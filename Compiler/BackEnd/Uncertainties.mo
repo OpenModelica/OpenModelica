@@ -818,7 +818,7 @@ algorithm
     
     BackendDAE.Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     BackendDAE.Variables externalObjects "External object variables";
-    BackendDAE.AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
+    BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
@@ -882,7 +882,7 @@ algorithm
     
     BackendDAE.Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     BackendDAE.Variables externalObjects "External object variables";
-    BackendDAE.AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
+    BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;
@@ -1298,7 +1298,7 @@ algorithm
     
     BackendDAE.Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     BackendDAE.Variables externalObjects "External object variables";
-    BackendDAE.AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
+    BackendDAE.Variables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     BackendDAE.EquationArray initialEqs "initialEqs ; Initial equations" ;
     BackendDAE.EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array<DAE.Constraint> constraints "constraints" ;

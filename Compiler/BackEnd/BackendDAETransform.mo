@@ -1040,7 +1040,7 @@ algorithm
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,var_lst_1,cont_var,disc_var;
       list<Integer> indxcont_var,indxdisc_var,indxcont_eqn,indxdisc_eqn;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables av;
       BackendDAE.EquationArray eqns_1,eqns,eeqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -1094,7 +1094,7 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar1(var_lst_1);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        av = BackendDAEUtil.emptyAliasVariables();
+        av = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         evars = BackendDAEUtil.listVar({});
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
@@ -1606,6 +1606,11 @@ algorithm
         comps;
     else
       equation
+        BackendDump.dumpIncidenceMatrix(m);
+        BackendDump.dumpIncidenceMatrixT(mt);
+        BackendDump.dumpMatching(ass1);
+        BackendDump.dumpMatching(ass2);
+        
         Error.addMessage(Error.INTERNAL_ERROR, {"-BackendDAETransform-tarjansAlgorithm failed! The sorting of the equations could not be done.(strongComponents failed), Use +d=failtrace for more information."});
       then fail();
   end matchcontinue;
@@ -2510,7 +2515,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
-    case (dummystate,stateindx,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,_)
+    case (dummystate,stateindx,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),_,_)
       equation
         (dummy_der,syst) = newDummyVar(dummystate, syst, DAE.NEW_DUMMY_DER(dummystate,{}));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStr, ("Chosen dummy: ",dummy_der," as dummy state\n"));
@@ -2519,11 +2524,11 @@ algorithm
         stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},DAE.callAttrBuiltinReal);
         dummyderexp = Expression.crefExp(dummy_der);
         changedeqns = List.unique(List.map1r(changedeqns,arrayGet,mapIncRowEqn));        
-        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, syst, shared, changedeqns)
+        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, syst, ishared, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, dummystate);
       then
-        (dummy_der,syst,shared,changedeqns);
+        (dummy_der,syst,ishared,changedeqns);
     else
       equation
          print("BackendDAETransform.makeDummyState failed\n");
@@ -2876,8 +2881,7 @@ algorithm
       BackendDAE.Var v,v_1,v_2;
       BackendDAE.Value indx,indx_1,dummy_no;
       Boolean dummy_fixed;
-      BackendDAE.Variables vars_1,vars,kv,ev;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables vars_1,vars,kv,ev,av;
       BackendDAE.BackendDAE dae;
       BackendDAE.EquationArray e,se,ie;
       BackendDAE.EventInfo ei;
@@ -2976,11 +2980,10 @@ algorithm
   (osyst,oshared):=
   matchcontinue (inExp1,inExp2,isyst,ishared,inIntegerLst6)
     local
-      array<list<BackendDAE.Value>> m,mt;
+      Option<array<list<BackendDAE.Value>>> m,mt;
       BackendDAE.Value e_1,e;
       BackendDAE.Equation eqn,eqn_1;
-      BackendDAE.Variables v_1,v,kv,ev,aliasVars;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables v_1,v,kv,ev,av;
       BackendDAE.EquationArray eqns_1,eqns,seqns,seqns1,ie,ie1;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -2996,16 +2999,18 @@ algorithm
       BackendDAE.BackendDAEType btp;
       BackendDAE.Matching matching;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;  
+      BackendDAE.Shared shared;
       
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av as BackendDAE.ALIASVARS(aliasVars = aliasVars),ie,seqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp,symjacs),{})
+      list<DAE.ComponentRef> crlst;
+      
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp,symjacs),{})
       equation
-        ((_, _, av)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp, av));
+        (av,(_, _)) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp));
         (ie1,(_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
-       then (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp,symjacs));
+       then (BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp,symjacs));
 
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: rest))
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),shared,(e :: rest))
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -3015,7 +3020,7 @@ algorithm
          "incidence_row(v\'\',eqn\') => row\' &
           Util.list_replaceat(row\',e\',m) => m\' &
           transpose_matrix(m\') => mt\' &" ;
-        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,SOME(m),SOME(mt),matching),shared, rest);
+        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,m,mt,matching),shared, rest);
       then
         (syst,shared);
 
@@ -3451,23 +3456,22 @@ protected function traverseReplaceAliasVarsBindExp
 "function traverseReplaceAliasVarsBindExp
   Helper function to replaceDummyDer.
   Replaces all variable bindings of the alias variables."
- input tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> inTpl;
- output tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp,BackendDAE.AliasVariables>> outTpl;
+ input tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp>> inTpl;
+ output tuple<BackendDAE.Var, tuple<DAE.Exp,DAE.Exp>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local
       Integer i;
       DAE.Exp e,en,e1,e2;
       BackendDAE.Var v;
-      BackendDAE.AliasVariables av;
-    case((v,(e1,e2,av)))
+    case((v,(e1,e2)))
       equation
         e = BackendVariable.varBindExp(v);
         ((en,i)) = Expression.replaceExp(e,e1,e2);
+        true = intGt(i,0);
         v = BackendVariable.setBindExp(v,en);
-        v = BackendVariable.mergeVariableOperations(v,Util.if_(i>0,{DAE.SUBSTITUTION({en},e)},{}));
-        av = BackendDAEUtil.addAliasVariables({v},av);
-      then ((v,(e1,e2,av)));
+        v = BackendVariable.mergeVariableOperations(v,{DAE.SUBSTITUTION({en},e)});
+      then ((v,(e1,e2)));
     case inTpl then inTpl;
   end matchcontinue;
 end traverseReplaceAliasVarsBindExp;

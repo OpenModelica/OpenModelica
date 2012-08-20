@@ -81,8 +81,7 @@ algorithm
     local
       list<DAE.InlineType> itlst;
       BackendDAE.Variables knownVars;
-      BackendDAE.Variables externalObjects;
-      BackendDAE.AliasVariables aliasVars "alias-variables' hashtable";
+      BackendDAE.Variables externalObjects,aliasVars "alias-variables' hashtable";
       BackendDAE.EquationArray removedEqs;
       BackendDAE.EquationArray initialEqs;
       array<DAE.Constraint> constrs;

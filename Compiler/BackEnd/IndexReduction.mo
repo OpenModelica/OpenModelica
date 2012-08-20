@@ -778,7 +778,7 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      Integer ne,nv,ne1,nv1,freestatevars,orgeqnscount;
+      Integer ne,nv,ne1,nv1,freestatevars,orgeqnscount,ndummystates;
       BackendDAE.StateOrder so;
       BackendDAE.ConstraintEquations orgEqnsLst;
       BackendDAE.Variables v,hov;
@@ -828,17 +828,19 @@ algorithm
         enqnslst = List.flatten(List.map(orgEqnsLst,Util.tuple22));
         syst = BackendEquation.equationsAddDAE(enqnslst, syst);
         ne1 = BackendDAEUtil.systemSize(syst);
+        ndummystates = listLength(dummyStates);
         nv1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
+        nv1 = nv1+ndummystates;
         vec1 = Util.arrayExpand(ne1-ne, ass1, -1);
         vec2 = Util.arrayExpand(nv1-nv, ass2, -1);
         (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
-        syst = BackendVariable.expandVarsDAE(listLength(dummyStates),syst);
+        syst = BackendVariable.expandVarsDAE(ndummystates,syst);
         (syst,shared,changedeqns) = addDummyStates(dummyStates,syst,shared,vec1,vec2,mapIncRowEqn,{});
         Debug.fcall(Flags.BLT_DUMP, print, "Full System:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);        
-        (syst,_,_) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,shared,BackendDAE.SOLVABLE(),changedeqns,mapEqnIncRow,mapIncRowEqn); 
-        Matching.matchingExternalsetIncidenceMatrix(nv1,ne1,m);
-        BackendDAEEXT.matching(ne1,nv1,5,-1,0.0,1);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);  
+        (syst,_,_) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,shared,BackendDAE.SOLVABLE(),changedeqns,mapEqnIncRow,mapIncRowEqn);
+        Matching.matchingExternalsetIncidenceMatrix(nv1,ne1,m);        
+        BackendDAEEXT.matching(nv1,ne1,5,-1,0.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);     
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
         Debug.fcall(Flags.BLT_DUMP, print, "Final System with DummyStates:\n");
@@ -1806,7 +1808,7 @@ algorithm
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         rang = listLength(states)-listLength(unassignedEqns);
-        (states1,dstates1) = List.split(states, rang);
+        (states1,dstates1) = List.split(listReverse(states), rang);
         dstates1 = listAppend(dstates1,dstates);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states1,BackendDAETransform.dumpStates,"\n","\n")));     
@@ -2326,7 +2328,7 @@ algorithm
         _ = consArrayUpdate(intGt(e,0), inAss1, e, -1);
         _ = consArrayUpdate(intGt(i,0), inAss2, i, -1);
         (syst,shared,changedeqns) = addDummyStates(rest,syst,shared,inAss1,inAss2,mapIncRowEqn,listAppend(ichangedeqns,changedeqns));
-      then 
+      then
         (syst,shared,changedeqns);
   end match;
 end addDummyStates;

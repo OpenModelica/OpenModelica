@@ -42,11 +42,8 @@ public import DAE;
 public import Env;
 public import SCode;
 public import Values;
-public import HashTable2;
 public import HashTable3;
-public import HashTable4;
 public import HashTableCG;
-public import HashTableCrILst;
 
 public constant String partialDerivativeNamePrefix="$pDER";
 public constant Integer RT_PROFILER0=6;
@@ -247,7 +244,14 @@ uniontype Shared "Data shared for all equation-systems"
   record SHARED
     Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     Variables externalObjects "External object variables";
-    AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
+    Variables aliasVars "Data originating from removed simple equations needed to build 
+variables' lookup table (in C output).
+
+In that way, double buffering of variables in pre()-buffer, extrapolation 
+buffer and results caching, etc., is avoided, but in C-code output all the 
+data about variables' names, comments, units, etc. is preserved as well as 
+pinter to their values (trajectories).
+";
     EquationArray initialEqs "initialEqs ; Initial equations" ;
     EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
     array< .DAE.Constraint> constraints "constraints (Optimica extension)";
@@ -301,23 +305,6 @@ uniontype Variables "- Variables"
     Integer numberOfVars "numberOfVars ; no. of vars";
   end VARIABLES;
 end Variables;
-
-public
-uniontype AliasVariables "
-Data originating from removed simple equations needed to build 
-variables' lookup table (in C output).
-
-In that way, double buffering of variables in pre()-buffer, extrapolation 
-buffer and results caching, etc., is avoided, but in C-code output all the 
-data about variables' names, comments, units, etc. is preserved as well as 
-pinter to their values (trajectories).
-"
-  record ALIASVARS
-    HashTable2.HashTable varMappingsCref "Hashtable cref > exp";
-    HashTable4.HashTable varMappingsExp  "Hashtable exp > cref";
-    Variables aliasVars                  "removed variables";
-  end ALIASVARS;
-end AliasVariables;
 
 uniontype AliasVariableType
   record NOALIAS end NOALIAS;

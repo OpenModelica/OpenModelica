@@ -89,8 +89,7 @@ public function lower
   output BackendDAE.BackendDAE outBackendDAE;
 protected
   BackendDAE.BinTree s;
-  BackendDAE.Variables vars,knvars,vars_1,extVars;
-  BackendDAE.AliasVariables aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
+  BackendDAE.Variables vars,knvars,vars_1,extVars,aliasVars;
   list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,ialgeqns,multidimeqns,imultidimeqns,eqns_1,ceeqns,iceeqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
@@ -127,7 +126,7 @@ algorithm
   constrarra := listArray(constrs);
   clsattrsarra := listArray(clsAttrs);
   einfo := BackendDAE.EVENT_INFO(whenclauses_1,{});
-  aliasVars := BackendDAEUtil.emptyAliasVariables();
+  aliasVars := BackendDAEUtil.emptyVars();
   outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,constrarra,clsattrsarra,inCache,inEnv,functionTree,einfo,extObjCls,BackendDAE.SIMULATION(),{}));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO,print,"No. of Equations: " +& intString(BackendDAEUtil.equationSize(eqnarr)) +& "\nNo. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
@@ -2047,8 +2046,7 @@ algorithm
   (osyst,oshared) := match (syst,shared)
     local
       Option<BackendDAE.IncidenceMatrix> m,mT;
-      BackendDAE.Variables vars,knvars,exobj,vars1,vars2;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables vars,knvars,exobj,vars1,vars2,av;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,inieqns1;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -2327,8 +2325,7 @@ protected function findZeroCrossingsShared "function: findZeroCrossingsShared
 algorithm
   (outDAE) := match (inDAE,allvars)
     local
-      BackendDAE.Variables vars,knvars,exobj;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables vars,knvars,exobj,av;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -2369,8 +2366,7 @@ algorithm
   (osyst,oshared) := match (syst,shared)
     local
       list<BackendDAE.Var> allvars;
-      BackendDAE.Variables vars,knvars,exobj;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables vars,knvars,exobj,av;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;

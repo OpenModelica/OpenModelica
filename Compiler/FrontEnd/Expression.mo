@@ -50,7 +50,6 @@ encapsulated package Expression
 // public imports
 public import Absyn;
 public import DAE;
-public import Values;
 
 public type ComponentRef = DAE.ComponentRef;
 public type Exp = DAE.Exp;

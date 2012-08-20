@@ -3412,8 +3412,7 @@ algorithm
   oshared := match (inVar,shared)
     local
       BackendDAE.Var var;
-      BackendDAE.Variables knvars,exobj,knvars1;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;

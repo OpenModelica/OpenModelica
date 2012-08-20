@@ -71,7 +71,6 @@ protected import ExpressionSimplify;
 protected import Error;
 protected import Flags;
 protected import Graph;
-protected import HashTable4;
 protected import HashSet;
 protected import Inline;
 protected import List;
@@ -104,8 +103,7 @@ public function inlineArrayEqnShared "function inlineArrayEqnShared"
 algorithm
   outDAE := match(inDAE)
     local
-      BackendDAE.Variables ordvars,knvars,exobj,knvars1;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables ordvars,knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns,eqns1,inieqns1,remeqns1,eqns2;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -1198,8 +1196,7 @@ algorithm
   (osyst,oshared):=
   match (b,syst,shared,repl,movedVars,movedAVars,meqns)
     local
-      BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,ordvars2,ordvars3;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,ordvars2,ordvars3,aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -1242,8 +1239,6 @@ algorithm
   match (b,inDAE,repl)
     local
       BackendDAE.Variables ordvars,knvars,exobj,knvars1;
-      HashTable2.HashTable varMappingsCref;
-      HashTable4.HashTable varMappingsExp;
       BackendDAE.Variables aliasVars;      
       BackendDAE.EquationArray remeqns,inieqns,inieqns1,remeqns1;
       array<DAE.Constraint> constrs;
@@ -1259,7 +1254,7 @@ algorithm
       BackendDAE.EqSystems systs,systs1;  
       list<BackendDAE.Var> ordvarslst,varlst;
     case (false,_,_) then inDAE;
-    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,BackendDAE.ALIASVARS(varMappingsCref,varMappingsExp,aliasVars),inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs)),repl)
+    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs)),repl)
       equation
         ordvarslst = BackendVariable.equationSystemsVarsLst(systs,{});
         ordvars = BackendDAEUtil.listVar(ordvarslst);
@@ -1272,7 +1267,7 @@ algorithm
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl);
         systs1 = removeSimpleEquationsUpdateWrapper(systs,{},repl);
       then 
-        BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,BackendDAE.ALIASVARS(varMappingsCref,varMappingsExp,aliasVars),inieqns1,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp,symjacs));
+        BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns1,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp,symjacs));
   end match;
 end removeSimpleEquationsShared;
 
@@ -1547,8 +1542,7 @@ algorithm
   (outVareqns,osyst,oshared,om,omT,outRepl,outMeqns):=
   match (eqnType,cr,i,exp,pos,repl,isyst,ishared,im,imT,inMeqns)
     local
-      BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables ordvars,knvars,exobj,ordvars1,knvars1,aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1,eqns2;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -2188,7 +2182,6 @@ algorithm
   av1 := BackendVariable.setBindExp(avar, e);
   newvars := BackendVariable.addVar(av1,mavars);
   oshared := shared;
-//  oshared := BackendDAEUtil.updateAliasVariablesDAE(acr,e,var,shared);
 end selectAlias2;
 
 protected function mergeAliasVars
@@ -2971,8 +2964,7 @@ algorithm
   odae := match (dae)
     local
       DAE.FunctionTree funcs;
-      BackendDAE.Variables knvars,exobj,knvars1;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables knvars,exobj,knvars1,av;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -3009,8 +3001,7 @@ algorithm
   odae := match (dae)
     local
       DAE.FunctionTree funcs;
-      BackendDAE.Variables knvars,exobj,knvars1;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables knvars,exobj,knvars1,av;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -3191,8 +3182,7 @@ public function removeParameters
 algorithm
   outDAE := match (inDAE)
     local
-      BackendDAE.Variables knvars,exobj,knvars1;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables knvars,exobj,knvars1,av;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -3288,8 +3278,7 @@ algorithm
   outDAE := match (inDAE)
     local
       DAE.FunctionTree funcs;
-      BackendDAE.Variables knvars,exobj;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables knvars,exobj,av;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -3384,8 +3373,7 @@ algorithm
   outDAE := match (inDAE)
     local
       DAE.FunctionTree funcs;
-      BackendDAE.Variables knvars,exobj;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables knvars,exobj,av;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -3433,8 +3421,7 @@ algorithm
   outDAE := match (inDAE)
     local
       DAE.FunctionTree funcs;
-      BackendDAE.Variables knvars,exobj;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables knvars,exobj,av;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -3973,8 +3960,7 @@ public function removeUnusedParameter
 algorithm
   outDlow := match (inDlow)
     local
-      BackendDAE.Variables knvars,exobj,avars,knvars1;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -3987,13 +3973,13 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.EqSystems eqs;
       BackendDAE.BackendDAEType btp;      
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs)))
+    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs)))
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((knvars,knvars1)) = BackendVariable.traverseBackendDAEVars(knvars,copyNonParamVariables,(knvars,knvars1));
         ((_,knvars1)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedParameter,(knvars,knvars1));
-        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedParameter,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars,checkUnusedParameter,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedParameter,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedParameter,(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedParameter,(knvars,knvars1));
@@ -4117,8 +4103,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;      
       DAE.FunctionTree funcs;
-      BackendDAE.Variables knvars,exobj,avars,knvars1;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -4129,12 +4114,12 @@ algorithm
       BackendDAE.EqSystems eqs;    
       BackendDAE.BackendDAEType btp;
       
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs)))
+    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs)))
       equation
         knvars1 = BackendDAEUtil.emptyVars();
         ((_,knvars1)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedVariables,(knvars,knvars1));
-        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedVariables,(knvars,knvars1));
+        ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedVariables,(knvars,knvars1));
         ((_,knvars1)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedVariables,(knvars,knvars1));
         (_,(_,knvars1)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedVariables,(knvars,knvars1));
@@ -4236,8 +4221,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;      
       DAE.FunctionTree funcs,usedfuncs;
-      BackendDAE.Variables knvars,exobj,avars;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -4248,13 +4232,13 @@ algorithm
       BackendDAE.EqSystems eqs;    
       BackendDAE.BackendDAEType btp;
       
-    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars as BackendDAE.ALIASVARS(aliasVars=avars),inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs)))
+    case (BackendDAE.DAE(eqs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo as BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst),eoc,btp,symjacs)))
       equation
         usedfuncs = copyRecordConstructorAndExternalObjConstructorDestructor(funcs);
         ((_,usedfuncs)) = List.fold1(eqs,BackendDAEUtil.traverseBackendDAEExpsEqSystem,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(knvars,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(exobj,checkUnusedFunctions,(funcs,usedfuncs));        
-        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(avars,checkUnusedFunctions,(funcs,usedfuncs));
+        ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsVars(aliasVars,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsEqns(remeqns,checkUnusedFunctions,(funcs,usedfuncs));
         ((_,usedfuncs)) = BackendDAEUtil.traverseBackendDAEExpsEqns(inieqns,checkUnusedFunctions,(funcs,usedfuncs));
         (_,(_,usedfuncs)) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,checkUnusedFunctions,(funcs,usedfuncs));
@@ -4455,8 +4439,7 @@ algorithm
     match(isyst,sharedChanged)
     local
       DAE.FunctionTree funcs;
-      BackendDAE.Variables vars,knvars,exobj,vars1,knvars1;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables vars,knvars,exobj,vars1,knvars1,aliasVars;
       BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -4833,7 +4816,7 @@ algorithm
       array<Option<BackendDAE.Var>> emptyarr,optVarArrEmpty;
       BackendDAE.Matching matching;
       BackendDAE.VariableArray varArrEmpty;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables aliasVars;
       array<DAE.Constraint> constraints;
       DAE.FunctionTree functionTree;
       Env.Cache cache;
@@ -7350,7 +7333,7 @@ algorithm
       BackendDAE.Variables orderedVars, jacOrderedVars; // ordered Variables, only states and alg. vars
       BackendDAE.Variables knownVars, jacKnownVars; // Known variables, i.e. constants and parameters
       BackendDAE.Variables jacExternalObjects; // External object variables
-      BackendDAE.AliasVariables jacAliasVars; // mappings of alias-variables to real-variables
+      BackendDAE.Variables jacAliasVars; // mappings of alias-variables to real-variables
       BackendDAE.EquationArray orderedEqs, jacOrderedEqs; // ordered Equations
       BackendDAE.EquationArray removedEqs, jacRemovedEqs; // Removed equations a=b
       BackendDAE.EquationArray jacInitialEqs; // Initial equations
@@ -7375,7 +7358,7 @@ algorithm
       jacOrderedVars = BackendDAEUtil.emptyVars();
       jacKnownVars = BackendDAEUtil.emptyVars();
       jacExternalObjects = BackendDAEUtil.emptyVars();
-      jacAliasVars =  BackendDAEUtil.emptyAliasVariables();
+      jacAliasVars =  BackendDAEUtil.emptyVars();
       jacOrderedEqs = BackendDAEUtil.listEquation({});
       jacRemovedEqs = BackendDAEUtil.listEquation({});
       jacInitialEqs = BackendDAEUtil.listEquation({});
@@ -7417,7 +7400,7 @@ algorithm
       jacKnownVars = BackendVariable.mergeVariables(jacKnownVars, inseedVars);
       (jacKnownVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(jacKnownVars, BackendVariable.setVarDirectionTpl, (DAE.INPUT()));
       jacExternalObjects = BackendDAEUtil.emptyVars();
-      jacAliasVars =  BackendDAEUtil.emptyAliasVariables();
+      jacAliasVars =  BackendDAEUtil.emptyVars();
       jacOrderedEqs = BackendDAEUtil.listEquation(derivedEquations);
       jacRemovedEqs = BackendDAEUtil.listEquation({});
       jacInitialEqs = BackendDAEUtil.listEquation({});
@@ -9504,8 +9487,7 @@ protected function simplifyTimeIndepFuncCallsShared "function simplifyTimeIndepF
 algorithm
   outDAE:= match (inDAE)
     local
-      BackendDAE.Variables knvars,exobj;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;

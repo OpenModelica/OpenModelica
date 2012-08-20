@@ -4794,8 +4794,7 @@ algorithm
     local
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1;
-      BackendDAE.Variables vars_1,vars,knvars,exvars,knvars_1;
-      BackendDAE.AliasVariables ave;
+      BackendDAE.Variables vars_1,vars,knvars,exvars,knvars_1,ave;
       BackendDAE.EquationArray eqns_1,eqns,eeqns;
       BackendDAE.BackendDAE subsystem_dae;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
@@ -4858,7 +4857,7 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = BackendDAEUtil.listVar1(var_lst_1);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        ave = BackendDAEUtil.emptyAliasVariables();
+        ave = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         funcs = DAEUtil.avlTreeNew();
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
@@ -4913,7 +4912,7 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = BackendDAEUtil.listVar1(var_lst_1);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        ave = BackendDAEUtil.emptyAliasVariables();
+        ave = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         funcs = DAEUtil.avlTreeNew();
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
@@ -5204,7 +5203,7 @@ algorithm
       array<DAE.ClassAttributes> clsAttrs;
       list<list<Real>> jacVals;
       list<Real> rhsVals,solvedVals;
-      BackendDAE.AliasVariables ave;
+      BackendDAE.Variables ave;
       list<DAE.ElementSource> sources;
       list<DAE.ComponentRef> names;
       list<list<Integer>> comps_1;
@@ -5239,7 +5238,7 @@ algorithm
       equation
         // check Relaxation
         true = Flags.isSet(Flags.RELAXATION);
-        ave = BackendDAEUtil.emptyAliasVariables();
+        ave = BackendDAEUtil.emptyVars();
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         cache = Env.emptyCache();
@@ -6004,7 +6003,7 @@ algorithm
       Env.Cache cache;
       DAE.FunctionTree funcs;
       DAE.ElementSource source;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables av;
       BackendDAE.BackendDAE subsystem_dae;
       SimEqSystem equation_;
       BackendDAE.StrongComponents comps;
@@ -6041,7 +6040,7 @@ algorithm
         ealst = List.threadTuple(ea1,ea2);
         re = List.map1(ealst,BackendEquation.generateEQUATION,source);
         eqns_1 = BackendDAEUtil.listEquation(re);
-        av = BackendDAEUtil.emptyAliasVariables();
+        av = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         evars = BackendDAEUtil.listVar({});
         constrs = listArray({});
@@ -6068,7 +6067,7 @@ algorithm
         ealst = List.threadTuple(ea1,ea2);
         re = List.map1(ealst,BackendEquation.generateEQUATION,source);
         eqns_1 = BackendDAEUtil.listEquation(re);
-        av = BackendDAEUtil.emptyAliasVariables();
+        av = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         evars = BackendDAEUtil.listVar({});
         constrs = listArray({});
@@ -6539,9 +6538,8 @@ protected function createStartValueEquations
 algorithm
   startValueEquations := matchcontinue (syst, shared, acc)
     local
-      BackendDAE.Variables vars;
+      BackendDAE.Variables vars,av;
       list<BackendDAE.Equation>  startValueEquationsTmp2;
-      BackendDAE.AliasVariables av;
       list<SimEqSystem> simeqns,simeqns1;
       Integer uniqueEqIndex;
       
@@ -6583,7 +6581,6 @@ algorithm
       list<DAE.Algorithm> varasserts,ialgs;
       BackendDAE.BackendDAE paramdlow;
       BackendDAE.ExternalObjectClasses extObjClasses;
-      BackendDAE.AliasVariables alisvars;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mT;
       array<Integer> v1,v2;
@@ -6593,7 +6590,7 @@ algorithm
       list<HelpVarInfo> helpVarInfo;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables aliasVars,alisvars;
       
       Env.Cache cache;
       Env.Env env;      
@@ -6613,7 +6610,7 @@ algorithm
         // sort the equations
         emptyeqns = BackendDAEUtil.listEquation({});
         pe = BackendDAEUtil.listEquation(parameterEquationsTmp);
-        alisvars = BackendDAEUtil.emptyAliasVariables();
+        alisvars = BackendDAEUtil.emptyVars();
         v = BackendDAEUtil.listVar(lv);
         kn = BackendDAEUtil.listVar(lkn);
         funcs = DAEUtil.avlTreeNew();
@@ -6676,8 +6673,8 @@ algorithm
 end traverseAlgorithmFinder;
 
 protected function createInitialAssignmentsFromStart
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.AliasVariables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.AliasVariables>> outTpl;
+  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.Variables>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)  
@@ -6688,7 +6685,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Exp startv;
       DAE.ElementSource source;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables av;
       
       // also add an assignment for variables that have non-constant
       // expressions, e.g. parameter values, as start.  NOTE: such start
@@ -6960,8 +6957,7 @@ algorithm
       BackendDAE.StrongComponent block_;
       list<Integer> rest;
       DAE.ComponentRef cr;
-      BackendDAE.Variables vars, knvars,exvars;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables vars, knvars,exvars,av;
       BackendDAE.EquationArray eqns,se,ie;
       BackendDAE.EventInfo ev;
       BackendDAE.ExternalObjectClasses eoc;
@@ -7194,20 +7190,20 @@ algorithm
       BackendDAE.Variables removedvars;
       BackendDAE.Variables extvars;
       BackendDAE.EquationArray ie;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables aliasVars;
       list<DAE.ComponentRef> initCrefs;
       BackendDAE.EqSystems systs;
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(
       knownVars = knvars, initialEqs=ie,
       externalObjects = extvars,
-      aliasVars = aliasVars as BackendDAE.ALIASVARS(aliasVars = removedvars))))
+      aliasVars = aliasVars)))
       equation
         /* Extract from variable list */
         ((varsOut,_,_)) = List.fold1(List.map(systs,BackendVariable.daeVars),BackendVariable.traverseBackendDAEVars,extractVarsFromList,(emptySimVars,aliasVars,knvars));
         /* Extract from known variable list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(knvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* Extract from removed variable list */
-        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(removedvars,extractVarsFromList,(varsOut,aliasVars,knvars));
+        ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(aliasVars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* Extract from external object list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* sort variables on index */
@@ -7225,15 +7221,14 @@ algorithm
 end createVars;
 
 protected function extractVarsFromList
-  input tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.AliasVariables,BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.AliasVariables,BackendDAE.Variables>> outTpl;
+  input tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<SimVars,BackendDAE.Variables,BackendDAE.Variables>> outTpl;
 algorithm
   outTpl:= matchcontinue (inTpl)      
     local
       BackendDAE.Var var;
       SimVars vars,varsTmp1,varsTmp2;
-      BackendDAE.AliasVariables aliasVars;
-      BackendDAE.Variables v;
+      BackendDAE.Variables aliasVars,v;
     case ((var,(vars,aliasVars,v)))
       equation
         varsTmp1 = extractVarFromVar(var,aliasVars,v);
@@ -7248,7 +7243,7 @@ end extractVarsFromList;
 // of algvars for example
 protected function extractVarFromVar
   input BackendDAE.Var dlowVar;
-  input BackendDAE.AliasVariables inAliasVars;
+  input BackendDAE.Variables inAliasVars;
   input BackendDAE.Variables inVars;
   output SimVars varsOut;
 algorithm
@@ -7862,7 +7857,7 @@ end addSimVarToHashTable;
 
 protected function getAliasVar
   input BackendDAE.Var inVar;
-  input Option<BackendDAE.AliasVariables> inAliasVars;
+  input Option<BackendDAE.Variables> inAliasVars;
   output AliasVariable outAlias;
 algorithm
   outAlias :=
@@ -7873,7 +7868,7 @@ algorithm
       BackendDAE.Var var;
       DAE.Exp e;
       AliasVariable alias;
-    case (BackendDAE.VAR(varName=name),SOME(BackendDAE.ALIASVARS(aliasVars = aliasVars)))
+    case (BackendDAE.VAR(varName=name),SOME(aliasVars))
       equation
         ((var :: _),_) = BackendVariable.getVar(name,aliasVars);
         // does not work
@@ -7961,7 +7956,7 @@ algorithm
       list<HelpVarInfo> helpvars;
       BackendDAE.Variables knownVars;
       BackendDAE.Variables externalObjects;
-      BackendDAE.AliasVariables aliasVars;
+      BackendDAE.Variables aliasVars;
       BackendDAE.EquationArray removedEqs;
       BackendDAE.EquationArray initialEqs;
       array<DAE.Constraint> constrs;
@@ -8226,8 +8221,8 @@ protected function generateInitialEquationsFromStart "function: generateInitialE
   attributes of variables. Only variables with a start value and
   fixed set to true is converted by this function. Fixed set to false
   means an initial guess, and is not considered here."
-  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.AliasVariables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.AliasVariables>> outTpl;
+  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Equation>,BackendDAE.Variables>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)      
@@ -8240,7 +8235,7 @@ algorithm
       DAE.Type tp;
       Option<DAE.VariableAttributes> attr;
       DAE.ElementSource source;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables av;
       
     case (((v as BackendDAE.VAR(varName = cr,varKind = kind,values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
       equation
@@ -9290,7 +9285,7 @@ end typesVar;
 
 public function dlowvarToSimvar
   input BackendDAE.Var dlowVar;
-  input Option<BackendDAE.AliasVariables> optAliasVars;
+  input Option<BackendDAE.Variables> optAliasVars;
   input BackendDAE.Variables inVars;
   output SimVar simVar;
 algorithm

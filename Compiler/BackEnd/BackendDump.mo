@@ -722,8 +722,7 @@ algorithm
       String varlen_str,eqnlen_str,s;
       list<BackendDAE.Equation> reqnsl,ieqnsl;
       list<String> ss;
-      BackendDAE.Variables vars2,vars3;
-      BackendDAE.AliasVariables av;
+      BackendDAE.Variables vars2,vars3,av;
       BackendDAE.EquationArray reqns,ieqns;
       array<DAE.Constraint> constrs;
       list<BackendDAE.ZeroCrossing> zc;
@@ -2098,17 +2097,15 @@ public function dumpAliasVariables "function: dumpAliasVariables
 
   dump AliasVariables.
 "
-  input BackendDAE.AliasVariables inAliasVars;
+  input BackendDAE.Variables inAliasVars;
 protected
-  BackendDAE.Variables aliasVars;
   list<BackendDAE.Var> vars;
   String sl;
   Integer l;
 algorithm
-  BackendDAE.ALIASVARS(aliasVars=aliasVars) := inAliasVars;
-  l := BackendVariable.varsSize(aliasVars);
+  l := BackendVariable.varsSize(inAliasVars);
   sl := intString(l);
-  vars := BackendDAEUtil.varList(aliasVars);
+  vars := BackendDAEUtil.varList(inAliasVars);
   print("AliasVariables: ");
   print(sl);
   print("\n===============\n");

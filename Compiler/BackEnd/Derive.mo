@@ -49,7 +49,6 @@ public import BackendDAE;
 public import DAE;
 public import DAEUtil;
 public import Types;
-public import Values;
 
 // protected imports
 protected import BackendDump;

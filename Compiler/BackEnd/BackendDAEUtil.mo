@@ -76,8 +76,6 @@ protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Flags;
 protected import Global;
-protected import HashTable2;
-protected import HashTable4;
 protected import IndexReduction;
 protected import List;
 protected import Matching;
@@ -92,7 +90,6 @@ type Var = BackendDAE.Var;
 type VarKind = BackendDAE.VarKind;
 type VariableArray = BackendDAE.VariableArray;
 type EquationArray = BackendDAE.EquationArray;
-type AliasVariables = BackendDAE.AliasVariables;
 type ExternalObjectClasses = BackendDAE.ExternalObjectClasses;
 type BackendDAEType = BackendDAE.BackendDAEType;
 type SymbolicJacobians = BackendDAE.SymbolicJacobians;
@@ -553,31 +550,31 @@ public  function createEmptyBackendDAE
   input BackendDAEType inBDAEType;
   output BackendDAE.BackendDAE outBDAE;
 protected 
-  BackendDAE.Variables emptyVars;
+  BackendDAE.Variables emptyvars;
   EquationArray emptyEqns;
-  AliasVariables emptyAliasVars;
+  BackendDAE.Variables emptyAliasVars;
   array<DAE.Constraint> constrs;
   array<DAE.ClassAttributes> clsAttrs;
   Env.Cache cache; 
   DAE.FunctionTree funcTree;
 algorithm
-  emptyVars :=  emptyVars();
+  emptyvars :=  emptyVars();
   emptyEqns := listEquation({});
-  emptyAliasVars := emptyAliasVariables();
+  emptyAliasVars := emptyVars();
   constrs := listArray({});
   clsAttrs := listArray({});
   cache := Env.emptyCache();
   funcTree := DAEUtil.avlTreeNew();
   outBDAE := BackendDAE.DAE({BackendDAE.EQSYSTEM(
-                              emptyVars,
+                              emptyvars,
                               emptyEqns,
                               NONE(),
                               NONE(),
                               BackendDAE.NO_MATCHING()
                             )},
                             BackendDAE.SHARED(
-                              emptyVars,
-                              emptyVars, 
+                              emptyvars,
+                              emptyvars, 
                               emptyAliasVars, 
                               emptyEqns, 
                               emptyEqns, 
@@ -661,8 +658,7 @@ algorithm
   outShared:=
   match (inShared)
     local
-      BackendDAE.Variables knvars,exobj,knvars1,exobj1;
-      AliasVariables av;
+      BackendDAE.Variables knvars,exobj,knvars1,exobj1,av;
       EquationArray remeqns,inieqns,remeqns1,inieqns1;
       array<DAE.Constraint> constrs,constrs1;
       list<DAE.Constraint> lstconstrs;
@@ -719,8 +715,7 @@ algorithm
   outShared:=
   match (inSymJac, inShared)
     local
-      BackendDAE.Variables knvars,exobj;
-      AliasVariables av;
+      BackendDAE.Variables knvars,exobj,av;
       EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -749,8 +744,7 @@ algorithm
   outShared:=
   match (inSymJac,inShared)
     local
-      BackendDAE.Variables knvars,exobj;
-      AliasVariables av;
+      BackendDAE.Variables knvars,exobj,av;
       EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs; 
@@ -779,8 +773,7 @@ public function addBackendDAEKnVars
 algorithm
   outBDAE := match (inKnVars, inBDAE)
     local
-      BackendDAE.Variables exobj;
-      AliasVariables av;
+      BackendDAE.Variables exobj,av;
       EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs; 
@@ -830,8 +823,7 @@ public function addBackendDAEFunctionTree
 algorithm
   outBDAE := match (inFunctionTree, inBDAE)
     local
-      BackendDAE.Variables knvars,exobj;
-      AliasVariables av;
+      BackendDAE.Variables knvars,exobj,av;
       EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;  
@@ -877,8 +869,7 @@ algorithm
       DAE.FunctionTree funcs;
       list<WhenClause> wc;
       list<ZeroCrossing> zc;
-      BackendDAE.Variables  knvars, extVars;
-      AliasVariables av;
+      BackendDAE.Variables  knvars, extVars,av;
       EquationArray seqns,ieqns;
       ExternalObjectClasses extObjCls;
       BackendDAEType btp;
@@ -1155,8 +1146,7 @@ algorithm
   outBackendDAE := match (inBackendDAE)
     local
       list<Var> knvarlst,varlst1,varlst2;
-      BackendDAE.Variables knvars,extVars,paramvars;
-      AliasVariables av;
+      BackendDAE.Variables knvars,extVars,paramvars,av;
       EquationArray seqns,ie;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
@@ -1316,50 +1306,31 @@ algorithm
   outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0,arrSize,emptyarr),bucketSize,0);
 end emptyVars;
 
-public function emptyAliasVariables
-  output AliasVariables outAliasVariables;
-protected
-  HashTable2.HashTable aliasMapsCref;
-  HashTable4.HashTable aliasMapsExp;
-  BackendDAE.Variables aliasVariables;
-algorithm
-  aliasMapsCref := HashTable2.emptyHashTable();
-  aliasMapsExp := HashTable4.emptyHashTable();
-  aliasVariables := emptyVars();
-  outAliasVariables := BackendDAE.ALIASVARS(aliasMapsCref,aliasMapsExp,aliasVariables);
-end emptyAliasVariables;
-
 public function addAliasVariables
 "function: addAliasVariables
   author: Frenkel TUD 2010-12
   Add an alias variable to the AliasVariables "
   input list<Var> inVars;
-  input AliasVariables inAliasVariables;
-  output AliasVariables outAliasVariables;
+  input BackendDAE.Variables inAliasVariables;
+  output BackendDAE.Variables outAliasVariables;
 algorithm
 algorithm
   outAliasVariables := matchcontinue (inVars,inAliasVariables)
     local
-      HashTable2.HashTable aliasMappingsCref,aliasMappingsCref1;
-      HashTable4.HashTable aliasMappingsExp,aliasMappingsExp1;
       BackendDAE.Variables aliasVariables;
-      AliasVariables aliases;
       DAE.ComponentRef cr;
       DAE.Exp exp;
       Var v;
       list<Var> rest;
-    case ({},aliases) then aliases;
-    case (v::rest,BackendDAE.ALIASVARS(aliasMappingsCref,aliasMappingsExp,aliasVariables))
+    case ({},_) then inAliasVariables;
+    case (v::rest,_)
       equation
-        aliasVariables = BackendVariable.addVar(v,aliasVariables);
+        aliasVariables = BackendVariable.addVar(v,inAliasVariables);
         exp = BackendVariable.varBindExp(v);
         cr = BackendVariable.varCref(v);
         Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("++++ added Alias eqn: ",cr," = ",exp,"\n"));
-        aliasMappingsCref1 = BaseHashTable.addNoUpdCheck((cr,exp),aliasMappingsCref);
-        aliasMappingsExp1 = BaseHashTable.addNoUpdCheck((exp,cr),aliasMappingsExp);
-        aliases =  addAliasVariables(rest,BackendDAE.ALIASVARS(aliasMappingsCref1,aliasMappingsExp1,aliasVariables));
       then
-       aliases;
+       addAliasVariables(rest,aliasVariables);
     case (_,_)
       equation
         print("- BackendDAEUtil.addAliasVariables failed\n");
@@ -1367,193 +1338,6 @@ algorithm
         fail();
   end matchcontinue;
 end addAliasVariables;
-
-public function updateAliasVariablesDAE
-"function: updateAliasVariablesDAE
-  author: Frenkel TUD 2011-04
-  update the alias variables."
-  input DAE.ComponentRef inCref;
-  input DAE.Exp inExp;
-  input Var inVar;
-  input BackendDAE.Shared shared;
-  output BackendDAE.Shared oshared;
-algorithm
-  oshared := match (inCref,inExp,inVar,shared)
-    local
-      BackendDAE.Variables knvars,exobj;
-      AliasVariables aliasVars,aliasVars1;
-      EquationArray remeqns,inieqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;      
-      DAE.FunctionTree funcs;
-      BackendDAE.EventInfo einfo;
-      ExternalObjectClasses eoc;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-    case (inCref,inExp,inVar,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
-      equation
-        aliasVars1 = updateAliasVariables(aliasVars,inCref,inExp,inVar);
-      then BackendDAE.SHARED(knvars,exobj,aliasVars1,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
-  end match;
-end updateAliasVariablesDAE;
-
-public function updateAliasVariables
-"function: changeAliasVariables
-  author: wbraun
-  replace cref in AliasVariable variable to the AliasVariables "
-  input AliasVariables inAliasVariables;
-  input DAE.ComponentRef inCref;
-  input DAE.Exp inExp;
-  input Var inVar;
-  output AliasVariables outAliasVariables;
-algorithm
-  outAliasVariables := matchcontinue (inAliasVariables,inCref,inExp,inVar)
-    local
-      HashTable4.HashTable aliasMappingsExp;
-      BackendDAE.Variables aliasVariables;
-      AliasVariables aliases;
-      Var v;
-      DAE.Exp exp,exp1;
-      DAE.ComponentRef cr1;
-      list<tuple<HashTable4.Key,HashTable4.Value>> tableList;
-    
-    case (aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
-      equation
-        exp1 = Expression.crefExp(inCref);
-        cr1 = BaseHashTable.get(exp1,aliasMappingsExp);
-        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("update ComponentRef: ",inCref," with Exp : ",inExp,"\n"));
-        
-        tableList = BaseHashTable.hashTableList(aliasMappingsExp);
-        aliases = updateAliasVars(tableList,exp1,inExp,aliases);
-
-        v = BackendVariable.setBindExp(v,inExp);
-
-        aliases = addAliasVariables({v},aliases);
-      then
-        aliases;
-    
-    case (aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
-      equation
-        exp1 = Expression.crefExp(inCref);
-        exp = Expression.negate(exp1);
-        (exp,_) = ExpressionSimplify.simplify1(exp);
-        cr1 = BaseHashTable.get(exp,aliasMappingsExp);
-        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("update ComponentRef: ",inCref," with  ",inExp,"\n"));
-        
-        tableList = BaseHashTable.hashTableList(aliasMappingsExp);
-        aliases = updateAliasVars(tableList,exp1,inExp,aliases);
-
-        v = BackendVariable.setBindExp(v,inExp);
-
-        aliases = addAliasVariables({v},aliases);
-      then
-        aliases;
-           
-    case (aliases as BackendDAE.ALIASVARS( varMappingsExp = aliasMappingsExp, aliasVars = aliasVariables),inCref,inExp,v)
-      equation
-        exp1 = Expression.crefExp(inCref);
-        failure(_ = BaseHashTable.get(exp1,aliasMappingsExp));
-        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,(" Search for ",inCref," with binding: ",inExp," failed.\n"));
-        v = BackendVariable.setBindExp(v,inExp);
-        aliases = addAliasVariables({v},aliases);
-      then
-        aliases;
-    //case (inAliasVariables,_,_) then inAliasVariables;
-    case (_,_,_,_)
-      equation
-        print("- BackendDAEUtil.changeAliasVariables failed\n");
-      then
-        fail();
-  end matchcontinue;
-end updateAliasVariables;
-
-protected function updateAliasVars
-" Helper function to changeAliasVariables.
-  Collect all variables and update the alias exp binding.  
-"
-  input list<tuple<HashTable4.Key,HashTable4.Value>> inTableList1;
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input AliasVariables inAliases;
-  output AliasVariables outAliases;
-algorithm
-  (outAliases) := List.fold2r(inTableList1,updateAliasVarsFold,inExp1,inExp2,inAliases);
-end updateAliasVars;
-
-protected function updateAliasVarsFold
-" Helper function to changeAliasVariables.
-  Collect all variables and update the alias exp binding.  
-"
-  input AliasVariables inAliases;
-  input tuple<HashTable4.Key,HashTable4.Value> item;
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  output AliasVariables outAliases;
-algorithm
-  (outAliases) := matchcontinue(inAliases, item, inExp1, inExp2)
-    local
-      DAE.Exp exp,exp2;
-      DAE.ComponentRef cref;
-      Var v;
-      BackendDAE.Variables aliasvars;
-      AliasVariables aliasVariables;
-      DAE.Type ty;
-      Boolean b;
-      
-      case (inAliases as BackendDAE.ALIASVARS(aliasVars=aliasvars),(exp,cref),inExp1,inExp2)
-        equation
-          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrExpStr,("*** search for: ",inExp1,"\n"));
-          ty = Expression.typeof(inExp2);
-          (true,b,exp2) = compareExpAlias(exp,inExp1);
-          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("*** got : ",cref," = Exp : ",exp2,"\n"));
-          ({v},_) = BackendVariable.getVar(cref,aliasvars);
-          exp = BackendVariable.varBindExp(v);
-          exp2 = Util.if_(b,DAE.UNARY(DAE.UMINUS(ty),inExp2),inExp2);
-          (exp2,_) = ExpressionSimplify.simplify1(exp2);
-          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrExpStrExpStr,("*** replace : ",exp," = ",exp2,"\n"));
-          v = BackendVariable.setBindExp(v,exp2);
-          v = BackendVariable.mergeVariableOperations(v,Util.if_(Expression.expEqual(exp,exp2),{},{DAE.SUBSTITUTION({exp2},exp)}));
-          aliasVariables = addAliasVariables({v},inAliases);
-          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("RES *** ComponentRef : ",cref," = Exp : ",exp2,"\n"));
-        then aliasVariables;
-      case (aliasVariables,(exp,cref),_,_)
-        equation
-          Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("*** let ",cref," with binding Exp : ",exp,"\n"));
-        then aliasVariables;
-   end matchcontinue;
-end updateAliasVarsFold;
-
-protected function  compareExpAlias
-"function helper function to getAllValues. 
- it compare both incomming expression for identital and output 
- that that fits"
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  output Boolean outB;
-  output Boolean outB2;
-  output DAE.Exp outExp;
-algorithm
-  (outB, outB2, outExp) := matchcontinue(inExp1,inExp2)
-    local
-      DAE.Type ty;
-      DAE.Exp e1,e2;
-      
-   // case a=a
-   case (e1,e2)
-     equation
-       true = Expression.expEqual(e1,e2);
-     then (true,false, inExp2);
-   // case a=-a
-   case (DAE.UNARY(DAE.UMINUS(ty),e1),e2)
-     equation
-       ty = Expression.typeof(e2);
-       true = Expression.expEqual(e1,e2);
-     then (true,true, DAE.UNARY(DAE.UMINUS(ty),e2));
-   case (e1,_) then (false,false,e1);
-   end matchcontinue;
-end compareExpAlias;
 
 public function equationList "function: equationList
   author: PA
@@ -3036,8 +2820,7 @@ public function whenClauseAddDAE
 algorithm
   oshared := match (inWcLst,shared)
     local
-      BackendDAE.Variables knvars,exobj;
-      AliasVariables aliasVars;
+      BackendDAE.Variables knvars,exobj,aliasVars;
       EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
