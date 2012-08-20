@@ -1069,15 +1069,15 @@ algorithm
         arg = traverseComponents1(elst,elst,inFunc,inTypeA);
       then 
          traverseComponents(rest,inFunc,arg);
-    case (BackendDAE.SINGLEARRAY(eqns=elst)::rest,_,_) 
+    case (BackendDAE.SINGLEARRAY(eqn=e)::rest,_,_) 
         // ToDo: check also this one     
       then 
          traverseComponents(rest,inFunc,inTypeA);   
-    case (BackendDAE.SINGLEALGORITHM(eqns=elst)::rest,_,_) 
+    case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest,_,_) 
         // ToDo: check also this one     
       then 
          traverseComponents(rest,inFunc,inTypeA);   
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=elst)::rest,_,_) 
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest,_,_) 
         // ToDo: check also this one     
       then 
          traverseComponents(rest,inFunc,inTypeA);   
@@ -4750,15 +4750,15 @@ algorithm
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
       then
         elst;        
-    case (BackendDAE.SINGLEARRAY(eqns=elst))
+    case (BackendDAE.SINGLEARRAY(eqn=e))
       then
-        elst;
-    case (BackendDAE.SINGLEALGORITHM(eqns=elst))
+        {e};
+    case (BackendDAE.SINGLEALGORITHM(eqn=e))
       then
-        elst;  
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=elst))
+        {e};  
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e))
       then
-        elst;               
+        {e};               
   end match;
 end getEqnIndxFromComp;
 
@@ -6513,30 +6513,27 @@ algorithm
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
-    case(BackendDAE.SINGLEARRAY(eqns=eqns,vars=vars)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=vars)::rest,result,inMatrix,inMatrixT)
       equation
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
-        eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
-        eqnlst = List.unionList(eqnlstList);
+        eqnlst = arrayGet(result, eqn);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
-    case(BackendDAE.SINGLEALGORITHM(eqns=eqns,vars=vars)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.SINGLEALGORITHM(eqn=eqn,vars=vars)::rest,result,inMatrix,inMatrixT)
       equation
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
-        eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
-        eqnlst = List.unionList(eqnlstList);
+        eqnlst = arrayGet(result, eqn);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;          
-    case(BackendDAE.SINGLECOMPLEXEQUATION(eqns=eqns,vars=vars)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqn,vars=vars)::rest,result,inMatrix,inMatrixT)
       equation
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
-        eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
-        eqnlst = List.unionList(eqnlstList);
+        eqnlst = arrayGet(result, eqn);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);  
       then result;          
@@ -11491,19 +11488,19 @@ algorithm
         tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendDAEUtil.listEquation(eqnlst),countOperationsExp,inTpl);
       then
         countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case (BackendDAE.SINGLEARRAY(eqns=e::_)::rest,_,_,_)
+    case (BackendDAE.SINGLEARRAY(eqn=e)::rest,_,_,_)
       equation 
          eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl); 
-    case (BackendDAE.SINGLEALGORITHM(eqns=e::_)::rest,_,_,_)
+    case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest,_,_,_)
       equation
          eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=e::_)::rest,_,_,_)
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest,_,_,_)
       equation 
          eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);

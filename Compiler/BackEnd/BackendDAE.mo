@@ -524,20 +524,17 @@ uniontype StrongComponent
   end MIXEDEQUATIONSYSTEM;   
   
   record SINGLEARRAY
-    Value arrayIndx;
-    list<Value> eqns;
+    Value eqn;
     list<Value> vars "be carefule with states, this are solved for der(x)";
   end SINGLEARRAY;
 
   record SINGLEALGORITHM
-    Value algorithmIndx;
-    list<Value> eqns;
+    Value eqn;
     list<Value> vars "be carefule with states, this are solved for der(x)";
   end SINGLEALGORITHM;
 
   record SINGLECOMPLEXEQUATION
-    Value arrayIndx;
-    list<Value> eqns;
+    Value eqn;
     list<Value> vars "be carefule with states, this are solved for der(x)";
   end SINGLECOMPLEXEQUATION;
 

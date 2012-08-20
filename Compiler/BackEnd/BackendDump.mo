@@ -1036,33 +1036,33 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst)::rest,eqns,vars) 
+    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,eqns,vars) 
       equation
         print("ArrayEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
-        eqnlst = BackendEquation.getEqns(elst,eqns); 
-        dumpEqns(eqnlst); 
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        dumpEqns({eqn}); 
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst)::rest,eqns,vars) 
+    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,eqns,vars) 
       equation
         print("Algorithm:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
-        eqnlst = BackendEquation.getEqns(elst,eqns); 
-        dumpEqns(eqnlst);   
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        dumpEqns({eqn});  
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=elst,vars=vlst)::rest,eqns,vars) 
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,eqns,vars) 
       equation
         print("ComplexEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
-        eqnlst = BackendEquation.getEqns(elst,eqns); 
-        dumpEqns(eqnlst);    
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        dumpEqns({eqn});    
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
@@ -2358,14 +2358,11 @@ algorithm
         print("\n");
       then
         ();        
-    case BackendDAE.SINGLEARRAY(arrayIndx=i,eqns=ilst,vars=vlst)
+    case BackendDAE.SINGLEARRAY(eqn=i,vars=vlst)
       equation
         print("Array ");
-        print(intString(i));
         print(" {{");
-        ls = List.map(ilst, intString);
-        s = stringDelimitList(ls, ", ");
-        print(s);
+        print(intString(i));
         print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
@@ -2373,14 +2370,11 @@ algorithm
         print("}}\n");
       then
         ();        
-    case BackendDAE.SINGLEALGORITHM(algorithmIndx=i,eqns=ilst,vars=vlst)
+    case BackendDAE.SINGLEALGORITHM(eqn=i,vars=vlst)
       equation
         print("Algorithm ");
-        print(intString(i));
         print(" {{");
-        ls = List.map(ilst, intString);
-        s = stringDelimitList(ls, ", ");
-        print(s);
+        print(intString(i));
         print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
@@ -2388,11 +2382,12 @@ algorithm
         print("}}\n");
       then
         ();    
-    case BackendDAE.SINGLECOMPLEXEQUATION(arrayIndx=i,vars=vlst)
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn=i,vars=vlst)
       equation
         print("ComplexEquation ");
-        print(intString(i));
         print(" {");
+        print(intString(i));
+        print(":");
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
         print(s);
@@ -2443,7 +2438,7 @@ algorithm
         s2 = stringAppendList({"{{",s,":",s1,"},\n",sj,"} Size: ",sl});
       then
         s2;        
-    case BackendDAE.SINGLEARRAY(arrayIndx=i,vars=vlst)
+    case BackendDAE.SINGLEARRAY(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
@@ -2451,7 +2446,7 @@ algorithm
         s2 = stringAppendList({"Array ",sl," {",s,"}"});
       then
         s2;        
-    case BackendDAE.SINGLEALGORITHM(algorithmIndx=i,vars=vlst)
+    case BackendDAE.SINGLEALGORITHM(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
@@ -2459,7 +2454,7 @@ algorithm
         s2 = stringAppendList({"Algorithm ",sl," {",s,"}"});
       then
         s2;    
-    case BackendDAE.SINGLECOMPLEXEQUATION(arrayIndx=i,vars=vlst)
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
@@ -2596,13 +2591,13 @@ algorithm
     case (BackendDAE.SINGLEEQUATION(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys))
       then 
         ((seq+1,salg,sarr,sce,eqsys,meqsys));
-    case (BackendDAE.SINGLEARRAY(arrayIndx=_),(seq,salg,sarr,sce,eqsys,meqsys))
+    case (BackendDAE.SINGLEARRAY(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys))
       then 
         ((seq,salg,sarr+1,sce,eqsys,meqsys));        
-    case (BackendDAE.SINGLEALGORITHM(algorithmIndx=_),(seq,salg,sarr,sce,eqsys,meqsys))
+    case (BackendDAE.SINGLEALGORITHM(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys))
       then 
         ((seq,salg+1,sarr,sce,eqsys,meqsys));        
-    case (BackendDAE.SINGLECOMPLEXEQUATION(arrayIndx=_),(seq,salg,sarr,sce,eqsys,meqsys))
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys))
       then 
         ((seq,salg,sarr,sce+1,eqsys,meqsys)); 
     case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_CONSTANT()),(seq,salg,sarr,sce,(e_jc,e_jt,e_jn,e_nj),meqsys))
@@ -2630,12 +2625,12 @@ algorithm
         d = listLength(ilst);
       then 
         ((seq,salg,sarr,sce,eqsys,(d::m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj)));        
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.SINGLEALGORITHM(algorithmIndx=_),disc_eqns=ilst),(seq,salg,sarr,sce,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj)))
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.SINGLEALGORITHM(eqn=_),disc_eqns=ilst),(seq,salg,sarr,sce,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj)))
       equation
         d = listLength(ilst);
       then 
         ((seq,salg,sarr,sce,eqsys,(m_se,d::m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj))); 
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.SINGLECOMPLEXEQUATION(arrayIndx=_),disc_eqns=ilst),(seq,salg,sarr,sce,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj)))
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.SINGLECOMPLEXEQUATION(eqn=_),disc_eqns=ilst),(seq,salg,sarr,sce,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj)))
       equation
         d = listLength(ilst);
       then 

@@ -2728,6 +2728,41 @@ algorithm
   end matchcontinue;
 end varsInEqn;
 
+public function varsInEqnEnhanced
+"function: varsInEqnEnhanced
+  author: Frenkel TUD
+  This function returns all variable indices as a list for
+  a given equation, given as an equation index. (1...n)
+  Negative indexes are removed.
+  See also: eqnsForVar and eqnsForVarWithStates
+  inputs:  (AdjacencyMatrixEnhanced, tuple(int,Solvability) /* equation */)
+  outputs:  int list /* variables */"
+  input BackendDAE.AdjacencyMatrixEnhanced m;
+  input Integer indx;
+  output list<Integer> outIntegerLst;
+algorithm
+  outIntegerLst := List.fold(m[indx],varsInEqnEnhanced1,{});
+end varsInEqnEnhanced;
+
+public function varsInEqnEnhanced1
+"function: varsInEqnEnhanced
+  author: Frenkel TUD
+  This function returns all variable indices as a list for
+  a given equation, given as an equation index. (1...n)
+  Negative indexes are removed.
+  See also: eqnsForVar and eqnsForVarWithStates
+  inputs:  (AdjacencyMatrixEnhanced, tuple(int,Solvability) /* equation */)
+  outputs:  int list /* variables */"
+  input BackendDAE.AdjacencyMatrixElementEnhancedEntry m;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+protected
+  Integer i;
+algorithm
+  (i,_) := m;
+  oAcc := List.consOnTrue(intGt(i,0),i,iAcc);
+end varsInEqnEnhanced1;
+
 public function subscript2dCombinations
 "function: susbscript2dCombinations
   This function takes two lists of list of subscripts and combines them in
@@ -6409,16 +6444,39 @@ algorithm
       BackendDAE.Variables vars;
       EquationArray eqns;
       BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
-    case (vars,eqns,m,mt,differentiateIfExp)
+    case (vars,eqns,m,_,differentiateIfExp)
       equation
         eqn_lst = equationList(eqns);
-        jac = calculateJacobianRows(eqn_lst,vars,m,mt,1,1,differentiateIfExp,{});
+        jac = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,varsInEqn,{});
       then
         SOME(jac);
     else then NONE();  /* no analytic jacobian available */
   end matchcontinue;
 end calculateJacobian;
+
+public function calculateJacobianEnhanced "function: calculateJacobianEnhanced
+  This function takes an array of equations and the variables of the equation
+  and calculates the jacobian of the equations."
+  input BackendDAE.Variables vars;
+  input EquationArray eqns;
+  input BackendDAE.AdjacencyMatrixEnhanced m;
+  input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
+  output Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> outTplIntegerIntegerEquationLstOption;
+algorithm
+  outTplIntegerIntegerEquationLstOption:=
+  matchcontinue (vars,eqns,m,differentiateIfExp)
+    local
+      list<BackendDAE.Equation> eqn_lst;
+      list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
+    case (_,_,_,_)
+      equation
+        eqn_lst = equationList(eqns);
+        jac = calculateJacobianRows(eqn_lst,vars,m,1,1,differentiateIfExp,varsInEqnEnhanced,{});
+      then
+        SOME(jac);
+    else then NONE();  /* no analytic jacobian available */
+  end matchcontinue;
+end calculateJacobianEnhanced;
 
 public function traverseequationToResidualForm "function: traverseequationToResidualForm
   author: Frenkel TUD 2010-11
@@ -6467,17 +6525,23 @@ protected function calculateJacobianRows "function: calculateJacobianRows
   For example, the equation on index e1: 3ax+5yz+ zz  given the
   variables {x,y,z} on index x1,y1,z1 gives
   {(e1,x1,3a), (e1,y1,5z), (e1,z1,5y+2z)}"
+  replaceable type Type_a subtypeof Any;
   input list<BackendDAE.Equation> inEquationLst;
   input BackendDAE.Variables vars;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input Type_a m;
   input Integer eqn_indx;
   input Integer scalar_eqn_indx;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
+  input varsInEqnFunc varsInEqn;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
+  partial function varsInEqnFunc
+    input Type_a m;
+    input Integer indx;
+    output list<Integer> outIntegerLst;
+  end varsInEqnFunc;  
 algorithm
-  outLst:= match (inEquationLst,vars,m,mt,eqn_indx,scalar_eqn_indx,differentiateIfExp,iAcc)
+  outLst:= match (inEquationLst,vars,m,eqn_indx,scalar_eqn_indx,differentiateIfExp,varsInEqn,iAcc)
     local
       list<tuple<Integer, Integer, BackendDAE.Equation>> res;
       BackendDAE.Equation eqn;
@@ -6486,9 +6550,9 @@ algorithm
     case ({},_,_,_,_,_,_,_) then listReverse(iAcc);
     case (eqn :: eqns,_,_,_,_,_,_,_)
       equation
-        (res,size) = calculateJacobianRow(eqn, vars,  m, mt, eqn_indx, scalar_eqn_indx,differentiateIfExp,iAcc);
+        (res,size) = calculateJacobianRow(eqn, vars,  m, eqn_indx, scalar_eqn_indx,differentiateIfExp,varsInEqn,iAcc);
       then
-        calculateJacobianRows(eqns, vars, m, mt, eqn_indx + 1, scalar_eqn_indx + size,differentiateIfExp,res);
+        calculateJacobianRows(eqns, vars, m, eqn_indx + 1, scalar_eqn_indx + size,differentiateIfExp,varsInEqn,res);
   end match;
 end calculateJacobianRows;
 
@@ -6501,18 +6565,24 @@ protected function calculateJacobianRow "function: calculateJacobianRow
               IncidenceMatrixT,
               int /* eqn index */)
   outputs: ((int  int  Equation) list option)"
+  replaceable type Type_a subtypeof Any;
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables vars;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
+  input Type_a m;
   input Integer eqn_indx;
   input Integer scalar_eqn_indx;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
+  input varsInEqnFunc fvarsInEqn;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> iAcc;
   output list<tuple<Integer, Integer, BackendDAE.Equation>> outLst;
   output Integer size;
+  partial function varsInEqnFunc
+    input Type_a m;
+    input Integer indx;
+    output list<Integer> outIntegerLst;
+  end varsInEqnFunc;
 algorithm
-  (outLst,size):=  match (inEquation,vars,m,mt,eqn_indx,scalar_eqn_indx,differentiateIfExp,iAcc)
+  (outLst,size):=  match (inEquation,vars,m,eqn_indx,scalar_eqn_indx,differentiateIfExp,fvarsInEqn,iAcc)
     local
       list<Integer> var_indxs,var_indxs_1,ds;
       list<Option<Integer>> ad;
@@ -6528,7 +6598,7 @@ algorithm
     // residual equations
     case (BackendDAE.EQUATION(exp = e1,scalar=e2,source=source),_,_,_,_,_,_,_)
       equation
-        var_indxs = varsInEqn(m, eqn_indx);
+        var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         eqns = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,source,iAcc);
@@ -6537,7 +6607,7 @@ algorithm
     // residual equations
     case (BackendDAE.RESIDUAL_EQUATION(exp = e,source=source),_,_,_,_,_,_,_)
       equation
-        var_indxs = varsInEqn(m, eqn_indx);
+        var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         eqns = calculateJacobianRow2(e, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,source,iAcc);
@@ -6547,7 +6617,7 @@ algorithm
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2,source=source),_,_,_,_,_,_,_)
       equation
         e1 = Expression.crefExp(cr);
-        var_indxs = varsInEqn(m, eqn_indx);
+        var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: ascending index" ;
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         eqns = calculateJacobianRow2(Expression.expSub(e1,e2), vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,source,iAcc);
@@ -6563,14 +6633,14 @@ algorithm
         subslst = arrayDimensionsToRange(ad);
         subslst = rangesToSubscripts(subslst);
         expl = List.map1r(subslst,Expression.applyExpSubscripts,e);
-        var_indxs = varsInEqn(m, eqn_indx);
+        var_indxs = fvarsInEqn(m, eqn_indx);
         var_indxs_1 = List.unionOnTrue(var_indxs, {}, intEq) "Remove duplicates and get in correct order: acsending index";
         var_indxs_1 = List.sort(var_indxs_1,intGt);
         eqns = calculateJacobianRowLst(expl, vars, scalar_eqn_indx, var_indxs_1,differentiateIfExp,source,iAcc);
         size = List.fold(ds,intMul,1);
       then
         (eqns,size);
-    case (_,_,_,_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = BackendDump.dumpEqnsStr({inEquation});

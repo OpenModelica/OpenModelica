@@ -3700,7 +3700,7 @@ algorithm
     local
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents restComps;
-      Integer index,vindex,uniqueEqIndex;
+      Integer e,index,vindex,uniqueEqIndex;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       BackendDAE.Var v;
@@ -3733,10 +3733,10 @@ algorithm
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);
        
       // A single array equation
-    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLEARRAY(eqns=eqnslst)) :: restComps, helpVarInfo, _,_)
+    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLEARRAY(eqn=e)) :: restComps, helpVarInfo, _,_)
       equation
         // block is dynamic, belong in dynamic section
-        bdynamic = BackendDAEUtil.blockIsDynamic(eqnslst, stateeqnsmark);        
+        bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, transformXToXd);
@@ -3749,10 +3749,10 @@ algorithm
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);
         
         // A single algorithm section for several variables.
-    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLEALGORITHM(eqns=eqnslst)) :: restComps, helpVarInfo, _,_)
+    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLEALGORITHM(eqn=e)) :: restComps, helpVarInfo, _,_)
       equation
         // block is dynamic, belong in dynamic section
-        bdynamic = BackendDAEUtil.blockIsDynamic(eqnslst, stateeqnsmark);        
+        bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         varlst = List.map(varlst, transformXToXd);
         (equations1,uniqueEqIndex) = createSingleAlgorithmCode(eqnlst,varlst,false,iuniqueEqIndex);
@@ -3764,10 +3764,10 @@ algorithm
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);      
        
       // A single complex equation
-    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqns=eqnslst)) :: restComps, helpVarInfo, _,_)
+    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)) :: restComps, helpVarInfo, _,_)
       equation
         // block is dynamic, belong in dynamic section
-        bdynamic = BackendDAEUtil.blockIsDynamic(eqnslst, stateeqnsmark);        
+        bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
         varlst = List.map(varlst, transformXToXd);
@@ -3874,7 +3874,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
        
       // A single array equation
-    case (includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLEARRAY(eqns=eqnslst)) :: restComps, helpVarInfo, _,_)
+    case (includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLEARRAY(eqn=index)) :: restComps, helpVarInfo, _,_)
       equation
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
@@ -3887,7 +3887,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
         
         // A single algorithm section for several variables.
-    case (includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLEALGORITHM(eqns=eqnslst)) :: restComps, helpVarInfo, _,_)
+    case (includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLEALGORITHM(eqn=index)) :: restComps, helpVarInfo, _,_)
       equation
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         varlst = List.map(varlst, transformXToXd);
@@ -3899,7 +3899,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);      
        
       // A single complex equation
-    case (includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqns=eqnslst)) :: restComps, helpVarInfo, _,_)
+    case (includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),shared, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=index)) :: restComps, helpVarInfo, _,_)
       equation
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.

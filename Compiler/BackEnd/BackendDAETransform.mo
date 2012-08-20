@@ -1056,21 +1056,21 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<String> slst;
 
-    case (comp,BackendDAE.ALGORITHM(size = _)::{},var_varindx_lst,_,_,_,_,false)
+    case (compelem::{},BackendDAE.ALGORITHM(size = _)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);        
       then
-        BackendDAE.SINGLEALGORITHM(0,comp,varindxs);
-    case (comp,BackendDAE.ARRAY_EQUATION(dimSize = _)::{},var_varindx_lst,_,_,_,_,false)
+        BackendDAE.SINGLEALGORITHM(compelem,varindxs);
+    case (compelem::{},BackendDAE.ARRAY_EQUATION(dimSize = _)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);        
       then
-        BackendDAE.SINGLEARRAY(0,comp,varindxs);
-    case (comp,BackendDAE.COMPLEX_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
+        BackendDAE.SINGLEARRAY(compelem,varindxs);
+    case (compelem::{},BackendDAE.COMPLEX_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);        
       then
-        BackendDAE.SINGLECOMPLEXEQUATION(0,comp,varindxs);        
+        BackendDAE.SINGLECOMPLEXEQUATION(compelem,varindxs);        
     case (compelem::{},_,(_,v)::{},_,_,_,ass2,false)
       then BackendDAE.SINGLEEQUATION(compelem,v);        
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,false)
@@ -1284,27 +1284,27 @@ algorithm
         e = List.first(elst);        
       then
         (eqnlst,varlst,e);        
-    case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst),eqns,vars) 
+    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst),eqns,vars) 
       equation
-        eqnlst = BackendEquation.getEqns(elst,eqns);      
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);        
-        e = List.first(elst);        
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
-        (eqnlst,varlst,e);  
-    case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst),eqns,vars)
+        ({eqn},varlst,e);  
+    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst),eqns,vars)
       equation
-        eqnlst = BackendEquation.getEqns(elst,eqns);  
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);        
-        e = List.first(elst);        
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
-        (eqnlst,varlst,e); 
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=elst,vars=vlst),eqns,vars) 
+        ({eqn},varlst,e);
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst),eqns,vars)
       equation
-        eqnlst = BackendEquation.getEqns(elst,eqns);      
-        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);        
-        e = List.first(elst);        
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
-        (eqnlst,varlst,e);                 
+        ({eqn},varlst,e);
     case (inComp,eqns,vars)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -1380,15 +1380,15 @@ algorithm
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst))      
       then
         (elst,vlst);        
-    case (BackendDAE.SINGLEARRAY(eqns=elst,vars=vlst))     
+    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst))     
       then
-        (elst,vlst);  
-    case (BackendDAE.SINGLEALGORITHM(eqns=elst,vars=vlst))     
+        ({e},vlst);  
+    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst))     
       then
-        (elst,vlst);    
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqns=elst,vars=vlst))     
+        ({e},vlst);    
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst))     
       then
-        (elst,vlst);             
+        ({e},vlst);             
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -1606,11 +1606,6 @@ algorithm
         comps;
     else
       equation
-        BackendDump.dumpIncidenceMatrix(m);
-        BackendDump.dumpIncidenceMatrixT(mt);
-        BackendDump.dumpMatching(ass1);
-        BackendDump.dumpMatching(ass2);
-        
         Error.addMessage(Error.INTERNAL_ERROR, {"-BackendDAETransform-tarjansAlgorithm failed! The sorting of the equations could not be done.(strongComponents failed), Use +d=failtrace for more information."});
       then fail();
   end matchcontinue;
