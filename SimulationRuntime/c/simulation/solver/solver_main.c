@@ -70,7 +70,7 @@ rungekutta_step(DATA* simData, SOLVER_INFO* solverInfo);
 
 void checkTermination(DATA* simData);
 
-int writeOutputVars(char* names, DATA* data);
+void writeOutputVars(char* names, DATA* data);
 
 int
 solver_main_step(int flag, DATA* simData, SOLVER_INFO* solverInfo) {
@@ -612,7 +612,7 @@ void checkTermination(DATA* simData)
   fflush(NULL);
 }
 
-int writeOutputVars(char* names, DATA* data)
+void writeOutputVars(char* names, DATA* data)
 {
   int i = 0;
   char *p = strtok(names, ",");
@@ -626,7 +626,7 @@ int writeOutputVars(char* names, DATA* data)
         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
     for (i = 0; i < data->modelData.nVariablesInteger; i++)
       if (!strcmp(p, data->modelData.integerVarsData[i].info.name))
-        fprintf(stdout, ",%s=%i", p, (data->localData[0])->integerVars[i]);
+        fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[i]);
     for (i = 0; i < data->modelData.nVariablesBoolean; i++)
       if (!strcmp(p, data->modelData.booleanVarsData[i].info.name))
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
@@ -646,9 +646,9 @@ int writeOutputVars(char* names, DATA* data)
       if (!strcmp(p, data->modelData.integerAlias[i].info.name))
       {
         if (data->modelData.integerAlias[i].negate)
-          fprintf(stdout, ",%s=%i", p, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
         else
-          fprintf(stdout, ",%s=%i", p, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
+          fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
       }
     for (i = 0; i < data->modelData.nAliasBoolean; i++)
       if (!strcmp(p, data->modelData.booleanAlias[i].info.name))
@@ -669,7 +669,7 @@ int writeOutputVars(char* names, DATA* data)
 
     for (i = 0; i < data->modelData.nParametersInteger; i++)
       if (!strcmp(p, data->modelData.integerParameterData[i].info.name))
-        fprintf(stdout, ",%s=%i", p, data->modelData.integerParameterData[i].attribute.initial);
+        fprintf(stdout, ",%s=%li", p, data->modelData.integerParameterData[i].attribute.initial);
 
     for (i = 0; i < data->modelData.nParametersBoolean; i++)
       if (!strcmp(p, data->modelData.booleanParameterData[i].info.name))
