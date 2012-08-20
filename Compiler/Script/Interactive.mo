@@ -9555,51 +9555,61 @@ public function updateProgram
   input Absyn.Program inProgram1;
   input Absyn.Program inProgram2;
   output Absyn.Program outProgram;
+protected
+  list<Absyn.Class> cs;
+  Absyn.Within w;
 algorithm
-  outProgram := matchcontinue (inProgram1,inProgram2)
+  Absyn.PROGRAM(classes=cs,within_=w) := inProgram1;
+  outProgram := updateProgram2(listReverse(cs),w,inProgram2);
+end updateProgram;
+
+protected function updateProgram2
+"function: updateProgram
+   This function takes an old program (second argument), i.e. the old
+   symboltable, and a new program (first argument), i.e. a new set of
+   classes and updates the old program with the definitions in the new one.
+   It also takes in the current symboltable and returns a new one with any
+   replaced functions cache cleared."
+  input list<Absyn.Class> classes;
+  input Absyn.Within w;
+  input Absyn.Program inProgram2;
+  output Absyn.Program outProgram;
+algorithm
+  outProgram := matchcontinue (classes,w,inProgram2)
     local
       Absyn.Program prg,newp,p2,newp_1, p1;
       Absyn.Class c1;
       String name;
       Absyn.Path path;
       list<Absyn.Class> c2,c3;
-      Absyn.Within w,w2;
+      Absyn.Within w2;
       Absyn.TimeStamp ts1,ts2;
 
-    case (Absyn.PROGRAM(classes = {}),prg)
-      then prg;
+    case ({},_,prg) then prg;
 
-    case (p1 as Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP()),globalBuildTimes=ts1),
-         (p2 as Absyn.PROGRAM(classes = c3,within_ = w2,globalBuildTimes=ts2)))
+    case ((c1 as Absyn.CLASS(name = name)) :: c2,Absyn.TOP(), (p2 as Absyn.PROGRAM(classes = c3,within_ = w2,globalBuildTimes=ts2)))
       equation
-        //debug_print("name", name);
-        //Dump.dump(p1);
         false = classInProgram(name, p2);
-        newp = updateProgram(Absyn.PROGRAM(c2,w,ts1), Absyn.PROGRAM((c1 :: c3),w2,ts2));
+        newp = updateProgram2(c2,w,Absyn.PROGRAM((c1 :: c3),w2,ts2));
       then
         newp;
 
-    case (p1 as Absyn.PROGRAM(classes = ((c1 as Absyn.CLASS(name = name)) :: c2),within_ = (w as Absyn.TOP()),globalBuildTimes=ts1),
-          p2)
+    case ((c1 as Absyn.CLASS(name = name)) :: c2,Absyn.TOP(),p2)
       equation
-        //debug_print("name", name);
-        //Dump.dump(p1);
         true = classInProgram(name, p2);
-        newp = updateProgram(Absyn.PROGRAM(c2,w,ts1), p2);
+        newp = updateProgram2(c2,w,p2);
         newp_1 = replaceClassInProgram(c1, newp);
       then
         newp_1;
 
-    case (Absyn.PROGRAM(classes = (c1 :: c2),within_ = (w as Absyn.WITHIN(path = path)),globalBuildTimes=ts1),
-          p2)
+    case ((c1 :: c2),Absyn.WITHIN(path = _),p2)
       equation
         newp = insertClassInProgram(c1, w, p2);
-        newp_1 = updateProgram(Absyn.PROGRAM(c2,w,ts1), newp);
-      then
-        newp_1;
+        newp_1 = updateProgram2(c2,w,newp);
+      then newp_1;
 
   end matchcontinue;
-end updateProgram;
+end updateProgram2;
 
 public function addScope
 "function: addScope

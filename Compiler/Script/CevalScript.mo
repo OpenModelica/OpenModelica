@@ -835,6 +835,7 @@ algorithm
       Absyn.CodeNode codeNode;
       list<Values.Value> cvars,vals2;
       list<Absyn.Path> paths;
+      list<Absyn.NamedArg> nargs;
       list<Absyn.Class> classes;
       Absyn.Within within_;
       BackendDAE.EqSystem syst;
@@ -1785,6 +1786,19 @@ algorithm
         (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(p,aDep,NONE(),ic,iv,cf,lf));
 
     case (cache,env,"addClassAnnotation",_,st as Interactive.SYMBOLTABLE(ast=p),msg)
+      then
+        (cache,Values.BOOL(false),st);
+
+    case (cache,env,"setDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1),Values.STRING(str2)},Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf),msg)
+      equation
+        nargs = List.consOnTrue(not stringEq(str1,""), Absyn.NAMEDARG("info",Absyn.STRING(str1)), {});
+        nargs = List.consOnTrue(not stringEq(str2,""), Absyn.NAMEDARG("revisions",Absyn.STRING(str2)), nargs);
+        aexp = Absyn.CALL(Absyn.CREF_IDENT("Documentation",{}),Absyn.FUNCTIONARGS({},nargs));
+        p = Interactive.addClassAnnotation(Absyn.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, p);
+      then
+        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(p,aDep,NONE(),ic,iv,cf,lf));
+
+    case (cache,env,"setDocumentationAnnotation",_,st as Interactive.SYMBOLTABLE(ast=p),msg)
       then
         (cache,Values.BOOL(false),st);
 

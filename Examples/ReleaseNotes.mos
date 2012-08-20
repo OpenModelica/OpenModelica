@@ -1,0 +1,21 @@
+system("mkdir -p wiki");
+cd("wiki");
+system("ruby ../ReleaseNotes.rb ../ReleaseNotes.yaml");
+versions:={
+  // $TypeName(OpenModelica.UsersGuide.ReleaseNotes.'1.8.1'),
+  $TypeName(OpenModelica.UsersGuide.ReleaseNotes.'1.9.0')
+};
+loadFile("../../Compiler/FrontEnd/ModelicaBuiltin.mo");
+loadString("function myReadFile
+  input OpenModelica.$Code.TypeName name;
+  output String contents;
+protected
+  String strs[:],str;
+algorithm
+  strs := OpenModelica.Scripting.typeNameStrings(name);
+  str := strs[4];
+  contents := OpenModelica.Scripting.readFile(\"ReleaseNotes/release-notes/\" + OpenModelica.Scripting.stringReplace(str,\"'\",\"\") + \".html\");
+end myReadFile;");getErrorString();
+deleteClass(myReadFile);
+getClassNames();getErrorString();
+writeFile("newf.mo",list());getErrorString();

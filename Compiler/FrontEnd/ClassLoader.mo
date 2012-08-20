@@ -42,7 +42,6 @@ encapsulated package ClassLoader
   loadFile function"
 
 public import Absyn;
-public import Interactive;
 
 protected import Config;
 protected import Debug;

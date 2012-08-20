@@ -2267,6 +2267,18 @@ external "builtin";
 annotation(preferredView="text");
 end getDocumentationAnnotation;
 
+function setDocumentationAnnotation
+  input TypeName class_;
+  input String info = "";
+  input String revisions = "";
+  output Boolean bool;
+
+  external "builtin" ;
+annotation(preferredView = "text", Documentation(info = "<html>
+<p>Used to set the Documentation annotation of a class. An empty argument (e.g. for revisions) means no annotation is added.</p>
+</html>"));
+end setDocumentationAnnotation;
+
 function typeNameString
   input TypeName cl;
   output String out;
