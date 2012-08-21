@@ -40,20 +40,25 @@ extern "C" {
 #include "fmilib.h"
 
 #define BUFFER 1000
+#define FMI_DEBUG
 
 static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
+#ifdef FMI_DEBUG
   printf("module = %s, log level = %d: %s\n", module, log_level, message);
+#endif
 }
 
 /* Logger function used by the FMU internally */
 static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
 {
+#ifdef FMI_DEBUG
   char msg[BUFFER];
   va_list argp;
   va_start(argp, message);
   vsprintf(msg, message, argp);
   printf("fmiStatus = %d;  %s (%s): %s\n", status, instanceName, category, msg);
+#endif
 }
 
 /*
@@ -237,6 +242,7 @@ char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
   fmi_version_enu_t version;
   version = fmi_import_get_fmi_version(context, file_name, working_directory);
   if (version != fmi_version_1_enu) {
+    fmi_import_free_context(context);
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 0);
     return strdup("");
   }
@@ -244,6 +250,7 @@ char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
   fmi1_import_t *fmu;
   fmu = fmi1_import_parse_xml(context, working_directory);
   if(!fmu) {
+    fmi_import_free_context(context);
     const char* c_tokens[1]={file_name};
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the XML file contained in %s."), c_tokens, 1);
     return strdup("");
@@ -252,6 +259,8 @@ char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
   jm_status_enu_t status;
   status = fmi1_import_create_dllfmu(fmu, callback_functions, 0);
   if (status == jm_status_error) {
+    fmi1_import_free(fmu);
+    fmi_import_free_context(context);
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
     return strdup("");
   }
@@ -260,14 +269,10 @@ char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
   // read the model identifier from FMI.
   const char* model_identifier = fmi1_import_get_model_identifier(fmu);
   int len = strlen(working_directory) + strlen(model_identifier);
-  generated_file_name = (char*) malloc(len + 16);
-  strcpy(generated_file_name, working_directory);
-  strcat(generated_file_name, "/");
-  strcat(generated_file_name, model_identifier);
-  strcat(generated_file_name, "FMUImportNew");
-  strcat(generated_file_name, ".mo");
+  generated_file_name = (char*) malloc(len + 17);
+  sprintf(generated_file_name, "%s/%sFMUImportNew.mo", working_directory, model_identifier);
   // Generate Modelica code and save the file
-  generateModelicaCode(fmu, generated_file_name, working_directory);
+  //generateModelicaCode(fmu, generated_file_name, working_directory);
   fmi1_import_destroy_dllfmu(fmu);
   fmi1_import_free(fmu);
   fmi_import_free_context(context);
