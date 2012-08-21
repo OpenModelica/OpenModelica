@@ -229,6 +229,7 @@ char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
   callbacks.realloc = realloc;
   callbacks.free = free;
   callbacks.logger = importlogger;
+  callbacks.log_level = jm_log_level_debug;
   callbacks.context = 0;
   // FMI callback functions
   fmi1_callback_functions_t callback_functions;

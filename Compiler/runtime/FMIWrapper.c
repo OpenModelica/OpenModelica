@@ -74,6 +74,7 @@ void* fmi_import_allocate_context_OMC()
     callbacks.realloc = realloc;
     callbacks.free = free;
     callbacks.logger = importlogger;
+    callbacks.log_level = jm_log_level_debug;
     callbacks.context = 0;
   }
   fmi_import_context_t* context = fmi_import_allocate_context(&callbacks);
