@@ -1740,6 +1740,7 @@ algorithm
         list<DAE.Exp> explst;
         list<BackendDAE.Equation> selecteqns,dselecteqns;
         list<BackendDAE.WhenClause> wclst;
+        DAE.FunctionTree ft;
         Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -1777,8 +1778,9 @@ algorithm
         // get Partial derivative of system for states
         eqn = BackendDAEUtil.equationNth(eqns, 0);
         BackendDAE.RESIDUAL_EQUATION(exp=exp)::{} = BackendEquation.equationToScalarResidualForm(eqn);
-        explst = List.map1(crstates,differentiateExp,exp);
-        Debug.fcall(Flags.BLT_DUMP, print, ("Partial Derivaives:\n"));
+        ft = BackendDAEUtil.getFunctions(ishared);
+        explst = List.map2(crstates,differentiateExp,exp,ft);
+        Debug.fcall(Flags.BLT_DUMP, print, ("Partial Derivatives:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((explst,ExpressionDump.printExpStr,"\n","\n")));
         
         // generate condition equation
@@ -1813,7 +1815,7 @@ algorithm
         rang = listLength(states)-listLength(unassignedEqns);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
         // get jacobian for all variables
-        jac = BackendDAEUtil.calculateJacobianEnhanced(vars, eqns, me, true);
+        jac = BackendDAEUtil.calculateJacobianEnhanced(vars, eqns, me, true, ishared);
         // get for each state the determinant of the jacobian [state,dummystates]
         //explst = getDeterminants(states,
         // try to find listLength(unassignedEqns) constant nonzero determinants
@@ -1898,16 +1900,16 @@ algorithm
       equation
         cre = Expression.crefExp(cr);
         crconexppre = DAE.CALL(Absyn.IDENT("pre"), {contexp}, DAE.callAttrBuiltinReal);
-        con = DAE.RELATION(crconexppre,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),0,NONE());
+        con = DAE.RELATION(crconexppre,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),-1,NONE());
         coni = DAE.LBINARY(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.OR(DAE.T_BOOL_DEFAULT),con);
         //eqn = BackendDAE.EQUATION(cre,DAE.IFEXP(coni,e1,e2),DAE.emptyElementSource);
         eqn = BackendDAE.EQUATION(cre,DAE.IFEXP(con,e1,e2),DAE.emptyElementSource);
         //deqn = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{cre},DAE.callAttrBuiltinReal),DAE.IFEXP(coni,DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal)),DAE.emptyElementSource);
         deqn = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{cre},DAE.callAttrBuiltinReal),DAE.IFEXP(con,DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal)),DAE.emptyElementSource);
-        con = DAE.RELATION(contexp,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),0,NONE());
+        con = DAE.RELATION(contexp,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),-1,NONE());
         wc = BackendDAE.WHEN_CLAUSE(con,{BackendDAE.REINIT(cr,e1,DAE.emptyElementSource)},NONE());
         wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT),con),{BackendDAE.REINIT(cr,e2,DAE.emptyElementSource)},NONE());
-        (startcond,_) = ExpressionSimplify.simplify(DAE.IFEXP(DAE.RELATION(contstartExp,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),0,NONE()),es1,es2));
+        (startcond,_) = ExpressionSimplify.simplify(DAE.IFEXP(DAE.RELATION(contstartExp,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.ICONST(indx),-1,NONE()),es1,es2));
         var = BackendVariable.setVarStartValue(var,startcond);
         (eqns,deqns,wclst,varlst1) = generateSelectEquations(indx+1,crlst,contexp,e2::explst,contstartExp,varlst,es2::startvalues,eqn::iEqns,deqn::idEqns,wc1::(wc::iWc),var::isetvarlst);
       then
@@ -2012,9 +2014,10 @@ end generateCondition2;
 protected function differentiateExp
   input DAE.ComponentRef cr;
   input DAE.Exp exp;
+  input DAE.FunctionTree ft;
   output DAE.Exp dexp;
 algorithm
-  dexp := Derive.differentiateExp(exp, cr, true);
+  dexp := Derive.differentiateExp(exp, cr, true, SOME(ft));
   (dexp,_) := ExpressionSimplify.simplify(dexp);
 end differentiateExp;
 
@@ -2406,7 +2409,7 @@ algorithm
          (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
          BackendDump.dumpIncidenceMatrixT(mt);
          
-         SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, mt,true);
+         SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,shared);
          jac = listReverse(jac);
          print("Jac:\n" +& BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
          

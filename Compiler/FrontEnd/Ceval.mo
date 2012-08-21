@@ -4119,9 +4119,11 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Msg msg;
       Env.Cache cache;
+      DAE.FunctionTree ft;
     case (cache,env,{exp1,DAE.CREF(componentRef = cr)},impl,st,msg)
       equation
-        differentiated_exp = Derive.differentiateExpCont(exp1, cr);
+        ft = Env.getFunctionTree(cache);
+        differentiated_exp = Derive.differentiateExpCont(exp1, cr,SOME(ft));
         (differentiated_exp_1,_) = ExpressionSimplify.simplify(differentiated_exp);
         /*
          this is wrong... this should be used instead but unelabExp must be able to unelaborate a complete exp

@@ -136,10 +136,11 @@ algorithm
       array<list<Integer>> vorphansarray1,mapEqnIncRow,ass22,vec1;
       list<BackendDAE.Equation> neweqns;      
       HashTable4.HashTable ht;   
+      DAE.FunctionTree funcs;
       
     case (_,_,{})
       then (isyst,ishared,false);
-    case (_,shared ,
+    case (_,shared as BackendDAE.SHARED(functionTree=funcs),
       (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_TIME_VARYING()))::comps)
       equation
         print("try to relax\n");
@@ -322,8 +323,8 @@ algorithm
         (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, shared, BackendDAE.ABSOLUTE());
           BackendDump.dumpEqSystem(subsyst);   
           IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml"); 
-        SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, mt,true);
-        ((_,beqs,_)) = BackendEquation.traverseBackendDAEEqns(eqns,BackendEquation.equationToExp,(vars,{},{}));
+        SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,ishared);
+        ((_,beqs,_,_)) = BackendEquation.traverseBackendDAEEqns(eqns,BackendEquation.equationToExp,(vars,{},{},SOME(funcs)));
         beqs = listReverse(beqs);
           print("Jacobian:\n");
           print(BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
@@ -3829,7 +3830,7 @@ algorithm
         cr = BackendVariable.varCref(v);
         (_,i::_) = BackendVariable.getVar(cr,vars);
         false = intGt(vec1[i],0);        
-        e1 = Derive.differentiateExp(e, cr, false);
+        e1 = Derive.differentiateExp(e, cr, false, NONE());
         (e2,_) = ExpressionSimplify.simplify(e1);
         true = Expression.isConstOne(e2) or Expression.isConstMinusOne(e2);
       then

@@ -277,7 +277,7 @@ algorithm
       equation
         false = hasOnlyFactors(e1,e2);
         lhs = Expression.makeDiff(e1,e2);
-        lhsder = Derive.differentiateExp(lhs, cr, linExp);
+        lhsder = Derive.differentiateExp(lhs, cr, linExp, NONE());
         (lhsder_1,_) = ExpressionSimplify.simplify(lhsder);
         false = Expression.isZero(lhsder_1);
         false = Expression.expContains(lhsder_1, crexp);
@@ -340,7 +340,7 @@ algorithm
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)), linExp)
       equation
         lhs = Expression.makeDiff(e1,e2);
-        lhsder = Derive.differentiateExp(lhs, cr, linExp);
+        lhsder = Derive.differentiateExp(lhs, cr, linExp, NONE());
         (lhsder_1,_) = ExpressionSimplify.simplify(lhsder);
         true = Expression.expContains(lhsder_1, crexp);
         /*print("solve2 failed: Not linear: ");
@@ -360,7 +360,7 @@ algorithm
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)), linExp)
       equation
         lhs = Expression.makeDiff(e1,e2);
-        lhsder = Derive.differentiateExp(lhs, cr, linExp);
+        lhsder = Derive.differentiateExp(lhs, cr, linExp, NONE());
         (lhsder_1,_) = ExpressionSimplify.simplify(lhsder);
         print("solve2 failed: ");
         print(printExpStr(e1));

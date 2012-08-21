@@ -1101,7 +1101,7 @@ algorithm
         shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, mt,true);
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, true,shared);
         // Jacobian of a Linear System is always linear 
         jac_tp = BackendDAEUtil.analyzeJacobian(vars_1,eqns_1,jac);
       then

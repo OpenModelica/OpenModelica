@@ -944,6 +944,20 @@ algorithm
   end match;
 end dumpJacobianStr2;
 
+public function jacobianTypeStr "function: jacobianTypeStr
+  author: PA
+  Returns the jacobian type as a string, used for debugging."
+  input BackendDAE.JacobianType inJacobianType;
+  output String outString;
+algorithm
+  outString := match (inJacobianType)
+    case BackendDAE.JAC_CONSTANT() then "Jacobian Constant";
+    case BackendDAE.JAC_TIME_VARYING() then "Jacobian Time varying";
+    case BackendDAE.JAC_NONLINEAR() then "Jacobian Nonlinear";
+    case BackendDAE.JAC_NO_ANALYTIC() then "No analytic jacobian";
+  end match;
+end jacobianTypeStr;
+
 public function dumpEqnsSolved
 "function: dumpEqnsSolved
   This function dumps the equations in the order they have to be calculate."
@@ -1004,6 +1018,7 @@ algorithm
       BackendDAE.Equation eqn;
       list<BackendDAE.Var> varlst;
       list<BackendDAE.Equation> eqnlst;
+      BackendDAE.JacobianType jacType;
     case ({},_,_)  then (); 
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_) 
       equation
@@ -1026,9 +1041,9 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)::rest,eqns,vars) 
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst,jacType=jacType)::rest,eqns,vars) 
       equation
-        print("Equationsystem:\n");
+        print("Equationsystem " +& jacobianTypeStr(jacType) +& ":\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         dumpVars(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
@@ -2355,7 +2370,7 @@ algorithm
         print("} Size: ");
         print(intString(listLength(ilst)));
         print(" ");
-        print(BackendDAEUtil.jacobianTypeStr(jacType)); 
+        print(jacobianTypeStr(jacType)); 
         print("\n");
       then
         ();
@@ -2441,7 +2456,7 @@ algorithm
         ls1 = List.map(vlst, intString);
         s1 = stringDelimitList(ls1, ", ");  
         sl = intString(listLength(ilst));  
-        sj = BackendDAEUtil.jacobianTypeStr(jacType); 
+        sj = jacobianTypeStr(jacType); 
         s2 = stringAppendList({"{",s,":",s1,"} Size: ",sl," ",sj});
       then
         s2;

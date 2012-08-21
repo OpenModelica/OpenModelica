@@ -4555,11 +4555,12 @@ algorithm
       list<DAE.ComponentRef> names;
       BackendDAE.BinTree movedVars;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),shared,eqn_lst,var_lst,jac,inMovedVars)
+      DAE.FunctionTree funcs;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),shared as BackendDAE.SHARED(functionTree=funcs),eqn_lst,var_lst,jac,inMovedVars)
       equation
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
         v = BackendDAEUtil.listVar1(var_lst);
-        ((_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(v,{},{}));
+        ((_,beqs,sources,_)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(v,{},{},SOME(funcs)));
         beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(List.map(beqs,Ceval.cevalSimple));
         jacVals = evaluateConstantJacobian(listLength(var_lst),jac);
@@ -4873,7 +4874,7 @@ algorithm
         transEqArr = equationToResidualFormArr(eq_subSyst_Arr,1,l);
         BackendDAE.SHARED(knownVars,externalObjects,aliasVars,_,removedEqs,constraints,classAttrs,cache,env,functionTree,eventInfo,extObjClasses,backenDAEType,symjacs) = sub_shared2;
         eqns_subSyst = BackendDAE.EQUATION_ARRAY(sizeArr,NOE,arrSize,transEqArr);
-        jac_subSyst = BackendDAEUtil.calculateJacobian(vars_subSyst, eqns_subSyst, m_subSyst2, mT_subSyst2,false);
+        jac_subSyst = BackendDAEUtil.calculateJacobian(vars_subSyst, eqns_subSyst, m_subSyst2, false,sub_shared);
         SOME(jac_subSyst1) = jac_subSyst;
         row = listGet(jac_subSyst1,1);
         (_,_,eq) = row;
@@ -4916,7 +4917,7 @@ algorithm
         linearDAE = BackendDAE.DAE({eqSystem},shared);
         eqnsNewton = List.intRange(l);
         varsNewton = List.intRange(l);
-        jacNewton = BackendDAEUtil.calculateJacobian(variables,eqArray,m_new,mT_new,false);
+        jacNewton = BackendDAEUtil.calculateJacobian(variables,eqArray,m_new,false,sub_shared);
         jacTypeNewton = BackendDAEUtil.analyzeJacobian(variables,eqArray,jacNewton);
         comps_Newton = BackendDAE.EQUATIONSYSTEM(eqnsNewton,varsNewton,jacNewton,jacTypeNewton);
         matching = BackendDAE.MATCHING(match1,match1,{comps_Newton});
@@ -11459,6 +11460,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       list<BackendDAE.Var> varlst;
       list<DAE.Exp> explst;
+      DAE.FunctionTree funcs;
     case ({},_,_,_) then inTpl; 
     case (BackendDAE.SINGLEEQUATION(eqn=e)::rest,_,_,_) 
       equation
@@ -11474,12 +11476,12 @@ algorithm
         tpl = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendDAEUtil.listEquation(eqnlst),countOperationsExp,tpl);
       then
         countOperationstraverseComps(rest,isyst,ishared,tpl);
-    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=BackendDAE.JAC_TIME_VARYING()))::rest,_,_,_) 
+    case ((comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=BackendDAE.JAC_TIME_VARYING()))::rest,_,BackendDAE.SHARED(functionTree=funcs),_) 
       equation
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
         tpl = addJacSpecificOperations(listLength(eqnlst),inTpl);
         tpl = countOperationsJac(jac,tpl);        
-        ((_,explst,_)) = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(eqnlst),BackendEquation.equationToExp,(BackendDAEUtil.listVar1(varlst),{},{}));
+        ((_,explst,_,_)) = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(eqnlst),BackendEquation.equationToExp,(BackendDAEUtil.listVar1(varlst),{},{},SOME(funcs)));
         ((_,tpl)) = Expression.traverseExpList(explst,countOperationsExp,tpl);
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl);

@@ -450,17 +450,35 @@ algorithm
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),e);
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),inVariables)
       equation
-        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
+        e1_1 = differentiateExpTime(e1, inVariables);
+        e2_1 = differentiateExpTime(e2, inVariables);
       then
-        Expression.makeBuiltinCall("max",expl_1,tp);
+        DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.GREATER(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), e1_1, e2_1);
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (e as DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
       equation
-        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
+        /* TODO: Implement Derivative of max(a,b,...,n)  */
+        e_str = ExpressionDump.printExpStr(e);
+        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
-        Expression.makeBuiltinCall("min",expl_1,tp);
+        fail();
+
+    case (DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+      equation
+        e1_1 = differentiateExpTime(e1, inVariables);
+        e2_1 = differentiateExpTime(e2, inVariables);
+      then
+        DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.LESS(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), e1_1, e2_1);
+
+    case (e as DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+      equation
+        /* TODO: Implement Derivative of min(a,b,...,n)  */
+        e_str = ExpressionDump.printExpStr(e);
+        Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
+      then
+        fail();
 
     case (e0 as DAE.CALL(path = Absyn.IDENT("sqrt"),expLst = {e}),inVariables)
       equation
@@ -605,10 +623,10 @@ algorithm
       equation
         // try to inline
         (e1,_,true) = Inline.forceInlineExp(e,(SOME(functions),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
+        e1 = Expression.addNoEventToRelations(e1);
         // get Derivative function
-        e2 = differentiateExpTime(e1,inVariables);
       then
-        e2;    
+        differentiateExpTime(e1,inVariables);  
     
     case (e as DAE.CALL(path = a,expLst = expl),inVariables)
       equation
@@ -1156,9 +1174,10 @@ end getFunctionMapper1;
 public function differentiateExpCont "calls differentiateExp(e,cr,false)"
   input DAE.Exp inExp;
   input DAE.ComponentRef inComponentRef;
+  input Option<DAE.FunctionTree> inFuncs;
   output DAE.Exp outExp;
 algorithm
-  outExp := differentiateExp(inExp,inComponentRef,false);
+  outExp := differentiateExp(inExp,inComponentRef,false,inFuncs);
 end differentiateExpCont;
 
 public function differentiateExp "function: differentiateExp
@@ -1168,9 +1187,10 @@ public function differentiateExp "function: differentiateExp
   input DAE.Exp inExp;
   input DAE.ComponentRef inComponentRef;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
+  input Option<DAE.FunctionTree> inFuncs;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp,inComponentRef,differentiateIfExp)
+  outExp := matchcontinue (inExp,inComponentRef,differentiateIfExp,inFuncs)
     local
       Real rval;
       DAE.ComponentRef cr,crx,tv;
@@ -1185,77 +1205,77 @@ algorithm
       DAE.ReductionIterators riters;
       DAE.CallAttributes attr;
     
-    case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);
+    case (DAE.ICONST(integer = _),_,_,_) then DAE.RCONST(0.0);
 
-    case (DAE.RCONST(real = _),_,_) then DAE.RCONST(0.0);
+    case (DAE.RCONST(real = _),_,_,_) then DAE.RCONST(0.0);
 
-    case (DAE.CREF(componentRef = cr),crx,_)
+    case (DAE.CREF(componentRef = cr),crx,_,_)
       equation
         true = ComponentReference.crefEqual(cr, crx) "D(x)/dx => 1" ;
         rval = intReal(1) "Since bug in MetaModelica Compiler (MMC) makes 1.0 into 0.0" ;
       then
         DAE.RCONST(rval);
 
-    case ((e as DAE.CREF(componentRef = cr,ty=tp)),crx,_)
+    case ((e as DAE.CREF(componentRef = cr,ty=tp)),crx,_,_)
       equation
         false = ComponentReference.crefEqual(cr, crx) "D(c)/dx => 0" ;
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         zero;
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),tv,differentiateIfExp)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),tv,_,_)
       equation
-        e1_1 = differentiateExp(e1, tv, differentiateIfExp);
-        e2_1 = differentiateExp(e2, tv, differentiateIfExp);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(e1_1,DAE.ADD(tp),e2_1);
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = tp),exp2 = e2),tv,differentiateIfExp)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = tp),exp2 = e2),tv,_,_)
       equation
-        e1_1 = differentiateExp(e1, tv, differentiateIfExp);
-        e2_1 = differentiateExp(e2, tv, differentiateIfExp);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(e1_1,DAE.ADD_ARR(tp),e2_1);
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2),tv,differentiateIfExp)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2),tv,_,_)
       equation
-        e1_1 = differentiateExp(e1, tv, differentiateIfExp);
-        e2_1 = differentiateExp(e2, tv, differentiateIfExp);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(e1_1,DAE.SUB(tp),e2_1);
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = tp),exp2 = e2),tv,differentiateIfExp)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = tp),exp2 = e2),tv,_,_)
       equation
-        e1_1 = differentiateExp(e1, tv, differentiateIfExp);
-        e2_1 = differentiateExp(e2, tv, differentiateIfExp);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(e1_1,DAE.SUB_ARR(tp),e2_1);
 
-    case (DAE.BINARY(exp1 = (e1 as DAE.CREF(componentRef = cr)),operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp) /* ax^(a-1) */
+    case (DAE.BINARY(exp1 = (e1 as DAE.CREF(componentRef = cr)),operator = DAE.POW(ty = tp),exp2 = e2),tv,_,_) /* ax^(a-1) */
       equation
         true = ComponentReference.crefEqual(cr, tv) "x^a => ax^(a-1)" ;
         false = Expression.expContains(e2, Expression.makeCrefExp(tv,tp));
-        const_one = differentiateExp(Expression.makeCrefExp(tv,tp), tv, differentiateIfExp);
+        const_one = differentiateExp(Expression.makeCrefExp(tv,tp), tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(e2,DAE.MUL(tp),
           DAE.BINARY(e1,DAE.POW(tp),DAE.BINARY(e2,DAE.SUB(tp),const_one)));
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp) /* ax^(a-1) */
+    case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2),tv,_,_) /* ax^(a-1) */
       equation
-        d_e1 = differentiateExp(e1, tv, differentiateIfExp) "e^x => xder(e)e^x-1" ;
+        d_e1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs) "e^x => xder(e)e^x-1" ;
         false = Expression.expContains(e2, Expression.makeCrefExp(tv,tp));
-        const_one = differentiateExp(Expression.makeCrefExp(tv,tp), tv, differentiateIfExp);
+        const_one = differentiateExp(Expression.makeCrefExp(tv,tp), tv, differentiateIfExp,inFuncs);
         exp = DAE.BINARY(
           DAE.BINARY(d_e1,DAE.MUL(tp),DAE.BINARY(e2,DAE.SUB(tp),DAE.RCONST(1.0))),DAE.MUL(tp),
           DAE.BINARY(e1,DAE.POW(tp),DAE.BINARY(e2,DAE.SUB(tp),const_one)));
       then
         exp;
 
-      case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp) /* a^x => a^x * log(A) */
+      case (e as DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = tp),exp2 = e2),tv,_,_) /* a^x => a^x * log(A) */
       equation
         false = Expression.expContains(e1, Expression.makeCrefExp(tv,tp));
         true  = Expression.expContains(e2,Expression.makeCrefExp(tv,tp));
-        d_e2 = differentiateExp(e2, tv, differentiateIfExp);
+        d_e2 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
         call = Expression.makeBuiltinCall("log",{e1},tp);
         exp = DAE.BINARY(d_e2,DAE.MUL(tp),DAE.BINARY(e,DAE.MUL(tp),call));
       then
@@ -1264,30 +1284,30 @@ algorithm
     // ax^(a-1)
     case (DAE.BINARY(exp1 = (e1 as DAE.CALL(path = (a as Absyn.IDENT(name = "der")),
           expLst = {(exp as DAE.CREF(componentRef = cr))},attr=attr)),
-          operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp)
+          operator = DAE.POW(ty = tp),exp2 = e2),tv,_,_)
       equation
         true = ComponentReference.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
         false = Expression.expContains(e2, Expression.makeCrefExp(tv,tp));
-        const_one = differentiateExp(Expression.makeCrefExp(tv,tp), tv, differentiateIfExp);
+        const_one = differentiateExp(Expression.makeCrefExp(tv,tp), tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(
           DAE.BINARY(DAE.CALL(a,{exp,DAE.ICONST(2)},attr),DAE.MUL(tp),e2),DAE.MUL(tp),
           DAE.BINARY(e1,DAE.POW(tp),DAE.BINARY(e2,DAE.SUB(tp),const_one)));
 
     // f\'g + fg\'
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2),tv,differentiateIfExp)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2),tv,_,_)
       equation
-        e1_1 = differentiateExp(e1, tv, differentiateIfExp);
-        e2_1 = differentiateExp(e2, tv, differentiateIfExp);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e2_1),DAE.ADD(tp),
           DAE.BINARY(e1_1,DAE.MUL(tp),e2));
 
     // (f'g - fg' ) / g^2
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e2),tv,differentiateIfExp)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e2),tv,_,_)
       equation
-        e1_1 = differentiateExp(e1, tv, differentiateIfExp);
-        e2_1 = differentiateExp(e2, tv, differentiateIfExp);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(
           DAE.BINARY(
@@ -1297,31 +1317,31 @@ algorithm
           DAE.DIV(tp),
           DAE.BINARY(e2,DAE.MUL(tp),e2));
     
-    case (DAE.UNARY(operator = op,exp = e),tv,differentiateIfExp)
+    case (DAE.UNARY(operator = op,exp = e),tv,_,_)
       equation
-        e_1 = differentiateExp(e, tv, differentiateIfExp);
+        e_1 = differentiateExp(e, tv, differentiateIfExp,inFuncs);
       then
         DAE.UNARY(op,e_1);
     
-    case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),tv,differentiateIfExp)
+    case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),tv,_,_)
       equation
         e_str = ExpressionDump.printExpStr(e) "The derivative of logic expressions are non-existent" ;
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
     
-    case (DAE.LUNARY(operator = op,exp = e),tv,differentiateIfExp)
+    case (DAE.LUNARY(operator = op,exp = e),tv,_,_)
       equation
-        e_1 = differentiateExp(e, tv, differentiateIfExp);
+        e_1 = differentiateExp(e, tv, differentiateIfExp,inFuncs);
       then
         DAE.LUNARY(op,e_1);
     
-    case (DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst={exp}),tv,differentiateIfExp)
+    case (DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst={exp}),tv,_,_)
       equation
         true = Expression.expContains(exp,Expression.crefExp(tv));
-      then differentiateCallExp1Arg(name,exp,tv,differentiateIfExp);
+      then differentiateCallExp1Arg(name,exp,tv,differentiateIfExp,inFuncs);
     
-    case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), crx, differentiateIfExp)
+    case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), crx, _,_)
       equation
         cr = ComponentReference.crefPrefixDer(cr);
         true = ComponentReference.crefEqual(cr, crx);
@@ -1331,14 +1351,14 @@ algorithm
         
     // der(x)
     case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst =
-          {(exp as DAE.CREF(componentRef = cr))},attr=attr),tv,differentiateIfExp)
+          {(exp as DAE.CREF(componentRef = cr))},attr=attr),tv,_,_)
       equation
         true = ComponentReference.crefEqual(cr, tv);
       then
         DAE.CALL(a,{exp,DAE.ICONST(2)},attr);
     
     // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
-    case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),tv,differentiateIfExp)
+    case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),tv,_,_)
       equation
         true = Expression.expContains(e, Expression.crefExp(tv));
         true = Expression.isZero(e1);
@@ -1346,12 +1366,12 @@ algorithm
       then exp;
 
     // der(arctan2(y,x)) = der(y/x)/1+(y/x)^2
-    case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),tv,differentiateIfExp)
+    case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),tv,_,_)
       equation
         true = Expression.expContains(e, Expression.crefExp(tv));
         false = Expression.isZero(e1);
         exp = Expression.makeDiv(e,e1);
-        e_1 = differentiateExp(exp, tv, differentiateIfExp);
+        e_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e)));
            
@@ -1367,34 +1387,34 @@ algorithm
         DAE.RELATION(e1_1,rel,e2_1);
     */
     
-    case (DAE.ARRAY(ty = tp,scalar = b,array = expl),tv,differentiateIfExp)
+    case (DAE.ARRAY(ty = tp,scalar = b,array = expl),tv,_,_)
       equation
-        expl_1 = List.map2(expl, differentiateExp, tv, differentiateIfExp);
+        expl_1 = List.map3(expl, differentiateExp, tv, differentiateIfExp,inFuncs);
       then
         DAE.ARRAY(tp,b,expl_1);
     
-    case (DAE.TUPLE(PR = expl),tv,differentiateIfExp)
+    case (DAE.TUPLE(PR = expl),tv,_,_)
       equation
-        expl_1 = List.map2(expl, differentiateExp, tv, differentiateIfExp);
+        expl_1 = List.map3(expl, differentiateExp, tv, differentiateIfExp,inFuncs);
       then
         DAE.TUPLE(expl_1);
     
-    case (DAE.CAST(ty = tp,exp = e),tv,differentiateIfExp)
+    case (DAE.CAST(ty = tp,exp = e),tv,_,_)
       equation
-        e_1 = differentiateExp(e, tv, differentiateIfExp);
+        e_1 = differentiateExp(e, tv, differentiateIfExp,inFuncs);
       then
         DAE.CAST(tp,e_1);
     
-    case (DAE.ASUB(exp = e,sub = sub),tv,differentiateIfExp)
+    case (DAE.ASUB(exp = e,sub = sub),tv,_,_)
       equation
-        e_1 = differentiateExp(e, tv, differentiateIfExp);
+        e_1 = differentiateExp(e, tv, differentiateIfExp,inFuncs);
       then
         Expression.makeASUB(e_1,sub);
     
       // TODO: Check if we are differentiating a local iterator?
-    case (DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,iterators = riters),tv,differentiateIfExp)
+    case (DAE.REDUCTION(reductionInfo=reductionInfo,expr = e1,iterators = riters),tv,_,_)
       equation
-        e1_1 = differentiateExp(e1, tv, differentiateIfExp);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
       then
         DAE.REDUCTION(reductionInfo,e1_1,riters);
     
@@ -1408,7 +1428,15 @@ algorithm
       then
         e1;*/
 
-    case (e,cr,differentiateIfExp)
+    case (e as DAE.CALL(path=_),tv,_,_)
+      equation
+        // try to inline
+        (e1,_,true) = Inline.forceInlineExp(e,(inFuncs,{DAE.NORM_INLINE(),DAE.NO_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
+        e1 = Expression.addNoEventToRelations(e1);
+      then
+        differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+
+    case (e,cr,_,_)
       equation
         false = Expression.expContains(e, Expression.crefExp(cr)) 
         "If the expression does not contain the variable,
@@ -1421,14 +1449,14 @@ algorithm
         zero;
 
     // Differentiate if-expressions if last argument true
-    case (DAE.IFEXP(cond,e1,e2),tv,differentiateIfExp as true) 
+    case (DAE.IFEXP(cond,e1,e2),tv,differentiateIfExp as true,_) 
       equation
-        e1_1 = differentiateExp(e1, tv, differentiateIfExp);
-        e2_1 = differentiateExp(e2, tv, differentiateIfExp);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
       then 
         DAE.IFEXP(cond,e1_1,e2_1);
     
-    case (e,cr,differentiateIfExp)
+    case (e,cr,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         s = ExpressionDump.printExpStr(e);
@@ -1441,7 +1469,7 @@ algorithm
   end matchcontinue;
 end differentiateExp;
 
-public function differentiateCallExp1Arg "function: differentiateCallExp1Arg
+protected function differentiateCallExp1Arg "function: differentiateCallExp1Arg
   This function differentiates builtin call expressions with 1 argument
   with respect to a given variable,given as second argument.
   The argument must contain the variable to differentiate w.r.t."
@@ -1449,81 +1477,82 @@ public function differentiateCallExp1Arg "function: differentiateCallExp1Arg
   input DAE.Exp exp;
   input DAE.ComponentRef tv;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
+  input Option<DAE.FunctionTree> inFuncs;
   output DAE.Exp outExp;
 algorithm
-  outExp := match (name,exp,tv,differentiateIfExp)
+  outExp := match (name,exp,tv,differentiateIfExp,inFuncs)
     local
       DAE.Exp exp_1,exp_2;
     // der(tanh(x)) = der(x) / cosh(x)
-    case ("tanh",_,_,_)
+    case ("tanh",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("cosh",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),exp_2);
 
     // der(cosh(x)) => der(x)sinh(x)
-    case ("cosh",_,_,_)
+    case ("cosh",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sinh",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_1,DAE.MUL(DAE.T_REAL_DEFAULT),exp_2);
 
     // der(sinh(x)) => der(x)sinh(x)
-    case ("sinh",_,_,_)
+    case ("sinh",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("cosh",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_1,DAE.MUL(DAE.T_REAL_DEFAULT),exp_2);
 
     // sin(x)
-    case ("sin",_,_,_)
+    case ("sin",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("cos",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_2,DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
 
-    case ("cos",_,_,_)
+    case ("cos",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sin",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),exp_2),DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
 
     // der(arccos(x)) = -der(x)/sqrt(1-x^2)
-    case ("acos",_,_,_)
+    case ("acos",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sqrt",{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(exp,DAE.MUL(DAE.T_REAL_DEFAULT),exp))},DAE.T_REAL_DEFAULT);
       then DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),exp_2));
     
     // der(arcsin(x)) = der(x)/sqrt(1-x^2)
-    case ("asin",_,_,_)
+    case ("asin",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sqrt",{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(exp,DAE.MUL(DAE.T_REAL_DEFAULT),exp))},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),exp_2);
     
     // der(arctan(x)) = der(x)/1+x^2
-    case ("atan",_,_,_)
+    case ("atan",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
       then DAE.BINARY(exp_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(exp,DAE.MUL(DAE.T_REAL_DEFAULT),exp)));
     
-    case ("exp",_,_,_)
+    case ("exp",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("exp",{exp},DAE.T_REAL_DEFAULT);
       then DAE.BINARY(exp_2,DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
     
-    case ("log",_,_,_)
+    case ("log",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(exp_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),exp));
     
-    case ("log10",_,_,_)
+    case ("log10",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("log",{DAE.RCONST(10.0)},DAE.T_REAL_DEFAULT);
       then
         DAE.BINARY(exp_1,DAE.MUL(DAE.T_REAL_DEFAULT),
@@ -1531,9 +1560,9 @@ algorithm
           DAE.BINARY(exp,DAE.MUL(DAE.T_REAL_DEFAULT),
           exp_2)));
     
-    case ("sqrt",_,_,_)
+    case ("sqrt",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sqrt",{exp},DAE.T_REAL_DEFAULT);
       then
         DAE.BINARY(
@@ -1541,9 +1570,9 @@ algorithm
           DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.T_REAL_DEFAULT),
           exp_2)),DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
     
-    case ("tan",_,_,_)
+    case ("tan",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("cos",{exp},DAE.T_REAL_DEFAULT);
       then
         DAE.BINARY(
@@ -1563,9 +1592,9 @@ algorithm
     */
     
     // der(abs(x)) = sign(x)der(x)
-    case ("abs",_,_,_)
+    case ("abs",_,_,_,_)
       equation
-        exp_1 = differentiateExp(exp, tv, differentiateIfExp);
+        exp_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
         exp_2 = Expression.makeBuiltinCall("sign",{exp_1},DAE.T_INTEGER_DEFAULT);
       then DAE.BINARY(exp_2,DAE.MUL(DAE.T_REAL_DEFAULT),exp_1);
   end match;

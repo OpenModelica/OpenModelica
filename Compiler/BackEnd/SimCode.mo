@@ -4827,7 +4827,7 @@ algorithm
       String msg;
       list<SimVar> tempvars;
       // create always a linear system of equations 
-    case (_,skipDiscInAlgorithm,true,syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),shared as BackendDAE.SHARED(knownVars = knvars, constraints = constrs, classAttrs = clsAttrs),comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp),helpVarInfo,_,_)
+    case (_,skipDiscInAlgorithm,true,syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),shared as BackendDAE.SHARED(knownVars = knvars, constraints = constrs, classAttrs = clsAttrs,functionTree=funcs),comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp),helpVarInfo,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create system (create linear jacobian).");
         //print("\ncreateOdeSystem -> Linear: ...\n");
@@ -4843,7 +4843,7 @@ algorithm
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
         // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
         jac_tp = changeJactype(jac_tp);
-        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs,jac, jac_tp, helpVarInfo,iuniqueEqIndex,itempvars);
+        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs,jac, jac_tp,helpVarInfo,funcs,iuniqueEqIndex,itempvars);
       then
         (equations_,equations_,uniqueEqIndex,tempvars);
     case (_,skipDiscInAlgorithm,true,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, constraints = constrs, classAttrs=clsAttrs,cache=cache,env=env,  eventInfo = ev, extObjClasses = eoc),comp as BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo,_,_)
@@ -4864,11 +4864,11 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,ev,eoc,BackendDAE.ALGEQSYSTEM(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, mt,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, false,ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = BackendDAEUtil.analyzeJacobian(vars_1,eqns_1,jac);
         // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
         jac_tp = changeJactype(jac_tp);
-        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs,jac, jac_tp, helpVarInfo,iuniqueEqIndex,itempvars);
+        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs,jac, jac_tp, helpVarInfo,funcs,iuniqueEqIndex,itempvars);
       then
         (equations_,equations_,uniqueEqIndex,tempvars);
           
@@ -4928,13 +4928,13 @@ algorithm
         comps_flat = List.flatten(comps_1);
         rf = List.flatten(r);
         tf = List.flatten(t);
-        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m_3, false,shared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = BackendDAEUtil.analyzeJacobian(vars_1,eqns_1,jac);
         (equation_,uniqueEqIndex,tempvars) = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,subsystem_dae_2, jac, jac_tp, helpVarInfo,iuniqueEqIndex,itempvars);
       then
         ({equation_},{equation_},uniqueEqIndex,tempvars);
         /* continuous system of equations */
-    case (_, skipDiscInAlgorithm, false,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, constraints = constrs,classAttrs=clsAttrs, eventInfo = ev, extObjClasses = eoc),comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=jac_tp),helpVarInfo,_,_)
+    case (_, skipDiscInAlgorithm, false,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, constraints = constrs,classAttrs=clsAttrs,functionTree=funcs, eventInfo = ev, extObjClasses = eoc),comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=jac_tp),helpVarInfo,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create continuous system.");
         //print("\ncreateOdeSystem -> Cont sys: ...\n");
@@ -4948,7 +4948,7 @@ algorithm
         vars_1 = BackendDAEUtil.listVar1(var_lst_1);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
-        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs, jac, jac_tp, helpVarInfo,iuniqueEqIndex,itempvars);
+        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs, jac, jac_tp, helpVarInfo,funcs,iuniqueEqIndex,itempvars);
       then
         (equations_,equations_,uniqueEqIndex,tempvars);
     else
@@ -5171,6 +5171,7 @@ protected function createOdeSystem2
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> inTplIntegerIntegerBackendDAEEquationLstOption;
   input BackendDAE.JacobianType inJacobianType;
   input list<HelpVarInfo> helpVarInfo;
+  input DAE.FunctionTree inFuncs;
   input Integer iuniqueEqIndex;
   input list<SimVar> itempvars;
   output list<SimEqSystem> equations_;
@@ -5179,7 +5180,7 @@ protected function createOdeSystem2
 algorithm
   (equations_,ouniqueEqIndex,otempvars) :=
   matchcontinue
-    (mixedEvent,skipDiscInAlgorithm,inVars,inKnVars,inEquationArray,inConstrs,inClassAttrs,inTplIntegerIntegerBackendDAEEquationLstOption,inJacobianType,helpVarInfo,iuniqueEqIndex,itempvars)
+    (mixedEvent,skipDiscInAlgorithm,inVars,inKnVars,inEquationArray,inConstrs,inClassAttrs,inTplIntegerIntegerBackendDAEEquationLstOption,inJacobianType,helpVarInfo,inFuncs,iuniqueEqIndex,itempvars)
     local
       Integer uniqueEqIndex;
       BackendDAE.BackendDAE subsystem_dae,subsystem_dae_1,subsystem_dae_2;
@@ -5188,7 +5189,6 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       list<DAE.ComponentRef> crefs;
       Env.Cache cache;
-      DAE.FunctionTree funcs;
       list<SimEqSystem> resEqs;
       BackendDAE.StrongComponents comps;
       list<Integer> comps_flat;
@@ -5210,15 +5210,16 @@ algorithm
       array<Integer> v1,v2,v1_1,v2_1;
       BackendVarTransform.VariableReplacements repl; 
       list<SimVar> tempvars;
+      String str;
         // constant jacobians. Linear system of equations (A x = b) where
         // A and b are constants. TODO: implement symbolic gaussian elimination
         // here. Currently uses dgesv as for next case
-    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_CONSTANT(),helpVarInfo,_,_)
+    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_CONSTANT(),helpVarInfo,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create linear system(const jacobian).");
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
-        ((_,beqs,sources)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{}));
+        ((_,beqs,sources,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{},SOME(inFuncs)));
         beqs = listReverse(beqs);
         rhsVals = ValuesUtil.valueReals(List.map(beqs,Ceval.cevalSimple));
         jacVals = BackendDAEOptimize.evaluateConstantJacobian(listLength(simVars),jac);
@@ -5234,7 +5235,7 @@ algorithm
         // constant jacobians. Linear system of equations (A x = b) where
         // A and b are constants. TODO: implement symbolic gaussian elimination
         // here. Currently uses dgesv as for next case
-    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_TIME_VARYING(),helpVarInfo,_,_)
+    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_TIME_VARYING(),helpVarInfo,_,_,_)
       equation
         // check Relaxation
         true = Flags.isSet(Flags.RELAXATION);
@@ -5242,8 +5243,7 @@ algorithm
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         cache = Env.emptyCache();
-        funcs = DAEUtil.avlTreeNew();
-        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM(),{}));
+        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,constrs,clsAttrs,cache,{},inFuncs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM(),{}));
         (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         (subsystem_dae_2,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
         true = listLength(r) > 0;
@@ -5256,19 +5256,19 @@ algorithm
        (equations_,uniqueEqIndex,tempvars);
         
         // Time varying jacobian. Linear system of equations that needs to be solved during runtime.
-    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_TIME_VARYING(),helpVarInfo,_,_)
+    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_TIME_VARYING(),helpVarInfo,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create linear system(time varying jacobian).");
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
-        ((_,beqs,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{}));
+        ((_,beqs,_,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{},SOME(inFuncs)));
         beqs = listReverse(beqs);
         simJac = List.map1(jac, jacToSimjac, v);
       then
         ({SES_LINEAR(iuniqueEqIndex, mixedEvent, simVars, beqs, simJac)},iuniqueEqIndex+1,itempvars);
         
         // Time varying nonlinear jacobian. Non-linear system of equations.
-    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_NONLINEAR(),helpVarInfo,_,_)
+    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_NONLINEAR(),helpVarInfo,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create non-linear system with jacobian.");
         eqn_lst = BackendDAEUtil.equationList(eqn);
@@ -5279,7 +5279,7 @@ algorithm
         ({SES_NONLINEAR(uniqueEqIndex, resEqs, crefs)},uniqueEqIndex+1,tempvars);
         
         // No analytic jacobian available. Generate non-linear system.
-    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,NONE(),BackendDAE.JAC_NO_ANALYTIC(),helpVarInfo,_,_)
+    case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,NONE(),BackendDAE.JAC_NO_ANALYTIC(),helpVarInfo,_,_,_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create non-linear system without jacobian.");
         eqn_lst = BackendDAEUtil.equationList(eqn);
@@ -5292,7 +5292,9 @@ algorithm
         // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem2 failed"});
+        str = BackendDump.jacobianTypeStr(inJacobianType);
+        str = stringAppendList({"createOdeSystem2 failed for ",str});
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
   end matchcontinue;
@@ -5702,6 +5704,7 @@ algorithm
       BackendDAE.EquationArray eqn;
       array<Integer> Ass2;
       list<SimVar> tempvars;
+      DAE.FunctionTree funcs;
     case ({r},mixedEvent,syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass2=Ass2)),shared,helpVarInfo,_,_)
       equation
         i = Ass2[r];
@@ -5709,14 +5712,14 @@ algorithm
       then 
         (reqns,uniqueEqIndex,tempvars);
         
-    case (block_ as _::_::_,mixedEvent,syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn),shared as BackendDAE.SHARED(knownVars=kv), helpVarInfo,_,_)
+    case (block_ as _::_::_,mixedEvent,syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn),shared as BackendDAE.SHARED(knownVars=kv,functionTree=funcs), helpVarInfo,_,_)
       equation
         (m,mT) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
         //mT = BackendDAEUtil.transposeMatrix(m);
-        SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, m, mT,false);
+        SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, m, false,shared);
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
-        ((_,beqs,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{}));
+        ((_,beqs,_,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{},SOME(funcs)));
         beqs = listReverse(beqs);
         simJac = List.map1(jac, jacToSimjac, v);
       then
@@ -5738,7 +5741,7 @@ algorithm
       
     case ((row, col, BackendDAE.RESIDUAL_EQUATION(exp=e,source=source)), v)
       equation
-        // rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v);
+        // rhs_exp = BackendDAEUtil.getEqnsysRhsExp(e, v,NONE());
         // rhs_exp_1 = ExpressionSimplify.simplify(rhs_exp);
         // then ((row - 1, col - 1, SES_RESIDUAL(rhs_exp_1)));
       then 
