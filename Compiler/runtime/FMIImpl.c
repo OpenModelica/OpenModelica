@@ -272,7 +272,7 @@ char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
   generated_file_name = (char*) malloc(len + 17);
   sprintf(generated_file_name, "%s/%sFMUImportNew.mo", working_directory, model_identifier);
   // Generate Modelica code and save the file
-  //generateModelicaCode(fmu, generated_file_name, working_directory);
+  generateModelicaCode(fmu, generated_file_name, working_directory);
   fmi1_import_destroy_dllfmu(fmu);
   fmi1_import_free(fmu);
   fmi_import_free_context(context);
