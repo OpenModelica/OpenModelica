@@ -677,6 +677,8 @@ public constant Message PARMODELICA_ERROR = MESSAGE(7005, TRANSLATION(), ERROR()
   Util.notrans("ParModelica: %s."));
 public constant Message OPTIMICA_ERROR = MESSAGE(7006, TRANSLATION(), ERROR(),
   Util.notrans("Optimica: %s."));
+public constant Message FILE_NOT_FOUND_ERROR = MESSAGE(7007, SCRIPTING(), ERROR(),
+  Util.gettext("File not Found: %s."));
 
 protected import ErrorExt;
 

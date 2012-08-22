@@ -1093,7 +1093,62 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
     <%fileNamePrefix%>_fmiSetTime @24
     <%fileNamePrefix%>_fmiTerminate @25
   >>
-end fmudeffile;  
+end fmudeffile;
+
+template importFMUModelica(Integer fmi)
+ "Generates the Modelica code from the FMU's modelDescription file."
+::=
+  <<
+  package <%getFMIModelIdentifier(fmi)%>_FMU
+    class fmiImportContext
+      extends ExternalObject;
+        function constructor
+          output fmiImportContext context;
+          external "C" context = fmi_import_allocate_context_OMC() annotation(Library = {"omcruntime", "fmilib"});
+        end constructor;
+        
+        function destructor
+          input fmiImportContext context;
+          external "C" fmi_import_free_context_OMC(context) annotation(Library = {"omcruntime", "fmilib"});
+        end destructor;
+    end fmiImportContext;
+    
+    class fmiImportInstance
+      extends ExternalObject;
+        function constructor
+          input fmiImportContext context;
+          input String tempPath;
+          output fmiImportInstance fmu;
+          external "C" fmu = fmiImportInstance_OMC(context, tempPath) annotation(Library = {"omcruntime", "fmilib"});
+        end constructor;
+        
+        function destructor
+          input fmiImportInstance fmu;
+          external "C" fmiImportFreeInstance_OMC(fmu) annotation(Library = {"omcruntime", "fmilib"});
+        end destructor;
+    end fmiImportInstance;
+    
+    package fmiStatus
+      constant Integer fmiOK=0;
+      constant Integer fmiWarning=1;
+      constant Integer fmiDiscard=2;
+      constant Integer fmiError=3;
+      constant Integer fmiFatal=4;
+      constant Integer fmiPending=5;
+    end fmiStatus;
+    
+    package jmStatus
+      constant Integer jmError=0;
+      constant Integer jmSuccess=1;
+      constant Integer jmWarning=2;
+    end jmStatus;
+    
+    model FMUModel <% if stringEq(getFMIDescription(fmi), "") then "" else " \"getFMIDescription(fmi)\""%>
+      annotation(experiment(StartTime=<%getFMIDefaultExperimentStart(fmi)%>, StopTime=<%getFMIDefaultExperimentStop(fmi)%>, Tolerance=<%getFMIDefaultExperimentTolerance(fmi)%>));
+    end FMUModel;
+  end <%getFMIModelIdentifier(fmi)%>_FMU;
+  >>
+end importFMUModelica;  
   
 end CodegenFMU;
 

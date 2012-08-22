@@ -2520,4 +2520,33 @@ package Types
   end unparseType;
 end Types;
 
+package FMI
+  
+  function getFMIModelIdentifier
+	  input Integer inFMU;
+	  output String outModelIdentifier;
+  end getFMIModelIdentifier;
+  
+  function getFMIDescription
+    input Integer inFMI;
+    output String outFMIDescription;
+  end getFMIDescription;
+  
+  function getFMIDefaultExperimentStart
+	  input Integer inFMI;
+	  output Real outFMIDefaultExperimentStart;
+	end getFMIDefaultExperimentStart;
+	
+	function getFMIDefaultExperimentStop
+	  input Integer inFMI;
+	  output Real outFMIDefaultExperimentStop;
+	end getFMIDefaultExperimentStop;
+	
+	function getFMIDefaultExperimentTolerance
+	  input Integer inFMI;
+	  output Real outFMIDefaultExperimentTolerance;
+	end getFMIDefaultExperimentTolerance;
+  
+end FMI;
+
 end SimCodeTV;

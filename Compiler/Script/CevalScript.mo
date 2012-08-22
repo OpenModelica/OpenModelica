@@ -99,6 +99,7 @@ protected import SCodeUtil;
 protected import Settings;
 protected import SimulationResults;
 protected import Tpl;
+protected import CodegenFMU;
 protected import Types;
 protected import Unparsing;
 protected import Util;
@@ -820,7 +821,7 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,value,v,cvar,cvar2;
       Absyn.ComponentRef cr_1;
-      Integer size,resI,i,n;
+      Integer size,resI,i,n,fmiContext,fmi;
       list<String> vars_1,args,strings,strs,visvars;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts; 
@@ -1435,10 +1436,30 @@ algorithm
         
     case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir)},st,msg)
       equation
+        true = System.regularFileExists(filename);
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
-        str = FMI.importFMU(filename, workdir);
+        /*str = FMI.importFMU(filename, workdir);*/
+        /* Initialize FMI objects */
+        fmiContext = FMI.initializeFMIContext(filename, workdir);
+        fmi = FMI.initializeFMI(fmiContext, workdir);
+        /* Reads the model identifier from the FMU.*/
+        filename_1 = FMI.getFMIModelIdentifier(fmi);
+        str = Tpl.tplString(CodegenFMU.importFMUModelica, fmi);
+        pd = System.pathDelimiter();
+        str1 = stringAppendList({workdir,pd,filename_1,"FMUImportNew.mo"});
+        System.writeFile(str1, str);
+        /* Release FMI objects */
+        FMI.releaseFMI(fmi);
+        FMI.releaseFMIContext(fmiContext);
       then
-        (cache,Values.STRING(str),st);
+        (cache,Values.STRING(str1),st);
+        
+    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir)},st,msg)
+      equation
+        false = System.regularFileExists(filename);
+        Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
+      then
+        (cache,Values.STRING(""),st);
         
     case (cache,env,"iconv",{Values.STRING(str),Values.STRING(from),Values.STRING(to)},st,msg)
       equation

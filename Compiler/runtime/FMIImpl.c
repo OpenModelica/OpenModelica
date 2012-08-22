@@ -151,133 +151,259 @@ char* getModelVariableName(fmi1_import_variable_t* variable)
 /*
  * Generate Modelica code
  */
-static void generateModelicaCode(fmi1_import_t* fmu, char* file_name, const char* working_directory)
-{
-  FILE* file;
-  const char* model_identifier = fmi1_import_get_model_identifier(fmu);
-  /* create the Modelica File. */
-  file = fopen(file_name, "w");
-  if (!file) {
-    const char *c_tokens[1]={file_name};
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Unable to create the file: %s."), c_tokens, 1);
-    return;
-  } else {
-    const char* fmu_template_str =
-        #include "FMIModelica.h"
-        ;
-    fprintf(file, "package FMUImportNew_%s\n", model_identifier);
-    fputs(fmu_template_str, file);
-    /* generate the code for FMUBlock */
-    fprintf(file, "public\nmodel FMUModel\n");
-    /* get the model description */
-    const char* model_description = fmi1_import_get_description(fmu);
-    if (strcmp(model_description, "") != 0)
-      fprintf(file, "\t\"%s\"\n", model_description);
-    /* get the model experiment annotation */
-    fprintf(file, "\tannotation(experiment(StartTime = %f, StopTime = %f, Tolerance = %f));\n",
-        fmi1_import_get_default_experiment_start(fmu),
-        fmi1_import_get_default_experiment_stop(fmu),
-        fmi1_import_get_default_experiment_tolerance(fmu));
-    fprintf(file, "\tconstant String FMUPath = \"%s\";\n", working_directory);
-    fprintf(file, "\tconstant String instanceName = \"%s\";\n", model_identifier);
-    /* Get the model variables */
-    fmi1_import_variable_list_t* variables_list = fmi1_import_get_variable_list(fmu);
-    size_t variables_list_size = fmi1_import_get_variable_list_size(variables_list);
-    int i = 0;
-    for (i ; i < variables_list_size ; i++) {
-      fmi1_import_variable_t* variable = fmi1_import_get_variable(variables_list, i);
-      /* get the variable variability */
-      fprintf(file, "\t%s", getModelVariableVariability(variable));
-      /* get the variable causality */
-      fprintf(file, "%s", getModelVariableCausality(variable));
-      /* get the variable type */
-      fprintf(file, "%s", getModelVariableBaseType(variable));
-      /* get the variable name and description/comment */
-      fprintf(file, "%s \"%s\";\n", getModelVariableName(variable), fmi1_import_get_variable_description(variable));
-      /* check variable        */
-    }
-    /*
-     * From FMIL docs,
-     * Free a variable list. Note that variable lists are allocated dynamically and must be freed when not needed any longer.
-     */
-    free(variables_list);
-    fprintf(file, "protected\n");
-    fprintf(file, "\tfmiImportInstance fmu = fmiImportInstance(context, FMUPath);\n");
-    fprintf(file, "\tfmiImportContext context = fmiImportContext();\n");
-    fprintf(file, "\t//Integer status = fmiImportInstantiateModel(fmu, instanceName);\n");
-    fprintf(file, "end FMUModel;\n");
-    fprintf(file, "end FMUImportNew_%s;", model_identifier);
-  }
-  fclose(file);
-}
+//static void generateModelicaCode(fmi1_import_t* fmu, char* file_name, const char* working_directory)
+//{
+//  FILE* file;
+//  const char* model_identifier = fmi1_import_get_model_identifier(fmu);
+//  /* create the Modelica File. */
+//  file = fopen(file_name, "w");
+//  if (!file) {
+//    const char *c_tokens[1]={file_name};
+//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Unable to create the file: %s."), c_tokens, 1);
+//    return;
+//  } else {
+//    const char* fmu_template_str =
+//        #include "FMIModelica.h"
+//        ;
+//    fprintf(file, "package FMUImportNew_%s\n", model_identifier);
+//    fputs(fmu_template_str, file);
+//    /* generate the code for FMUBlock */
+//    fprintf(file, "public\nmodel FMUModel\n");
+//    /* get the model description */
+//    const char* model_description = fmi1_import_get_description(fmu);
+//    if (strcmp(model_description, "") != 0)
+//      fprintf(file, "\t\"%s\"\n", model_description);
+//    /* get the model experiment annotation */
+//    fprintf(file, "\tannotation(experiment(StartTime = %f, StopTime = %f, Tolerance = %f));\n",
+//        fmi1_import_get_default_experiment_start(fmu),
+//        fmi1_import_get_default_experiment_stop(fmu),
+//        fmi1_import_get_default_experiment_tolerance(fmu));
+//    fprintf(file, "\tconstant String FMUPath = \"%s\";\n", working_directory);
+//    fprintf(file, "\tconstant String instanceName = \"%s\";\n", model_identifier);
+//    /* Get the model variables */
+//    fmi1_import_variable_list_t* variables_list = fmi1_import_get_variable_list(fmu);
+//    size_t variables_list_size = fmi1_import_get_variable_list_size(variables_list);
+//    int i = 0;
+//    for (i ; i < variables_list_size ; i++) {
+//      fmi1_import_variable_t* variable = fmi1_import_get_variable(variables_list, i);
+//      /* get the variable variability */
+//      fprintf(file, "\t%s", getModelVariableVariability(variable));
+//      /* get the variable causality */
+//      fprintf(file, "%s", getModelVariableCausality(variable));
+//      /* get the variable type */
+//      fprintf(file, "%s", getModelVariableBaseType(variable));
+//      /* get the variable name and description/comment */
+//      fprintf(file, "%s \"%s\";\n", getModelVariableName(variable), fmi1_import_get_variable_description(variable));
+//      /* check variable        */
+//    }
+//    /*
+//     * From FMIL docs,
+//     * Free a variable list. Note that variable lists are allocated dynamically and must be freed when not needed any longer.
+//     */
+//    free(variables_list);
+//    fprintf(file, "protected\n");
+//    fprintf(file, "\tfmiImportInstance fmu = fmiImportInstance(context, FMUPath);\n");
+//    fprintf(file, "\tfmiImportContext context = fmiImportContext();\n");
+//    fprintf(file, "\t//Integer status = fmiImportInstantiateModel(fmu, instanceName);\n");
+//    fprintf(file, "end FMUModel;\n");
+//    fprintf(file, "end FMUImportNew_%s;", model_identifier);
+//  }
+//  fclose(file);
+//}
+//
+///*
+// * Reads the FMU, extract and generates Modelica code.
+// */
+//char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
+//{
+//  // check the if the fmu file exists
+//  if (!SystemImpl__regularFileExists(file_name)) {
+//    const char* c_tokens[1]={file_name};
+//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("File not Found: %s."), c_tokens, 1);
+//    return strdup("");
+//  }
+//  // JM callbacks
+//  jm_callbacks callbacks;
+//  callbacks.malloc = malloc;
+//  callbacks.calloc = calloc;
+//  callbacks.realloc = realloc;
+//  callbacks.free = free;
+//  callbacks.logger = importlogger;
+//  callbacks.log_level = jm_log_level_debug;
+//  callbacks.context = 0;
+//  // FMI callback functions
+//  fmi1_callback_functions_t callback_functions;
+//  callback_functions.logger = fmilogger;
+//  callback_functions.allocateMemory = calloc;
+//  callback_functions.freeMemory = free;
+//  // FMI context
+//  fmi_import_context_t *context;
+//  context = fmi_import_allocate_context(&callbacks);
+//  // extract the fmu file and read the version
+//  fmi_version_enu_t version;
+//  version = fmi_import_get_fmi_version(context, file_name, working_directory);
+//  if (version != fmi_version_1_enu) {
+//    fmi_import_free_context(context);
+//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 0);
+//    return strdup("");
+//  }
+//  // parse the xml file
+//  fmi1_import_t *fmu;
+//  fmu = fmi1_import_parse_xml(context, working_directory);
+//  if(!fmu) {
+//    fmi_import_free_context(context);
+//    const char* c_tokens[1]={file_name};
+//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the XML file contained in %s."), c_tokens, 1);
+//    return strdup("");
+//  }
+//  // Load the dll
+//  jm_status_enu_t status;
+//  status = fmi1_import_create_dllfmu(fmu, callback_functions, 0);
+//  if (status == jm_status_error) {
+//    fmi1_import_free(fmu);
+//    fmi_import_free_context(context);
+//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
+//    return strdup("");
+//  }
+//  // create a file name for generated Modelica code
+//  char* generated_file_name;
+//  // read the model identifier from FMI.
+//  const char* model_identifier = fmi1_import_get_model_identifier(fmu);
+//  int len = strlen(working_directory) + strlen(model_identifier);
+//  generated_file_name = (char*) malloc(len + 17);
+//  sprintf(generated_file_name, "%s/%sFMUImportNew.mo", working_directory, model_identifier);
+//  // Generate Modelica code and save the file
+//  generateModelicaCode(fmu, generated_file_name, working_directory);
+//  fmi1_import_destroy_dllfmu(fmu);
+//  fmi1_import_free(fmu);
+//  fmi_import_free_context(context);
+//  return generated_file_name;
+//}
 
 /*
- * Reads the FMU, extract and generates Modelica code.
+ * Creates an instance of the FMI Import Context i.e fmi_import_context_t
  */
-char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
+void* FMIImpl__initializeFMIContext(const char* file_name, const char* working_directory)
 {
-  // check the if the fmu file exists
-  if (!SystemImpl__regularFileExists(file_name)) {
-    const char* c_tokens[1]={file_name};
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("File not Found: %s."), c_tokens, 1);
-    return strdup("");
-  }
   // JM callbacks
-  jm_callbacks callbacks;
-  callbacks.malloc = malloc;
-  callbacks.calloc = calloc;
-  callbacks.realloc = realloc;
-  callbacks.free = free;
-  callbacks.logger = importlogger;
-  callbacks.log_level = jm_log_level_debug;
-  callbacks.context = 0;
-  // FMI callback functions
-  fmi1_callback_functions_t callback_functions;
-  callback_functions.logger = fmilogger;
-  callback_functions.allocateMemory = calloc;
-  callback_functions.freeMemory = free;
-  // FMI context
-  fmi_import_context_t *context;
-  context = fmi_import_allocate_context(&callbacks);
+  static int init = 0;
+  static jm_callbacks callbacks;
+  if (!init) {
+    init = 1;
+    callbacks.malloc = malloc;
+    callbacks.calloc = calloc;
+    callbacks.realloc = realloc;
+    callbacks.free = free;
+    callbacks.logger = importlogger;
+    callbacks.log_level = jm_log_level_debug;
+    callbacks.context = 0;
+  }
+  fmi_import_context_t* context = fmi_import_allocate_context(&callbacks);
   // extract the fmu file and read the version
   fmi_version_enu_t version;
   version = fmi_import_get_fmi_version(context, file_name, working_directory);
   if (version != fmi_version_1_enu) {
     fmi_import_free_context(context);
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 0);
-    return strdup("");
+    return 0;
+  }
+  return context;
+}
+
+/*
+ * Destroys the instance of the FMI Import Context i.e fmi_import_context_t
+ */
+void FMIImpl__releaseFMIContext(void* context)
+{
+  fmi_import_free_context((fmi_import_context_t*)context);
+}
+
+/*
+ * Creates an instance of the FMI Import i.e fmi1_import_t
+ * Reads the xml.
+ * Loads the binary (dll/so).
+ */
+void* FMIImpl__initializeFMI(void* context, const char* working_directory)
+{
+  fmi_import_context_t* context1 = (fmi_import_context_t*)context;
+  // FMI callback functions
+  static int init = 0;
+  fmi1_callback_functions_t callback_functions;
+  if (!init) {
+    init = 1;
+    callback_functions.logger = fmilogger;
+    callback_functions.allocateMemory = calloc;
+    callback_functions.freeMemory = free;
   }
   // parse the xml file
-  fmi1_import_t *fmu;
-  fmu = fmi1_import_parse_xml(context, working_directory);
-  if(!fmu) {
-    fmi_import_free_context(context);
-    const char* c_tokens[1]={file_name};
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the XML file contained in %s."), c_tokens, 1);
-    return strdup("");
+  fmi1_import_t* fmi;
+  fmi = fmi1_import_parse_xml(context1, working_directory);
+  if(!fmi) {
+    fmi_import_free_context(context1);
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);
+    return 0;
   }
-  // Load the dll
+  // Load the binary (dll/so)
   jm_status_enu_t status;
-  status = fmi1_import_create_dllfmu(fmu, callback_functions, 0);
+  status = fmi1_import_create_dllfmu(fmi, callback_functions, 0);
   if (status == jm_status_error) {
-    fmi1_import_free(fmu);
-    fmi_import_free_context(context);
+    fmi1_import_free(fmi);
+    fmi_import_free_context(context1);
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
-    return strdup("");
+    return 0;
   }
-  // create a file name for generated Modelica code
-  char* generated_file_name;
-  // read the model identifier from FMI.
-  const char* model_identifier = fmi1_import_get_model_identifier(fmu);
-  int len = strlen(working_directory) + strlen(model_identifier);
-  generated_file_name = (char*) malloc(len + 17);
-  sprintf(generated_file_name, "%s/%sFMUImportNew.mo", working_directory, model_identifier);
-  // Generate Modelica code and save the file
-  generateModelicaCode(fmu, generated_file_name, working_directory);
-  fmi1_import_destroy_dllfmu(fmu);
-  fmi1_import_free(fmu);
-  fmi_import_free_context(context);
-  return generated_file_name;
+  return fmi;
+}
+
+/*
+ * Destroys the instance of the FMI Import i.e fmi1_import_t
+ * Also destroys the loaded binary (dll/so).
+ */
+void FMIImpl__releaseFMI(void* fmi)
+{
+  fmi1_import_t* fmi1 = (fmi1_import_t*)fmi;
+  fmi1_import_destroy_dllfmu(fmi1);
+  fmi1_import_free(fmi1);
+}
+
+/*
+ * Reads the model identifier from FMU's modelDescription.xml file.
+ */
+const char* FMIImpl__getFMIModelIdentifier(void* fmi)
+{
+  return fmi1_import_get_model_identifier((fmi1_import_t*)fmi);
+}
+
+/*
+ * Reads the FMI description from FMU's modelDescription.xml file.
+ */
+const char* FMIImpl__getFMIDescription(void* fmi)
+{
+  return fmi1_import_get_description((fmi1_import_t*)fmi);
+}
+
+/*
+ * Reads the FMI Default Experiment Start value from FMU's modelDescription.xml file.
+ */
+double FMIImpl__getFMIDefaultExperimentStart(void* fmi)
+{
+  return fmi1_import_get_default_experiment_start((fmi1_import_t*)fmi);
+}
+
+/*
+ * Reads the FMI Default Experiment Stop value from FMU's modelDescription.xml file.
+ */
+double FMIImpl__getFMIDefaultExperimentStop(void* fmi)
+{
+  return fmi1_import_get_default_experiment_stop((fmi1_import_t*)fmi);
+}
+
+/*
+ * Reads the FMI Default Experiment Tolerance value from FMU's modelDescription.xml file.
+ */
+double FMIImpl__getFMIDefaultExperimentTolerance(void* fmi)
+{
+  return fmi1_import_get_default_experiment_tolerance((fmi1_import_t*)fmi);
 }
 
 #ifdef __cplusplus

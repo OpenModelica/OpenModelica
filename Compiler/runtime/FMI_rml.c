@@ -36,13 +36,81 @@ void FMI_5finit(void)
 
 }
 
-RML_BEGIN_LABEL(FMI__importFMU)
+/*RML_BEGIN_LABEL(FMI__importFMU)
 {
   const char* filename = RML_STRINGDATA(rmlA0);
   const char* workingDirectory = RML_STRINGDATA(rmlA1);
   char* res = FMIImpl__importFMU(filename, workingDirectory);
   rmlA0 = (void*) mk_scon(res);
   free(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL*/
+
+RML_BEGIN_LABEL(FMI__initializeFMIContext)
+{
+  const char* filename = RML_STRINGDATA(rmlA0);
+  const char* workingDirectory = RML_STRINGDATA(rmlA1);
+  rmlA0 = FMIImpl__initializeFMIContext(filename, workingDirectory);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(FMI__releaseFMIContext)
+{
+  FMIImpl__releaseFMIContext(rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(FMI__initializeFMI)
+{
+  const char* workingDirectory = RML_STRINGDATA(rmlA1);
+  rmlA0 = FMIImpl__initializeFMI(rmlA0, workingDirectory);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(FMI__releaseFMI)
+{
+  FMIImpl__releaseFMI(rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(FMI__getFMIModelIdentifier)
+{
+  const char* res = FMIImpl__getFMIModelIdentifier(rmlA0);
+  rmlA0 = (void*) mk_scon(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(FMI__getFMIDescription)
+{
+  const char* res = FMIImpl__getFMIDescription(rmlA0);
+  rmlA0 = (void*) mk_scon(res);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(FMI__getFMIDefaultExperimentStart)
+{
+  rmlA0 = (void*) mk_rcon(FMIImpl__getFMIDefaultExperimentStart(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(FMI__getFMIDefaultExperimentStop)
+{
+  rmlA0 = (void*) mk_rcon(FMIImpl__getFMIDefaultExperimentStop(rmlA0));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(FMI__getFMIDefaultExperimentTolerance)
+{
+  rmlA0 = (void*) mk_rcon(FMIImpl__getFMIDefaultExperimentTolerance(rmlA0));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
