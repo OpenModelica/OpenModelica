@@ -98,13 +98,13 @@ encapsulated package OpenCL
     parglobal input Integer A[:,:];
     parglobal input Integer B[:,:];
     parglobal output Integer C[:,:];
-	external "builtin";
+  external "builtin";
   end matrixMult;
   
   function matrixTranspose
     parglobal input Integer A[:,:];
     parglobal output Integer B[:,:];
-	external "builtin";
+  external "builtin";
   end matrixTranspose;
   
 end OpenCL;
