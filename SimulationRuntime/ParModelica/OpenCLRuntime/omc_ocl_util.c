@@ -55,6 +55,8 @@ cl_command_queue device_comm_queue = NULL;
 cl_context  device_context = NULL;
 cl_device_id ocl_device = NULL;
 
+
+
 modelica_integer MAX_THREADS_WORKGROUP = 0;
 modelica_integer WORK_DIM = 0;
 size_t GLOBAL_SIZE[3]; 
@@ -157,6 +159,7 @@ void ocl_initialize(){
             ocl_get_device();
         }
         ocl_create_context_and_comm_queue();
+        ocl_build_p_from_src();
     }
 }
 
@@ -185,23 +188,21 @@ void ocl_create_context_and_comm_queue(){
     free(OCL_Devices);    
 }
 
-cl_program ocl_build_p_from_src(const char* source, int isfile){
+void ocl_build_p_from_src(){
     
     // Create OpenCL program with source code
     
-    if (!device_comm_queue)
-        ocl_initialize();
-    
     const char* program_source;
     
-    if(isfile)
-        program_source = load_source_file(source);
-    else
-        program_source = source;
+
+    program_source = load_source_file(omc_ocl_kernels_source);
+
     
     
     printf("--- Creating OpenCL program");
-    cl_program ocl_program = clCreateProgramWithSource(device_context, 1,
+    
+    // omc_ocl_program declared in omc_ocl_util.h
+    omc_ocl_program = clCreateProgramWithSource(device_context, 1,
         (const char**)&program_source, NULL, NULL);
     printf("\t\t\t - OK.\n");    
 
@@ -232,17 +233,17 @@ cl_program ocl_build_p_from_src(const char* source, int isfile){
     
     // Build the OpenCL program.
     cl_int err = 0;
-    err = clBuildProgram(ocl_program, 0, NULL, options, NULL, NULL);
+    err = clBuildProgram(omc_ocl_program, 0, NULL, options, NULL, NULL);
     ocl_error_check(OCL_BUILD_PROGRAM, err);
     
     // Get build log size.
     size_t size;
-    clGetProgramBuildInfo(ocl_program, ocl_device, CL_PROGRAM_BUILD_LOG,        
+    clGetProgramBuildInfo(omc_ocl_program, ocl_device, CL_PROGRAM_BUILD_LOG,        
                               0, NULL, &size);
     
     // Get the build log.
     char * log = (char*)malloc(size);
-    clGetProgramBuildInfo(ocl_program,ocl_device,CL_PROGRAM_BUILD_LOG,size,log, NULL);
+    clGetProgramBuildInfo(omc_ocl_program,ocl_device,CL_PROGRAM_BUILD_LOG,size,log, NULL);
     printf("CL_PROGRAM_BUILD_LOG:  \n%s\n", log);
     free(log);
     
@@ -250,13 +251,6 @@ cl_program ocl_build_p_from_src(const char* source, int isfile){
         printf("Build failed: Errors detected in compilation of OpenCL code:\n");
         exit(1);
     }
-    
-    
-    
-    return ocl_program;
-
-
-
     
 }
 

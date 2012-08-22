@@ -819,6 +819,7 @@ algorithm
     case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
       equation
         true = Config.simulationCg();
+        false = Config.acceptParModelicaGrammar();
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
@@ -827,6 +828,23 @@ algorithm
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();
+     
+     // If accepting parModelica create a slightly different default settings.
+     // Temporary solution for now since Intel OpenCL dll calls hang.
+     // So use simple Models and call the needed functions.  
+     case (dlow,classname,ap,dae) /* classname ass1 ass2 blocks */
+      equation
+        true = Config.simulationCg();
+        true = Config.acceptParModelicaGrammar();
+        Print.clearErrorBuf();
+        Print.clearBuf();
+        cname_str = Absyn.pathString(classname);
+        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*",false,"");
+        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+        Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
+      then
+        ();   
+     
     /* If not generating simulation code: Succeed so no error messages are printed */
     else
       equation

@@ -67,7 +67,9 @@ size_t device_array_nr_of_elements(device_array *a);
 // Just to stick to  OpenModelica's function naming pattern
 #define oclSetNumThreadsOnlyGlobal(...) ocl_set_num_threads( __VA_ARGS__ ) 
 #define oclSetNumThreadsGlobalLocal(...) ocl_set_num_threads( __VA_ARGS__ ) 
-#define oclSetNumThreadsGlobalLocalArrays(...) ocl_set_num_threads( __VA_ARGS__ ) 
+#define oclSetNumThreadsGlobalLocal1D(...) ocl_set_num_threads( __VA_ARGS__ ) 
+#define oclSetNumThreadsGlobalLocal2D(...) ocl_set_num_threads( __VA_ARGS__ ) 
+#define oclSetNumThreadsGlobalLocal3D(...) ocl_set_num_threads( __VA_ARGS__ ) 
 
 
 // sets the number of threads for subsequent parallel operations

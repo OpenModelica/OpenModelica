@@ -112,7 +112,7 @@ modelica_integer  oclGetGlobalId(modelica_integer dim) {
 }
 
 
-
+#define oclGlobalBarrier() barrier(CLK_GLOBAL_MEM_FENCE)
 
 
 
@@ -198,6 +198,8 @@ void copy_real_array_data(real_array *source, real_array *dest)
 #define integer_array_element_addr_c99_1(L, d, i) (((L)->data) + i - 1)
 #define integer_array_element_addr_c99_2(L, d, i, j) ((((L)->data)) + (i - 1)*((L)->dim_size[1]) + (j - 1))
 
+#define real_array_element_addr_c99_1(L, d, i) (((L)->data) + i - 1)
+#define real_array_element_addr_c99_2(L, d, i, j) ((((L)->data)) + (i - 1)*((L)->dim_size[1]) + (j - 1))
 
 
 

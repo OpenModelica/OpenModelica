@@ -2227,12 +2227,6 @@ template simulationFunctionsFile(String filePrefix, list<Function> functions, li
   extern "C" {
   #endif
   
-  <%if acceptParModelicaGrammar() then 
-  << /* the OpenCL program. Made global to avoid repeated builds */
-  cl_program ocl_kernels_program = ocl_build_p_from_src("<%filePrefix%>_kernels.cl", true);
-  >>
-  %>
-  
   
   <%literals |> literal hasindex i0 fromindex 0 => literalExpConst(literal,i0) ; separator="\n";empty%>
   <%functionBodies(functions)%>
@@ -2308,7 +2302,7 @@ template simulationFunctionsHeaderFile(String filePrefix, list<Function> functio
   <<
   #ifndef <%stringReplace(filePrefix,".","_")%>__H
   #define <%stringReplace(filePrefix,".","_")%>__H
-  <%commonHeader()%>
+  <%commonHeader(filePrefix)%>
   #include "simulation_runtime.h"
   #ifdef __cplusplus
   extern "C" {
@@ -2501,7 +2495,7 @@ template initVal(Exp initialValue)
   else error(sourceInfo(), 'initial value of unknown type: <%printExpStr(initialValue)%>')
 end initVal;
 
-template commonHeader()
+template commonHeader(String filePrefix)
 ::=
   <<
   <% if acceptMetaModelicaGrammar() then "#define __OPENMODELICA__METAMODELICA"%>
@@ -2511,7 +2505,16 @@ template commonHeader()
   #include <stdio.h>
   #include <stdlib.h>
   #include <errno.h>
-  <%if acceptParModelicaGrammar() then '#include <omc_ocl_interface.h>'%>
+  <%if acceptParModelicaGrammar() then 
+  <<
+  #include <omc_ocl_interface.h>
+  /* the OpenCL Kernels file name needed in libOMOCLRuntime.a */
+  const char* omc_ocl_kernels_source = "<%filePrefix%>_kernels.cl";
+  /* the OpenCL program. Made global to avoid repeated builds */
+  extern cl_program omc_ocl_program;
+  
+  >>
+  %>
   
   >>
 end commonHeader;
@@ -2534,11 +2537,6 @@ template functionsFile(String filePrefix,
   #define MODELICA_ASSERT(info,msg) { printInfo(stderr,info); fprintf(stderr,"Modelica Assert: %s!\n", msg); fflush(NULL); }
   #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(NULL); }  
 
-  <%if acceptParModelicaGrammar() then 
-  << /* the OpenCL program. Made global to avoid repeated builds */
-  cl_program ocl_kernels_program = ocl_build_p_from_src("<%filePrefix%>_kernels.cl", true);
-  >>
-  %>
   
   <%match mainFunction case SOME(fn) then functionBody(fn,true)%>
   <%functionBodies(functions)%>
@@ -2557,7 +2555,7 @@ template functionsHeaderFile(String filePrefix,
   <<
   #ifndef <%stringReplace(filePrefix,".","_")%>__H
   #define <%stringReplace(filePrefix,".","_")%>__H
-  <%commonHeader()%>
+  <%commonHeader(filePrefix)%>
   #ifdef __cplusplus
   extern "C" {
   #endif
@@ -3113,7 +3111,7 @@ case tupleVar as ((cref as CREF_IDENT(identType = T_ARRAY(__)),_)) then
   case identType as T_ARRAY(ty = T_INTEGER(__)) then
     '__global modelica_integer* data_<%varName%>,<%\n%>__global modelica_integer* info_<%varName%>'
   case identType as T_ARRAY(ty = T_REAL(__)) then
-    '__global modelica_integer* data_<%varName%>,<%\n%>__global modelica_integer* info_<%varName%>'
+    '__global modelica_real* data_<%varName%>,<%\n%>__global modelica_integer* info_<%varName%>'
     
   else 'Tempalte error in parFunArgDefinitionFromLooptupleVar'
     
@@ -3682,7 +3680,7 @@ case KERNEL_FUNCTION(__) then
   
     /* functionBodyKernelFunctionInterface : <%fname%> Kernel creation and execution */
     int <%kernel_arg_number%> = 0;
-    <%cl_kernelVar%> = ocl_create_kernel(ocl_kernels_program, "_<%fname%>");
+    <%cl_kernelVar%> = ocl_create_kernel(omc_ocl_program, "_<%fname%>");
     <%kernelArgSets%>
     ocl_execute_kernel(<%cl_kernelVar%>);
     clReleaseKernel(<%cl_kernelVar%>);
@@ -5199,7 +5197,7 @@ case RANGE(__) then
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
-  <%cl_kernelVar%> = ocl_create_kernel(ocl_kernels_program, "<%parforKernelName%>");
+  <%cl_kernelVar%> = ocl_create_kernel(omc_ocl_program, "<%parforKernelName%>");
   int <%kerArgNr%> = 0;
   
   ocl_set_kernel_arg(<%cl_kernelVar%>, <%kerArgNr%>, <%startVar%>); ++<%kerArgNr%>; <%\n%>

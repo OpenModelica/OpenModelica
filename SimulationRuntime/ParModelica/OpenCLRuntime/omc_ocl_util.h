@@ -60,6 +60,15 @@
 #include <sys/stat.h>
 
 
+// The compiled OpenCL program containing kerenls generated for a simulation
+cl_program omc_ocl_program = NULL;
+
+// The ParModelica kernels file containing kerenls generated for a simulation
+// This should be initialzed in the generated code.
+extern const char* omc_ocl_kernels_source;
+
+
+
 extern m_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...);
 
 
@@ -110,8 +119,9 @@ void ocl_set_num_threads(modelica_integer global_threads_in);
 //returns the current number of threads.
 modelica_integer ocl_get_num_threads();
 
-//Builds a program from a source file containing Kernels or from a text buffer if isfile = 0
-cl_program ocl_build_p_from_src(const char* source, int isfile);
+//Builds a program from a source file containing Kernels.
+// Puts the program in the global var omc_ocl_program
+void ocl_build_p_from_src();
 
 void ocl_clean_up();
 

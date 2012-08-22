@@ -28,6 +28,7 @@ transfer: libOMOCLRuntime.a
 	$(COPY) omc_ocl_memory_ops.h $(OPENMODELICA_INC)
 	$(COPY) libOMOCLRuntime.a $(OPENMODELICA_LIB)
 	$(COPY) $(OPENLC_LIB) $(OPENMODELICA_LIB)
+	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_LIB)
 	mkdir -p $(OPENMODELICA_INC)/CL/
 	$(COPY) ./CL/* $(OPENMODELICA_INC)/CL/
 	$(COPY) OCLRuntimeUtil_new.cl $(OPENMODELICAHOME)/include/omc/

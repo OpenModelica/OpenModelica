@@ -3474,6 +3474,8 @@ protected function propagateParallelism
   output Parallelism p;
 algorithm 
   p := matchcontinue(p1,p2)
+    case(p1,NON_PARALLEL()) 
+      then p1;
     case(p1,p2) 
       equation
         true = parallelismEqual(p1,p2);
