@@ -635,6 +635,9 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   /* check if reftime is larger or equal time */
   res = mk_nil();
   if (time.data[time.n] > timeref.data[timeref.n]) {
+#ifdef DEBUGOUTPUT
+    fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n],timeref.data[timeref.n]);
+#endif
     res = mk_cons(mk_scon("Reference file has not enough time points!\n"),res);
   }
   var1=NULL;
