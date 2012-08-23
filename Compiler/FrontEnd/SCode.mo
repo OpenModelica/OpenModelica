@@ -3048,6 +3048,10 @@ algorithm
       then name;
     case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
+    case (CLASS(name=name,restriction=R_FUNCTION(FR_PARALLEL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=NONE(),lang=SOME("builtin"))))),_,_)
+      then name;
+    case (CLASS(restriction=R_FUNCTION(FR_PARALLEL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
+      then name;
     case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),inVars,{outVar1})
       equation
         true = listMember(name,knownExternalCFunctions);

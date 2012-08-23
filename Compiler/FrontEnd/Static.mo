@@ -7745,11 +7745,14 @@ algorithm
    vect_dims,
    slots) := elabTypes(inCache, inEnv, args, nargs, typelist, true/* Check types*/, impl,st,pre,info)
    "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
-  //check the env to see if a call to a parallel or kernle function is a valid one.
-  // true := isValidWRTParallelScope(fn,funcParal,inEnv,info);
+
   (fn_1,functype) := deoverloadFuncname(fn, functype);
   tuple_ := isTuple(restype);
   (isBuiltin,builtin,fn_1) := isBuiltinFunc(fn_1,functype);
+  
+  //check the env to see if a call to a parallel or kernle function is a valid one.
+  true := isValidWRTParallelScope(fn,builtin,funcParal,inEnv,info);
+  
   const := List.fold(constlist, Types.constAnd, DAE.C_CONST());
   const := Util.if_((Flags.isSet(Flags.RML) and not builtin) or (not isPure), DAE.C_VAR(), const) "in RML no function needs to be ceval'ed; this speeds up compilation significantly when bootstrapping";
   (cache,const) := determineConstSpecialFunc(cache,inEnv,const,fn_1);
@@ -7782,34 +7785,63 @@ end elabCallArgs3;
 
 protected function isValidWRTParallelScope
   input Absyn.Path inFn;
+  input Boolean isBuiltin;
   input DAE.FunctionParallelism inFuncParallelism;
   input Env.Env inEnv;
   input Absyn.Info inInfo;
   output Boolean isValid;
 algorithm
-  isValid := matchcontinue(inFn,inFuncParallelism, inEnv, inInfo)
+  isValid := matchcontinue(inFn,isBuiltin,inFuncParallelism,inEnv,inInfo)
   local
     String scopeName, errorString;
     Env.ScopeType scopeType;
     list<Env.Frame> restFrames;
     
-    // This two are common cases so keep them at the top.
-    // normal(non parallel) function call in a normal scope (function and class scopes) is OK.
-    case(_,DAE.FP_NON_PARALLEL(), Env.FRAME(optType = SOME(Env.CLASS_SCOPE()))::_, _) 
-      then true;
-    case(_,DAE.FP_NON_PARALLEL(), Env.FRAME(optType = SOME(Env.FUNCTION_SCOPE()))::_, _) 
+    
+    // non-parallel builtin function call is OK everywhere.
+    case(_,true,DAE.FP_NON_PARALLEL(), _, _) 
       then true;
     
+    // If we have a function call in an implicit scope type, then go 
+    // up recursively to find the actuall scope and then check.
+    case(_,_,_, Env.FRAME(optName = SOME(scopeName))::restFrames, _) 
+      equation 
+        true = listMember(scopeName, Env.implicitScopeNames);
+      then isValidWRTParallelScope(inFn,isBuiltin,inFuncParallelism,restFrames,inInfo);
+    
+    // This two are common cases so keep them at the top.
+    // normal(non parallel) function call in a normal scope (function and class scopes) is OK.
+    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(optType = SOME(Env.CLASS_SCOPE()))::_, _) 
+      then true;
+    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(optType = SOME(Env.FUNCTION_SCOPE()))::_, _) 
+      then true;
+       
+    // Normal function call in a prallel scope is error, if it is not a built-in function.  
+    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+      equation
+        
+        errorString = "\n" +& 
+             "- Non-Parallel function '" +& Absyn.pathString(inFn) +& 
+             "' can not be called from a parallel scope." +& "\n" +&
+             "- Here called from :" +& scopeName +& "\n" +&
+             "- Please declare the function as parallel function." 
+             ;  
+        Error.addSourceMessage(Error.PARMODELICA_ERROR, 
+          {errorString}, inInfo);
+      then false;
+    
+    
     //parallel function call in a parallel scope (kernel function, parallel function, or parfor) is OK.
-    case(_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+    // Except when it is calling itself, recurssion
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
         // make sure the function is not calling itself
         // recurrsion is not allowed.
         false = stringEqual(scopeName,Absyn.pathString(inFn));
       then true;
         
-    // If the above case failed this will print the error message
-    case(_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+    // If the above case failed (parallel function recurssion) this will print the error message
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
         // make sure the function is not calling itself
         // recurrsion is not allowed.
@@ -7825,15 +7857,9 @@ algorithm
           {errorString}, inInfo);
       then false;
       
-    // If we have a parallel function call in an implicit scope type, then go 
-    // up recursively to find the actuall scope.
-    case(_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::restFrames, _) 
-      equation 
-        true = listMember(scopeName, Env.implicitScopeNames);
-      then isValidWRTParallelScope(inFn,inFuncParallelism,restFrames,inInfo);
       
     //parallel function call in non parallel scope types is error.
-    case(_,DAE.FP_PARALLEL_FUNCTION(),Env.FRAME(optName = SOME(scopeName))::_,_) 
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(),Env.FRAME(optName = SOME(scopeName))::_,_) 
       equation
         errorString = "\n" +& 
              "- Parallel function '" +& Absyn.pathString(inFn) +& 
@@ -7845,9 +7871,24 @@ algorithm
         Error.addSourceMessage(Error.PARMODELICA_ERROR, 
           {errorString}, inInfo);
       then false;
+        
+    // Kernel functions should not call themselves.
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::_, _) 
+      equation
+        // make sure the function is not calling itself
+        // recurrsion is not allowed.
+        true = stringEqual(scopeName,Absyn.pathString(inFn));
+        errorString = "\n" +& 
+             "- Kernel function '" +& Absyn.pathString(inFn) +& 
+             "' can not call itself. " +& "\n" +&
+             "- Recurrsion is not allowed for Kernel functions. "
+             ;  
+        Error.addSourceMessage(Error.PARMODELICA_ERROR, 
+          {errorString}, inInfo);
+      then false;
      
     //kernel function call in a parallel scope (kernel function, parallel function, or parfor) is Error.
-    case(_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
         errorString = "\n" +& 
              "- Kernel function '" +& Absyn.pathString(inFn) +& 
@@ -7860,14 +7901,16 @@ algorithm
           {errorString}, inInfo);
       then false;
         
-    // If we have a kernel function call in an implicit scope type, then go 
-    // up recursively to find the actuall scope.
-    case(_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::restFrames, _) 
-      equation 
-        true = listMember(scopeName, Env.implicitScopeNames);
-      then isValidWRTParallelScope(inFn,inFuncParallelism,restFrames,inInfo);
-     
-    case(_,_,_,_) then true;
+    // Kernel function call in a non-parallel scope is OK.
+    // Except when it is calling itself, recurssion
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::_, _) 
+      equation
+        // make sure the function is not calling itself
+        // recurrsion is not allowed.
+        false = stringEqual(scopeName,Absyn.pathString(inFn));
+      then true; 
+
+    case(_,_,_,_,_) then true;
         /*
     //Normal (non parallel) function call in a normal function scope is OK.
     case(DAE.FP_NON_PARALLEL(), Env.FRAME(optType = Env.FUNCTION_SCOPE())) then();

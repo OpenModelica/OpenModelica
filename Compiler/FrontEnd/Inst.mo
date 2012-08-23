@@ -17170,9 +17170,15 @@ algorithm
         purity = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
       then (DAE.FUNCTION_ATTRIBUTES(inlineType,purity,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_NON_PARALLEL()));
     
-    //parallel functions: never builtin and never inlined.
-    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),_)
-      then DAE.FUNCTION_ATTRIBUTES(DAE.NO_INLINE(),true,DAE.FUNCTION_NOT_BUILTIN(),DAE.FP_PARALLEL_FUNCTION());
+    //parallel functions: There are some builtin functions.    
+    case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_PARALLEL_FUNCTION())),vl)
+      equation
+        inVars = List.filter(vl,Types.isInputVar);
+        outVars = List.filter(vl,Types.isOutputVar);
+        name = SCode.isBuiltinFunction(cl,List.map(inVars,Types.varName),List.map(outVars,Types.varName));
+        inlineType = isInlineFunc2(cl);
+        purity = not SCode.hasBooleanNamedAnnotationInClass(cl,"__OpenModelica_Impure");
+      then (DAE.FUNCTION_ATTRIBUTES(inlineType,purity,DAE.FUNCTION_BUILTIN(SOME(name)),DAE.FP_PARALLEL_FUNCTION()));
     
     //kernel functions: never builtin and never inlined.
     case (SCode.CLASS(restriction=SCode.R_FUNCTION(SCode.FR_KERNEL_FUNCTION())),_)
