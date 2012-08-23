@@ -1838,7 +1838,7 @@ algorithm
         digraph = getDeterminantDigraphSelect(jac,digraph,select);
       //print("\n");
         select = unsetSelectArray(dstates,select);
-        determinants = getDeterminants(states,jac,unassignedEqnsSize-1,size,arrayList(digraph),select,{},{});
+        determinants = getDeterminants1(states,jac,unassignedEqnsSize-1,size,arrayList(digraph),select,{},{});
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((determinants,dumpDeterminants,"",""))); 
         // generate state set and condition name 
         crstates = List.map(states,Util.tuple21);
