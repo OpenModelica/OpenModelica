@@ -8781,7 +8781,9 @@ algorithm
   (BackendDAEOptimize.generateSymbolicLinearizationPast,"generateSymbolicLinearization",false),
   (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
   (BackendDAEOptimize.removeUnusedFunctions,"removeUnusedFunctions",false),
-  (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false)};
+  (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false),
+  (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false)
+  };
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);
   pastOptModules := selectOptModules(strPastOptModules,allPastOptModules,{});
