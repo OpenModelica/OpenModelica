@@ -1214,6 +1214,22 @@ algorithm
   newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
 end addForLoopScope;
 
+protected function addParForLoopScope
+"Adds a scope to the environment used in for loops.
+ adrpo NOTE: 
+   The variability of the iterator SHOULD 
+   be determined by the range constantness!"
+  input Env.Env env;
+  input Ident iterName;
+  input DAE.Type iterType;
+  input SCode.Variability iterVariability;
+  input Option<DAE.Const> constOfForIteratorRange;
+  output Env.Env newEnv;
+algorithm
+  newEnv := Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.parForScopeName), NONE());
+  newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange);
+end addParForLoopScope;
+
 public function instEqEquation "function: instEqEquation
   author: LS, ELN 
   Equations follow the same typing rules as equality expressions.
@@ -4861,7 +4877,7 @@ algorithm
         t = getIteratorType(t,i,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache,env, ih, e_1, pre);
-        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
+        env_1 = addParForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
         (cache,sl_1) = instStatements(cache, env_1, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
         
         // this is where we check the parfor loop for data parallel specific
@@ -4894,7 +4910,7 @@ algorithm
         t = getIteratorType(t,i,info);
         (cache, e_1) = Ceval.cevalRangeIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-        env_1 = addForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
+        env_1 = addParForLoopScope(env, i, t, SCode.VAR(), SOME(cnst));
         (cache,sl_1) = instStatements(cache,env_1,ih,pre,ci_state,sl,source,initial_,impl,unrollForLoops);
         source = DAEUtil.addElementSourceFileInfo(source,info);
         stmt = Algorithm.makeFor(i, e_2, prop, sl_1, source);

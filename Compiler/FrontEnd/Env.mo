@@ -218,9 +218,11 @@ end emptyCache;
 
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
 public constant String forIterScopeName="$foriter loop scope$" "a unique scope used in for iterators";
+public constant String parForScopeName="$pafor loop scope$" "a unique scope used in parfor loops";
+public constant String parForIterScopeName="$parforiter loop scope$" "a unique scope used in parfor iterators";
 public constant String matchScopeName="$match scope$" "a unique scope used by match expressions";
 public constant String caseScopeName="$case scope$" "a unique scope used by match expressions; to be removed when local decls are deprecated";
-public constant list<String> implicitScopeNames={forScopeName,forIterScopeName,matchScopeName,caseScopeName};
+public constant list<String> implicitScopeNames={forScopeName,forIterScopeName,parForScopeName,parForIterScopeName,matchScopeName,caseScopeName};
 
 // functions for dealing with the environment
 
@@ -295,7 +297,7 @@ algorithm
   end matchcontinue;
 end inForLoopScope;
 
-public function inForIterLoopScope "returns true if environment has a frame that is a for iterator 'loop'"
+public function inForOrParforIterLoopScope "returns true if environment has a frame that is a for iterator 'loop'"
   input Env env;
   output Boolean res;
 algorithm
@@ -306,10 +308,15 @@ algorithm
       equation
         true = stringEq(name, forIterScopeName);
       then true;
+        
+    case(FRAME(optName = SOME(name))::_) 
+      equation
+        true = stringEq(name, parForIterScopeName);
+      then true;
     
     case(_) then false;
   end matchcontinue;
-end inForIterLoopScope;
+end inForOrParforIterLoopScope;
 
 public function stripForLoopScope "strips for loop scopes"
   input Env inEnv;

@@ -7804,9 +7804,11 @@ algorithm
     
     // If we have a function call in an implicit scope type, then go 
     // up recursively to find the actuall scope and then check.
+    // But parfor scope is a parallel type so is handled differently.
     case(_,_,_, Env.FRAME(optName = SOME(scopeName))::restFrames, _) 
       equation 
         true = listMember(scopeName, Env.implicitScopeNames);
+        false = stringEq(scopeName, Env.parForScopeName);
       then isValidWRTParallelScope(inFn,isBuiltin,inFuncParallelism,restFrames,inInfo);
     
     // This two are common cases so keep them at the top.
@@ -7831,7 +7833,7 @@ algorithm
       then false;
     
     
-    //parallel function call in a parallel scope (kernel function, parallel function, or parfor) is OK.
+    // parallel function call in a parallel scope (kernel function, parallel function) is OK.
     // Except when it is calling itself, recurssion
     case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
@@ -7857,6 +7859,11 @@ algorithm
           {errorString}, inInfo);
       then false;
       
+    // parallel function call in a parfor scope is OK.
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::_, _) 
+      equation
+        true = stringEqual(scopeName, Env.parForScopeName);
+      then true;
       
     //parallel function call in non parallel scope types is error.
     case(_,_,DAE.FP_PARALLEL_FUNCTION(),Env.FRAME(optName = SOME(scopeName))::_,_) 
@@ -7887,12 +7894,27 @@ algorithm
           {errorString}, inInfo);
       then false;
      
-    //kernel function call in a parallel scope (kernel function, parallel function, or parfor) is Error.
+    //kernel function call in a parallel scope (kernel function, parallel function) is Error.
     case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
         errorString = "\n" +& 
              "- Kernel function '" +& Absyn.pathString(inFn) +& 
              "' can not be called from a parallel scope '" +& scopeName +& "'.\n" +&
+             "- Kernel functions CAN NOT be called from: 'kernel' functions," +&
+             " 'parallel' functions or from a body of a" +& 
+             " 'parfor' loop"
+             ;  
+        Error.addSourceMessage(Error.PARMODELICA_ERROR, 
+          {errorString}, inInfo);
+      then false;
+        
+    //kernel function call in a parfor loop is Error too (similar to above). just different error message.
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::_, _) 
+      equation
+        true = stringEqual(scopeName, Env.parForScopeName);
+        errorString = "\n" +& 
+             "- Kernel function '" +& Absyn.pathString(inFn) +& 
+             "' can not be called from inside parallel for (parfor) loop body." +& "'.\n" +&
              "- Kernel functions CAN NOT be called from: 'kernel' functions," +&
              " 'parallel' functions or from a body of a" +& 
              " 'parfor' loop"
@@ -11643,7 +11665,7 @@ algorithm
     // treated in this way.
     case (_, _, _, _, _, _, _, _)
       equation
-        true = Env.inForIterLoopScope(inEnv);
+        true = Env.inForOrParforIterLoopScope(inEnv);
         true = Expression.dimensionKnown(inDimension);
       then
         (inCache, inSubscript);
@@ -12021,7 +12043,7 @@ algorithm
     case (cache,env,e1,e2,e3,DAE.C_PARAM(),impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3));
     case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st,_)
       equation
-        msg = Util.if_(Env.inFunctionScope(env) or Env.inForIterLoopScope(env), Ceval.NO_MSG(), Ceval.MSG(inInfo));
+        msg = Util.if_(Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env), Ceval.NO_MSG(), Ceval.MSG(inInfo));
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg);
         res = Util.if_(cond, e2, e3);
       then
@@ -12030,7 +12052,7 @@ algorithm
     // the stupid Lookup which instantiates packages without modifiers.
     case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st,_)
       equation
-        true = Env.inFunctionScope(env) or Env.inForIterLoopScope(env);
+        true = Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env);
       then
         (cache, DAE.IFEXP(e1, e2, e3));
     
