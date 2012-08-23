@@ -49,6 +49,7 @@ protected import ComponentReference;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
+protected import Error;
 protected import Print;
 protected import Util;
 protected import Expression;
@@ -1581,13 +1582,15 @@ algorithm
       DAE.Statement stmt;
       DAE.Type ty;
       Algorithm.Else else_;
+      DAE.ElementSource source;
     
-    case (DAE.STMT_ASSIGN(exp1 = e2,exp = e),i)
+    case (DAE.STMT_ASSIGN(exp1 = e2,exp = e,source = source),i)
       equation
         indent(i);
         ExpressionDump.printExp(e2);
         Print.printBuf(" := ");
         ExpressionDump.printExp(e);
+        Print.printBuf(Util.if_(Config.typeinfo(), " /* " +& Error.infoStr(DAEUtil.getElementSourceFileInfo(source)) +& " */", ""));
         Print.printBuf(";\n");
       then
         ();
