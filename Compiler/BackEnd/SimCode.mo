@@ -6117,8 +6117,8 @@ algorithm
       equation
         solvedVars = List.map(vars,BackendVariable.varCref);
         algOutVars = CheckModel.algorithmOutputs(alg);
-        // The variables solved for and the output variables of the algorithm must be the same.
-        true = List.setEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
+        // The variables solved for musst all be part of the output variables of the algorithm.
+        List.map2AllValue(solvedVars,List.isMemberOnTrue,true,algOutVars,ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg,NONE());
       then 
         ({SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1);
@@ -6128,8 +6128,8 @@ algorithm
       equation
         solvedVars = List.map(vars,BackendVariable.varCref);
         algOutVars = CheckModel.algorithmOutputs(alg);
-        // The variables solved for and the output variables of the algorithm must be the same.
-        true = List.setEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
+        // The variables solved for musst all be part of the output variables of the algorithm.
+        List.map2AllValue(solvedVars,List.isMemberOnTrue,true,algOutVars,ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg,NONE());
         algStatements = BackendDAEUtil.removediscreteAssingments(algStatements,BackendDAEUtil.listVar(vars));
       then 
@@ -6140,8 +6140,8 @@ algorithm
       equation
         solvedVars = List.map(vars,BackendVariable.varCref);
         algOutVars = CheckModel.algorithmOutputs(alg);
-        // The variables solved for and the output variables of the algorithm must be the same.
-        false = List.setEqualOnTrue(solvedVars,algOutVars,ComponentReference.crefEqualNoStringCompare);
+        // The variables solved for musst all be part of the output variables of the algorithm.
+        failure(List.map2AllValue(solvedVars,List.isMemberOnTrue,true,algOutVars,ComponentReference.crefEqualNoStringCompare));
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
