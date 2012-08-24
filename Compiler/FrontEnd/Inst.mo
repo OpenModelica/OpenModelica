@@ -5619,27 +5619,17 @@ algorithm
       String id;
       ElementList all_el, accum_el;
       tuple<SCode.Element, DAE.Mod> e;
+      Absyn.ComponentRef cref;
 
-    case ((exp as Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = id)), (all_el, accum_el)))
+    case ((exp as Absyn.CREF(componentRef = cref), (all_el, accum_el)))
       equation
+        id = Absyn.crefFirstIdent(cref);
         // Try and delete the element with the given name from the list of all
         // elements. If this succeeds, add it to the list of elements. This
         // ensures that we don't add any dependency more than once.
         (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
       then
         ((exp, (all_el, e :: accum_el)));
-
-    /* this doesn't work yet as we don't know the structure of a component reference! 
-       For example (false positive): 
-       Error: Cyclically dependent constants or parameters found in scope Modelica.Electrical.Machines.Examples.TransformerTestbench: {transformer,transformerData}
-    case ((exp as Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = id)), (all_el, accum_el)))
-      equation
-        // Try and delete the element with the given name from the list of all
-        // elements. If this succeeds, add it to the list of elements. This
-        // ensures that we don't add any dependency more than once.
-        (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
-      then
-        ((exp, (all_el, e :: accum_el)));*/
 
     else then inTuple;
   end matchcontinue;
@@ -5735,12 +5725,14 @@ algorithm
       list<list<String>> names;
       list<String> cycles_strs;
       String cycles_str, scope_str;
+      list<tuple<Element, list<Element>>> graph;
 
     case ({}, _) then ();
 
     case (_, _)
       equation
-        {} = Graph.findCycles(inCycles, isElementEqual);
+        graph = Graph.filterGraph(inCycles, isElementParamOrConst);
+        {} = Graph.findCycles(graph, isElementEqual);
       then
         ();
     
@@ -5757,6 +5749,22 @@ algorithm
         fail();
   end matchcontinue;
 end checkCyclicalComponents;
+
+protected function isElementParamOrConst
+  input tuple<SCode.Element, DAE.Mod> inElement;
+  output Boolean outIsParamOrConst;
+algorithm
+  outIsParamOrConst := match(inElement)
+    local
+      SCode.Element elem;
+      SCode.Variability var;
+
+    case ((SCode.COMPONENT(attributes = SCode.ATTR(variability = var)), _))
+      then SCode.isParameterOrConst(var);
+
+    else false;
+  end match;
+end isElementParamOrConst;
 
 protected function elementName
   "Returns the name of the given element."

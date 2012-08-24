@@ -6462,7 +6462,8 @@ algorithm
 end filter1rOnTrue_tail;
 
 public function removeOnTrue
-  "Go through a list and when the given function is true, remove that element."
+  "Goes through a list and removes all elements which are equal to the given
+   value, using the given comparison function."
   input ValueType inValue;
   input CompFunc inCompFunc;
   input list<ElementType> inList;
@@ -7362,11 +7363,13 @@ public function accumulateMap
     output list<ElementOutType> outList;
   end MapFunc;
 algorithm
-  outList := accumulateMap_impl(inList, inMapFunc, {});
+  outList := accumulateMapAccum(inList, inMapFunc, {});
 end accumulateMap;
 
-protected function accumulateMap_impl
-  "The actual implementation of accumulateMap."
+public function accumulateMapAccum
+  "Takes a list, a function and a result list. The function is applied to each
+   element of the list, and the function is itself responsible for adding
+   elements to the result list."
   input list<ElementInType> inList;
   input MapFunc inMapFunc;
   input list<ElementOutType> inAccumList;
@@ -7388,10 +7391,43 @@ algorithm
       equation
         accum = inMapFunc(e, accum);
       then
-        accumulateMap_impl(rest_e, inMapFunc, accum);
+        accumulateMapAccum(rest_e, inMapFunc, accum);
 
     case ({}, _, _) then inAccumList;
   end match;
-end accumulateMap_impl;
+end accumulateMapAccum;
+
+public function accumulateMapAccum1
+  "Takes a list, a function, an extra argument, and a result list. The function
+   is applied to each element of the list, and the function is itself responsible
+   for adding elements to the result list."
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+ 
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg;
+    input list<ElementOutType> inAccumList;
+    output list<ElementOutType> outList;
+  end MapFunc;
+algorithm
+  outList := match(inList, inMapFunc, inArg, inAccumList)
+    local
+      ElementInType e;
+      list<ElementInType> rest_e;
+      list<ElementOutType> accum;
+
+    case (e :: rest_e, _, _, accum)
+      equation
+        accum = inMapFunc(e, inArg, accum);
+      then
+        accumulateMapAccum1(rest_e, inMapFunc, inArg, accum);
+
+    case ({}, _, _, _) then inAccumList;
+  end match;
+end accumulateMapAccum1;
 
 end List;

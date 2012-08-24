@@ -797,6 +797,41 @@ algorithm
   newarr_1 := arrayCopy(arr, newarr);
 end arrayExpand;
 
+public function arrayExpandOnDemand
+  "Resizes an array if needed."
+  input Integer inNewSize "The number of elements that should fit in the array.";
+  input array<ElementType> inArray "The array to resize.";
+  input Real inExpansionFactor "The factor to resize the array with.";
+  input ElementType inFillValue "The value to fill the new part of the array.";
+  output array<ElementType> outArray "The resulting array.";
+  
+  replaceable type ElementType subtypeof Any;
+algorithm
+  outArray :=
+  matchcontinue(inNewSize, inArray, inExpansionFactor, inFillValue)
+    local
+      Integer new_size;
+      array<ElementType> new_arr;
+      
+    // Space left in the array, do nothing.
+    case (_, _, _, _)
+      equation
+        true = inNewSize <= arrayLength(inArray);
+      then
+        inArray;
+    
+    // Otherwise, resize the array.
+    else
+      equation
+        new_size = realInt(intReal(arrayLength(inArray)) *. inExpansionFactor);
+        new_arr = arrayCreate(new_size, inFillValue);
+        new_arr = arrayCopy(inArray, new_arr);
+      then
+        new_arr;
+
+  end matchcontinue;
+end arrayExpandOnDemand;
+        
 public function arrayNCopy "function arrayNCopy
   Copeis n elements in src array into dest array
   The function fails if all elements can not be fit into dest array."
@@ -1830,6 +1865,20 @@ algorithm
       then j;
   end match;
 end intSign;
+
+public function intCompare
+  "Compares two integers and return -1 if the first is smallest, 1 if the second
+   is smallest, or 0 if they are equal."
+  input Integer inN;
+  input Integer inM;
+  output Integer outResult;
+algorithm
+  outResult := matchcontinue(inN, inM)
+    case (_, _) equation true = intLt(inN, inM); then -1;
+    case (_, _) equation true = intGt(inN, inM); then 1;
+    else 0;
+  end matchcontinue;
+end intCompare;
 
 public function flattenOption "function: flattenOption
   Returns the second argument if NONE() or the element in SOME(element)"

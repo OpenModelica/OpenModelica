@@ -44,7 +44,10 @@ protected import Error;
 protected import List;
 protected import Util;
 
-
+public
+replaceable type NodeType subtypeof Any;
+replaceable type ArgType subtypeof Any;
+  
 public function buildGraph
   "This function will build a graph given a list of nodes, an edge function, and
   an extra argument to the edge function. The edge function should generate a
@@ -55,9 +58,6 @@ public function buildGraph
   input ArgType inEdgeArg;
   output list<tuple<NodeType, list<NodeType>>> outGraph;
 
-  replaceable type NodeType subtypeof Any;
-  replaceable type ArgType subtypeof Any;
-  
   partial function EdgeFunc
     input NodeType inNode;
     input ArgType inArg;
@@ -83,8 +83,6 @@ public function topologicalSort
   output list<NodeType> outNodes;
   output list<tuple<NodeType, list<NodeType>>> outRemainingGraph;
 
-  replaceable type NodeType subtypeof Any;
-
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -109,8 +107,6 @@ protected function topologicalSort2
   input EqualFunc inEqualFunc;
   output list<NodeType> outNodes;
   output list<tuple<NodeType, list<NodeType>>> outRemainingGraph;
-
-  replaceable type NodeType subtypeof Any;
 
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
@@ -163,8 +159,6 @@ protected function hasOutgoingEdges
   "Returns true if the given node has no outgoing edges, otherwise false."
   input tuple<NodeType, list<NodeType>> inNode;
   output Boolean outHasOutEdges;
-
-  replaceable type NodeType subtypeof Any;
 algorithm
   outHasOutEdges := match(inNode)
     case ((_, {})) then false;
@@ -179,8 +173,6 @@ protected function removeEdge
   input NodeType inRemovedNode;
   input EqualFunc inEqualFunc;
   output tuple<NodeType, list<NodeType>> outNode;
-
-  replaceable type NodeType subtypeof Any;
 
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
@@ -211,8 +203,6 @@ public function findCycles
   input EqualFunc inEqualFunc;
   output list<list<NodeType>> outCycles;
 
-  replaceable type NodeType subtypeof Any;
-
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -229,8 +219,6 @@ public function findCycles2
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input EqualFunc inEqualFunc;
   output list<list<NodeType>> outCycles;
-
-  replaceable type NodeType subtypeof Any;
 
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
@@ -282,8 +270,6 @@ protected function findCycleForNode
   input EqualFunc inEqualFunc;
   output Option<list<NodeType>> outCycle;
 
-  replaceable type NodeType subtypeof Any;
-
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -332,8 +318,6 @@ protected function findCycleForNode2
   input EqualFunc inEqualFunc;
   output list<NodeType> outCycle;
 
-  replaceable type NodeType subtypeof Any;
-
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -375,8 +359,6 @@ protected function findNodeInGraph
   input EqualFunc inEqualFunc;
   output tuple<NodeType, list<NodeType>> outNode;
 
-  replaceable type NodeType subtypeof Any;
-
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -411,8 +393,6 @@ protected function findIndexofNodeInGraph
   input Integer inIndex;
   output Integer outIndex;
 
-  replaceable type NodeType subtypeof Any;
-
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -445,8 +425,6 @@ protected function removeNodesFromGraph
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input EqualFunc inEqualFunc;
   output list<tuple<NodeType, list<NodeType>>> outGraph;
-
-  replaceable type NodeType subtypeof Any;
 
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
@@ -489,8 +467,6 @@ public function transposeGraph
   input EqualFunc inEqualFunc;
   output list<tuple<NodeType, list<NodeType>>> outGraph;
 
-  replaceable type NodeType subtypeof Any;
- 
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -529,8 +505,6 @@ protected function insertNodetoGraph
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   output list<tuple<NodeType, list<NodeType>>> outGraph;
  
-  replaceable type NodeType subtypeof Any;
- 
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -567,8 +541,6 @@ public function allReachableNodes
   input list<tuple<NodeType, list<NodeType>>> inGraph;
   input EqualFunc inEqualFunc;
   output list<NodeType> reachableNodes;
-  
-  replaceable type NodeType subtypeof Any;
   
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
@@ -645,9 +617,6 @@ color[ui ] <- min{c > 0 : forbiddenColors[c] = ui }
     input list<NodeType> inNode1;
     input String inName;
   end PrintFunc;
-  
-  replaceable type NodeType subtypeof Any;
-  
 algorithm
   outColored := matchcontinue(toColorNodes, inforbiddenColor, inColors, inGraph, inGraphT, inColored, inEqualFunc, inPrintFunc)
   local
@@ -683,8 +652,6 @@ protected function addForbiddenColors
   input PrintFunc inPrintFunc;
   output array<Option<list<NodeType>>> outForbiddenColor;
   
-  replaceable type NodeType subtypeof Any;
-
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -785,8 +752,6 @@ protected function arrayFindMinColorIndex
   input PrintFunc inPrintFunc;
   output Integer outColor;
   
-  replaceable type NodeType subtypeof Any;
-
   partial function EqualFunc
     "Given two nodes, returns true if they are equal, otherwise false."
     input NodeType inNode1;
@@ -831,8 +796,6 @@ public function printGraph
   input NodeToString inPrintFunc;
   output String outString;
   
-  replaceable type NodeType subtypeof Any;
-
   partial function NodeToString
     input NodeType inNode;
     output String outString;
@@ -845,8 +808,6 @@ public function printNode
   input tuple<NodeType, list<NodeType>> inNode;
   input NodeToString inPrintFunc;
   output String outString;
-
-  replaceable type NodeType subtypeof Any;
 
   partial function NodeToString
     input NodeType inNode;
@@ -1082,5 +1043,51 @@ algorithm
   end matchcontinue;
 end arrayFindMinColorIndexInt;
 
+public function filterGraph
+  "Removes any node for which the given function evaluates to false, as well as
+   any edge pointing at that node."
+  input list<tuple<NodeType, list<NodeType>>> inGraph;
+  input CondFunc inCondFunc;
+  output list<tuple<NodeType, list<NodeType>>> outGraph;
+
+  partial function CondFunc
+    input NodeType inNode;
+    output Boolean outCond;
+  end CondFunc;
+algorithm
+  outGraph := List.accumulateMapAccum1(inGraph, filterGraph2, inCondFunc, {});
+end filterGraph;
+
+protected function filterGraph2
+  "Helper function to filterGraph."
+  input tuple<NodeType, list<NodeType>> inNode;
+  input CondFunc inCondFunc;
+  input list<tuple<NodeType, list<NodeType>>> inAccumGraph;
+  output list<tuple<NodeType, list<NodeType>>> outNode;
+
+  partial function CondFunc
+    input NodeType inNode;
+    output Boolean outCond;
+  end CondFunc;
+algorithm
+  outNode := matchcontinue(inNode, inCondFunc, inAccumGraph)
+    local
+      NodeType node;
+      list<NodeType> edges;
+
+    case ((node, _), _, _)
+      equation
+        false = inCondFunc(node);
+      then
+        inAccumGraph;
+
+    case ((node, edges), _, _)
+      equation
+        edges = List.filterOnTrue(edges, inCondFunc);
+      then
+        (node, edges) :: inAccumGraph;
+
+  end matchcontinue;
+end filterGraph2;
 
 end Graph;
