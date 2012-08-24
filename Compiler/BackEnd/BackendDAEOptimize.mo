@@ -12204,7 +12204,7 @@ algorithm
         // ..
         // sn = sn-1
         // y = semiLinear(x,sa,sb)
-        eqn = BackendDAE.EQUATION(s1,DAE.IFEXP(DAE.RELATION(x,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),sa,sb),source);      
+        eqn = BackendDAE.EQUATION(s1,DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(x,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE())},DAE.callAttrBuiltinBool),sa,sb),source);      
         eqn1 = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source1);      
         acc = semiLinearOptimize4(explst,(eqn1,index1)::iAcc);
       then
