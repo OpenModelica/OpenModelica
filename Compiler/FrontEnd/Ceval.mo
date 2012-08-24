@@ -1108,6 +1108,9 @@ algorithm
       Absyn.Path complexName;
       list<Expression.Var> varLst;
       list<String> varNames;
+      DAE.Type ty;
+      Absyn.Info info;
+      String str;
     
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
@@ -1134,12 +1137,13 @@ algorithm
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
     // evaluate or generate non-partial and non-replaceable functions
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
 
         true = isCompleteFunction(cache, env, funcpath);
+        false = Types.hasMetaArray(ty);
         
         (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg);
         
@@ -1148,7 +1152,7 @@ algorithm
         (cache, newval, st);
 
     // partial and replaceable functions should not be evaluated!
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
@@ -1158,6 +1162,15 @@ algorithm
         Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation failed: " +& Absyn.pathString(funcpath));
       then
         fail();
+
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg as MSG(info))
+      equation
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        true = isCompleteFunction(cache, env, funcpath);
+        true = Types.hasMetaArray(ty);
+        str = ExpressionDump.printExpStr(inExp);
+        Error.addSourceMessage(Error.FUNCTION_RETURNS_META_ARRAY, {str}, info);
+      then fail();
 
   end matchcontinue;
 end cevalCallFunction;
@@ -1271,9 +1284,10 @@ algorithm
       SCode.Restriction res;
       Interactive.SymbolTable syt;
       Absyn.FunctionRestriction funcRest;
+      DAE.Type ty;
 
     // try function interpretation
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(builtin = false)), vallst, impl, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
       equation
         false = boolOr(Flags.isSet(Flags.NO_EVAL_FUNC), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS));
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));

@@ -2024,6 +2024,8 @@ algorithm
       then
         res;
 
+    case (DAE.T_METATYPE(ty = ty)) then unparseType(ty);
+
     case (DAE.T_NORETCALL(_))              then "#NORETCALL#";
     case (DAE.T_UNKNOWN(_))                then "#T_UNKNOWN#";
     case (DAE.T_ANYTYPE(anyClassType = _)) then "#ANYTYPE#";
@@ -6429,6 +6431,13 @@ algorithm
         tpl = fn((ty,a));
       then tpl;
     
+    case ((DAE.T_METATYPE(ty,ts),a),_)
+      equation
+        ((ty,a)) = traverseType((ty,a),fn);
+        ty = DAE.T_METATYPE(ty,ts);
+        tpl = fn((ty,a));
+      then tpl;
+
     case ((DAE.T_METALIST(ty,ts),a),_)
       equation
         ((ty,a)) = traverseType((ty,a),fn);
@@ -7142,6 +7151,25 @@ algorithm
     case DAE.T_SUBTYPE_BASIC(equalityConstraint = SOME(_)) then true;
   end match;
 end isOverdeterminedType;
+
+public function hasMetaArray
+  input Type ty;
+  output Boolean b;
+algorithm
+  ((_,b)) := traverseType((ty,false),hasMetaArrayWork);
+end hasMetaArray;
+
+protected function hasMetaArrayWork
+  input tuple<Type,Boolean> inTpl;
+  output tuple<Type,Boolean> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      Type ty;
+    case ((ty as DAE.T_METAARRAY(ty=_), false)) then ((ty,true));
+    else inTpl;
+  end match;
+end hasMetaArrayWork;
 
 end Types;
 
