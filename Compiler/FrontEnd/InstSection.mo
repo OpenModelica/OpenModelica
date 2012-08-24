@@ -4586,7 +4586,7 @@ algorithm
       DAE.Statement stmt;
       list<Env.Frame> env;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,e1,e2, var;
+      Absyn.Exp e,e1,e2;
       Boolean impl;
       list<Absyn.Exp> expl;
       list<DAE.Exp> expl_1,expl_2;
