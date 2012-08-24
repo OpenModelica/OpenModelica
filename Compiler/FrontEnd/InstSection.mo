@@ -4545,7 +4545,7 @@ algorithm
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),source,initial_,impl,unrollForLoops,_)
       equation
         (cache,e_1,eprop,_) = Static.elabExp(cache,env,value,impl,NONE(),true,pre,info);
-        (cache,stmts) = instAssignment2(cache,env,ih,pre,var,e_1,eprop,info,source,initial_,impl,unrollForLoops);
+        (cache,stmts) = instAssignment2(cache,env,ih,pre,var,e_1,eprop,info,source,initial_,impl,unrollForLoops,numError);
       then (cache,stmts);
         
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent=var,value=value,info=info),source,initial_,impl,unrollForLoops,numError)
@@ -4573,10 +4573,11 @@ protected function instAssignment2
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
+  input Integer numError;
   output Env.Cache outCache;
   output list<DAE.Statement> stmts "more statements due to loop unrolling";
 algorithm
-  (outCache,stmts) := matchcontinue (inCache,inEnv,inIH,inPre,var,value,props,info,inSource,initial_,inBoolean,unrollForLoops)
+  (outCache,stmts) := matchcontinue (inCache,inEnv,inIH,inPre,var,value,props,info,inSource,initial_,inBoolean,unrollForLoops,numError)
     local
       DAE.ComponentRef ce,ce_1;
       DAE.Type t;
@@ -4592,7 +4593,7 @@ algorithm
       list<DAE.Properties> cprops, eprops;
       list<DAE.Attributes> attrs;
       DAE.Type lt,rt;
-      String s,lhs_str,rhs_str,lt_str,rt_str;
+      String s,lhs_str,rhs_str,lt_str,rt_str,s1,s2;
       list<DAE.Statement> stmts;
       Env.Cache cache;
       Prefix.Prefix pre;
@@ -4606,7 +4607,7 @@ algorithm
       DAE.ElementSource source;
    
     // v := expr;
-    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops) 
+    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops,_) 
       equation     
         (cache,SOME((DAE.CREF(ce,t),cprop,attr as DAE.ATTR(direction = direction)))) = Static.elabCref(cache, env, cr, impl, false, pre, info);
         Static.checkAssignmentToInput(Dump.printComponentRefStr(cr), direction, info, Static.bDisallowTopLevelInputs);
@@ -4620,7 +4621,7 @@ algorithm
         (cache,{stmt});
 
     // der(x) := ...
-    case (cache,env,ih,pre,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop,info,source,initial_,impl,unrollForLoops,_)
       equation 
         (cache,SOME((_,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
@@ -4633,7 +4634,7 @@ algorithm
         (cache,{stmt});
 
     // v[i] := expr (in e.g. for loops)
-    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops,_)
       equation 
         (cache,SOME((cre,cprop,attr as DAE.ATTR(direction = direction)))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
         Static.checkAssignmentToInput(Dump.printComponentRefStr(cr), direction, info, Static.bDisallowTopLevelInputs);
@@ -4646,7 +4647,7 @@ algorithm
         (cache,{stmt});
 
     // (v1,v2,..,vn) := func(...)
-    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops,_)
       equation
         true = MetaUtil.onlyCrefExpressions(expl);
         (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
@@ -4660,7 +4661,7 @@ algorithm
         (cache,{stmt});
 
     // (v1,v2,..,vn) := match...
-    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         true = MetaUtil.onlyCrefExpressions(expl);
@@ -4675,7 +4676,7 @@ algorithm
       then
         (cache,{stmt});
 
-    case (cache,env,ih,pre,left,e_1,prop,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,left,e_1,prop,info,source,initial_,impl,unrollForLoops,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         ty = Types.getPropType(prop);
@@ -4686,7 +4687,7 @@ algorithm
       then (cache,{stmt});
         
     /* Tuple with rhs constant */
-    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,info,source,initial_,impl,unrollForLoops,_)
       equation 
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), Ceval.MSG(info));
@@ -4700,7 +4701,7 @@ algorithm
         (cache,stmts);
 
     /* Tuple with lhs being a tuple NOT of crefs => Error */
-    case (cache,env,ih,pre,e as Absyn.TUPLE(expressions = expl),_,_,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,e as Absyn.TUPLE(expressions = expl),_,_,info,source,initial_,impl,unrollForLoops,_)
       equation 
         failure(_ = List.map(expl,Absyn.expCref));
         s = Dump.printExpStr(e);
@@ -4708,7 +4709,7 @@ algorithm
       then
         fail();
         
-    case (cache,env,ih,pre,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,e1 as Absyn.TUPLE(expressions = expl),e_2,prop2,info,source,initial_,impl,unrollForLoops,_)
       equation
         DAE.CALL(path = _) = e_2;
         _ = List.map(expl,Absyn.expCref);
@@ -4725,12 +4726,21 @@ algorithm
         fail();
 
     /* Tuple with rhs not CALL or CONSTANT => Error */
-    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,_,info,source,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,_,info,source,initial_,impl,unrollForLoops,_)
       equation
-        // failure(Absyn.CALL(functionArgs = _) = e);
         _ = List.map(expl,Absyn.expCref);
+        failure(DAE.CALL(path = _) = e_1);
         s = ExpressionDump.printExpStr(e_1);
         Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s}, info);
+      then
+        fail();
+
+    case (cache,env,ih,pre,var,e_1,_,info,source,initial_,impl,unrollForLoops,numError)
+      equation
+        true = numError == Error.getNumErrorMessages();
+        s1 = Dump.printExpStr(var);
+        s2 = ExpressionDump.printExpStr(e_1);
+        Error.addSourceMessage(Error.ASSIGN_UNKNOWN_ERROR, {s1,s2}, info);
       then
         fail();
   end matchcontinue;

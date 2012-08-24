@@ -557,6 +557,8 @@ public constant Message GUARD_EXPRESSION_TYPE_MISMATCH = MESSAGE(241, GRAMMAR(),
   Util.gettext("Guard expressions need to be Boolean, got expression of type %s."));
 public constant Message FUNCTION_RETURNS_META_ARRAY = MESSAGE(242, TRANSLATION(), ERROR(),
   Util.gettext("User-defined function calls that return Array<...> are not supported: %s."));
+public constant Message ASSIGN_UNKNOWN_ERROR = MESSAGE(243, TRANSLATION(), ERROR(),
+  Util.gettext("Failed elaborate assignment for some unknown reason: %1 := %2. File a bug report and we will make sure this error gets a better message in the future."));
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"));
