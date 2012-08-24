@@ -946,7 +946,6 @@ algorithm
         i = listLength(es);
         e = Expression.makeBuiltinCall("cat",DAE.ICONST(i)::es,tp);
       then e;
-
   end matchcontinue;
 end simplifyBuiltinCalls;
 
@@ -4032,10 +4031,11 @@ algorithm
   outExp := matchcontinue (inOperator2,inExp3)
     local
       Type ty,ty1;
-      DAE.Exp e1,e_1,e2;
+      DAE.Exp e1,e_1,e2,e3;
       Integer i_1,i;
       Real r_1,r;
       Boolean b1;
+      DAE.CallAttributes attr;
     
     // not true => false, not false => true
     case(DAE.NOT(DAE.T_BOOL(varLst = _)),e1) 
@@ -4131,6 +4131,9 @@ algorithm
        then e1;
      case (DAE.UMINUS_ARR(ty = _),DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = e1)) /* --a => a */
        then e1;
+    // -semiLinear(-x,sb,sa) = semiLinear(x,sa,sb)
+    case (DAE.UMINUS(ty = _),DAE.CALL(path=Absyn.IDENT("semiLinear"),expLst={DAE.UNARY(exp=e1),e2,e3},attr=attr))
+      then DAE.CALL(Absyn.IDENT("semiLinear"),{e1,e3,e2},attr);
   end matchcontinue;
 end simplifyUnary;
 

@@ -72,6 +72,7 @@ protected import Error;
 protected import Flags;
 protected import Graph;
 protected import HashSet;
+protected import HashTableExpToIndex;
 protected import Inline;
 protected import List;
 protected import Matching;
@@ -12052,6 +12053,487 @@ algorithm
         (eq :: rest_res);
   end match;
 end makeEquationsFromResiduals;
+
+
+/* 
+ * simplify semiLinear calls 
+ *
+ */
+
+public function simplifysemiLinear
+"function: simplifysemiLinear
+  autor: Frenkel TUD 2012-08
+  This function traveres all equations and tries to simplify calls to semiLinear"
+  input BackendDAE.BackendDAE dae;
+  output BackendDAE.BackendDAE odae;
+algorithm
+  odae := BackendDAEUtil.mapEqSystem(dae,simplifysemiLinearWork);
+end simplifysemiLinear;
+
+protected function simplifysemiLinearWork
+"function: simplifysemiLinearWork
+  autor: Frenkel TUD 2012-08
+  This function traveres all equations and tries to simplify calls to semiLinear"
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared) := matchcontinue (isyst,ishared)
+    local
+      BackendDAE.Variables vars,knvars;
+      BackendDAE.EquationArray eqns;
+      list<tuple<BackendDAE.Equation,Integer>> eqnslst;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      Boolean b;
+      HashTableExpToIndex.HashTable ht;
+      array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
+      equation
+        // traverse the equations and collect all semiLinear calls  y=semiLinear(x,sa,sb)
+        (eqns,(eqnslst,_,true)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,simplifysemiLinearFinder,({},0,false));
+        // sort for (y,x) pairs
+        eqnsarray = arrayCreate(5,{});
+        ht = HashTableExpToIndex.emptyHashTable();
+        eqnsarray = semiLinearSort(eqnslst,ht,1,eqnsarray);
+        eqnsarray = semiLinearSort1(arrayList(eqnsarray),1,arrayCreate(5,{}));
+        // optimize 
+        // y = semiLinear(x,sa,s1)
+        // y = semiLinear(x,s1,s2)
+        // y = semiLinear(x,s2,s3)
+        // ...
+        // y = semiLinear(x,sn,sb)
+        // -> 
+        // s1 = if (x>=0) then sa else sb
+        // s2 = s1
+        // s3 = s2
+        // ..
+        // sn = sn-1
+        // y = semiLinear(x,sa,sb)
+        eqnslst = List.fold(arrayList(eqnsarray),semiLinearOptimize,{});
+        // replace the equations in the system
+        eqns = List.fold(eqnslst,semiLinearReplaceEqns,eqns);        
+        syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+      then (syst,shared);
+    case (_,_)
+      then (isyst,ishared);
+  end matchcontinue;
+end simplifysemiLinearWork;
+
+protected function semiLinearReplaceEqns
+"function: semiLinearReplaceEqns
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input tuple<BackendDAE.Equation,Integer> iTpl;
+  input BackendDAE.EquationArray iEqns;
+  output BackendDAE.EquationArray oEqns;
+protected
+  BackendDAE.Equation eqn;
+  Integer index;
+algorithm
+  (eqn,index) := iTpl;
+  Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Replace with ",eqn,"\n"));
+  oEqns := BackendEquation.equationSetnth(iEqns, index, eqn);
+end semiLinearReplaceEqns;
+
+protected function semiLinearOptimize
+"function: semiLinearOptimize
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input list<tuple<BackendDAE.Equation,Integer>> eqnslst;
+  input list<tuple<BackendDAE.Equation,Integer>> iAcc;
+  output list<tuple<BackendDAE.Equation,Integer>> oAcc;
+algorithm
+  oAcc := matchcontinue(eqnslst,iAcc)
+    local
+      HashTableExpToIndex.HashTable ht,ht1;
+      array<tuple<BackendDAE.Equation,Integer>> eqnsarray;
+      list<DAE.Exp> explst;
+    case (_::{},_) then iAcc;
+    case (_,_)
+      equation
+        // get HashMab sa-> index
+        ht = HashTableExpToIndex.emptyHashTable();
+        ht1 = HashTableExpToIndex.emptyHashTable();
+        (ht,ht1) = semiLinearOptimize1(eqnslst,1,ht,ht1);
+        // get sa
+        explst = List.fold1(BaseHashTable.hashTableKeyList(ht),semiLinearGetSA,ht1,{}); 
+        eqnsarray = listArray(eqnslst);
+        // optimize
+      then
+        semiLinearOptimize2(explst,ht,eqnsarray,iAcc);
+    case(_,_) then iAcc;
+  end matchcontinue;
+end semiLinearOptimize;
+
+protected function semiLinearOptimize2
+"function: semiLinearOptimize2
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input list<DAE.Exp> saLst;
+  input HashTableExpToIndex.HashTable iHt;
+  input array<tuple<BackendDAE.Equation,Integer>> IEqnsarray;
+  input list<tuple<BackendDAE.Equation,Integer>> iAcc;
+  output list<tuple<BackendDAE.Equation,Integer>> oAcc;
+algorithm
+  oAcc := matchcontinue(saLst,iHt,IEqnsarray,iAcc)
+    local
+      DAE.Exp sa,sb,s1,y,x;
+      list<DAE.Exp> rest;
+      list<tuple<DAE.Exp,Integer,DAE.ElementSource>> explst;
+      array<tuple<BackendDAE.Equation,Integer>> eqnsarray;
+      list<tuple<BackendDAE.Equation,Integer>> acc;
+      HashTableExpToIndex.HashTable ht;
+      BackendDAE.Equation eqn,eqn1;
+      Integer i1,index,index1;
+      Absyn.Path path;
+      DAE.CallAttributes attr;
+      DAE.ElementSource source,source1;
+    case ({},_,_,_) then iAcc;
+    case (sa::rest,_,_,_)
+      equation
+        i1 = BaseHashTable.get(sa,iHt);
+        ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path=path,expLst = {x,_,s1},attr=attr),source=source),index)) = IEqnsarray[i1];
+        // get Order of s1,s2,s3,..,sn,sb
+        (sb,source1,index1,explst) = semiLinearOptimize3(s1,source,index,iHt,IEqnsarray,{});
+        // generate optimized equations
+        // s1 = if (x>=0) then sa else sb
+        // s2 = s1
+        // ..
+        // sn = sn-1
+        // y = semiLinear(x,sa,sb)
+        eqn = BackendDAE.EQUATION(s1,DAE.IFEXP(DAE.RELATION(x,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),sa,sb),source);      
+        eqn1 = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source1);      
+        acc = semiLinearOptimize4(explst,(eqn1,index1)::iAcc);
+      then
+        semiLinearOptimize2(rest,iHt,IEqnsarray,(eqn,index)::acc);
+    case (_::rest,_,_,_)
+      then
+        semiLinearOptimize2(rest,iHt,IEqnsarray,iAcc);        
+  end matchcontinue;
+end semiLinearOptimize2;
+
+protected function semiLinearOptimize4
+"function: semiLinearOptimize3
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input list<tuple<DAE.Exp,Integer,DAE.ElementSource>> explst;
+  input list<tuple<BackendDAE.Equation,Integer>> iAcc;
+  output list<tuple<BackendDAE.Equation,Integer>> oAcc;
+algorithm
+  oAcc := match(explst,iAcc)
+    local
+      DAE.Exp s1,s2;
+      list<tuple<DAE.Exp,Integer,DAE.ElementSource>> rest;
+      Integer index;
+      BackendDAE.Equation eqn;
+      DAE.ElementSource source;
+    case ({},_) then iAcc;
+    case (_::{},_) then iAcc;
+    case((s2,index,source)::(rest as ((s1,_,_)::_)),_)
+      equation
+        eqn = BackendDAE.EQUATION(s2,s1,source);
+      then
+        semiLinearOptimize4(rest,(eqn,index)::iAcc);
+  end match;
+end semiLinearOptimize4;
+
+protected function semiLinearOptimize3
+"function: semiLinearOptimize3
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input DAE.Exp exp;
+  input DAE.ElementSource isource;
+  input Integer iIndex;
+  input HashTableExpToIndex.HashTable iHt;
+  input array<tuple<BackendDAE.Equation,Integer>> IEqnsarray;
+  input list<tuple<DAE.Exp,Integer,DAE.ElementSource>> iAcc;
+  output DAE.Exp slast;
+  output DAE.ElementSource osource;
+  output Integer oIndex;
+  output list<tuple<DAE.Exp,Integer,DAE.ElementSource>> oAcc;
+algorithm
+  (slast,osource,oIndex,oAcc) := matchcontinue(exp,isource,iIndex,iHt,IEqnsarray,iAcc)
+    local
+      DAE.Exp sb;
+      Integer i,index;
+      DAE.ElementSource source;
+    case(_,_,_,_,_,_)
+      equation
+        i = BaseHashTable.get(exp,iHt);
+        ((BackendDAE.EQUATION(scalar=DAE.CALL(expLst = {_,_,sb}),source=source),index)) = IEqnsarray[i];
+        (sb,source,index,oAcc) = semiLinearOptimize3(sb,source,index,iHt,IEqnsarray,(exp,iIndex,source)::iAcc);
+      then
+        (sb,source,index,oAcc);
+    case(_,_,_,_,_,_)
+      then
+        (exp,isource,iIndex,iAcc);         
+  end matchcontinue;
+end semiLinearOptimize3;
+
+protected function semiLinearGetSA
+"function: semiLinearGetSA
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input DAE.Exp key;
+  input HashTableExpToIndex.HashTable iHt1;
+  input list<DAE.Exp> iAcc;
+  output list<DAE.Exp> oAcc;
+algorithm
+  oAcc := matchcontinue(key,iHt1,iAcc)
+    case (_,_,_)
+      equation
+        _ = BaseHashTable.get(key,iHt1);
+      then
+        iAcc;
+    case(_,_,_)
+      then
+        key::iAcc;
+  end matchcontinue;
+end semiLinearGetSA;
+
+protected function semiLinearOptimize1
+"function: semiLinearOptimize1
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input list<tuple<BackendDAE.Equation,Integer>> eqnslst;
+  input Integer i;
+  input HashTableExpToIndex.HashTable iHt;
+  input HashTableExpToIndex.HashTable iHt1;
+  output HashTableExpToIndex.HashTable oHt;
+  output HashTableExpToIndex.HashTable oHt1;
+algorithm
+  (oHt,oHt1) := match(eqnslst,i,iHt,iHt1)
+    local
+     BackendDAE.Equation eqn;     
+      list<tuple<BackendDAE.Equation,Integer>> rest;
+      HashTableExpToIndex.HashTable ht,ht1;
+      DAE.Exp sa,sb;
+    case ({},_,_,_) then (iHt,iHt1);
+    case ((eqn as BackendDAE.EQUATION(scalar=DAE.CALL(expLst = {_,sa,sb})),_)::rest,_,_,_)
+      equation
+        ht = BaseHashTable.add((sa,i), iHt);
+        ht1 = BaseHashTable.add((sb,i), iHt1);
+        (ht,ht1) = semiLinearOptimize1(rest,i+1,ht,ht1);
+      then
+        (ht,ht1);
+  end match;
+end semiLinearOptimize1;
+
+protected function semiLinearSort
+"function: semiLinearSort
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input  list<tuple<BackendDAE.Equation,Integer>> eqnslst;
+  input  HashTableExpToIndex.HashTable iHt;
+  input  Integer size;
+  input  array<list<tuple<BackendDAE.Equation,Integer>>> iEqnsarray;
+  output  array<list<tuple<BackendDAE.Equation,Integer>>> oEqnsarray;
+algorithm
+  oEqnsarray := matchcontinue(eqnslst,iHt,size,iEqnsarray)
+    local
+     BackendDAE.Equation eqn;
+     Integer index,i;
+     list<tuple<BackendDAE.Equation,Integer>> rest,eqns;
+     HashTableExpToIndex.HashTable ht;
+     DAE.Exp y;
+     array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
+    case ({},_,_,_) then iEqnsarray;
+    case ((eqn as BackendDAE.EQUATION(exp=y),index)::rest,_,_,_)
+      equation
+        i = BaseHashTable.get(y,iHt);
+        eqns = iEqnsarray[i];
+        eqnsarray = arrayUpdate(iEqnsarray,i,(eqn,index)::eqns);
+      then
+        semiLinearSort(rest,iHt,size,eqnsarray);
+    case ((eqn as BackendDAE.EQUATION(exp=y),index)::rest,_,_,_)
+      equation
+        ht = BaseHashTable.add((y,size), iHt);
+        // expand if necesarray
+        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Util.arrayExpand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = arrayUpdate(eqnsarray,size,{(eqn,index)});
+      then
+        semiLinearSort(rest,ht,size+1,eqnsarray);
+  end matchcontinue;
+end semiLinearSort;
+
+protected function semiLinearSort1
+"function: semiLinearSort1
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input  list<list<tuple<BackendDAE.Equation,Integer>>> eqnslstlst;
+  input  Integer size;
+  input  array<list<tuple<BackendDAE.Equation,Integer>>> iEqnsarray;
+  output  array<list<tuple<BackendDAE.Equation,Integer>>> oEqnsarray;
+algorithm
+  oEqnsarray := match(eqnslstlst,size,iEqnsarray)
+    local
+     Integer size1;
+     tuple<BackendDAE.Equation,Integer> tpl;
+     list<tuple<BackendDAE.Equation,Integer>> eqns;
+     list<list<tuple<BackendDAE.Equation,Integer>>> rest;
+     HashTableExpToIndex.HashTable ht;
+     array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
+    case ({},_,_) then iEqnsarray;
+    case ((tpl::{})::rest,_,_)
+      equation
+        // expand if necesarray
+        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Util.arrayExpand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = arrayUpdate(eqnsarray,size,{tpl});
+      then
+        semiLinearSort1(rest,size+1,eqnsarray);
+    case (eqns::rest,_,_)
+      equation
+        ht = HashTableExpToIndex.emptyHashTable();
+        (size1,eqnsarray) = semiLinearSort2(eqns,ht,size,iEqnsarray);
+      then
+        semiLinearSort1(rest,size1,eqnsarray);
+  end match;
+end semiLinearSort1;
+
+protected function semiLinearSort2
+"function: semiLinearSort2
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input  list<tuple<BackendDAE.Equation,Integer>> eqnslst;
+  input  HashTableExpToIndex.HashTable iHt;
+  input  Integer size;
+  input  array<list<tuple<BackendDAE.Equation,Integer>>> iEqnsarray;
+  output  Integer osize;
+  output  array<list<tuple<BackendDAE.Equation,Integer>>> oEqnsarray;
+algorithm
+  (osize,oEqnsarray) := matchcontinue(eqnslst,iHt,size,iEqnsarray)
+    local
+     BackendDAE.Equation eqn;
+     Integer index,i;
+     list<tuple<BackendDAE.Equation,Integer>> rest,eqns;
+     HashTableExpToIndex.HashTable ht;
+     DAE.Exp x;
+     array<list<tuple<BackendDAE.Equation,Integer>>> eqnsarray;
+    case ({},_,_,_) then (size,iEqnsarray);
+    case ((eqn as BackendDAE.EQUATION(scalar=DAE.CALL(expLst = x::_)),index)::rest,_,_,_)
+      equation
+        i = BaseHashTable.get(x,iHt);
+        eqns = iEqnsarray[i];
+        eqnsarray = arrayUpdate(iEqnsarray,i,(eqn,index)::eqns);
+        (i,eqnsarray) = semiLinearSort2(rest,iHt,size,eqnsarray);
+      then
+        (i,eqnsarray);
+    case ((eqn as BackendDAE.EQUATION(scalar=DAE.CALL(expLst = x::_)),index)::rest,_,_,_)
+      equation
+        ht = BaseHashTable.add((x,size), iHt);
+        // expand if necesarray
+        eqnsarray = Debug.bcallret3(intGt(size,arrayLength(iEqnsarray)), Util.arrayExpand,5, iEqnsarray, {},iEqnsarray);
+        eqnsarray = arrayUpdate(eqnsarray,size,{(eqn,index)});
+        (i,eqnsarray) = semiLinearSort2(rest,ht,size+1,eqnsarray);
+      then
+        (i,eqnsarray);
+  end matchcontinue;
+end semiLinearSort2;
+
+protected function simplifysemiLinearFinder
+"function: simplifysemiLinearFinder
+  autor: Frenkel TUD 2012-08
+  helper for simplifysemiLinear"
+  input tuple<BackendDAE.Equation,tuple<list<tuple<BackendDAE.Equation,Integer>>,Integer,Boolean>> inTpl;
+  output tuple<BackendDAE.Equation,tuple<list<tuple<BackendDAE.Equation,Integer>>,Integer,Boolean>> outTpl;
+algorithm
+  outTpl:=  
+  matchcontinue (inTpl)
+    local 
+      BackendDAE.Equation eqn;
+      list<tuple<BackendDAE.Equation,Integer>> eqnslst;
+      Integer index;
+      Boolean b;
+      DAE.Exp x,y,sa,sb;
+      DAE.ElementSource source;
+      Absyn.Path path;
+      DAE.CallAttributes attr;
+    // 0 = semiLinear(0,sa,sb) -> sa=sb
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb}),source=source),(eqnslst,index,_)))
+      equation
+        true = Expression.isZero(y);
+        true = Expression.isZero(x);
+      then ((BackendDAE.EQUATION(sa,sb,source),(eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb}),scalar=y,source=source),(eqnslst,index,_)))
+      equation
+        true = Expression.isZero(y);
+        true = Expression.isZero(x);
+      then ((BackendDAE.EQUATION(sa,sb,source),(eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb})),source=source),(eqnslst,index,_)))
+      equation
+        true = Expression.isZero(y);
+        true = Expression.isZero(x);
+      then ((BackendDAE.EQUATION(sa,sb,source),(eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb})),scalar=y,source=source),(eqnslst,index,_)))
+      equation
+        true = Expression.isZero(y);
+        true = Expression.isZero(x);
+      then ((BackendDAE.EQUATION(sa,sb,source),(eqnslst,index+1,true)));
+    // y = -semiLinear(-x,sb,sa) -> y = semiLinear(x,sa,sb)
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr)),source=source),(eqnslst,index,_)))
+      equation
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr)),scalar=y,source=source),(eqnslst,index,_)))
+      equation
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+    // -y = semiLinear(-x,sb,sa) -> y = semiLinear(x,sa,sb)
+    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=y),scalar=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),source=source),(eqnslst,index,_)))
+      equation
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),scalar=DAE.UNARY(exp=y),source=source),(eqnslst,index,_)))
+      equation
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+    // y = semiLinear(-x,sb,sa) -> -y = semiLinear(x,sa,sb)
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),source=source),(eqnslst,index,_)))
+      equation
+        y = Expression.negate(y);
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),scalar=y,source=source),(eqnslst,index,_)))
+      equation
+        y = Expression.negate(y);
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));        
+    // y = semiLinear(x,sa,sb)
+    case ((eqn as BackendDAE.EQUATION(scalar=DAE.CALL(path =Absyn.IDENT("semiLinear"))),(eqnslst,index,_)))
+      equation
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+    case ((eqn as BackendDAE.EQUATION(exp=DAE.CALL(path =Absyn.IDENT("semiLinear"))),(eqnslst,index,_)))
+      equation
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp= x as DAE.CALL(path = Absyn.IDENT("semiLinear"))),source=source),(eqnslst,index,_)))
+      equation
+        y = Expression.negate(y);
+        eqn = BackendDAE.EQUATION(y,x,source);
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp= x as DAE.CALL(path = Absyn.IDENT("semiLinear"))),scalar=y,source=source),(eqnslst,index,_)))
+      equation
+        y = Expression.negate(y);
+        eqn = BackendDAE.EQUATION(y,x,source);
+        Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
+      then ((eqn,((eqn,index)::eqnslst,index+1,true)));
+
+    case ((eqn,(eqnslst,index,b))) then ((eqn,(eqnslst,index+1,b)));
+  end matchcontinue;
+end simplifysemiLinearFinder;
+
+
 
 
 /*

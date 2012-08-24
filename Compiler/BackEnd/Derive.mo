@@ -1427,7 +1427,17 @@ algorithm
         (e1,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         e1;*/
-
+    /* semiLinear(x,a,b) -> if (x>=0) then a*x else b*x -> if (x>=0) then da*x+a*dx else db*x+b*dx
+    case (DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {cond,e1,e2}), tv, differentiateIfExp as true,_)
+      equation
+        exp = differentiateExp(cond, tv, differentiateIfExp,inFuncs);
+        e1_1 = differentiateExp(e1, tv, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, tv, differentiateIfExp,inFuncs);
+        e1_1 = Expression.expAdd(Expression.expMul(e1_1,cond),Expression.expMul(e1,exp));
+        e2_1 = Expression.expAdd(Expression.expMul(e2_1,cond),Expression.expMul(e2,exp));
+      then 
+        DAE.IFEXP(cond,e1_1,e2_1);
+    */
     case (e as DAE.CALL(path=_),tv,_,_)
       equation
         // try to inline

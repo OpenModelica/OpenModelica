@@ -359,6 +359,9 @@ constant DebugFlag TEARING_AND_RELAXATION = DEBUG_FLAG(98, "tearing_and_relaxati
   Util.gettext("performes relaxation after tearing"));
 constant DebugFlag DUMPOPTINIT = DEBUG_FLAG(99, "dumpoptinit",
   Util.gettext("Enables dumping of the optimisationinformation when optimize the initial system"));
+constant DebugFlag SEMILINEAR = DEBUG_FLAG(100, "semiLinear",
+  Util.gettext("Enables dumping of the optimisationinformation when optimize calls to semiLinear"));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -463,7 +466,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_EQNINORDER,
   SYMBOLIC_INITIALIZATION,
   TEARING_AND_RELAXATION,
-  DUMPOPTINIT
+  DUMPOPTINIT,
+  SEMILINEAR
 };
 
 // CONFIGURATION FLAGS
@@ -577,6 +581,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeevaluateParameters",
     "inlineArrayEqn",
     "constantLinearSystem",
+    "simplifysemiLinear",
     "tearingSystem",
     "removeSimpleEquations",
 //    "countOperations",
@@ -603,6 +608,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)")),
     ("removeUnusedFunctions", Util.gettext("removed all unused functions from functionTree")),
     ("simplifyTimeIndepFuncCalls", Util.gettext("simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false")),
+    ("simplifysemiLinear", Util.gettext("simplifies calls to semiLinear")),
     ("optimizeInitialSystem", Util.gettext("simplifies time initial system"))
     })),
   Util.gettext("Sets the post optimisation modules to use in the back end. See +help=optmodules for more info."));
