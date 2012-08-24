@@ -6426,14 +6426,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     //sqrt 
   case CALL(path=IDENT(name="sqrt"), expLst={e1}, attr=attr as CALL_ATTR(__)) then
     let argStr = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    (match e1
-       case CALL(path=IDENT(name="abs")) then
-         'sqrt(<%argStr%>)'
-       else
-         let ass = '(<%argStr%> >= 0.0)'
-         let retPre = assertCommonVar(ass,createDAEString("Model error: Argument of sqrt should be >= 0"), context, &varDecls, dummyInfo)
-         let &preExp += '<%retPre%>'
-         'sqrt(<%argStr%>)')
+    (if isPositiveOrZero(e1)
+     then
+       'sqrt(<%argStr%>)'
+     else
+       let ass = '(<%argStr%> >= 0.0)'
+       let retPre = assertCommonVar(ass,createDAEString("Model error: Argument of sqrt should be >= 0"), context, &varDecls, dummyInfo)
+       let &preExp += '<%retPre%>'
+       'sqrt(<%argStr%>)')
   
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)

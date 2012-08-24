@@ -5724,14 +5724,50 @@ algorithm
 end isZero;
 
 public function isPositiveOrZero
-"function: isPositiveOrZero
-  Returns true if an expression is known to be >= 0"
+  "Returns true if an expression is known to be >= 0"
   input DAE.Exp inExp;
   output Boolean outBoolean;
 algorithm
   outBoolean := match (inExp)
-    
+    local
+      Boolean b,b1,b2,b3;
+      DAE.Exp e1,e2;
+      Integer i;
+      Real r;
+      /* abs(e) */
     case DAE.CALL(path = Absyn.IDENT("abs")) then true;
+      /* literals */
+    case DAE.ICONST(i) then i>=0;
+    case DAE.RCONST(r) then realGe(r,0.0);
+      /* e1 + e2 */
+    case DAE.BINARY(e1,DAE.ADD(ty=_),e2)
+      then isPositiveOrZero(e1) and isPositiveOrZero(e2);
+      /* e1 - e2 */
+    case DAE.BINARY(e1,DAE.SUB(ty=_),e2)
+      then isPositiveOrZero(e1) and isNegativeOrZero(e2);
+      /* e1 * e2 , -e1 * -e2, e ^ 2.0 */
+    case DAE.BINARY(e1,DAE.MUL(ty=_),e2)
+      equation
+        b1 = (isPositiveOrZero(e1) and isPositiveOrZero(e2));
+        b2 = (isNegativeOrZero(e1) and isNegativeOrZero(e2));
+        b3 = expEqual(e1,e2);
+      then b1 or b2 or b3;
+      /* e1 * e2, -e1 * -e2 */
+    case DAE.BINARY(e1,DAE.DIV(ty=_),e2)
+      equation
+        b1 = (isPositiveOrZero(e1) and isPositiveOrZero(e2));
+        b2 = (isNegativeOrZero(e1) and isNegativeOrZero(e2));
+      then b1 or b2;
+      /* Integer power we can say something good about */
+    case DAE.BINARY(e1,DAE.POW(ty=_),DAE.RCONST(r))
+      equation
+        i = realInt(r);
+        b1 = realEq(r,intReal(i));
+        b2 = 0 == intMod(i,2);
+        b3 = isPositiveOrZero(e1);
+        b = b2 or b3;
+      then b1 and b;
+    case DAE.BINARY(e1,DAE.POW(ty=_),e2) then isEven(e2);
     else isZero(inExp);
 
   end match;
@@ -6692,42 +6728,11 @@ algorithm
   end matchcontinue;
 end isCrefScalar;
 
-public function expCanBeZero "Returns true if it is possible that the expression can be zero.
-
-For instance,
-expCanBeZero(1) => false
-expCanBeZero(a+b) => true  (for a = -b)
-expCanBeZero(1+a^2) => false (all terms positive)
-"
-  input DAE.Exp e;
-  output Boolean canBeZero;
-algorithm
-  canBeZero := matchcontinue(e)
-    local
-      list<DAE.Exp> terms_;
-
-    case(e) equation
-      true = isConst(e) and not isZero(e);
-    then false;
-
-    /* For several terms, all must be positive or zero and at least one must be > 0 */
-    case(e)
-      equation
-        (terms_ as _::_) = terms(e);
-        true = List.mapAllValueBool(terms_,expIsPositiveOrZero,true);
-        _::_ = List.select(terms_,expIsPositive);
-      then 
-        false;
-
-    case(e) then true;
-  end matchcontinue;
-end expCanBeZero;
-
 public function expIsPositive "Returns true if an expression is positive,
 Returns true in the following cases:
 constant >= 0
 
-See also expIsPositiveOrZero.
+See also isPositiveOrZero.
 "
   input DAE.Exp e;
   output Boolean res;
@@ -6745,37 +6750,6 @@ algorithm
     else false;
   end matchcontinue;
 end expIsPositive;
-
-public function expIsPositiveOrZero "Returns true if an expression is positive or equal to zero,
-Returns true in the following cases:
-constant >= 0
-a^n, for even n.
-abs(expr)
-"
-  input DAE.Exp e;
-  output Boolean res;
-algorithm
-  res := matchcontinue(e)
-    local DAE.Exp e1,e2;
-
-     /* constant >= 0 */
-    case(e) equation
-      true = isConst(e);
-      false = expReal(e) <. intReal(0);
-    then true;
-
-      /* e1 ^ n for even n */
-    case(DAE.BINARY(e1,DAE.POW(_),e2)) equation
-      true = isEven(e2);
-    then true;
-
-    /* expr * expr */
-    case(DAE.BINARY(e1,DAE.MUL(_),e2)) equation
-      true = expEqual(e1,e2);
-    then true;
-    else false;
-  end matchcontinue;
-end expIsPositiveOrZero;
 
 public function isEven "returns true if expression is even"
   input DAE.Exp e;

@@ -2250,6 +2250,11 @@ package Expression
     output Boolean hasCref;
   end anyExpHasCrefName;
 
+  function isPositiveOrZero
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end isPositiveOrZero;
+
 end Expression;
 
 package ExpressionDump
