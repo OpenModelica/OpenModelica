@@ -4896,7 +4896,7 @@ algorithm
         (ieqns,ivars) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp1);
         cont_eqn = BackendEquation.getEqns(ieqns,eqns);
         cont_var = List.map1r(ivars, BackendVariable.getVarAt, vars);
-        (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var); // ({1,0},{2});
+        (values, value_dims) = extractValuesAndDims(disc_var); // ({1,0},{2});
         //(values, value_dims) = ({1,0},{2});
       then
         ({SES_MIXED(uniqueEqIndex, equation_, simVarsDisc, discEqs, values, value_dims)},{equation_},uniqueEqIndex+1,tempvars);
@@ -5130,21 +5130,15 @@ algorithm
 end extractDiscEqs;
 
 protected function extractValuesAndDims
-  input list<BackendDAE.Equation> inBackendDAEEquationLst1;
-  input list<BackendDAE.Var> inBackendDAEVarLst2;
-  input list<BackendDAE.Equation> inBackendDAEEquationLst3;
-  input list<BackendDAE.Var> inBackendDAEVarLst4;
+  input list<BackendDAE.Var> disc_v;
   output list<Integer> valuesRet;
   output list<Integer> value_dims;
 algorithm
   (valuesRet, value_dims) :=
-  match (inBackendDAEEquationLst1,inBackendDAEVarLst2,inBackendDAEEquationLst3,inBackendDAEVarLst4)
+  match (disc_v)
     local
-      list<list<Integer>> values,values_1;
-      list<BackendDAE.Equation> cont_e,disc_e;
-      list<BackendDAE.Var> cont_v,disc_v;
-      
-    case (cont_e,cont_v,disc_e,disc_v)
+      list<list<Integer>> values,values_1;      
+    case (_)
       equation
         (values,value_dims) = generateMixedDiscretePossibleValues2(disc_v, 0);
         values_1 = generateMixedDiscreteCombinationValues(values);
