@@ -3240,12 +3240,6 @@ algorithm
         b = v1 <. v2;
       then 
         DAE.BCONST(b);
-    
-    case(DAE.LESS(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
-      equation
-        b = i1 < i2;
-      then 
-        DAE.BCONST(b);
 
     case(DAE.LESSEQ(ty=_),DAE.BCONST(true),DAE.BCONST(false))
       then DAE.BCONST(false);
@@ -3261,12 +3255,6 @@ algorithm
       then 
         DAE.BCONST(b);
 
-    case(DAE.LESSEQ(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
-      equation
-        b = i1 <= i2;
-      then 
-        DAE.BCONST(b);
-    
     case(DAE.GREATER(ty=_),DAE.BCONST(true),DAE.BCONST(false))
       then DAE.BCONST(true);
 
@@ -3280,23 +3268,11 @@ algorithm
         b = v1 >. v2;
       then 
         DAE.BCONST(b);
-    
-    case(DAE.GREATER(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
-      equation
-        b = i1 > i2;
-      then 
-        DAE.BCONST(b);
 
     case(DAE.GREATEREQ(ty=_),DAE.BCONST(false),DAE.BCONST(true))
       then DAE.BCONST(false);
 
     case(DAE.GREATEREQ(ty=_),DAE.BCONST(_),DAE.BCONST(_))
-      then DAE.BCONST(true);
-
-    case(DAE.GREATEREQ(ty=_),exp1,exp2) 
-      equation
-        true = Expression.isPositiveOrZero(exp1);
-        true = Expression.isNegativeOrZero(exp2);
       then DAE.BCONST(true);
 
     case(DAE.GREATEREQ(ty=_),exp1,exp2) 
@@ -3307,12 +3283,6 @@ algorithm
       then 
         DAE.BCONST(b);
     
-    case(DAE.GREATEREQ(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
-      equation
-        b = i1 >= i2;
-      then 
-        DAE.BCONST(b);
-
     case(DAE.EQUAL(ty=_),DAE.BCONST(b1),DAE.BCONST(b2)) 
       equation
         b = boolEq(b1,b2);
@@ -3333,12 +3303,6 @@ algorithm
       then 
         DAE.BCONST(b);
     
-    case(DAE.EQUAL(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
-      equation
-        b = i1 == i2;
-      then 
-        DAE.BCONST(b);
-
     case(DAE.NEQUAL(ty=_),DAE.BCONST(b1),DAE.BCONST(b2)) 
       equation
         b = not boolEq(b1,b2);
@@ -3359,12 +3323,6 @@ algorithm
       then 
         DAE.BCONST(b);
     
-    case(DAE.NEQUAL(ty=_),DAE.ENUM_LITERAL(index=i1),DAE.ENUM_LITERAL(index=i2)) 
-      equation
-        b = i1 <> i2;
-      then 
-        DAE.BCONST(b);
-
     case(DAE.AND(DAE.T_BOOL(varLst = _)),exp1,exp2) 
       equation
         b1 = Expression.getBoolConst(exp1);
@@ -3982,6 +3940,12 @@ algorithm
         e2 = simplifyBinary(inOperator2, inExp3, e2);
       then
         DAE.RANGE(ty,e1,oexp,e2);        
+      
+    case(DAE.GREATEREQ(ty=_),_,_) 
+      equation
+        true = Expression.isPositiveOrZero(inExp3);
+        true = Expression.isNegativeOrZero(inExp4);
+      then DAE.BCONST(true);      
       
   end matchcontinue;
 end simplifyBinary;

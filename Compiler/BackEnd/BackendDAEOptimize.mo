@@ -3127,20 +3127,13 @@ algorithm
     case ((v as BackendDAE.VAR(varName=cr,bindExp=SOME(e),values=attr),(repl,numrepl)))
       equation
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
+        (e1,_) = ExpressionSimplify.simplify(e1);
         v1 = BackendVariable.setBindExp(v,e1);
-        true = Expression.isConst(e1);
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, e1,NONE());
+        repl_1 = addConstExpReplacement(e1,cr,repl);
         (attr,repl_1) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl_1);
         v1 = BackendVariable.setVarAttributes(v1,attr);
       then ((v1,(repl_1,numrepl+1)));
-    case ((v as BackendDAE.VAR(bindExp=SOME(e),values=attr),(repl,numrepl)))
-      equation
-        (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
-        v1 = BackendVariable.setBindExp(v,e1);
-        (new_attr,repl) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl);
-        v1 = BackendVariable.setVarAttributes(v1,new_attr);
-      then ((v1,(repl,numrepl)));
-    
+  
     case  ((v as BackendDAE.VAR(values=attr),(repl,numrepl)))
       equation 
         (new_attr,repl) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,traverseExpVisitorWrapper,repl);
@@ -3148,6 +3141,23 @@ algorithm
       then ((v1,(repl,numrepl)));
   end matchcontinue;
 end replaceFinalVarTraverser;
+
+protected function addConstExpReplacement
+  input DAE.Exp inExp;
+  input DAE.ComponentRef cr;
+  input BackendVarTransform.VariableReplacements inRepl;
+  output BackendVarTransform.VariableReplacements outRepl;
+algorithm
+  outRepl := matchcontinue(inExp,cr,inRepl)
+    case (_,_,_)
+      equation
+        true = Expression.isConst(inExp);
+      then
+        BackendVarTransform.addReplacement(inRepl, cr, inExp,NONE());
+    else
+      inRepl;
+  end matchcontinue;
+end addConstExpReplacement;
 
 protected function traverseExpVisitorWrapper "help function to replaceFinalVarTraverser"
   input tuple<DAE.Exp,BackendVarTransform.VariableReplacements> inTpl;
