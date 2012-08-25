@@ -10572,7 +10572,7 @@ algorithm
       list<BackendDAE.Equation> h0,g0,h,g,eqnslst;
       list<list<BackendDAE.Equation>> derivedEquations,hlst,glst; 
       array<list<BackendDAE.Equation>> derivedEquationsArr;
-      list<BackendDAE.Var> k0,pdvarlst;    
+      list<BackendDAE.Var> k0,pdvarlst,tvarslst;    
       BackendDAE.Variables vars,kvars,sysvars,sysvars1,kvars1,varst1;
       BackendDAE.EquationArray eqns,syseqns;
       BackendVarTransform.VariableReplacements repl;
@@ -10623,6 +10623,12 @@ algorithm
         glst = List.map1r(othercomps1,arrayGet,derivedEquationsArr);
         hlst = List.map1r(residual1,arrayGet,derivedEquationsArr);
         g = List.flatten(glst);
+        // take care that tearing vars not used in relations
+        tvarslst = List.map1r(tvars,BackendVariable.getVarAt,vars);
+        pdcr_lst = List.map(tvarslst,BackendVariable.varCref);
+        ht = HashSet.emptyHashSet();
+        ht = List.fold(pdcr_lst,BaseHashSet.add,ht);
+        (_,(ht,true)) = BackendEquation.traverseBackendDAEExpsEqnList(g,checkTVarsnoRelations,(ht,true));        
         //pdcr_lst = BackendEquation.equationUnknownCrefs(g,BackendDAEUtil.listVar(listAppend(BackendDAEUtil.varList(sysvars),knvarlst)));
         pdcr_lst = BackendEquation.equationUnknownCrefs(g,BackendVariable.daeVars(isyst),kvars);
         pdvarlst = List.map(pdcr_lst,makePardialDerVar);
