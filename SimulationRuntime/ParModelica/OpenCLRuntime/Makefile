@@ -1,7 +1,9 @@
 
-OPENMODELICA_INC=$(OPENMODELICAHOME)/include/omc/
-OPENMODELICA_LIB=$(OPENMODELICAHOME)/lib/omc/
-OPENMODELICA_BIN=$(OPENMODELICAHOME)/bin/
+TOP_BUILDDIR = ../../../build/
+
+OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/
+OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
+OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
 
 AR_=ar -rcs
@@ -10,7 +12,7 @@ CC=g++
 CXX=g++
 EXEEXT=
 DLLEXT=.so
-CFLAGS= -O3 -Wall -I. -I"$(OPENMODELICAHOME)/include/omc"
+CFLAGS= -O3 -Wall -I. -I"$(TOP_BUILDDIR)/include/omc"
 OPENLC_LIB= lOpenCL
 
 
@@ -31,9 +33,9 @@ transfer: libOMOCLRuntime.a
 	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_LIB)
 #	mkdir -p $(OPENMODELICA_INC)/CL/
 #	$(COPY) ./CL/* $(OPENMODELICA_INC)/CL/
-	$(COPY) OCLRuntimeUtil_new.cl $(OPENMODELICAHOME)/include/omc/
-# cp OCLRuntimeUtil.cl $(OPENMODELICAHOME)/bin/
-# cp ocloffcomp$(EXEEXT) $(OPENMODELICAHOME)/bin/
+	$(COPY) OCLRuntimeUtil_new.cl $(TOP_BUILDDIR)/include/omc/
+# cp OCLRuntimeUtil.cl $(TOP_BUILDDIR)/bin/
+# cp ocloffcomp$(EXEEXT) $(TOP_BUILDDIR)/bin/
 
 ocloffc: omc_ocl_util.h libOMOCLRuntime.a
 	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.c libOMOCLRuntime.a $(OPENLC_LIB) $(CFLAGS) 
