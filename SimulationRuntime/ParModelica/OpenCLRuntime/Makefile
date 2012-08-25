@@ -8,10 +8,10 @@ AR_=ar -rcs
 COPY=cp -rpu
 CC=g++
 CXX=g++
-EXEEXT=.exe
-DLLEXT=.dll
+EXEEXT=
+DLLEXT=.so
 CFLAGS= -O3 -Wall -I. -I"$(OPENMODELICAHOME)/include/omc"
-OPENLC_LIB= OpenCL.lib 
+OPENLC_LIB= lOpenCL
 
 
 OBJS = \
@@ -27,10 +27,10 @@ transfer: libOMOCLRuntime.a
 	$(COPY) omc_ocl_common_header.h $(OPENMODELICA_INC)
 	$(COPY) omc_ocl_memory_ops.h $(OPENMODELICA_INC)
 	$(COPY) libOMOCLRuntime.a $(OPENMODELICA_LIB)
-	$(COPY) $(OPENLC_LIB) $(OPENMODELICA_LIB)
+#	$(COPY) $(OPENLC_LIB) $(OPENMODELICA_LIB)
 	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_LIB)
-	mkdir -p $(OPENMODELICA_INC)/CL/
-	$(COPY) ./CL/* $(OPENMODELICA_INC)/CL/
+#	mkdir -p $(OPENMODELICA_INC)/CL/
+#	$(COPY) ./CL/* $(OPENMODELICA_INC)/CL/
 	$(COPY) OCLRuntimeUtil_new.cl $(OPENMODELICAHOME)/include/omc/
 # cp OCLRuntimeUtil.cl $(OPENMODELICAHOME)/bin/
 # cp ocloffcomp$(EXEEXT) $(OPENMODELICAHOME)/bin/
