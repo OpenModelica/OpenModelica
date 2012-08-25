@@ -12,7 +12,7 @@ CC=g++
 CXX=g++
 EXEEXT=
 DLLEXT=.so
-CFLAGS= -O3 -Wall -I. -I"$(TOP_BUILDDIR)/include/omc"
+CFLAGS= -O3 -Wall -I. -I"../../c"
 OPENLC_LIB= lOpenCL
 
 
