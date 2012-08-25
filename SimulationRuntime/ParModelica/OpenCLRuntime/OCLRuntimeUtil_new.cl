@@ -45,28 +45,34 @@
 */ 
 
 
-
-#ifdef __AMD__
-  #pragma OPENCL EXTENSION cl_amd_fp64 : enable
-  #ifdef __CPU__
-    #pragma OPENCL EXTENSION cl_amd_printf : enable
-    #define MODELICA_ASSERT(i,s) (printf(s); printf("At line %d\n", i))
-    #define printline() printf("At line %d\n", __LINE__)
-  #else
-    #define MODELICA_ASSERT(i,s)
-    #define printline()
-  #endif    
-#else
-  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
-  #ifdef __CPU__
-    #pragma OPENCL EXTENSION cl_intel_printf : enable
-    #define MODELICA_ASSERT(i,s) (printf(s); printf("At line %d\n", i))
-    #define printline() printf("At line %d\n", __LINE__)
-  #else
-    #define MODELICA_ASSERT(i,s)
-    #define printline()
-  #endif
+#ifdef cl_amd_printf
+  #pragma OPENCL EXTENSION cl_amd_printf : enable
+  #define PRINTF_AVAILABLE
 #endif
+
+#ifdef cl_intel_printf
+  #pragma OPENCL EXTENSION cl_intel_printf : enable
+  #define PRINTF_AVAILABLE
+#endif
+
+#ifdef PRINTF_AVAILABLE
+  #define MODELICA_ASSERT(i,s) (printf("Assertion: %s\n File %s, Line %d\n", s, __LINE__, i))
+  #define printline() printf("At line %d\n", __LINE__)
+#else
+  #define MODELICA_ASSERT(i,s)
+  #define printline()
+#endif
+
+#ifdef cl_khr_fp64
+  #pragma OPENCL EXTENSION cl_khr_fp64 : enable
+  #define DOUBLE_PREC_AVAILABLE
+#endif
+
+#ifdef cl_amd_fp64
+  #pragma OPENCL EXTENSION cl_amd_fp64 : enable
+  #define DOUBLE_PREC_AVAILABLE
+#endif
+
 
 #define FILE_INFO modelica_integer
 #define omc_dummyFileInfo __LINE__
@@ -75,9 +81,18 @@
 #define cos(v,m) (cos(v))
  
  
-typedef double modelica_real; 
-// typedef long  modelica_integer;
+#ifdef __x86_64__
+typedef long  modelica_integer;
+#else
 typedef int  modelica_integer;
+#endif
+
+#ifdef DOUBLE_PREC_AVAILABLE
+typedef double modelica_real; 
+#else
+typedef float modelica_real; 
+#endif
+
 typedef bool modelica_boolean;
 typedef modelica_integer _index_t;
 
@@ -110,7 +125,6 @@ typedef struct gi_array integer_array;
 modelica_integer  oclGetGlobalId(modelica_integer dim) {
     return get_global_id(dim - 1) + 1;
 }
-
 
 #define oclGlobalBarrier() barrier(CLK_GLOBAL_MEM_FENCE)
 

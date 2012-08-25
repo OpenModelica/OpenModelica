@@ -1,1 +1,33 @@
-# TODO
+TOP_BUILDDIR = ../../../build/
+
+OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/
+OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
+OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
+
+
+AR_=ar -rcs
+COPY=cp -rpu
+CC=g++
+CXX=g++
+
+CFLAGS= -fPIC -O3 -Wall -I. -I"../../c"
+
+SRCS = \
+omc_ocl_memory_ops.c \
+omc_ocl_interface.c \
+omc_ocl_builtin_kernels.c \
+omc_ocl_util.c 
+
+OBJS = $(SRCS:.c=.o)
+
+.PHONY : ocloffc libOMOCLRuntime clean
+
+ocloffc: omc_ocl_util.h libOMOCLRuntime.a
+	 $(CXX) -I.  -o ocloffcomp$(EXEEXT) ocl_offcomp.c libOMOCLRuntime.a $(OPENLC_LIB) $(CFLAGS) 
+	 
+libOMOCLRuntime.a: $(OBJS)
+	@rm -f $@
+	$(AR_) $@ $(OBJS)
+	
+clean :
+	rm -f *.o *.a
