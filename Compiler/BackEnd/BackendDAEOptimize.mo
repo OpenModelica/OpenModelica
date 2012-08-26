@@ -10810,9 +10810,9 @@ algorithm
         ((e,false, (ht,b)));
     
     // case for functionpointers    
-    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(ht,true)))
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(ht,b)))
       then
-        ((e,false, (ht,true)));
+        ((e,false, (ht,b)));
 
     // already there
     case ((e as DAE.CREF(componentRef = cr),(ht,true)))
@@ -10820,7 +10820,7 @@ algorithm
          b1 = BaseHashSet.has(cr, ht);
          b1 = not b1;
       then
-        ((e, b1,(ht,b1)));
+        ((e, false,(ht,b1)));
 
     case ((e,(ht,b))) then ((e,b,(ht,b)));
   end matchcontinue;
