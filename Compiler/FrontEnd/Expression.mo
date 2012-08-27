@@ -6737,18 +6737,7 @@ See also isPositiveOrZero.
   input DAE.Exp e;
   output Boolean res;
 algorithm
-  res := matchcontinue(e)
-    local
-      DAE.Exp e1,e2;
-
-     /* constant >= 0 */
-    case(e) equation
-      true = isConst(e);
-      false = expReal(e) <. intReal(0);
-    then true;
-
-    else false;
-  end matchcontinue;
+  res :=isPositiveOrZero(e) and not isZero(e);
 end expIsPositive;
 
 public function isEven "returns true if expression is even"
