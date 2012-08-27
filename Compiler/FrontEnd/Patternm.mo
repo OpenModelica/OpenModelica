@@ -234,7 +234,7 @@ algorithm
         et = validPatternType(DAE.T_METALIST_DEFAULT,ty,inLhs,info);
       then (cache,DAE.PAT_CONSTANT(et,DAE.LIST({})));
 
-    case (cache,env,Absyn.ARRAY(exps),ty,info,_,_)
+    case (cache,env,Absyn.ARRAY(exps as _::_),ty,info,_,_)
       equation
         lhs = List.fold(listReverse(exps), Absyn.makeCons, Absyn.ARRAY({}));
         (cache,pattern) = elabPattern(cache,env,lhs,ty,info,Static.bDisallowTopLevelInputs);
