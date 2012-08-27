@@ -213,6 +213,20 @@ algorithm
   Flags.setConfigInt(Flags.VECTORIZATION_LIMIT, limit);
 end setVectorizationLimit;
 
+public function getDefaultOpenCLDevice
+  "Returns the id for the default OpenCL device to be used."
+  output Integer defdevid;
+algorithm
+  defdevid := Flags.getConfigInt(Flags.DEFAULT_OPENCL_DEVICE);
+end getDefaultOpenCLDevice;
+
+public function setDefaultOpenCLDevice
+  "Sets the default OpenCL device to be used."
+  input Integer defdevid;
+algorithm
+  Flags.setConfigInt(Flags.DEFAULT_OPENCL_DEVICE, defdevid);
+end setDefaultOpenCLDevice;
+
 public function showAnnotations
   output Boolean show;
 algorithm

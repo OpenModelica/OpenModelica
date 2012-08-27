@@ -85,7 +85,7 @@ char* load_source_file(const char* file_name){
 
 void ocl_get_device(){
     cl_uint nr_dev;
-    cl_uint plat_id;
+    cl_uint plat_id = -1;
     size_t arg_nr;
     clGetPlatformIDs(MAX_DEVICE, NULL, &nr_dev);
 
@@ -94,55 +94,89 @@ void ocl_get_device(){
     clGetPlatformIDs(nr_dev, cpPlatform, NULL);
     
     
-#ifdef SHOW_DEVICE_SELECTION
-    for (unsigned int i = 0; i < nr_dev; i++){
-        char cBuffer[1024];
-        cl_uint mem;
-        cl_ulong mem2;
-        
-
-        clGetDeviceIDs(cpPlatform[i], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL);
-
-
-        clGetDeviceInfo(ocl_device, CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL);
-        printf("%d CL_DEVICE_NAME :\t\t%s\n", i, cBuffer);
-        clGetDeviceInfo(ocl_device, CL_DRIVER_VERSION, sizeof(cBuffer), &cBuffer, NULL);
-        printf("%d CL_DRIVER_VERSION :\t%s\n", i, cBuffer);
-        clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_COMPUTE_UNITS , sizeof(cl_uint), &mem, NULL);
-        printf("%d CL_DEVICE_MAX_COMPUTE_UNITS :\t%d\n", i, mem);
-        clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_CLOCK_FREQUENCY , sizeof(cl_uint), &mem, NULL);
-        printf("%d CL_DEVICE_MAX_CLOCK_FREQUENCY :\t%d\n", i,mem);
-        clGetDeviceInfo(ocl_device, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
-        printf("%d CL_DEVICE_LOCAL_MEM_SIZE :\t%lu KB\n", i, mem2/1024);
-        clGetDeviceInfo(ocl_device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
-        printf("%d CL_DEVICE_GLOBAL_MEM_SIZE: %lu MB\n", i, mem2/1024/1024);
-        clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
-        printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %lu MB\n", i, mem2/1024/1024);
-        clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
-        printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %d MB\n", i, arg_nr);
-        
-        clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
-        printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %d \n", i, arg_nr);
-        MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   //default number of threads is the max number of threads!
-        
-        clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);
-        printf("%d CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  : %d\n\n\n", i,mem);
-        
-        // MinGW needs fflush. They should put it in BIG LETTERS on A BIG BANNER!!
-        fflush(stdout);
+    // If the default device id is given in to the Openmodelica compiler
+    // Set our device to it.
+    if (default_ocl_device)
+    {
+        // If the default device id is valid set our device to it.
+        if(default_ocl_device >= 1 && default_ocl_device <= nr_dev)
+        {
+            plat_id = default_ocl_device;            
+        }
+        // Not a valid id. set default_ocl_device=0 so that the next if can take care of it.
+        else
+        {
+            printf("- The device id you provided to OMC is not valid.\n");
+            printf("- Please select a valid OpenCL device number. \n");     
+            fflush(stdout);
+            default_ocl_device = 0;
+        }
     }
     
-    printf("Select your device:      ");     fflush(stdout);
-    scanf ("%d",&plat_id);
-    
-    
-#else
-    plat_id = DEFAULT_DEVICE;
-#endif
 
-    clGetDeviceIDs(cpPlatform[plat_id], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL);
+    // If the default device id is not given in to the Openmodelica compiler OR
+    // If the given id was not valid then
+    // Show the selection options to the user.
+    if (!default_ocl_device)  
+    {
+        printf("- %d OpenCL devices available.\n\n", nr_dev);
+        
+        for (unsigned int i = 1; i <= nr_dev; i++){
+            char cBuffer[1024];
+            cl_uint mem;
+            cl_ulong mem2;
+            
+
+            clGetDeviceIDs(cpPlatform[i-1], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL);
+
+
+            clGetDeviceInfo(ocl_device, CL_DEVICE_NAME, sizeof(cBuffer), &cBuffer, NULL);
+            printf("%d CL_DEVICE_NAME :\t\t%s\n", i, cBuffer);
+            clGetDeviceInfo(ocl_device, CL_DRIVER_VERSION, sizeof(cBuffer), &cBuffer, NULL);
+            printf("%d CL_DRIVER_VERSION :\t%s\n", i, cBuffer);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_COMPUTE_UNITS , sizeof(cl_uint), &mem, NULL);
+            printf("%d CL_DEVICE_MAX_COMPUTE_UNITS :\t%d\n", i, mem);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_CLOCK_FREQUENCY , sizeof(cl_uint), &mem, NULL);
+            printf("%d CL_DEVICE_MAX_CLOCK_FREQUENCY :\t%d\n", i,mem);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_LOCAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
+            printf("%d CL_DEVICE_LOCAL_MEM_SIZE :\t%lu KB\n", i, mem2/1024);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_GLOBAL_MEM_SIZE, sizeof(cl_ulong), &mem2, NULL);
+            printf("%d CL_DEVICE_GLOBAL_MEM_SIZE: %lu MB\n", i, mem2/1024/1024);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_MEM_ALLOC_SIZE, sizeof(cl_ulong), &mem2, NULL);
+            printf("%d CL_DEVICE_MAX_MEM_ALLOC_SIZE: %lu MB\n", i, mem2/1024/1024);
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_PARAMETER_SIZE, sizeof(size_t), &arg_nr, NULL);
+            printf("%d CL_DEVICE_MAX_PARAMETER_SIZE: %d MB\n", i, arg_nr);
+            
+            clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
+            printf("%d CL_DEVICE_MAX_WORK_GROUP_SIZE: %d \n", i, arg_nr);
+            MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   //default number of threads is the max number of threads!
+            
+            clGetDeviceInfo(ocl_device, CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  , sizeof(cl_uint), &mem, NULL);
+            printf("%d CL_DEVICE_PREFERRED_VECTOR_WIDTH_DOUBLE  : %d\n\n\n", i,mem);
+            
+            // MinGW needs fflush. They should put it in BIG LETTERS on A BIG BANNER!!
+            fflush(stdout);
+        }
+        
+        while(plat_id < 1 || plat_id > nr_dev)
+        {    
+            printf("- Select your device:      ");     fflush(stdout);
+            scanf ("%d",&plat_id);
+            
+            if(plat_id < 1 || plat_id > nr_dev)
+                printf("- Please select a valid OpenCL device number. \n");
+        };
+    
+    }
+    
+    
+
+    clGetDeviceIDs(cpPlatform[plat_id - 1], CL_DEVICE_TYPE_ALL, 1, &ocl_device, NULL);
     clGetDeviceInfo(ocl_device, CL_DEVICE_MAX_WORK_GROUP_SIZE, sizeof(size_t), &arg_nr, NULL);
+    
+#if BE_OCL_VERBOSE
     printf("Using CL_DEVICE_MAX_WORK_GROUP_SIZE: %d \n", arg_nr);
+#endif
     
     //default number of threads is the max number of threads!
     MAX_THREADS_WORKGROUP = (modelica_integer)arg_nr;   
@@ -167,7 +201,10 @@ void ocl_create_context_and_comm_queue(){
     // Create a context to run OpenCL on the OCL-enabled Device
     cl_int err;
     
+#if BE_OCL_VERBOSE
     printf("--- Creating OpenCL context");
+#endif
+    
     device_context = clCreateContext(0, 1, &ocl_device, NULL, NULL, &err);
     
     ocl_error_check(OCL_CREATE_CONTEXT, err);
@@ -179,7 +216,10 @@ void ocl_create_context_and_comm_queue(){
     clGetContextInfo(device_context, CL_CONTEXT_DEVICES, ParmDataBytes, OCL_Devices, NULL);
 
     // Create a command-queue on the first OCL_ device
+#if BE_OCL_VERBOSE
     printf("--- Creating OpenCL command queue");
+#endif
+    
     device_comm_queue = clCreateCommandQueue(device_context,
         OCL_Devices[0], 0, &err);
     
@@ -198,13 +238,16 @@ void ocl_build_p_from_src(){
     program_source = load_source_file(omc_ocl_kernels_source);
 
     
-    
+#if BE_OCL_VERBOSE
     printf("--- Creating OpenCL program");
-    
+#endif
     // omc_ocl_program declared in omc_ocl_util.h
     omc_ocl_program = clCreateProgramWithSource(device_context, 1,
         (const char**)&program_source, NULL, NULL);
+    
+#if BE_OCL_VERBOSE
     printf("\t\t\t - OK.\n");    
+#endif
 
     free((void*)program_source);
     
@@ -220,7 +263,10 @@ void ocl_build_p_from_src(){
     
     
     // Build the program (OpenCL JIT compilation).
+#if BE_OCL_VERBOSE
     printf("--- Building OpenCL program \n");    
+#endif
+    
     char options[100];
     const char* flags = "-I\"";
     const char* OMEXT = "/include/omc/\"";
@@ -229,7 +275,10 @@ void ocl_build_p_from_src(){
     strcpy(options, flags);
     strcat(options, OMHOME);
     strcat(options, OMEXT);
+    
+#if BE_OCL_VERBOSE
     printf("\t :Using flags %s\n",options);
+#endif
     
     // Build the OpenCL program.
     cl_int err = 0;
@@ -244,14 +293,16 @@ void ocl_build_p_from_src(){
     // Get the build log.
     char * log = (char*)malloc(size);
     clGetProgramBuildInfo(omc_ocl_program,ocl_device,CL_PROGRAM_BUILD_LOG,size,log, NULL);
-    printf("CL_PROGRAM_BUILD_LOG:  \n%s\n", log);
-    free(log);
-    
+        
     if(err){
         printf("Build failed: Errors detected in compilation of OpenCL code:\n");
+        printf("CL_PROGRAM_BUILD_LOG:  \n%s\n", log);
+        free(log);
         exit(1);
     }
-    
+
+    free(log);
+
 }
 
 cl_kernel ocl_create_kernel(cl_program program, const char* kernel_name){
@@ -454,7 +505,9 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
+#if BE_OCL_VERBOSE
                     printf("\t\t\t\t\t\t - OK.\n");    
+#endif
                     break;
                 default:
                     printf("Possible unknown error in : OCL_BUILD_PROGRAM\n");
@@ -554,7 +607,9 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
+#if BE_OCL_VERBOSE
                     printf("\t\t\t - OK.\n");    
+#endif                    
                     break;
                 default:
                     printf("Possible unknown error in : OCL_CREATE_CONTEXT\n");
@@ -584,7 +639,9 @@ void ocl_error_check(int operation, cl_int error_code){
                     printf("CL_OUT_OF_HOST_MEMORY \n");
                     break;
                 case CL_SUCCESS:
+#if BE_OCL_VERBOSE
                     printf("\t\t - OK.\n");    
+#endif                    
                     break;
                 default:
                     printf("Possible unknown error in : OCL_CREATE_COMMAND_QUEUE\n");

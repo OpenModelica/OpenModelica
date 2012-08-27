@@ -67,6 +67,9 @@ cl_program omc_ocl_program = NULL;
 // This should be initialzed in the generated code.
 extern const char* omc_ocl_kernels_source;
 
+// The default OpenCL device. If not set (=0) show the selection option.*/
+// This should be initialzed in the generated code.
+extern unsigned int default_ocl_device;
 
 
 extern m_integer* integer_array_element_addr_c99_1(integer_array_t* source,int ndims,...);

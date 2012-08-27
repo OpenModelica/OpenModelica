@@ -689,6 +689,9 @@ constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(40, "plotSilent",
 constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale", 
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Override the locale from the environment."));
+constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
+  SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
+  Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialisation so that all flags are
@@ -734,7 +737,8 @@ constant list<ConfigFlag> allConfigFlags = {
   REDUCE_TERMS,
   REDUCTION_METHOD,
   PLOT_SILENT,
-  LOCALE_FLAG
+  LOCALE_FLAG,
+  DEFAULT_OPENCL_DEVICE
 };
 
 public function new

@@ -174,6 +174,9 @@ modelica_integer size_of_dimension_integer_array(device_integer_array dev_arr, m
 //Free a device array memory.
 void free_device_array(device_array *dest);
 
+// This is just overloaded to allow the device arrays
+// be freed properly.
+void free_device_array(base_array_t* dest);
 
 //prints information about a device array. useful for debugging.
 void print_array_info(device_real_array* arr);

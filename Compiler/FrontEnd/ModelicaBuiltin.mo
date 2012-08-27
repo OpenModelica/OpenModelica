@@ -1521,6 +1521,23 @@ algorithm
 annotation(preferredView="text");
 end setVectorizationLimit;
 
+public function getDefaultOpenCLDevice
+  "Returns the id for the default OpenCL device to be used."
+  output Integer defdevid;
+external "builtin";
+annotation(preferredView="text");
+end getDefaultOpenCLDevice;
+
+public function setDefaultOpenCLDevice
+  "Sets the default OpenCL device to be used."
+  input Integer defdevid;
+  output Boolean success;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  success := setCommandLineOptions("+o=" + String(defdevid));
+annotation(preferredView="text");
+end setDefaultOpenCLDevice;
+
 function setShowAnnotations
   input Boolean show;
   output Boolean success;

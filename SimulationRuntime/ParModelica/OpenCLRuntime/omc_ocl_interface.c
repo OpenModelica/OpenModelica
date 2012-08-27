@@ -150,11 +150,18 @@ void alloc_real_array(device_real_array *dest, int ndims, ...){
 }
 
 
-void free_device_array(device_array *dest){
+void free_device_array(device_array* dest){
     clReleaseMemObject(dest->data);
     clReleaseMemObject(dest->info_dev);
     free(dest->info);
 }
+
+// This is just overloaded to allow the device arrays
+// be freed properly.
+void free_device_array(base_array_t* dest){
+}
+
+
 
 
 void copy_real_array_data(device_real_array* dev_array_ptr, real_array_t* host_array_ptr){

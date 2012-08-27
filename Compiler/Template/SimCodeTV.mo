@@ -2284,6 +2284,12 @@ package Config
   function getRunningTestsuite
     output Boolean runningTestsuite;
   end getRunningTestsuite;
+  
+  function getDefaultOpenCLDevice
+  "Returns the id for the default OpenCL device to be used."
+    output Integer defdevid;
+  end getDefaultOpenCLDevice;
+  
 end Config;
 
 package Flags

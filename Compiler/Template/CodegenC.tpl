@@ -2512,7 +2512,8 @@ template commonHeader(String filePrefix)
   const char* omc_ocl_kernels_source = "<%filePrefix%>_kernels.cl";
   /* the OpenCL program. Made global to avoid repeated builds */
   extern cl_program omc_ocl_program;
-  
+  /* The default OpenCL device. If not set (=0) show the selection option.*/
+  unsigned int default_ocl_device = <%getDefaultOpenCLDevice()%>;
   >>
   %>
   
@@ -4906,6 +4907,20 @@ case STMT_ASSIGN_ARR(exp=RANGE(__), componentRef=cr, type_=t) then
   <<
   <%fillArrayFromRange(t,exp,cr,context,&varDecls)%>
   >>
+case STMT_ASSIGN_ARR(exp=e as CALL(__), componentRef=cr, type_=t) then
+  let &preExp = buffer "" /*BUFD*/
+  let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  let ispec = indexSpecFromCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)  
+  if ispec then
+    <<
+    <%preExp%>
+    <%indexedAssign(t, expPart, cr, ispec, context, &varDecls)%>
+    >>
+  else
+    <<
+    <%preExp%>
+    <%copyArrayDataAndFreeMemAfterCall(t, expPart, cr, context)%>
+    >>
 case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -4973,6 +4988,24 @@ template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
   else
     'copy_<%type%>_data_mem(&<%exp%>, &<%cref%>);'
 end copyArrayData;
+
+template copyArrayDataAndFreeMemAfterCall(DAE.Type ty, String exp, DAE.ComponentRef cr,
+
+  Context context)
+::=
+  let type = expTypeArray(ty)
+  let cref = contextArrayCref(cr, context)
+  match context
+  case FUNCTION_CONTEXT(__) then
+    <<
+    copy_<%type%>_data(&<%exp%>, &<%cref%>);
+    <%if acceptParModelicaGrammar() then 'free_device_array(&<%exp%>);'%>
+    >>
+  case PARALLEL_FUNCTION_CONTEXT(__) then
+    'copy_<%type%>_data(&<%exp%>, &<%cref%>);'
+  else
+    'copy_<%type%>_data_mem(&<%exp%>, &<%cref%>);'
+end copyArrayDataAndFreeMemAfterCall;
     
 template algStmtTupleAssign(DAE.Statement stmt, Context context,
                    Text &varDecls /*BUFP*/)
