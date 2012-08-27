@@ -44,9 +44,8 @@ protected import Error;
 protected import List;
 protected import Util;
 
-public
-replaceable type NodeType subtypeof Any;
-replaceable type ArgType subtypeof Any;
+public replaceable type NodeType subtypeof Any;
+public replaceable type ArgType subtypeof Any;
   
 public function buildGraph
   "This function will build a graph given a list of nodes, an edge function, and

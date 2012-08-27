@@ -61,7 +61,7 @@ protected import System;
 /*   Interfaces */
 /*************************************/
 
-partial function StructurallySingularSystemHandlerFunc
+public partial function StructurallySingularSystemHandlerFunc
   input list<Integer> eqns;
   input Integer actualEqn;
   input BackendDAE.EqSystem isyst;
