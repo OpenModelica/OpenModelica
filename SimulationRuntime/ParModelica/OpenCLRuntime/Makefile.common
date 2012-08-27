@@ -4,13 +4,9 @@ OPENMODELICA_INC=$(TOP_BUILDDIR)/include/omc/
 OPENMODELICA_LIB=$(TOP_BUILDDIR)/lib/omc/
 OPENMODELICA_BIN=$(TOP_BUILDDIR)/bin/
 
-
+# cp -u is a GNU extension. Do not rely on it.
+COPY=cp -rp
 AR_=ar -rcs
-COPY=cp -rpu
-CC=g++
-CXX=g++
-
-CFLAGS= -fPIC -O3 -Wall -I. -I"../../c"
 
 SRCS = \
 omc_ocl_memory_ops.c \

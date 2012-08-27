@@ -1,9 +1,12 @@
+CC=@CC@
+CXX=@CXX@
 
+CFLAGS=@CFLAGS@
+CPPFLAGS=@CPPFLAGS@ -I. -I"../../c"
 
 EXEEXT=
 DLLEXT=.so
 OPENLC_LIB= lOpenCL
-
 
 all: transfer
 	 
@@ -15,6 +18,7 @@ transfer: libOMOCLRuntime.a
 	$(COPY) ParModelicaBuiltin.mo $(OPENMODELICA_LIB)
 	$(COPY) OCLRuntimeUtil_new.cl $(TOP_BUILDDIR)/include/omc/
 
-include Makefile.common
+Makefile: Makefile.in
+	(cd ../../../ && ./config.status)
 
-	
+include Makefile.common
