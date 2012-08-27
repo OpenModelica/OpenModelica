@@ -516,28 +516,11 @@ protected function simplifyIfExp
 algorithm
   exp := match (cond,tb,fb)
     local 
-      Real r;
-      Integer i;
       Boolean b,b1;
       DAE.Exp e;
       // Condition is constant
     case (DAE.BCONST(true),tb,fb) then tb;
     case (DAE.BCONST(false),tb,fb) then fb;
-    // because ther is somewhere an error (maybe eval return reals instead of bools)
-    case (DAE.RCONST(r),tb,fb)
-      equation
-        b = r ==. 1.0;
-        b1 = r ==. 0.0;
-        true = b or b1;
-      then 
-        Util.if_(b,tb,fb);
-    case (DAE.ICONST(i),tb,fb)
-      equation
-        b = i == 1;
-        b1 = i == 0;
-        true = b or b1;
-      then 
-        Util.if_(b,tb,fb);
       // The expression is the condition
     case (exp,DAE.BCONST(true),DAE.BCONST(false)) then exp;
     case (exp,DAE.BCONST(false),DAE.BCONST(true))

@@ -45,6 +45,7 @@ public import DAE;
 public import Env;
 
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BaseHashTable;
@@ -130,7 +131,7 @@ algorithm
   outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,constrarra,clsattrsarra,inCache,inEnv,functionTree,einfo,extObjCls,BackendDAE.SIMULATION(),{}));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO,print,"No. of Equations: " +& intString(BackendDAEUtil.equationSize(eqnarr)) +& "\nNo. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
-  Debug.execStat("generate Backend Data Structur",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("generate Backend Data Structure",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
 end lower;
 
 protected function lower2
@@ -609,7 +610,7 @@ algorithm
                   absynCommentOption = comment))
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, ct);
-        bind = fixParameterStartBinding(bind,dae_var_attr,kind_1);
+        // bind = fixParameterStartBinding(bind,t,dae_var_attr,kind_1);
         tp = lowerType(t);
         b = DAEUtil.boolVarVisibility(protection);
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
@@ -689,14 +690,15 @@ end setMinMaxFromEnumeration1;
 
 protected function fixParameterStartBinding
   input Option<DAE.Exp> bind;
+  input DAE.Type ty;
   input Option<DAE.VariableAttributes> attr;
   input BackendDAE.VarKind kind;
   output Option<DAE.Exp> outBind;
 algorithm
-  outBind := matchcontinue (bind,attr,kind)
+  outBind := matchcontinue (bind,ty,attr,kind)
     local
       DAE.Exp exp;
-    case (NONE(),_,BackendDAE.PARAM())
+    case (NONE(),DAE.T_REAL(source=_),_,BackendDAE.PARAM())
       equation
         exp = DAEUtil.getStartAttr(attr);
       then SOME(exp);
