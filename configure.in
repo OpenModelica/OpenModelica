@@ -196,7 +196,7 @@ else
       READLINELIB=$WANT_STATIC_READLINE/lib
     fi
     test -f $READLINELIB/*/libreadline.a && READLINELIB=`dirname $READLINELIB/*/libreadline.a`
-    LIBS="-lncurses $READLINELIB/libreadline.a"
+    LIBS="-lncurses $READLINELIB/libreadline.a -ltermcap"
     AC_MSG_CHECKING([for static readline $LIBS])
     AC_LINK_IFELSE([AC_LANG_CALL([], [rl_message])], [LIBREADLINE=$LIBS], [AC_MSG_ERROR([failed])])
     AC_MSG_RESULT([ok])
