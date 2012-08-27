@@ -43,6 +43,28 @@ extern "C"
 #include <stdio.h>
 #include "read_csv.h"
 
+int read_csv_dataset_size(const char* filename)
+{
+  string header;
+  int length;
+  int size = -1;
+
+  ifstream stream(filename);
+
+  /* first line start with " */
+  getline(stream,header);
+  length = strlen(header.c_str());
+
+  /* second line has to be a number */
+  while (length > 0) {
+    if (length != 0)
+      size+=1;
+    getline(stream,header);
+    length = strlen(header.c_str());
+  }
+  return size;
+}
+
 char** read_csv_variables(const char* filename)
 {
   string header;
@@ -80,6 +102,85 @@ char** read_csv_variables(const char* filename)
     res[k] = strdup(variablesList.at(k).c_str());
   }
   res[variablesList.size()] = NULL;
+  return res;
+}
+
+double* read_csv_dataset(const char *filename, const char *var, int dimsize)
+{
+  string header;
+  string variable;
+  string value;
+  unsigned int varpos=0;
+  unsigned int datapos=0;
+  bool startReading = false;
+  int length=0;
+  unsigned int stringlen=0;
+  vector<double> data;
+  char found=0;
+
+  /* get Position of var */
+  ifstream stream(filename);
+
+  getline(stream,header);
+  length = strlen(header.c_str());
+
+  for (int i = 0 ; i < length ; i++)
+  {
+    if (startReading) {
+      if (header[i] != '"') {
+        variable.append(1,header[i]);
+        stringlen+=1;
+      }
+    }
+
+    if (header[i] == '"') {
+      if (startReading) {
+        if (header[i+1] == ',') {
+          startReading = false;
+          if (strncmp(variable.c_str(),var,stringlen)==0) {
+            found = 1;
+            break;
+          }
+          varpos+=1;
+          stringlen = 0;
+          variable.clear();
+        }
+      } else {
+        startReading = true;
+      }
+    }
+  }
+  if (found==0)
+  return NULL;
+  /* collect data */
+  getline(stream,header);
+  length = strlen(header.c_str());
+  while (length > 0) {
+    for (int i = 0 ; i < length ; i++)
+    {
+      if (header[i] == ',') {
+        if (datapos == varpos) {
+          data.push_back(atof(value.c_str()));
+          break;
+        }
+        value.clear();
+        datapos +=1;
+      }
+      else
+        value.append(1,header[i]);
+    }
+    getline(stream,header);
+    length = strlen(header.c_str());
+    datapos = 0;
+    value.clear();
+  }
+
+  double *res = (double*)malloc((data.size())*sizeof(double));
+  for (unsigned int k = 0 ; k < data.size(); k++)
+  {
+    res[k] = data.at(k);
+  }
+
   return res;
 }
 

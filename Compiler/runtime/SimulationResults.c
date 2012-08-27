@@ -191,6 +191,12 @@ static int SimulationResultsImpl__readSimulationResultSize(const char *filename,
     if (size == -1) c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to read readSimulationResultSize from file: %s\n"), msg, 1);
     break;
   }
+  case CSV: {
+    size = read_csv_dataset_size(filename);
+    msg[0] = filename;
+    if (size == -1) c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to read readSimulationResultSize from file: %s\n"), msg, 1);
+    break;
+  }
   default:
     msg[0] = PlotFormatStr[simresglob->curFormat];
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("readSimulationResultSize() not implemented for plot format: %s\n"), msg, 1);
@@ -285,6 +291,24 @@ static void* SimulationResultsImpl__readDataset(const char *filename, void *vars
   }
   case PLT: {
     res = read_ptolemy_dataset(filename,vars,dimsize);
+    break;
+  }
+  case CSV: {
+    while (RML_NILHDR != RML_GETHDR(vars)) {
+      var = RML_STRINGDATA(RML_CAR(vars));
+      vars = RML_CDR(vars);
+      vals = read_csv_dataset(filename,var,dimsize);
+      if (vals == NULL) {
+        msg[1] = var;
+        msg[0] = filename;
+        c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not read variable %s in file %s."), msg, 2);
+        return NULL;
+      } else {
+        col=mk_nil();
+        for (i=0;i<dimsize;i++) col=mk_cons(mk_rcon(vals[i]),col);
+        res = mk_cons(col,res);
+      }
+    }
     break;
   }
   default:

@@ -162,7 +162,7 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
   res.n = 0;
   res.data = NULL;
 
-  /* fprintf(stderr, "getData of Var: %s from file %s\n", varname,filename); */
+  /* fprintf(stderr, "getData of Var: %s from file %s\n", varname,filename);  */
   cmpvar = mk_nil();
   cmpvar =  mk_cons(mk_scon(varname),cmpvar);
   dataset = SimulationResultsImpl__readDataset(filename,cmpvar,size,srg);
@@ -171,8 +171,8 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
     return res;
   }
 
-  /* fprintf(stderr, "Data of Var: %s\n", varname);
-     First calculate the length of the matrix */
+  /* fprintf(stderr, "Data of Var: %s\n", varname); */
+  /*  First calculate the length of the matrix */
   datasetBackup = dataset;
   while (RML_NILHDR != RML_GETHDR(dataset)) {
     lst = RML_CAR(dataset);

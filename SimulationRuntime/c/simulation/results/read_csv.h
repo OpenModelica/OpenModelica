@@ -29,4 +29,10 @@
  *
  */
 
+#include <stdio.h>
+
+int read_csv_dataset_size(const char* filename);
+
 char** read_csv_variables(const char *filename);
+
+double* read_csv_dataset(const char *filename, const char *var, int dimsize);
