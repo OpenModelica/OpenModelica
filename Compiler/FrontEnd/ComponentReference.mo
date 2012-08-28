@@ -2631,5 +2631,48 @@ algorithm
   end match;
 end expandSlice;
 
+public function replaceSubsWithString
+  input DAE.ComponentRef inCref;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inCref)
+    local
+      DAE.Ident ident,ident1;
+      DAE.Type identType;
+      list<DAE.Subscript> subscriptLst;
+      DAE.ComponentRef cr,cr1;
+      String str;
+    case DAE.CREF_QUAL(ident=ident,identType=identType,subscriptLst={},componentRef=cr)
+      equation
+        cr1 = replaceSubsWithString(cr);
+      then  
+        DAE.CREF_QUAL(ident,identType,{},cr1);
+    case DAE.CREF_QUAL(ident=ident,identType=identType,subscriptLst=subscriptLst,componentRef=cr)
+      equation
+        identType = Expression.unliftArrayTypeWithSubs(subscriptLst,identType);
+        cr1 = replaceSubsWithString(cr);
+        str = ExpressionDump.printListStr(subscriptLst, ExpressionDump.printSubscriptStr, "_");
+        ident1 = stringAppendList({ident, "_", str, "_"});
+      then  
+        DAE.CREF_QUAL(ident1,identType,{},cr1);
+    case DAE.CREF_IDENT(subscriptLst={})
+      then  
+        inCref;
+    case DAE.CREF_IDENT(ident=ident,identType=identType,subscriptLst=subscriptLst)
+      equation
+        identType = Expression.unliftArrayTypeWithSubs(subscriptLst,identType);
+        str = ExpressionDump.printListStr(subscriptLst, ExpressionDump.printSubscriptStr, "_");
+        ident1 = stringAppendList({ident, "_", str, "_"});
+      then  
+        DAE.CREF_IDENT(ident1,identType,{});
+    case DAE.CREF_ITER(ident=_)
+      then  
+        inCref;
+    case DAE.WILD()
+      then  
+        inCref;
+  end match;
+end replaceSubsWithString;
+
 end ComponentReference;
 

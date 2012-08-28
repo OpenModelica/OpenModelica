@@ -198,13 +198,13 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     _historyImpl = new HistoryImplType(globalSettings);
     <%arrayReindex(modelInfo)%>
     //Initialize array elements
-  
-    //Load Algloopsover library
+    <%initializeArrayElements(simCode)%>
+    //Load Algloopsolver library
     type_map types;
 
-    std::string algsover_name(SYSTEM_LIB);
-    if(!load_single_library(types, algsover_name))
-        throw std::invalid_argument("Algsover library could not be loaded");
+    std::string algsolver_name(SYSTEM_LIB);
+    if(!load_single_library(types, algsolver_name))
+        throw std::invalid_argument("Algsolver library could not be loaded");
     std::map<std::string, factory<IAlgLoopSolverFactory> >::iterator iter;
     std::map<std::string, factory<IAlgLoopSolverFactory> >& factories(types.get());
     iter = factories.find("AlgLoopSolverFactory");
@@ -1869,7 +1869,7 @@ template generateClassDeclarationCode(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(__)) then
   <<
-  class <%lastIdentOfPath(modelInfo.name)%>: public IDAESystem ,public IContinous ,public IEvent ,public ISystemProperties, public  ISystemInitialization <%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ',public IReduceDAE '%>,public SystemDefaultImplementation
+  class <%lastIdentOfPath(modelInfo.name)%>: public IDAESystem, public IContinous, public IEvent, public ISystemProperties, public ISystemInitialization<%if Flags.isSet(Flags.WRITE_TO_BUFFER) then ', public IReduceDAE'%>, public SystemDefaultImplementation
   { 
   
    <%generatefriendAlgloops(allEquations,simCode)%>
@@ -2616,7 +2616,7 @@ match simVar
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
-      match dims case "0" then  '<%varType%>& <%varName%>;'    
+      match dims case "0" then  '<%varType%> <%varName%>;'    
 end MemberVariableDefine;
 
 template MemberVariableDefineReference(String type,SimVar simVar, String arrayName,String pre)
@@ -2972,6 +2972,32 @@ template initVals(list<SimVar> varsLst,SimCode simCode) ::=
   >>  
   ;separator="\n"
 end initVals;
+
+
+template initializeArrayElements(SimCode simCode)
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as SIMVARS(__))) 
+  then
+  <<
+  <%initValsArray(vars.constVars,simCode)%>
+  <%initValsArray(vars.intConstVars,simCode)%>
+  <%initValsArray(vars.boolConstVars,simCode)%>
+  <%initValsArray(vars.stringConstVars,simCode)%>
+  <%initValsArray(vars.paramVars,simCode)%>
+  <%initValsArray(vars.intParamVars,simCode)%>
+  <%initValsArray(vars.boolParamVars,simCode)%>
+  <%initValsArray(vars.stringParamVars,simCode)%>
+  >>
+end initializeArrayElements;
+
+template initValsArray(list<SimVar> varsLst,SimCode simCode) ::=
+  varsLst |> SIMVAR(numArrayElement=_::_,initialValue=SOME(v)) =>
+  <<
+  <%cref(name)%> = <%initVal(v)%>;
+  >>  
+  ;separator="\n"
+end initValsArray;
 
 template arrayInit(SimCode simCode)
  "Generates the contents of the makefile for the simulation case."
@@ -4344,7 +4370,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
   case ASUB(exp=e, sub=indexes) then
   let exp = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
  // let typeShort = expTypeFromExpShort(e)
-  let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls,simCode)%>' ;separator=", ")
+  let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls,simCode)%>' ;separator="][")
    //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
   '(<%exp%>)[<%expIndexes%>+1]'
   case exp then
@@ -4654,13 +4680,15 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'transpose_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
    
-   case CALL(path=IDENT(name="cross"), expLst={v1, v2}) then
+   case CALL(path=IDENT(name="cross"), expLst={v1, v2},attr=CALL_ATTR(ty=ty as T_ARRAY(dims=dims))) then
     let var1 = daeExp(v1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
     let var2 = daeExp(v2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
-    let arr_tp_str = '<%expTypeFromExpArray(v1)%>'
-    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += 'cross_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'multi_array<int,<%listLength(dims)%>>' 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'multi_array<int,<%listLength(dims)%>>'
+                        else 'multi_array<double,<%listLength(dims)%>>'
+    let tvar = tempDecl(type, &varDecls /*BUFD*/)                        
+    let &preExp += '<%tvar%> = cross_array(<%var1%>,<%var2%>);<%\n%>'
+    '<%tvar%>'  
   
   case CALL(path=IDENT(name="identity"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
@@ -4902,13 +4930,42 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     let &preExp += '<%var1%>=multiply_array<<%type1%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
     '<%var1%>'  
   case DIV_ARRAY_SCALAR(ty=T_ARRAY(dims=dims)) then
-  let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
-                        else "real_array"
-    let var = tempDecl(type, &varDecls /*BUFD*/)
-    let &preExp += 'div_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
+  let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int' 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
+                        else 'double'
+    let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
+    //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
+    let &preExp += '<%var%>=divide_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
     '<%var%>'
-  case _   then "daeExpBinary:ERR"
+    
+  case UMINUS(__) then "daeExpBinary:ERR UMINUS not supported" 
+  case UMINUS_ARR(__) then "daeExpBinary:ERR UMINUS_ARR not supported" 
+
+  case ADD_ARR(__) then "daeExpBinary:ERR ADD_ARR not supported" 
+  case SUB_ARR(__) then "daeExpBinary:ERR SUB_ARR not supported" 
+  case MUL_ARR(__) then "daeExpBinary:ERR MUL_ARR not supported" 
+  case DIV_ARR(__) then "daeExpBinary:ERR DIV_ARR not supported" 
+  case ADD_ARRAY_SCALAR(__) then "daeExpBinary:ERR ADD_ARRAY_SCALAR not supported" 
+  case SUB_SCALAR_ARRAY(__) then "daeExpBinary:ERR SUB_SCALAR_ARRAY not supported"  
+  case MUL_SCALAR_PRODUCT(__) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int>'
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
+                        else 'double'
+    'dot_array(<%e1%>, <%e2%>)'  
+  case DIV_SCALAR_ARRAY(__) then "daeExpBinary:ERR DIV_SCALAR_ARRAY not supported" 
+  case POW_ARRAY_SCALAR(__) then "daeExpBinary:ERR POW_ARRAY_SCALAR not supported" 
+  case POW_SCALAR_ARRAY(__) then "daeExpBinary:ERR POW_SCALAR_ARRAY not supported" 
+  case POW_ARR(__) then "daeExpBinary:ERR POW_ARR not supported" 
+  case POW_ARR2(__) then "daeExpBinary:ERR POW_ARR2 not supported" 
+  case NOT(__) then "daeExpBinary:ERR NOT not supported" 
+  case LESS(__) then "daeExpBinary:ERR LESS not supported" 
+  case LESSEQ(__) then "daeExpBinary:ERR LESSEQ not supported" 
+  case GREATER(__) then "daeExpBinary:ERR GREATER not supported" 
+  case GREATEREQ(__) then "daeExpBinary:ERR GREATEREQ not supported" 
+  case EQUAL(__) then "daeExpBinary:ERR EQUAL not supported" 
+  case NEQUAL(__) then "daeExpBinary:ERR NEQUAL not supported" 
+  case USERDEFINED(__) then "daeExpBinary:ERR POW_ARR not supported" 
+  case _   then 'daeExpBinary:ERR'
 end daeExpBinary;
 
 template tempDecl1(String ty, String exp, Text &varDecls /*BUFP*/)
@@ -5329,6 +5386,7 @@ end expTypeFromExpArrayIf;
 template expTypeFromExp(Exp it) ::=
   match it
   case ICONST(__)    then "int"
+  case ENUM_LITERAL(__)    then "int"
   case RCONST(__)    then "double"
   case SCONST(__)    then "string"
   case BCONST(__)    then "bool"
@@ -5347,6 +5405,23 @@ template expTypeFromExp(Exp it) ::=
   case CODE(__)       then expTypeShort(ty)
   case ASUB(__)       then expTypeFromExp(exp)
   case REDUCTION(__)  then expTypeFromExp(expr)
+  
+  case TUPLE(__) then "expTypeFromExp:ERROR TUPLE unsupported"
+  case TSUB(__) then "expTypeFromExp:ERROR TSUB unsupported"
+  case SIZE(__) then "expTypeFromExp:ERROR SIZE unsupported"
+
+  /* Part of MetaModelica extension. KS */
+  case LIST(__) then "expTypeFromExp:ERROR LIST unsupported"
+  case CONS(__) then "expTypeFromExp:ERROR CONS unsupported"
+  case META_TUPLE(__) then "expTypeFromExp:ERROR META_TUPLE unsupported"
+  case META_OPTION(__) then "expTypeFromExp:ERROR META_OPTION unsupported"
+  case METARECORDCALL(__) then "expTypeFromExp:ERROR METARECORDCALL unsupported"
+  case MATCHEXPRESSION(__) then "expTypeFromExp:ERROR MATCHEXPRESSION unsupported"
+  case BOX(__) then "expTypeFromExp:ERROR BOX unsupported"
+  case UNBOX(__) then "expTypeFromExp:ERROR UNBOX unsupported"
+  case SHARED_LITERAL(__) then expTypeFlag(ty,6)
+  case PATTERN(__) then "expTypeFromExp:ERROR PATTERN unsupported"
+
   case _          then "expTypeFromExp:ERROR"
 end expTypeFromExp;
 

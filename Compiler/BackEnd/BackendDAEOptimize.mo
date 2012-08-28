@@ -7975,12 +7975,15 @@ algorithm
       DAE.ComponentRef cref, x;
       String id,str;
       String matrixName;
+     /* replace the subscripts with strings because no all elements of the arrays may be derived, this avoid trouble when generate simulation code */
      case(cref, x, (matrixName,true)) 
       equation
         cref = ComponentReference.joinCrefs(ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix, ComponentReference.crefType(cref), {}),cref);
         cref = ComponentReference.appendStringCref(matrixName, cref);
+        cref = ComponentReference.joinCrefs(cref, x);
+        cref = ComponentReference.replaceSubsWithString(cref);
       then 
-        ComponentReference.joinCrefs(cref, x);
+        cref;
     case(cref, x, (matrixName,false))
       equation
         id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& matrixName +& ComponentReference.printComponentRefStr(x);
@@ -11095,7 +11098,8 @@ algorithm
       DAE.ComponentRef cr,cr1;
       BackendVarTransform.VariableReplacements repl;
       list<BackendDAE.Var> varLst;
-      BackendDAE.Var var;     
+      BackendDAE.Var var;
+      DAE.Type ty;
     case ({},_,_,_,_,_) 
       then 
         (inVarLst,inRepl);
@@ -11105,12 +11109,15 @@ algorithm
         var = BackendVariable.getVarAt(inVars, v);
         cr = BackendVariable.varCref(var);
         cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
-        cr1 = ComponentReference.makeCrefQual("$ZERO",DAE.T_REAL_DEFAULT,{},cr);
+        cr1 = ComponentReference.makeCrefQual("$ZERO",DAE.T_COMPLEX_DEFAULT,{},cr);
+        cr1 = ComponentReference.replaceSubsWithString(cr1);
         varexp = Expression.crefExp(cr1);
         repl = BackendVarTransform.addReplacement(inRepl,cr,varexp,NONE());
-        var = BackendVariable.copyVarNewName(cr1,var);
-        var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-        var = BackendVariable.setVarAttributes(var, NONE());
+        ty = ComponentReference.crefLastType(cr1);
+        var = BackendDAE.VAR(cr1,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
+        //var = BackendVariable.copyVarNewName(cr1,var);
+        //var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+        //var = BackendVariable.setVarAttributes(var, NONE());
         (varLst,repl) = getZeroVarReplacements1(rest,inVars,ass2,mapIncRowEqn,repl,var::inVarLst);
       then
         (varLst,repl);
