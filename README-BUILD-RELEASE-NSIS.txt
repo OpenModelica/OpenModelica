@@ -43,15 +43,13 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
       -> to \trunk\build\MinGW
        REMOVE MinGW\lib\mlton
        REMOVE MinGW\share\doc\mlton
-       ZIP    MinGW\doc\*.* to MinGW\doc\doc.zip and delete them
-       ZIP    MinGW\info\*.* to MinGW\info\info.zip and delete them
-       ZIP    MinGW\man\*.* to MinGW\man\man.zip and delete them
       Note that this step will have to be repeated starting from svn checkout 
       again if anything has changed in svn MinGW directory since last build. 
 
-    - build OMShell, OMNotebook, OMPlot, OMOptim, OMPlotWindow using Qt SDK
-      into $OMDev\tools\OMTools\bin
-    - update $OMDev\tools\OMTools\qtdlls with the newest from Qt SDK!
+    - build OMEdit, OMShell, OMNotebook, OMPlot, OMOptim using Qt SDK
+    - put the .exe files into $OMDev\tools\OMTools\bin
+    - put the .a files into $OMDev\tools\OMTools\lib
+    - add any new dll needed by clients into $OMDev\tools\OMTools\dll
 
 04. Update the version into:
     - documentation
@@ -100,7 +98,7 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
         C:\OpenModelica[x.y.z]\MinGW and compilation/simulation
         works fine 
     - Install the new OpenModelica
-    - test OMShell, OMNotebook, OMEdit, OMPlot*, OMOptim
+    - test OMEdit, OMShell, OMNotebook, OMPlot, OMOptim
     
 11. Be extremely proud and glad, you made it! :)
 
