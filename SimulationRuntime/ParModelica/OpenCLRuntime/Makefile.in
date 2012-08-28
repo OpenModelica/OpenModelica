@@ -2,7 +2,7 @@ CC=@CC@
 CXX=@CXX@
 
 CFLAGS=@CFLAGS@
-CPPFLAGS=@CPPFLAGS@ -I. -I"../../c" -fPIC -O3 
+CPPFLAGS=@CPPFLAGS@ -I. -I"../../c"
 
 EXEEXT=
 DLLEXT=.so
