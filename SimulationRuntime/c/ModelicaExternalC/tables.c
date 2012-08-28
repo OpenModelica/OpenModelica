@@ -1489,12 +1489,12 @@ void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl)
   /* check if table has values */
   ASSERT2((tpl->rows > 1) && (tpl->cols > 1),"Table %s from file %s has no data!",tpl->tablename,tpl->filename);
   /* check that first row and column are strictly monotonous */
-  for(i=2; i < tpl->rows; ++i)
-  {
+  for(i=2; i < tpl->rows; ++i) {
     if (InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
       THROW3("Table: %s independent variable u1 not strictly \
             monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,i-1,0), InterpolationTable2D_getElt(tpl,i,0));
-  for(i=2; i < tpl->cols; ++i)
+  }
+  for(i=2; i < tpl->cols; ++i) {
     if (InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
       THROW3("Table: %s independent variable u2 not strictly \
             monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,0,i-1), InterpolationTable2D_getElt(tpl,0,i));
