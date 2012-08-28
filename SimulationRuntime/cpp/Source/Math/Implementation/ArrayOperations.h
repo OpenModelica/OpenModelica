@@ -126,12 +126,12 @@ boost::multi_array< T, dims > add_array( boost::multi_array_ref< T, dims > a ,  
 /**
 scalar product of two arrays (a,b type as template parameter)
 */
-//template < typename T >
-double dot_array( boost::multi_array_ref< double, 1 > a ,  boost::multi_array_ref< double, 1 > b  )
+template < typename T >
+T dot_array( boost::multi_array_ref< T, 1 > a ,  boost::multi_array_ref< T, 1 > b  )
 {
-  double tmp = 0;
-  boost::multi_array< double, 1 >::const_iterator j = b.begin();
-  for ( boost::multi_array< double, 1 >::iterator i = a.begin();  i != a.end(); i++, j++ )
+  T tmp = 0;
+  typename boost::multi_array< T, 1 >::const_iterator j = b.begin();
+  for ( typename boost::multi_array< T, 1 >::iterator i = a.begin();  i != a.end(); i++, j++ )
     tmp += (*i) * (*j);
 
   return tmp;
@@ -140,16 +140,25 @@ double dot_array( boost::multi_array_ref< double, 1 > a ,  boost::multi_array_re
 /**
 cross product of two arrays (a,b type as template parameter)
 */
-//template < typename T >
-boost::multi_array< double, 1 > cross_array( boost::multi_array_ref< double, 1 > a ,  boost::multi_array_ref< double, 1 > b  )
+template < typename T >
+boost::multi_array< T, 1 > cross_array( boost::multi_array_ref< T, 1 > a ,  boost::multi_array_ref< T, 1 > b  )
 {
-  boost::multi_array<double, 1> res(boost::extents[3]);
+  typename boost::multi_array<T, 1> res(boost::extents[3]);
   res[1] = (a[2] * b[3]) - (a[3] * b[2]);
   res[2] = (a[3] * b[1]) - (a[1] * b[3]);
   res[3] = (a[1] * b[2]) - (a[2] * b[1]);
   return res;
 };
 
+/**
+- array (a)
+*/
+template < typename T, size_t dims >
+void usub_array(boost::multi_array_ref< T, dims > &a)
+{
+  for ( typename boost::multi_array< T, dims >::iterator i = a.begin();  i != a.end(); i++)
+    (*i) = -(*i);
+}
 
 /**
 Applies array operation F (*,/) on array

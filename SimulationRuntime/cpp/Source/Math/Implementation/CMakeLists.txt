@@ -8,6 +8,7 @@ add_library(${MathName} SHARED ArrayOperations.cpp  )
 install (TARGETS ${MathName} DESTINATION lib/omc)
 install (FILES Functions.h
          ArrayOperations.h
+		 Utility.h
       DESTINATION include/omc/cpp/Math/Implementation)
 install (FILES ../Interfaces/ILapack.h
       DESTINATION include/omc/cpp/Math/Interfaces)
