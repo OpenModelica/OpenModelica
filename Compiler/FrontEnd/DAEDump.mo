@@ -1693,7 +1693,7 @@ algorithm
     case (DAE.STMT_ASSERT(cond = cond,msg = msg),i)
       equation
         indent(i);
-        Print.printBuf("assert( ");
+        Print.printBuf("assert(");
         ExpressionDump.printExp(cond);
         Print.printBuf(", ");
         ExpressionDump.printExp(msg);
