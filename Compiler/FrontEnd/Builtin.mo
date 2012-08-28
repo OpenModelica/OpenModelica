@@ -52,6 +52,7 @@ public import SCode;
 // protected imports
 protected import ClassInf;
 protected import Config;
+protected import Flags;
 protected import Global;
 protected import List;
 protected import Parser;
@@ -647,7 +648,7 @@ algorithm
   initialProgram := matchcontinue ()
     local
       String fileModelica,fileMetaModelica,fileParModelica,initialFunctionStr,initialFunctionStrMM;
-      list<tuple<Boolean,Absyn.Program>> assocLst;
+      list<tuple<Integer,Absyn.Program>> assocLst;
       list<Absyn.Class> classes,classes1,classes2;
     case ()
       equation
@@ -657,10 +658,10 @@ algorithm
     case ()
       equation
         assocLst = getGlobalRoot(Global.builtinIndex);
-      then Util.assoc(Config.acceptMetaModelicaGrammar() or Config.acceptParModelicaGrammar(), assocLst);
+      then Util.assoc(Flags.getConfigEnum(Flags.GRAMMAR), assocLst);
     case ()
       equation
-        true = Config.acceptMetaModelicaGrammar();
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.METAMODELICA);
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         fileMetaModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/MetaModelicaBuiltin.mo";
         initialFunctionStr = System.readFile(fileModelica);
@@ -670,11 +671,11 @@ algorithm
         classes = listAppend(classes1,classes2);
         initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, (true,initialProgram)::assocLst);
+        setGlobalRoot(Global.builtinIndex, (Flags.METAMODELICA,initialProgram)::assocLst);
       then initialProgram;
     case ()
       equation
-        true = Config.acceptParModelicaGrammar();
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.PARMODELICA);
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         fileParModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ParModelicaBuiltin.mo";
         initialFunctionStr = System.readFile(fileModelica);
@@ -684,18 +685,17 @@ algorithm
         classes = listAppend(classes1,classes2);
         initialProgram = Absyn.PROGRAM(classes,Absyn.TOP(),Absyn.dummyTimeStamp);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, (true,initialProgram)::assocLst);
+        setGlobalRoot(Global.builtinIndex, (Flags.PARMODELICA,initialProgram)::assocLst);
       then initialProgram;
     case ()
       equation
-        false = Config.acceptMetaModelicaGrammar();
-        false = Config.acceptParModelicaGrammar();
+        true = intEq(Flags.getConfigEnum(Flags.GRAMMAR), Flags.MODELICA);
         
         fileModelica = Settings.getInstallationDirectoryPath() +& "/lib/omc/ModelicaBuiltin.mo";
         initialFunctionStr = System.readFile(fileModelica);
         initialProgram = Parser.parsebuiltinstring(initialFunctionStr, fileModelica);
         assocLst = getGlobalRoot(Global.builtinIndex);
-        setGlobalRoot(Global.builtinIndex, (false,initialProgram)::assocLst);
+        setGlobalRoot(Global.builtinIndex, (Flags.MODELICA,initialProgram)::assocLst);
       then initialProgram;
     else
       equation
