@@ -1261,6 +1261,12 @@ algorithm
         i = Config.vectorizationLimit();
       then
         (cache,Values.INTEGER(i),st);
+        
+    case (cache,env,"getDefaultOpenCLDevice",{},st,msg)
+      equation
+        i = Config.getDefaultOpenCLDevice();
+      then
+        (cache,Values.INTEGER(i),st);
 
     case (cache,env,"getOrderConnections",{},st,msg)
       equation

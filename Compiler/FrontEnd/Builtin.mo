@@ -657,7 +657,7 @@ algorithm
     case ()
       equation
         assocLst = getGlobalRoot(Global.builtinIndex);
-      then Util.assoc(Config.acceptMetaModelicaGrammar(), assocLst);
+      then Util.assoc(Config.acceptMetaModelicaGrammar() or Config.acceptParModelicaGrammar(), assocLst);
     case ()
       equation
         true = Config.acceptMetaModelicaGrammar();
