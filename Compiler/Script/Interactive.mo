@@ -72,7 +72,6 @@ protected import Dependency;
 protected import Dump;
 protected import Error;
 protected import ErrorExt;
-protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;

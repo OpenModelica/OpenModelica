@@ -67,7 +67,6 @@ encapsulated package Error
        it's ErrorID.
 "
 
-protected import System;
 public import Util;
 
 public

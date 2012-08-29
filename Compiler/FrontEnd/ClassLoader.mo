@@ -45,12 +45,10 @@ public import Absyn;
 
 protected import Config;
 protected import Debug;
-protected import Dump;
 protected import Error;
 protected import Flags;
 protected import List;
 protected import Parser;
-protected import Print;
 protected import System;
 protected import Util;
 

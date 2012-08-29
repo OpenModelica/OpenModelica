@@ -41,7 +41,6 @@ encapsulated package IndexReduction
 
 public import BackendDAE;
 public import DAE;
-public import HashTable;
 public import HashTable3;
 public import HashTableCG;
 

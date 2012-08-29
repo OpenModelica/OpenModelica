@@ -54,8 +54,6 @@ protected import Flags;
 protected import List;
 protected import SCodeLookup;
 protected import SCodeDump;
-protected import SCodeFlat;
-protected import SCodeGraph;
 
 public
 uniontype Item

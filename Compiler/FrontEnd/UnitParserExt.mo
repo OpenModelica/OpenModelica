@@ -9,7 +9,6 @@ encapsulated package UnitParserExt "
 "
 
 
-public import UnitAbsyn;
 
 public function initSIUnits "initialize the UnitParser with the SI units"
   external "C" UnitParserExtImpl__initSIUnits() annotation(Library = {"omcruntime","lpsolve55"});

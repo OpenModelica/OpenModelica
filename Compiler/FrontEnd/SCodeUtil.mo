@@ -55,7 +55,6 @@ protected import Error;
 protected import Flags;
 protected import Global;
 protected import Inst;
-protected import InstanceHierarchy;
 protected import List;
 protected import MetaUtil;
 protected import System;

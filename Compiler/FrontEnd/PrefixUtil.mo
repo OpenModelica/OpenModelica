@@ -52,7 +52,6 @@ public import SCode;
 public import Prefix;
 public import InnerOuter;
 public import ClassInf;
-public import Values;
 
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 

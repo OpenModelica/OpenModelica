@@ -65,7 +65,6 @@ protected import Interactive;
 protected import List;
 protected import Parser;
 protected import Print;
-protected import SCode;
 protected import Settings;
 protected import SimCode;
 protected import Socket;

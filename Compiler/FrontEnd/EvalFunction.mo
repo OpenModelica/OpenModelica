@@ -56,7 +56,6 @@ encapsulated package EvalFunction
 public import InstTypes;
 
 // protected imports
-protected import ExpressionSimplify;
 
 // [TYPE]  Types
 

@@ -57,7 +57,6 @@ protected import Flags;
 protected import InstDump;
 protected import InstUtil;
 protected import List;
-protected import SCode;
 protected import Types;
 protected import Util;
   
