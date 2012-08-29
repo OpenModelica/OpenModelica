@@ -5494,7 +5494,7 @@ algorithm
   end match;
 end traverseExpSubs;
 
-protected function traverseExpTopDownCrefHelper
+public function traverseExpTopDownCrefHelper
   input ComponentRef inCref;
   input FuncType rel;
   input Argument iarg;

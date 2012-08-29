@@ -9,7 +9,8 @@ msginit --locale=sv_SE.utf8 -i openmodelica.pot
 svn add sv.po
 
 # Edit the .po-file using your favorite gettext po-file editor
-# Maybe gtranslate. Maybe poedit. Maybe something else.
+# Maybe linguist (same as for OMEdit), gtranslate, or poedit.
+# Maybe something else entirely
 
 # To update a translation file
 msgmerge -U sv.po openmodelica.pot

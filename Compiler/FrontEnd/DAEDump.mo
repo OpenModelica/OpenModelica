@@ -1940,6 +1940,13 @@ algorithm
       then
         str;
 
+    case (DAE.STMT_RETURN(source = _),i)
+      equation
+        s1 = indentStr(i);
+        str = stringAppend(s1, "return;\n");
+      then
+        str;
+
     case (DAE.STMT_BREAK(source = _),i)
       equation
         s1 = indentStr(i);

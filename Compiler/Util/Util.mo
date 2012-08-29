@@ -3456,4 +3456,12 @@ algorithm
   outStr := System.substring(str,1,stringLength(str)-3);
 end removeLast3Char;
 
+public function stringNotEqual
+  input String str1;
+  input String str2;
+  output Boolean b;
+algorithm
+  b := not stringEq(str1,str2);
+end stringNotEqual;
+
 end Util;
