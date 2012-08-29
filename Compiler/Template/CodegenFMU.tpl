@@ -1095,11 +1095,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   >>
 end fmudeffile;
 
-template importFMUModelica(Integer fmi)
+template importFMUModelica(FmiImport fmi)
  "Generates the Modelica code from the FMU's modelDescription file."
 ::=
+match fmi
+case FMIIMPORT(__) then
   <<
-  package <%getFMIModelIdentifier(fmi)%>_FMU
+  package <%fmiModelIdentifier%>_FMU
     class fmiImportContext
       extends ExternalObject;
         function constructor
@@ -1143,13 +1145,91 @@ template importFMUModelica(Integer fmi)
       constant Integer jmWarning=2;
     end jmStatus;
     
-    model FMUModel <% if stringEq(getFMIDescription(fmi), "") then "" else " \"getFMIDescription(fmi)\""%>
-      annotation(experiment(StartTime=<%getFMIDefaultExperimentStart(fmi)%>, StopTime=<%getFMIDefaultExperimentStop(fmi)%>, Tolerance=<%getFMIDefaultExperimentTolerance(fmi)%>));
+    model FMUModel <%if stringEq(fmiDescription, "") then "" else " \"fmiDescription\""%>
+      <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
+      constant Integer numberOfContinuousStates=<%getFMINumberOfContinuousStates(fmiInstance)%>;
+      constant Integer numberOfEventIndicators=<%getFMINumberOfEventIndicators(fmiInstance)%>;
+      annotation(experiment(StartTime=<%fmiExperimentStartTime%>, StopTime=<%fmiExperimentStopTime%>, Tolerance=<%fmiExperimentTolerance%>));
     end FMUModel;
-  end <%getFMIModelIdentifier(fmi)%>_FMU;
+  end <%fmiModelIdentifier%>_FMU;
   >>
-end importFMUModelica;  
+end importFMUModelica;
+
+template dumpFMIModelVariablesList(list<Integer> fmiModelVariablesList)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpFMIModelVariable(fmiModelVariable) ;separator="\n"%>
+  >>
+end dumpFMIModelVariablesList;
+
+template dumpFMIModelVariable(Integer fmiModelVariable)
+::=
   
+  <<
+  <%dumpFMIModelVariableVariability(fmiModelVariable)%><%dumpFMIModelVariableCausality(fmiModelVariable)%><%dumpFMIModelVariableBasetypeAndName(fmiModelVariable)%><%dumpFMIModelVariableDescription(fmiModelVariable)%>;
+  >>
+end dumpFMIModelVariable;
+
+template dumpFMIModelVariableVariability(Integer fmiModelVariable)
+::=
+  let variability = getFMIModelVariableVariability(fmiModelVariable)
+  <<
+  <%if stringEq(variability, "") then "" else variability+" "%>
+  >>
+end dumpFMIModelVariableVariability;
+
+template dumpFMIModelVariableCausality(Integer fmiModelVariable)
+::=
+  let causality = getFMIModelVariableCausality(fmiModelVariable)
+  <<
+  <%if stringEq(causality, "") then "" else causality+" "%>
+  >>
+end dumpFMIModelVariableCausality;
+
+template dumpFMIModelVariableBasetypeAndName(Integer fmiModelVariable)
+::=
+  let basetype = getFMIModelVariableBaseType(fmiModelVariable)
+  let name = getFMIModelVariableName(fmiModelVariable)
+  let hasStart = getFMIModelVariableHasStart(fmiModelVariable)
+  let hasFixed = getFMIModelVariableHasFixed(fmiModelVariable)
+  <<
+  <%basetype%> <%name%><%if stringEq(hasStart,"true") then "(start="+dumpFMIModelVariableStartValue(fmiModelVariable,basetype)%><%if boolAnd(stringEq(hasStart,"true"),stringEq(hasFixed,"true")) then ",fixed=true"%><%if boolAnd(stringEq(hasStart,"false"),stringEq(hasFixed,"true")) then "(fixed=true"%><%if boolOr(stringEq(hasStart,"true"),stringEq(hasFixed,"true")) then ")"%>
+  >>
+end dumpFMIModelVariableBasetypeAndName;
+
+template dumpFMIModelVariableDescription(Integer fmiModelVariable)
+::=
+  let description = getFMIModelVariableDescription(fmiModelVariable)
+  <<
+  <%if stringEq(description, "") then "" else " \""+description+"\""%>
+  >>
+end dumpFMIModelVariableDescription;
+
+template dumpFMIModelVariableStartValue(Integer fmiModelVariable, String basetype)
+::=
+match basetype
+  case "Real" then
+  <<
+  <%getFMIRealVariableStartValue(fmiModelVariable)%>
+  >>
+  case "Integer" then
+  <<
+  <%getFMIIntegerVariableStartValue(fmiModelVariable)%>
+  >>
+  case "Boolean" then
+  <<
+  <%getFMIBooleanVariableStartValue(fmiModelVariable)%>
+  >>
+  case "String" then
+  <<
+  <%getFMIStringVariableStartValue(fmiModelVariable)%>
+  >>
+  case "enumeration" then
+  <<
+  <%getFMIEnumerationVariableStartValue(fmiModelVariable)%>
+  >>
+end dumpFMIModelVariableStartValue;
+
 end CodegenFMU;
 
 // vim: filetype=susan sw=2 sts=2

@@ -34,8 +34,10 @@ extern "C" {
 
 #include <stdio.h>
 
+#include "meta_modelica.h"
 #include "systemimpl.h"
 #include "errorext.h"
+
 #define FMILIB_BUILDING_LIBRARY
 #include "fmilib.h"
 
@@ -45,7 +47,24 @@ extern "C" {
 static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
 #ifdef FMI_DEBUG
-  printf("module = %s, log level = %d: %s\n", module, log_level, message);
+  const char* tokens[3] = {module,jm_log_level_to_string(log_level),message};
+  switch (log_level) {
+    case jm_log_level_fatal:
+    case jm_log_level_error:
+      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("module = %s, log level = %s: %s"), tokens, 3);
+      break;
+    case jm_log_level_warning:
+      c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("module = %s, log level = %s: %s"), tokens, 3);
+      break;
+    case jm_log_level_info:
+    case jm_log_level_verbose:
+    case jm_log_level_debug:
+      c_add_message(-1, ErrorType_scripting, ErrorLevel_notification, gettext("module = %s, log level = %s: %s"), tokens, 3);
+      break;
+    default:
+      printf("module = %s, log level = %d: %s\n", module, log_level, message);
+      break;
+  }
 #endif
 }
 
@@ -78,16 +97,16 @@ void charReplace(char* variable_name, unsigned int len, char old, char new)
 /*
  * Reads the model variable variability.
  */
-char* getModelVariableVariability(fmi1_import_variable_t* variable)
+const char* getModelVariableVariability(fmi1_import_variable_t* variable)
 {
   fmi1_variability_enu_t variability = fmi1_import_get_variability(variable);
   switch (variability) {
     case fmi1_variability_enu_constant:
-      return "constant ";
+      return "constant";
     case fmi1_variability_enu_parameter:
-      return "parameter ";
+      return "parameter";
     case fmi1_variability_enu_discrete:
-      return "discrete ";
+      return "discrete";
     case fmi1_variability_enu_continuous:
     case fmi1_variability_enu_unknown:
       return "";
@@ -97,14 +116,14 @@ char* getModelVariableVariability(fmi1_import_variable_t* variable)
 /*
  * Reads the model variable causality.
  */
-char* getModelVariableCausality(fmi1_import_variable_t* variable)
+const char* getModelVariableCausality(fmi1_import_variable_t* variable)
 {
   fmi1_causality_enu_t causality = fmi1_import_get_causality(variable);
   switch (causality) {
     case fmi1_causality_enu_input:
-      return "input ";
+      return "input";
     case fmi1_causality_enu_output:
-      return "output ";
+      return "output";
     case fmi1_causality_enu_internal:
     case fmi1_causality_enu_none:
     case fmi1_causality_enu_unknown:
@@ -115,20 +134,20 @@ char* getModelVariableCausality(fmi1_import_variable_t* variable)
 /*
  * Reads the model variable base type.
  */
-char* getModelVariableBaseType(fmi1_import_variable_t* variable)
+const char* getModelVariableBaseType(fmi1_import_variable_t* variable)
 {
   fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(variable);
   switch (type) {
     case fmi1_base_type_real:
-      return "Real ";
+      return "Real";
     case fmi1_base_type_int:
-      return "Integer ";
+      return "Integer";
     case fmi1_base_type_bool:
-      return "Boolean ";
+      return "Boolean";
     case fmi1_base_type_str:
-      return "String ";
+      return "String";
     case fmi1_base_type_enum:
-      return "enumeration ";
+      return "enumeration";
   }
 }
 
@@ -137,157 +156,43 @@ char* getModelVariableBaseType(fmi1_import_variable_t* variable)
  */
 char* getModelVariableName(fmi1_import_variable_t* variable)
 {
-  char* variable_name = fmi1_import_get_variable_name(variable);
-  int len = strlen(variable_name);
-  charReplace(variable_name, len, '.', '_');
-  charReplace(variable_name, len, '[', '_');
-  charReplace(variable_name, len, ']', '_');
-  charReplace(variable_name, len, ',', '_');
-  charReplace(variable_name, len, '(', '_');
-  charReplace(variable_name, len, ')', '_');
-  return variable_name;
+  const char* res = fmi1_import_get_variable_name(variable);
+  int length = strlen(res);
+  char* model_variable_name = malloc(length);
+  strcpy(model_variable_name, res);
+  charReplace(model_variable_name, length, '.', '_');
+  charReplace(model_variable_name, length, '[', '_');
+  charReplace(model_variable_name, length, ']', '_');
+  charReplace(model_variable_name, length, ',', '_');
+  charReplace(model_variable_name, length, '(', '_');
+  charReplace(model_variable_name, length, ')', '_');
+  return model_variable_name;
 }
 
 /*
- * Generate Modelica code
+ * Initializes FMI Import.
+ * Reads the Model Identifier name.
+ * Reads the experiment annotation.
+ * Reads the model variables.
  */
-//static void generateModelicaCode(fmi1_import_t* fmu, char* file_name, const char* working_directory)
-//{
-//  FILE* file;
-//  const char* model_identifier = fmi1_import_get_model_identifier(fmu);
-//  /* create the Modelica File. */
-//  file = fopen(file_name, "w");
-//  if (!file) {
-//    const char *c_tokens[1]={file_name};
-//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Unable to create the file: %s."), c_tokens, 1);
-//    return;
-//  } else {
-//    const char* fmu_template_str =
-//        #include "FMIModelica.h"
-//        ;
-//    fprintf(file, "package FMUImportNew_%s\n", model_identifier);
-//    fputs(fmu_template_str, file);
-//    /* generate the code for FMUBlock */
-//    fprintf(file, "public\nmodel FMUModel\n");
-//    /* get the model description */
-//    const char* model_description = fmi1_import_get_description(fmu);
-//    if (strcmp(model_description, "") != 0)
-//      fprintf(file, "\t\"%s\"\n", model_description);
-//    /* get the model experiment annotation */
-//    fprintf(file, "\tannotation(experiment(StartTime = %f, StopTime = %f, Tolerance = %f));\n",
-//        fmi1_import_get_default_experiment_start(fmu),
-//        fmi1_import_get_default_experiment_stop(fmu),
-//        fmi1_import_get_default_experiment_tolerance(fmu));
-//    fprintf(file, "\tconstant String FMUPath = \"%s\";\n", working_directory);
-//    fprintf(file, "\tconstant String instanceName = \"%s\";\n", model_identifier);
-//    /* Get the model variables */
-//    fmi1_import_variable_list_t* variables_list = fmi1_import_get_variable_list(fmu);
-//    size_t variables_list_size = fmi1_import_get_variable_list_size(variables_list);
-//    int i = 0;
-//    for (i ; i < variables_list_size ; i++) {
-//      fmi1_import_variable_t* variable = fmi1_import_get_variable(variables_list, i);
-//      /* get the variable variability */
-//      fprintf(file, "\t%s", getModelVariableVariability(variable));
-//      /* get the variable causality */
-//      fprintf(file, "%s", getModelVariableCausality(variable));
-//      /* get the variable type */
-//      fprintf(file, "%s", getModelVariableBaseType(variable));
-//      /* get the variable name and description/comment */
-//      fprintf(file, "%s \"%s\";\n", getModelVariableName(variable), fmi1_import_get_variable_description(variable));
-//      /* check variable        */
-//    }
-//    /*
-//     * From FMIL docs,
-//     * Free a variable list. Note that variable lists are allocated dynamically and must be freed when not needed any longer.
-//     */
-//    free(variables_list);
-//    fprintf(file, "protected\n");
-//    fprintf(file, "\tfmiImportInstance fmu = fmiImportInstance(context, FMUPath);\n");
-//    fprintf(file, "\tfmiImportContext context = fmiImportContext();\n");
-//    fprintf(file, "\t//Integer status = fmiImportInstantiateModel(fmu, instanceName);\n");
-//    fprintf(file, "end FMUModel;\n");
-//    fprintf(file, "end FMUImportNew_%s;", model_identifier);
-//  }
-//  fclose(file);
-//}
-//
-///*
-// * Reads the FMU, extract and generates Modelica code.
-// */
-//char* FMIImpl__importFMU(const char* file_name, const char* working_directory)
-//{
-//  // check the if the fmu file exists
-//  if (!SystemImpl__regularFileExists(file_name)) {
-//    const char* c_tokens[1]={file_name};
-//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("File not Found: %s."), c_tokens, 1);
-//    return strdup("");
-//  }
-//  // JM callbacks
-//  jm_callbacks callbacks;
-//  callbacks.malloc = malloc;
-//  callbacks.calloc = calloc;
-//  callbacks.realloc = realloc;
-//  callbacks.free = free;
-//  callbacks.logger = importlogger;
-//  callbacks.log_level = jm_log_level_debug;
-//  callbacks.context = 0;
-//  // FMI callback functions
-//  fmi1_callback_functions_t callback_functions;
-//  callback_functions.logger = fmilogger;
-//  callback_functions.allocateMemory = calloc;
-//  callback_functions.freeMemory = free;
-//  // FMI context
-//  fmi_import_context_t *context;
-//  context = fmi_import_allocate_context(&callbacks);
-//  // extract the fmu file and read the version
-//  fmi_version_enu_t version;
-//  version = fmi_import_get_fmi_version(context, file_name, working_directory);
-//  if (version != fmi_version_1_enu) {
-//    fmi_import_free_context(context);
-//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 0);
-//    return strdup("");
-//  }
-//  // parse the xml file
-//  fmi1_import_t *fmu;
-//  fmu = fmi1_import_parse_xml(context, working_directory);
-//  if(!fmu) {
-//    fmi_import_free_context(context);
-//    const char* c_tokens[1]={file_name};
-//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the XML file contained in %s."), c_tokens, 1);
-//    return strdup("");
-//  }
-//  // Load the dll
-//  jm_status_enu_t status;
-//  status = fmi1_import_create_dllfmu(fmu, callback_functions, 0);
-//  if (status == jm_status_error) {
-//    fmi1_import_free(fmu);
-//    fmi_import_free_context(context);
-//    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
-//    return strdup("");
-//  }
-//  // create a file name for generated Modelica code
-//  char* generated_file_name;
-//  // read the model identifier from FMI.
-//  const char* model_identifier = fmi1_import_get_model_identifier(fmu);
-//  int len = strlen(working_directory) + strlen(model_identifier);
-//  generated_file_name = (char*) malloc(len + 17);
-//  sprintf(generated_file_name, "%s/%sFMUImportNew.mo", working_directory, model_identifier);
-//  // Generate Modelica code and save the file
-//  generateModelicaCode(fmu, generated_file_name, working_directory);
-//  fmi1_import_destroy_dllfmu(fmu);
-//  fmi1_import_free(fmu);
-//  fmi_import_free_context(context);
-//  return generated_file_name;
-//}
-
-/*
- * Creates an instance of the FMI Import Context i.e fmi_import_context_t
- */
-void* FMIImpl__initializeFMIContext(const char* file_name, const char* working_directory)
+int FMIImpl__initializeFMIImport(const char* file_name, const char* working_directory, int fmi_log_level, void** fmiContext, void** fmiInstance,
+    const char** modelIdentifier, const char** description, double* experimentStartTime, double* experimentStopTime, double* experimentTolerance,
+    void** modelVariablesInstance, void** modelVariablesList)
 {
-  // JM callbacks
+  *fmiContext = NULL;
+  *fmiInstance = NULL;
+  *modelIdentifier = "";
+  *description = "";
+  *experimentStartTime = 0;
+  *experimentStopTime = 0;
+  *experimentTolerance = 0;
+  *modelVariablesInstance = NULL;
+  *modelVariablesList = NULL;
   static int init = 0;
+  // JM callbacks
   static jm_callbacks callbacks;
+  // FMI callback functions
+  static fmi1_callback_functions_t callback_functions;
   if (!init) {
     init = 1;
     callbacks.malloc = malloc;
@@ -295,10 +200,14 @@ void* FMIImpl__initializeFMIContext(const char* file_name, const char* working_d
     callbacks.realloc = realloc;
     callbacks.free = free;
     callbacks.logger = importlogger;
-    callbacks.log_level = jm_log_level_debug;
+    callbacks.log_level = fmi_log_level;
     callbacks.context = 0;
+    callback_functions.logger = fmilogger;
+    callback_functions.allocateMemory = calloc;
+    callback_functions.freeMemory = free;
   }
   fmi_import_context_t* context = fmi_import_allocate_context(&callbacks);
+  *fmiContext = context;
   // extract the fmu file and read the version
   fmi_version_enu_t version;
   version = fmi_import_get_fmi_version(context, file_name, working_directory);
@@ -307,103 +216,191 @@ void* FMIImpl__initializeFMIContext(const char* file_name, const char* working_d
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 0);
     return 0;
   }
-  return context;
-}
-
-/*
- * Destroys the instance of the FMI Import Context i.e fmi_import_context_t
- */
-void FMIImpl__releaseFMIContext(void* context)
-{
-  fmi_import_free_context((fmi_import_context_t*)context);
-}
-
-/*
- * Creates an instance of the FMI Import i.e fmi1_import_t
- * Reads the xml.
- * Loads the binary (dll/so).
- */
-void* FMIImpl__initializeFMI(void* context, const char* working_directory)
-{
-  fmi_import_context_t* context1 = (fmi_import_context_t*)context;
-  // FMI callback functions
-  static int init = 0;
-  fmi1_callback_functions_t callback_functions;
-  if (!init) {
-    init = 1;
-    callback_functions.logger = fmilogger;
-    callback_functions.allocateMemory = calloc;
-    callback_functions.freeMemory = free;
-  }
   // parse the xml file
   fmi1_import_t* fmi;
-  fmi = fmi1_import_parse_xml(context1, working_directory);
+  fmi = fmi1_import_parse_xml(context, working_directory);
   if(!fmi) {
-    fmi_import_free_context(context1);
+    fmi_import_free_context(context);
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);
     return 0;
   }
+  *fmiInstance = fmi;
   // Load the binary (dll/so)
   jm_status_enu_t status;
   status = fmi1_import_create_dllfmu(fmi, callback_functions, 0);
   if (status == jm_status_error) {
     fmi1_import_free(fmi);
-    fmi_import_free_context(context1);
+    fmi_import_free_context(context);
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
     return 0;
   }
-  return fmi;
+  /* Read the model identifier from FMU's modelDescription.xml file. */
+  *modelIdentifier = fmi1_import_get_model_identifier(fmi);
+  /* Read the FMI description from FMU's modelDescription.xml file. */
+  *description = fmi1_import_get_description(fmi);
+  /* Read the FMI Default Experiment Start value from FMU's modelDescription.xml file. */
+  *experimentStartTime = fmi1_import_get_default_experiment_start(fmi);
+  /* Read the FMI Default Experiment Stop value from FMU's modelDescription.xml file. */
+  *experimentStopTime = fmi1_import_get_default_experiment_stop(fmi);
+  /* Read the FMI Default Experiment Tolerance value from FMU's modelDescription.xml file. */
+  *experimentTolerance = fmi1_import_get_default_experiment_tolerance(fmi);
+  /* Read the model variables from the FMU's modelDescription.xml file and create a list of it. */
+  fmi1_import_variable_list_t* model_variables_list = fmi1_import_get_variable_list(fmi);
+  *modelVariablesInstance = model_variables_list;
+  size_t model_variables_list_size = fmi1_import_get_variable_list_size(model_variables_list);
+  int i = 0;
+  *modelVariablesList = mmc_mk_nil();
+  for (i ; i < model_variables_list_size ; i++) {
+    fmi1_import_variable_t* model_variable = fmi1_import_get_variable(model_variables_list, i);
+    *modelVariablesList = mmc_mk_cons(mmc_mk_icon(model_variable), *modelVariablesList);
+  }
+  /* everything is OK return success */
+  return 1;
 }
 
 /*
- * Destroys the instance of the FMI Import i.e fmi1_import_t
- * Also destroys the loaded binary (dll/so).
+ * Releases all the instances of FMI Import.
+ * From FMIL docs; Free a variable list. Note that variable lists are allocated dynamically and must be freed when not needed any longer.
  */
-void FMIImpl__releaseFMI(void* fmi)
+void FMIImpl__releaseFMIImport(int fmiModeVariablesInstance, int fmiInstance, int fmiContext)
 {
-  fmi1_import_t* fmi1 = (fmi1_import_t*)fmi;
-  fmi1_import_destroy_dllfmu(fmi1);
-  fmi1_import_free(fmi1);
+  free((fmi1_import_variable_list_t*)fmiModeVariablesInstance);
+  fmi1_import_t* fmi = (fmi1_import_t*)fmiInstance;
+  fmi1_import_destroy_dllfmu(fmi);
+  fmi1_import_free(fmi);
+  fmi_import_free_context((fmi_import_context_t*)fmiContext);
 }
 
 /*
- * Reads the model identifier from FMU's modelDescription.xml file.
+ * Reads the model variable variability.
  */
-const char* FMIImpl__getFMIModelIdentifier(void* fmi)
+const char* FMIImpl__getFMIModelVariableVariability(int fmiModelVariable)
 {
-  return fmi1_import_get_model_identifier((fmi1_import_t*)fmi);
+  return getModelVariableVariability((fmi1_import_variable_t*)fmiModelVariable);
 }
 
 /*
- * Reads the FMI description from FMU's modelDescription.xml file.
+ * Reads the model variable causality.
  */
-const char* FMIImpl__getFMIDescription(void* fmi)
+const char* FMIImpl__getFMIModelVariableCausality(int fmiModelVariable)
 {
-  return fmi1_import_get_description((fmi1_import_t*)fmi);
+  return getModelVariableCausality((fmi1_import_variable_t*)fmiModelVariable);
 }
 
 /*
- * Reads the FMI Default Experiment Start value from FMU's modelDescription.xml file.
+ * Reads the model variable type.
  */
-double FMIImpl__getFMIDefaultExperimentStart(void* fmi)
+const char* FMIImpl__getFMIModelVariableBaseType(int fmiModelVariable)
 {
-  return fmi1_import_get_default_experiment_start((fmi1_import_t*)fmi);
+  return getModelVariableBaseType((fmi1_import_variable_t*)fmiModelVariable);
 }
 
 /*
- * Reads the FMI Default Experiment Stop value from FMU's modelDescription.xml file.
+ * Reads the model variable name.
  */
-double FMIImpl__getFMIDefaultExperimentStop(void* fmi)
+char* FMIImpl__getFMIModelVariableName(int fmiModelVariable)
 {
-  return fmi1_import_get_default_experiment_stop((fmi1_import_t*)fmi);
+  return getModelVariableName((fmi1_import_variable_t*)fmiModelVariable);
 }
 
 /*
- * Reads the FMI Default Experiment Tolerance value from FMU's modelDescription.xml file.
+ * Reads the model variable description.
  */
-double FMIImpl__getFMIDefaultExperimentTolerance(void* fmi)
+const char* FMIImpl__getFMIModelVariableDescription(int fmiModelVariable)
 {
-  return fmi1_import_get_default_experiment_tolerance((fmi1_import_t*)fmi);
+  return fmi1_import_get_variable_description((fmi1_import_variable_t*)fmiModelVariable);
+}
+
+/*
+ * Reads the model number of continuous states.
+ */
+int FMIImpl__getFMINumberOfContinuousStates(int fmiInstance)
+{
+  return fmi1_import_get_number_of_continuous_states((fmi1_import_t*)fmiInstance);
+}
+
+/*
+ * Reads the model number of event indicators.
+ */
+int FMIImpl__getFMINumberOfEventIndicators(int fmiInstance)
+{
+  return fmi1_import_get_number_of_event_indicators((fmi1_import_t*)fmiInstance);
+}
+
+/*
+ * Checks if the model variable has start.
+ */
+int FMIImpl__getFMIModelVariableHasStart(int fmiModelVariable)
+{
+  return fmi1_import_get_variable_has_start((fmi1_import_variable_t*)fmiModelVariable);
+}
+
+/*
+ * Checks if the model variable has fixed.
+ */
+int FMIImpl__getFMIModelVariableHasFixed(int fmiModelVariable)
+{
+  return fmi1_import_get_variable_is_fixed((fmi1_import_variable_t*)fmiModelVariable);
+}
+
+/*
+ * Reads the start value of the Real model variable.
+ */
+double FMIImpl__getFMIRealVariableStartValue(int fmiModelVariable)
+{
+  fmi1_import_real_variable_t* fmiRealModelVariable = fmi1_import_get_variable_as_real((fmi1_import_variable_t*)fmiModelVariable);
+  if (fmiRealModelVariable)
+    return fmi1_import_get_real_variable_start(fmiRealModelVariable);
+  else
+    return 0;
+}
+
+/*
+ * Reads the start value of the Integer model variable.
+ */
+int FMIImpl__getFMIIntegerVariableStartValue(int fmiModelVariable)
+{
+  fmi1_import_integer_variable_t* fmiIntegerModelVariable = fmi1_import_get_variable_as_integer((fmi1_import_variable_t*)fmiModelVariable);
+  if (fmiIntegerModelVariable)
+    return fmi1_import_get_integer_variable_start(fmiIntegerModelVariable);
+  else
+    return 0;
+}
+
+/*
+ * Reads the start value of the Boolean model variable.
+ */
+int FMIImpl__getFMIBooleanVariableStartValue(int fmiModelVariable)
+{
+  fmi1_import_bool_variable_t* fmiBooleanModelVariable = fmi1_import_get_variable_as_boolean((fmi1_import_variable_t*)fmiModelVariable);
+  if (fmiBooleanModelVariable)
+    return fmi1_import_get_boolean_variable_start(fmiBooleanModelVariable);
+  else
+    return 0;
+}
+
+/*
+ * Reads the start value of the String model variable.
+ */
+const char* FMIImpl__getFMIStringVariableStartValue(int fmiModelVariable)
+{
+  fmi1_import_string_variable_t* fmiStringModelVariable = fmi1_import_get_variable_as_string((fmi1_import_variable_t*)fmiModelVariable);
+  if (fmiStringModelVariable)
+    return fmi1_import_get_string_variable_start(fmiStringModelVariable);
+  else
+    return "";
+}
+
+/*
+ * Reads the start value of the Enumeration model variable.
+ */
+int FMIImpl__getFMIEnumerationVariableStartValue(int fmiModelVariable)
+{
+  fmi1_import_enum_variable_t * fmiEnumerationModelVariable = fmi1_import_get_variable_as_enum((fmi1_import_variable_t*)fmiModelVariable);
+  if (fmiEnumerationModelVariable)
+    return fmi1_import_get_enum_variable_start(fmiEnumerationModelVariable);
+  else
+    return 0;
 }
 
 #ifdef __cplusplus

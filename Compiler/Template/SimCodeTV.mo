@@ -28,11 +28,22 @@ package builtin
     output Integer c;
   end intAdd;
   
+  function boolAnd
+    input Boolean b1;
+    input Boolean b2;
+    output Boolean b;
+  end boolAnd;
+  
   function boolOr
     input Boolean a;
     input Boolean b;
     output Boolean c;
   end boolOr;
+  
+  function boolNot
+    input Boolean b;
+    output Boolean nb;
+  end boolNot;
   
   function intSub
     input Integer a;
@@ -2533,30 +2544,89 @@ end Types;
 
 package FMI
   
-  function getFMIModelIdentifier
-    input Integer inFMU;
-    output String outModelIdentifier;
-  end getFMIModelIdentifier;
+  uniontype FmiImport
+    record FMIIMPORT
+      Integer fmiContext;
+      Integer fmiInstance;
+      String fmiModelIdentifier;
+      String fmiDescription;
+      Real fmiExperimentStartTime;
+      Real fmiExperimentStopTime;
+      Real fmiExperimentTolerance;
+      Integer fmiModelVariablesInstance;
+      list<Integer> fmiModelVariablesList;
+    end FMIIMPORT;
+  end FmiImport;
+    
+  function getFMIModelVariableVariability
+    input Integer inFMIModelVariable;
+    output String outFMIModelVariableVariability;
+  end getFMIModelVariableVariability;
+
+  function getFMIModelVariableCausality
+    input Integer inFMIModelVariable;
+    output String outFMIModelVariableCausality;
+  end getFMIModelVariableCausality;
+
+  function getFMIModelVariableBaseType
+    input Integer inFMIModelVariable;
+    output String outFMIModelVariableBaseType;
+  end getFMIModelVariableBaseType;  
+
+  function getFMIModelVariableName
+    input Integer inFMIModelVariable;
+    output String outFMIModelVariableName;
+  end getFMIModelVariableName;
   
-  function getFMIDescription
-    input Integer inFMI;
-    output String outFMIDescription;
-  end getFMIDescription;
+  function getFMIModelVariableDescription
+    input Integer inFMIModelVariable;
+    output String outFMIModelVariableDescription;
+  end getFMIModelVariableDescription;
   
-  function getFMIDefaultExperimentStart
-    input Integer inFMI;
-    output Real outFMIDefaultExperimentStart;
-  end getFMIDefaultExperimentStart;
+  function getFMINumberOfContinuousStates
+    input Integer inFMIInstance;
+    output Integer outFMINumberOfContinuousStates;
+  end getFMINumberOfContinuousStates;
+
+  function getFMINumberOfEventIndicators
+    input Integer inFMIInstance;
+    output Integer outFMINumberOfEventIndicators;
+  end getFMINumberOfEventIndicators;
   
-  function getFMIDefaultExperimentStop
-    input Integer inFMI;
-    output Real outFMIDefaultExperimentStop;
-  end getFMIDefaultExperimentStop;
+  function getFMIModelVariableHasStart
+    input Integer inFMIModelVariable;
+    output Boolean outFMIModelVariableHasStart;
+  end getFMIModelVariableHasStart;
+
+  function getFMIModelVariableHasFixed
+    input Integer inFMIModelVariable;
+    output Boolean outFMIModelVariableHasFixed;
+  end getFMIModelVariableHasFixed;
   
-  function getFMIDefaultExperimentTolerance
-    input Integer inFMI;
-    output Real outFMIDefaultExperimentTolerance;
-  end getFMIDefaultExperimentTolerance;
+  function getFMIRealVariableStartValue
+    input Integer inFMIModelVariable;
+    output Real outFMIRealVariableStartValue;
+  end getFMIRealVariableStartValue;
+
+  function getFMIIntegerVariableStartValue
+    input Integer inFMIModelVariable;
+    output Integer outFMIIntegerVariableStartValue;
+  end getFMIIntegerVariableStartValue;
+
+  function getFMIBooleanVariableStartValue
+    input Integer inFMIModelVariable;
+    output Boolean outFMIBooleanVariableStartValue;
+  end getFMIBooleanVariableStartValue;
+
+  function getFMIStringVariableStartValue
+    input Integer inFMIModelVariable;
+    output String outFMIStringVariableStartValue;
+  end getFMIStringVariableStartValue;
+
+  function getFMIEnumerationVariableStartValue
+    input Integer inFMIModelVariable;
+    output Integer outFMIEnumerationVariableStartValue;
+  end getFMIEnumerationVariableStartValue;
   
 end FMI;
 

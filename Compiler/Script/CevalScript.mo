@@ -821,7 +821,11 @@ algorithm
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       Values.Value ret_val,simValue,value,v,cvar,cvar2;
       Absyn.ComponentRef cr_1;
-      Integer size,resI,i,n,fmiContext,fmi;
+      Integer size,resI,i,n;
+      Integer fmiContext, fmiInstance, fmiModelVariablesInstance, fmiLogLevel;
+      list<Integer> fmiModelVariablesList, fmiModelVariablesList1;
+      Real fmiExperimentStartTime, fmiExperimentStopTime, fmiExperimentTolerance;
+      String fmiModelIdentifier, fmiDescription;
       list<String> vars_1,args,strings,strs,visvars;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts; 
@@ -1261,12 +1265,6 @@ algorithm
         i = Config.vectorizationLimit();
       then
         (cache,Values.INTEGER(i),st);
-        
-    case (cache,env,"getDefaultOpenCLDevice",{},st,msg)
-      equation
-        i = Config.getDefaultOpenCLDevice();
-      then
-        (cache,Values.INTEGER(i),st);
 
     case (cache,env,"getOrderConnections",{},st,msg)
       equation
@@ -1440,30 +1438,33 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir)},st,msg)
+    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,msg)
       equation
         true = System.regularFileExists(filename);
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
-        /*str = FMI.importFMU(filename, workdir);*/
         /* Initialize FMI objects */
-        fmiContext = FMI.initializeFMIContext(filename, workdir);
-        fmi = FMI.initializeFMI(fmiContext, workdir);
-        /* Reads the model identifier from the FMU.*/
-        filename_1 = FMI.getFMIModelIdentifier(fmi);
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, fmi);
+        (b, fmiContext, fmiInstance, fmiModelIdentifier, fmiDescription, fmiExperimentStartTime, fmiExperimentStopTime, fmiExperimentTolerance,
+        fmiModelVariablesInstance, fmiModelVariablesList) = FMI.initializeFMIImport(filename, workdir, fmiLogLevel);
+        true = b; /* if something goes wrong while initializing */
+        fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
+        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(fmiContext, fmiInstance, fmiModelIdentifier, fmiDescription, fmiExperimentStartTime,
+        fmiExperimentStopTime, fmiExperimentTolerance, fmiModelVariablesInstance, fmiModelVariablesList1));
         pd = System.pathDelimiter();
-        str1 = stringAppendList({workdir,pd,filename_1,"FMUImportNew.mo"});
-        System.writeFile(str1, str);
+        filename_1 = stringAppendList({workdir,pd,fmiModelIdentifier,"FMUImportNew.mo"});
+        System.writeFile(filename_1, str);
         /* Release FMI objects */
-        FMI.releaseFMI(fmi);
-        FMI.releaseFMIContext(fmiContext);
+        FMI.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext);
       then
-        (cache,Values.STRING(str1),st);
+        (cache,Values.STRING(filename_1),st);
         
-    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir)},st,msg)
+    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,msg)
       equation
         false = System.regularFileExists(filename);
         Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
+      then
+        (cache,Values.STRING(""),st);
+    
+    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,msg)
       then
         (cache,Values.STRING(""),st);
         
