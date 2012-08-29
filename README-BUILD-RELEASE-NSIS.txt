@@ -50,6 +50,8 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
     - put the .exe files into $OMDev\tools\OMTools\bin
     - put the .a files into $OMDev\tools\OMTools\lib
     - add any new dll needed by clients into $OMDev\tools\OMTools\dll
+    - if a new language file is added to OMEdit then add the corresponding qt language file into $OMDev\tools\OMTools\nls
+    - generate the *.qm files for OMEdit. Follow the OMEdit/OMEditGUI/Resources/nls/README.txt for instructions.
 
 04. Update the version into:
     - documentation
