@@ -281,7 +281,12 @@ void OMIProxy::startInteractiveSimulation(QString file)
   mpSimulationProcess = new QProcess();
 #ifdef WIN32
   QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
-  environment.insert("PATH", environment.value("Path") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\bin"));
+  // if OMDEV is set
+  const char *omdev = getenv("OMDEV");
+  if (omdev == NULL || omdev == "")
+    environment.insert("PATH", environment.value("Path") + ";" + QString(Helper::OpenModelicaHome).append("MinGW\\bin"));
+  else
+    environment.insert("PATH", environment.value("Path") + ";" + QString(omdev).append("\\tools\\mingw\\bin"));
   mpSimulationProcess->setProcessEnvironment(environment);
 #endif
   mpSimulationProcess->setWorkingDirectory(fileInfo.absolutePath());
