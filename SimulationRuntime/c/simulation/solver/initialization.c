@@ -590,7 +590,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
       }
       else {
       /* skipp warnings about self generated variables */
-        if (((strcmp(mData->realVarsData[i].info.name,"$ZERO.") != 0) && (strcmp(mData->realVarsData[i].info.name,"$pDER.") != 0)) || DEBUG_FLAG(LOG_INIT))
+        if (((strncmp (mData->realVarsData[i].info.name,"$ZERO.",6) != 0) && (strncmp (mData->realVarsData[i].info.name,"$pDER.",6) != 0)) || DEBUG_FLAG(LOG_INIT))
           WARNING1("unable to import real variable %s from given file", mData->realVarsData[i].info.name);
       }
     }
