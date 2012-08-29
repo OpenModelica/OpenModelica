@@ -1136,7 +1136,7 @@ algorithm
   end match;
 end traversePatternList;
 
-protected function traversePattern
+public function traversePattern
   input tuple<DAE.Pattern,TypeA> inTpl;
   input Func func;
   output tuple<DAE.Pattern,TypeA> outTpl;

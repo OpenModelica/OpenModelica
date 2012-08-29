@@ -145,6 +145,7 @@ protected import Interactive;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
+protected import Patternm;
 protected import PrefixUtil;
 protected import SCodeUtil;
 protected import Static;
@@ -11327,7 +11328,7 @@ algorithm
         partialPrefixBool = SCode.partialBool(partialPrefix);
         
         daeElts = optimizeFunctionCheckForLocals(fpath,daeElts,NONE(),{},{},{});
-        Debug.bcall2(not Config.acceptMetaModelicaGrammar(),checkFunctionDefUse,daeElts,info);
+        checkFunctionDefUse(daeElts,info);
         cmt = extractClassDefComment(cache, env, cd);
         /* Not working 100% yet... Also, a lot of code has unused inputs :( */
         Debug.bcall3(false and Config.acceptMetaModelicaGrammar() and not instFunctionTypeOnly,checkFunctionInputUsed,daeElts,NONE(),Absyn.pathString(fpath));
@@ -17921,15 +17922,41 @@ algorithm
       list<String> unbound;
       DAE.ComponentRef cr;
       DAE.Exp exp;
+      DAE.Pattern pattern;
     case (DAE.CREF(componentRef=DAE.WILD()),_) then inUnbound;
     case (DAE.CREF(componentRef=cr),unbound)
       equation
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,ComponentReference.crefFirstIdent(cr));
       then unbound;
     case (DAE.ASUB(exp=exp),unbound) then crefFiltering(exp,unbound);
+    case (DAE.PATTERN(pattern=pattern),unbound)
+      equation
+        ((_,unbound)) = Patternm.traversePattern((pattern,unbound),patternFiltering);
+      then unbound;
     else inUnbound;
   end match;
 end crefFiltering;
+
+protected function patternFiltering
+  input tuple<DAE.Pattern,list<String>> inTpl;
+  output tuple<DAE.Pattern,list<String>> outTpl;
+algorithm
+  outTpl := match inTpl
+    local
+      list<String> unbound;
+      String id;
+      DAE.Pattern pattern;
+    case ((pattern as DAE.PAT_AS(id=id),unbound))
+      equation
+        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,id);
+      then ((pattern,unbound));
+    case ((pattern as DAE.PAT_AS_FUNC_PTR(id=id),unbound))
+      equation
+        unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,id);
+      then ((pattern,unbound));
+    else inTpl;
+  end match;
+end patternFiltering;
 
 protected function traverseCrefSubs
   input DAE.Exp exp;
