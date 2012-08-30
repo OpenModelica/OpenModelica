@@ -41,8 +41,6 @@ encapsulated package IndexReduction
 
 public import BackendDAE;
 public import DAE;
-public import HashTable3;
-public import HashTableCG;
 
 protected import Absyn;
 protected import BackendDAEEXT;
@@ -52,15 +50,21 @@ protected import BackendEquation;
 protected import BackendDAEOptimize;
 protected import BackendDAETransform;
 protected import BackendVariable;
+protected import BaseHashTable;
 protected import ComponentReference;
+protected import DAEUtil;
 protected import Debug;
 protected import Derive;
+protected import Env;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import GraphML;
+protected import HashTable2;
+protected import HashTable3;
+protected import HashTableCG;
 protected import Inline;
 protected import List;
 protected import Matching;
@@ -834,12 +838,11 @@ algorithm
         nv1 = nv1+ndummystates;
         vec1 = Util.arrayExpand(ne1-ne, ass1, -1);
         vec2 = Util.arrayExpand(nv1-nv, ass2, -1);
-        (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
         syst = BackendVariable.expandVarsDAE(ndummystates,syst);
-        (syst,shared,changedeqns) = addDummyStates(dummyStates,syst,shared,vec1,vec2,mapIncRowEqn,{});
+        (syst,shared) = addDummyStates(dummyStates,syst,shared);
+        (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
         Debug.fcall(Flags.BLT_DUMP, print, "Full System:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);
-        (syst as BackendDAE.EQSYSTEM(m = SOME(m)),_,_) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,shared,BackendDAE.SOLVABLE(),changedeqns,mapEqnIncRow,mapIncRowEqn);
         Matching.matchingExternalsetIncidenceMatrix(nv1,ne1,m);        
         BackendDAEEXT.matching(nv1,ne1,5,-1,0.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);     
@@ -1618,7 +1621,7 @@ algorithm
 
     else
       equation
-        print("Error, sortStateCandidatesVars failed!");
+        print("Error, sortStateCandidatesVars failed!\n");
       then
         fail();
 
@@ -1647,7 +1650,7 @@ protected function calculateVarPriorities
   input list<tuple<DAE.ComponentRef,Integer,Real>> iTuples;
   output list<tuple<DAE.ComponentRef,Integer,Real>> tuples;
 algorithm
-  tuples := match(index,vars,varsSize,allVars,so,iTuples)
+  tuples := matchcontinue(index,vars,varsSize,allVars,so,iTuples)
     local 
       DAE.ComponentRef varCref;
       BackendDAE.Var v;
@@ -1664,7 +1667,12 @@ algorithm
         Debug.fcall(Flags.DUMMY_SELECT,BackendDump.debugStrCrefStrRealStrRealStrRealStr,("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio,"\n"));
       then
         calculateVarPriorities(index+1,vars,varsSize,allVars,so,(varCref,index,prio)::iTuples);
-  end match;
+    case (_,_,_,_,_,_)
+      equation
+        false = intLe(index,varsSize);
+      then
+        iTuples;
+  end matchcontinue;
 end calculateVarPriorities;
 
 protected function varStateSelectHeuristicPrio
@@ -2955,37 +2963,188 @@ protected function addDummyStates
   input list<DAE.ComponentRef> dummyStates;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input array<Integer> inAss1;
-  input array<Integer> inAss2;
-  input array<Integer> mapIncRowEqn;
-  input list<Integer> ichangedeqns;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;  
-  output list<Integer> ochangedeqns;
 algorithm
-  (osyst,oshared,ochangedeqns) := 
-  match (dummyStates,isyst,ishared,inAss1,inAss2,mapIncRowEqn,ichangedeqns)
+  (osyst,oshared) := 
+  match (dummyStates,isyst,ishared)
     local
-     DAE.ComponentRef cr;
-     BackendDAE.EqSystem syst;
-     BackendDAE.Shared shared;
-     list<DAE.ComponentRef> rest;
-     Integer i,e;
-     list<Integer> changedeqns;
-     BackendDAE.Var v;
-    case ({},_,_,_,_,_,_) then (isyst,ishared,List.unique(ichangedeqns));
-    case (cr::rest,_,_,_,_,_,_)
+      DAE.ComponentRef cr;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      list<DAE.ComponentRef> rest;
+      Integer i,e;
+      list<Integer> changedeqns;
+      BackendDAE.Var v;
+      HashTable2.HashTable ht;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      Option<BackendDAE.IncidenceMatrix> om,omT;
+      BackendDAE.Matching matching;     
+    case ({},_,_) then (isyst,ishared);
+    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=om,mT=omT,matching=matching),_)
       equation
-        (v::_,i::_) = BackendVariable.getVarDAE(cr,isyst);
-        (_,syst,shared,changedeqns) = BackendDAETransform.makeDummyState(cr,i,isyst,ishared,mapIncRowEqn);
-        e = inAss1[i];
-        _ = consArrayUpdate(intGt(e,0), inAss1, e, -1);
-        _ = consArrayUpdate(intGt(i,0), inAss2, i, -1);
-        (syst,shared,changedeqns) = addDummyStates(rest,syst,shared,inAss1,inAss2,mapIncRowEqn,listAppend(ichangedeqns,changedeqns));
+        ht = HashTable2.emptyHashTable();
+        // create dummy_der vars and change deselected states to dummy states
+        ((vars,ht)) = List.fold(dummyStates,makeDummyVarandDummyDerivative,(vars,ht)); 
+        (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,replaceDummyDerivatives,ht);
+        shared = replaceDummyDerivativesShared(ishared,ht);
+        syst = BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching);
       then
-        (syst,shared,changedeqns);
+        (syst,shared);
   end match;
 end addDummyStates;
+
+protected function replaceDummyDerivatives "function replaceDummyDerivatives
+  author: Frenkel TUD 2012-08"
+  input tuple<DAE.Exp,HashTable2.HashTable> itpl;
+  output tuple<DAE.Exp,HashTable2.HashTable> outTpl;
+protected
+  DAE.Exp e;
+  HashTable2.HashTable ht;
+algorithm
+  (e,ht) := itpl;
+  outTpl := Expression.traverseExp(e,replaceDummyDerivativesExp,ht);
+end replaceDummyDerivatives;
+
+protected function replaceDummyDerivativesExp "function replaceDummyDerivativesExp
+  author: Frenkel TUD 2012-08"
+  input tuple<DAE.Exp,HashTable2.HashTable> tpl;
+  output tuple<DAE.Exp,HashTable2.HashTable> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      HashTable2.HashTable ht;
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),ht))
+      equation
+        e = BaseHashTable.get(cr,ht);
+      then 
+        ((e,ht));
+    case tpl then tpl;
+  end matchcontinue;
+end replaceDummyDerivativesExp;
+
+protected function replaceDummyDerivativesShared
+"function: replaceDummyDerivativesShared
+  author Frenkel TUD 2012-08"
+  input BackendDAE.Shared ishared;
+  input HashTable2.HashTable ht;
+  output BackendDAE.Shared oshared;
+algorithm
+  oshared:= match (ishared,ht)
+    local
+      BackendDAE.Variables knvars,exobj,knvars1;
+      BackendDAE.Variables aliasVars;      
+      BackendDAE.EquationArray remeqns,inieqns;
+      array<DAE.Constraint> constrs;
+      array<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;      
+      DAE.FunctionTree funcTree;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
+      list<BackendDAE.ZeroCrossing> zeroCrossingLst;
+      BackendDAE.BackendDAEType btp;  
+    case (BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs),_)
+      equation
+        // replace dummy_derivatives in knvars,aliases,ineqns,remeqns
+        (aliasVars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceDummyDerivativesVar,ht);
+        (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceDummyDerivativesVar,ht);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,replaceDummyDerivatives,ht);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,replaceDummyDerivatives,ht);
+        (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceDummyDerivatives,ht);
+      then 
+        BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp,symjacs);
+  end match;
+end replaceDummyDerivativesShared;
+
+protected function replaceDummyDerivativesVar
+"autor: Frenkel TUD 2012-08"
+ input tuple<BackendDAE.Var, HashTable2.HashTable> inTpl;
+ output tuple<BackendDAE.Var, HashTable2.HashTable> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v,v1;
+      HashTable2.HashTable ht;
+      DAE.Exp e,e1;
+      DAE.ComponentRef cr;
+      Option<DAE.VariableAttributes> attr,new_attr;
+      
+    case ((v as BackendDAE.VAR(bindExp=SOME(e),values=attr),ht))
+      equation
+        ((e1, _)) = Expression.traverseExp(e, replaceDummyDerivatives, ht);
+        v1 = BackendVariable.setBindExp(v,e1);
+        (attr,_) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,replaceDummyDerivatives,ht);
+        v1 = BackendVariable.setVarAttributes(v1,attr);
+      then ((v1,ht));
+  
+    case  ((v as BackendDAE.VAR(values=attr),ht))
+      equation 
+        (attr,_) = BackendDAEUtil.traverseBackendDAEVarAttr(attr,replaceDummyDerivatives,ht);
+        v1 = BackendVariable.setVarAttributes(v,attr);     
+      then ((v1,ht));
+  end matchcontinue;
+end replaceDummyDerivativesVar;
+
+
+protected function makeDummyVarandDummyDerivative
+"function: makeDummyVarandDummyDerivative
+  author: Frenkel TUD
+  This function creates a new variable named
+  der+<varname> and adds it to the dae. The kind of the
+  var with varname is changed to dummy_state"
+  input DAE.ComponentRef inComponentRef;
+  input tuple<BackendDAE.Variables,HashTable2.HashTable> inTpl;
+  output tuple<BackendDAE.Variables,HashTable2.HashTable> oTpl;
+algorithm
+  oTpl := matchcontinue (inComponentRef,inTpl)
+    local
+      HashTable2.HashTable ht;
+      BackendDAE.Variables vars;
+      DAE.ComponentRef name,dummyvar_cr;
+      DAE.VarDirection dir;
+      DAE.VarParallelism prl;
+      DAE.Type tp;
+      Option<DAE.Exp> bind;
+      Option<Values.Value> value;
+      DAE.InstDims dim;
+      Integer idx;
+      .DAE.ElementSource source,source1;
+      Option<DAE.VariableAttributes> attr,odattr;
+      DAE.VariableAttributes dattr;
+      Option<SCode.Comment> comment;
+      DAE.ConnectorType ct;
+      BackendDAE.Var dummy_derstate,dummy_state;
+
+    case (name,(vars,ht))
+      equation
+        ((BackendDAE.VAR(name,_,dir,prl,tp,bind,value,dim,idx,source,attr,comment,ct) :: _),_) = BackendVariable.getVar(name, vars);
+        dummyvar_cr = ComponentReference.crefPrefixDer(name);
+        source1 = DAEUtil.addSymbolicTransformation(source,DAE.NEW_DUMMY_DER(name,{}));
+        /* Dummy variables are algebraic variables, hence fixed = false */
+        dattr = BackendVariable.getVariableAttributefromType(tp);
+        odattr = DAEUtil.setFixedAttr(SOME(dattr), SOME(DAE.BCONST(false)));
+        dummy_derstate = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,0,source,odattr,comment,ct);
+        dummy_state = BackendDAE.VAR(name,BackendDAE.DUMMY_STATE(),dir,prl,tp,bind,value,dim,idx,source1,attr,comment,ct);
+        vars = BackendVariable.addNewVar(dummy_derstate, vars);
+        vars = BackendVariable.addVar(dummy_state, vars);
+        ht = BaseHashTable.add((name,Expression.crefExp(dummyvar_cr)),ht);
+      then
+        ((vars,ht));
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.makeDummyVarandDummyDerivative failed!"});
+      then
+        fail();
+  end matchcontinue;
+end makeDummyVarandDummyDerivative;
 
 protected function consArrayUpdate
   input Boolean cond;

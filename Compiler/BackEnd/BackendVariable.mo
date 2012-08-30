@@ -415,7 +415,7 @@ algorithm
   end matchcontinue;
 end varStateSelect;
 
-protected function getVariableAttributefromType
+public function getVariableAttributefromType
   input DAE.Type inType;
   output DAE.VariableAttributes attr;
 algorithm
