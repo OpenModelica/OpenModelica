@@ -10110,8 +10110,8 @@ algorithm
     case BackendDAE.SOLVABILITY_PARAMETER(b=true) then 50;
     case BackendDAE.SOLVABILITY_TIMEVARYING(b=false) then 0;
     case BackendDAE.SOLVABILITY_TIMEVARYING(b=true) then 100;
-    case BackendDAE.SOLVABILITY_NONLINEAR() then 200;
-    case BackendDAE.SOLVABILITY_UNSOLVABLE() then 300;
+    case BackendDAE.SOLVABILITY_NONLINEAR() then 500;
+    case BackendDAE.SOLVABILITY_UNSOLVABLE() then 1000;
   end match;
 end solvabilityWights;
 
