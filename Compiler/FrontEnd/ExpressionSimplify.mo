@@ -1513,6 +1513,12 @@ algorithm
         a1 = simplifyMatrixBinary(e1, op, e2);
       then a1;
 
+    case (e1,op as DAE.MUL_ARRAY_SCALAR(ty = tp),e2)
+      equation
+        true = Expression.isZero(e2);
+        a1 = Expression.makeConstZero(tp);
+      then a1;
+
   end matchcontinue;
 end simplifyBinaryArray;
 
