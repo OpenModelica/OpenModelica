@@ -17696,7 +17696,7 @@ algorithm
       String name;
     case (_,_)
       equation
-        checkFunctionDefUse2(elts,NONE(),{});
+        _ = checkFunctionDefUse2(elts,NONE(),{});
       then ();
     else
       equation
@@ -17711,8 +17711,9 @@ protected function checkFunctionDefUse2
   input list<DAE.Element> elts;
   input Option<list<DAE.Statement>> alg "NONE() in first iteration";
   input list<String> inUnbound "{} in first iteration";
+  output list<String> outUnbound;
 algorithm
-  _ := match (elts,alg,inUnbound)
+  outUnbound := match (elts,alg,inUnbound)
     local
       list<DAE.Element> rest;
       list<DAE.Statement> stmts;
@@ -17720,30 +17721,30 @@ algorithm
       String name;
       DAE.Type ty;
       DAE.InstDims dims;
-    case ({},NONE(),_)
-      then ();
+    case ({},NONE(),unbound)
+      then unbound;
     case ({},SOME(stmts),unbound)
       equation
-        _ = List.fold(stmts, checkFunctionDefUseStmt, (false,false,unbound));
-      then ();
+        ((_,_,unbound)) = List.fold(stmts, checkFunctionDefUseStmt, (false,false,unbound));
+      then unbound;
     case (DAE.VAR(direction=DAE.INPUT())::rest,alg,unbound)
       equation
-        checkFunctionDefUse2(rest,alg,unbound);
-      then ();
+        unbound = checkFunctionDefUse2(rest,alg,unbound);
+      then unbound;
     case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),dims=dims,binding=NONE())::rest,alg,unbound)
       equation
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
         unbound = List.consOnTrue(List.fold(dims,foldIsKnownSubscriptDimension,true),name,unbound);
-        checkFunctionDefUse2(rest,alg,unbound);
-      then ();
+        unbound = checkFunctionDefUse2(rest,alg,unbound);
+      then unbound;
     case (DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS(stmts))::rest,NONE(),unbound)
       equation
-        checkFunctionDefUse2(rest,SOME(stmts),unbound);
-      then ();
+        unbound = checkFunctionDefUse2(rest,SOME(stmts),unbound);
+      then unbound;
     case (_::rest,alg,unbound)
       equation
-        checkFunctionDefUse2(rest,alg,unbound);
-      then ();
+        unbound = checkFunctionDefUse2(rest,alg,unbound);
+      then unbound;
   end match;
 end checkFunctionDefUse2;
 
@@ -17983,12 +17984,15 @@ algorithm
   outTpl := match inTpl
     local
       DAE.Exp exp;
-      list<String> unbound;
+      list<String> unbound,unboundLocal;
       Absyn.Info info;
       String str;
       DAE.ComponentRef cr;
       Boolean b;
       tuple<list<String>,Absyn.Info> arg;
+      list<DAE.Exp> inputs;
+      list<DAE.Element> localDecls;
+      list<DAE.MatchCase> cases;
     case ((exp as DAE.SIZE(exp=_),arg)) then ((exp,false,arg));
     case ((exp as DAE.CREF(componentRef=cr),arg))
       equation
@@ -17998,8 +18002,35 @@ algorithm
         Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {str}, info);
         unbound = List.filter1OnTrue(unbound,Util.stringNotEqual,str);
       then ((exp,true,(unbound,info)));
+    case ((exp as DAE.MATCHEXPRESSION(inputs=inputs,localDecls=localDecls,cases=cases),(unbound,info)))
+      equation
+        ((_,(unbound,_))) = Expression.traverseExpTopDown(DAE.LIST(inputs),findUnboundVariableUse,(unbound,info));
+        unboundLocal = checkFunctionDefUse2(localDecls,NONE(),unbound);
+        List.map1_0(cases,findUnboundVariableUseInCase,unboundLocal);
+      then ((exp,false,(unbound,info)));
     case ((exp,arg)) then ((exp,true,arg));
   end match;
 end findUnboundVariableUse;
+
+protected function findUnboundVariableUseInCase "Check if the expression is used before it is defined"
+  input DAE.MatchCase case_;
+  input list<String> inUnbound;
+algorithm
+  _ := match (case_,inUnbound)
+    local
+      list<String> unbound;
+      Absyn.Info info,resultInfo;
+      Option<DAE.Exp> patternGuard,result;
+      list<DAE.Pattern> patterns;
+      list<DAE.Statement> body;
+    case (DAE.CASE(patterns=patterns,patternGuard=patternGuard,body=body,result=result,info=info,resultInfo=resultInfo),unbound)
+      equation
+        ((_,unbound)) = Patternm.traversePattern((DAE.PAT_META_TUPLE(patterns),unbound),patternFiltering);
+        ((_,(unbound,info))) = Expression.traverseExpTopDown(DAE.META_OPTION(patternGuard),findUnboundVariableUse,(unbound,info));
+        ((_,_,unbound)) = List.fold(body, checkFunctionDefUseStmt, (false,false,unbound));
+        ((_,(unbound,info))) = Expression.traverseExpTopDown(DAE.META_OPTION(result),findUnboundVariableUse,(unbound,resultInfo));
+      then ();
+  end match;
+end findUnboundVariableUseInCase;
 
 end Inst;
