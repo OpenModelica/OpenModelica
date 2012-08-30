@@ -2859,6 +2859,62 @@ annotation(Documentation(info="<html>
 </ul>
 </html>"));
 end '1.8.1';
+package '1.9.0' "Version 1.9.0 (r12739, 2012-08-31)"
+annotation(Documentation(info="<html>
+<p>The OpenModelica 1.9.0 beta release has a more complete OMC model compiler. It simulates more models than the previous 1.8.1 version, for example 74 MSL 3.1 example models compared to 36 example models for the previous release, and partial support for some other libraries like ThermoSysPro. It also contains a further improved ModelicaML version for the latest Eclipse and Papyrus releases. However it does not yet contain support for the Fluid library, which is the target for the final 1.9.0 release planned for the October/November time frame.</p>
+<h4>OpenModelica Compiler (OMC)</h4>
+<p>This release mainly includes bug fixes and improvements of the OpenModelica Compiler (OMC), including, but not restricted to:</p>
+<ul>
+<li>A more stable and complete OMC model compiler. The 1.9.0 beta version simulates more models than the previous 1.8.1 version.</li>
+<li>Better simulation support for MSL, e.g. 74 MSL 3.1 example models now simulate compared to 36 models for the 1.8.1 version. Almost all MultiBody example models (except 2) now simulate.</li>
+<li>Better simulation support for several other libraries, e.g. more than twenty examples simulate from ThermoSysPro, and all but one model from PlanarMechanics simulate.</li>
+<li>NOTE: this beta version does not support simulation of the Fluid library. That is the target for the final 1.9.0 release, planned for the October/November time frame.</li>
+<li>Improved tearing algorithm for the compiler backend. Tearing is by default used.</li>
+<li>Matching and dynamic state selection algorithms for the compiler backend.</li>
+<li>New index reduction algorithm implementation.</li>
+<li>Better initialization, including symbolic matrices for initialization.</li>
+<li>Better class loading from files. The package.order file is now respected and the file structure is more thoroughly examined.</li>
+<li>It is now possible to translate the error messages in the omc kernel.</li>
+<li>Enhanced ModelicaML version with support for value bindings in requirements-driven modeling available for the latest Eclipse and Papyrus versions. GUI specific adaptations. Automated model composition workflows (used for model-based design verification against requirements) are modularized and have improved in terms of performance.</li>
+<li>Improved FMI import to prepare for FMI for co-simulation.</li>
+<li>Checking (when possible) that variables have been assigned to before they are used in algorithmic code.</li>
+<li>Full version of Python scripting.</li>
+<li>Prototype support for uncertainty computations, special feature enabled by special flag.</li>
+<li>Parallel algorithmc Modelica support (ParModelica) for efficient portable parallel algorithmic programming based on the OpenCL standard, for CPUs and GPUs.</li>
+<li>Support for optimisation of semiLinear according to MSL 3.3 chapter 3.7.2.5 semiLinear.</li>
+<li>Various bugfixes.</li>
+<li>NOTE: interactive simulation is not operational in this beta release. It will be put back again in the near future, first available as a nightly build. It is also available in the previous 1.8.0 release.</li>
+</ul>
+<h4>OpenModelica Notebook (OMNotebook)</h4>
+<ul>
+<li>No changes.</li>
+</ul>
+<h4>OpenModelica Shell (OMShell)</h4>
+<ul>
+<li>No changes.</li>
+</ul>
+<h4>OpenModelica Eclipse Plug-in (MDT)</h4>
+<ul>
+<li>Enhanced debugger for algorithmic Modelica code, supporting both standard Modelica algorithmic code called from simulation models, and MetaModelica code.</li>
+</ul>
+<h4>OpenModelica Development Environment (OMDev)</h4>
+<ul>
+<li>Migration of version handling and configuration management from CodeBeamer to Trac.</li>
+</ul>
+<h4>Graphic Editor OMEdit</h4>
+<ul>
+<li>Bug fixes.</li>
+</ul>
+<h4>OMOptim Optimization Subsystem</h4>
+<ul>
+<li>Bug fixes.</li>
+</ul>
+<h4>FMI Support</h4>
+<ul>
+<li>Bug fixes.</li>
+</ul>
+</html>"));
+end '1.9.0';
 package trunk "Development version"
 annotation(Documentation(info="<html>
 </html>"));
