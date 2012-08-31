@@ -1235,7 +1235,7 @@ uniontype Exp "Expressions
   end MATRIX;
 
   record RANGE
-    Type ty;
+    Type ty "the (array) type of the expression";
     Exp start "start value";
     Option<Exp> step "step value";
     Exp stop "stop value" ;

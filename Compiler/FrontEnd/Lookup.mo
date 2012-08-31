@@ -2522,14 +2522,14 @@ algorithm
       then
         DAE.T_ARRAY(t_1,{DAE.DIM_INTEGER(dim_int)},ts);
 
-    // Unexpanded array means non-constant range, so no range-checking possible.
-    case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts), 
-          (DAE.SLICE(exp = DAE.RANGE(ty = _)) :: ys))
+    case (DAE.T_ARRAY(dims = {_}, ty = t, source = ts),
+          (DAE.SLICE(exp = e) :: ys))
       equation
+        DAE.T_ARRAY(dims={dim}) = Expression.typeof(e);
         t_1 = checkSubscripts(t, ys);
       then
-        DAE.T_ARRAY(t_1, {DAE.DIM_UNKNOWN()}, ts);
-
+        DAE.T_ARRAY(t_1, {dim}, ts);
+    
     case (DAE.T_ARRAY(dims = {dim}, ty = t, source = ts),
           (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
       equation
@@ -2570,20 +2570,6 @@ algorithm
       then
         t_1;
 
-    case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t, source = ts),
-          (DAE.SLICE(exp = _) :: ys))
-      equation
-        t_1 = checkSubscripts(t, ys);
-      then
-        DAE.T_ARRAY(t_1, {DAE.DIM_UNKNOWN()}, ts);
-
-    case (DAE.T_ARRAY(dims = {(dim as DAE.DIM_EXP(exp = _))}, ty = t, source = ts),
-          (DAE.SLICE(exp = _) :: ys))
-      equation
-        t_1 = checkSubscripts(t, ys);
-      then
-        DAE.T_ARRAY(t_1, {dim}, ts);
-    
     case (DAE.T_SUBTYPE_BASIC(complexType = t),ys)
       then checkSubscripts(t,ys);
     

@@ -1761,7 +1761,7 @@ algorithm
     case (DAE.PARTEVALFUNCTION(ty=tp)) then tp;
     case (DAE.ARRAY(ty = tp)) then tp;
     case (DAE.MATRIX(ty = tp)) then tp;
-    case (DAE.RANGE(ty = tp)) then tp;
+    case (DAE.RANGE(ty = tp)) then DAE.T_ARRAY(tp, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource);
     case (DAE.CAST(ty = tp)) then tp;
     case (DAE.ASUB(exp = e,sub=explist)) 
       equation
