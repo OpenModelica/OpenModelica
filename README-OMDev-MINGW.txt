@@ -78,8 +78,7 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
       independent (static) omc.exe.
     - to build omc for a release you need to make it static.
 
-11.
-    To install the Modelica Standard Library into the build directory:
+11. To install the Modelica Standard Library into the build directory:
     - Ctrl+B and type: omlibrary
 
 12. To run the OpenModelica testsuite:
@@ -92,6 +91,11 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
       >export OPENMODELICALIBRARY="c:\\path\\to\\your\\OpenModelica\\build\\lib\\omlibrary"
       >cd testsuite
       testsuite> make
+      
+13. To install the OpenModelica Python Interface:
+    - Ctrl+B and type: install-python
+      Generates the python stub files.
+      Copy the OMPython files in trunk\build\share\omc\scripts\PythonInterface
 
 ***NOTES*** ON PROBLEMS WITH THE ECLIPSE PROJECT/OMDev BUILDER:
 ---------------------------------------------------------------
