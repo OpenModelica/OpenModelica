@@ -3372,6 +3372,16 @@ algorithm
   end match;
 end connectorTypeEqual;
 
+public function potentialBool
+  input ConnectorType inConnectorType;
+  output Boolean outPotential;
+algorithm
+  outPotential := match(inConnectorType)
+    case POTENTIAL() then true;
+    else false;
+  end match;
+end potentialBool;
+
 public function flowBool
   input ConnectorType inConnectorType;
   output Boolean outFlow;

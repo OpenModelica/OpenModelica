@@ -47,6 +47,7 @@ Connect2.mo \
 ConnectUtil.mo \
 ConnectUtil2.mo \
 ConnectionGraph.mo \
+ConnectionSets.mo \
 Constants.mo \
 DAE.mo \
 DAEDump.mo \

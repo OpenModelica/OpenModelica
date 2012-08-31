@@ -52,6 +52,7 @@ protected import Debug;
 protected import Error;
 protected import Expression;
 protected import Flags;
+protected import InstDump;
 protected import List;
 protected import SCodeDump;
 protected import Types;
@@ -127,9 +128,8 @@ algorithm
     case (InstTypes.ELEMENT(component = comp, cls = cls), vars)
       equation
         var = componentToDaeVar(comp);
-        vars = var :: vars;
       then
-        makeDaeVarsFromClass(cls, vars);
+        var :: vars;
 
     case (InstTypes.EXTENDED_ELEMENTS(cls = cls), vars)
       then makeDaeVarsFromClass(cls, vars);
@@ -137,9 +137,8 @@ algorithm
     case (InstTypes.CONDITIONAL_ELEMENT(component = comp), vars)
       equation
         var = componentToDaeVar(comp);
-        vars = var :: vars;
       then
-        vars;
+        var :: vars;
 
   end match;
 end makeDaeVarsFromElement;
@@ -155,7 +154,7 @@ algorithm
 
     case (InstTypes.BASIC_TYPE(), _) then inAccumVars;
     case (InstTypes.COMPLEX_CLASS(components = elems), _)
-      then List.accumulateMap(elems, makeDaeVarsFromElement);
+      then List.accumulateMapAccum(elems, makeDaeVarsFromElement, inAccumVars);
 
   end match;
 end makeDaeVarsFromClass;
@@ -169,19 +168,23 @@ algorithm
       Absyn.Path path;
       DAE.Type ty;
       String name;
+      DAE.Attributes attr;
+      Prefixes prefs;
+      DaePrefixes dprefs;
 
-    case InstTypes.UNTYPED_COMPONENT(name = path)
+    case InstTypes.UNTYPED_COMPONENT(name = path, prefixes = prefs)
       equation
         name = Absyn.pathLastIdent(path);
+        attr = prefixesToDaeAttr(prefs);
       then
-        DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
-          DAE.UNBOUND(), NONE());
+        DAE.TYPES_VAR(name, attr, DAE.T_UNKNOWN_DEFAULT, DAE.UNBOUND(), NONE());
 
-    case InstTypes.TYPED_COMPONENT(name = path, ty = ty)
+    case InstTypes.TYPED_COMPONENT(name = path, ty = ty, prefixes = dprefs)
       equation
         name = Absyn.pathLastIdent(path);
+        attr = daePrefixesToDaeAttr(dprefs);
       then
-        DAE.TYPES_VAR(name, DAE.dummyAttrVar, ty, DAE.UNBOUND(), NONE());
+        DAE.TYPES_VAR(name, attr, ty, DAE.UNBOUND(), NONE());
 
     // TODO: Handle stuff like conditional components here.
     else DAE.TYPES_VAR("dummy", DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
@@ -190,6 +193,99 @@ algorithm
   end match;
 end componentToDaeVar;
 
+protected function prefixesToDaeAttr
+  input Prefixes inPrefixes;
+  output DAE.Attributes outAttr;
+algorithm
+  outAttr := match(inPrefixes)
+    local
+      SCode.ConnectorType cty;
+      SCode.Variability var;
+      Absyn.Direction dir;
+      Absyn.InnerOuter io;
+      SCode.Visibility vis;
+
+    case InstTypes.NO_PREFIXES() then DAE.dummyAttrVar;
+    case InstTypes.PREFIXES(vis, var, _, io, (dir, _), (cty, _), _)
+      then DAE.ATTR(cty, SCode.NON_PARALLEL(), var, dir, io, vis);
+
+  end match;
+end prefixesToDaeAttr;
+
+protected function daePrefixesToDaeAttr
+  input DaePrefixes inPrefixes;
+  output DAE.Attributes outAttr;
+algorithm
+  outAttr := match(inPrefixes)
+    local
+      DAE.VarVisibility dvis;
+      DAE.VarKind dvar;
+      DAE.VarDirection ddir;
+      DAE.ConnectorType dcty;
+      SCode.ConnectorType cty;
+      SCode.Variability var;
+      Absyn.Direction dir;
+      Absyn.InnerOuter io;
+      SCode.Visibility vis;
+
+    case InstTypes.NO_DAE_PREFIXES() then DAE.dummyAttrVar;
+    case InstTypes.DAE_PREFIXES(dvis, dvar, _, io, ddir, dcty)
+      equation
+        vis = daeToSCodeVisibility(dvis);
+        var = daeToSCodeVariability(dvar);
+        dir = daeToAbsynDirection(ddir);
+        cty = daeToSCodeConnectorType(dcty);
+      then
+        DAE.ATTR(cty, SCode.NON_PARALLEL(), var, dir, io, vis);
+
+  end match;
+end daePrefixesToDaeAttr;
+
+protected function daeToSCodeVisibility
+  input DAE.VarVisibility inVisibility;
+  output SCode.Visibility outVisibility;
+algorithm
+  outVisibility := match(inVisibility)
+    case DAE.PUBLIC() then SCode.PUBLIC();
+    case DAE.PROTECTED() then SCode.PROTECTED();
+  end match;
+end daeToSCodeVisibility;
+
+protected function daeToSCodeVariability
+  input DAE.VarKind inVariability;
+  output SCode.Variability outVariability;
+algorithm
+  outVariability := match(inVariability)
+    case DAE.VARIABLE() then SCode.VAR();
+    case DAE.DISCRETE() then SCode.DISCRETE();
+    case DAE.PARAM() then SCode.PARAM();
+    case DAE.CONST() then SCode.CONST();
+  end match;
+end daeToSCodeVariability;
+
+protected function daeToAbsynDirection
+  input DAE.VarDirection inDirection;
+  output Absyn.Direction outDirection;
+algorithm
+  outDirection := match(inDirection)
+    case DAE.BIDIR() then Absyn.BIDIR();
+    case DAE.INPUT() then Absyn.INPUT();
+    case DAE.OUTPUT() then Absyn.OUTPUT();
+  end match;
+end daeToAbsynDirection;
+
+protected function daeToSCodeConnectorType
+  input DAE.ConnectorType inConnectorType;
+  output SCode.ConnectorType outConnectorType;
+algorithm
+  outConnectorType := match(inConnectorType)
+    case DAE.NON_CONNECTOR() then SCode.POTENTIAL();
+    case DAE.POTENTIAL() then SCode.POTENTIAL();
+    case DAE.FLOW() then SCode.FLOW();
+    case DAE.STREAM() then SCode.STREAM();
+  end match;
+end daeToSCodeConnectorType;
+  
 public function makeDerivedClassType
   input DAE.Type inType;
   input ClassInf.State inState;
@@ -297,12 +393,13 @@ algorithm
       Prefix prefix;
       Option<Absyn.Path> inner_name;
       DAE.Exp cond;
+      Option<Component> p;
 
     case (InstTypes.UNTYPED_COMPONENT(_, ty, dims, prefs, pty, binding, info), _)
       then InstTypes.UNTYPED_COMPONENT(inName, ty, dims, prefs, pty, binding, info);
 
-    case (InstTypes.TYPED_COMPONENT(_, ty, dprefs, binding, info), _)
-      then InstTypes.TYPED_COMPONENT(inName, ty, dprefs, binding, info);
+    case (InstTypes.TYPED_COMPONENT(_, ty, p, dprefs, binding, info), _)
+      then InstTypes.TYPED_COMPONENT(inName, ty, p, dprefs, binding, info);
 
     case (InstTypes.CONDITIONAL_COMPONENT(_, cond, elem, mod, prefs, env, prefix, info), _)
       then InstTypes.CONDITIONAL_COMPONENT(inName, cond, elem, mod, prefs, env, prefix, info);
@@ -411,6 +508,22 @@ algorithm
 
   end match;
 end getEffectiveComponentVariability;
+
+public function getComponentConnectorType
+  input Component inComponent;
+  output DAE.ConnectorType outConnectorType;
+algorithm
+  outConnectorType := match(inComponent)
+    local
+      DAE.ConnectorType cty;
+
+    case InstTypes.TYPED_COMPONENT(prefixes =
+      InstTypes.DAE_PREFIXES(connectorType = cty)) then cty;
+
+    else DAE.POTENTIAL();
+
+  end match;
+end getComponentConnectorType;
 
 protected function getSpecialExtends
   input list<Element> inElements;
@@ -575,7 +688,7 @@ protected
 algorithm
   binding := InstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(inName, inIndex), inType,
     0, Absyn.dummyInfo);
-  outComponent := InstTypes.TYPED_COMPONENT(inName, inType,
+  outComponent := InstTypes.TYPED_COMPONENT(inName, inType, NONE(),
     InstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, Absyn.dummyInfo);
 end makeEnumLiteralComp;
 
@@ -634,7 +747,7 @@ public function makeIterator
   input Absyn.Info inInfo;
   output Component outIterator;
 algorithm
-  outIterator := InstTypes.TYPED_COMPONENT(inName, inType,
+  outIterator := InstTypes.TYPED_COMPONENT(inName, inType, NONE(),
     InstTypes.NO_DAE_PREFIXES(), InstTypes.UNBOUND(), inInfo);
 end makeIterator;
 
@@ -1598,5 +1711,142 @@ algorithm
 
   end match;
 end getFunctionInputs;
+
+public function getComponentParent
+  input Component inComponent;
+  output Option<Component> outParent;
+algorithm
+  outParent := match(inComponent)
+    local
+      Option<Component> parent;
+
+    case InstTypes.TYPED_COMPONENT(parent = parent) then parent;
+    else NONE();
+
+  end match;
+end getComponentParent;
+
+public function setComponentParent
+  input Component inComponent;
+  input Option<Component> inParent;
+  output Component outComponent;
+protected
+  Absyn.Path name;
+  DAE.Type ty;
+  DaePrefixes pref;
+  Binding binding;
+  Absyn.Info info;
+algorithm
+  InstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info) := inComponent;
+  outComponent := InstTypes.TYPED_COMPONENT(name, ty, inParent, pref, binding, info);
+end setComponentParent;
+      
+public function makeTypedComponentCref
+  input Component inComponent;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inComponent)
+    local
+      Absyn.Path name;
+      DAE.ComponentRef cref;
+
+    case InstTypes.TYPED_COMPONENT(name = name)
+      equation
+        (cref, _) = makeTypedComponentCref2(name, inComponent);
+      then
+        cref;
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- InstUtil.makeTypedComponentCref failed on component ");
+        Debug.traceln(InstDump.componentStr(inComponent));
+      then
+        fail();
+
+  end match;
+end makeTypedComponentCref;
+
+protected function makeTypedComponentCref2
+  input Absyn.Path inPath;
+  input Component inComponent;
+  output DAE.ComponentRef outCref;
+  output Option<Component> outParent;
+algorithm
+  (outCref, outParent) := match(inPath, inComponent)
+    local
+      Absyn.Ident id;
+      Absyn.Path rest_path;
+      DAE.ComponentRef cref;
+      DAE.Type ty;
+      Option<Component> parent;
+
+    case (Absyn.QUALIFIED(name = id, path = rest_path), _)
+      equation
+        (cref, SOME(InstTypes.TYPED_COMPONENT(ty = ty, parent = parent))) =
+          makeTypedComponentCref2(rest_path, inComponent);
+      then
+        (DAE.CREF_QUAL(id, ty, {}, cref), parent);
+
+    case (Absyn.IDENT(name = id),
+        InstTypes.TYPED_COMPONENT(ty = ty, parent = parent))
+      then (DAE.CREF_IDENT(id, ty, {}), parent);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- InstUtil.makeTypedComponentCref2 failed on path ");
+        Debug.traceln(Absyn.pathString(inPath));
+      then
+        fail();
+
+  end match;
+end makeTypedComponentCref2;
+
+public function typeCrefWithComponent
+  input DAE.ComponentRef inCref;
+  input Component inComponent;
+  output DAE.ComponentRef outCref;
+algorithm
+  (outCref, _) := typeCrefWithComponent2(inCref, inComponent);
+end typeCrefWithComponent;
+
+protected function typeCrefWithComponent2
+  input DAE.ComponentRef inCref;
+  input Component inComponent;
+  output DAE.ComponentRef outCref;
+  output Option<Component> outParent;
+algorithm
+  (outCref, outParent) := match(inCref, inComponent)
+    local
+      Option<Component> parent;
+      DAE.Ident id;
+      DAE.Type ty;
+      list<DAE.Subscript> subs;
+      DAE.ComponentRef rest_cref;
+
+    case (DAE.CREF_IDENT(id, _, subs),
+        InstTypes.TYPED_COMPONENT(ty = ty, parent = parent))
+      then (DAE.CREF_IDENT(id, ty, subs), parent);
+
+    case (DAE.CREF_QUAL(id, _, subs, rest_cref), _)
+      equation
+        (rest_cref, SOME(InstTypes.TYPED_COMPONENT(ty = ty, parent = parent))) =
+          typeCrefWithComponent2(rest_cref, inComponent);
+      then
+        (DAE.CREF_QUAL(id, ty, subs, rest_cref), parent);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- InstUtil.typeCrefWithComponent2 failed on cref ");
+        Debug.trace(ComponentReference.printComponentRefStr(inCref));
+        Debug.trace(" and component ");
+        Debug.traceln(InstDump.componentStr(inComponent));
+      then
+        fail();
+
+  end match;
+end typeCrefWithComponent2;
 
 end InstUtil;

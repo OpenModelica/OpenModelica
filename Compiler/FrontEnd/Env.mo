@@ -1333,6 +1333,22 @@ algorithm
   end match;
 end setCachedInitialEnv;
 
+public function setCachedFunctionTree
+  input Cache inCache;
+  input DAE.FunctionTree inFunctions;
+  output Cache outCache;
+protected
+  Option<array<EnvCache>> envCache;
+  Option<Env> env;
+  array<DAE.FunctionTree> ef;
+  StructuralParameters ht;
+  Absyn.Path p;
+algorithm
+  CACHE(envCache, env, _, ht, p) := inCache;
+  ef := arrayCreate(1, inFunctions);
+  outCache := CACHE(envCache, env, ef, ht, p);
+end setCachedFunctionTree;
+
 public function cacheGet "Get an environment from the cache."
   input Absyn.Path scope;
   input Absyn.Path path;

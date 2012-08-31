@@ -1357,30 +1357,27 @@ algorithm
   end match;
 end crefLastCref;
 
-public function crefType "function: crefType 
-Function for extracting the type out of the first cref of a componentReference. "
-  input DAE.ComponentRef inRef;
-  output DAE.Type res;
+public function crefType
+  "Function for extracting the type of the first identifier of a cref."
+  input DAE.ComponentRef inCref;
+  output DAE.Type outType;
 algorithm
-  res := matchcontinue (inRef)
+  outType := match(inCref)
     local
-      DAE.Type t2;
-      String s;
+      DAE.Type ty;
     
-    case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
+    case DAE.CREF_IDENT(identType = ty) then ty;
+    case DAE.CREF_QUAL(identType = ty) then ty;
     
-    case(inRef as DAE.CREF_QUAL(_,t2,_,_)) then t2;
-    
-    case(inRef)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "ComponentReference.crefType failed on Cref:");
-        s = printComponentRefStr(inRef);
-        Debug.fprint(Flags.FAILTRACE, s);
-        Debug.fprint(Flags.FAILTRACE, "\n");
+        Debug.trace("ComponentReference.crefType failed on cref: ");
+        Debug.traceln(printComponentRefStr(inCref));
       then
         fail();
-  end matchcontinue;
+
+  end match;
 end crefType;
 
 public function crefLastType "returns the 'last' type of a cref.

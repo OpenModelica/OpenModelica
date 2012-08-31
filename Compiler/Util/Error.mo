@@ -159,6 +159,8 @@ public constant Message REM_ARG_ZERO = MESSAGE(17, TRANSLATION(), ERROR(),
   Util.gettext("Second argument in rem is zero in rem(%s,%s)"));
 public constant Message SCRIPT_READ_SIM_RES_ERROR = MESSAGE(18, SCRIPTING(), ERROR(),
   Util.gettext("Error reading simulation result."));
+public constant Message RECURSIVE_EXTENDS = MESSAGE(19, TRANSLATION(), ERROR(),
+  Util.gettext("Extending %s is not allowed, since it is an enclosing class."));
 public constant Message LOAD_MODEL_ERROR = MESSAGE(20, TRANSLATION(), ERROR(),
   Util.gettext("Class %s not found"));
 public constant Message WRITING_FILE_ERROR = MESSAGE(21, SCRIPTING(), ERROR(),
@@ -211,8 +213,8 @@ public constant Message TUPLE_ASSIGN_FUNCALL_ONLY = MESSAGE(47, TRANSLATION(), E
   Util.gettext("Tuple assignment only allowed when rhs is function call (in %s)"));
 public constant Message INVALID_CONNECTOR_TYPE = MESSAGE(48, TRANSLATION(), ERROR(),
   Util.gettext("Illegal connection: component %s is not a connector."));
-public constant Message CONNECT_FLOW_TO_NONFLOW = MESSAGE(51, TRANSLATION(), ERROR(),
-  Util.gettext("Cannot connect flow component %s to non-flow component %s"));
+public constant Message CONNECT_PREFIX_MISMATCH = MESSAGE(51, TRANSLATION(), ERROR(),
+  Util.gettext("Cannot connect %1 component %2 to non-%1 component %3"));
 public constant Message INVALID_CONNECTOR_VARIABLE = MESSAGE(52, TRANSLATION(), ERROR(),
   Util.gettext("The type of variables %s (%s) are inconsistent in connect equations"));
 public constant Message TYPE_ERROR = MESSAGE(53, TRANSLATION(), ERROR(),
@@ -305,8 +307,6 @@ public constant Message ASSERT_FAILED = MESSAGE(106, TRANSLATION(), ERROR(),
   Util.gettext("Assertion failed in function, message: %s "));
 public constant Message MISSING_INNER_PREFIX = MESSAGE(108, TRANSLATION(), WARNING(),
   Util.gettext("No corresponding 'inner' declaration found for component %s declared as '%s'.\n  The existing 'inner' components are:\n    %s\n  Check if you have not misspelled the 'outer' component name.\n  Please declare an 'inner' component with the same name in the top scope.\n  Continuing flattening by only considering the 'outer' component declaration."));
-public constant Message CONNECT_STREAM_TO_NONSTREAM = MESSAGE(109, TRANSLATION(), ERROR(),
-  Util.gettext("Cannot connect stream component %s to non-stream component %s"));
 public constant Message IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY = MESSAGE(110, TRANSLATION(), ERROR(),
   Util.gettext("Identificator %s of implicit for iterator must be present as array subscript in the loop body."));
 public constant Message IF_EQUATION_UNBALANCED = MESSAGE(114, TRANSLATION(), ERROR(),

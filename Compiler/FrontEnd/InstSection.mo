@@ -3842,7 +3842,7 @@ algorithm
   _ := matchcontinue(inLhsConnectorType, inRhsConnectorType, inLhsCref,
       inRhsCref, inInfo)
     local
-      String cref_str1, cref_str2;
+      String cref_str1, cref_str2, pre_str1, pre_str2;
       list<String> err_strl;
 
     case (_, _, _, _, _)
@@ -3851,31 +3851,17 @@ algorithm
       then
         ();
 
-    case (_, _, _, _, _)
+    case (SCode.POTENTIAL(), _, _, _, _)
       equation
-        true = SCode.flowBool(inLhsConnectorType) or
-               SCode.flowBool(inRhsConnectorType);
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
-        err_strl = Util.if_(SCode.flowBool(inLhsConnectorType),
-          {cref_str1, cref_str2}, {cref_str2, cref_str1});
-        Error.addSourceMessage(Error.CONNECT_FLOW_TO_NONFLOW,
-          err_strl, inInfo);
+        pre_str1 = SCodeDump.connectorTypeStr(inLhsConnectorType);
+        pre_str2 = SCodeDump.connectorTypeStr(inRhsConnectorType);
+        err_strl = Util.if_(SCode.potentialBool(inLhsConnectorType),
+          {pre_str2, cref_str2, cref_str1}, {pre_str1, cref_str1, cref_str2});
+        Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, inInfo);
       then
-        fail(); 
-
-    case (_, _, _, _, _)
-      equation
-        true = SCode.streamBool(inLhsConnectorType) or
-               SCode.streamBool(inRhsConnectorType);
-        cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
-        cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
-        err_strl = Util.if_(SCode.streamBool(inLhsConnectorType),
-          {cref_str1, cref_str2}, {cref_str2, cref_str1});
-        Error.addSourceMessage(Error.CONNECT_STREAM_TO_NONSTREAM,
-          err_strl, inInfo);
-      then
-        fail(); 
+        fail();
 
   end matchcontinue;
 end checkConnectTypesFlowStream;

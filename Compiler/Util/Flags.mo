@@ -49,7 +49,7 @@ encapsulated package Flags
   Debug flags are boolean flags specified with +d, which can be used together
   with the Debug package. They are typically used to enable printing of extra
   information that helps debugging, such as the failtrace flag. All debug flags
-  are initialised to disabled, unlike configuration flags which have a specified
+  are initialized to disabled, unlike configuration flags which have a specified
   default value.
 
   To add a new flag, simply add a new constant of either DebugFlag or ConfigFlag
@@ -301,9 +301,9 @@ constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(68, "dummyselect",
 constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(69, "dumpdaelow",
   Util.gettext("Dumps the equation system at the beginning of the back end."));
 constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(70, "dumpindxdae",
-  Util.gettext("Dumps the equation system after index reduction and optimisation."));
+  Util.gettext("Dumps the equation system after index reduction and optimization."));
 constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(71, "optdaedump",
-  Util.gettext("Dumps information from the optimisation modules."));
+  Util.gettext("Dumps information from the optimization modules."));
 constant DebugFlag EXEC_HASH = DEBUG_FLAG(72, "execHash",
   Util.notrans(""));
 constant DebugFlag EXEC_FILES = DEBUG_FLAG(73, "execFiles",
@@ -359,14 +359,14 @@ constant DebugFlag SYMBOLIC_INITIALIZATION = DEBUG_FLAG(97, "symbolicInitializat
 constant DebugFlag TEARING_AND_RELAXATION = DEBUG_FLAG(98, "tearing_and_relaxation",
   Util.gettext("performes relaxation after tearing"));
 constant DebugFlag DUMPOPTINIT = DEBUG_FLAG(99, "dumpoptinit",
-  Util.gettext("Enables dumping of the optimisationinformation when optimize the initial system"));
+  Util.gettext("Enables dumping of the optimization information when optimizing the initial system"));
 constant DebugFlag SEMILINEAR = DEBUG_FLAG(100, "semiLinear",
-  Util.gettext("Enables dumping of the optimisationinformation when optimize calls to semiLinear"));
+  Util.gettext("Enables dumping of the optimization information when optimizing calls to semiLinear"));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
-// initialisation so that all flags are sorted by index (and thus have unique
+// initialization so that all flags are sorted by index (and thus have unique
 // indices).
 constant list<DebugFlag> allDebugFlags = {
   FAILTRACE,
@@ -537,7 +537,7 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("expandDerOperator", Util.notrans("DESCRIBE ME")),
     ("simplifyIfEquations", Util.gettext("tries to simplify if equations by use of information from evaluated parameters")),
     ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x"))})),
-  Util.gettext("Sets the pre optimisation modules to use in the back end. See +help=optmodules for more info."));
+  Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm",
   NONE(), EXTERNAL(), INT_FLAG(3),
   SOME(STRING_DESC_OPTION({
@@ -612,7 +612,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("simplifysemiLinear", Util.gettext("simplifies calls to semiLinear")),
     ("optimizeInitialSystem", Util.gettext("simplifies time initial system"))
     })),
-  Util.gettext("Sets the post optimisation modules to use in the back end. See +help=optmodules for more info."));
+  Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"), 
   SOME(STRING_OPTION({"CSharp", "Cpp", "Adevs", "QSS", "C", "c", "Dump"})),
@@ -695,7 +695,7 @@ constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
   Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
-// in this list, and the list is checked at initialisation so that all flags are
+// in this list, and the list is checked at initialization so that all flags are
 // sorted by index (and thus have unique indices).
 constant list<ConfigFlag> allConfigFlags = {
   DEBUG,
@@ -1492,14 +1492,14 @@ algorithm
     case {"optmodules"}
       equation
         /* 80-char wrapped lines */
-        print(System.gettext("The +preOptModules flag sets the optimisation modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a\ncomma-separated list, where the valid modules are:\n\n"));
+        print(System.gettext("The +preOptModules flag sets the optimization modules which are used before the\nmatching and index reduction in the back end. These modules are specified as a\ncomma-separated list, where the valid modules are:\n\n"));
         print(printFlagValidOptionsDesc(PRE_OPT_MODULES));
         /* 80-char wrapped lines */
-        print(System.gettext("\nThe +matchingAlgorithm sets the method that is used for the matching algorithm,\nafter the pre optimisation modules. Valid options are:\n\n"));
+        print(System.gettext("\nThe +matchingAlgorithm sets the method that is used for the matching algorithm,\nafter the pre optimization modules. Valid options are:\n\n"));
         print(printFlagValidOptionsDesc(MATCHING_ALGORITHM));
-        print(System.gettext("\nThe +indexReductionMethod sets the method that is used for the index reduction,\nafter the pre optimisation modules. Valid options are:\n\n"));
+        print(System.gettext("\nThe +indexReductionMethod sets the method that is used for the index reduction,\nafter the pre optimization modules. Valid options are:\n\n"));
         print(printFlagValidOptionsDesc(INDEX_REDUCTION_METHOD));
-        print(System.gettext("\nThe +postOptModules then sets the optimisation modules which are used after the\nindex reduction, specified as a comma-separated list. The valid modules are:\n\n"));
+        print(System.gettext("\nThe +postOptModules then sets the optimization modules which are used after the\nindex reduction, specified as a comma-separated list. The valid modules are:\n\n"));
         print(printFlagValidOptionsDesc(POST_OPT_MODULES));
         print("\n");
       then

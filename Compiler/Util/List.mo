@@ -1443,6 +1443,61 @@ algorithm
   end matchcontinue;
 end sublist_tail;
 
+public function productMap
+  "Given two lists and a function, forms the cartesian product of the lists and
+   applies the function to each resulting pair.
+     Example: productMap({1, 2}, {3, 4}, intMul) = {1*3, 1*4, 2*3, 2*4}"
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  output list<ElementOutType> outResult;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    output ElementOutType outResult;
+  end MapFunc;
+protected
+  list<ElementType1> list1;
+  list<ElementType2> list2;
+algorithm
+  list1 := listReverse(inList1);
+  list2 := listReverse(inList2);
+  outResult := productMap_tail(list1, list2, inMapFunc, {});
+end productMap;
+  
+protected function productMap_tail
+  "Tail-recursive implementation of productMap."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outResult;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    output ElementOutType outResult;
+  end MapFunc;
+algorithm
+  outResult := match(inList1, inList2, inMapFunc, inAccumList)
+    local
+      ElementType1 e;
+      list<ElementType1> rest;
+      list<ElementOutType> result;
+      
+    case ({}, _, _, _) then inAccumList;
+
+    case (e :: rest, _, _, _)
+      equation
+        result = map1r_tail(inList2, inMapFunc, e, inAccumList);
+        result = productMap_tail(rest, inList2, inMapFunc, result);
+      then
+        result;
+
+  end match;
+end productMap_tail;
+
 public function product
   "Given 2 lists, generate the product of them.
      Example:

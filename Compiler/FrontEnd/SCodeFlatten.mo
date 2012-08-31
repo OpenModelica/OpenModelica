@@ -43,20 +43,18 @@ encapsulated package SCodeFlatten
 public import Absyn;
 public import SCode;
 public import SCodeDependency;
+public import SCodeEnv;
 public import SCodeFlattenImports;
 public import SCodeFlattenExtends;
-//public import SCodeFlattenRedeclare;
 
 protected import Debug;
 protected import Flags;
 protected import List;
-protected import SCodeEnv;
 protected import System;
 protected import SCodeLookup;
-//protected import SCodeDump;
 protected import SCodeInst;
 
-protected type Env = SCodeEnv.Env;
+public type Env = SCodeEnv.Env;
 
 public function flattenProgram
   "Flattens the last class in a program."
@@ -66,7 +64,7 @@ protected
   Absyn.Path cls_path;
 algorithm
   cls_path := getLastClassNameInProgram(inProgram);
-  outProgram := flattenClassInProgram(cls_path, inProgram);
+  (outProgram, _, _) := flattenClassInProgram(cls_path, inProgram);
 end flattenProgram;
 
 protected function getLastClassNameInProgram
@@ -106,13 +104,14 @@ public function flattenClassInProgram
   input Absyn.Path inClassName;
   input SCode.Program inProgram;
   output SCode.Program outProgram;
+  output Env outEnv;
+  output list<Absyn.Path> outConstants;
 algorithm
-  outProgram := matchcontinue(inClassName, inProgram)
+  (outProgram, outEnv, outConstants) := matchcontinue(inClassName, inProgram)
     local
       Env env;
       SCode.Program prog;
       list<Absyn.Path> consts;
-      
 
     case (_, prog)
       equation
@@ -125,18 +124,14 @@ algorithm
         
         (prog, env, consts) = SCodeDependency.analyse(inClassName, env, prog);
         checkForCardinality(env);
-        //print(SCodeDump.programStr(prog) +& "\n");
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
 
-        SCodeInst.instClass(inClassName, env, consts);
-        prog = SCodeFlattenExtends.flattenProgram(inClassName, prog, env);
-        
         //System.stopTimer();
         //Debug.traceln("SCodeFlatten.flattenClassInProgram took " +& 
         //  realString(System.getTimerIntervalTime()) +& " seconds");
         
       then
-        prog;
+        (prog, env, consts);
 
     else
       equation

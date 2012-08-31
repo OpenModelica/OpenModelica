@@ -4805,6 +4805,22 @@ algorithm
   end matchcontinue;
 end joinDaeLst;
 
+public function appendToCompDae
+  input DAE.DAElist inCompDae;
+  input DAE.DAElist inDae;
+  output DAE.DAElist outCompDae;
+protected
+  DAE.Ident ident;
+  list<DAE.Element> el, el2;
+  DAE.ElementSource src;
+  Option<SCode.Comment> cmt;
+algorithm
+  DAE.DAE({DAE.COMP(ident, el, src, cmt)}) := inCompDae;
+  DAE.DAE(el2) := inDae;
+  el := listAppend(el, el2);
+  outCompDae := DAE.DAE({DAE.COMP(ident, el, src, cmt)});
+end appendToCompDae;
+  
 /*AvlTree implementation for DAE functions.*/
 
 public function keyStr "prints a key to a string"

@@ -50,6 +50,9 @@ public import SCodeEnv;
 protected import BaseHashTable;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ConnectUtil2;
+protected import DAEDump;
+protected import DAEUtil;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -105,8 +108,10 @@ public function instClass
   input Absyn.Path inClassPath;
   input Env inEnv;
   input list<Absyn.Path> inGlobalConstants;
+  output DAE.DAElist outDae;
+  output DAE.FunctionTree outFunctions;
 algorithm
-  _ := matchcontinue(inClassPath, inEnv, inGlobalConstants)
+  (outDae, outFunctions) := matchcontinue(inClassPath, inEnv, inGlobalConstants)
     local
       Item item;
       Absyn.Path path;
@@ -117,12 +122,9 @@ algorithm
       list<Element> const_el;
       FunctionHashTable functions;
       Connections conn;
-
-    case (_, _, _)
-      equation
-        false = Flags.isSet(Flags.SCODE_INST);
-      then
-        ();
+      list<Connect2.Connector> flows;
+      DAE.DAElist dae_conn, dae;
+      DAE.FunctionTree func_tree;
 
     case (_, _, _)
       equation
@@ -165,6 +167,10 @@ algorithm
         // Type check the typed class.
         (cls, symtab) = TypeCheck.check(cls, symtab);
 
+
+        flows = ConnectUtil2.collectFlowConnectors(cls);
+        dae_conn = ConnectUtil2.generateEquations(conn, flows);
+
         System.stopTimer();
 
         //print(InstDump.modelStr(name, cls));
@@ -177,9 +183,13 @@ algorithm
 
         // Expand the instantiated and typed class into scalar components,
         // equations and algorithms.
-        _ = SCodeExpand.expand(name, cls, functions);
+        (dae, func_tree) = SCodeExpand.expand(name, cls, functions);
+        dae = DAEUtil.appendToCompDae(dae, dae_conn);
+
+        //print("\nEXPANDED FORM:\n\n");
+        //print(DAEDump.dumpStr(dae, func_tree) +& "\n");
       then
-        ();
+        (dae, func_tree);
 
     else
       equation
@@ -813,6 +823,7 @@ algorithm
         // Look up the extended class.
         (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
         path = SCodeEnv.mergePathWithEnvPath(path, env);
+        checkRecursiveExtends(path, inEnv, info);
 
         // Apply the redeclarations.
         (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
@@ -837,6 +848,33 @@ algorithm
   end match;
 end instExtends;
 
+protected function checkRecursiveExtends
+  input Absyn.Path inExtendedClass;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inExtendedClass, inEnv, inInfo)
+    local
+      Absyn.Path env_path;
+      String env_str, path_str;
+
+    case (_, _, _)
+      equation
+        env_path = SCodeEnv.getEnvPath(inEnv);
+        false = Absyn.pathPrefixOf(inExtendedClass, env_path);
+      then
+        ();
+
+    else
+      equation
+        path_str = Absyn.pathString(inExtendedClass);
+        Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end checkRecursiveExtends;
+        
 protected function instPackageConstants
   input SCode.Element inPackage;
   input Modifier inMod;
@@ -1334,7 +1372,7 @@ algorithm
       then
         (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
     
-    // hopefully all the other ones have an complete entry in ModelicaBuiltin.mo
+    // hopefully all the other ones have a complete entry in ModelicaBuiltin.mo
     case (Absyn.CALL(function_ = acref, 
         functionArgs = Absyn.FUNCTIONARGS(afargs, anamed_args)), _, _, _, functions)
       equation
@@ -2479,7 +2517,7 @@ protected function fillFunctionSlots
 protected
   list<FunctionSlot> slots;
 algorithm
-  //print("Function: " +& Absyn.pathString(inFuncName) +& ":\n");
+  //print(Error.infoStr(inInfo) +& " Function: " +& Absyn.pathString(inFuncName) +& ":\n");
   //print(Util.stringDelimitListNonEmptyElts(List.map(inInputs, InstUtil.printElement), "\n\t") +& "\n");  
   slots := makeFunctionSlots(inInputs, inPositionalArgs, {}, inFuncName, inInfo);
   slots := List.fold(inNamedArgs, fillFunctionSlot, slots);
@@ -2515,13 +2553,13 @@ algorithm
 
     // Last vararg input and no positional arguments means we're done.
     case ({InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(prefixes =
-        InstTypes.PREFIXES(varArgs = _ /* InstTypes.IS_VARARG() */)))}, {}, _, _, _)
+        InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG())))}, {}, _, _, _)
       then listReverse(inAccumSlots);
 
     // If the last input of the function is a vararg, handle it first
     case (rest_inputs as (InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(name =
-        Absyn.IDENT(param_name), binding = binding, prefixes = InstTypes.PREFIXES(varArgs = _ 
-        /* InstTypes.IS_VARARG() */))) :: {}),  _::_, slots, _, _)
+        Absyn.IDENT(param_name), binding = binding, prefixes = InstTypes.PREFIXES(varArgs =
+        InstTypes.IS_VARARG()))) :: {}),  _::_, slots, _, _)
       equation
         (arg, rest_args) = List.splitFirstOption(inPositionalArgs);
         default_value = InstUtil.getBindingExpOpt(binding);
@@ -3309,6 +3347,7 @@ algorithm
       Absyn.Info info;
       Element iel;
       FunctionHashTable functions;
+      DAE.ComponentRef cref;
 
     case (SCodeEnv.VAR(var = el), _, true, _, functions)
       equation
@@ -3343,7 +3382,7 @@ algorithm
         // TODO: Check this, should it really be 1?
         binding = InstTypes.TYPED_BINDING(bind_exp, arr_ty, 1, info);
       then
-        (InstTypes.ELEMENT(InstTypes.TYPED_COMPONENT(inPath, ty,
+        (InstTypes.ELEMENT(InstTypes.TYPED_COMPONENT(inPath, ty, NONE(),
             InstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info),
           InstTypes.COMPLEX_CLASS(enum_el, {}, {}, {}, {})),functions);
 
@@ -3520,7 +3559,8 @@ algorithm
     case (InstTypes.CONDITIONAL_COMPONENT(name, cond_exp, sel, mod, prefs, env,
         prefix, info), st, functions)
       equation
-        (cond_exp, ty, st) = Typing.typeExp(cond_exp, Typing.EVAL_CONST_PARAM(), st);
+        (cond_exp, ty, st) = Typing.typeExp(cond_exp, Typing.EVAL_CONST_PARAM(),
+          Typing.CONTEXT_MODEL(), st);
         (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
         cond = evaluateConditionalExp(cond_exp, ty, name, info);
         (el, st, functions) = instConditionalComponent2(cond, name, sel, mod, prefs, env, prefix, st, functions);

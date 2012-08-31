@@ -50,10 +50,13 @@ public import SCode;
 protected import BaseHashTable;
 protected import ComponentReference;
 protected import ConnectUtil2;
+protected import Debug;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
+protected import Flags;
+protected import InstDump;
 protected import InstUtil;
 protected import List;
 protected import Types;
@@ -67,6 +70,8 @@ public type DaePrefixes = InstTypes.DaePrefixes;
 public type Dimension = InstTypes.Dimension;
 public type Element = InstTypes.Element;
 public type Equation = InstTypes.Equation;
+public type Function = InstTypes.Function;
+public type FunctionTable = HashTablePathToFunction.HashTable;
 public type Modifier = InstTypes.Modifier;
 public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
@@ -92,32 +97,46 @@ public function typeClass
   output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
-  (outClass, outSymbolTable) := match(inClass, inContext, inSymbolTable)
+  (outClass, outSymbolTable) :=
+    typeClass2(inClass, NONE(), inContext, inSymbolTable);
+end typeClass;
+
+public function typeClass2
+  input Class inClass;
+  input Option<Component> inParent;
+  input Context inContext;
+  input SymbolTable inSymbolTable;
+  output Class outClass;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outClass, outSymbolTable) := match(inClass, inParent, inContext, inSymbolTable)
     local
       list<Element> comps;
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
       SymbolTable st;
 
-    case (InstTypes.BASIC_TYPE(), _, st) then (inClass, st);
+    case (InstTypes.BASIC_TYPE(), _, _, st) then (inClass, st);
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), _, st)
+    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), _, _, st)
       equation
-        (comps, st) = List.map1Fold(comps, typeElement, inContext, st);
+        (comps, st) = List.map2Fold(comps, typeElement, inParent, inContext, st);
       then
         (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st);
 
   end match;
-end typeClass;
+end typeClass2;
 
 protected function typeElement
   input Element inElement;
+  input Option<Component> inParent;
   input Context inContext;
   input SymbolTable inSymbolTable;
   output Element outElement;
   output SymbolTable outSymbolTable;
 algorithm
-  (outElement, outSymbolTable) := match(inElement, inContext, inSymbolTable)
+  (outElement, outSymbolTable) :=
+  match(inElement, inParent, inContext, inSymbolTable)
     local
       Component comp;
       Class cls;
@@ -125,23 +144,24 @@ algorithm
       SymbolTable st;
       DAE.Type ty;
 
-    case (InstTypes.ELEMENT(comp as InstTypes.UNTYPED_COMPONENT(name = name), cls), _, st)
+    case (InstTypes.ELEMENT(comp as InstTypes.UNTYPED_COMPONENT(name = name), cls),
+        _, _, st)
       equation
         comp = InstSymbolTable.lookupName(name, st); 
-        (comp, st) = typeComponent(comp, inContext, st);
-        (cls, st) = typeClass(cls, inContext, st);
+        (comp, st) = typeComponent(comp, inParent, inContext, st);
+        (cls, st) = typeClass2(cls, SOME(comp), inContext, st);
       then
         (InstTypes.ELEMENT(comp, cls), st);
 
-    case (InstTypes.ELEMENT(comp, cls), _, st)
+    case (InstTypes.ELEMENT(comp, cls), _, _, st)
       equation
-        (cls, st) = typeClass(cls, inContext, st);
+        (cls, st) = typeClass2(cls, SOME(comp), inContext, st);
       then
         (InstTypes.ELEMENT(comp, cls), st);
 
-    case (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), _, st)
+    case (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), _, _, st)
       equation
-        (cls, st) = typeClass(cls, inContext, st);
+        (cls, st) = typeClass2(cls, inParent, inContext, st);
       then
         (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), st);
 
@@ -152,43 +172,57 @@ end typeElement;
 
 protected function typeComponent
   input Component inComponent;
+  input Option<Component> inParent;
   input Context inContext;
   input SymbolTable inSymbolTable;
   output Component outComponent;
   output SymbolTable outSymbolTable;
 algorithm
-  (outComponent, outSymbolTable) := match(inComponent, inContext, inSymbolTable)
+  (outComponent, outSymbolTable) :=
+  match(inComponent, inParent, inContext, inSymbolTable)
     local
       Absyn.Path name;
       DAE.Type ty;
       Binding binding;
       SymbolTable st;
       Component comp, inner_comp;
+      Context c;
 
-    case (InstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding), _, st)
+    case (InstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding),
+        _, c, st)
       equation
         (ty, st) = typeComponentDims(inComponent, inContext, st);
-        (comp, st ) = typeComponentBinding(inComponent, SOME(ty), st);
+        (comp, st) = typeComponentBinding(inComponent, SOME(ty), inParent, c, st);
       then
         (comp, st);
 
-    case (InstTypes.TYPED_COMPONENT(name = _), _, st) then (inComponent, st);
+    // A typed component without a parent has been typed due to a dependency
+    // such as a binding, when parent information was not available. Update it
+    // now if we have that information.
+    case (InstTypes.TYPED_COMPONENT(parent = NONE()), SOME(_), _, st)
+      equation
+        comp = InstUtil.setComponentParent(inComponent, inParent);
+        st = InstSymbolTable.updateComponent(comp, st);
+      then
+        (comp, st);
 
-    case (InstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, st)
+    case (InstTypes.TYPED_COMPONENT(name = _), _, _, st) then (inComponent, st);
+
+    case (InstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, _, st)
       equation
         comp = InstSymbolTable.lookupName(name, st);
-        (comp, st) = typeComponent(comp, inContext, st);
+        (comp, st) = typeComponent(comp, inParent, inContext, st);
       then
         (comp, st);
 
-    case (InstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), _, st)
+    case (InstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), _, _, st)
       equation
         (_, SOME(inner_comp), st) = InstSymbolTable.updateInnerReference(inComponent, st);
-        (inner_comp, st) = typeComponent(inner_comp, inContext, st);
+        (inner_comp, st) = typeComponent(inner_comp, inParent, inContext, st);
       then
         (inner_comp, st);
 
-    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _, _)
+    case (InstTypes.CONDITIONAL_COMPONENT(name = name), _, _, _)
       equation
         print("Trying to type conditional component " +& Absyn.pathString(name) +& "\n");
       then
@@ -211,8 +245,9 @@ algorithm
       array<Dimension> dims;
       list<DAE.Dimension> typed_dims;
       Absyn.Path name;
+      Absyn.Info info;
 
-    case (InstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims), _, st)
+    case (InstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims, info = info), _, st)
       equation
         true = intEq(0, arrayLength(dims));
       then
@@ -228,8 +263,11 @@ algorithm
     
     else
       equation
-        print("Typing.typeComponentDims failed\n");
-      then fail();
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- Typing.typeComponentDims failed on component ");
+        Debug.traceln(Absyn.pathString(InstUtil.getComponentName(inComponent)));
+      then
+        fail();
 
   end matchcontinue;
 end typeComponentDims;
@@ -279,7 +317,7 @@ protected
 algorithm
   len := arrayLength(inDimensions);
   (outDimensions, outSymbolTable) := 
-  typeDimensions2(inDimensions, inComponentName, inContext, inSymbolTable, 1, len, {});
+    typeDimensions2(inDimensions, inComponentName, inContext, inSymbolTable, 1, len, {});
 end typeDimensions;
 
 protected function typeDimensions2
@@ -349,7 +387,7 @@ algorithm
     case (InstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, _, st, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, InstTypes.UNTYPED_DIMENSION(dim, true));
-        (dim_exp, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), st);
+        (dim_exp, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), inContext, st);
         (dim_exp, _) = ExpressionSimplify.simplify(dim_exp);
         dim = InstUtil.makeDimension(dim_exp);
         typed_dim = InstTypes.TYPED_DIMENSION(dim);
@@ -361,7 +399,7 @@ algorithm
       equation
         _ = arrayUpdate(inDimensions, inIndex, InstTypes.UNTYPED_DIMENSION(dim, true));
         comp = InstSymbolTable.lookupName(inComponentName, st);
-        (comp, st) = typeComponentBinding(comp, NONE(), st);
+        (comp, st) = typeComponentBinding(comp, NONE(), NONE(), inContext, st);
         dim_count = arrayLength(inDimensions);
         dim = InstUtil.getComponentBindingDimension(comp, inIndex, dim_count);
         typed_dim = InstTypes.TYPED_DIMENSION(dim);
@@ -395,23 +433,26 @@ end typeDimension;
 protected function typeComponentBinding
   input Component inComponent;
   input Option<DAE.Type> inType;
+  input Option<Component> inParent;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output Component outComponent;
   output SymbolTable outSymbolTable;
 algorithm
-  (outComponent, outSymbolTable) := match(inComponent, inType, inSymbolTable)
+  (outComponent, outSymbolTable) :=
+  match(inComponent, inType, inParent, inContext, inSymbolTable)
     local
       Binding binding;
       SymbolTable st;
       Component comp;
       EvalPolicy ep;
 
-    case (InstTypes.UNTYPED_COMPONENT(binding = binding), _, st)
+    case (InstTypes.UNTYPED_COMPONENT(binding = binding), _, _, _, st)
       equation
         st = markComponentBindingAsProcessing(inComponent, st);
         ep = getEvalPolicyForBinding(inComponent);
-        (binding, st) = typeBinding(binding, ep, st);
-        comp = updateComponentBinding(inComponent, binding, inType);
+        (binding, st) = typeBinding(binding, ep, inContext, st);
+        comp = updateComponentBinding(inComponent, binding, inType, inParent);
         st = InstSymbolTable.updateComponent(comp, st);
       then
         (comp, st);
@@ -437,9 +478,10 @@ protected function updateComponentBinding
   input Component inComponent;
   input Binding inBinding;
   input Option<DAE.Type> inType;
+  input Option<Component> inParent;
   output Component outComponent;
 algorithm
-  outComponent := match(inComponent, inBinding, inType)
+  outComponent := match(inComponent, inBinding, inType, inParent)
     local
       Absyn.Path name;
       DAE.Type ty;
@@ -449,13 +491,14 @@ algorithm
       array<Dimension> dims;
       Absyn.Info info;
      
-    case (InstTypes.UNTYPED_COMPONENT(name = name, prefixes = pf, info = info), _, SOME(ty))
+    case (InstTypes.UNTYPED_COMPONENT(name = name, prefixes = pf, info = info),
+        _, SOME(ty), _)
       equation
         dpf = InstUtil.translatePrefixes(pf);
       then 
-        InstTypes.TYPED_COMPONENT(name, ty, dpf, inBinding, info);
+        InstTypes.TYPED_COMPONENT(name, ty, inParent, dpf, inBinding, info);
 
-    case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty, _, info), _, NONE())
+    case (InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty, _, info), _, NONE(), _)
       then InstTypes.UNTYPED_COMPONENT(name, ty, dims, pf, pty, inBinding, info);
 
   end match;
@@ -507,11 +550,13 @@ end markComponentBindingAsProcessing;
 protected function typeBinding
   input Binding inBinding;
   input EvalPolicy inEvalPolicy;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output Binding outBinding;
   output SymbolTable outSymbolTable;
 algorithm
-  (outBinding, outSymbolTable) := match(inBinding, inEvalPolicy, inSymbolTable)
+  (outBinding, outSymbolTable) :=
+  match(inBinding, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Exp binding;
       SymbolTable st;
@@ -519,20 +564,20 @@ algorithm
       Integer pd;
       Absyn.Info info;
 
-    case (InstTypes.UNTYPED_BINDING(isProcessing = true), _, st)
+    case (InstTypes.UNTYPED_BINDING(isProcessing = true), _, _, st)
       equation
         InstSymbolTable.showCyclicDepError(st);
       then
         fail();
 
     case (InstTypes.UNTYPED_BINDING(bindingExp = binding, propagatedDims = pd,
-        info = info), _, st)
+        info = info), _, _, st)
       equation
-        (binding, ty, st) = typeExp(binding, inEvalPolicy, st);
+        (binding, ty, st) = typeExp(binding, inEvalPolicy, inContext, st);
       then
         (InstTypes.TYPED_BINDING(binding, ty, pd, info), st);
 
-    case (InstTypes.TYPED_BINDING(bindingExp = _), _, st)
+    case (InstTypes.TYPED_BINDING(bindingExp = _), _, _, st)
       then (inBinding, st);
 
     else (InstTypes.UNBOUND(), inSymbolTable);
@@ -543,26 +588,28 @@ end typeBinding;
 protected function typeExpList
   input list<DAE.Exp> inExpList;
   input EvalPolicy inEvalPolicy;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output list<DAE.Exp> outExpList;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
   (outExpList, outType, outSymbolTable) :=
-  match(inExpList, inEvalPolicy, inSymbolTable)
+  match(inExpList, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Exp exp;
       list<DAE.Exp> rest_expl;
       EvalPolicy ep;
       SymbolTable st;
       DAE.Type ty;
+      Context c;
 
-    case ({}, _, st) then ({}, DAE.T_UNKNOWN_DEFAULT, st);
+    case ({}, _, _, st) then ({}, DAE.T_UNKNOWN_DEFAULT, st);
 
-    case (exp :: rest_expl, ep, st)
+    case (exp :: rest_expl, ep, c, st)
       equation
-        (exp, ty, st) = typeExp(exp, ep, st);
-        (rest_expl, _, st) = typeExpList(rest_expl, ep, st);
+        (exp, ty, st) = typeExp(exp, ep, c, st);
+        (rest_expl, _, st) = typeExpList(rest_expl, ep, c, st);
       then
         (exp :: rest_expl, ty, st);
 
@@ -572,20 +619,21 @@ end typeExpList;
 public function typeExpOpt
   input Option<DAE.Exp> inExp;
   input EvalPolicy inEvalPolicy;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output Option<DAE.Exp> outExp;
   output Option<DAE.Type> outType;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExp, outType, outSymbolTable) := match(inExp, inEvalPolicy, inSymbolTable)
+  (outExp, outType, outSymbolTable) := match(inExp, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Exp exp;
       SymbolTable st;
       DAE.Type ty;
 
-    case (SOME(exp), _, st)
+    case (SOME(exp), _, _, st)
       equation
-        (exp, ty, st) = typeExp(exp, inEvalPolicy, st);
+        (exp, ty, st) = typeExp(exp, inEvalPolicy, inContext, st);
       then
         (SOME(exp), SOME(ty), st);
 
@@ -610,12 +658,14 @@ end selectType;
 public function typeExp
   input DAE.Exp inExp;
   input EvalPolicy inEvalPolicy;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExp, outType, outSymbolTable) := match(inExp, inEvalPolicy, inSymbolTable)
+  (outExp, outType, outSymbolTable) :=
+  match(inExp, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Exp e1, e2;
       DAE.ComponentRef cref;
@@ -628,29 +678,30 @@ algorithm
       list<DAE.Exp> expl;
       EvalPolicy ep;
       Option<DAE.Exp> oe;
+      Context c;
 
-    case (DAE.ICONST(integer = _), _, st) then (inExp, DAE.T_INTEGER_DEFAULT, st);
-    case (DAE.RCONST(real = _), _, st) then (inExp, DAE.T_REAL_DEFAULT, st);
-    case (DAE.SCONST(string = _), _, st) then (inExp, DAE.T_STRING_DEFAULT, st);
-    case (DAE.BCONST(bool = _), _, st) then (inExp, DAE.T_BOOL_DEFAULT, st);
-    case (DAE.CREF(componentRef = cref), ep, st)
+    case (DAE.ICONST(integer = _), _, _, st) then (inExp, DAE.T_INTEGER_DEFAULT, st);
+    case (DAE.RCONST(real = _), _, _, st) then (inExp, DAE.T_REAL_DEFAULT, st);
+    case (DAE.SCONST(string = _), _, _, st) then (inExp, DAE.T_STRING_DEFAULT, st);
+    case (DAE.BCONST(bool = _), _, _, st) then (inExp, DAE.T_BOOL_DEFAULT, st);
+    case (DAE.CREF(componentRef = cref), ep, _, st)
       equation
         (e1, ty, st) = typeCref(cref, ep, st);
       then
         (e1, ty, st);
         
-    case (DAE.ARRAY(array = expl), ep, st)
+    case (DAE.ARRAY(array = expl), ep, c, st)
       equation
-        (expl, ty, st) = typeExpList(expl, ep, st);
+        (expl, ty, st) = typeExpList(expl, ep, c, st);
         dim_int = listLength(expl);
         ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(dim_int)}, DAE.emptyTypeSource);
       then
         (DAE.ARRAY(ty, true, expl), ty, st);
 
-    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), ep, st)
+    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
       equation
-        (e1, ty, st) = typeExp(e1, ep, st);
-        (e2, ty, st) = typeExp(e2, ep, st);
+        (e1, ty, st) = typeExp(e1, ep, c, st);
+        (e2, ty, st) = typeExp(e2, ep, c, st);
         // get the type of the operator, not the types of 
         // the last operand as for == it DOES NOT HOLD
         tyOp = Expression.typeofOp(op);
@@ -658,37 +709,37 @@ algorithm
       then
         (DAE.BINARY(e1, op, e2), ty, st);
 
-    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), ep, st)
+    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
       equation
-        (e1, ty, st) = typeExp(e1, ep, st);
-        (e2, ty, st) = typeExp(e2, ep, st);
+        (e1, ty, st) = typeExp(e1, ep, c, st);
+        (e2, ty, st) = typeExp(e2, ep, c, st);
         tyOp = Expression.typeofOp(op);
         ty = selectType(tyOp, ty);
       then
         (DAE.LBINARY(e1, op, e2), ty, st);
 
-    case (DAE.LUNARY(operator = op, exp = e1), ep, st)
+    case (DAE.LUNARY(operator = op, exp = e1), ep, c, st)
       equation
-        (e1, ty, st) = typeExp(e1, ep, st);
+        (e1, ty, st) = typeExp(e1, ep, c, st);
         tyOp = Expression.typeofOp(op);
         ty = selectType(tyOp, ty);
       then
         (DAE.LUNARY(op, e1), ty, st);
 
-    case (DAE.SIZE(exp = DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, st)
+    case (DAE.SIZE(exp = e1 as DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, c, st)
       equation
-        (DAE.ICONST(dim_int), _, st) = typeExp(e2, EVAL_CONST_PARAM(), st);
+        (e2 as DAE.ICONST(dim_int), _, st) = typeExp(e2, EVAL_CONST_PARAM(), c, st);
         comp = InstSymbolTable.lookupCref(cref, st);
-        (dim, st) = typeComponentDim(comp, dim_int, CONTEXT_MODEL() /* TODO: Propagate here, too */, st);
-        e1 = dimensionExp(dim);
+        (dim, st) = typeComponentDim(comp, dim_int, c, st);
+        e1 = dimensionExp(dim, e1, e2, c);
       then
         (e1, DAE.T_INTEGER_DEFAULT, st);
 
-    case (DAE.RANGE(start = e1, step = oe, stop = e2), ep, st)
+    case (DAE.RANGE(start = e1, step = oe, stop = e2), ep, c, st)
       equation
-        (e1, ty, st) = typeExp(e1, ep, st);
-        (oe, _, st) = typeExpOpt(oe, ep, st);
-        (e2, _, st) = typeExp(e2, ep, st);
+        (e1, ty, st) = typeExp(e1, ep, c, st);
+        (oe, _, st) = typeExpOpt(oe, ep, c, st);
+        (e2, _, st) = typeExp(e2, ep, c, st);
         ty = Expression.liftArrayLeft(ty, DAE.DIM_UNKNOWN());
       then
         (DAE.RANGE(ty, e1, oe, e2), ty, st);
@@ -706,15 +757,20 @@ end typeExp;
     
 protected function dimensionExp
   input DAE.Dimension inDimension;
+  input DAE.Exp inCref;
+  input DAE.Exp inIndex;
+  input Context inContext;
   output DAE.Exp outExp;
 algorithm
-  outExp := match(inDimension)
+  outExp := match(inDimension, inCref, inIndex, inContext)
     local
       Integer dim_int;
       DAE.Exp dim_exp;
 
-    case (DAE.DIM_INTEGER(dim_int)) then DAE.ICONST(dim_int);
-    case (DAE.DIM_EXP(dim_exp)) then dim_exp;
+    case (DAE.DIM_INTEGER(dim_int), _, _, _) then DAE.ICONST(dim_int);
+    case (DAE.DIM_EXP(dim_exp), _, _, _) then dim_exp;
+    case (DAE.DIM_UNKNOWN(), _, _, CONTEXT_FUNCTION())
+      then DAE.SIZE(inCref, SOME(inIndex));
 
   end match;
 end dimensionExp;
@@ -803,6 +859,8 @@ algorithm
 
     case (_, InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), true, _, st)
       equation
+        // TODO: The start value should be used if a parameter or constant has
+        // fixed = true, and no binding.
         exp = InstUtil.getBindingExp(binding);
         // TODO: Apply cref subscripts to the expression.
       then
@@ -817,7 +875,7 @@ algorithm
     case (_, InstTypes.UNTYPED_COMPONENT(name = _), true, _, st)
       equation
         (InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), st) =
-          typeComponent(inComponent, CONTEXT_MODEL(), st);
+          typeComponent(inComponent, NONE(), CONTEXT_MODEL(), st);
         exp = InstUtil.getBindingExp(binding);
         // TODO: Apply cref subscripts to the expression.
       then
@@ -832,7 +890,7 @@ algorithm
 
     case (_, InstTypes.OUTER_COMPONENT(name = _), se, ep, st)
       equation
-        (inner_comp, st) = typeComponent(inComponent, CONTEXT_MODEL(), st);
+        (inner_comp, st) = typeComponent(inComponent, NONE(), CONTEXT_MODEL(), st);
         inner_name = InstUtil.getComponentName(inner_comp);
         inner_cref = InstUtil.removeCrefOuterPrefix(inner_name, inCref);
         (exp, ty, st) = typeCref2(inner_cref, inner_comp, se, ep, st);
@@ -1093,8 +1151,8 @@ algorithm
 
     case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el, _)
       equation
-        (rhs, _, _) = typeExp(rhs, EVAL_CONST(), st);
-        (lhs, _, _) = typeExp(lhs, EVAL_CONST(), st);
+        (rhs, _, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (lhs, _, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.EQUALITY_EQUATION(lhs, rhs, info);
       then
         (eq :: acc_el, inConnections);
@@ -1108,7 +1166,7 @@ algorithm
 
     case (InstTypes.FOR_EQUATION(name, index, _, SOME(exp1), eql, info), st, acc_el, conn)
       equation
-        (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), st);
+        (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st);
         ty = rangeToIteratorType(ty, exp1, info);
         iter_name = Absyn.IDENT(name);
         iter = InstUtil.makeIterator(iter_name, ty, info);
@@ -1144,15 +1202,15 @@ algorithm
 
     case (InstTypes.ASSERT_EQUATION(exp1, exp2, info), st, acc_el, _)
       equation
-        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
-        (exp2, _, _) = typeExp(exp2, EVAL_CONST(), st);
+        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp2, _, _) = typeExp(exp2, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.ASSERT_EQUATION(exp1, exp2, info);
       then
         (eq :: acc_el, Connect2.NO_CONNECTIONS());
 
     case (InstTypes.TERMINATE_EQUATION(exp1, info), st, acc_el, _)
       equation
-        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.TERMINATE_EQUATION(exp1, info);
       then
         (eq :: acc_el, Connect2.NO_CONNECTIONS());
@@ -1160,7 +1218,7 @@ algorithm
     case (InstTypes.REINIT_EQUATION(cref1, exp1, info), st, acc_el, _)
       equation
         (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), st);
-        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.REINIT_EQUATION(cref1, exp1, info);
       then
         (eq :: acc_el, Connect2.NO_CONNECTIONS());
@@ -1174,7 +1232,7 @@ algorithm
 
     case (InstTypes.NORETCALL_EQUATION(exp1, info), st, acc_el, _)
       equation
-        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), st);
+        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.NORETCALL_EQUATION(exp1, info);
       then
         (eq :: acc_el, Connect2.NO_CONNECTIONS());
@@ -1236,7 +1294,7 @@ algorithm
 
     case ("potentialRoot", {DAE.CREF(componentRef = cref1), prio}, st, _)
       equation
-        (prio, _, _) = typeExp(prio, EVAL_CONST_PARAM(), st);
+        (prio, _, _) = typeExp(prio, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st);
       then
         ConnectUtil2.makePotentialRoot(cref1, prio, inInfo);
 
@@ -1265,17 +1323,20 @@ algorithm
       Connect2.Face lhs_face, rhs_face;
       DAE.Type lhs_ty, rhs_ty;
       Boolean lhs_id, rhs_id, is_deleted;
+      Connect2.ConnectorType lhs_cty, rhs_cty;
 
     case (_, _, _, _, _, _)
       equation
-        (lhs, lhs_face, lhs_ty, lhs_id) =
+        (lhs, lhs_face, lhs_ty, lhs_cty, lhs_id) =
           typeConnectorCref(inLhs, inPrefix, inSymbolTable, inInfo);
-        (rhs, rhs_face, rhs_ty, rhs_id) =
+        (rhs, rhs_face, rhs_ty, rhs_cty, rhs_id) =
           typeConnectorCref(inRhs, inPrefix, inSymbolTable, inInfo);
         is_deleted = lhs_id or rhs_id;
+        // TODO: Typecheck the components to make sure that they have compatible
+        // types, i.e. check the types of lhs and rhs.
       then
-        ConnectUtil2.addConnectionCond(is_deleted, lhs, lhs_face, rhs, rhs_face,
-          inInfo, inConnections);
+        ConnectUtil2.addConnectionCond(is_deleted, lhs, lhs_face, lhs_cty, 
+          rhs, rhs_face, rhs_cty, inInfo, inConnections);
 
   end match;
 end typeConnection;
@@ -1288,9 +1349,10 @@ protected function typeConnectorCref
   output DAE.ComponentRef outCref;
   output Connect2.Face outFace;
   output DAE.Type outType;
+  output Connect2.ConnectorType outConnectorType;
   output Boolean outIsDeleted;
 algorithm
-  (outCref, outFace, outType, outIsDeleted) :=
+  (outCref, outFace, outType, outConnectorType, outIsDeleted) :=
   match(inCref, inPrefix, inSymbolTable, inInfo)
     local
       DAE.ComponentRef cref;
@@ -1298,14 +1360,15 @@ algorithm
       Connect2.Face face;
       Boolean is_deleted;
       DAE.Type ty;
+      Connect2.ConnectorType cty;
 
     case (_, _, _, _)
       equation
         (cref, comp, pre_comp) =
           lookupConnectorCref(inCref, inPrefix, inSymbolTable, inInfo);
-        (face, ty, is_deleted) = typeConnectorCref2(cref, comp, pre_comp, inInfo);
+        (cref, face, ty, cty, is_deleted) = typeConnectorCref2(cref, comp, pre_comp, inInfo);
       then
-        (cref, face, ty, is_deleted);
+        (cref, face, ty, cty, is_deleted);
   
   end match;
 end typeConnectorCref;
@@ -1315,41 +1378,47 @@ protected function typeConnectorCref2
   input Option<Component> inComponent;
   input Option<Component> inPrefixComponent;
   input Absyn.Info inInfo;
+  output DAE.ComponentRef outCref;
   output Connect2.Face outFace;
   output DAE.Type outType;
+  output Connect2.ConnectorType outConnectorType;
   output Boolean outIsDeleted;
 algorithm
-  (outFace, outType, outIsDeleted) := match(inCref, inComponent, inPrefixComponent, inInfo)
+  (outCref, outFace, outType, outConnectorType, outIsDeleted) :=
+  match(inCref, inComponent, inPrefixComponent, inInfo)
     local
       Connect2.Face face;
       Component comp;
       DAE.Type ty;
+      DAE.ComponentRef cref;
+      DAE.ConnectorType dcty;
+      Connect2.ConnectorType cty;
 
+    // A connector that is part of a deleted conditional component.
     case (_, NONE(), NONE(), _)
-      equation
-        print(ComponentReference.printComponentRefStr(inCref) +& " is deleted\n");
-      then
-        (Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
+      then (inCref, Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, Connect2.NO_TYPE(), true);
 
+    // A connector which is itself deleted.
     case (_, SOME(InstTypes.DELETED_COMPONENT(_)), _, _)
-      equation
-        print(ComponentReference.printComponentRefStr(inCref) +& " is deleted\n");      
-      then
-        (Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, true);
+      then (inCref, Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, Connect2.NO_TYPE(), true);
 
     // A component that should be added to an expandable connector. It can only
     // be outside, since only connectors on the form m.c are inside.
     case (_, NONE(), SOME(_), _)
-      then (Connect2.OUTSIDE(), DAE.T_UNKNOWN_DEFAULT, false);
+      then (inCref, Connect2.OUTSIDE(), DAE.T_UNKNOWN_DEFAULT, Connect2.NO_TYPE(), false);
 
-    case (_, SOME(comp), _, _)
+    // A normal connector.
+    case (cref, SOME(comp), _, _)
       equation
         // TODO: Resolve outer references here?
         checkComponentIsConnector(comp, inPrefixComponent, inCref, inInfo);
         face = getConnectorFace(inPrefixComponent);
         ty = InstUtil.getComponentType(comp);
+        dcty = InstUtil.getComponentConnectorType(comp);
+        cty = ConnectUtil2.translateDaeConnectorType(dcty);
+        cref = InstUtil.typeCrefWithComponent(cref, comp);
       then
-        (face, ty, false);
+        (cref, face, ty, cty, false);
 
   end match;
 end typeConnectorCref2;
@@ -1404,7 +1473,7 @@ algorithm
   (outCref, outComponent, outPrefixComponent) :=
   matchcontinue(inCref, inPrefix, inSymbolTable)
     local
-      Component comp, pre_comp;
+      Component comp;
       DAE.ComponentRef cref, cref2;
       Option<Component> opt_comp, opt_pre_comp;
       
@@ -1419,11 +1488,11 @@ algorithm
       equation
         (cref, cref2) = ComponentReference.splitCrefFirst(inCref);
         cref = InstUtil.prefixCref(cref, inPrefix);
-        pre_comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
         cref = ComponentReference.joinCrefs(cref, cref2);
         comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
+        opt_pre_comp = InstUtil.getComponentParent(comp);
       then
-        (cref, SOME(comp), SOME(pre_comp));
+        (cref, SOME(comp), opt_pre_comp);
 
     // If the cref is qualified but we couldn't find it, it might be part of a
     // deleted conditional component (i.e. it hasn't been instantiated). It
@@ -1590,7 +1659,7 @@ algorithm
 
     case ((cond_exp, branch_body), _, conn)
       equation
-        (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), inSymbolTable);
+        (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), CONTEXT_MODEL(), inSymbolTable);
         (branch_body, conn) = typeEquations(branch_body, inSymbolTable, conn);
       then
         ((cond_exp, branch_body), conn);
@@ -1603,24 +1672,26 @@ protected function typeAlgorithms
   input SymbolTable inSymbolTable;
   output list<list<Statement>> outStmts;
 algorithm
-  outStmts := List.map1(inStmts,typeStatements,inSymbolTable);
+  outStmts := List.map2(inStmts,typeStatements,CONTEXT_MODEL(),inSymbolTable);
 end typeAlgorithms;
 
 protected function typeStatements
   input list<Statement> inStmts;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output list<Statement> outStmts;
 algorithm
-  outStmts := listReverse(List.fold1(inStmts, typeStatement, inSymbolTable, {}));
+  outStmts := listReverse(List.fold2(inStmts, typeStatement, inContext, inSymbolTable, {}));
 end typeStatements;
 
 protected function typeStatement
   input Statement inStmt;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   input list<Statement> inAcc;
   output list<Statement> outAcc;
 algorithm
-  outAcc := match (inStmt,inSymbolTable,inAcc)
+  outAcc := match (inStmt,inContext,inSymbolTable,inAcc)
     local
       DAE.Exp lhs,rhs,exp;
       Absyn.Info info;
@@ -1628,28 +1699,30 @@ algorithm
       SymbolTable st;
       list<tuple<DAE.Exp,list<Statement>>> branches;
       String name;
-    case (InstTypes.ASSIGN_STMT(lhs=lhs,rhs=rhs,info=info),st,_)
+      Context c;
+
+    case (InstTypes.ASSIGN_STMT(lhs=lhs,rhs=rhs,info=info),c,st,_)
       equation
-        (lhs,lty,_) = typeExp(lhs, NO_EVAL(), st);
-        (rhs,rty,_) = typeExp(rhs, EVAL_CONST(), st);
+        (lhs,lty,_) = typeExp(lhs, NO_EVAL(), c, st);
+        (rhs,rty,_) = typeExp(rhs, EVAL_CONST(), c, st);
         // rhs = typeCheck(rhs,lty,rty)
       then typeAssignment(lhs,rhs,info,inAcc);
-    case (InstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),st,_)
+    case (InstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),c,st,_)
       equation
         InstTypes.TYPED_COMPONENT(ty=ty) = InstSymbolTable.lookupCref(DAE.CREF_IDENT(name,ty,{}),st);
       then InstTypes.FUNCTION_ARRAY_INIT(name,ty,info) :: inAcc;
-    case (InstTypes.NORETCALL_STMT(exp=exp, info=info),st,_)
+    case (InstTypes.NORETCALL_STMT(exp=exp, info=info),c,st,_)
       equation
         // Let's try skipping evaluation. Maybe helps some external functions
-        (exp,_,_) = typeExp(exp, NO_EVAL(), st);
+        (exp,_,_) = typeExp(exp, NO_EVAL(), c, st);
         // TODO: Check variability/etc to potentially reduce the statement?
       then InstTypes.NORETCALL_STMT(exp,info)::inAcc;
-    case (InstTypes.IF_STMT(branches=branches, info=info),st,_)
+    case (InstTypes.IF_STMT(branches=branches, info=info),c,st,_)
       equation
-        branches = List.map1(branches, typeBranchStatement, st);
+        branches = List.map2(branches, typeBranchStatement, c, st);
       then
         InstTypes.IF_STMT(branches, info) :: inAcc;
-    case (InstTypes.FOR_STMT(info=_),st,_)
+    case (InstTypes.FOR_STMT(info=_),c,st,_)
       then
         inStmt :: inAcc;
     else
@@ -1684,56 +1757,108 @@ end typeAssignment;
 
 protected function typeBranchStatement
   input tuple<DAE.Exp, list<Statement>> inBranch;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output tuple<DAE.Exp, list<Statement>> outBranch;
 algorithm
-  outBranch := match(inBranch, inSymbolTable)
+  outBranch := match(inBranch, inContext, inSymbolTable)
     local
       DAE.Exp cond_exp;
       list<Statement> branch_body;
+      Context c;
 
-    case ((cond_exp, branch_body), _)
+    case ((cond_exp, branch_body), c, _)
       equation
-        (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), inSymbolTable);
+        (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), c, inSymbolTable);
         /* TODO: Type-check the condition */
-        branch_body = typeStatements(branch_body, inSymbolTable);
+        branch_body = typeStatements(branch_body, c, inSymbolTable);
       then
         ((cond_exp, branch_body));
 
   end match;
 end typeBranchStatement;
 
-public function typeFunction
-  input Absyn.Path path;
-  input tuple<HashTablePathToFunction.HashTable,SymbolTable> inTpl;
-  output tuple<HashTablePathToFunction.HashTable,SymbolTable> outTpl;
+protected function lookupFunction
+  input Absyn.Path inPath;
+  input HashTablePathToFunction.HashTable inTable;
+  output Function outFunction;
 algorithm
-  outTpl := matchcontinue (path,inTpl)
+  outFunction := matchcontinue(inPath, inTable)
+    local
+      String func_str;
+
+    case (_, _) then BaseHashTable.get(inPath, inTable);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE); 
+        func_str = Absyn.pathString(inPath);
+        Debug.traceln("- Typing.lookupFunction could not find the function " +& func_str);
+      then
+        fail();
+
+  end matchcontinue;
+end lookupFunction;
+        
+public function typeFunction
+  input Absyn.Path inPath;
+  input tuple<HashTablePathToFunction.HashTable, SymbolTable> inTpl;
+  output tuple<HashTablePathToFunction.HashTable, SymbolTable> outTpl;
+protected
+  HashTablePathToFunction.HashTable ht;
+  SymbolTable st;
+  Function func;
+algorithm
+  (ht, st) := inTpl;
+  func := lookupFunction(inPath, ht);
+  outTpl := typeFunction2(func, inPath, ht, st);
+end typeFunction;
+  
+public function typeFunction2
+  input Function inFunction;
+  input Absyn.Path inPath;
+  input FunctionTable inFunctionTable;
+  input SymbolTable inSymbolTable;
+  output tuple<FunctionTable, SymbolTable> outTuple;
+algorithm
+  outTuple := matchcontinue (inFunction, inPath, inFunctionTable, inSymbolTable)
     local
       list<InstTypes.Element> inputs,outputs,locals;
       list<InstTypes.Statement> al;
       HashTablePathToFunction.HashTable ht;
       SymbolTable st;
-    case (path,(ht,st))
+
+    case (InstTypes.FUNCTION(inputs = inputs, outputs = outputs, locals = locals,
+        algorithms = al), _, ht, st)
       equation
-        InstTypes.FUNCTION(inputs=inputs,outputs=outputs,locals=locals,algorithms=al) = BaseHashTable.get(path,ht);
         st = InstSymbolTable.addFunctionScope(st);
-        (_,st) = InstSymbolTable.addElements(inputs, st);
-        (_,st) = InstSymbolTable.addElements(outputs, st);
-        (_,st) = InstSymbolTable.addElements(locals, st);
-        (inputs, st) = List.map1Fold(inputs, typeElement, CONTEXT_FUNCTION(), st);
-        (outputs, st) = List.map1Fold(outputs, typeElement, CONTEXT_FUNCTION(), st);
-        (locals, st) = List.map1Fold(locals, typeElement, CONTEXT_FUNCTION(), st);
-        al = typeStatements(al, st);
-        ht = BaseHashTable.add((path,InstTypes.FUNCTION(path,inputs,outputs,locals,al)),ht);
+        (_, st) = InstSymbolTable.addElements(inputs, st);
+        (_, st) = InstSymbolTable.addElements(outputs, st);
+        (_, st) = InstSymbolTable.addElements(locals, st);
+        (inputs, st) = List.map2Fold(inputs, typeElement, NONE(), CONTEXT_FUNCTION(), st);
+        (outputs, st) = List.map2Fold(outputs, typeElement, NONE(), CONTEXT_FUNCTION(), st);
+        (locals, st) = List.map2Fold(locals, typeElement, NONE(), CONTEXT_FUNCTION(), st);
+        al = typeStatements(al, CONTEXT_FUNCTION(), st);
+        ht = BaseHashTable.add((inPath, InstTypes.FUNCTION(inPath, inputs, outputs, locals, al)), ht);
         _::st = st;
-      then ((ht,st));
+      then
+        ((ht, st));
+
+    case (InstTypes.RECORD(path = _), _, ht, st)
+      equation
+        print("- Typing.typeFunction2: Support for record constructors not yet implemented.\n");
+      then
+        ((ht, st));
+
     else
       equation
-        print("typeFunction failed " +& Absyn.pathString(path) +& "\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- Typing.typeFunction2 failed on function " +&
+          Absyn.pathString(inPath));
       then 
         fail();
+
   end matchcontinue;
-end typeFunction;
+end typeFunction2;
 
 end Typing;

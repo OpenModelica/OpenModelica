@@ -84,11 +84,12 @@ public function expand
   input InstTypes.Class inClass;
   input FunctionHashTable inFunctions;
   output DAE.DAElist outDAE;
+  output DAE.FunctionTree outFunctions;
 protected
   list<DAE.Element> el;
   DAE.FunctionTree tree;
 algorithm
-  outDAE := matchcontinue(inName, inClass, inFunctions)
+  (outDAE, outFunctions) := matchcontinue(inName, inClass, inFunctions)
     local
       list<DAE.Element> el;
       DAE.DAElist dae;
@@ -106,13 +107,12 @@ algorithm
 
         tree = DAEUtil.emptyFuncTree;
         tree = DAEUtil.addDaeFunction(funcs, tree);
-        print("\nEXPANDED FORM:\n\n");
-        print(DAEDump.dumpStr(dae, tree) +& "\n");
+
         (vars, params) = countElements(el, 0, 0);
-        print("\nFound " +& intString(vars) +& " components and " +&
-          intString(params) +& " parameters.\n");
+        //print("\nFound " +& intString(vars) +& " components and " +&
+        //  intString(params) +& " parameters.\n");
       then
-        dae;
+        (dae, tree);
 
     else
       equation
@@ -436,7 +436,8 @@ algorithm
         InstTypes.DAE_PREFIXES(variability = DAE.CONST())), _, _)
       then inAccumEl;
 
-    case (InstTypes.TYPED_COMPONENT(name, ty, prefs, binding, _), subs, _)
+    case (InstTypes.TYPED_COMPONENT(name = name, ty = ty, prefixes = prefs,
+        binding = binding), subs, _)
       equation
         subs = listReverse(subs);
         bind_exp = expandBinding(binding, subs);
@@ -638,9 +639,10 @@ protected
   InstTypes.DaePrefixes prefs;
   InstTypes.Binding binding;
   Absyn.Info info;
+  Option<InstTypes.Component> p;
 algorithm
-  InstTypes.TYPED_COMPONENT(name, DAE.T_ARRAY(ty = ty), prefs, binding, info) := inComponent;
-  outComponent := InstTypes.TYPED_COMPONENT(name, ty, prefs, binding, info);
+  InstTypes.TYPED_COMPONENT(name, DAE.T_ARRAY(ty = ty), p, prefs, binding, info) := inComponent;
+  outComponent := InstTypes.TYPED_COMPONENT(name, ty, p, prefs, binding, info);
 end unliftComponentType;
 
 protected function getPrefixes

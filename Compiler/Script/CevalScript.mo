@@ -91,7 +91,9 @@ protected import Parser;
 protected import Print;
 protected import Refactor;
 protected import SCodeDump;
+protected import SCodeEnv;
 protected import SCodeFlatten;
+protected import SCodeInst;
 protected import System;
 protected import Static;
 protected import SCode;
@@ -1797,7 +1799,7 @@ algorithm
         {Values.STRING(filename), Values.CODE(Absyn.C_TYPENAME(classpath))}, st, msg)
       equation
         (scodeP, st) = Interactive.symbolTableToSCode(st);
-        scodeP = SCodeFlatten.flattenClassInProgram(classpath, scodeP);
+        (scodeP, _, _) = SCodeFlatten.flattenClassInProgram(classpath, scodeP);
         scodeP = SCode.removeBuiltinsFromTopScope(scodeP);
         str = SCodeDump.programStr(scodeP);
         System.writeFile(filename, str);
@@ -2700,9 +2702,29 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
+      SCodeEnv.Env senv;
+      list<Absyn.Path> consts;
+      DAE.FunctionTree funcs;
       
+    case (_, _, _, Interactive.SYMBOLTABLE(p, aDep, fp, ic, iv, cf, lf), _, _)
+      equation
+        true = Flags.isSet(Flags.SCODE_INST);
+        scodeP = SCodeUtil.translateAbsyn2SCode(p);
+        (_, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
+        (dae, funcs) = SCodeInst.instClass(className, senv, consts);
+
+        cache = Env.emptyCache();
+        cache = Env.setCachedFunctionTree(cache, funcs);
+        env = Env.emptyEnv;
+        ic_1 = Interactive.addInstantiatedClass(ic, 
+          Interactive.INSTCLASS(className, dae, env));
+        st = Interactive.SYMBOLTABLE(p, aDep, fp, ic_1, iv, cf, lf);
+      then
+        (cache, env, dae, st);
+
     case (cache,env,className,Interactive.SYMBOLTABLE(p,aDep,fp,ic,iv,cf,lf),relaxedFrontEnd,_)
       equation
+        false = Flags.isSet(Flags.SCODE_INST);
         str = Absyn.pathString(className);
         (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
         re = Absyn.restrString(restriction);

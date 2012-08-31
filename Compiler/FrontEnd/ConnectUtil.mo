@@ -2312,7 +2312,7 @@ algorithm
 
     // Both outside:
     // cr1 = inStream(cr2);
-    // cr2 = inStream(cr2);
+    // cr2 = inStream(cr1);
     case ({Connect.CONNECTOR_ELEMENT(name = cr1, face = Connect.OUTSIDE(), source = src1),
            Connect.CONNECTOR_ELEMENT(name = cr2, face = Connect.OUTSIDE(), source = src2)})
       equation

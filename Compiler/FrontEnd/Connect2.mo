@@ -53,10 +53,21 @@ public uniontype ExpandableConnector
   end EXPANDABLE_CONNECTOR;
 end ExpandableConnector;
 
+public uniontype ConnectorType
+  "The type of a connector element."
+  record POTENTIAL end POTENTIAL;
+  record FLOW end FLOW;
+  record STREAM 
+    Option<DAE.ComponentRef> associatedFlow;
+  end STREAM;
+  record NO_TYPE end NO_TYPE;
+end ConnectorType;
+
 public uniontype Connector
   record CONNECTOR
     DAE.ComponentRef name;
     Face face;
+    ConnectorType ty;
   end CONNECTOR;
 end Connector;
 

@@ -146,6 +146,7 @@ public uniontype Component
   record TYPED_COMPONENT
     Absyn.Path name;
     DAE.Type ty;
+    Option<Component> parent; //NO_COMPONENT?
     DaePrefixes prefixes;
     Binding binding;
     Absyn.Info info;

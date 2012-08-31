@@ -215,7 +215,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
       equation
         cache = Env.setCacheClassName(cache,path);
-        cdecls = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
+        (cdecls, _, _) = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls);
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
@@ -236,7 +236,7 @@ algorithm
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
         cache = Env.setCacheClassName(cache,path);
-        cdecls = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
+        (cdecls, _, _) = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
         pathstr = Absyn.pathString(path);
                 
         //System.startTimer();
