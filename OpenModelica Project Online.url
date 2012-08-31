@@ -1,7 +1,5 @@
-[DEFAULT]
-BASEURL=http://www.ida.liu.se/labs/pelab/modelica/OpenModelica.html
+[{000214A0-0000-0000-C000-000000000046}]
+Prop3=19,11
 [InternetShortcut]
-URL=http://www.ida.liu.se/labs/pelab/modelica/OpenModelica.html
-Modified=A04BCA6D1450C6014D
-IconFile=http://www.ida.liu.se/favicon.ico
-IconIndex=1
+URL=https://www.openmodelica.org/
+IDList=
