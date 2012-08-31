@@ -455,7 +455,7 @@ algorithm
     case (DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))),_,_,_,_,_,_)
       equation
         backendVar1 = lowerExtObjVar(inElement);
-        backendVar2 = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        (backendVar2,_) = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
         extvars = BackendVariable.addVar(backendVar2, inExVars);
       then
         (inVars,inKnVars,extvars,inEqnsLst,inStates);
@@ -467,7 +467,7 @@ algorithm
         // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(inElement);
         (backendVar1,states) = lowerDynamicVar(inElement, inStates);
-        backendVar2 = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        (backendVar2,_) = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
         (e2,source,_) = Inline.inlineExp(e2,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         vars = BackendVariable.addVar(backendVar2, inVars);
         e1 = Expression.crefExp(cr);
@@ -479,7 +479,7 @@ algorithm
       equation
         true = isStateOrAlgvar(inElement);
         (backendVar1,states) = lowerDynamicVar(inElement, inStates);
-        backendVar2 = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        (backendVar2,_) = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
         vars = BackendVariable.addVar(backendVar2, inVars);
       then
         (vars,inKnVars,inExVars,inEqnsLst,states);
@@ -488,7 +488,7 @@ algorithm
     case (DAE.VAR(componentRef = _),_,_,_,_,_,_)
       equation
         backendVar1 = lowerKnownVar(inElement) "in previous rule, lower_var failed." ;
-        backendVar2 = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        (backendVar2,_) = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
         knvars = BackendVariable.addVar(backendVar2, inKnVars);
       then
         (inVars,knvars,inExVars,inEqnsLst,inStates);
