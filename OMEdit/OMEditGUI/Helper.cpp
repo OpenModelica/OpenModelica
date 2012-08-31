@@ -39,7 +39,7 @@
 
 /* Global non-translated variables */
 QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "Version: 1.8.1";
+QString Helper::applicationVersion = "Version: 1.9.0";
 QString Helper::applicationIntroText = "OpenModelica Connection Editor";
 /* Increment this settings number if you change something in the QMainWindow appereance
    * Otherwise OMEdit will load the old settings and Qt make a mess of your toolbars and dockwidgets.
