@@ -346,6 +346,30 @@ algorithm
   end matchcontinue;
 end fcallret3;
 
+public function bcallret0
+"function: bcallret0
+  Boolean-controlled calling of given function (2nd arg).
+  The passed function gets 0 arguments.
+  The last parameter is returned if the boolean is false."
+  input Boolean flag;
+  input FuncTypeType_aToType_b func;
+  input Type_b default;
+  output Type_b res;
+  partial function FuncTypeType_aToType_b
+    output Type_b outTypeB;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  res := match (flag,func,default)
+    case (true,_,_)
+      equation
+        res = func();
+      then res;
+    else default;
+  end match;
+end bcallret0;
+
 public function bcallret1
 "function: bcallret1
   Boolean-controlled calling of given function (2nd arg).

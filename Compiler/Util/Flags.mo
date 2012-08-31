@@ -63,6 +63,7 @@ protected import Error;
 protected import ErrorExt;
 protected import Global; 
 protected import List;
+protected import Print;
 protected import Settings;
 protected import System;
 public import Util;
@@ -1474,7 +1475,7 @@ algorithm
 
     case {}
       equation
-        printUsage();
+        print(printUsage());
       then
         ();
 
@@ -1534,29 +1535,32 @@ end printHelp;
 
 public function printUsage
   "Prints out the usage text for the compiler."
+  output String usage;
 algorithm
-  print("OpenModelica Compiler "); print(Settings.getVersionNr()); print("\n");
-  print(System.gettext("Copyright © 2012 Open Source Modelica Consortium (OSMC)\n"));
-  print(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
-  //print("Please check the System Guide for full information about flags.\n");
-  print(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));
-  print(System.gettext("* +omcOptions:\n"));
-  print(printAllConfigFlags());
-  print("\n");
-  print(System.gettext("* Examples:\n"));
-  print(System.gettext("\tomc Model.mo             will produce flattened Model on standard output\n"));
-  print(System.gettext("\tomc +s Model.mo          will produce simulation code for the model:\n"));
-  print(System.gettext("\t                          * Model.c           the model C code\n"));
-  print(System.gettext("\t                          * Model_functions.c the model functions C code\n"));
-  print(System.gettext("\t                          * Model.makefile    the makefile to compile the model.\n"));
-  print(System.gettext("\t                          * Model_init.xml    the initial values\n"));
-  //print("\tomc Model.mof            will produce flattened Model on standard output\n");
-  print(System.gettext("\tomc Script.mos           will run the commands from Script.mos\n"));
-  print(System.gettext("\tomc Model.mo Modelica    will first load the Modelica library and then produce \n\t                         flattened Model on standard output\n"));
-  print(System.gettext("\tomc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n\t                         flattened Model1 on standard output\n"));
-  print(System.gettext("\t*.mo (Modelica files) \n"));
-  //print("\t*.mof (Flat Modelica files) \n");
-  print(System.gettext("\t*.mos (Modelica Script files) \n"));
+  Print.clearBuf();
+  Print.printBuf("OpenModelica Compiler "); Print.printBuf(Settings.getVersionNr()); Print.printBuf("\n");
+  Print.printBuf(System.gettext("Copyright © 2012 Open Source Modelica Consortium (OSMC)\n"));
+  Print.printBuf(System.gettext("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n\n"));
+  //Print.printBuf("Please check the System Guide for full information about flags.\n");
+  Print.printBuf(System.gettext("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Script.mos) [Libraries | .mo-files] \n* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n             The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n* runtimeOptions: call omc -help to see runtime options\n"));
+  Print.printBuf(System.gettext("* +omcOptions:\n"));
+  Print.printBuf(printAllConfigFlags()); Print.printBuf("\n");
+  Print.printBuf(System.gettext("* Examples:\n"));
+  Print.printBuf(System.gettext("\tomc Model.mo             will produce flattened Model on standard output\n"));
+  Print.printBuf(System.gettext("\tomc +s Model.mo          will produce simulation code for the model:\n"));
+  Print.printBuf(System.gettext("\t                          * Model.c           the model C code\n"));
+  Print.printBuf(System.gettext("\t                          * Model_functions.c the model functions C code\n"));
+  Print.printBuf(System.gettext("\t                          * Model.makefile    the makefile to compile the model.\n"));
+  Print.printBuf(System.gettext("\t                          * Model_init.xml    the initial values\n"));
+  //Print.printBuf("\tomc Model.mof            will produce flattened Model on standard output\n");
+  Print.printBuf(System.gettext("\tomc Script.mos           will run the commands from Script.mos\n"));
+  Print.printBuf(System.gettext("\tomc Model.mo Modelica    will first load the Modelica library and then produce \n\t                         flattened Model on standard output\n"));
+  Print.printBuf(System.gettext("\tomc Model1.mo Model2.mo  will load both Model1.mo and Model2.mo, and produce \n\t                         flattened Model1 on standard output\n"));
+  Print.printBuf(System.gettext("\t*.mo (Modelica files) \n"));
+  //Print.printBuf("\t*.mof (Flat Modelica files) \n");
+  Print.printBuf(System.gettext("\t*.mos (Modelica Script files) Documentation is available in the built-in package OpenModelica.Scripting or online <https://build.openmodelica.org/Documentation/OpenModelica.Scripting.html>\n"));
+  usage := Print.getString();
+  Print.clearBuf();
 end printUsage;
 
 public function printAllConfigFlags

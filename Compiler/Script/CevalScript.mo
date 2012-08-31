@@ -1771,6 +1771,12 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,"help",{},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        str = Flags.printUsage();
+      then
+        (cache,Values.STRING(str),st);
+        
     case (cache,env,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},
         (st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation

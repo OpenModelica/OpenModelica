@@ -998,10 +998,7 @@ end saveAll;
 
 function help "display the OpenModelica help text."
   output String helpText;
-  annotation(__OpenModelica_EarlyInline = true);
-algorithm
-  helpText := readFile(getInstallationDirectoryPath() + "/share/doc/omc/omc_helptext.txt");
-annotation(preferredView="text");
+external "builtin";
 end help;
 
 function clear "Clears everything: symboltable and variables."

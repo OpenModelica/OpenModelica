@@ -5,17 +5,5 @@ versions:={
   // $TypeName(OpenModelica.UsersGuide.ReleaseNotes.'1.8.1'),
   $TypeName(OpenModelica.UsersGuide.ReleaseNotes.'1.9.0')
 };
-loadFile("../../Compiler/FrontEnd/ModelicaBuiltin.mo");
-loadString("function myReadFile
-  input OpenModelica.$Code.TypeName name;
-  output String contents;
-protected
-  String strs[:],str;
-algorithm
-  strs := OpenModelica.Scripting.typeNameStrings(name);
-  str := strs[4];
-  contents := OpenModelica.Scripting.readFile(\"ReleaseNotes/release-notes/\" + OpenModelica.Scripting.stringReplace(str,\"'\",\"\") + \".html\");
-end myReadFile;");getErrorString();
-deleteClass(myReadFile);
-getClassNames();getErrorString();
-writeFile("newf.mo",list());getErrorString();
+system("grep -v DOCTYPE ReleaseNotes/release-notes/1.9.0.html | grep -v xhtml11.dtd | sed 's/<html .*>/<html>/g' > 1.9.0.html");
+readFile("1.9.0.html");
