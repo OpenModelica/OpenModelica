@@ -27,9 +27,9 @@ SRC	= Print_rml.c System_rml.c Settings_rml.c \
 
 CPPSRC  = unitparser.cpp UnitParserExt_rml.cpp ptolemyio_rml.cpp \
   BackendDAEEXT_rml.cpp ErrorMessage.cpp Error_rml.cpp \
-  systemimplmisc.cpp Dynload_rml.cpp $(CORBASRC)
+  systemimplmisc.cpp Dynload_rml.cpp
 
-OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
+OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CORBAOBJ)
 
 OMC_OBJ = Error_omc.o Print_omc.o System_omc.o Settings_omc.o \
   IOStreamExt_omc.o ErrorMessage.o FMIImpl.o FMIWrapper.o systemimplmisc.o \

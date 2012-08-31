@@ -12,11 +12,13 @@ CFLAGS = @CFLAGS@ $(USE_CORBA)
 
 ifdef USE_CORBA
   CORBASRC = omc_communication.cc omc_communication_impl.cpp Corba_rml.cpp
+  CORBAOBJ = omc_communication.o omc_communication_impl.o Corba_rml.o
   CORBAINCL = @CORBACFLAGS@
   OMCCORBASRC = omc_communication.o omc_communication_impl.o Corba_omc.o
   IDLPYTHONTARGET = $(builddir_share)/omc/scripts/PythonInterface/stubs/omc_communication_idl.py
 else
   CORBASRC = corbaimpl_stub.c
+  CORBAOBJ = corbaimpl_stub.o
   CORBAINCL =  
   OMCCORBASRC = corbaimpl_stub_omc.o
   IDLPYTHONTARGET = 

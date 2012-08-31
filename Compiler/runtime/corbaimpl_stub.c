@@ -8,7 +8,7 @@ void Corba_5finit(void)
 }
 
 static void errmsg() {
-  cerr << "CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable." << endl;
+  fprintf(stderr, "CORBA disabled. Configure with --with-omniORB (or --with-MICO) and recompile to enable.");
 }
 
 RML_BEGIN_LABEL(Corba__haveCorba)
