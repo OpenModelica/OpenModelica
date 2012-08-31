@@ -136,7 +136,7 @@ algorithm
         // get Allgorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = alg;
         e1_1 = differentiateFunctionTime(e1,(timevars,shared));
-        (e2,source) = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
+        (e2,source,_) = Inline.inlineExp(e1_1,(SOME(funcs),{DAE.NORM_INLINE()}),source);
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,expExpLst,(timevars,shared));
         op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e2);
         source = DAEUtil.addSymbolicTransformation(source,op1);
@@ -615,7 +615,7 @@ algorithm
       equation
         // get Derivative function
         e1 = differentiateFunctionTime(e,inVariables);
-        (e2,_) = Inline.inlineExp(e1,(SOME(functions),{DAE.NORM_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
+        (e2,_,_) = Inline.inlineExp(e1,(SOME(functions),{DAE.NORM_INLINE()}),DAE.emptyElementSource/*TODO:Can we propagate source?*/);
       then
         e2;
     
