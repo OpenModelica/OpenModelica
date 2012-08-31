@@ -1,5 +1,7 @@
-[{000214A0-0000-0000-C000-000000000046}]
-Prop3=19,11
+[DEFAULT]
+BASEURL=https://www.openmodelica.org/
 [InternetShortcut]
 URL=https://www.openmodelica.org/
-IDList=
+Modified=A04BCA6D1450C6014D
+IconFile=https://www.openmodelica.org/templates/open_modelica/favicon.ico
+IconIndex=1
