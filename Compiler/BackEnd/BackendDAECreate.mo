@@ -468,7 +468,7 @@ algorithm
         true = isStateOrAlgvar(inElement);
         (backendVar1,states) = lowerDynamicVar(inElement, inStates);
         backendVar2 = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
-        (e2,source) = Inline.inlineExp(e2,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        (e2,source,_) = Inline.inlineExp(e2,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         vars = BackendVariable.addVar(backendVar2, inVars);
         e1 = Expression.crefExp(cr);
       then
@@ -937,15 +937,15 @@ algorithm
       
     case (DAE.EQUATION(exp = e1,scalar = e2,source = source),_,_)
       equation
-        (e1,source) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (e2,source) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
         BackendDAE.EQUATION(e1,e2,source)::inEqns;
 
     case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = source),_,_)
       equation
-        (e1,source) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (e2,source) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
         BackendDAE.EQUATION(e1,e2,source)::inEqns;
 
@@ -958,7 +958,7 @@ algorithm
 
     case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source),_,_)
       equation
-        (e2,source) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);        
+        (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);        
         e1 = Expression.crefExp(cr1);
       then
         BackendDAE.EQUATION(e1,e2,source)::inEqns;
@@ -966,14 +966,14 @@ algorithm
     case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source),_,_)
       equation
         e1 = Expression.crefExp(cr1);
-        (e2,source) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
         BackendDAE.EQUATION(e1,e2,source)::inEqns;
 
     case (DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_)
       equation
-        //(e1,source) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        //(e2,source) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        //(e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        //(e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e1,source,_) = Inline.forceInlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);
         (e2,source,_) = Inline.forceInlineExp(e2,(SOME(functionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);        
       then
@@ -981,23 +981,23 @@ algorithm
         
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_)
       equation
-        (e1,source) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (e2,source) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         size = Expression.sizeOf(Expression.typeof(e1));
       then
         BackendDAE.COMPLEX_EQUATION(size,e1,e2,source)::inEqns;
 
     case (DAE.ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_)
       equation
-        (e1,source) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (e2,source) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
         lowerArrayEqn(dims,e1,e2,source,inEqns);
       
     case (DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_)
       equation
-        (e1,source) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (e2,source) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);    
+        (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);    
       then
         lowerArrayEqn(dims,e1,e2,source,inEqns); 
          
@@ -1005,7 +1005,7 @@ algorithm
       equation
         b1 = not Flags.getConfigBool(Flags.CHECK_MODEL);
         s = Debug.bcallret1(b1, DAEDump.dumpElementsStr, {inElement}, "");
-        (explst,source) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (explst,source,_) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (explst1,blst) = ExpressionSimplify.simplifyList1(explst,{},{});
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);
       then
@@ -1015,7 +1015,7 @@ algorithm
       equation
         b1 = not Flags.getConfigBool(Flags.CHECK_MODEL);
         s = Debug.bcallret1(b1, DAEDump.dumpElementsStr, {inElement}, "");
-        (explst,source) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (explst,source,_) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (explst1,blst) = ExpressionSimplify.simplifyList1(explst,{},{});
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);
       then
@@ -1023,7 +1023,7 @@ algorithm
           
     case (DAE.ASSERT(condition=cond,message=msg,source=source),_,_)
       equation
-        (cond,source) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        (cond,source,_) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         BackendDAEUtil.checkAssertCondition(cond,msg);
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)});
       then
@@ -1302,7 +1302,7 @@ algorithm
 
     case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE(),source=source),_,_,_)
       equation
-        (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (cond,source,_) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (res,reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, inEquationLst, {});
         whenClauseList = makeWhenClauses(listLength(reinit) > 0, cond, reinit,inWhenClauseLst);
       then
@@ -1311,7 +1311,7 @@ algorithm
     case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = SOME(elsePart),source=source),_,_,_)
       equation
         (elseEqnLst,whenClauseList) = lowerWhenEqn(elsePart,functionTree,{},inWhenClauseLst);
-        (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (cond,source,_) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (trueEqnLst,reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
         whenClauseList = makeWhenClauses(listLength(reinit) > 0, cond, reinit,whenClauseList);
         res = mergeClauses(trueEqnLst,elseEqnLst,inEquationLst);                    
@@ -1359,7 +1359,7 @@ algorithm
     case ({},_,_,_,_) then (iEquationLst,iReinitStatementLst);
     case (DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),scalar = e, source = source) :: xs,_,_,_,_)
       equation
-        (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, BackendDAE.WHEN_EQUATION(1,BackendDAE.WHEN_EQ(inCond,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
@@ -1367,14 +1367,14 @@ algorithm
     case (DAE.COMPLEX_EQUATION(lhs = (cre as DAE.CREF(componentRef = cr)),rhs = e,source = source) :: xs,_,_,_,_)
       equation
         size = Expression.sizeOf(Expression.typeof(cre));
-        (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(inCond,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
     case ((el as DAE.IF_EQUATION(condition1=expl,equations2=eqnslst,equations3=eqns, source = source)) :: xs,_,_,_,_)
       equation
-        (expl,source) = Inline.inlineExps(expl, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (expl,source,_) = Inline.inlineExps(expl, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         b = not Flags.getConfigBool(Flags.CHECK_MODEL);
         s = Debug.bcallret1(b, DAEDump.dumpElementsStr, {el}, "");
         Debug.bcall3(b,Error.addSourceMessage,Error.IF_EQUATION_WARNING, {s}, DAEUtil.getElementSourceFileInfo(source));
@@ -1387,29 +1387,29 @@ algorithm
     case (DAE.ARRAY_EQUATION(dimension=ds,exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs,_,_,_,_)
       equation
         size = List.fold(Expression.dimensionsSizes(ds),intMul,1);
-        (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(inCond,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
       then
         (eqnl,reinit);
 
     case (DAE.ASSERT(condition=cond,message = e,source = source) :: xs,_,_,_,_)
       equation
-        (cond,source) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (cond,source,_) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, iEquationLst, BackendDAE.ASSERT(cond,e,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
 
     case (DAE.REINIT(componentRef = cr,exp = e,source = source) :: xs,_,_,_,_)
       equation
-        (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, iEquationLst, BackendDAE.REINIT(cr,e,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
 
     case (DAE.TERMINATE(message = e,source = source) :: xs,_,_,_,_)
       equation
-        (e,source) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, iEquationLst, BackendDAE.TERMINATE(e,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
@@ -1516,7 +1516,7 @@ algorithm
     case (DAE.ALGORITHM(algorithm_=alg, source=source),_,_,_,_)
       equation
         // calculate the size of the algorithm by collecting the left hand sites of the statemens 
-        alg = Inline.inlineAlgorithm(alg,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        (alg,_) = Inline.inlineAlgorithm(alg,(SOME(functionTree),{DAE.NORM_INLINE()}));
         crefLst = CheckModel.algorithmOutputs(alg);
         size = listLength(crefLst); 
         (eqns,reqns) = List.consOnBool(intGt(size,0), BackendDAE.ALGORITHM(size, alg, source),inEquations,inREquations);
@@ -1526,7 +1526,7 @@ algorithm
     case (DAE.INITIALALGORITHM(algorithm_=alg, source=source),_,_,_,_)
       equation
         // calculate the size of the algorithm by collecting the left hand sites of the statemens 
-        alg = Inline.inlineAlgorithm(alg,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        (alg,_) = Inline.inlineAlgorithm(alg,(SOME(functionTree),{DAE.NORM_INLINE()}));
         crefLst = CheckModel.algorithmOutputs(alg);
         size = listLength(crefLst);        
       then
@@ -1534,7 +1534,7 @@ algorithm
         
     case (DAE.ASSERT(condition=cond,message=msg,source=source),_,_,_,_)
       equation
-        (cond,source) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        (cond,source,_) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         BackendDAEUtil.checkAssertCondition(cond,msg);
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)});
       then
@@ -1551,7 +1551,7 @@ algorithm
         // constrain is fine when we do check model!
         b2 = Flags.getConfigBool(Flags.CHECK_MODEL);
         true = boolOr(b1, b2);
-        (functionArgs,source) = Inline.inlineExps(functionArgs,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        (functionArgs,source,_) = Inline.inlineExps(functionArgs,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_NORETCALL(DAE.CALL(functionName,functionArgs,DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),source)});
       then
         (inEquations,BackendDAE.ALGORITHM(0,alg,source)::inREquations,inIEquations);        

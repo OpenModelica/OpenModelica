@@ -8167,7 +8167,7 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
+  sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler,true);
   Debug.fcall(Flags.BLT_DUMP, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
@@ -8252,7 +8252,7 @@ protected
 algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   indexReductionMethod := getIndexReductionMethod(strindexReductionMethod);
-  outDAE := reduceIndexDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod);
+  outDAE := reduceIndexDAE(inDAE,inMatchingOptions,matchingAlgorithm,indexReductionMethod,true);
 end transformBackendDAE;
 
 protected function reduceIndexDAE
@@ -8264,6 +8264,7 @@ protected function reduceIndexDAE
   input Option<BackendDAE.MatchingOptions> inMatchingOptions;
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
+  input Boolean dolateinline;
   output BackendDAE.BackendDAE outDAE;
 protected
   list<BackendDAE.EqSystem> systs;
@@ -8274,7 +8275,7 @@ algorithm
   // reduce index
   (systs,shared,args) := mapReduceIndexDAE(systs,shared,inMatchingOptions,matchingAlgorithm,stateDeselection,{},{});
   // do late inline 
-  BackendDAE.DAE(systs,shared) := BackendDAEOptimize.lateInlineFunction(BackendDAE.DAE(systs,shared));
+  BackendDAE.DAE(systs,shared) := Debug.bcallret1(dolateinline,BackendDAEOptimize.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
   // do state selection
   (systs,shared) := mapStateSelectionDAE(systs,shared,args,stateDeselection,{});
   outDAE := BackendDAE.DAE(systs,shared);
@@ -8453,10 +8454,10 @@ algorithm
     case (_,(optModule,moduleStr,_)::rest,_,_)
       equation
         dae = optModule(inDAE);
-        dae1 = reduceIndexDAE(dae,NONE(),matchingAlgorithm,daeHandler);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
         Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae);
+        dae1 = reduceIndexDAE(dae,NONE(),matchingAlgorithm,daeHandler,false);
         (dae2,status) = pastoptimiseDAE(dae1,rest,matchingAlgorithm,daeHandler);
       then
         (dae2,status);
@@ -8559,7 +8560,7 @@ algorithm
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
 
   // transformation phase (matching and sorting using a index reduction method
-  sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler);
+  sode := reduceIndexDAE(optdae,NONE(),matchingAlgorithm,daeHandler,true);
   Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.bltdump, ("bltdump",sode));
 
   // past optimisation phase
