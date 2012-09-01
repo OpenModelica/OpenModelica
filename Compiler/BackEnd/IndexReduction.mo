@@ -102,26 +102,29 @@ algorithm
   matchcontinue (eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
     local
       list<Integer> eqns_1,changedeqns,unassignedStates,discEqns;
-      Integer contiEqn;
+      Integer contiEqn,size,newsize;
       Boolean b;
       array<Integer> ass1,ass2;
+      array<Boolean> barray;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
     case (_,_,_,_,_,_,_)
       equation
         true = intGt(listLength(eqns),0);        
-        BackendDAEUtil.profilerstart1();
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
         // the check may should first split the equations in independent subgraphs
         (b,eqns_1,unassignedStates,discEqns) = minimalStructurallySingularSystem(eqns,isyst,inAssignments1,inAssignments2);
-        (changedeqns,syst,shared,ass1,ass2,arg) =
-         pantelidesIndexReduction1(b,unassignedStates,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
+        size = BackendDAEUtil.systemSize(isyst);
+        barray = arrayCreate(size,false);
+        barray = List.fold(eqns_1,setBArray,barray);
+        (barray,syst,shared,ass1,ass2,arg) =
+         pantelidesIndexReduction1(b,unassignedStates,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,barray);
         // get from eqns indexes the scalar indexes
-        changedeqns = List.unionOnTrue(changedeqns, discEqns, intEq);
-        changedeqns = List.sort(changedeqns,intEq);
-        contiEqn = List.fold(changedeqns,intMin,listGet(eqns,1));
-        BackendDAEUtil.profilerstop1();
+        newsize = BackendDAEUtil.systemSize(syst);
+        barray = List.fold(discEqns,setBArray,barray);
+        barray = Util.arrayExpand(newsize-size, barray, true);
+        (changedeqns,contiEqn) = getChangedEqnsAndLowest(newsize,barray,{},size);
       then
        (changedeqns,contiEqn,syst,shared,ass1,ass2,arg);
     case ({},_,_,_,_,_,_)
@@ -137,6 +140,45 @@ algorithm
   end matchcontinue;
 end pantelidesIndexReduction;
 
+protected function getChangedEqnsAndLowest
+  input Integer index;
+  input array<Boolean> arr;
+  input list<Integer> iAcc;
+  input Integer iLowest;
+  output list<Integer> oAcc;
+  output Integer oLowest;
+algorithm
+  (oAcc,oLowest) := matchcontinue(index,arr,iAcc,iLowest)
+    local
+      list<Integer> acc;
+      Integer l;
+    case(_,_,_,_)
+      equation
+        true = intGt(index,0);
+        true = arr[index];
+        (acc,l) = getChangedEqnsAndLowest(index-1,arr,index::iAcc,index);
+      then
+        (acc,l);
+    case(_,_,_,_)
+      equation
+        true = intGt(index,0);
+        (acc,l) = getChangedEqnsAndLowest(index-1,arr,iAcc,iLowest);
+      then
+        (acc,l);
+    case(_,_,_,_)
+      then
+        (iAcc,iLowest);
+  end matchcontinue;
+end getChangedEqnsAndLowest;
+
+protected function setBArray
+  input Integer index;
+  input array<Boolean> iarray;
+  output array<Boolean> oarray;
+algorithm
+  oarray := arrayUpdate(iarray,index,true);
+end setBArray;
+
 public function pantelidesIndexReduction1
 "function: pantelidesIndexReduction1
   author: Frenkel TUD 2012-04
@@ -151,15 +193,16 @@ public function pantelidesIndexReduction1
   input array<Integer> inAssignments1;
   input array<Integer> inAssignments2;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  output list<Integer> changedEqns;
+  input array<Boolean> ibarray;
+  output array<Boolean> obarray;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2; 
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
-  (changedEqns,osyst,oshared,outAssignments1,outAssignments2,outArg):=
-  matchcontinue (b,unassignedStates,alleqns,eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
+  (obarray,osyst,oshared,outAssignments1,outAssignments2,outArg):=
+  matchcontinue (b,unassignedStates,alleqns,eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,ibarray)
     local
       list<BackendDAE.Var> varlst;
       list<Integer> changedeqns,eqns1;
@@ -170,8 +213,9 @@ algorithm
       BackendDAE.Shared shared;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
+      array<Boolean> barray;
            
-    case (true,_,_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn))
+    case (true,_,_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn),_)
       equation
         true = intGt(listLength(eqns),0);
         // get from scalar eqns indexes the indexes in the equation array
@@ -183,11 +227,11 @@ algorithm
         // diff Alias does not yet work proper
         //(syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedeqns,eqns1) = differentiateAliasEqns(isyst,ishared,eqns1,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,{},{});
         //(syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,changedeqns) = differentiateEqns(syst,shared,eqns1,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedeqns);
-        (syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,changedeqns) = differentiateEqns(isyst,ishared,eqns1,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,{});
+        (syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,barray) = differentiateEqns(isyst,ishared,eqns1,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,ibarray);
       then
-       (changedeqns,syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn));
+       (barray,syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn));
 
-    case (_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn))
+    case (_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn),_)
       equation
         false = intGt(listLength(eqns),0);
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
@@ -201,7 +245,7 @@ algorithm
       then
         fail(); 
 
-    case (false,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn))
+    case (false,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn),_)
       equation
         true = intGt(listLength(eqns),0);
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
@@ -469,8 +513,8 @@ protected function differentiateEqns
   input BackendDAE.StateOrder inStateOrd;
   input BackendDAE.ConstraintEquations inOrgEqnsLst;
   input array<list<Integer>> imapEqnIncRow;
-  input array<Integer> imapIncRowEqn;     
-  input list<Integer> inchangedEqns;
+  input array<Integer> imapIncRowEqn;
+  input array<Boolean> ibarray;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAss1;
@@ -478,11 +522,11 @@ protected function differentiateEqns
   output BackendDAE.StateOrder outStateOrd;
   output BackendDAE.ConstraintEquations outOrgEqnsLst;
   output array<list<Integer>> omapEqnIncRow;
-  output array<Integer> omapIncRowEqn;    
-  output list<Integer> outchangedEqns;
+  output array<Integer> omapIncRowEqn;
+  output array<Boolean> obarray;
 algorithm
-  (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn,outchangedEqns):=
-  matchcontinue (isyst,ishared,inEqns,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,inchangedEqns)
+  (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn,obarray):=
+  matchcontinue (isyst,ishared,inEqns,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,ibarray)
     local
       Integer e_1,e,eqnss,eqnss1;
       BackendDAE.Equation eqn,eqn_1;
@@ -498,7 +542,8 @@ algorithm
       BackendDAE.Matching matching;
       array<Integer> ass1,ass2,mapIncRowEqn;
       array<list<Integer>> mapEqnIncRow;
-    case (_,_,{},_,_,_,_,_,_,_) then (isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,inchangedEqns);
+      array<Boolean> barray;
+    case (_,_,{},_,_,_,_,_,_,_) then (isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,ibarray);
     case (syst as BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
@@ -520,21 +565,18 @@ algorithm
         ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
         eqnslst1 = BackendDAETransform.collectVarEqns(ilst,{},mt,arrayLength(mt));
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching);
-        eqnslst1 =  List.unique(listAppend(List.map1r(eqnslst1,arrayGet,imapIncRowEqn),eqnslst));
-        eqnslst1 = List.unique(e::eqnslst1);
+        eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
+        eqnslst1 =  List.unique(e::eqnslst1);
+        eqnslst1 = listAppend(eqnslst1,eqnslst);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," ","\n"));
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
         orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst,e,eqn);
-        // collect changed equations
-        // and new equations and current equation
-        eqnslst =  List.unique(List.flatten(List.map1r(e::eqnslst,arrayGet,mapEqnIncRow)));
-        changedEqns = listAppend(inchangedEqns, eqnslst);
-        // add assigned equations from variables become states       
-        changedEqns = List.unionOnTrue(changedEqns, ilst1, intEq);      
-        (syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedEqns) = differentiateEqns(syst,shared,es,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedEqns);
+        // collect changed equations     
+        barray = List.fold(ilst1,setBArrayCheckSize,ibarray);
+        (syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,barray) = differentiateEqns(syst,shared,es,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,barray);
       then
-        (syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedEqns);
+        (syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,barray);
     case (syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),_,(e :: _),_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
@@ -552,6 +594,25 @@ algorithm
         fail();
   end matchcontinue;
 end differentiateEqns;
+
+protected function setBArrayCheckSize
+  input Integer index;
+  input array<Boolean> iarray;
+  output array<Boolean> oarray;
+algorithm
+  oarray := matchcontinue(index,iarray)
+    local
+      Integer size;
+    case(_,_)
+      equation
+        true = intLe(index,arrayLength(iarray));
+        oarray = arrayUpdate(iarray,index,true);
+      then
+        oarray;
+    else
+      iarray;
+  end matchcontinue;
+end setBArrayCheckSize;
 
 protected function selectAliasState
 "function selectAliasState
