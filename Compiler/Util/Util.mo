@@ -787,14 +787,25 @@ public function arrayExpand "function: arrayExpand
   input Type_a v;
   output array<Type_a> newarr_1;
   replaceable type Type_a subtypeof Any;
-protected
-  Integer len,newlen;
-  array<Type_a> newarr;
 algorithm
-  len := arrayLength(arr);
-  newlen := n + len;
-  newarr := arrayCreate(newlen, v);
-  newarr_1 := arrayCopy(arr, newarr);
+  newarr_1 := matchcontinue(n,arr,v)
+    local
+      Integer len,newlen;
+      array<Type_a> newarr;
+    case (_,_,_)
+      equation
+       len = arrayLength(arr);
+       newlen = n + len;
+       newarr = arrayCreate(newlen, v);
+       newarr_1 = arrayCopy(arr, newarr);
+      then
+       newarr_1;
+    else
+      equation
+        print("Util.arrayExpand failed!\n");
+      then
+        fail();
+  end matchcontinue; 
 end arrayExpand;
 
 public function arrayExpandOnDemand

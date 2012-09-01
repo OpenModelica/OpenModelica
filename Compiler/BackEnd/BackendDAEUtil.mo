@@ -8124,11 +8124,9 @@ partial function matchingAlgorithmFunc
 end matchingAlgorithmFunc;
 
 partial function stateDeselectionFunc
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input BackendDAE.DAEHandlerArg inArg;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.BackendDAE inDAE;
+  input list<Option<BackendDAE.DAEHandlerArg>> inArgs;
+  output BackendDAE.BackendDAE outDAE;
 end stateDeselectionFunc;
 
 public function getSolvedSystem
@@ -8270,6 +8268,8 @@ protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
   list<Option<BackendDAE.DAEHandlerArg>> args;
+  String methodstr;
+  stateDeselectionFunc sDfunc;  
 algorithm
   BackendDAE.DAE(systs,shared) := inDAE;
   // reduce index
@@ -8277,7 +8277,11 @@ algorithm
   // do late inline 
   BackendDAE.DAE(systs,shared) := Debug.bcallret1(dolateinline,BackendDAEOptimize.lateInlineFunction,BackendDAE.DAE(systs,shared),BackendDAE.DAE(systs,shared));
   // do state selection
-  (systs,shared) := mapStateSelectionDAE(systs,shared,args,stateDeselection,{});
+  (_,_,sDfunc,methodstr) := stateDeselection;
+  BackendDAE.DAE(systs,shared) := sDfunc(BackendDAE.DAE(systs,shared),args);
+  Debug.execStat("transformDAE -> state selection " +& methodstr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  // sort assigned equations to blt form
+  (systs,shared) := mapSortEqnsDAE(systs,shared,{});
   outDAE := BackendDAE.DAE(systs,shared);
 end reduceIndexDAE;
 
@@ -8361,72 +8365,61 @@ algorithm
   end matchcontinue;
 end reduceIndexDAEWork;
 
-protected function mapStateSelectionDAE
-"function mapStateSelectionDAE 
-  Run the state selection Algorithm."
+protected function mapSortEqnsDAE
+"function mapSortEqnsDAE 
+  Run Tarjans Algorithm."
   input list<BackendDAE.EqSystem> isysts;
   input BackendDAE.Shared ishared;
-  input list<Option<BackendDAE.DAEHandlerArg>> iargs;
-  input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
   input list<BackendDAE.EqSystem> acc;
   output list<BackendDAE.EqSystem> osysts;
   output BackendDAE.Shared oshared;
 algorithm
-  (osysts,oshared) := match (isysts,ishared,iargs,stateDeselection,acc)
+  (osysts,oshared) := match (isysts,ishared,acc)
     local 
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
-      BackendDAE.DAEHandlerArg arg;
-      list<Option<BackendDAE.DAEHandlerArg>> args;
-    case ({},_,_,_,_) then (listReverse(acc),ishared);
-    case (syst::systs,_,NONE()::args,_,_)
+    case ({},_,_) then (listReverse(acc),ishared);
+    case ((syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_::_)))::systs,_,_)
       equation
-        (systs,shared) = mapStateSelectionDAE(systs,ishared,args,stateDeselection,syst::acc);
+        (systs,shared) = mapSortEqnsDAE(systs,ishared,syst::acc);
       then (systs,shared);
-    case (syst::systs,_,SOME(arg)::args,_,_)
+    case (syst::systs,_,_)
       equation
-        (syst,shared) = stateSelectionDAEWork(syst,ishared,arg,stateDeselection);
-        (systs,shared) = mapStateSelectionDAE(systs,shared,args,stateDeselection,syst::acc);
+        (syst,shared) = sortEqnsDAEWork(syst,ishared);
+        (systs,shared) = mapSortEqnsDAE(systs,shared,syst::acc);
       then (systs,shared);
   end match;
-end mapStateSelectionDAE;
+end mapSortEqnsDAE;
 
-protected function stateSelectionDAEWork
-"function stateSelectionDAEWork 
-  Run the state selection Algorithm."
+protected function sortEqnsDAEWork
+"function sortEqnsDAEWork 
+  Run Tarjans Algorithm."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input BackendDAE.DAEHandlerArg iarg;
-  input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
-  (osyst,oshared) := matchcontinue (isyst,ishared,iarg,stateDeselection)
+  (osyst,oshared) := matchcontinue (isyst,ishared)
     local 
-      String str,methodstr;
-      stateDeselectionFunc sDfunc;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;     
+      String str;
+      BackendDAE.EqSystem syst;   
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn; 
-    case (_,_,_,(_,_,sDfunc,methodstr))
+    case (_,_)
       equation
-        // state selection
-         (syst,shared) = sDfunc(isyst,ishared,iarg);
-        Debug.execStat("transformDAE -> state selection",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         // sorting algorithm
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
-        (syst,_) = BackendDAETransform.strongComponentsScalar(syst, shared,mapEqnIncRow,mapIncRowEqn);        
+        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
+        (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);        
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-      then (syst,shared);
+      then (syst,ishared);
     else
       equation
-        str = "Transformation Module failed!";
+        str = "Transformation Module sort components failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;
-end stateSelectionDAEWork;
+end sortEqnsDAEWork;
 
 protected function pastoptimiseDAE
 "function optimiseDAE 

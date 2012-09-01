@@ -811,13 +811,11 @@ public function noStateDeselection
 "function: noStateDeselection
   author: Frenkel TUD 2012-04
   use the index 1/0 system as it is"
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input BackendDAE.DAEHandlerArg inArg;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.BackendDAE inDAE;
+  input list<Option<BackendDAE.DAEHandlerArg>> inArgs;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
-  (osyst,oshared) := (isyst,ishared);
+  outDAE := inDAE;
 end noStateDeselection;
 
 
@@ -830,17 +828,69 @@ end noStateDeselection;
  *****************************************/
 
 public function dynamicStateSelection
-"function: dynamicStateSelection
+  input BackendDAE.BackendDAE inDAE;
+  input list<Option<BackendDAE.DAEHandlerArg>> inArgs;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  list<BackendDAE.EqSystem> systs;
+  BackendDAE.Shared shared;
+  HashTable2.HashTable ht;
+algorithm
+  BackendDAE.DAE(systs,shared) := inDAE;
+  // do state selection
+  ht := HashTable2.emptyHashTable();
+  (systs,shared,ht) := mapdynamicStateSelection(systs,shared,inArgs,{},ht);
+  shared := replaceDummyDerivativesShared(shared,ht);
+  outDAE := BackendDAE.DAE(systs,shared);  
+end dynamicStateSelection;
+
+protected function mapdynamicStateSelection
+"function mapdynamicStateSelection 
+  Run the state selection Algorithm."
+  input list<BackendDAE.EqSystem> isysts;
+  input BackendDAE.Shared ishared;
+  input list<Option<BackendDAE.DAEHandlerArg>> iargs;
+  input list<BackendDAE.EqSystem> acc;
+  input HashTable2.HashTable iHt;
+  output list<BackendDAE.EqSystem> osysts;
+  output BackendDAE.Shared oshared;
+  output HashTable2.HashTable oHt;
+algorithm
+  (osysts,oshared,oHt) := match (isysts,ishared,iargs,acc,iHt)
+    local 
+      BackendDAE.EqSystem syst;
+      list<BackendDAE.EqSystem> systs;
+      BackendDAE.Shared shared;
+      BackendDAE.DAEHandlerArg arg;
+      list<Option<BackendDAE.DAEHandlerArg>> args;
+      HashTable2.HashTable ht;
+    case ({},_,_,_,_) then (listReverse(acc),ishared,iHt);
+    case (syst::systs,_,NONE()::args,_,_)
+      equation
+        (systs,shared,ht) = mapdynamicStateSelection(systs,ishared,args,syst::acc,iHt);
+      then (systs,shared,ht);
+    case (syst::systs,_,SOME(arg)::args,_,_)
+      equation
+        (syst,shared,ht) = dynamicStateSelectionWork(syst,ishared,arg,iHt);
+        (systs,shared,ht) = mapdynamicStateSelection(systs,shared,args,syst::acc,ht);
+      then (systs,shared,ht);
+  end match;
+end mapdynamicStateSelection;
+
+protected function dynamicStateSelectionWork
+"function: dynamicStateSelectionWork
   author: Frenkel TUD 2012-04
   dynamic state deselect of the system."
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.DAEHandlerArg inArg;
+  input HashTable2.HashTable iHt;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
+  output HashTable2.HashTable oHt;
 algorithm
-  (osyst,oshared):=
-  matchcontinue (isyst,ishared,inArg)
+  (osyst,oshared,oHt):=
+  matchcontinue (isyst,ishared,inArg,iHt)
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -859,12 +909,13 @@ algorithm
       array<Integer> mapIncRowEqn;  
       list<BackendDAE.Equation> enqnslst;
       list<Integer> changedeqns;
+      HashTable2.HashTable ht;
     // no Index Reduction performed (OrgEqnsLst is Empty)
-    case (_,_,(so,{},mapEqnIncRow,mapIncRowEqn))
+    case (_,_,(so,{},mapEqnIncRow,mapIncRowEqn),_)
      then 
-       (isyst,ishared);
+       (isyst,ishared,iHt);
     // Index Reduction performed
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=v,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),BackendDAE.SHARED(functionTree=funcs),(so,orgEqnsLst,_,_))
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=v,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),BackendDAE.SHARED(functionTree=funcs),(so,orgEqnsLst,_,_),_)
       equation
         // do late Inline also in orgeqnslst
         orgEqnsLst = inlineOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),{});
@@ -900,7 +951,7 @@ algorithm
         vec1 = Util.arrayExpand(ne1-ne, ass1, -1);
         vec2 = Util.arrayExpand(nv1-nv, ass2, -1);
         syst = BackendVariable.expandVarsDAE(ndummystates,syst);
-        (syst,shared) = addDummyStates(dummyStates,syst,shared);
+        (syst,shared,ht) = addDummyStates(dummyStates,syst,shared,iHt);
         (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
         Debug.fcall(Flags.BLT_DUMP, print, "Full System:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);
@@ -911,14 +962,14 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "Final System with DummyStates:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);       
      then 
-       (syst,shared);
+       (syst,shared,ht);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.dynamicStateSelection failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.dynamicStateSelectionWork failed!"});
       then
         fail();
   end matchcontinue;
-end dynamicStateSelection;
+end dynamicStateSelectionWork;
 
 protected function countOrgEqns
 "function: countOrgEqns
@@ -3049,36 +3100,30 @@ protected function addDummyStates
   input list<DAE.ComponentRef> dummyStates;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
+  input HashTable2.HashTable iHt;
   output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;  
+  output BackendDAE.Shared oshared;
+  output HashTable2.HashTable oHt;  
 algorithm
-  (osyst,oshared) := 
-  match (dummyStates,isyst,ishared)
+  (osyst,oshared,oHt) := 
+  match (dummyStates,isyst,ishared,iHt)
     local
-      DAE.ComponentRef cr;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-      list<DAE.ComponentRef> rest;
-      Integer i,e;
-      list<Integer> changedeqns;
-      BackendDAE.Var v;
       HashTable2.HashTable ht;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;     
-    case ({},_,_) then (isyst,ishared);
-    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=om,mT=omT,matching=matching),_)
+    case ({},_,_,_) then (isyst,ishared,iHt);
+    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=om,mT=omT,matching=matching),_,_)
       equation
-        ht = HashTable2.emptyHashTable();
         // create dummy_der vars and change deselected states to dummy states
-        ((vars,ht)) = List.fold(dummyStates,makeDummyVarandDummyDerivative,(vars,ht)); 
+        ((vars,ht)) = List.fold(dummyStates,makeDummyVarandDummyDerivative,(vars,iHt)); 
         (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,replaceDummyDerivatives,ht);
-        shared = replaceDummyDerivativesShared(ishared,ht);
         syst = BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching);
       then
-        (syst,shared);
+        (syst,ishared,ht);
   end match;
 end addDummyStates;
 

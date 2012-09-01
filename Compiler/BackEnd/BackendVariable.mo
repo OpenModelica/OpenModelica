@@ -2042,7 +2042,7 @@ algorithm
         BackendDAE.VARIABLE_ARRAY(n_1,size,arr_1);
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),v)
       equation
-        (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
+        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
         rexpandsize = rsize*. 0.4;
         expandsize = realInt(rexpandsize);
@@ -2053,9 +2053,14 @@ algorithm
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(v));
       then
         BackendDAE.VARIABLE_ARRAY(n_1,newsize,arr_2);
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size),_)
+      equation
+        print("- BackendVariable.vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& "\n");
+      then
+        fail();
     case (_,_)
       equation
-        print("- BackendVariable.vararrayAdd failed\n");
+        print("- BackendVariable.vararrayAdd failed!\n");
       then
         fail();
   end matchcontinue;
