@@ -44,6 +44,7 @@ ClassLoader.mo \
 ComponentReference.mo \
 Connect.mo \
 Connect2.mo \
+ConnectCheck.mo \
 ConnectUtil.mo \
 ConnectUtil2.mo \
 ConnectionGraph.mo \

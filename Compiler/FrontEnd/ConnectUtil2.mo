@@ -46,6 +46,7 @@ public import SCode;
 public import Types;
 
 protected import ComponentReference;
+protected import ConnectCheck;
 protected import Config;
 protected import DAEUtil;
 protected import Debug;
@@ -75,8 +76,8 @@ public function makeBranch
   input Absyn.Info inInfo;
   output Connections outConnections;
 algorithm
-  checkCrefIsValidNode(inNode1, "Connections.branch", true, inInfo);
-  checkCrefIsValidNode(inNode2, "Connections.branch", false, inInfo);
+  ConnectCheck.crefIsValidNode(inNode1, "Connections.branch", true, inInfo);
+  ConnectCheck.crefIsValidNode(inNode2, "Connections.branch", false, inInfo);
   outConnections := Connect2.NO_CONNECTIONS();
 end makeBranch;
 
@@ -85,7 +86,7 @@ public function makeRoot
   input Absyn.Info inInfo;
   output Connections outConnections;
 algorithm
-  checkCrefIsValidNode(inNode, "Connections.root", true, inInfo);
+  ConnectCheck.crefIsValidNode(inNode, "Connections.root", true, inInfo);
   outConnections := Connect2.NO_CONNECTIONS();
 end makeRoot;
 
@@ -95,65 +96,9 @@ public function makePotentialRoot
   input Absyn.Info inInfo;
   output Connections outConnections;
 algorithm
-  checkCrefIsValidNode(inNode, "Connections.potentialRoot", true, inInfo);
+  ConnectCheck.crefIsValidNode(inNode, "Connections.potentialRoot", true, inInfo);
   outConnections := Connect2.NO_CONNECTIONS();
 end makePotentialRoot;
-
-protected function checkCrefIsValidNode
-  "A node given as argument to branch, root or potentialRoot must be on the form
-   A.R, where A is a connector and R and overdetermined type/record. This
-   function checks that a cref is a valid node."
-  input DAE.ComponentRef inNode;
-  input String inFuncName;
-  input Boolean isFirst;
-  input Absyn.Info inInfo;
-algorithm
-  _ := match(inNode, inFuncName, isFirst, inInfo)
-    local
-      DAE.Type ty1, ty2;
-      
-    // TODO: This is actually not working as it should, since the cref will have
-    // been prefixed already. Need to check this before prefixing somehow.
-    case (DAE.CREF_QUAL(identType = ty1, 
-        componentRef = DAE.CREF_IDENT(identType = ty2)), _, _, _)
-      equation
-        checkCrefIsValidNode2(ty1, ty2, inFuncName, isFirst, inInfo);
-      then
-        ();
-
-    else
-      equation
-        Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_BRANCH_FIRST,Error.INVALID_ARGUMENT_TYPE_BRANCH_SECOND), {inFuncName}, inInfo);
-      then
-        ();
-
-  end match;
-end checkCrefIsValidNode;
-
-protected function checkCrefIsValidNode2
-  input DAE.Type inType1;
-  input DAE.Type inType2;
-  input String inFuncName;
-  input Boolean isFirst;
-  input Absyn.Info inInfo;
-algorithm
-  _ := matchcontinue(inType1, inType2, inFuncName, isFirst, inInfo)
-    case (_, _, _, _, _)
-      equation
-        true = Types.isComplexConnector(inType1);
-        true = Types.isOverdeterminedType(inType2);
-      then
-        ();
-
-    else
-      equation
-        Error.addSourceMessage(Util.if_(isFirst,Error.INVALID_ARGUMENT_TYPE_OVERDET_FIRST,Error.INVALID_ARGUMENT_TYPE_OVERDET_SECOND),
-          {inFuncName}, inInfo);
-      then
-        fail();
-
-  end matchcontinue;
-end checkCrefIsValidNode2;
 
 protected function makeConnector
   input DAE.ComponentRef inName;
@@ -200,6 +145,29 @@ algorithm
   end match;
 end faceEqual;
 
+public function connectorTypeEqual
+  input ConnectorType inType1;
+  input ConnectorType inType2;
+  output Boolean outEqual;
+algorithm
+  outEqual := match(inType1, inType2)
+    case (Connect2.POTENTIAL(), Connect2.POTENTIAL()) then true;
+    case (Connect2.FLOW(), Connect2.FLOW()) then true;
+    case (Connect2.STREAM(_), Connect2.STREAM(_)) then true;
+    else false;
+  end match;
+end connectorTypeEqual;
+
+public function isPotential
+  input ConnectorType inType;
+  output Boolean outIsPotential;
+algorithm
+  outIsPotential := match(inType)
+    case Connect2.POTENTIAL() then true;
+    else false;
+  end match;
+end isPotential;
+
 public function connectorStr
   input Connector inConnector;
   output String outString;
@@ -227,7 +195,7 @@ algorithm
   end match;
 end faceStr;
 
-protected function connectorTypeStr
+public function connectorTypeStr
   input ConnectorType inConnectorType;
   output String outString;
 algorithm
@@ -316,6 +284,8 @@ protected
   Connector lhs, rhs;
   Connection conn;
 algorithm
+  ConnectCheck.connectorCompatibility(inLhsName, inLhsConnectorType,
+    inRhsName, inRhsConnectorType, inInfo);
   lhs := makeConnector(inLhsName, inLhsFace, inLhsConnectorType);
   rhs := makeConnector(inRhsName, inRhsFace, inRhsConnectorType);
   conn := makeConnection(lhs, rhs, inInfo);
