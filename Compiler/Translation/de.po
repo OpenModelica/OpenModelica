@@ -16,21 +16,25 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n!=1);\n"
+"X-Language: de_DE\n"
+"X-Source-Language: C\n"
 
 #: ../Util/Error.mo:132
 #, c-format
 msgid "Class %s not found in scope %s."
-msgstr ""
+msgstr "Klasse %s konnte nicht im Geltungsbereich von %s gefunden werden."
 
 #: ../Util/Error.mo:134
 #, c-format
 msgid "Class %s not found in scope %s while instantiating %s."
 msgstr ""
+"Klasse %s konnte nicht im Geltungsbereich von %s gefunden werden während der "
+"Instanziierung von %s."
 
 #: ../Util/Error.mo:136
 #, c-format
 msgid "Variable %s not found in scope %s"
-msgstr ""
+msgstr "Variable %s konnte nicht im Geltungsbereich von %s gefunden werden"
 
 #: ../Util/Error.mo:138
 #, c-format
@@ -81,32 +85,32 @@ msgstr ""
 #: ../Util/Error.mo:156
 #, c-format
 msgid "Division by zero in %s / %s"
-msgstr ""
+msgstr "Division durch Null in %s / %s"
 
 #: ../Util/Error.mo:158
 #, c-format
 msgid "Modulo by zero in mod(%s,%s)"
-msgstr ""
+msgstr "Modulo Null in mod(%s,%s)"
 
 #: ../Util/Error.mo:160
 #, c-format
 msgid "Second argument in rem is zero in rem(%s,%s)"
-msgstr ""
+msgstr "Das zweite Argument in rem ist Null in rem(%s,%s)"
 
 #: ../Util/Error.mo:162
 msgid "Error reading simulation result."
-msgstr ""
+msgstr "Fehler beim Lesen des Simulationsergebnisses."
 
 #: ../Util/Error.mo:164
 #, c-format
 msgid "Class %s not found"
-msgstr ""
+msgstr "Klasse %s nicht gefunden"
 
 #: ../Util/Error.mo:166 ../runtime/printimpl.c:270 ../runtime/printimpl.c:289
 #: ../runtime/systemimpl.c:376 ../runtime/systemimpl.c:394
 #, c-format
 msgid "Error writing to file %s."
-msgstr ""
+msgstr "Fehler beim Schreiben auf Datei %s."
 
 #: ../Util/Error.mo:168
 #, c-format
@@ -121,16 +125,16 @@ msgstr ""
 #: ../Util/Error.mo:172
 #, c-format
 msgid "Variable %s has no value."
-msgstr ""
+msgstr "Variable %s hat keinen Wert."
 
 #: ../Util/Error.mo:174
 msgid "Negative value as argument to sqrt."
-msgstr ""
+msgstr "Negativer Wert als Argument von sqrt (Wurzel)."
 
 #: ../Util/Error.mo:176
 #, c-format
 msgid "No constant value for variable %s in scope %s."
-msgstr ""
+msgstr "Kein konstanter Wert für Variable %s im Geltungsbereich von %s."
 
 #: ../Util/Error.mo:178
 #, c-format
@@ -143,6 +147,7 @@ msgstr ""
 #, c-format
 msgid "Different number of equations in the branches of the if equation: %s"
 msgstr ""
+"Unterschiedliche Anzahl an Gleichungen in den Zweigen der if-equation: %s"
 
 #: ../Util/Error.mo:182
 #, c-format
@@ -150,6 +155,8 @@ msgid ""
 "Too few equations, underdetermined system. The model has %s equation(s) and "
 "%s variable(s)"
 msgstr ""
+"Zu wenige Gleichungen - unterbestimmtes System. Das Modell hat %s "
+"Gleichung(en) und %s Variable(n)"
 
 #: ../Util/Error.mo:184
 #, c-format
@@ -157,6 +164,8 @@ msgid ""
 "Too many equations, overdetermined system. The model has %s equation(s) and "
 "%s variable(s)"
 msgstr ""
+"Zu viele Gleichungen - überbestimmtes System. Das Modell hat %s "
+"Gleichung(en) und %s Variable(n)"
 
 #: ../Util/Error.mo:186
 #, c-format
@@ -164,6 +173,8 @@ msgid ""
 "Model is structurally singular, error found sorting equations %s for "
 "variables %s"
 msgstr ""
+"Das Modell ist strukturell singulär. Fehler wurde durch Sortieren der "
+"Gleichungen %s für Variable %s gefunden"
 
 #: ../Util/Error.mo:188
 #, c-format
@@ -173,11 +184,11 @@ msgstr ""
 #: ../Util/Error.mo:190
 #, c-format
 msgid "Derivative of expression %s is non-existent"
-msgstr ""
+msgstr "Ableitung des Ausdrucks %s ist nicht existent"
 
 #: ../Util/Error.mo:192
 msgid "No classes are loaded."
-msgstr ""
+msgstr "Keine Klassen geladen."
 
 #: ../Util/Error.mo:194
 #, c-format
@@ -187,12 +198,12 @@ msgstr ""
 #: ../Util/Error.mo:196
 #, c-format
 msgid "Base class %s not found in scope %s"
-msgstr ""
+msgstr "Basis Klasse %s wurd in Geltungsbereich %s nicht gefunden"
 
 #: ../Util/Error.mo:198
 #, c-format
 msgid "Invalid redeclaration of %s %s as %s."
-msgstr ""
+msgstr "Ungültige Redeklaration von %s %s als %s."
 
 #: ../Util/Error.mo:200
 msgid "Trying to redeclare %1 %2 but %1 not declared as replaceable"
@@ -209,16 +220,19 @@ msgid ""
 "Array dimension mismatch, expression %s has type %s, expected array "
 "dimensions [%s]"
 msgstr ""
+"Abweichung in der Arraydimension. Ausdruck %s hat den Typ %s, erwartete "
+"Arraydimension [%s]"
 
 #: ../Util/Error.mo:206
 #, c-format
 msgid "Array dimension must be integer expression in %s which has type %s"
 msgstr ""
+"Arraydimension muss ganzzahliger Ausdruck in %s sein, der den Typ %s hat"
 
 #: ../Util/Error.mo:208
 #, c-format
 msgid "Type mismatch in equation %s of type %s"
-msgstr ""
+msgstr "Unterschiedliche Typen in Gleichung %s von Typ %s"
 
 #: ../Util/Error.mo:210
 #, c-format
@@ -228,12 +242,12 @@ msgstr ""
 #: ../Util/Error.mo:212
 #, c-format
 msgid "Tuple assignment only allowed when rhs is function call (in %s)"
-msgstr ""
+msgstr "Tupelzuweisung nur erlaubt wenn RHS ein Funktionsaufruf ist (in %s)"
 
 #: ../Util/Error.mo:214
 #, c-format
 msgid "Illegal connection: component %s is not a connector."
-msgstr ""
+msgstr "Ungültige Verbindung: Komponente %s ist kein Connector."
 
 #: ../Util/Error.mo:216
 msgid "Cannot connect %1 component %2 to non-%1 component %3"
@@ -247,12 +261,12 @@ msgstr ""
 #: ../Util/Error.mo:220
 #, c-format
 msgid "Wrong type on %s, expected %s"
-msgstr ""
+msgstr "Falscher typ von %s, erwarte %s"
 
 #: ../Util/Error.mo:222
 #, c-format
 msgid "Attempt to modify protected element %s"
-msgstr ""
+msgstr "Versuche geschütztes Element %s zu verändern"
 
 #: ../Util/Error.mo:224
 #, c-format
@@ -282,7 +296,7 @@ msgstr ""
 #: ../Util/Error.mo:234
 #, c-format
 msgid "Internal error %s"
-msgstr ""
+msgstr "Interner Fehler %s"
 
 #: ../Util/Error.mo:236
 #, c-format
@@ -314,6 +328,7 @@ msgstr ""
 #, c-format
 msgid "Wrong type or wrong number of arguments to %s (in component %s)"
 msgstr ""
+"Falscher Typ oder falsche Anzahl an Argumenten für %s (in Komponente %s)"
 
 #: ../Util/Error.mo:246
 #, c-format
@@ -346,16 +361,17 @@ msgid ""
 "No matching function found for %s in component %s\n"
 "candidates are %s"
 msgstr ""
+"Keine passende Funktion für %s in Komponente %s gefunden. Kandidaten sind %s"
 
 #: ../Util/Error.mo:258
 #, c-format
 msgid "No matching function found for %s"
-msgstr ""
+msgstr "Keine passende Funktion für %s gefunden"
 
 #: ../Util/Error.mo:260
 #, c-format
 msgid "Component %s in function is neither input nor output"
-msgstr ""
+msgstr "Komponente %s in Funktion ist weder Eingang noch  Ausgang"
 
 #: ../Util/Error.mo:262
 #, c-format
@@ -365,7 +381,7 @@ msgstr ""
 #: ../Util/Error.mo:264
 #, c-format
 msgid "No such argument %s in component %s"
-msgstr ""
+msgstr "Argument %s nicht in Komponente %s vorhanden"
 
 #: ../Util/Error.mo:266
 #, c-format
@@ -389,7 +405,7 @@ msgstr ""
 #: ../Util/Error.mo:272
 #, c-format
 msgid "Cannot resolve type of expression %s in component %s"
-msgstr ""
+msgstr "Kann Typ des Ausdrucks %s in Komponente %s nicht auflösen"
 
 #: ../Util/Error.mo:274
 #, c-format
@@ -426,7 +442,7 @@ msgstr ""
 #: ../Util/Error.mo:284
 #, c-format
 msgid "Variable %s in package %s is not constant"
-msgstr ""
+msgstr "Variable %s in Paket %s ist nicht konstant"
 
 #: ../Util/Error.mo:286
 #, c-format
@@ -458,7 +474,7 @@ msgstr ""
 #: ../Util/Error.mo:296
 #, c-format
 msgid "Index out of bounds. Addressing position: %s, while array length is: %s"
-msgstr ""
+msgstr "Index außerhalb der Grenzen. Position: %s, Arraylänge: %s"
 
 #: ../Util/Error.mo:298
 #, c-format
@@ -485,7 +501,7 @@ msgstr ""
 #: ../Util/Error.mo:306
 #, c-format
 msgid "Assertion failed in function, message: %s "
-msgstr ""
+msgstr "Behauptung in Funktion fehlgeschlagen: %s"
 
 #: ../Util/Error.mo:308
 #, c-format
@@ -564,7 +580,7 @@ msgstr ""
 
 #: ../Util/Error.mo:330
 msgid "Nested when statements are not allowed."
-msgstr ""
+msgstr "Geschachtelte when-Anweisungen sind nicht erlaubt."
 
 #: ../Util/Error.mo:332
 #, c-format
@@ -688,7 +704,7 @@ msgstr ""
 #: ../Util/Error.mo:368
 #, c-format
 msgid "Wrong number of arguments to %s"
-msgstr ""
+msgstr "Falsche Anzahl an Argumenten für %s"
 
 #: ../Util/Error.mo:370
 #, c-format
@@ -730,7 +746,7 @@ msgstr ""
 #: ../Util/Error.mo:384
 #, c-format
 msgid "Element is not allowed in function context: %s"
-msgstr ""
+msgstr "Element ist in Funktionskontext nicht erlaubt: %s"
 
 #: ../Util/Error.mo:386
 #, c-format
@@ -756,6 +772,8 @@ msgstr ""
 #, c-format
 msgid "An element with name %s is already declared in this scope."
 msgstr ""
+"Ein Element mit dem Namen %s ist in diesem Geltungsvereich bereits "
+"deklariert."
 
 #: ../Util/Error.mo:396
 #, c-format
@@ -777,7 +795,7 @@ msgstr ""
 #: ../Util/Error.mo:402
 #, c-format
 msgid "Function %s not found in scope %s."
-msgstr ""
+msgstr "Funktion %s wurde im Geltungsbereich %s nicht gefunden."
 
 #: ../Util/Error.mo:404
 #, c-format
@@ -787,7 +805,7 @@ msgstr ""
 #: ../Util/Error.mo:406
 #, c-format
 msgid "Equations are not allowed in %s."
-msgstr ""
+msgstr "Gleichungen sind in %s nicht erlaubt."
 
 #: ../Util/Error.mo:408
 #, c-format
@@ -799,7 +817,7 @@ msgstr ""
 #: ../Util/Error.mo:410
 #, c-format
 msgid "Invalid external object %s, %s."
-msgstr ""
+msgstr "Ungültiges externes Objekt %s, %s."
 
 #: ../Util/Error.mo:412
 #, c-format
@@ -862,6 +880,7 @@ msgid "Linear solver (%s) returned invalid input for linear system %s."
 msgstr ""
 
 #: ../Util/Error.mo:434
+#, qt-format
 msgid ""
 "When solving linear system %1\n"
 "  U(%2,%2) = 0.0, which means system is singular for variable %3."
@@ -924,7 +943,7 @@ msgstr ""
 #: ../Util/Error.mo:454
 #, c-format
 msgid "Unused input variable %s in function %s."
-msgstr ""
+msgstr "Unbenutze Eingangsvariable %s in Funktion %s."
 
 #: ../Util/Error.mo:456
 #, c-format
@@ -1009,12 +1028,12 @@ msgstr ""
 #: ../Util/Error.mo:479
 #, c-format
 msgid "Stack overflow occurred while evaluating %s"
-msgstr ""
+msgstr "Stacküberlauf währen der Auswertung von %s aufgetreten."
 
 #: ../Util/Error.mo:481
 #, c-format
 msgid "Unknown debug flag %s."
-msgstr ""
+msgstr "Unbekanntes Debug Flag %s."
 
 #: ../Util/Error.mo:483
 #, c-format
@@ -1043,7 +1062,7 @@ msgstr ""
 #: ../Util/Error.mo:491
 #, c-format
 msgid "Unknown option %s."
-msgstr ""
+msgstr "Unbekannte Option %s."
 
 #: ../Util/Error.mo:493
 msgid "Subscripted modifier is illegal."
@@ -1300,16 +1319,21 @@ msgid ""
 "The system of units is inconsistent in term %s with the units %s and %s "
 "respectively."
 msgstr ""
+"Das Einheitensystem ist im Term %s inkonsistent mit den jeweiligen Einheiten "
+"%s und %s."
 
 #: ../Util/Error.mo:584
 msgid "The system of units is consistent."
-msgstr ""
+msgstr "Das Einheitensystem ist konsistent."
 
 #: ../Util/Error.mo:586
 msgid ""
 "The system of units is incomplete. Please provide unit information to the "
 "model by e.g. using types from the SIunits package."
 msgstr ""
+"Das Einheitensystem ist unvollständig. Bitte stellen Sie "
+"Einheiteninformationen im Modell bereit, z.B. durch Beutzung der Typen im "
+"SIunits Paket."
 
 #: ../Util/Error.mo:588
 #, c-format
@@ -1347,6 +1371,8 @@ msgstr ""
 #, c-format
 msgid "Library %s was not loaded but is marked as used by model %s."
 msgstr ""
+"Bibliothek %s wurde nicht geladen, ist jedoch im Modell %s als benutzt "
+"markiert."
 
 #: ../Util/Error.mo:602
 #, c-format
@@ -1354,12 +1380,15 @@ msgid ""
 "The maximum recursion depth was reached, probably due to mutual recursion. "
 "The current scope: %s."
 msgstr ""
+"Die Maximale Rekursionstiefe wurde erreicht, wahrscheinlich durch "
+"gegenseitige Rekursion. Der aktuelle Geltungsbereich ist %s."
 
 #: ../Util/Error.mo:605
 #, c-format
 msgid ""
 "Local variable '%s' shadows input or result variables in a match-expression."
 msgstr ""
+"Lokale Variable '%s' überdeckt Eingangs- oder Ergebnisvariablen in einem match-Ausdruck."
 
 #: ../Util/Error.mo:607
 #, c-format
@@ -1498,7 +1527,7 @@ msgstr ""
 #: ../Util/Error.mo:653
 #, c-format
 msgid "Unused local variable: %s."
-msgstr ""
+msgstr "Unbenutzte lokale Variable: %s."
 
 #: ../Util/Error.mo:655
 #, c-format
@@ -1759,7 +1788,8 @@ msgstr ""
 #: ../Util/Flags.mo:476
 msgid "Sets debug flags. Use +help=debug to see available flags."
 msgstr ""
-"Stellt Debug-Flags. Verwenden Sie +help=debug, um verfügbare Flags zu sehen."
+"Setzt die Debug-Flags. Verwenden Sie +help=debug, um verfügbare Flags zu "
+"sehen."
 
 #: ../Util/Flags.mo:480
 msgid "Displays the help text."
@@ -1771,15 +1801,15 @@ msgstr "Wird verwendet, um die Tests deterministisch zu machen."
 
 #: ../Util/Flags.mo:486
 msgid "Print the version and exit."
-msgstr "Drucken Sie die Version aus und beende."
+msgstr "Gibt die Version aus und beendet."
 
 #: ../Util/Flags.mo:489
 msgid "Sets the target compiler to use."
-msgstr "Setzt den Ziel-Compiler zu verwenden."
+msgstr "Setzt den zu verwendenden Ziel-Compiler."
 
 #: ../Util/Flags.mo:493
 msgid "Sets the grammar and semantics to accept."
-msgstr "Setzt die Grammatik und Semantik zu akzeptieren."
+msgstr "Setzt die zu akzeptierende Grammatik und Semantik."
 
 #: ../Util/Flags.mo:496
 msgid "Sets the annotation version that should be used."
@@ -1787,11 +1817,11 @@ msgstr "Setzt die Annotation-Version, die verwendet werden sollten."
 
 #: ../Util/Flags.mo:501
 msgid "Sets the language standard that should be used."
-msgstr "Setzt die Sprache Norm, die verwendet werden sollten."
+msgstr "Setzt die Sprache Norm, die verwendet werden sollte."
 
 #: ../Util/Flags.mo:504
 msgid "Show error messages immediately when they happen."
-msgstr "Zeige Fehlermeldungen sofort, wenn sie passieren."
+msgstr "Zeige Fehlermeldungen sofort wenn sie passieren."
 
 #: ../Util/Flags.mo:507
 msgid "Show annotations in the flattened code."
@@ -2018,7 +2048,7 @@ msgstr ""
 
 #: ../Util/Flags.mo:618
 msgid "Sets the target language for the code generation"
-msgstr "Setzt die Zielsprache für die Code-Generierung."
+msgstr "Setzt die Zielsprache für die Codegenerierung"
 
 #: ../Util/Flags.mo:621
 msgid "Orders connect equations alphabetically if set."
@@ -2030,20 +2060,21 @@ msgstr "Druckt zusätzliche Typinformationen falls eingestellt."
 
 #: ../Util/Flags.mo:627
 msgid "Sets whether to split arrays or not."
-msgstr "Legt fest, ob Arrays aufgeteilt oder nicht."
+msgstr "Legt fest, ob Arrays aufgeteilt werden oder nicht."
 
 #: ../Util/Flags.mo:636
 msgid "Turns on silent mode."
-msgstr "Schaltet stumm geschaltet wurde."
+msgstr "Schaltet stillen Modus ein."
 
 #: ../Util/Flags.mo:639
 msgid "Sets the name of the corba session if +d=interactiveCorba is used."
 msgstr ""
-"Legt den Namen des CORBA-Sitzung, wenn +d=interactiveCorba verwendet wird."
+"Legt den Namen der CORBA-Sitzung fest, wenn +d=interactiveCorba verwendet "
+"wird."
 
 #: ../Util/Flags.mo:642
 msgid "Sets the number of processors to use."
-msgstr "Legt die Anzahl der Prozessoren zu nutzen."
+msgstr "Legt die Anzahl der zu benutzenden Prozessoren fest."
 
 #: ../Util/Flags.mo:645
 msgid "Sets the latency for parallel execution."
@@ -2051,7 +2082,7 @@ msgstr ""
 
 #: ../Util/Flags.mo:648
 msgid "Sets the bandwidth for parallel execution."
-msgstr "Legt die Bandbreite für die parallele Ausführung."
+msgstr "Legt die Bandbreite für die parallele Ausführung fest."
 
 #: ../Util/Flags.mo:651
 msgid "Instantiate the class given by the fully qualified path."
@@ -2062,16 +2093,16 @@ msgid ""
 "Sets the vectorization limit, arrays and matrices larger than this will not "
 "be vectorized."
 msgstr ""
-"Setzt die Vektorisierung liegt, wird von Arrays und Matrizen größer als "
-"dieser Wert nicht vektorisiert werden."
+"Setzt die Vektorisierungsgrenze. Arrays und Matrizen größer als dieser Wert "
+"werden nicht vektorisiert."
 
 #: ../Util/Flags.mo:657
 msgid "Turns on simulation code generation."
-msgstr "Schaltet die Simulation Codegenerierung."
+msgstr "Schaltet die Simulationscodegenerierung ein."
 
 #: ../Util/Flags.mo:660
 msgid "Sets whether to evaluate parameters in annotations or not."
-msgstr "Legt fest, ob Parameter in Annotationen zu bewerten ist oder nicht."
+msgstr "Legt fest, ob Parameter in Annotationen zu bewerten sind oder nicht."
 
 #: ../Util/Flags.mo:663
 msgid "Set when checkModel is used to turn on specific features for checking."
@@ -2091,15 +2122,15 @@ msgstr ""
 
 #: ../Util/Flags.mo:685
 msgid "Sets the reduction method to be used."
-msgstr "Setzt die Methode zur Reduktion verwendet werden."
+msgstr "Legt die Methode zur Reduktion fest."
 
 #: ../Util/Flags.mo:688
 msgid ""
 "Defines whether plot commands should open OMPlot or show the list of "
 "arguments that would have been sent to OMPlot."
 msgstr ""
-"Legt fest, ob Plot-Befehle sollten OMPlot öffnen oder zeigen die Liste der "
-"Argumente, die zur OMPlot Befehl gesendet worden wäre."
+"Legt fest, ob Plot-Befehle von OMPlot geöffnet werden oder zeigt die Liste "
+"der Argumente, die zum OMPlot Befehl gesendet worden wäre."
 
 #: ../Util/Flags.mo:691
 msgid "Override the locale from the environment."
@@ -2265,7 +2296,7 @@ msgstr "Gültige Optionen:"
 
 #: ../Main/Main.mo:621
 msgid "File does not exist: "
-msgstr ""
+msgstr "Datei existiert nicht:"
 
 #: ../Main/Main.mo:1142
 msgid "You are trying to run OpenModelica as root.\n"
@@ -2297,7 +2328,7 @@ msgstr ""
 #: ../runtime/SimulationResults.c:108 ../runtime/SimulationResults.c:138
 #, c-format
 msgid "%s not found in %s\n"
-msgstr ""
+msgstr "%s nicht in %s gefunden"
 
 #: ../runtime/SimulationResults.c:121
 #, c-format
@@ -2307,7 +2338,7 @@ msgstr ""
 #: ../runtime/SimulationResults.c:154
 #, c-format
 msgid "%s not defined at time %s\n"
-msgstr ""
+msgstr "%s zur Zeit %s nicht definiert"
 
 #: ../runtime/SimulationResults.c:168
 #, c-format
@@ -2349,16 +2380,16 @@ msgstr ""
 
 #: ../runtime/SimulationResultsCmp.c:701
 msgid "Cannot write result file!\n"
-msgstr ""
+msgstr "Kann Ergebnisdatei nicht schreiben!"
 
 #: ../runtime/SimulationResultsCmp.c:712
 msgid "Files not Equal\n"
-msgstr ""
+msgstr "Dateien sind nicht gleich"
 
 #: ../runtime/systemimpl.c:313
 #, c-format
 msgid "Error opening file: %s."
-msgstr ""
+msgstr "Fehler beim öffnen der Datei: %s."
 
 #: ../runtime/systemimpl.c:327
 #, c-format
@@ -2409,17 +2440,17 @@ msgstr ""
 #: ../runtime/systemimpl.c:1359
 #, c-format
 msgid "Unknown uri: %s"
-msgstr ""
+msgstr "Unbekannte URI: %s"
 
 #: ../runtime/systemimpl.c:1618
 #, c-format
 msgid "freopen(%s,%s,%s) failed: %s"
-msgstr ""
+msgstr "freopen(%s,%s,%s) fehlgeschlagen: %s"
 
 #: ../runtime/systemimpl.c:1647 ../runtime/systemimpl.c:1657
 #, c-format
 msgid "iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"
-msgstr ""
+msgstr "iconv(\"%s\",to=\"%s\",from=\"%s\") fehlgeschlagen: %s"
 
 #: ../runtime/systemimpl.c:1663
 #, c-format
