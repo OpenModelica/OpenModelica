@@ -3851,7 +3851,7 @@ algorithm
       then
         ();
 
-    case (SCode.POTENTIAL(), _, _, _, _)
+    else
       equation
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
