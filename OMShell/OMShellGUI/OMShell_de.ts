@@ -11,7 +11,7 @@
     <message>
         <location filename="oms.cpp" line="374"/>
         <source>Ctrl+L</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg+L</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="369"/>
@@ -43,7 +43,7 @@
     <message>
         <location filename="oms.cpp" line="380"/>
         <source>Ctrl+D</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg+D</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="381"/>
@@ -58,7 +58,7 @@
     <message>
         <location filename="oms.cpp" line="386"/>
         <source>Ctrl+X</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg+X</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="391"/>
@@ -68,7 +68,7 @@
     <message>
         <location filename="oms.cpp" line="392"/>
         <source>Ctrl+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg+C</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="397"/>
@@ -78,7 +78,7 @@
     <message>
         <location filename="oms.cpp" line="398"/>
         <source>Ctrl+V</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg+V</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="404"/>
@@ -128,7 +128,7 @@
     <message>
         <location filename="oms.cpp" line="421"/>
         <source>Ctrl+Shift+C</source>
-        <translation type="unfinished"></translation>
+        <translation>Strg+Umschalt+C</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="422"/>
@@ -153,17 +153,17 @@
     <message>
         <location filename="oms.cpp" line="589"/>
         <source>Communication Error with OMC</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommunikationsfehler mit OMC</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="611"/>
         <source>Communication Error</source>
-        <translation type="unfinished"></translation>
+        <translation>Kommunikationsfehler</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="612"/>
         <source>&lt;B&gt;Unable to communication correctlly with OMC. OMShell will therefore close.&lt;/B&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;B&gt;Kann nicht mit OMC kommunizieren. OMShell wird deshalb beendet.&lt;/B&gt;</translation>
     </message>
     <message>
         <location filename="oms.cpp" line="816"/>
@@ -174,7 +174,8 @@
         <location filename="oms.cpp" line="865"/>
         <source>[ERROR] Selected fontsize not between 8 and 120.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>[FEHLER] Ausgewählte Schriftgröße nicht zwischen 8 und 120.
+</translation>
     </message>
 </context>
 </TS>
