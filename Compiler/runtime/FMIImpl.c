@@ -46,7 +46,6 @@ extern "C" {
 
 static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
-#ifdef FMI_DEBUG
   const char* tokens[3] = {module,jm_log_level_to_string(log_level),message};
   switch (log_level) {
     case jm_log_level_fatal:
@@ -65,7 +64,6 @@ static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t l
       printf("module = %s, log level = %d: %s\n", module, log_level, message);
       break;
   }
-#endif
 }
 
 /* Logger function used by the FMU internally */
@@ -158,7 +156,7 @@ char* getModelVariableName(fmi1_import_variable_t* variable)
 {
   const char* res = fmi1_import_get_variable_name(variable);
   int length = strlen(res);
-  char* model_variable_name = malloc(length);
+  char* model_variable_name = malloc(length+1);
   strcpy(model_variable_name, res);
   charReplace(model_variable_name, length, '.', '_');
   charReplace(model_variable_name, length, '[', '_');
@@ -336,9 +334,9 @@ int FMIImpl__getFMIModelVariableHasStart(int fmiModelVariable)
 }
 
 /*
- * Checks if the model variable has fixed.
+ * Check the model variable fixed attribute value.
  */
-int FMIImpl__getFMIModelVariableHasFixed(int fmiModelVariable)
+int FMIImpl__getFMIModelVariableIsFixed(int fmiModelVariable)
 {
   return fmi1_import_get_variable_is_fixed((fmi1_import_variable_t*)fmiModelVariable);
 }

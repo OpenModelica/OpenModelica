@@ -115,6 +115,36 @@ extern struct record_description Config_LanguageStandard_MODELICA__LATEST__desc;
 static const MMC_DEFSTRUCTLIT(Config__MODELICA_5fLATEST__struct,1,9) {&Config_LanguageStandard_MODELICA__LATEST__desc}};
 static void *Config__MODELICA_5fLATEST = MMC_REFSTRUCTLIT(Config__MODELICA_5fLATEST__struct);
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_TranslatableContent_gettext__desc_added
+#define Error_TranslatableContent_gettext__desc_added
+ADD_METARECORD_DEFINTIONS const char* Error_TranslatableContent_gettext__desc__fields[1] = {"msgid"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_TranslatableContent_gettext__desc = {
+  "Error_TranslatableContent_gettext",
+  "Error.TranslatableContent.gettext",
+  Error_TranslatableContent_gettext__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_TranslatableContent_gettext__desc;
+#endif
+#define Error__gettext_3dBOX1 3
+#define Error__gettext(msgid) (mmc_mk_box2(3,&Error_TranslatableContent_gettext__desc,msgid))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Error_TranslatableContent_notrans__desc_added
+#define Error_TranslatableContent_notrans__desc_added
+ADD_METARECORD_DEFINTIONS const char* Error_TranslatableContent_notrans__desc__fields[1] = {"str"};
+ADD_METARECORD_DEFINTIONS struct record_description Error_TranslatableContent_notrans__desc = {
+  "Error_TranslatableContent_notrans",
+  "Error.TranslatableContent.notrans",
+  Error_TranslatableContent_notrans__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Error_TranslatableContent_notrans__desc;
+#endif
+#define Error__notrans_3dBOX1 4
+#define Error__notrans(str) (mmc_mk_box2(4,&Error_TranslatableContent_notrans__desc,str))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_Severity_ERROR__desc_added
 #define Error_Severity_ERROR__desc_added
 ADD_METARECORD_DEFINTIONS const char* Error_Severity_ERROR__desc__fields[1] = {"no fileds"};

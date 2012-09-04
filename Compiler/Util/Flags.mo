@@ -59,7 +59,7 @@ encapsulated package Flags
 
 protected import Corba;
 protected import Debug;
-protected import Error;
+public import Error;
 protected import ErrorExt;
 protected import Global; 
 protected import List;
@@ -72,7 +72,7 @@ public uniontype DebugFlag
   record DEBUG_FLAG
     Integer index "Unique index.";
     String name "The name of the flag used by +d";
-    Util.TranslatableContent description "A description of the flag.";
+    Error.TranslatableContent description "A description of the flag.";
   end DEBUG_FLAG;
 end DebugFlag;
 
@@ -84,7 +84,7 @@ public uniontype ConfigFlag
     FlagVisibility visibility "Whether the flag is visible to the user or not.";
     FlagData defaultValue "The default value of the flag.";
     Option<ValidOptions> validOptions "The valid options for the flag.";
-    Util.TranslatableContent description "A description of the flag.";
+    Error.TranslatableContent description "A description of the flag.";
   end CONFIG_FLAG;
 end ConfigFlag;
 
@@ -151,7 +151,7 @@ public uniontype ValidOptions
 
   record STRING_DESC_OPTION
     "Options for a string flag, with a description for each option."
-    list<tuple<String, Util.TranslatableContent>> options;
+    list<tuple<String, Error.TranslatableContent>> options;
   end STRING_DESC_OPTION;
 end ValidOptions;
 
@@ -163,205 +163,205 @@ public constant Integer PARMODELICA = 3;
 // DEBUG FLAGS
 public
 constant DebugFlag FAILTRACE = DEBUG_FLAG(1, "failtrace",
-  Util.gettext("Sets whether to print a failtrace or not."));
+  Error.gettext("Sets whether to print a failtrace or not."));
 constant DebugFlag CEVAL = DEBUG_FLAG(2, "ceval",
-  Util.gettext("Prints extra information from Ceval."));
+  Error.gettext("Prints extra information from Ceval."));
 constant DebugFlag LINEARIZATION = DEBUG_FLAG(3, "linearization",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag JACOBIAN = DEBUG_FLAG(4, "jacobian", 
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CHECK_BACKEND_DAE = DEBUG_FLAG(5, "checkBackendDae",
-  Util.gettext("Do some simple analyses on the datastructure from the frontend to check if it is consistent"));
+  Error.gettext("Do some simple analyses on the datastructure from the frontend to check if it is consistent"));
 constant DebugFlag DUMP_INIT = DEBUG_FLAG(6, "dumpInit",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag OPENMP = DEBUG_FLAG(7, "openmp",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag PTHREADS = DEBUG_FLAG(8, "pthreads",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag TEARING = DEBUG_FLAG(9, "tearing",
-  Util.gettext("Use if tearing should be performed"));
+  Error.gettext("Use if tearing should be performed"));
 constant DebugFlag RELAXATION = DEBUG_FLAG(10, "relaxation",
-  Util.gettext("Use if relaxation should be performed, Does only work with tearing"));
+  Error.gettext("Use if relaxation should be performed, Does only work with tearing"));
 constant DebugFlag NO_EVENTS = DEBUG_FLAG(11, "noevents",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag EVAL_FUNC = DEBUG_FLAG(12, "evalfunc",
-  Util.gettext("Prints extra failtrace from CevalFunction."));
+  Error.gettext("Prints extra failtrace from CevalFunction."));
 constant DebugFlag NO_EVAL_FUNC = DEBUG_FLAG(13, "noevalfunc",
-  Util.gettext("Turns off function evaluation and uses dynamic loading instead."));
+  Error.gettext("Turns off function evaluation and uses dynamic loading instead."));
 constant DebugFlag NO_GEN = DEBUG_FLAG(14, "nogen",
-  Util.gettext("Turns off dynamic loading of functions."));
+  Error.gettext("Turns off dynamic loading of functions."));
 constant DebugFlag DYN_LOAD = DEBUG_FLAG(15, "dynload",
-  Util.gettext("Display debug information about dynamic loading of compiled functions."));
+  Error.gettext("Display debug information about dynamic loading of compiled functions."));
 constant DebugFlag GENERATE_CODE_CHEAT = DEBUG_FLAG(16, "generateCodeCheat",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CGRAPH_GRAPHVIZ_FILE = DEBUG_FLAG(17, "cgraphGraphVizFile",
-  Util.gettext("Generates a graphviz file of the connection graph."));
+  Error.gettext("Generates a graphviz file of the connection graph."));
 constant DebugFlag CGRAPH_GRAPHVIZ_SHOW = DEBUG_FLAG(18, "cgraphGraphVizShow",
-  Util.gettext("Displays the connection graph with the GraphViz lefty tool"));
+  Error.gettext("Displays the connection graph with the GraphViz lefty tool"));
 constant DebugFlag FRONTEND_INLINE_EULER = DEBUG_FLAG(19, "frontend-inline-euler",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag USEDEP = DEBUG_FLAG(20, "usedep",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag ENV = DEBUG_FLAG(21, "env",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CHECK_DAE_CREF_TYPE = DEBUG_FLAG(22, "checkDAECrefType",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CHECK_ASUB = DEBUG_FLAG(23, "checkASUB",
-  Util.gettext("Prints out a warning if an ASUB is created from a CREF expression."));
+  Error.gettext("Prints out a warning if an ASUB is created from a CREF expression."));
 constant DebugFlag INSTANCE = DEBUG_FLAG(24, "instance",
-  Util.gettext("Prints extra failtrace from InstanceHierarchy."));
+  Error.gettext("Prints extra failtrace from InstanceHierarchy."));
 constant DebugFlag NO_CACHE = DEBUG_FLAG(25, "noCache",
-  Util.gettext("Turns off the instantiation cache."));
+  Error.gettext("Turns off the instantiation cache."));
 constant DebugFlag RML = DEBUG_FLAG(26, "rml",
-  Util.gettext("Turns on extra RML checks."));
+  Error.gettext("Turns on extra RML checks."));
 constant DebugFlag TAIL = DEBUG_FLAG(27, "tail",
-  Util.gettext("Prints out a notification if tail recursion optimization has been applied."));
+  Error.gettext("Prints out a notification if tail recursion optimization has been applied."));
 constant DebugFlag LOOKUP = DEBUG_FLAG(28, "lookup",
-  Util.gettext("Print extra failtrace from lookup."));
+  Error.gettext("Print extra failtrace from lookup."));
 constant DebugFlag PATTERNM_SKIP_FILTER_UNUSED_AS_BINDINGS = DEBUG_FLAG(29, "patternmSkipFilterUnusedBindings",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag PATTERNM_ALL_INFO = DEBUG_FLAG(30, "patternmAllInfo",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag PATTERNM_SKIP_MCDCE = DEBUG_FLAG(31, "patternmSkipMCDCE",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag PATTERNM_SKIP_MOVE_LAST_EXP = DEBUG_FLAG(32, "patternmSkipMoveLastExp",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag SCODE_FLATTEN = DEBUG_FLAG(33, "scodeFlatten",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag EXPERIMENTAL_REDUCTIONS = DEBUG_FLAG(34, "experimentalReductions",
-  Util.gettext("Turns on custom reduction functions (OpenModelica extension)."));
+  Error.gettext("Turns on custom reduction functions (OpenModelica extension)."));
 constant DebugFlag EVAL_PARAM = DEBUG_FLAG(35, "evalparam",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag TYPES = DEBUG_FLAG(36, "types",
-  Util.gettext("Prints extra failtrace from Types."));
+  Error.gettext("Prints extra failtrace from Types."));
 constant DebugFlag SHOW_STATEMENT = DEBUG_FLAG(37, "showStatement",
-  Util.gettext("Shows the statement that is currently being evaluated when evaluating a script."));
+  Error.gettext("Shows the statement that is currently being evaluated when evaluating a script."));
 constant DebugFlag INFO = DEBUG_FLAG(38, "info",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag DUMP = DEBUG_FLAG(39, "dump",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag DUMP_GRAPHVIZ = DEBUG_FLAG(40, "graphviz",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag EXEC_STAT = DEBUG_FLAG(41, "execstat",
-  Util.gettext("Prints out execution statistics for the compiler."));
+  Error.gettext("Prints out execution statistics for the compiler."));
 constant DebugFlag TRANSFORMS_BEFORE_DUMP = DEBUG_FLAG(42, "transformsbeforedump",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag BEFORE_FIX_MOD_OUT = DEBUG_FLAG(43, "beforefixmodout",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag FLAT_MODELICA = DEBUG_FLAG(44, "flatmodelica",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag DAE_DUMP = DEBUG_FLAG(45, "daedump",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag DAE_DUMP2 = DEBUG_FLAG(46, "daedump2",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag DAE_DUMP_DEBUG = DEBUG_FLAG(47, "daedumpdebug",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag DAE_DUMP_GRAPHV = DEBUG_FLAG(48, "daedumpgraphv",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag BLT = DEBUG_FLAG(49, "blt",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag INTERACTIVE = DEBUG_FLAG(50, "interactive",
-  Util.gettext("Starts omc as a server listening on the socket interface."));
+  Error.gettext("Starts omc as a server listening on the socket interface."));
 constant DebugFlag INTERACTIVE_CORBA = DEBUG_FLAG(51, "interactiveCorba",
-  Util.gettext("Starts omc as a server listening on the Corba interface."));
+  Error.gettext("Starts omc as a server listening on the Corba interface."));
 constant DebugFlag INTERACTIVE_DUMP = DEBUG_FLAG(52, "interactivedump",
-  Util.gettext("Prints out debug information for the interactive server."));
+  Error.gettext("Prints out debug information for the interactive server."));
 constant DebugFlag RELIDX = DEBUG_FLAG(53, "relidx",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag DUMP_REPL = DEBUG_FLAG(54, "dumprepl",
-  Util.gettext("dump the found replacments for remove simple equation"));
+  Error.gettext("dump the found replacments for remove simple equation"));
 constant DebugFlag DUMP_FP_REPL = DEBUG_FLAG(55, "dumpFPrepl",
-  Util.gettext("dump the found replacements for final parameters"));
+  Error.gettext("dump the found replacements for final parameters"));
 constant DebugFlag DUMP_PARAM_REPL = DEBUG_FLAG(56, "dumpParamrepl",
-  Util.gettext("dump the found replacements for remove parameters"));
+  Error.gettext("dump the found replacements for remove parameters"));
 constant DebugFlag DUMP_PP_REPL = DEBUG_FLAG(57, "dumpPPrepl",
-  Util.gettext("dump the found replacements for protected parameters"));
+  Error.gettext("dump the found replacements for protected parameters"));
 constant DebugFlag DUMP_EA_REPL = DEBUG_FLAG(58, "dumpEArepl",
-  Util.gettext("dump the found replacements for evaluate annotations (evaluate=true) parameters"));
+  Error.gettext("dump the found replacements for evaluate annotations (evaluate=true) parameters"));
 constant DebugFlag DEBUG_ALIAS = DEBUG_FLAG(59, "debugAlias",
-  Util.gettext("dump the found alias variables"));
+  Error.gettext("dump the found alias variables"));
 constant DebugFlag TEARING_DUMP = DEBUG_FLAG(60, "tearingdump",
-  Util.gettext("Dumps tearing information."));
+  Error.gettext("Dumps tearing information."));
 constant DebugFlag JAC_DUMP = DEBUG_FLAG(61, "jacdump",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag JAC_DUMP2 = DEBUG_FLAG(62, "jacdump2",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag JAC_DUMP_EQN = DEBUG_FLAG(63, "jacdumpeqn",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag FAILTRACE_JAC = DEBUG_FLAG(64, "failtraceJac",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag VAR_INDEX = DEBUG_FLAG(65, "varIndex",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag VAR_INDEX2 = DEBUG_FLAG(66, "varIndex2",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag BLT_DUMP = DEBUG_FLAG(67, "bltdump",
-  Util.gettext("Dumps information from index reduction."));
+  Error.gettext("Dumps information from index reduction."));
 constant DebugFlag DUMMY_SELECT = DEBUG_FLAG(68, "dummyselect",
-  Util.gettext("Dumps information from dummy state selection heuristic"));
+  Error.gettext("Dumps information from dummy state selection heuristic"));
 constant DebugFlag DUMP_DAE_LOW = DEBUG_FLAG(69, "dumpdaelow",
-  Util.gettext("Dumps the equation system at the beginning of the back end."));
+  Error.gettext("Dumps the equation system at the beginning of the back end."));
 constant DebugFlag DUMP_INDX_DAE = DEBUG_FLAG(70, "dumpindxdae",
-  Util.gettext("Dumps the equation system after index reduction and optimization."));
+  Error.gettext("Dumps the equation system after index reduction and optimization."));
 constant DebugFlag OPT_DAE_DUMP = DEBUG_FLAG(71, "optdaedump",
-  Util.gettext("Dumps information from the optimization modules."));
+  Error.gettext("Dumps information from the optimization modules."));
 constant DebugFlag EXEC_HASH = DEBUG_FLAG(72, "execHash",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag EXEC_FILES = DEBUG_FLAG(73, "execFiles",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag PARAM_DLOW_DUMP = DEBUG_FLAG(74, "paramdlowdump",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CPP = DEBUG_FLAG(75, "cpp",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CPP_VAR = DEBUG_FLAG(76, "cppvar",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CPP_VAR_INDEX = DEBUG_FLAG(77, "cppvarindex",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CPP_SIM1 = DEBUG_FLAG(78, "cppsim1",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag TCVT = DEBUG_FLAG(79, "tcvt",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CGRAPH = DEBUG_FLAG(80, "cgraph",
-  Util.gettext("Prints out connection graph information."));
+  Error.gettext("Prints out connection graph information."));
 constant DebugFlag DUMPTR = DEBUG_FLAG(81, "dumptr",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag DUMPIH = DEBUG_FLAG(82, "dumpIH",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag REC_CONST = DEBUG_FLAG(83, "recconst",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag UPDMOD = DEBUG_FLAG(84, "updmod",
-  Util.gettext("Prints information about modification updates."));
+  Error.gettext("Prints information about modification updates."));
 constant DebugFlag SEI = DEBUG_FLAG(85, "sei",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag STATIC = DEBUG_FLAG(86, "static",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag PERF_TIMES = DEBUG_FLAG(87, "perfTimes",
-  Util.notrans(""));
+  Error.notrans(""));
 constant DebugFlag CHECK_SIMPLIFY = DEBUG_FLAG(88, "checkSimplify",
-  Util.gettext("Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed."));
+  Error.gettext("Enables checks for expression simplification and prints a notification whenever an undesirable transformation has been performed."));
 constant DebugFlag SCODE_INST = DEBUG_FLAG(89, "scodeInst",
-  Util.gettext("Enables experimental SCode instantiation phase."));
+  Error.gettext("Enables experimental SCode instantiation phase."));
 constant DebugFlag DELAY_BREAK_LOOP = DEBUG_FLAG(90, "delayBreakLoop",
-  Util.gettext("Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization."));
+  Error.gettext("Enables (very) experimental code to break algebraic loops using the delay() operator. Probably messes with initialization."));
 constant DebugFlag WRITE_TO_BUFFER = DEBUG_FLAG(91, "writeToBuffer",
-  Util.gettext("Enables writing simulation results to buffer."));
+  Error.gettext("Enables writing simulation results to buffer."));
 constant DebugFlag DUMP_BACKENDDAE_INFO = DEBUG_FLAG(92, "backenddaeinfo",
-  Util.gettext("Enables dumping of backend information about system (Number of equations before backend,...)."));
+  Error.gettext("Enables dumping of backend information about system (Number of equations before backend,...)."));
 constant DebugFlag GEN_DEBUG_SYMBOLS = DEBUG_FLAG(93, "gendebugsymbols",
-  Util.gettext("Generate code with debugging symbols."));
+  Error.gettext("Generate code with debugging symbols."));
 constant DebugFlag DUMP_STATESELECTION_INFO = DEBUG_FLAG(94, "stateselection",
-  Util.gettext("Enables dumping of selected states. Works only in combination with backenddaeinfo."));
+  Error.gettext("Enables dumping of selected states. Works only in combination with backenddaeinfo."));
 constant DebugFlag DUMP_DERREPL = DEBUG_FLAG(95, "dumpderrepl",
-  Util.gettext("Enables dumping of selected states. Works only in combination with backenddaeinfo."));
+  Error.gettext("Enables dumping of selected states. Works only in combination with backenddaeinfo."));
 constant DebugFlag DUMP_EQNINORDER = DEBUG_FLAG(96, "dumpeqninorder",
-  Util.gettext("Enables dumping of the equations in the order they are calculated"));
+  Error.gettext("Enables dumping of the equations in the order they are calculated"));
 constant DebugFlag SYMBOLIC_INITIALIZATION = DEBUG_FLAG(97, "symbolicInitialization",
-  Util.gettext("Enables using of symbolic matrices for initialization (ipopt only)"));
+  Error.gettext("Enables using of symbolic matrices for initialization (ipopt only)"));
 constant DebugFlag TEARING_AND_RELAXATION = DEBUG_FLAG(98, "tearing_and_relaxation",
-  Util.gettext("performes relaxation after tearing"));
+  Error.gettext("performes relaxation after tearing"));
 constant DebugFlag DUMPOPTINIT = DEBUG_FLAG(99, "dumpoptinit",
-  Util.gettext("Enables dumping of the optimization information when optimizing the initial system"));
+  Error.gettext("Enables dumping of the optimization information when optimizing the initial system"));
 constant DebugFlag SEMILINEAR = DEBUG_FLAG(100, "semiLinear",
-  Util.gettext("Enables dumping of the optimization information when optimizing calls to semiLinear"));
+  Error.gettext("Enables dumping of the optimization information when optimizing calls to semiLinear"));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -474,42 +474,42 @@ constant list<DebugFlag> allDebugFlags = {
 // CONFIGURATION FLAGS
 constant ConfigFlag DEBUG = CONFIG_FLAG(1, "debug",
   SOME("d"), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets debug flags. Use +help=debug to see available flags."));
+  Error.gettext("Sets debug flags. Use +help=debug to see available flags."));
 constant ConfigFlag HELP = CONFIG_FLAG(2, "help",
   NONE(), EXTERNAL(), BOOL_FLAG(false), 
   SOME(STRING_OPTION({"debug", "optmodules"})),
-  Util.gettext("Displays the help text."));
+  Error.gettext("Displays the help text."));
 constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Used when running the testsuite."));
+  Error.gettext("Used when running the testsuite."));
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
   SOME("+v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Print the version and exit."));
+  Error.gettext("Print the version and exit."));
 constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc, msvc"})),
-  Util.gettext("Sets the target compiler to use."));
+  Error.gettext("Sets the target compiler to use."));
 constant ConfigFlag GRAMMAR = CONFIG_FLAG(6, "grammar", SOME("g"), EXTERNAL(),
   ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA)}), 
   SOME(STRING_OPTION({"Modelica", "MetaModelica", "ParModelica"})),
-  Util.gettext("Sets the grammar and semantics to accept."));
+  Error.gettext("Sets the grammar and semantics to accept."));
 constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",
   NONE(), EXTERNAL(), STRING_FLAG("3.x"), SOME(STRING_OPTION({"1.x", "2.x", "3.x"})),
-  Util.gettext("Sets the annotation version that should be used."));
+  Error.gettext("Sets the annotation version that should be used."));
 constant ConfigFlag LANGUAGE_STANDARD = CONFIG_FLAG(8, "std", NONE(), EXTERNAL(),
   ENUM_FLAG(1000, 
     {("1.x", 10), ("2.x", 20), ("3.0", 30), ("3.1", 31), ("3.2", 32), ("3.3", 33)}),
   SOME(STRING_OPTION({"1.x", "2.x", "3.1", "3.2", "3.3"})),
-  Util.gettext("Sets the language standard that should be used."));
+  Error.gettext("Sets the language standard that should be used."));
 constant ConfigFlag SHOW_ERROR_MESSAGES = CONFIG_FLAG(9, "showErrorMessages",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Show error messages immediately when they happen."));
+  Error.gettext("Show error messages immediately when they happen."));
 constant ConfigFlag SHOW_ANNOTATIONS = CONFIG_FLAG(10, "showAnnotations",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Show annotations in the flattened code."));
+  Error.gettext("Show annotations in the flattened code."));
 constant ConfigFlag NO_SIMPLIFY = CONFIG_FLAG(11, "noSimplify",
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Do not simplify expressions if set."));
-protected constant Util.TranslatableContent removeSimpleEquationDesc = Util.gettext("Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).");
+  Error.gettext("Do not simplify expressions if set."));
+protected constant Error.TranslatableContent removeSimpleEquationDesc = Error.gettext("Performs alias elimination and removes constant variables from the DAE, replacing all occurrences of the old variable reference with the new value (constants) or variable reference (alias elimination).");
 public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "evaluateFinalParameters", 
@@ -524,56 +524,56 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
   SOME(STRING_DESC_OPTION({
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
-    ("inlineArrayEqn", Util.notrans("DESCRIBE ME")),
-    ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are evalutated and replaced with their value in other vars. They may no longer be changed in the init file.")),
-    ("removeFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
-    ("removeProtectedParameters", Util.gettext("replace all parameters with protected=true in the system")),
-    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system")),
-    ("removeUnusedVariables", Util.gettext("Strips all variables not present in the equations from the system")),
-    ("evaluateParameters", Util.gettext("Evaluates parameter with evalute=true annotation")),
-    ("partitionIndependentBlocks", Util.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations)")),
-    ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)")),
-    ("expandDerOperator", Util.notrans("DESCRIBE ME")),
-    ("simplifyIfEquations", Util.gettext("tries to simplify if equations by use of information from evaluated parameters")),
-    ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x"))})),
-  Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
+    ("inlineArrayEqn", Error.notrans("DESCRIBE ME")),
+    ("evaluateFinalParameters", Error.gettext("Structural parameters and parameters declared as final are evalutated and replaced with their value in other vars. They may no longer be changed in the init file.")),
+    ("removeFinalParameters", Error.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("removeEqualFunctionCalls", Error.notrans("DESCRIBE ME")),
+    ("removeProtectedParameters", Error.gettext("replace all parameters with protected=true in the system")),
+    ("removeUnusedParameter", Error.gettext("Strips all parameter not present in the equations from the system")),
+    ("removeUnusedVariables", Error.gettext("Strips all variables not present in the equations from the system")),
+    ("evaluateParameters", Error.gettext("Evaluates parameter with evalute=true annotation")),
+    ("partitionIndependentBlocks", Error.gettext("Partitions the equation system into independent equation systems (which can then be simulated in parallel or used to speed up subsequent optimizations)")),
+    ("collapseIndependentBlocks", Error.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)")),
+    ("expandDerOperator", Error.notrans("DESCRIBE ME")),
+    ("simplifyIfEquations", Error.gettext("tries to simplify if equations by use of information from evaluated parameters")),
+    ("residualForm", Error.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x"))})),
+  Error.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm",
   NONE(), EXTERNAL(), INT_FLAG(3),
   SOME(STRING_DESC_OPTION({
-    ("0", Util.gettext("No cheap matching.")),
-    ("1", Util.gettext("cheap matching, traveres all equations and match the first free variable")),
-    ("3", Util.gettext("Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."))})),
-    Util.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));    
+    ("0", Error.gettext("No cheap matching.")),
+    ("1", Error.gettext("cheap matching, traveres all equations and match the first free variable")),
+    ("3", Error.gettext("Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."))})),
+    Error.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));    
 constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
   NONE(), EXTERNAL(), STRING_FLAG("omc"),
   SOME(STRING_DESC_OPTION({
-    ("omc", Util.gettext("Depth First Search based Algorithm with simple Look Ahead Feature")),
-    ("BFSB", Util.gettext("Breath First Search based Algorithm")),
-    ("DFSB", Util.gettext("Depth First Search based Algorithm")),
-    ("MC21A", Util.gettext("Depth First Search based Algorithm with look ahead feature")),
-    ("PF", Util.gettext("Depth First Search based Algorithm with look ahead feature")),
-    ("PFPlus", Util.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal")),
-    ("HK", Util.gettext("Combined BFS and DFS algorithm")),
-    ("HKDW", Util.gettext("Combined BFS and DFS algorithm")),
-    ("ABMP", Util.gettext("Combined BFS and DFS algorithm")),
-    ("PR", Util.gettext("matching algorithm using push relabel mechanism")),
-    ("DFSBExt", Util.gettext("Depth First Search based Algorithm external c implementation")),
-    ("BFSBExt", Util.gettext("Breath First Search based Algorithm external c implementation")),
-    ("MC21AExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation")),
-    ("PFExt", Util.gettext("Depth First Search based Algorithm with look ahead feature external c implementation")),
-    ("PFPlusExt", Util.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation")),
-    ("HKExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
-    ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
-    ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
-    ("PRExt", Util.gettext("matching algorithm using push relabel mechanism external c implementation"))})),
-    Util.gettext("Sets the matching algorithm to use."));  
+    ("omc", Error.gettext("Depth First Search based Algorithm with simple Look Ahead Feature")),
+    ("BFSB", Error.gettext("Breath First Search based Algorithm")),
+    ("DFSB", Error.gettext("Depth First Search based Algorithm")),
+    ("MC21A", Error.gettext("Depth First Search based Algorithm with look ahead feature")),
+    ("PF", Error.gettext("Depth First Search based Algorithm with look ahead feature")),
+    ("PFPlus", Error.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal")),
+    ("HK", Error.gettext("Combined BFS and DFS algorithm")),
+    ("HKDW", Error.gettext("Combined BFS and DFS algorithm")),
+    ("ABMP", Error.gettext("Combined BFS and DFS algorithm")),
+    ("PR", Error.gettext("matching algorithm using push relabel mechanism")),
+    ("DFSBExt", Error.gettext("Depth First Search based Algorithm external c implementation")),
+    ("BFSBExt", Error.gettext("Breath First Search based Algorithm external c implementation")),
+    ("MC21AExt", Error.gettext("Depth First Search based Algorithm with look ahead feature external c implementation")),
+    ("PFExt", Error.gettext("Depth First Search based Algorithm with look ahead feature external c implementation")),
+    ("PFPlusExt", Error.gettext("Depth First Search based Algorithm with look ahead feature and fair row traversal external c implementation")),
+    ("HKExt", Error.gettext("Combined BFS and DFS algorithm external c implementation")),
+    ("HKDWExt", Error.gettext("Combined BFS and DFS algorithm external c implementation")),
+    ("ABMPExt", Error.gettext("Combined BFS and DFS algorithm external c implementation")),
+    ("PRExt", Error.gettext("matching algorithm using push relabel mechanism external c implementation"))})),
+    Error.gettext("Sets the matching algorithm to use."));  
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
   SOME(STRING_DESC_OPTION({
-    ("dummyDerivative", Util.gettext("simple index reduction method, select dummy states based on heuristics")),
-    ("dynamicStateSelection", Util.gettext("simple index reduction method, select (dynamic) dummy states based on analysis of the system"))})),
-    Util.gettext("Sets the index reduction method to use."));
+    ("dummyDerivative", Error.gettext("simple index reduction method, select dummy states based on heuristics")),
+    ("dynamicStateSelection", Error.gettext("simple index reduction method, select (dynamic) dummy states based on analysis of the system"))})),
+    Error.gettext("Sets the index reduction method to use."));
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
     "lateInlineFunction",
@@ -591,108 +591,108 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "optimizeInitialSystem"
   }),
   SOME(STRING_DESC_OPTION({
-    ("lateInlineFunction", Util.gettext("perform function inlining for function with annotation LateInline=true")),
+    ("lateInlineFunction", Error.gettext("perform function inlining for function with annotation LateInline=true")),
     ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
-    ("removeFinalParameters", Util.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
-    ("removeEqualFunctionCalls", Util.notrans("DESCRIBE ME")),
-    ("inlineArrayEqn", Util.notrans("DESCRIBE ME")),
-    ("removeUnusedParameter", Util.gettext("Strips all parameter not present in the equations from the system")),
-    ("constantLinearSystem", Util.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time")),
-    ("tearingSystem",Util.notrans("DESCRIBE ME")),
-    ("relaxSystem",Util.notrans("DESCRIBE ME")),
-    ("removeevaluateParameters", Util.gettext("remove parameter with evalute=true annotation")),
-    ("coundOperations", Util.gettext("count the mathematic operations of the system")),
-    ("dumpComponentsGraphStr", Util.notrans("DESCRIBE ME")),
-    ("generateSymbolicJacobian", Util.gettext("Generates symbolic jacobian")),
-    ("generateSymbolicLinearization", Util.gettext("Generates symbolic Linearization Matrixes A,B,C,D for Linear Model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du")),
-    ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)")),
-    ("removeUnusedFunctions", Util.gettext("removed all unused functions from functionTree")),
-    ("simplifyTimeIndepFuncCalls", Util.gettext("simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false")),
-    ("simplifysemiLinear", Util.gettext("simplifies calls to semiLinear")),
-    ("optimizeInitialSystem", Util.gettext("simplifies time initial system"))
+    ("removeFinalParameters", Error.gettext("Structural parameters and parameters declared as final are removed and replaced with their value. They may no longer be changed in the init file.")),
+    ("removeEqualFunctionCalls", Error.notrans("DESCRIBE ME")),
+    ("inlineArrayEqn", Error.notrans("DESCRIBE ME")),
+    ("removeUnusedParameter", Error.gettext("Strips all parameter not present in the equations from the system")),
+    ("constantLinearSystem", Error.gettext("Evaluates constant linear systems (a*x+b*y=c; d*x+e*y=f; a,b,c,d,e,f are constants) at compile-time")),
+    ("tearingSystem",Error.notrans("DESCRIBE ME")),
+    ("relaxSystem",Error.notrans("DESCRIBE ME")),
+    ("removeevaluateParameters", Error.gettext("remove parameter with evalute=true annotation")),
+    ("coundOperations", Error.gettext("count the mathematic operations of the system")),
+    ("dumpComponentsGraphStr", Error.notrans("DESCRIBE ME")),
+    ("generateSymbolicJacobian", Error.gettext("Generates symbolic jacobian")),
+    ("generateSymbolicLinearization", Error.gettext("Generates symbolic Linearization Matrixes A,B,C,D for Linear Model:\n\t\t\\dot x = Ax + Bu\n\t\ty = Cx +Du")),
+    ("collapseIndependentBlocks", Error.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)")),
+    ("removeUnusedFunctions", Error.gettext("removed all unused functions from functionTree")),
+    ("simplifyTimeIndepFuncCalls", Error.gettext("simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false")),
+    ("simplifysemiLinear", Error.gettext("simplifies calls to semiLinear")),
+    ("optimizeInitialSystem", Error.gettext("simplifies time initial system"))
     })),
-  Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
+  Error.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"), 
   SOME(STRING_OPTION({"CSharp", "Cpp", "Adevs", "QSS", "C", "c", "Dump"})),
-  Util.gettext("Sets the target language for the code generation"));
+  Error.gettext("Sets the target language for the code generation"));
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections", 
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
-  Util.gettext("Orders connect equations alphabetically if set."));
+  Error.gettext("Orders connect equations alphabetically if set."));
 constant ConfigFlag TYPE_INFO = CONFIG_FLAG(19, "typeinfo",
   SOME("t"), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Prints out extra type information if set."));
+  Error.gettext("Prints out extra type information if set."));
 constant ConfigFlag KEEP_ARRAYS = CONFIG_FLAG(20, "keepArrays",
   SOME("a"), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Sets whether to split arrays or not."));
+  Error.gettext("Sets whether to split arrays or not."));
 constant ConfigFlag MODELICA_OUTPUT = CONFIG_FLAG(21, "modelicaOutput",
   SOME("m"), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.notrans(""));
+  Error.notrans(""));
 constant ConfigFlag PARAMS_STRUCT = CONFIG_FLAG(22, "paramsStruct",
   SOME("p"), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.notrans(""));
+  Error.notrans(""));
 constant ConfigFlag SILENT = CONFIG_FLAG(23, "silent",
   SOME("q"), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Turns on silent mode."));
+  Error.gettext("Turns on silent mode."));
 constant ConfigFlag CORBA_SESSION = CONFIG_FLAG(24, "corbaSessionName",
   SOME("c"), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Sets the name of the corba session if +d=interactiveCorba is used."));
+  Error.gettext("Sets the name of the corba session if +d=interactiveCorba is used."));
 constant ConfigFlag NUM_PROC = CONFIG_FLAG(25, "numProcs",
   SOME("n"), EXTERNAL(), INT_FLAG(0), NONE(),
-  Util.gettext("Sets the number of processors to use."));
+  Error.gettext("Sets the number of processors to use."));
 constant ConfigFlag LATENCY = CONFIG_FLAG(26, "latency",
   SOME("l"), EXTERNAL(), INT_FLAG(0), NONE(),
-  Util.gettext("Sets the latency for parallel execution."));
+  Error.gettext("Sets the latency for parallel execution."));
 constant ConfigFlag BANDWIDTH = CONFIG_FLAG(27, "bandwidth",
   SOME("b"), EXTERNAL(), INT_FLAG(0), NONE(),
-  Util.gettext("Sets the bandwidth for parallel execution."));
+  Error.gettext("Sets the bandwidth for parallel execution."));
 constant ConfigFlag INST_CLASS = CONFIG_FLAG(28, "instClass",
   SOME("i"), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Instantiate the class given by the fully qualified path."));
+  Error.gettext("Instantiate the class given by the fully qualified path."));
 constant ConfigFlag VECTORIZATION_LIMIT = CONFIG_FLAG(29, "vectorizationLimit",
   SOME("v"), EXTERNAL(), INT_FLAG(0), NONE(),
-  Util.gettext("Sets the vectorization limit, arrays and matrices larger than this will not be vectorized."));
+  Error.gettext("Sets the vectorization limit, arrays and matrices larger than this will not be vectorized."));
 constant ConfigFlag SIMULATION_CG = CONFIG_FLAG(30, "simulationCg",
   SOME("s"), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Turns on simulation code generation."));
+  Error.gettext("Turns on simulation code generation."));
 constant ConfigFlag EVAL_PARAMS_IN_ANNOTATIONS = CONFIG_FLAG(31,
   "evalAnnotationParams", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Sets whether to evaluate parameters in annotations or not."));
+  Error.gettext("Sets whether to evaluate parameters in annotations or not."));
 constant ConfigFlag CHECK_MODEL = CONFIG_FLAG(32,
   "checkModel", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Set when checkModel is used to turn on specific features for checking."));
+  Error.gettext("Set when checkModel is used to turn on specific features for checking."));
 constant ConfigFlag CEVAL_EQUATION = CONFIG_FLAG(33,
   "cevalEquation", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
-  Util.notrans(""));
+  Error.notrans(""));
 constant ConfigFlag UNIT_CHECKING = CONFIG_FLAG(34,
   "unitChecking", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.notrans(""));
+  Error.notrans(""));
 constant ConfigFlag TRANSLATE_DAE_STRING = CONFIG_FLAG(35,
   "translateDAEString", NONE(), INTERNAL(), BOOL_FLAG(true), NONE(),
-  Util.notrans(""));
+  Error.notrans(""));
 constant ConfigFlag ENV_CACHE = CONFIG_FLAG(36,
   "envCache", NONE(), INTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.notrans(""));
+  Error.notrans(""));
 constant ConfigFlag GENERATE_LABELED_SIMCODE = CONFIG_FLAG(37,
   "generateLabeledSimCode", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Turns on labeled SimCode generation for reduction algorithms."));
+  Error.gettext("Turns on labeled SimCode generation for reduction algorithms."));
 constant ConfigFlag REDUCE_TERMS = CONFIG_FLAG(38,
   "reduceTerms", NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Turns on reducing terms for reduction algorithms."));
+  Error.gettext("Turns on reducing terms for reduction algorithms."));
 constant ConfigFlag REDUCTION_METHOD = CONFIG_FLAG(39, "reductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("deletion"),
   SOME(STRING_OPTION({"deletion","substitution","linearization"})),
-    Util.gettext("Sets the reduction method to be used."));
+    Error.gettext("Sets the reduction method to be used."));
 constant ConfigFlag PLOT_SILENT = CONFIG_FLAG(40, "plotSilent", 
   NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
-  Util.gettext("Defines whether plot commands should open OMPlot or show the list of arguments that would have been sent to OMPlot."));
+  Error.gettext("Defines whether plot commands should open OMPlot or show the list of arguments that would have been sent to OMPlot."));
 constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale", 
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
-  Util.gettext("Override the locale from the environment."));
+  Error.gettext("Override the locale from the environment."));
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
-  Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
+  Error.gettext("Sets the default OpenCL device to be used for parallel execution."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -1468,7 +1468,7 @@ protected function printHelp
 algorithm
   _ := matchcontinue (inTopics)
     local
-      Util.TranslatableContent desc;
+      Error.TranslatableContent desc;
       list<String> debug_flags, rest_topics;
       String str,name;
       ConfigFlag config_flag;
@@ -1508,7 +1508,7 @@ algorithm
     case {str}
       equation
         (config_flag as CONFIG_FLAG(name=name,description=desc)) = List.getMemberOnTrue(str, allConfigFlags, matchConfigFlag);
-        str = Util.translateContent(desc);
+        str = Error.translateContent(desc);
         str = "    +" +& name +& " " +& str +& "\n";
         str = stringAppendList(Util.stringWrap(str, 80, descriptionIndent));
         print(str);
@@ -1577,7 +1577,7 @@ protected function printConfigFlag
 algorithm
   outString := match(inFlag)
     local
-      Util.TranslatableContent desc;
+      Error.TranslatableContent desc;
       String name, desc_str, flag_str, delim_str, opt_str;
       list<String> wrapped_str;
 
@@ -1585,7 +1585,7 @@ algorithm
 
     case CONFIG_FLAG(description = desc)
       equation
-        desc_str = Util.translateContent(desc);
+        desc_str = Error.translateContent(desc);
         name = Util.stringPadRight(printConfigFlagName(inFlag), 28, " ");
         flag_str = stringAppendList({name, " ", desc_str});
         delim_str = descriptionIndent +& "  ";
@@ -1628,7 +1628,7 @@ algorithm
     local
       list<String> strl;
       String opt_str;
-      list<tuple<String, Util.TranslatableContent>> descl;
+      list<tuple<String, Error.TranslatableContent>> descl;
 
     case CONFIG_FLAG(validOptions = NONE()) then "";
     case CONFIG_FLAG(validOptions = SOME(STRING_OPTION(options = strl)))
@@ -1648,7 +1648,7 @@ end printValidOptions;
 
 protected function printFlagOptionDescShort
   "Prints out the name of a flag option."
-  input tuple<String, Util.TranslatableContent> inOption;
+  input tuple<String, Error.TranslatableContent> inOption;
   output String outString;
 protected
   String name;
@@ -1663,7 +1663,7 @@ protected function printFlagValidOptionsDesc
   input ConfigFlag inFlag;
   output String outString;
 protected
-  list<tuple<String, Util.TranslatableContent>> options;
+  list<tuple<String, Error.TranslatableContent>> options;
 algorithm
   CONFIG_FLAG(validOptions = SOME(STRING_DESC_OPTION(options = options))) := inFlag;
   outString := stringAppendList(List.map(options, printFlagOptionDesc));
@@ -1671,14 +1671,14 @@ end printFlagValidOptionsDesc;
 
 protected function printFlagOptionDesc
   "Helper function to printFlagValidOptionsDesc."
-  input tuple<String, Util.TranslatableContent> inOption;
+  input tuple<String, Error.TranslatableContent> inOption;
   output String outString;
 protected
-  Util.TranslatableContent desc;
+  Error.TranslatableContent desc;
   String name, desc_str, str;
 algorithm
   (name, desc) := inOption;
-  desc_str := Util.translateContent(desc);
+  desc_str := Error.translateContent(desc);
   str := Util.stringPadRight(" * " +& name +& " ", 30, " ") +& desc_str;
   outString := stringDelimitList(
     Util.stringWrap(str, 80, descriptionIndent +& "    "), "\n") +& "\n";
@@ -1689,11 +1689,11 @@ protected function printDebugFlag
   input DebugFlag inFlag;
   output String outString;
 protected
-  Util.TranslatableContent desc;
+  Error.TranslatableContent desc;
   String name, desc_str;
 algorithm
   DEBUG_FLAG(name = name, description = desc) := inFlag;
-  desc_str := Util.translateContent(desc);
+  desc_str := Error.translateContent(desc);
   outString := Util.stringPadRight(" * " +& name +& " ", 26, " ") +& desc_str;
   outString := stringDelimitList(Util.stringWrap(outString, 80,
     descriptionIndent), "\n") +& "\n";

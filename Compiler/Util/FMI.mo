@@ -121,11 +121,11 @@ public function getFMIModelVariableHasStart
   external "C" outFMIModelVariableHasStart=FMIImpl__getFMIModelVariableHasStart(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
 end getFMIModelVariableHasStart;
 
-public function getFMIModelVariableHasFixed
+public function getFMIModelVariableIsFixed
   input Integer inFMIModelVariable;
   output Boolean outFMIModelVariableHasFixed;
-  external "C" outFMIModelVariableHasFixed=FMIImpl__getFMIModelVariableHasFixed(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIModelVariableHasFixed;
+  external "C" outFMIModelVariableHasFixed=FMIImpl__getFMIModelVariableIsFixed(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
+end getFMIModelVariableIsFixed;
 
 public function getFMIRealVariableStartValue
   input Integer inFMIModelVariable;

@@ -2328,7 +2328,7 @@ msgstr ""
 #: ../runtime/SimulationResults.c:108 ../runtime/SimulationResults.c:138
 #, c-format
 msgid "%s not found in %s\n"
-msgstr "%s nicht in %s gefunden"
+msgstr "%s nicht in %s gefunden\n"
 
 #: ../runtime/SimulationResults.c:121
 #, c-format
@@ -2338,7 +2338,7 @@ msgstr ""
 #: ../runtime/SimulationResults.c:154
 #, c-format
 msgid "%s not defined at time %s\n"
-msgstr "%s zur Zeit %s nicht definiert"
+msgstr "%s zur Zeit %s nicht definiert\n"
 
 #: ../runtime/SimulationResults.c:168
 #, c-format
@@ -2380,11 +2380,11 @@ msgstr ""
 
 #: ../runtime/SimulationResultsCmp.c:701
 msgid "Cannot write result file!\n"
-msgstr "Kann Ergebnisdatei nicht schreiben!"
+msgstr "Kann Ergebnisdatei nicht schreiben!\n"
 
 #: ../runtime/SimulationResultsCmp.c:712
 msgid "Files not Equal\n"
-msgstr "Dateien sind nicht gleich"
+msgstr "Dateien sind nicht gleich\n"
 
 #: ../runtime/systemimpl.c:313
 #, c-format

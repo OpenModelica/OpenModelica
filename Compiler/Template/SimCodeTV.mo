@@ -2598,10 +2598,10 @@ package FMI
     output Boolean outFMIModelVariableHasStart;
   end getFMIModelVariableHasStart;
 
-  function getFMIModelVariableHasFixed
+  function getFMIModelVariableIsFixed
     input Integer inFMIModelVariable;
     output Boolean outFMIModelVariableHasFixed;
-  end getFMIModelVariableHasFixed;
+  end getFMIModelVariableIsFixed;
   
   function getFMIRealVariableStartValue
     input Integer inFMIModelVariable;

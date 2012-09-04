@@ -1191,9 +1191,9 @@ template dumpFMIModelVariableBasetypeAndName(Integer fmiModelVariable)
   let basetype = getFMIModelVariableBaseType(fmiModelVariable)
   let name = getFMIModelVariableName(fmiModelVariable)
   let hasStart = getFMIModelVariableHasStart(fmiModelVariable)
-  let hasFixed = getFMIModelVariableHasFixed(fmiModelVariable)
+  let isFixed = getFMIModelVariableIsFixed(fmiModelVariable)
   <<
-  <%basetype%> <%name%><%if stringEq(hasStart,"true") then "(start="+dumpFMIModelVariableStartValue(fmiModelVariable,basetype)%><%if boolAnd(stringEq(hasStart,"true"),stringEq(hasFixed,"true")) then ",fixed=true"%><%if boolAnd(stringEq(hasStart,"false"),stringEq(hasFixed,"true")) then "(fixed=true"%><%if boolOr(stringEq(hasStart,"true"),stringEq(hasFixed,"true")) then ")"%>
+  <%basetype%> <%name%><%if stringEq(hasStart,"true") then "(start="+dumpFMIModelVariableStartValue(fmiModelVariable,basetype)%><%if boolAnd(stringEq(hasStart,"true"),stringEq(isFixed,"true")) then ",fixed=true"%><%if boolAnd(stringEq(hasStart,"false"),stringEq(isFixed,"true")) then "(fixed=true"%><%if boolOr(stringEq(hasStart,"true"),stringEq(isFixed,"true")) then ")"%>
   >>
 end dumpFMIModelVariableBasetypeAndName;
 

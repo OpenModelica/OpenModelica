@@ -3438,28 +3438,6 @@ algorithm
   empty := "";
 end anyToEmptyString;
 
-public uniontype TranslatableContent
-  record gettext "Used to mark messages as targets for translation"
-    String msgid;
-  end gettext;
-  record notrans "String cannot be translated; used for too generic messages"
-    String str;
-  end notrans;
-end TranslatableContent;
-
-public function translateContent "Translate content to a string"
-  input TranslatableContent msg;
-  output String str;
-algorithm
-  str := match msg
-    case gettext(str)
-      equation
-        str = System.gettext(str);
-      then str;
-    case notrans(str) then str;
-  end match;
-end translateContent;
-
 public function removeLast3Char
   input String str;
   output String outStr;

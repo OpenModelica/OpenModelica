@@ -133,9 +133,9 @@ RML_BEGIN_LABEL(FMI__getFMIModelVariableHasStart)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(FMI__getFMIModelVariableHasFixed)
+RML_BEGIN_LABEL(FMI__getFMIModelVariableIsFixed)
 {
-  rmlA0 = FMIImpl__getFMIModelVariableHasFixed(RML_UNTAGFIXNUM(rmlA0)) ? RML_TRUE : RML_FALSE;
+  rmlA0 = FMIImpl__getFMIModelVariableIsFixed(RML_UNTAGFIXNUM(rmlA0)) ? RML_TRUE : RML_FALSE;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
