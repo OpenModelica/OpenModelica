@@ -1538,7 +1538,7 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
               *isDir = cIsDir;
             }
             break;
-          } else if (version && 0 == strncmp(version,cverPrio,versionLen)) {
+          } else if (version && 0 == strcmp(version,cverPrio)) {
             outPrio = prio;
             *outDir = mp;
             if (*outName) free(*outName);
