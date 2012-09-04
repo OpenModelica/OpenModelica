@@ -1515,7 +1515,9 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
         /* Check if this file has higher priority than the last found match */
         while (RML_NILHDR != RML_GETHDR(priosWork)) {
           if (prio > outPrio) break;
-          const char *cverPrio = RML_STRINGDATA(RML_CAR(priosWork));
+          void *cverCar = RML_CAR(priosWork);
+          const char *cverPrio = RML_STRINGDATA(cverCar);
+          int cverLength = RML_HDRSTRLEN(RML_GETHDR(cverCar));
           priosWork = RML_CDR(priosWork);
           /* fprintf(stderr, "'%s' '%s' %d\n", cverPrio, version, versionLen); */
           if (0 == strcmp("default",cverPrio)) {
@@ -1542,8 +1544,14 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
             if (*outName) free(*outName);
             *outName = strdup(ent->d_name);
             *isDir = cIsDir;
+          } else if (version && 0 == strncmp(version,cverPrio,cverLength) && outPrio > prio) {
+            outPrio = prio+1;
+            *outDir = mp;
+            if (*outName) free(*outName);
+            *outName = strdup(ent->d_name);
+            *isDir = cIsDir;
           }
-          prio++;
+          prio+=2;
         } /* prios loop */
       } /* strcmp */
     } /* readdir loop */
