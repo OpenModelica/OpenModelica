@@ -3,6 +3,7 @@ loadFile("Script/Interactive.mo");
 loadFile("FrontEnd/Values.mo");
 loadFile("Util/Error.mo");
 loadFile("Util/Config.mo");
+loadFile("Util/Util.mo");
 err:=getErrorString();
 if err == "" then loadOK := true; end if;
 a:=loadOK; // Will cause exit(1) if loadOK is undefined

@@ -4781,7 +4781,7 @@ algorithm
       Absyn.Path msgpath;
       Values.Value tyVal,severityVal,infoVal;
       list<Values.Value> values;
-      Error.TranslatableContent message;
+      Util.TranslatableContent message;
       String msg_str;
       Integer id;
       Error.Severity severity;
@@ -4789,7 +4789,7 @@ algorithm
       Absyn.Info info;
     case Error.TOTALMESSAGE(Error.MESSAGE(id,ty,severity,message),info)
       equation
-        msg_str = Error.translateContent(message);
+        msg_str = Util.translateContent(message);
         msgpath = Absyn.FULLYQUALIFIED(Absyn.QUALIFIED("OpenModelica",Absyn.QUALIFIED("Scripting",Absyn.IDENT("ErrorMessage"))));
         tyVal = errorTypeToValue(ty);
         severityVal = errorLevelToValue(severity);

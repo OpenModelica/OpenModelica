@@ -34,6 +34,7 @@ extern "C" {
 #include "Absyn.h"
 /* Cannot include Error.h as there exists one the Simulation Runtime as well */
 #include "../Error.h"
+#include "../Util.h"
 #include "rml.h"
 #define UNBOX_OFFSET 0
 #include "errorext.cpp"

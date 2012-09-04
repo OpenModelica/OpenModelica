@@ -3,6 +3,98 @@
 extern "C" {
 #endif
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Util_ReplacePattern_REPLACEPATTERN__desc_added
+#define Util_ReplacePattern_REPLACEPATTERN__desc_added
+ADD_METARECORD_DEFINTIONS const char* Util_ReplacePattern_REPLACEPATTERN__desc__fields[2] = {"from","to"};
+ADD_METARECORD_DEFINTIONS struct record_description Util_ReplacePattern_REPLACEPATTERN__desc = {
+  "Util_ReplacePattern_REPLACEPATTERN",
+  "Util.ReplacePattern.REPLACEPATTERN",
+  Util_ReplacePattern_REPLACEPATTERN__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Util_ReplacePattern_REPLACEPATTERN__desc;
+#endif
+#define Util__REPLACEPATTERN_3dBOX2 3
+#define Util__REPLACEPATTERN(from,to) (mmc_mk_box3(3,&Util_ReplacePattern_REPLACEPATTERN__desc,from,to))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Util_Status_SUCCESS__desc_added
+#define Util_Status_SUCCESS__desc_added
+ADD_METARECORD_DEFINTIONS const char* Util_Status_SUCCESS__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Util_Status_SUCCESS__desc = {
+  "Util_Status_SUCCESS",
+  "Util.Status.SUCCESS",
+  Util_Status_SUCCESS__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Util_Status_SUCCESS__desc;
+#endif
+#define Util__SUCCESS_3dBOX0 3
+static const MMC_DEFSTRUCTLIT(Util__SUCCESS__struct,1,3) {&Util_Status_SUCCESS__desc}};
+static void *Util__SUCCESS = MMC_REFSTRUCTLIT(Util__SUCCESS__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Util_Status_FAILURE__desc_added
+#define Util_Status_FAILURE__desc_added
+ADD_METARECORD_DEFINTIONS const char* Util_Status_FAILURE__desc__fields[1] = {"no fileds"};
+ADD_METARECORD_DEFINTIONS struct record_description Util_Status_FAILURE__desc = {
+  "Util_Status_FAILURE",
+  "Util.Status.FAILURE",
+  Util_Status_FAILURE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Util_Status_FAILURE__desc;
+#endif
+#define Util__FAILURE_3dBOX0 4
+static const MMC_DEFSTRUCTLIT(Util__FAILURE__struct,1,4) {&Util_Status_FAILURE__desc}};
+static void *Util__FAILURE = MMC_REFSTRUCTLIT(Util__FAILURE__struct);
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Util_DateTime_DATETIME__desc_added
+#define Util_DateTime_DATETIME__desc_added
+ADD_METARECORD_DEFINTIONS const char* Util_DateTime_DATETIME__desc__fields[6] = {"sec","min","hour","mday","mon","year"};
+ADD_METARECORD_DEFINTIONS struct record_description Util_DateTime_DATETIME__desc = {
+  "Util_DateTime_DATETIME",
+  "Util.DateTime.DATETIME",
+  Util_DateTime_DATETIME__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Util_DateTime_DATETIME__desc;
+#endif
+#define Util__DATETIME_3dBOX6 3
+#define Util__DATETIME(sec,min,hour,mday,mon,year) (mmc_mk_box7(3,&Util_DateTime_DATETIME__desc,sec,min,hour,mday,mon,year))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Util_TranslatableContent_gettext__desc_added
+#define Util_TranslatableContent_gettext__desc_added
+ADD_METARECORD_DEFINTIONS const char* Util_TranslatableContent_gettext__desc__fields[1] = {"msgid"};
+ADD_METARECORD_DEFINTIONS struct record_description Util_TranslatableContent_gettext__desc = {
+  "Util_TranslatableContent_gettext",
+  "Util.TranslatableContent.gettext",
+  Util_TranslatableContent_gettext__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Util_TranslatableContent_gettext__desc;
+#endif
+#define Util__gettext_3dBOX1 3
+#define Util__gettext(msgid) (mmc_mk_box2(3,&Util_TranslatableContent_gettext__desc,msgid))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Util_TranslatableContent_notrans__desc_added
+#define Util_TranslatableContent_notrans__desc_added
+ADD_METARECORD_DEFINTIONS const char* Util_TranslatableContent_notrans__desc__fields[1] = {"str"};
+ADD_METARECORD_DEFINTIONS struct record_description Util_TranslatableContent_notrans__desc = {
+  "Util_TranslatableContent_notrans",
+  "Util.TranslatableContent.notrans",
+  Util_TranslatableContent_notrans__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Util_TranslatableContent_notrans__desc;
+#endif
+#define Util__notrans_3dBOX1 4
+#define Util__notrans(str) (mmc_mk_box2(4,&Util_TranslatableContent_notrans__desc,str))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Config_LanguageStandard_MODELICA__1__X__desc_added
 #define Config_LanguageStandard_MODELICA__1__X__desc_added
 ADD_METARECORD_DEFINTIONS const char* Config_LanguageStandard_MODELICA__1__X__desc__fields[1] = {"no fileds"};
@@ -114,36 +206,6 @@ extern struct record_description Config_LanguageStandard_MODELICA__LATEST__desc;
 #define Config__MODELICA_5fLATEST_3dBOX0 9
 static const MMC_DEFSTRUCTLIT(Config__MODELICA_5fLATEST__struct,1,9) {&Config_LanguageStandard_MODELICA__LATEST__desc}};
 static void *Config__MODELICA_5fLATEST = MMC_REFSTRUCTLIT(Config__MODELICA_5fLATEST__struct);
-#ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Error_TranslatableContent_gettext__desc_added
-#define Error_TranslatableContent_gettext__desc_added
-ADD_METARECORD_DEFINTIONS const char* Error_TranslatableContent_gettext__desc__fields[1] = {"msgid"};
-ADD_METARECORD_DEFINTIONS struct record_description Error_TranslatableContent_gettext__desc = {
-  "Error_TranslatableContent_gettext",
-  "Error.TranslatableContent.gettext",
-  Error_TranslatableContent_gettext__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Error_TranslatableContent_gettext__desc;
-#endif
-#define Error__gettext_3dBOX1 3
-#define Error__gettext(msgid) (mmc_mk_box2(3,&Error_TranslatableContent_gettext__desc,msgid))
-#ifdef ADD_METARECORD_DEFINTIONS
-#ifndef Error_TranslatableContent_notrans__desc_added
-#define Error_TranslatableContent_notrans__desc_added
-ADD_METARECORD_DEFINTIONS const char* Error_TranslatableContent_notrans__desc__fields[1] = {"str"};
-ADD_METARECORD_DEFINTIONS struct record_description Error_TranslatableContent_notrans__desc = {
-  "Error_TranslatableContent_notrans",
-  "Error.TranslatableContent.notrans",
-  Error_TranslatableContent_notrans__desc__fields
-};
-#endif
-#else /* Only use the file as a header */
-extern struct record_description Error_TranslatableContent_notrans__desc;
-#endif
-#define Error__notrans_3dBOX1 4
-#define Error__notrans(str) (mmc_mk_box2(4,&Error_TranslatableContent_notrans__desc,str))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Error_Severity_ERROR__desc_added
 #define Error_Severity_ERROR__desc_added

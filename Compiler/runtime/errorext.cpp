@@ -366,7 +366,7 @@ extern void* ErrorImpl__getMessages()
     case ErrorType_runtime: ty=Error__SIMULATION; break;
     case ErrorType_scripting: ty=Error__SCRIPTING; break;
     }
-    void *message = Error__notrans(mk_scon(errorMessageQueue.top()->getShortMessage().c_str()));
+    void *message = Util__notrans(mk_scon(errorMessageQueue.top()->getShortMessage().c_str()));
     void *msg = Error__MESSAGE(id,ty,severity,message);
     void *sl = mk_icon(errorMessageQueue.top()->getStartLineNo());
     void *sc = mk_icon(errorMessageQueue.top()->getStartColumnNo());
