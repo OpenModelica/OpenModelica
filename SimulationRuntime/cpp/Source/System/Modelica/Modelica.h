@@ -7,6 +7,12 @@
 #include <cmath>
 using namespace std;
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
+#ifndef BOOST_THREAD_USE_DLL
+#define BOOST_THREAD_USE_DLL
+#endif
+#ifndef BOOST_ALL_DYN_LINK
+#define BOOST_ALL_DYN_LINK
+#endif
 #include <boost/assign/std/vector.hpp> // for 'operator+=()'
 #include <boost/assign/list_of.hpp> // for 'list_of()'
 #include <boost/unordered_map.hpp> 

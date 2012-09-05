@@ -35,9 +35,8 @@ SystemDefaultImplementation::~SystemDefaultImplementation()
 void SystemDefaultImplementation::Assert(bool cond,string msg)
 {
   if(!cond)
-    //throw std::runtime_error(msg);
-    //cout << msg << std::endl;
-    cout << "";
+    throw std::runtime_error(msg);
+      
 }
 
 void SystemDefaultImplementation::Terminate(string msg)

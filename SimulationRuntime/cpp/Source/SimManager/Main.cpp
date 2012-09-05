@@ -40,7 +40,7 @@ int main(int argc, const char* argv[])
             return 1;
         }
         string runtime_lib_path;
-                      
+
         if (vm.count("runtime-libray"))
         {
             //cout << "runtime library path set to " << vm["runtime-libray"].as<string>() << std::endl;
@@ -69,7 +69,7 @@ int main(int argc, const char* argv[])
         {
             //cout << "config path set to " << vm["config-path"].as<string>() << std::endl;
             config_path = fs::path(vm["config-path"].as<string>());
-        
+
         }
         else
         {
@@ -81,7 +81,7 @@ int main(int argc, const char* argv[])
         {
             //cout << "results file: " << vm["results-file"].as<string>() << std::endl;
             resultsfilename = vm["results-file"].as<string>();
-            
+
         }
         else
         {
@@ -158,21 +158,14 @@ int main(int argc, const char* argv[])
             solver->setInitStepSize(config.getSolverSettings()->gethInit());
             // Call the solver
             solver->solve(command);
-
+            // Get the status of the solver (is the interation done sucessfully?) 
+            IDAESolver::SOLVERSTATUS status = solver->getSolverStatus();
+            //Todo: use flags for simulation outputs
+            //solver->writeSimulationInfo(std::cout);
+            //solver->reportErrorMessage(std::cout);
+            return 0;
         }
-        // Get the status of the solver (is the interation done sucessfully?) 
-        IDAESolver::SOLVERSTATUS status = solver->getSolverStatus();
-        //Todo: use flags for simulation outputs
-        //solver->writeSimulationInfo(std::cout);
-        //solver->reportErrorMessage(std::cout);
-        return 0;
     }
-
-    catch(exception& e) 
-    {
-        cerr << "error: " << e.what() << "\n";
-        return 1;
-    } 
     catch(std::exception& ex)
     {
         std::string error = ex.what();
@@ -181,5 +174,3 @@ int main(int argc, const char* argv[])
     }
 
 }
-
-

@@ -13,3 +13,9 @@
 #include "Utils/extension/factory.hpp"
 using namespace boost::numeric;
 using namespace std;
+#ifndef BOOST_THREAD_USE_DLL
+#define BOOST_THREAD_USE_DLL
+#endif
+#ifndef BOOST_ALL_DYN_LINK
+#define BOOST_ALL_DYN_LINK
+#endif

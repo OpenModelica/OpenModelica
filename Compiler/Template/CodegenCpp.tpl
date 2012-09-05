@@ -564,12 +564,19 @@ end extReturnType;
 template functionHeaderRegularFunction1(Function fn,SimCode simCode)
 ::=
 match fn
-case FUNCTION(__) then 
-  let fname = underscorePath(name)
-  << 
-    typedef tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
-    typedef tuple< <%outVars |> var => funReturnDefinition2(var,simCode) ;separator=", "%> > <%fname%>RefRetType;
+ case FUNCTION(outVars={var}) then 
+ let fname = underscorePath(name)
+  << /*default return type*/
+    typedef <%funReturnDefinition1(var,simCode)%>  <%fname%>RetType;
+    typedef <%funReturnDefinition2(var,simCode)%>  <%fname%>RefRetType;
   >>
+case FUNCTION(outVars=_::_) then 
+ let fname = underscorePath(name)
+  << /*tuple return type*/
+    typedef boost::tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
+    typedef boost::tuple< <%outVars |> var => funReturnDefinition2(var,simCode) ;separator=", "%> > <%fname%>RefRetType;
+  >>
+
  case RECORD_CONSTRUCTOR(__) then
       let fname = underscorePath(name)
       <<
@@ -599,7 +606,7 @@ match fn
 case EXTERNAL_FUNCTION(__) then 
   let fname = underscorePath(name)
   << 
-    typedef tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
+    typedef boost::tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
   >>
 end functionHeaderExternFunction;
 
@@ -730,12 +737,16 @@ case FUNCTION(__) then
   let &outVarInits = buffer ""
   let &outVarCopy = buffer ""
   let &outVarAssign = buffer ""
- 
-     let _ = (outVars |> var hasindex i1 fromindex 0 =>
+     let _ =  match outVars   case {var} then (outVars |> var hasindex i1 fromindex 0 =>
      varOutput(fn, var,i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, simCode)
       ;separator="\n"; empty /* increase the counter! */
      )
-   
+    else
+      (outVars |> var hasindex i1 fromindex 0 =>
+     varOutputTuple(fn, var,i1, &varDecls, &outVarInits, &outVarCopy, &outVarAssign, simCode)
+      ;separator="\n"; empty /* increase the counter! */
+     )
+  
   
   
   
@@ -1086,6 +1097,55 @@ case var as VARIABLE(__) then
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/,simCode)
     ;separator="][")
+ if instDims then
+    let &varInits += '_<%fname%>.resize((boost::extents[<%instDimsInit%>]));
+    _<%fname%>.reindex(1);<%\n%>'
+    let &varAssign += '_<%fname%>=<%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
+    ""
+  else
+   // let &varInits += initRecordMembers(var)
+    let &varAssign += '_<%fname%> = <%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
+    ""
+case var as FUNCTION_PTR(__) then
+    let &varAssign += '_<%fname%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
+    ""
+end varOutput;
+
+
+
+
+template varOutputTuple(Function fn, Variable var, Integer ix, Text &varDecls,
+          Text &varInits, Text &varCopy, Text &varAssign, SimCode simCode)
+ "Generates code to copy result value from a function to dest."
+::=
+match fn
+case FUNCTION(__) then
+ let fname = underscorePath(name)
+match var
+/* The storage size of arrays is known at call time, so they can be allocated
+ * before set_memory_state. Strings are not known, so we copy them, etc...
+ */
+case var as VARIABLE(ty = T_STRING(__)) then 
+    if not acceptMetaModelicaGrammar() then
+      // We need to strdup() all strings, then allocate them on the memory pool again, then free the temporary string
+      let strVar = tempDecl("modelica_string_t", &varDecls)
+      let &varCopy += '<%strVar%> = strdup(<%contextCref(var.name,contextFunction,simCode)%>);<%\n%>'
+      let &varAssign +=
+        <<
+        _<%fname%> = init_modelica_string(<%strVar%>);
+        free(<%strVar%>);<%\n%>
+        >>
+      ""
+    else
+      let &varAssign += '_<%fname%>= <%contextCref(var.name,contextFunction,simCode)%>;<%\n%>'
+      ""
+case var as VARIABLE(__) then
+  let marker = '<%contextCref(var.name,contextFunction,simCode)%>'
+  let &varInits += '/* varOutput varInits(<%marker%>) */ <%\n%>'
+  let &varAssign += '/* varOutput varAssign(<%marker%>) */ <%\n%>'
+  let instDimsInit = (instDims |> exp =>
+      daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFD*/,simCode)
+    ;separator="][")
   let assginBegin = 'get<<%ix%>>(' 
   let assginEnd = ')'
   if instDims then
@@ -1100,7 +1160,7 @@ case var as VARIABLE(__) then
 case var as FUNCTION_PTR(__) then
     let &varAssign += '_<%fname%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
     ""
-end varOutput;
+end varOutputTuple;
 
 template varInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/, SimCode simCode)
  "Generates code to initialize variables.
@@ -4510,7 +4570,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = T_REAL(__)), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-    'fmax(<%var1%>,<%var2%>)'
+    'max(<%var1%>,<%var2%>)'
   
   case CALL(path=IDENT(name="max"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
@@ -4521,7 +4581,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-    'fmin(<%var1%>,<%var2%>)'
+    'min(<%var1%>,<%var2%>)'
   
   case CALL(path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
@@ -4768,17 +4828,38 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%expPart%>), <%i%>));<%\n%>'
     '<%tvar%>'
   
-  case exp as CALL(attr=attr as CALL_ATTR(ty=ty)) then
+  case exp as CALL(attr=attr as CALL_ATTR(ty=T_NORETCALL(__))) then
+  ""
+  /*Function calls with array return type*/
+  case exp as CALL(attr=attr as CALL_ATTR(ty=T_ARRAY(ty=ty,dims=dims))) then
+  
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
     let retType = '<%funName%>RetType'
-    let retVar = match exp
-      case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then ""
-      else tempDecl(retType, &varDecls)
+    let retVar = tempDecl(retType, &varDecls)
+    let arraytpye =  'multi_array_ref<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+    let &preExp += match context 
+                        case FUNCTION_CONTEXT(__) then 'array_assign(<%retVar%>,<%funName%>(<%argStr%>));<%\n%>'
+                        else 'assign_array(<%retVar%> ,_functions.<%funName%>(<%argStr%>));<%\n%>'
+                     
+     
+    '<%retVar%>'
+   /*Function calls with tuple return type
+   case exp as CALL(attr=attr as CALL_ATTR(ty=T_TUPLE(__))) then  
+     then  "Tuple not supported yet"
+   */
+    /*Function calls with default type*/
+   case exp as CALL(attr=attr as CALL_ATTR(ty =ty)) then  
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    let funName = '<%underscorePath(path)%>'
+    let retType = '<%funName%>RetType'
+    let retVar = tempDecl(retType, &varDecls)
     let &preExp += match context case FUNCTION_CONTEXT(__) then'<%if retVar then '<%retVar%> = '%><%funName%>(<%argStr%>);<%\n%>'
-    /*let &preExp += match context case OTHER(__) then*/ else '<%if retVar then '<%retVar%> = '%>_functions.<%funName%>(<%argStr%>);<%\n%>'
-    
-    match exp
+    else '<%if retVar then '<%retVar%> = '%>_functions.<%funName%>(<%argStr%>);<%\n%>'
+     '<%retVar%>'
+     
+     
+    /*match exp
       // no return calls
       case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then '/* NORETCALL */'
       // non tuple calls (single return value)
@@ -4787,7 +4868,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
       // tuple calls (multiple return values)
       case CALL(attr=CALL_ATTR(tuple_=true)) then
         '<%retVar%>'
-  
+     */
     
 end daeExpCall;
 
@@ -5364,25 +5445,72 @@ template daeExpIf(Exp cond, Exp then_, Exp else_, Context context, Text &preExp,
   let &preExpElse = buffer ""
   let eElse = daeExp(else_, context, &preExpElse /*BUFC*/, &varDecls /*BUFD*/,simCode)
       let condVar = tempDecl("bool", &varDecls /*BUFD*/)
-      let resVarType = expTypeFromExpArrayIf(then_)
-      let resVar = tempDecl(resVarType, &varDecls /*BUFD*/)
+      //let resVarType = expTypeFromExpArrayIf(else_,context,preExp,varDecls,simCode)
+      let resVar  = expTypeFromExpArrayIf(else_,context,preExp,varDecls,simCode)
       let &preExp +=  
       <<
       <%condVar%> = <%condExp%>;
       if (<%condVar%>) {
         <%preExpThen%>
-        <%resVar%> = <%eThen%>;
+        <% match typeof(then_)
+            case T_ARRAY(dims=dims) then
+              'assign_array(<%resVar%>,<%eThen%>);'
+                else
+                '<%resVar%> = <%eThen%>;'
+                %>
       } else {
         <%preExpElse%>
-        <%resVar%> = <%eElse%>;
+         <%match typeof(else_)
+            case T_ARRAY(dims=dims) then
+              'assign_array(<%resVar%>,<%eElse%>);'
+                else
+                '<%resVar%> = <%eElse%>;'
+        %>
       }<%\n%>
       >>
       resVar
 end daeExpIf;
 
-template expTypeFromExpArrayIf(Exp exp) ::=
-  expTypeFlag(typeof(exp),6)
+
+
+
+template expTypeFromExpArrayIf(Exp exp, Context context, Text &preExp /*BUFP*/,
+                     Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates code for an array expression."
+::=
+match exp
+case ARRAY(__) then
+  let arrayTypeStr = expTypeArray(ty)
+
+  let arrayDim = expTypeArrayforDim(ty)
+  let &tmpdecl = buffer "" /*BUFD*/
+  let arrayVar = tempDecl(arrayTypeStr, &tmpdecl /*BUFD*/)
+  // let scalarPrefix = if scalar then "scalar_" else ""
+  //let scalarRef = if scalar then "&" else ""
+  let &tmpVar = buffer ""
+  let params = (array |> e =>
+    '<%daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>'
+   ;separator=", ")
+   let &preExp += '
+   //tmp array 
+   <%arrayDim%><%arrayVar%>(boost::extents[<%listLength(array)%>]);
+   <%arrayVar%>.reindex(1);'
+  arrayVar
+  else 
+    match typeof(exp)
+      case T_ARRAY(dims=dims) then 
+      let resVarType = 'multi_array<<%expTypeShort(ty)%>,<%listLength(dims)%>>'
+       let resVar = tempDecl(resVarType, &varDecls /*BUFD*/)
+      resVar 
+     else  
+    let resVarType = expTypeFlag(typeof(exp), 2)
+    let resVar = tempDecl(resVarType, &varDecls /*BUFD*/)
+   resVar
+   end match
+  end match
 end expTypeFromExpArrayIf;
+
+
 
 template expTypeFromExp(Exp it) ::=
   match it
