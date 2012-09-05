@@ -133,6 +133,7 @@ DAEQuery.mo \
 Derive.mo \
 ExpressionSolve.mo \
 GraphML.mo \
+HashTableCrSimVars.mo \
 PartFn.mo \
 OnRelaxation.mo \
 SimCode.mo \

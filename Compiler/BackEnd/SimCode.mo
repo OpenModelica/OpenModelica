@@ -61,6 +61,7 @@ public import DAE;
 public import Env;
 public import HashTableExpToIndex;
 public import HashTableStringToPath;
+public import HashTableCrSimVars;
 public import Inline;
 public import Interactive;
 public import SCode;
@@ -7473,6 +7474,216 @@ algorithm
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
   end match;
 end sortSimvars;
+
+protected function sortSimVars1
+"function: sortSimVars1
+  author: Frenkel TUD 2012-09"
+  input list<SimVar> unsorted;
+  output list<SimVar> sorted;
+protected
+  list<SimVar> vars;
+  HashTableCrSimVars.HashTable ht;
+  list<list<SimVar>> varslstlst;
+algorithm
+  // extract Array SimVars from List
+  ht := HashTableCrSimVars.emptyHashTable();
+  (vars,ht) := extractArrayVars(unsorted,{},ht);
+  // sort array vars
+  varslstlst := BaseHashTable.hashTableValueList(ht);
+  sorted := sortSimVars2(varslstlst,vars);
+end sortSimVars1;
+
+protected function extractArrayVars
+"function: extractArrayVars
+  author: Frenkel TUD 2012-09"
+  input list<SimVar> inVars;
+  input list<SimVar> iscalarVars;
+  input HashTableCrSimVars.HashTable iHt;
+  output list<SimVar> scalarVars;
+  output HashTableCrSimVars.HashTable oHt;
+algorithm
+  (scalarVars,oHt) := match(inVars,iscalarVars,iHt)
+    local
+      HashTableCrSimVars.HashTable ht;
+      SimVar var;
+      list<SimVar> rest,vars;
+      DAE.ComponentRef cr,crnosub;
+    case((var as SIMVAR(arrayCref=NONE()))::rest,_,_)
+      equation
+        (vars,ht) = extractArrayVars(rest,var::iscalarVars,iHt);
+      then 
+        (vars,ht); 
+    case((var as SIMVAR(name=cr,arrayCref=SOME(_)))::rest,_,_)
+      equation
+        crnosub = ComponentReference.crefStripLastSubs(cr);
+        ht = addSimVarHashTableCrSimVars(crnosub,var,iHt);
+        (vars,ht) = extractArrayVars(rest,ht);
+      then 
+        (vars,ht); 
+  end match;
+end extractArrayVars;
+
+protected function addSimVarHashTableCrSimVars
+"function: addSimVarHashTableCrSimVars
+  author: Frenkel TUD 2012-09"
+  input DAE.ComponentRef crnosub;
+  input SimVar var;
+  input HashTableCrSimVars.HashTable iHt;
+  output HashTableCrSimVars.HashTable oHt;
+algorithm
+  oHt := matchcontinue(crnosub,var,iHt)
+    local
+      DAE.ComponentRef cr,crnosub;
+      list<SimVar> varlst;
+    case (_,_,_)
+      equation
+        varlst = BaseHashTable.get(crnosub,iHt);
+        ht = BaseHashTable.add((crnosub,var::varlst), iHt);
+      then
+        ht;
+    case(_,_,_)
+      equation
+        ht = BaseHashTable.add((crnosub,{var}), iHt);
+      then
+        ht;
+  end matchcontinue;
+end addSimVarHashTableCrSimVars;
+
+protected function sortSimVars2
+"function: sortSimVars2
+  author: Frenkel TUD 2012-09"
+  input list<list<SimVar>> varlstlst;
+  input list<SimVar> iVars;
+  output list<SimVar> sortedVars;
+algorithm
+  sortedVars := match(varlstlst,iVars)
+    local
+      list<list<SimVar>> rest;
+      list<SimVar> unsorted,sorted;
+      SimVar var;
+    // only on element, no sort needed
+    case ((var::{})::rest,_)
+      then
+        sortSimVars2(rest,var::iVars);
+    case (unsorted::rest,_)
+      equation
+        sorted = sortArrayVars(unsorted,iVars);
+      then
+        sortSimVars2(rest,sorted);
+  end match;
+end sortSimVars2;
+
+protected function sortArrayVars
+"function: sortArrayVars
+  author: Frenkel TUD 2012-09"
+  input list<SimVar> varlst;
+  input list<SimVar> iVars;
+  output list<SimVar> sortedVars;
+protected
+  array<Option<SimVar>> vararray;
+  DAE.ComponentRef cr;
+  DAE.Type tp;
+  Integer size;
+  DAE.Dimensions dims;
+algorithm
+  SIMVAR(name=cr)::_ := varlst;
+  // get last type
+  tp := ComponentReference.crefLastType(cr);
+  // get size of last type
+  size := Expression.sizeOf(tp);
+  // alloc the array 
+  vararray := arrayCreate(size,NONE());
+  // insert vars in array
+  dims := Expression.arrayDimension(tp);
+  dimsint := Expression.dimensionsSizes(dims);
+  vararray := List.fold1(varlst,insertArrayVars,dimsint,vararray);
+  // get vars from array sorted
+  sortedVars := getVarsFromArray(size,vararray,iVars);
+end sortArrayVars;
+
+protected function getVarsFromArray
+"function: getVarsFromArray
+  author: Frenkel TUD 2012-09"
+  input Integer index;
+  input array<Option<SimVar>> arr;
+  input list<SimVar> iVars;
+  output list<SimVar> sortedVars;
+algorithm
+  sortedVars := matchcontinue(index,arr,iVars)
+    local
+      SimVar var;
+    case (_,_,_)
+      equation
+        true = intGt(index,0);
+        SOME(var) = arr[index];
+      then
+        getVarsFromArray(index-1,arr,var::iVars);
+    case (_,_,_)
+      equation
+        true = intGt(index,0);
+      then
+        getVarsFromArray(index-1,arr,iVars);
+    case (_,_,_)
+      then
+        iVars;
+  end matchcontinue;  
+end getVarsFromArray;
+
+protected function insertArrayVars
+"function: insertArrayVars
+  author: Frenkel TUD 2012-09"
+  input SimVar var;
+  input list<Integer> dims;
+  input array<Option<SimVar>> iarr;
+  output array<Option<SimVar>> oarr;
+protected
+  array<Option<SimVar>> vararray;
+  DAE.ComponentRef cr;
+  list<DAE.Subscript> subscriptLst;
+  list<Integer> indexes;
+  Integer index;
+algorithm
+  // get Subscripts
+  SIMVAR(name=cr) := var;
+  subscriptLst := ComponentReference.crefLastSubs(cr);
+  indexes := Expression.subscriptsInt(subscriptLst);
+  // calculate Place in Array
+  index := calculateIndex(indexes,dims);
+	// insert Var in array
+	oarr := arrayUpdate(iarr,index,SOME(var));
+end insertArrayVars;
+
+protected function calculateIndex
+"function: calculateIndex
+  author: Frenkel TUD 2012-09
+  Helper function for insertArrayVars.
+  Calculate based on the dimensions and the
+  indexes the place of the element in a one
+  dimensional array."
+  input list<Integer> inindex;
+  input list<Integer> dimlist;
+  output Integer value;
+algorithm
+  value:=
+  matchcontinue (inindex,dimlist)
+    local
+      list<Integer> index_lst,dim_lst;
+      Integer value1,index,dim;
+    case ({},{}) then 1;
+    case (index::{},_) then index;
+    case (index::index_lst,dim::dim_lst)
+      equation
+        value = calculateIndex(index_lst,dim_lst);
+        value1 = value + (index*dim);
+      then
+        value1;
+    else
+      equation
+        print("- SimCode.calculateIndex failed\n");
+      then
+        fail();
+  end matchcontinue;
+end calculateIndex;
 
 protected function fixIndex
   input SimVars unfixedSimvars;
