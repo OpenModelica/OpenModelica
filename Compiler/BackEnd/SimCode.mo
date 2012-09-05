@@ -7649,8 +7649,8 @@ algorithm
   indexes := Expression.subscriptsInt(subscriptLst);
   // calculate Place in Array
   index := calculateIndex(indexes,dims);
-	// insert Var in array
-	oarr := arrayUpdate(iarr,index,SOME(var));
+  // insert Var in array
+  oarr := arrayUpdate(iarr,index,SOME(var));
 end insertArrayVars;
 
 protected function calculateIndex
