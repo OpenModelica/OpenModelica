@@ -144,6 +144,7 @@ template < typename T >
 boost::multi_array< T, 1 > cross_array( boost::multi_array_ref< T, 1 > a ,  boost::multi_array_ref< T, 1 > b  )
 {
   typename boost::multi_array<T, 1> res(boost::extents[3]);
+  res.reindex(1);
   res[1] = (a[2] * b[3]) - (a[3] * b[2]);
   res[2] = (a[3] * b[1]) - (a[1] * b[3]);
   res[3] = (a[1] * b[2]) - (a[2] * b[1]);

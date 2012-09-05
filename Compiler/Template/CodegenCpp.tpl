@@ -4428,7 +4428,7 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
   case ASUB(exp=e, sub=indexes) then
   let exp = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
  // let typeShort = expTypeFromExpShort(e)
-  let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls,simCode)%>' ;separator="][")
+  let expIndexes = (indexes |> index => '<%daeExpASubIndex(index, context, &preExp, &varDecls,simCode)%>' ;separator="+1][")
    //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
   '(<%exp%>)[<%expIndexes%>+1]'
   case exp then
@@ -4745,7 +4745,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
                         case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
                         else 'double'
     let tvar = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)                        
-    let &preExp += '<%tvar%> = cross_array<<%type%>>(<%var1%>,<%var2%>);<%\n%>'
+    let &preExp += 'assign_array(<%tvar%>,cross_array<<%type%>>(<%var1%>,<%var2%>));<%\n%>'
     '<%tvar%>'  
   
   case CALL(path=IDENT(name="identity"), expLst={A}) then
@@ -5014,7 +5014,7 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
                         else 'double'
     let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
-    let &preExp += '<%var%>=divide_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>);<%\n%>'
+    let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
     '<%var%>'
     
   case UMINUS(__) then "daeExpBinary:ERR UMINUS not supported" 
