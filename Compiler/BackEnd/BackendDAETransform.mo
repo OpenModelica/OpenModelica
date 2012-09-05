@@ -755,10 +755,12 @@ algorithm
       BackendDAE.StrongComponents comps1;
       BackendDAE.EquationArray eqs;
       BackendDAE.Variables vars;
+      array<Integer> markarray;
     case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_)),_,_,_)
       equation
         comps = tarjanAlgorithm(m,mt,ass1,ass2);
-        comps1 = analyseStrongComponentsScalar(comps,syst,shared,ass1,ass2,mapEqnIncRow,mapIncRowEqn,{});
+        markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs),-1);
+        comps1 = analyseStrongComponentsScalar(comps,syst,shared,ass1,ass2,mapEqnIncRow,mapIncRowEqn,1,markarray,{});
         ass1 = varAssignmentNonScalar(1,arrayLength(ass1),ass1,mapIncRowEqn,{});
         //noscalass2 = eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
       then
@@ -840,22 +842,25 @@ protected function analyseStrongComponentsScalar"function: analyseStrongComponen
   input array<Integer> inAss1;
   input array<Integer> inAss2;  
   input array<list<Integer>> mapEqnIncRow;
-  input array<Integer> mapIncRowEqn;   
+  input array<Integer> mapIncRowEqn;
+  input Integer imark;
+  input array<Integer> markarray;
   input BackendDAE.StrongComponents iAcc;
   output BackendDAE.StrongComponents outComps;
 algorithm
   outComps:=
-  match (inComps,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,iAcc)
+  match (inComps,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,imark,markarray,iAcc)
     local
       list<Integer> comp;
       list<list<Integer>> comps;
       BackendDAE.StrongComponent acomp;
-    case ({},_,_,_,_,_,_,_) then listReverse(iAcc);
-    case (comp::comps,_,_,_,_,_,_,_)
+      Integer mark;
+    case ({},_,_,_,_,_,_,_,_,_) then listReverse(iAcc);
+    case (comp::comps,_,_,_,_,_,_,_,_,_)
       equation
-        acomp = analyseStrongComponentScalar(comp,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn);
+        (acomp,mark) = analyseStrongComponentScalar(comp,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,imark,markarray);
       then
-        analyseStrongComponentsScalar(comps,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,acomp::iAcc);
+        analyseStrongComponentsScalar(comps,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,mark,markarray,acomp::iAcc);
     else
       equation
         print("- BackendDAETransform.analyseStrongComponents failed\n");
@@ -874,10 +879,13 @@ protected function analyseStrongComponentScalar"function: analyseStrongComponent
   input array<Integer> inAss2;  
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;   
+  input Integer imark;
+  input array<Integer> markarray;  
   output BackendDAE.StrongComponent outComp;
+  output Integer omark;
 algorithm
-  outComp:=
-  match (inComp,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn)
+  (outComp,omark):=
+  match (inComp,syst,shared,inAss1,inAss2,mapEqnIncRow,mapIncRowEqn,imark,markarray)
     local
       list<Integer> comp,vlst,eqngetlst;
       list<BackendDAE.Var> varlst;
@@ -887,19 +895,22 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponent compX;
-    case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_,_)
+      Integer mark,low,high;
+      Boolean foundequal;
+    case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_,_,_,_)
       equation
         vlst = List.map1r(comp,arrayGet,ass2);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
         var_varindx_lst = List.threadTuple(varlst,vlst);
         // get from scalar eqns indexes the indexes in the equation array
         comp = List.map1r(comp,arrayGet,mapIncRowEqn);
-        comp = List.unique(comp);  
+        comp = List.fold2(comp,uniqueComp,imark,markarray,{});
+        //comp = List.unique(comp);
         eqngetlst = List.map1(comp,intSub,1);
         eqn_lst = List.map1r(eqngetlst,BackendDAEUtil.equationNth,eqns);
         compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,ass1,ass2,false);   
       then
-        compX;
+        (compX,imark+1);
     else
       equation
         print("- BackendDAETransform.analyseStrongComponent failed\n");
@@ -908,6 +919,26 @@ algorithm
   end match;  
 end analyseStrongComponentScalar;
 
+
+protected function uniqueComp
+  input Integer c;
+  input Integer mark;
+  input array<Integer> markarray;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := matchcontinue(c,mark,markarray,iAcc)
+    case(_,_,_,_)
+      equation
+        false = intEq(mark,markarray[c]);
+        _ = arrayUpdate(markarray,c,mark);
+      then
+        c::iAcc;
+    else
+      then
+        iAcc;
+  end matchcontinue;
+end uniqueComp;
 
 
 public function strongComponents "function: strongComponents

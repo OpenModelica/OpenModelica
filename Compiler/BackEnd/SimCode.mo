@@ -7224,14 +7224,13 @@ algorithm
   outTpl:= matchcontinue (inTpl)      
     local
       BackendDAE.Var var;
-      SimVars vars,varsTmp1,varsTmp2;
+      SimVars vars;
       BackendDAE.Variables aliasVars,v;
     case ((var,(vars,aliasVars,v)))
       equation
-        varsTmp1 = extractVarFromVar(var,aliasVars,v);
-        varsTmp2 = mergeVars(varsTmp1, vars);
+        vars = extractVarFromVar(var,aliasVars,v,vars);
       then
-        ((var,(varsTmp2,aliasVars,v)));
+        ((var,(vars,aliasVars,v)));
     case (inTpl) then inTpl;
   end matchcontinue;
 end extractVarsFromList;
@@ -7242,10 +7241,11 @@ protected function extractVarFromVar
   input BackendDAE.Var dlowVar;
   input BackendDAE.Variables inAliasVars;
   input BackendDAE.Variables inVars;
+  input SimVars varsIn;
   output SimVars varsOut;
 algorithm
   varsOut :=
-  match (dlowVar,inAliasVars,inVars)
+  match (dlowVar,inAliasVars,inVars,varsIn)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -7263,7 +7263,7 @@ algorithm
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> stringAliasVars;
-      list<SimVar> extObjVars;
+      list<SimVar> extObjVars,jacobianVars;
       list<SimVar> constVars;
       list<SimVar> intConstVars;
       list<SimVar> boolConstVars;
@@ -7272,81 +7272,62 @@ algorithm
       SimVar derivSimvar;
       BackendDAE.Variables v;
       Boolean isalias;
-    case (dlowVar,inAliasVars,v)
+    case (dlowVar,inAliasVars,v,
+      SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+          aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+          stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacobianVars,constVars,intConstVars,boolConstVars,stringConstVars))
       equation
-        /* start with empty lists */
-        stateVars = {};
-        derivativeVars = {};
-        algVars = {};
-        intAlgVars = {};
-        boolAlgVars = {};
-        inputVars = {};
-        outputVars = {};
-        aliasVars = {};
-        intAliasVars = {};
-        boolAliasVars = {};
-        paramVars = {};
-        intParamVars = {};
-        boolParamVars = {};
-        stringAlgVars = {};
-        stringParamVars = {};
-        stringAliasVars = {};
-        extObjVars = {};
-        constVars = {};
-        intConstVars = {};
-        boolConstVars = {};
-        stringConstVars = {};
         /* extract the sim var */
         simvar = dlowvarToSimvar(dlowVar,SOME(inAliasVars),v);
         derivSimvar = derVarFromStateVar(simvar);
         isalias = isAliasVar(simvar);
         /* figure out in which lists to put it */
-        stateVars = addSimvarIfTrue((not isalias) and
+        stateVars = List.consOnTrue((not isalias) and
           BackendVariable.isStateVar(dlowVar), simvar, stateVars);
-        derivativeVars = addSimvarIfTrue((not isalias) and
+        derivativeVars = List.consOnTrue((not isalias) and
           BackendVariable.isStateVar(dlowVar), derivSimvar, derivativeVars);
-        algVars = addSimvarIfTrue((not isalias) and
+        algVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarAlg(dlowVar), simvar, algVars);
-        intAlgVars = addSimvarIfTrue((not isalias) and
+        intAlgVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarIntAlg(dlowVar), simvar, intAlgVars);
-        boolAlgVars = addSimvarIfTrue((not isalias) and
+        boolAlgVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAlgVars);
-        inputVars = addSimvarIfTrue((not isalias) and
+        inputVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarOnTopLevelAndInput(dlowVar), simvar, inputVars);
-        outputVars = addSimvarIfTrue((not isalias) and
+        outputVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
-        paramVars = addSimvarIfTrue((not isalias) and
+        paramVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarParam(dlowVar), simvar, paramVars);
-        intParamVars = addSimvarIfTrue((not isalias) and
+        intParamVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarIntParam(dlowVar), simvar, intParamVars);
-        boolParamVars = addSimvarIfTrue((not isalias) and
+        boolParamVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarBoolParam(dlowVar), simvar, boolParamVars);
-        stringAlgVars = addSimvarIfTrue((not isalias) and
+        stringAlgVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarStringAlg(dlowVar), simvar, stringAlgVars);
-        stringParamVars = addSimvarIfTrue((not isalias) and
+        stringParamVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarStringParam(dlowVar), simvar, stringParamVars);
-        extObjVars = addSimvarIfTrue((not isalias) and
+        extObjVars = List.consOnTrue((not isalias) and
           BackendVariable.isExtObj(dlowVar), simvar, extObjVars);
-        aliasVars = addSimvarIfTrue( isalias and
+        aliasVars = List.consOnTrue( isalias and
           BackendVariable.isVarAlg(dlowVar), simvar, aliasVars);
-        intAliasVars = addSimvarIfTrue( isalias and
+        intAliasVars = List.consOnTrue( isalias and
           BackendVariable.isVarIntAlg(dlowVar), simvar, intAliasVars);
-        boolAliasVars = addSimvarIfTrue( isalias and
+        boolAliasVars = List.consOnTrue( isalias and
           BackendVariable.isVarBoolAlg(dlowVar), simvar, boolAliasVars);
-        stringAliasVars = addSimvarIfTrue( isalias and
+        stringAliasVars = List.consOnTrue( isalias and
           BackendVariable.isVarStringAlg(dlowVar), simvar, stringAliasVars);
-        constVars =addSimvarIfTrue((not isalias) and
+        constVars =List.consOnTrue((not isalias) and
           BackendVariable.isVarConst(dlowVar), simvar, constVars);
-        intConstVars = addSimvarIfTrue((not isalias) and
+        intConstVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarIntConst(dlowVar), simvar, intConstVars);
-        boolConstVars = addSimvarIfTrue((not isalias) and
+        boolConstVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarBoolConst(dlowVar), simvar, boolConstVars);
-        stringConstVars = addSimvarIfTrue((not isalias) and
+        stringConstVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarStringConst(dlowVar), simvar, stringConstVars);
       then
         SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-          stringAlgVars, stringParamVars, stringAliasVars, extObjVars,{},constVars,intConstVars,boolConstVars,stringConstVars);
+          stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacobianVars,constVars,intConstVars,boolConstVars,stringConstVars);
   end match;
 end extractVarFromVar;
 
@@ -7412,21 +7393,6 @@ algorithm
    end matchcontinue;
 end dumpVar;
 
-protected function addSimvarIfTrue
-  input Boolean condition;
-  input SimVar var;
-  input list<SimVar> lst;
-  output list<SimVar> res;
-algorithm
-  res :=
-  match (condition, var, lst)
-    case (true, var, lst)
-    then (var :: lst);
-    case (false, var, lst)
-    then lst;
-  end match;
-end addSimvarIfTrue;
-
 protected function isAliasVar
   input SimVar var;
   output Boolean res;
@@ -7439,76 +7405,6 @@ algorithm
     then true;
   end match;
 end isAliasVar;
-
-protected function mergeVars
-  input SimVars vars1;
-  input SimVars vars2;
-  output SimVars varsResult;
-algorithm
-  varsResult :=
-  matchcontinue (vars1, vars2)
-    local
-      list<SimVar> stateVars, stateVars1, stateVars2;
-      list<SimVar> derivativeVars, derivativeVars1, derivativeVars2;
-      list<SimVar> algVars, algVars1, algVars2;
-      list<SimVar> intAlgVars, intAlgVars1, intAlgVars2;
-      list<SimVar> boolAlgVars, boolAlgVars1, boolAlgVars2;
-      list<SimVar> inputVars, inputVars1, inputVars2;
-      list<SimVar> outputVars, outputVars1, outputVars2;
-      list<SimVar> paramVars, paramVars1, paramVars2;
-      list<SimVar> aliasVars, intAliasVars, boolAliasVars, stringAliasVars;
-      list<SimVar> aliasVars1, intAliasVars1, boolAliasVars1, stringAliasVars1;
-      list<SimVar> aliasVars2, intAliasVars2, boolAliasVars2, stringAliasVars2;
-      list<SimVar> intParamVars, intParamVars1, intParamVars2;
-      list<SimVar> boolParamVars, boolParamVars1, boolParamVars2;
-      list<SimVar> stringAlgVars, stringAlgVars1, stringAlgVars2;
-      list<SimVar> stringParamVars, stringParamVars1, stringParamVars2;
-      list<SimVar> extObjVars, extObjVars1, extObjVars2;
-      list<SimVar> jacVars, jacVars1, jacVars2;
-      list<SimVar> constVars, constVars1, constVars2;
-      list<SimVar> intConstVars, intConstVars1, intConstVars2;
-      list<SimVar> boolConstVars, boolConstVars1, boolConstVars2;
-      list<SimVar> stringConstVars, stringConstVars1, stringConstVars2;
-    case (SIMVARS(stateVars1, derivativeVars1, algVars1, intAlgVars1, boolAlgVars1, inputVars1,
-           outputVars1, aliasVars1, intAliasVars1, boolAliasVars1, paramVars1, intParamVars1, boolParamVars1,
-           stringAlgVars1, stringParamVars1, stringAliasVars1, extObjVars1,jacVars1,constVars1,intConstVars1,boolConstVars1,stringConstVars1),
-      SIMVARS(stateVars2, derivativeVars2, algVars2, intAlgVars2, boolAlgVars2, inputVars2,
-           outputVars2, aliasVars2, intAliasVars2, boolAliasVars2, paramVars2, intParamVars2, boolParamVars2,
-           stringAlgVars2, stringParamVars2,stringAliasVars2,extObjVars2,jacVars2,constVars2,intConstVars2,boolConstVars2,stringConstVars2))
-      equation
-        stateVars = listAppend(stateVars1, stateVars2);
-        derivativeVars = listAppend(derivativeVars1, derivativeVars2);
-        algVars = listAppend(algVars1, algVars2);
-        intAlgVars = listAppend(intAlgVars1, intAlgVars2);
-        boolAlgVars = listAppend(boolAlgVars1, boolAlgVars2);
-        inputVars = listAppend(inputVars1, inputVars2);
-        outputVars = listAppend(outputVars1, outputVars2);
-        aliasVars = listAppend(aliasVars1, aliasVars2);
-        intAliasVars = listAppend(intAliasVars1, intAliasVars2);
-        boolAliasVars = listAppend(boolAliasVars1, boolAliasVars2);
-        paramVars = listAppend(paramVars1, paramVars2);
-        intParamVars = listAppend(intParamVars1, intParamVars2);
-        boolParamVars = listAppend(boolParamVars1, boolParamVars2);
-        stringAlgVars = listAppend(stringAlgVars1, stringAlgVars2);
-        stringParamVars = listAppend(stringParamVars1, stringParamVars2);
-        stringAliasVars = listAppend(stringAliasVars1, stringAliasVars2);
-        extObjVars = listAppend(extObjVars1, extObjVars2);
-        jacVars = listAppend(jacVars1, jacVars2);
-        constVars = listAppend(constVars1, constVars2);
-        intConstVars = listAppend(intConstVars1, intConstVars2);
-        boolConstVars = listAppend(boolConstVars1, boolConstVars2);
-        stringConstVars = listAppend(stringConstVars1, stringConstVars2);
-      then
-        SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
-          aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
-          stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
-    case (_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"mergeVars failed"});
-      then
-        fail();
-  end matchcontinue;
-end mergeVars;
 
 protected function sortSimvars
   input SimVars unsortedSimvars;
