@@ -1471,12 +1471,57 @@ static int getPrio(const char *ver, size_t versionLen)
   return 1;
 }
 
-int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const char **outDir, char **outName, int *isDir)
+typedef struct {
+  const char *dir;
+  char *file;
+  long version;
+  char *versionExtra;
+  int fileIsDir;
+} modelicaPathEntry;
+
+void splitVersion(const char *version, long *versionNum, char **versionExtra)
 {
-  size_t nlen = strlen(name);
-  int outPrio = INT_MAX;
-  int defaultPrio = INT_MAX;
-  char *defaultVersion = NULL;
+  const char *buf = version;
+  char *next;
+  long l;
+  int cont,i=3,len;
+  *versionNum = 0;
+  do {
+    /* fprintf(stderr, "look versionNum %s\n", buf); */
+    l = strtol(buf,&next,10);
+    cont = buf != next && l < 255 && l >= 0;
+    if (cont) {
+      *versionNum = *versionNum + (l << (i*8));
+      /* fprintf(stderr, "versionNum %lx\n", *versionNum); */
+      if (*next == '.') *next++;
+    }
+    buf = next;
+  } while (cont && i-- > 0);
+  if (*buf == ' ') buf++;
+  *versionExtra = strdup(buf);
+  len = strlen(*versionExtra);
+  if (len > 3 && 0==strcmp(".mo", *versionExtra+len-3)) {
+    (*versionExtra)[len-3] = '\0';
+  }
+}
+
+static int regularFileExistsInDirectory(const char *dir1, const char *dir2, const char *file)
+{
+  char *str;
+  int res;
+  str = (char*) malloc(strlen(dir1) + strlen(dir2) + strlen(file) + 3);
+  sprintf(str,"%s/%s/%s", dir1, dir2, file);
+  res = SystemImpl__regularFileExists(str);
+  free(str);
+  return res;
+}
+
+static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, void *mps, int *numMatches)
+{
+  int i = 0;
+  *numMatches = 0;
+  modelicaPathEntry* res;
+  void *save_mps = mps;
   while (RML_NILHDR != RML_GETHDR(mps)) {
     const char *mp = RML_STRINGDATA(RML_CAR(mps));
     DIR *dir = opendir(mp);
@@ -1484,82 +1529,219 @@ int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const
     mps = RML_CDR(mps);
     if (!dir) continue;
     while ((ent = readdir(dir))) {
-      if (0 == strncmp(name, ent->d_name, nlen)) {
-        const char *version;
-        int prio = 0, cIsDir = 1;
-        void *priosWork = prios;
-        size_t versionLen = 0;
-        /* Check if file is dir or mo-file; and if it has a version-string or not */
-        if (ent->d_name[nlen] == ' ') {
-          version = ent->d_name+nlen+1;
-          versionLen = strlen(version);
-          if (versionLen >= 3 && version[versionLen-3] == '.' && version[versionLen-2] == 'm' && version[versionLen-1] == 'o') {
-            if (versionLen == 3) version = NULL;
-            cIsDir = 0;
-            versionLen -= 3;
-          }
+      if (0 == strncmp(name, ent->d_name, nlen) && ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.') {
+        int entlen,mightbedir;
 #ifdef DT_DIR
-          /* dirent.d_type is a BSD extension, not part of POSIX */
-          else if (!(ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN)) {
-            continue;
-          }
+        mightbedir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN);
+#else
+        mightbedir = 1;
 #endif
-        } else if (ent->d_name[nlen] == '\0') {
-          version = NULL;
-        } else if (0 == strcmp(ent->d_name+nlen,".mo")) {
-          version = NULL;
-          cIsDir = 0;
-        } else {
+        if (mightbedir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
+          (*numMatches)++;
           continue;
         }
-        /* Check if this file has higher priority than the last found match */
-        while (RML_NILHDR != RML_GETHDR(priosWork)) {
-          if (prio > outPrio) break;
-          void *cverCar = RML_CAR(priosWork);
-          const char *cverPrio = RML_STRINGDATA(cverCar);
-          int cverLength = RML_HDRSTRLEN(RML_GETHDR(cverCar));
-          priosWork = RML_CDR(priosWork);
-          /* fprintf(stderr, "'%s' '%s' %d\n", cverPrio, version, versionLen); */
-          if (0 == strcmp("default",cverPrio)) {
-            /* Search for an appropriate version of the library */
-            outPrio = prio;
-            prio = getPrio(version,versionLen);
-            /* Force preferred version MSL 3.1 / MS 1.0 */
-            if (prio == 1 && 0 == strcmp("Modelica",name) && 0 == strcmp(version,"3.1")) prio = -1;
-            if (prio == 1 && 0 == strcmp("ModelicaServices",name) && 0 == strcmp(version,"1.0")) prio = -1;
-            /* TODO: Use something better than strcmp. We need natural sort for all cases... */
-            if (prio < defaultPrio || (prio == defaultPrio && version && defaultVersion && (strcmp(version, defaultVersion) > 0))) {
-              defaultPrio = prio;
-              *outDir = mp;
-              if (*outName) free(*outName);
-              if (defaultVersion) free(defaultVersion);
-              *outName = strdup(ent->d_name);
-              defaultVersion = version ? strdup(version) : NULL;
-              *isDir = cIsDir;
-            }
-            break;
-          } else if (version && 0 == strcmp(version,cverPrio)) {
-            outPrio = prio;
-            *outDir = mp;
-            if (*outName) free(*outName);
-            *outName = strdup(ent->d_name);
-            *isDir = cIsDir;
-          } else if (version && 0 == strncmp(version,cverPrio,cverLength) && outPrio > prio) {
-            outPrio = prio+1;
-            *outDir = mp;
-            if (*outName) free(*outName);
-            *outName = strdup(ent->d_name);
-            *isDir = cIsDir;
-          }
-          prio+=2;
-        } /* prios loop */
-      } /* strcmp */
-    } /* readdir loop */
+        entlen = strlen(ent->d_name);
+        if (entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+          (*numMatches)++;
+        }
+      }
+    }
     closedir(dir);
   }
-  if (defaultVersion) free(defaultVersion);
-  /* if (*outName) fprintf(stderr, "Found version: %s\n", *outName); */
-  return outPrio == INT_MAX;
+  /* fprintf(stderr, "numMatches: %ld\n", *numMatches); */
+  res = (modelicaPathEntry*) malloc(*numMatches*sizeof(modelicaPathEntry));
+  mps = save_mps;
+  while (RML_NILHDR != RML_GETHDR(mps)) {
+    const char *mp = RML_STRINGDATA(RML_CAR(mps));
+    DIR *dir = opendir(mp);
+    struct dirent *ent;
+    int len;
+    mps = RML_CDR(mps);
+    if (!dir) continue;
+    while ((ent = readdir(dir))) {
+      if (0 == strncmp(name, ent->d_name, nlen) && ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.') {
+        int entlen,ok=0;
+#ifdef DT_DIR
+        if (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN) {
+          ok=1;
+          res[i].fileIsDir=1;
+        }
+#else
+        if (regularFileExistsInDirectory(dir,ent->d_name,"package.mo")) {
+          ok=1;
+          res[i].fileIsDir=1;
+        }
+#endif
+        entlen = strlen(ent->d_name);
+        if (!ok && entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+          res[i].fileIsDir=0;
+          ok=1;
+        }
+        if (!ok)
+          continue;
+        res[i].dir = mp;
+        res[i].file = strdup(ent->d_name);
+        /* fprintf(stderr, "found match: %ld %s\n", i, res[i].file); */
+        if (res[i].file[nlen] == ' ') {
+          splitVersion(res[i].file+nlen+1, &res[i].version, &res[i].versionExtra);
+        } else {
+          res[i].version = 0;
+          res[i].versionExtra = strdup("");
+        }
+        assert(i<*numMatches);
+        i++;
+      }
+    }
+    closedir(dir);
+  }
+  return res;
+}
+
+static void freeAllModelicaPaths(modelicaPathEntry *entries, int numEntries)
+{
+  int i;
+  for (i=0; i<numEntries; i++) {
+    free(entries[i].file);
+    free(entries[i].versionExtra);
+  }
+  free(entries);
+}
+
+static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPathEntry *entries, int numEntries, const char **outDir, char **outName, int *isDir)
+{
+  int i, foundIndex = -1;
+  long version, foundVersion = 0;
+  char *versionExtra, *foundVersionExtra;
+  splitVersion(searchTarget,&version,&versionExtra);
+  /* fprintf(stderr, "expected %lx %s\n", version, versionExtra); */
+  if (version > 0 && !*versionExtra) {
+    for (i=0; i<numEntries; i++) {
+
+      /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
+      fprintf(stderr, "entry version %lx expected %lx extra=%s\n", entries[i].version, version, entries[i].versionExtra); */
+
+      if (entries[i].version == version) {
+        *outDir = entries[i].dir;
+        *outName = entries[i].file;
+        *isDir = entries[i].fileIsDir;
+        free(versionExtra);
+        return 0;
+      }
+    }
+  }
+  if (version > 0 && !*versionExtra) {
+    for (i=0; i<numEntries; i++) {
+      /* Makes us load 3.2.1 if 3.2.0.0 is not available.
+       * Note that all 4 levels are present and 3.2 is equivalent to 3.2.0.0
+       */
+      if ((entries[i].version & 0xFFFF0000) == version) {
+        if (entries[i].version > foundVersion) {
+          foundVersion = entries[i].version;
+          foundIndex = i;
+        }
+      }
+    }
+  }
+  if (foundIndex >= 0) {
+    *outDir = entries[foundIndex].dir;
+    *outName = entries[foundIndex].file;
+    *isDir = entries[foundIndex].fileIsDir;
+    free(versionExtra);
+    return 0;
+  }
+  if (*versionExtra) {
+    /* fprintf(stderr, "Look for version %lx versionExtra: %s\n", version, versionExtra); */
+    for (i=0; i<numEntries; i++) {
+      if (entries[i].version == version && 0==strncmp(entries[i].versionExtra,versionExtra,strlen(versionExtra))) {
+        *outDir = entries[i].dir;
+        *outName = entries[i].file;
+        *isDir = entries[i].fileIsDir;
+        free(versionExtra);
+        return 0;
+      }
+    }
+  }
+  free(versionExtra);
+  return 1;
+}
+
+static int getLoadModelPathFromDefaultTarget(const char *name, modelicaPathEntry *entries, int numEntries, const char **outDir, char **outName, int *isDir)
+{
+  const char *foundExtra = 0;
+  long foundVersion = -1;
+  int bestPrio,i,foundIndex;
+
+  /* Force preferred version MSL 3.1 */
+  if (0 == strcmp("Modelica",name)) {
+    for (i=0; i<numEntries; i++) {
+      if (entries[i].version == 0x03010000 && entries[i].versionExtra[0] == '\0') {
+        *outDir = entries[i].dir;
+        *outName = entries[i].file;
+        *isDir = entries[i].fileIsDir;
+        return 0;
+      }
+    }
+  }
+  /* Force preferred version MS 1.0 */
+  if (0 == strcmp("ModelicaServices",name)) {
+    for (i=0; i<numEntries; i++) {
+      if (entries[i].version == 0x01000000 && entries[i].versionExtra[0] == '\0') {
+        *outDir = entries[i].dir;
+        *outName = entries[i].file;
+        *isDir = entries[i].fileIsDir;
+        return 0;
+      }
+    }
+  }
+  /* Look for best release version */
+  for (i=0; i<numEntries; i++) {
+    if (entries[i].version > foundVersion && entries[i].versionExtra[0] == '\0') {
+      foundVersion = entries[i].version;
+      foundIndex = i;
+    }
+  }
+  /* Look for best pre-release/named version */
+  if (foundIndex == -1) {
+    for (i=0; i<numEntries; i++) {
+      if (entries[i].version > foundVersion || (entries[i].version == foundVersion && strcmp(entries[i].versionExtra,foundExtra) > 0)) {
+        foundVersion = entries[i].version;
+        foundExtra = entries[i].versionExtra;
+        foundIndex = i;
+      }
+    }
+  }
+  if (foundIndex >= 0) {
+    *outDir = entries[foundIndex].dir;
+    *outName = entries[foundIndex].file;
+    *isDir = entries[foundIndex].fileIsDir;
+    return 0;
+  }
+}
+
+int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const char **outDir, char **outName, int *isDir)
+{
+  int numEntries,res=1;
+  size_t nameLen = strlen(name);
+  modelicaPathEntry *entries = getAllModelicaPaths(name, nameLen, mps, &numEntries);
+  while (RML_NILHDR != RML_GETHDR(prios)) {
+    const char *prio = RML_STRINGDATA(RML_CAR(prios));
+    if (0==strcmp("default",prio)) {
+      if (!getLoadModelPathFromDefaultTarget(name,entries,numEntries,outDir,outName,isDir)) {
+        res = 0;
+        break;
+      }
+    } else {
+      if (!getLoadModelPathFromSingleTarget(prio,entries,numEntries,outDir,outName,isDir)) {
+        res = 0;
+        break;
+      }
+    }
+    prios = RML_CDR(prios);
+  }
+  /* fprintf(stderr, "result: %d %s %s %d", res, *outDir, *outName, *isDir); */
+  *outName = *outName ? strdup(*outName) : 0;
+  freeAllModelicaPaths(entries,numEntries);
+  return res;
 }
 
 #define MAX_TMP_TICK 16
@@ -1753,8 +1935,8 @@ void SystemImpl__gettextInit(const char *locale)
   char *locale3 = NULL;
   char *old_ctype = strdup(setlocale(LC_CTYPE, ""));
   int old_ctype_is_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
-  asprintf(&locale2, "%s.utf8", locale);
-  asprintf(&locale3, "%s.UTF-8", locale);
+  assert(asprintf(&locale2, "%s.utf8", locale) > 0);
+  assert(asprintf(&locale3, "%s.UTF-8", locale) > 0);
   int res = *locale == 0 ? setlocale(LC_MESSAGES, "") && setlocale(LC_CTYPE, ""):
     (setlocale(LC_MESSAGES, locale3) && setlocale(LC_CTYPE, locale3))  ||
     (setlocale(LC_MESSAGES, locale2) && setlocale(LC_CTYPE, locale2)) ||
