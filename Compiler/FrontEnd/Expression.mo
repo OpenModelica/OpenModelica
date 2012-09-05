@@ -8003,7 +8003,7 @@ algorithm
     case DAE.USERDEFINED(fqName=_) then 100;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.opWCET failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"Expression.opWCET failed"});
       then fail();
   end match;
 end opComplexity;

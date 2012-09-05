@@ -67,6 +67,7 @@ protected import Parser;
 protected import Print;
 protected import Settings;
 protected import SimCode;
+protected import SimCodeUtil;
 protected import Socket;
 protected import System;
 protected import TaskGraph;
@@ -822,8 +823,8 @@ algorithm
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
-        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
-        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+        simSettings = SimCodeUtil.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","mat",".*",false,"");
+        (_,_,_,_,_,_) = SimCodeUtil.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();
@@ -838,8 +839,8 @@ algorithm
         Print.clearErrorBuf();
         Print.clearBuf();
         cname_str = Absyn.pathString(classname);
-        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*",false,"");
-        (_,_,_,_,_,_) = SimCode.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+        simSettings = SimCodeUtil.createSimulationSettings(0.0, 1.0, 1, 1e-6,"dassl","","plt",".*",false,"");
+        (_,_,_,_,_,_) = SimCodeUtil.generateModelCode(dlow,ap,dae,classname,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
         Debug.execStat("Codegen Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
       then
         ();   

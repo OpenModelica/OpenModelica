@@ -47,6 +47,7 @@ import Env;
 protected
 import CevalScript;
 import SimCode;
+import SimCodeUtil;
 import Interactive;
 import System;
 import Settings;
@@ -108,7 +109,7 @@ algorithm
   
   //print("strippedDae :");
   //BackendDump.dump(strippedDae);
-  (_,libs,fileDir,_,_,_) := SimCode.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
+  (_,libs,fileDir,_,_,_) := SimCodeUtil.generateModelCode(strippedDae,inProgram,inDAElist,inPath,cname_str,SOME(simSettings),Absyn.FUNCTIONARGS({},{}));
   
   //print("..compiling, fileNamePrefix = "+&fileNamePrefix+&"\n");  
   CevalScript.compileModel(fileNamePrefix , libs, fileDir, "", "");

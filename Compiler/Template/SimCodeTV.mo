@@ -496,9 +496,13 @@ package SimCode
   constant Context contextParallelFunction;
   constant list<DAE.Exp> listExpLength1;
 
+end SimCode;
+
+package SimCodeUtil
+
   function elementVars
     input list<DAE.Element> ld;
-    output list<Variable> vars;
+    output list<SimCode.Variable> vars;
   end elementVars;
   
   function crefSubIsScalar
@@ -513,7 +517,7 @@ package SimCode
 
   function crefIsScalar
     input DAE.ComponentRef cref;
-    input Context context;
+    input SimCode.Context context;
     output Boolean isScalar;
   end crefIsScalar;
 
@@ -543,8 +547,8 @@ package SimCode
    
   function cref2simvar
     input DAE.ComponentRef cref;
-    input SimCode simCode;
-    output SimVar outSimVar;
+    input SimCode.SimCode simCode;
+    output SimCode.SimVar outSimVar;
   end cref2simvar;
   
   function derComponentRef
@@ -554,7 +558,7 @@ package SimCode
   
   function hackArrayReverseToCref
     input DAE.Exp inExp;
-    input Context context; 
+    input SimCode.Context context; 
     output DAE.Exp outExp;
   end hackArrayReverseToCref;
   
@@ -565,7 +569,7 @@ package SimCode
 
   function hackMatrixReverseToCref
     input DAE.Exp inExp;
-    input Context context; 
+    input SimCode.Context context; 
     output DAE.Exp outExp;
   end hackMatrixReverseToCref;
   
@@ -580,14 +584,14 @@ package SimCode
   end createAssertforSqrt;
 
     function appendAllequations
-      input list<JacobianMatrix> inJacobianMatrix;
-      output list<SimEqSystem> eqn;
+      input list<SimCode.JacobianMatrix> inJacobianMatrix;
+      output list<SimCode.SimEqSystem> eqn;
     end appendAllequations;
  
     function appendLists
-      input list<SimEqSystem> inEqn1;
-      input list<SimEqSystem> inEqn2;
-      output list<SimEqSystem> outEqn;
+      input list<SimCode.SimEqSystem> inEqn1;
+      input list<SimCode.SimEqSystem> inEqn2;
+      output list<SimCode.SimEqSystem> outEqn;
     end appendLists;
  
     function createDAEString
@@ -596,12 +600,12 @@ package SimCode
     end createDAEString;
   
     function isBoxedFunction
-      input Function fn;
+      input SimCode.Function fn;
       output Boolean b;
     end isBoxedFunction;
     
     function functionInfo
-      input Function fn;
+      input SimCode.Function fn;
       output Absyn.Info info;
     end functionInfo;
   
@@ -611,21 +615,21 @@ package SimCode
     end twodigit;
 
    function countDynamicExternalFunctions
-      input list<Function> inFncLst;
+      input list<SimCode.Function> inFncLst;
       output Integer outDynLoadFuncs;     
    end countDynamicExternalFunctions;
 
   function eqInfo
-    input SimEqSystem eq;
+    input SimCode.SimEqSystem eq;
     output Absyn.Info info;
   end eqInfo;
 
   function varName
-    input SimVar var;
+    input SimCode.SimVar var;
     output DAE.ComponentRef cr;
   end varName;
 
-end SimCode;
+end SimCodeUtil;
 
 
 package BackendDAE

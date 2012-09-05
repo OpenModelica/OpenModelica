@@ -94,6 +94,7 @@ protected import SCodeDump;
 protected import SCodeEnv;
 protected import SCodeFlatten;
 protected import SCodeInst;
+protected import SimCodeUtil;
 protected import System;
 protected import Static;
 protected import SCode;
@@ -2810,7 +2811,7 @@ algorithm
     case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),fileNamePrefix,addDummy,inSimSettingsOpt)
       equation
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
-          SimCode.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
+          SimCodeUtil.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
 
@@ -2849,7 +2850,7 @@ algorithm
     case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt)
       equation
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
-          SimCode.translateModelCPP(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+          SimCodeUtil.translateModelCPP(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
   end match;
@@ -2882,7 +2883,7 @@ algorithm
     case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
       equation
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, _) =
-          SimCode.translateModelFMU(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+          SimCodeUtil.translateModelFMU(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
           
         // compile
         fileNamePrefix = stringAppend(fileNamePrefix,"_FMU");
@@ -2981,7 +2982,7 @@ algorithm
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
-        outSimSettings = SimCode.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,measureTime,cflags);
+        outSimSettings = SimCodeUtil.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str,variableFilter_str,measureTime,cflags);
       then
         (cache, outSimSettings);
     else
@@ -3131,7 +3132,7 @@ algorithm
         
         (cache,ret_val,st,indexed_dlow_1,libs,file_dir,resultValues) = translateModel(cache,env, classname, st_1, filenameprefix,true, SOME(simSettings));
         //cname_str = Absyn.pathString(classname);
-        //SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
+        //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
         
         System.realtimeTick(RT_CLOCK_BUILD_MODEL);
@@ -4465,7 +4466,7 @@ algorithm
         //cname_str = Absyn.pathString(classname);
         //(cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str) 
         //= calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
-        //SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
+        //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
         compileModel(filenameprefix, libs, file_dir, "", method_str);
         Debug.fprintln(Flags.DYN_LOAD, "buildModel: Compiling done.");
@@ -4507,7 +4508,7 @@ algorithm
   funcs := Env.getFunctionTree(cache);
   // First check if the main function exists... If it does not it might be an interactive function...
   mainFunction := DAEUtil.getNamedFunction(functionName, funcs);
-  dependencies := SimCode.getCalledFunctionsInFunction(functionName,funcs);
+  dependencies := SimCodeUtil.getCalledFunctionsInFunction(functionName,funcs);
 end getFunctionDependencies;
 
 public function collectDependencies
@@ -4558,7 +4559,7 @@ algorithm
         (cache, mainFunction, d, metarecordTypes) = collectDependencies(cache, env, path);
         
         pathstr = generateFunctionName(path);
-        SimCode.translateFunctions(pathstr, SOME(mainFunction), d, metarecordTypes, {});
+        SimCodeUtil.translateFunctions(pathstr, SOME(mainFunction), d, metarecordTypes, {});
         compileModel(pathstr, {}, "", "", "");
       then
         (cache, pathstr);
@@ -4578,7 +4579,7 @@ algorithm
         
         // The list of functions is not ordered, so we need to filter out the main function...
         d = DAEUtil.getFunctionList(funcs);
-        SimCode.translateFunctions(pathstr, NONE(), d, {}, {});
+        SimCodeUtil.translateFunctions(pathstr, NONE(), d, {}, {});
       then
         (cache, pathstr);
 
@@ -4632,7 +4633,7 @@ algorithm
         acc = (name,dependencies)::acc;
         dependencies = List.map1(dependencies,stringAppend,".h\"");
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");
-        SimCode.translateFunctions(name, NONE(), d, {}, dependencies);
+        SimCodeUtil.translateFunctions(name, NONE(), d, {}, dependencies);
         acc = generateFunctions(cache,env,sp,acc);
       then acc;
     case (cache,env,_::sp,acc)

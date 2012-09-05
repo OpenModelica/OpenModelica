@@ -137,6 +137,7 @@ HashTableCrSimVars.mo \
 PartFn.mo \
 OnRelaxation.mo \
 SimCode.mo \
+SimCodeUtil.mo \
 TaskGraph.mo \
 XMLDump.mo \
 Matching.mo \

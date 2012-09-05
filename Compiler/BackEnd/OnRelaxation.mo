@@ -225,18 +225,18 @@ algorithm
 
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpMatching(ass2);        
-          subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
-          IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemOneFreeMatching.graphml");
+        //  subsyst = BackendDAEUtil.setEqSystemMatching(subsyst,BackendDAE.MATCHING(ass1,ass2,{}));
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemOneFreeMatching.graphml");
 
         // hier sollte zur vorsicht noch mal ein matching durchgefuehrt werden
         
         // collect tearing variables and residual equations
         vorphans = getOrphans(1,size,ass1,{});
         eorphans = getOrphans(1,size,ass2,{});
-           print("Var Orphans: \n");
-           BackendDump.debuglst((vorphans,intString,", ","\n"));
-           print("Equation Orphans: \n");
-           BackendDump.debuglst((eorphans,intString,", ","\n"));
+        //   print("Var Orphans: \n");
+        //   BackendDump.debuglst((vorphans,intString,", ","\n"));
+        //   print("Equation Orphans: \n");
+        //   BackendDump.debuglst((eorphans,intString,", ","\n"));
         
         // transform to nonscalar 
         ass1 = BackendDAETransform.varAssignmentNonScalar(1,size,ass1,mapIncRowEqn,{});
@@ -258,39 +258,39 @@ algorithm
         mct = Util.arrayCopy(mt, mct);
         mark = 1 "init mark value";
         (mark,constraintresidual) = generateCliquesResidual(eorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vars,{}) "generate cliques for residual equations";
-          print("constraintresidual: \n");
-           BackendDump.debuglst((constraintresidual,intString,", ","\n"));        
+        //  print("constraintresidual: \n");
+        //   BackendDump.debuglst((constraintresidual,intString,", ","\n"));        
         (mark,roots,constraints) = prepairOrphansOrder(vorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vorphansarray1,vars,{},{}) "generate cliques for tearing vars";
         mark = prepairOrphansOrder2(vorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vorphansarray1);
         //  subsyst = BackendDAE.EQSYSTEM(vars,eqns,SOME(mc),SOME(mct),BackendDAE.NO_MATCHING());
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemPreIndex.graphml");
-          print("roots:\n");
-          BackendDump.debuglst((roots,intString,", ","\n")); 
-          print("constraints:\n");
-          BackendDump.debuglst((constraints,intString,", ","\n")); 
+        //  print("roots:\n");
+        //  BackendDump.debuglst((roots,intString,", ","\n")); 
+        //  print("constraints:\n");
+        //  BackendDump.debuglst((constraints,intString,", ","\n")); 
 
         // Order of orphans 
         vorphansarray1 = arrayCreate(size,{});
         List.map2_0(roots,doMark,rowmarks,mark);
         List.map2_0(constraints,doMark,rowmarks,mark);
         otherorphans = List.select2(vorphans, unmarked, rowmarks, mark);
-          print("otherorphans:\n");
-          BackendDump.debuglst((otherorphans,intString,", ","\n")); 
+        //  print("otherorphans:\n");
+        //  BackendDump.debuglst((otherorphans,intString,", ","\n")); 
         mark = getOrphansOrderEdvanced(otherorphans,ass1,ass22,m,mt,mc,mct,mark,rowmarks,colummarks,vorphansarray1);
         List.map2_0(otherorphans,removeRootConnections,vorphansarray1,roots);
         mark = getConstraintesOrphansOrderEdvanced(constraints,ass1,ass22,m,mt,mc,mct,mark,rowmarks,colummarks,vorphansarray1);
-          print("getOrphansOrderEdvanced:\n");
-          BackendDump.dumpIncidenceMatrix(vorphansarray1);
+        //  print("getOrphansOrderEdvanced:\n");
+        //  BackendDump.dumpIncidenceMatrix(vorphansarray1);
 
         (vorphans,mark) = getOrphansOrderEdvanced3(roots,otherorphans,constraints,vorphans,vorphansarray1,mark,rowmarks);
 
         List.map2_0(constraints,doMark,rowmarks,mark);
         otherorphans = List.select2(vorphans, unmarked, rowmarks, mark);
 
-          print("sorted Var Orphans: \n");
-           List.map1_0(vorphans,dumpVar, vars);
-          BackendDump.debuglst((vorphans,intString,", ","\n"));
-       //   BackendDump.dumpVarsArray(vars);
+        //  print("sorted Var Orphans: \n");
+        //   List.map1_0(vorphans,dumpVar, vars);
+        //  BackendDump.debuglst((vorphans,intString,", ","\n"));
+        //  BackendDump.dumpVarsArray(vars);
 
         // get pairs of orphans 
         List.map2_0(constraintresidual,doAssign,ass22,{-1});
@@ -321,22 +321,22 @@ algorithm
         
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, shared, BackendDAE.ABSOLUTE());
-          BackendDump.dumpEqSystem(subsyst);   
-          IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml"); 
+        //  BackendDump.dumpEqSystem(subsyst);   
+        //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml"); 
         SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,ishared);
         ((_,beqs,_,_)) = BackendEquation.traverseBackendDAEEqns(eqns,BackendEquation.equationToExp,(vars,{},{},SOME(funcs)));
         beqs = listReverse(beqs);
-          print("Jacobian:\n");
-          print(BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
+        //  print("Jacobian:\n");
+        //  print(BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
         // dumpJacMatrix(jac,1,1,size,vars);
         
         matrix = arrayCreate(size,{});
         transformJacToMatrix(jac,1,1,size,beqs,matrix);
-          print("Jacobian as Matrix:\n");
-          dumpMatrix(1,size,matrix);
+        //  print("Jacobian as Matrix:\n");
+        //  dumpMatrix(1,size,matrix);
         ht = HashTable4.emptyHashTable();
         (tvars,teqns) = gaussElimination(1,size,matrix,BackendDAEUtil.emptyVars(),BackendDAEUtil.listEquation({}),(1,1));
-          dumpMatrix(1,size,matrix);
+        //  dumpMatrix(1,size,matrix);
         //  subsyst = BackendDAE.EQSYSTEM(tvars,teqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         //  BackendDump.dumpEqSystem(subsyst);
         eqn_lst = BackendDAEUtil.equationList(teqns);  

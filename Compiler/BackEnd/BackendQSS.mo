@@ -54,6 +54,7 @@ public import BackendDAEUtil;
 protected import BackendVariable;
 protected import ComponentReference;
 protected import List;
+protected import SimCodeUtil;
 
 public
 uniontype QSSinfo "- equation indices in static blocks and DEVS structure"
@@ -623,7 +624,7 @@ algorithm
     then computeAlgs(tail,states,listAppend(i_algs,{cref}));
     case ((SimCode.SES_LINEAR(vars=vars)) :: tail,_,i_algs) 
     equation
-      vars_cref = List.map(vars,SimCode.varName);
+      vars_cref = List.map(vars,SimCodeUtil.varName);
     then computeAlgs(tail,states,listAppend(i_algs,vars_cref));
     case ({},_,i_algs)
     equation
@@ -823,9 +824,9 @@ algorithm
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp),
         SimCode.SIMVARS(paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars))
   equation
-    failure(i = List.position(cref,List.map(paramVars,SimCode.varName)));  
-    failure(i = List.position(cref,List.map(intParamVars,SimCode.varName)));  
-    failure(i = List.position(cref,List.map(boolParamVars,SimCode.varName)));  
+    failure(i = List.position(cref,List.map(paramVars,SimCodeUtil.varName)));  
+    failure(i = List.position(cref,List.map(intParamVars,SimCodeUtil.varName)));  
+    failure(i = List.position(cref,List.map(boolParamVars,SimCodeUtil.varName)));  
     t = stringAppend("parameter Real ",System.stringReplace(replaceCref(cref,{},{},{}),".","_"));
     t = stringAppend(t," = ");
     t = stringAppend(t,ExpressionDump.printExpStr(replaceVars(exp,{},{},{})));
