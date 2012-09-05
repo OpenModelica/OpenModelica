@@ -4541,17 +4541,21 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%retVar%> = division(<%argStr%>);<%\n%>'
     '<%retVar%>'              
   
-  case CALL(path=IDENT(name="DIVISION_ARRAY_SCALAR"),
-            expLst={e1, e2, DAE.SCONST(string=string)},attr=attr as CALL_ATTR(__)) then
-    let type = match attr.ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
-                        case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_array"
-                        else "real_array"
-    let var = tempDecl(type, &varDecls)
+   case CALL(attr=CALL_ATTR(ty=ty as T_ARRAY(dims=dims)),
+            path=IDENT(name="DIVISION_ARRAY_SCALAR"),
+            expLst={e1, e2, e3 as SHARED_LITERAL(__)}) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
+                        else "double"
+    
+    let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
     let var1 = daeExp(e1, context, &preExp, &varDecls,simCode)
     let var2 = daeExp(e2, context, &preExp, &varDecls,simCode)
-    let var3 = Util.escapeModelicaStringToCString(string)
-    let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>,"<%var3%>");<%\n%>'
+    let var3 = daeExp(e3, context, &preExp, &varDecls,simCode)
+    let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%var1%>, <%var2%>));<%\n%>'
+    //let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, <%var3%>);<%\n%>' 
     '<%var%>'
+  
     
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     representationCref2(arg.componentRef,simCode,context)
@@ -5016,7 +5020,14 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
     //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
     let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
     '<%var%>'
-    
+  case DIV_SCALAR_ARRAY(ty=T_ARRAY(dims=dims)) then
+    let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then 'int' 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then 'int'
+                        else 'double'
+    let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
+    //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
+    let &preExp += 'assign_array(<%var%>,divide_array<<%type%>,<%listLength(dims)%>>(<%e2%>, <%e1%>));<%\n%>'
+    '<%var%>'
   case UMINUS(__) then "daeExpBinary:ERR UMINUS not supported" 
   case UMINUS_ARR(__) then "daeExpBinary:ERR UMINUS_ARR not supported" 
 
