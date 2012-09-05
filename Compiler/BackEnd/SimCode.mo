@@ -61,7 +61,7 @@ public import DAE;
 public import Env;
 public import HashTableExpToIndex;
 public import HashTableStringToPath;
-public import HashTableCrSimVars;
+//public import HashTableCrSimVars;
 public import Inline;
 public import Interactive;
 public import SCode;
@@ -7474,7 +7474,7 @@ algorithm
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
   end match;
 end sortSimvars;
-
+/*
 protected function sortSimVars1
 "function: sortSimVars1
   author: Frenkel TUD 2012-09"
@@ -7684,7 +7684,7 @@ algorithm
         fail();
   end matchcontinue;
 end calculateIndex;
-
+*/
 protected function fixIndex
   input SimVars unfixedSimvars;
   output SimVars fixedSimvars;

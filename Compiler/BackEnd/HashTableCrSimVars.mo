@@ -28,9 +28,10 @@ public import DAE;
 public import SimCode;
 protected import ComponentReference;
 protected import System;
+protected import List;
 
 public type Key = DAE.ComponentRef;
-public type Value = list<Simcode.SimVar>;
+public type Value = list<SimCode.SimVar>;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
 public type HashTable = tuple<
