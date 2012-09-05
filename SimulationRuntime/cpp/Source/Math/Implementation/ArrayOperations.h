@@ -340,7 +340,7 @@ void assign_array(boost::multi_array<T, NumDims> &A,boost::multi_array_ref<T, Nu
     const size_t* shape = B.shape();
     ex.assign( shape, shape+B.num_dimensions() );
     A.resize( ex );
-	A.reindex(1);
+    A.reindex(1);
     A = B;
 }
 
