@@ -6505,7 +6505,7 @@ protected function hasStopTime2 "For use with getNamedAnnotation"
   input Absyn.ElementArg arg;
   output Boolean b;
 algorithm
-  experimentStr := match (arg)
+  b := match (arg)
     local 
       list<Absyn.ElementArg> arglst;
       list<String> strs;
