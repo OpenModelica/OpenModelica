@@ -564,7 +564,7 @@ algorithm
         dae_var_attr = DAEUtil.setProtectedAttr(dae_var_attr,b);
         dae_var_attr = setMinMaxFromEnumeration(t,dae_var_attr);
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
-        _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);       
+        _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
       then
         (BackendDAE.VAR(name,kind_1,dir,prl,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,ct), states);
   end match;

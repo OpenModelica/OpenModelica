@@ -9650,7 +9650,7 @@ algorithm
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, ishared, BackendDAE.NORMAL());
   //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System" +& intString(size) +& ".graphml");
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,subsyst);
-  
+
   (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared);
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixEnhanced,me);
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixTEnhanced,meT);
@@ -10110,8 +10110,8 @@ algorithm
     case BackendDAE.SOLVABILITY_PARAMETER(b=true) then 50;
     case BackendDAE.SOLVABILITY_TIMEVARYING(b=false) then 0;
     case BackendDAE.SOLVABILITY_TIMEVARYING(b=true) then 100;
-    case BackendDAE.SOLVABILITY_NONLINEAR() then 500;
-    case BackendDAE.SOLVABILITY_UNSOLVABLE() then 1000;
+    case BackendDAE.SOLVABILITY_NONLINEAR() then 200;
+    case BackendDAE.SOLVABILITY_UNSOLVABLE() then 300;
   end match;
 end solvabilityWights;
 

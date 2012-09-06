@@ -8172,8 +8172,9 @@ algorithm
   (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,pastOptModules,matchingAlgorithm,daeHandler);
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  indexed_dlow := translateDae(sode1,NONE());
-  Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  //indexed_dlow := translateDae(sode1,NONE());
+  //Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  indexed_dlow := sode1;
   _ := traverseBackendDAEExpsNoCopyWithUpdate(indexed_dlow,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   sode2 := calculateValues(indexed_dlow);
   Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);

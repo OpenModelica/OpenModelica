@@ -6954,7 +6954,7 @@ algorithm
   end match;
 end isAliasVar;
 
-protected function sortSimvars
+protected function sortSimvarsOld
   input SimCode.SimVars unsortedSimvars;
   input Comparer comp;
   output SimCode.SimVars sortedSimvars;
@@ -7020,9 +7020,9 @@ algorithm
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
   end match;
-end sortSimvars;
+end sortSimvarsOld;
 
-protected function sortSimvarsNew
+protected function sortSimvars
   input SimCode.SimVars unsortedSimvars;
   input Comparer comp;
   output SimCode.SimVars sortedSimvars;
@@ -7088,39 +7088,24 @@ algorithm
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
   end match;
-end sortSimvarsNew;
+end sortSimvars;
 
 protected function sortSimVars1
 "function: sortSimVars1
   author: Frenkel TUD 2012-09"
   input list<SimCode.SimVar> unsorted;
   output list<SimCode.SimVar> sorted;
+protected
+  list<SimCode.SimVar> vars;
+  HashTableCrSimVars.HashTable ht;
+  list<list<SimCode.SimVar>> varslstlst;      
 algorithm
-  sorted := matchcontinue(unsorted)
-    local
-       list<SimCode.SimVar> vars;
-       HashTableCrSimVars.HashTable ht;
-       list<list<SimCode.SimVar>> varslstlst;      
-    case (_)
-      equation
-       // extract Array SimCode.SimVars from List
-       ht = HashTableCrSimVars.emptyHashTable();
-print("extractArrayVars ");      
-      (vars,ht) = extractArrayVars(unsorted,{},ht);
-print("ok \n");      
-      // sort array vars
-      varslstlst = BaseHashTable.hashTableValueList(ht);
-print("sortSimVars2 ");      
-      sorted = sortSimVars2(varslstlst,vars);
-print("ok \n");      
-    then
-      sorted;
-  else
-    equation
-      print("SimCodeUtil.sortSimVars1 failed!\n");
-    then
-      fail();
-  end matchcontinue;
+  // extract Array SimCode.SimVars from List
+  ht := HashTableCrSimVars.emptyHashTable();
+ (vars,ht) := extractArrayVars(unsorted,{},ht);
+  // sort array vars
+  varslstlst := BaseHashTable.hashTableValueList(ht);
+  sorted := sortSimVars2(varslstlst,vars);
 end sortSimVars1;
 
 protected function extractArrayVars
@@ -7233,6 +7218,8 @@ algorithm
       Integer size;
       DAE.Dimensions dims;
       list<Integer> dimsint;
+      
+      String crstr;
     case (_,_)
       equation
         SimCode.SIMVAR(name=cr)::_ = varlst;
@@ -7245,6 +7232,8 @@ algorithm
         // insert vars in array
         dims = Expression.arrayDimension(tp);
         dimsint = Expression.dimensionsSizes(dims);
+        // workaround for Ticket #1796
+        dimsint = listReverse(dimsint);
         vararray = List.fold1(varlst,insertArrayVars,dimsint,vararray);
         // get vars from array sorted
         sortedVars = getVarsFromArray(size,vararray,iVars);
@@ -7253,10 +7242,12 @@ algorithm
   case (_,_)
     equation
       SimCode.SIMVAR(name=cr)::_ = varlst;
-      print("SimCodeUtil.sortArrayVars failed!\n");
-      print(ComponentReference.printComponentRefStr(cr) +& "\n");
+      crstr = ComponentReference.printComponentRefStr(cr);
+      Debug.fprintln(Flags.FAILTRACE, "SimCodeUtil.sortArrayVars failed on " +& crstr +& "\n");
+      sortedVars = List.sort(varlst,comparingArrayVarsIndexes);
+      sortedVars = listAppend(sortedVars,iVars);
     then
-      fail(); 
+      sortedVars; 
   else
     equation
       print("SimCodeUtil.sortArrayVars failed!\n");
@@ -7264,6 +7255,58 @@ algorithm
       fail();     
   end matchcontinue;   
 end sortArrayVars;
+
+protected function comparingArrayVarsIndexes1
+"function: comparingArrayVarsIndexes1
+  author: Frenkel TUD
+  Helper function for comparingArrayVarsIndexes.
+  Check if a element of a non scalar has his place
+  before or after another element in a one
+  dimensional array."
+  input list<Integer> inlist;
+  input list<Integer> inlist1;
+  output Boolean outval;
+algorithm
+  outval:=
+  matchcontinue (inlist, inlist1)
+    local
+      list<Integer> index,index1;
+      Integer val1,val2;
+    case ({},_) then true;
+    case (val1::index,val2::index1)
+      equation
+        true = intEq(val1,val2);
+      then
+       comparingArrayVarsIndexes1(index,index1);
+    case (val1::index,val2::index1)
+      then
+       val1 > val2;
+  end matchcontinue;
+end comparingArrayVarsIndexes1;
+
+protected function comparingArrayVarsIndexes
+"function: comparingArrayVarsIndexes
+  author: Frenkel TUD
+  Comparing two NonScalars.
+  Example:  A[2,2],A[1,1] -> {A[1,1],A[2,2]}"
+  input SimCode.SimVar invar1;
+  input SimCode.SimVar invar2;
+  output Boolean outval;
+algorithm
+  outval:=
+  matchcontinue (invar1,invar2)
+    local
+      DAE.ComponentRef varName1, varName2;
+      list<DAE.Subscript> subscriptLst, subscriptLst1;
+    case (SimCode.SIMVAR(name = varName1),SimCode.SIMVAR(name = varName2))
+      equation
+        subscriptLst = ComponentReference.crefLastSubs(varName1);
+        subscriptLst1 = ComponentReference.crefLastSubs(varName2);
+      then
+        comparingArrayVarsIndexes1(Expression.subscriptsInt(subscriptLst),Expression.subscriptsInt(subscriptLst1));
+    case (_,_) then true;
+  end matchcontinue;
+end comparingArrayVarsIndexes;
 
 protected function getVarsFromArray
 "function: getVarsFromArray
@@ -7300,35 +7343,25 @@ protected function insertArrayVars
   input list<Integer> dims;
   input array<Option<SimCode.SimVar>> iarr;
   output array<Option<SimCode.SimVar>> oarr;
+protected
+  array<Option<SimCode.SimVar>> vararray;
+  DAE.ComponentRef cr;
+  list<DAE.Subscript> subscriptLst;
+  list<Integer> indexes;
+  Integer index;
 algorithm
-  oarr := matchcontinue(var,dims,iarr)
-    local
-      array<Option<SimCode.SimVar>> vararray;
-      DAE.ComponentRef cr;
-      list<DAE.Subscript> subscriptLst;
-      list<Integer> indexes;
-      Integer index;
-    case(_,_,_)
-      equation
-        // get Subscripts
-        SimCode.SIMVAR(name=cr) = var;
-        subscriptLst = ComponentReference.crefLastSubs(cr);
-        indexes = Expression.subscriptsInt(subscriptLst);
-        // calculate Place in Array
-        index = calculateIndex(indexes,dims);
-        // insert Var in array
-     print("Insert " +& intString(arrayLength(iarr)) +& " index " +& intString(index) +& "  " +& stringDelimitList(List.map(subscriptLst,ExpressionDump.subscriptString),", ") +& "\n");   
-     print("indexes " +& stringDelimitList(List.map(indexes,intString),", ") +& "\n");   
-     print("dims " +& stringDelimitList(List.map(dims,intString),", ") +& "\n");   
-        oarr = arrayUpdate(iarr,index,SOME(var));
-     then
-       oarr;
-    else
-      equation
-        print("SimCodeUtil.insertArrayVars failed!\n");
-      then
-        fail(); 
-  end matchcontinue;
+  // get Subscripts
+  SimCode.SIMVAR(name=cr) := var;
+  subscriptLst := ComponentReference.crefLastSubs(cr);
+  indexes := Expression.subscriptsInt(subscriptLst);
+  // print("ArrayLength " +& intString(arrayLength(iarr)) +& " : " +& stringDelimitList(List.map(subscriptLst,ExpressionDump.subscriptString),", ") +& "\n");   
+  // print("indexes " +& stringDelimitList(List.map(indexes,intString),", ") +& "\n");   
+  // print("dims " +& stringDelimitList(List.map(dims,intString),", ") +& "\n");   
+  // calculate Place in Array
+  index := calculateIndex(indexes,dims);
+  // print("index " +& intString(index) +& "\n");   
+  // insert Var in array
+  oarr := arrayUpdate(iarr,index,SOME(var));
 end insertArrayVars;
 
 protected function calculateIndex
@@ -7352,12 +7385,13 @@ algorithm
     case (index::index_lst,dim::dim_lst)
       equation
         value = calculateIndex(index_lst,dim_lst);
-        value1 = value + ((index-1)*dim);
+        value1 = List.fold(dim_lst,intMul,1);
+        value1 = value + (index-1)*value1;
       then
         value1;
     else
       equation
-        print("- SimCodeUtil.calculateIndex failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.calculateIndex failed\n"});
       then
         fail();
   end matchcontinue;
@@ -7397,6 +7431,8 @@ algorithm
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars))
       equation
+        stateVars = rewriteIndex(stateVars, 0);
+        derivativeVars = rewriteIndex(derivativeVars, 0);
         algVars = rewriteIndex(algVars, 0);
         intAlgVars = rewriteIndex(intAlgVars,0);
         boolAlgVars = rewriteIndex(boolAlgVars,0);
@@ -7414,6 +7450,9 @@ algorithm
         intConstVars = rewriteIndex(intConstVars, 0);
         boolConstVars = rewriteIndex(boolConstVars, 0);
         stringConstVars = rewriteIndex(stringConstVars, 0);
+        extObjVars = rewriteIndex(extObjVars, 0);
+        inputVars = rewriteIndex(inputVars, 0);
+        outputVars = rewriteIndex(outputVars, 0);
       then SimCode.SIMVARS(stateVars, derivativeVars, algVars,intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
@@ -11589,8 +11628,7 @@ algorithm
       Integer variable_index1;
       SimCode.SimVar v,newvar1;
       list<String> numArrayElement;
-  
-  case((v as SimCode.SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),SimCode.SIMVAR(name1,_,_,_,_,index1,_,_,_,_,_,_,_,_,_,_,_,SOME(variable_index1),_)::_)    
+  case((v as SimCode.SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_,isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)),SimCode.SIMVAR(name=name1,index=index1,variable_index=SOME(variable_index1))::_)    
     equation
       Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStrCrefStr,(" compare variable ",name,"with ",name1,"\n"));
       true = ComponentReference.crefEqual(name,name1);
