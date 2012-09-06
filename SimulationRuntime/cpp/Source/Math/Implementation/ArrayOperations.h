@@ -165,15 +165,11 @@ void usub_array(boost::multi_array_ref< T, dims > &a)
 Applies array operation F (*,/) on array
 */
 
-template<
-  typename T1, typename T2, size_t dims, class F,
-  template< typename, size_t > class Array1,
-  template< typename, size_t > class Array2
->
-boost::multi_array_ref< T1, dims >  array_operation( Array1< T1, dims > a, const Array2< T2, dims >& b, F& op )
+template< typename T1, typename T2, size_t dims, class F >
+boost::multi_array_ref< T1, dims >  array_operation( boost::multi_array< T1, dims > a, const boost::multi_array_ref< T2, dims > b, F& op )
 {
-  typename Array2< T2, dims >::const_iterator j = b.begin();
-  for ( typename Array1< T1, dims >::iterator i = a.begin();
+  typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
+  for ( typename boost::multi_array< T1, dims >::iterator i = a.begin();
         i != a.end(); i++, j++ )
     array_operation( *i, *j, op );
   return a;
@@ -198,13 +194,11 @@ boost::multi_array_ref< T1, 1 > array_operation( boost::multi_array< T1, 1 > a, 
 /**
 Applies array operation F  (*,/) on  sub array a[i]
 */
-template<
-  typename T1, typename T2, size_t NumDims, class F,
-  template< typename, size_t > class Array2
->
-boost::detail::multi_array::sub_array< T1, NumDims > array_operation( boost::detail::multi_array::sub_array< T1, NumDims > a, const Array2< T2, NumDims > &b, F op )
+template<typename T1, typename T2, size_t NumDims, class F >
+
+boost::detail::multi_array::sub_array< T1, NumDims > array_operation( boost::detail::multi_array::sub_array< T1, NumDims > a, const boost::multi_array_ref< T2, NumDims > &b, F op )
 {
-  typename Array2< T2, NumDims >::const_iterator j = b.begin();
+  typename boost::multi_array_ref< T2, NumDims >::const_iterator j = b.begin();
   for ( typename boost::detail::multi_array::sub_array< T1, NumDims >::iterator i = a.begin();
         i != a.end(); i++, j++ )
     array_operation( *i, *j, op );
@@ -214,13 +208,10 @@ boost::detail::multi_array::sub_array< T1, NumDims > array_operation( boost::det
 /**
 Applies array operation F  (*,/) on one dimensial sub array a[i]
 */
-template<
-  typename T1, typename T2, class F,
-  template< typename, size_t > class Array2
->
-boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::multi_array::sub_array< T1, 1 > a, const Array2< T2, 1 > &b,  F op )
+template< typename T1, typename T2, class F >
+boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::multi_array::sub_array< T1, 1 > a, boost::multi_array_ref< T2, 1 > &b,  F op )
 {
-  typename Array2< T2, 1 >::const_iterator j = b.begin();
+  typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
   for ( typename boost::detail::multi_array::sub_array< T1, 1 >::iterator i = a.begin();
         i != a.end(); i++, j++ )
     op( *i, *j );
@@ -233,14 +224,11 @@ Applies array operation F (+,-) on  on dimensional  subarray
 */
 
 template<
-  typename T1, typename T2, typename T3, class F,
-  template< typename, size_t > class Array2,
-  template< typename, size_t > class Array3
->
-boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::multi_array::sub_array< T1, 1 > a,  const Array2< T2, 1 > &b, const Array3< T3, 1 > &c, F op )
+  typename T1, typename T2, typename T3, class F >
+boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::multi_array::sub_array< T1, 1 > a,  boost::multi_array_ref< T2, 1 > &b, boost::multi_array_ref< T3, 1 > &c, F op )
 {
-  typename Array2< T2, 1 >::const_iterator j = b.begin();
-  typename Array3< T3, 1 >::const_iterator k = c.begin();
+  typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
+  typename boost::multi_array_ref< T3, 1 >::const_iterator k = c.begin();
   for ( typename boost::detail::multi_array::sub_array< T1, 1 >::iterator i = a.begin();
         i != a.end(); i++, j++, k++ )
    op( *i, *j, *k );
@@ -249,20 +237,16 @@ boost::detail::multi_array::sub_array< T1, 1 > array_operation( boost::detail::m
 
 
 /**
-Applies array operation F (+,-) on on dimensional array
+Applies array operation F (+,-) on array
 */
 
 template<
-  typename T1, typename T2, typename T3, class F,
-  template< typename, size_t > class Array1,
-  template< typename, size_t > class Array2,
-  template< typename, size_t > class Array3
->
-Array1< T1, 1 > &array_operation( Array1< T1, 1 > &a, const Array2< T2, 1 > &b, const Array3< T3, 1 > &c, F op )
+  typename T1, typename T2, typename T3, class F >
+boost::multi_array< T1, 1 > &array_operation( boost::multi_array< T1, 1 > &a,  boost::multi_array_ref< T2, 1 > &b,  boost::multi_array_ref< T3, 1 > &c, F op )
 {
-  typename Array2< T2, 1 >::const_iterator j = b.begin();
-  typename Array3< T3, 1 >::const_iterator k = c.begin();
-  for ( typename Array1< T1, 1 >::iterator i = a.begin();
+ typename boost::multi_array_ref< T2, 1 >::const_iterator j = b.begin();
+ typename boost::multi_array_ref< T3, 1 >::const_iterator k = c.begin();
+  for ( typename boost::multi_array< T1, 1 >::iterator i = a.begin();
         i != a.end(); i++, j++, k++ )
     op( *i, *j, *k );
   return a;
@@ -273,14 +257,11 @@ Applies array operation F (+,-) on subarray
 */
 
 template<
-  typename T1, typename T2, typename T3, size_t dims, class F,
-  template< typename, size_t > class Array2,
-  template< typename, size_t > class Array3
->
-boost::detail::multi_array::sub_array< T1, dims > array_operation( boost::detail::multi_array::sub_array< T1, dims > a, const Array2< T2, dims > &b, const Array3< T3, dims > &c,  F op )
+  typename T1, typename T2, typename T3, size_t dims, class F >
+boost::detail::multi_array::sub_array< T1, dims > array_operation( boost::detail::multi_array::sub_array< T1, dims > a, boost::multi_array_ref< T2, dims > &b, boost::multi_array_ref< T3, dims > &c,  F op )
 {
-  typename Array2< T2, dims >::const_iterator j = b.begin();
-  typename Array3< T3, dims >::const_iterator k = c.begin();
+  typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
+  typename boost::multi_array_ref< T3, dims >::const_iterator k = c.begin();
   for ( typename boost::detail::multi_array::sub_array< T1, dims >::iterator i = a.begin();
         i != a.end(); i++, j++, k++ )    array_operation( *i, *j, *k, op );
   return a;
@@ -290,16 +271,12 @@ Applies array operation F (+,-) on array
 */
 
 template<
-  typename T1, typename T2, typename T3, size_t dims, class F,
-  template< typename, size_t > class Array1,
-  template< typename, size_t > class Array2,
-  template< typename, size_t > class Array3
->
-Array1< T1, dims > &array_operation( Array1< T1, dims > &a, const Array2< T2, dims > &b, const Array3< T3, dims > &c, F op )
+  typename T1, typename T2, typename T3, size_t dims, class F >
+boost::multi_array< T1, dims > &array_operation( boost::multi_array< T1, dims > &a,  boost::multi_array_ref< T2, dims > b,  boost::multi_array_ref< T3, dims > c, F op )
 {
-  typename Array2< T2, dims >::const_iterator j = b.begin();
-  typename Array3< T3, dims >::const_iterator k = c.begin();
-  for ( typename Array1< T1, dims >::iterator i = a.begin();
+  typename boost::multi_array_ref< T2, dims >::const_iterator j = b.begin();
+  typename boost::multi_array_ref< T3, dims >::const_iterator k = c.begin();
+  for (typename boost::multi_array< T1, dims >::iterator i = a.begin();
         i != a.end(); i++, j++, k++ )
     array_operation( *i, *j, *k, op );
   return a;

@@ -603,7 +603,14 @@ end functionHeaderRecordConstruct;
 template functionHeaderExternFunction(Function fn,SimCode simCode)
 ::=
 match fn
-case EXTERNAL_FUNCTION(__) then 
+case EXTERNAL_FUNCTION(outVars={var}) then 
+  
+  let fname = underscorePath(name)
+  << 
+    typedef  <%funReturnDefinition1(var,simCode)%> <%fname%>RetType;
+  >>
+ case EXTERNAL_FUNCTION(outVars=_::_) then 
+  
   let fname = underscorePath(name)
   << 
     typedef boost::tuple< <%outVars |> var => funReturnDefinition1(var,simCode) ;separator=", "%> >  <%fname%>RetType;
@@ -974,14 +981,29 @@ case EXTERNAL_FUNCTION(__) then
   <%match extReturn case SIMEXTARG(__) then extFunCallVardecl(extReturn, &varDecls /*BUFD*/)%>
   <%dynamicCheck%>
   <%returnAssign%><%extName%>(<%args%>);
-  <%extArgs |> arg => extFunCallVarcopy(arg,fname) ;separator="\n"%>
-  <%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn,fname)%>
+  <%extArgs |> arg => extFunCallVarcopy(arg,fname) ;separator="\n"%>             
+  
+  <%match extReturn case SIMEXTARG(__) then extFunCallVarcopy(extReturn,fname)%> 
   >>
 end extFunCallC;
 
-
-
 template extFunCallVarcopy(SimExtArg arg, String fnName)
+ "Helper to extFunCall."
+::=
+match arg
+case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
+  match oi case 0 then
+    ""
+  else
+    let cr = '<%extVarName2(c)%>'
+    <<
+     _<%fnName%> = <%cr%>;
+    >>
+end extFunCallVarcopy;
+
+
+
+template extFunCallVarcopyTuple(SimExtArg arg, String fnName)
  "Helper to extFunCall."
 ::=
 match arg
@@ -996,7 +1018,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     <<
      <%assginBegin%>_<%fnName%><%assginEnd%> = <%cr%>;
     >>
-end extFunCallVarcopy;
+end extFunCallVarcopyTuple;
 
 template expTypeModelica(DAE.Type ty)
  "Generate type helper."
@@ -5031,8 +5053,22 @@ template daeExpBinary(Operator it, Exp exp1, Exp exp2, Context context, Text &pr
   case UMINUS(__) then "daeExpBinary:ERR UMINUS not supported" 
   case UMINUS_ARR(__) then "daeExpBinary:ERR UMINUS_ARR not supported" 
 
-  case ADD_ARR(__) then "daeExpBinary:ERR ADD_ARR not supported" 
-  case SUB_ARR(__) then "daeExpBinary:ERR SUB_ARR not supported" 
+  case ADD_ARR(ty=T_ARRAY(dims=dims)) then 
+  let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then "int"
+                        else "double"
+  let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
+    //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
+    let &preExp += 'assign_array(<%var%>,add_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
+    '<%var%>' 
+  case SUB_ARR(ty=T_ARRAY(dims=dims)) then 
+  let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "int" 
+                        case T_ARRAY(ty=T_ENUMERATION(__)) then  "int"
+                        else "double"
+  let var = tempDecl('multi_array<<%type%>,<%listLength(dims)%>>', &varDecls /*BUFD*/)
+    //let var = tempDecl1(type,e1,&varDecls /*BUFD*/)
+    let &preExp += 'assign_array(<%var%>,subtract_array<<%type%>,<%listLength(dims)%>>(<%e1%>, <%e2%>));<%\n%>'
+    '<%var%>'
   case MUL_ARR(__) then "daeExpBinary:ERR MUL_ARR not supported" 
   case DIV_ARR(__) then "daeExpBinary:ERR DIV_ARR not supported" 
   case ADD_ARRAY_SCALAR(__) then "daeExpBinary:ERR ADD_ARRAY_SCALAR not supported" 
