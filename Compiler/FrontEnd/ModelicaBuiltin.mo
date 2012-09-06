@@ -2437,6 +2437,12 @@ algorithm
   end if;
 end setInitXmlStartValue;
 
+function isExperiment "An experiment is defined as having annotation Experiment(stopTime=...)"
+  input TypeName name;
+  output Boolean res;
+external "builtin";
+end isExperiment;
+
 annotation(preferredView="text");
 end Scripting;
 

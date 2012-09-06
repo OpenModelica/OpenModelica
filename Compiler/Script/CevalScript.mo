@@ -1881,6 +1881,16 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
     
+    case (cache,env,"isExperiment",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+      equation
+        b = Interactive.getNamedAnnotation(classpath, p, "experiment", SOME(false), hasStopTime);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,"isExperiment",_,st as Interactive.SYMBOLTABLE(ast=p),msg)
+      then
+        (cache,Values.BOOL(false),st);
+
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),msg)
       equation
         Print.clearBuf();
@@ -6477,5 +6487,34 @@ algorithm
     else "(version unknown)";
   end matchcontinue;
 end getPackageVersion;
+
+protected function hasStopTime "For use with getNamedAnnotation"
+  input Option<Absyn.Modification> mod;
+  output Boolean b;
+algorithm
+  b := match (mod)
+    local 
+      list<Absyn.ElementArg> arglst;
+    case (SOME(Absyn.CLASSMOD(elementArgLst = arglst)))
+      then List.exist(arglst,hasStopTime2);
+    
+  end match;
+end hasStopTime;
+
+protected function hasStopTime2 "For use with getNamedAnnotation"
+  input Absyn.ElementArg arg;
+  output Boolean b;
+algorithm
+  experimentStr := match (arg)
+    local 
+      list<Absyn.ElementArg> arglst;
+      list<String> strs;
+      String s;
+
+    case Absyn.MODIFICATION(componentRef=Absyn.CREF_IDENT(name="StopTime")) then true;
+    else false;
+    
+  end match;
+end hasStopTime2;
 
 end CevalScript;
