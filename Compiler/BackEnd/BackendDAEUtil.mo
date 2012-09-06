@@ -840,59 +840,6 @@ algorithm
   end match;
 end addBackendDAEFunctionTree;
 
-public function translateDae "function: translateDae
-  author: PA
-
-  Translates the dae so variables are indexed into different arrays:
-  - x for states
-  - xd for derivatives
-  - y_real for algebraic variables
-  - p_real for parameters
-  - y_int for algebraic variables
-  - p_int for parameters
-  - y_bool for algebraic variables
-  - p_bool for parameters
-  - y_str for algebraic variables
-  - p_str for parameters
-"
-  input BackendDAE.BackendDAE inBackendDAE;
-  input Option<String> dummy;
-  output BackendDAE.BackendDAE outBackendDAE;
-algorithm
-  outBackendDAE := match (inBackendDAE,dummy)
-    local
-      list<list<Var>> varlst;
-      list<Var> knvarlst,extvarlst;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;      
-      DAE.FunctionTree funcs;
-      list<WhenClause> wc;
-      list<ZeroCrossing> zc;
-      BackendDAE.Variables  knvars, extVars,av;
-      EquationArray seqns,ieqns;
-      ExternalObjectClasses extObjCls;
-      BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      EqSystems systs;
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls,btp,symjacs)),_)
-      equation
-        varlst = List.mapMap(systs,BackendVariable.daeVars,varList);
-        knvarlst = varList(knvars);
-        extvarlst = varList(extVars);
-        // varlst = Util.listMap(varlst,listReverse);
-        // knvarlst = listReverse(knvarlst);
-        // extvarlst = listReverse(extvarlst);
-        (varlst,knvarlst,extvarlst) = BackendVariable.calculateIndexes(varlst, knvarlst,extvarlst);
-        systs = List.threadMap(systs,varlst,addVarsToEqSystem);
-        knvars = BackendVariable.addVars(knvarlst, knvars);
-        extVars = BackendVariable.addVars(extvarlst, extVars);
-      then
-        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,extVars,av,ieqns,seqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wc,zc),extObjCls,btp,symjacs));
-  end match;
-end translateDae;
-
 public function addVarsToEqSystem
   input BackendDAE.EqSystem syst;
   input list<Var> varlst;
@@ -8139,7 +8086,7 @@ public function getSolvedSystem
   input Option<list<String>> strPastOptModules;
   output BackendDAE.BackendDAE outSODE;
 protected
-  BackendDAE.BackendDAE dae,optdae,sode,sode1,sode2,optsode,indexed_dlow;
+  BackendDAE.BackendDAE dae,optdae,sode,sode1,sode2,optsode;
   Option<BackendDAE.IncidenceMatrix> om,omT;
   BackendDAE.IncidenceMatrix m,mT,m_1,mT_1;
   array<Integer> v1,v2,v1_1,v2_1;
@@ -8172,11 +8119,8 @@ algorithm
   (optsode,Util.SUCCESS()) := pastoptimiseDAE(sode,pastOptModules,matchingAlgorithm,daeHandler);
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  //indexed_dlow := translateDae(sode1,NONE());
-  //Debug.execStat("translateDAE",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  indexed_dlow := sode1;
-  _ := traverseBackendDAEExpsNoCopyWithUpdate(indexed_dlow,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  sode2 := calculateValues(indexed_dlow);
+  _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
+  sode2 := calculateValues(sode1);
   Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   outSODE := expandAlgorithmsbyInitStmts(sode2);
   Debug.execStat("expandAlgorithmsbyInitStmts",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
