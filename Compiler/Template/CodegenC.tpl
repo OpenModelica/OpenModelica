@@ -1539,40 +1539,40 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
       
       int functionJac<%matrixname%>_sparse(DATA* data, double* jac)
       {
-        int i, j, l, k=0, ii;
+        int color, seedVar, i, l, k=0;
        
         int index = INDEX_JAC_<%matrixname%>;       
         const int maxColor = <%maxColor%>;
         const int numSeedVars = <%numSeedVars%>;
         
-        for(i=0; i<maxColor; i++)
+        for(color=0; color<maxColor; color++)
         {
-          for(ii=0; ii<numSeedVars; ii++)
-            if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
-              data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
+          for(i=0; i<numSeedVars; i++)
+            if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
+              data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
 
           functionJac<%matrixname%>_column(data);
           
-          for(j=0; j<numSeedVars; j++)
+          for(seedVar=0; seedVar<numSeedVars; seedVar++)
           {
-            if(data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
+            if(data->simulationInfo.analyticJacobians[index].seedVars[seedVar] == 1)
             {
-              if(j == 0)
-                ii = 0;
+              if(seedVar == 0)
+                i = 0;
               else
-                ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
+                i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar-1];
               
-              for(; ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j]; ii++)
+              for(; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar]; i++)
               {
-                l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii]-1;
+                l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[i]-1;
                 jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[l];
               }
             }
           }
           
-          for(ii=0; ii<numSeedVars; ii++)
-            if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
-              data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0;
+          for(i=0; i<numSeedVars; i++)
+            if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
+              data->simulationInfo.analyticJacobians[index].seedVars[i] = 0;
           
         }
         return 0;
