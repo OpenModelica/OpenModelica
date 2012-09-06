@@ -286,7 +286,7 @@ public function hackArrayReverseToCref
 "This is a hack transformation of an expanded array back to its cref.
 It is used in daeExpArray() (for C# yet) to optimize the generated code.
 TODO: This function should not exist! 
-Rather the array should not be let expanded when SimCode.SimCode is entering templates. 
+Rather the array should not be let expanded when SimCode is entering templates. 
 "
   input DAE.Exp inExp;
   input SimCode.Context context;
@@ -343,7 +343,7 @@ public function hackMatrixReverseToCref
 "This is a hack transformation of an expanded matrix back to its cref.
 It is used in daeExpMatrix() (for C# yet) to optimize the generated code.
 TODO: This function should not exist! 
-Rather the matrix should not be let expanded when SimCode.SimCode is entering templates 
+Rather the matrix should not be let expanded when SimCode is entering templates 
 "
   input DAE.Exp inExp;
   input SimCode.Context context;
@@ -521,7 +521,7 @@ end createSimulationSettings;
 
 
 public function generateModelCodeFMU
-  "Generates code for a model by creating a SimCode.SimCode structure and calling the
+  "Generates code for a model by creating a SimCode structure and calling the
    template-based code generator on it."
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Program p;
@@ -555,7 +555,7 @@ algorithm
   simCode := createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
-  Debug.execStat("SimCode.SimCode",CevalScript.RT_CLOCK_SIMCODE);
+  Debug.execStat("SimCode",CevalScript.RT_CLOCK_SIMCODE);
   
   System.realtimeTick(CevalScript.RT_CLOCK_TEMPLATES);
   callTargetTemplatesFMU(simCode, Config.simCodeTarget());
@@ -598,7 +598,7 @@ algorithm
       Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
     case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),filenameprefix,addDummy, inSimSettingsOpt)
       equation
-        /* calculate stuff that we need to create SimCode.SimCode data structure */
+        /* calculate stuff that we need to create SimCode data structure */
         System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
@@ -618,13 +618,13 @@ algorithm
           ("timeFrontend", Values.REAL(timeFrontend))
           };
           resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode.SimCode: The model ",resstr," has been translated to FMU"});
+        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to FMU"});
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,className,_,_,_, _)
       equation        
         resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode.SimCode: The model ",resstr," could not be translated to FMU"});
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to FMU"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
         fail();
@@ -633,7 +633,7 @@ end translateModelFMU;
 
 
 public function generateModelCode
-  "Generates code for a model by creating a SimCode.SimCode structure and calling the
+  "Generates code for a model by creating a SimCode structure and calling the
    template-based code generator on it."
    
   input BackendDAE.BackendDAE inBackendDAE;
@@ -673,7 +673,7 @@ algorithm
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
-  Debug.execStat("SimCode.SimCode",CevalScript.RT_CLOCK_SIMCODE);
+  Debug.execStat("SimCode",CevalScript.RT_CLOCK_SIMCODE);
   
   System.realtimeTick(CevalScript.RT_CLOCK_TEMPLATES);
   callTargetTemplates(simCode,inBackendDAE,Config.simCodeTarget());
@@ -683,7 +683,7 @@ end generateModelCode;
 // TODO: use another switch ... later make it first class option like -target or so
 // Update: inQSSrequiredData passed in order to call BackendQSS and generate the extra structures needed for QSS simulation.
 protected function callTargetTemplates
-"Generate target code by passing the SimCode.SimCode data structure to templates."
+"Generate target code by passing the SimCode data structure to templates."
   input SimCode.SimCode simCode;
   input BackendDAE.BackendDAE inQSSrequiredData;
   input String target;
@@ -737,7 +737,7 @@ algorithm
 end callTargetTemplates;
 
 protected function callTargetTemplatesFMU
-"Generate target code by passing the SimCode.SimCode data structure to templates."
+"Generate target code by passing the SimCode data structure to templates."
   input SimCode.SimCode simCode;
   input String target;
 algorithm
@@ -798,7 +798,7 @@ algorithm
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix,addDummy, inSimSettingsOpt,args)
       equation
-        // calculate stuff that we need to create SimCode.SimCode data structure 
+        // calculate stuff that we need to create SimCode data structure 
         System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
         //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
@@ -816,15 +816,15 @@ algorithm
           ("timeFrontend", Values.REAL(timeFrontend))
           };          
         resstr = Util.if_(Flags.isSet(Flags.FAILTRACE),Absyn.pathStringNoQual(className),"");
-        resstr = stringAppendList({"SimCode.SimCode: The model ",resstr," has been translated"});
-        //        resstr = "SimCode.SimCode: The model has been translated";
+        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
+        //        resstr = "SimCode: The model has been translated";
       then
         (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,className,_,_,_,_,_)
       equation        
         true = Flags.isSet(Flags.FAILTRACE);
         resstr = Absyn.pathStringNoQual(className);
-        resstr = stringAppendList({"SimCode.SimCode: The model ",resstr," could not be translated"});
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
       then
         fail();
@@ -1920,9 +1920,9 @@ algorithm
         LinearMatrices = createJacobianLinearCode(dlow2,uniqueEqIndex);
         LinearMatrices = jacG::LinearMatrices;
         
-        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode.SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
         crefToSimVarHT = createCrefToSimVarHT(modelInfo);
-        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode.SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
         
         constraints = arrayList(constrsarr);
         
@@ -1954,10 +1954,10 @@ algorithm
           crefToSimVarHT);
         (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
         simCode = setSimCodeLiterals(simCode,listReverse(lits));
-        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode.SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
         // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
         // simCode = collectAllFiles(simCode);
-        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode.SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
+        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
       then
         simCode;
     else
@@ -2271,9 +2271,9 @@ algorithm
                                     inBackendDAE as BackendDAE.DAE(eqs=systs),_)
       equation
         
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode.SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         (columnEquations,_,uniqueEqIndex,_) = createEquations(false, false, false, false, true, syst, shared, comps, {},iuniqueEqIndex,{});
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode.SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
         
         origVarslst = BackendVariable.equationSystemsVarsLst(systs,{});
         origVars = BackendDAEUtil.listVar(origVarslst);
@@ -2303,7 +2303,7 @@ algorithm
         diffedVars = List.map(sortdiffvars,Util.tuple21);
 
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode.SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         s =  intString(listLength(diffedVars));
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
@@ -2319,7 +2319,7 @@ algorithm
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode.SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         
         // generate sparse pattern
         (sparsepattern,colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
@@ -2336,7 +2336,7 @@ algorithm
         (linearModelMatrices,uniqueEqIndex);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of symbolic matrix SimCode.SimCode (SimCode.createSymbolicJacobianssSimCode) failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of symbolic matrix SimCode (SimCode.createSymbolicJacobianssSimCode) failed"});
       then
         fail();
   end matchcontinue;
@@ -5830,9 +5830,9 @@ algorithm
     case ((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared=shared), name, diffVars, diffedVars, alldiffedVars),
           inBackendDAE as BackendDAE.DAE(eqs=systs),
           uniqueEqIndex) equation
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode.SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         (columnEquations, _, uniqueEqIndex,_) = createEquations(false, false, false, false, true, syst, shared, comps, {}, uniqueEqIndex,{});
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode.SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
         
         
         origVarslst = BackendVariable.equationSystemsVarsLst(systs,{});
@@ -5863,7 +5863,7 @@ algorithm
         diffedVars = List.map(sortdiffvars,Util.tuple21);
 
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode.SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         s =  intString(listLength(diffedVars));
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
@@ -5879,7 +5879,7 @@ algorithm
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode.SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         
         // generate sparse pattern
         (sparsepattern,colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
@@ -7022,22 +7022,105 @@ algorithm
   end match;
 end sortSimvars;
 
+protected function sortSimvarsNew
+  input SimCode.SimVars unsortedSimvars;
+  input Comparer comp;
+  output SimCode.SimVars sortedSimvars;
+  partial function Comparer
+    input SimCode.SimVar a;
+    input SimCode.SimVar b;
+    output Boolean res;
+  end Comparer;
+algorithm
+  sortedSimvars :=
+  match (unsortedSimvars,comp)
+    local
+      list<SimCode.SimVar> stateVars;
+      list<SimCode.SimVar> derivativeVars;
+      list<SimCode.SimVar> algVars;
+      list<SimCode.SimVar> intAlgVars;
+      list<SimCode.SimVar> boolAlgVars;
+      list<SimCode.SimVar> inputVars;
+      list<SimCode.SimVar> outputVars;
+      list<SimCode.SimVar> aliasVars;
+      list<SimCode.SimVar> intAliasVars;
+      list<SimCode.SimVar> boolAliasVars;
+      list<SimCode.SimVar> paramVars;
+      list<SimCode.SimVar> intParamVars;
+      list<SimCode.SimVar> boolParamVars;
+      list<SimCode.SimVar> stringAlgVars;
+      list<SimCode.SimVar> stringParamVars;
+      list<SimCode.SimVar> stringAliasVars;
+      list<SimCode.SimVar> extObjVars;
+      list<SimCode.SimVar> jacVars;
+      list<SimCode.SimVar> constVars;
+      list<SimCode.SimVar> intConstVars;
+      list<SimCode.SimVar> boolConstVars;
+      list<SimCode.SimVar> stringConstVars;
+    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars),comp)
+      equation
+        stateVars = sortSimVars1(stateVars);
+        derivativeVars = sortSimVars1(derivativeVars);
+        algVars = sortSimVars1(algVars);
+        intAlgVars = sortSimVars1(intAlgVars);
+        boolAlgVars = sortSimVars1(boolAlgVars);
+        inputVars = sortSimVars1(inputVars);
+        outputVars = sortSimVars1(outputVars);
+        aliasVars = sortSimVars1(aliasVars);
+        intAliasVars = sortSimVars1(intAliasVars);
+        boolAliasVars = sortSimVars1(boolAliasVars);
+        paramVars = sortSimVars1(paramVars);
+        intParamVars = sortSimVars1(intParamVars);
+        boolParamVars = sortSimVars1(boolParamVars);
+        stringAlgVars = sortSimVars1(stringAlgVars);
+        stringParamVars = sortSimVars1(stringParamVars);
+        stringAliasVars = sortSimVars1(stringAliasVars);
+        extObjVars = sortSimVars1(extObjVars);
+        jacVars = sortSimVars1(jacVars);
+        constVars = sortSimVars1(constVars);
+        intConstVars = sortSimVars1(intConstVars);
+        boolConstVars = sortSimVars1(boolConstVars);
+        stringConstVars = sortSimVars1(stringConstVars);
+        
+      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+        outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+        stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
+  end match;
+end sortSimvarsNew;
+
 protected function sortSimVars1
 "function: sortSimVars1
   author: Frenkel TUD 2012-09"
   input list<SimCode.SimVar> unsorted;
   output list<SimCode.SimVar> sorted;
-protected
-  list<SimCode.SimVar> vars;
-  HashTableCrSimVars.HashTable ht;
-  list<list<SimCode.SimVar>> varslstlst;
 algorithm
-  // extract Array SimCode.SimVars from List
-  ht := HashTableCrSimVars.emptyHashTable();
-  (vars,ht) := extractArrayVars(unsorted,{},ht);
-  // sort array vars
-  varslstlst := BaseHashTable.hashTableValueList(ht);
-  sorted := sortSimVars2(varslstlst,vars);
+  sorted := matchcontinue(unsorted)
+    local
+       list<SimCode.SimVar> vars;
+       HashTableCrSimVars.HashTable ht;
+       list<list<SimCode.SimVar>> varslstlst;      
+    case (_)
+      equation
+       // extract Array SimCode.SimVars from List
+       ht = HashTableCrSimVars.emptyHashTable();
+print("extractArrayVars ");      
+      (vars,ht) = extractArrayVars(unsorted,{},ht);
+print("ok \n");      
+      // sort array vars
+      varslstlst = BaseHashTable.hashTableValueList(ht);
+print("sortSimVars2 ");      
+      sorted = sortSimVars2(varslstlst,vars);
+print("ok \n");      
+    then
+      sorted;
+  else
+    equation
+      print("SimCodeUtil.sortSimVars1 failed!\n");
+    then
+      fail();
+  end matchcontinue;
 end sortSimVars1;
 
 protected function extractArrayVars
@@ -7055,16 +7138,19 @@ algorithm
       SimCode.SimVar var;
       list<SimCode.SimVar> rest,vars;
       DAE.ComponentRef cr,crnosub;
-    case((var as SimCode.SIMVAR(arrayCref=NONE()))::rest,_,_)
-      equation
-        (vars,ht) = extractArrayVars(rest,var::iscalarVars,iHt);
-      then 
-        (vars,ht); 
-    case((var as SimCode.SIMVAR(name=cr,arrayCref=SOME(_)))::rest,_,_)
+    case ({},_,_) 
+      then
+        (iscalarVars,iHt);       
+    case((var as SimCode.SIMVAR(name=cr,numArrayElement=_::_))::rest,_,_)
       equation
         crnosub = ComponentReference.crefStripLastSubs(cr);
         ht = addSimVarHashTableCrSimVars(crnosub,var,iHt);
         (vars,ht) = extractArrayVars(rest,iscalarVars,ht);
+      then 
+        (vars,ht);
+    case(var::rest,_,_)
+      equation
+        (vars,ht) = extractArrayVars(rest,var::iscalarVars,iHt);
       then 
         (vars,ht); 
   end match;
@@ -7080,7 +7166,7 @@ protected function addSimVarHashTableCrSimVars
 algorithm
   oHt := matchcontinue(crnosub,var,iHt)
     local
-      DAE.ComponentRef cr,crnosub;
+      DAE.ComponentRef cr;
       list<SimCode.SimVar> varlst;
       HashTableCrSimVars.HashTable ht;
     case (_,_,_)
@@ -7094,6 +7180,11 @@ algorithm
         ht = BaseHashTable.add((crnosub,{var}), iHt);
       then
         ht;
+  else
+    equation
+      print("SimCodeUtil.addSimVarHashTableCrSimVars failed!\n");
+    then
+      fail();        
   end matchcontinue;
 end addSimVarHashTableCrSimVars;
 
@@ -7109,6 +7200,12 @@ algorithm
       list<list<SimCode.SimVar>> rest;
       list<SimCode.SimVar> unsorted,sorted;
       SimCode.SimVar var;
+    case ({},_)
+      then
+        iVars; 
+    case (({})::rest,_)
+      then
+        sortSimVars2(rest,iVars);
     // only on element, no sort needed
     case ((var::{})::rest,_)
       then
@@ -7127,27 +7224,45 @@ protected function sortArrayVars
   input list<SimCode.SimVar> varlst;
   input list<SimCode.SimVar> iVars;
   output list<SimCode.SimVar> sortedVars;
-protected
-  array<Option<SimCode.SimVar>> vararray;
-  DAE.ComponentRef cr;
-  DAE.Type tp;
-  Integer size;
-  DAE.Dimensions dims;
-  list<Integer> dimsint;
 algorithm
-  SimCode.SIMVAR(name=cr)::_ := varlst;
-  // get last type
-  tp := ComponentReference.crefLastType(cr);
-  // get size of last type
-  size := Expression.sizeOf(tp);
-  // alloc the array 
-  vararray := arrayCreate(size,NONE());
-  // insert vars in array
-  dims := Expression.arrayDimension(tp);
-  dimsint := Expression.dimensionsSizes(dims);
-  vararray := List.fold1(varlst,insertArrayVars,dimsint,vararray);
-  // get vars from array sorted
-  sortedVars := getVarsFromArray(size,vararray,iVars);
+  sortedVars := matchcontinue(varlst,iVars)
+    local
+      array<Option<SimCode.SimVar>> vararray;
+      DAE.ComponentRef cr;
+      DAE.Type tp;
+      Integer size;
+      DAE.Dimensions dims;
+      list<Integer> dimsint;
+    case (_,_)
+      equation
+        SimCode.SIMVAR(name=cr)::_ = varlst;
+        // get last type
+        tp = ComponentReference.crefLastType(cr);
+        // get size of last type
+        size = Expression.sizeOf(tp);
+        // alloc the array 
+        vararray = arrayCreate(size,NONE());
+        // insert vars in array
+        dims = Expression.arrayDimension(tp);
+        dimsint = Expression.dimensionsSizes(dims);
+        vararray = List.fold1(varlst,insertArrayVars,dimsint,vararray);
+        // get vars from array sorted
+        sortedVars = getVarsFromArray(size,vararray,iVars);
+     then
+        sortedVars;
+  case (_,_)
+    equation
+      SimCode.SIMVAR(name=cr)::_ = varlst;
+      print("SimCodeUtil.sortArrayVars failed!\n");
+      print(ComponentReference.printComponentRefStr(cr) +& "\n");
+    then
+      fail(); 
+  else
+    equation
+      print("SimCodeUtil.sortArrayVars failed!\n");
+    then
+      fail();     
+  end matchcontinue;   
 end sortArrayVars;
 
 protected function getVarsFromArray
@@ -7185,21 +7300,35 @@ protected function insertArrayVars
   input list<Integer> dims;
   input array<Option<SimCode.SimVar>> iarr;
   output array<Option<SimCode.SimVar>> oarr;
-protected
-  array<Option<SimCode.SimVar>> vararray;
-  DAE.ComponentRef cr;
-  list<DAE.Subscript> subscriptLst;
-  list<Integer> indexes;
-  Integer index;
 algorithm
-  // get Subscripts
-  SimCode.SIMVAR(name=cr) := var;
-  subscriptLst := ComponentReference.crefLastSubs(cr);
-  indexes := Expression.subscriptsInt(subscriptLst);
-  // calculate Place in Array
-  index := calculateIndex(indexes,dims);
-  // insert Var in array
-  oarr := arrayUpdate(iarr,index,SOME(var));
+  oarr := matchcontinue(var,dims,iarr)
+    local
+      array<Option<SimCode.SimVar>> vararray;
+      DAE.ComponentRef cr;
+      list<DAE.Subscript> subscriptLst;
+      list<Integer> indexes;
+      Integer index;
+    case(_,_,_)
+      equation
+        // get Subscripts
+        SimCode.SIMVAR(name=cr) = var;
+        subscriptLst = ComponentReference.crefLastSubs(cr);
+        indexes = Expression.subscriptsInt(subscriptLst);
+        // calculate Place in Array
+        index = calculateIndex(indexes,dims);
+        // insert Var in array
+     print("Insert " +& intString(arrayLength(iarr)) +& " index " +& intString(index) +& "  " +& stringDelimitList(List.map(subscriptLst,ExpressionDump.subscriptString),", ") +& "\n");   
+     print("indexes " +& stringDelimitList(List.map(indexes,intString),", ") +& "\n");   
+     print("dims " +& stringDelimitList(List.map(dims,intString),", ") +& "\n");   
+        oarr = arrayUpdate(iarr,index,SOME(var));
+     then
+       oarr;
+    else
+      equation
+        print("SimCodeUtil.insertArrayVars failed!\n");
+      then
+        fail(); 
+  end matchcontinue;
 end insertArrayVars;
 
 protected function calculateIndex
@@ -7223,7 +7352,7 @@ algorithm
     case (index::index_lst,dim::dim_lst)
       equation
         value = calculateIndex(index_lst,dim_lst);
-        value1 = value + (index*dim);
+        value1 = value + ((index-1)*dim);
       then
         value1;
     else
@@ -12153,7 +12282,7 @@ algorithm
                   
     case inSimCode
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.collectAllFiles failed to collect files from SimCode.SimCode!"});        
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.collectAllFiles failed to collect files from SimCode!"});        
       then
         inSimCode;
   end matchcontinue;
