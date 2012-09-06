@@ -1537,11 +1537,13 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
         mightbedir = 1;
 #endif
         if (mightbedir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
+          /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
           (*numMatches)++;
           continue;
         }
         entlen = strlen(ent->d_name);
         if (entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+          /* fprintf(stderr, "found match %d %s\n", *numMatches, ent->d_name); */
           (*numMatches)++;
         }
       }
@@ -1560,20 +1562,20 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     if (!dir) continue;
     while ((ent = readdir(dir))) {
       if (0 == strncmp(name, ent->d_name, nlen) && ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.') {
-        int entlen,ok=0;
+        int entlen,ok=0,maybeDir;
 #ifdef DT_DIR
-        if (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN) {
-          ok=1;
-          res[i].fileIsDir=1;
-        }
+        maybeDir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN);
 #else
-        if (regularFileExistsInDirectory(dir,ent->d_name,"package.mo")) {
+        maybeDir = 1;
+#endif
+        if (maybeDir && regularFileExistsInDirectory(mp,ent->d_name,"package.mo")) {
           ok=1;
           res[i].fileIsDir=1;
+          /* fprintf(stderr, "found dir match: %ld %s - ok=%d\n", i, ent->d_name, ok); */
         }
-#endif
         entlen = strlen(ent->d_name);
         if (!ok && entlen > 3 && 0==strcmp(ent->d_name+entlen-3,".mo") && regularFileExistsInDirectory(mp,"",ent->d_name)) {
+          /* fprintf(stderr, "found match file: %ld %s - ok=%d\n", i, ent->d_name, ok); */
           res[i].fileIsDir=0;
           ok=1;
         }
@@ -1581,7 +1583,6 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
           continue;
         res[i].dir = mp;
         res[i].file = strdup(ent->d_name);
-        /* fprintf(stderr, "found match: %ld %s\n", i, res[i].file); */
         if (res[i].file[nlen] == ' ') {
           splitVersion(res[i].file+nlen+1, &res[i].version, &res[i].versionExtra);
         } else {
