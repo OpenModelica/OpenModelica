@@ -2608,7 +2608,8 @@ algorithm
         e1 = listGet(explst,1);
         e1 = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_REAL_DEFAULT,false,explst),e1);
         e2 = listGet(explst,1);
-        e2 = Util.if_(intGt(rang,1),DAE.CALL(Absyn.IDENT("der"),{DAE.ARRAY(DAE.T_REAL_DEFAULT,false,explst)},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal));
+        explst = List.map(explst,makeder);
+        e2 = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_REAL_DEFAULT,false,explst),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal));
         con = DAE.RELATION(contexp,DAE.EQUAL(DAE.T_INTEGER_DEFAULT),DAE.ICONST(index),-1,NONE());
         wc = BackendDAE.WHEN_CLAUSE(con,{BackendDAE.REINIT(crset,e1,DAE.emptyElementSource)},NONE());
         startvalues = List.map(varlst,BackendVariable.varStartValue);
@@ -2618,6 +2619,14 @@ algorithm
   end match;
 end generateSelectEquationsMulti;
 
+protected function makeder
+"function makeder
+Author: Frenkel TUD 2012-09"
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := DAE.CALL(Absyn.IDENT("der"),{inExp},DAE.callAttrBuiltinReal);
+end makeder;
 
 protected function changeVarToStartValue "
 function changeVarToStartValue
