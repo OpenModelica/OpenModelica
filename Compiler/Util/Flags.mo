@@ -362,6 +362,8 @@ constant DebugFlag DUMPOPTINIT = DEBUG_FLAG(99, "dumpoptinit",
   Util.gettext("Enables dumping of the optimization information when optimizing the initial system"));
 constant DebugFlag SEMILINEAR = DEBUG_FLAG(100, "semiLinear",
   Util.gettext("Enables dumping of the optimization information when optimizing calls to semiLinear"));
+constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(101, "uncertainties",
+  Util.gettext("Enables dumping of status when calling modelEquationsUC"));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -468,7 +470,8 @@ constant list<DebugFlag> allDebugFlags = {
   SYMBOLIC_INITIALIZATION,
   TEARING_AND_RELAXATION,
   DUMPOPTINIT,
-  SEMILINEAR
+  SEMILINEAR,
+  UNCERTAINTIES
 };
 
 // CONFIGURATION FLAGS

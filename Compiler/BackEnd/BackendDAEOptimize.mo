@@ -81,7 +81,6 @@ protected import System;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
-protected import Uncertainties;
 
 
 
@@ -4867,7 +4866,7 @@ algorithm
         eqn_lst = BackendEquation.getEqns(residualeqns,eqns);
         eq = listGet(eqn_lst,1);
         var_lst = List.map1r(tvars, BackendVariable.getVarAt, vars);
-        subSyst = Uncertainties.getSubSystemDaeForVars(residual,tvars,dlow1_1);
+        subSyst = getSubSystemDaeForVars(residual,tvars,dlow1_1);
         BackendDAE.DAE({sub_eqSyst2},sub_shared2) = subSyst;
         (m_subSyst2,mT_subSyst2) = BackendDAEUtil.incidenceMatrix(sub_eqSyst2, sub_shared2, BackendDAE.NORMAL());
         BackendDAE.EQSYSTEM(vars_subSyst,eqns_subSyst,_,_,_) = sub_eqSyst2;
@@ -4985,6 +4984,55 @@ algorithm
         ({0}::r,{0}::t,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp::comps_1);
   end matchcontinue;
 end tearingSystem1;
+
+public function getSubSystemDaeForVars "Returns a subsystem dae given a list of equations and a list of 
+variables as indices."
+  input list<Integer> eqnIndxLst;
+  input list<Integer> varIndxLst;
+  input BackendDAE.BackendDAE dae;
+  output BackendDAE.BackendDAE outDae;
+algorithm
+  outDae:= match(eqnIndxLst,varIndxLst,dae)
+  local 
+    list<BackendDAE.Equation> eqnLst;
+    list<BackendDAE.Var> varLst; 
+    BackendDAE.EqSystem eqsys1;
+    list<Integer> fixedIndex;
+    case(eqnIndxLst,varIndxLst,dae) equation
+      BackendDAE.DAE(eqs=(eqsys1::_)) = dae;
+       fixedIndex = List.map1r(eqnIndxLst,intAdd,-1);
+       eqnLst = List.map1r(fixedIndex,BackendDAEUtil.equationNth,BackendEquation.daeEqns(eqsys1)); //daeArrayEqns equationNth
+       varLst = List.map1r(varIndxLst,BackendVariable.getVarAt,BackendVariable.daeVars(eqsys1));
+      then setDaeVarsAndEqs(dae,BackendDAEUtil.listEquation(eqnLst),BackendDAEUtil.listVar(varLst));
+    case(_,_,_) equation
+     //print("getSubSystemDaeForVars failed\n");
+    then fail();
+  end match;
+end getSubSystemDaeForVars;
+
+public function setDaeVarsAndEqs "
+   note: this function destroys matching
+"
+  input BackendDAE.BackendDAE systIn;
+  input BackendDAE.EquationArray newEqnsIn;
+  input BackendDAE.Variables newVarsIn;
+  output BackendDAE.BackendDAE sysOut;
+algorithm
+  sysOut:= match(systIn,newEqnsIn,newVarsIn) 
+    local
+       Option<BackendDAE.IncidenceMatrix> m;
+       Option<BackendDAE.IncidenceMatrixT> mT;
+       BackendDAE.Matching matching;
+       BackendDAE.Shared shared;
+       BackendDAE.EquationArray newEqns;
+       BackendDAE.Variables newVars;
+       list<BackendDAE.EqSystem> eqlist;
+      case (BackendDAE.DAE(BackendDAE.EQSYSTEM(_,_,m,mT,matching)::eqlist,shared),newEqns,newVars)
+        then 
+           BackendDAE.DAE(BackendDAE.EQSYSTEM(newVars,newEqns,m,mT,matching)::eqlist,shared);   
+  end match;
+end setDaeVarsAndEqs;  
+
 
 protected function printEquationArr
   "prints an array of BackendDAE.Equations"
