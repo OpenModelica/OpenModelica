@@ -15,7 +15,8 @@ system("rm -f tmp.date");
 
 if MSLVersion == "3.2" then
   loadModel(ModelicaTest,{"1.1"});
-  loadModelicaTest:="\nloadModel(ModelicaTest,{\"1.1\"});";
+  loadModel(ObsoleteModelica3,{"3.2.1"});
+  loadModelicaTest:="\nloadModel(ModelicaTest,{\"1.1\"});\nloadModel(ObsoleteModelica3,{\"3.2.1\"});";
 else
   loadModelicaTest:="";
 end if;
@@ -34,16 +35,7 @@ deleteClass(Modelica.Utilities);
 system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
-loadString("
-function subScript
-  input String strs[:];
-  input Integer ix;
-  output String str;
-algorithm
-  str := if size(strs,1)<ix then \"\" else strs[ix];
-end subScript;
-");
-a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) and typeNameString(x)<>"Modelica.Utilities.Examples.readRealParameterModel" in getClassNames(recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
