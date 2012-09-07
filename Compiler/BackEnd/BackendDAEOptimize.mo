@@ -1996,6 +1996,7 @@ algorithm
         (v::{},i::_) = BackendVariable.getVar(cr,vars);
         v = BackendVariable.mergeVariableOperations(v,DAE.SOLVED(cr,exp)::ops);
         v = BackendVariable.setBindExp(v,exp);
+        syst = BackendVariable.addVarDAE(v,syst);
         newavars = BackendVariable.addVar(v,mavars);
       then
         (i,syst,shared,mvars,newavars,1);     
