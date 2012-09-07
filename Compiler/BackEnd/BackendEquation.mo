@@ -1742,11 +1742,11 @@ algorithm
       case (BackendDAE.EQUATION(exp=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),scalar=e as DAE.CREF(componentRef = dcr)))
         then (cr,dcr,e,de,false);
       // a = -der(b);
-      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = cr),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = dcr)}))))
+      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
         equation
           ne = Expression.negate(e);
         then (cr,dcr,ne,de,true);
-      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = cr),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = dcr)}))))
+      case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
         equation
           ne = Expression.negate(e);
         then (cr,dcr,ne,de,true);
@@ -1779,14 +1779,26 @@ algorithm
         then (cr,dcr,e,ne,true);
       // -a = -der(b);
       case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
-        then (cr,dcr,e,de,false);
+        equation
+          ne = Expression.negate(e);
+          de = Expression.negate(de);
+        then (cr,dcr,ne,de,false);
       case (BackendDAE.EQUATION(exp=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr)),scalar=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}))))
-        then (cr,dcr,e,de,false);     
+        equation
+          ne = Expression.negate(e);
+          de = Expression.negate(de);
+        then (cr,dcr,ne,de,false);     
       // -der(a) = -b;
       case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = dcr))))
-        then (cr,dcr,e,de,false);
+        equation
+          ne = Expression.negate(e);
+          de = Expression.negate(de);
+        then (cr,dcr,ne,de,false);
       case (BackendDAE.EQUATION(exp=de as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),scalar=e as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = dcr))))
-        then (cr,dcr,e,de,false);               
+        equation
+          ne = Expression.negate(e);
+          de = Expression.negate(de);
+        then (cr,dcr,ne,de,false);               
   end match;
 end derivativeEquation;
 

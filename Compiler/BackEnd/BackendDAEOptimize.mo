@@ -545,6 +545,14 @@ algorithm
       equation
         derrepl = BaseHashTable.add((cr,exp),derrepl);
       then (syst,shared,repl,derrepl,pos::deeqns,meqns);
+    // self generated
+    case (5,cr,i,exp,pos,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
+      equation
+        // remove var from vars
+        (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
+        // update Replacements
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());        
+      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared,repl_1,derrepl,deeqns,pos::meqns);        
   end match;
 end replacementsInEqnsFast;
 
@@ -845,7 +853,7 @@ algorithm
       BackendDAE.Var var,var2;
       BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn;
-      Boolean negate;
+      Boolean negate,selfgenerated;
       DAE.ElementSource source;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -889,6 +897,7 @@ algorithm
         // constant or alias
         (i,syst,shared,eqTy) = constOrAlias(var,cr,es,syst,shared,DAEUtil.getSymbolicTransformations(source));
       then (cr,i,es,syst,shared,eqTy);        
+/*  really bad idea to merge der(cr) with dcr variable attributes because der_cr attributes not reachable via cr
     // a = der(b) 
     // a is a dummy_der_state
     case ({var,var2},pos,eqn,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
@@ -902,7 +911,7 @@ algorithm
         //false = BackendVariable.varHasUncertainValueRefine(var);
         (syst,shared) = selectAlias2(cr,cr2,var,var2,e2,es,syst,shared,negate,BackendEquation.equationSource(eqn));
       then (cr,k,es,syst,shared,1);
-    // a = der(b) 
+ */   // a = der(b) 
     // a is not a state
     /* Frenkel TUD: -because we have no way to store the min,max,nominval,start attribute for der(state) variables we cannot replace 
                      this simple equations. */   
@@ -931,7 +940,9 @@ algorithm
         (cr,cr2,e1,e2,negate) = BackendEquation.aliasEquation(eqn);
         // select candidate
         (cr,es,k,syst,shared) = selectAlias(cr,cr2,e1,e2,syst,shared,negate,source);
-      then (cr,k,es,syst,shared,1);
+        selfgenerated = selfGeneratedVar(cr);
+        eqTy = Util.if_(selfgenerated,5,1);
+      then (cr,k,es,syst,shared,eqTy);
     case ({var,var2},pos,BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
         cr = BackendVariable.varCref(var);
@@ -1031,6 +1042,16 @@ algorithm
         // update IncidenceMatrix
         syst= BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns2);
       then (vareqns1,syst,shared,repl,derrepl,pos::deeqns,meqns);
+    // self generated   
+    case (5,cr,i,exp,pos,_,_,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
+      equation
+        // equations of var
+        vareqns = mT[i];
+        // remove var from vars
+        (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
+        // update Replacements
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+      then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared,repl_1,derrepl,deeqns,pos::meqns);
   end match;
 end replacementsInEqnsPast;
 
@@ -1553,7 +1574,7 @@ algorithm
       BackendDAE.Var var;
       BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn;
-      Boolean negate;
+      Boolean negate,selfgenerated;
       DAE.ElementSource source;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -1584,6 +1605,8 @@ algorithm
         (cr,cr2,e1,e2,negate) = BackendEquation.aliasEquation(eqn);
         // select candidate
         (cr,es,k,syst,shared) = selectAlias(cr,cr2,e1,e2,syst,shared,negate,source);
+        selfgenerated = selfGeneratedVar(cr);
+        eqTy = Util.if_(selfgenerated,5,1);        
       then (cr,k,es,syst,shared,1);
   end matchcontinue;
 end simpleEquation1;
@@ -1607,17 +1630,27 @@ algorithm
       DAE.ComponentRef cra;
       BackendDAE.VarKind kind;
       BackendDAE.Var var2,var3,v,v1;
-      Boolean constExp,negate;
+      Boolean constExp,negate,selfgenerated;
       BackendDAE.Variables knvars,vars;
       Integer eqTy,i;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
+    // self generated
+    case (var,cr,exp,syst,shared,ops)
+      equation
+        true = selfGeneratedVar(cr);
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Self Generated Var ",cr," = ",exp," found (1).\n"));
+        vars = BackendVariable.daeVars(syst);
+        (_,i::{}) = BackendVariable.getVar(cr,vars);        
+      then
+        (i,syst,shared,5);
     // alias a
     case (var,cr,exp,syst,shared,ops)
       equation
         (negate,cra) = aliasExp(exp);
         // no State
         false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
+        selfgenerated = selfGeneratedVar(cr);
         kind = BackendVariable.varKind(var);
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         //false = BackendVariable.isVarOnTopLevelAndOutput(var);
@@ -1657,6 +1690,18 @@ algorithm
         (i,syst,shared,eqTy);      
   end matchcontinue;
 end constOrAlias;
+
+protected function selfGeneratedVar
+  input DAE.ComponentRef inCref;
+  output Boolean b;
+algorithm
+  b := match(inCref)
+    case DAE.CREF_QUAL(ident = "$ZERO") then true;
+    case DAE.CREF_QUAL(ident = "$_DER") then true;
+    case DAE.CREF_QUAL(ident = "$pDER") then true;
+    else then false;
+  end match;
+end selfGeneratedVar;
 
 protected function aliasExp
 "function aliasExp
@@ -1808,6 +1853,8 @@ algorithm
   i := intAdd(i,Util.if_(b,1,0));
   // self generated var
   b := BackendVariable.isDummyDerVar(var);
+  i := intAdd(i,Util.if_(b,1,0));
+  b := selfGeneratedVar(cr);
   i := intAdd(i,Util.if_(b,1,0));
 end calcAliasKey;
 
