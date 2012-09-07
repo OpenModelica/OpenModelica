@@ -277,12 +277,13 @@ match eq
 
    
     
-    <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(<%modelname%>* system, double* z,double* zDot,EventHandling& event_handling ) 
+    <%modelname%>Algloop<%index%>::<%modelname%>Algloop<%index%>(<%modelname%>* system, double* z,double* zDot,bool* conditions1, EventHandling& event_handling ) 
    :AlgLoopDefaultImplementation()
    ,_system(system)
    ,_residuals(NULL)
    ,__z(z)
    ,__zDot(zDot)
+   ,_conditions1(conditions1)
    
    ,_event_handling(event_handling)
    <%alocateLinearSystem(eq)%>
@@ -2011,7 +2012,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   { 
   public: 
       <%modelname%>Algloop<%index%>(    <%modelname%>* system
-                                        ,double* z,double* zDot
+                                        ,double* z,double* zDot, bool* conditions1
                                        ,EventHandling& event_handling
                                       ); 
       ~<%modelname%>Algloop<%index%>();
@@ -2029,6 +2030,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     boost::multi_array<double,2> __A;
     //b vector
     boost::multi_array<double,1> __b;
+    bool* _conditions1;
    
     EventHandling& _event_handling; 
     
@@ -3837,7 +3839,7 @@ template generateAlgloopsolvers2(SimEqSystem eq, Context context, Text &varDecls
   case SIMCODE(modelInfo = MODELINFO(__)) then    
   <<
 
-  _algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_event_handling )
+  _algLoop<%num%> =  boost::shared_ptr<<%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>>(new <%lastIdentOfPath(modelInfo.name)%>Algloop<%num%>(this,__z,__zDot,_conditions1,_event_handling )
                                                                                                                                   );
   _algLoopSolver<%num%> = boost::shared_ptr<IAlgLoopSolver>(_algLoopSolverFactory->createAlgLoopSolver(_algLoop<%num%>.get()));
    >>
@@ -6256,17 +6258,17 @@ template giveZeroFunc3(Integer index1, Exp relation, Text &varDecls /*BUFP*/,Tex
       case LESSEQ(__) then
        <<
          if(_conditions0[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
+                f[<%index1%>]=(<%e1%> - EPSILON - <%e2%>);
            else
-                f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> - EPSILON);
        >>
       case GREATER(__)
       case GREATEREQ(__) then
         <<
          if(_conditions0[<%zerocrossingIndex%>])
-                f[<%index1%>]=(<%e2%>-<%e1%>-EPSILON);
+                f[<%index1%>]=(<%e2%> - <%e1%> - EPSILON);
            else
-                f[<%index1%>]=(<%e1%>-EPSILON-<%e2%>);
+                f[<%index1%>]=(<%e1%> - EPSILON - <%e2%>);
          >>
       end match  
 end giveZeroFunc3;
