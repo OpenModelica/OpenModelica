@@ -647,10 +647,10 @@ algorithm
     case (_,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),_,_)
       equation
        Debug.fcall(Flags.DUMP_DERREPL, BaseHashTable.dumpHashTable, inDerrepl);
-       n = BackendDAEUtil.equationSize(eqns);
+       n = BackendDAEUtil.equationArraySize(eqns);
        flagarray = arrayCreate(n,true);
        flagarray = List.fold1r(inDeEqns,arrayUpdate,false,flagarray);
-       eqns1 = replaceDerEquations1(flagarray,0,n,inDerrepl,eqns);
+       eqns1 = replaceDerEquations1(flagarray,1,n,inDerrepl,eqns);
      then 
        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),inShared);
    end match;     
@@ -669,21 +669,22 @@ algorithm
      local
       list<Integer> deeqns;
       HashTable2.HashTable derrepl;
-      Integer n,i,de;
+      Integer n,i,i_1;
       BackendDAE.Equation eqn,eqn1;
       BackendDAE.EquationArray eqns,eqns1;
      case (_,i,n,derrepl,eqns)
       equation
-       true = intLt(i,n);
-       true = flagarray[i+1];
-       eqn = BackendDAEUtil.equationNth(eqns,i);
+       true = intLe(i,n);
+       true = flagarray[i];
+       i_1 = i-1;
+       eqn = BackendDAEUtil.equationNth(eqns,i_1);
        (eqn1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceDerEquationsFinder,derrepl);
-       eqns1 = BackendEquation.equationSetnth(eqns,i,eqn1);
+       eqns1 = BackendEquation.equationSetnth(eqns,i_1,eqn1);
      then 
        replaceDerEquations1(flagarray,i+1,n,derrepl,eqns1);
      case (_,i,n,derrepl,eqns)
       equation
-       true = intLt(i,n);
+       true = intLe(i,n);
      then 
        replaceDerEquations1(flagarray,i+1,n,derrepl,eqns);
     else
