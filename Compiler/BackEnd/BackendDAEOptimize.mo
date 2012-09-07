@@ -2200,7 +2200,7 @@ protected
   list<DAE.SymbolicOperation> ops;
   BackendDAE.Var var;
 algorithm
-  Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (2).\n"));
+  Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (3).\n"));
   // merge fixed,start,nominal
   v1 := mergeAliasVars(ivar,avar,negate);
   osyst := BackendVariable.addVarDAE(v1,syst);
@@ -2208,6 +2208,7 @@ algorithm
   ops := DAEUtil.getSymbolicTransformations(source);
   var := BackendVariable.mergeVariableOperations(avar,DAE.SOLVED(acr,e)::ops);
   av1 := BackendVariable.setBindExp(avar, e);
+  osyst := BackendVariable.addVarDAE(av1,osyst);
   newvars := BackendVariable.addVar(av1,mavars);
   oshared := shared;
 end selectAlias2;
@@ -7017,7 +7018,7 @@ algorithm
       //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals", false);
       (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
       initialEqs = BackendDAEUtil.listEquation(initialEquationList);
-      initialVars = BackendDAEUtil.listVar(initialVariableList);
+      initialVars = BackendDAEUtil.listVar1(initialVariableList);
       //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
       //BackendDump.dumpBackendDAEVarList(initialVariableList, "initial vars");
       
@@ -7031,7 +7032,7 @@ algorithm
       //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 1");
       orderedVarList = redirectOutputToBidir(orderedVarList);
       //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 2");
-      orderedVars = BackendDAEUtil.listVar(orderedVarList);
+      orderedVars = BackendDAEUtil.listVar1(orderedVarList);
       DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, shared);
       
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
@@ -7299,7 +7300,7 @@ algorithm
                        +& s +& " diffed equations: " +&  s1 +& "\n", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
                        
         // Differentiate the ODE system w.r.t states for jacobian
-        (backendDAE as BackendDAE.DAE(shared=shared)) = generateSymbolicJacobian(inBackendDAE, comref_vars, inDifferentiatedVars, BackendDAEUtil.listVar(seedlst), inStateVars, inInputVars, inParameterVars, inName);
+        (backendDAE as BackendDAE.DAE(shared=shared)) = generateSymbolicJacobian(inBackendDAE, comref_vars, inDifferentiatedVars, BackendDAEUtil.listVar1(seedlst), inStateVars, inInputVars, inParameterVars, inName);
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated equations for Jacobian " +& inName +& " time: " +& realString(clock()) +& "\n");
         
         knvars1 = BackendVariable.daeKnVars(shared);
@@ -7665,91 +7666,6 @@ algorithm
     then fail();
   end matchcontinue;
 end creatallDiffedVars;
-
-public function determineIndices
-  // function: determineIndices
-  // using column major order
-  input list<DAE.ComponentRef> inStates;
-  input list<DAE.ComponentRef> inStates2;
-  input Integer inActInd;
-  input list<BackendDAE.Var> inAllVars;
-  input Integer inNoStates;
-  input tuple<String,Boolean> inMatrixName; 
-  output list<tuple<DAE.ComponentRef,Integer>> outTuple;
-algorithm
-  outTuple := matchcontinue(inStates, inStates2, inActInd,inAllVars,inNoStates, inMatrixName)
-    local
-      list<tuple<DAE.ComponentRef,Integer>> str;
-      list<tuple<DAE.ComponentRef,Integer>> erg;
-      list<DAE.ComponentRef> rest, states;
-      DAE.ComponentRef curr,dState;
-      Integer actInd, noStates;
-      list<BackendDAE.Var> allVars;
-      
-    case ({}, states, _, _, _, _) then {};
-    case (curr::rest, states, actInd, allVars, noStates, inMatrixName) equation
-      ({BackendDAE.VAR(varKind = BackendDAE.STATE())}, _) = BackendVariable.getVar(curr, BackendDAEUtil.listVar(allVars));
-      dState = ComponentReference.crefPrefixDer(curr);
-      //actInd = actInd + (listLength(rest)+1);
-      (str, actInd) = determineIndices2(dState, states, actInd, allVars,true,noStates, inMatrixName);
-      erg = determineIndices(rest, states, actInd, allVars,noStates, inMatrixName);
-      str = listAppend(str, erg);
-    then str;
-    case (curr::rest, states, actInd, allVars, noStates, inMatrixName) equation
-      failure(({BackendDAE.VAR(varKind = BackendDAE.STATE())}, _) = BackendVariable.getVar(curr, BackendDAEUtil.listVar(allVars)));
-      //actInd = noStates - (listLength(rest)+1);
-      (str, actInd) = determineIndices2(curr, states, actInd, allVars,false,noStates, inMatrixName);
-      erg = determineIndices(rest, states, actInd, allVars,noStates, inMatrixName);
-      str = listAppend(str, erg);
-    then str;    
-    else
-     equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.determineIndices failed"});
-    then fail();        
-  end matchcontinue;
-end determineIndices;
-
-protected function determineIndices2
-  // function: determineIndices2
-  input DAE.ComponentRef inDStates;
-  input list<DAE.ComponentRef> inStates;
-  input Integer actInd;
-  input list<BackendDAE.Var> inAllVars;
-  input Boolean isDStateState;
-  input Integer inNoStates;
-  input tuple<String,Boolean> inMatrixName; 
-  output list<tuple<DAE.ComponentRef,Integer>> outTuple;
-  output Integer outActInd;
-algorithm
-  (outTuple,outActInd) := matchcontinue(inDStates, inStates, actInd, inAllVars,isDStateState,inNoStates, inMatrixName)
-    local
-      tuple<DAE.ComponentRef,Integer> str;
-      list<tuple<DAE.ComponentRef,Integer>> erg;
-      list<DAE.ComponentRef> rest;
-      DAE.ComponentRef new, curr, dState;
-      list<BackendDAE.Var> allVars;
-      //String debug1;Integer debug2;
-    case (dState, {}, actInd, allVars, _ , _, _ ) then ({}, actInd);
-    case (dState,curr::rest, actInd, allVars, true, _, _ ) equation
-      new = differentiateVarWithRespectToX(dState, curr, inMatrixName);
-      str = (new ,actInd);
-      //print("CRef: " +& ComponentReference.printComponentRefStr(new) +& " index: " +& intString(actInd) +& "\n");
-      actInd = actInd+1;
-      (erg, actInd) = determineIndices2(dState, rest, actInd, allVars, true, inNoStates, inMatrixName);
-    then (str::erg, actInd);
-    case (dState,curr::rest, actInd, allVars,false, _, _) equation
-      new = differentiateVarWithRespectToX(dState, curr, inMatrixName);
-      str = (new ,actInd);
-      //print("CRef: " +& ComponentReference.printComponentRefStr(new) +& " index: " +& intString(actInd) +& "\n");
-      actInd = actInd+1;
-      (erg, actInd) = determineIndices2(dState, rest, actInd, allVars,false,inNoStates, inMatrixName);
-    then (str::erg, actInd);
-    else
-    equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.determineIndices2() failed"});
-    then fail();
-  end matchcontinue;
-end determineIndices2;
 
 protected function deriveAll "function deriveAll
   author: lochel"
@@ -9179,7 +9095,7 @@ protected
   String s1,s2,s3,s4;
   list<String> crs;
 algorithm
-  vars := BackendDAEUtil.listVar(vl);
+  vars := BackendDAEUtil.listVar1(vl);
   arr := BackendDAEUtil.listEquation(el);
   i1 := BackendDAEUtil.equationSize(arr);
   i2 := BackendVariable.numVariables(vars);

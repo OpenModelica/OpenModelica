@@ -508,7 +508,7 @@ protected
   list<BackendDAE.Var> varLst;
 algorithm
   (_,varLst) := List.splitOnTrue(BackendDAEUtil.varList(vars),isCorrelationVar);
-  outVars := BackendDAEUtil.listVar(varLst); 
+  outVars := BackendDAEUtil.listVar1(varLst); 
 end stripCorrelationVars;
 
 protected function isCorrelationVar "help function"

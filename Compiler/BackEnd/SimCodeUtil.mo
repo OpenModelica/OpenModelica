@@ -1899,7 +1899,7 @@ algorithm
         varlst = List.mapFlat(orderedVars,BackendDAEUtil.varList);
         varlst1 = BackendDAEUtil.varList(knownVars);        
         varlst2 = listAppend(varlst,varlst1);    
-        vars = BackendDAEUtil.listVar(varlst2);
+        vars = BackendDAEUtil.listVar1(varlst2);
         (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         (odeEquations,_) = listListMap1_2(odeEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         (algebraicEquations,_) = listMap1_2(algebraicEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
@@ -5569,12 +5569,12 @@ algorithm
         eqns_1 = BackendDAEUtil.listEquation(re);
         av = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
-        evars = BackendDAEUtil.listVar({});
+        evars = BackendDAEUtil.listVar1({});
         constrs = listArray({});
         clsAttrs = listArray({});
         cache = Env.emptyCache();
         funcs = DAEUtil.avlTreeNew();
-        vars1 = BackendDAEUtil.listVar(vars);
+        vars1 = BackendDAEUtil.listVar1(vars);
         syst = BackendDAE.EQSYSTEM(vars1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ARRAYSYSTEM(),{});
         subsystem_dae = BackendDAE.DAE({syst},shared);
@@ -5596,12 +5596,12 @@ algorithm
         eqns_1 = BackendDAEUtil.listEquation(re);
         av = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
-        evars = BackendDAEUtil.listVar({});
+        evars = BackendDAEUtil.listVar1({});
         constrs = listArray({});
         clsAttrs = listArray({});
         cache = Env.emptyCache();
         funcs = DAEUtil.avlTreeNew();
-        vars1 = BackendDAEUtil.listVar(vars);
+        vars1 = BackendDAEUtil.listVar1(vars);
         syst = BackendDAE.EQSYSTEM(vars1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ARRAYSYSTEM(),{});
         subsystem_dae = BackendDAE.DAE({syst},shared);
@@ -5655,7 +5655,7 @@ algorithm
         // The variables solved for musst all be part of the output variables of the algorithm.
         List.map2AllValue(solvedVars,List.isMemberOnTrue,true,algOutVars,ComponentReference.crefEqualNoStringCompare);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg,NONE());
-        algStatements = BackendDAEUtil.removediscreteAssingments(algStatements,BackendDAEUtil.listVar(vars));
+        algStatements = BackendDAEUtil.removediscreteAssingments(algStatements,BackendDAEUtil.listVar1(vars));
       then 
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1);
         

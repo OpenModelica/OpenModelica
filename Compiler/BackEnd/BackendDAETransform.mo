@@ -1127,7 +1127,7 @@ algorithm
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
         av = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
-        evars = BackendDAEUtil.listVar({});
+        evars = BackendDAEUtil.listVar1({});
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());

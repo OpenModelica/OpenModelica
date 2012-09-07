@@ -1313,7 +1313,7 @@ algorithm
                                    removedEqs=removedEqs,constraints=constraints,classAttrs=classAttrs,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),repl,func,replaceVariables) 
     equation
-       orderedVars = BackendDAEUtil.listVar(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
+       orderedVars = BackendDAEUtil.listVar1(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
        eqnslst = BackendDAEUtil.equationList(orderedEqs);
        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst,repl,NONE());
        orderedEqs = Debug.bcallret1(b,BackendDAEUtil.listEquation,eqnslst,orderedEqs);
