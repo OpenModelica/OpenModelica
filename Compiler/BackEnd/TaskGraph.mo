@@ -91,7 +91,7 @@ algorithm
         addVariables(knvars, starttask);
         cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.T_REAL_DEFAULT,{});
         addVariables({BackendDAE.VAR(cref_,BackendDAE.VARIABLE(),
-                      DAE.INPUT(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),
+                      DAE.INPUT(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),
                       NONE(),DAE.NON_CONNECTOR())}, starttask);
         buildBlocks(dae, comps);
         print("done building taskgraph, about to build inits.\n");
@@ -135,7 +135,6 @@ algorithm
   _ := matchcontinue (inBackendDAEVarLst)
     local
       String v,origname_str;
-      Integer indx;
       DAE.ComponentRef origname;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -143,97 +142,97 @@ algorithm
       DAE.Exp e;
       Values.Value value;
     case ({}) then ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         v = ExpressionDump.printExpStr(e);
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitVar(indx, v, origname_str);
+        TaskGraphExt.addInitVar(0, v, origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitVar(indx, "0.0", origname_str);
+        TaskGraphExt.addInitVar(0, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
-      equation
-        e = DAEUtil.getStartAttr(dae_var_attr);
-        v = ExpressionDump.printExpStr(e);
-        origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitState(indx, v, origname_str);
-        buildInits2(rest);
-      then
-        ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
-      equation
-        origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitState(indx, "0.0", origname_str);
-        buildInits2(rest);
-      then
-        ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         v = ExpressionDump.printExpStr(e);
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitVar(indx, v, origname_str);
+        TaskGraphExt.addInitState(0, v, origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitVar(indx, "0.0", origname_str);
+        TaskGraphExt.addInitState(0, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         v = ExpressionDump.printExpStr(e);
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitVar(indx, v, origname_str);
+        TaskGraphExt.addInitVar(0, v, origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_DER(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitVar(indx, "0.0", origname_str);
+        TaskGraphExt.addInitVar(0, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindValue = SOME(value),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
+      equation
+        e = DAEUtil.getStartAttr(dae_var_attr);
+        v = ExpressionDump.printExpStr(e);
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitVar(0, v, origname_str);
+        buildInits2(rest);
+      then
+        ();
+    case ((BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
+      equation
+        origname_str = ComponentReference.printComponentRefStr(origname);
+        TaskGraphExt.addInitVar(0, "0.0", origname_str);
+        buildInits2(rest);
+      then
+        ();
+    case ((BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindValue = SOME(value),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         v = ValuesUtil.valString(value);
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitParam(indx, v, origname_str);
+        TaskGraphExt.addInitParam(0, v, origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindValue = NONE(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.PARAM(),bindValue = NONE(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitParam(indx, "0.0", origname_str);
+        TaskGraphExt.addInitParam(0, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.CONST(),bindValue = SOME(value),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.CONST(),bindValue = SOME(value),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         v = ValuesUtil.valString(value);
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitParam(indx, v, origname_str);
+        TaskGraphExt.addInitParam(0, v, origname_str);
         buildInits2(rest);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.CONST(),bindValue = NONE(),index = indx,varName = origname,values = dae_var_attr,comment = comment) :: rest))
+    case ((BackendDAE.VAR(varKind = BackendDAE.CONST(),bindValue = NONE(),varName = origname,values = dae_var_attr,comment = comment) :: rest))
       equation
         origname_str = ComponentReference.printComponentRefStr(origname);
-        TaskGraphExt.addInitParam(indx, "0.0", origname_str);
+        TaskGraphExt.addInitParam(0, "0.0", origname_str);
         buildInits2(rest);
       then
         ();
@@ -326,7 +325,7 @@ algorithm
       equation
         e_1 = e - 1 "Solving the state s means solving for der(s)" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(),index=indx)) = BackendVariable.getVarAt(vars,v_1);
+        (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE())) = BackendVariable.getVarAt(vars,v_1);
         origname_str = ComponentReference.printComponentRefStr(cr);
         name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
@@ -358,7 +357,7 @@ algorithm
       equation
         e_1 = e - 1 "state nonlinear" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(),index=indx)) = BackendVariable.getVarAt(vars,v_1);
+        (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE())) = BackendVariable.getVarAt(vars,v_1);
         name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
         //c_name = Util.modelicaStringToCStr(name,true);
         c_name = name;

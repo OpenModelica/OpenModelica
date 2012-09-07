@@ -1176,7 +1176,6 @@ algorithm
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
       list<Expression.Subscript> dim;
-      Integer index;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -1191,7 +1190,6 @@ algorithm
       bindExp = exp,
       bindValue = v,
       arryDim = dim,
-      index = index,
       source = source,
       values = attr,
       comment = comment,
@@ -1199,7 +1197,7 @@ algorithm
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,index,source,attr,comment,ct);
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,source,attr,comment,ct);
         
     case (backendVar)
     then
@@ -2849,8 +2847,7 @@ algorithm
       Option<DAE.Exp> b;
       Option<Values.Value> value;
       list<DAE.Subscript> dim;
-      BackendDAE.Value idx;
-      DAE.ElementSource source "origin of equation";
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -2862,8 +2859,8 @@ algorithm
 
     case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching),cr)
       equation
-        ((BackendDAE.VAR(cr,kind,d,prl,t,b,value,dim,idx,source,dae_var_attr,comment,ct) :: _),indx) = BackendVariable.getVar(cr, vars);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,t,b,value,dim,idx,source,dae_var_attr,comment,ct), vars);
+        ((BackendDAE.VAR(cr,kind,d,prl,t,b,value,dim,source,dae_var_attr,comment,ct) :: _),indx) = BackendVariable.getVar(cr, vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,t,b,value,dim,source,dae_var_attr,comment,ct), vars);
       then
         BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching);
 
@@ -3518,9 +3515,8 @@ algorithm
       BackendDAE.Type b;
       Option<DAE.Exp> c;
       Option<Values.Value> d;
-      BackendDAE.Value g;
       DAE.ComponentRef dummyder,cr;
-      DAE.ElementSource source "the source of the element";
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -3529,28 +3525,28 @@ algorithm
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,i)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,g,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(_,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.crefPrefixDer(dummyder);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, ct), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, source, NONE(), comment, ct), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,i)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,g,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
+        ((BackendDAE.VAR(_,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, ct), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, source, NONE(), comment, ct), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,i)))
       equation
-        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,g,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        ((BackendDAE.VAR(_,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, 0, source, NONE(), comment, ct), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, source, NONE(), comment, ct), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((e, (vars_1,i+1)));
@@ -3580,9 +3576,8 @@ algorithm
       Option<DAE.Exp> bind;
       Option<Values.Value> value;
       list<DAE.Subscript> dim;
-      BackendDAE.Value idx;
       DAE.ComponentRef name,dummyvar_cr,var;
-      DAE.ElementSource source "origin of equation";
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -3594,11 +3589,11 @@ algorithm
 
     case (var,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching),op)
       equation
-        ((BackendDAE.VAR(name,kind,dir,prl,tp,bind,value,dim,idx,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(var, vars);
+        ((BackendDAE.VAR(name,kind,dir,prl,tp,bind,value,dim,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(var, vars);
         dummyvar_cr = ComponentReference.crefPrefixDer(name);
         /* start value is not the same */
         source = DAEUtil.addSymbolicTransformation(source,op);
-        dummyvar = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,0,source,NONE(),comment,ct);
+        dummyvar = BackendDAE.VAR(dummyvar_cr,BackendDAE.DUMMY_DER(),dir,prl,tp,NONE(),NONE(),dim,source,NONE(),comment,ct);
         /* Dummy variables are algebraic variables, hence fixed = false */
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
         vars_1 = BackendVariable.addNewVar(dummyvar, vars);

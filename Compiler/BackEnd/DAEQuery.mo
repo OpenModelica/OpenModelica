@@ -291,7 +291,7 @@ algorithm
   matchcontinue (inVarLst,inInteger)
     local
       String varnostr,dirstr,str,str1,str2;
-      Integer varno_1,indx,varno;
+      Integer varno_1,varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -302,7 +302,7 @@ algorithm
       DAE.ConnectorType ct;
       list<BackendDAE.Var> xs;
       BackendDAE.Type var_type;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
 
     case ({},_) then "";
     case (((v as BackendDAE.VAR(varName = cr,
@@ -310,7 +310,6 @@ algorithm
                             varDirection = dir,
                             varType = var_type,
                             bindExp = e,
-                            index = indx,
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -346,7 +345,6 @@ algorithm
                               varDirection = dir,
                               varType = var_type,
                               bindExp = e,
-                              index = indx,
                               source = source,
                               values = dae_var_attr,
                               comment = comment,

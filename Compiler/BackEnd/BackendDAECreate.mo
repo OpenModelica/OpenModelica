@@ -567,7 +567,7 @@ algorithm
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
       then
-        (BackendDAE.VAR(name,kind_1,dir,prl,tp,NONE(),NONE(),dims,-1,source,dae_var_attr,comment,ct), states);
+        (BackendDAE.VAR(name,kind_1,dir,prl,tp,NONE(),NONE(),dims,source,dae_var_attr,comment,ct), states);
   end match;
 end lowerDynamicVar;
 
@@ -618,7 +618,7 @@ algorithm
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
       then
-        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,ct);
+        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,source,dae_var_attr,comment,ct);
 
     case (_)
       equation
@@ -885,7 +885,7 @@ algorithm
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
       then
-        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,-1,source,dae_var_attr,comment,ct);
+        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,source,dae_var_attr,comment,ct);
   end match;
 end lowerExtObjVar;
 
@@ -1728,7 +1728,7 @@ algorithm
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
         cref_ = ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cref_, BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR()), vars);

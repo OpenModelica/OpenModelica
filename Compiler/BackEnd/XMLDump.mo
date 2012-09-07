@@ -3181,7 +3181,7 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,inInteger,addMathMLCode)
     local
-      BackendDAE.Value indx,varno;
+      BackendDAE.Value varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -3207,14 +3207,13 @@ algorithm
                             bindExp = e,
                             bindValue = b,
                             arryDim = arry_Dim,
-                            index = indx,
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
                             connectorType = ct)) :: xs),varno,addMMLCode)
       equation
         dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
-                     intString(indx),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
+                     intString(0),boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),
                      dumpStreamStr(ct),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
@@ -3245,7 +3244,7 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,crefIdxLstArr,inInteger,addMathMLCode)
     local
-      BackendDAE.Value indx,varno;
+      BackendDAE.Value varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -3272,13 +3271,12 @@ algorithm
                             bindExp = e,
                             bindValue = b,
                             arryDim = arry_Dim,
-                            index = indx,
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
                             connectorType = ct)) :: xs),crefIdxLstArr,varno,addMMLCode)
       equation
-        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
+        dumpVariable(intString(varno),ComponentReference.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(0),
                         boolString(BackendVariable.varFixed(v)),dumpFlowStr(ct),dumpStreamStr(ct),
                         DAEDump.dumpCommentOptionStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);

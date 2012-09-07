@@ -78,18 +78,17 @@ algorithm
     local
       DAE.ComponentRef var_name,cr;
       BackendDAE.Var variable;
-      BackendDAE.Value indx;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       list<BackendDAE.Var> rest;
       Boolean res;
     case ({},var_name) then false;
-    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment)) :: rest),var_name)
+    case (((variable as BackendDAE.VAR(varName = cr,values = dae_var_attr,comment = comment)) :: rest),var_name)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr, var_name);
       then
         true;
-    case (((variable as BackendDAE.VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment)) :: rest),var_name)
+    case (((variable as BackendDAE.VAR(varName = cr,values = dae_var_attr,comment = comment)) :: rest),var_name)
       equation
         res = isVarKnown(rest, var_name);
       then
@@ -140,7 +139,6 @@ algorithm
       Option<DAE.Exp> e;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
-      BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr;
@@ -156,14 +154,13 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = SOME(attr),
               comment = s,
               connectorType = ct),fixed)
       equation
         oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr,s,ct);
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -173,7 +170,6 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = NONE(),
               comment = s,
@@ -181,7 +177,7 @@ algorithm
       equation
         attr = getVariableAttributefromType(d);
         oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr,s,ct);
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
 
 
   end match;
@@ -242,7 +238,6 @@ algorithm
       Option<DAE.Exp> e;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
-      BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -257,14 +252,13 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = SOME(attr),
               comment = s,
               connectorType = ct),inExp)
       equation
         oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -274,7 +268,6 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = NONE(),
               comment = s,
@@ -282,7 +275,7 @@ algorithm
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
       
   end match;
 end setVarStartValue;
@@ -305,13 +298,12 @@ algorithm
       Option<DAE.Exp> e;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
-      BackendDAE.Value i;
       DAE.ElementSource source;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
       
-    case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,_,s,ct),attr)
-      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,attr,s,ct);  
+    case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,s,ct),attr)
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,s,ct);  
   end match;
 end setVarAttributes; 
 
@@ -453,7 +445,6 @@ algorithm
       Option<DAE.Exp> e;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
-      BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -468,7 +459,6 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = NONE(),
               comment = s,
@@ -476,7 +466,7 @@ algorithm
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -486,14 +476,13 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = SOME(attr),
               comment = s,
               connectorType = ct),finalPrefix)
       equation
         oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
   end match;
 end setVarFinal;
 
@@ -515,7 +504,6 @@ algorithm
       Option<DAE.Exp> e;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
-      BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -530,7 +518,6 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = NONE(),
               comment = s,
@@ -538,7 +525,7 @@ algorithm
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -548,14 +535,13 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = SOME(attr),
               comment = s,
               connectorType = ct),minMax)
       equation
         oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
   end match;
 end setVarMinMax;
 
@@ -590,7 +576,6 @@ algorithm
       Option<DAE.Exp> e;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
-      BackendDAE.Value i;
       DAE.ElementSource source;
       DAE.VariableAttributes attr;
       Option<DAE.VariableAttributes> oattr1;
@@ -605,7 +590,6 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = NONE(),
               comment = s,
@@ -613,7 +597,7 @@ algorithm
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -623,14 +607,13 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = SOME(attr),
               comment = s,
               connectorType = ct),inExp)
       equation
         oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
-    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,i,source,oattr1,s,ct);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
   end match;
 end setVarNominalValue;
 
@@ -679,21 +662,6 @@ algorithm
   end match;
 end varBindValue;
 
-public function varIndex "function: varIndex
-  author: PA
-
-  extracts the index in the implementation vector of a Var
-"
-  input BackendDAE.Var inVar;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  match (inVar)
-    local BackendDAE.Value i;
-    case (BackendDAE.VAR(index = i)) then i;
-  end match;
-end varIndex;
-
 public function varNominal "function: varNominal
   author: PA
 
@@ -706,7 +674,7 @@ algorithm
   outReal := matchcontinue (inVar)
     local
       Real nominal;
-    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(_,_,_,_,_,_,SOME(DAE.RCONST(nominal)),_,_,_,_,_,_)))) then nominal;
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(nominal=SOME(DAE.RCONST(nominal)))))) then nominal;
   end matchcontinue;
 end varNominal;
 
@@ -1275,21 +1243,6 @@ algorithm
   end matchcontinue;
 end isFlowVar;
 
-public function varIndexComparer
-  input BackendDAE.Var lhs;
-  input BackendDAE.Var rhs;
-  output Boolean res;
-algorithm
-  res :=
-  match (lhs, rhs)
-      local
-      Integer lhsIndex;
-      Integer rhsIndex;
-    case (BackendDAE.VAR(index=lhsIndex), BackendDAE.VAR(index=rhsIndex))
-      then rhsIndex < lhsIndex;
-  end match;
-end varIndexComparer;
-
 public function isConst
 "function: isConst
   Return true if variable is a constant."
@@ -1447,8 +1400,7 @@ algorithm
       Option<DAE.Exp> bind;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
-      BackendDAE.Value i;
-      DAE.ElementSource source "origin of equation";
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -1460,13 +1412,12 @@ algorithm
               bindExp = bind,
               bindValue = v,
               arryDim = dim,
-              index = i,
               source = source,
               values = attr,
               comment = comment,
               connectorType = ct))
     then
-      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,ct); 
+      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct); 
   end match;
 end copyVarNewName;
 
@@ -1498,8 +1449,7 @@ algorithm
       Option<DAE.Exp> bind;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
-      BackendDAE.Value i;
-      DAE.ElementSource source "origin of equation";
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -1513,62 +1463,16 @@ algorithm
               bindExp = bind,
               bindValue = v,
               arryDim = dim,
-              index = i,
               source = source,
               values = attr,
               comment = comment,
               connectorType = ct),new_kind)
     equation
-      oVar = BackendDAE.VAR(cr,new_kind,dir,prl,tp,bind,v,dim,i,source,attr,comment,ct); // referenceUpdate(inVar, 2, new_kind);
+      oVar = BackendDAE.VAR(cr,new_kind,dir,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 2, new_kind);
     then 
       oVar; 
   end match;
 end setVarKind;
-
-public function setVarIndex
-"function setVarKind
-  author: PA
-  Sets the BackendDAE.VarKind of a variable"
-  input BackendDAE.Var inVar;
-  input BackendDAE.Value inVarIndex;
-  output BackendDAE.Var outVar;
-algorithm
-  outVar := match (inVar,inVarIndex)
-    local
-      DAE.ComponentRef cr;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.VarParallelism prl;
-      BackendDAE.Type tp;
-      Option<DAE.Exp> bind;
-      Option<Values.Value> v;
-      list<DAE.Subscript> dim;
-      BackendDAE.Value i,new_i;
-      DAE.ElementSource source "origin of equation";
-      Option<DAE.VariableAttributes> attr;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
-      BackendDAE.Var oVar;
-
-    case (BackendDAE.VAR(varName = cr,
-              varKind = kind,
-              varDirection = dir,
-              varParallelism = prl,
-              varType = tp,
-              bindExp = bind,
-              bindValue = v,
-              arryDim = dim,
-              index = i,
-              source = source,
-              values = attr,
-              comment = comment,
-              connectorType = ct),new_i)
-    equation
-      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,v,dim,new_i,source,attr,comment,ct); // referenceUpdate(inVar, 8, new_i);
-    then
-      oVar; 
-  end match;
-end setVarIndex;
 
 public function setBindExp
 "function setBindExp
@@ -1587,8 +1491,7 @@ algorithm
       BackendDAE.Type tp;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
-      BackendDAE.Value i;
-      DAE.ElementSource source "origin of equation";
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -1601,14 +1504,13 @@ algorithm
               varType = tp,
               bindValue = v,
               arryDim = dim,
-              index = i,
               source = source,
               values = attr,
               comment = comment,
               connectorType = ct),
           inBindExp)
     equation
-      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,i,source,attr,comment,ct); // referenceUpdate(inVar, 5, SOME(inBindExp));
+      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 5, SOME(inBindExp));
     then 
       oVar;
   end match;
@@ -1631,8 +1533,7 @@ algorithm
       BackendDAE.Type tp;
       Option<DAE.Exp> bind;
       list<DAE.Subscript> dim;
-      BackendDAE.Value i;
-      DAE.ElementSource source "origin of equation";
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -1646,13 +1547,12 @@ algorithm
               bindExp = bind,
               bindValue = NONE(),
               arryDim = dim,
-              index = i,
               source = source,
               values = attr,
               comment = comment,
               connectorType = ct),inBindValue)
     equation
-      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,i,source,attr,comment,ct); // referenceUpdate(inVar, 6, SOME(inBindValue));
+      oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,source,attr,comment,ct); // referenceUpdate(inVar, 6, SOME(inBindValue));
     then 
       oVar;
   end match;
@@ -1690,7 +1590,6 @@ algorithm
       Option<DAE.Exp> bind;
       Option<Values.Value> v;
       list<DAE.Subscript> dim;
-      BackendDAE.Value i;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
@@ -1704,13 +1603,12 @@ algorithm
               bindExp = bind,
               bindValue = v,
               arryDim = dim,
-              index = i,
               source = source,
               values = attr,
               comment = comment,
               connectorType = ct),varDirection)
     equation
-      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,i,source,attr,comment,ct); // referenceUpdate(inVar, 3, varDirection);
+      oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 3, varDirection);
     then 
       oVar; 
   end match;
@@ -3011,7 +2909,6 @@ algorithm
       equation   
         cr = varCref(v);
        (vlst,indxlst) = getVar(cr, vars);
-       indxlst = List.map(vlst,varIndex);
        v_lst = listAppend(v_lst,indxlst);
       then ((v,(vars,v_lst)));
     case inTpl then inTpl;
@@ -3304,7 +3201,6 @@ algorithm
       Option<DAE.Exp> e;
       Option<Values.Value> f;
       list<DAE.Subscript> g;
-      BackendDAE.Value i;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
@@ -3319,7 +3215,6 @@ algorithm
               bindExp = e,
               bindValue = f,
               arryDim = g,
-              index = i,
               source = source,
               values = oattr,
               comment = s,
@@ -3327,7 +3222,7 @@ algorithm
       equation
         ops = listReverse(iops);
         source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);
-      then BackendDAE.VAR(a,b,c,p,d,e,f,g,i,source,oattr,s,ct);
+      then BackendDAE.VAR(a,b,c,p,d,e,f,g,source,oattr,s,ct);
   end match;
 end mergeVariableOperations;
 

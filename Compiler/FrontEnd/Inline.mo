@@ -498,7 +498,6 @@ algorithm
       DAE.Exp startv,startv_1;
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
-      Integer index;
       Option<DAE.VariableAttributes> values,values1;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
@@ -507,19 +506,19 @@ algorithm
       Option<DAE.Exp> bind;
       Boolean b1,b2;
 
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,ct),fns)
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,comment,ct),fns)
       equation
         (bind,source,b1) = inlineExpOpt(bind,fns,source);
         startv = DAEUtil.getStartAttrFail(values);
         (startv_1,source,b2) = inlineExp(startv,fns,source);
         values1 = Debug.bcallret2(b2,DAEUtil.setStartAttr,values,startv_1,values);
       then
-        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values1,comment,ct),b1 or b2);
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,ct),fns)
+        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,comment,ct),b1 or b2);
+    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,comment,ct),fns)
       equation
         (bind,source,b1) = inlineExpOpt(bind,fns,source);
       then
-        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,index,source,values,comment,ct),b1);
+        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,comment,ct),b1);
     case(var,_) then (var,false);
   end matchcontinue;
 end inlineVar;

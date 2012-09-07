@@ -98,7 +98,6 @@ uniontype Var "- Variables"
     Option< .DAE.Exp> bindExp "bindExp ; Binding expression e.g. for parameters" ;
     Option<Values.Value> bindValue "bindValue ; binding value for parameters" ;
     .DAE.InstDims arryDim "arryDim ; array dimensions on nonexpanded var" ;
-    Integer index "index ; index in impl. vector" ;
     .DAE.ElementSource source "origin of variable" ;
     Option< .DAE.VariableAttributes> values "values ; values on builtin attributes" ;
     Option<SCode.Comment> comment "comment ; this contains the comment and annotation from Absyn" ;

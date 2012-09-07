@@ -2308,7 +2308,7 @@ algorithm
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
         comref_seedVars = List.map(seedlst, BackendVariable.varCref);
-        ((seedVars,_)) =  BackendVariable.traverseBackendDAEVars(BackendDAEUtil.listVar(seedlst),traversingdlowvarToSimvar,({},BackendDAEUtil.emptyVars()));
+        ((seedVars,_)) = List.fold(seedlst,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
         seedVars = List.sort(seedVars,varIndexComparer);
 
         dummyVarName = ("dummyVar" +& name);
@@ -2575,55 +2575,6 @@ algorithm
         fail();
   end matchcontinue;
 end helpVarInfoFromWhenConditionChecks1;
-
-protected function buildDiscreteVarChanges "
-For all discrete variables in the model, generate code that checks if they have changed and if so generate code
-that add events to the event queue: if (change(<discretevar>)) { AddEvent(c1);...;AddEvent(cn)}"
-  input BackendDAE.BackendDAE daelow;
-  input list<list<Integer>> comps;
-  input array<Integer> ass1;
-  input array<Integer> ass2;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mT;
-  output String outString;
-algorithm
-  outString := matchcontinue(daelow,comps,ass1,ass2,m,mT)
-    local String s1,s2;
-      list<Integer> b;
-      list<list<Integer>> blocks;
-      BackendDAE.Variables v;
-      list<BackendDAE.Var> vLst;
-    case (daelow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{}),blocks,ass1,ass2,m,mT)
-      equation
-        vLst = BackendVariable.getAllDiscreteVarFromVariables(v); // select all discrete vars.
-        outString = stringDelimitList(List.map2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n  ");
-      then outString;
-    case(_,_,_,_,_,_) equation
-      print("buildDiscreteVarChanges failed\n");
-    then fail();
-  end matchcontinue;
-end buildDiscreteVarChanges;
-
-protected function buildDiscreteVarChangesVar "help function to buildDiscreteVarChanges"
-  input BackendDAE.Var var;
-  input BackendDAE.BackendDAE daelow;
-  input BackendDAE.IncidenceMatrixT mT;
-  output String outString;
-algorithm
-  outString := matchcontinue(var,daelow,mT)
-    local list<String> strLst;
-      Expression.ComponentRef cr;
-      Integer varIndx;
-      list<Integer> eqns;
-    case(var as BackendDAE.VAR(varName=cr,index=varIndx), daelow,mT) equation
-      eqns = mT[varIndx+1]; // eqns containing var
-      true = crefNotInWhenEquation(cr,daelow,eqns);
-      outString = buildDiscreteVarChangesAddEvent(0,cr);
-    then outString;
-      
-    case(_,_,_) then "";
-  end matchcontinue;
-end buildDiscreteVarChangesVar;
 
 protected function crefNotInWhenEquation "Returns true if cref is not solved in any of the equations
 given as indices which is a when_equation"
@@ -3061,7 +3012,6 @@ algorithm
       equation
         // select all discrete vars.
         // remove those vars that are solved in when equations
-        //vLst = List.select2(vLst, varNotSolvedInWhen, dlow, mT);
         // replace var with cref
         vLst2 = BackendVariable.traverseBackendDAEVars(v,traversingisVarDiscreteCrefFinder,{});
         vLst2 = listAppend(vLst2,acc);
@@ -3093,29 +3043,6 @@ algorithm
     case inTpl then inTpl;
   end matchcontinue;
 end traversingisVarDiscreteCrefFinder;
-
-protected function varNotSolvedInWhen
-  input BackendDAE.Var var;
-  input BackendDAE.BackendDAE dlow;
-  input BackendDAE.IncidenceMatrixT mT;
-  output Boolean include;
-algorithm
-  include := matchcontinue(var, dlow, mT)
-    local
-      Expression.ComponentRef cr;
-      Integer varIndx;
-      list<Integer> eqns;
-      
-    case(var as BackendDAE.VAR(varName=cr, index=varIndx), dlow, mT)
-      equation
-        eqns = mT[varIndx + 1];
-        true = crefNotInWhenEquation(cr, dlow, eqns);
-      then true;
-        
-    case(_,_,_) then false;
-        
-  end matchcontinue;
-end varNotSolvedInWhen;
 
 protected function createSimWhenClauses
   input BackendDAE.BackendDAE dlow;
@@ -5868,7 +5795,7 @@ algorithm
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
         comref_seedVars = List.map(seedlst, BackendVariable.varCref);
-        ((seedVars,_)) =  BackendVariable.traverseBackendDAEVars(BackendDAEUtil.listVar(seedlst),traversingdlowvarToSimvar,({},BackendDAEUtil.emptyVars()));
+        ((seedVars,_)) = List.fold(seedlst,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
         seedVars = List.sort(seedVars,varIndexComparer);
 
         dummyVarName = ("dummyVar" +& name);
@@ -6752,7 +6679,7 @@ algorithm
         /* Extract from external object list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* sort variables on index */
-        varsOut = sortSimvars(varsOut,varIndexComparer);
+        varsOut = sortSimvars(varsOut);
         /* Index of algebraic and parameters need 
          to fix due to separation of int Vars*/
         varsOut = fixIndex(varsOut);
@@ -7024,16 +6951,10 @@ end sortSimvarsOld;
 
 protected function sortSimvars
   input SimCode.SimVars unsortedSimvars;
-  input Comparer comp;
   output SimCode.SimVars sortedSimvars;
-  partial function Comparer
-    input SimCode.SimVar a;
-    input SimCode.SimVar b;
-    output Boolean res;
-  end Comparer;
 algorithm
   sortedSimvars :=
-  match (unsortedSimvars,comp)
+  match (unsortedSimvars)
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
@@ -7059,7 +6980,7 @@ algorithm
       list<SimCode.SimVar> stringConstVars;
     case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars),comp)
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars))
       equation
         stateVars = sortSimVars1(stateVars);
         derivativeVars = sortSimVars1(derivativeVars);
@@ -8293,35 +8214,6 @@ algorithm
   end matchcontinue;
 end addMissingEquations;
 
-protected function buildDiscreteVarChangesVar2
-"Help relation to buildDiscreteVarChangesVar
- For an equation e  (not a when equation) containing a discrete variable v, if e contains a
- ZeroCrossing(i) generate 'if change(v) needToIterate=1;)'"
-  input Integer eqn;
-  input Expression.ComponentRef cr;
-  input BackendDAE.BackendDAE daelow;
-  output String outString;
-algorithm
-  outString := matchcontinue(eqn,cr,daelow)
-    local BackendDAE.EquationArray eqns;
-      BackendDAE.Equation e;
-      list<BackendDAE.ZeroCrossing> zcLst;
-      String crStr;
-      list<String> strLst;
-      list<Integer> zcIndxLst;
-      
-    case(eqn,cr,daelow as BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst))))
-      equation
-        zcIndxLst = zeroCrossingsContainIndex(eqn,0,zcLst);
-        strLst = List.map1(zcIndxLst,buildDiscreteVarChangesAddEvent,cr);
-        outString = stringDelimitList(strLst,"\n");
-      then outString;
-    case(_,_,_) equation
-      print("buildDiscreteVarChangesVar2 failed\n");
-    then fail();
-  end matchcontinue;
-end buildDiscreteVarChangesVar2;
-
 protected function zeroCrossingsContainIndex "Returns the zero crossing indices that contains equation
 given by input index."
   input Integer eqn "equation index";
@@ -8341,20 +8233,6 @@ algorithm
     then  eqns;
   end matchcontinue;
 end zeroCrossingsContainIndex;
-
-protected function buildDiscreteVarChangesAddEvent
-"help function to buildDiscreteVarChangesVar2
- Generates 'if (change(v)) needToIterate=1 for and index i and variable v"
-  input Integer indx;
-  input Expression.ComponentRef cr;
-  output String str;
-protected
-  String crStr,indxStr;
-algorithm
-  crStr := ComponentReference.printComponentRefStr(cr);
-  indxStr := intString(indx);
-  str := stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
-end buildDiscreteVarChangesAddEvent;
 
 protected function generateMixedDiscreteCombinationValues "function generateMixedDiscreteCombinationValues
   author: PA
@@ -8665,11 +8543,10 @@ algorithm
       Option<DAE.Exp> exp;
       Option<Values.Value> v;
       list<Expression.Subscript> dim;
-      Integer index;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
       BackendDAE.Var backendVar;
       
     case (BackendDAE.VAR(varName = cr,
@@ -8680,7 +8557,6 @@ algorithm
       bindExp = exp,
       bindValue = v,
       arryDim = dim,
-      index = index,
       source = source,
       values = attr,
       comment = comment,
@@ -8688,7 +8564,7 @@ algorithm
       equation
         cr = ComponentReference.crefPrefixDer(cr);
       then
-        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,index,source,attr,comment,ct);
+        BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,source,attr,comment,ct);
         
     case (backendVar)
     then
@@ -9117,7 +8993,6 @@ algorithm
       DAE.VarDirection dir;
       list<Expression.Subscript> inst_dims;
       list<String> numArrayElement;
-      Integer indx;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       BackendDAE.Type tp;
@@ -9137,7 +9012,6 @@ algorithm
       varKind = kind,
       varDirection = dir,
       arryDim = inst_dims,
-      index = indx,
       values = dae_var_attr,
       comment = comment,
       varType = tp,
@@ -9158,7 +9032,7 @@ algorithm
         numArrayElement=arraydim1(inst_dims);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
-        SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
+        SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, 0, minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
   end match;
 end dlowvarToSimvar;
 
@@ -9204,6 +9078,15 @@ algorithm
     case(_,_) then SimCode.INTERNAL();
   end matchcontinue;
 end getCausality;
+
+protected function traversingdlowvarToSimvarFold
+"autor: Frenkel TUD 2010-11"
+  input BackendDAE.Var v;
+  input tuple<list<SimCode.SimVar>,BackendDAE.Variables> inTpl;
+  output tuple<list<SimCode.SimVar>,BackendDAE.Variables> outTpl;
+algorithm
+  ((_,outTpl)) := traversingdlowvarToSimvar((v,inTpl));
+end traversingdlowvarToSimvarFold;
 
 protected function traversingdlowvarToSimvar
 "autor: Frenkel TUD 2010-11"

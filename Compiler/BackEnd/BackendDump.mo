@@ -1375,7 +1375,7 @@ algorithm
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
-      BackendDAE.Value varno_1,indx,varno;
+      BackendDAE.Value varno_1,varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -1398,7 +1398,6 @@ algorithm
                      varType = var_type,
                      arryDim = arrayDim,
                      bindExp = SOME(e),
-                     index = indx,
                      source = source,
                      values = dae_var_attr,
                      comment = comment,
@@ -1427,15 +1426,11 @@ algorithm
         print(s);
         print(" ");
         print(path_str);
-        indx_str = intString(indx) "print \"  \" & print comment_str & print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
         print(ComponentReference.printComponentRef2Str("", arrayDim));
         print("(");
         dumpAttributes(dae_var_attr);
-        print(") ");
-        print(" indx = ");
-        print(indx_str);
-        print("\n");
+        print(")\n");
         varno_1 = varno + 1;
         dumpVars2(xs, varno_1) "DAEDump.dump_variable_attributes(dae_var_attr) &" ;
       then
@@ -1447,7 +1442,6 @@ algorithm
                      varType = var_type,
                      arryDim = arrayDim,
                      bindExp = NONE(),
-                     index = indx,
                      source = source,
                      values = dae_var_attr,
                      comment = comment,
@@ -1472,11 +1466,8 @@ algorithm
         dumpAttributes(dae_var_attr);
         print(") ");        
         print(path_str);
-        indx_str = intString(indx) "print \" former: \" & print old_name &" ;
         str = dumpTypeStr(var_type);print( " type: "); print(str);
         print(ComponentReference.printComponentRef2Str("", arrayDim));
-        print(" indx = ");
-        print(indx_str);
         print("\n");
         varno_1 = varno + 1;
         dumpVars2(xs, varno_1);

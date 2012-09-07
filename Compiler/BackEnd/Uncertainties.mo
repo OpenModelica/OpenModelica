@@ -979,13 +979,12 @@ algorithm
       Option<DAE.Exp> bind ;
       Option<Values.Value> bindval;
       DAE.InstDims ad;
-      Integer indx;
-      DAE.ElementSource source "origin of variable" ;
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       DAE.ConnectorType ct;
-    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,ct),bindExp) then 
-      BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,indx,source,attr,cmt,ct); 
+    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct),bindExp) then 
+      BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,source,attr,cmt,ct); 
   end match;
 end setVarBindingOpt;
 
@@ -1008,13 +1007,12 @@ algorithm
       Option<DAE.Exp> bind ;
       Option<Values.Value> bindval;
       DAE.InstDims ad;
-      Integer indx;
-      DAE.ElementSource source "origin of variable" ;
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       DAE.ConnectorType ct;
-    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,ct),cr) then 
-      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,indx,source,attr,cmt,ct); 
+    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct),cr) then 
+      BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct); 
   end match;
 end setVarCref;
 

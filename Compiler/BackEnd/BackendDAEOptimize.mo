@@ -398,7 +398,7 @@ algorithm
         ((syst,shared,repl_1,derrepl1,deqns,movedVars,movedAVars,meqns,b)) = 
           traverseEquations(1,n,removeSimpleEquationsFastFinder,
             (syst,shared,repl,derrepl,{},BackendDAE.emptyBintree,BackendDAEUtil.emptyVars(),{},false));
-        // replace der(x)=dx 
+        // replace der(x)=dx
         (syst,shared) = replaceDerEquations(deqns,syst,shared,derrepl1);
         // replace vars in arrayeqns and algorithms, move vars to knvars and aliasvars, remove eqns
         (syst,shared) = removeSimpleEquations2(b,syst,shared,repl_1,movedVars,movedAVars,meqns);
@@ -5081,7 +5081,7 @@ algorithm
     BackendDAE.Variables variables,variables1;
   case (_,cref::rest,_)
     equation
-      var = BackendDAE.VAR(cref, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,
+      var = BackendDAE.VAR(cref, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                             DAE.emptyElementSource,
                             NONE(),NONE(),DAE.NON_CONNECTOR());
       variables1 = BackendVariable.addVar(var,inVars);
@@ -5627,7 +5627,7 @@ algorithm
         var = BackendVariable.vararrayNth(varr, tearingvar-1);
         cr = BackendVariable.varCref(var);
         crt = ComponentReference.prependStringCref("tearingresidual_",cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,DAE.emptyElementSource,
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR()), ordvars);
         // replace in residual equation orgvar with Tearing Var
@@ -5690,7 +5690,7 @@ algorithm
         var = BackendVariable.vararrayNth(varr, tearingvar-1);
         cr = BackendVariable.varCref(var);
         crt = ComponentReference.prependStringCref("tearingresidual_",cr);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,DAE.emptyElementSource,
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR()), ordvars);
         // replace in residual equation orgvar with Tearing Var
@@ -6819,7 +6819,7 @@ protected function convertInitialResidualsIntoInitialEquations "function convert
   output list<BackendDAE.Equation> outEquationList;
   output list<BackendDAE.Var> outVariableList;
 algorithm
-  (outEquationList, outVariableList) := convertInitialResidualsIntoInitialEquations2(inResidualList, 1);
+  (outEquationList, outVariableList) := convertInitialResidualsIntoInitialEquations2(inResidualList, 1,{},{});
 end convertInitialResidualsIntoInitialEquations;
 
 protected function convertInitialResidualsIntoInitialEquations2 "function generateInitialResidualEquations2
@@ -6827,10 +6827,12 @@ protected function convertInitialResidualsIntoInitialEquations2 "function genera
   This is a helper function of convertInitialResidualsIntoInitialEquations."
   input list<BackendDAE.Equation> inEquationList;
   input Integer inIndex;
+  input list<BackendDAE.Equation> iEquationList;
+  input list<BackendDAE.Var> iVariableList;
   output list<BackendDAE.Equation> outEquationList;
   output list<BackendDAE.Var> outVariableList;
 algorithm
-  (outEquationList, outVariableList) := matchcontinue(inEquationList, inIndex)
+  (outEquationList, outVariableList) := matchcontinue(inEquationList, inIndex, iEquationList, iVariableList)
     local
       Integer index;
       list<BackendDAE.Equation> restEquationList;
@@ -6846,21 +6848,19 @@ algorithm
       BackendDAE.Equation currEquation;
       BackendDAE.Var currVariable;
     
-    case({}, _)
-    then ({}, {});
+    case({}, _, _ , _)
+    then (listReverse(iEquationList), listReverse(iVariableList));
     
-    case((BackendDAE.RESIDUAL_EQUATION(exp, source))::restEquationList, index) equation
-      (equationList, variableList) = convertInitialResidualsIntoInitialEquations2(restEquationList, index+1);
+    case((BackendDAE.RESIDUAL_EQUATION(exp, source))::restEquationList, index,_,_) equation
       
       varName = "$res" +& intString(index);
       componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
       expVarName = DAE.CREF(componentRef, DAE.T_REAL_DEFAULT);
       currEquation = BackendDAE.EQUATION(expVarName, exp, source);
       
-      currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      
-      equationList = currEquation::equationList;
-      variableList = currVariable::variableList;
+      currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+
+      (equationList, variableList) = convertInitialResidualsIntoInitialEquations2(restEquationList, index+1,currEquation::iEquationList,currVariable::iVariableList);
     then (equationList, variableList);
     
     else equation
@@ -6964,20 +6964,16 @@ algorithm
       knownVarList = BackendDAEUtil.varList(knownVars);
       knownVarCrefList = List.map(knownVarList, BackendVariable.varCref);
       states = BackendVariable.getAllStateVarFromVariables(orderedVars);
-      states = List.sort(states, BackendVariable.varIndexComparer);
       inputs = List.select(knownVarList, BackendVariable.isInput);
-      inputs = List.sort(inputs, BackendVariable.varIndexComparer);
       parameters = List.select(knownVarList, BackendVariable.isParam);
-      parameters = List.sort(parameters,  BackendVariable.varIndexComparer);
       outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
-      outputs = List.sort(outputs, BackendVariable.varIndexComparer);
       
       jacobian = createJacobian(DAE,                                      // DAE
                                 states,                                   // 
-                                BackendDAEUtil.listVar(states),           // 
-                                BackendDAEUtil.listVar(inputs),           // 
-                                BackendDAEUtil.listVar(parameters),       // 
-                                BackendDAEUtil.listVar(outputs),          // 
+                                BackendDAEUtil.listVar1(states),           // 
+                                BackendDAEUtil.listVar1(inputs),           // 
+                                BackendDAEUtil.listVar1(parameters),       // 
+                                BackendDAEUtil.listVar1(outputs),          // 
                                 orderedVarList,                           // 
                                 (orderedVarCrefList, knownVarCrefList),   // 
                                 "G");                                     // name
@@ -7081,14 +7077,11 @@ algorithm
         knvarlst = BackendDAEUtil.varList(kv);
         comref_knvars = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
-        states = List.sort(states, BackendVariable.varIndexComparer);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
-        inputvars = List.sort(inputvars, BackendVariable.varIndexComparer);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
-        paramvars = List.sort(paramvars,  BackendVariable.varIndexComparer);
 
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> prepared vars for symbolic matrix A time: " +& realString(clock()) +& "\n");
-        outJacobian = createJacobian(backendDAE2,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
+        outJacobian = createJacobian(backendDAE2,states,BackendDAEUtil.listVar1(states),BackendDAEUtil.listVar1(inputvars),BackendDAEUtil.listVar1(paramvars),BackendDAEUtil.listVar1(states),varlst,(comref_vars,comref_knvars),"A");
         
       then
         outJacobian;
@@ -7114,7 +7107,7 @@ algorithm
       list<BackendDAE.Var>  varlst, knvarlst,  states, inputvars, inputvars2, outputvars, paramvars;
       list<DAE.ComponentRef> comref_states, comref_inputvars, comref_outputvars, comref_vars, comref_knvars;
       
-      BackendDAE.Variables v,kv;
+      BackendDAE.Variables v,kv,statesarr,inputvarsarr,paramvarsarr,outputvarsarr;
       BackendDAE.EquationArray e;
       
       BackendDAE.SymbolicJacobians linearModelMatrices;
@@ -7133,40 +7126,40 @@ algorithm
         knvarlst = BackendDAEUtil.varList(kv);
         comref_knvars = List.map(knvarlst,BackendVariable.varCref);
         states = BackendVariable.getAllStateVarFromVariables(v);
-        states = List.sort(states, BackendVariable.varIndexComparer);
         inputvars = List.select(knvarlst,BackendVariable.isInput);
-        inputvars = List.sort(inputvars, BackendVariable.varIndexComparer);
         paramvars = List.select(knvarlst, BackendVariable.isParam);
-        paramvars = List.sort(paramvars,  BackendVariable.varIndexComparer);
         inputvars2 = List.select(knvarlst,BackendVariable.isVarOnTopLevelAndInput);
-        inputvars2 = List.sort(inputvars2, BackendVariable.varIndexComparer);
         outputvars = List.select(varlst,BackendVariable.isVarOnTopLevelAndOutput);
-        outputvars = List.sort(outputvars, BackendVariable.varIndexComparer);
         
         comref_states = List.map(states,BackendVariable.varCref);
         comref_inputvars = List.map(inputvars2,BackendVariable.varCref);
         comref_outputvars = List.map(outputvars,BackendVariable.varCref);
         
+        statesarr = BackendDAEUtil.listVar1(states);
+        inputvarsarr = BackendDAEUtil.listVar1(inputvars);
+        paramvarsarr = BackendDAEUtil.listVar1(paramvars);
+        outputvarsarr = BackendDAEUtil.listVar1(outputvars);
+        
         // Differentiate the System w.r.t states for matrices A
-        linearModelMatrix = createJacobian(backendDAE2,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"A");
+        linearModelMatrix = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,(comref_vars,comref_knvars),"A");
         linearModelMatrices = {linearModelMatrix};
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
   
         
         // Differentiate the System w.r.t inputs for matrices B
-        linearModelMatrix = createJacobian(backendDAE2,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars), BackendDAEUtil.listVar(states),varlst,(comref_vars,comref_knvars),"B");
+        linearModelMatrix = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,(comref_vars,comref_knvars),"B");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
 
 
         // Differentiate the System w.r.t states for matrices C
-        linearModelMatrix = createJacobian(backendDAE2,states,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"C");
+        linearModelMatrix = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,(comref_vars,comref_knvars),"C");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
 
         
         // Differentiate the System w.r.t inputs for matrices D
-        linearModelMatrix = createJacobian(backendDAE2,inputvars2,BackendDAEUtil.listVar(states),BackendDAEUtil.listVar(inputvars),BackendDAEUtil.listVar(paramvars),BackendDAEUtil.listVar(outputvars),varlst,(comref_vars,comref_knvars),"D");
+        linearModelMatrix = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,(comref_vars,comref_knvars),"D");
         linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
 
@@ -7390,10 +7383,9 @@ algorithm
       // all variables for new equation system
       // d(ordered vars)/d(dummyVar) 
       diffvars = BackendDAEUtil.varList(orderedVars);
-      diffvars = List.sort(diffvars, BackendVariable.varIndexComparer);
       derivedVariables = creatallDiffedVars(diffvars, x, diffedVars, 0, (matrixName, false));
 
-      jacOrderedVars = BackendDAEUtil.listVar(derivedVariables);
+      jacOrderedVars = BackendDAEUtil.listVar1(derivedVariables);
       // known vars: all variable from original system + seed
       jacKnownVars = BackendDAEUtil.emptyVars();
       jacKnownVars = BackendVariable.mergeVariables(jacKnownVars, orderedVars);
@@ -7448,7 +7440,7 @@ algorithm
     case (_, _)
       equation 
         derivedCref = differentiateVarWithRespectToX(indiffVar, indiffVar, inMatrixName);
-        jacvar = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1,  DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        jacvar = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       then jacvar;
   end match;
 end createSeedVars;
@@ -7510,7 +7502,7 @@ algorithm
     case(var as BackendDAE.VAR(varName=cref,varKind=BackendDAE.STATE()), currVar::restVar, _) equation
       cref = ComponentReference.crefPrefixDer(cref);
       derivedCref = differentiateVarWithRespectToX(cref, currVar, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (r2,res1) = generateJacobianVars2(var, restVar, inMatrixName);
       res = listAppend({derivedCref}, res1);
       r = listAppend({r1}, r2);
@@ -7518,7 +7510,7 @@ algorithm
 
     case(var as BackendDAE.VAR(varName=cref), currVar::restVar, _) equation
       derivedCref = differentiateVarWithRespectToX(cref, currVar, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       (r2,res1) = generateJacobianVars2(var, restVar, inMatrixName);
       res = listAppend({derivedCref}, res1);
       r = listAppend({r1}, r2);
@@ -7559,7 +7551,7 @@ algorithm
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, inIndex, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       r2 = creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName);
       r = listAppend({r1}, r2);
     then r;
@@ -7567,7 +7559,7 @@ algorithm
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,inAllVars,inIndex, _) equation
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, inIndex, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       r2 = creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName);
       r = listAppend({r1}, r2);
     then r;  
@@ -7575,14 +7567,14 @@ algorithm
      case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,inAllVars,inIndex, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       r2 = creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName);
       r = listAppend({r1}, r2);
     then r;
       
     case(BackendDAE.VAR(varName=currVar)::restVar,cref,inAllVars,inIndex, _) equation
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
-      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       r2 = creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName);
       r = listAppend({r1}, r2);
     then r;  
@@ -7678,68 +7670,6 @@ algorithm
     then fail();
   end matchcontinue;
 end determineIndices2;
-
-public function changeIndices
-  input list<BackendDAE.Var> derivedVariables;
-  input list<tuple<DAE.ComponentRef,Integer>> outTuple;
-  input BackendDAE.BinTree inBinTree;
-  output list<BackendDAE.Var> derivedVariablesChanged;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  (derivedVariablesChanged,outBinTree) := matchcontinue(derivedVariables,outTuple,inBinTree)
-    local
-      list<BackendDAE.Var> rest,changedVariables;
-      BackendDAE.Var derivedVariable;
-      list<tuple<DAE.ComponentRef,Integer>> restTuple;
-      BackendDAE.BinTree bt;
-    case ({},_,bt) then ({},bt);
-    case (derivedVariable::rest,restTuple,bt) equation
-      (derivedVariable,bt) = changeIndices2(derivedVariable,restTuple,bt);
-      (changedVariables,bt) = changeIndices(rest,restTuple,bt);
-    then (derivedVariable::changedVariables,bt);
-    else
-    equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.changeIndices() failed"});
-    then fail();
-  end matchcontinue;
-end changeIndices;
-
-protected function changeIndices2
-  input BackendDAE.Var derivedVariable;
-  input list<tuple<DAE.ComponentRef,Integer>> varIndex;
-  input BackendDAE.BinTree inBinTree;
-  output BackendDAE.Var derivedVariablesChanged;
-  output BackendDAE.BinTree outBinTree;
-algorithm
- (derivedVariablesChanged,outBinTree) := matchcontinue(derivedVariable, varIndex,inBinTree)
-    local
-      BackendDAE.Var curr, changedVar;
-      DAE.ComponentRef currCREF;
-      list<tuple<DAE.ComponentRef,Integer>> restTuple;
-      DAE.ComponentRef currVar;
-      Integer currInd;
-      BackendDAE.BinTree bt;
-    case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
-      true = ComponentReference.crefEqual(currCREF, currVar) ;
-      changedVar = BackendVariable.setVarIndex(curr,currInd);
-      Debug.fcall(Flags.VAR_INDEX2,BackendDump.debugCrefStrIntStr,(currVar," ",currInd,"\n"));
-      bt = BackendDAEUtil.treeAddList(bt,{currCREF});
-    then (changedVar,bt);
-    case (curr  as BackendDAE.VAR(varName=currCREF),{},bt) equation
-      changedVar = BackendVariable.setVarIndex(curr,-1);
-      Debug.fcall(Flags.VAR_INDEX2,BackendDump.debugCrefStr, (currCREF," -1\n"));
-    then (changedVar,bt);
-    case (curr  as BackendDAE.VAR(varName=currCREF),(currVar,currInd)::restTuple,bt) equation
-      changedVar = BackendVariable.setVarIndex(curr,-1);
-      Debug.fcall(Flags.VAR_INDEX2,BackendDump.debugCrefStr,(currCREF," -1\n"));
-      (changedVar,bt) = changeIndices2(changedVar,restTuple,bt);
-    then (changedVar,bt);
-    else
-    equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.changeIndices2() failed"});
-    then fail();
-  end matchcontinue;
-end changeIndices2;
 
 protected function deriveAll "function deriveAll
   author: lochel"
@@ -8315,7 +8245,7 @@ algorithm
     case(DAE.STMT_FOR(type_=type_, iterIsArray=iterIsArray, iter=ident, index=index, range=exp, statementLst=statementLst, source=source)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, _)
     equation
       cref = ComponentReference.makeCrefIdent(ident, DAE.T_INTEGER_DEFAULT, {});
-      controlVar = BackendDAE.VAR(cref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, -1, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      controlVar = BackendDAE.VAR(cref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       controlVars = listAppend(controlVars, {controlVar});
       derivedStatements1 = differentiateAlgorithmStatements(statementLst, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, inMatrixName);
 
@@ -11035,7 +10965,7 @@ protected function makePardialDerVar
   input DAE.ComponentRef cr;
   output BackendDAE.Var v;
 algorithm
-  v := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},-1,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
+  v := BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
 end makePardialDerVar;
 
 protected function getTVarCrefs "function getTVarCrefs
@@ -11196,7 +11126,7 @@ algorithm
         varexp = Expression.crefExp(cr1);
         repl = BackendVarTransform.addReplacement(inRepl,cr,varexp,NONE());
         ty = ComponentReference.crefLastType(cr1);
-        var = BackendDAE.VAR(cr1,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},0,DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
+        var = BackendDAE.VAR(cr1,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),ty,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
         //var = BackendVariable.copyVarNewName(cr1,var);
         //var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
         //var = BackendVariable.setVarAttributes(var, NONE());
