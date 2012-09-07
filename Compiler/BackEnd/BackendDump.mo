@@ -50,7 +50,6 @@ protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
-protected import Error;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;

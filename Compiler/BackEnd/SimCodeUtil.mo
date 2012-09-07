@@ -2274,48 +2274,43 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         (columnEquations,_,uniqueEqIndex,_) = createEquations(false, false, false, false, true, syst, shared, comps, {},iuniqueEqIndex,{});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
-        
         origVarslst = BackendVariable.equationSystemsVarsLst(systs,{});
-        origVars = BackendDAEUtil.listVar(origVarslst);
+        origVars = BackendDAEUtil.listVar1(origVarslst);
 
         // create SimCode.SimVars from jacobian vars
         vars = BackendVariable.daeVars(syst);
         knvars = BackendVariable.daeKnVars(shared);
         empty = BackendDAEUtil.emptyVars();
         // re-sort Variables
-        v = BackendDAEUtil.listVar(alldiffedVars);
+        v = BackendDAEUtil.listVar1(alldiffedVars);
         varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        sortdiffvars = List.threadTuple(alldiffedVars, listReverse(varsIndexes));
+        sortdiffvars = List.threadTuple(alldiffedVars, varsIndexes);
         sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
         alldiffedVars = List.map(sortdiffvars,Util.tuple21);
-                
-        v = BackendDAEUtil.listVar(diffVars);
+
+        v = BackendDAEUtil.listVar1(diffVars);
         varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
         varsIndexes = Util.if_(listLength(varsIndexes) == listLength(diffVars),varsIndexes, List.intRange2(1, listLength(diffVars)));
-        sortdiffvars = List.threadTuple(diffVars, listReverse(varsIndexes));
+        sortdiffvars = List.threadTuple(diffVars, varsIndexes);
         sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
         diffVars = List.map(sortdiffvars,Util.tuple21);
-        
-        v = BackendDAEUtil.listVar(diffedVars);      
+
+        v = BackendDAEUtil.listVar1(diffedVars);      
         varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        sortdiffvars = List.threadTuple(diffedVars, listReverse(varsIndexes));
+        sortdiffvars = List.threadTuple(diffedVars, varsIndexes);
         sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
         diffedVars = List.map(sortdiffvars,Util.tuple21);
-
 
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         s =  intString(listLength(diffedVars));
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
-        comref_seedVars = List.map(seedlst, BackendVariable.varCref);
+        //comref_seedVars = List.map(seedlst, BackendVariable.varCref);
         ((seedVars,_)) = List.fold(seedlst,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
-        seedVars = List.sort(seedVars,varIndexComparer);
 
         dummyVarName = ("dummyVar" +& name);
         x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
-        derivedVariableslst = BackendDAEOptimize.creatallDiffedVars(alldiffedVars, x, v, 0, (name,false));
-        derivedVariables = BackendDAEUtil.listVar(derivedVariableslst);
-        ((columnVars,_)) =  BackendVariable.traverseBackendDAEVars(derivedVariables,traversingdlowvarToSimvar,({},empty));
+        columnVars = creatallDiffedVars(alldiffedVars, x, v, 0, (name,false),{});
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
@@ -2341,6 +2336,66 @@ algorithm
         fail();
   end matchcontinue;
 end createSymbolicJacobianssSimCode;
+
+protected function creatallDiffedVars
+  // function: help function for creatallDiffedVars
+  // author: wbraun
+  input list<BackendDAE.Var> inVars;
+  input DAE.ComponentRef inCref;
+  input BackendDAE.Variables inAllVars;
+  input Integer inIndex;
+  input tuple<String,Boolean> inMatrixName;
+  input list<SimCode.SimVar> iVars;
+  output list<SimCode.SimVar> outVars;
+algorithm
+  outVars := matchcontinue(inVars, inCref,inAllVars,inIndex,inMatrixName,iVars)
+  local
+    BackendDAE.Var  v1;
+    SimCode.SimVar r1;
+    DAE.ComponentRef currVar, cref, derivedCref;
+    list<BackendDAE.Var> restVar;
+   
+    case({}, _, _, _, _,_)
+    then listReverse(iVars);
+    // skip for dicrete variable
+    case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.DISCRETE())::restVar,cref,inAllVars,inIndex, _, _) equation
+     then
+       creatallDiffedVars(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);    
+ 
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,inAllVars,inIndex, _, _) equation
+      ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
+      currVar = ComponentReference.crefPrefixDer(currVar);
+      derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "","","",inIndex,NONE(),NONE(),NONE(),NONE(),false,DAE.T_REAL_DEFAULT,false,NONE(),SimCode.NOALIAS(),DAE.emptyElementSource,SimCode.NONECAUS(),NONE(),{});
+    then 
+      creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
+      
+    case(BackendDAE.VAR(varName=currVar)::restVar,cref,inAllVars,inIndex, _, _) equation
+      ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
+      derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.STATE_DER(), "","","",inIndex,NONE(),NONE(),NONE(),NONE(),false,DAE.T_REAL_DEFAULT,false,NONE(),SimCode.NOALIAS(),DAE.emptyElementSource,SimCode.NONECAUS(),NONE(),{});
+    then 
+      creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars); 
+ 
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,inAllVars,inIndex, _, _) equation
+      currVar = ComponentReference.crefPrefixDer(currVar);
+      derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "","","",-1,NONE(),NONE(),NONE(),NONE(),false,DAE.T_REAL_DEFAULT,false,NONE(),SimCode.NOALIAS(),DAE.emptyElementSource,SimCode.NONECAUS(),NONE(),{});
+    then 
+      creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
+      
+    case(BackendDAE.VAR(varName=currVar)::restVar,cref,inAllVars,inIndex, _, _) equation
+      derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
+      r1 = SimCode.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "","","",-1,NONE(),NONE(),NONE(),NONE(),false,DAE.T_REAL_DEFAULT,false,NONE(),SimCode.NOALIAS(),DAE.emptyElementSource,SimCode.NONECAUS(),NONE(),{});
+    then 
+      creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
+ 
+    else
+     equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"SimCodeUtil.creatallDiffedVars failed"});
+    then fail();
+  end matchcontinue;
+end creatallDiffedVars;
 
 protected function addLinearizationMatrixes
 "fuction creates the jacobian column-wise
@@ -5763,29 +5818,29 @@ algorithm
         
         
         origVarslst = BackendVariable.equationSystemsVarsLst(systs,{});
-        origVars = BackendDAEUtil.listVar(origVarslst);
+        origVars = BackendDAEUtil.listVar1(origVarslst);
 
         // create SimCode.SimVars from jacobian vars
         vars = BackendVariable.daeVars(syst);
         knvars = BackendVariable.daeKnVars(shared);
         empty = BackendDAEUtil.emptyVars();
         // re-sort Variables
-        v = BackendDAEUtil.listVar(alldiffedVars);
+        v = BackendDAEUtil.listVar1(alldiffedVars);
         varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        sortdiffvars = List.threadTuple(alldiffedVars, listReverse(varsIndexes));
+        sortdiffvars = List.threadTuple(alldiffedVars, varsIndexes);
         sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
         alldiffedVars = List.map(sortdiffvars, Util.tuple21);
                 
-        v = BackendDAEUtil.listVar(diffVars);
+        v = BackendDAEUtil.listVar1(diffVars);
         varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
         varsIndexes = Util.if_(listLength(varsIndexes) == listLength(diffVars),varsIndexes, List.intRange2(1, listLength(diffVars)));
-        sortdiffvars = List.threadTuple(diffVars, listReverse(varsIndexes));
+        sortdiffvars = List.threadTuple(diffVars, varsIndexes);
         sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
         diffVars = List.map(sortdiffvars,Util.tuple21);
         
-        v = BackendDAEUtil.listVar(diffedVars);
+        v = BackendDAEUtil.listVar1(diffedVars);
         varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        sortdiffvars = List.threadTuple(diffedVars, listReverse(varsIndexes));
+        sortdiffvars = List.threadTuple(diffedVars, varsIndexes);
         sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
         diffedVars = List.map(sortdiffvars,Util.tuple21);
 
@@ -5794,15 +5849,12 @@ algorithm
         s =  intString(listLength(diffedVars));
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
-        comref_seedVars = List.map(seedlst, BackendVariable.varCref);
+        //comref_seedVars = List.map(seedlst, BackendVariable.varCref);
         ((seedVars,_)) = List.fold(seedlst,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
-        seedVars = List.sort(seedVars,varIndexComparer);
 
         dummyVarName = ("dummyVar" +& name);
         x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
-        derivedVariableslst = BackendDAEOptimize.creatallDiffedVars(alldiffedVars, x, v, 0, (name,false));
-        derivedVariables = BackendDAEUtil.listVar(derivedVariableslst);
-        ((columnVars,_)) =  BackendVariable.traverseBackendDAEVars(derivedVariables,traversingdlowvarToSimvar,({},empty));
+        columnVars = creatallDiffedVars(alldiffedVars, x, v, 0, (name,false),{});
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
@@ -6880,74 +6932,6 @@ algorithm
     then true;
   end match;
 end isAliasVar;
-
-protected function sortSimvarsOld
-  input SimCode.SimVars unsortedSimvars;
-  input Comparer comp;
-  output SimCode.SimVars sortedSimvars;
-  partial function Comparer
-    input SimCode.SimVar a;
-    input SimCode.SimVar b;
-    output Boolean res;
-  end Comparer;
-algorithm
-  sortedSimvars :=
-  match (unsortedSimvars,comp)
-    local
-      list<SimCode.SimVar> stateVars;
-      list<SimCode.SimVar> derivativeVars;
-      list<SimCode.SimVar> algVars;
-      list<SimCode.SimVar> intAlgVars;
-      list<SimCode.SimVar> boolAlgVars;
-      list<SimCode.SimVar> inputVars;
-      list<SimCode.SimVar> outputVars;
-      list<SimCode.SimVar> aliasVars;
-      list<SimCode.SimVar> intAliasVars;
-      list<SimCode.SimVar> boolAliasVars;
-      list<SimCode.SimVar> paramVars;
-      list<SimCode.SimVar> intParamVars;
-      list<SimCode.SimVar> boolParamVars;
-      list<SimCode.SimVar> stringAlgVars;
-      list<SimCode.SimVar> stringParamVars;
-      list<SimCode.SimVar> stringAliasVars;
-      list<SimCode.SimVar> extObjVars;
-      list<SimCode.SimVar> jacVars;
-      list<SimCode.SimVar> constVars;
-      list<SimCode.SimVar> intConstVars;
-      list<SimCode.SimVar> boolConstVars;
-      list<SimCode.SimVar> stringConstVars;
-    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
-      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars),comp)
-      equation
-        stateVars = List.sort(stateVars, comp);
-        derivativeVars = List.sort(derivativeVars, comp);
-        algVars = List.sort(algVars, comp);
-        intAlgVars = List.sort(intAlgVars, comp);
-        boolAlgVars = List.sort(boolAlgVars, comp);
-        inputVars = List.sort(inputVars, comp);
-        outputVars = List.sort(outputVars, comp);
-        aliasVars = List.sort(aliasVars, comp);
-        intAliasVars = List.sort(intAliasVars, comp);
-        boolAliasVars = List.sort(boolAliasVars, comp);
-        paramVars = List.sort(paramVars, comp);
-        intParamVars = List.sort(intParamVars, comp);
-        boolParamVars = List.sort(boolParamVars, comp);
-        stringAlgVars = List.sort(stringAlgVars, comp);
-        stringParamVars = List.sort(stringParamVars, comp);
-        stringAliasVars = List.sort(stringAliasVars, comp);
-        extObjVars = List.sort(extObjVars, comp);
-        jacVars = List.sort(jacVars, comp);
-        constVars = List.sort(constVars, comp);
-        intConstVars = List.sort(intConstVars, comp);
-        boolConstVars = List.sort(boolConstVars, comp);
-        stringConstVars = List.sort(stringConstVars, comp);
-        
-      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
-        outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
-        stringAlgVars, stringParamVars, stringAliasVars, extObjVars,jacVars,constVars,intConstVars,boolConstVars,stringConstVars);
-  end match;
-end sortSimvarsOld;
 
 protected function sortSimvars
   input SimCode.SimVars unsortedSimvars;
@@ -9030,7 +9014,8 @@ algorithm
         numArrayElement=arraydim1(inst_dims);
         // print("name: " +& ComponentReference.printComponentRefStr(cr) +& "indx: " +& intString(indx) +& "\n");
       then
-        SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, 0, minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
+        SimCode.SIMVAR(cr, kind, commentStr, unit, displayUnit, -1 /* use -1 to get an error in simulation if something failed */,
+        minValue, maxValue, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, caus,NONE(),numArrayElement);
   end match;
 end dlowvarToSimvar;
 
