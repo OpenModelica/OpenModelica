@@ -106,6 +106,7 @@ protected
   DAE.FunctionTree functionTree;
 algorithm
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("Enter Backend",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
   (DAE.DAE(elems),functionTree) := processDelayExpressions(lst,functionTree);
   s := states(elems, BackendDAE.emptyBintree);

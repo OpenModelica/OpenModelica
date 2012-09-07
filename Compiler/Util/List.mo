@@ -921,6 +921,40 @@ algorithm
   end matchcontinue;
 end mergeSorted;
 
+public function sortIntN 
+  "Provides same functionality as sort, but for integer values between 1
+   and N. The complexity in this case is O(n)"
+  input list<Integer> inList;
+  input Integer inN;
+  output list<Integer> outSorted;
+protected 
+  array<Boolean> a1;
+algorithm
+  a1 := arrayCreate(inN, false);
+  a1 := fold1r(inList,arrayUpdate,true,a1);
+  outSorted := sortIntN1(a1, inN, {});
+end sortIntN;
+
+protected function sortIntN1
+  input array<Boolean> a1;
+  input Integer index;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := match(a1,index,iAcc)
+    local
+      list<Integer> acc;
+    case(_,0,_)
+      then
+        iAcc;
+    else
+      equation
+        acc = consOnTrue(a1[index], index, iAcc);
+      then
+        sortIntN1(a1,index-1,acc);
+  end match;        
+end sortIntN1;
+
 public function unique
   "Takes a list of elements and returns a list with duplicates removed, so that
    each element in the new list is unique."

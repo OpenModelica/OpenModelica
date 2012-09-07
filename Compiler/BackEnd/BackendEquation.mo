@@ -1198,26 +1198,6 @@ algorithm
   outEqns := List.map1r(indxs, BackendDAEUtil.equationNth, inEquationArray);  
 end getEqns;
   
-public function equationDeleteDAE
-"function: equationDeleteDAE
-  author: Frenkel TUD 2011-05"
-  input list<Integer> inIntLst;
-  input BackendDAE.EqSystem syst;
-  output BackendDAE.EqSystem osyst;
-algorithm
-  osyst := match (inIntLst,syst)
-    local
-      BackendDAE.Variables ordvars;
-      BackendDAE.EquationArray eqns,eqns1;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
-    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT))
-      equation
-        eqns1 = equationDelete(eqns,inIntLst);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING());
-  end match;
-end equationDeleteDAE;  
-  
 public function equationDelete "function: equationDelete
   author: Frenkel TUD 2010-12
   Delets the equations from the list of Integers."
@@ -1225,21 +1205,52 @@ public function equationDelete "function: equationDelete
   input list<Integer> inIntLst;
   output BackendDAE.EquationArray outEquationArray;
 algorithm
-  outEquationArray := match (inEquationArray,inIntLst)
+  outEquationArray := matchcontinue (inEquationArray,inIntLst)
     local
-      list<BackendDAE.Equation> eqnlst,eqnlst1;
+      list<BackendDAE.Equation> eqnlst;
+      Integer numberOfElement,arrSize;
+      array<Option<BackendDAE.Equation>> equOptArr;
     case (inEquationArray,{})
       then
         inEquationArray;
-    case (inEquationArray,inIntLst)
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr),inIntLst)
       equation
-        eqnlst = BackendDAEUtil.equationList(inEquationArray);
-        eqnlst1 = List.deletePositions(eqnlst,inIntLst);
-        outEquationArray =  BackendDAEUtil.listEquation(eqnlst1);
+        equOptArr = List.fold1r(inIntLst,arrayUpdate,NONE(),equOptArr);
+        eqnlst = equationDelete1(arrSize,equOptArr,{});
       then
-        outEquationArray;
-  end match;   
+        BackendDAEUtil.listEquation(eqnlst);
+    else        
+      equation
+        print("BackendDAE.equationDelete failed\n");
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationDelete failed");
+      then
+        fail();        
+  end matchcontinue;
 end equationDelete;
+
+protected function equationDelete1
+ "function: equationDelete1
+  author: Frenkel TUD 2012-09
+  helper for equationDelete."
+  input Integer index;
+  input array<Option<BackendDAE.Equation>> equOptArr;
+  input list<BackendDAE.Equation> iAcc;
+  output list<BackendDAE.Equation> oAcc;
+algorithm
+  oAcc := matchcontinue(index,equOptArr,iAcc)
+    local
+      BackendDAE.Equation eqn;
+    case(0,_,_) then iAcc;
+    case(_,_,_)
+      equation
+        SOME(eqn) = equOptArr[index];
+      then
+        equationDelete1(index-1,equOptArr,eqn::iAcc);
+    case(_,_,_)
+      then
+        equationDelete1(index-1,equOptArr,iAcc);
+  end matchcontinue;
+end equationDelete1;
 
 public function equationToScalarResidualForm "function: equationToScalarResidualForm
   author: Frenkel TUD 2012-06

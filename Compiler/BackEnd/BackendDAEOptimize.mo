@@ -452,7 +452,7 @@ algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
-      Integer pos,l,i,eqnType,pos_1;
+      Integer pos,l,i,eqnType;
       BackendVarTransform.VariableReplacements repl,repl_1;
       BackendDAE.BinTree mvars,mvars_1;
       BackendDAE.Variables mavars,mavars_1;
@@ -469,10 +469,9 @@ algorithm
     case ((l,pos,_,BackendDAE.EQUATION(exp=e1,scalar=e2),(syst,shared,repl,derrepl,deeqns,mvars,mavars,meqns,b)))
       equation
         true = intEq(l,0);  
-        pos_1 = pos-1;     
         true = Expression.isConst(e1);
         true = Expression.expEqual(e1,e2);
-      then ((syst,shared,repl,derrepl,deeqns,mvars,mavars,pos_1::meqns,b));
+      then ((syst,shared,repl,derrepl,deeqns,mvars,mavars,pos::meqns,b));
     case ((l,pos,varlst,eqn,(syst,shared,repl,derrepl,deeqns,mvars,mavars,meqns,_)))
       equation
         true = intLt(l,3);
@@ -514,7 +513,6 @@ algorithm
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
-      Integer pos_1;
       list<Integer> meqns,deeqns;
       BackendVarTransform.VariableReplacements repl_1;
       BackendDAE.Var v;
@@ -528,21 +526,18 @@ algorithm
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared1 = BackendVariable.addKnVarDAE(v, shared);
-        pos_1 = pos - 1;
-      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared1,repl,derrepl,deeqns,pos_1::meqns);
+      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared1,repl,derrepl,deeqns,pos::meqns);
     case (1,cr,i,exp,pos,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
       equation
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         // update Replacements
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
-        pos_1 = pos - 1;
-      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared,repl_1,derrepl,deeqns,pos_1::meqns);
+      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared,repl_1,derrepl,deeqns,pos::meqns);
     case (2,cr,i,exp,pos,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(mT=mT),shared,meqns)
       equation
         derrepl = BaseHashTable.add((cr,exp),derrepl);
-        pos_1 = pos - 1;
-      then (syst,shared,repl,derrepl,pos_1::deeqns,meqns);
+      then (syst,shared,repl,derrepl,pos::deeqns,meqns);
   end match;
 end replacementsInEqnsFast;
 
@@ -641,28 +636,28 @@ algorithm
   (outSyst,outShared) :=
     match (inDeEqns,inSyst,inShared,inDerrepl)
      local
-      list<Integer> deeqns;
-      HashTable2.HashTable derrepl;
       BackendDAE.EquationArray eqns,eqns1;
       BackendDAE.Variables vars;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.Matching matching;  
       Integer n;
+      array<Boolean> flagarray;
     case ({},_,_,_) then (inSyst,inShared); 
-    case (deeqns,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),_,derrepl)
+    case (_,BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),_,_)
       equation
-       Debug.fcall(Flags.DUMP_DERREPL, BaseHashTable.dumpHashTable, derrepl);
+       Debug.fcall(Flags.DUMP_DERREPL, BaseHashTable.dumpHashTable, inDerrepl);
        n = BackendDAEUtil.equationSize(eqns);
-       deeqns = List.sort(deeqns,intGt);
-       eqns1 = replaceDerEquations1(deeqns,0,n,derrepl,eqns);
+       flagarray = arrayCreate(n,true);
+       flagarray = List.fold1r(inDeEqns,arrayUpdate,false,flagarray);
+       eqns1 = replaceDerEquations1(flagarray,0,n,inDerrepl,eqns);
      then 
        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),inShared);
    end match;     
 end replaceDerEquations;
 
 protected function replaceDerEquations1
-  input list<Integer> inSortDeEqns;
+  input array<Boolean> flagarray;
   input Integer inIndx;
   input Integer EqnSize;
   input HashTable2.HashTable inDerrepl; 
@@ -670,27 +665,30 @@ protected function replaceDerEquations1
   output BackendDAE.EquationArray outEqns;
 algorithm
   outEqns :=
-    matchcontinue (inSortDeEqns,inIndx,EqnSize,inDerrepl,inEqns)
+    matchcontinue (flagarray,inIndx,EqnSize,inDerrepl,inEqns)
      local
       list<Integer> deeqns;
       HashTable2.HashTable derrepl;
       Integer n,i,de;
       BackendDAE.Equation eqn,eqn1;
       BackendDAE.EquationArray eqns,eqns1;
-     case ({},_,_,_,eqns) then eqns; 
-     case (de::deeqns,i,n,derrepl,eqns)
+     case (_,i,n,derrepl,eqns)
       equation
-       true = intLt(i,de);
+       true = intLt(i,n);
+       true = flagarray[i+1];
        eqn = BackendDAEUtil.equationNth(eqns,i);
        (eqn1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceDerEquationsFinder,derrepl);
        eqns1 = BackendEquation.equationSetnth(eqns,i,eqn1);
      then 
-       replaceDerEquations1(de::deeqns,i+1,n,derrepl,eqns1);
-     case (de::deeqns,i,n,derrepl,eqns)
+       replaceDerEquations1(flagarray,i+1,n,derrepl,eqns1);
+     case (_,i,n,derrepl,eqns)
       equation
-       false = intLt(i,de);
+       true = intLt(i,n);
      then 
-       replaceDerEquations1(deeqns,i+1,n,derrepl,eqns);       
+       replaceDerEquations1(flagarray,i+1,n,derrepl,eqns);
+    else
+      then
+        inEqns;       
    end matchcontinue;     
 end replaceDerEquations1;
 
@@ -783,7 +781,7 @@ algorithm
   outTpl:=
   matchcontinue (inTpl)
     local
-      Integer pos,l,i,eqnType,pos_1;
+      Integer pos,l,i,eqnType;
       BackendVarTransform.VariableReplacements repl,repl_1;
       BackendDAE.BinTree mvars,mvars_1;
       BackendDAE.Variables mavars,mavars_1;
@@ -799,11 +797,10 @@ algorithm
 
     case ((l,pos,_,_,BackendDAE.EQUATION(exp=e1,scalar=e2),(syst,shared,repl,derrepl,deeqns,mvars,mavars,meqns,b)))
       equation
-        true = intEq(l,0);  
-        pos_1 = pos-1;     
+        true = intEq(l,0);    
         true = Expression.isConst(e1);
         true = Expression.expEqual(e1,e2);
-      then (({},(syst,shared,repl,derrepl,deeqns,mvars,mavars,pos_1::meqns,b)));
+      then (({},(syst,shared,repl,derrepl,deeqns,mvars,mavars,pos::meqns,b)));
     case ((l,pos,varlst,comp,eqn,(syst,shared,repl,derrepl,deeqns,mvars,mavars,meqns,_)))
       equation
         true = intLt(l,3);
@@ -983,7 +980,6 @@ algorithm
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m;
       BackendDAE.IncidenceMatrixT mT;
-      Integer pos_1;
       list<Integer> vareqns,vareqns1,vareqns2,meqns,deeqns,comp;
       BackendVarTransform.VariableReplacements repl_1;
       BackendDAE.Var v;
@@ -999,8 +995,7 @@ algorithm
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared1 = BackendVariable.addKnVarDAE(v, shared);
-        pos_1 = pos - 1;
-      then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl,derrepl,deeqns,pos_1::meqns);
+      then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl,derrepl,deeqns,pos::meqns);
     case (1,cr,i,exp,pos,_,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
       equation
         // equations of var
@@ -1009,14 +1004,12 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         // update Replacements
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
-        pos_1 = pos - 1;
-      then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared,repl_1,derrepl,deeqns,pos_1::meqns);
+      then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared,repl_1,derrepl,deeqns,pos::meqns);
     case (2,cr,i,exp,pos,comp,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(mT=SOME(mT)),shared,meqns)
       equation
         // equations of var
         vareqns = mT[i];
         vareqns1 = List.removeOnTrue(0, intGt, vareqns);
-        pos_1 = pos - 1;
         vareqns1 = List.removeOnTrue(pos, intEq, vareqns1);
         derrepl = BaseHashTable.add((cr,exp),derrepl);
         vareqns2 = List.intersectionOnTrue(vareqns1, comp, intEq);
@@ -1024,7 +1017,7 @@ algorithm
         (syst,shared) = replacementsInEqns2(vareqns1,exp,cr,syst,shared);
         // update IncidenceMatrix
         syst= BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns2);
-      then (vareqns1,syst,shared,repl,derrepl,pos_1::deeqns,meqns);
+      then (vareqns1,syst,shared,repl,derrepl,pos::deeqns,meqns);
   end match;
 end replacementsInEqnsPast;
 
@@ -1501,7 +1494,7 @@ algorithm
         BackendDAE.EQUATION(exp=e1,scalar=e2) = BackendDAEUtil.equationNth(eqns,pos_1);
         true = Expression.isConst(e1);
         true = Expression.expEqual(e1,e2);
-      then (({},m,(syst,shared,mT,repl,mvars,mavars,pos_1::meqns,true)));      
+      then (({},m,(syst,shared,mT,repl,mvars,mavars,pos::meqns,true)));      
     case ((elem,pos,m,(syst,shared,mT,repl,mvars,mavars,meqns,_)))
       equation
         // check number of vars in eqns
@@ -1574,8 +1567,7 @@ algorithm
         syst = BackendDAE.EQSYSTEM(ordvars1,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs);
         (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns);
-        pos_1 = pos - 1;
-      then (vareqns1,syst,shared,m,mT,repl,pos_1::meqns);
+      then (vareqns1,syst,shared,m,mT,repl,pos::meqns);
     case (1,cr,i,exp,pos,repl,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),shared,m,mT,meqns)
       equation
         // equations of var
@@ -1591,7 +1583,7 @@ algorithm
         // update IncidenceMatrix
         syst = BackendDAE.EQSYSTEM(ordvars,eqns2,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
         (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT))) = BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns);
-      then (vareqns1,syst,shared,m,mT,repl_1,pos_1::meqns);
+      then (vareqns1,syst,shared,m,mT,repl_1,pos::meqns);
     case (2,cr,i,exp,pos,repl,syst,shared,m,mT,meqns)
       equation
         // equations of var
@@ -4477,7 +4469,6 @@ algorithm
         // move changed variables
         (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
         // remove changed eqns
-        eqnlst = List.map1(eqnlst,intSub,1);
         eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
         syst = Util.if_(b2,BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),syst);
         shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
