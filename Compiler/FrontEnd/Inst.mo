@@ -2470,92 +2470,25 @@ protected function arrayBasictypeBaseclass
   author: PA"
   input InstDims inInstDims;
   input DAE.Type inType;
-  output Option<DAE.Type> outTypesTypeOption;
+  output Option<DAE.Type> outOptType;
 algorithm
-  outTypesTypeOption := matchcontinue (inInstDims,inType)
+  outOptType := match(inInstDims, inType)
     local
-      DAE.Type tp,tp_1;
-      DAE.Dimensions lst;
-      InstDims inst_dims;
-    case ({},tp) then NONE();
-    case (inst_dims,tp)
+      DAE.Type ty;
+      DAE.Dimensions dims;
+
+    case ({}, _) then NONE();
+
+    else
       equation
-        lst = instdimsIntOptList(List.last(inst_dims));
-        tp_1 = arrayBasictypeBaseclass2(lst, tp);
+        dims = Expression.subscriptDimensions(List.last(inInstDims));
+        ty = Expression.liftArrayLeftList(inType, dims);
       then
-        SOME(tp_1);
-        /*
-    case (inst_dims,tp)
-      equation
-        str = stringDelimitList(List.map(List.flatten(inst_dims),ExpressionDump.printSubscriptStr),",");
-        str = "Inst.arrayBasictypeBaseclass failed: " +& str;
-        Error.addMessage(Error.INTERNAL_ERROR,{str});
-      then fail();
-      */
-  end matchcontinue;
+        SOME(ty);
+
+  end match;
 end arrayBasictypeBaseclass;
       
-protected function instdimsIntOptList
-"function: instdimsIntOptList
-  author: PA"
-  input list<DAE.Subscript> inInstDims;
-  output DAE.Dimensions outIntegerOptionLst;
-algorithm
-  outIntegerOptionLst := matchcontinue (inInstDims)
-    local
-      DAE.Dimensions res;
-      Integer i;
-      list<DAE.Subscript> ss;
-      DAE.Exp e;
-    case ({}) then {};
-    case (DAE.INDEX(exp = DAE.ICONST(integer = i)) :: ss)
-      equation
-        res = instdimsIntOptList(ss);
-      then
-        (DAE.DIM_INTEGER(i) :: res);
-    case (DAE.WHOLEDIM() :: ss)
-      equation
-        res = instdimsIntOptList(ss);
-      then
-        DAE.DIM_UNKNOWN() :: res;
-    // The case of non-expanded arrays.
-    case (DAE.WHOLE_NONEXP(exp=e) :: ss) 
-      equation
-        false = Config.splitArrays();
-        res = instdimsIntOptList(ss);
-      then
-        DAE.DIM_EXP(e) :: res;
-    case (DAE.INDEX(exp = _) :: ss)
-      equation
-        true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        res = instdimsIntOptList(ss);
-      then
-        DAE.DIM_UNKNOWN() :: res;
-  end matchcontinue;
-end instdimsIntOptList;
-
-protected function arrayBasictypeBaseclass2
-"function: arrayBasictypeBaseclass2
-  author: PA"
-  input DAE.Dimensions inDimensionLst;
-  input DAE.Type inType;
-  output DAE.Type outType;
-algorithm
-  outType := match (inDimensionLst,inType)
-    local
-      DAE.Type tp,tp_1,res;
-      DAE.Dimension d;
-      DAE.Dimensions ds;
-    case ({},tp) then tp;
-    case ((d :: ds),tp)
-      equation
-        tp_1 = Types.liftArray(tp, d);
-        res = arrayBasictypeBaseclass2(ds, tp_1);
-      then
-        res;
-  end match;
-end arrayBasictypeBaseclass2;
-
 public function partialInstClassIn
 "function: partialInstClassIn
   This function is used when instantiating classes in lookup of other classes.
@@ -16444,44 +16377,37 @@ algorithm
   end matchcontinue;
 end propagateAbSCDirection2;
 
-protected function makeCrefBaseType "Function: makeCrefBaseType"
-  input DAE.Type baseType;
-  input InstDims dims;
-  output DAE.Type ety;
-algorithm ety := matchcontinue(baseType,dims)
-  local
-    DAE.Type ty;
-    DAE.Type tp_1,btp;
-    DAE.Dimensions lst;
+protected function makeCrefBaseType
+  input DAE.Type inBaseType;
+  input InstDims inDimensions;
+  output DAE.Type outType;
+algorithm
+  outType := Types.simplifyType(makeCrefBaseType2(inBaseType, inDimensions));
+end makeCrefBaseType;
+
+protected function makeCrefBaseType2
+  input DAE.Type inBaseType;
+  input InstDims inDimensions;
+  output DAE.Type outType;
+algorithm 
+  outType := matchcontinue(inBaseType, inDimensions)
+    local
+      DAE.Type ty;
+      DAE.Dimensions dims;
     
     // Types extending basic type has dimensions already added
-    case (baseType as DAE.T_SUBTYPE_BASIC(complexType = btp),dims) equation
-      ty = Types.simplifyType(btp);
-    then ty;
-           
-   case(baseType, dims)
-    equation
-      lst = instdimsIntOptList(List.last(dims));
-      tp_1 = arrayBasictypeBaseclass2(lst, baseType);
-      ty = Types.simplifyType(tp_1);
-    then
-      ty;
-     
-  case(baseType, dims)
-    equation
-      failure(_ = instdimsIntOptList(List.last(dims)));
-      ty = Types.simplifyType(baseType);
-    then
-      ty;
+    case (DAE.T_SUBTYPE_BASIC(complexType = ty), _) then ty;
+    case (_, {}) then inBaseType;
 
-  case(_,_)
-    equation
-    Debug.fprint(Flags.FAILTRACE, "- make_makeCrefBaseType failed\n");
-    print("makCrefBaseType failed\n");
-    then
-      fail();
-end matchcontinue;
-end makeCrefBaseType;
+    else
+      equation
+        dims = Expression.subscriptDimensions(List.last(inDimensions));
+        ty = Expression.liftArrayLeftList(inBaseType, dims);
+      then
+        ty;
+     
+  end matchcontinue;
+end makeCrefBaseType2;
 
 protected function liftNonBasicTypesNDimensions "Function: liftNonBasicTypesNDimensions
 This is to handle a Option<integer> list of dimensions."

@@ -932,6 +932,30 @@ algorithm
   end matchcontinue;
 end liftArrayLeft;
 
+public function liftArrayLeftList
+  input Type inType;
+  input list<DAE.Dimension> inDimensions;
+  output Type outType;
+algorithm
+  outType := match(inType, inDimensions)
+    local
+      Type ty;
+      DAE.Dimensions dims;
+      DAE.TypeSource ts;
+
+    case (_, {}) then inType;
+
+    case (DAE.T_ARRAY(ty, dims, ts), _)
+      equation
+        dims = listAppend(inDimensions, dims);
+      then
+        DAE.T_ARRAY(ty, dims, ts);
+
+    else DAE.T_ARRAY(inType, inDimensions, DAE.emptyTypeSource);
+
+  end match;
+end liftArrayLeftList;
+
 public function setOpType
   "Sets the type of an operator."
   input Operator inOp;
@@ -1499,68 +1523,32 @@ algorithm
   end match;
 end arrayTypeDimensions;
 
-public function subscriptDimensions "Function: subscriptDimensions
-Returns the dimensionality of the subscript expression"
-  input list<Subscript> insubs;
-  output DAE.Dimensions oint;
+public function subscriptDimensions
+  "Converts a list of subscript to a list of dimensions."
+  input list<Subscript> inSubscripts;
+  output DAE.Dimensions outDimensions;
 algorithm 
-  oint := matchcontinue(insubs)
-    local
-      Subscript ss;
-      list<Subscript> subs;
-      Integer x;
-      DAE.Dimensions recursive;
-      DAE.Exp e;
-      String sub_str;
-          
-    case ({}) then {};
-    
-    case ((ss as DAE.INDEX(DAE.ICONST(x)))::subs) 
-      equation
-        recursive = subscriptDimensions(subs);
-      then 
-        DAE.DIM_INTEGER(x):: recursive;
-    
-    case ((ss as DAE.WHOLEDIM()) :: subs)
-      equation
-        recursive = subscriptDimensions(subs);
-      then
-        DAE.DIM_UNKNOWN() :: recursive;
-    
-    case ((ss as DAE.INDEX(exp = e)) :: subs)
-      equation
-        recursive = subscriptDimensions(subs);
-      then
-        DAE.DIM_EXP(e) :: recursive;
-    
-    case (ss :: subs)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        sub_str = ExpressionDump.subscriptString(ss);
-        Debug.fprintln(Flags.FAILTRACE, "- Expression.subscriptDimensions failed on " +& sub_str);
-      then
-        fail();
-  end matchcontinue;
+  outDimensions := List.map(inSubscripts, subscriptDimension);
 end subscriptDimensions;
 
-public function subscriptDimension "Function: subscriptDimension
-Returns the dimensionality of the subscript expression"
-  input Subscript insub;
-  output DAE.Dimension oint;
+public function subscriptDimension
+  "Converts a subscript to a dimension by interpreting the subscript as a
+   dimension."
+  input Subscript inSubscript;
+  output DAE.Dimension outDimension;
 algorithm 
-  oint := matchcontinue(insub)
+  outDimension := matchcontinue(inSubscript)
     local
-      Subscript ss;
       Integer x;
       DAE.Exp e;
       String sub_str;
     
-    case DAE.INDEX(DAE.ICONST(x)) then DAE.DIM_INTEGER(x);
-    
-    case  DAE.WHOLEDIM() then DAE.DIM_UNKNOWN();
+    case DAE.INDEX(exp = DAE.ICONST(x)) then DAE.DIM_INTEGER(x);
+    case DAE.INDEX(exp = e) then DAE.DIM_EXP(e);
+    case DAE.WHOLEDIM() then DAE.DIM_UNKNOWN();
     
     // Special cases for non-expanded arrays
-    case  DAE.WHOLE_NONEXP(exp = DAE.ICONST(x))
+    case DAE.WHOLE_NONEXP(exp = DAE.ICONST(x))
       equation
         false = Config.splitArrays();
       then
@@ -1572,15 +1560,14 @@ algorithm
       then
         DAE.DIM_EXP(e);
     
-    case ss as DAE.INDEX(exp = e) then DAE.DIM_EXP(e);
-    
-    case ss 
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        sub_str = ExpressionDump.subscriptString(ss);
-        Debug.fprintln(Flags.FAILTRACE, "- Expression.subscriptDimension failed on " +& sub_str);
+        sub_str = ExpressionDump.subscriptString(inSubscript);
+        Debug.traceln("- Expression.subscriptDimension failed on " +& sub_str);
       then
         fail();
+
   end matchcontinue;
 end subscriptDimension;
 

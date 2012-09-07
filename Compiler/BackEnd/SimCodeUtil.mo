@@ -7153,8 +7153,6 @@ algorithm
         // insert vars in array
         dims = Expression.arrayDimension(tp);
         dimsint = Expression.dimensionsSizes(dims);
-        // workaround for Ticket #1796
-        dimsint = listReverse(dimsint);
         vararray = List.fold1(varlst,insertArrayVars,dimsint,vararray);
         // get vars from array sorted
         sortedVars = getVarsFromArray(size,vararray,iVars);
