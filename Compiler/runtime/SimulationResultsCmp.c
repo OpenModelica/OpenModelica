@@ -231,6 +231,15 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
   char interpolate = 0;
   char isdifferent = 0;
   char refevent = 0;
+  double average=0;
+  for (i=0;i<refdata->n;i++){
+	  average += absdouble(refdata->data[i]);
+  }
+  average = average/((double)refdata->n);
+#ifdef DEBUGOUTPUT
+   fprintf(stderr, "average: %.6g\n",average);
+#endif
+  average = reltol*fabs(average)+abstol;
   j = 0;
   tr = reftime->data[j];
   dr = refdata->data[j];
@@ -353,14 +362,14 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
 
           err = absdouble(d_left-dr_left);
 #ifdef DEBUGOUTPUT
-           fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr_left)+abstol);
+           fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
-          if ( err < reltol*fabs(dr_left)+abstol){
+          if ( err < average){
             err = absdouble(d_right-dr_right);
 #ifdef DEBUGOUTPUT
-             fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr_right)+abstol);
+             fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
-            if ( err < reltol*fabs(dr_right)+abstol){
+            if ( err < average){
               continue;
             }
           }
@@ -411,14 +420,14 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
 #endif
             err = absdouble(d_left-dr_left);
 #ifdef DEBUGOUTPUT
-            fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr_left)+abstol);
+            fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
-            if ( err < reltol*fabs(dr_left)+abstol){
+            if ( err < average){
               err = absdouble(d_right-dr_right);
 #ifdef DEBUGOUTPUT
-              fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr_right)+abstol);
+              fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
-              if ( err < reltol*fabs(dr_right)+abstol){
+              if ( err < average){
                 j = j_event;
                 tr = reftime->data[j];
                 continue;
@@ -510,9 +519,9 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
 #endif
     err = absdouble(d-dr);
 #ifdef DEBUGOUTPUT
-    fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,reltol*fabs(dr)+abstol);
+    fprintf(stderr, "delta:%.6g  reltol:%.6g\n",err,average);
 #endif
-    if ( err > reltol*fabs(dr)+abstol){
+    if ( err > average){
       if (j+1<reftime->n) {
         if (reftime->data[j+1] == tr) {
           dr = refdata->data[j+1];
@@ -520,7 +529,7 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
         }
       }
 
-      if (err < reltol*fabs(dr)+abstol){
+      if (err < average){
         continue;
       }
 
