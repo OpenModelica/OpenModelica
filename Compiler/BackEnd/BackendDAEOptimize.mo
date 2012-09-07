@@ -502,7 +502,7 @@ algorithm
 
     case ((l,pos,_,BackendDAE.EQUATION(exp=e1,scalar=e2),(syst,shared,repl,derrepl,deeqns,mvars,meqns,b)))
       equation
-        true = intEq(l,0);  
+        true = intEq(l,0);
         true = Expression.isConst(e1);
         true = Expression.expEqual(e1,e2);
       then ((syst,shared,repl,derrepl,deeqns,pos::meqns,b));
@@ -1087,7 +1087,7 @@ protected function traverseComponents
   input BackendDAE.StrongComponents inComps;
   input FuncType inFunc;
   input Type_a inTypeA;
-  input array<Integer> compflag;
+  input array<Integer> icompflag;
   input Integer mark;
   output Type_a outTypeA;
   partial function FuncType
@@ -1096,7 +1096,7 @@ protected function traverseComponents
   end FuncType;
 algorithm
   outTypeA := 
-  matchcontinue (inComps,inFunc,inTypeA,compflag,mark)
+  matchcontinue (inComps,inFunc,inTypeA,icompflag,mark)
     local
       Integer e;
       list<Integer> elst,elst1;
@@ -1104,16 +1104,17 @@ algorithm
       BackendDAE.StrongComponents rest;
       Type_a arg;
       FuncType func;
+      array<Integer> compflag;
     case ({},_,_,_,_) then inTypeA; 
     case (BackendDAE.SINGLEEQUATION(eqn=e)::rest,_,_,_,_) 
       equation
-        ((_,arg)) = inFunc((e,compflag,mark,inTypeA));
+        ((_,arg)) = inFunc((e,icompflag,mark,inTypeA));
       then 
-         traverseComponents(rest,inFunc,arg,compflag,mark);
+         traverseComponents(rest,inFunc,arg,icompflag,mark);
     case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst)::rest,_,_,_,_) 
       equation
         (elst1,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        compflag = List.fold1r(elst,arrayUpdate,mark,compflag);
+        compflag = List.fold1r(elst,arrayUpdate,mark,icompflag);
         compflag = List.fold1r(elst1,arrayUpdate,mark,compflag);
         elst = listAppend(elst,elst1);
         elst = List.sort(elst,intGt);
@@ -1122,7 +1123,7 @@ algorithm
         traverseComponents(rest,inFunc,arg,compflag,mark+1);
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst)::rest,_,_,_,_)
       equation
-        compflag = List.fold1r(elst,arrayUpdate,mark,compflag);
+        compflag = List.fold1r(elst,arrayUpdate,mark,icompflag);
         elst = List.sort(elst,intGt);
         arg = traverseComponents1(elst,inFunc,inTypeA,compflag,mark);
       then 
@@ -1130,24 +1131,24 @@ algorithm
     case (BackendDAE.SINGLEARRAY(eqn=e)::rest,_,_,_,_) 
         // ToDo: check also this one     
       then 
-         traverseComponents(rest,inFunc,inTypeA,compflag,mark);   
+         traverseComponents(rest,inFunc,inTypeA,icompflag,mark);   
     case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest,_,_,_,_) 
         // ToDo: check also this one     
       then 
-         traverseComponents(rest,inFunc,inTypeA,compflag,mark);   
+         traverseComponents(rest,inFunc,inTypeA,icompflag,mark);   
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest,_,_,_,_) 
         // ToDo: check also this one     
       then 
-         traverseComponents(rest,inFunc,inTypeA,compflag,mark);   
+         traverseComponents(rest,inFunc,inTypeA,icompflag,mark);   
     case (_::rest,_,_,_,_) 
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("BackendDAEOptimize.traverseComponents failed!");
       then
-         traverseComponents(rest,inFunc,inTypeA,compflag,mark);
+         traverseComponents(rest,inFunc,inTypeA,icompflag,mark);
     case (_::rest,func,arg,_,_) 
       then
-        traverseComponents(rest,inFunc,inTypeA,compflag,mark);
+        traverseComponents(rest,inFunc,inTypeA,icompflag,mark);
   end matchcontinue;  
 end traverseComponents;
 
