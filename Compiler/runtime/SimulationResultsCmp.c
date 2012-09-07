@@ -233,7 +233,7 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
   char refevent = 0;
   double average=0;
   for (i=0;i<refdata->n;i++){
-	  average += absdouble(refdata->data[i]);
+    average += absdouble(refdata->data[i]);
   }
   average = average/((double)refdata->n);
 #ifdef DEBUGOUTPUT
