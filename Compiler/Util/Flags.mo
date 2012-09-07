@@ -516,10 +516,9 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "partitionIndependentBlocks",
     "expandDerOperator",
     "inlineArrayEqn",
-    "removeSimpleEquationsFast"
+    "removeSimpleEquations"
 }),
   SOME(STRING_DESC_OPTION({
-    ("removeSimpleEquationsFast", removeSimpleEquationDesc),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("inlineArrayEqn", Util.notrans("DESCRIBE ME")),
     ("evaluateFinalParameters", Util.gettext("Structural parameters and parameters declared as final are evalutated and replaced with their value in other vars. They may no longer be changed in the init file.")),
