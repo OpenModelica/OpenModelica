@@ -1447,7 +1447,6 @@ algorithm
       array<Option<Var>> arr;
       Var elt;
       BackendDAE.Value n,size;
-      list<Var> lst;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 0,varOptArr = arr)) then {};
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 1,varOptArr = arr))
       equation
@@ -1455,41 +1454,33 @@ algorithm
       then
         {elt};
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr))
-      equation
-        lst = vararrayList2(arr, 1, n);
       then
-        lst;
+        vararrayList2(arr, n, {});
   end matchcontinue;
 end vararrayList;
 
 protected function vararrayList2
 "function: vararrayList2
   Helper function to vararrayList"
-  input array<Option<Var>> inVarOptionArray1;
-  input Integer inInteger2;
-  input Integer inInteger3;
+  input array<Option<Var>> arr;
+  input Integer pos;
+  input list<Var> inVarLst;
   output list<Var> outVarLst;
 algorithm
   outVarLst:=
-  matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
+  matchcontinue (arr,pos,inVarLst)
     local
       Var v;
-      array<Option<Var>> arr;
-      BackendDAE.Value pos,lastpos,pos_1;
       list<Var> res;
-    case (arr,pos,lastpos)
+    case (_,0,_) then inVarLst;
+    case (_,_,_)
       equation
-        (pos == lastpos) = true;
         SOME(v) = arr[pos];
       then
-        {v};
-    case (arr,pos,lastpos)
-      equation
-        pos_1 = pos + 1;
-        SOME(v) = arr[pos];
-        res = vararrayList2(arr, pos_1, lastpos);
+        vararrayList2(arr,pos-1,v::inVarLst);
+    case (_,_,_)
       then
-        (v :: res);
+        vararrayList2(arr,pos-1,inVarLst);
   end matchcontinue;
 end vararrayList2;
 

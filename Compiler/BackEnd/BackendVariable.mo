@@ -2506,6 +2506,36 @@ algorithm
   end match;
 end addKnVarDAE;
 
+public function addAliasVarDAE
+"function: addAliasVarDAE
+  author: Frenkel TUD 2012-09
+  Add a alias variable to Variables of a BackendDAE.Shared
+  If the variable already exists, the function updates the variable."
+  input BackendDAE.Var inVar;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared oshared;
+algorithm
+  oshared := match (inVar,shared)
+    local
+      BackendDAE.Var var;
+      BackendDAE.Variables knvars,exobj,aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns;
+      array<DAE.Constraint> constrs;
+      array<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;      
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.BackendDAEType btp;
+    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+      equation
+        aliasVars = addVar(var,aliasVars);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
+  end match;
+end addAliasVarDAE;
+
 public function addVars "function: addVars
   author: PA
   Adds a list of BackendDAE.Var to BackendDAE.Variables"

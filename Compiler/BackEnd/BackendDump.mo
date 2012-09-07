@@ -133,45 +133,6 @@ algorithm
   end matchcontinue;
 end printCallFunction2StrDIVISION;
 
-public function printTuple
-  input list<tuple<DAE.ComponentRef,Integer>> outTuple;
-algorithm
-  _ := matchcontinue(outTuple)
-    local
-      DAE.ComponentRef currVar;
-      Integer currInd;
-      list<tuple<DAE.ComponentRef,Integer>> restTuple;
-    case ({}) then ();
-    case ((currVar,currInd)::restTuple)
-      equation
-        Debug.fcall(Flags.VAR_INDEX,print, ComponentReference.printComponentRefStr(currVar))  ;
-        Debug.fcall(Flags.VAR_INDEX,print,":   ");
-        Debug.fcall(Flags.VAR_INDEX,print,intString(currInd));
-        Debug.fcall(Flags.VAR_INDEX,print,"\n");
-        printTuple(restTuple);
-      then ();
-    case (_) equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"printTuple() failed"});
-    then fail();
-  end matchcontinue;
-end printTuple;
-
-protected function printPrioTuplesStr
-"Debug function for printing the priorities of state selection to a string"
-  input tuple<DAE.ComponentRef,Integer,Real> prioTuples;
-  output String str;
-algorithm
-  str := matchcontinue(prioTuples)
-    local DAE.ComponentRef cr; Real prio; String s1,s2;
-    case((cr,_,prio))
-      equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = realString(prio);
-        str = stringAppendList({"(",s1,", ",s2,")"});
-      then str;
-  end matchcontinue;
-end printPrioTuplesStr;
-
 public function printEquations
   input list<Integer> inIntegerLst;
   input BackendDAE.EqSystem syst;

@@ -1221,7 +1221,6 @@ algorithm
         BackendDAEUtil.listEquation(eqnlst);
     else        
       equation
-        print("BackendDAE.equationDelete failed\n");
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationDelete failed");
       then
         fail();        
@@ -1251,6 +1250,36 @@ algorithm
         equationDelete1(index-1,equOptArr,iAcc);
   end matchcontinue;
 end equationDelete1;
+
+public function equationRemove "function: equationRemove
+  author: Frenkel TUD 2012-09
+  Removes the equations from the array on the given possitoin but
+  does not scale down the array size"
+  input BackendDAE.EquationArray inEquationArray;
+  input Integer inPos "1 based index";
+  output BackendDAE.EquationArray outEquationArray;
+algorithm
+  outEquationArray := matchcontinue (inEquationArray,inPos)
+    local
+      Integer numberOfElement,arrSize,size,size1,eqnsize;
+      array<Option<BackendDAE.Equation>> equOptArr;
+      BackendDAE.Equation eqn;
+    case (BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr),_)
+      equation
+        true = intLe(inPos,numberOfElement);
+        SOME(eqn) = equOptArr[inPos];
+        equOptArr = arrayUpdate(equOptArr,inPos,NONE());
+        eqnsize = equationSize(eqn);
+        size1 = size - eqnsize;
+      then
+        BackendDAE.EQUATION_ARRAY(size1,numberOfElement,arrSize,equOptArr);
+    else        
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationRemove failed");
+      then
+        fail();        
+  end matchcontinue;
+end equationRemove;
 
 public function equationToScalarResidualForm "function: equationToScalarResidualForm
   author: Frenkel TUD 2012-06
