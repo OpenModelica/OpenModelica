@@ -537,6 +537,13 @@ uniontype StrongComponent
     list<Value> vars "be carefule with states, this are solved for der(x)";
   end SINGLECOMPLEXEQUATION;
 
+  record TORNSYSTEM
+    list<Value> tearingvars;
+    list<Value> residualequations;
+    list<tuple<Value,list<Value>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+    Boolean linear;
+  end TORNSYSTEM; 
+
 end StrongComponent;
 
 public

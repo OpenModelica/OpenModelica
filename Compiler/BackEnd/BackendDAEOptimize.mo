@@ -1151,6 +1151,7 @@ algorithm
       Type_a arg;
       FuncType func;
       array<Integer> compflag;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst;
     case ({},_,_,_,_) then inTypeA; 
     case (BackendDAE.SINGLEEQUATION(eqn=e)::rest,_,_,_,_) 
       equation
@@ -1192,6 +1193,16 @@ algorithm
         Debug.traceln("BackendDAEOptimize.traverseComponents failed!");
       then
          traverseComponents(rest,inFunc,inTypeA,icompflag,mark);
+    case (BackendDAE.TORNSYSTEM(residualequations=elst, otherEqnVarTpl=eqnvartpllst)::rest,_,_,_,_)
+      equation
+        compflag = List.fold1r(elst,arrayUpdate,mark,icompflag);
+        elst1 = List.map(eqnvartpllst,Util.tuple21);
+        compflag = List.fold1r(elst1,arrayUpdate,mark,icompflag);
+        elst = listAppend(elst,elst1);
+        elst = List.sort(elst,intGt);
+        arg = traverseComponents1(elst,inFunc,inTypeA,compflag,mark);
+      then 
+         traverseComponents(rest,inFunc,arg,compflag,mark+1);         
     case (_::rest,func,arg,_,_) 
       then
         traverseComponents(rest,inFunc,inTypeA,icompflag,mark);
@@ -1280,8 +1291,8 @@ algorithm
       array<Integer> ass1,ass2;
       BackendDAE.StrongComponents comps;
     case (false,_,_,_,_) then (isyst,ishared);
-//    case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()),_,_,_)
     case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),_,_,_)
+//    case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()),_,_,_)
       equation
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
@@ -1368,6 +1379,8 @@ algorithm
       Integer v,e;
       list<Integer> vars,eqns;
       BackendDAE.JacobianType jacType;
+      Boolean b;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst;
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),_,_,_)
       equation
         e = eqnindxs[e];
@@ -1395,7 +1408,7 @@ algorithm
         vars = List.select1(vars,intGt,0);
         comp = Util.if_(intEq(listLength(eqns),0),comp,BackendDAE.MIXEDEQUATIONSYSTEM(comp,eqns,vars));
       then
-        comp::iAcc; 
+        comp::iAcc;
     case (BackendDAE.SINGLEARRAY(eqn=e,vars=vars),_,_,_)
       equation
         e = eqnindxs[e];
@@ -1403,7 +1416,7 @@ algorithm
         vars = List.select1(vars,intGt,0);
         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEARRAY(e,vars), iAcc);
       then
-        comps;  
+        comps;
     case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vars),_,_,_)
       equation
         e = eqnindxs[e];
@@ -1411,7 +1424,7 @@ algorithm
         vars = List.select1(vars,intGt,0);
         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEALGORITHM(e,vars), iAcc);
       then
-        comps;  
+        comps;
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vars),_,_,_)
       equation
         e = eqnindxs[e];
@@ -1419,9 +1432,42 @@ algorithm
         vars = List.select1(vars,intGt,0);
         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLECOMPLEXEQUATION(e,vars), iAcc);
       then
-        comps;  
+        comps;
+    case (BackendDAE.TORNSYSTEM(tearingvars=vars,residualequations=eqns,otherEqnVarTpl=eqnvartpllst,linear=b),_,_,_)
+      equation
+        eqns = List.map1r(eqns,arrayGet,eqnindxs);
+        eqns = List.select1(eqns,intGt,0);
+        vars = List.map1r(vars,arrayGet,varindxs);
+        vars = List.select1(vars,intGt,0);
+        eqnvartpllst = updateTornSystemComp(eqnvartpllst,varindxs,eqnindxs,{});
+        comp = BackendDAE.TORNSYSTEM(vars,eqns,eqnvartpllst,b);
+      then
+        comp::iAcc;
   end match;
 end updateStrongComponent;
+
+protected function updateTornSystemComp
+  input list<tuple<Integer,list<Integer>>> inEqnVarTplLst;
+  input array<Integer> varindxs;
+  input array<Integer> eqnindxs;
+  input list<tuple<Integer,list<Integer>>> iAcc;
+  output list<tuple<Integer,list<Integer>>> oAcc;
+algorithm
+  oAcc := match(inEqnVarTplLst,varindxs,eqnindxs,iAcc)
+    local
+      Integer e;
+      list<Integer> vars;
+      list<tuple<Integer,list<Integer>>> rest,acc;
+    case({},_,_,_) then listReverse(iAcc);
+    case((e,vars)::rest,_,_,_)
+      equation
+        e = eqnindxs[e];
+        vars = List.map1r(vars,arrayGet,varindxs);
+        acc = List.consOnTrue(intGt(e,0), (e,vars), iAcc);
+      then
+        updateTornSystemComp(rest,varindxs,eqnindxs,acc);
+  end match;
+end updateTornSystemComp;
 
 protected function updateVarArray
 " function: updateVarArray
@@ -4476,110 +4522,108 @@ algorithm
   (osyst,osharedChanged) := 
     match(isyst,sharedChanged)
     local
-      DAE.FunctionTree funcs;
-      BackendDAE.Variables vars,knvars,exobj,vars1,knvars1,aliasVars;
-      BackendDAE.EquationArray eqns,remeqns,inieqns,eqns1;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;      
-      BackendDAE.EventInfo einfo;
-      BackendDAE.ExternalObjectClasses eoc;
-      BackendDAE.SymbolicJacobians symjacs;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrix mT;
       BackendDAE.StrongComponents comps;
       Boolean b,b1,b2;
-      list<Integer> eqnlst;
-      BackendDAE.BinTree movedVars;
       BackendDAE.Shared shared;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.Matching matching;
       BackendDAE.EqSystem syst;
-      
     case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b1))
       equation
-        (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs),b2,eqnlst,movedVars) = constantLinearSystem1(syst,shared,comps,{},BackendDAE.emptyBintree);
+        (syst,shared,b2) = constantLinearSystem1(syst,shared,comps);
+        syst = constantLinearSystem2(b2,syst);
         b = b1 or b2;
-        // move changed variables
-        (vars1,knvars1) = BackendVariable.moveVariables(vars,knvars,movedVars);
-        // remove changed eqns
-        eqns1 = BackendEquation.equationDelete(eqns,eqnlst);
-        syst = Util.if_(b2,BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),syst);
-        shared = BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
       then
         (syst,(shared,b));
   end match;  
 end constantLinearSystem0;
 
+protected function constantLinearSystem2
+"function constantLinearSystem"
+  input Boolean b;
+  input BackendDAE.EqSystem isyst;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match(b,isyst)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      BackendDAE.StrongComponents comps;
+      array<Integer> ass1,ass2;
+    case (false,_) then isyst;
+    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()))
+      equation
+        // remove empty entries from vars/eqns
+        vars = BackendDAEUtil.listVar1(BackendDAEUtil.varList(vars));
+        eqns = BackendDAEUtil.listEquation(BackendDAEUtil.equationList(eqns));
+      then
+        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());     
+    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps)))
+      then
+        updateEquationSystemMatching(vars,eqns,ass1,ass2,comps);
+  end match;  
+end constantLinearSystem2;
+
 protected function constantLinearSystem1
 "function constantLinearSystem1"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
-  input BackendDAE.StrongComponents inComps;  
-  input list<Integer> inEqnlst;
-  input BackendDAE.BinTree inMovedVars;
+  input BackendDAE.StrongComponents inComps;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output Boolean outRunMatching;
-  output list<Integer> outEqnlst;
-  output BackendDAE.BinTree movedVars;
 algorithm
-  (osyst,oshared,outRunMatching,outEqnlst,movedVars):=
-  matchcontinue (isyst,ishared,inComps,inEqnlst,inMovedVars)
+  (osyst,oshared,outRunMatching):=
+  matchcontinue (isyst,ishared,inComps)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp,comp1;
       Boolean b,b1;
-      list<BackendDAE.Equation> eqn_lst; 
+      list<BackendDAE.Equation> eqn_lst;
       list<BackendDAE.Var> var_lst;
-      list<Integer> eindex,vindx,remeqnlst,remeqnlst1;
+      list<Integer> eindex,vindx;
       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-      BackendDAE.BinTree movedVars,movedVars1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case (syst,shared,{},inEqnlst,inMovedVars)
-      then (syst,shared,false,inEqnlst,inMovedVars);
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps,inEqnlst,inMovedVars)
+    case (syst,shared,{})
+      then (syst,shared,false);
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,(comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_CONSTANT()))::comps)
       equation
         eqn_lst = BackendEquation.getEqns(eindex,eqns);        
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, vars);
-        (syst,shared,movedVars) = solveLinearSystem(syst,shared,eqn_lst,var_lst,jac,inMovedVars);
-        remeqnlst = listAppend(eindex,inEqnlst);
-        (syst,shared,b,remeqnlst1,movedVars1) = constantLinearSystem1(syst,shared,comps,remeqnlst,movedVars);
+        (syst,shared) = solveLinearSystem(syst,shared,eqn_lst,eindex,var_lst,vindx,jac);
+        (syst,shared,b) = constantLinearSystem1(syst,shared,comps);
       then
-        (syst,shared,true,remeqnlst1,movedVars1);
-    case (syst,shared,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps,inEqnlst,inMovedVars)
+        (syst,shared,true);
+    case (syst,shared,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps)
       equation
-        (syst,shared,b,remeqnlst,movedVars) = constantLinearSystem1(syst,shared,{comp1},inEqnlst,inMovedVars);
-        (syst,shared,b1,remeqnlst1,movedVars1) = constantLinearSystem1(syst,shared,comps,remeqnlst,movedVars);
+        (syst,shared,b) = constantLinearSystem1(syst,shared,{comp1});
+        (syst,shared,b1) = constantLinearSystem1(syst,shared,comps);
       then
-        (syst,shared,b1 or b,remeqnlst1,movedVars1);
-    case (syst,shared,comp::comps,inEqnlst,inMovedVars)
+        (syst,shared,b1 or b);
+    case (syst,shared,comp::comps)
       equation
-        (syst,shared,b,remeqnlst,movedVars) = constantLinearSystem1(syst,shared,comps,inEqnlst,inMovedVars);
+        (syst,shared,b) = constantLinearSystem1(syst,shared,comps);
       then
-        (syst,shared,b,remeqnlst,movedVars);
+        (syst,shared,b);
   end matchcontinue;  
 end constantLinearSystem1;
 
 protected function solveLinearSystem
 "function constantLinearSystem1"
   input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.Shared ishared;
   input list<BackendDAE.Equation> eqn_lst; 
-  input list<BackendDAE.Var> var_lst; 
+  input list<Integer> eqn_indxs;
+  input list<BackendDAE.Var> var_lst;
+  input list<Integer> var_indxs;
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
-  input BackendDAE.BinTree inMovedVars;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
-  output BackendDAE.BinTree outMovedVars;
 algorithm
-  (osyst,oshared,outMovedVars):=
-  match (syst,shared,eqn_lst,var_lst,jac,inMovedVars)
+  (osyst,oshared):=
+  match (syst,ishared,eqn_lst,eqn_indxs,var_lst,var_indxs,jac)
     local
       BackendDAE.Variables vars,vars1,v;
       BackendDAE.EquationArray eqns,eqns1;
@@ -4592,7 +4636,8 @@ algorithm
       BackendDAE.BinTree movedVars;
       BackendDAE.Matching matching;
       DAE.FunctionTree funcs;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),shared as BackendDAE.SHARED(functionTree=funcs),eqn_lst,var_lst,jac,inMovedVars)
+	  BackendDAE.Shared shared;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),BackendDAE.SHARED(functionTree=funcs),_,_,_,_,_)
       equation
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);
         v = BackendDAEUtil.listVar1(var_lst);
@@ -4604,10 +4649,10 @@ algorithm
         names = List.map(var_lst,BackendVariable.varCref);  
         checkLinearSystem(linInfo,names,jacVals,rhsVals,eqn_lst);
         sources = List.map1(sources, DAEUtil.addSymbolicTransformation, DAE.LINEAR_SOLVED(names,jacVals,rhsVals,solvedVals));           
-        vars1 = changeconstantLinearSystemVars(var_lst,solvedVals,sources,vars);
-        movedVars = BackendDAEUtil.treeAddList(inMovedVars, names);
+        (vars1,shared) = changeconstantLinearSystemVars(var_lst,solvedVals,sources,var_indxs,vars,ishared);
+        eqns = List.fold(eqn_indxs,BackendEquation.equationRemove,eqns);
       then
-        (BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),matching),shared,movedVars);
+        (BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),matching),shared);
   end match;  
 end solveLinearSystem;
 
@@ -4615,10 +4660,13 @@ protected function changeconstantLinearSystemVars
   input list<BackendDAE.Var> inVarLst;
   input list<Real> inSolvedVals;
   input list<DAE.ElementSource> inSources;
+  input list<Integer> var_indxs;
   input BackendDAE.Variables inVars;
+  input BackendDAE.Shared ishared;
   output BackendDAE.Variables outVars;
+  output BackendDAE.Shared oshared;
 algorithm
-    outVars := match (inVarLst,inSolvedVals,inSources,inVars)
+    (outVars,oshared) := match (inVarLst,inSolvedVals,inSources,var_indxs,inVars,ishared)
     local
       BackendDAE.Var v,v1;
       list<BackendDAE.Var> varlst;
@@ -4627,15 +4675,19 @@ algorithm
       BackendDAE.Variables vars,vars1,vars2;
       Real r;
       list<Real> rlst;
-    case ({},{},{},vars) then vars;      
-    case (v::varlst,r::rlst,s::slst,vars)
+      BackendDAE.Shared shared;
+      Integer indx;
+      list<Integer> vindxs;
+    case ({},{},{},_,vars,_) then (vars,ishared);      
+    case (v::varlst,r::rlst,s::slst,indx::vindxs,vars,_)
       equation
         v1 = BackendVariable.setBindExp(v,DAE.RCONST(r));
         v1 = BackendVariable.setVarStartValue(v1,DAE.RCONST(r));
         // ToDo: merge source of var and equation
-        vars1 = BackendVariable.addVar(v1,vars);
-        vars2 = changeconstantLinearSystemVars(varlst,rlst,slst,vars1);
-      then vars2;
+        (vars1,_) = BackendVariable.removeVar(indx, vars);
+        shared = BackendVariable.addKnVarDAE(v1,ishared);
+        (vars2,shared) = changeconstantLinearSystemVars(varlst,rlst,slst,vindxs,vars1,shared);
+      then (vars2,shared);
   end match; 
 end changeconstantLinearSystemVars;
 
@@ -11488,6 +11540,8 @@ algorithm
       list<BackendDAE.Var> varlst;
       list<DAE.Exp> explst;
       DAE.FunctionTree funcs;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst;
+      list<Integer> vlst;
     case ({},_,_,_) then inTpl; 
     case (BackendDAE.SINGLEEQUATION(eqn=e)::rest,_,_,_) 
       equation
@@ -11535,7 +11589,15 @@ algorithm
          eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
       then 
-         countOperationstraverseComps(rest,isyst,ishared,tpl); 
+         countOperationstraverseComps(rest,isyst,ishared,tpl);
+    case ((comp as BackendDAE.TORNSYSTEM(tearingvars=vlst, otherEqnVarTpl=eqnvartpllst, linear=_))::rest,_,BackendDAE.SHARED(functionTree=funcs),_) 
+      equation
+        (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp, BackendEquation.daeEqns(isyst), BackendVariable.daeVars(isyst));
+        tpl = addJacSpecificOperations(listLength(vlst),inTpl);
+        ((_,explst,_,_)) = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(eqnlst),BackendEquation.equationToExp,(BackendDAEUtil.listVar1(varlst),{},{},SOME(funcs)));
+        ((_,tpl)) = Expression.traverseExpList(explst,countOperationsExp,tpl);
+      then 
+         countOperationstraverseComps(rest,isyst,ishared,tpl);  
     case (_::rest,_,_,_) 
       equation
         true = Flags.isSet(Flags.FAILTRACE);

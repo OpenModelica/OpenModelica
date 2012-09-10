@@ -2995,10 +2995,11 @@ algorithm
   matchcontinue (inVariables,func,inTypeA)
     local
       array<Option<BackendDAE.Var>> varOptArr;
+      Integer n;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(varOptArr=varOptArr)),func,inTypeA)
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),func,inTypeA)
       equation
-        ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,arrayLength(varOptArr),inTypeA);
+        ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,n,inTypeA);
       then
         ext_arg_1;
     case (_,_,_)

@@ -1289,6 +1289,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       BackendDAE.StrongComponent comp;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst;
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),eqns,vars) 
       equation
         e_1 = e - 1;
@@ -1334,6 +1335,17 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
         ({eqn},varlst,e);
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst),eqns,vars) 
+      equation
+        eqnlst = BackendEquation.getEqns(elst,eqns);        
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        eqnlst1 = BackendEquation.getEqns(List.map(eqnvartpllst,Util.tuple21),eqns);        
+        varlst1 = List.map1r(List.flatten(List.map(eqnvartpllst,Util.tuple22)), BackendVariable.getVarAt, vars);
+        eqnlst = listAppend(eqnlst,eqnlst1);
+        varlst = listAppend(varlst,varlst1);        
+        e = List.first(elst);        
+      then
+        (eqnlst,varlst,e);        
     case (inComp,eqns,vars)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -1396,28 +1408,37 @@ algorithm
       Integer v,e;
       list<Integer> elst,vlst,elst1,vlst1;
       BackendDAE.StrongComponent comp;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst;
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)) 
       then
         ({e},{v});
-    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst))
+    case BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=elst,disc_vars=vlst)
       equation       
         (elst1,vlst1) = getEquationAndSolvedVarIndxes(comp);
         elst = listAppend(elst1,elst);
         vlst = listAppend(vlst1,vlst);
       then
-        (elst,vlst);          
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst))      
+        (elst,vlst);
+    case BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst)   
       then
-        (elst,vlst);        
-    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst))     
+        (elst,vlst);
+    case BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)
       then
-        ({e},vlst);  
-    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst))     
+        ({e},vlst);
+    case BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)
       then
-        ({e},vlst);    
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst))     
+        ({e},vlst);
+    case BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)
       then
-        ({e},vlst);             
+        ({e},vlst);
+    case BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst)
+      equation       
+        elst1 = List.map(eqnvartpllst,Util.tuple21);
+        vlst1 = List.flatten(List.map(eqnvartpllst,Util.tuple22));
+        elst = listAppend(elst1,elst);
+        vlst = listAppend(vlst1,vlst);
+      then
+        (elst,vlst);         
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);

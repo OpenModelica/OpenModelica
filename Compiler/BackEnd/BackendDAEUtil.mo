@@ -8399,10 +8399,11 @@ algorithm
       list<BackendDAE.Value> ilst;
       list<String> ls;
       String s;
-      Integer i;
+      Integer i,i1;
       BackendDAE.JacobianType jacType;
       BackendDAE.StrongComponent comp;
       BackendDAE.StrongComponents comps;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst;
     case ({},_) then inInt;
     case (BackendDAE.SINGLEEQUATION(var=_)::comps,_)
       equation
@@ -8434,6 +8435,12 @@ algorithm
         i = listLength(ilst);
         outInt = countComponents(comps,inInt+i);
       then outInt;        
+    case (BackendDAE.TORNSYSTEM(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst)::comps,_)
+      equation
+        i = listLength(ilst);
+        i1 = listLength(List.flatten(List.map(eqnvartpllst,Util.tuple22)));
+        outInt = countComponents(comps,inInt+i+i1);
+      then outInt; 
   end match;
 end countComponents;
 
