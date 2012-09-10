@@ -1529,7 +1529,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     mps = RML_CDR(mps);
     if (!dir) continue;
     while ((ent = readdir(dir))) {
-      if (0 == strncmp(name, ent->d_name, nlen) && ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.') {
+      if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
         int entlen,mightbedir;
 #ifdef DT_DIR
         mightbedir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN);
@@ -1561,7 +1561,7 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     mps = RML_CDR(mps);
     if (!dir) continue;
     while ((ent = readdir(dir))) {
-      if (0 == strncmp(name, ent->d_name, nlen) && ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.') {
+      if (0 == strncmp(name, ent->d_name, nlen) && (ent->d_name[nlen] == '\0' || ent->d_name[nlen] == ' ' || ent->d_name[nlen] == '.')) {
         int entlen,ok=0,maybeDir;
 #ifdef DT_DIR
         maybeDir = (ent->d_type==DT_DIR || ent->d_type==DT_UNKNOWN);
