@@ -35,6 +35,8 @@
 
 #include <math.h>
 
+#define smooth(P,EXP)    (EXP)
+
 
 /* fmod in math.h does not work in the same way as mod defined by modelica, so
  * we need to define our own mod. */
@@ -47,5 +49,6 @@ static inline int modelica_mod_integer(int x, int y)
 {
   return x % y;
 }
+
 
 #endif

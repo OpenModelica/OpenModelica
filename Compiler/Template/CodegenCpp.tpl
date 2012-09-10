@@ -3036,24 +3036,50 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   then
   <<
   <%arrayConstruct(modelInfo)%>
-  <%initVals(vars.constVars,simCode)%>
-  <%initVals(vars.intConstVars,simCode)%>
-  <%initVals(vars.boolConstVars,simCode)%>
-  <%initVals(vars.stringConstVars,simCode)%>
-  <%initVals(vars.paramVars,simCode)%>
-  <%initVals(vars.intParamVars,simCode)%>
-  <%initVals(vars.boolParamVars,simCode)%>
-  <%initVals(vars.stringParamVars,simCode)%>
+  <%initconstVals(vars.constVars,simCode)%>
+  <%initconstVals(vars.intConstVars,simCode)%>
+  <%initconstVals(vars.boolConstVars,simCode)%>
+  <%initconstVals(vars.stringConstVars,simCode)%>
+  <%initconstVals(vars.paramVars,simCode)%>
+  <%initconstVals(vars.intParamVars,simCode)%>
+  <%initconstVals(vars.boolParamVars,simCode)%>
+  <%initconstVals(vars.stringParamVars,simCode)%>
   >>
 end simulationInitFile;
 
-template initVals(list<SimVar> varsLst,SimCode simCode) ::=
-  varsLst |> SIMVAR(numArrayElement={},initialValue=SOME(v)) =>
-  <<
-  ,<%cref(name)%>(<%initVal(v)%>) 
-  >>  
+template initconstVals(list<SimVar> varsLst,SimCode simCode) ::=
+  varsLst |> (var as SIMVAR(__)) => 
+  initconstValue(var,simCode)
   ;separator="\n"
-end initVals;
+end initconstVals;
+
+template initconstValue(SimVar var,SimCode simCode) ::=
+ match var
+  case SIMVAR(numArrayElement=_::_) then ' '
+  case SIMVAR(__) then ',<%cref(name)%><%match initialValue 
+    case SOME(v) then initconstValue2(v,simCode)
+      else "(0)"
+    %>'
+end initconstValue;
+
+template initconstValue2(Exp initialValue,SimCode simCode) 
+::=
+  match initialValue 
+    case v then 
+      let &preExp = buffer "" //dummy ... the value is always a constant
+      let &varDecls = buffer ""
+      match daeExp(v, contextOther, &preExp, &varDecls,simCode)
+      case vStr as "0"
+      case vStr as "0.0"
+      case vStr as "(0)" then
+       '(<%vStr%>)'
+      case vStr as "" then
+       '(<%vStr%>)'
+      case vStr then
+       '(<%vStr%>)' 
+     end match
+     
+end initconstValue2;
 
 
 template initializeArrayElements(SimCode simCode)
@@ -4684,7 +4710,24 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let retVar = tempDecl(retType, &varDecls /*BUFD*/)
     let &preExp += '<%retVar%> = <%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     if attr.builtin then '<%retVar%>' else '<%retVar%>.<%retType%>_1'
+   
+   case CALL(path=IDENT(name="atan2"),
+            expLst={e1,e2},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
     
+    let retType = 'double'
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = std::atan2(<%argStr%>);<%\n%>'
+    '<%retVar%>'
+    case CALL(path=IDENT(name="smooth"),
+            expLst={e1,e2},attr=attr as CALL_ATTR(__)) then
+    let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
+    
+    let retType = expTypeShort(attr.ty)
+    let retVar = tempDecl(retType, &varDecls /*BUFD*/)
+    let &preExp += '<%retVar%> = smooth(<%argStr%>);<%\n%>'
+    '<%retVar%>' 
+   
    case CALL(path=IDENT(name="exp"),
             expLst={e1},attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)%>' ;separator=", ")
@@ -6885,7 +6928,7 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
   case s as STMT_TUPLE_ASSIGN(__)   then algStmtTupleAssign(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_IF(__)             then algStmtIf(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_FOR(__)            then algStmtFor(s, context, &varDecls /*BUFD*/,simCode)
-  case s as STMT_WHILE(__)          then "STMT WHILE"
+  case s as STMT_WHILE(__)           then algStmtWhile(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_ASSERT(__)         then algStmtAssert(s, context, &varDecls ,simCode)
   case s as STMT_TERMINATE(__)      then algStmtTerminate(s, context, &varDecls /*BUFD*/,simCode)
   case s as STMT_WHEN(__)           then algStmtWhen(s, context, &varDecls ,simCode)
@@ -6906,6 +6949,21 @@ template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCod
 
 end algStatement;
 
+template algStmtWhile(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
+ "Generates a while algorithm statement."
+::=
+match stmt
+case STMT_WHILE(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let var = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
+  <<
+  while (1) {
+    <%preExp%>
+    if (!<%var%>) break;
+    <%statementLst |> stmt => algStatement(stmt, context, &varDecls /*BUFD*/,simCode) ;separator="\n"%>
+  }
+  >>
+end algStmtWhile;
 
 template algStmtTerminate(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
  "Generates an assert algorithm statement."
