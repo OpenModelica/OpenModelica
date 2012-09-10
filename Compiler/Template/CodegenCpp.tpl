@@ -3055,10 +3055,13 @@ end initconstVals;
 
 template initconstValue(SimVar var,SimCode simCode) ::=
  match var
-  case SIMVAR(numArrayElement=_::_) then ' '
-  case SIMVAR(__) then ',<%cref(name)%><%match initialValue 
+  case SIMVAR(numArrayElement=_::_) then ''
+  case SIMVAR(type_=type) then ',<%cref(name)%>
+    <%match initialValue 
     case SOME(v) then initconstValue2(v,simCode)
-      else "(0)"
+      else match type 
+      case T_STRING(__) then '("")'
+      else '(0)'
     %>'
 end initconstValue;
 
