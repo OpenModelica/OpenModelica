@@ -2443,6 +2443,17 @@ function isExperiment "An experiment is defined as having annotation Experiment(
 external "builtin";
 end isExperiment;
 
+function loadModelica3d "Please start the server using python $OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py or blender2.59"
+  output Boolean status;
+protected
+  String m3d;
+algorithm
+  status := loadModel(Modelica,{"3.1"});
+  status := status and loadModel(ModelicaServices,{"1.0 modelica3d"});
+  m3d:=getInstallationDirectoryPath()+"/lib/omlibrary-modelica3d/";
+  status := status and min(loadFile({m3d + file for file in {"DoublePendulum.mo","Engine1b.mo","Internal.mo","Pendulum.mo"}}));
+end loadModelica3d;
+
 annotation(preferredView="text");
 end Scripting;
 
