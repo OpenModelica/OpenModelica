@@ -5573,6 +5573,7 @@ algorithm
         eqnsindxs1 = List.map(eqnsindxs,intNeg);
         newrow = List.map1(eqnsindxs1,Util.makeTuple,solva);
         // put it in the array
+        newrow = listAppend(newrow,row);
         mT = arrayUpdate(inIncidenceArrayT, vabs, newrow);
       then  
         fillincAdjacencyMatrixTEnhanced(rest, eqnsindxs, mT);
