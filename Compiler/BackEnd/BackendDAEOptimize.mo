@@ -1372,7 +1372,7 @@ protected function updateStrongComponent
   input BackendDAE.StrongComponents iAcc;
   output BackendDAE.StrongComponents oComps;
 algorithm
-  oComps := match(iComp,varindxs,eqnindxs,iAcc)
+  oComps := matchcontinue(iComp,varindxs,eqnindxs,iAcc)
     local
       BackendDAE.StrongComponents comps;
       BackendDAE.StrongComponent comp;
@@ -1397,8 +1397,9 @@ algorithm
         e::_ = eqns;
         v::_ = vars;
         comp = Util.if_(intEq(listLength(eqns),1),BackendDAE.SINGLEEQUATION(e,v),BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType));
+        comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
       then
-        comp::iAcc;
+        comps;
     case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=eqns,disc_vars=vars),_,_,_)
       equation
         comp::_ =updateStrongComponent(comp,varindxs,eqnindxs,{});
@@ -1407,8 +1408,9 @@ algorithm
         vars = List.map1r(vars,arrayGet,varindxs);
         vars = List.select1(vars,intGt,0);
         comp = Util.if_(intEq(listLength(eqns),0),comp,BackendDAE.MIXEDEQUATIONSYSTEM(comp,eqns,vars));
+        comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
       then
-        comp::iAcc;
+        comps;
     case (BackendDAE.SINGLEARRAY(eqn=e,vars=vars),_,_,_)
       equation
         e = eqnindxs[e];
@@ -1443,8 +1445,40 @@ algorithm
         comp = BackendDAE.TORNSYSTEM(vars,eqns,eqnvartpllst,b);
       then
         comp::iAcc;
-  end match;
+    case (_,_,_,_)
+      equation
+        print("BackendDAEOptimize.updateStrongComponent failed for Comp:\n");
+        BackendDump.dumpComponent(iComp);
+        print("Size EqnsIndx: " +& intString(arrayLength(eqnindxs)) +& "\n");
+        print("Size VarsIndx: " +& intString(arrayLength(varindxs)) +& "\n");
+      then
+        fail();
+  end matchcontinue;
 end updateStrongComponent;
+
+protected function updateEquationSystemComp
+  input list<Integer> eqns;
+  input list<Integer> vars;
+  input BackendDAE.JacobianType jacType;
+  input BackendDAE.StrongComponents iAcc;
+  output BackendDAE.StrongComponents oComps;
+algorithm
+  oComps := match(eqns,vars,jacType,iAcc)
+    local
+      Integer e,v;
+    case ({},{},_,_) then iAcc;
+    case ({},v::_,_,_)
+      //equation
+      then 
+        fail();
+    case (e::{},v::_,_,_) 
+      then
+        BackendDAE.SINGLEEQUATION(e,v)::iAcc;
+    case (_,_,_,_)
+      then
+        BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType)::iAcc; 
+  end match; 
+end updateEquationSystemComp;
 
 protected function updateTornSystemComp
   input list<tuple<Integer,list<Integer>>> inEqnVarTplLst;
@@ -4549,17 +4583,18 @@ algorithm
       BackendDAE.StrongComponents comps;
       array<Integer> ass1,ass2;
     case (false,_) then isyst;
-    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()))
+//    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()))
+    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns))
       equation
         // remove empty entries from vars/eqns
         vars = BackendDAEUtil.listVar1(BackendDAEUtil.varList(vars));
         eqns = BackendDAEUtil.listEquation(BackendDAEUtil.equationList(eqns));
       then
         BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());     
-    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps)))
+/*    case (true,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps)))
       then
         updateEquationSystemMatching(vars,eqns,ass1,ass2,comps);
-  end match;  
+*/  end match;  
 end constantLinearSystem2;
 
 protected function constantLinearSystem1
@@ -4636,7 +4671,7 @@ algorithm
       BackendDAE.BinTree movedVars;
       BackendDAE.Matching matching;
       DAE.FunctionTree funcs;
-	  BackendDAE.Shared shared;
+  BackendDAE.Shared shared;
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=matching),BackendDAE.SHARED(functionTree=funcs),_,_,_,_,_)
       equation
         eqns1 = BackendDAEUtil.listEquation(eqn_lst);

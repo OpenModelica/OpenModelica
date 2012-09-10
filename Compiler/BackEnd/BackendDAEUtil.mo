@@ -1309,7 +1309,7 @@ algorithm
     
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr))
       equation
-        lst = equationList2(arr, 1, n);
+        lst = equationList2(arr, n, {});
       then
         lst;
     
@@ -1326,32 +1326,23 @@ protected function equationList2 "function: equationList2
   Helper function to equationList
   inputs:  (Equation option array, int /* pos */, int /* lastpos */)
   outputs: BackendDAE.Equation list"
-  input array<Option<BackendDAE.Equation>> inEquationOptionArray1;
-  input Integer inInteger2;
-  input Integer inInteger3;
+  input array<Option<BackendDAE.Equation>> arr;
+  input Integer pos;
+  input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> outEquationLst;
 algorithm
-  outEquationLst := matchcontinue (inEquationOptionArray1,inInteger2,inInteger3)
+  outEquationLst := matchcontinue (arr,pos,iAcc)
     local
       BackendDAE.Equation e;
-      array<Option<BackendDAE.Equation>> arr;
-      BackendDAE.Value pos,lastpos,pos_1;
-      list<BackendDAE.Equation> res;
-    
-    case (arr,pos,lastpos)
+    case (_,0,_) then iAcc;    
+    case (_,_,_)
       equation
-        (pos == lastpos) = true;
         SOME(e) = arr[pos];
       then
-        {e};
-    
-    case (arr,pos,lastpos)
-      equation
-        pos_1 = pos + 1;
-        SOME(e) = arr[pos];
-        res = equationList2(arr, pos_1, lastpos);
+        equationList2(arr,pos-1,e::iAcc);
+    case (_,_,_)
       then
-        (e :: res);
+        equationList2(arr,pos-1,iAcc);
   end matchcontinue;
 end equationList2;
 
