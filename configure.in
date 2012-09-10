@@ -18,6 +18,7 @@ AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
 AC_SUBST(LPSOLVEINC)
+AC_SUBST(MODELICA3D)
 AC_SUBST(USE_CORBA)
 AC_SUBST(QT_USE_CORBA)
 AC_SUBST(CORBA_QMAKE_INCLUDES)
@@ -462,6 +463,14 @@ AC_MSG_RESULT([$DESIRED_CORBA]);
 AC_MSG_CHECKING([if the user wants to use the Python interface])
 AC_ARG_ENABLE(python-interface, [  --enable-python-interface        Python interface to omc. Enabled by default if omniORB is enabled.],[test "xno" = x"$enableval" && PYTHON_INTERFACE=""])
 if test -z "$PYTHON_INTERFACE" ; then
+AC_MSG_RESULT([no])
+else
+AC_MSG_RESULT([yes])
+fi
+
+AC_MSG_CHECKING([if the user wants Modelica3D])
+AC_ARG_ENABLE(modelica3d, [  --enable-modelica-3d[=yes]        Modelica3D library.],[test "xno" = x"$enableval" && MODELICA3D=""],[MODELICA3D="yes"])
+if test -z "$MODELICA3D" ; then
 AC_MSG_RESULT([no])
 else
 AC_MSG_RESULT([yes])

@@ -75,6 +75,9 @@ qtclean: qtclean-common
 endif
 
 modelica3d:
+ifeq (@MODELICA3D@,)
+	@echo Skipping Modelica3D
+else
 	cd 3rdParty/modelica3d && mkdir -p build
 	cd 3rdParty/modelica3d/build && cmake -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 ..
 	$(MAKE) -C 3rdParty/modelica3d/build
@@ -85,6 +88,7 @@ modelica3d:
 	cp -p 3rdParty/modelica3d/examples/multibody/src/modelica/*.mo build/lib/omlibrary-modelica3d/
 	cp -p 3rdParty/modelica3d/backends/blender2.59/dbus-server.py build/lib/omlibrary-modelica3d/blender2.59/
 	cp -p 3rdParty/modelica3d/backends/osg-gtk/python/dbus-server.py build/lib/omlibrary-modelica3d/osg-gtk/
+endif
 
 fix-svn-eol-style:
 	svn propset svn:eol-style LF `find testsuite/ Compiler/ libraries/ -name "*.mo" | grep -v parser/ParseModel | grep -v "[ ]" | grep -v "_temp[0-9]*"`
