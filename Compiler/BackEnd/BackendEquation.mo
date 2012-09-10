@@ -53,6 +53,7 @@ protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
+protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import HashTable;
@@ -1300,6 +1301,11 @@ algorithm
       list<BackendDAE.Equation> eqns;
       list<list<DAE.Subscript>> subslst;
     
+    case (BackendDAE.EQUATION(exp = DAE.TUPLE(explst),scalar = e2,source = source))
+      equation
+        ((_,eqns)) = List.fold2(explst,equationTupleToScalarResidualForm,e2,source,(1,{}));
+      then eqns;
+    
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source = source))
       equation
         //ExpressionDump.dumpExpWithTitle("equationToResidualForm 1\n",e2);
@@ -1342,6 +1348,42 @@ algorithm
         fail();
   end matchcontinue;
 end equationToScalarResidualForm;
+
+protected function equationTupleToScalarResidualForm "Tuple-expressions (function calls) that need to be converted to residual form are scalarized in a stupid, straight-forward way"
+  input DAE.Exp cr;
+  input DAE.Exp exp;
+  input DAE.ElementSource inSource;
+  input tuple<Integer,list<BackendDAE.Equation>> inTpl;
+  output tuple<Integer,list<BackendDAE.Equation>> outTpl;
+algorithm
+  outTpl := match (cr,exp,inSource,inTpl)
+    local
+      Integer i;
+      list<BackendDAE.Equation> eqs;
+      String str;
+      DAE.Exp e;
+      // Wild-card does not produce a residual
+    case (DAE.CREF(componentRef=DAE.WILD()),_,_,(i,eqs)) then ((i+1,eqs));
+      // 0-length arrays do not produce a residual
+    case (DAE.ARRAY(array={}),_,_,(i,eqs)) then ((i+1,eqs));
+      // A scalar real
+    case (DAE.CREF(ty=DAE.T_REAL(source=_)),_,_,(i,eqs))
+      equation
+        eqs = BackendDAE.RESIDUAL_EQUATION(DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT),inSource)::eqs;
+      then ((i+1,eqs));
+      // Create a sum for arrays...
+    case (DAE.CREF(ty=DAE.T_ARRAY(ty=DAE.T_REAL(source=_))),_,_,(i,eqs))
+      equation
+        e = Expression.makeBuiltinCall("sum",{DAE.TSUB(exp,i,DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT);
+        eqs = BackendDAE.RESIDUAL_EQUATION(e,inSource)::eqs;
+      then ((i+1,eqs));
+    case (_,_,_,(i,_))
+      equation
+        str = "BackendEquation.equationTupleToScalarResidualForm failed: " +& intString(i) +& ": " +& ExpressionDump.printExpStr(cr);
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{str},DAEUtil.getElementSourceFileInfo(inSource));
+      then fail();
+  end match;
+end equationTupleToScalarResidualForm;
 
 public function equationToResidualForm "function: equationToResidualForm
   author: PA
