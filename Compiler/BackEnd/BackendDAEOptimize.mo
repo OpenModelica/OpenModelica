@@ -398,10 +398,39 @@ algorithm
         // replace der(x)=dx
         (syst,shared) = replaceDerEquations(deqns,syst,shared,derrepl1);
         // replace vars in arrayeqns and algorithms, move vars to knvars and aliasvars, remove eqns
-        (syst,shared) = removeSimpleEquations2(b,syst,shared,repl_1,meqns);
+        (syst,shared) = removeSimpleEquationsFast2(b,syst,shared,repl_1,meqns);
       then (syst,(shared,(repl_1,b or b1)));
   end match;
 end removeSimpleEquationsFast1;
+
+protected function removeSimpleEquationsFast2
+"function: removeSimpleEquationsFast2"
+  input Boolean b;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  input BackendVarTransform.VariableReplacements repl;
+  input list<Integer> meqns;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+algorithm
+  (osyst,oshared):=
+  match (b,syst,shared,repl,meqns)
+    local
+      BackendDAE.Variables ordvars;
+      BackendDAE.EquationArray eqns,eqns1;
+    case (false,_,_,_,_) then (syst,shared);
+    case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),_,_,_)
+      equation
+        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
+        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
+        // remove empty entries from vars
+        ordvars = BackendDAEUtil.listVar1(BackendDAEUtil.varList(ordvars));        
+        // remove changed eqns
+        eqns1 = BackendEquation.equationDelete(eqns,meqns);
+      then 
+        (BackendDAE.EQSYSTEM(ordvars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),shared);
+  end match;
+end removeSimpleEquationsFast2;
 
 protected function removeSimpleEquationsFastFinder
 "autor: Frenkel TUD 2012-03"
@@ -625,7 +654,7 @@ algorithm
       
     case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared,(repl,b1)))
       equation
-      (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, shared, BackendDAE.NORMAL());
+      (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.NORMAL());
         derrepl = HashTable2.emptyHashTable();
         compflag = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst),-1);
         // check equations
@@ -1019,6 +1048,7 @@ algorithm
         // update Replacements
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl_1,derrepl,deeqns,pos::meqns);
+    // Alias a = b 
     case (1,cr,i,exp,pos,_,_,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
       equation
         // equations of var
@@ -1028,8 +1058,11 @@ algorithm
         shared1 = BackendVariable.addAliasVarDAE(v, shared);
         // update Replacements
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        // update Assignments
+        matching = updateAliasMatching(matching,i,pos);
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl_1,derrepl,deeqns,pos::meqns);
-    case (2,cr,i,exp,pos,_,_,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(mT=SOME(mT)),shared,meqns)
+    // a = der(b) -> replace der(b) with a in all other eqns
+    case (2,cr,i,exp,pos,_,_,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
       equation
         // equations of var
         vareqns = mT[i];
@@ -1039,8 +1072,11 @@ algorithm
         vareqns2 = getCompEqns(vareqns1,compflag,mark,{});
         // replace der(a)=b in vareqns
         (syst,shared) = replacementsInEqns2(vareqns1,exp,cr,syst,shared);
+        // update Assignments
+        matching = updateAliasMatching(matching,i,pos);
+        syst = BackendDAE.EQSYSTEM(ordvars,eqns,m,SOME(mT),matching);
         // update IncidenceMatrix
-        syst= BackendDAEUtil.updateIncidenceMatrix(syst,shared,vareqns2);
+        syst= BackendDAEUtil.updateIncidenceMatrix(syst,vareqns2);
       then (vareqns1,syst,shared,repl,derrepl,pos::deeqns,meqns);
     // self generated   
     case (5,cr,i,exp,pos,_,_,repl,derrepl,deeqns,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
@@ -1051,9 +1087,44 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         // update Replacements
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        // update Assignments
+        matching = updateAliasMatching(matching,i,pos);
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared,repl_1,derrepl,deeqns,pos::meqns);
   end match;
 end replacementsInEqnsPast;
+
+protected function updateAliasMatching
+  input BackendDAE.Matching iMatching;
+  input Integer var;
+  input Integer eqn;
+  output BackendDAE.Matching oMatching;
+algorithm
+  oMatching := matchcontinue(iMatching,var,eqn)
+    local
+      Integer e,v;
+      array<Integer> ass1,ass2;
+      BackendDAE.StrongComponents comps;
+    case(BackendDAE.NO_MATCHING(),_,_) then iMatching;
+    case(BackendDAE.MATCHING(ass1, ass2, comps),_,_)
+      equation
+        true = intEq(ass2[eqn],var);
+        // var is matched in this equation, nothing to do
+      then
+        iMatching;
+    case(BackendDAE.MATCHING(ass1, ass2, comps),_,_)
+      equation
+        false = intEq(ass2[eqn],var);
+        // var is not matched in this equation
+        e = ass1[var] "eqn of removed var";
+        v = ass2[eqn] "var of removed eqn";
+        _ = arrayUpdate(ass1,v,e);
+        _ = arrayUpdate(ass2,e,v);
+        _ = arrayUpdate(ass1,var,eqn);
+        _ = arrayUpdate(ass2,eqn,var);
+      then
+        BackendDAE.MATCHING(ass1, ass2, comps);
+  end matchcontinue;
+end updateAliasMatching;
 
 protected function traverseComponents 
 " function: traverseComponents
@@ -1190,31 +1261,280 @@ end getCompEqns;
 protected function removeSimpleEquations2
 "function: removeSimpleEquations2"
   input Boolean b;
-  input BackendDAE.EqSystem syst;
-  input BackendDAE.Shared shared;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input BackendVarTransform.VariableReplacements repl;
   input list<Integer> meqns;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
 algorithm
   (osyst,oshared):=
-  match (b,syst,shared,repl,meqns)
+  match (b,isyst,ishared,repl,meqns)
     local
+      BackendDAE.EqSystem syst;
       BackendDAE.Variables ordvars;
       BackendDAE.EquationArray eqns,eqns1;
-    case (false,_,_,_,_) then (syst,shared);
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+      array<Integer> ass1,ass2;
+      BackendDAE.StrongComponents comps;
+    case (false,_,_,_,_) then (isyst,ishared);
+//    case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,matching=BackendDAE.NO_MATCHING()),_,_,_)
     case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns),_,_,_)
       equation
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
         // remove empty entries from vars
         ordvars = BackendDAEUtil.listVar1(BackendDAEUtil.varList(ordvars));        
-        // remove changed eqns
+        // delete changed eqns
         eqns1 = BackendEquation.equationDelete(eqns,meqns);
       then 
-        (BackendDAE.EQSYSTEM(ordvars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),shared);
-  end match;
+        (BackendDAE.EQSYSTEM(ordvars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),ishared);
+/*    case (true,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,matching=BackendDAE.MATCHING(ass1=ass1, ass2=ass2, comps=comps)),_,_,_)
+      equation
+        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
+        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
+        // remove changed eqns
+        eqns1 = List.fold(meqns,BackendEquation.equationRemove,eqns);        
+        syst = updateEquationSystemMatching(ordvars,eqns1,ass1,ass2,comps);
+      then 
+        (syst,ishared);        
+*/  end match;
 end removeSimpleEquations2;
+
+protected function updateEquationSystemMatching
+" function: updateEquationSystemMatching
+  autor: Frenkel TUD 2012-09"
+  input BackendDAE.Variables ordvars;
+  input BackendDAE.EquationArray eqns;
+  input array<Integer> ass1 "ass[varindx]=eqnindx";
+  input array<Integer> ass2 "ass[eqnindx]=varindx";
+  input BackendDAE.StrongComponents comps;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := matchcontinue(ordvars,eqns,ass1,ass2,comps)
+    local
+      array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+      Integer bucketSize,numberOfVars,size,neqns,nvars,arrSizeEqns,arrSizeVars,neqns1,nvars1;
+      array<Option<BackendDAE.Var>> varOptArr;
+      array<Option<BackendDAE.Equation>> equOptArr;
+      array<Integer> eqnindxs,varindxs;
+      BackendDAE.StrongComponents comps_1;
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns1;
+      BackendDAE.VariableArray varArr;
+    case(BackendDAE.VARIABLES(varArr=BackendDAE.VARIABLE_ARRAY(nvars,arrSizeVars,varOptArr),bucketSize=bucketSize),
+         BackendDAE.EQUATION_ARRAY(size, neqns, arrSizeEqns, equOptArr),
+         _,_,comps)
+      equation
+        // update equationsarray
+        eqnindxs = arrayCreate(neqns,-1);
+        neqns1 = updateEquationArray(1,neqns,1,equOptArr,ass1,ass2,eqnindxs);
+        // update variablearray
+        varindxs = arrayCreate(nvars,-1);
+        crefIdxLstArr = arrayCreate(bucketSize, {});
+        nvars1 = updateVarArray(1,nvars,1,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,varindxs);
+        // update strongComponents
+        comps_1 = List.fold2(comps,updateStrongComponent,varindxs,eqnindxs,{});
+        comps_1 = listReverse(comps_1);
+        // generate updated data structs
+        varArr = BackendDAE.VARIABLE_ARRAY(nvars1,arrSizeVars,varOptArr);
+        vars = BackendDAE.VARIABLES(crefIdxLstArr, varArr, bucketSize, nvars1);
+        eqns1 = BackendDAE.EQUATION_ARRAY(size, neqns1, arrSizeEqns, equOptArr);
+      then
+        BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps_1));
+    else
+      equation
+        print("BackendDAEOptimize.updateEquationSystemMatching failed\n");
+      then
+        fail();     
+  end matchcontinue;
+end updateEquationSystemMatching;
+
+protected function updateStrongComponent
+" function: updateStrongComponent
+  autor: Frenkel TUD 2012-09"
+  input BackendDAE.StrongComponent iComp;
+  input array<Integer> varindxs;
+  input array<Integer> eqnindxs;
+  input BackendDAE.StrongComponents iAcc;
+  output BackendDAE.StrongComponents oComps;
+algorithm
+  oComps := match(iComp,varindxs,eqnindxs,iAcc)
+    local
+      BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponent comp;
+      Integer v,e;
+      list<Integer> vars,eqns;
+      BackendDAE.JacobianType jacType;
+    case (BackendDAE.SINGLEEQUATION(eqn=e,var=v),_,_,_)
+      equation
+        e = eqnindxs[e];
+        v = varindxs[v];
+        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEEQUATION(e,v), iAcc);
+      then
+        comps;
+    case (BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars,jacType=jacType),_,_,_)
+      equation
+        eqns = List.map1r(eqns,arrayGet,eqnindxs);
+        eqns = List.select1(eqns,intGt,0);
+        vars = List.map1r(vars,arrayGet,varindxs);
+        vars = List.select1(vars,intGt,0);
+        e::_ = eqns;
+        v::_ = vars;
+        comp = Util.if_(intEq(listLength(eqns),1),BackendDAE.SINGLEEQUATION(e,v),BackendDAE.EQUATIONSYSTEM(eqns,vars,NONE(),jacType));
+      then
+        comp::iAcc;
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp,disc_eqns=eqns,disc_vars=vars),_,_,_)
+      equation
+        comp::_ =updateStrongComponent(comp,varindxs,eqnindxs,{});
+        eqns = List.map1r(eqns,arrayGet,eqnindxs);
+        eqns = List.select1(eqns,intGt,0);
+        vars = List.map1r(vars,arrayGet,varindxs);
+        vars = List.select1(vars,intGt,0);
+        comp = Util.if_(intEq(listLength(eqns),0),comp,BackendDAE.MIXEDEQUATIONSYSTEM(comp,eqns,vars));
+      then
+        comp::iAcc; 
+    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vars),_,_,_)
+      equation
+        e = eqnindxs[e];
+        vars = List.map1r(vars,arrayGet,varindxs);
+        vars = List.select1(vars,intGt,0);
+        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEARRAY(e,vars), iAcc);
+      then
+        comps;  
+    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vars),_,_,_)
+      equation
+        e = eqnindxs[e];
+        vars = List.map1r(vars,arrayGet,varindxs);
+        vars = List.select1(vars,intGt,0);
+        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEALGORITHM(e,vars), iAcc);
+      then
+        comps;  
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vars),_,_,_)
+      equation
+        e = eqnindxs[e];
+        vars = List.map1r(vars,arrayGet,varindxs);
+        vars = List.select1(vars,intGt,0);
+        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLECOMPLEXEQUATION(e,vars), iAcc);
+      then
+        comps;  
+  end match;
+end updateStrongComponent;
+
+protected function updateVarArray
+" function: updateVarArray
+  autor: Frenkel TUD 2012-09"
+  input Integer index;
+  input Integer numberOfElement;
+  input Integer insertindex;
+  input array<Option<BackendDAE.Var>> varOptArr;
+  input array<list<BackendDAE.CrefIndex>> crefIdxLstArr;
+  input Integer bucketSize;
+  input array<Integer> ass1 "ass[varindx]=eqnindx";
+  input array<Integer> ass2 "ass[eqnindx]=varindx";
+  input array<Integer> newindexarr;
+  output Integer newnumberOfElement;
+algorithm
+  newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr)
+    local
+      BackendDAE.Var var;
+      DAE.ComponentRef cr;
+      Integer e,indx,i;
+      list<BackendDAE.CrefIndex> indexes;
+    // found element
+    case(_,_,_,_,_,_,_,_,_)
+      equation
+        true = intLe(index,numberOfElement);
+        SOME(var as BackendDAE.VAR(varName=cr)) = varOptArr[index];
+        // insert on new pos
+        _ = arrayUpdate(varOptArr,insertindex,SOME(var));
+        // store new pos
+        _ = arrayUpdate(newindexarr,index,insertindex);
+        // add to hash vec
+        indx = HashTable2.hashFunc(cr, bucketSize);
+        indexes = crefIdxLstArr[indx + 1];
+        i = insertindex-1;
+        _ = arrayUpdate(crefIdxLstArr, indx + 1, (BackendDAE.CREFINDEX(cr,i) :: indexes));                
+        // update assignments
+        e = ass1[index];
+        _ = arrayUpdate(ass1,insertindex,e);
+        _ = arrayUpdate(ass2,e,insertindex);        
+      then
+        updateVarArray(index+1,numberOfElement,insertindex+1,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr);
+    // found non element
+    case(_,_,_,_,_,_,_,_,_)
+      equation
+        true = intLe(index,numberOfElement);
+        NONE() = varOptArr[index];
+      then
+        updateVarArray(index+1,numberOfElement,insertindex,varOptArr,crefIdxLstArr,bucketSize,ass1,ass2,newindexarr);
+    // at the end
+    case(_,_,_,_,_,_,_,_,_)
+      equation
+        false = intLe(index,numberOfElement);
+      then
+        insertindex-1;
+    else
+      equation
+        print("BackendDAEOptimize.updateVarArray failed\n");
+      then
+        fail();
+  end matchcontinue;
+end updateVarArray;
+
+protected function updateEquationArray
+" function: updateEquationArray
+  autor: Frenkel TUD 2012-09"
+  input Integer index;
+  input Integer numberOfElement;
+  input Integer insertindex;
+  input array<Option<BackendDAE.Equation>> equOptArr;
+  input array<Integer> ass1 "ass[varindx]=eqnindx";
+  input array<Integer> ass2 "ass[eqnindx]=varindx";
+  input array<Integer> newindexarr;
+  output Integer newnumberOfElement;
+algorithm
+  newnumberOfElement := matchcontinue(index,numberOfElement,insertindex,equOptArr,ass1,ass2,newindexarr)
+    local
+      BackendDAE.Equation eqn;
+      Integer v;
+    // found element
+    case(_,_,_,_,_,_,_)
+      equation
+        true = intLe(index,numberOfElement);
+        SOME(eqn) = equOptArr[index];
+        // insert on new pos
+        _ = arrayUpdate(equOptArr,insertindex,SOME(eqn));
+        // store new pos
+        _ = arrayUpdate(newindexarr,index,insertindex);
+        // update assignments
+        v = ass2[index];
+        _ = arrayUpdate(ass2,insertindex,v);
+        _ = arrayUpdate(ass1,v,insertindex);        
+      then
+        updateEquationArray(index+1,numberOfElement,insertindex+1,equOptArr,ass1,ass2,newindexarr);
+    // found non element
+    case(_,_,_,_,_,_,_)
+      equation
+        true = intLe(index,numberOfElement);
+        NONE() = equOptArr[index];
+      then
+        updateEquationArray(index+1,numberOfElement,insertindex,equOptArr,ass1,ass2,newindexarr);
+    // at the end
+    case(_,_,_,_,_,_,_)
+      equation
+        false = intLe(index,numberOfElement);
+      then
+        insertindex-1;
+    else
+      equation
+        print("BackendDAEOptimize.updateEquationArray failed\n");
+      then
+        fail();
+  end matchcontinue;
+end updateEquationArray;
 
 protected function removeSimpleEquationsShared
 "function: removeSimpleEquationsShared"
@@ -3465,13 +3785,13 @@ algorithm
 
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
         // check equations
         (m_1,(mT_1,_,eqns1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,{}));
         b = intGt(listLength(changed),0);
         // update arrayeqns and algorithms, collect info for wrappers
         syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING());
-        syst = BackendDAEUtil.updateIncidenceMatrix(syst,shared,changed);
+        syst = BackendDAEUtil.updateIncidenceMatrix(syst,changed);
       then (syst,shared);
   end match;
 end removeEqualFunctionCallsWork;
@@ -4573,7 +4893,7 @@ algorithm
         l = listLength(tearingvars);
         sub_dae = BackendDAEUtil.copyBackendDAE(dlow1_1);
         BackendDAE.DAE({sub_eqSyst},sub_shared) = dlow1_1;
-        (m_subSyst1,mT_subSyst1) = BackendDAEUtil.incidenceMatrix(sub_eqSyst, sub_shared, BackendDAE.NORMAL());
+        (m_subSyst1,mT_subSyst1) = BackendDAEUtil.incidenceMatrix(sub_eqSyst, BackendDAE.NORMAL());
         residual = residualeqns;
         tvars = tearingvars;
         BackendDAE.EQSYSTEM(vars,eqns,_,_,_) = sub_eqSyst;
@@ -4583,7 +4903,7 @@ algorithm
         var_lst = List.map1r(tvars, BackendVariable.getVarAt, vars);
         subSyst = getSubSystemDaeForVars(residual,tvars,dlow1_1);
         BackendDAE.DAE({sub_eqSyst2},sub_shared2) = subSyst;
-        (m_subSyst2,mT_subSyst2) = BackendDAEUtil.incidenceMatrix(sub_eqSyst2, sub_shared2, BackendDAE.NORMAL());
+        (m_subSyst2,mT_subSyst2) = BackendDAEUtil.incidenceMatrix(sub_eqSyst2, BackendDAE.NORMAL());
         BackendDAE.EQSYSTEM(vars_subSyst,eqns_subSyst,_,_,_) = sub_eqSyst2;
         BackendDAE.EQUATION_ARRAY(sizeArr,NOE,arrSize,eq_subSyst_Arr) = eqns_subSyst;
         eq_subSyst_Lst = arrayList(eq_subSyst_Arr);
@@ -4626,7 +4946,7 @@ algorithm
         emptyVars = BackendDAEUtil.emptyVars();
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,emptyEqns,removedEqs,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.SIMULATION(),{});
-        (m_new,mT_new) = BackendDAEUtil.incidenceMatrix(eqSystem,shared,BackendDAE.NORMAL());
+        (m_new,mT_new) = BackendDAEUtil.incidenceMatrix(eqSystem,BackendDAE.NORMAL());
         match1 = arrayCreate(l,1);
         matching = BackendDAE.MATCHING(match1,match1,{});
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,SOME(m_new),SOME(mT_new),matching);
@@ -4657,7 +4977,7 @@ algorithm
         v1_2 = arrayCreate(ll, 0);
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
         BackendDAE.DAE({syst},shared) = dlow1_1;
-        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
+        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL());
         dlow1_2 = BackendDAE.DAE({syst},shared);
         (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
         // next Block
@@ -4681,7 +5001,7 @@ algorithm
         v1_2 = arrayCreate(ll, 0);
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
         BackendDAE.DAE({syst},shared) = dlow1_1;
-        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,shared,BackendDAE.NORMAL());
+        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL());
         dlow1_2 = BackendDAE.DAE({syst},shared);
         (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
         // next Block
@@ -6359,7 +6679,7 @@ public function generateSparsePattern
         syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqns,NONE(),NONE(),bdaeMatching);*/
         
         (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) = BackendDAEUtil.addVarsToEqSystem(syst,JacDiffVars);
-        (adjMatrix, adjMatrixT) = BackendDAEUtil.incidenceMatrix(syst1,shared,BackendDAE.SPARSE());
+        (adjMatrix, adjMatrixT) = BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE());
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpVars,BackendDAEUtil.varList(varswithDiffs));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpEqns,BackendDAEUtil.equationList(orderedEqns));
@@ -8704,7 +9024,7 @@ algorithm
     case (syst,shared,_)
       equation
         // print("partitionIndependentBlocks: TODO: Implement me\n");
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
         ixs = arrayCreate(arrayLength(m),0);
         // ixsT = arrayCreate(arrayLength(mT),0);
         i = partitionIndependentBlocks0(arrayLength(m),0,mT,m,ixs);
@@ -9243,7 +9563,7 @@ algorithm
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendDAEUtil.listVar1(var_lst);
   subsyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, ishared, BackendDAE.NORMAL());
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL());
   //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System" +& intString(size) +& ".graphml");
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,subsyst);
 

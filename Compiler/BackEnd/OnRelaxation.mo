@@ -154,7 +154,7 @@ algorithm
         vars = BackendDAEUtil.listVar1(var_lst);
 
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, shared, BackendDAE.ABSOLUTE());
+        (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE());
           BackendDump.dumpEqSystem(subsyst);
 
         // Vector Matching a=f(..),f(..)=a 
@@ -180,7 +180,7 @@ algorithm
 
         // Boeser hack fuer FourBar
     /*    
-        (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, shared, BackendDAE.ABSOLUTE());
+        (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE());
         temp::_ = mapEqnIncRow[72]; 
         _ = arrayUpdate(ass1,90,temp);
         _ = arrayUpdate(ass2,temp,90);
@@ -197,7 +197,7 @@ algorithm
 */
 
         // Matching based on Enhanced Adiacency Matrix, take care of the solvability - theems to be good but not good enough
-        //  (subsyst,_,_) = BackendDAEUtil.getIncidenceMatrix(subsyst, shared, BackendDAE.ABSOLUTE());
+        //  (subsyst,_,_) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE());
         //   BackendDump.dumpEqSystem(subsyst);
         //   dumpJacMatrix(jac,1,1,size,vars);
         m1 = arrayCreate(size,{});
@@ -242,7 +242,7 @@ algorithm
         ass1 = BackendDAETransform.varAssignmentNonScalar(1,size,ass1,mapIncRowEqn,{});
         ass22 = BackendDAETransform.eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
         eorphans = List.unique(List.map1r(eorphans,arrayGet,mapIncRowEqn));
-        (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, shared, BackendDAE.ABSOLUTE());
+        (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE());
         //  BackendDump.dumpIncidenceMatrix(m);
         //  BackendDump.dumpIncidenceMatrixT(mt);
 
@@ -320,7 +320,7 @@ algorithm
         //_ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, replaceFinalParameter, BackendVariable.daeKnVars(shared));
         
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, shared, BackendDAE.ABSOLUTE());
+        (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE());
         //  BackendDump.dumpEqSystem(subsyst);   
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml"); 
         SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,ishared);
@@ -352,7 +352,7 @@ algorithm
         vars = BackendVariable.addVars(var_lst, vars);
         eqns = BackendEquation.addEquations(neweqns, teqns);
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-          (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, shared, BackendDAE.NORMAL());
+          (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL());
           print("Relaxed System:\n");
           BackendDump.dumpEqSystem(subsyst);
 
@@ -368,7 +368,7 @@ algorithm
           BackendDump.dumpEqSystem(subsyst);
         */
         
-        //  (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(syst, shared, BackendDAE.NORMAL());
+        //  (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(syst, BackendDAE.NORMAL());
         //  BackendDump.dumpEqSystem(syst);
         //  (i1,i2,i3) = countOperations1(syst,shared);
         //  print("Add Operations: " +& intString(i1) +& "\n");

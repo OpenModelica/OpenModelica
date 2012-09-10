@@ -5995,7 +5995,7 @@ algorithm
   testMatchingAlgorithms1(matchingAlgorithms,syst,ishared,inMatchingOptions);
   
   System.realtimeTick(BackendDAE.RT_PROFILER0);
-  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,ishared,BackendDAE.NORMAL());
+  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
   matchingExternalsetIncidenceMatrix(nv,ne,m);
   cheapID := 3;
   t := System.realtimeTock(BackendDAE.RT_PROFILER0);
@@ -6218,7 +6218,7 @@ algorithm
        setrandArray(nv,randarr1);
        eqns1 = randSortSystem1(ne,-1,randarr,eqns,BackendDAEUtil.listEquation({}),BackendDAEUtil.equationNth,BackendEquation.equationAdd);
        vars1 = randSortSystem1(nv,0,randarr1,vars,BackendDAEUtil.emptyVars(),BackendVariable.getVarAt,BackendVariable.addVar);
-       (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),ishared,BackendDAE.NORMAL());
+       (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.NORMAL());
      then 
        syst;
   end match;       

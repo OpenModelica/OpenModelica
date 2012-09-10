@@ -115,7 +115,7 @@ algorithm
 
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
         BackendDAE.EQSYSTEM(allVars,allEqs,_,_,_) = currentSystem;
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,shared,BackendDAE.NORMAL());
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL());
 
         //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),_)::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
 
@@ -141,7 +141,7 @@ algorithm
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
         BackendDAE.EQSYSTEM(allVars,allEqs,_,_,_) = currentSystem;         
         
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,shared,BackendDAE.NORMAL());
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL());
         Debug.fprintln(Flags.UNCERTAINTIES,"Incidence row to equation ");
         printIntList(arrayList(mapIncRowEqn));
         Debug.fprintln(Flags.UNCERTAINTIES,";\n");
@@ -875,7 +875,7 @@ algorithm
       //print("partially indexed crs:"+&Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+&"\n");
       repl = BackendVarTransform.emptyReplacements();
 
-      (m,_) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL()); 
+      (m,_) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL()); 
       (eqnLst,seqns,movedvars_1,repl) = eliminateVariablesDAE2(eqnLst,1,vars,kvars,HashTable.emptyHashTable(),repl,crefDouble,m,elimVarIndexList,false);
       //Debug.fcall("dumprepl",BackendVarTransform.dumpReplacements,repl);
 

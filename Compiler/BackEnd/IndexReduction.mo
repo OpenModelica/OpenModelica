@@ -484,7 +484,7 @@ algorithm
         ass2 = consArrayUpdate(b, inAss2,e1,-1);
         syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching);
         changedEqns =  List.unique(List.map1r(changedEqns,arrayGet,imapIncRowEqn));
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared,BackendDAE.SOLVABLE(), changedEqns, imapEqnIncRow, imapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), changedEqns, imapEqnIncRow, imapIncRowEqn);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStrCrefStr,("Found Alias State ",cr," := ",scr,"\n Update Incidence Matrix: "));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(changedEqns,intString," ","\n"));        
         changedEqns = List.consOnTrue(b, e1, mapEqnIncRow[e]);
@@ -570,7 +570,7 @@ algorithm
         eqnslst1 = listAppend(eqnslst1,eqnslst);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," ","\n"));
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
         orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst,e,eqn);
         // collect changed equations     
         barray = List.fold(ilst1,setBArrayCheckSize,ibarray);
@@ -930,7 +930,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "highest Order Derivatives:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, hov);
         // iterate comps
-        (syst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,ishared,BackendDAE.NORMAL());
+        (syst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.NORMAL());
         Debug.fcall(Flags.BLT_DUMP, print, "Index Reduced System:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);
         comps = BackendDAETransform.tarjanAlgorithm(m,mt,ass1,ass2);
@@ -952,7 +952,7 @@ algorithm
         vec2 = Util.arrayExpand(nv1-nv, ass2, -1);
         syst = BackendVariable.expandVarsDAE(ndummystates,syst);
         (syst,shared,ht) = addDummyStates(dummyStates,syst,shared,iHt);
-        (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,shared,BackendDAE.NORMAL());
+        (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.NORMAL());
         Debug.fcall(Flags.BLT_DUMP, print, "Full System:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);
         Matching.matchingExternalsetIncidenceMatrix(nv1,ne1,m);        
@@ -1703,7 +1703,7 @@ algorithm
         true = intGt(varSize,1);
         false = intGt(eqnsSize,varSize);
         Debug.fcall(Flags.BLT_DUMP, print, "try to select dummy vars heuristic based\n");
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()),ishared,BackendDAE.NORMAL());
+        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.NORMAL());
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst);
         varlst = BackendDAEUtil.varList(vars);
         crlst = List.map(varlst,BackendVariable.varCref);
@@ -2178,7 +2178,7 @@ algorithm
         syst = List.fold(selecteqns,BackendEquation.equationAddDAE,syst);
         changedeqns = List.intRange2(size,size+listLength(selecteqns));
         // ToDO Fix this, thers chould be used updateIncidenceMatrixScalar
-        //syst = BackendDAEUtil.updateIncidenceMatrix(syst, ishared, changedeqns);
+        //syst = BackendDAEUtil.updateIncidenceMatrix(syst, changedeqns);
         shared = BackendDAEUtil.whenClauseAddDAE(wclst,ishared);
         (hov1,lov,dummystates) = selectDummyStates(listAppend(states,dstates),1,varSize,vars,hov,inLov,inDummyStates);
       then
@@ -2239,7 +2239,7 @@ algorithm
         syst = List.fold(selecteqns,BackendEquation.equationAddDAE,syst);
         changedeqns = List.intRange2(size,size+listLength(selecteqns));
         // ToDO Fix this, thers chould be used updateIncidenceMatrixScalar
-        //syst = BackendDAEUtil.updateIncidenceMatrix(syst, ishared, changedeqns);
+        //syst = BackendDAEUtil.updateIncidenceMatrix(syst, changedeqns);
         shared = BackendDAEUtil.whenClauseAddDAE(wclst,ishared);
         (hov1,lov,dummystates) = selectDummyStates(listAppend(states,dstates),1,varSize,vars,hov,inLov,inDummyStates);
       then
@@ -3338,7 +3338,7 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared, b1))
       equation
          BackendDump.dumpEqSystem(syst);
-         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.NORMAL());
+         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.NORMAL());
          BackendDump.dumpIncidenceMatrixT(mt);
          
          SOME(jac) = BackendDAEUtil.calculateJacobian(vars, eqns, m, true,shared);
@@ -3834,9 +3834,9 @@ algorithm
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
-        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,ishared,BackendDAE.NORMAL());
+        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL());
         mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
-        //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
+        //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
         graph = GraphML.getGraph("G",false);  
         ((_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(1,graph));
         neqns = BackendDAEUtil.equationArraySize(eqns);
@@ -3851,9 +3851,9 @@ algorithm
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
-        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,ishared,BackendDAE.NORMAL());
+        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL());
         //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
-        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
+        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
         graph = GraphML.getGraph("G",false);  
         ((_,_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(1,vec1,graph));
         //neqns = BackendDAEUtil.equationArraySize(eqns);
@@ -3870,7 +3870,7 @@ algorithm
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
-        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,ishared,BackendDAE.NORMAL());
+        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
         graph = GraphML.getGraph("G",false);  
         ((_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(1,graph));
         neqns = BackendDAEUtil.equationSize(eqns);

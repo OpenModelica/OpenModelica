@@ -2136,7 +2136,7 @@ protected function dumpIncidenceMatrixWork
 protected
  BackendDAE.IncidenceMatrix m;
 algorithm
-  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.NORMAL());
+  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
   _ := Util.arrayFold(m,dumpIncidenceMatrix2,(inOffset,1));
   outOffset := inOffset + arrayLength(m);
 end dumpIncidenceMatrixWork;

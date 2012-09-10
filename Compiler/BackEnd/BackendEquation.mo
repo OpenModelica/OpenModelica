@@ -1256,16 +1256,16 @@ public function equationRemove "function: equationRemove
   author: Frenkel TUD 2012-09
   Removes the equations from the array on the given possitoin but
   does not scale down the array size"
-  input BackendDAE.EquationArray inEquationArray;
   input Integer inPos "1 based index";
+  input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
 algorithm
-  outEquationArray := matchcontinue (inEquationArray,inPos)
+  outEquationArray := matchcontinue (inPos,inEquationArray)
     local
       Integer numberOfElement,arrSize,size,size1,eqnsize;
       array<Option<BackendDAE.Equation>> equOptArr;
       BackendDAE.Equation eqn;
-    case (BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr),_)
+    case (_,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr))
       equation
         true = intLe(inPos,numberOfElement);
         SOME(eqn) = equOptArr[inPos];
@@ -1274,6 +1274,12 @@ algorithm
         size1 = size - eqnsize;
       then
         BackendDAE.EQUATION_ARRAY(size1,numberOfElement,arrSize,equOptArr);
+    case (_,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr))
+      equation
+        true = intLe(inPos,numberOfElement);
+        NONE() = equOptArr[inPos];
+      then
+        inEquationArray;
     else        
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationRemove failed");

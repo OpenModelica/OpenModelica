@@ -1130,7 +1130,7 @@ algorithm
         evars = BackendDAEUtil.listVar1({});
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM(),{});
-        (m,mt) = BackendDAEUtil.incidenceMatrix(syst, shared, BackendDAE.ABSOLUTE());
+        (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, true,shared);
         // Jacobian of a Linear System is always linear 
@@ -2755,12 +2755,12 @@ algorithm
         (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, syst, shared, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, state);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst, shared,BackendDAE.SOLVABLE(), changedeqns,mapEqnIncRow,mapIncRowEqn);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), changedeqns,mapEqnIncRow,mapIncRowEqn);
         // print("new DAE:");
         // BackendDump.dumpEqSystem(syst);
         // BackendDump.dump(BackendDAE.DAE({syst},shared));
         // print("new IM:");
-        // (_,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,shared,BackendDAE.SOLVABLE());
+        // (_,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.SOLVABLE());
         // BackendDump.dumpIncidenceMatrix(m);
         // BackendDump.dumpStateVariables(BackendVariable.daeVars(syst));
       then
