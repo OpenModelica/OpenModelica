@@ -9594,17 +9594,17 @@ algorithm
     case (_,_,
       (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_)
       equation
-        (comp1,b) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,ojac,jacType);
-        acc = List.consOnTrue(b, comp1, iAcc);
-        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,b or iRunMatching,acc);
+        (comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,ojac,jacType);
+        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);
       then
         (acc,b1);
-    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps,_,_)
+    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_)
       equation
-        (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        (comp1,b) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
-        acc = List.consOnTrue(b, comp1, iAcc);
-        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,b or iRunMatching,acc);
+        //(eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+        //(comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
+        //(acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);
+        (comp1::_,true) = tearingSystemNew1(isyst,ishared,{comp1},false,{});
+        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc);
       then
         (acc,b1);
     case (_,_,comp::comps,_,_)
