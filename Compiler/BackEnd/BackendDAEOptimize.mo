@@ -5052,9 +5052,9 @@ algorithm
         BackendDAE.DAE({eqSystem},shared) = linearDAE1;
         BackendDAE.EQSYSTEM(variables,eqArray,_,_,matching) = eqSystem;
         BackendDAE.MATCHING(v1_new,v2_new,_) = matching;
-        (relaxedEqSystem,relaxedShared,_) = tearingSystemNew1(eqSystem,shared,{comps_Newton},false);
+        //(relaxedEqSystem,relaxedShared,_) = tearingSystemNew1(eqSystem,shared,{comps_Newton},false);
         print("\nrelaxedEqSystem\n");
-        BackendDump.dumpEqSystem(relaxedEqSystem);
+        //BackendDump.dumpEqSystem(relaxedEqSystem);
         print("\n----end of linear system----\n");
         
         //-------------
@@ -9558,10 +9558,11 @@ algorithm
       Boolean b,b1,b2;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
-      
-    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps)),(shared, b1))
+      array<Integer> ass1,ass2;
+    case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps)),(shared, b1))
       equation
-        (syst,shared,b2) = tearingSystemNew1(syst,shared,comps,false);
+        (comps,b2) = tearingSystemNew1(syst,shared,comps,false,{});
+        syst = Debug.bcallret2(b2, BackendDAEUtil.setEqSystemMatching, syst,BackendDAE.MATCHING(ass1,ass2,comps), syst);
         b = b1 or b2;
       then
         (syst,(shared,b));
@@ -9574,43 +9575,43 @@ protected function tearingSystemNew1 "function tearingSystemNew1
   input BackendDAE.Shared ishared;
   input BackendDAE.StrongComponents inComps;
   input Boolean iRunMatching;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
+  input BackendDAE.StrongComponents iAcc;
+  output BackendDAE.StrongComponents oComps;
   output Boolean outRunMatching;
 algorithm
-  (osyst,oshared,outRunMatching):=
-  matchcontinue (isyst,ishared,inComps,iRunMatching)
+  (oComps,outRunMatching):=
+  matchcontinue (isyst,ishared,inComps,iRunMatching,iAcc)
     local
       list<Integer> eindex,vindx;
       list<list<Integer>> othercomps;
       Boolean b,b1;
-      BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-      BackendDAE.StrongComponents comps;
+      BackendDAE.StrongComponents comps,acc;
       BackendDAE.StrongComponent comp,comp1;   
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
       BackendDAE.JacobianType jacType;
-    case (_,_,{},_)
-      then (isyst,ishared,iRunMatching);
-    case (_,shared,
-      (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_)
+    case (_,_,{},_,_)
+      then (listReverse(iAcc),iRunMatching);
+    case (_,_,
+      (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_)
       equation
-        (syst,shared,b) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,ojac,jacType);
-        (syst,shared,b1) = tearingSystemNew1(syst,shared,comps,b or iRunMatching);
+        (comp1,b) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,ojac,jacType);
+        acc = List.consOnTrue(b, comp1, iAcc);
+        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,b or iRunMatching,acc);
       then
-        (syst,shared,b1);
-    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps,_)
+        (acc,b1);
+    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1))::comps,_,_)
       equation
         (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        (syst,shared,b) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
-        (syst,shared,b1) = tearingSystemNew1(syst,shared,comps,b or iRunMatching);
+        (comp1,b) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
+        acc = List.consOnTrue(b, comp1, iAcc);
+        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,b or iRunMatching,acc);
       then
-        (syst,shared,b1);
-    case (_,_,comp::comps,_)
+        (acc,b1);
+    case (_,_,comp::comps,_,_)
       equation
-        (syst,shared,b) = tearingSystemNew1(isyst,ishared,comps,iRunMatching);
+        (acc,b) = tearingSystemNew1(isyst,ishared,comps,iRunMatching,comp::iAcc);
       then
-        (syst,shared,b);
+        (acc,b);
   end matchcontinue;  
 end tearingSystemNew1;
 
@@ -9622,8 +9623,7 @@ protected function tearingSystemNew1_1 "function tearingSystemNew1
   input list<Integer> vindx;
   input Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> ojac;
   input BackendDAE.JacobianType jacType;
-  output BackendDAE.EqSystem osyst;
-  output BackendDAE.Shared oshared;
+  output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 protected
   list<Integer> tvars,residual,unsolvables;
@@ -9706,7 +9706,8 @@ algorithm
   //  print("OtherEquationsOrder:\n"); 
   //  BackendDump.dumpComponentsOLD(othercomps); print("\n");
   // handle system in case of liniear and other cases 
-  (osyst,oshared,outRunMatching) := tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
+  //(osyst,oshared,outRunMatching) := tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
+  (ocomp,outRunMatching) := tearingSystemNew4_1(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
   Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(outRunMatching,"Ok system torn\n","System not torn\n"));
 end tearingSystemNew1_1;
 
@@ -10639,6 +10640,100 @@ algorithm
         tearingBFS2(rest,ilst,mt,ass1,ass2,columark,mark,newqueue);
   end match; 
 end tearingBFS2;
+
+protected function tearingSystemNew4_1 "function tearingSystemNew4
+  author: Frenkel TUD 2012-09"
+  input BackendDAE.JacobianType jacType;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.EqSystem subsyst;
+  input list<Integer> tvars;
+  input list<Integer> residual;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input list<list<Integer>> othercomps;
+  input list<Integer> eindex;
+  input list<Integer> vindx;   
+  input array<list<Integer>> mapEqnIncRow;
+  input array<Integer> mapIncRowEqn; 
+  output BackendDAE.StrongComponent ocomp;
+  output Boolean outRunMatching;
+algorithm
+  (ocomp,outRunMatching):=
+    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn)
+    local
+      list<Integer> ores,residual1,ovars;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst;
+      array<Integer> eindxarr,varindxarr;
+      Boolean linear;
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        Debug.fcall(Flags.TEARING_DUMP, print,"handle torn System\n");
+        // map indexes back
+        residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
+        residual1 = List.unique(residual1);
+        eindxarr = listArray(eindex);
+        ores = List.map1r(residual1,arrayGet,eindxarr);
+        varindxarr = listArray(vindx);
+        ovars = List.map1r(tvars,arrayGet,varindxarr);
+        eqnvartpllst = tearingSystemNew4_2(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,{});
+        linear = getLinearfromJacType(jacType);
+      then
+        (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear),true);           
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+      then
+        (BackendDAE.TORNSYSTEM({}, {}, {}, false),false);        
+  end matchcontinue;  
+end tearingSystemNew4_1;
+
+protected function tearingSystemNew4_2
+  input list<list<Integer>> othercomps;
+  input array<Integer> ass2;
+  input array<Integer> mapIncRowEqn;
+  input array<Integer> eindxarr;
+  input array<Integer> varindxarr;
+  input list<tuple<Integer,list<Integer>>> iAcc;
+  output list<tuple<Integer,list<Integer>>> oEqnVarTplLst;
+algorithm
+  oEqnVarTplLst :=
+  match (othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,iAcc)
+    local
+      list<list<Integer>> rest;
+      Integer e,v,c;
+      list<Integer> vlst,clst,elst;
+    case ({},_,_,_,_,_) then listReverse(iAcc);
+    case ({c}::rest,_,_,_,_,_)
+      equation
+        e = mapIncRowEqn[c];
+        e = eindxarr[e];
+        v = ass2[c];
+        v = varindxarr[v];
+      then
+        tearingSystemNew4_2(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,(e,{v})::iAcc);
+    case (clst::rest,_,_,_,_,_)
+      equation
+        elst = List.map1r(clst,arrayGet,mapIncRowEqn);
+        c::{} = List.unique(elst);       
+        e = mapIncRowEqn[c];
+        e = eindxarr[e];
+        vlst = List.map1r(clst,arrayGet,ass2);
+        vlst = List.map1r(vlst,arrayGet,varindxarr);
+      then
+        tearingSystemNew4_2(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,(e,vlst)::iAcc);
+  end match;
+end tearingSystemNew4_2;
+
+protected function getLinearfromJacType
+  input BackendDAE.JacobianType jacType;
+  output Boolean linear;
+algorithm
+  linear := match(jacType)
+    case (BackendDAE.JAC_CONSTANT()) then true;
+    case (BackendDAE.JAC_TIME_VARYING()) then true;
+    case (BackendDAE.JAC_NONLINEAR()) then false;
+    case (BackendDAE.JAC_NO_ANALYTIC()) then false;
+  end match;
+end getLinearfromJacType;
 
 protected function tearingSystemNew4 "function tearingSystemNew4
   author: Frenkel TUD 2012-05"

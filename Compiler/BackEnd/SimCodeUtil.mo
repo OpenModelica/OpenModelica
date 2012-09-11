@@ -4477,12 +4477,12 @@ algorithm
         (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs, jac, jac_tp, helpVarInfo,funcs,iuniqueEqIndex,itempvars);
       then
         (equations_,equations_,uniqueEqIndex,tempvars);
-/*    case (_, skipDiscInAlgorithm, false,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),_,comp as BackendDAE.TORNSYSTEM(tearingvars=tf, residualequations=rf, otherEqnVarTpl=eqnvartpllst, linear=b),helpVarInfo,_,_)
+    case (_, skipDiscInAlgorithm, false,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),_,comp as BackendDAE.TORNSYSTEM(tearingvars=tf, residualequations=rf, otherEqnVarTpl=eqnvartpllst, linear=b),helpVarInfo,_,_)
       equation
         (equations_,uniqueEqIndex,tempvars) = createTornSystem(b, skipDiscInAlgorithm, tf,rf,eqnvartpllst, isyst, ishared, helpVarInfo,iuniqueEqIndex,itempvars);
       then
         (equations_,equations_,uniqueEqIndex,tempvars);        
-*/    else
+    else
       equation
         msg = "createOdeSystem failed for " +& BackendDump.printComponent(inComp);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
@@ -4521,6 +4521,139 @@ algorithm
         (jac,jac_tp);          
   end match;
 end updateJacobian;
+
+protected function createTornSystem
+  input Boolean liniear; 
+  input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
+  input list<Integer> tearingVars;
+  input list<Integer> residualEqns;
+  input list<tuple<Integer,list<Integer>>> otherEqns;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input list<SimCode.HelpVarInfo> helpVarInfo;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  output list<SimCode.SimEqSystem> equations_;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+   (equations_,ouniqueEqIndex,otempvars) := 
+   matchcontinue(liniear,skipDiscInAlgorithm,tearingVars,residualEqns,otherEqns,isyst,ishared,helpVarInfo,iuniqueEqIndex,itempvars)
+     local
+       list<BackendDAE.Var> tvars;
+       list<BackendDAE.Equation> reqns;
+       BackendDAE.Variables vars;
+       BackendDAE.EquationArray eqns;
+       BackendVarTransform.VariableReplacements repl;
+       list<SimCode.SimVar> tempvars;
+       list<SimCode.SimEqSystem> simequations,resEqs;
+       Integer uniqueEqIndex;
+       list<DAE.ComponentRef> tcrs;
+     // linear case
+     /* TODO */
+     // nonliniear case  
+     case(_,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,_,_,_)
+       equation
+         //get tearing vars
+         tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
+         tvars = List.map(tvars, transformXToXd);
+         // get residual eqns
+         reqns = BackendEquation.getEqns(residualEqns, eqns);
+         reqns = replaceDerOpInEquationList(reqns);
+         // generate residual replacements
+         tcrs = List.map(tvars,BackendVariable.varCref);
+         repl = makeResidualReplacements(tcrs);
+         // generade other equations
+         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(otherEqns,repl,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,iuniqueEqIndex,itempvars,{});
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(reqns, repl,uniqueEqIndex,tempvars);
+        simequations = listAppend(simequations,resEqs);         
+       then
+         ({SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs)},uniqueEqIndex+1,tempvars);
+   end matchcontinue;
+end createTornSystem;
+
+protected function createTornSystemOtherEqns
+  input list<tuple<Integer,list<Integer>>> otherEqns;
+  input BackendVarTransform.VariableReplacements repl;
+  input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input list<SimCode.HelpVarInfo> helpVarInfo;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  input list<SimCode.SimEqSystem> isimequations;
+  output list<SimCode.SimEqSystem> equations_;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+   (equations_,ouniqueEqIndex,otempvars) := 
+   matchcontinue(otherEqns,repl,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,iuniqueEqIndex,itempvars,isimequations)
+     local
+       BackendDAE.EquationArray eqns;
+       list<SimCode.SimVar> tempvars;
+       list<SimCode.SimEqSystem> simequations;
+       Integer uniqueEqIndex,eqnindx;
+       BackendDAE.Equation eqn;
+       list<Integer> vars;
+       list<tuple<Integer,list<Integer>>> rest;
+       BackendDAE.EqSystem syst;
+       BackendDAE.StrongComponent comp;
+     case({},_,_,_,_,_,_,_,_)
+       then
+         (isimequations,iuniqueEqIndex,itempvars);
+     case((eqnindx,vars)::rest,_,_,BackendDAE.EQSYSTEM(orderedEqs=eqns),_,_,_,_,_)
+       equation
+         // get Eqn
+         eqn = BackendDAEUtil.equationNth(eqns, eqnindx-1);
+         // apply replacements
+         (eqn::_,_) = BackendVarTransform.replaceEquations({eqn}, repl, SOME(BackendVarTransform.skipPreOperator));
+         syst = BackendEquation.equationSetnthDAE(eqnindx-1, eqn, isyst);
+         // geneate comp
+         comp = createTornSystemOtherEqns1(eqn,eqnindx,vars);
+         (simequations,_,uniqueEqIndex,tempvars) = createEquations(false, false, true, skipDiscInAlgorithm, false, syst, ishared, {comp}, helpVarInfo, iuniqueEqIndex, itempvars);
+         simequations = listAppend(isimequations,simequations);
+         // generade other equations
+         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(rest,repl,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,uniqueEqIndex,tempvars,simequations);
+       then
+         (simequations,uniqueEqIndex,tempvars);
+   end matchcontinue;
+end createTornSystemOtherEqns;
+
+protected function createTornSystemOtherEqns1
+  input BackendDAE.Equation eqn;
+  input Integer eqnindx;
+  input list<Integer> varindx;
+  output BackendDAE.StrongComponent ocomp;
+algorithm
+  ocomp := match(eqn,eqnindx,varindx)
+    local
+      Integer v;
+    case (BackendDAE.EQUATION(exp=_),_,v::{})
+      then
+        BackendDAE.SINGLEEQUATION(eqnindx,v);
+    case (BackendDAE.RESIDUAL_EQUATION(exp=_),_,v::{})
+      then
+        BackendDAE.SINGLEEQUATION(eqnindx,v);
+    case (BackendDAE.SOLVED_EQUATION(source=_),_,v::{})
+      then
+        BackendDAE.SINGLEEQUATION(eqnindx,v);
+    case (BackendDAE.ARRAY_EQUATION(dimSize=_),_,_)
+      then
+        BackendDAE.SINGLEARRAY(eqnindx, varindx);
+    case (BackendDAE.ALGORITHM(size=_),_,_)
+      then
+        BackendDAE.SINGLEALGORITHM(eqnindx, varindx);
+    case (BackendDAE.COMPLEX_EQUATION(size=_),_,_)
+      then
+        BackendDAE.SINGLECOMPLEXEQUATION(eqnindx, varindx);
+    else
+      equation
+        print("SimCodeUtil.createTornSystemOtherEqns1 failed for\n");
+        BackendDump.dumpEqns({eqn});
+      then
+        fail();
+  end match;
+end createTornSystemOtherEqns1;
 
 protected function generateTearingSystem "function: generateTearingSystem
   author: Frenkel TUD
