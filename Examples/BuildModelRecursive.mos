@@ -15,8 +15,9 @@ system("rm -f tmp.date");
 
 if MSLVersion == "3.2" then
   loadModel(ModelicaTest,{"1.1"});
-  loadModel(ObsoleteModelica3,{"3.2.1"});
-  loadModelicaTest:="\nloadModel(ModelicaTest,{\"1.1\"});\nloadModel(ObsoleteModelica3,{\"3.2.1\"});";
+  // Loading ObsoleteModelica3 causes many errors even while flattening models that do not depend on it
+  // loadModel(ObsoleteModelica3,{"3.2.1"});
+  loadModelicaTest:="\nloadModel(ModelicaTest,{\"1.1\"});\n";
 else
   loadModelicaTest:="";
 end if;

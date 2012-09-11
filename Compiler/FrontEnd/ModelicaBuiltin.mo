@@ -2443,7 +2443,7 @@ function isExperiment "An experiment is defined as having annotation Experiment(
 external "builtin";
 end isExperiment;
 
-function loadModelica3d "Please start the server using python $OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py or blender2.59"
+function loadModelica3d
   output Boolean status;
 protected
   String m3d;
@@ -2452,6 +2452,12 @@ algorithm
   status := status and loadModel(ModelicaServices,{"1.0 modelica3d"});
   m3d:=getInstallationDirectoryPath()+"/lib/omlibrary-modelica3d/";
   status := status and min(loadFile({m3d + file for file in {"DoublePendulum.mo","Engine1b.mo","Internal.mo","Pendulum.mo"}}));
+  annotation(Documentation(info="<html>
+<h2>Usage</h2>
+<p>Modelica3d requires some changes to the standard libraries in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an m3d object.
+This API call will load the modified MSL 3.1 and MS 1.0 so Modelica3D runs.</p>
+<p>You will also need to start an m3d backend to render the results. We hid them in $OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py (or blender2.59).</p>
+ </html>")
 end loadModelica3d;
 
 annotation(preferredView="text");
