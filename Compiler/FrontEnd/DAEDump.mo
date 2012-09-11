@@ -63,6 +63,39 @@ protected import ClassInf;
 protected import Algorithm;
 protected import SCodeDump;
 protected import List;
+protected import Flags;
+protected import DAEDumpTpl;
+protected import Tpl;
+
+
+public uniontype splitElements
+  record SPLIT_ELEMENTS
+    list<DAE.Element> v;
+    list<DAE.Element> ie;
+    list<DAE.Element> ia;
+    list<DAE.Element> e;
+    list<DAE.Element> a;
+    list<DAE.Element> co;
+    list<DAE.Element> o;
+    list<DAE.Element> ca;
+  end SPLIT_ELEMENTS;
+end splitElements; 
+
+public uniontype compWithSplitElements
+  record COMP_WITH_SPLIT
+    String name;
+    splitElements spltElems;    
+    Option<SCode.Comment> comment;
+  end COMP_WITH_SPLIT;
+end compWithSplitElements;
+
+public uniontype functionList
+  record FUNCTION_LIST
+    list<DAE.Function> funcs;
+  end FUNCTION_LIST;
+end functionList; 
+
+
 
 public function printDAE "function: printDAE
   This function prints out a list of elements (i.e. a DAE)
@@ -1630,12 +1663,11 @@ algorithm
       then
         ();
     
-    case (DAE.STMT_FOR(iter = id,index=index,range = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(iter = id,range = e,statementLst = stmts),i)
       equation
         indent(i);
         Print.printBuf("for ");
         Print.printBuf(id);
-        Debug.bcall(index <> -1, Print.printBuf, " /* iter index " +& intString(index) +& " */");
         Print.printBuf(" in ");
         ExpressionDump.printExp(e);
         Print.printBuf(" loop\n");
@@ -2742,11 +2774,29 @@ public function dumpStr "function: dumpStr
   input DAE.FunctionTree functionTree;
   output String outString;
 algorithm
-  outString := match (inDAElist,functionTree)
+  outString := matchcontinue (inDAElist,functionTree)
     local      
       IOStream.IOStream myStream;
       String str;
+      list<DAE.Element> daelist;
+      list<DAE.Function> funcs;
+      splitElements splElems;  
+      list<compWithSplitElements> fixedDae;   
+      functionList funList;
+    case (DAE.DAE(daelist), functionTree)
+      equation
+    
+        true = Flags.isSet(Flags.DUMP_DAE);
+          
+        funList = dumpFunctionList(functionTree);
+                 
+        fixedDae = List.map(daelist, dumpDAEList);
+        
+        str = Tpl.tplString2(DAEDumpTpl.dumpDAE, fixedDae, funList);
 
+      then
+        str;
+        
     case (inDAElist,functionTree)
       equation
         myStream = IOStream.create("dae", IOStream.LIST());
@@ -2754,7 +2804,7 @@ algorithm
         str = IOStream.string(myStream);
       then
         str;
-  end match;
+  end matchcontinue;
 end dumpStr;
 
 public function dumpElementsStr "function: dumpElementsStr
@@ -2847,6 +2897,69 @@ algorithm
         str;
   end match;
 end dumpStream;
+
+public function dumpDAEList "function: dumpDAEList
+   returns split  DAE elements(Mainly important for template based DAE unparser) :
+   variables, initial equations, initial algorithms, 
+   equations, algorithms, constraints and external objects"
+  input DAE.Element inElement;
+  output compWithSplitElements outCompWSplElem;
+algorithm
+  (outCompWSplElem) := match (inElement)
+    local      
+      String n;
+      list<DAE.Element> l;
+      Option<SCode.Comment> c;
+            
+      list<DAE.Element> v;
+      list<DAE.Element> ie;
+      list<DAE.Element> ia;
+      list<DAE.Element> e;
+      list<DAE.Element> a;
+      list<DAE.Element> co;
+      list<DAE.Element> o;
+      list<DAE.Element> ca;
+      splitElements loc_splelem;
+      
+      compWithSplitElements compWSplElem;
+      
+
+    case (DAE.COMP(ident = n,dAElist = l,comment = c))
+      equation
+        
+       (v,ie,ia,e,a,ca,co,o) = DAEUtil.splitElements(l);
+        
+        loc_splelem = SPLIT_ELEMENTS(v,ie,ia,e,a,ca,co,o);
+          
+        compWSplElem = COMP_WITH_SPLIT(n, loc_splelem, c);        
+
+      then
+        (compWSplElem);
+  end match;
+end dumpDAEList;
+
+public function dumpFunctionList " returns sorted functions and record constructors in alphabetical order
+  (mainly important for template based DAE unparser)."
+  input DAE.FunctionTree functionTree;
+  output functionList funList;
+algorithm
+  (funList) := match (functionTree)
+    local      
+      list<DAE.Function> funcs;
+      functionList funList;
+
+    case (functionTree)
+      equation
+        funcs = DAEUtil.getFunctionList(functionTree);
+        funcs = sortFunctions(funcs);
+        funList = FUNCTION_LIST(funcs) ;
+      
+      then
+        (funList);
+  end match;
+end dumpFunctionList;
+
+
 
 protected function dumpCompElementStream "function: dumpCompElementStream
   Dumps components to a stream."
