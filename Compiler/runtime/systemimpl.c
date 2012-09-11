@@ -1621,7 +1621,7 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
       /* fprintf(stderr, "entry %s/%s\n", entries[i].dir, entries[i].file);
       fprintf(stderr, "entry version %lx expected %lx extra=%s\n", entries[i].version, version, entries[i].versionExtra); */
 
-      if (entries[i].version == version) {
+      if (entries[i].version == version && entries[i].versionExtra[0] == '\0') {
         *outDir = entries[i].dir;
         *outName = entries[i].file;
         *isDir = entries[i].fileIsDir;
@@ -1635,7 +1635,7 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
       /* Makes us load 3.2.1 if 3.2.0.0 is not available.
        * Note that all 4 levels are present and 3.2 is equivalent to 3.2.0.0
        */
-      if ((entries[i].version & 0xFFFF0000) == version) {
+      if ((entries[i].version & 0xFFFF0000) == version && entries[i].versionExtra[0] == '\0') {
         if (entries[i].version > foundVersion) {
           foundVersion = entries[i].version;
           foundIndex = i;
