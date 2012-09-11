@@ -2457,7 +2457,7 @@ algorithm
 <p>Modelica3d requires some changes to the standard libraries in order to work correctly. These changes will make your MultiBody models unable to simulate because they need an m3d object.
 This API call will load the modified MSL 3.1 and MS 1.0 so Modelica3D runs.</p>
 <p>You will also need to start an m3d backend to render the results. We hid them in $OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py (or blender2.59).</p>
- </html>")
+ </html>"));
 end loadModelica3d;
 
 annotation(preferredView="text");
