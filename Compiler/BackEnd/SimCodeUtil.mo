@@ -4584,7 +4584,6 @@ algorithm
          tcrs = List.map(tvars,BackendVariable.varCref);
          repl = makeResidualReplacements(tcrs);
          // x = xloc
-         // x=..,y=..
          (crefs,elst) = BackendVarTransform.getAllReplacements(repl);
          ecrlst = List.map(crefs,Expression.crefExp);
          exptl = List.threadTuple(ecrlst,elst);
@@ -4678,6 +4677,7 @@ algorithm
       equation
         print("SimCodeUtil.createTornSystemOtherEqns1 failed for\n");
         BackendDump.dumpEqns({eqn});
+        print("Eqn: " +& intString(eqnindx) +& " Vars: " +& stringDelimitList(List.map(varindx,intString),", ") +& "\n");
       then
         fail();
   end match;

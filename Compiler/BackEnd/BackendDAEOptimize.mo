@@ -10713,8 +10713,7 @@ algorithm
     case (clst::rest,_,_,_,_,_)
       equation
         elst = List.map1r(clst,arrayGet,mapIncRowEqn);
-        c::{} = List.unique(elst);       
-        e = mapIncRowEqn[c];
+        e::{} = List.unique(elst);  
         e = eindxarr[e];
         vlst = List.map1r(clst,arrayGet,ass2);
         vlst = List.map1r(vlst,arrayGet,varindxarr);
