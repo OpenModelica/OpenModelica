@@ -677,7 +677,7 @@ protected function expandEquation
 algorithm
   outElements := matchcontinue(inEquation, inSubscripts, inAccumEl)
     local
-      DAE.Exp rhs, lhs, exp, msg;
+      DAE.Exp rhs, lhs, exp, msg, level;
       DAE.ComponentRef cref1;
       DAE.Type ty1;
       list<DAE.Element> accum_el;
@@ -731,11 +731,11 @@ algorithm
       then
         accum_el;
         
-    case (InstTypes.ASSERT_EQUATION(condition = exp, message = msg, info = info), _, _)
+    case (InstTypes.ASSERT_EQUATION(condition = exp, message = msg, level = level, info = info), _, _)
       equation
         ty1 = Expression.typeof(exp);
         dims = Types.getDimensions(ty1);
-        accum_el = DAE.ASSERT(exp, msg, DAE.emptyElementSource)::inAccumEl;
+        accum_el = DAE.ASSERT(exp, msg, level, DAE.emptyElementSource)::inAccumEl;
       then
         accum_el;
         

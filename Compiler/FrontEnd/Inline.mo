@@ -825,7 +825,7 @@ algorithm
       DAE.VarParallelism parallelism;
       DAE.VarVisibility protection;
       DAE.Type ty;
-      DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1;
+      DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1,exp3,exp3_1;
       DAE.InstDims dims;
       DAE.ConnectorType ct;
       Option<DAE.VariableAttributes> variableAttributesOption;
@@ -959,13 +959,14 @@ algorithm
       then
         (DAE.COMP(i,elist_1,source,absynCommentOption),true);
 
-    case(DAE.ASSERT(exp1,exp2,source) ,fns)
+    case(DAE.ASSERT(exp1,exp2,exp3,source) ,fns)
       equation
         (exp1_1,source,b1) = inlineExp(exp1,fns,source);
         (exp2_1,source,b2) = inlineExp(exp2,fns,source);
-        true = b1 or b2;
+        (exp3_1,source,b3) = inlineExp(exp3,fns,source);
+        true = b1 or b2 or b3;
       then
-        (DAE.ASSERT(exp1_1,exp2_1,source),true);
+        (DAE.ASSERT(exp1_1,exp2_1,exp3_1,source),true);
 
     case(DAE.TERMINATE(exp,source),fns)
       equation

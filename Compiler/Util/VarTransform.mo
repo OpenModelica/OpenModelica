@@ -178,7 +178,7 @@ algorithm
       DAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.Type tp,ftp;
-      DAE.Exp bindExp,bindExp2,e,e2,e22,e1,e11;
+      DAE.Exp bindExp,bindExp2,e,e2,e22,e1,e11,e3,e32;
       DAE.InstDims dims;
       DAE.StartValue start;
       DAE.ConnectorType ct;
@@ -335,13 +335,14 @@ algorithm
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then elt::dae2;
 
-    case (DAE.ASSERT(e1,e2,source)::dae,repl,condExpFunc)
+    case (DAE.ASSERT(e1,e2,e3,source)::dae,repl,condExpFunc)
       equation
         (e11,_) = replaceExp(e1, repl, condExpFunc);
         (e22,_) = replaceExp(e2, repl, condExpFunc);
+        (e32,_) = replaceExp(e3, repl, condExpFunc);
         /* TODO: Add operation to source */
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-      then DAE.ASSERT(e11,e22,source)::dae2;
+      then DAE.ASSERT(e11,e22,e32,source)::dae2;
 
     case (DAE.TERMINATE(e1,source)::dae,repl,condExpFunc)
       equation

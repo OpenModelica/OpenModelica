@@ -268,6 +268,7 @@ public uniontype Element
   record ASSERT " The Modelica builtin assert"
     Exp condition;
     Exp message;
+    Exp level;
     ElementSource source "the origin of the component/equation/algorithm";
   end ASSERT;
 
@@ -301,6 +302,9 @@ public uniontype Element
     
   
 end Element;
+
+public constant Exp ASSERTIONLEVEL_ERROR = ENUM_LITERAL(Absyn.QUALIFIED("AssertionLevel",Absyn.IDENT("error")),1);
+public constant Exp ASSERTIONLEVEL_WARNING = ENUM_LITERAL(Absyn.QUALIFIED("AssertionLevel",Absyn.IDENT("warning")),2);
 
 public uniontype Function
   record FUNCTION " A Modelica function"

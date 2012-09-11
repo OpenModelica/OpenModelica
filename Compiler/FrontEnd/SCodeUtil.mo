@@ -1717,7 +1717,7 @@ algorithm
   outEEquation := matchcontinue (inEquation,inComment,inInfo,inIsInitial)
     local
       list<SCode.EEquation> tb_1,fb_1,eb_1,l_1;
-      Absyn.Exp e,ee,econd_1,cond,econd,e1,e2;
+      Absyn.Exp e,ee,econd_1,cond,econd,e1,e2,e3;
       list<Absyn.EquationItem> tb,fb,ei,eb,l;
       SCode.EEquation eq;
       list<tuple<Absyn.Exp, list<Absyn.EquationItem>>> eis,elsewhen_;
@@ -1813,8 +1813,12 @@ algorithm
         fail();
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com,info,_)
-      then SCode.EQ_ASSERT(e1,e2,com,info);
+                             functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com,info,_)
+      then SCode.EQ_ASSERT(e1,e2,Absyn.CREF(Absyn.CREF_QUAL("AssertionLevel",{},Absyn.CREF_IDENT("error",{}))),com,info);
+
+    case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
+                              functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2,e3},argNames = {})),com,info,_)
+      then SCode.EQ_ASSERT(e1,e2,e3,com,info);
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("terminate", _),
                             functionArgs = Absyn.FUNCTIONARGS(args = {e1},argNames = {})),com,info,_)

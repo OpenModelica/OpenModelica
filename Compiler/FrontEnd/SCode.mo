@@ -312,6 +312,7 @@ uniontype EEquation
   record EQ_ASSERT "the assert equation"
     Absyn.Exp condition "the assert condition";
     Absyn.Exp message   "the assert message";
+    Absyn.Exp level;
     Option<Comment> comment;
     Absyn.Info info;
   end EQ_ASSERT;
@@ -1808,7 +1809,7 @@ algorithm
     local
       String id, id_1;
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
-      Absyn.Exp e_1,e_2;
+      Absyn.Exp e_1,e_2,e_3;
       list<Absyn.Exp> eLst;
       Absyn.ComponentRef cr_1, cr_2;
       list<EEquation> eeqLst;
@@ -1862,11 +1863,12 @@ algorithm
           lst_3=findIteratorInElsewhen(id,ew);
           lst=List.flatten({lst_1,lst_2,lst_3});
         then lst;
-      case (id,EQ_ASSERT(condition = e_1, message = e_2))
+      case (id,EQ_ASSERT(condition = e_1, message = e_2, level = e_3))
         equation
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=Absyn.findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
+          lst_3=Absyn.findIteratorInExp(id,e_3);
+          lst=List.flatten({lst_1,lst_2,lst_3});
         then lst;
       case (id,EQ_TERMINATE(message = e_1))
         equation
@@ -2483,7 +2485,7 @@ algorithm
       TraverseFunc traverser;
       Argument arg;
       tuple<TraverseFunc, Argument> tup;
-      Absyn.Exp e1, e2;
+      Absyn.Exp e1, e2, e3;
       list<Absyn.Exp> expl1;
       list<list<EEquation>> then_branch;
       list<EEquation> else_branch, eql;
@@ -2527,12 +2529,13 @@ algorithm
       then
         (EQ_WHEN(e1, eql, else_when, comment, info), tup);
 
-    case (EQ_ASSERT(e1, e2, comment, info), (traverser, arg))
+    case (EQ_ASSERT(e1, e2, e3, comment, info), (traverser, arg))
       equation
         ((e1, arg)) = traverser((e1, arg));
         ((e2, arg)) = traverser((e2, arg));
+        ((e3, arg)) = traverser((e3, arg));
       then
-        (EQ_ASSERT(e1, e2, comment, info), (traverser, arg));
+        (EQ_ASSERT(e1, e2, e3, comment, info), (traverser, arg));
 
     case (EQ_TERMINATE(e1, comment, info), (traverser, arg))
       equation

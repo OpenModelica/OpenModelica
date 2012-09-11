@@ -1047,7 +1047,7 @@ algorithm
     local
       String id;
       Absyn.ComponentRef cref,cref1,cref2;
-      Absyn.Exp exp,exp1,exp2;
+      Absyn.Exp exp,exp1,exp2,exp3;
       list<Absyn.Exp> expl;
       list<SCode.EEquation> eql;
       list<list<SCode.EEquation>> eqll;
@@ -1086,11 +1086,12 @@ algorithm
         (cache,eql) = fixList(cache,env,eql,ht,fixEEquation);
         (cache,whenlst) = fixListTuple2(cache,env,whenlst,ht,fixExp,fixListEEquation);
       then (cache,SCode.EQ_WHEN(exp,eql,whenlst,comment,info));
-    case (cache,env,SCode.EQ_ASSERT(exp1,exp2,comment,info),ht)
+    case (cache,env,SCode.EQ_ASSERT(exp1,exp2,exp3,comment,info),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
-      then (cache,SCode.EQ_ASSERT(exp1,exp2,comment,info));
+        (cache,exp3) = fixExp(cache,env,exp3,ht);
+      then (cache,SCode.EQ_ASSERT(exp1,exp2,exp3,comment,info));
     case (cache,env,SCode.EQ_TERMINATE(exp,comment,info),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);

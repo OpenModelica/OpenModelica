@@ -2969,8 +2969,8 @@ protected function instEEquation
 algorithm
   (outEquation,outFunctions) := matchcontinue (inEquation, inEnv, inPrefix, inFunctions)
     local
-      Absyn.Exp exp1, exp2;
-      DAE.Exp dexp1, dexp2;
+      Absyn.Exp exp1, exp2, exp3;
+      DAE.Exp dexp1, dexp2, dexp3;
       Absyn.ComponentRef cref1, cref2;
       DAE.ComponentRef dcref1, dcref2;
       Absyn.Info info;
@@ -3044,12 +3044,13 @@ algorithm
       then
         (InstTypes.WHEN_EQUATION(inst_branches, info), functions);
 
-    case (SCode.EQ_ASSERT(condition = exp1, message = exp2, info = info), _, _, functions)
+    case (SCode.EQ_ASSERT(condition = exp1, message = exp2, level = exp3, info = info), _, _, functions)
       equation
         (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
         (dexp2,functions) = instExp(exp2, inEnv, inPrefix, info, functions);
+        (dexp3,functions) = instExp(exp3, inEnv, inPrefix, info, functions);
       then
-        (InstTypes.ASSERT_EQUATION(dexp1, dexp2, info), functions);
+        (InstTypes.ASSERT_EQUATION(dexp1, dexp2, dexp3, info), functions);
 
     case (SCode.EQ_TERMINATE(message = exp1, info = info), _, _, functions)
       equation

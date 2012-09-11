@@ -421,10 +421,10 @@ algorithm
       SCode.Initial initial_;
       Boolean impl;
       String i,s;
-      Absyn.Exp e2,e1,e,ee;
+      Absyn.Exp e2,e1,e,ee,e3;
       list<Absyn.Exp> conditions;
-      DAE.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2;
-      DAE.Properties prop1,prop2;
+      DAE.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2,e3_1,e3_2;
+      DAE.Properties prop1,prop2,prop3;
       list<SCode.EEquation> b,fb,el,eel;
       list<list<SCode.EEquation>> tb;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> eex;
@@ -447,7 +447,7 @@ algorithm
       Absyn.Info info;
       DAE.Element daeElt2;
       list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec;
-      Integer i1,ipriority;
+      Integer i1,ipriority,index;
       list<DAE.Element> daeElts,daeElts3;
       DAE.ComponentRef cr_,cr1_,cr2_;
       DAE.Type t;
@@ -704,19 +704,24 @@ algorithm
         fail();
     
     // assert statements
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,info = info),initial_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_ASSERT(condition = e1,message = e2,level = e3, info = info),initial_,impl,graph)
       equation 
         (cache,e1_1,prop1 as DAE.PROP(DAE.T_BOOL(varLst = _),_),_) = Static.elabExp(cache,env, e1, impl,NONE(),true,pre,info) "assert statement" ;
-        (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
         (cache,e2_1,prop2 as DAE.PROP(DAE.T_STRING(varLst = _),_),_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
-        (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl, info);
+        (cache,e3_1,prop3 as DAE.PROP(DAE.T_ENUMERATION(path = Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel"))),_),_) = Static.elabExp(cache,env, e3, impl,NONE(),true,pre,info);
+        
+        (cache,e1_1,prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl, info);
+        (cache,e2_1,prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl, info);
+        (cache,e3_1,prop3) = Ceval.cevalIfConstant(cache, env, e3_1, prop3, impl, info);
+
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
         (cache,e2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_1, pre);
+        (cache,e3_2) = PrefixUtil.prefixExp(cache, env, ih, e3_1, pre);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        dae = DAE.DAE({DAE.ASSERT(e1_2,e2_2,source)});
+        dae = DAE.DAE({DAE.ASSERT(e1_2,e2_2,e3_2,source)});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
 
@@ -4046,6 +4051,7 @@ algorithm
           DAE.ASSERT(
             DAE.RELATION(crefExp1,DAE.EQUAL(DAE.T_BOOL_DEFAULT),crefExp2,-1,NONE()),
             DAE.SCONST("automatically generated from connect"),
+            DAE.ASSERTIONLEVEL_ERROR,
             source) // set the origin of the element
           }),graph);
 

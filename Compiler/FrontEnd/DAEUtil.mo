@@ -1943,7 +1943,7 @@ algorithm
       list<Absyn.Path> h;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
-      DAE.Exp e_1,e1_1,e2_1,e1,e2,e_2,e;
+      DAE.Exp e_1,e1_1,e2_1,e1,e2,e_2,e,e3,e_3;
       Absyn.Path p;
       Absyn.InnerOuter io;
       list<DAE.Exp> conds, conds_1;
@@ -2090,13 +2090,14 @@ algorithm
       then
         (DAE.COMP(id,elts2,source,comment) :: elts_1);
 
-    case ((DAE.ASSERT(condition = e1,message=e2,source = source) :: elts))
+    case ((DAE.ASSERT(condition = e1,message=e2,level=e3,source = source) :: elts))
       equation
         elts_1 = toModelicaFormElts(elts);
         e_1 = toModelicaFormExp(e1);
         e_2 = toModelicaFormExp(e2);
+        e_3 = toModelicaFormExp(e3);
       then
-        (DAE.ASSERT(e_1,e_2,source) :: elts_1);
+        (DAE.ASSERT(e_1,e_2,e_3,source) :: elts_1);
     case ((DAE.TERMINATE(message = e1,source = source) :: elts))
       equation
         elts_1 = toModelicaFormElts(elts);
@@ -3883,7 +3884,7 @@ algorithm
       DAE.ConnectorType ct;
       DAE.VarParallelism prl;
       DAE.VarVisibility prot;
-      DAE.Exp e,e2,e22,e1,e11,maybeCrExp;
+      DAE.Exp e,e2,e22,e1,e11,maybeCrExp,e3,e32;
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       Option<DAE.Exp> optExp;
@@ -3896,7 +3897,7 @@ algorithm
       Absyn.Path path;
       list<DAE.Exp> expl;
       DAE.ElementSource source "the origin of the element";
-      Type_a extraArg;      
+      Type_a extraArg;
   
     case(DAE.VAR(cr,kind,dir,prl,prot,tp,optExp,dims,ct,source,attr,cmt,io),func,extraArg)
       equation
@@ -4009,11 +4010,12 @@ algorithm
     case(elt as DAE.EXTOBJECTCLASS(path,source),func,extraArg)
       then (elt,extraArg);
         
-    case(DAE.ASSERT(e1,e2,source),func,extraArg)
+    case(DAE.ASSERT(e1,e2,e3,source),func,extraArg)
       equation
         ((e11,extraArg)) = func((e1,extraArg));
         ((e22,extraArg)) = func((e2,extraArg));
-        elt = DAE.ASSERT(e11,e22,source);
+        ((e32,extraArg)) = func((e3,extraArg));
+        elt = DAE.ASSERT(e11,e22,e32,source);
       then 
         (elt,extraArg);
         

@@ -2982,8 +2982,8 @@ protected function dumpEquationsStream "function: dumpEquationsStream
 algorithm
   outStream := match (inElementLst, inStream)
     local
-      String s1,s2,s;
-      DAE.Exp e1,e2,e;
+      String s1,s2,s3,s;
+      DAE.Exp e1,e2,e3,e;
       list<DAE.Exp> conds,expl;
       list<DAE.Element> xs,xs1,xs2;
       list<list<DAE.Element>> tb;
@@ -3037,11 +3037,21 @@ algorithm
       then
         str;
 
-    case ((DAE.ASSERT(condition=e1,message = e2) :: xs), str)
+    case ((DAE.ASSERT(condition=e1,message = e2,level = DAE.ENUM_LITERAL(index=1)) :: xs), str)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         str = IOStream.appendList(str, {"  assert(",s1,",",s2,");\n"});
+        str = dumpEquationsStream(xs, str);
+      then
+        str;
+
+    case ((DAE.ASSERT(condition=e1,message = e2,level = e3) :: xs), str)
+      equation
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        s3 = ExpressionDump.printExpStr(e3);
+        str = IOStream.appendList(str, {"  assert(",s1,",",s2,",",s3,");\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;

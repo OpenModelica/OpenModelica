@@ -1132,7 +1132,7 @@ algorithm
   (outAccumEql, outConnections) :=
   match(inEquation, inSymbolTable, inAccumEql, inConnections)
     local
-      DAE.Exp rhs, lhs, exp1, exp2;
+      DAE.Exp rhs, lhs, exp1, exp2, exp3;
       list<DAE.Exp> args;
       SymbolTable st;
       Absyn.Info info;
@@ -1200,11 +1200,12 @@ algorithm
       then
         (eq :: acc_el, Connect2.NO_CONNECTIONS());
 
-    case (InstTypes.ASSERT_EQUATION(exp1, exp2, info), st, acc_el, _)
+    case (InstTypes.ASSERT_EQUATION(exp1, exp2, exp3, info), st, acc_el, _)
       equation
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
         (exp2, _, _) = typeExp(exp2, EVAL_CONST(), CONTEXT_MODEL(), st);
-        eq = InstTypes.ASSERT_EQUATION(exp1, exp2, info);
+        (exp3, _, _) = typeExp(exp3, EVAL_CONST(), CONTEXT_MODEL(), st);
+        eq = InstTypes.ASSERT_EQUATION(exp1, exp2, exp3, info);
       then
         (eq :: acc_el, Connect2.NO_CONNECTIONS());
 

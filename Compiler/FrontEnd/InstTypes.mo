@@ -294,6 +294,7 @@ public uniontype Equation
   record ASSERT_EQUATION
     DAE.Exp condition "The assert condition.";
     DAE.Exp message "The message to display if the assert fails.";
+    DAE.Exp level "Error or warning";
     Absyn.Info info;
   end ASSERT_EQUATION;
 

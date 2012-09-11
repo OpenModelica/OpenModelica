@@ -1898,12 +1898,13 @@ algorithm
         s1 = stringDelimitList(List.map(vs, unparseVarAttr),", ");
         s2 = "Boolean(" +& s1 +& ")";
       then s2;
-    case (DAE.T_ENUMERATION(names = l, literalVarLst=vs))
+    case (DAE.T_ENUMERATION(path = path, names = l, literalVarLst=vs))
       equation
-        s1 = stringDelimitList(l, ", ");
-        s2 = stringAppendList(List.map(vs, unparseVar));
-        s2 = Util.if_(s2 ==& "", "", "(" +& s2 +& ")");
-        str = stringAppendList({"enumeration(",s1,")"});
+        s1 = Util.if_(Config.typeinfo(), " /*" +& Absyn.pathString(path) +& "*/ (", "(");
+        s2 = stringDelimitList(l, ", ");
+        /* s2 = stringAppendList(List.map(vs, unparseVar));
+        s2 = Util.if_(s2 ==& "", "", "(" +& s2 +& ")"); */
+        str = stringAppendList({"enumeration",s1,s2,")"});
       then
         str;
     

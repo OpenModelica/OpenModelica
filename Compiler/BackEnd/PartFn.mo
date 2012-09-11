@@ -213,7 +213,7 @@ algorithm
       Ident i;
       Absyn.Path p;
       list<DAE.Exp> elst,elst_1;
-      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1,e3,e3_1;
       DAE.Algorithm alg,alg_1;
       DAE.ElementSource source;
       list<DAE.Function> dae;
@@ -329,12 +329,13 @@ algorithm
       then
         (DAE.COMP(i,elts_1,source,absynCommentOption),dae);
 
-    case(DAE.ASSERT(e1,e2,source),dae)
+    case(DAE.ASSERT(e1,e2,e3,source),dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
+        ((e3_1,dae)) = Expression.traverseExp(e3,elabExp,dae);
       then
-        (DAE.ASSERT(e1_1,e2_1,source),dae);
+        (DAE.ASSERT(e1_1,e2_1,e3_1,source),dae);
 
     case(DAE.TERMINATE(e,source),dae)
       equation
