@@ -3916,8 +3916,8 @@ protected function createNonlinearResidualEquationsComplex
 algorithm
   (equations_,ouniqueEqIndex,otempvars) := matchcontinue (inExp,inExp1,source, repl,iuniqueEqIndex,itempvars)
     local
-      DAE.ComponentRef cr;
-      DAE.Exp e1,e2,e1_1,e2_1;
+      DAE.ComponentRef cr,crtmp;
+      DAE.Exp e1,e2,e1_1,e2_1,etmp;
       DAE.Statement stms;
       DAE.Type tp;
       list<DAE.Var> varLst;
@@ -3936,38 +3936,58 @@ algorithm
         //((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
-        (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))  = Expression.typeof(e1);
+        (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e1);
+        // tmp
+        ident = Absyn.pathString(path);
+        crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
+        tempvars = greateTempVars(varLst,crtmp,itempvars);
+        // 0 = a - tmp        
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
+        (e1lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
+        e2lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,crtmp);
+        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
+        // x=..,y=..
         (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
         e4lst = List.map(crefs,Expression.crefExp);
         exptl1 = List.threadTuple(e4lst,e3lst);
-        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);
-        stms = DAE.STMT_ASSIGN(tp,e1,e2_1,source);
+        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);        
+        // tmp = f(x,y)
+        etmp = Expression.crefExp(crtmp);
+        stms = DAE.STMT_ASSIGN(tp,etmp,e2_1,source);
         eqSystlst = listAppend(eqSystlst1,SimCode.SES_ALGORITHM(uniqueEqIndex,{stms})::eqSystlst);
       then
-         (eqSystlst,uniqueEqIndex+1,itempvars);
+         (eqSystlst,uniqueEqIndex+1,tempvars);
     /* f() = a */    
     case (e1,(e2 as DAE.CREF(componentRef = cr)),_,_,_,_)
       equation
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         //((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
-        (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)))  = Expression.typeof(e2);
+        (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e2);
+        // tmp
+        ident = Absyn.pathString(path);
+        crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
+        tempvars = greateTempVars(varLst,crtmp,itempvars);
+        // 0 = a - tmp        
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
+        (e1lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
+        e2lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,crtmp);
+        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);     
+        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
+        // x=..,y=..
         (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
         e4lst = List.map(crefs,Expression.crefExp);
         exptl1 = List.threadTuple(e4lst,e3lst);
-        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);
-        stms = DAE.STMT_ASSIGN(tp,e2,e1_1,source);
+        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);        
+        // tmp = f(x,y)
+        etmp = Expression.crefExp(crtmp);
+        stms = DAE.STMT_ASSIGN(tp,etmp,e1_1,source);
         eqSystlst = listAppend(eqSystlst1,SimCode.SES_ALGORITHM(uniqueEqIndex,{stms})::eqSystlst);
       then
-         (eqSystlst,uniqueEqIndex+1,itempvars);        
+         (eqSystlst,uniqueEqIndex+1,tempvars);        
     /* Record() = f() */  
     case (e1 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(rpath)))),e2,_,_,_,_)
       equation
