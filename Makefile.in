@@ -9,14 +9,18 @@ libdir = @libdir@
 includedir = @includedir@
 datadir = @datadir@
 docdir = @docdir@
-CMAKE = cmake
+CMAKE = CC=$(CC) CXX=$(CXX) cmake
 CMAKE_TARGET = "Unix Makefiles"
 
 defaultMakefileTarget = Makefile
 QMAKE=@QMAKE@
 EXE=@EXE@
 
+CC=@CC@
+CXX=@CXX@
 CFLAGS=@CFLAGS@
+CPPFLAGS=@CPPFLAGS@
+CXXFLAGS=@CXXFLAGS@
 
 include Makefile.common
 
@@ -79,7 +83,7 @@ ifeq (@MODELICA3D@,)
 	@echo Skipping Modelica3D
 else
 	cd 3rdParty/modelica3d && mkdir -p build
-	cd 3rdParty/modelica3d/build && cmake -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 ..
+	cd 3rdParty/modelica3d/build && $(CMAKE) -DCMAKE_COLOR_MAKEFILE:Bool=OFF -DOSG_BACKEND=1 ..
 	$(MAKE) -C 3rdParty/modelica3d/build
 	cp -p 3rdParty/modelica3d/build/backends/osg-gtk/libm3d-osg-gtk.so 3rdParty/modelica3d/build/lib/proc3d/libproc3d.so build/lib/
 	cp -p 3rdParty/modelica3d/lib/modcount/src/c/modcount.h 3rdParty/modelica3d/lib/modbus/src/c/modbus.h build/include/omc/
