@@ -3945,7 +3945,6 @@ algorithm
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         (e1lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         e2lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,crtmp);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
         // x=..,y=..
@@ -3974,7 +3973,6 @@ algorithm
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
         (e1lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         e2lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,crtmp);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
         // x=..,y=..
@@ -4566,9 +4564,11 @@ algorithm
        BackendDAE.EquationArray eqns;
        BackendVarTransform.VariableReplacements repl;
        list<SimCode.SimVar> tempvars;
-       list<SimCode.SimEqSystem> simequations,resEqs;
+       list<SimCode.SimEqSystem> simequations,resEqs,simequations1;
        Integer uniqueEqIndex;
-       list<DAE.ComponentRef> tcrs;
+       list<DAE.ComponentRef> tcrs,crefs;
+       list<DAE.Exp> elst,ecrlst;
+       list<tuple<DAE.Exp,DAE.Exp>> exptl; 
      // linear case
      /* TODO */
      // nonliniear case  
@@ -4583,10 +4583,18 @@ algorithm
          // generate residual replacements
          tcrs = List.map(tvars,BackendVariable.varCref);
          repl = makeResidualReplacements(tcrs);
+         // x = xloc
+         // x=..,y=..
+         (crefs,elst) = BackendVarTransform.getAllReplacements(repl);
+         ecrlst = List.map(crefs,Expression.crefExp);
+         exptl = List.threadTuple(ecrlst,elst);
+         (simequations1,uniqueEqIndex) = List.map1Fold(exptl,makeSES_SIMPLE_ASSIGN,DAE.emptyElementSource,iuniqueEqIndex);         
          // generade other equations
-         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(otherEqns,repl,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,iuniqueEqIndex,itempvars,{});
+         repl = BackendVarTransform.emptyReplacements();
+         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(otherEqns,repl,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,uniqueEqIndex,itempvars,{});
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(reqns, repl,uniqueEqIndex,tempvars);
         simequations = listAppend(simequations,resEqs);         
+        simequations = listAppend(simequations1,simequations);         
        then
          ({SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs)},uniqueEqIndex+1,tempvars);
    end matchcontinue;
@@ -4628,7 +4636,7 @@ algorithm
          // apply replacements
          (eqn::_,_) = BackendVarTransform.replaceEquations({eqn}, repl, SOME(BackendVarTransform.skipPreOperator));
          syst = BackendEquation.equationSetnthDAE(eqnindx-1, eqn, isyst);
-         // geneate comp
+         // generate comp
          comp = createTornSystemOtherEqns1(eqn,eqnindx,vars);
          (simequations,_,uniqueEqIndex,tempvars) = createEquations(false, false, true, skipDiscInAlgorithm, false, syst, ishared, {comp}, helpVarInfo, iuniqueEqIndex, itempvars);
          simequations = listAppend(isimequations,simequations);
