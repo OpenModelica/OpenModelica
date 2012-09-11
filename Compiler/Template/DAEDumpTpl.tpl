@@ -18,7 +18,7 @@ template dumpDAE(list<DAEDump.compWithSplitElements> fixedDaeList, DAEDump.funct
      >>
    else
      <<
-     <%comp_str%>	
+     <%comp_str%>  
      >>
 end dumpDAE;
 
