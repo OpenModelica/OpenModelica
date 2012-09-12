@@ -1917,10 +1917,6 @@ algorithm
         parameterEquations = listAppend(parameterEquations,{SimCode.SES_ALGORITHM(uniqueEqIndex,allDivStmts)});
         uniqueEqIndex = uniqueEqIndex+1;
         
-        // Replace variables in nonlinear equation systems with xloc[index]
-        // variables.
-        allEquations = List.map(allEquations,applyResidualReplacements);
-
         // generate jacobian or linear model matrices
         LinearMatrices = createJacobianLinearCode(dlow2,uniqueEqIndex);
         LinearMatrices = jacG::LinearMatrices;
@@ -3611,8 +3607,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         failure((_,_) = solve(e1, e2, varexp));
         //index = System.tmpTick();
-        repl = makeResidualReplacements({cr});
-        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn}, repl,iuniqueEqIndex,itempvars);
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn},iuniqueEqIndex,itempvars);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr})},uniqueEqIndex+1,tempvars);
         
@@ -3626,9 +3621,8 @@ algorithm
         cr_1 = ComponentReference.crefPrefixDer(cr);
         varexp = Expression.crefExp(cr_1);
         failure((_,_) = solve(e1, e2, varexp));
-        repl = makeResidualReplacements({cr_1});
         //index = System.tmpTick();
-        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn}, repl,iuniqueEqIndex,itempvars);
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn},iuniqueEqIndex,itempvars);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr_1})},uniqueEqIndex+1,tempvars);
         
@@ -3912,21 +3906,20 @@ protected function createNonlinearResidualEquationsComplex
   input DAE.Exp inExp;
   input DAE.Exp inExp1;
   input DAE.ElementSource source;
-  input BackendVarTransform.VariableReplacements repl;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
   output list<SimCode.SimEqSystem> equations_;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
 algorithm
-  (equations_,ouniqueEqIndex,otempvars) := matchcontinue (inExp,inExp1,source, repl,iuniqueEqIndex,itempvars)
+  (equations_,ouniqueEqIndex,otempvars) := matchcontinue (inExp,inExp1,source,iuniqueEqIndex,itempvars)
     local
       DAE.ComponentRef cr,crtmp;
       DAE.Exp e1,e2,e1_1,e2_1,etmp;
       DAE.Statement stms;
       DAE.Type tp;
       list<DAE.Var> varLst;
-      list<DAE.Exp> e1lst,e2lst,e3lst,e4lst;
+      list<DAE.Exp> e1lst,e2lst;
       SimCode.SimEqSystem simeqn;
       list<SimCode.SimEqSystem> eqSystlst,eqSystlst1;
       list<tuple<DAE.Exp,DAE.Exp>> exptl,exptl1;
@@ -3936,7 +3929,7 @@ algorithm
       String ident;
       list<SimCode.SimVar> tempvars;
     /* a = f() */ 
-    case (e1 as DAE.CREF(componentRef = cr),e2,_,_,_,_)
+    case (e1 as DAE.CREF(componentRef = cr),e2,_,_,_)
       equation
         //((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
@@ -3948,23 +3941,17 @@ algorithm
         tempvars = greateTempVars(varLst,crtmp,itempvars);
         // 0 = a - tmp        
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e1lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         e2lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,crtmp);
         exptl = List.threadTuple(e1lst,e2lst);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
-        // x=..,y=..
-        (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
-        e4lst = List.map(crefs,Expression.crefExp);
-        exptl1 = List.threadTuple(e4lst,e3lst);
-        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);        
+        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);       
         // tmp = f(x,y)
         etmp = Expression.crefExp(crtmp);
         stms = DAE.STMT_ASSIGN(tp,etmp,e2_1,source);
-        eqSystlst = listAppend(eqSystlst1,SimCode.SES_ALGORITHM(uniqueEqIndex,{stms})::eqSystlst);
+        eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex,{stms})::eqSystlst;
       then
          (eqSystlst,uniqueEqIndex+1,tempvars);
     /* f() = a */    
-    case (e1,(e2 as DAE.CREF(componentRef = cr)),_,_,_,_)
+    case (e1,(e2 as DAE.CREF(componentRef = cr)),_,_,_)
       equation
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
@@ -3976,23 +3963,17 @@ algorithm
         tempvars = greateTempVars(varLst,crtmp,itempvars);
         // 0 = a - tmp        
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e1lst,_) = BackendVarTransform.replaceExpList(e1lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         e2lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,crtmp);
         exptl = List.threadTuple(e1lst,e2lst);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
-        // x=..,y=..
-        (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
-        e4lst = List.map(crefs,Expression.crefExp);
-        exptl1 = List.threadTuple(e4lst,e3lst);
-        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);        
+        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);       
         // tmp = f(x,y)
         etmp = Expression.crefExp(crtmp);
         stms = DAE.STMT_ASSIGN(tp,etmp,e1_1,source);
-        eqSystlst = listAppend(eqSystlst1,SimCode.SES_ALGORITHM(uniqueEqIndex,{stms})::eqSystlst);
+        eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex,{stms})::eqSystlst;
       then
          (eqSystlst,uniqueEqIndex+1,tempvars);        
     /* Record() = f() */  
-    case (e1 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(rpath)))),e2,_,_,_,_)
+    case (e1 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(rpath)))),e2,_,_,_)
       equation
         true = Absyn.pathEqual(path, rpath);
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
@@ -4006,21 +3987,14 @@ algorithm
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()-tmp = 0
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,uniqueEqIndex);
-        
-        (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
-        e4lst = List.map(crefs,Expression.crefExp);
-        exptl1 = List.threadTuple(e4lst,e3lst);
-        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);        
-        
-        eqSystlst = listAppend(eqSystlst1,simeqn::eqSystlst);
+        eqSystlst = simeqn::eqSystlst;
         tempvars = greateTempVars(varLst,cr,itempvars);
       then
          (eqSystlst,uniqueEqIndex,tempvars);   
     /* Record() = f() */  
-    case (e1,e2 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(rpath)))),_,_,_,_)
+    case (e1,e2 as DAE.CALL(path=path,expLst=e2lst,attr=DAE.CALL_ATTR(ty= tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(rpath)))),_,_,_)
       equation
         true = Absyn.pathEqual(path, rpath);
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
@@ -4034,21 +4008,14 @@ algorithm
         uniqueEqIndex = iuniqueEqIndex + 1;
         // Record()-tmp = 0
         e1lst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        (e2lst,_) = BackendVarTransform.replaceExpList(e2lst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         exptl = List.threadTuple(e1lst,e2lst);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,uniqueEqIndex);
-        
-        (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
-        e4lst = List.map(crefs,Expression.crefExp);
-        exptl1 = List.threadTuple(e4lst,e3lst);
-        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);        
-        
-        eqSystlst = listAppend(eqSystlst1,simeqn::eqSystlst);
+        eqSystlst = simeqn::eqSystlst;
         tempvars = greateTempVars(varLst,cr,itempvars);
       then
          (eqSystlst,uniqueEqIndex,tempvars);              
         // failure
-    case (e1,e2,_,_,_,_)
+    case (e1,e2,_,_,_)
       /*
        equation
        s1 = ExpressionDump.printExpStr(e1);
@@ -4094,7 +4061,6 @@ end greateTempVars;
 
 protected function createNonlinearResidualEquations
   input list<BackendDAE.Equation> eqs;
-  input BackendVarTransform.VariableReplacements repl;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
   output list<SimCode.SimEqSystem> eqSystems;
@@ -4102,14 +4068,14 @@ protected function createNonlinearResidualEquations
   output list<SimCode.SimVar> otempvars;
 algorithm
   (eqSystems,ouniqueEqIndex,otempvars) :=
-  matchcontinue (eqs,repl,iuniqueEqIndex,itempvars)
+  matchcontinue (eqs,iuniqueEqIndex,itempvars)
     local
       Integer size,uniqueEqIndex;
       DAE.Exp res_exp,e1,e2,e;
-      list<DAE.Exp> explst,e2lst,e3lst,e4lst;
+      list<DAE.Exp> explst,e2lst;
       list<BackendDAE.Equation> rest;
       BackendDAE.Equation eq;
-      list<SimCode.SimEqSystem> eqSystemsRest,eqSystlst,eqSystlst1;
+      list<SimCode.SimEqSystem> eqSystemsRest,eqSystlst;
       list<Integer> ds;
       list<Option<Integer>> ad;
       DAE.ComponentRef left;
@@ -4120,59 +4086,56 @@ algorithm
       list<DAE.ComponentRef> crefs;
       list<list<DAE.Subscript>> subslst;
       list<SimCode.SimVar> tempvars;
-    case ({},_,_,_) then ({},iuniqueEqIndex,itempvars);
+    case ({},_,_) then ({},iuniqueEqIndex,itempvars);
       
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source) :: rest,_,_,_)
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source) :: rest,_,_)
       equation
         res_exp = Expression.expSub(e1,e2);
         (res_exp,_) = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
-        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(BackendVarTransform.skipPreOperator));
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest, repl,iuniqueEqIndex,itempvars);
+        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
       then
         (SimCode.SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
         
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: rest, _, _,_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: rest,_,_)
       equation
         (res_exp,_) = ExpressionSimplify.simplify(e);
         res_exp = replaceDerOpInExp(res_exp);
-        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(BackendVarTransform.skipPreOperator));
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest, repl,iuniqueEqIndex,itempvars);
+        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
       then
         (SimCode.SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
    
         // An array equation
-    case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2, source=source) :: rest, _, _,_)
+    case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2, source=source) :: rest,_,_)
       equation
         res_exp = Expression.expSub(e1,e2);
         (res_exp,_) = ExpressionSimplify.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
-        (res_exp,_) = BackendVarTransform.replaceExp(res_exp, repl, SOME(BackendVarTransform.skipPreOperator));
         ad = List.map(ds,Util.makeOption);
         subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
         subslst = BackendDAEUtil.rangesToSubscripts(subslst);
         explst = List.map1r(subslst,Expression.applyExpSubscripts,res_exp);
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest, repl,iuniqueEqIndex,itempvars);
+        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(listReverse(explst),makeSES_RESIDUAL,source,uniqueEqIndex);
         eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);                
       then 
         (eqSystemsRest,uniqueEqIndex+1,tempvars);     
 
         // An complex equation
-    case (BackendDAE.COMPLEX_EQUATION(size=size,left=e1, right=e2, source=source) :: rest, _, _,_)
+    case (BackendDAE.COMPLEX_EQUATION(size=size,left=e1, right=e2, source=source) :: rest,_,_)
       equation
         (e1,_) = ExpressionSimplify.simplify(e1);
         e1 = replaceDerOpInExp(e1);
         (e2,_) = ExpressionSimplify.simplify(e2);
         e2 = replaceDerOpInExp(e2);
-        (eqSystlst,uniqueEqIndex,tempvars) = createNonlinearResidualEquationsComplex(e1,e2,source,repl,iuniqueEqIndex,itempvars);
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest, repl,uniqueEqIndex,tempvars);
+        (eqSystlst,uniqueEqIndex,tempvars) = createNonlinearResidualEquationsComplex(e1,e2,source,iuniqueEqIndex,itempvars);
+        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex,tempvars);
         eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
       then 
         (eqSystemsRest,uniqueEqIndex,tempvars);        
 
         
-    case ((eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = left, right = e2)))::rest,_,_,_)
+    case ((eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = left, right = e2)))::rest,_,_)
       equation
         // This following does not work. It does not take index or elseWhen into account.
         // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
@@ -4190,26 +4153,18 @@ algorithm
       then
         fail();
    
-    case ((BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements),source=source) :: rest), _, _,_)
+    case ((BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements),source=source) :: rest),_,_)
       equation
         crefs = CheckModel.algorithmOutputs(DAE.ALGORITHM_STMTS(algStatements));
         explst = List.map(crefs,Expression.crefExp);
         explst = List.map(explst,replaceDerOpInExp);
         (eqSystlst,uniqueEqIndex) = List.map1Fold(explst,makeSES_RESIDUAL,source,iuniqueEqIndex);        
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest, repl,uniqueEqIndex,itempvars);
-        (e2lst,_) = BackendVarTransform.replaceExpList(explst, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
-        exptl = List.threadTuple(explst,e2lst);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,uniqueEqIndex); 
-       (crefs,e3lst) = BackendVarTransform.getAllReplacements(repl);
-        e4lst = List.map(crefs,Expression.crefExp);
-        exptl1 = List.threadTuple(e4lst,e3lst);
-        (eqSystlst1,uniqueEqIndex) = List.map1Fold(exptl1,makeSES_SIMPLE_ASSIGN,source,uniqueEqIndex);    
-        eqSystlst = listAppend(eqSystlst1,SimCode.SES_ALGORITHM(uniqueEqIndex,algStatements)::eqSystlst);    
-        eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
+        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex,itempvars);
+        eqSystemsRest = SimCode.SES_ALGORITHM(uniqueEqIndex,algStatements)::eqSystemsRest;
       then
         (eqSystemsRest,uniqueEqIndex+1,tempvars);   
                 
-    case (eq::_,_,_,_)
+    case (eq::_,_,_)
       equation
         eqstr = BackendDump.equationStr(eq);
         eqstr = stringAppend("SimCode.createNonlinearResidualEquations failed for equation: ",eqstr);
@@ -4260,60 +4215,6 @@ algorithm
   outSimEqn := SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,cr,e,source);
   ouniqueEqIndex := iuniqueEqIndex+1;
 end makeSES_SIMPLE_ASSIGN;
-
-protected function applyResidualReplacements
-  "Replaces variables in nonlinear equation systems with xloc[index] variables."
-  input SimCode.SimEqSystem inEqs;
-  output SimCode.SimEqSystem outEqs;
-algorithm
-  outEqs := match inEqs
-    local
-      SimCode.SimEqSystem cont;
-      list<SimCode.SimEqSystem> eqs,discEqs;
-      Integer index;
-      list<DAE.ComponentRef> crefs;
-      BackendVarTransform.VariableReplacements repl;
-      list<SimCode.SimVar> discVars;
-      list<Integer> values,value_dims;
-      
-    case SimCode.SES_NONLINEAR(index = index, eqs = eqs, crefs = crefs)
-      equation
-        repl = makeResidualReplacements(crefs);
-        eqs = List.map1(eqs, applyResidualReplacementsEqn, repl);
-      then
-        SimCode.SES_NONLINEAR(index, eqs, crefs);
-        
-    case SimCode.SES_MIXED(index,cont,discVars,discEqs,values,value_dims)
-      equation
-        cont = applyResidualReplacements(cont);
-      then SimCode.SES_MIXED(index,cont,discVars,discEqs,values,value_dims);
-
-    else inEqs;
-  end match;
-end applyResidualReplacements;
-
-protected function applyResidualReplacementsEqn
-  "Helper function to applyResidualReplacements. Replaces variables in an
-    residual equation system."
-  input SimCode.SimEqSystem inEqn;
-  input BackendVarTransform.VariableReplacements repl;
-  output SimCode.SimEqSystem outEqn;
-algorithm
-  outEqn := matchcontinue(inEqn, repl)
-    local
-      Integer indx;
-      DAE.Exp res_exp,exp;
-      DAE.ElementSource source;
-      
-    case (SimCode.SES_RESIDUAL(indx,exp,source), _)
-      equation
-        (res_exp,true) = BackendVarTransform.replaceExp(exp, repl, SOME(BackendVarTransform.skipPreOperator));
-        source = DAEUtil.addSymbolicTransformationSubstitution(true,source,exp,res_exp);
-      then
-        SimCode.SES_RESIDUAL(indx,exp,source);
-    else inEqn;
-  end matchcontinue;
-end applyResidualReplacementsEqn;
 
 protected function changeJactype
   input BackendDAE.JacobianType inJactype;
@@ -4587,18 +4488,10 @@ algorithm
          reqns = replaceDerOpInEquationList(reqns);
          // generate residual replacements
          tcrs = List.map(tvars,BackendVariable.varCref);
-         repl = makeResidualReplacements(tcrs);
-         // x = xloc
-         (crefs,elst) = BackendVarTransform.getAllReplacements(repl);
-         ecrlst = List.map(crefs,Expression.crefExp);
-         exptl = List.threadTuple(ecrlst,elst);
-         (simequations1,uniqueEqIndex) = List.map1Fold(exptl,makeSES_SIMPLE_ASSIGN,DAE.emptyElementSource,iuniqueEqIndex);         
          // generade other equations
-         repl = BackendVarTransform.emptyReplacements();
-         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(otherEqns,repl,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,uniqueEqIndex,itempvars,{});
-        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(reqns, repl,uniqueEqIndex,tempvars);
-        simequations = listAppend(simequations,resEqs);         
-        simequations = listAppend(simequations1,simequations);         
+         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(otherEqns,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,iuniqueEqIndex,itempvars,{});
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(reqns,uniqueEqIndex,tempvars);
+        simequations = listAppend(simequations,resEqs);
        then
          ({SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs)},uniqueEqIndex+1,tempvars);
    end matchcontinue;
@@ -4606,7 +4499,6 @@ end createTornSystem;
 
 protected function createTornSystemOtherEqns
   input list<tuple<Integer,list<Integer>>> otherEqns;
-  input BackendVarTransform.VariableReplacements repl;
   input Boolean skipDiscInAlgorithm "if true skip discrete algorithm vars";
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -4619,7 +4511,7 @@ protected function createTornSystemOtherEqns
   output list<SimCode.SimVar> otempvars;
 algorithm
    (equations_,ouniqueEqIndex,otempvars) := 
-   matchcontinue(otherEqns,repl,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,iuniqueEqIndex,itempvars,isimequations)
+   matchcontinue(otherEqns,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,iuniqueEqIndex,itempvars,isimequations)
      local
        BackendDAE.EquationArray eqns;
        list<SimCode.SimVar> tempvars;
@@ -4630,22 +4522,19 @@ algorithm
        list<tuple<Integer,list<Integer>>> rest;
        BackendDAE.EqSystem syst;
        BackendDAE.StrongComponent comp;
-     case({},_,_,_,_,_,_,_,_)
+     case({},_,_,_,_,_,_,_)
        then
          (isimequations,iuniqueEqIndex,itempvars);
-     case((eqnindx,vars)::rest,_,_,BackendDAE.EQSYSTEM(orderedEqs=eqns),_,_,_,_,_)
+     case((eqnindx,vars)::rest,_,BackendDAE.EQSYSTEM(orderedEqs=eqns),_,_,_,_,_)
        equation
          // get Eqn
          eqn = BackendDAEUtil.equationNth(eqns, eqnindx-1);
-         // apply replacements
-         (eqn::_,_) = BackendVarTransform.replaceEquations({eqn}, repl, SOME(BackendVarTransform.skipPreOperator));
-         syst = BackendEquation.equationSetnthDAE(eqnindx-1, eqn, isyst);
          // generate comp
          comp = createTornSystemOtherEqns1(eqn,eqnindx,vars);
-         (simequations,_,uniqueEqIndex,tempvars) = createEquations(false, false, true, skipDiscInAlgorithm, false, syst, ishared, {comp}, helpVarInfo, iuniqueEqIndex, itempvars);
+         (simequations,_,uniqueEqIndex,tempvars) = createEquations(false, false, true, skipDiscInAlgorithm, false, isyst, ishared, {comp}, helpVarInfo, iuniqueEqIndex, itempvars);
          simequations = listAppend(isimequations,simequations);
          // generade other equations
-         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(rest,repl,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,uniqueEqIndex,tempvars,simequations);
+         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(rest,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,uniqueEqIndex,tempvars,simequations);
        then
          (simequations,uniqueEqIndex,tempvars);
    end matchcontinue;
@@ -4743,19 +4632,16 @@ algorithm
         eq = BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource);
         eqn_lst1 = eq :: eqn_lst;
         tcrs = List.map1r(t,listNth,crefs1);
-        repl = makeResidualReplacements(tcrs);
         // get residual eqns and other eqns
         reqns = List.map1r(r,listNth,eqn_lst1);
         // remove residual equation from list of other equtions
         block_1 = List.select1(block_,List.notMember,r);
-        // replace tearing variables in other equations with x_loc[..]
-        eqn_lst2 = generateTearingSystem1(eqn_lst,repl);
-        eqn1 = BackendDAEUtil.listEquation(eqn_lst2);
+        eqn1 = BackendDAEUtil.listEquation(eqn_lst);
         syst = BackendDAE.EQSYSTEM(v,eqn1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         // generade code for other equations
         (simeqnsystemlst,(uniqueEqIndex,tempvars)) = List.map1Fold(block_1,generateTearingOtherEqns,(syst,shared,ass2,helpVarInfo),(iuniqueEqIndex,itempvars));
         simeqnsystem = List.flatten(simeqnsystemlst);
-        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(reqns, repl,uniqueEqIndex,tempvars);
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(reqns,uniqueEqIndex,tempvars);
         simeqnsystem1 = listAppend(simeqnsystem,resEqs);
       then
         (SimCode.SES_NONLINEAR(uniqueEqIndex, simeqnsystem1, tcrs),uniqueEqIndex+1,tempvars);
@@ -4787,41 +4673,6 @@ algorithm
   (simeqnsystem,index,tempvars) := createEquation(inEq, i, syst, shared, helpVarInfo, true, false,index,tempvars);
   ouniqueEqIndex := (index,tempvars);
 end generateTearingOtherEqns;
-
-protected function generateTearingSystem1
-  "function: generateTearingSystem1
-  author: Frenkel TUD
-  Helper function to generateTearingSystem1"
-  input list<BackendDAE.Equation> inBackendDAEEquationLst;
-  input BackendVarTransform.VariableReplacements inVariableReplacements;
-  output list<BackendDAE.Equation> outBackendDAEEquationLst;
-algorithm
-  outBackendDAEEquationLst := match (inBackendDAEEquationLst,inVariableReplacements)
-    local
-      DAE.Exp e1,e2,e1_1,e2_1;
-      list<BackendDAE.Equation> rest,rest2;
-      BackendVarTransform.VariableReplacements repl;
-      DAE.ElementSource source;
-      Boolean b1,b2;
-    case ({},_) then {};
-    case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: rest),repl)
-      equation
-        rest2 = generateTearingSystem1(rest,repl);
-        (e1_1,b1) = BackendVarTransform.replaceExp(e1, repl, SOME(BackendVarTransform.skipPreOperator));
-        (e2_1,b2) = BackendVarTransform.replaceExp(e2, repl, SOME(BackendVarTransform.skipPreOperator));
-        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
-        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
-      then
-        BackendDAE.EQUATION(e1_1,e2_1,source) :: rest2;
-    case ((BackendDAE.RESIDUAL_EQUATION(exp = e1,source = source) :: rest),repl)
-      equation
-        rest2 = generateTearingSystem1(rest,repl);
-        (e1_1,b1) = BackendVarTransform.replaceExp(e1, repl, SOME(BackendVarTransform.skipPreOperator));
-        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
-      then
-        BackendDAE.RESIDUAL_EQUATION(e1_1,source) :: rest2;
-  end match;
-end generateTearingSystem1;
 
 protected function extractDiscEqs
   input list<BackendDAE.Equation> disc_eqn;
@@ -4994,8 +4845,7 @@ algorithm
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create non-linear system with jacobian.");
         eqn_lst = BackendDAEUtil.equationList(eqn);
         crefs = BackendVariable.getAllCrefFromVariables(v);
-        repl = makeResidualReplacements(crefs);
-        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(eqn_lst, repl,iuniqueEqIndex,itempvars);
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(eqn_lst,iuniqueEqIndex,itempvars);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs)},uniqueEqIndex+1,tempvars);
         
@@ -5005,8 +4855,7 @@ algorithm
         Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create non-linear system without jacobian.");
         eqn_lst = BackendDAEUtil.equationList(eqn);
         crefs = BackendVariable.getAllCrefFromVariables(v);
-        repl = makeResidualReplacements(crefs);
-        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(eqn_lst, repl,iuniqueEqIndex,itempvars);
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(eqn_lst,iuniqueEqIndex,itempvars);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs)},uniqueEqIndex+1,tempvars);
         
@@ -5549,8 +5398,7 @@ algorithm
     case (BackendDAE.COMPLEX_EQUATION(source=_),_,_,_,_)
       equation
         crefs = List.map(inVars,BackendVariable.varCref);
-        repl = makeResidualReplacements(crefs);
-        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({inEquation}, repl,iuniqueEqIndex,itempvars);
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({inEquation},iuniqueEqIndex,itempvars);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs)},uniqueEqIndex+1,tempvars);       
         // failure
@@ -8649,51 +8497,6 @@ algorithm
         cr;
   end match;
 end getVectorizedCrefFromExp;
-
-protected function makeResidualReplacements "function: makeResidualReplacements
-  author: PA
-
-  This function makes replacement rules for variables occuring in a
-  nonlinear equation system. They should be replaced by xloc{index}, i.e.
-  an unique index in a xloc vector.
-"
-  input list<Expression.ComponentRef> crefs;
-  output BackendVarTransform.VariableReplacements repl_1;
-protected
-  BackendVarTransform.VariableReplacements repl;
-algorithm
-  repl := BackendVarTransform.emptyReplacements();
-  repl_1 := makeResidualReplacements2(repl, crefs, 0);
-end makeResidualReplacements;
-
-protected function makeResidualReplacements2 "function makeResidualReplacements2
-  author: PA
-
-  Helper function to make_residual_replacements"
-  input BackendVarTransform.VariableReplacements inVariableReplacements;
-  input list<Expression.ComponentRef> inExpComponentRefLst;
-  input Integer inInteger;
-  output BackendVarTransform.VariableReplacements outVariableReplacements;
-algorithm
-  outVariableReplacements := match (inVariableReplacements,inExpComponentRefLst,inInteger)
-    local
-      BackendVarTransform.VariableReplacements repl,repl_1,repl_2;
-      Integer pos_1,pos;
-      DAE.ComponentRef cr,cref_;
-      list<Expression.ComponentRef> crs;
-      
-    case (repl,{},_) then repl;
-      
-    case (repl,(cr :: crs),pos)
-      equation
-        cref_ = ComponentReference.makeCrefIdent("xloc", DAE.T_ARRAY(DAE.T_REAL_DEFAULT, {DAE.DIM_UNKNOWN()}, DAE.emptyTypeSource), {DAE.INDEX(DAE.ICONST(pos))});
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, Expression.crefExp(cref_),NONE());
-        pos_1 = pos + 1;
-        repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);
-      then
-        repl_2;
-  end match;
-end makeResidualReplacements2;
 
 protected function getExpCref
   input DAE.Exp inExp;

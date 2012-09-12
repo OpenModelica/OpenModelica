@@ -795,7 +795,7 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, 
   case e as SES_ALGORITHM(__)
   then equation_(e, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
   case e as SES_SIMPLE_ASSIGN(__)
-  then equation_(e, contextInlineSolver, &varDecls /*BUFD*/, &eqs)
+  then old_equation_(e, contextSimulationDiscrete, &varDecls /*BUFD*/)
 end functionExtraResidualsPreBody;
 
 template functionExtraResiduals(list<SimEqSystem> allEquations)
@@ -806,6 +806,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let &tmp = buffer ""
+     let xlocs = (crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n") 
      let prebody = (eq.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp)
        ;separator="\n")   
@@ -827,6 +828,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,1);
        #endif
        mem_state = get_memory_state();
+       <%xlocs%>
        <%prebody%>
        <%body%>
        restore_memory_state(mem_state);
