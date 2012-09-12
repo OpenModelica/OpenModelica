@@ -841,7 +841,7 @@ algorithm
   ht := HashTable2.emptyHashTable();
   (systs,shared,ht) := mapdynamicStateSelection(systs,shared,inArgs,{},ht);
   shared := replaceDummyDerivativesShared(shared,ht);
-  outDAE := BackendDAE.DAE(systs,shared);  
+  outDAE := BackendDAE.DAE(systs,shared);
 end dynamicStateSelection;
 
 protected function mapdynamicStateSelection
@@ -940,7 +940,7 @@ algorithm
         varlst = List.filter(varlst, notVarStateSelectAlways);
         freestatevars = listLength(varlst);
         orgeqnscount = countOrgEqns(orgEqnsLst,0);
-        
+       
         (dummyStates,syst,shared) = processComps(freestatevars,varlst,orgeqnscount,comps,syst,ishared,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn),hov,{});
         enqnslst = List.flatten(List.map(orgEqnsLst,Util.tuple22));
         syst = BackendEquation.equationsAddDAE(enqnslst, syst);
@@ -1637,11 +1637,12 @@ algorithm
       equation
         // if there is only one var select it because there is no choice
         Debug.fcall(Flags.BLT_DUMP, print, "single var and eqn\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
         v = BackendVariable.getVarAt(vars,1);
         cr = BackendVariable.varCref(v);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStr, ("Select ",cr," as dummyState\n"));
-        hov1 = BackendVariable.deleteVar(cr,hov);
+        hov1 = BackendVariable.removeCref(cr,hov);
         lov = BackendVariable.addVar(v,inLov);
       then
         (hov1,cr::dummystates,lov,isyst,ishared);
@@ -3095,7 +3096,7 @@ algorithm
       case ((cr,s)::rest,_,_,_,_,_,_)
         equation
           v = BackendVariable.getVarAt(vars,s);
-          hov1 = BackendVariable.deleteVar(cr,hov);
+          hov1 = BackendVariable.removeCref(cr,hov);
           lov = BackendVariable.addVar(v,inLov);
          (hov1,lov, dummystates) = selectDummyStates(rest,i+1,nstates,vars,hov1,lov,cr::inDummyStates);
         then

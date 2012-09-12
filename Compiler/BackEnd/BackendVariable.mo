@@ -2274,8 +2274,8 @@ algorithm
     case (_,_)
       equation
         true = intGt(varsSize(inDelVars),0);
-        newvars = BackendDAEUtil.emptyVars();
-        ((_,newvars)) = traverseBackendDAEVars(inVariables,deleteVars2,(inDelVars,newvars));
+        newvars = traverseBackendDAEVars(inDelVars,deleteVars1,inVariables);
+        newvars = BackendDAEUtil.listVar1(BackendDAEUtil.varList(newvars));
       then
         newvars;
     else
@@ -2284,30 +2284,23 @@ algorithm
   end matchcontinue;
 end deleteVars;
 
-protected function deleteVars2
+protected function deleteVars1
 "autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+ input tuple<BackendDAE.Var, BackendDAE.Variables> inTpl;
+ output tuple<BackendDAE.Var, BackendDAE.Variables> outTpl;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  outTpl:= match (inTpl)
     local
       BackendDAE.Var v;
-      BackendDAE.Variables vars,vars1,delvars;
+      BackendDAE.Variables vars;
       DAE.ComponentRef cr;
-    case ((v as BackendDAE.VAR(varName = cr),(delvars,vars)))
+    case ((v as BackendDAE.VAR(varName = cr),vars))
       equation
-        (_::{},_) = getVar(cr,delvars) "alg var deleted" ;
+        vars = removeCref(cr,vars) "alg var deleted" ;
       then
-        ((v,(delvars,vars)));
-    case ((v as BackendDAE.VAR(varName = cr),(delvars,vars)))
-      equation
-        failure((_,_) = getVar(cr,delvars)) "alg var not deleted" ;
-        vars1 = addVar(v,vars);
-      then
-        ((v,(delvars,vars1)));
-  end matchcontinue;
-end deleteVars2;
+        ((v,vars));
+  end match;
+end deleteVars1;
 
 public function deleteVar
 "function: deleteVar
@@ -2319,41 +2312,78 @@ public function deleteVar
 algorithm
   outVariables := match (inComponentRef,inVariables)
     local
-      BackendDAE.Variables v,newvars,newvars_1;
+      BackendDAE.Variables vars;
       DAE.ComponentRef cr;
-    case (cr,v)
+      list<Integer> ilst;
+    case (cr,_)
       equation
-        newvars = BackendDAEUtil.emptyVars();
-        ((_,newvars_1)) = traverseBackendDAEVars(v,deleteVar2,(cr,newvars));
+        (_,ilst) = getVar(cr,inVariables);
+        (vars,_) = removeVars(ilst,inVariables,{});
+        vars = BackendDAEUtil.listVar1(BackendDAEUtil.varList(vars));
       then
-        newvars_1;
+        vars;
   end match;
 end deleteVar;
 
-protected function deleteVar2
-"autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<DAE.ComponentRef,BackendDAE.Variables>> inTpl;
- output tuple<BackendDAE.Var, tuple<DAE.ComponentRef,BackendDAE.Variables>> outTpl;
+public function removeCref
+"function: removeCref
+  author: Frenkel TUD 2012-09
+  Deletes a variable from Variables."
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Variables inVariables;
+  output BackendDAE.Variables outVariables;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
+  outVariables := matchcontinue (inComponentRef,inVariables)
     local
-      BackendDAE.Var v;
-      BackendDAE.Variables vars,vars1;
-      DAE.ComponentRef cr,dcr;
-    case ((v as BackendDAE.VAR(varName = cr),(dcr,vars)))
+      BackendDAE.Variables vars;
+      DAE.ComponentRef cr;
+      list<Integer> ilst;
+    case (cr,_)
       equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, dcr);
+        (_,ilst) = getVar(cr,inVariables);
+        (vars,_) = removeVars(ilst,inVariables,{});
       then
-        ((v,(dcr,vars)));
-    case ((v as BackendDAE.VAR(varName = cr),(dcr,vars)))
-      equation
-        vars1 = addVar(v,vars);
+        vars;
+    case (cr,_)
+//      equation
+//        BackendDump.debugStrCrefStr(("var ",cr," not in inVariables\n"));
       then
-        ((v,(dcr,vars1)));
+        inVariables;
   end matchcontinue;
-end deleteVar2;
+end removeCref;
 
+public function removeVars
+"function: removeVar
+  author: Frenkel TUD 2012-09
+  Removes  vars from the vararray but does not scaling down the array"
+  input list<Integer> inVarPos "Position of vars to delete 1 based";
+  input BackendDAE.Variables inVariables;
+  input list<BackendDAE.Var> iAcc;
+  output BackendDAE.Variables outVariables;
+  output list<BackendDAE.Var> outVars "deleted vars in reverse order";
+algorithm
+  (outVariables,outVars) := matchcontinue(inVarPos,inVariables,iAcc)
+    local
+      BackendDAE.Variables vars;
+      list<Integer> ilst;
+      Integer i;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> acc;
+    case({},_,_) then (inVariables,iAcc);
+    case(i::ilst,_,_)
+      equation
+        (vars,v) = removeVar(i,inVariables);
+        (vars,acc) = removeVars(ilst,vars,v::iAcc);
+      then
+        (vars,acc);
+    case(i::ilst,_,_)
+      equation
+        (vars,acc) = removeVars(ilst,inVariables,iAcc);
+      then
+        (vars,acc);      
+  end matchcontinue;
+end removeVars;
+  
 public function removeVar
 "function: removeVar
   author: Frenkel TUD 2011-04

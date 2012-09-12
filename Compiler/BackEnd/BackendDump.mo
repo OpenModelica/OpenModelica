@@ -1076,6 +1076,14 @@ algorithm
   end matchcontinue;  
 end dumpEqnsSolved2;
 
+public function dumpEqnsArray
+"function: dumpEqnsArray
+  Helper function to dump."
+  input BackendDAE.EquationArray eqns;
+algorithm
+  dumpEqns2(BackendDAEUtil.equationList(eqns), 1);
+end dumpEqnsArray;
+
 public function dumpEqns
 "function: dumpEqns
   Helper function to dump."
