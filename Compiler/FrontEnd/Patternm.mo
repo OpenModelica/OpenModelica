@@ -1182,6 +1182,7 @@ algorithm
         pats = List.map(namedpats,Util.tuple31);
         fields = List.map(namedpats,Util.tuple32);
         types = List.map(namedpats,Util.tuple33);
+        (pats,a) = traversePatternList(pats, func, a);
         namedpats = List.thread3Tuple(pats, fields, types);
         pat = DAE.PAT_CALL_NAMED(name,namedpats);
         outTpl = func((pat,a));
