@@ -1663,11 +1663,12 @@ algorithm
       then
         ();
     
-    case (DAE.STMT_FOR(iter = id,range = e,statementLst = stmts),i)
+    case (DAE.STMT_FOR(iter = id,index = index,range = e,statementLst = stmts),i)
       equation
         indent(i);
         Print.printBuf("for ");
         Print.printBuf(id);
+        Debug.bcall(index <> -1, Print.printBuf, " /* iter index " +& intString(index) +& " */");
         Print.printBuf(" in ");
         ExpressionDump.printExp(e);
         Print.printBuf(" loop\n");
@@ -3706,5 +3707,17 @@ algorithm
   outStream := dumpVarsStream(l, true, inStream);
   outStream := List.fold(l, dumpAlgorithmStream, outStream);
 end dumpFunctionElementsStream;
+
+public function unparseVarKind
+  input DAE.VarKind inVarKind;
+  output String outString;
+algorithm
+  outString := match(inVarKind)
+    case DAE.VARIABLE() then "";
+    case DAE.PARAM() then "parameter";
+    case DAE.CONST() then "const";
+    case DAE.DISCRETE() then "discrete";
+  end match;
+end unparseVarKind;
 
 end DAEDump;
