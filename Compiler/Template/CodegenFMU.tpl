@@ -1105,8 +1105,9 @@ case FMIIMPORT(__) then
     class fmiImportContext
       extends ExternalObject;
         function constructor
+          input Integer fmiLogLevel;
           output fmiImportContext context;
-          external "C" context = fmi_import_allocate_context_OMC() annotation(Library = {"omcruntime", "fmilib"});
+          external "C" context = fmi_import_allocate_context_OMC(fmiLogLevel) annotation(Library = {"omcruntime", "fmilib"});
         end constructor;
         
         function destructor
@@ -1120,15 +1121,60 @@ case FMIIMPORT(__) then
         function constructor
           input fmiImportContext context;
           input String tempPath;
-          output fmiImportInstance fmu;
-          external "C" fmu = fmiImportInstance_OMC(context, tempPath) annotation(Library = {"omcruntime", "fmilib"});
+          output fmiImportInstance fmi;
+          external "C" fmi = fmiImportInstance_OMC(context, tempPath) annotation(Library = {"omcruntime", "fmilib"});
         end constructor;
         
         function destructor
-          input fmiImportInstance fmu;
-          external "C" fmiImportFreeInstance_OMC(fmu) annotation(Library = {"omcruntime", "fmilib"});
+          input fmiImportInstance fmi;
+          external "C" fmiImportFreeInstance_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"});
         end destructor;
     end fmiImportInstance;
+    
+    package fmiFunctions
+      function fmiInstantiateModel
+        input fmiImportInstance fmi;
+        input String instanceName;
+        output Integer status;
+        external "C" status = fmiInstantiateModel_OMC(fmi, instanceName) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiInstantiateModel;
+      
+      function fmiSetTime
+        input fmiImportInstance fmi;
+        input Real in_time;
+        output Integer status;
+        external "C" status = fmiSetTime_OMC(fmi, in_time) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetTime;
+      
+      function fmiInitialize
+        input fmiImportInstance fmi;
+        output Integer status;
+        external "C" status = fmiInitialize_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiInitialize;
+      
+      function fmiGetContinuousStates
+        input fmiImportInstance fmi;
+        input Integer numberOfContinuousStates;
+        input Real fmi_x[numberOfContinuousStates];
+        output Integer status;
+        external "C" status = fmiGetContinuousStates_OMC(fmi, fmi_x, numberOfContinuousStates) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiGetContinuousStates;
+      
+      function fmiGetEventIndicators
+        input fmiImportInstance fmi;
+        input Integer numberOfEventIndicators;
+        input Real fmi_z[numberOfEventIndicators];
+        output Integer status;
+        external "C" status = fmiGetEventIndicators_OMC(fmi, fmi_z, numberOfEventIndicators) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiGetEventIndicators;
+      
+      function fmiSetDebugLogging
+        input fmiImportInstance fmi;
+        input Boolean debugLogging;
+        output Integer status;
+        external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetDebugLogging;
+    end fmiFunctions;
     
     package fmiStatus
       constant Integer fmiOK=0;
@@ -1146,9 +1192,29 @@ case FMIIMPORT(__) then
     end jmStatus;
     
     model FMUModel <%if stringEq(fmiDescription, "") then "" else " \"fmiDescription\""%>
+      constant String fmuFile = "<%fmuFileName%>";
+      constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
+      constant Integer fmiLogLevel = <%fmiLogLevel%>;
       <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
-      constant Integer numberOfContinuousStates=<%getFMINumberOfContinuousStates(fmiInstance)%>;
-      constant Integer numberOfEventIndicators=<%getFMINumberOfEventIndicators(fmiInstance)%>;
+      constant Integer numberOfContinuousStates = <%getFMINumberOfContinuousStates(fmiInstance)%>;
+      Real fmi_x[numberOfContinuousStates] "States";
+      constant Integer numberOfEventIndicators = <%getFMINumberOfEventIndicators(fmiInstance)%>;
+      Real fmi_z[numberOfEventIndicators] "Event indicators";
+      constant Boolean debugLogging = true;
+      Integer fmi_status;
+      fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
+      fmiImportContext context = fmiImportContext(fmiLogLevel);
+    initial algorithm
+      fmiFunctions.fmiInstantiateModel(fmi, "<%fmiModelIdentifier%>");
+      fmi_status := fmiFunctions.fmiSetTime(fmi, time);
+      fmi_status := fmiFunctions.fmiInitialize(fmi);
+      fmi_status := fmiFunctions.fmiGetContinuousStates(fmi, fmi_x, numberOfContinuousStates);
+      fmi_status := fmiFunctions.fmiGetEventIndicators(fmi, fmi_z, numberOfEventIndicators);
+      fmi_status := fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
+    equation
+      fmi_status = fmiFunctions.fmiSetTime(fmi, time);
+      assert(fmi_status<>fmiStatus.fmiFatal, "fmiInitialize returned a fatal error.");
+      assert(fmi_status<>fmiStatus.fmiError, "fmiInitialize returned an error.");
       annotation(experiment(StartTime=<%fmiExperimentStartTime%>, StopTime=<%fmiExperimentStopTime%>, Tolerance=<%fmiExperimentTolerance%>));
     end FMUModel;
   end <%fmiModelIdentifier%>_FMU;

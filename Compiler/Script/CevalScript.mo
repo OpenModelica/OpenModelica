@@ -1450,8 +1450,9 @@ algorithm
         fmiModelVariablesInstance, fmiModelVariablesList) = FMI.initializeFMIImport(filename, workdir, fmiLogLevel);
         true = b; /* if something goes wrong while initializing */
         fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(fmiContext, fmiInstance, fmiModelIdentifier, fmiDescription, fmiExperimentStartTime,
-        fmiExperimentStopTime, fmiExperimentTolerance, fmiModelVariablesInstance, fmiModelVariablesList1));
+        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(filename, workdir, fmiLogLevel, fmiContext, fmiInstance, fmiModelIdentifier, fmiDescription,
+                                                                        fmiExperimentStartTime, fmiExperimentStopTime, fmiExperimentTolerance,
+                                                                        fmiModelVariablesInstance, fmiModelVariablesList1));
         pd = System.pathDelimiter();
         filename_1 = stringAppendList({workdir,pd,fmiModelIdentifier,"FMUImportNew.mo"});
         System.writeFile(filename_1, str);

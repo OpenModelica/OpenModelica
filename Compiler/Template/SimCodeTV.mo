@@ -2557,6 +2557,9 @@ package FMI
   
   uniontype FmiImport
     record FMIIMPORT
+      String fmuFileName;
+      String fmuWorkingDirectory;
+      Integer fmiLogLevel;
       Integer fmiContext;
       Integer fmiInstance;
       String fmiModelIdentifier;

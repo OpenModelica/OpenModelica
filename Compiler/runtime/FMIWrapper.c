@@ -62,7 +62,7 @@ static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_statu
 /*
  * Creates an instance of the FMI Import Context i.e fmi_import_context_t
  */
-void* fmi_import_allocate_context_OMC()
+void* fmi_import_allocate_context_OMC(int fmi_log_level)
 {
   // JM callbacks
   static int init = 0;
@@ -74,7 +74,7 @@ void* fmi_import_allocate_context_OMC()
     callbacks.realloc = realloc;
     callbacks.free = free;
     callbacks.logger = importlogger;
-    callbacks.log_level = jm_log_level_debug;
+    callbacks.log_level = fmi_log_level;
     callbacks.context = 0;
   }
   fmi_import_context_t* context = fmi_import_allocate_context(&callbacks);
@@ -106,31 +106,59 @@ void* fmiImportInstance_OMC(void* context, char* working_directory)
     callback_functions.freeMemory = free;
   }
   // parse the xml file
-  fmi1_import_t* fmu;
-  fmu = fmi1_import_parse_xml((fmi_import_context_t*)context, working_directory);
-  if(!fmu) {
+  fmi1_import_t* fmi;
+  fmi = fmi1_import_parse_xml((fmi_import_context_t*)context, working_directory);
+  if(!fmi) {
     fprintf(stderr, "Error parsing the XML file contained in %s\n", working_directory);
     return 0;
   }
   // Load the binary (dll/so)
   jm_status_enu_t status;
-  status = fmi1_import_create_dllfmu(fmu, callback_functions, 0);
+  status = fmi1_import_create_dllfmu(fmi, callback_functions, 0);
   if (status == jm_status_error) {
     fprintf(stderr, "Could not create the DLL loading mechanism(C-API).\n");
     return 0;
   }
-  return fmu;
+  return fmi;
 }
 
 /*
  * Destroys the instance of the FMI Import i.e fmi1_import_t
  * Also destroys the loaded binary (dll/so).
  */
-void fmiImportFreeInstance_OMC(void* fmu)
+void fmiImportFreeInstance_OMC(void* fmi)
 {
-  fmi1_import_t* fmu1 = (fmi1_import_t*)fmu;
-  fmi1_import_destroy_dllfmu(fmu1);
-  fmi1_import_free(fmu1);
+  fmi1_import_t* fmi1 = (fmi1_import_t*)fmi;
+  fmi1_import_destroy_dllfmu(fmi1);
+  fmi1_import_free(fmi1);
+}
+
+int fmiInstantiateModel_OMC(void* fmi, const char* instanceName)
+{
+  return fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
+}
+
+int fmiSetTime_OMC(void* fmi, double time)
+{
+  return fmi1_import_set_time((fmi1_import_t*)fmi, time);
+}
+
+int fmiInitialize_OMC(void* fmi)
+{
+  fmi1_boolean_t toleranceControlled = fmi1_true;
+  fmi1_real_t relativeTolerance = 0.001;
+  fmi1_event_info_t eventInfo;
+  return fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, &eventInfo);
+}
+
+int fmiGetContinuousStates_OMC(void* fmi, const double* states, int numberOfContinuousStates)
+{
+  return fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+}
+
+int fmiGetEventIndicators_OMC(void* fmi, const double* events, int numberOfEventIndicators)
+{
+  return fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
 }
 
 #ifdef __cplusplus
