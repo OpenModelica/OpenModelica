@@ -1650,7 +1650,7 @@ static int getLoadModelPathFromDefaultTarget(const char *name, modelicaPathEntry
 {
   const char *foundExtra = 0;
   long foundVersion = -1;
-  int i,foundIndex;
+  int i,foundIndex = -1;
 
   /* Force preferred version MSL 3.1 */
   if (0 == strcmp("Modelica",name)) {
