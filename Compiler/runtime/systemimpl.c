@@ -575,7 +575,7 @@ int SystemImpl__spawnCall(const char* path, const char* str)
 
   fflush(NULL); /* flush output so the testsuite is deterministic */
 #if defined(__MINGW32__) || defined(_MSC_VER)
-  status = spawnl(P_DETACH, path, str, "", NULL);
+  ret_val = spawnl(P_DETACH, path, str, "", NULL);
 #else
   pid_t pID = vfork();
   if (pID == 0) { // child
@@ -590,18 +590,13 @@ int SystemImpl__spawnCall(const char* path, const char* str)
     c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("system(%s) failed: %s"),tokens,2);
     return -1;
   }
+  ret_val = 0;
 #endif
   fflush(NULL); /* flush output so the testsuite is deterministic */
 
   if (debug) {
     fprintf(stderr, "System.spawnCall: returned\n"); fflush(NULL);
   }
-
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  ret_val = status;
-#else
-  ret_val = 0;
-#endif
 
   if (debug) {
     fprintf(stderr, "System.spawnCall: returned value: %d\n", ret_val); fflush(NULL);
