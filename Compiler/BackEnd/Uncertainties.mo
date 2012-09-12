@@ -340,12 +340,12 @@ end isApproximatedEquation3;
 protected function flattenModel
   input Absyn.Path className;
   input Absyn.Program p;
-  input Env.Cache cache;
+  input Env.Cache icache;
   output DAE.DAElist daeOut;
   output Env.Cache cacheOut;
   output list<Env.Frame> envOut;
 algorithm
-(daeOut,cacheOut,envOut):=matchcontinue(className,p,cache)
+(daeOut,cacheOut,envOut):=matchcontinue(className,p,icache)
   local
     list<SCode.Element> p_1;
     Absyn.Program ptot;
@@ -353,17 +353,18 @@ algorithm
     list<Env.Frame> env;
     Real timeFrontend;
     String resstr;
-  case(className,p,cache)
+    Env.Cache cache;
+  case(_,_,_)
     equation
       System.realtimeTick(CevalScript.RT_CLOCK_UNCERTAINTIES);
       ptot = Dependency.getTotalProgram(className,p);
       p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-      (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+      (cache,env,_,dae) = Inst.instantiateClass(icache,InnerOuter.emptyInstHierarchy,p_1,className);
       timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_UNCERTAINTIES);
       System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
       dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
     then (dae,cache,env);
-  case(className,_,_)
+  else
       equation
         resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"modelEquationsUC: The model ",resstr," could not be flattened"});
