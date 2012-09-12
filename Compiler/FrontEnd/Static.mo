@@ -6680,7 +6680,7 @@ protected function elabCallInteractive "function: elabCallInteractive
       Boolean impl;
       Interactive.SymbolTable st;
       Ident cname_str,str;
-      DAE.Exp filenameprefix,exp_1,crefExp;
+      DAE.Exp filenameprefix,exp_1,crefExp,outputFile;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> excludeList;
@@ -6715,9 +6715,13 @@ protected function elabCallInteractive "function: elabCallInteractive
 
    case (cache,env,Absyn.CREF_IDENT(name = "modelEquationsUC"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
-        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        (cache,cr_1) = elabUntypedCref(cache,env,cr,impl,pre,info);
+        className = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
+        (cache,outputFile) = 
+          getOptionalNamedArg(cache, env, SOME(st), impl, "outputFile", DAE.T_STRING_DEFAULT, 
+                              args, DAE.SCONST(""),pre,info);
       then
-        (cache,Expression.makeBuiltinCall("modelEquationsUC",simulationArgs,DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
         
    case (cache,env,Absyn.CREF_IDENT(name = "translateModelCPP"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation

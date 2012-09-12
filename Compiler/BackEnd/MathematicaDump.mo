@@ -53,7 +53,7 @@ algorithm
   end match;
 end dumpMmaDAEStr;
 
-protected function printMmaEqnsStr "print equations on a form suitable for Mathematica to a string."
+public function printMmaEqnsStr "print equations on a form suitable for Mathematica to a string."
   input list<BackendDAE.Equation> inEqns;
   input tuple<BackendDAE.Variables,BackendDAE.Variables> inTuple;
   output String res;
@@ -314,7 +314,7 @@ algorithm
       equation
         fs = Absyn.pathString(fcn);
         argstr = stringDelimitList(List.map2(args, printExpMmaStr,vars,knvars),",");        
-        s_2 = "Missing[\"ModelicaName\",\""+& fs +&"\"]["+&argstr+&"]";
+        s_2 = "FunctionCall[\""+& fs +&"\"]["+&argstr+&"]";
       then
         s_2;
         
@@ -677,7 +677,7 @@ algorithm
   end match;
 end whenEquationStr;
 
-protected function printMmaVarsStr "print variables on a form suitable for Mathematica to a string.
+public function printMmaVarsStr "print variables on a form suitable for Mathematica to a string.
 $p,$lb, $rb, $leftParentesis, $rightParentesis removed.
 $derivative<varname> replaced by D[<varname>,t]
 All variables returned as Mma lists on form {{states},{algvars}, e.g. {{Iii},{abc, R1i, R2pi}}
@@ -782,7 +782,7 @@ algorithm
   end matchcontinue;
 end printMmaInputStr;
 
-protected function printMmaParamsStr "print parameters on a form suitable for Mathematica,
+public function printMmaParamsStr "print parameters on a form suitable for Mathematica,
 $p,$lb, $rb, $leftParentesis, $rightParentesis removed.
 Returns a list of rules for parameters and their values
 E.g. {R1R->1.0,R2R->R1R*0.5,I3I->0.1}

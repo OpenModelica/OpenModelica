@@ -801,7 +801,7 @@ algorithm
              call,str_1,mp,pathstr,name,cname,errMsg,errorStr,
              title,xLabel,yLabel,filename2,varNameStr,xml_filename,xml_contents,visvar_str,pwd,omhome,omlib,omcpath,os,
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
-             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2;
+             legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2, outputFile;
       list<Values.Value> vals;
       Absyn.Path path,classpath,className;
       SCode.Program scodeP,sp;
@@ -1113,9 +1113,9 @@ algorithm
     case (cache,env,"translateModel",_,st,msg)
       then (cache,Values.STRING("There were errors during translation. Use getErrorString() to see them."),st);
 
-    case (cache,env,"modelEquationsUC",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_,_,_,_},st,msg)
+    case (cache,env,"modelEquationsUC",vals as {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(outputFile)},st,msg)
       equation
-        (cache,ret_val,st_1) = Uncertainties.modelEquationsUC(cache, env, className, st, filenameprefix);
+        (cache,ret_val,st_1) = Uncertainties.modelEquationsUC(cache, env, className, st, outputFile);
       then
         (cache,ret_val,st_1);
    

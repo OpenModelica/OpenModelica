@@ -36,6 +36,7 @@ package Uncertainties
   import MathematicaDump;
   import Matching;
   import BackendDAEEXT;
+  import Util;
 
 type ExtIncidenceMatrixRow = tuple<Integer,list<Integer>>; 
 type ExtIncidenceMatrix = list<ExtIncidenceMatrixRow>;
@@ -45,25 +46,26 @@ public function modelEquationsUC
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
   input Interactive.SymbolTable inInteractiveSymbolTable;
-  input String inFileNamePrefix;
+  input String outputFileIn;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
 
 algorithm
   (outCache,outValue,outInteractiveSymbolTable):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix)
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,outputFileIn)
     local
-      String filenameprefix,resstr;
-      list<SCode.Element> p_1;
+      String outputFile,resstr;
+      
       DAE.DAElist dae;
+      Env.Cache cache;
       list<Env.Frame> env;
+      Absyn.Program p;
+
       BackendDAE.BackendDAE dlow,dlow_1;
       Interactive.SymbolTable st;
-      Absyn.Program p,ptot;
-      Env.Cache cache;
       DAE.FunctionTree funcs;
-      Real    timeFrontend;
+      
       BackendDAE.IncidenceMatrix m,mt,my,mx;
       array<Integer> ass1,ass2;
       
@@ -73,7 +75,7 @@ algorithm
       BackendDAE.EquationArray eqns,ieqns;
       list<BackendDAE.Equation> setC_eq,setS_eq;
       list<BackendDAE.EqSystem> eqsyslist; 
-      BackendDAE.Variables allVars;
+      BackendDAE.Variables allVars,knownVariables,unknownVariables,sharedVars;
       BackendDAE.EquationArray allEqs;
       list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked; 
       BackendDAE.Shared shared;
@@ -89,21 +91,13 @@ algorithm
 
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
-            
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),filenameprefix)
-      equation
-        
+      
+      String outString;
 
-        // calculate stuff that we need to create SimCode data structure 
-        System.realtimeTick(CevalScript.RT_CLOCK_UNCERTAINTIES);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
-        ptot = Dependency.getTotalProgram(className,p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
-        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_UNCERTAINTIES);
-        System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
-        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        funcs = Env.getFunctionTree(cache);
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),outputFile)
+      equation
+     
+        (dae,cache,env) = flattenModel(className,p,cache);
 
         Debug.fprintln(Flags.UNCERTAINTIES, "- Flatten ok\n");   
         dlow = BackendDAECreate.lower(dae,cache,env,true);
@@ -139,7 +133,8 @@ algorithm
         // First try to eliminate all the unknown variables
         dlow_1 = eliminateVariablesDAE(unknowns,dlow_1);
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
-        BackendDAE.EQSYSTEM(allVars,allEqs,_,_,_) = currentSystem;         
+        BackendDAE.EQSYSTEM(allVars,allEqs,_,_,_) = currentSystem;
+        BackendDAE.SHARED(knownVars=sharedVars) = shared;         
         
         (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL());
         Debug.fprintln(Flags.UNCERTAINTIES,"Incidence row to equation ");
@@ -147,6 +142,9 @@ algorithm
         Debug.fprintln(Flags.UNCERTAINTIES,";\n");
 
         mExt=getExtIncidenceMatrix(m);
+
+        approximatedEquations = getEquationsWithApproximatedAnnotation(dlow_1);
+        mExt=removeEquations(mExt,approximatedEquations);
         // get the variable indices after the elimination
         variables = List.intRange(BackendVariable.varsSize(allVars));       
         knowns = getUncertainRefineVariableIndexes(allVars,variables); 
@@ -174,23 +172,27 @@ algorithm
         Debug.fprintln(Flags.UNCERTAINTIES,";\n");   
 
         setC=List.map1r(setC,listGet,arrayList(mapIncRowEqn));
-        setC=List.map1(setC,intAdd,-1);       
+        setC=List.unique(List.map1(setC,intAdd,-1));       
         setS=List.map1r(setS,listGet,arrayList(mapIncRowEqn));
-        setS=List.map1(setS,intAdd,-1);   
+        setS=List.unique(List.map1(setS,intAdd,-1));   
 
         setC_eq=List.map1r(setC,BackendDAEUtil.equationNth,allEqs);
         setS_eq=List.map1r(setS,BackendDAEUtil.equationNth,allEqs);
         //eqnLst = BackendDAEUtil.equationList(eqns);
         
-        print("* Uncertainty equations extracted: \n");
-        BackendDump.dumpEqns(setC_eq);
+        knownVariables = BackendDAEUtil.listVar(List.map1r(knowns,BackendVariable.getVarAt,allVars));
+        unknownVariables = BackendDAEUtil.listVar(List.map1r(unknowns,BackendVariable.getVarAt,allVars));
 
-        print("* Auxiliary set of equations: \n");
-        BackendDump.dumpEqns(setS_eq);
+        //print("* Uncertainty equations extracted: \n");
+        //BackendDump.dumpEqns(setC_eq);
 
-        //System.writeFile(System.readEnv("TEMP")+&"\\uncertainties.out",MathematicaDump.dumpMmaDAEStr((vars,kvars,eqnLst,ieqnLst))); 
+        //print("* Auxiliary set of equations: \n");
+        //BackendDump.dumpEqns(setS_eq);
 
-        resstr="Done...";
+        outString = "{{"+&getMathematicaVarStr(knownVariables)+&","+&getMathematicaEqStr(setC_eq,allVars,sharedVars)+&"},{"+&getMathematicaVarStr(unknownVariables)+&","+&getMathematicaEqStr(setS_eq,allVars,sharedVars)+&"}}";
+        
+        resstr=writeFileIfNonEmpty(outputFile,outString);
+        //resstr="Done...";
       then
         (cache,Values.STRING(resstr),st);
     case (_,_,className,_,_)
@@ -204,6 +206,190 @@ algorithm
   end matchcontinue;
 end modelEquationsUC;
 
+protected function writeFileIfNonEmpty
+  input String filename;
+  input String content;
+  output String out;
+algorithm
+out:=matchcontinue(filename,content)
+    local String directory;
+    case("",content)
+      equation
+        //print("Mathematica Expression =\n"+&content);
+      then content;
+    case(filename,content)
+      equation
+        directory=System.dirname(filename);
+        true=System.directoryExists(directory);
+        //print("Writing file "+&filename);
+        System.writeFile(filename,content);
+      then "Done...";
+    case(filename,content)
+        equation
+          //print("Mathematica Expression =\n"+&content); 
+        then content;  
+  end matchcontinue;
+end writeFileIfNonEmpty;
+
+
+protected function getEquationsWithApproximatedAnnotation
+   input BackendDAE.BackendDAE dae;
+   output list<Integer> outEqs;
+algorithm
+  outEqs:=match(dae)
+     local
+       BackendDAE.EquationArray orderedEqs;
+       list<Integer> ret;
+    case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=orderedEqs)::_,_))
+      equation
+        ret=getEquationsWithApproximatedAnnotation2(BackendDAEUtil.equationList(orderedEqs),0);
+      then
+        ret;
+    case(_)
+      then {};
+  end match;   
+end getEquationsWithApproximatedAnnotation;
+
+protected function getEquationsWithApproximatedAnnotation2
+   input list<BackendDAE.Equation> eqs;
+   input Integer index;
+   output list<Integer> listOut;
+algorithm
+   listOut:=
+      matchcontinue(eqs,index)
+        local
+          BackendDAE.Equation h;
+          list<BackendDAE.Equation> t;
+          list<Integer> inner_ret;
+          Integer i;
+        case ({},_)
+          then
+            {};   
+        case(h::t,i)
+          equation
+            true=isApproximatedEquation(h);
+            inner_ret = getEquationsWithApproximatedAnnotation2(t,i+1);   
+          then
+            i::inner_ret;   
+        case(h::t,i)
+          equation
+            inner_ret = getEquationsWithApproximatedAnnotation2(t,i+1);   
+          then
+            inner_ret;     
+      end matchcontinue;  
+end getEquationsWithApproximatedAnnotation2;
+
+protected function isApproximatedEquation
+  input BackendDAE.Equation eqn;
+  output Boolean out;
+algorithm
+  out:= match(eqn)
+    local
+      list<SCode.Comment> comment;
+      Boolean ret;
+    case(BackendDAE.EQUATION(_,_,DAE.SOURCE(comment=comment)))
+      equation
+        ret = isApproximatedEquation2(comment);
+      then  
+        ret;
+    case(_)
+      then 
+        false;
+  end match;    
+end isApproximatedEquation;
+
+protected function isApproximatedEquation2
+  input list<SCode.Comment> commentIn;
+  output Boolean out;
+ algorithm
+  out:= matchcontinue(commentIn)
+    local
+      SCode.Comment h;
+      list<SCode.Comment> t;
+      Boolean ret;
+      list<SCode.SubMod> subModLst;
+    case({})
+      equation
+        then false;
+    case(SCode.COMMENT(annotation_=SOME(SCode.ANNOTATION(SCode.MOD(subModLst=subModLst))))::t)
+      equation
+        ret = (List.exist(subModLst,isApproximatedEquation3)) or isApproximatedEquation2(t);
+      then
+        ret;
+    case(h::t)
+      equation
+        ret = isApproximatedEquation2(t);
+      then
+        ret;    
+  end matchcontinue;     
+end isApproximatedEquation2;
+
+protected function isApproximatedEquation3
+  input SCode.SubMod m;
+  output Boolean out;
+algorithm  
+out:= match(m)
+  case(SCode.NAMEMOD("__OpenModelica_ApproximatedEquation",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))))
+     then true;
+  case(_)
+     then false;
+   end match;           
+end isApproximatedEquation3;
+
+
+protected function flattenModel
+  input Absyn.Path className;
+  input Absyn.Program p;
+  input Env.Cache cache;
+  output DAE.DAElist daeOut;
+  output Env.Cache cacheOut;
+  output list<Env.Frame> envOut;
+algorithm
+(daeOut,cacheOut,envOut):=matchcontinue(className,p,cache)
+  local
+    list<SCode.Element> p_1;
+    Absyn.Program ptot;
+    DAE.DAElist dae;
+    list<Env.Frame> env;
+    Real timeFrontend;
+    String resstr;
+  case(className,p,cache)
+    equation
+      System.realtimeTick(CevalScript.RT_CLOCK_UNCERTAINTIES);
+      ptot = Dependency.getTotalProgram(className,p);
+      p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
+      (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+      timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_UNCERTAINTIES);
+      System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
+      dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+    then (dae,cache,env);
+  case(className,_,_)
+      equation
+        resstr = Absyn.pathStringNoQual(className);
+        resstr = stringAppendList({"modelEquationsUC: The model ",resstr," could not be flattened"});
+        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+      then fail();  
+end matchcontinue;
+end flattenModel;   
+
+protected function getMathematicaVarStr
+  input BackendDAE.Variables vars;
+  output String out;
+  protected list<String> states,algs,outputs,inputsStates;
+  protected String s1;
+algorithm
+  (states,algs,outputs,inputsStates) := MathematicaDump.printMmaVarsStr(vars);
+  out := "{"+&Util.stringDelimitListNonEmptyElts(listAppend(listAppend(states,algs),listAppend(outputs,inputsStates)),",")+&"}";
+end getMathematicaVarStr;  
+
+protected function getMathematicaEqStr
+  input list<BackendDAE.Equation> eqns;
+  input BackendDAE.Variables systemVars;
+  input BackendDAE.Variables sharedVars;
+  output String out;
+algorithm
+  out:= MathematicaDump.printMmaEqnsStr(eqns,(systemVars,sharedVars));
+end getMathematicaEqStr;
 
 protected function getEquationsForUnknownsSystem
   input ExtIncidenceMatrix m;
@@ -875,7 +1061,7 @@ algorithm
       //print("partially indexed crs:"+&Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+&"\n");
       repl = BackendVarTransform.emptyReplacements();
 
-      (m,_) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL()); 
+      (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL()); 
       (eqnLst,seqns,movedvars_1,repl) = eliminateVariablesDAE2(eqnLst,1,vars,kvars,HashTable.emptyHashTable(),repl,crefDouble,m,elimVarIndexList,false);
       //Debug.fcall("dumprepl",BackendVarTransform.dumpReplacements,repl);
 
