@@ -68,7 +68,6 @@ protected import SCode;
 protected import System;
 protected import Util;
 
-
 public function lower
 "function: lower
   This function translates a DAE, which is the result from instantiating a

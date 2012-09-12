@@ -222,6 +222,19 @@ algorithm
   (_,(_,outVars)) := traverseBackendDAEExpsEqn(inEquation,checkEquationsVars,(inVars,outVars));
 end equationVars;
 
+public function expressionVars
+"function: equationVars
+  author: Frenkel TUD 2012-03
+  From the expression and a variable array return all
+  variables in the expression."
+  input DAE.Exp inExp;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Variables outVars;
+algorithm
+  outVars := BackendDAEUtil.emptyVars();
+  ((_,(_,outVars))) := Expression.traverseExp(inExp,checkEquationsVarsExp,(inVars,outVars));
+end expressionVars;
+
 protected function checkEquationsVars
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
@@ -1097,7 +1110,7 @@ algorithm
     case (_,BackendDAE.EQUATION_ARRAY(size=size,numberOfElement = n,arrSize = arrsize,equOptArr = arr))
       equation
         print("- BackendEquation.equationAdd failed\nArraySize: " +& intString(arrsize) +& 
-            "\nnumberOfElement " +& intString(n) +& "\nSize " +& intString(size));
+            "\nnumberOfElement " +& intString(n) +& "\nSize " +& intString(size) +& "\narraySize " +& intString(arrayLength(arr)));
       then
         fail();
   end matchcontinue;

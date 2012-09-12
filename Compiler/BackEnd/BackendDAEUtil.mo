@@ -6088,7 +6088,7 @@ algorithm
       Boolean b,bs;
       Integer mark;
       array<Integer> rowmark;
-    
+      BackendDAE.BinTree bt;
     case ((e as DAE.LUNARY(exp = e1),(vars,bs,(mark,rowmark),pa)))
       equation
         ((_,(vars,_,_,pa))) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
@@ -6108,6 +6108,10 @@ algorithm
         ((_,(vars,_,_,pa))) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,bs,(mark,rowmark),pa));
         ((_,(vars,_,_,pa))) = Expression.traverseExpTopDown(e2, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,bs,(mark,rowmark),pa));
         ((_,(vars,_,_,pa))) = Expression.traverseExpTopDown(e3, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
+        // mark all vars which are not in alle branches unsolvable
+        ((_,bt)) = Expression.traverseExpTopDown(e,getIfExpBranchVarOccurency,BackendDAE.emptyBintree);
+        ((_,(_,_,_,_))) = Expression.traverseExp(e1,markBranchVars,(mark,rowmark,vars,bt));
+        ((_,(_,_,_,_))) = Expression.traverseExp(e2,markBranchVars,(mark,rowmark,vars,bt));
       then
         ((e,false,(vars,bs,(mark,rowmark),pa)));
     case ((e as DAE.RANGE(start = e1,step=NONE(),stop=e2),(vars,bs,(mark,rowmark),pa)))
@@ -6155,7 +6159,173 @@ algorithm
     case ((e,(vars,bs,(mark,rowmark),pa))) then ((e,true,(vars,bs,(mark,rowmark),pa)));
   end matchcontinue;
 end traversingadjacencyRowExpSolvableEnhancedFinder;    
+
+protected function markBranchVars
+"Author: Frenkel TUD 2012-09
+  mark all vars of a if expression which are not in all branches as unsolvable"
+  input tuple<DAE.Exp, tuple<Integer,array<Integer>,BackendDAE.Variables,BackendDAE.BinTree>> inTuple;
+  output tuple<DAE.Exp, tuple<Integer,array<Integer>,BackendDAE.Variables,BackendDAE.BinTree>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      BackendDAE.Variables vars;
+      DAE.ComponentRef cr;
+      BackendDAE.BinTree bt;
+      list<Integer> ilst;
+      Integer mark;
+      array<Integer> rowmark;
+      list<BackendDAE.Var> backendVars;
     
+    // special case for time, it is never part of the equation system  
+    case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(mark,rowmark,vars,bt)))
+      then ((e, (mark,rowmark,vars,bt)));
+        
+    // case for functionpointers    
+    case ((e as DAE.CREF(ty=DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)),(mark,rowmark,vars,bt)))
+      then
+        ((e, (mark,rowmark,vars,bt)));
+
+    // mark if not in bt
+    case ((e as DAE.CREF(componentRef = cr),(mark,rowmark,vars,bt)))
+      equation
+         (backendVars,ilst) = BackendVariable.getVar(cr, vars);
+         markBranchVars1(backendVars,ilst,mark,rowmark,bt);
+      then
+        ((e, (mark,rowmark,vars,bt)));
+   
+    case inTuple then inTuple;
+  end matchcontinue;
+end markBranchVars;
+
+protected function markBranchVars1
+"Author: Frenkel TUD 2012-09
+  Helper for markBranchVars"
+  input list<BackendDAE.Var> varlst;
+  input list<Integer> iIlst;
+  input Integer mark;
+  input array<Integer> rowmark;
+  input BackendDAE.BinTree bt;
+algorithm
+  _ := matchcontinue(varlst,iIlst,mark,rowmark,bt)
+    local
+      DAE.ComponentRef cr;
+     list<BackendDAE.Var> vlst;
+     Integer i;
+     list<Integer> ilst;
+    case({},_,_,_,_) then ();
+    case(BackendDAE.VAR(varName=cr)::vlst,_::ilst,_,_,_)
+      equation
+        _ = treeGet(bt,cr);
+        markBranchVars1(vlst,ilst,mark,rowmark,bt);
+      then
+        ();
+    case(_::vlst,i::ilst,_,_,_)
+      equation
+        _ = arrayUpdate(rowmark,i,-mark);
+        markBranchVars1(vlst,ilst,mark,rowmark,bt);
+      then
+        ();
+  end matchcontinue;  
+end markBranchVars1;
+
+protected function getIfExpBranchVarOccurency
+"Author: Frenkel TUD 2012-09
+  Helper for getIfExpBranchVarOccurency"
+  input tuple<DAE.Exp, BackendDAE.BinTree> inTpl "(exp,allbranchvars)";
+  output tuple<DAE.Exp, Boolean, BackendDAE.BinTree> outTpl;  
+algorithm
+  outTpl := match(inTpl)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e,e1,e2;
+      BackendDAE.BinTree bt,bt_then,bt_else;
+      Boolean b;
+      list<DAE.Exp> elst;
+    case ((e as DAE.IFEXP(expThen = e1,expElse = e2),bt))
+      equation
+        ((_,bt_then)) = Expression.traverseExpTopDown(e1,getIfExpBranchVarOccurency,BackendDAE.emptyBintree);
+        ((_,bt_else)) = Expression.traverseExpTopDown(e2,getIfExpBranchVarOccurency,BackendDAE.emptyBintree);
+        bt = binTreeintersection(bt_then,bt_else,bt);
+      then
+        ((e,false,bt));
+    // skip relations,ranges,asubs
+    case ((e as DAE.LUNARY(exp = _),bt))
+      then ((e,false,bt));
+    case ((e as DAE.LBINARY(exp1 = _),bt))
+      then ((e,false,bt));      
+    case ((e as DAE.RELATION(exp1 = _),bt))
+      then ((e,false,bt));       
+    case ((e as DAE.RANGE(start = _),bt))
+      then ((e,false,bt)); 
+    case ((e as DAE.RANGE(start = _),bt))
+      then ((e,false,bt)); 
+    case ((e as DAE.ASUB(exp = e1,sub=elst),bt))
+      equation
+        ((_,bt)) = Expression.traverseExpTopDown(e1, getIfExpBranchVarOccurency, bt);
+      then ((e,false,bt));
+    // add crefs
+    case ((e as DAE.CREF(componentRef = cr),bt))
+      equation
+        bt = treeAdd(bt,cr,0);
+      then
+        ((e,false,bt));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),bt))
+      equation
+        bt = treeAdd(bt,cr,0);
+      then
+        ((e,false,bt));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),bt))
+      equation
+        bt = treeAdd(bt,cr,0);
+      then
+        ((e,false,bt));
+    // pre(v) is considered a known variable 
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),bt)) then ((e,false,bt));
+    // delay(e) can be used to break algebraic loops given some solver options 
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),bt))
+      equation
+        b = Flags.isSet(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+      then ((e,not b,bt));
+    case ((e,bt)) then ((e,true,bt));        
+  end match;
+end getIfExpBranchVarOccurency;
+
+protected function binTreeintersection
+"Author: Frenkel TUD 2012-09
+  at all key member of bt1 and bt2 to iBt"
+  input BackendDAE.BinTree bt1;
+  input BackendDAE.BinTree bt2;
+  input BackendDAE.BinTree iBt;
+  output BackendDAE.BinTree oBt;
+protected
+  list<DAE.ComponentRef> keys;
+algorithm
+  (keys,_) := bintreeToList(bt1);
+  oBt := List.fold1(keys, binTreeintersection1, bt2,iBt); 
+end binTreeintersection;
+
+protected function binTreeintersection1
+"Author: Frenkel TUD 2012-09
+  Helper for binTreeintersection1"
+  input DAE.ComponentRef key;
+  input BackendDAE.BinTree bt2;
+  input BackendDAE.BinTree iBt;
+  output BackendDAE.BinTree oBt;
+algorithm
+  oBt := matchcontinue(key,bt2,iBt)
+    local
+     BackendDAE.BinTree bt;  
+    case(_,_,_)
+      equation
+        _ = treeGet(bt2,key);
+        bt = treeAdd(iBt,key,0);
+      then
+        bt;
+    else then iBt;
+  end matchcontinue;  
+end binTreeintersection1;
+
 protected function adjacencyRowExpEnhanced1
 "function: adjacencyRowExpEnhanced1
   author: Frenkel TUD 2012-05

@@ -3943,7 +3943,7 @@ algorithm
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e1);
         // tmp
-        ident = Absyn.pathString(path);
+        ident = System.stringReplace(Absyn.pathString(path),".","_");
         crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         tempvars = greateTempVars(varLst,crtmp,itempvars);
         // 0 = a - tmp        
@@ -3971,7 +3971,7 @@ algorithm
         //((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         (tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(path)))  = Expression.typeof(e2);
         // tmp
-        ident = Absyn.pathString(path);
+        ident = System.stringReplace(Absyn.pathString(path),".","_");
         crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         tempvars = greateTempVars(varLst,crtmp,itempvars);
         // 0 = a - tmp        
@@ -3998,7 +3998,7 @@ algorithm
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
-        ident = Absyn.pathString(path);
+        ident = System.stringReplace(Absyn.pathString(path),".","_");
         cr = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefExp(cr);
         stms = DAE.STMT_ASSIGN(tp,e1_1,e2_1,source);
@@ -4026,7 +4026,7 @@ algorithm
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
-        ident = Absyn.pathString(path);
+        ident = System.stringReplace(Absyn.pathString(path),".","_");
         cr = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr);
         stms = DAE.STMT_ASSIGN(tp,e2_1,e1_1,source);
@@ -5622,7 +5622,7 @@ algorithm
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
-        ident = Absyn.pathString(path);
+        ident = System.stringReplace(Absyn.pathString(path),".","_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e1_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp,e1_1,e2_1,source);
@@ -5647,7 +5647,7 @@ algorithm
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         //true = ComponentReference.crefEqualNoStringCompare(cr, cr2);
         // tmp = f() 
-        ident = Absyn.pathString(path);
+        ident = System.stringReplace(Absyn.pathString(path),".","_");
         cr1 = ComponentReference.makeCrefIdent("$TMP_" +& ident +& intString(iuniqueEqIndex), tp, {});
         e2_1 = Expression.crefExp(cr1);
         stms = DAE.STMT_ASSIGN(tp,e2_1,e1_1,source);

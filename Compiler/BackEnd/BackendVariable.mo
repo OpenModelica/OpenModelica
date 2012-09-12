@@ -2358,7 +2358,7 @@ public function removeVar
 "function: removeVar
   author: Frenkel TUD 2011-04
   Removes a var from the vararray but does not scaling down the array"
-  input Integer inVarPos;
+  input Integer inVarPos "1 based index";
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
   output BackendDAE.Var outVar;
@@ -2411,14 +2411,14 @@ algorithm
 
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),pos)
       equation
-        (pos < size) = true;
+        (pos <= size) = true;
         SOME(v) = arr[pos];
         arr_1 = arrayUpdate(arr, pos, NONE());
       then
         (v,BackendDAE.VARIABLE_ARRAY(n,size,arr_1));
-    case (_,_)
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
-        print("- BackendVariable.removeVar1 failed\n");
+        print("- BackendVariable.removeVar1 failed\n Pos " +& intString(inInteger) +& " numberOfElements " +& intString(n) +& " size " +& intString(size) +& " arraySize " +& intString(arrayLength(arr)) +& "\n");
       then
         fail();
   end matchcontinue;

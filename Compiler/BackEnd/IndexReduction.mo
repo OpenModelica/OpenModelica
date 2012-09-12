@@ -2388,7 +2388,8 @@ algorithm
         acc = getDeterminants1(rest,jac,unassigned-1,size+1,digraphLst,select,unusedStates,iAcc);
         _ = arrayUpdate(select,i,-1);
       then
-       getDeterminants(rest,jac,unassigned,size,digraphLst,select,i::unusedStates,acc);
+        acc;
+       //getDeterminants(rest,jac,unassigned,size,digraphLst,select,i::unusedStates,acc);
     case ((cr,i)::rest,_,_,_,_,_,_,_)
       equation
         false = intGe(listLength(rest),unassigned);
