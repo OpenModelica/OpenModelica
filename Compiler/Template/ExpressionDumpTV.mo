@@ -758,4 +758,10 @@ package System
   end escapedString;
 end System;
 
+package Config
+  function typeinfo
+    output Boolean flag;
+  end typeinfo;
+end Config;
+
 end ExpressionDumpTV;

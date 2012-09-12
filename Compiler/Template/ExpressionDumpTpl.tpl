@@ -194,6 +194,30 @@ end dumpOperand;
 
 template dumpBinOp(DAE.Operator op)
 ::=
+if typeinfo() then
+match op
+  case ADD(__) then '+'
+  case SUB(__) then '-'
+  case MUL(__) then '*'
+  case DIV(__) then '/'
+  case POW(__) then '^'
+  case ADD_ARR(__) then '+ /* ADD_ARR */'
+  case SUB_ARR(__) then '- /* SUB_ARR */'
+  case MUL_ARR(__) then '* /* MUL_ARR */'
+  case DIV_ARR(__) then '/ /* DIV_ARR */'
+  case POW_ARR(__) then '^ /* POW_ARR */'
+  case POW_ARR2(__) then '^ /* POW_ARR2 */'
+  case MUL_ARRAY_SCALAR(__) then '* /* MUL_ARR_SCA */'
+  case ADD_ARRAY_SCALAR(__) then '+ /* ADD_ARR_SCA */'
+  case SUB_SCALAR_ARRAY(__) then '- /* SUB_SCA_ARR */'
+  case POW_SCALAR_ARRAY(__) then '^ /* POW_SCA_ARR */'
+  case POW_ARRAY_SCALAR(__) then '^ /* POW_ARR_SCA */'
+  case MUL_SCALAR_PRODUCT(__) then '* /* MUL_SCA_PRO */'
+  case MUL_MATRIX_PRODUCT(__) then '* /* MUL_MAT_PRO */'
+  case DIV_SCALAR_ARRAY(__) then '/ /* DIV_SCA_ARR */'
+  case DIV_ARRAY_SCALAR(__) then '/ /* DIV_ARR_SCA */'
+  else errorMsg("ExpressionDumpTpl.dumpBinOp: Unknown operator.")
+else
 match op
   case ADD(__) then '+'
   case SUB(__) then '-'
