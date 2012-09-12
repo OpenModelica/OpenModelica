@@ -1043,7 +1043,7 @@ algorithm
       DAE.Statement elem;
       list<DAE.Statement> elems,sList,b;
       String s,id;
-      DAE.Exp e,e1,e2;
+      DAE.Exp e,e1,e2,e3;
       list<DAE.Exp> eLst;
       DAE.ComponentRef cRef;
       Boolean bool;
@@ -1107,11 +1107,12 @@ algorithm
         (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,elems);
 
-    case (localCache,localEnv,ih,DAE.STMT_ASSERT(e1,e2,source) :: rest,localAccList,pre)
+    case (localCache,localEnv,ih,DAE.STMT_ASSERT(e1,e2,e3,source) :: rest,localAccList,pre)
       equation
         (localCache,e1) = prefixExp(localCache,localEnv,ih,e1,pre);
         (localCache,e2) = prefixExp(localCache,localEnv,ih,e2,pre);
-        elem = DAE.STMT_ASSERT(e1,e2,source);
+        (localCache,e3) = prefixExp(localCache,localEnv,ih,e3,pre);
+        elem = DAE.STMT_ASSERT(e1,e2,e3,source);
         localAccList = listAppend(localAccList,List.create(elem));
         (localCache,elems) = prefixStatements(localCache,localEnv,ih,rest,localAccList,pre);
       then (localCache,elems);

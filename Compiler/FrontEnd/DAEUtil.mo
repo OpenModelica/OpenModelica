@@ -4116,7 +4116,7 @@ public function traverseDAEEquationsStmts "function: traverseDAEEquationsStmts
 algorithm
   (outStmts,oextraArg) := matchcontinue(inStmts,func,iextraArg)
     local
-      DAE.Exp e_1,e_2,e,e2;
+      DAE.Exp e_1,e_2,e,e2,e3,e_3;
       list<DAE.Exp> expl1,expl2;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts1,stmts2;
@@ -4211,12 +4211,13 @@ algorithm
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_WHEN(e_1,stmts2,SOME(ew),li,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, level=e3, source = source)) :: xs),func,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         ((e_2, extraArg)) = func((e2, extraArg));
+        ((e_3, extraArg)) = func((e3, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-      then (DAE.STMT_ASSERT(e_1,e_2,source) :: xs_1,extraArg);
+      then (DAE.STMT_ASSERT(e_1,e_2,e_3,source) :: xs_1,extraArg);
         
     case (((x as DAE.STMT_TERMINATE(msg = e, source = source)) :: xs),func,extraArg)
       equation

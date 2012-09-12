@@ -1829,6 +1829,10 @@ algorithm
       then SCode.EQ_REINIT(cr,e2,com,info);
 
     case (Absyn.EQ_NORETCALL(fname,fargs),com,info,_)
+      equation
+        failure(Absyn.CREF_IDENT("reinit", _) = fname);
+        failure(Absyn.CREF_IDENT("assert", _) = fname);
+        failure(Absyn.CREF_IDENT("terminate", _) = fname);
       then SCode.EQ_NORETCALL(Absyn.CALL(fname,fargs),com,info);
   end matchcontinue;
 end translateEquation;

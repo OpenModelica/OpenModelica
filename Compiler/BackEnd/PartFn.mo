@@ -454,7 +454,7 @@ algorithm
       list<DAE.Statement> cdr,cdr_1,stmts,stmts_1;
       list<DAE.Function> dae;
       DAE.Type ty;
-      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1,e3,e3_1;
       list<DAE.Exp> elst,elst_1;
       DAE.Else els,els_1;
       Boolean b;
@@ -524,13 +524,14 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source) :: cdr_1,dae);
-    case(DAE.STMT_ASSERT(e1,e2,source) :: cdr,dae)
+    case(DAE.STMT_ASSERT(e1,e2,e3,source) :: cdr,dae)
       equation
         ((e1_1,dae)) = Expression.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Expression.traverseExp(e2,elabExp,dae);
+        ((e3_1,dae)) = Expression.traverseExp(e3,elabExp,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_ASSERT(e1_1,e2_1,source) :: cdr_1,dae);
+        (DAE.STMT_ASSERT(e1_1,e2_1,e3_1,source) :: cdr_1,dae);
     case(DAE.STMT_TERMINATE(e,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Expression.traverseExp(e,elabExp,dae);
@@ -1184,7 +1185,7 @@ algorithm
       Boolean b;
       DAE.Statement stmt,stmt_1;
       list<Integer> ilst;
-      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1,e3,e3_1;
       list<DAE.Exp> elst,elst_1;
       DAE.ElementSource source;
       Integer ix;
@@ -1255,13 +1256,14 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source) :: cdr_1;
-    case(DAE.STMT_ASSERT(e1,e2,source) :: cdr,dae,p,inputs,current)
+    case(DAE.STMT_ASSERT(e1,e2,e3,source) :: cdr,dae,p,inputs,current)
       equation
         ((e1_1,_)) = Expression.traverseExp(e1,fixCall,(p,inputs,dae,current));
         ((e2_1,_)) = Expression.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        ((e3_1,_)) = Expression.traverseExp(e3,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_ASSERT(e1_1,e2_1,source) :: cdr_1;
+        DAE.STMT_ASSERT(e1_1,e2_1,e3_1,source) :: cdr_1;
     case(DAE.STMT_TERMINATE(e,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Expression.traverseExp(e,fixCall,(p,inputs,dae,current));

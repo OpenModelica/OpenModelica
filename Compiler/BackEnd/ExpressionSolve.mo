@@ -320,7 +320,7 @@ algorithm
         sa = ExpressionDump.printExpStr(a);
         estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
-        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)::asserts);
+        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::asserts);
        
     // swapped args: a*(b-c) = 0  solve for b     
     case (e2,e1,(crexp as DAE.CREF(componentRef = cr)),linExp)
@@ -335,7 +335,7 @@ algorithm
         sa = ExpressionDump.printExpStr(a);
         estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
-        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)::asserts);
+        (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::asserts);
 
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)), linExp)
       equation

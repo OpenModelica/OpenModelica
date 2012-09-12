@@ -636,7 +636,7 @@ algorithm
   (outAlgorithmStatementLst,replacementPerformed) :=
   matchcontinue (inAlgorithmStatementLst,inVariableReplacements,condExpFunc)
     local
-      DAE.Exp e_1,e_2,e,e2;
+      DAE.Exp e_1,e_2,e,e2,e3,e_3;
       list<DAE.Exp> expl1,expl2;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Statement> xs_1,xs,stmts,stmts2;
@@ -724,15 +724,16 @@ algorithm
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_WHEN(e_1,stmts2,ew_1,li,source) :: xs_1, true);
-    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2,source = source)) :: xs),repl,condExpFunc)
+    case (((x as DAE.STMT_ASSERT(cond=e,msg=e2,level=e3,source=source)) :: xs),repl,condExpFunc)
       equation
         (e_1,b1) = replaceExp(e, repl, condExpFunc);
         (e_2,b2) = replaceExp(e2, repl, condExpFunc);
-        true = b1 or b2;
+        (e_3,b3) = replaceExp(e3, repl, condExpFunc);
+        true = b1 or b2 or b3;
         /* TODO: Add operation to source; do simplify? */
         (xs_1,_) = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSERT(e_1,e_2,source) :: xs_1, true);
+        (DAE.STMT_ASSERT(e_1,e_2,e_3,source) :: xs_1, true);
     case (((x as DAE.STMT_TERMINATE(msg = e,source = source)) :: xs),repl,condExpFunc)
       equation
         (e_1,true) = replaceExp(e, repl, condExpFunc);

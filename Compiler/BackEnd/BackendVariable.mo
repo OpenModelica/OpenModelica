@@ -1779,9 +1779,9 @@ algorithm
               );
         // do not add if const true
         false = Expression.isConstTrue(cond);
-        BackendDAEUtil.checkAssertCondition(cond,msg);
+        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_ERROR);
       then 
-        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
+        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_ERROR,source)})};
     case(_,_,_,_,_) then {};
   end matchcontinue;
 end getMinMaxAsserts;
@@ -1844,9 +1844,9 @@ algorithm
               );
         // do not add if const true
         false = Expression.isConstTrue(cond);
-        BackendDAEUtil.checkAssertCondition(cond,msg);
+        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_ERROR);
       then 
-        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)})};
+        {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_ERROR,source)})};
     case(_,_,_,_,_) then {};
   end matchcontinue;
 end getNominalAssert;

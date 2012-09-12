@@ -2457,10 +2457,10 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inPre,ci_state,inAlgorithm,inSource,initial_,inBoolean,unrollForLoops,numErrorMessages)
     local
       DAE.Properties cprop,prop,msgprop,varprop,valprop;
-      DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2;
+      DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,level_1,level_2;
       DAE.Statement stmt, stmt1;
       list<Env.Frame> env;
-      Absyn.Exp e,cond,msg, var,value;
+      Absyn.Exp e,cond,msg,level,var,value;
       Boolean impl;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
@@ -2566,13 +2566,30 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})), info = info),source,initial_,impl,unrollForLoops,_)
       equation 
         (cache,cond_1,cprop,_) = Static.elabExp(cache, env, cond, impl,NONE(), true,pre,info);
-        (cache, cond_1, cprop) = Ceval.cevalIfConstant(cache, env, cond_1, cprop, impl, info);
-        (cache,cond_2) = PrefixUtil.prefixExp(cache, env, ih, cond_1, pre);
         (cache,msg_1,msgprop,_) = Static.elabExp(cache, env, msg, impl,NONE(), true,pre,info);
+        (cache, cond_1, cprop) = Ceval.cevalIfConstant(cache, env, cond_1, cprop, impl, info);
         (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl, info);
+        (cache,cond_2) = PrefixUtil.prefixExp(cache, env, ih, cond_1, pre);
         (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmts = Algorithm.makeAssert(cond_2, msg_2, cprop, msgprop, source);
+        stmts = Algorithm.makeAssert(cond_2, msg_2, DAE.ASSERTIONLEVEL_ERROR, cprop, msgprop, source);
+      then
+        (cache,stmts);
+    /* assert(cond,msg,level) */
+    case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert"),
+          functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg,level},argNames = {})), info = info),source,initial_,impl,unrollForLoops,_)
+      equation 
+        (cache,cond_1,cprop,_) = Static.elabExp(cache, env, cond, impl,NONE(), true,pre,info);
+        (cache,msg_1,msgprop,_) = Static.elabExp(cache, env, msg, impl,NONE(), true,pre,info);
+        (cache,level_1,msgprop,_) = Static.elabExp(cache, env, level, impl,NONE(), true,pre,info);
+        (cache, cond_1, cprop) = Ceval.cevalIfConstant(cache, env, cond_1, cprop, impl, info);
+        (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl, info);
+        (cache, level_1, msgprop) = Ceval.cevalIfConstant(cache, env, level_1, msgprop, impl, info);
+        (cache,cond_2) = PrefixUtil.prefixExp(cache, env, ih, cond_1, pre);
+        (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
+        (cache,level_2) = PrefixUtil.prefixExp(cache, env, ih, level_1, pre);
+        source = DAEUtil.addElementSourceFileInfo(source, info);
+        stmts = Algorithm.makeAssert(cond_2, msg_2, level_2, cprop, msgprop, source);
       then
         (cache,stmts);
         
@@ -2607,6 +2624,9 @@ algorithm
     /* generic NORETCALL */
     case (cache,env,ih,pre,ci_state,(SCode.ALG_NORETCALL(exp = e, info = info)),source,initial_,impl,unrollForLoops,_)
       equation
+        failure(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "reinit")) = e);
+        failure(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert")) = e);
+        failure(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "terminate")) = e);
         (cache, DAE.CALL(ap, eexpl, attr), varprop, _) = 
           Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
         // DO NOT PREFIX THIS PATH; THE PREFIX IS ONLY USED FOR COMPONENTS, NOT NAMES OF FUNCTIONS.... 

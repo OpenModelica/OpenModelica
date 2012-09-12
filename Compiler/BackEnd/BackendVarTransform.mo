@@ -1406,7 +1406,7 @@ algorithm
       list<DAE.Statement> es,es_1,statementLst,statementLst_1;
       DAE.Statement statement,statement_1;
       DAE.Type type_;
-      DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2;
+      DAE.Exp e1_1,e2_1,e1,e2,e1_2,e2_2,e3,e3_1,e3_2;
       list<DAE.Exp> expExpLst,expExpLst_1;
       DAE.Else else_;
       DAE.ElementSource source;
@@ -1533,16 +1533,19 @@ algorithm
       then
         ( es_1,b);
     
-    case ((DAE.STMT_ASSERT(cond=e1,msg=e2,source=source)::es),repl,_,_,_)
+    case ((DAE.STMT_ASSERT(cond=e1,msg=e2,level=e3,source=source)::es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
-        true = b1 or b2;
+        (e3_1,b3) = replaceExp(e3, repl,inFuncTypeExpExpToBooleanOption);
+        true = b1 or b2 or b3;
         (e1_2,_) = ExpressionSimplify.condsimplify(b1,e1_1);
         (e2_2,_) = ExpressionSimplify.condsimplify(b2,e2_1);
+        (e3_2,_) = ExpressionSimplify.condsimplify(b3,e3_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_2);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_2);
-        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_ASSERT(e1_2,e2_2,source)::inAcc,true);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b3,source,e3,e3_2);
+        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_ASSERT(e1_2,e2_2,e3_2,source)::inAcc,true);
       then
         ( es_1,b);
     

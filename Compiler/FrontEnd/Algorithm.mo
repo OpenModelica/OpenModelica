@@ -733,14 +733,15 @@ public function makeAssert "function: makeAssert
 "
   input DAE.Exp cond "condition";
   input DAE.Exp msg "message";
+  input DAE.Exp level;
   input DAE.Properties inProperties3;
   input DAE.Properties inProperties4;
   input DAE.ElementSource source;
   output list<Statement> outStatement;
 algorithm
-  outStatement := match (cond,msg,inProperties3,inProperties4,source)
+  outStatement := match (cond,msg,level,inProperties3,inProperties4,source)
     local
-    case (DAE.BCONST(true),_,_,_,source)
+    case (DAE.BCONST(true),_,_,_,_,source)
       then {};
     /* Do not evaluate all assertions. These may or may not be evaluated during runtime...
     case (DAE.BCONST(false),DAE.SCONST(str),_,_,DAE.SOURCE(info=info))
@@ -752,8 +753,8 @@ algorithm
         Error.addSourceMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{"Message was not constant and could not be evaluated"},info);
       then fail();
     */
-    case (cond,msg,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),source)
-      then {DAE.STMT_ASSERT(cond,msg,source)};
+    case (cond,msg,level,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),source)
+      then {DAE.STMT_ASSERT(cond,msg,level,source)};
   end match;
 end makeAssert;
 

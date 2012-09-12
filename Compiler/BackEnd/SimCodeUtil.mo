@@ -2998,7 +2998,7 @@ algorithm
     case (((e as DAE.CALL(path=Absyn.IDENT(name="sqrt"), expLst={e1})),inasserts))
       equation
         estr = "Model error: Argument of sqrt should be >= 0";
-        addAssert = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.emptyElementSource)});
+        addAssert = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)});
       then ((e, addAssert::inasserts));
     
     case inTuple then inTuple;

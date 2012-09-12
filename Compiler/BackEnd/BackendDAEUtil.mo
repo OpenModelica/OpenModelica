@@ -394,19 +394,25 @@ end checkEquationSize;
 public function checkAssertCondition "Succeds if condition of assert is not constant false"
   input DAE.Exp cond;
   input DAE.Exp message;
+  input DAE.Exp level;
 algorithm
-  _ := matchcontinue(cond,message)
+  _ := matchcontinue(cond,message,level)
     local 
       String messageStr;
-    case(_, _)
+    case(_, _, _)
       equation
         // Don't check assertions when checking models
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then ();
-    case(cond,message) equation
-      false = Expression.isConstFalse(cond);
+    case (cond,message,level)
+      equation
+        false = Expression.isConstFalse(cond);
       then ();
-    case(cond,message)
+    case (cond,message,level)
+      equation
+        failure(DAE.ENUM_LITERAL(index=1) = level);
+      then ();
+    case(cond,message,level)
       equation
         true = Expression.isConstFalse(cond);
         messageStr = ExpressionDump.printExpStr(message);

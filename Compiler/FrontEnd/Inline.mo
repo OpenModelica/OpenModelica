@@ -1053,7 +1053,7 @@ algorithm
       Functiontuple fns;
       Algorithm.Statement stmt,stmt_1;
       DAE.Type t;
-      DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
+      DAE.Exp e,e_1,e1,e1_1,e2,e2_1,e3,e3_1;
       list<DAE.Exp> explst,explst_1;
       DAE.ComponentRef cref;
       Algorithm.Else a_else,a_else_1;
@@ -1119,13 +1119,14 @@ algorithm
         true = b1 or b2;
       then
         (DAE.STMT_WHEN(e_1,stmts_1,NONE(),ilst,source),true);
-    case(DAE.STMT_ASSERT(e1,e2,source),fns)
+    case(DAE.STMT_ASSERT(e1,e2,e3,source),fns)
       equation
         (e1_1,source,b1) = inlineExp(e1,fns,source);
         (e2_1,source,b2) = inlineExp(e2,fns,source);
-        true = b1 or b2;
+        (e3_1,source,b3) = inlineExp(e3,fns,source);
+        true = b1 or b2 or b3;
       then
-        (DAE.STMT_ASSERT(e1_1,e2_1,source),true);
+        (DAE.STMT_ASSERT(e1_1,e2_1,e3_1,source),true);
     case(DAE.STMT_TERMINATE(e,source),fns)
       equation
         (e_1,source,true) = inlineExp(e,fns,source);

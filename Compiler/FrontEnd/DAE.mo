@@ -620,6 +620,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   record STMT_ASSERT "assert(cond,msg)"
     Exp cond;
     Exp msg;
+    Exp level;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_ASSERT;
 

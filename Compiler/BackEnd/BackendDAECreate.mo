@@ -917,7 +917,7 @@ protected function lowerEqn
 algorithm
   outEqns :=  match (inElement,functionTree,inEqns)
     local
-      DAE.Exp e1,e2,cond,msg;
+      DAE.Exp e1,e2,cond,msg,level;
       DAE.ComponentRef cr1,cr2;
       DAE.ElementSource source;
       Boolean b1;
@@ -1022,11 +1022,13 @@ algorithm
       then
         lowerIfEquation(explst1,eqnslstlst,eqnslst,{},{},source,functionTree,inEqns);
           
-    case (DAE.ASSERT(condition=cond,message=msg,source=source),_,_)
+    case (DAE.ASSERT(condition=cond,message=msg,level=level,source=source),_,_)
       equation
         (cond,source,_) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
-        BackendDAEUtil.checkAssertCondition(cond,msg);
-        alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)});
+        (msg,source,_) = Inline.inlineExp(msg,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        (level,source,_) = Inline.inlineExp(level,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        BackendDAEUtil.checkAssertCondition(cond,msg,level);
+        alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,level,source)});
       then
         BackendDAE.ALGORITHM(0,alg,source)::inEqns;  
 
@@ -1502,7 +1504,7 @@ protected function lowerAlgorithm
 algorithm
   (outEquations,outREquations,outIEquations) :=  matchcontinue (inElement,functionTree,inEquations,inREquations,inIEquations)
     local
-      DAE.Exp cond,msg;
+      DAE.Exp cond,msg,level;
       DAE.Algorithm alg;
       DAE.ElementSource source;
       Integer size;
@@ -1533,11 +1535,13 @@ algorithm
       then
         (inEquations,inREquations,BackendDAE.ALGORITHM(size, alg, source)::inIEquations);        
         
-    case (DAE.ASSERT(condition=cond,message=msg,source=source),_,_,_,_)
+    case (DAE.ASSERT(condition=cond,message=msg,level=level,source=source),_,_,_,_)
       equation
         (cond,source,_) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
-        BackendDAEUtil.checkAssertCondition(cond,msg);
-        alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)});
+        (msg,source,_) = Inline.inlineExp(msg,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        (level,source,_) = Inline.inlineExp(level,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        BackendDAEUtil.checkAssertCondition(cond,msg,level);
+        alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,level,source)});
       then
         (inEquations,BackendDAE.ALGORITHM(0,alg,source)::inREquations,inIEquations);  
 
