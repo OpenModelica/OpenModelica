@@ -788,6 +788,16 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   >>
 end functionInitialResidual;
 
+template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
+ "Generates an equation."
+::=
+  match eq
+  case e as SES_ALGORITHM(__)
+  then equation_(e, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
+  case e as SES_SIMPLE_ASSIGN(__)
+  then equation_(e, contextInlineSolver, &varDecls /*BUFD*/, &eqs)
+end functionExtraResidualsPreBody;
+
 template functionExtraResiduals(list<SimEqSystem> allEquations)
   "Generates functions in simulation file."
 ::=
@@ -796,11 +806,8 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
      case eq as SES_NONLINEAR(__) then
      let &varDecls = buffer "" /*BUFD*/
      let &tmp = buffer ""
-     let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
-         equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
-       ;separator="\n")      
-     let prebody = (eq.eqs |> eq2 as SES_SIMPLE_ASSIGN(__) =>
-         equation_(eq2, contextInlineSolver, &varDecls /*BUFD*/, &tmp)
+     let prebody = (eq.eqs |> eq2 =>
+         functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp)
        ;separator="\n")   
      let body = (eq.eqs |> eq2 as SES_RESIDUAL(__) hasindex i0 =>
          let &preExp = buffer "" /*BUFD*/
@@ -821,7 +828,6 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        #endif
        mem_state = get_memory_state();
        <%prebody%>
-       <%algs%>
        <%body%>
        restore_memory_state(mem_state);
      }
