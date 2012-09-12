@@ -2588,8 +2588,8 @@ case BINARY(__) then
     <exp:Add>
       <%e1%>
       <%e2%>
-  </exp:Add> <%\n%>
-  >>
+    </exp:Add> <%\n%>
+    >>
     '<%var%>'
   case SUB_ARR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
@@ -2598,11 +2598,11 @@ case BINARY(__) then
     let var = tempDeclXml(type, &varDecls /*BUFD*/)
     let &preExp += 
     <<
-  <exp:Sub>
+    <exp:Sub>
     <%e1%>
     <%e2%>
-  </exp:Sub> <%\n%>
-  >>
+    </exp:Sub> <%\n%>
+    >>
     '<%var%>'
   case MUL_ARR(__) then  'daeExpBinary:ERR for MUL_ARR'  
   case DIV_ARR(__) then  'daeExpBinary:ERR for DIV_ARR'  
@@ -2616,8 +2616,8 @@ case BINARY(__) then
     <exp:Mul>
     <%e1%>
     <%e2%>
-  </exp:Mul> <%\n%>
-  >>
+    </exp:Mul> <%\n%>
+    >>
     '<%var%>'  
   case ADD_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for ADD_ARRAY_SCALAR'
   case SUB_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for SUB_SCALAR_ARRAY'
@@ -2637,8 +2637,8 @@ case BINARY(__) then
     <exp:Mul>
     <%e1%>
     <%e2%>
-  </exp:Mul> <%\n%>
-  >>
+    </exp:Mul> <%\n%>
+    >>
     '<%var%>'
   case DIV_ARRAY_SCALAR(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_array" 
@@ -2650,8 +2650,8 @@ case BINARY(__) then
     <exp:Div>
     <%e1%>
     <%e2%>
-  </exp:Div> <%\n%>
-  >>
+    </exp:Div> <%\n%>
+    >>
     '<%var%>'
   case DIV_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for DIV_SCALAR_ARRAY'
   case POW_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for POW_ARRAY_SCALAR'
@@ -2683,8 +2683,8 @@ case UNARY(__) then
     <<
     <exp:Neg>
     <%e%>
-  </exp:Neg> <%\n%>
-  >>
+    </exp:Neg> <%\n%>
+    >>
     '<%e%>'
   case UMINUS_ARR(__) then error(sourceInfo(),"unary minus for non-real arrays not implemented")
   else error(sourceInfo(),"daeExpUnary:ERR")
