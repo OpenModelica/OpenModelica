@@ -180,14 +180,12 @@ RML_BEGIN_LABEL(System__removeFirstAndLastChar)
   char *str = RML_STRINGDATA(rmlA0);
   char *res = "";
   int length=strlen(str);
-  int i;
-  if(length > 1)
-    {
-      res=malloc(length-1);
-      strncpy(res,str + 1,length-2);
+  if(length > 1) {
+    res=malloc(length-1);
+    strncpy(res,str + 1,length-2);
 
-      res[length-1] = '\0';
-    }
+    res[length-1] = '\0';
+  }
 
   rmlA0 = (void*) mk_scon(res);
   /* adrpo added 2004-10-29 */
@@ -305,7 +303,7 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
   char *fileName2 = RML_STRINGDATA(rmlA1);
   char emptyString[5] = "empty";
   int res=1,i;
-  FILE *fp1,*fp2,*d1,*d2;
+  FILE *fp1,*fp2,*d1;
   long fileSize1,fileSize2;
   fp1 = fopen(fileName1, "r");
 
@@ -1218,8 +1216,6 @@ int scandir(const char* dirname,
 
 void System_5finit(void)
 {
-  char* qthome;
-
   last_ptr_index = -1;
   memset(ptr_vector, 0, sizeof(ptr_vector));
 }
@@ -1297,9 +1293,8 @@ char *getSymbolicLinkPath(char* path)
  **/
 char* findSymbolicLinks(char* path)
 {
-    int readChars=0,pointer=0,i;
+    int i;
     char *curRes = (char *) malloc(sizeof(char)*MAXPATHLEN);
-    char *destPos;
     char *curPos;
     char *endPos;
     curRes[0]='\0';
@@ -1342,7 +1337,7 @@ char* normalizePath(const char* src)
 {
   const char* srcEnd = src + strlen(src);
   const char* srcPos = src;
-  char* dest;
+  char* dest = NULL;
   char* targetPos = dest;
   char* newSrcPos = NULL;
   char* p = NULL;
@@ -1545,22 +1540,24 @@ RML_BEGIN_LABEL(System__moFiles)
 }
 RML_END_LABEL
 
-char *path_cat (const char *str1, char *str2,char *fileString) {
-    size_t str1_len = strlen(str1),str2_len = strlen(str2);
-    struct stat buf;
-    char *result;
-    int ret_val;
+static char *path_cat (const char *str1, char *str2,char *fileString)
+{
+  struct stat buf;
+  char *result;
+  int ret_val;
 
-    result = (char *)malloc(PATH_MAX*sizeof( *result));
-    if(strcmp(str2,"..") ==0 || strcmp(str2,".")==0){ result[0]= '\0'; return result;}
-    sprintf(result,"%s%s/%s",str1,str2,fileString);
-    ret_val = stat(result, &buf);
+  result = (char *)malloc(PATH_MAX*sizeof( *result));
+  if(strcmp(str2,"..") ==0 || strcmp(str2,".")==0) {
+    result[0]= '\0'; return result;
+  }
+  sprintf(result,"%s%s/%s",str1,str2,fileString);
+  ret_val = stat(result, &buf);
 
-    if (ret_val == 0 && buf.st_mode & S_IFREG) {
-            return result;
-    }
-    result[0]='\0';
+  if (ret_val == 0 && buf.st_mode & S_IFREG) {
     return result;
+  }
+  result[0]='\0';
+  return result;
 }
 
 RML_BEGIN_LABEL(System__getPackageFileNames)

@@ -567,7 +567,7 @@ int SystemImpl__systemCall(const char* str)
 
 int SystemImpl__spawnCall(const char* path, const char* str)
 {
-  int status = -1,ret_val = -1;
+  int ret_val = -1;
   const int debug = 0;
   if (debug) {
     fprintf(stderr, "System.spawnCall: %s\n", str); fflush(NULL);
@@ -657,7 +657,7 @@ extern int SystemImpl__directoryExists(const char *str)
 char* SystemImpl__readFileNoNumeric(const char* filename)
 {
   char* buf, *bufRes;
-  int res,bufPointer = 0,numCount;
+  int res,numCount;
   FILE * file = NULL;
   struct stat statstr;
   res = stat(filename, &statstr);
@@ -692,7 +692,6 @@ char* SystemImpl__readFileNoNumeric(const char* filename)
 double SystemImpl__getCurrentTime()
 {
   time_t t;
-  double elapsedTime;             // the time elapsed as double
   time( &t );
   return difftime(t, 0); // the current time
 }
@@ -707,9 +706,7 @@ typedef const struct dirent* direntry;
 
 static int file_select_mo(direntry entry)
 {
-  char fileName[MAXPATHLEN];
-  int res; char* ptr;
-  struct stat fileStatus;
+  char* ptr;
   if ((strcmp(entry->d_name, ".") == 0) ||
       (strcmp(entry->d_name, "..") == 0) ||
       (strcmp(entry->d_name, "package.mo") == 0)) {
@@ -1455,22 +1452,6 @@ int SystemImpl__lpsolve55(void *lA, void *lB, void *ix, void **res)
   return info;
 }
 
-static int getPrio(const char *ver, size_t versionLen)
-{
-  if (!ver) return 0;
-  int status = 0;
-  while (*ver && versionLen) {
-    if (*ver >= '0' && *ver <= '9') status = 1;
-    else if (status == 1 && *ver == '.') status = 2;
-    else if (status == 1 && *ver == ' ') return 2;
-    else return 3;
-    ver++;
-    versionLen--;
-  }
-  /* TODO: Handle pre-release, release, non-release */
-  return 1;
-}
-
 typedef struct {
   const char *dir;
   char *file;
@@ -1493,7 +1474,7 @@ void splitVersion(const char *version, long *versionNum, char **versionExtra)
     if (cont) {
       *versionNum = *versionNum + (l << (i*8));
       /* fprintf(stderr, "versionNum %lx\n", *versionNum); */
-      if (*next == '.') *next++;
+      if (*next == '.') next++;
     }
     buf = next;
   } while (cont && i-- > 0);
@@ -1557,7 +1538,6 @@ static modelicaPathEntry* getAllModelicaPaths(const char *name, size_t nlen, voi
     const char *mp = RML_STRINGDATA(RML_CAR(mps));
     DIR *dir = opendir(mp);
     struct dirent *ent;
-    int len;
     mps = RML_CDR(mps);
     if (!dir) continue;
     while ((ent = readdir(dir))) {
@@ -1612,7 +1592,7 @@ static int getLoadModelPathFromSingleTarget(const char *searchTarget, modelicaPa
 {
   int i, foundIndex = -1;
   long version, foundVersion = 0;
-  char *versionExtra, *foundVersionExtra;
+  char *versionExtra;
   splitVersion(searchTarget,&version,&versionExtra);
   /* fprintf(stderr, "expected %lx %s\n", version, versionExtra); */
   if (version > 0 && !*versionExtra) {
@@ -1670,7 +1650,7 @@ static int getLoadModelPathFromDefaultTarget(const char *name, modelicaPathEntry
 {
   const char *foundExtra = 0;
   long foundVersion = -1;
-  int bestPrio,i,foundIndex;
+  int i,foundIndex;
 
   /* Force preferred version MSL 3.1 */
   if (0 == strcmp("Modelica",name)) {
@@ -1717,6 +1697,7 @@ static int getLoadModelPathFromDefaultTarget(const char *name, modelicaPathEntry
     *isDir = entries[foundIndex].fileIsDir;
     return 0;
   }
+  return 1;
 }
 
 int SystemImpl__getLoadModelPath(const char *name, void *prios, void *mps, const char **outDir, char **outName, int *isDir)
@@ -1850,7 +1831,6 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   }
   buf[(buflen-1)-out_sz] = 0;
   if (strlen(buf) != (buflen-1)-out_sz) {
-    const char *tokens[1] = {to};
     if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(to=%s) failed because the character set output null bytes in the middle of the string."),&to,1);
     return (char*) "";
   }
@@ -1943,7 +1923,6 @@ void SystemImpl__gettextInit(const char *locale)
     (setlocale(LC_MESSAGES, locale2) && setlocale(LC_CTYPE, locale2)) ||
     setlocale(LC_MESSAGES, locale) && setlocale(LC_CTYPE, locale);
   if (!res) {
-    const char *c_tokens[1]={locale};
     fprintf(stderr, gettext("Warning: Failed to set locale: '%s'\n"), locale);
   }
   free(locale2);
