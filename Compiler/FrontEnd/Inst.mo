@@ -17626,7 +17626,6 @@ algorithm
       then ();
     else
       equation
-        print("Inst.checkFunctionDefUse failed...\n");
         Error.addSourceMessage(Error.INTERNAL_ERROR, {"Inst.checkFunctionDefUse failed"}, info);
       then ();
   end matchcontinue;

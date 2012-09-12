@@ -2910,10 +2910,11 @@ algorithm
   outExp := matchcontinue(e1,e2)
     local
       Type tp;
-      Boolean b;
+      Boolean b1,b2;
       Operator op;
       Real r1,r2;
       Integer i1,i2;
+      DAE.Exp e1_1,e2_1;
     case(_,_)
       equation
         true = isZero(e1);
@@ -2951,10 +2952,15 @@ algorithm
     case (_,_)
       equation
         tp = typeof(e1);
-        b = DAEUtil.expTypeArray(tp);
-        op = Util.if_(b,DAE.MUL_ARR(tp),DAE.MUL(tp));
+        b1 = DAEUtil.expTypeArray(tp);
+        tp = typeof(e2);
+        b2 = DAEUtil.expTypeArray(tp);
+        /* swap e1 and e2 if we have scalar mul array */
+        (e1_1,e2_1) = Util.swap((not b1) and b2, e1, e2);
+        /* Create all kinds of multiplication with scalars or arrays */
+        op = Util.if_(b1 and b2,DAE.MUL_ARR(tp),Util.if_(boolEq(b1,b2),DAE.MUL(tp),DAE.MUL_ARRAY_SCALAR(tp)));
       then
-        DAE.BINARY(e1,op,e2);         
+        DAE.BINARY(e1_1,op,e2_1);
   end matchcontinue;   
 end expMul;
 
