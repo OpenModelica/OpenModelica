@@ -1951,9 +1951,10 @@ algorithm
         arr_2 = arrayUpdate(arr_1, n + 1, SOME(v));
       then
         BackendDAE.VARIABLE_ARRAY(n_1,newsize,arr_2);
-    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size),_)
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
-        print("- BackendVariable.vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& "\n");
+        print("- BackendVariable.vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& " arraysize: " +& intString(arrayLength(arr)) +& "\n");
+        Debug.execStat("vararrayAdd",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
         fail();
     case (_,_)
@@ -2678,7 +2679,7 @@ algorithm
       equation
         size1 = noe + needed;
         true = intGt(size1,size);
-        expandsize = size1-size1;
+        expandsize = size1-size;
         arr_1 = Util.arrayExpand(expandsize, arr, NONE());
       then
         BackendDAE.VARIABLES(hashvec,BackendDAE.VARIABLE_ARRAY(noe,size1,arr_1),bsize,n);
