@@ -1569,6 +1569,13 @@ package DAE
     record FP_KERNEL_FUNCTION "an OpenCL/CUDA kernel function" end FP_KERNEL_FUNCTION;
   end FunctionParallelism;
   
+  uniontype Constraint "The `Constraints\' type corresponds to a whole Constraint section.
+  It is simply a list of expressions."
+    record CONSTRAINT_EXPS
+      list<Exp> constraintLst;
+    end CONSTRAINT_EXPS;
+  end Constraint;
+  
 end DAE;
 
 

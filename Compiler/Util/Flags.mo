@@ -613,7 +613,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",
   NONE(), EXTERNAL(), STRING_FLAG("C"), 
-  SOME(STRING_OPTION({"CSharp", "Cpp", "Adevs", "QSS", "C", "c", "Dump"})),
+  SOME(STRING_OPTION({"CSharp", "Cpp", "Adevs", "QSS", "C", "c", "Dump", "XML"})),
   Util.gettext("Sets the target language for the code generation"));
 constant ConfigFlag ORDER_CONNECTIONS = CONFIG_FLAG(18, "orderConnections", 
   NONE(), EXTERNAL(), BOOL_FLAG(true), NONE(),
