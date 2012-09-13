@@ -451,6 +451,13 @@ algorithm
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),e);
 
+    case (DAE.CALL(path = Absyn.IDENT("log10"),expLst = {e}),inVariables)
+      equation
+        e_1 = differentiateExpTime(e, inVariables) "der(log10(x)) = der(x)/(ln(10)*x)";
+        r = realLn(10.0);
+      then
+        DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(r),DAE.MUL(DAE.T_REAL_DEFAULT),e));
+
     case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),inVariables)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
