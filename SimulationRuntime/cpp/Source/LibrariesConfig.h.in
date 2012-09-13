@@ -8,3 +8,4 @@
 #define NEWTON_LIB "@NEWTON_LIB@"
 #define SYSTEM_LIB "@SYSTEM_LIB@"
 #define SOLVER_LIB "@SOLVER_LIB@"
+#define MATH_LIB "@MATH_LIB@"

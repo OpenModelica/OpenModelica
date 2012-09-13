@@ -152,7 +152,7 @@ FUNCTIONFILE=Functions.cpp
 
 .PHONY: <%lastIdentOfPath(modelInfo.name)%>
 <%lastIdentOfPath(modelInfo.name)%>: $(MAINFILE) 
-<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lOMCppSystem  -lOMCppModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lOMCppSystem -lOMCppMath -lOMCppModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
      
 >>
 end simulationMakefile;
@@ -6053,11 +6053,13 @@ template resetTimeEvents(list<SampleCondition> sampleConditions,list<SimWhenClau
 ::=
 match simCode
 case SIMCODE(sampleConditions=sam) then
+   let helpvars =  match helpVarInfo case _::_ then 'double h[<%helpvarlength(simCode)%>];
+                                                    <%helpvarvector(whenClauses,simCode)%>
+                                                    _event_handling.setHelpVars(h);'
+                                                     
   << 
-     <%resetTimeEvent(sampleConditions,simCode)%>
-     double h[<%helpvarlength(simCode)%>];
-     <%helpvarvector(whenClauses,simCode)%>
-      _event_handling.setHelpVars(h);
+      <%helpvars%>
+    
   >> 
 end resetTimeEvents;
 
@@ -6162,8 +6164,12 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let zeroCrossingsCode = handleSystemEvents1(zeroCrossings, &varDecls /*BUFD*/, simCode)
+ 
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then 
+   let helpvars =  match helpVarInfo case _::_ then 'double h[<%helpvarlength(simCode)%>];
+                                                    <%helpvarvector(whenClauses,simCode)%>
+                                                    _event_handling.setHelpVars(h);'
   <<
    void <%lastIdentOfPath(modelInfo.name)%>::handleSystemEvents(const bool* events)
    { 
@@ -6177,9 +6183,7 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
     while(restart && !(iter++ > 15))
     {
       
-         double h[<%helpvarlength(simCode)%>];
-          <%helpvarvector(whenClauses,simCode)%>
-             _event_handling.setHelpVars(h);
+             <%helpvars%>
             //iterate and handle all events inside the eventqueue
             restart=_event_handling.IterateEventQueue(_conditions1);
            saveAll();

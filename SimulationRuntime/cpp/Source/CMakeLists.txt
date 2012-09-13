@@ -173,12 +173,16 @@ GET_FILENAME_COMPONENT(libSystemName ${libSystem} NAME)
 GET_TARGET_PROPERTY(libSolver ${SolverName} LOCATION)
 GET_FILENAME_COMPONENT(libSolverName ${libSolver} NAME)
 
+GET_TARGET_PROPERTY(libMath ${MathName} LOCATION)
+GET_FILENAME_COMPONENT(libMathName ${libMath} NAME)
+
 set (EULER_LIB ${libEulerName})
 set (SETTINGSFACTORY_LIB ${libSetFactoryName})
 set (MODELICASYSTEM_LIB ${libModelicaName})
 set (NEWTON_LIB ${libNewtonName})
 set (SYSTEM_LIB ${libSystemName})
 set (SOLVER_LIB ${libSolverName})
+set (MATH_LIB ${libMathName})
 # configure a header file to pass some library names
 # to the source code which are used to dynamic load and instantiate 
 
@@ -223,9 +227,9 @@ install (FILES "DataExchange/Interfaces/IHistory.h"
  
  #copy Utils/extension
  SET(HS Utils/extension/adaptable_factory.hpp  Utils/extension/common.hpp Utils/extension/convenience.hpp 
-		Utils/extension/extension.hpp  Utils/extension/factory.hpp Utils/extension/factory_map.hpp Utils/extension/filesystem.hpp 
-		Utils/extension/parameter.hpp Utils/extension/parameter_map.hpp Utils/extension/registry.hpp Utils/extension/shared_library.hpp 
-		Utils/extension/type_map.hpp
+  Utils/extension/extension.hpp  Utils/extension/factory.hpp Utils/extension/factory_map.hpp Utils/extension/filesystem.hpp 
+  Utils/extension/parameter.hpp Utils/extension/parameter_map.hpp Utils/extension/registry.hpp Utils/extension/shared_library.hpp 
+  Utils/extension/type_map.hpp
  Utils/extension/impl/adaptable_factory.hpp Utils/extension/impl/adaptable_factory_free_functions.hpp Utils/extension/impl/adaptable_factory_set.hpp
  Utils/extension/impl/create.hpp  Utils/extension/impl/create_func.hpp Utils/extension/impl/decl.hpp
  Utils/extension/impl/factory.hpp Utils/extension/impl/factory_map.hpp Utils/extension/impl/function.hpp Utils/extension/impl/library_impl.hpp 

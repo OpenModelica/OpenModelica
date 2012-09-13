@@ -4,6 +4,9 @@
 #include <stdlib.h>
 #include "Math/Interfaces/ILapack.h"    ///< For the use of DGESV, etc.
 #include <limits>
+#include <exception>
+#include <string>
+#include "Math/Interfaces/OMAPI.h"    ///< For the use of DGESV, etc.
 /*****************************************************************************/
 /**
 
@@ -26,11 +29,8 @@ inline static int sgn (const double &c)
 }
 
 /// Definition of Signum function
-inline static double division (const double &a,const double &b,string text)
-{
-  return (b != 0) ?  a/b : throw std::invalid_argument(text);
-  
-}
+OMC_API double division (const double &a,const double &b,std::string text);
+
 
 
 /// Provides the maximum Norm 
