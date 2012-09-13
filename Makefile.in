@@ -104,7 +104,8 @@ fix-svn-eol-style:
 fix-bom:
 	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
 
-SOURCE_DIRS=OM*/ Compiler/ SimulationRuntime/ mosh/ libraries/ testsuite/libraries/ testsuite/3rdParty/ testsuite/modelicaML
+SOURCE_DIRS=$(SOURCE_DIRS_UTF8) testsuite/3rdParty/HumMod
+SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ libraries/ testsuite/libraries/ `bash -c echo testsuite/3rdParty/{AVM,PlanarMechanics,siemens,TestMedia,SiemensPower,ThermoSysPro}` testsuite/modelicaML
 
 bom-error:
 	rm -f bom-error.log bom-error.sh
@@ -123,9 +124,9 @@ thumbsdb-error:
 
 utf8-error:
 	rm -f utf8-error.log*
-	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
+	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "iconv -f UTF-8 -t UTF-8 '{}' -o /dev/null 2>utf8-error.log2 || (echo -n '{}: ' && head -n1 utf8-error.log2)"  ';' 2>&1 > utf8-error.log
 	# Also detect some valid UTF-8 that were obviously fucked up by eclipse
-	find $(SOURCE_DIRS) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "grep 'Link[^A-Za-z0-9_,.;&-]*ping' '{}' | grep -v Linköping && (echo '{}: Failed Linköping test')"  ';' 2>&1 >> utf8-error.log
+	find $(SOURCE_DIRS_UTF8) -regextype posix-egrep -regex '.*\.(cpp|c|h|mo|tpl)$$' -exec bash -c "grep 'Link[^A-Za-z0-9_,.;&-]*ping' '{}' | grep -v Linköping && (echo '{}: Failed Linköping test')"  ';' 2>&1 >> utf8-error.log
 	@cat utf8-error.log
 	@test ! -s utf8-error.log
 	rm -f utf8-error.log*
