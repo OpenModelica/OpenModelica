@@ -85,21 +85,10 @@ void Cvode::init()
   // 1) System assemblen und updaten, alles für Nullstellsuche anlegen
   // 2) Spezielle Dimensionen bestimmen (muss wg. ODE/DAE im Solver stattfinden) 
   // 3) Zustandsvektor anlegen
-   _dimSys    = continous_system->getDimVars(IContinous::ALL_STATES);
-  _dimZeroFunc = event_system->getDimZeroFunc();
-    _CV_y0 = N_VMake_Serial(_dimSys, _zInit);
-    _CV_y = N_VMake_Serial(_dimSys, _z);
-    _CV_yWrite = N_VMake_Serial(_dimSys, _zWrite);
-    // Allocate memory for the solver
-    _cvodeMem = CVodeCreate(CV_BDF, CV_NEWTON);
-    if(check_flag((void*)_cvodeMem, "CVodeCreate", 0))
-    {
-      _idid = -5; 
-      throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
-    }
-  SolverDefaultImplementation::init();
 
- 
+
+  _dimSys    = continous_system->getDimVars(IContinous::ALL_STATES);
+  _dimZeroFunc = event_system->getDimZeroFunc();
   
   int dimAEq  = continous_system->getDimVars(IContinous::DIFF_INDEX3);
 
@@ -156,7 +145,13 @@ void Cvode::init()
 
     }
 
-  
+    // Allocate memory for the solver
+    _cvodeMem = CVodeCreate(CV_BDF, CV_NEWTON);
+    if(check_flag((void*)_cvodeMem, "CVodeCreate", 0))
+    {
+      _idid = -5; 
+      throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
+    }
 
     //
     // Make Cvode ready for integration
@@ -170,7 +165,9 @@ void Cvode::init()
     continous_system->giveVars(_zInit);
     memcpy(_z,_zInit,_dimSys*sizeof(double));
 
-  
+    _CV_y0 = N_VMake_Serial(_dimSys, _zInit);
+    _CV_y = N_VMake_Serial(_dimSys, _z);
+    _CV_yWrite = N_VMake_Serial(_dimSys, _zWrite);
     if(check_flag((void*)_CV_y0, "N_VMake_Serial", 0))
     {
       _idid = -5; 
@@ -224,7 +221,7 @@ void Cvode::init()
     //
     // CVODE is ready for integration
     //
-
+   SolverDefaultImplementation::init();
   }
 }
 
