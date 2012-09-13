@@ -39,7 +39,7 @@
 
 #include "openmodelica.h"
 #include "ringbuffer.h"
-
+#include "omc_error.h"
 
 #define omc_dummyFileInfo {"",-1,-1,-1,-1,1}
 #define omc_dummyVarInfo {-1,"","",omc_dummyFileInfo}
@@ -47,16 +47,6 @@
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
 
   /* Model info structures */
-  typedef struct FILE_INFO
-  {
-    const char* filename;
-    int lineStart;
-    int colStart;
-    int lineEnd;
-    int colEnd;
-    int readonly;
-  }FILE_INFO;
-
   typedef struct VAR_INFO
   {
     int id;

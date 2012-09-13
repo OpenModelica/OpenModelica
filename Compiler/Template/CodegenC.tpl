@@ -906,7 +906,11 @@ template functionWhenReinitStatement(WhenOperator reinit, Text &varDecls /*BUFP*
   case TERMINATE(__) then 
     let &preExp = buffer "" /*BUFD*/
     let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<<%preExp%>  MODELICA_TERMINATE(<%msgVar%>);>>
+    <<
+    <%preExp%>
+    FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
+    omc_terminate(<%msgVar%>, info);
+    >>
   case ASSERT(source=SOURCE(info=info)) then
     assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
   end match
@@ -958,7 +962,8 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
       let msgVar = daeExp(message, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<  
       <%preExp%> 
-      MODELICA_TERMINATE(<%msgVar%>);
+      FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
+      omc_terminate(<%msgVar%>, info);
       >>
   case ASSERT(source=SOURCE(info=info)) then 
     assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
@@ -2536,16 +2541,9 @@ template functionsFile(String filePrefix,
   <<
   #include "<%filePrefix%>.h"
   #include "modelica.h"
-  /* undefine them if they are defined */
-  #if defined(MODELICA_ASSERT)
-  #undef MODELICA_ASSERT
-  #endif
-  #if defined(MODELICA_TERMINATE)
-  #undef MODELICA_TERMINATE
-  #endif 
-  #define MODELICA_ASSERT(info,msg) { printInfo(stderr,info); fprintf(stderr,"Modelica Assert: %s!\n", msg); fflush(NULL); }
-  #define MODELICA_TERMINATE(msg) { fprintf(stderr,"Modelica Terminate: %s!\n", msg); fflush(NULL); }  
-
+  void (*omc_assert)(const char *msg, FILE_INFO info) = omc_assert_function;
+  void (*omc_terminate)(const char *msg, FILE_INFO info) = omc_terminate_function;
+  void (*omc_throw)() = omc_throw_function;
   
   <%match mainFunction case SOME(fn) then functionBody(fn,true)%>
   <%functionBodies(functions)%>
@@ -4497,7 +4495,8 @@ case EXTERNAL_FUNCTION(__) then
   let dynamicCheck = if dynamicLoad then 
   <<
   if (<%fname%>==NULL) {
-    MODELICA_TERMINATE("dynamic external function <%extFunctionName(extName, language)%> not set!")
+    FILE_INFO info = {<%infoArgs(info)%>};
+    omc_terminate("dynamic external function <%extFunctionName(extName, language)%> not set!", info);
   } else
   >>
     else ''
@@ -5299,7 +5298,7 @@ case RANGE(__) then
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
   if (!<%stepVar%>) {
     FILE_INFO info = omc_dummyFileInfo;
-    MODELICA_ASSERT(info, "assertion range step != 0 failed");
+    omc_assert("assertion range step != 0 failed", info);
   } else if (!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>)))) {
     <%type%> <%iterName%>;
     for (<%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>) { 
@@ -5389,7 +5388,8 @@ case STMT_TERMINATE(__) then
   let msgVar = daeExp(msg, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
   <%preExp%>
-  MODELICA_TERMINATE(<%msgVar%>);
+  FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
+  omc_terminate(<%msgVar%>, info);
   >>
 end algStmtTerminate;
 
@@ -7861,7 +7861,7 @@ template assertCommonVar(Text condVar, Exp message, Context context, Text &varDe
   if (!<%condVar%>) {
     <%preExpMsg%>
     FILE_INFO info = {<%infoArgs(info)%>};
-    MODELICA_ASSERT(info, <%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>);
+    omc_assert(<%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>, info);
   }<%\n%>
   >>
 end assertCommonVar;

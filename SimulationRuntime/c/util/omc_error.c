@@ -30,6 +30,10 @@
  */
 
 #include "setjmp.h"
+#include <stdio.h>
+#include "omc_error.h"
+/* For MMC_THROW, so we can end this thing */
+#include "meta_modelica.h"
 
 /* Global JumpBuffer */
 jmp_buf globalJmpbuf;
@@ -48,3 +52,26 @@ const unsigned int LOG_DEBUG         = (1<<9);
 
 
 unsigned int globalDebugFlags = 0;
+
+void printInfo(FILE *stream, FILE_INFO info) {
+  fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
+}
+
+void omc_assert_function(const char *msg, FILE_INFO info) {
+  printInfo(stderr, info);
+  fprintf(stderr,"Modelica Assert: %s!\n", msg);
+  fflush(NULL);
+  MMC_THROW();
+}
+
+
+void omc_throw_function() {
+  MMC_THROW();
+}
+
+void omc_terminate_function(const char *msg, FILE_INFO info) {
+  printInfo(stderr, info);
+  fprintf(stderr,"Modelica Terminate: %s!\n", msg);
+  fflush(NULL);
+  MMC_THROW();
+}

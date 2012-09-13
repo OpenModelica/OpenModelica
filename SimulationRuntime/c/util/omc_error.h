@@ -40,6 +40,24 @@
 extern "C" {
 #endif
 
+typedef struct FILE_INFO
+{
+  const char* filename;
+  int lineStart;
+  int colStart;
+  int lineEnd;
+  int colEnd;
+  int readonly;
+}FILE_INFO;
+
+extern void printInfo(FILE *stream, FILE_INFO info);
+extern void (*omc_assert)(const char*, FILE_INFO);
+extern void (*omc_terminate)(const char*, FILE_INFO);
+extern void (*omc_throw)();
+void omc_assert_function(const char *msg, FILE_INFO info);
+void omc_terminate_function(const char *msg, FILE_INFO info);
+void omc_throw_function();
+
 #define USE_ASSERTS
 
 /* global JumpBuffer */

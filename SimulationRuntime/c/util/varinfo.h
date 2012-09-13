@@ -40,8 +40,6 @@ extern "C" {
 
 extern void printErrorEqSyst(equationSystemError err, EQUATION_INFO eq, double time);
 
-extern void printInfo(FILE *stream, FILE_INFO info);
-
 extern void freeVarInfo(VAR_INFO* info);
 
 #ifdef __cplusplus

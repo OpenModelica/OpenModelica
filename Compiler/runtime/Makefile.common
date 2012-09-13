@@ -83,6 +83,7 @@ ptolemyio_omc.o : ptolemyio.cpp errorext.h $(RML_COMPAT)
 ErrorMessage.o : ErrorMessage.cpp ErrorMessage.hpp errorext.h
 FMI_rml.o : FMIImpl.c
 FMIWrapper.o : FMIWrapper.c
+ModelicaExternalC_rml.o : $(SimRuntimeCDir)/../meta/meta_modelica.h
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*

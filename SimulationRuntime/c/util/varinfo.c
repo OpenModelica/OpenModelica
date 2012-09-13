@@ -55,12 +55,6 @@ void printErrorEqSyst(equationSystemError err, EQUATION_INFO eq, double time)
   }
 }
 
-void printInfo(FILE *stream, FILE_INFO info)
-{
-  fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
-}
-
-
 void freeVarInfo(VAR_INFO* info)
 {
   free((void*)info->info.filename);

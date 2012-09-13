@@ -1085,6 +1085,7 @@ algorithm
       list<Absyn.ElementItem> es;
       SCode.Visibility vis;
       Absyn.Element e;
+      list<String> names;
       
     case ({},_) then {};
     case ((Absyn.ANNOTATIONITEM(annotation_ = _) :: es),vis)

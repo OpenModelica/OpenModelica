@@ -739,3 +739,29 @@ void sim_result_writeParameterData(MODEL_DATA *modelData)
 {
    if (sim_result) sim_result->writeParameterData(modelData);
 }
+
+static void omc_assert_simulation(const char *msg, FILE_INFO info)
+{
+  terminationAssert = 1;
+  setTermMsg(msg);
+  TermInfo = info;
+}
+
+static void omc_terminate_simulation(const char *msg, FILE_INFO info)
+{
+  modelTermination=1;
+  terminationTerminate = 1;
+  setTermMsg(msg);
+  TermInfo = info;
+}
+
+static void omc_throw_simulation()
+{
+  terminationAssert = 1;
+  setTermMsg("Assertion triggered by external C function");
+  TermInfo = (struct FILE_INFO){"",-1,-1,-1,-1,1};
+}
+
+void (*omc_assert)(const char *msg, FILE_INFO info) = omc_assert_simulation;
+void (*omc_terminate)(const char *msg, FILE_INFO info) = omc_terminate_simulation;
+void (*omc_throw)() = omc_throw_simulation;
