@@ -118,7 +118,7 @@ int main(int argc, const char* argv[])
         modelica_system_path/=modelica_system_name;
 
         fs::path math_name(MATH_LIB);
-        fs::path math_path = modelica_path;
+        fs::path math_path = libraries_path;
         math_path/=math_name;
 
         fs::path default_system_name(SYSTEM_LIB);
