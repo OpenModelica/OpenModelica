@@ -740,6 +740,7 @@ void OMCProxy::loadStandardLibrary()
   sendCommand("getNamedAnnotation(Modelica,version)");
   QStringList versionLst = StringHandler::unparseStrings(getResult());
   QString versionStr = versionLst.empty() ? "" : versionLst.at(0);
+  Helper::OpenModelicaLibraryVersion = versionStr;
   double version = versionStr.toDouble();
 
   if (version >= 3.0 && version < 4.0) {

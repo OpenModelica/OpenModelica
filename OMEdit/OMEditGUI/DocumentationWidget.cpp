@@ -43,7 +43,7 @@
 //! Constructor
 //! @param pParent is the pointer to MainWindow.
 DocumentationWidget::DocumentationWidget(MainWindow *pParent)
-  : QWidget(pParent), mDocumentationFile(QDir::tempPath() + "/OpenModelica/OMEdit/documentation-XXXXXX.html")
+  : QWidget(pParent), mDocumentationFile(QDir::tempPath() + "/OpenModelica/OMEdit/DocumentationWidget.html")
 {
   setObjectName("DocumentationWidget");
   mpParentMainWindow = pParent;
@@ -86,6 +86,7 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
 //! Destructor
 DocumentationWidget::~DocumentationWidget()
 {
+  mDocumentationFile.remove();
   delete mpDocumentationViewer;
   delete mpDocumentationEditor;
 }
@@ -121,14 +122,18 @@ void DocumentationWidget::show(QString className)
     mpSaveButton->setVisible(false);
   }
   QString documentation = mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className);
+  //! @todo Ugly way to update images links. Fix it ASAP.
+  //! @todo Fix MSL to use image link as modelica://.
+  // We need to replace the back slashes(\) with forward slash(/), since QWebView baseurl doesn't handle it.
+  documentation = documentation.replace("src=\"../Images", "src=\"" + QString(Helper::OpenModelicaLibrary).replace("\\", "/").append("/Modelica ").append(Helper::OpenModelicaLibraryVersion).append("/Images"));
   /* Create a local file with the html we want to view as otherwise
    * JavaScript does not run properly.
    */
-  mDocumentationFile.open();
+  mDocumentationFile.open(QIODevice::WriteOnly | QIODevice::Text);
   QTextStream out(&mDocumentationFile);
   out << documentation;
   mDocumentationFile.close();
-  
+
   mpDocumentationViewer->setUrl(mDocumentationFile.fileName());
   mpDocumentationViewer->setVisible(true);
   mpDocumentationEditor->setVisible(false);
@@ -227,13 +232,6 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
   : QWebView(pParent)
 {
   mpParentDocumentationWidget = pParent;
-  // set the base url for documentation.
-  mpParentDocumentationWidget->mpParentMainWindow->mpOMCProxy->sendCommand("getNamedAnnotation(Modelica,version)");
-  QStringList lst = StringHandler::unparseStrings(mpParentDocumentationWidget->mpParentMainWindow->mpOMCProxy->getResult());
-  QString versionStr = lst.empty() ? "" : lst.at(0);
-  // We need to replace the back slashes(\) with forward slash(/), since QWebView baseurl doesn't handle it.
-  QString baseUrl = QString(Helper::OpenModelicaLibrary).replace("\\", "/").append("/Modelica ").append(versionStr).append("/Images/");
-  setBaseUrl(baseUrl);
   // set page font settings
   settings()->setFontFamily(QWebSettings::StandardFont, "Verdana");
   settings()->setFontSize(QWebSettings::DefaultFontSize, 10);
@@ -243,20 +241,6 @@ DocumentationViewer::DocumentationViewer(DocumentationWidget *pParent)
 
   connect(this, SIGNAL(linkClicked(QUrl)), SLOT(processLinkClick(QUrl)));
   connect(page(), SIGNAL(linkHovered(QString,QString,QString)), SLOT(processLinkHover(QString,QString,QString)));
-}
-
-//! Sets a base url for the webview.
-//! @param url the base url
-void DocumentationViewer::setBaseUrl(QString url)
-{
-  mBaseUrl.setUrl(url);
-}
-
-//! Returns the base url.
-//! @return QUrl the base url.
-QUrl DocumentationViewer::getBaseUrl()
-{
-  return mBaseUrl;
 }
 
 //! Slot activated when linkClicked signal of webview is raised.
@@ -273,10 +257,11 @@ void DocumentationViewer::processLinkClick(QUrl url)
     QDesktopServices::openUrl(url);
   }
 
-  // if the user has clicked on some Modelica Links like Modelica://
+  //! @todo Fix MSL to one standard. Some places the links are reference as Modelica:/ and at some places as modelica://
+  // if the user has clicked on some Modelica Links like Modelica:/
   else if (url.toString().startsWith("Modelica", Qt::CaseInsensitive))
   {
-    // remove Modelica:// from link
+    // remove Modelica:/ from link
     QString className;
     className = url.toString().mid(10, url.toString().length() - 1);
     // send the new className to DocumentationWidget

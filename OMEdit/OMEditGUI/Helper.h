@@ -55,6 +55,7 @@ public:
   static int settingsVersion;
   static QString OpenModelicaHome;
   static QString OpenModelicaLibrary;
+  static QString OpenModelicaLibraryVersion;
   static QString omcServerName;
   static QString omFileTypes;
   static QString omnotebookFileTypes;

@@ -70,7 +70,7 @@ public:
   QPushButton *mpEditButton;
   QPushButton *mpSaveButton;
   QDialogButtonBox *mpButtonBox;
-  QTemporaryFile mDocumentationFile;
+  QFile mDocumentationFile;
   QString mClassName;
 protected:
   virtual void paintEvent(QPaintEvent *event);
@@ -101,8 +101,6 @@ private:
   QUrl mBaseUrl;
 public:
   DocumentationViewer(DocumentationWidget *pParent);
-  void setBaseUrl(QString url);
-  QUrl getBaseUrl();
 
   DocumentationWidget *mpParentDocumentationWidget;
 public slots:

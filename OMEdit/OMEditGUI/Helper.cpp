@@ -48,6 +48,8 @@ int Helper::settingsVersion = 0;
 // these two variables are set once we are connected to OMC......in OMCProxy::startServer().
 QString Helper::OpenModelicaHome = "";
 QString Helper::OpenModelicaLibrary = "";
+// this variables is set in OMCProxy::loadStandardLibrary().
+QString Helper::OpenModelicaLibraryVersion = "";
 QString Helper::omcServerName = "OMEdit";
 QString Helper::omFileTypes = "Modelica Files (*.mo)";
 QString Helper::omnotebookFileTypes = "OMNotebook Files (*.onb *.onbz *.nb)";
