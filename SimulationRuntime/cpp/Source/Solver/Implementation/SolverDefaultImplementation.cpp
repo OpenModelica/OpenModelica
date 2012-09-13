@@ -105,7 +105,7 @@ void SolverDefaultImplementation::init()
     _system->writeOutput(IDAESystem::HEAD_LINE);
 
     // Allocate array with values of zero functions
-    if (_dimZeroFunc != event_system->getDimZeroFunc())
+    if (event_system->getDimZeroFunc() > 0)
     {
         // Number (dimension) of zero functions
         _dimZeroFunc = event_system->getDimZeroFunc();

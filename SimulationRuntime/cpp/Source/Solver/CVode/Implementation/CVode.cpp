@@ -158,9 +158,6 @@ void Cvode::init()
     //
 
     // Set initial values for CVODE
-
-    // System und Events aktualisieren
-    continous_system->update(IContinous::CONTINOUS);
     // giveVars (Zustand holen)
     continous_system->giveVars(_zInit);
     memcpy(_z,_zInit,_dimSys*sizeof(double));
@@ -222,6 +219,8 @@ void Cvode::init()
     // CVODE is ready for integration
     //
    SolverDefaultImplementation::init();
+    // System und Events aktualisieren
+    continous_system->update(IContinous::CONTINOUS);
   }
 }
 
