@@ -548,7 +548,7 @@ algorithm
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n");
+        // print( "differentiat equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n");
         eqn_1 = Derive.differentiateEquationTime(eqn, v, shared);
         (eqn_1,so) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1, BackendDAETransform.replaceStateOrderExp,inStateOrd); 
         eqnss = BackendDAEUtil.equationArraySize(eqns);
@@ -1342,7 +1342,7 @@ algorithm
         (orgEqnsLst,orgEqnLevel) = getOrgEqns(comp,orgEqnsLst,{},{},BackendEquation.daeEqns(isyst));
         // sort eqns, this is maybe not neccessary
         orgEqnLevel = List.sort(orgEqnLevel,compareOrgEqn);
-        (hov1,dummyStates,syst,shared) = processComp(orgEqnLevel,isyst,ishared,so,cv,hov,hov,inDummyStates);
+        (hov1,dummyStates,syst,shared) = processComp(orgEqnLevel,isyst,ishared,so,cv,hov,inDummyStates);
         //(hov1,dummyStates,_) = processCompInv(orgEqnLevel,isyst,ishared,so,cv,hov,hov,inDummyStates);
         (dummyStates,syst,shared) = processComps1(rest,syst,shared,vec2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn),hov1,dummyStates);
       then
@@ -1459,8 +1459,7 @@ protected function processComp
   input BackendDAE.Shared ishared;
   input BackendDAE.StateOrder so; 
   input BackendDAE.Variables cvars;  
-  input BackendDAE.Variables hov;  
-  input BackendDAE.Variables hov1;  
+  input BackendDAE.Variables hov;
   input list<DAE.ComponentRef> inDummyStates;  
   output BackendDAE.Variables outhov;   
   output list<DAE.ComponentRef> outDummyStates; 
@@ -1468,7 +1467,7 @@ protected function processComp
   output BackendDAE.Shared oshared;    
 algorithm
   (outhov,outDummyStates,osyst,oshared) := 
-  matchcontinue(orgEqnsLst,isyst,ishared,so,cvars,hov,hov1,inDummyStates)
+  matchcontinue(orgEqnsLst,isyst,ishared,so,cvars,hov,inDummyStates)
     local 
       list<BackendDAE.Equation> eqnslst;
       list<tuple<Integer, list<BackendDAE.Equation>, Integer>> orgeqns;
@@ -1478,18 +1477,18 @@ algorithm
       list<Integer> eqnindxlst;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-    case ({},_,_,_,_,_,_,_) then (hov1,inDummyStates,isyst,ishared);
-    case (_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_) then (hov,inDummyStates,isyst,ishared);
+    case (_,_,_,_,_,_,_)
       equation
         (orgeqns,eqnslst,eqnindxlst) = getOrgEqn(orgEqnsLst,{},{},{});
         // inline array eqns
         eqnslst = List.fold(eqnslst,BackendDAEOptimize.getScalarArrayEqns1,{});
         eqns = BackendDAEUtil.listEquation(eqnslst);
-        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov1,inDummyStates,isyst,ishared,so,BackendDAEUtil.emptyVars());
+        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov,inDummyStates,isyst,ishared,so,BackendDAEUtil.emptyVars());
         // get derivatives one order less
         lov = lowerOrderDerivatives(lov,BackendVariable.daeVars(isyst),so);
         // call again with original equations of derived equations 
-        (hov_1,dummyStates,syst,shared) = processComp(orgeqns,syst,shared,so,lov,lov,hov_1,dummyStates);
+        (hov_1,dummyStates,syst,shared) = processComp(orgeqns,syst,shared,so,lov,hov_1,dummyStates);
       then
         (hov_1,dummyStates,syst,shared); 
     else
@@ -1658,7 +1657,7 @@ algorithm
         varlst = BackendDAEUtil.varList(vars);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
-        (hov1,lov,dummystates) = selectDummyStatesNEW(varlst,vars,hov,inLov,inDummyStates);
+        (hov1,lov,dummystates) = selectDummyStateVars(varlst,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared); 
     case(_,_,_,_,_,_,_,_,_,_,_)
@@ -1677,7 +1676,7 @@ algorithm
         states = List.threadTuple(crlst,List.intRange2(1,dummyvarssize));
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
-        (hov1,lov,dummystates) = selectDummyStatesNEW(varlst,vars,hov,inLov,inDummyStates);
+        (hov1,lov,dummystates) = selectDummyStateVars(varlst,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared); 
     case(_,_,_,_,_,_,_,_,_,_,_)
@@ -3107,9 +3106,9 @@ algorithm
   end matchcontinue;    
 end selectDummyStates;
 
-protected function selectDummyStatesNEW
-"function: selectDummyStates
-  author: Frenkel TUD 2012-05
+protected function selectDummyStateVars
+"function: selectDummyStateVars
+  author: Frenkel TUD 2012-09
   selects the states as dummy states"
   input list<BackendDAE.Var> states;
   input BackendDAE.Variables vars;
@@ -3136,11 +3135,11 @@ algorithm
           cr = BackendVariable.varCref(v);
           hov1 = BackendVariable.removeCref(cr,hov);
           lov = BackendVariable.addVar(v,inLov);
-         (hov1,lov, dummystates) = selectDummyStatesNEW(rest,vars,hov1,lov,cr::inDummyStates);
+         (hov1,lov, dummystates) = selectDummyStateVars(rest,vars,hov1,lov,cr::inDummyStates);
         then
           (hov1,lov, dummystates);
   end matchcontinue;    
-end selectDummyStatesNEW;
+end selectDummyStateVars;
 
 protected function addDummyStates
 "function: addDummyStates
