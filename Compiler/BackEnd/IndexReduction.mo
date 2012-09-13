@@ -1656,11 +1656,9 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
         varlst = BackendDAEUtil.varList(vars);
-        crlst = List.map(varlst,BackendVariable.varCref);
-        states = List.threadTuple(crlst,List.intRange2(1,varSize));
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));
-        (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
+        (hov1,lov,dummystates) = selectDummyStatesNEW(varlst,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared); 
     case(_,_,_,_,_,_,_,_,_,_,_)
@@ -1678,8 +1676,8 @@ algorithm
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,dummyvarssize));
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));
-        (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
+        (hov1,lov,dummystates) = selectDummyStatesNEW(varlst,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared); 
     case(_,_,_,_,_,_,_,_,_,_,_)
@@ -3108,6 +3106,41 @@ algorithm
           (hov1,lov, dummystates);
   end matchcontinue;    
 end selectDummyStates;
+
+protected function selectDummyStatesNEW
+"function: selectDummyStates
+  author: Frenkel TUD 2012-05
+  selects the states as dummy states"
+  input list<BackendDAE.Var> states;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables hov;
+  input BackendDAE.Variables inLov;
+  input list<DAE.ComponentRef> inDummyStates;
+  output BackendDAE.Variables outhov;
+  output BackendDAE.Variables outlov;
+  output list<DAE.ComponentRef> outDummyStates;
+algorithm
+  (outhov,outlov,outDummyStates) := matchcontinue(states,vars,hov,inLov,inDummyStates)
+    local
+      DAE.ComponentRef cr;
+      Integer s;
+      list<BackendDAE.Var> rest;
+      BackendDAE.Variables hov1,lov;
+      list<DAE.ComponentRef> dummystates;
+      BackendDAE.Var v;
+      case ({},_,_,_,_)
+        then
+          (hov,inLov,inDummyStates);
+      case (v::rest,_,_,_,_)
+        equation
+          cr = BackendVariable.varCref(v);
+          hov1 = BackendVariable.removeCref(cr,hov);
+          lov = BackendVariable.addVar(v,inLov);
+         (hov1,lov, dummystates) = selectDummyStatesNEW(rest,vars,hov1,lov,cr::inDummyStates);
+        then
+          (hov1,lov, dummystates);
+  end matchcontinue;    
+end selectDummyStatesNEW;
 
 protected function addDummyStates
 "function: addDummyStates
