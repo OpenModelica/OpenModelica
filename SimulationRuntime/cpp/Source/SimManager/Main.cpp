@@ -117,21 +117,27 @@ int main(int argc, const char* argv[])
         fs::path modelica_system_path = modelica_path;
         modelica_system_path/=modelica_system_name;
 
+        fs::path math_name(MATH_LIB);
+        fs::path math_path = modelica_path;
+        math_path/=math_name;
+
         fs::path default_system_name(SYSTEM_LIB);
         fs::path default_system_path = libraries_path;
         default_system_path/=default_system_name;
-
+    
       
 
         default_system_path.make_preferred();
         modelica_system_path.make_preferred();
-       
+        math_path.make_preferred();
+
         type_map types;
         if(!load_single_library(types,  default_system_path.string()))
             throw std::invalid_argument("System default library could not be loaded");
        
-        
-        
+        shared_library math_lib(math_path.string());
+        if(!math_lib.open())
+             throw std::invalid_argument("Math library could not be loaded");
 
         if(!load_single_library(types,  modelica_system_path.string()))
             throw std::invalid_argument("ModelicaSystem library could not be loaded");

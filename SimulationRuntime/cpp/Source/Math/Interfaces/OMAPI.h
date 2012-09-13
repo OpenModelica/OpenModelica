@@ -10,7 +10,7 @@
 #  define OMC_API __declspec( dllexport )
 #   else
 #  define OMC_API __declspec( dllimport )
-# pragma warning( disable : 4251 )	// 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
+# pragma warning( disable : 4251 )// 'identifier' : class 'type' needs to have dll-interface to be used by clients of class 'type2'
 # endif
 #endif
 
