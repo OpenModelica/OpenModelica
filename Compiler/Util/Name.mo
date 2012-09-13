@@ -145,7 +145,7 @@ protected
   NameInteger n2i;
   IntegerName i2n;
   Integer seqNo;
-  String str, str1, str2;
+  String str1, str2;
 algorithm
   NAMES(n2i, i2n, seqNo) := inNames;
   str1 := AvlTree.prettyPrintTreeStr(n2i);

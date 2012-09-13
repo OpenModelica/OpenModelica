@@ -112,9 +112,9 @@ algorithm
         //       ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
         
         // check duplicates in builtin (initial) functions
-        SCodeCheck.checkDuplicateClasses(spInitial);
+        SCodeCheck.checkDuplicateElements(spInitial);
         // check duplicates in absyn
-        SCodeCheck.checkDuplicateClasses(spAbsyn);
+        SCodeCheck.checkDuplicateElements(spAbsyn);
          
         sp = listAppend(spInitial, spAbsyn);
       then
@@ -1099,8 +1099,7 @@ algorithm
         e_1 = translateElement(e, vis);
         es_1 = translateEitemlist(es, vis);
         l = listAppend(e_1, es_1);
-      then
-        l;
+      then l;
 
     case ((Absyn.LEXER_COMMENT(comment = _) :: es),vis)
       then translateEitemlist(es, vis);
@@ -1111,6 +1110,22 @@ algorithm
       then translateEitemlist(es, vis);
   end match;
 end translateEitemlist;
+
+protected function checkForDuplicateElements
+"Verifies that the input is empty; else an error message is printed"
+  input list<String> duplicateNames;
+algorithm
+  _ := match duplicateNames
+    local
+      String msg;
+    case {} then ();
+    else
+      equation
+        msg = stringDelimitList(duplicateNames, ",");
+        Error.addMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,{msg});
+      then fail();
+  end match;
+end checkForDuplicateElements;
 
 // stefan
 protected function translateAnnotations

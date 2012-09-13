@@ -668,7 +668,7 @@ algorithm
   end match;
 end getElementNamed;
 
-protected function getElementNamedFromElts
+public function getElementNamedFromElts
 "function: getElementNamedFromElts
   Helper function to getElementNamed."
   input Ident inIdent;
@@ -847,10 +847,31 @@ public function elementName ""
   output String s;
 algorithm
   s := match(e)
-    case(COMPONENT(name = s)) then s;
-    case(CLASS(name = s)) then s;
+    case (COMPONENT(name = s)) then s;
+    case (CLASS(name = s)) then s;
   end match;
 end elementName;
+
+public function elementNames "Gets all elements that have an element name from the list"
+  input list<Element> elts;
+  output list<String> names;
+algorithm
+  names := List.fold(elts,elementNamesWork,{});
+end elementNames;
+
+protected function elementNamesWork "Gets all elements that have an element name from the list"
+  input Element e;
+  input list<String> acc;
+  output list<String> out;
+algorithm
+  out := match(e,acc)
+    local
+      String s;
+    case (COMPONENT(name = s),acc) then s::acc;
+    case (CLASS(name = s),acc) then s::acc;
+    else acc;
+  end match;
+end elementNamesWork;
 
 public function renameElement
   input Element inElement;

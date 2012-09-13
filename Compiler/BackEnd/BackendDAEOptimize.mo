@@ -2299,7 +2299,7 @@ protected function mergeAliasVars
   output BackendDAE.Var outVar;
 protected
   BackendDAE.Var v,va,v1,v2;
-  Boolean fixeda, fixed,fixeda,f;
+  Boolean fixed,fixeda,f;
   Option<DAE.Exp> sv,sva;
   DAE.Exp start;
 algorithm
