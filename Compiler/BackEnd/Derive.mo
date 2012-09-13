@@ -333,6 +333,7 @@ algorithm
       DAE.ReductionIterators iters;
       DAE.CallAttributes attr;
       BackendDAE.VarKind kind;
+      Real r;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -515,14 +516,25 @@ algorithm
       then 
         DAE.IFEXP(DAE.RELATION(exp,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()), e1_1, DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),e1_1));
 
-    case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(_))),inVariables) /* ax^(a-1) */
+    // x^r
+    case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(real=r))),inVariables) /* ax^(a-1) */
       equation
         d_e1 = differentiateExpTime(e1, inVariables) "e^x => xder(e)e^x-1" ;
         // false = Expression.expContains(e2, Expression.makeCrefExp(tv,tp));
         // const_one = differentiateExp(Expression.makeCrefExp(tv,tp), tv);
+        r = r -. 1.0;
         exp = DAE.BINARY(
           DAE.BINARY(d_e1,DAE.MUL(tp),e2),DAE.MUL(tp),
-          DAE.BINARY(e1,DAE.POW(tp),DAE.BINARY(e2,DAE.SUB(tp),DAE.RCONST(1.0))));
+          DAE.BINARY(e1,DAE.POW(tp),DAE.RCONST(r)));
+      then
+        exp;
+
+    // r^x 
+    case (e0 as DAE.BINARY(exp1 = (e1 as DAE.RCONST(real=r)),operator = DAE.POW(tp),exp2 = e2),inVariables) /* r^x*ln(r)*der(x) */
+      equation
+        d_e1 = differentiateExpTime(e2, inVariables);
+        r = realLn(r);
+        exp = DAE.BINARY(DAE.BINARY(e0,DAE.MUL(tp),DAE.RCONST(r)),DAE.MUL(tp),d_e1);
       then
         exp;
 
@@ -724,7 +736,7 @@ algorithm
         e1_1 = differentiateExpTime(e1, inVariables);
       then
         DAE.REDUCTION(reductionInfo,e1_1,iters);
-    
+
     /* We need to expect failures for example for shared array-equations
     case (e,_)
       equation
