@@ -1628,7 +1628,8 @@ algorithm
         BackendDAE.AdjacencyMatrixEnhanced me;
         BackendDAE.AdjacencyMatrixTEnhanced meT;  
         array<list<Integer>> mapEqnIncRow;
-        array<Integer> mapIncRowEqn;     
+        array<Integer> mapIncRowEqn;
+        Integer dummyvarssize;
     case(_,0,_,_,_,_,_,_,_,_,_)
         // if no vars then there is nothing do do
       then
@@ -1652,7 +1653,8 @@ algorithm
         true = intGt(varSize,1);
         true = intEq(eqnsSize,varSize);
         Debug.fcall(Flags.BLT_DUMP, print, "equal var and eqn size\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
         varlst = BackendDAEUtil.varList(vars);
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,varSize));
@@ -1668,11 +1670,13 @@ algorithm
         false = intGt(eqnsSize,varSize);
         varlst = BackendDAEUtil.varList(vars);
         varlst = List.filter(varlst, notVarStateSelectAlways);
-        true = intGt(eqnsSize,listLength(varlst));
+        dummyvarssize = listLength(varlst);
+        true = intEq(eqnsSize,dummyvarssize);
         Debug.fcall(Flags.BLT_DUMP, print, "select dummy vars from stateselection\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
         crlst = List.map(varlst,BackendVariable.varCref);
-        states = List.threadTuple(crlst,List.intRange2(1,varSize));
+        states = List.threadTuple(crlst,List.intRange2(1,dummyvarssize));
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));
         (hov1,lov,dummystates) = selectDummyStates(states,1,eqnsSize,vars,hov,inLov,inDummyStates);
@@ -1723,7 +1727,8 @@ algorithm
         true = intGt(varSize,1);
         true = intGt(eqnsSize,varSize);
         print("Structural singular system:\n");
-        BackendDump.dumpEqSystem(BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
       then
         fail();
   end matchcontinue;
