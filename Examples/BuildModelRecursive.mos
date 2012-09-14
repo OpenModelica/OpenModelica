@@ -36,7 +36,7 @@ deleteClass(Modelica.Utilities);
 system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
-a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(Modelica.Blocks,recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
@@ -61,14 +61,15 @@ echo(false);
 frontend :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_FRONTEND);
 backend  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BACKEND);
 simcode  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMCODE);
-linearize:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_LINEARIZE);
+// linearize:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_LINEARIZE);
+linearize:=0.0;
 templates:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_TEMPLATES);
 total    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
 build    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BUILD_MODEL);
 frontend :=if frontend <> -1.0 then frontend-backend else -1.0;
 backend  :=if backend <> -1.0 then backend-simcode else -1.0;
 simcode  :=if simcode <> -1.0 then simcode-linearize else -1.0;
-linearize:=if linearize <> -1.0 then linearize-templates else -1.0;
+// linearize:=if linearize <> -1.0 then linearize-templates else -1.0;
 templates:=if templates <> -1.0 then templates-build else -1.0;
 
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
@@ -92,7 +93,7 @@ str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" els
   \"</td>\" +
   cell(timeSim,greenOnOk=true) +
   \"<td bgcolor=\\\"#\"+(if res[1]<>\"\" then \"00FF00\" else \"FF0000\")+\"\\\">\"+OpenModelica.Scripting.Internal.Time.readableTime(total)+\"</td>\" +
-  sum(cell(d) for d in {frontend,backend,simcode,linearize,templates,build}) + \"</tr>\\n\";getErrorString();
+  sum(cell(d) for d in {frontend,backend,simcode,templates,build}) + \"</tr>\\n\";getErrorString();
 writeFile(statFile,str);getErrorString();
 ") for s in a);
 getErrorString();
@@ -110,6 +111,6 @@ str:="<h1>Recursive BuildModel Test</h1><p>Results: " + String(sum(if OpenModeli
 <p>Simulation time limit: "+ulimitExe+"s</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
-writeFile(log,"<table><tr><th>Model</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Linearize</th><th>Templates</th><th>Compile</th></tr>",append=true);getErrorString();
+writeFile(log,"<table><tr><th>Model</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>",append=true);getErrorString();
 writeFile(log,sum(readFile(s + ".stat") + "\n" for s in a),append=true);getErrorString();
 writeFile(log,"</table></body></html>",append=true);getErrorString();
