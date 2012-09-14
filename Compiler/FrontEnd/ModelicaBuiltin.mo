@@ -2443,7 +2443,7 @@ function isExperiment "An experiment is defined as having annotation Experiment(
 external "builtin";
 end isExperiment;
 
-function loadModelica3d
+function loadModelica3D
   output Boolean status;
 protected
   String m3d;
@@ -2458,7 +2458,7 @@ algorithm
 <p>You will also need to start an m3d backend to render the results. We hid them in $OPENMODELICAHOME/lib/omlibrary-modelica3d/osg-gtk/dbus-server.py (or blender2.59).</p>
 <p>For more information and example models, visit the <a href=\"https://mlcontrol.uebb.tu-berlin.de/redmine/projects/modelica3d-public/wiki\">Modelica3D wiki</a>.</p>
  </html>"));
-end loadModelica3d;
+end loadModelica3D;
 
 annotation(preferredView="text");
 end Scripting;
