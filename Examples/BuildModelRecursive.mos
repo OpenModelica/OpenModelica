@@ -5,7 +5,7 @@ OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.T
 log:="BuildModelRecursive.html";
 MSLVersion:="3.1";
 ulimitOmc:="300"; // 5 minutes to generate the C-code
-ulimitExe:="40";  // 40 seconds to initialize and run the simulation
+ulimitExe:="45";  // 40 seconds to initialize and run the simulation
 loadModel(Modelica,{MSLVersion});
 getErrorString();
 
@@ -52,7 +52,8 @@ res:=buildModel("+s+");
 errFile:=\""+s+".err\";
 simFile:=\""+s+".sim\";
 err:=getErrorString();
-system(\"rm -f \" + errFile + \" \" + simFile);
+system(\"rm -f \" + errFile);
+writeFile(simFile,\"\");
 if err <> \"\" then
   writeFile(errFile,err);
 end if;
