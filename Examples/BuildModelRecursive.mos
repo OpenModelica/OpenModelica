@@ -36,7 +36,7 @@ deleteClass(Modelica.Utilities);
 system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
-a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(Modelica.Blocks,recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
