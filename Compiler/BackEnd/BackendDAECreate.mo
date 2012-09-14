@@ -1041,7 +1041,7 @@ algorithm
         s = "BackendDAECreate.lowerEqn failed for " +& DAEDump.dumpElementsStr({inElement});
         Error.addMessage(Error.INTERNAL_ERROR, {s});
       then fail();          
-                         
+
   end match;
 end lowerEqn;
 
@@ -1347,7 +1347,7 @@ algorithm
       Integer size;
       list<BackendDAE.Equation> eqnl;
       list<BackendDAE.WhenOperator> reinit;
-      DAE.Exp cre,e,cond;
+      DAE.Exp cre,e,cond,level;
       DAE.ComponentRef cr;
       list<DAE.Element> xs,eqns;
       DAE.Element el;
@@ -1394,11 +1394,11 @@ algorithm
       then
         (eqnl,reinit);
 
-    case (DAE.ASSERT(condition=cond,message = e,source = source) :: xs,_,_,_,_)
+    case (DAE.ASSERT(condition=cond,message = e,level = level,source = source) :: xs,_,_,_,_)
       equation
         (cond,source,_) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, iEquationLst, BackendDAE.ASSERT(cond,e,source) :: iReinitStatementLst);
+        (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, iEquationLst, BackendDAE.ASSERT(cond,e,level,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
 

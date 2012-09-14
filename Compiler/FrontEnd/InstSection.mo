@@ -2456,7 +2456,7 @@ algorithm
   (outCache,outStatements) := 
   matchcontinue (inCache,inEnv,inIH,inPre,ci_state,inAlgorithm,inSource,initial_,inBoolean,unrollForLoops,numErrorMessages)
     local
-      DAE.Properties cprop,prop,msgprop,varprop,valprop;
+      DAE.Properties cprop,prop,msgprop,varprop,valprop,levelprop;
       DAE.Exp e_1,e_2,cond_1,cond_2,msg_1,msg_2,var_1,var_2,value_1,value_2,level_1,level_2;
       DAE.Statement stmt, stmt1;
       list<Env.Frame> env;
@@ -2572,7 +2572,7 @@ algorithm
         (cache,cond_2) = PrefixUtil.prefixExp(cache, env, ih, cond_1, pre);
         (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmts = Algorithm.makeAssert(cond_2, msg_2, DAE.ASSERTIONLEVEL_ERROR, cprop, msgprop, source);
+        stmts = Algorithm.makeAssert(cond_2, msg_2, DAE.ASSERTIONLEVEL_ERROR, cprop, msgprop, DAE.PROP(DAE.T_ASSERTIONLEVEL,DAE.C_CONST()), source);
       then
         (cache,stmts);
     /* assert(cond,msg,level) */
@@ -2581,15 +2581,22 @@ algorithm
       equation 
         (cache,cond_1,cprop,_) = Static.elabExp(cache, env, cond, impl,NONE(), true,pre,info);
         (cache,msg_1,msgprop,_) = Static.elabExp(cache, env, msg, impl,NONE(), true,pre,info);
-        (cache,level_1,msgprop,_) = Static.elabExp(cache, env, level, impl,NONE(), true,pre,info);
+        (cache,level_1,levelprop,_) = Static.elabExp(cache, env, level, impl,NONE(), true,pre,info);
         (cache, cond_1, cprop) = Ceval.cevalIfConstant(cache, env, cond_1, cprop, impl, info);
         (cache, msg_1, msgprop) = Ceval.cevalIfConstant(cache, env, msg_1, msgprop, impl, info);
-        (cache, level_1, msgprop) = Ceval.cevalIfConstant(cache, env, level_1, msgprop, impl, info);
+        (cache, level_1, levelprop) = Ceval.cevalIfConstant(cache, env, level_1, levelprop, impl, info);
         (cache,cond_2) = PrefixUtil.prefixExp(cache, env, ih, cond_1, pre);
         (cache,msg_2) = PrefixUtil.prefixExp(cache, env, ih, msg_1, pre);
         (cache,level_2) = PrefixUtil.prefixExp(cache, env, ih, level_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmts = Algorithm.makeAssert(cond_2, msg_2, level_2, cprop, msgprop, source);
+        stmts = Algorithm.makeAssert(cond_2, msg_2, level_2, cprop, msgprop, levelprop, source);
+      then
+        (cache,stmts);
+    /* assert(cond,msg,level) */
+    case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert"),
+          functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {Absyn.NAMEDARG("level",level)})), info = info),source,initial_,impl,unrollForLoops,_)
+      equation 
+        (cache,stmts) = instStatement2(cache,env,ih,pre,ci_state,SCode.ALG_NORETCALL(Absyn.CALL(Absyn.CREF_IDENT("assert",{}),Absyn.FUNCTIONARGS({cond,msg,level},{})),NONE(),info),source,initial_,impl,unrollForLoops,numErrorMessages);
       then
         (cache,stmts);
         

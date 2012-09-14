@@ -303,6 +303,7 @@ public uniontype Element
   
 end Element;
 
+public constant Type T_ASSERTIONLEVEL = T_ENUMERATION(NONE(), Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")), {"error","warning"}, {}, {}, emptyTypeSource);
 public constant Exp ASSERTIONLEVEL_ERROR = ENUM_LITERAL(Absyn.QUALIFIED("AssertionLevel",Absyn.IDENT("error")),1);
 public constant Exp ASSERTIONLEVEL_WARNING = ENUM_LITERAL(Absyn.QUALIFIED("AssertionLevel",Absyn.IDENT("warning")),2);
 

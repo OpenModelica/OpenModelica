@@ -1836,6 +1836,10 @@ algorithm
                               functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2,e3},argNames = {})),com,info,_)
       then SCode.EQ_ASSERT(e1,e2,e3,com,info);
 
+    case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
+                              functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {Absyn.NAMEDARG("level",e3)})),com,info,_)
+      then SCode.EQ_ASSERT(e1,e2,e3,com,info);
+
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("terminate", _),
                             functionArgs = Absyn.FUNCTIONARGS(args = {e1},argNames = {})),com,info,_)
       then SCode.EQ_TERMINATE(e1,com,info);

@@ -560,6 +560,8 @@ public constant Message ASSIGN_UNKNOWN_ERROR = MESSAGE(243, TRANSLATION(), ERROR
   Util.gettext("Failed elaborate assignment for some unknown reason: %1 := %2. File a bug report and we will make sure this error gets a better message in the future."));
 public constant Message WARNING_DEF_USE = MESSAGE(244, TRANSLATION(), WARNING(),
   Util.gettext("%s was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed."));
+public constant Message EXP_TYPE_MISMATCH = MESSAGE(245, TRANSLATION(), ERROR(),
+  Util.gettext("Expression %1 has type %3, expected type %2."));
 
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"));

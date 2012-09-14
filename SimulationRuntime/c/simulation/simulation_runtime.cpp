@@ -747,6 +747,11 @@ static void omc_assert_simulation(const char *msg, FILE_INFO info)
   TermInfo = info;
 }
 
+static void omc_assert_warning_simulation(const char *msg, FILE_INFO info)
+{
+  fprintf(stderr, "Warning: %s\n", msg);
+}
+
 static void omc_terminate_simulation(const char *msg, FILE_INFO info)
 {
   modelTermination=1;
@@ -763,5 +768,6 @@ static void omc_throw_simulation()
 }
 
 void (*omc_assert)(const char *msg, FILE_INFO info) = omc_assert_simulation;
+void (*omc_assert_warning)(const char *msg, FILE_INFO info) = omc_assert_warning_simulation;
 void (*omc_terminate)(const char *msg, FILE_INFO info) = omc_terminate_simulation;
 void (*omc_throw)() = omc_throw_simulation;

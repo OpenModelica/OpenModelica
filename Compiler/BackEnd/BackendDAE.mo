@@ -181,6 +181,7 @@ uniontype WhenOperator "- Reinit Statement"
   record ASSERT
     .DAE.Exp condition;
     .DAE.Exp message;
+    .DAE.Exp level;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end ASSERT;
   

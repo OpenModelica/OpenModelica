@@ -64,6 +64,11 @@ void omc_assert_function(const char *msg, FILE_INFO info) {
   MMC_THROW();
 }
 
+void omc_assert_warning_function(const char *msg, FILE_INFO info) {
+  printInfo(stderr, info);
+  fprintf(stderr,"Warning, assertion triggered: %s!\n", msg);
+  fflush(NULL);
+}
 
 void omc_throw_function() {
   MMC_THROW();

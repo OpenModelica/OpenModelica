@@ -912,7 +912,7 @@ template functionWhenReinitStatement(WhenOperator reinit, Text &varDecls /*BUFP*
     omc_terminate(<%msgVar%>, info);
     >>
   case ASSERT(source=SOURCE(info=info)) then
-    assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
+    assertCommon(condition, message, level, contextSimulationDiscrete, &varDecls, info)
   end match
 end functionWhenReinitStatement;
 
@@ -966,7 +966,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
       omc_terminate(<%msgVar%>, info);
       >>
   case ASSERT(source=SOURCE(info=info)) then 
-    assertCommon(condition, message, contextSimulationDiscrete, &varDecls, info)
+    assertCommon(condition, message, level, contextSimulationDiscrete, &varDecls, info)
     ;separator="\n")
     <<
     <%body%>  
@@ -2542,6 +2542,7 @@ template functionsFile(String filePrefix,
   #include "<%filePrefix%>.h"
   #include "modelica.h"
   void (*omc_assert)(const char *msg, FILE_INFO info) = omc_assert_function;
+  void (*omc_assert_warning)(const char *msg, FILE_INFO info) = omc_assert_warning_function;
   void (*omc_terminate)(const char *msg, FILE_INFO info) = omc_terminate_function;
   void (*omc_throw)() = omc_throw_function;
   
@@ -5376,7 +5377,7 @@ template algStmtAssert(DAE.Statement stmt, Context context, Text &varDecls /*BUF
 ::=
 match stmt
 case STMT_ASSERT(source=SOURCE(info=info)) then
-  assertCommon(cond, msg, context, &varDecls, info)
+  assertCommon(cond, msg, level, context, &varDecls, info)
 end algStmtAssert;
 
 template algStmtTerminate(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
@@ -7400,6 +7401,23 @@ template tempDecl(String ty, Text &varDecls /*BUFP*/)
   newVar
 end tempDecl;
 
+template tempDeclZero(String ty, Text &varDecls /*BUFP*/)
+ "Declares a temporary variable initialized to zero in varDecls and returns the name."
+::=
+  let newVar
+         =
+    match ty /* TODO! FIXME! UGLY! UGLY! hack! */ 
+      case "modelica_metatype"
+      case "metamodelica_string"
+      case "metamodelica_string_const"
+        then 'tmpMeta[<%System.tmpTickIndex(1)%>]'
+      else
+        let newVarIx = 'tmp<%System.tmpTick()%>'
+        let &varDecls += '<%ty%> <%newVarIx%> = 0;<%\n%>'
+        newVarIx
+  newVar
+end tempDeclZero;
+
 template tempDeclMatchInput(String ty, String prefix, String startIndex, String index, Text &varDecls /*BUFP*/)
  "Declares a temporary variable in varDecls for variables in match input list and returns the name."
 ::=
@@ -7843,13 +7861,51 @@ template infoArgs(Info info)
   case INFO(__) then '"<%fileName%>",<%lineNumberStart%>,<%columnNumberStart%>,<%lineNumberEnd%>,<%columnNumberEnd%>,<%if isReadOnly then 1 else 0%>'
 end infoArgs;
 
-template assertCommon(Exp condition, Exp message, Context context, Text &varDecls, Info info)
+template assertCommon(Exp condition, Exp message, Exp level, Context context, Text &varDecls, Info info)
 ::=
   let &preExpCond = buffer ""
   let condVar = daeExp(condition, context, &preExpCond, &varDecls)
+  match level
+  case ENUM_LITERAL(index=1) then
   <<
   <%preExpCond%>
   <%assertCommonVar(condVar,message,context,&varDecls,info)%>
+  >>
+  case ENUM_LITERAL(index=2) then
+  let warningTriggered = tempDeclZero("static int", &varDecls)
+  let &preExpMsg = buffer ""
+  let msgVar = daeExp(message, context, &preExpMsg, &varDecls)
+  <<
+  if (!<%warningTriggered%>) {
+    <%preExpCond%>
+    if (!<%condVar%>) {
+      <%preExpMsg%>
+      FILE_INFO info = {<%infoArgs(info)%>};
+      omc_assert_warning(<%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>, info);
+      <%warningTriggered%> = 1;
+    }
+  }<%\n%>
+  >>
+  else
+  let warningTriggered = tempDeclZero("static int", &varDecls)
+  let &preExpLevel = buffer ""
+  let &preExpMsg = buffer ""
+  let levelVar = daeExp(level, context, &preExpMsg, &varDecls)
+  let msgVar = daeExp(message, context, &preExpMsg, &varDecls)
+  <<
+  <%preExpLevel%>
+  if (<%levelVar%> == 1 || !<%warningTriggered%>) {
+    <%preExpCond%>
+    if (!<%condVar%>) {
+      <%preExpMsg%>
+      FILE_INFO info = {<%infoArgs(info)%>};
+      if (<%levelVar%> == 1)
+        omc_assert(<%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>, info);
+      else
+        omc_assert_warning(<%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>, info);
+      <%warningTriggered%> = 1;
+    }
+  }<%\n%>
   >>
 end assertCommon;
 
@@ -7859,9 +7915,9 @@ template assertCommonVar(Text condVar, Exp message, Context context, Text &varDe
   let msgVar = daeExp(message, context, &preExpMsg, &varDecls)
   <<
   if (!<%condVar%>) {
-    <%preExpMsg%>
-    FILE_INFO info = {<%infoArgs(info)%>};
-    omc_assert(<%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>, info);
+      <%preExpMsg%>
+      FILE_INFO info = {<%infoArgs(info)%>};
+      omc_assert(<%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>, info);
   }<%\n%>
   >>
 end assertCommonVar;

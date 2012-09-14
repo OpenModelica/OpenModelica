@@ -664,6 +664,7 @@ package BackendDAE
     record ASSERT
       DAE.Exp condition;
       DAE.Exp message;
+      DAE.Exp level;
       DAE.ElementSource source "the origin of the component/equation/algorithm";
     end ASSERT;  
   
@@ -1253,6 +1254,7 @@ package DAE
     record STMT_ASSERT
       Exp cond;
       Exp msg;
+      Exp level;
       ElementSource source;
     end STMT_ASSERT;
     record STMT_REINIT

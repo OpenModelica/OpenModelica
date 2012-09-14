@@ -736,26 +736,34 @@ public function makeAssert "function: makeAssert
   input DAE.Exp level;
   input DAE.Properties inProperties3;
   input DAE.Properties inProperties4;
+  input DAE.Properties inProperties5;
   input DAE.ElementSource source;
   output list<Statement> outStatement;
 algorithm
-  outStatement := match (cond,msg,level,inProperties3,inProperties4,source)
+  outStatement := matchcontinue (cond,msg,level,inProperties3,inProperties4,inProperties5,source)
     local
-    case (DAE.BCONST(true),_,_,_,_,source)
+      Absyn.Info info;
+      DAE.Type t1,t2,t3;
+      String strTy,strExp;
+    case (DAE.BCONST(true),_,_,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))),source)
       then {};
-    /* Do not evaluate all assertions. These may or may not be evaluated during runtime...
-    case (DAE.BCONST(false),DAE.SCONST(str),_,_,DAE.SOURCE(info=info))
-      equation
-        Error.addSourceMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{str},info);
-      then fail();
-    case (DAE.BCONST(false),_,_,_,DAE.SOURCE(info=info))
-      equation
-        Error.addSourceMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{"Message was not constant and could not be evaluated"},info);
-      then fail();
-    */
-    case (cond,msg,level,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),source)
+    case (cond,msg,level,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))),source)
       then {DAE.STMT_ASSERT(cond,msg,level,source)};
-  end match;
+    case (cond,msg,level,DAE.PROP(type_ = t1),DAE.PROP(type_ = t2),DAE.PROP(type_ = t3),source)
+      equation
+        info = DAEUtil.getElementSourceFileInfo(source);
+        strExp = ExpressionDump.printExpStr(cond);
+        strTy = Types.unparseType(t1);
+        Error.assertionOrAddSourceMessage(Types.isBooleanOrSubTypeBoolean(t1),Error.EXP_TYPE_MISMATCH,{strExp,"Boolean",strTy},info);
+        strExp = ExpressionDump.printExpStr(msg);
+        strTy = Types.unparseType(t2);
+        Error.assertionOrAddSourceMessage(Types.isString(t2),Error.EXP_TYPE_MISMATCH,{strExp,"String",strTy},info);
+        failure(DAE.T_ENUMERATION(path=Absyn.IDENT("AssertionLevel")) = t3);
+        strExp = ExpressionDump.printExpStr(level);
+        strTy = Types.unparseType(t3);
+        Error.assertionOrAddSourceMessage(Types.isString(t3),Error.EXP_TYPE_MISMATCH,{strExp,"AssertionLevel",strTy},info);
+      then fail();
+  end matchcontinue;
 end makeAssert;
 
 public function makeTerminate "

@@ -3356,7 +3356,7 @@ algorithm
     local
       list<BackendDAE.WhenOperator> res,res1;
       BackendDAE.WhenOperator wop;
-      DAE.Exp cond,cond1,msg;
+      DAE.Exp cond,cond1,msg,level;
       DAE.ComponentRef cr;
       DAE.ElementSource source;
       Type_a ext_arg_1,ext_arg_2;
@@ -3370,12 +3370,12 @@ algorithm
       then
         (BackendDAE.REINIT(cr,cond1,source)::res1,ext_arg_2);
 
-    case (BackendDAE.ASSERT(condition=cond,message=msg,source=source)::res,func,inTypeA)
+    case (BackendDAE.ASSERT(condition=cond,message=msg,level=level,source=source)::res,func,inTypeA)
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
         ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
       then
-        (BackendDAE.ASSERT(cond1,msg,source)::res1,ext_arg_2);
+        (BackendDAE.ASSERT(cond1,msg,level,source)::res1,ext_arg_2);
 
     case (wop::res,func,inTypeA)
       equation
