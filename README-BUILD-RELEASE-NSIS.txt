@@ -31,14 +31,13 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
     in trunk/Examples/*.onb
     in trunk/doc/*.doc + generate .pdfs
 
-02. Please do all the steps in README-OMDev-MINGW.txt
-    use: make clean testlog
-    zip trunk\testsuite directory into trunk\testsuite.zip!
+02. If you don't have OpenModelica Development Environment setup then follow the steps in README-OMDev-MINGW.txt until step 9.
+    Then make clean omc.
+    OR
+    From eclipse press Ctrl+B and type: omc
 
 03. Additional needed files:
-    - take qtlibs from:
-      https://www.ida.liu.se/~adrpo/omc/omdev/qtlibs/
-      unpack it, point it by environment variable QTHOME
+    - make install-python OR Ctrl+B and type: install-python
     - svn checkout https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/tools/mingw
       -> to \trunk\build\MinGW
        REMOVE MinGW\lib\mlton
@@ -46,7 +45,7 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
       Note that this step will have to be repeated starting from svn checkout 
       again if anything has changed in svn MinGW directory since last build. 
 
-    - build OMEdit, OMShell, OMNotebook, OMPlot, OMOptim using Qt SDK
+    - build OMClients i.e OMEdit, OMShell, OMNotebook, OMPlot, OMOptim using Qt SDK. Follow the README.txt of each OMClient.
     - put the .exe files into $OMDev\tools\OMTools\bin
     - put the .a files into $OMDev\tools\OMTools\lib
     - add any new dll needed by clients into $OMDev\tools\OMTools\dll
@@ -85,7 +84,7 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
     - OpenModelica-revision-NUMBER-README.txt
       + write the new important stuff here
     - OpenModelica-revision-NUMBER-testsuite-trace.txt
-      + from trunk\testsuite\testsuite-trace.txt
+      + write the hudson testsuite link.
     Push the new build into:
     http://build.openmodelica.org/omc/builds/windows/nightly-builds/
     if you have the rights :) and move the old one into:
