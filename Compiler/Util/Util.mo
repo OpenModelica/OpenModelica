@@ -794,6 +794,12 @@ algorithm
       array<Type_a> newarr;
     case (_,_,_)
       equation
+        // do nothing if n is negative or zero
+        true = intLt(n,1);
+      then
+        arr;
+    case (_,_,_)
+      equation
        len = arrayLength(arr);
        newlen = n + len;
        newarr = arrayCreate(newlen, v);
@@ -803,6 +809,7 @@ algorithm
     else
       equation
         print("Util.arrayExpand failed!\n");
+        print("OldSize: " +& intString(arrayLength(arr)) +& " additional elements: " +& intString(n) +& "\n");
       then
         fail();
   end matchcontinue; 
