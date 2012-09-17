@@ -598,8 +598,7 @@ algorithm
 
     case Connect2.CONNECTOR(name, ty, face, cty, attr)
       equation
-        prefixes = expandConnectorPrefix(name);
-        name = ComponentReference.crefLastCref(name);
+        (prefixes, name) = expandConnectorPrefix(name);
         connl = expandConnector2(name, ty, face, cty, attr);
         connl = List.productMap(prefixes, connl, prefixConnector);
       then
@@ -607,6 +606,27 @@ algorithm
 
   end match;
 end expandConnector;
+
+protected function expandConnectorPrefix
+  input DAE.ComponentRef inCref;
+  output list<DAE.ComponentRef> outPrefixes;
+  output DAE.ComponentRef outLastCref;
+algorithm
+  (outPrefixes, outLastCref) := match(inCref)
+    local
+      list<DAE.ComponentRef> prefixes;
+      DAE.ComponentRef pre_cr, last_cr;
+
+    case DAE.CREF_IDENT(ident = _) then ({}, inCref);
+    else
+      equation
+        (pre_cr, last_cr) = ComponentReference.splitCrefLast(inCref);
+        prefixes = ComponentReference.expandCref(pre_cr, false);
+      then
+        (prefixes, last_cr);
+
+  end match;
+end expandConnectorPrefix;
 
 public function prefixConnector
   input DAE.ComponentRef inPrefix;
@@ -624,18 +644,9 @@ algorithm
   outConnector := Connect2.CONNECTOR(name, ty, face, cty, attr);
 end prefixConnector;
 
-protected function expandConnectorPrefix
-  input DAE.ComponentRef inCref;
-  output list<DAE.ComponentRef> outPrefixes;
-algorithm
-  outPrefixes := match(inCref)
-    case DAE.CREF_IDENT(ident = _) then {};
-    else ComponentReference.expandCref(inCref, false);
-  end match;
-end expandConnectorPrefix;
-
 public function varToConnector
   input DAE.Var inVar;
+  input DAE.ComponentRef inPrefixCref;
   input Face inFace;
   output Connector outConnector;
 protected
@@ -654,7 +665,8 @@ protected
 algorithm
   DAE.TYPES_VAR(name = name, ty = ty, attributes = DAE.ATTR(connectorType = scty,
     variability = svar, direction = sdir, visibility = svis)) := inVar;
-  cref := DAE.CREF_IDENT(name, ty, {});
+  cref := ComponentReference.makeCrefIdent(name, ty, {});
+  cref := ComponentReference.joinCrefs(inPrefixCref, cref);
   cty := translateSCodeConnectorType(scty);
   var := InstUtil.translateVariability(svar);
   dir := InstUtil.translateDirection(sdir);
@@ -690,7 +702,7 @@ algorithm
       equation
         vars = List.filterOnTrue(vars, DAEUtil.isNotParamOrConstVar);
       then
-        List.map1(vars, varToConnector, inFace);
+        List.map2(vars, varToConnector, inCref, inFace);
 
     else
       equation
@@ -1369,10 +1381,8 @@ protected function generateConnectAssertion4
 protected
   Connector lhs_conn, rhs_conn;
 algorithm
-  lhs_conn := varToConnector(inLhsVar, Connect2.INSIDE());
-  lhs_conn := prefixConnector(inLhsCref, lhs_conn);
-  rhs_conn := varToConnector(inRhsVar, Connect2.INSIDE());
-  rhs_conn := prefixConnector(inRhsCref, rhs_conn);
+  lhs_conn := varToConnector(inLhsVar, inLhsCref, Connect2.INSIDE());
+  rhs_conn := varToConnector(inRhsVar, inRhsCref, Connect2.INSIDE());
   (outEquations, outIsOnlyConst) := generateConnectAssertion(lhs_conn, rhs_conn,
     inInfo, inEquations);
 end generateConnectAssertion4;
