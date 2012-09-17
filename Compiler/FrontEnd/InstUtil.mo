@@ -113,7 +113,7 @@ algorithm
   end match;
 end makeClass;
 
-protected function makeDaeVarsFromElement
+public function makeDaeVarsFromElement
   input Element inElement;
   input list<DAE.Var> inAccumVars;
   output list<DAE.Var> outVars;
@@ -415,7 +415,28 @@ algorithm
 
   end match;
 end setComponentName;
-    
+
+public function setTypedComponentType
+  input Component inComponent;
+  input DAE.Type inType;
+  output Component outComponent;
+algorithm
+  outComponent := match(inComponent, inType)
+    local
+      Absyn.Path name;
+      DaePrefixes dprefs;
+      Binding binding;
+      Absyn.Info info;
+      Option<Component> p;
+
+    case (InstTypes.TYPED_COMPONENT(name, _, p, dprefs, binding, info), _)
+      then InstTypes.TYPED_COMPONENT(name, inType, p, dprefs, binding, info);
+
+    else inComponent;
+
+  end match;
+end setTypedComponentType;
+
 public function setComponentParamType
   input Component inComponent;
   input ParamType inParamType;

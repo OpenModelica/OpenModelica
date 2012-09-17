@@ -48,6 +48,7 @@ public import InstTypes;
 public import SCode;
 
 protected import BaseHashTable;
+protected import ClassInf;
 protected import ComponentReference;
 protected import ConnectCheck;
 protected import ConnectUtil2;
@@ -154,12 +155,7 @@ algorithm
         comp = InstSymbolTable.lookupName(name, st); 
         (comp, st) = typeComponent(comp, inParent, inContext, st);
         (cls, st) = typeClass2(cls, SOME(comp), inContext, st);
-        /*-------------------------------------------------------------------*/
-        // TODO: Complex components should have their types updated with the
-        // typed class, so that the subcomponents types are correct in the
-        // complex type. Otherwise the connection checking won't work with
-        // nested connectors.
-        /*-------------------------------------------------------------------*/
+        (comp, st) = updateComplexComponentType(comp, cls, st);
       then
         (InstTypes.ELEMENT(comp, cls), st);
 
@@ -594,6 +590,44 @@ algorithm
 
   end match;
 end typeBinding;
+
+protected function updateComplexComponentType
+  input Component inComponent;
+  input Class inClass;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+  output SymbolTable outSymbolTable;
+algorithm
+  (outComponent, outSymbolTable) :=
+  match(inComponent, inClass, inSymbolTable)
+    local
+      ClassInf.State state;
+      DAE.EqualityConstraint ec;
+      DAE.TypeSource ty_src;
+      list<DAE.Var> vars;
+      list<Element> elems;
+      SymbolTable st;
+      DAE.Type base_ty, ty;
+      Component comp;
+
+    // Complex base type, update the vars in the type.
+    case (InstTypes.TYPED_COMPONENT(ty = ty),
+        InstTypes.COMPLEX_CLASS(components = elems), st)
+      equation
+        DAE.T_COMPLEX(state, _, ec, ty_src) = Types.arrayElementType(ty);
+        vars = List.accumulateMap(elems, InstUtil.makeDaeVarsFromElement);
+        vars = listReverse(vars);
+        base_ty = DAE.T_COMPLEX(state, vars, ec, ty_src);
+        ty = Types.setArrayElementType(ty, base_ty);
+        comp = InstUtil.setTypedComponentType(inComponent, ty);
+        st = InstSymbolTable.updateComponent(comp, st);
+      then
+        (comp, st);
+
+    else (inComponent, inSymbolTable);
+
+  end match;
+end updateComplexComponentType;
 
 protected function typeExpList
   input list<DAE.Exp> inExpList;

@@ -1847,6 +1847,28 @@ algorithm
   end match;
 end arrayElementType;
 
+public function setArrayElementType
+  input Type inType;
+  input Type inBaseType;
+  output Type outType;
+algorithm
+  outType := match(inType, inBaseType)
+    local
+      DAE.Type ty;
+      DAE.Dimensions dims;
+      DAE.TypeSource src;
+
+    case (DAE.T_ARRAY(ty, dims, src), _)
+      equation
+        ty = setArrayElementType(ty, inBaseType);
+      then
+        DAE.T_ARRAY(ty, dims, src);
+
+    else inBaseType;
+
+  end match;
+end setArrayElementType;
+
 public function unparseEqMod
 "prints eqmod to a string"
   input EqMod eq;
