@@ -124,8 +124,8 @@ int main(int argc, const char* argv[])
         fs::path default_system_name(SYSTEM_LIB);
         fs::path default_system_path = libraries_path;
         default_system_path/=default_system_name;
-    
-      
+
+
 
         default_system_path.make_preferred();
         modelica_system_path.make_preferred();
@@ -134,10 +134,10 @@ int main(int argc, const char* argv[])
         type_map types;
         if(!load_single_library(types,  default_system_path.string()))
             throw std::invalid_argument("System default library could not be loaded");
-       
+
         shared_library math_lib(math_path.string());
         if(!math_lib.open())
-             throw std::invalid_argument("Math library could not be loaded");
+            throw std::invalid_argument("Math library could not be loaded");
 
         if(!load_single_library(types,  modelica_system_path.string()))
             throw std::invalid_argument("ModelicaSystem library could not be loaded");
@@ -169,23 +169,17 @@ int main(int argc, const char* argv[])
             solver->setEndTime(global_settings->getEndTime());
             solver->setInitStepSize(config.getSolverSettings()->gethInit());
             // Call the solver
-            try
-            {
+
+
             solver->solve(command);
-             }
-            catch(std::exception& ex)
-            {
-                std::string error = ex.what();
-                cerr << "Simulation error: "<<  error ;
-                //return 1;
-            }
+
             // Get the status of the solver (is the interation done sucessfully?) 
             IDAESolver::SOLVERSTATUS status = solver->getSolverStatus();
             //Todo: use flags for simulation outputs
             //solver->writeSimulationInfo(std::cout);
             //solver->reportErrorMessage(std::cout);
-            return 0;
         }
+
     }
     catch(std::exception& ex)
     {
@@ -193,5 +187,5 @@ int main(int argc, const char* argv[])
         cerr << "Simulation stopped: "<<  error ;
         return 1;
     }
-  
+
 }

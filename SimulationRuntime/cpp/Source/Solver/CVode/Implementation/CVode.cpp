@@ -544,21 +544,31 @@ void Cvode::writeCVodeOutput(const double &time,const double &h,const int &stp)
 
 
 
-void Cvode::calcFunction(const double& time, const double* y, double* f)
+int Cvode::calcFunction(const double& time, const double* y, double* f)
 {
-  IContinous* continous_system = dynamic_cast<IContinous*>(_system);
-  IEvent* event_system =  dynamic_cast<IEvent*>(_system);
-  continous_system->setTime(time);
-  continous_system->setVars(y,IContinous::ALL_STATES);
-  continous_system->update(IContinous::CONTINOUS);
-  continous_system->giveRHS(f,IContinous::ALL_STATES);
+    try
+    {
+        IContinous* continous_system = dynamic_cast<IContinous*>(_system);
+        IEvent* event_system =  dynamic_cast<IEvent*>(_system);
+        continous_system->setTime(time);
+        continous_system->setVars(y,IContinous::ALL_STATES);
+        continous_system->update(IContinous::CONTINOUS);
+        continous_system->giveRHS(f,IContinous::ALL_STATES);
+    }//workaround until exception can be catch from c- libraries
+    catch(std::exception& ex)
+    {
+          std::string error = ex.what();
+          IDAESolver::SOLVERERROR;
+        cerr << "CVode integration error: "<<  error ;
+      return -1;
+    }
 }
 
 int Cvode::CV_fCallback(double t, N_Vector y, N_Vector ydot, void *user_data)
 {
-  ((Cvode*) user_data)->calcFunction(t, NV_DATA_S(y),NV_DATA_S(ydot));
+  return ((Cvode*) user_data)->calcFunction(t, NV_DATA_S(y),NV_DATA_S(ydot));
 
-  return(0);
+
 }
 
 void Cvode::giveZeroVal(const double &t,const double *y,double *zeroValue)

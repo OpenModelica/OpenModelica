@@ -125,7 +125,7 @@ private:
   void CVodeCore(); 
 
   /// Kapselung der Berechnung der rechten Seite 
-  void calcFunction(const double& time, const double* y, double* yd);
+  int calcFunction(const double& time, const double* y, double* yd);
 
   // Callback für die rechte Seite
   static int CV_fCallback(double t, N_Vector y, N_Vector ydot, void *user_data);
