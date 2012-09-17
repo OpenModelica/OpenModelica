@@ -9342,7 +9342,7 @@ algorithm
         true = "Windows_NT" ==& System.os();
         str = "-l" +& str;
         strs = getLibraryStringInGccFormat(Absyn.STRING("Lapack"));
-        strs = str :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
+        strs = str :: "-lintl" :: "-liconv" :: "-lexpat" :: "-lsqlite3" :: "-llpsolve55" :: "-lmico2313" :: "-lws2_32" :: "-lregex" :: strs;
       then 
         strs;
         
