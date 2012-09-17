@@ -163,7 +163,6 @@ end dumpPrefixPart;
 template dumpConnections(Connections conn)
 ::=
 match conn
-  case NO_CONNECTIONS() then 'No connections'
   case CONNECTIONS(__) then
     let conn_str = (connections |> c => dumpConnection(c) ;separator="\n")
     '<%conn_str%>'

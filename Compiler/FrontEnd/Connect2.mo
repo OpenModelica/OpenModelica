@@ -66,10 +66,20 @@ end ConnectorType;
 public uniontype Connector
   record CONNECTOR
     DAE.ComponentRef name;
+    DAE.Type ty;
     Face face;
-    ConnectorType ty;
+    ConnectorType cty;
+    ConnectorAttr attr;
   end CONNECTOR;
 end Connector;
+
+public uniontype ConnectorAttr
+  record CONN_ATTR
+    DAE.VarKind variability;
+    DAE.VarVisibility visibility;
+    DAE.VarDirection direction;
+  end CONN_ATTR;
+end ConnectorAttr;
 
 public uniontype Connection
   record CONNECTION
@@ -102,13 +112,13 @@ public uniontype Root
 end Root;
 
 public uniontype Connections
-  record NO_CONNECTIONS end NO_CONNECTIONS;
-
   record CONNECTIONS
     list<Connection> connections;
     list<Connection> branches;
     list<Root> roots;
   end CONNECTIONS;
 end Connections;
+
+public constant Connections emptyConnections := CONNECTIONS({}, {}, {});
 
 end Connect2;

@@ -56,8 +56,6 @@ package Connect2
   end Root;
 
   uniontype Connections
-    record NO_CONNECTIONS end NO_CONNECTIONS;
-
     record CONNECTIONS
       list<Connection> connections;
       list<Connection> branches;

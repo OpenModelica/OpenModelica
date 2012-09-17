@@ -1257,6 +1257,23 @@ algorithm
   end matchcontinue;
 end isParameterOrConstant;
 
+public function isParamOrConstVar
+  input DAE.Var inVar;
+  output Boolean outIsParamOrConst;
+protected
+  SCode.Variability var;
+algorithm
+  DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var)) := inVar;
+  outIsParamOrConst := SCode.isParameterOrConst(var);
+end isParamOrConstVar;
+  
+public function isNotParamOrConstVar
+  input DAE.Var inVar;
+  output Boolean outIsNotParamOrConst;
+algorithm
+  outIsNotParamOrConst := not isParamOrConstVar(inVar);
+end isNotParamOrConstVar;
+
 public function isParamOrConstVarKind
   input DAE.VarKind inVarKind;
   output Boolean outIsParamOrConst;
@@ -1420,6 +1437,16 @@ algorithm
     case DAE.VAR(kind = DAE.VARIABLE(),direction = DAE.BIDIR()) then ();
   end match;
 end isBidirVar;
+
+public function isBidirVarDirection
+  input DAE.VarDirection inVarDirection;
+  output Boolean outIsBidir;
+algorithm
+  outIsBidir := match(inVarDirection)
+    case DAE.BIDIR() then true;
+    else false;
+  end match;
+end isBidirVarDirection;
 
 public function isInputVar "
   Succeeds if Element is an input variable.
@@ -6138,4 +6165,40 @@ algorithm
   outAttributes := DAE.ATTR(ct, p, var, inDirection, io, vis);
 end setAttributeDirection;
 
+public function varKindEqual
+  input DAE.VarKind inVariability1;
+  input DAE.VarKind inVariability2;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := match(inVariability1, inVariability2)
+    case (DAE.VARIABLE(), DAE.VARIABLE()) then true;
+    case (DAE.DISCRETE(), DAE.DISCRETE()) then true;
+    case (DAE.CONST(), DAE.CONST()) then true;
+    case (DAE.PARAM(), DAE.PARAM()) then true;
+  end match;
+end varKindEqual;
+
+public function varDirectionEqual
+  input DAE.VarDirection inDirection1;
+  input DAE.VarDirection inDirection2;
+  output Boolean outIsEqual;
+algorithm
+  outIsEqual := match(inDirection1, inDirection2)
+    case (DAE.BIDIR(), DAE.BIDIR()) then true;
+    case (DAE.INPUT(), DAE.INPUT()) then true;
+    case (DAE.OUTPUT(), DAE.OUTPUT()) then true;
+    else false;
+  end match;
+end varDirectionEqual;
+
+public function isComplexVar
+  input DAE.Var inVar;
+  output Boolean outIsComplex;
+protected
+  DAE.Type ty;
+algorithm
+  DAE.TYPES_VAR(ty = ty) := inVar;
+  outIsComplex := Types.isComplexType(ty);
+end isComplexVar;
+  
 end DAEUtil;

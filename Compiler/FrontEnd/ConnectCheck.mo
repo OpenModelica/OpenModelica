@@ -40,10 +40,14 @@ encapsulated package ConnectCheck
 public import Absyn;
 public import Connect2;
 public import DAE;
+public import InstTypes;
 
 protected import ComponentReference;
 protected import ConnectUtil2;
+protected import DAEUtil;
+protected import DAEDump;
 protected import Error;
+protected import InstUtil;
 protected import List;
 protected import SCode;
 protected import Types;
@@ -55,6 +59,10 @@ public type Connector = Connect2.Connector;
 public type ConnectorType = Connect2.ConnectorType;
 public type Face = Connect2.Face;
 public type Root = Connect2.Root;
+
+public type Component = InstTypes.Component;
+
+public type TupleErrorInfo = tuple<DAE.ComponentRef, DAE.ComponentRef, Absyn.Info>;
 
 public function crefIsValidNode
   "A node given as argument to branch, root or potentialRoot must be on the form
@@ -68,9 +76,11 @@ algorithm
   _ := match(inNode, inFuncName, isFirst, inInfo)
     local
       DAE.Type ty1, ty2;
-      
+     
+    /*-----------------------------------------------------------------------*/
     // TODO: This is actually not working as it should, since the cref will have
     // been prefixed already. Need to check this before prefixing somehow.
+    /*-----------------------------------------------------------------------*/
     case (DAE.CREF_QUAL(identType = ty1, 
         componentRef = DAE.CREF_IDENT(identType = ty2)), _, _, _)
       equation
@@ -97,7 +107,7 @@ algorithm
   _ := matchcontinue(inType1, inType2, inFuncName, isFirst, inInfo)
     case (_, _, _, _, _)
       equation
-        true = Types.isComplexConnector(inType1);
+        true = Types.isConnector(inType1);
         true = Types.isOverdeterminedType(inType2);
       then
         ();
@@ -112,109 +122,371 @@ algorithm
   end matchcontinue;
 end crefIsValidNode2;
 
-public function connectorCompatibility
-  input DAE.ComponentRef inLhsName;
-  input ConnectorType inLhsType;
-  input DAE.ComponentRef inRhsName;
-  input ConnectorType inRhsType;
-  input Absyn.Info inInfo;
-protected
-  ConnectorType lhs_cty, rhs_cty;
-  DAE.Type lhs_ty, rhs_ty;
-algorithm
-  connectorTypeCompatibility(inLhsType, inRhsType, inLhsName, inRhsName, inInfo);
-  lhs_ty := ComponentReference.crefLastType(inLhsName);
-  rhs_ty := ComponentReference.crefLastType(inRhsName);
-  complexConnectorTypeCompatibility(lhs_ty, rhs_ty, inLhsName, inRhsName, inInfo);
-end connectorCompatibility;
-        
-protected function connectorTypeCompatibility
-  input ConnectorType inLhsType;
-  input ConnectorType inRhsType;
-  input DAE.ComponentRef inLhsName;
-  input DAE.ComponentRef inRhsName;
+public function checkComponentIsConnector
+  input Component inComponent;
+  input Option<Component> inPrefixComponent;
+  input DAE.ComponentRef inCref;
   input Absyn.Info inInfo;
 algorithm
-  _ := matchcontinue(inLhsType, inRhsType, inLhsName, inRhsName, inInfo)
+  _ := matchcontinue(inComponent, inPrefixComponent, inCref, inInfo)
     local
-      String cref_str1, cref_str2, cty_str1, cty_str2;
-      list<String> err_strl;
+      String cref_str, ty_str;
+      DAE.Type ty;
+      Component comp;
 
-    case (_, _, _, _, _)
+    case (_, _, _, _)
       equation
-        true = ConnectUtil2.connectorTypeEqual(inLhsType, inRhsType);
+        true = InstUtil.isConnectorComponent(inComponent);
+      then
+        ();
+
+    // A component in an expandable connector is seen as a connector.
+    case (_, SOME(comp), _, _)
+      equation
+        ty = InstUtil.getComponentType(comp);
+        true = Types.isComplexExpandableConnector(ty);
       then
         ();
 
     else
       equation
-        cref_str1 = ComponentReference.printComponentRefStr(inLhsName);
-        cref_str2 = ComponentReference.printComponentRefStr(inRhsName);
-        cty_str1 = ConnectUtil2.connectorTypeStr(inLhsType);
-        cty_str2 = ConnectUtil2.connectorTypeStr(inRhsType);
-        err_strl = Util.if_(ConnectUtil2.isPotential(inLhsType),
-          {cty_str2, cref_str2, cref_str1}, {cty_str1, cref_str1, cref_str2});
-        Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, inInfo);
+        ty = InstUtil.getComponentType(inComponent);
+        ty_str = Types.unparseType(ty);
+        cref_str = ComponentReference.printComponentRefStr(inCref);
+        Error.addSourceMessage(Error.INVALID_CONNECTOR_TYPE,
+          {cref_str, ty_str}, inInfo);
       then
         fail();
 
   end matchcontinue;
-end connectorTypeCompatibility;
+end checkComponentIsConnector;
 
-protected function complexConnectorTypeCompatibility
-  input DAE.Type inLhsType;
-  input DAE.Type inRhsType;
-  input DAE.ComponentRef inLhsName;
-  input DAE.ComponentRef inRhsName;
+public function compatibleConnectors
+  "Checks that two connectors are compatible with each other for the purpose of
+   connecting them."
+  input Connector inLhsConnector;
+  input Connector inRhsConnector;
   input Absyn.Info inInfo;
+protected
+  DAE.ComponentRef lhs_name, rhs_name;
+  ConnectorType lhs_cty, rhs_cty;
+  DAE.Type lhs_ty, rhs_ty;
+  DAE.VarKind lhs_var, rhs_var;
+  DAE.VarDirection lhs_dir, rhs_dir;
+  TupleErrorInfo info;
 algorithm
-  _ := match(inLhsType, inRhsType, inLhsName, inRhsName, inInfo)
+  Connect2.CONNECTOR(name = lhs_name, ty = lhs_ty, cty = lhs_cty, attr =
+    Connect2.CONN_ATTR(variability = lhs_var, direction = lhs_dir)) := inLhsConnector;
+  Connect2.CONNECTOR(name = rhs_name, ty = rhs_ty, cty = rhs_cty, attr =
+    Connect2.CONN_ATTR(variability = rhs_var, direction = rhs_dir)) := inRhsConnector;
+
+  info := (lhs_name, rhs_name, inInfo);
+  compatibleConnectors2(lhs_ty, lhs_cty, lhs_var, lhs_dir,
+                        rhs_ty, rhs_cty, rhs_var, rhs_dir, info);
+end compatibleConnectors;
+        
+protected function compatibleConnectors2
+  "Helper function to compatibleConnectors2. Calls the different check function."
+  input DAE.Type inLhsType;
+  input ConnectorType inLhsConnectorType;
+  input DAE.VarKind inLhsVariability;
+  input DAE.VarDirection inLhsDirection;
+  input DAE.Type inRhsType;
+  input ConnectorType inRhsConnectorType;
+  input DAE.VarKind inRhsVariability;
+  input DAE.VarDirection inRhsDirection;
+  input TupleErrorInfo inErrorInfo;
+algorithm
+  compatibleConnectorTypes(inLhsConnectorType, inRhsConnectorType, inErrorInfo);
+  compatibleDirection(inLhsDirection, inRhsDirection, inErrorInfo);
+  compatibleVariability(inLhsVariability, inLhsType, inLhsConnectorType,
+    inRhsVariability, inRhsType, inRhsConnectorType, inErrorInfo);
+  complexConnectorTypeCompatibility(inLhsType, inRhsType, inErrorInfo);
+end compatibleConnectors2;
+
+protected function compatibleConnectorTypes
+  "Check that two connector types (flow/stream) are compatible with each other,
+   i.e. that they are equal. Anything else is an error."
+  input ConnectorType inLhsType;
+  input ConnectorType inRhsType;
+  input TupleErrorInfo inErrorInfo;
+algorithm
+  _ := matchcontinue(inLhsType, inRhsType, inErrorInfo)
     local
-      list<DAE.Var> vars1, vars2;
-      
-    case (DAE.T_COMPLEX(varLst = vars1), DAE.T_COMPLEX(varLst = vars2), _, _, _)
+      DAE.ComponentRef lhs_cref, rhs_cref;
+      Absyn.Info info;
+      String cref_str1, cref_str2, cty_str1, cty_str2;
+      list<String> err_strl;
+
+    // Equal connector types => ok.
+    case (_, _, _)
       equation
-        _ = List.threadMap3(vars1, vars2, varConnectorTypeCompatibility,
-          inLhsName, inRhsName, inInfo);
+        true = ConnectUtil2.connectorTypeEqual(inLhsType, inRhsType);
       then
         ();
 
+    // Nonequal connector types => error.
+    case (_, _, (lhs_cref, rhs_cref, info))
+      equation
+        cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
+        cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
+        cty_str1 = ConnectUtil2.unparseConnectorType(inLhsType);
+        cty_str2 = ConnectUtil2.unparseConnectorType(inRhsType);
+        err_strl = Util.if_(ConnectUtil2.isPotential(inLhsType),
+          {cty_str2, cref_str2, cref_str1}, {cty_str1, cref_str1, cref_str2});
+        Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
+      then
+        fail();
+
+  end matchcontinue;
+end compatibleConnectorTypes;
+
+protected function compatibleDirection
+  "Check that two connector directions are compatible, i.e. that either none or
+   both of them have an input/output prefix."
+  input DAE.VarDirection inLhsDirection;
+  input DAE.VarDirection inRhsDirection;
+  input TupleErrorInfo inErrorInfo;
+algorithm
+  _ := matchcontinue(inLhsDirection, inRhsDirection, inErrorInfo)
+    local
+      DAE.ComponentRef lhs_cref, rhs_cref;
+      String cref_str1, cref_str2, dir_str1, dir_str2;
+      list<String> err_strl;
+      Absyn.Info info;
+
+    // None or both are input/output => ok.
+    case (_, _, _)
+      equation
+        true = boolEq(DAEUtil.isBidirVarDirection(inLhsDirection),
+                      DAEUtil.isBidirVarDirection(inRhsDirection));
+      then
+        ();
+
+    // One is input/output, the other bidirectional => error.
+    case (_, _, (lhs_cref, rhs_cref, info))
+      equation
+        cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
+        cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
+        dir_str1 = DAEDump.unparseVarDirection(inLhsDirection);
+        dir_str2 = DAEDump.unparseVarDirection(inRhsDirection);
+        err_strl = Util.if_(DAEUtil.isBidirVarDirection(inLhsDirection),
+          {dir_str2, cref_str2, cref_str1}, {dir_str1, cref_str1, cref_str2});
+        Error.addSourceMessage(Error.CONNECT_PREFIX_MISMATCH, err_strl, info);
+      then
+        fail();
+        
+  end matchcontinue;
+end compatibleDirection;
+
+public function compatibleVariability
+  "Checks that the variability of two connectors are compatible, and also that
+   the variability of each connector is valid considering the type and connector
+   type of the connector."
+  input DAE.VarKind inLhsVariability;
+  input DAE.Type inLhsType;
+  input ConnectorType inLhsConnectorType;
+  input DAE.VarKind inRhsVariability;
+  input DAE.Type inRhsType;
+  input ConnectorType inRhsConnectorType;
+  input TupleErrorInfo inErrorInfo;
+algorithm
+  _ := match(inLhsVariability, inLhsType, inLhsConnectorType,
+      inRhsVariability, inRhsType, inRhsConnectorType, inErrorInfo)
+    local
+      Boolean ipc;
+      DAE.ComponentRef lhs_cref, rhs_cref;
+      Absyn.Info info;
+      ConnectorType lhs_cty, rhs_cty;
+      DAE.VarKind lhs_var, rhs_var;
+
+    case (lhs_var, _, lhs_cty, rhs_var, _, rhs_cty, (lhs_cref, rhs_cref, info))
+      equation
+        ipc = connectorVariabilityEq(lhs_var, rhs_var, inErrorInfo);
+        compatibleVariability2(ipc, inLhsType, lhs_cty, lhs_var, lhs_cref, info);
+        compatibleVariability2(ipc, inRhsType, rhs_cty, rhs_var, rhs_cref, info);
+      then
+        ();
+
+  end match;
+end compatibleVariability;
+
+protected function connectorVariabilityEq
+  "Checks that the variability of two connectors are compatiable. Returns true
+   of both of them are parameter/constant, false if neither is, and otherwise
+   fails with an error message."
+  input DAE.VarKind inVariability1;
+  input DAE.VarKind inVariability2;
+  input TupleErrorInfo inErrorInfo;
+  output Boolean outIsParamOrConst;
+algorithm
+  outIsParamOrConst := matchcontinue(inVariability1, inVariability2, inErrorInfo)
+    local
+      Boolean ipc1, ipc2;
+      DAE.ComponentRef cref1, cref2;
+      Absyn.Info info;
+      String lhs_str, rhs_str, lhs_var_str, rhs_var_str;
+      list<String> tokens;
+
+    // Both must be either constant/parameter or non-constant/parameter.
+    case (_, _, _)
+      equation
+        ipc1 = DAEUtil.isParamOrConstVarKind(inVariability1);
+        ipc2 = DAEUtil.isParamOrConstVarKind(inVariability2);
+        true = boolEq(ipc1, ipc2);
+      then
+        ipc1;
+
+    // Different variability => error.
+    case (_, _, (cref1, cref2, info))
+      equation
+        lhs_str = ComponentReference.printComponentRefStr(cref1);
+        rhs_str = ComponentReference.printComponentRefStr(cref2);
+        lhs_var_str = DAEDump.unparseVarKind(inVariability1);
+        rhs_var_str = DAEDump.unparseVarKind(inVariability2);
+        tokens = Util.if_(DAEUtil.isParamOrConstVarKind(inVariability1),
+          {lhs_var_str, lhs_str, rhs_str}, {rhs_var_str, rhs_str, lhs_str});
+        Error.addSourceMessage(Error.INCOMPATIBLE_CONNECTOR_VARIABILITY,
+          tokens, info);
+      then
+        fail();
+
+  end matchcontinue;
+end connectorVariabilityEq;
+
+protected function compatibleVariability2
+  "Helper function to compatibleVariability, check that the variability is
+   compatible with the type and connector type of a connector."
+  input Boolean inIsParamOrConst;
+  input DAE.Type inType;
+  input ConnectorType inConnectorType;
+  input DAE.VarKind inVariability;
+  input DAE.ComponentRef inCref;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inIsParamOrConst, inType, inConnectorType,
+      inVariability, inCref, inInfo)
+    local
+      String cref_str, var_str, cty_str;
+
+    // A connector which is a variable can be whatever it wants to be.
+    case (false, _, _, _, _, _) then ();
+
+    // A connector which is constant/parameter should be non-complex and
+    // potential.
+    case (true, _, _, _, _, _)
+      equation
+        false = Types.isComplexConnector(inType);
+        true = ConnectUtil2.isPotential(inConnectorType);
+      then
+        ();
+
+    // A connector which is constant/parameter and complex is an error.
+    case (true, _, _, _, _, _)
+      equation
+        true = Types.isComplexConnector(inType);
+        cref_str = ComponentReference.printComponentRefStr(inCref);
+        var_str = DAEDump.unparseVarKind(inVariability);
+        Error.addSourceMessage(Error.INVALID_COMPLEX_CONNECTOR_VARIABILITY,
+          {cref_str, var_str}, inInfo);
+      then
+        fail();
+
+    // A connector which is constant/parameter and not potential is an error.
+    case (true, _, _, _, _, _)
+      equation
+        false = ConnectUtil2.isPotential(inConnectorType);
+        cref_str = ComponentReference.printComponentRefStr(inCref);
+        var_str = DAEDump.unparseVarKind(inVariability);
+        cty_str = ConnectUtil2.unparseConnectorType(inConnectorType);
+        Error.addSourceMessage(Error.INVALID_CONNECTOR_PREFIXES,
+          {cref_str, var_str, cty_str}, inInfo);
+      then
+        fail();
+
+  end matchcontinue;
+end compatibleVariability2;
+
+protected function complexConnectorTypeCompatibility
+  "Checks that two complex connectors defined by DAE.Type are compatible."
+  input DAE.Type inLhsType;
+  input DAE.Type inRhsType;
+  input TupleErrorInfo inErrorInfo;
+algorithm
+  _ := match(inLhsType, inRhsType, inErrorInfo)
+    local
+      list<DAE.Var> vars1, vars2;
+      list<Connector> connl1, connl2;
+      
+    // Two complex connectors, check their components.
+    case (DAE.T_COMPLEX(varLst = vars1), DAE.T_COMPLEX(varLst = vars2), _)
+      equation
+        _ = List.threadMap1(vars1, vars2, varConnectorTypeCompatibility, inErrorInfo);
+      then
+        ();
+
+    // Non-complex connectors, nothing to do.
     else ();
 
   end match;
 end complexConnectorTypeCompatibility;
 
 protected function varConnectorTypeCompatibility
+  "Checks that two connector elements defined by DAE.Var are compatible."
   input DAE.Var inLhsVar;
   input DAE.Var inRhsVar;
-  input DAE.ComponentRef inLhsName;
-  input DAE.ComponentRef inRhsName;
-  input Absyn.Info inInfo;
+  input TupleErrorInfo inErrorInfo;
   output Integer outDummy;
 algorithm
-  outDummy := match(inLhsVar, inRhsVar, inLhsName, inRhsName, inInfo)
+  outDummy := match(inLhsVar, inRhsVar, inErrorInfo)
     local
-      SCode.ConnectorType lhs_scty, rhs_scty;
-      ConnectorType lhs_cty, rhs_cty;
-      DAE.Type lhs_ty, rhs_ty;
-      DAE.Ident lhs_name, rhs_name;
       DAE.ComponentRef lhs_cref, rhs_cref;
+      DAE.Type lhs_ty, rhs_ty;
+      ConnectorType lhs_cty, rhs_cty;
+      DAE.VarKind lhs_var, rhs_var;
+      DAE.VarDirection lhs_dir, rhs_dir;
+      Absyn.Info info;
+      TupleErrorInfo err_info;
 
-    case (DAE.TYPES_VAR(name = lhs_name, ty = lhs_ty, attributes =
-            DAE.ATTR(connectorType = lhs_scty)),
-          DAE.TYPES_VAR(name = rhs_name, ty = rhs_ty, attributes =
-            DAE.ATTR(connectorType = rhs_scty)), _, _, _)
+    case (_, _, (lhs_cref, rhs_cref, info))
       equation
-        lhs_cty = ConnectUtil2.translateSCodeConnectorType(lhs_scty);
-        rhs_cty = ConnectUtil2.translateSCodeConnectorType(rhs_scty);
-        lhs_cref = ComponentReference.crefPrependIdent(inLhsName, lhs_name, {}, lhs_ty);
-        rhs_cref = ComponentReference.crefPrependIdent(inRhsName, rhs_name, {}, rhs_ty);
-        connectorTypeCompatibility(lhs_cty, rhs_cty, lhs_cref, rhs_cref, inInfo);
-        complexConnectorTypeCompatibility(lhs_ty, rhs_ty, lhs_cref, rhs_cref, inInfo);
+        (lhs_cref, lhs_ty, lhs_cty, lhs_var, lhs_dir) =
+          getVarConnectorData(inLhsVar, lhs_cref);
+        (rhs_cref, rhs_ty, rhs_cty, rhs_var, rhs_dir) =
+          getVarConnectorData(inRhsVar, rhs_cref);
+        err_info = (lhs_cref, rhs_cref, info);
+
+        compatibleConnectors2(lhs_ty, lhs_cty, lhs_var, lhs_dir, rhs_ty,
+          rhs_cty, rhs_var, rhs_dir, (lhs_cref, rhs_cref, info));
       then
         0;
 
   end match;
 end varConnectorTypeCompatibility;
-      
+
+protected function getVarConnectorData
+  "Helper function to varConnectorTypeCompatibility, extracts the relevant
+   fields from a DAE.Var."
+  input DAE.Var inVar;
+  input DAE.ComponentRef inPrefix;
+  output DAE.ComponentRef outName;
+  output DAE.Type outType;
+  output ConnectorType outConnectorType;
+  output DAE.VarKind outVariability;
+  output DAE.VarDirection outDirection;
+protected
+  DAE.Ident name;
+  SCode.ConnectorType scty;
+  SCode.Variability svar;
+  Absyn.Direction adir;
+algorithm
+  DAE.TYPES_VAR(name = name, ty = outType, attributes = DAE.ATTR(
+    connectorType = scty, variability = svar, direction = adir)) := inVar;
+  outConnectorType := ConnectUtil2.translateSCodeConnectorType(scty);
+  outVariability := InstUtil.translateVariability(svar);
+  outDirection := InstUtil.translateDirection(adir);
+  // Prefix the name with the given prefix.
+  outName := ComponentReference.crefPrependIdent(inPrefix, name, {}, outType);
+end getVarConnectorData;
+
 end ConnectCheck;

@@ -177,6 +177,12 @@ public constant Message NO_CONSTANT_BINDING = MESSAGE(26, TRANSLATION(), ERROR()
   Util.gettext("No constant value for variable %s in scope %s."));
 public constant Message TYPE_NOT_FROM_PREDEFINED = MESSAGE(27, TRANSLATION(), ERROR(),
   Util.gettext("In class %s, class restriction 'type' can only be derived from predefined types."));
+public constant Message INCOMPATIBLE_CONNECTOR_VARIABILITY = MESSAGE(28, TRANSLATION(), ERROR(),
+  Util.gettext("Cannot connect %s %s to non-constant/parameter %s."));
+public constant Message INVALID_CONNECTOR_PREFIXES = MESSAGE(29, TRANSLATION(), ERROR(),
+  Util.gettext("Connector element %s may not be both %s and %s."));
+public constant Message INVALID_COMPLEX_CONNECTOR_VARIABILITY = MESSAGE(30, TRANSLATION(), ERROR(),
+  Util.gettext("Composite connector element %s may not be %s."));
 public constant Message DIFFERENT_NO_EQUATION_IF_BRANCHES = MESSAGE(31, TRANSLATION(), ERROR(),
   Util.gettext("Different number of equations in the branches of the if equation: %s"));
 public constant Message UNDERDET_EQN_SYSTEM = MESSAGE(32, SYMBOLIC(), ERROR(),

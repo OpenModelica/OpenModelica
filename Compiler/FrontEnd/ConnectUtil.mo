@@ -2993,7 +2993,7 @@ algorithm
       equation
         // Check that it's a connector.
         ty2 = Types.arrayElementType(ty);
-        true = Types.isComplexConnector(ty2);
+        true = Types.isConnector(ty2);
         // If we have an array of connectors, count how many they are.
         n = List.fold(Types.getDimensionSizes(ty), intMul, 1);
         // Count the number of different variables inside the connector, and

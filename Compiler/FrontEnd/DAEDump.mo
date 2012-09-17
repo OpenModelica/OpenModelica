@@ -3720,4 +3720,15 @@ algorithm
   end match;
 end unparseVarKind;
 
+public function unparseVarDirection
+  input DAE.VarDirection inVarDirection;
+  output String outString;
+algorithm
+  outString := match(inVarDirection)
+    case DAE.BIDIR() then "";
+    case DAE.INPUT() then "input";
+    case DAE.OUTPUT() then "output";
+  end match;
+end unparseVarDirection;
+
 end DAEDump;

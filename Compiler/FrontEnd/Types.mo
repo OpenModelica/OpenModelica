@@ -325,15 +325,28 @@ algorithm
   end match;
 end isSimpleType;
 
-public function isComplexConnector ""
-  input Type t;
-  output Boolean b;
+public function isConnector
+  "Returns true if the given type is a connector type, otherwise false."
+  input Type inType;
+  output Boolean outIsConnector;
 algorithm
-  b := matchcontinue(t)
-    case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,_))) then true;
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,_))) then true;
+  outIsConnector := match(inType)
+    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path = _)) then true;
+    case DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(path = _)) then true;
     else false;
-  end matchcontinue;
+  end match;
+end isConnector;
+
+public function isComplexConnector
+  "Returns true if the given type is a complex connector type, i.e. a connector
+   with components, otherwise false."
+  input Type inType;
+  output Boolean outIsComplexConnector;
+algorithm
+  outIsComplexConnector := match(inType)
+    case DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path = _)) then true;
+    else false;
+  end match;
 end isComplexConnector;
 
 public function isComplexExpandableConnector
@@ -525,6 +538,20 @@ algorithm
    case(_) then false;
  end matchcontinue;
 end isReal;
+
+public function isScalarReal
+  input Type inType;
+  output Boolean outIsScalarReal;
+algorithm
+  outIsScalarReal := match(inType)
+    local
+      Type ty;
+
+    case DAE.T_REAL(varLst = _) then true;
+    case DAE.T_SUBTYPE_BASIC(complexType = ty) then isScalarReal(ty);
+    else false;
+  end match;
+end isScalarReal;
 
 public function isRealOrSubTypeReal "
 Author BZ 2008-05

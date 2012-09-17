@@ -1439,10 +1439,10 @@ algorithm
       equation
         ty = arrayElementType(ty);
       then
-        Types.isComplexConnector(ty);
+        Types.isConnector(ty);
 
     case InstTypes.UNTYPED_COMPONENT(baseType = ty)
-      then Types.isComplexConnector(ty);
+      then Types.isConnector(ty);
 
     else
       equation
@@ -1594,7 +1594,7 @@ algorithm
   end match;
 end translatePrefixes;
 
-protected function translateVisibility
+public function translateVisibility
   input SCode.Visibility inVisibility;
   output DAE.VarVisibility outVisibility;
 algorithm
@@ -1604,7 +1604,7 @@ algorithm
   end match;
 end translateVisibility;
 
-protected function translateVariability
+public function translateVariability
   input SCode.Variability inVariability;
   output DAE.VarKind outVariability;
 algorithm
@@ -1616,7 +1616,7 @@ algorithm
   end match;
 end translateVariability;
 
-protected function translateDirection
+public function translateDirection
   input Absyn.Direction inDirection;
   output DAE.VarDirection outDirection;
 algorithm
@@ -1627,7 +1627,7 @@ algorithm
   end match;
 end translateDirection;
 
-protected function translateConnectorType
+public function translateConnectorType
   input SCode.ConnectorType inConnectorType;
   output DAE.ConnectorType outConnectorType;
 algorithm

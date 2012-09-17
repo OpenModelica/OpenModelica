@@ -61,12 +61,15 @@ public type Connections = Connect2.Connections;
 public type Connection = Connect2.Connection;
 public type Connector = Connect2.Connector;
 public type ConnectorType = Connect2.ConnectorType;
+public type ConnectorAttr = Connect2.ConnectorAttr;
 public type Face = Connect2.Face;
 public type Root = Connect2.Root;
 
 public type Class = InstTypes.Class;
 public type Component = InstTypes.Component;
 public type Element = InstTypes.Element;
+public type Equation = InstTypes.Equation;
+public type DaePrefixes = InstTypes.DaePrefixes;
 
 protected type DisjointSets = ConnectionSets.DisjointSets;
 
@@ -78,7 +81,7 @@ public function makeBranch
 algorithm
   ConnectCheck.crefIsValidNode(inNode1, "Connections.branch", true, inInfo);
   ConnectCheck.crefIsValidNode(inNode2, "Connections.branch", false, inInfo);
-  outConnections := Connect2.NO_CONNECTIONS();
+  outConnections := Connect2.emptyConnections;
 end makeBranch;
 
 public function makeRoot
@@ -87,7 +90,7 @@ public function makeRoot
   output Connections outConnections;
 algorithm
   ConnectCheck.crefIsValidNode(inNode, "Connections.root", true, inInfo);
-  outConnections := Connect2.NO_CONNECTIONS();
+  outConnections := Connect2.emptyConnections;
 end makeRoot;
 
 public function makePotentialRoot
@@ -97,17 +100,61 @@ public function makePotentialRoot
   output Connections outConnections;
 algorithm
   ConnectCheck.crefIsValidNode(inNode, "Connections.potentialRoot", true, inInfo);
-  outConnections := Connect2.NO_CONNECTIONS();
+  outConnections := Connect2.emptyConnections;
 end makePotentialRoot;
 
-protected function makeConnector
+public function makeConnector
   input DAE.ComponentRef inName;
   input Face inFace;
+  input Option<Component> inComponent;
+  output Connector outConnector;
+protected
+  DAE.Type ty;
+  ConnectorType cty;
+  ConnectorAttr attr;
+algorithm
+  (ty, cty, attr) := extractConnectorTypesFromComp(inComponent);
+  outConnector := makeConnector2(inName, ty, inFace, cty, attr);
+end makeConnector;
+
+protected function makeConnector2
+  input DAE.ComponentRef inName;
+  input DAE.Type inType;
+  input Face inFace;
   input ConnectorType inConnectorType;
+  input ConnectorAttr inConnectorAttr;
   output Connector outConnector;
 algorithm
-  outConnector := Connect2.CONNECTOR(inName, inFace, inConnectorType);
-end makeConnector;
+  outConnector := Connect2.CONNECTOR(inName, inType, inFace,
+    inConnectorType, inConnectorAttr);
+end makeConnector2;
+
+protected function extractConnectorTypesFromComp
+  input Option<Component> inComponent;
+  output DAE.Type outType;
+  output ConnectorType outConnectorType;
+  output ConnectorAttr outConnectorAttr;
+algorithm
+  (outType, outConnectorType, outConnectorAttr) := match(inComponent)
+    local
+      DAE.Type ty;
+      DAE.ConnectorType dcty;
+      ConnectorType cty;
+      DaePrefixes prefs;
+      ConnectorAttr attr;
+
+    case SOME(InstTypes.TYPED_COMPONENT(ty = ty, prefixes = prefs))
+      equation
+        (attr, dcty) = extractConnectorAttrFromPrefs(prefs);
+        cty = translateDaeConnectorType(dcty);
+      then
+        (ty, cty, attr);
+
+    else (DAE.T_UNKNOWN_DEFAULT, Connect2.NO_TYPE(),
+          Connect2.CONN_ATTR(DAE.VARIABLE(), DAE.PUBLIC(), DAE.BIDIR()));
+
+  end match;
+end extractConnectorTypesFromComp;
 
 public function connectorEqual
   input Connector inConnector1;
@@ -177,7 +224,7 @@ protected
   ConnectorType cty;
   String name_str, face_str, cty_str;
 algorithm
-  Connect2.CONNECTOR(name, face, cty) := inConnector;
+  Connect2.CONNECTOR(name = name, face = face, cty = cty) := inConnector;
   name_str := ComponentReference.printComponentRefStr(name);
   face_str := faceStr(face);
   cty_str := connectorTypeStr(cty);
@@ -216,6 +263,39 @@ algorithm
   end match;
 end connectorTypeStr;
 
+public function unparseConnectorType
+  input ConnectorType inConnectorType;
+  output String outString;
+algorithm
+  outString := match(inConnectorType)
+    case Connect2.FLOW() then "flow";
+    case Connect2.STREAM(_) then "stream";
+    else "";
+  end match;
+end unparseConnectorType;
+
+public function getConnectorPrefixes
+  input DaePrefixes inPrefixes;
+  output ConnectorType outConnectorType;
+  output DAE.VarKind outVariability;
+algorithm
+  (outConnectorType, outVariability) := match(inPrefixes)
+    local
+      DAE.ConnectorType dcty;
+      ConnectorType cty;
+      DAE.VarKind var;
+
+    case InstTypes.DAE_PREFIXES(connectorType = dcty, variability = var)
+      equation
+        cty = translateDaeConnectorType(dcty);
+      then
+        (cty, var);
+
+    else (Connect2.POTENTIAL(), DAE.VARIABLE());
+
+  end match;
+end getConnectorPrefixes;
+
 public function translateDaeConnectorType
   input DAE.ConnectorType inConnectorType;
   output ConnectorType outConnectorType;
@@ -249,46 +329,32 @@ algorithm
 end makeConnection;
 
 public function addConnectionCond
-  input Boolean inIsDeleted;
-  input DAE.ComponentRef inLhsName;
-  input Face inLhsFace;
-  input ConnectorType inLhsConnectorType;
-  input DAE.ComponentRef inRhsName;
-  input Face inRhsFace;
-  input ConnectorType inRhsConnectorType;
+  input Boolean inAdd;
+  input Connector inLhsConnector;
+  input Connector inRhsConnector;
   input Absyn.Info inInfo;
   input Connections inConnections;
   output Connections outConnections;
 algorithm
-  outConnections := match(inIsDeleted, inLhsName, inLhsFace, inLhsConnectorType,
-      inRhsName, inRhsFace, inRhsConnectorType, inInfo, inConnections)
-    case (true, _, _, _, _, _, _, _, _) then inConnections;
+  outConnections :=
+  match(inAdd, inLhsConnector, inRhsConnector, inInfo, inConnections)
+    case (true, _, _, _, _)
+      then addConnection(inLhsConnector, inRhsConnector, inInfo, inConnections);
 
-    else addConnection(inLhsName, inLhsFace, inLhsConnectorType,
-      inRhsName, inRhsFace, inRhsConnectorType, inInfo, inConnections);
-
+    else inConnections;
   end match;
 end addConnectionCond;
 
 public function addConnection
-  input DAE.ComponentRef inLhsName;
-  input Face inLhsFace;
-  input ConnectorType inLhsConnectorType;
-  input DAE.ComponentRef inRhsName;
-  input Face inRhsFace;
-  input ConnectorType inRhsConnectorType;
+  input Connector inLhsConnector;
+  input Connector inRhsConnector;
   input Absyn.Info inInfo;
   input Connections inConnections;
   output Connections outConnections;
 protected
-  Connector lhs, rhs;
   Connection conn;
 algorithm
-  ConnectCheck.connectorCompatibility(inLhsName, inLhsConnectorType,
-    inRhsName, inRhsConnectorType, inInfo);
-  lhs := makeConnector(inLhsName, inLhsFace, inLhsConnectorType);
-  rhs := makeConnector(inRhsName, inRhsFace, inRhsConnectorType);
-  conn := makeConnection(lhs, rhs, inInfo);
+  conn := makeConnection(inLhsConnector, inRhsConnector, inInfo);
   outConnections := consConnection(conn, inConnections);
 end addConnection;
 
@@ -296,26 +362,14 @@ protected function consConnection
   input Connection inConnection;
   input Connections inConnections;
   output Connections outConnections;
+protected
+  list<Connection> connl;
+  list<Connection> branches;
+  list<Root> roots;
 algorithm
-  outConnections := match(inConnection, inConnections)
-    local
-      list<Connection> connl;
-      list<Connection> branches;
-      list<Root> roots;
-
-    case (_, Connect2.CONNECTIONS(connl, branches, roots))
-      equation
-        connl = inConnection :: connl;
-      then
-        Connect2.CONNECTIONS(connl, branches, roots);
-
-    else
-      equation
-        connl = {inConnection};
-      then
-        Connect2.CONNECTIONS(connl, {}, {});
-
-  end match;
+  Connect2.CONNECTIONS(connl, branches, roots) := inConnections;
+  connl := inConnection :: connl;
+  outConnections := Connect2.CONNECTIONS(connl, branches, roots);
 end consConnection;
 
 public function collectFlowConnectors
@@ -380,17 +434,15 @@ protected function collectFlowConnector
 algorithm
   outFlows := matchcontinue(inElement, inAccumFlows)
     local
-      Absyn.Path name;
       Component comp;
       DAE.ComponentRef cref;
       Connector c;
 
-    case (InstTypes.ELEMENT(component = comp as InstTypes.TYPED_COMPONENT(
-        name = _)), _)
+    case (InstTypes.ELEMENT(component = comp), _)
       equation
         true = InstUtil.isFlowComponent(comp);
         cref = InstUtil.makeTypedComponentCref(comp);
-        c = Connect2.CONNECTOR(cref, Connect2.INSIDE(), Connect2.FLOW());
+        c = makeConnector(cref, Connect2.INSIDE(), SOME(comp));
       then
         c :: inAccumFlows;
 
@@ -398,18 +450,36 @@ algorithm
   end matchcontinue;
 end collectFlowConnector;
 
+protected function extractConnectorAttrFromPrefs
+  input DaePrefixes inPrefixes;
+  output ConnectorAttr outAttributes;
+  output DAE.ConnectorType outConnectorType;
+algorithm
+  (outAttributes, outConnectorType) := match(inPrefixes)
+    local
+      DAE.VarKind var;
+      DAE.VarVisibility vis;
+      DAE.VarDirection dir;
+      DAE.ConnectorType cty;
+
+    case InstTypes.DAE_PREFIXES(visibility = vis, variability = var,
+        direction = dir, connectorType = cty)
+      then (Connect2.CONN_ATTR(var, vis, dir), cty);
+
+    else (Connect2.CONN_ATTR(DAE.VARIABLE(), DAE.PUBLIC(), DAE.BIDIR()),
+            DAE.POTENTIAL());
+
+  end match;
+end extractConnectorAttrFromPrefs;
+
 protected function connectionCount
   input Connections inConnections;
   output Integer outCount;
+protected
+  list<Connection> connl;
 algorithm
-  outCount := match(inConnections)
-    local
-      list<Connection> connl;
-
-    case Connect2.NO_CONNECTIONS() then 0;
-    case Connect2.CONNECTIONS(connections = connl) then listLength(connl);
-
-  end match;
+  Connect2.CONNECTIONS(connections = connl) := inConnections;
+  outCount := listLength(connl);
 end connectionCount;
 
 protected function getConnections
@@ -440,7 +510,7 @@ algorithm
       list<Connector> flows;
       list<Connection> connections;
 
-    case (Connect2.NO_CONNECTIONS(), {}) then DAEUtil.emptyDae;
+    case (Connect2.CONNECTIONS({}, {}, {}), {}) then DAEUtil.emptyDae;
 
     case (_, _)
       equation
@@ -450,7 +520,7 @@ algorithm
         disjoint_sets = ConnectionSets.emptySets(set_size);
 
         // Add flow variables to the set structure.
-        flows = listReverse(inFlowVariables);
+        flows = List.mapFlatReverse(inFlowVariables, expandConnector);
         disjoint_sets = List.fold(flows, ConnectionSets.add, disjoint_sets);
 
         // Add connections to the set structure.
@@ -479,12 +549,24 @@ protected function addConnectionToSet
   input DisjointSets inSets;
   output DisjointSets outSets;
 algorithm
-  outSets := match(inConnection, inSets)
+  outSets := matchcontinue(inConnection, inSets)
     local
       Connector lhs, rhs;
       Absyn.Info info;
       DisjointSets sets;
       list<Connector> lhs_connl, rhs_connl;
+      DAE.VarKind var;
+
+    // Don't add parameter/constant connectors, asserts for them should already
+    // have been generated during typing.
+    case (Connect2.CONNECTION(lhs = Connect2.CONNECTOR(attr =
+        Connect2.CONN_ATTR(variability = var))), _)
+      equation
+        // Variability should have been checked already, so should be enough to
+        // just check one since they should be the same.
+        true = DAEUtil.isParamOrConstVarKind(var);
+      then
+        inSets;
 
     case (Connect2.CONNECTION(lhs = lhs, rhs = rhs, info = info), sets)
       equation
@@ -494,29 +576,39 @@ algorithm
       then
         sets;
 
-  end match;
+  end matchcontinue;
 end addConnectionToSet;
 
 protected function expandConnector
   input Connector inConnector;
   output list<Connector> outConnectors;
-protected
-  DAE.ComponentRef name;
-  Face face;
-  ConnectorType cty;
-  list<DAE.ComponentRef> prefixes;
-  DAE.Type ty;
-  list<Connector> connl;
 algorithm
-  Connect2.CONNECTOR(name, face, cty) := inConnector;
-  prefixes := expandConnectorPrefix(name);
-  name := ComponentReference.crefLastCref(name);
-  ty := ComponentReference.crefType(name);
-  connl := expandConnector2(name, ty, face, cty);
-  outConnectors := List.productMap(prefixes, connl, prefixConnector);
+  outConnectors := match(inConnector)
+    local
+      DAE.ComponentRef name;
+      Face face;
+      ConnectorType cty;
+      list<DAE.ComponentRef> prefixes;
+      DAE.Type ty;
+      list<Connector> connl;
+      ConnectorAttr attr;
+
+    case Connect2.CONNECTOR(name as DAE.CREF_IDENT(ident = _), ty, face, cty, attr)
+      then expandConnector2(name, ty, face, cty, attr);
+
+    case Connect2.CONNECTOR(name, ty, face, cty, attr)
+      equation
+        prefixes = expandConnectorPrefix(name);
+        name = ComponentReference.crefLastCref(name);
+        connl = expandConnector2(name, ty, face, cty, attr);
+        connl = List.productMap(prefixes, connl, prefixConnector);
+      then
+        connl;
+
+  end match;
 end expandConnector;
 
-protected function prefixConnector
+public function prefixConnector
   input DAE.ComponentRef inPrefix;
   input Connector inConnector;
   output Connector outConnector;
@@ -524,20 +616,25 @@ protected
   DAE.ComponentRef name;
   Face face;
   ConnectorType cty;
+  DAE.Type ty;
+  ConnectorAttr attr;
 algorithm
-  Connect2.CONNECTOR(name, face, cty) := inConnector;
+  Connect2.CONNECTOR(name, ty, face, cty, attr) := inConnector;
   name := ComponentReference.joinCrefs(inPrefix, name);
-  outConnector := Connect2.CONNECTOR(name, face, cty);
+  outConnector := Connect2.CONNECTOR(name, ty, face, cty, attr);
 end prefixConnector;
 
 protected function expandConnectorPrefix
   input DAE.ComponentRef inCref;
   output list<DAE.ComponentRef> outPrefixes;
 algorithm
-  outPrefixes := ComponentReference.expandCref(inCref, false);
+  outPrefixes := match(inCref)
+    case DAE.CREF_IDENT(ident = _) then {};
+    else ComponentReference.expandCref(inCref, false);
+  end match;
 end expandConnectorPrefix;
 
-protected function varToConnector
+public function varToConnector
   input DAE.Var inVar;
   input Face inFace;
   output Connector outConnector;
@@ -547,12 +644,23 @@ protected
   DAE.ComponentRef cref;
   SCode.ConnectorType scty;
   ConnectorType cty;
+  SCode.Variability svar;
+  DAE.VarKind var;
+  Absyn.Direction sdir;
+  DAE.VarDirection dir;
+  SCode.Visibility svis;
+  DAE.VarVisibility vis;
+  ConnectorAttr attr;
 algorithm
-  DAE.TYPES_VAR(name = name, ty = ty,
-    attributes = DAE.ATTR(connectorType = scty)) := inVar;
+  DAE.TYPES_VAR(name = name, ty = ty, attributes = DAE.ATTR(connectorType = scty,
+    variability = svar, direction = sdir, visibility = svis)) := inVar;
   cref := DAE.CREF_IDENT(name, ty, {});
   cty := translateSCodeConnectorType(scty);
-  outConnector := Connect2.CONNECTOR(cref, inFace, cty);
+  var := InstUtil.translateVariability(svar);
+  dir := InstUtil.translateDirection(sdir);
+  vis := InstUtil.translateVisibility(svis);
+  attr := Connect2.CONN_ATTR(var, vis, dir);
+  outConnector := makeConnector2(cref, ty, inFace, cty, attr);
 end varToConnector;
   
 protected function expandConnector2
@@ -560,25 +668,35 @@ protected function expandConnector2
   input DAE.Type inType;
   input Face inFace;
   input ConnectorType inConnectorType;
+  input ConnectorAttr inConnectorAttr;
   output list<Connector> outConnectors;
 algorithm
-  outConnectors := match(inCref, inType, inFace, inConnectorType)
+  outConnectors := match(inCref, inType, inFace, inConnectorType, inConnectorAttr)
     local
       list<DAE.Var> vars;
       list<DAE.ComponentRef> crefs;
       list<Connector> connl;
+      Connector conn;
 
-    case (_, DAE.T_ARRAY(ty = _), _, _)
+    case (_, DAE.T_ARRAY(ty = _), _, _, _)
       equation
         crefs = ComponentReference.expandCref(inCref, false);
-        connl = List.map2(crefs, makeConnector, inFace, inConnectorType);
+        connl = List.map4(crefs, makeConnector2, inType, inFace, inConnectorType,
+          inConnectorAttr);
       then
         connl;
 
-    case (_, DAE.T_COMPLEX(varLst = vars), _, _)
-      then List.map1(vars, varToConnector, inFace);
+    case (_, DAE.T_COMPLEX(varLst = vars), _, _, _)
+      equation
+        vars = List.filterOnTrue(vars, DAEUtil.isNotParamOrConstVar);
+      then
+        List.map1(vars, varToConnector, inFace);
 
-    else {Connect2.CONNECTOR(inCref, inFace, inConnectorType)};
+    else
+      equation
+        conn = makeConnector2(inCref, inType, inFace, inConnectorType, inConnectorAttr);
+      then
+        {conn};
 
   end match;
 end expandConnector2;
@@ -601,7 +719,7 @@ protected function getSetType
   output ConnectorType outType;
 algorithm
   // All connectors in a set should have the same type, so pick the first.
-  Connect2.CONNECTOR(ty = outType) :: _ := inSet;
+  Connect2.CONNECTOR(cty = outType) :: _ := inSet;
 end getSetType;
 
 protected function generateEquation_dispatch
@@ -890,7 +1008,7 @@ protected function streamFlowExp
 protected
   DAE.ComponentRef stream_cr, flow_cr;
 algorithm
-  Connect2.CONNECTOR(name = stream_cr, ty = Connect2.STREAM(SOME(flow_cr))) := inElement;
+  Connect2.CONNECTOR(name = stream_cr, cty = Connect2.STREAM(SOME(flow_cr))) := inElement;
   outStreamExp := Expression.crefExp(stream_cr);
   outFlowExp := Expression.crefExp(flow_cr);
 end streamFlowExp;
@@ -902,7 +1020,7 @@ protected function flowExp
 protected
   DAE.ComponentRef flow_cr;
 algorithm
-  Connect2.CONNECTOR(ty = Connect2.STREAM(SOME(flow_cr))) := inElement;
+  Connect2.CONNECTOR(cty = Connect2.STREAM(SOME(flow_cr))) := inElement;
   outFlowExp := Expression.crefExp(flow_cr);
 end flowExp;
 
@@ -1009,5 +1127,254 @@ algorithm
   end matchcontinue;
 end compareCrefStreamSet;
 
+public function getConnectorFace
+  "Determines the face of a connector element, i.e. inside or outside. A
+   connector element is outside if the first identifier in the cref is a
+   connector, otherwise inside. This function takes the optional component
+   returned from lookupConnectorCref instead of a cref though."
+  input Option<Component> inPrefixComponent;
+  output Face outFace;
+algorithm
+  outFace := match(inPrefixComponent)
+    local
+      Component comp;
+      Boolean is_conn;
+      Face face;
+
+    // No prefix component means a simple identifier, i.e. the connector element
+    // itself is the first identifier.
+    case NONE() then Connect2.OUTSIDE();
+
+    // A prefix component, face depends on if it's a connector or not.
+    case SOME(comp)
+      equation
+        is_conn = InstUtil.isConnectorComponent(comp);
+        // Connector => outside, not connector => inside.
+        face = Util.if_(is_conn, Connect2.OUTSIDE(), Connect2.INSIDE());
+      then
+        face;
+
+  end match;
+end getConnectorFace;
+
+public function generateConnectAssertion
+  input Connector inLhsConnector;
+  input Connector inRhsConnector;
+  input Absyn.Info inInfo;
+  input list<Equation> inEquations;
+  output list<Equation> outEquations;
+  output Boolean outIsOnlyConst;
+algorithm
+  (outEquations, outIsOnlyConst) := matchcontinue(inLhsConnector, inRhsConnector,
+      inInfo, inEquations)
+    local
+      DAE.ComponentRef lhs, rhs;
+      DAE.Exp lhs_exp, rhs_exp;
+      list<Equation> eql;
+      Boolean is_only_const;
+      DAE.Type lhs_ty, rhs_ty, ty;
+
+    // Variable simple connection, nothing to do.
+    case (Connect2.CONNECTOR(ty = lhs_ty), Connect2.CONNECTOR(ty = rhs_ty), _, _)
+      equation
+        false = isConstOrComplexConnector(inLhsConnector);
+        false = isConstOrComplexConnector(inRhsConnector);
+      then
+        (inEquations, false);
+              
+    // One or both of the connectors are constant/parameter or complex,
+    // generate assertion or error message.
+    case (Connect2.CONNECTOR(name = lhs, ty = lhs_ty),
+          Connect2.CONNECTOR(name = rhs, ty = rhs_ty), _, _)
+      equation
+        /* ------------------------------------------------------------------*/
+        // TODO: If we have mixed Real/Integer, one of these expression might
+        // need to be typecast. ty should be the common type.
+        /* ------------------------------------------------------------------*/
+        lhs_exp = DAE.CREF(lhs, lhs_ty);
+        rhs_exp = DAE.CREF(rhs, rhs_ty);
+        ty = lhs_ty;
+
+        (eql, is_only_const) = generateConnectAssertion2(lhs_exp, rhs_exp,
+          ty, inInfo, inEquations);
+      then
+        (eql, is_only_const);
+
+  end matchcontinue;
+end generateConnectAssertion;
+
+protected function isConstOrComplexConnector
+  input Connector inConnector;
+  output Boolean outIsConstOrComplex;
+algorithm
+  outIsConstOrComplex := match(inConnector)
+    local
+      DAE.VarKind var;
+
+    case Connect2.CONNECTOR(ty = DAE.T_COMPLEX(varLst = _)) then true;
+    case Connect2.CONNECTOR(attr = Connect2.CONN_ATTR(variability = var))
+      then DAEUtil.isParamOrConstVarKind(var);
+
+  end match;
+end isConstOrComplexConnector;
+    
+protected function generateConnectAssertion2
+  input DAE.Exp inLhsExp;
+  input DAE.Exp inRhsExp;
+  input DAE.Type inType;
+  input Absyn.Info inInfo;
+  input list<Equation> inEquations;
+  output list<Equation> outEquations;
+  output Boolean outIsOnlyConst;
+algorithm
+  (outEquations, outIsOnlyConst) :=
+  matchcontinue(inLhsExp, inRhsExp, inType, inInfo, inEquations)
+    local
+      DAE.Exp bin_exp, abs_exp, cond_exp;
+      Equation assertion;
+      list<DAE.Var> lhs_vars, lhs_rest, rhs_vars, rhs_rest;
+      DAE.ComponentRef lhs_cref, rhs_cref;
+      list<Equation> eql;
+      Boolean ioc;
+      String ty_str;
+
+    // One or both of the connectors are scalar Reals.
+    case (_, _, _, _, _)
+      equation
+        true = Types.isScalarReal(inType);
+        // Generate an 'abs(lhs - rhs) <= 0' assertion, to keep the flat Modelica
+        // somewhat similar to Modelica (which doesn't allow == for Reals).
+        bin_exp = DAE.BINARY(inLhsExp, DAE.SUB(inType), inRhsExp);
+        abs_exp = DAE.CALL(Absyn.IDENT("abs"), {bin_exp}, DAE.callAttrBuiltinReal);
+        cond_exp = DAE.RELATION(abs_exp, DAE.LESSEQ(inType), DAE.RCONST(0.0), 0, NONE());
+        assertion = makeConnectAssertion(cond_exp, inInfo);
+      then
+        (assertion :: inEquations, true);
+
+    // Array connectors.
+    case (_, _, DAE.T_ARRAY(ty = _), _, _)
+      equation
+        /* ------------------------------------------------------------------*/
+        // TODO: Implement this.
+        /* ------------------------------------------------------------------*/
+        Error.addSourceMessage(Error.INTERNAL_ERROR,
+          {"Generating assertions for connections not yet implemented for arrays."},
+          inInfo);
+      then
+        fail();
+
+    // Complex connectors.
+    case (DAE.CREF(lhs_cref, DAE.T_COMPLEX(varLst = lhs_vars)),
+          DAE.CREF(rhs_cref, DAE.T_COMPLEX(varLst = rhs_vars)), _, _, _)
+      equation
+        (lhs_vars, lhs_rest) = List.splitOnTrue(lhs_vars, isParamConstOrComplexVar);
+        (rhs_vars, rhs_rest) = List.splitOnTrue(rhs_vars, isParamConstOrComplexVar);
+
+        ioc = List.isEmpty(lhs_rest) and List.isEmpty(rhs_rest);
+
+        (eql, ioc) = generateConnectAssertion3(lhs_vars, rhs_vars,
+          lhs_cref, rhs_cref, inInfo, inEquations, ioc);
+      then
+        (eql, ioc);
+
+    // Other scalar types.
+    case (_, _, _, _, _)
+      equation
+        true = Types.isSimpleType(inType);
+        // Generate an 'lhs = rhs' assertion.
+        cond_exp = DAE.RELATION(inLhsExp, DAE.EQUAL(inType), inRhsExp, 0, NONE());
+        assertion = makeConnectAssertion(cond_exp, inInfo);
+      then
+        (assertion :: inEquations, true);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.trace("- ConnectUtil.generateConnectAssertion2 failed on unknown type ");
+        ty_str = Types.unparseType(inType);
+        Debug.traceln(ty_str);
+      then
+        fail();
+
+  end matchcontinue;
+end generateConnectAssertion2;
+  
+protected function isParamConstOrComplexVar
+  input DAE.Var inVar;
+  output Boolean outIsParamConstComplex;
+algorithm
+  outIsParamConstComplex := DAEUtil.isParamOrConstVar(inVar) or
+                            DAEUtil.isComplexVar(inVar);
+end isParamConstOrComplexVar;
+    
+protected function makeConnectAssertion
+  input DAE.Exp inCondition;
+  input Absyn.Info inInfo;
+  output Equation outAssert;
+protected
+  DAE.Exp cond_exp, msg_exp;
+algorithm
+  /* ------------------------------------------------------------------*/
+  // TODO: Change this to a better message. Kept like this for now to be
+  // as close to the old instantiation as possible.
+  /* ------------------------------------------------------------------*/
+  msg_exp := DAE.SCONST("automatically generated from connect");
+  outAssert := InstTypes.ASSERT_EQUATION(inCondition, msg_exp,
+    DAE.ASSERTIONLEVEL_ERROR, inInfo);
+end makeConnectAssertion;
+
+protected function generateConnectAssertion3
+  input list<DAE.Var> inLhsVar;
+  input list<DAE.Var> inRhsVar;
+  input DAE.ComponentRef inLhsCref;
+  input DAE.ComponentRef inRhsCref;
+  input Absyn.Info inInfo;
+  input list<Equation> inEquations;
+  input Boolean inIsOnlyConst;
+  output list<Equation> outEquations;
+  output Boolean outIsOnlyConst;
+algorithm
+  (outEquations, outIsOnlyConst) := match(inLhsVar, inRhsVar,
+      inLhsCref, inRhsCref, inInfo, inEquations, inIsOnlyConst)
+    local
+      DAE.Var lhs_var, rhs_var;
+      list<DAE.Var> lhs_rest, rhs_rest;
+      list<Equation> eql;
+      Boolean ioc;
+
+    case (lhs_var :: lhs_rest, rhs_var :: rhs_rest, _, _, _, eql, _)
+      equation
+        (eql, ioc) = generateConnectAssertion4(lhs_var, rhs_var,
+          inLhsCref, inRhsCref, inInfo, eql);
+        ioc = ioc and inIsOnlyConst;
+        (eql, ioc) = generateConnectAssertion3(lhs_rest, rhs_rest,
+          inLhsCref, inRhsCref, inInfo, eql, ioc);
+      then
+        (eql, ioc);
+
+    case ({}, {}, _ ,_, _, _, _) then (inEquations, inIsOnlyConst);
+        
+  end match;
+end generateConnectAssertion3;
+
+protected function generateConnectAssertion4
+  input DAE.Var inLhsVar;
+  input DAE.Var inRhsVar;
+  input DAE.ComponentRef inLhsCref;
+  input DAE.ComponentRef inRhsCref;
+  input Absyn.Info inInfo;
+  input list<Equation> inEquations;
+  output list<Equation> outEquations;
+  output Boolean outIsOnlyConst;
+protected
+  Connector lhs_conn, rhs_conn;
+algorithm
+  lhs_conn := varToConnector(inLhsVar, Connect2.INSIDE());
+  lhs_conn := prefixConnector(inLhsCref, lhs_conn);
+  rhs_conn := varToConnector(inRhsVar, Connect2.INSIDE());
+  rhs_conn := prefixConnector(inRhsCref, rhs_conn);
+  (outEquations, outIsOnlyConst) := generateConnectAssertion(lhs_conn, rhs_conn,
+    inInfo, inEquations);
+end generateConnectAssertion4;
 
 end ConnectUtil2;

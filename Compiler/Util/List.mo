@@ -3635,10 +3635,27 @@ public function mapFlat
     output list<ElementOutType> outList;
   end MapFunc;
 algorithm
-  outList := mapFlat_tail(inList, inMapFunc, {});
+  outList := listReverse(mapFlat_tail(inList, inMapFunc, {}));
 end mapFlat;
 
-public function mapFlat_tail
+public function mapFlatReverse
+  "Takes a list and a function that maps elements to lists, which are flattened
+   into one list. Returns the values in reverse order as the input.
+     Example (fill2(n) = {n, n}):
+       mapFlat({1, 2, 3}, fill2) => {3, 3, 2, 2, 1, 1}"
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    output list<ElementOutType> outList;
+  end MapFunc;
+algorithm
+  outList := mapFlat_tail(inList, inMapFunc, {});
+end mapFlatReverse;
+
+protected function mapFlat_tail
   "Tail recursive implementation of mapFlat."
   input list<ElementInType> inList;
   input MapFunc inMapFunc;
@@ -3656,7 +3673,7 @@ algorithm
       list<ElementInType> rest;
       list<ElementOutType> res;
 
-    case ({}, _, _) then listReverse(inAccum);
+    case ({}, _, _) then inAccum;
     
     case (e :: rest, _, _)
       equation
@@ -5924,6 +5941,126 @@ algorithm
           inArg1, inArg2, inArg3, res :: inAccum);
   end match;
 end thread3Map3_tail;
+
+public function threadFold1
+  "This is a combination of thread and fold that applies a function to the head
+   of two lists with an extra argument that is updated and passed on. This
+   function also takes an extra constant argument that is passed to the function."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inArg1;
+  input FoldType inFoldArg;
+  output FoldType outFoldArg;
+
+  partial function FoldFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outFoldArg := match(inList1, inList2, inFoldFunc, inArg1, inFoldArg)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      FoldType res;
+
+    case ({}, {}, _, _, _) then inFoldArg;
+
+    case (e1 :: rest1, e2 :: rest2, _, _, _)
+      equation
+        res = inFoldFunc(e1, e2, inArg1, inFoldArg);
+      then
+        threadFold1(rest1, rest2, inFoldFunc, inArg1, res);
+
+  end match;
+end threadFold1;
+
+public function threadFold2
+  "This is a combination of thread and fold that applies a function to the head
+   of two lists with an extra argument that is updated and passed on. This
+   function also takes two extra constant arguments that is passed to the function."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input FoldType inFoldArg;
+  output FoldType outFoldArg;
+
+  partial function FoldFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outFoldArg := match(inList1, inList2, inFoldFunc, inArg1, inArg2, inFoldArg)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      FoldType res;
+
+    case ({}, {}, _, _, _, _) then inFoldArg;
+
+    case (e1 :: rest1, e2 :: rest2, _, _, _, _)
+      equation
+        res = inFoldFunc(e1, e2, inArg1, inArg2, inFoldArg);
+      then
+        threadFold2(rest1, rest2, inFoldFunc, inArg1, inArg2, res);
+
+  end match;
+end threadFold2;
+
+public function threadFold3
+  "This is a combination of thread and fold that applies a function to the head
+   of two lists with an extra argument that is updated and passed on. This
+   function also takes three extra constant arguments that is passed to the function."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  input FoldType inFoldArg;
+  output FoldType outFoldArg;
+
+  partial function FoldFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    input FoldType inFoldArg;
+    output FoldType outFoldArg;
+  end FoldFunc;
+algorithm
+  outFoldArg := match(inList1, inList2, inFoldFunc, inArg1, inArg2, inArg3, inFoldArg)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      FoldType res;
+
+    case ({}, {}, _, _, _, _, _) then inFoldArg;
+
+    case (e1 :: rest1, e2 :: rest2, _, _, _, _, _)
+      equation
+        res = inFoldFunc(e1, e2, inArg1, inArg2, inArg3, inFoldArg);
+      then
+        threadFold3(rest1, rest2, inFoldFunc, inArg1, inArg2, inArg3, res);
+
+  end match;
+end threadFold3;
 
 public function threadFold
   "This is a combination of thread and fold that applies a function to the head
