@@ -2228,6 +2228,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       DAE.DAElist dae;
       String s;
+      Absyn.Info info;
       
     case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,unrollForLoops,graph) /* impl */ 
       equation 
@@ -2246,7 +2247,8 @@ algorithm
       equation
         failure(_ = ClassInf.trans(ci_state,ClassInf.FOUND_ALGORITHM()));
         s = ClassInf.printStateStr(ci_state);
-        Error.addMessage(Error.ALGORITHM_TRANSITION_FAILURE,{s});
+        info = SCode.getStatementInfo(stmt);
+        Error.addSourceMessage(Error.ALGORITHM_TRANSITION_FAILURE, {s}, info);
       then fail();
 
     case (_,_,_,_,_,_,_,algSCode,_,_,_)
