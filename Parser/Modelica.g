@@ -1122,11 +1122,6 @@ name_path_star2 returns [void* ast, int unqual, void* lst] :
       $ast = Absyn__IDENT(token_to_scon(id));
       $unqual = uq != 0;
       $lst = mlst;
-      if (mlst != NULL && !metamodelica_enabled()) {
-        c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "Group imports are an OpenModelica extension, not standard Modelica.",
-                             NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
-                             ModelicaParser_readonly, ModelicaParser_filename_C);
-      }
     }
   | (id=IDENT|id=CODE) DOT p=name_path_star2
     {
