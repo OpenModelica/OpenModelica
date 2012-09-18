@@ -101,6 +101,10 @@ private:
   QPushButton *mpEquationSystemInitializationFileBrowseButton;
   QLabel *mpEquationSystemInitializationTimeLabel;
   QLineEdit *mpEquationSystemInitializationTimeTextBox;
+  QLabel *mpMatchingAlgorithmLabel;
+  QComboBox *mpMatchingAlgorithmComboBox;
+  QLabel *mpIndexReductionLabel;
+  QComboBox *mpIndexReductionComboBox;
   QGroupBox *mpLoggingGroup;
   QCheckBox *mpLogStatsCheckBox;
   QCheckBox *mpLogInitializationCheckBox;

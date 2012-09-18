@@ -190,6 +190,12 @@ public:
   QString getSimulationOptions(QString modelName);
   bool translateModelFMU(QString modelName);
   bool importFMU(QString fmuName, QString outputDirectory);
+  QString getMatchingAlgorithm();
+  void getAvailableMatchingAlgorithms(QStringList *choices, QStringList *comments);
+  bool setMatchingAlgorithm(QString matchingAlgorithm);
+  QString getIndexReductionMethod();
+  void getAvailableIndexReductionMethods(QStringList *choices, QStringList *comments);
+  bool setIndexReductionMethod(QString method);
 public slots:
   void sendCommand();
   void openOMCLogger();

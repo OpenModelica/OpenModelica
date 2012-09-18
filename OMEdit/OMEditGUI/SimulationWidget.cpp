@@ -167,6 +167,32 @@ void SimulationWidget::setUpForm()
   // Equation System time
   mpEquationSystemInitializationTimeLabel = new QLabel(tr("Equation System Initialization Time (Optional):"));
   mpEquationSystemInitializationTimeTextBox = new QLineEdit;
+  // Matching Algorithm
+  mpMatchingAlgorithmLabel = new QLabel(tr("Matching Algorithm:"));
+  QStringList matchingAlgorithmChoices, matchingAlgorithmComments;
+  mpParentMainWindow->mpOMCProxy->getAvailableMatchingAlgorithms(&matchingAlgorithmChoices, &matchingAlgorithmComments);
+  mpMatchingAlgorithmComboBox = new QComboBox;
+  int i = 0;
+  foreach (QString matchingAlgorithmChoice, matchingAlgorithmChoices)
+  {
+    mpMatchingAlgorithmComboBox->addItem(matchingAlgorithmChoice);
+    mpMatchingAlgorithmComboBox->setItemData(i, matchingAlgorithmComments[i], Qt::ToolTipRole);
+    i++;
+  }
+  mpMatchingAlgorithmComboBox->setCurrentIndex(mpMatchingAlgorithmComboBox->findText(mpParentMainWindow->mpOMCProxy->getMatchingAlgorithm()));
+  // Index Reduction Method
+  mpIndexReductionLabel = new QLabel(tr("Index Reduction Method:"));
+  QStringList indexReductionChoices, indexReductionComments;
+  mpParentMainWindow->mpOMCProxy->getAvailableIndexReductionMethods(&indexReductionChoices, &indexReductionComments);
+  mpIndexReductionComboBox = new QComboBox;
+  i = 0;
+  foreach (QString indexReductionChoice, indexReductionChoices)
+  {
+    mpIndexReductionComboBox->addItem(indexReductionChoice);
+    mpIndexReductionComboBox->setItemData(i, indexReductionComments[i], Qt::ToolTipRole);
+    i++;
+  }
+  mpIndexReductionComboBox->setCurrentIndex(mpIndexReductionComboBox->findText(mpParentMainWindow->mpOMCProxy->getIndexReductionMethod()));
   // Logging
   mpLogStatsCheckBox = new QCheckBox(tr("Stats"));
   mpLogInitializationCheckBox = new QCheckBox(tr("Initialization"));
@@ -203,7 +229,11 @@ void SimulationWidget::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationFileBrowseButton, 3, 2);
   pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationTimeLabel, 4, 0);
   pSimulationFlagsTabLayout->addWidget(mpEquationSystemInitializationTimeTextBox, 4, 1, 1, 2);
-  pSimulationFlagsTabLayout->addWidget(mpLoggingGroup, 5, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpMatchingAlgorithmLabel, 5, 0);
+  pSimulationFlagsTabLayout->addWidget(mpMatchingAlgorithmComboBox, 5, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpIndexReductionLabel, 6, 0);
+  pSimulationFlagsTabLayout->addWidget(mpIndexReductionComboBox, 6, 1, 1, 2);
+  pSimulationFlagsTabLayout->addWidget(mpLoggingGroup, 7, 0, 1, 3);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTab, tr("Simulation Flags"));
@@ -417,8 +447,10 @@ void SimulationWidget::simulate()
       if (mpLogDebugCheckBox->isChecked())
         simulationFlags.append("LOG_DEBUG");
     }
-    // before simulating save the simulation options
+    // before simulating save the simulation options and set the matching algorithm & index reduction.
     saveSimulationOptions();
+    mpParentMainWindow->mpOMCProxy->setMatchingAlgorithm(mpMatchingAlgorithmComboBox->currentText());
+    mpParentMainWindow->mpOMCProxy->setIndexReductionMethod(mpIndexReductionComboBox->currentText());
     // show the progress bar
     mpProgressDialog->setText(tr("Compiling Model.\nPlease wait for a while."));
     mpProgressDialog->getCancelSimulationButton()->setEnabled(false);

@@ -1895,6 +1895,84 @@ bool OMCProxy::importFMU(QString fmuName, QString outputDirectory)
   }
 }
 
+//! Reads the matching algorithm used during the simulation.
+//! @return the name of the matching algorithm
+QString OMCProxy::getMatchingAlgorithm()
+{
+  sendCommand("getMatchingAlgorithm()");
+  return StringHandler::unparse(getResult());
+}
+
+//! Reads the list of available matching algorithms.
+//! @param Output the list of matching algorithm choices
+//! @param Output the list of matching algorithm choices comments
+void OMCProxy::getAvailableMatchingAlgorithms(QStringList *choices, QStringList *comments)
+{
+  sendCommand("getAvailableMatchingAlgorithms()");
+  QStringList resultList = StringHandler::unparseArrays(getResult());
+  if (resultList.size() == 2)
+  {
+    *choices = StringHandler::unparseStrings(resultList.at(0));
+    *comments = StringHandler::unparseStrings(resultList.at(1));
+  }
+  else
+    printMessagesStringInternal();
+}
+
+//! Reads the index reduction method used during the simulation.
+//! @return the name of the index reduction method.
+QString OMCProxy::getIndexReductionMethod()
+{
+  sendCommand("getIndexReductionMethod()");
+  return StringHandler::unparse(getResult());
+}
+
+//! Sets the matching algorithm.
+//! @param matchingAlgorithm the macthing algorithm to set
+//! @return true on success
+bool OMCProxy::setMatchingAlgorithm(QString matchingAlgorithm)
+{
+  sendCommand("setMatchingAlgorithm(\"" + matchingAlgorithm + "\")");
+  if (StringHandler::unparseBool(getResult()))
+    return true;
+  else
+  {
+    printMessagesStringInternal();
+    return false;
+  }
+}
+
+//! Reads the list of available index reduction methods.
+//! @param Output the list of index reduction methods choices
+//! @param Output the list of index reduction methods comments
+void OMCProxy::getAvailableIndexReductionMethods(QStringList *choices, QStringList *comments)
+{
+  sendCommand("getAvailableIndexReductionMethods()");
+  QStringList resultList = StringHandler::unparseArrays(getResult());
+  if (resultList.size() == 2)
+  {
+    *choices = StringHandler::unparseStrings(resultList.at(0));
+    *comments = StringHandler::unparseStrings(resultList.at(1));
+  }
+  else
+    printMessagesStringInternal();
+}
+
+//! Sets the index reduction method.
+//! @param method the index reduction method to set
+//! @return true on success
+bool OMCProxy::setIndexReductionMethod(QString method)
+{
+  sendCommand("setIndexReductionMethod(\"" + method + "\")");
+  if (StringHandler::unparseBool(getResult()))
+    return true;
+  else
+  {
+    printMessagesStringInternal();
+    return false;
+  }
+}
+
 //! @class CustomExpressionBox
 //! @brief A text box for executing OMC commands.
 
