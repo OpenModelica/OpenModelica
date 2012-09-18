@@ -80,7 +80,7 @@ protected import DAEUtil;
 protected import DAEDump;
 protected import Debug;
 protected import Dump;
-protected import Dynload;
+protected import DynLoad;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
