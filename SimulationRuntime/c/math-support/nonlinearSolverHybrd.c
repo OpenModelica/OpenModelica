@@ -150,8 +150,8 @@ void wrapper_fvec_hybrd(int* n, double* x, double* f, int* iflag, void* data){
 
 /*! \fn solve non-linear system with hybrd method
  *
- *  \param	[in]	[data]
- *  				[sysNumber] index of the corresponing non-linear system
+ *  \param  [in]  [data]
+ *                [sysNumber] index of the corresponing non-linear system
  *
  *  \author wbraun
  */

@@ -103,8 +103,8 @@ int freeNonlinearSystem(DATA *data){
 
 /*! \fn solve non-linear systems
  *
- *  \param	[in]	[data]
- *  				[sysNumber] index of corresponding non-linear System
+ *  \param  [in]  [data]
+ *                [sysNumber] index of corresponding non-linear System
  *
  *  \author wbraun
  */
@@ -112,15 +112,15 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 {
   /* NONLINEAR_SYSTEM_DATA* system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
   data->simulationInfo.currentNonlinearSystemIndex = sysNumber;
-	/* strategy for solving nonlinear system
-	 *
-	 *
-	 *
-	 */
+  /* strategy for solving nonlinear system
+   *
+   *
+   *
+   */
 
 
   /* for now just use hybrd solver as before */
-	solveHybrd(data, sysNumber);
+  solveHybrd(data, sysNumber);
 
-	return 0;
+  return 0;
 }

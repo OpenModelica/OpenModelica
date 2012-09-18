@@ -2472,10 +2472,10 @@ algorithm
       list<SimCode.SimEqSystem> eqs, rest, res;
       list<DAE.ComponentRef> crefs;
       SimCode.SimEqSystem eq,cont;
-		  list<SimCode.SimVar> discVars;
-		  list<SimCode.SimEqSystem> discEqs;
-		  list<Integer> values;
-		  list<Integer> value_dims;      
+      list<SimCode.SimVar> discVars;
+      list<SimCode.SimEqSystem> discEqs;
+      list<Integer> values;
+      list<Integer> value_dims;      
       case ({},_) 
         then ({},inIndex);
       case(SimCode.SES_NONLINEAR(index, eqs, crefs, _)::rest,_)

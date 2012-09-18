@@ -86,7 +86,7 @@ extern void callExternalObjectDestructors(DATA *_data);
  *
  *  \param [ref] [data]
  */
-extern int initialNonLinearSystem(NONLINEAR_SYSTEM_DATA *data);
+extern void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA *data);
 
 /* functionODE contains those equations that are needed
  * to calculate the dynamic part of the system */
