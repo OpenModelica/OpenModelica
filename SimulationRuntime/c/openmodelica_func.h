@@ -57,6 +57,7 @@ extern "C" {
 
 #include "model_help.h"
 #include "delay.h"
+#include "nonlinearSystem.h"
 
 /*
  * this is used for initialize the DATA structure that is used in
@@ -78,6 +79,14 @@ extern void setupDataStruc2(DATA *data);
 extern void callExternalObjectConstructors(DATA *data);
 /* Function for calling external object deconstructors */
 extern void callExternalObjectDestructors(DATA *_data);
+
+/*! \fn initialNonLinearSystem
+ *
+ *  This function initialize nonlinear system structure.
+ *
+ *  \param [ref] [data]
+ */
+extern int initialNonLinearSystem(NONLINEAR_SYSTEM_DATA *data);
 
 /* functionODE contains those equations that are needed
  * to calculate the dynamic part of the system */

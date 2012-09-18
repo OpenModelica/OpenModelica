@@ -65,6 +65,7 @@
 #include "solver_main.h"
 #include "modelinfo.h"
 #include "model_help.h"
+#include "nonlinearSystem.h"
 #include "rtclock.h"
 
 #ifdef _OMC_QSS_LIB
@@ -108,10 +109,6 @@ const std::string *init_method = NULL; // method for  initialization.
 // The simulation result
 simulation_result *sim_result = NULL;
 
-
-/* Flags for modelErrorCodes */
-extern const int ERROR_NONLINSYS = -1;
-extern const int ERROR_LINSYS = -2;
 
 /* function with template for linear model */
 int callSolver(DATA*, string, string, string, double, double, double, long, double, string, string, string, double, string);
@@ -190,6 +187,10 @@ int verboseLevel(int argc, char**argv) {
   if (flags->find("LOG_NONLIN_SYS", 0) != string::npos) {
     res |= LOG_NONLIN_SYS;
     globalDebugFlags |= LOG_NONLIN_SYS;
+  }
+  if (flags->find("LOG_NONLIN_SYS_V", 0) != string::npos) {
+    res |= LOG_NONLIN_SYS_V;
+    globalDebugFlags |= LOG_NONLIN_SYS_V;
   }
   if (flags->find("LOG_ZEROCROSSINGS", 0) != string::npos) {
     res |= LOG_ZEROCROSSINGS;
@@ -542,7 +543,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
              "\n\t\t[specify a new setup XML file to the generated simulation code]" << "\n\t"
          << "<-r result file> "
              "\n\t\t[specify a new result file than the default Model_res.mat]" << "\n\t"
-         << "<-m|s solver:{dassl,euler,rungekutta,dopri5,inline-euler,inline-rungekutta,qss}> "
+         << "<-m|s solver:{dassl,euler,rungekutta,inline-euler,inline-rungekutta,qss}> "
              "\n\t\t[specify the solver]" << "\n\t"
          << "<-interactive> <-port value> "
              "\n\t\t[specify interactive simulation and port]" << "\n\t"
@@ -706,11 +707,6 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
      */
     retVal = startNonInteractiveSimulation(argc, argv, data);
 
-    /*
-     * deinitializeEventData();
-     * callExternalObjectDestructors2(globalData);
-     * free(globalData);
-     */
     callExternalObjectDestructors(data);
     DeinitializeDataStruc(data);
     fflush(NULL);

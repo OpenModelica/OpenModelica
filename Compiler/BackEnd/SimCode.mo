@@ -185,6 +185,7 @@ uniontype VarInfo
     Integer numStringParamVars;
     Integer numStringAliasVars;
     Integer numJacobianVars;
+    Integer numNonLinearResFunctions;
     Option <Integer> dimODE1stOrder;
     Option <Integer> dimODE2ndOrder;
   end VARINFO;
@@ -414,6 +415,7 @@ uniontype SimEqSystem
     Integer index;
     list<SimEqSystem> eqs;
     list<DAE.ComponentRef> crefs;
+    Integer indexNonLinear;
   end SES_NONLINEAR;
   record SES_MIXED
     Integer index;

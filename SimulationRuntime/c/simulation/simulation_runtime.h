@@ -84,17 +84,12 @@ extern int measure_time_flag;
 extern const char *linear_model_frame; /* printf format-string with holes for 6 strings */
 
 extern int modelTermination; /* Becomes non-zero when simulation terminates. */
-extern int modelErrorCode;
 extern int terminationTerminate; /* Becomes non-zero when user terminates simulation. */
 extern int terminationAssert; /* Becomes non-zero when model call assert simulation. */
 extern int warningLevelAssert; /* Becomes non-zero when model call assert with warning level. */
 extern FILE_INFO TermInfo; /* message for termination. */
 
 extern char* TermMsg; /* message for termination. */
-
-/* Flags for modelErrorCodes */
-extern const int ERROR_NONLINSYS;
-extern const int ERROR_LINSYS;
 
 int useVerboseOutput(int level);
 

@@ -76,10 +76,16 @@ extern const unsigned int LOG_SOLVER;
 extern const unsigned int LOG_JAC;
 extern const unsigned int LOG_ENDJAC;
 extern const unsigned int LOG_NONLIN_SYS;
+extern const unsigned int LOG_NONLIN_SYS_V; /* verbose */
 extern const unsigned int LOG_EVENTS;
 extern const unsigned int LOG_ZEROCROSSINGS;
 extern const unsigned int LOG_DEBUG;
 extern const unsigned int LOG_RES_INIT;
+
+/* Flags for modelErrorCodes */
+extern const int ERROR_NONLINSYS;
+extern const int ERROR_LINSYS;
+
 
 #define MSG_H(type, stream)   do{fprintf(stream, "%s | [line] %d | [file] %s\n", type, __LINE__, __FILE__); fflush(NULL);}while(0)
 #define MSG_T(type, stream)   do{fprintf(stream, "%s | ", type);}while(0)

@@ -32,6 +32,7 @@
 #include "simulation_runtime.h"
 #include "openmodelica_func.h"
 #include "initialization.h"
+#include "nonlinearSystem.h"
 #include "dassl.h"
 #include "delay.h"
 #include "events.h"
@@ -162,6 +163,8 @@ int solver_main(DATA* simData, double start, double stop, double step,
   /* instance all external Objects */
   callExternalObjectConstructors(simData);
 
+  /* allocate memory for non-linear system solvers */
+  allocateNonlinearSystem(simData);
 
   if (flag == 2) {
   /* Allocate RK work arrays */
@@ -193,14 +196,6 @@ int solver_main(DATA* simData, double start, double stop, double step,
     break;
     */
   }
-
-  /* Is done while the initialization!
-  if (updateBoundParameters(simData)) {
-    INFO("Error calculating bound parameters");
-    return -1;
-  }
-  DEBUG_INFO(LOG_SOLVER, "Calculated bound parameters");
-  */
 
   /* Calculate initial values from updateBoundStartValues()
    * saveall() value as pre values */
@@ -415,13 +410,13 @@ int solver_main(DATA* simData, double start, double stop, double step,
     /* Check for termination of terminate() or assert() */
     if (terminationAssert ||
         terminationTerminate ||
-        modelErrorCode) {
+        simData->simulationInfo.modelErrorCode) {
 
       terminationAssert = 0;
       terminationTerminate = 0;
       checkForAsserts(simData);
       checkTermination(simData);
-      if (modelErrorCode)
+      if (simData->simulationInfo.modelErrorCode)
         retValIntegrator = 1;
     }
 
@@ -511,6 +506,9 @@ int solver_main(DATA* simData, double start, double stop, double step,
     /* free other solver memory */
   }
 
+  /* free nonlinear system data */
+  freeNonlinearSystem(simData);
+
   if (fmt)
     fclose(fmt);
 
@@ -585,7 +583,7 @@ void checkTermination(DATA* simData)
 {
   if(terminationAssert || terminationTerminate)
   {
-    modelErrorCode = 1;
+    simData->simulationInfo.modelErrorCode = 1;
     printInfo(stdout, TermInfo);
     fputc(' ', stdout);
   }

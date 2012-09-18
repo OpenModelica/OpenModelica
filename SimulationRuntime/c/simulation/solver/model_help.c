@@ -419,6 +419,49 @@ void storePreValues(DATA *data)
   memcpy(sInfo->helpVarsPre, sInfo->helpVars, sizeof(modelica_boolean)*mData->nHelpVars);
 }
 
+
+/*! \fn storeRelations
+ *
+ *  This function copys all the relations results  into their pre-values.
+ *
+ *  \param [ref] [data]
+ *
+ *  \author wbraun
+ */
+void storeReleations(DATA *data){
+
+  MODEL_DATA      *mData = &(data->modelData);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+
+  memcpy(sInfo->backupRelationsPre, sInfo->backupRelations, sizeof(modelica_boolean)*mData->nZeroCrossings);
+}
+
+/*! \fn checkRelations
+ *
+ *  This function check if at least one backupRelation has changed
+ *
+ *  \param [ref] [data]
+ *
+ *  \author wbraun
+ */
+modelica_boolean checkReleations(DATA *data){
+
+  int i;
+  modelica_boolean check=0;
+
+  MODEL_DATA      *mData = &(data->modelData);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+
+  for(i=0;i<mData->nZeroCrossings;++i){
+    if (sInfo->backupRelationsPre[i] != sInfo->backupRelations[i]){
+      check = 1;
+      break;
+    }
+  }
+
+  return check;
+}
+
 /*! \fn resetAllHelpVars
  *
  *  workaround function to reset all helpvar that are used for when-equations.
@@ -469,7 +512,7 @@ void initializeDataStruc(DATA *data)
     THROW("Your memory is not strong enough for our Ringbuffer!");
   }
 
-  /* prepair RingBuffer */
+  /* prepare RingBuffer */
   for(i=0; i<SIZERINGBUFFER; i++)
   {
     /* set time value */
@@ -511,6 +554,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.backupRelations = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
+  data->simulationInfo.backupRelationsPre = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingEnabled = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
 
   data->simulationInfo.helpVars = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
@@ -537,6 +581,11 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.inputVars = (modelica_real*) calloc(data->modelData.nInputVars, sizeof(modelica_real));
   data->simulationInfo.outputVars = (modelica_real*) calloc(data->modelData.nOutputVars, sizeof(modelica_real));
 
+  /* buffer for non-linear systems */
+  data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) malloc(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
+  initialNonLinearSystem(data->simulationInfo.nonlinearSystemData);
+
+  /* buffer for analytical jacobains */
   data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
   /* buffer for equations and fucntions */
@@ -552,6 +601,9 @@ void initializeDataStruc(DATA *data)
   /* initial build calls terminal, initial */
   data->simulationInfo.terminal = 0;
   data->simulationInfo.initial = 0;
+
+  /* initialize model error code */
+  data->simulationInfo.modelErrorCode = 0;
 
   /* initial delay */
   data->simulationInfo.delayStructure = (RINGBUFFER**)malloc(data->modelData.nDelayExpressions * sizeof(RINGBUFFER*));
@@ -655,6 +707,9 @@ void DeinitializeDataStruc(DATA *data)
   free(data->simulationInfo.integerParameter);
   free(data->simulationInfo.booleanParameter);
   free(data->simulationInfo.stringParameter);
+
+  /* free buffer jacobians */
+  free(data->simulationInfo.nonlinearSystemData);
 
   /* free buffer jacobians */
   free(data->simulationInfo.analyticJacobians);

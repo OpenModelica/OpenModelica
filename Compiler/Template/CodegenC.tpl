@@ -153,6 +153,8 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionExtraResiduals(allEquations)%>
     
+    <%functionInitialNonLinearSystems(allEquations)%>
+    
     <%functionInput(modelInfo)%>
     
     <%functionOutput(modelInfo)%>
@@ -266,6 +268,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
     data->modelData.nFunctions = <%listLength(functions)%>;
     data->modelData.nEquations = <%listLength(allEquations)%>;
+    data->modelData.nNonLinearSystems = <%varInfo.numNonLinearResFunctions%>;
     
     data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
@@ -788,6 +791,35 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   >>
 end functionInitialResidual;
 
+template functionInitialNonLinearSystems(list<SimEqSystem> allEquations)
+  "Generates functions in simulation file."
+::=
+  let body = functionInitialNonLinearSystemsTemp(allEquations)
+  <<
+  /* funtion initialize non-linear systems */
+  void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
+  {
+    <%body%>
+  }
+  >> 
+end functionInitialNonLinearSystems;
+
+template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations)
+  "Generates functions in simulation file."
+::=
+  (allEquations |> eqn => (match eqn
+     case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1))
+     case eq as SES_NONLINEAR(__) then
+     let size = listLength(crefs)
+     <<
+     nonLinearSystemData[<%indexNonLinear%>].simProfEqNr = SIM_PROF_EQ_<%index%>;
+     nonLinearSystemData[<%indexNonLinear%>].size = <%size%>;
+     nonLinearSystemData[<%indexNonLinear%>].residualFunc = residualFunc<%index%>;
+     >> 
+   )
+   ;separator="\n\n")
+end functionInitialNonLinearSystemsTemp;
+
 template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
  "Generates an equation."
 ::=
@@ -818,10 +850,9 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        ;separator="\n")
      <<
      <%&tmp%>
-     void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag, void* userdata)
+     void residualFunc<%index%>(void* dataIn, double* xloc, double* res, int* iflag)
      {
-       char discreteCall = 1;
-       DATA *data = ((DATA*)userdata);
+       DATA* data = (DATA*) dataIn;
        state mem_state;
        <%varDecls%>
        #ifdef _OMC_MEASURE_TIME
@@ -833,7 +864,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        <%body%>
        restore_memory_state(mem_state);
      }
-     >>
+   >>
    )
    ;separator="\n\n")
 end functionExtraResiduals;
@@ -1035,6 +1066,8 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
     int id,th_id;
     state mem_state; /* We need to have separate memory pools for separate systems... */
     mem_state = get_memory_state();
+    
+    data->simulationInfo.discreteCall = 0;
     <% if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)' %>
     for (id=0; id<<%nFuncs%>; id++) {
       th_id = omp_get_thread_num();
@@ -1058,7 +1091,7 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   {
     state mem_state;
     <%varDecls2%>
-  
+    data->simulationInfo.discreteCall = 0;
     mem_state = get_memory_state();
     begin_inline();
     <%stateContPartInline%>
@@ -1095,7 +1128,7 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
   {
     state mem_state;
     <%varDecls%>
-  
+   data->simulationInfo.discreteCall = 0;
     mem_state = get_memory_state();
     <%algEquations%>
     restore_memory_state(mem_state);
@@ -1120,7 +1153,7 @@ template functionAliasEquation(list<SimEqSystem> removedEquations)
   {
     state mem_state;
     <%varDecls%>
-  
+    data->simulationInfo.discreteCall = 0;
     mem_state = get_memory_state();
     <%removedPart%>
     restore_memory_state(mem_state);
@@ -1150,10 +1183,9 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen,
   int functionDAE(DATA *data, int *needToIterate)
   {
     state mem_state;
-    char discreteCall = 1;
     <%varDecls%>
     *needToIterate = 0;
-  
+    data->simulationInfo.discreteCall = 1;
     mem_state = get_memory_state();
     <%eqs%>
     <%reinit%>
@@ -1793,7 +1825,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   let &eqs +=
   <<
   
-  void eqFunction_<%ix%>(DATA *data, char discreteCall)
+  void eqFunction_<%ix%>(DATA *data)
   {
     <%&varD%>
     <%x%>
@@ -1801,7 +1833,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   
   >>
   <<
-  eqFunction_<%ix%>(data,<%disc%>);
+  eqFunction_<%ix%>(data);
   >>
   )
 end equation_;
@@ -1819,7 +1851,7 @@ case SIMULATION(genDiscrete=true) then
   else
   let ix = equationIndex(eq)
   <<
-  eqFunction_<%ix%>(data,1);
+  eqFunction_<%ix%>(data);
   >>
 else
  match eq
@@ -1828,7 +1860,7 @@ else
   else
   let ix = equationIndex(eq)
   <<
-  eqFunction_<%ix%>(data,0);
+  eqFunction_<%ix%>(data);
   >>  
 end equationNames_;
 
@@ -2118,23 +2150,25 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
 match eq
 case SES_NONLINEAR(__) then
   let size = listLength(crefs)
+  let nonlinindx = indexNonLinear
   <<
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
   SIM_PROF_ADD_NCALL_EQ(SIM_PROF_EQ_<%index%>,-1);
   #endif<%\n%>
-  start_nonlinear_system(<%size%>);
+  /* extrapolate data */
   <%crefs |> name hasindex i0 =>
     let namestr = cref(name)
     <<
-    nls_diag[<%i0%>] = $P$ATTRIBUTE<%namestr%>.nominal;
-    nls_xEx[<%i0%>] = nls_x[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
-    nls_xold[<%i0%>] = _<%namestr%>(1) /*old*/;
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxScaling[<%i0%>] = $P$ATTRIBUTE<%namestr%>.nominal;
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxExtrapolation[<%i0%>] = data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
     >>
   ;separator="\n"%>
-  solve_nonlinear_system(residualFunc<%index%>, data->modelData.equationInfo[SIM_PROF_EQ_<%index%>], (void*)data);
-  <%crefs |> name hasindex i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
-  end_nonlinear_system();<%inlineCrefs(context,crefs)%>
+  solve_nonlinear_system(data, <%indexNonLinear%>);
+  /* write solution */ 
+  <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>];' ;separator="\n"%>
+  <%inlineCrefs(context,crefs)%>
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
   #endif<%\n%>
@@ -5485,7 +5519,7 @@ case SIMULATION(__) then
       ;separator="\n")
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
     <<
-    if (discreteCall == 1) {
+    if (data->simulationInfo.discreteCall == 1) {
       <%preIf%>
       if (<%helpVarIndices |> idx => 'data->simulationInfo.helpVars[<%idx%>] && !data->simulationInfo.helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>) {
         <%statements%>
@@ -6311,16 +6345,16 @@ case rel as RELATION(__) then
         let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
         match rel.operator
         case LESS(__) then
-          let &preExp += 'if (discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>  }<%\n%>'
           res
         case LESSEQ(__) then
-          let &preExp += 'if (discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>  }<%\n%>'
           res
         case GREATER(__) then
-          let &preExp += 'if (discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>  }<%\n%>'
           res
         case GREATEREQ(__) then
-          let &preExp += 'if (discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>  }<%\n%>'
           res
         end match
     case SOME((exp,i,j)) then
@@ -6334,16 +6368,16 @@ case rel as RELATION(__) then
         //let e3 = daeExp(createArray(i), context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
         match rel.operator
         case LESS(__) then
-          let &preExp += 'if (discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>  }<%\n%>'
           res
         case LESSEQ(__) then
-          let &preExp += 'if (discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>  }<%\n%>'
           res
         case GREATER(__) then
-          let &preExp += 'if (discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>  }<%\n%>'
           res
         case GREATEREQ(__) then
-          let &preExp += 'if (discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>,<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>,<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>  }<%\n%>'
           res
         end match
       end match

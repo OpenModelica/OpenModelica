@@ -21,7 +21,7 @@ static logical c_false = FALSE_;
   fvec, doublereal *xtol, integer *maxfev, integer *ml, integer *mu, 
   doublereal *epsfcn, doublereal *diag, integer *mode, doublereal *
   factor, integer *nprint, integer *info, integer *nfev, doublereal *
-  fjac, integer *ldfjac, doublereal *r__, integer *lr, doublereal *qtf, 
+  fjac, doublereal * fjacobian, integer *ldfjac, doublereal *r__, integer *lr, doublereal *qtf,
   doublereal *wa1, doublereal *wa2, doublereal *wa3, doublereal *wa4, void* userdata)
 {
     /* Initialized data */
@@ -83,8 +83,8 @@ static logical c_false = FALSE_;
 /*     the subroutine statement is */
 
 /*       subroutine hybrd(fcn,n,x,fvec,xtol,maxfev,ml,mu,epsfcn, */
-/*                        diag,mode,factor,nprint,info,nfev,fjac, */
-/*                        ldfjac,r,lr,qtf,wa1,wa2,wa3,wa4) */
+/*                        diag,mode,factor,nprint,info,nfev,fjac,fjac, */
+/*                        ldfjac,r,lr,qtf,wa1,wa2,wa3,wa4, userdata) */
 
 /*     where */
 
@@ -198,6 +198,9 @@ static logical c_false = FALSE_;
 /*         orthogonal matrix q produced by the qr factorization */
 /*         of the final approximate jacobian. */
 
+/*       fjacobian is an output n by n array which contains the */
+/*         of the final approximate jacobian. */
+
 /*       ldfjac is a positive integer input variable not less than n */
 /*         which specifies the leading dimension of the array fjac. */
 
@@ -238,6 +241,7 @@ static logical c_false = FALSE_;
     fjac_dim1 = *ldfjac;
     fjac_offset = 1 + fjac_dim1;
     fjac -= fjac_offset;
+    --fjacobian;
     --r__;
 
     /* Function Body */
@@ -271,9 +275,13 @@ L20:
 /*     evaluate the function at the starting point */
 /*     and calculate its norm. */
 
+
     iflag = 1;
     (*fcn)(n, &x[1], &fvec[1], &iflag, userdata);
+
+
     *nfev = 1;
+
     if (iflag < 0) {
   goto L300;
     }
@@ -305,6 +313,19 @@ L30:
     fdjac1_((S_fp)fcn, n, &x[1], &fvec[1], &fjac[fjac_offset], ldfjac, &iflag,
        ml, mu, epsfcn, &wa1[1], &wa2[1], userdata);
     *nfev += msum;
+/*        store the calculate jacobain matrix   */
+/*        added by wbraun for scaling residuals */
+
+    {
+      int l = fjac_offset;
+      int k = 1;
+      for(j = 1; j <= *n; ++j){
+        for(i__ = 1; i__<= *n; ++i__, l++, k++){
+          fjacobian[k] = fjac[l];
+        }
+      }
+    }
+
     if (iflag < 0) {
   goto L300;
     }
@@ -464,6 +485,17 @@ L190:
     iflag = 1;
     (*fcn)(n, &wa2[1], &wa4[1], &iflag, userdata);
     ++(*nfev);
+
+/*           Scaling Residual vector  */
+/*           added by wbraun          */
+    /*
+    {
+      for(i__=1;i__<*n;i__++)
+        wa4[i__] = diagres[i__] * wa4[i__];
+    }
+    */
+
+
     if (iflag < 0) {
   goto L300;
     }

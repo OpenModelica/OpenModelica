@@ -18,6 +18,7 @@ RUNTIME_HEADERS = ./f2c.h \
 ./omc_inline.h \
 ./math-support/blaswrap.h \
 ./math-support/matrix.h \
+./math-support/nonlinearSystem.h \
 ./meta/gc/common.h \
 ./meta/gc/gc.h \
 ./meta/gc/generational.h \

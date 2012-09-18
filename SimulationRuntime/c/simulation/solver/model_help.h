@@ -80,6 +80,10 @@ void storeInitialValuesParam(DATA *data);
 
 void storePreValues(DATA *data);
 
+void storeReleations(DATA *data);
+
+modelica_boolean checkReleations(DATA *data);
+
 void resetAllHelpVars(DATA* data);
 
 double getNextSampleTimeFMU(DATA *data);

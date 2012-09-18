@@ -46,10 +46,14 @@ const unsigned int LOG_SOLVER        = (1<<3);
 const unsigned int LOG_JAC           = (1<<4);
 const unsigned int LOG_ENDJAC        = (1<<5);
 const unsigned int LOG_NONLIN_SYS    = (1<<6);
-const unsigned int LOG_EVENTS        = (1<<7);
-const unsigned int LOG_ZEROCROSSINGS = (1<<8);
-const unsigned int LOG_DEBUG         = (1<<9);
+const unsigned int LOG_NONLIN_SYS_V  = (1<<7);  /* verbose */
+const unsigned int LOG_EVENTS        = (1<<8);
+const unsigned int LOG_ZEROCROSSINGS = (1<<9);
+const unsigned int LOG_DEBUG         = (1<<10);
 
+/* Flags for modelErrorCodes */
+extern const int ERROR_NONLINSYS = -1;
+extern const int ERROR_LINSYS = -2;
 
 unsigned int globalDebugFlags = 0;
 

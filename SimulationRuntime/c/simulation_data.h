@@ -238,6 +238,22 @@
     modelica_boolean filterOutput; /* True if this variable should be filtered */
   }STATIC_STRING_DATA;
 
+  typedef struct NONLINEAR_SYSTEM_DATA
+  {
+    modelica_integer size;
+    void (*residualFunc)(void*,double*,double*,int*);
+
+    void* solverData;
+    modelica_real* nlsx;
+    modelica_real* nlsxOld;
+    modelica_real* nlsxExtrapolation;
+    modelica_real* nlsxScaling;
+    modelica_integer simProfEqNr;
+
+    modelica_integer method;
+    modelica_real residualError;
+  }NONLINEAR_SYSTEM_DATA;
+
   typedef struct MODEL_DATA
   {
     STATIC_REAL_DATA* realVarsData;
@@ -287,6 +303,7 @@
     long nFunctions;
     long nEquations;
     long nProfileBlocks;
+    long nNonLinearSystems;
 
     long nAliasReal;
     long nAliasInteger;
@@ -307,8 +324,10 @@
     modelica_string outputFormat;
     modelica_string variableFilter;
 
-    modelica_boolean initial; /* =1 during initialization, 0 otherwise. */
-    modelica_boolean terminal; /* =1 at the end of the simulation, 0 otherwise. */
+    modelica_boolean initial;        /* =1 during initialization, 0 otherwise. */
+    modelica_boolean terminal;       /* =1 at the end of the simulation, 0 otherwise. */
+    modelica_integer modelErrorCode; /* =1 if modelEquation result is wrong, 0 otherwise. */
+    modelica_boolean discreteCall;   /* =1 for a discrete step, otherwise 0 */
 
     void** extObjs; /* External objects */
 
@@ -322,6 +341,7 @@
     modelica_real* zeroCrossings;
     modelica_real* zeroCrossingsPre;
     modelica_boolean* backupRelations;
+    modelica_boolean* backupRelationsPre;
     modelica_boolean* zeroCrossingEnabled;
 
     /* helpVars are the result when relations and samples */
@@ -350,6 +370,11 @@
 
     ANALYTIC_JACOBIAN* analyticJacobians;
 
+    NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
+    int currentNonlinearSystemIndex;
+
+    int found_solution;             /* helper for mixed systems */
+
     /* delay vars */
     double tStart;
     RINGBUFFER **delayStructure;
@@ -375,7 +400,6 @@
     SIMULATION_DATA **localData;
     MODEL_DATA modelData;           /* static stuff */
     SIMULATION_INFO simulationInfo;
-    int found_solution;             /* helper for mixed systems */
   }DATA;
 
 #endif

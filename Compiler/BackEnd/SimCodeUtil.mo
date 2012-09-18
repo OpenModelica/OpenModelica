@@ -1800,7 +1800,7 @@ algorithm
   matchcontinue (inBackendDAE,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
     local
       String cname,   fileDir;
-      Integer n_h,maxDelayedExpIndex,uniqueEqIndex;
+      Integer n_h,maxDelayedExpIndex,uniqueEqIndex,nonLinearCount;
       Integer numberOfInitialEquations, numberOfInitialAlgorithms;
       list<SimCode.HelpVarInfo> helpVarInfo;
       BackendDAE.BackendDAE dlow,dlow2;
@@ -1878,6 +1878,10 @@ algorithm
         (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},{});
         
         modelInfo = addTempVars(tempvars,modelInfo);
+          
+        // update indexNonLinear in SES_NONLINEAR and count
+        (allEquations,nonLinearCount) = updateNonLinearSys(allEquations, 0);
+        modelInfo = addnonLinearCount(nonLinearCount,modelInfo);
         
         odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
 
@@ -1988,12 +1992,13 @@ algorithm
       Integer numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
       Integer numStringParamVars,numStringAliasVars,numJacobianVars;
       Option<Integer> dimODE1stOrder,dimODE2ndOrder;
+      Integer numNonLinearResFunctions;
     case({},_) then modelInfo;
     case(_,SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels))
       equation
         SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
-           numStringParamVars,numStringAliasVars,numJacobianVars,dimODE1stOrder,dimODE2ndOrder) = varInfo;
+           numStringParamVars,numStringAliasVars,numJacobianVars,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder) = varInfo;
         SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
                stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars,intConstVars,boolConstVars,stringConstVars) = vars;
         
@@ -2007,7 +2012,7 @@ algorithm
 
         varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
-           numStringParamVars,numStringAliasVars,numJacobianVars,dimODE1stOrder,dimODE2ndOrder);
+           numStringParamVars,numStringAliasVars,numJacobianVars,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder);
         vars = SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
                stringAlgVars,stringParamVars,stringAliasVars,extObjVars,jacobianVars,constVars,intConstVars,boolConstVars,stringConstVars);
       then
@@ -2093,6 +2098,37 @@ algorithm
          (onumAlgVars,oalgVars,onumIntAlgVars,ointAlgVars,onumBoolAlgVars,oboolAlgVars,onumStringAlgVars,ostringAlgVars);
    end match;  
 end addTempVars1;
+
+protected function addnonLinearCount
+  input Integer nonLinearCount;
+  input SimCode.ModelInfo modelInfo;
+  output SimCode.ModelInfo omodelInfo;
+algorithm
+  omodelInfo := match(nonLinearCount,modelInfo)
+    local
+      Absyn.Path name;
+      String directory;
+      SimCode.VarInfo varInfo;
+      SimCode.SimVars vars;
+      list<SimCode.Function> functions;
+      list<String> labels;
+      Integer numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams;
+      Integer numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
+      Integer numStringParamVars,numStringAliasVars,numJacobianVars;
+      Option<Integer> dimODE1stOrder,dimODE2ndOrder;
+      Integer numNonLinearResFunctions;
+    case(_,SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels))
+      equation
+        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
+           numStringParamVars,numStringAliasVars,numJacobianVars,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder) = varInfo;
+        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
+           numStringParamVars,numStringAliasVars,numJacobianVars,nonLinearCount,dimODE1stOrder,dimODE2ndOrder);
+      then
+       SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels); 
+  end match;
+end addnonLinearCount;
 
 protected function createEquationsForSystems
   input BackendDAE.EqSystems inSysts;
@@ -2421,6 +2457,45 @@ algorithm
     else then {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
   end matchcontinue;
 end addLinearizationMatrixes;
+
+
+protected function updateNonLinearSys
+"count and updte all nonlinear system"
+  input list<SimCode.SimEqSystem> inEqns;
+  input Integer inIndex;
+  output list<SimCode.SimEqSystem> outEqns;
+  output Integer outIndex;
+algorithm
+  (outEqns,outIndex) := matchcontinue(inEqns, inIndex)
+    local
+      Integer index, indx;
+      list<SimCode.SimEqSystem> eqs, rest, res;
+      list<DAE.ComponentRef> crefs;
+      SimCode.SimEqSystem eq,cont;
+		  list<SimCode.SimVar> discVars;
+		  list<SimCode.SimEqSystem> discEqs;
+		  list<Integer> values;
+		  list<Integer> value_dims;      
+      case ({},_) 
+        then ({},inIndex);
+      case(SimCode.SES_NONLINEAR(index, eqs, crefs, _)::rest,_)
+        equation
+        (res,indx) = updateNonLinearSys(rest,inIndex+1);
+        res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inIndex)},res);
+        then (res,indx);
+      case(SimCode.SES_MIXED(index, cont, discVars, discEqs, values, value_dims)::rest,_)
+        equation
+        ({cont},indx) = updateNonLinearSys({cont},inIndex);  
+        (res,indx) = updateNonLinearSys(rest,indx);
+        res = listAppend({SimCode.SES_MIXED(index, cont, discVars, discEqs, values, value_dims)},res);
+        then (res,indx);          
+      case(eq::rest,_)
+        equation
+        (res,indx) = updateNonLinearSys(rest,inIndex);
+        res = listAppend({eq},res);
+        then (res,indx);
+   end matchcontinue;
+end updateNonLinearSys;
 
 protected function collectDelayExpressions
 "Put expression into a list if it is a call to delay().
@@ -3609,7 +3684,7 @@ algorithm
         //index = System.tmpTick();
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn},iuniqueEqIndex,itempvars);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr})},uniqueEqIndex+1,tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr},0)},uniqueEqIndex+1,tempvars);
         
         // state nonlinear
     case (eqNum, varNum,
@@ -3624,7 +3699,7 @@ algorithm
         //index = System.tmpTick();
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn},iuniqueEqIndex,itempvars);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr_1})},uniqueEqIndex+1,tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr_1},0)},uniqueEqIndex+1,tempvars);
         
         // Algorithm for single variable.
     case (eqNum, varNum, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_, helpVarInfo, false, true,_,_)
@@ -4493,7 +4568,7 @@ algorithm
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(reqns,uniqueEqIndex,tempvars);
         simequations = listAppend(simequations,resEqs);
        then
-         ({SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs)},uniqueEqIndex+1,tempvars);
+         ({SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs,0)},uniqueEqIndex+1,tempvars);
    end matchcontinue;
 end createTornSystem;
 
@@ -4644,7 +4719,7 @@ algorithm
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(reqns,uniqueEqIndex,tempvars);
         simeqnsystem1 = listAppend(simeqnsystem,resEqs);
       then
-        (SimCode.SES_NONLINEAR(uniqueEqIndex, simeqnsystem1, tcrs),uniqueEqIndex+1,tempvars);
+        (SimCode.SES_NONLINEAR(uniqueEqIndex, simeqnsystem1, tcrs,0),uniqueEqIndex+1,tempvars);
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "-generateTearingSystem failed \n");
@@ -4847,7 +4922,7 @@ algorithm
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(eqn_lst,iuniqueEqIndex,itempvars);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs)},uniqueEqIndex+1,tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs,0)},uniqueEqIndex+1,tempvars);
         
         // No analytic jacobian available. Generate non-linear system.
     case (mixedEvent,skipDiscInAlgorithm,v,kv,eqn,constrs,clsAttrs,NONE(),BackendDAE.JAC_NO_ANALYTIC(),helpVarInfo,_,_,_)
@@ -4857,7 +4932,7 @@ algorithm
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(eqn_lst,iuniqueEqIndex,itempvars);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs)},uniqueEqIndex+1,tempvars);
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs,0)},uniqueEqIndex+1,tempvars);
         
         // failure
     else
@@ -5400,7 +5475,7 @@ algorithm
         crefs = List.map(inVars,BackendVariable.varCref);
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({inEquation},iuniqueEqIndex,itempvars);
       then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs)},uniqueEqIndex+1,tempvars);       
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, crefs,0)},uniqueEqIndex+1,tempvars);       
         // failure
     else
       equation
@@ -6739,7 +6814,7 @@ algorithm
         numInitialResiduals = numInitialEquations+numInitialAlgorithms;
       then
         SimCode.VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0,SOME(dim_1),SOME(dim_2));
+          numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0,SOME(dim_1),SOME(dim_2));
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfoCPP failed"});
@@ -9724,7 +9799,7 @@ algorithm
       list<SimCode.SimVar> vars;
       list<DAE.Exp> elst,elst1;
       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac,simJac1;
-      Integer index;
+      Integer index, indexNonLinear;
       list<DAE.ComponentRef> crefs;
       SimCode.SimEqSystem cont,cont1,elseWhenEq,elseWhen;
       list<SimCode.SimEqSystem> discEqs,discEqs1;
@@ -9768,11 +9843,11 @@ algorithm
         divtplLst2 = listAppend(divtplLst,divtplLst1);
       then
         (SimCode.SES_LINEAR(index,partOfMixed,vars,elst1,simJac1),divtplLst2);
-    case (SimCode.SES_NONLINEAR(index = index,eqs = discEqs, crefs = crefs),inDlowMode)
+    case (SimCode.SES_NONLINEAR(index = index,eqs = discEqs, crefs = crefs, indexNonLinear = indexNonLinear),inDlowMode)
       equation
         (discEqs,divtplLst) =  listMap1_2(discEqs,addDivExpErrorMsgtoSimEqSystem,inDlowMode);
       then
-        (SimCode.SES_NONLINEAR(index,discEqs,crefs),divtplLst);
+        (SimCode.SES_NONLINEAR(index,discEqs,crefs,indexNonLinear),divtplLst);
     case (SimCode.SES_MIXED(index,cont,vars,discEqs,values,value_dims),inDlowMode)
       equation
         (cont1,divtplLst) = addDivExpErrorMsgtoSimEqSystem(cont,inDlowMode);
@@ -12517,7 +12592,7 @@ algorithm
       list<DAE.Statement> stmts;
       SimCode.SimEqSystem cont;
       list<SimCode.SimEqSystem> discEqs,eqs;
-      Integer index;
+      Integer index,indexNonLinear;
       Boolean partOfMixed;
       list<SimCode.SimVar> vars,discVars;
       list<DAE.Exp> beqs;
@@ -12547,10 +12622,10 @@ algorithm
       equation
         /* TODO: Me */
       then (SimCode.SES_LINEAR(index,partOfMixed,vars,beqs,simJac),a);
-    case (SimCode.SES_NONLINEAR(index,eqs,crefs),func,a)
+    case (SimCode.SES_NONLINEAR(index,eqs,crefs,indexNonLinear),func,a)
       equation
         /* TODO: Me */
-      then (SimCode.SES_NONLINEAR(index,eqs,crefs),a);
+      then (SimCode.SES_NONLINEAR(index,eqs,crefs,indexNonLinear),a);
     case (SimCode.SES_MIXED(index,cont,discVars,discEqs,values,values_dims),func,a)
       equation
         /* TODO: Me */
