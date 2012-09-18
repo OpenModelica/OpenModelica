@@ -34,17 +34,7 @@
 #include <errno.h>
 #include <string.h>
 
-#if !defined(_MSC_VER)
-#ifdef __cplusplus
-/* Make sure we don't use any C++ features anywhere */
-#define __cplusplusend
-#undef __cplusplus
-#endif
-
-extern "C" {
-#else
 #define bool int
-#endif
 
 #include <MetaModelica_Lexer.h>
 #include <Modelica_3_Lexer.h>
@@ -426,7 +416,3 @@ static void* parseFile(const char* fileName, int flags, const char *encoding, in
   }
   return parseStream(input, runningTestsuite);
 }
-
-#ifdef __cplusplusend
-}
-#endif

@@ -95,7 +95,7 @@ goto rule ## func ## Ex; }}
 #endif
   #define token_to_scon(tok) mk_scon((char*)tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
-  #define INFO(start) Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(isReadOnly), mk_icon(start->line), mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
+  #define PARSER_INFO(start) (void*)Absyn__INFO(ModelicaParser_filename_RML, mk_bcon(isReadOnly), mk_icon(start->line), mk_icon(start->line == 1 ? start->charPosition+2 : start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef struct fileinfo_struct {
     int line1;
     int line2;
@@ -149,7 +149,7 @@ class_definition_list returns [void* ast] :
 class_definition [int final] returns [void* ast] :
   ((e=ENCAPSULATED)? (p=PARTIAL)? ct=class_type cs=class_specifier)
     {
-      $ast = Absyn__CLASS($cs.name, mk_bcon(p), mk_bcon(final), mk_bcon(e), ct, $cs.ast, INFO($start));
+      $ast = Absyn__CLASS($cs.name, mk_bcon(p), mk_bcon(final), mk_bcon(e), ct, $cs.ast, PARSER_INFO($start));
     }
   ;
 
@@ -364,8 +364,8 @@ element returns [void* ast]
   void *redecl;
 }
   :
-    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER, ic, INFO($start), mk_none());}
-  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER, ec, INFO($start),mk_none());}
+    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER, ic, PARSER_INFO($start), mk_none());}
+  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__NOT_5fINNER_5fOUTER, ec, PARSER_INFO($start),mk_none());}
   | du=defineunit_clause { $ast = du;}
   | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mk_bcon(f); innerouter = make_inner_outer(i,o); }
     ( ( cdef=class_definition[f != NULL] | cc=component_clause )
@@ -374,19 +374,19 @@ element returns [void* ast]
              $ast = Absyn__ELEMENT(final, r != NULL ? mk_some(make_redeclare_keywords(false,r != NULL)) : mk_none(),
                                   innerouter,
                                   Absyn__CLASSDEF(RML_FALSE, cdef.ast),
-                                  INFO($start), mk_none());
+                                  PARSER_INFO($start), mk_none());
            else
              $ast = Absyn__ELEMENT(final, r != NULL ? mk_some(make_redeclare_keywords(false,r != NULL)) : mk_none(), innerouter,
-                                   cc, INFO($start), mk_none());
+                                   cc, PARSER_INFO($start), mk_none());
         }
     | (REPLACEABLE ( cdef=class_definition[f != NULL] | cc=component_clause ) constr=constraining_clause_comment? )
         {
            if (cc)
              $ast = Absyn__ELEMENT(final, mk_some(make_redeclare_keywords(true,r != NULL)), innerouter,
-                                   cc, INFO($start), mk_some_or_none(constr));
+                                   cc, PARSER_INFO($start), mk_some_or_none(constr));
            else
              $ast = Absyn__ELEMENT(final, mk_some(make_redeclare_keywords(true,r != NULL)), innerouter,
-                                   Absyn__CLASSDEF(RML_TRUE, cdef.ast), INFO($start), mk_some_or_none(constr));
+                                   Absyn__CLASSDEF(RML_TRUE, cdef.ast), PARSER_INFO($start), mk_some_or_none(constr));
         }
     )
   | conn=CONNECT
@@ -398,7 +398,7 @@ element returns [void* ast]
 import_clause returns [void* ast] :
   im=IMPORT (imp=explicit_import_name | imp=implicit_import_name) cmt=comment
     {
-      ast = Absyn__IMPORT(imp, mk_some_or_none(cmt), INFO($im));
+      ast = Absyn__IMPORT(imp, mk_some_or_none(cmt), PARSER_INFO($im));
     }
   ;
 defineunit_clause returns [void* ast] :
@@ -543,7 +543,7 @@ modification returns [void* ast] :
   | eq=ASSIGN e=expression
   )
     {
-      ast = Absyn__CLASSMOD(or_nil(cm), e ? Absyn__EQMOD(e,INFO($eq)) : Absyn__NOMOD);
+      ast = Absyn__CLASSMOD(or_nil(cm), e ? Absyn__EQMOD(e,PARSER_INFO($eq)) : Absyn__NOMOD);
     }
   ;
 
@@ -574,7 +574,7 @@ element_modification_or_replaceable returns [void* ast] @init {
 element_modification [void *each, void *final] returns [void* ast] @init {
   $ast = NULL;
 } :
-  cr=component_reference ( mod=modification )? cmt=string_comment { $ast = Absyn__MODIFICATION(final, each, cr.ast, mk_some_or_none(mod), mk_some_or_none(cmt), INFO($start)); }
+  cr=component_reference ( mod=modification )? cmt=string_comment { $ast = Absyn__MODIFICATION(final, each, cr.ast, mk_some_or_none(mod), mk_some_or_none(cmt), PARSER_INFO($start)); }
   ;
 
 element_redeclaration returns [void* ast]  @init {
@@ -587,7 +587,7 @@ element_redeclaration returns [void* ast]  @init {
        if ($er.ast) {
          $ast = $er.ast;
        } else {
-         $ast = Absyn__REDECLARATION(mk_bcon(f), make_redeclare_keywords(false,true), e ? Absyn__EACH : Absyn__NON_5fEACH, $cc.ast ? $cc.ast : Absyn__CLASSDEF(RML_FALSE,$cdef.ast), mk_none(), INFO($start));
+         $ast = Absyn__REDECLARATION(mk_bcon(f), make_redeclare_keywords(false,true), e ? Absyn__EACH : Absyn__NON_5fEACH, $cc.ast ? $cc.ast : Absyn__CLASSDEF(RML_FALSE,$cdef.ast), mk_none(), PARSER_INFO($start));
        }
      }
   ;
@@ -599,7 +599,7 @@ element_replaceable [int each, int final, int redeclare] returns [void* ast] @in
     {
       $ast = Absyn__REDECLARATION(mk_bcon(final), make_redeclare_keywords(true,redeclare),
                                   each ? Absyn__EACH : Absyn__NON_5fEACH, e_spec ? e_spec : Absyn__CLASSDEF(RML_TRUE, $cd.ast),
-                                  mk_some_or_none($constr.ast), INFO($start));
+                                  mk_some_or_none($constr.ast), PARSER_INFO($start));
     }
   ;
   
@@ -673,7 +673,7 @@ equation returns [void* ast] :
     }
   )
   cmt=comment
-    {$ast = Absyn__EQUATIONITEM(e, mk_some_or_none(cmt), INFO($start));}
+    {$ast = Absyn__EQUATIONITEM(e, mk_some_or_none(cmt), PARSER_INFO($start));}
   ;
 
 constraint returns [void* ast] :
@@ -712,7 +712,7 @@ algorithm returns [void* ast] :
     }
   )
   cmt=comment
-    {$ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), INFO($start));}
+    {$ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), PARSER_INFO($start));}
   ;
 
 assign_clause_a returns [void* ast] @declarations {
@@ -1355,7 +1355,7 @@ top_algorithm returns [void* ast, int isExp] :
   )
     {
       if (!e) {
-        $ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), INFO($start));
+        $ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), PARSER_INFO($start));
         $isExp = 0;
       } else {
         $ast = e;
@@ -1433,7 +1433,7 @@ cases2 returns [void* ast] :
                              ModelicaParser_readonly, ModelicaParser_filename_C);
       if ($th) $el = $th;
       if (exp)
-       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,INFO($el),mk_some_or_none(cmt),INFO($start)),mk_nil());
+       $ast = mk_cons(Absyn__ELSE(or_nil(es),or_nil(eqs),exp,PARSER_INFO($el),mk_some_or_none(cmt),PARSER_INFO($start)),mk_nil());
       else
        $ast = mk_nil();
     }
@@ -1451,10 +1451,10 @@ onecase returns [void* ast] :
           c_add_source_message(2, ErrorType_syntax, ErrorLevel_warning, "case local declarations are deprecated. Move all case- and else-declarations to the match local declarations.",
                                NULL, 0, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                ModelicaParser_readonly, ModelicaParser_filename_C);
-        $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard),pat.info,or_nil(es),or_nil(eqs),exp,INFO($th),mk_some_or_none(cmt),INFO($start));
+        $ast = Absyn__CASE(pat.ast,mk_some_or_none(guard),pat.info,or_nil(es),or_nil(eqs),exp,PARSER_INFO($th),mk_some_or_none(cmt),PARSER_INFO($start));
     }
   ;
 
 pattern returns [void* ast, void* info] :
-  e=expression {$ast = e; $info = INFO($start);}
+  e=expression {$ast = e; $info = PARSER_INFO($start);}
   ;

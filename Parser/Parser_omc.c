@@ -28,8 +28,6 @@
  *
  */
 
-extern "C" {
-
 #include "meta_modelica.h"
 #include "rml_compatibility.h"
 #include "parse.c"
@@ -85,6 +83,4 @@ void* ParserExt_parsestringexp(const char* data, const char* filename, int accep
   } else {
     MMC_THROW();
   }
-}
-
 }

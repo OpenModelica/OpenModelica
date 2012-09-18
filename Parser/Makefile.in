@@ -1,5 +1,4 @@
-REAL_CC=@CC@
-CC=@CXX@
+CC=@CC@
 CXX=@CXX@
 CFLAGS=@CFLAGS@
 CPPFLAGS=@CPPFLAGS@ -I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include $(BUILDINC)
