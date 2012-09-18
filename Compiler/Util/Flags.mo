@@ -1449,6 +1449,23 @@ algorithm
   STRING_LIST_FLAG(data = outValue) := getConfigValue(inFlag);
 end getConfigStringList;
 
+public function getConfigOptionsStringList
+  "Returns the valid options of a single-string configuration flag."
+  input ConfigFlag inFlag;
+  output list<String> outOptions;
+  output list<String> outComments;
+algorithm
+  (outOptions,outComments) := match inFlag
+    local
+      list<tuple<String, Util.TranslatableContent>> options;
+      list<String> flags;
+    case CONFIG_FLAG(validOptions=SOME(STRING_DESC_OPTION(options)))
+      then (List.map(options,Util.tuple21),List.mapMap(options, Util.tuple22, Util.translateContent));
+    case CONFIG_FLAG(validOptions=SOME(STRING_OPTION(flags)))
+      then (flags,List.fill("",listLength(flags)));
+  end match;
+end getConfigOptionsStringList;
+
 public function getConfigEnum
   "Returns the value of an enumeration configuration flag."
   input ConfigFlag inFlag;

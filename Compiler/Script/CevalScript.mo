@@ -822,14 +822,14 @@ algorithm
       BackendDAE.EquationArray eqnarr;
       array<list<Integer>> m,mt;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
-      Values.Value ret_val,simValue,value,v,cvar,cvar2;
+      Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr_1;
       Integer size,resI,i,n;
       Integer fmiContext, fmiInstance, fmiModelVariablesInstance, fmiLogLevel;
       list<Integer> fmiModelVariablesList, fmiModelVariablesList1;
       Real fmiExperimentStartTime, fmiExperimentStopTime, fmiExperimentTolerance;
       String fmiModelIdentifier, fmiDescription;
-      list<String> vars_1,args,strings,strs,visvars;
+      list<String> vars_1,args,strings,strs,strs1,strs2,visvars;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts; 
       Boolean have_corba, bval, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
@@ -1646,6 +1646,32 @@ algorithm
         
     case (cache,env,"runScript",_,st,msg)
     then (cache,Values.STRING("Failed"),st);
+      
+    case (cache,env,"getIndexReductionMethod",_,st,_)
+      equation
+        str = Config.getIndexReductionMethod();
+      then (cache,Values.STRING(str),st);
+
+    case (cache,env,"getAvailableIndexReductionMethods",_,st,_)
+      equation
+        (strs1,strs2) = Flags.getConfigOptionsStringList(Flags.INDEX_REDUCTION_METHOD);
+        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v = Values.TUPLE({v1,v2});
+      then (cache,v,st);
+    
+    case (cache,env,"getMatchingAlgorithm",_,st,_)
+      equation
+        str = Config.getMatchingAlgorithm();
+      then (cache,Values.STRING(str),st);
+
+    case (cache,env,"getAvailableMatchingAlgorithms",_,st,_)
+      equation
+        (strs1,strs2) = Flags.getConfigOptionsStringList(Flags.MATCHING_ALGORITHM);
+        v1 = ValuesUtil.makeArray(List.map(strs1, ValuesUtil.makeString));
+        v2 = ValuesUtil.makeArray(List.map(strs2, ValuesUtil.makeString));
+        v = Values.TUPLE({v1,v2});
+      then (cache,v,st);
     
     case (cache,env,"typeNameString",{Values.CODE(A=Absyn.C_TYPENAME(path=path))},st,_)
       equation

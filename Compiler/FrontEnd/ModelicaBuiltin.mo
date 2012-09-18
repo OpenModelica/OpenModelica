@@ -1203,6 +1203,17 @@ algorithm
 annotation(preferredView="text");
 end setCheapMatchingAlgorithm;
 
+function getMatchingAlgorithm
+  output String selected;
+  external "builtin";
+end getMatchingAlgorithm;
+
+function getAvailableMatchingAlgorithms
+  output String[:] allChoices;
+  output String[:] allComments;
+  external "builtin";
+end getAvailableMatchingAlgorithms;
+
 function setMatchingAlgorithm "example input: omc"
   input String matchingAlgorithm;
   output Boolean success;
@@ -1211,6 +1222,17 @@ algorithm
   success := setCommandLineOptions("+matchingAlgorithm=" + matchingAlgorithm);
 annotation(preferredView="text");
 end setMatchingAlgorithm;
+
+function getIndexReductionMethod
+  output String selected;
+  external "builtin";
+end getIndexReductionMethod;
+
+function getAvailableIndexReductionMethods
+  output String[:] allChoices;
+  output String[:] allComments;
+  external "builtin";
+end getAvailableIndexReductionMethods;
 
 function setIndexReductionMethod "example input: dummyDerivative"
   input String method;
