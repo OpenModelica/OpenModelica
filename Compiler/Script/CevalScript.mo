@@ -69,6 +69,7 @@ protected import BackendDAEUtil;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import Builtin;
+protected import CevalFunction;
 protected import CheckModel;
 protected import ClassInf;
 protected import ClassLoader;
@@ -79,13 +80,16 @@ protected import DAEUtil;
 protected import DAEDump;
 protected import Debug;
 protected import Dump;
+protected import Dynload;
 protected import Expression;
+protected import ExpressionDump;
 protected import Flags;
 protected import Inst;
 protected import InnerOuter;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
+protected import Mod;
 protected import Prefix;
 protected import Parser;
 protected import Print;
@@ -3453,470 +3457,9 @@ algorithm
   (outCache,Values.STRING(outString),_) := Ceval.ceval(cache, env, filenameprefix, true, SOME(st),msg);
 end extractFilePrefix;
 
-public function cevalAstExp
-"function: cevalAstExp
-  Part of meta-programming using CODE.
-  This function evaluates a piece of Expression AST, replacing Eval(variable)
-  with the value of the variable, given that it is of type \"Expression\".
 
-  Example: y = Code(1 + x)
-           2 + 5  ( x + Eval(y) )  =>   2 + 5  ( x + 1 + x )"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Exp inExp;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output Absyn.Exp outExp;
-algorithm
-  (outCache,outExp) :=
-  matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      Absyn.Exp e,e1_1,e2_1,e1,e2,e_1,cond_1,then_1,else_1,cond,then_,else_,exp,e3_1,e3;
-      list<Env.Frame> env;
-      Absyn.Operator op;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Ceval.Msg msg;
-      list<tuple<Absyn.Exp, Absyn.Exp>> nest_1,nest;
-      Absyn.ComponentRef cr;
-      Absyn.FunctionArgs fa;
-      list<Absyn.Exp> expl_1,expl;
-      Env.Cache cache;
-      DAE.Exp daeExp;
-      list<list<Absyn.Exp>> lstExpl_1,lstExpl;
 
-    case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_,info) then (cache,e);
-    case (cache,_,(e as Absyn.REAL(value = _)),_,_,_,info) then (cache,e);
-    case (cache,_,(e as Absyn.CREF(componentRef = _)),_,_,_,info) then (cache,e);
-    case (cache,_,(e as Absyn.STRING(value = _)),_,_,_,info) then (cache,e);
-    case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_,info) then (cache,e);
-    
-    case (cache,env,Absyn.BINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg,info)
-      equation
-        (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
-        (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
-      then
-        (cache,Absyn.BINARY(e1_1,op,e2_1));
-    
-    case (cache,env,Absyn.UNARY(op = op,exp = e),impl,st,msg,info)
-      equation
-        (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
-      then
-        (cache,Absyn.UNARY(op,e_1));
-    
-    case (cache,env,Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg,info)
-      equation
-        (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
-        (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
-      then
-        (cache,Absyn.LBINARY(e1_1,op,e2_1));
-    
-    case (cache,env,Absyn.LUNARY(op = op,exp = e),impl,st,msg,info)
-      equation
-        (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
-      then
-        (cache,Absyn.LUNARY(op,e_1));
-    
-    case (cache,env,Absyn.RELATION(exp1 = e1,op = op,exp2 = e2),impl,st,msg,info)
-      equation
-        (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
-        (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
-      then
-        (cache,Absyn.RELATION(e1_1,op,e2_1));
-    
-    case (cache,env,Absyn.IFEXP(ifExp = cond,trueBranch = then_,elseBranch = else_,elseIfBranch = nest),impl,st,msg,info)
-      equation
-        (cache,cond_1) = cevalAstExp(cache,env, cond, impl, st, msg, info);
-        (cache,then_1) = cevalAstExp(cache,env, then_, impl, st, msg, info);
-        (cache,else_1) = cevalAstExp(cache,env, else_, impl, st, msg, info);
-        (cache,nest_1) = cevalAstExpexpList(cache,env, nest, impl, st, msg, info);
-      then
-        (cache,Absyn.IFEXP(cond_1,then_1,else_1,nest_1));
-    
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg,info)
-      equation
-        (cache,daeExp,_,_) = Static.elabExp(cache, env, e, impl, st, true, Prefix.NOPRE(), info);
-        (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = Ceval.ceval(cache, env, daeExp, impl, st, msg);
-      then
-        (cache,exp);
-    
-    case (cache,env,(e as Absyn.CALL(function_ = cr,functionArgs = fa)),_,_,msg,info) then (cache,e);
-    
-    case (cache,env,Absyn.ARRAY(arrayExp = expl),impl,st,msg,info)
-      equation
-        (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg, info);
-      then
-        (cache,Absyn.ARRAY(expl_1));
-    
-    case (cache,env,Absyn.MATRIX(matrix = lstExpl),impl,st,msg,info)
-      equation
-        (cache,lstExpl_1) = cevalAstExpListList(cache, env, lstExpl, impl, st, msg, info);
-      then
-        (cache,Absyn.MATRIX(lstExpl_1));
-    
-    case (cache,env,Absyn.RANGE(start = e1,step = SOME(e2),stop = e3),impl,st,msg,info)
-      equation
-        (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
-        (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
-        (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg, info);
-      then
-        (cache,Absyn.RANGE(e1_1,SOME(e2_1),e3_1));
-    
-    case (cache,env,Absyn.RANGE(start = e1,step = NONE(),stop = e3),impl,st,msg,info)
-      equation
-        (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
-        (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg, info);
-      then
-        (cache,Absyn.RANGE(e1_1,NONE(),e3_1));
-    
-    case (cache,env,Absyn.TUPLE(expressions = expl),impl,st,msg,info)
-      equation
-        (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg, info);
-      then
-        (cache,Absyn.TUPLE(expl_1));
-    
-    case (cache,env,Absyn.END(),_,_,msg,info) then (cache,Absyn.END());
-    
-    case (cache,env,(e as Absyn.CODE(code = _)),_,_,msg,info) then (cache,e);
 
-  end matchcontinue;
-end cevalAstExp;
-
-public function cevalAstExpList
-"function: cevalAstExpList
-  List version of cevalAstExp"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output list<Absyn.Exp> outAbsynExpLst;
-algorithm
-  (outCache,outAbsynExpLst) :=
-  match (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      list<Env.Frame> env;
-      Ceval.Msg msg;
-      Absyn.Exp e_1,e;
-      list<Absyn.Exp> res,es;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Env.Cache cache;
-    
-    case (cache,env,{},_,_,msg,info) then (cache,{});
-    
-    case (cache,env,(e :: es),impl,st,msg,info)
-      equation
-        (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
-        (cache,res) = cevalAstExpList(cache,env, es, impl, st, msg, info);
-      then
-        (cache,e :: res);
-  end match;
-end cevalAstExpList;
-
-protected function cevalAstExpListList "function: cevalAstExpListList"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<list<Absyn.Exp>> inAbsynExpLstLst;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output list<list<Absyn.Exp>> outAbsynExpLstLst;
-algorithm
-  (outCache,outAbsynExpLstLst) :=
-  match (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      list<Env.Frame> env;
-      Ceval.Msg msg;
-      list<Absyn.Exp> e_1,e;
-      list<list<Absyn.Exp>> res,es;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Env.Cache cache;
-    
-    case (cache,env,{},_,_,msg,info) then (cache,{});
-    
-    case (cache,env,(e :: es),impl,st,msg,info)
-      equation
-        (cache,e_1) = cevalAstExpList(cache,env, e, impl, st, msg, info);
-        (cache,res) = cevalAstExpListList(cache,env, es, impl, st, msg, info);
-      then
-        (cache,e :: res);
-  end match;
-end cevalAstExpListList;
-
-protected function cevalAstExpexpList
-"function: cevalAstExpexpList
-  For IFEXP"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output list<tuple<Absyn.Exp, Absyn.Exp>> outTplAbsynExpAbsynExpLst;
-algorithm
-  (outCache,outTplAbsynExpAbsynExpLst) :=
-  match (inCache,inEnv,inTplAbsynExpAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      Ceval.Msg msg;
-      Absyn.Exp e1_1,e2_1,e1,e2;
-      list<tuple<Absyn.Exp, Absyn.Exp>> res,xs;
-      list<Env.Frame> env;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Env.Cache cache;
-    case (cache,_,{},_,_,msg,info) then (cache,{});
-    case (cache,env,((e1,e2) :: xs),impl,st,msg,info)
-      equation
-        (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
-        (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
-        (cache,res) = cevalAstExpexpList(cache,env, xs, impl, st, msg, info);
-      then
-        (cache,(e1_1,e2_1) :: res);
-  end match;
-end cevalAstExpexpList;
-
-public function cevalAstElt
-"function: cevalAstElt
-  Evaluates an ast constructor for Element nodes, e.g.
-  Code(parameter Real x=1;)"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Element inElement;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  output Env.Cache outCache;
-  output Absyn.Element outElement;
-algorithm
-  (outCache,outElement) :=
-  match (inCache,inEnv,inElement,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
-    local
-      list<Absyn.ComponentItem> citems_1,citems;
-      list<Env.Frame> env;
-      Boolean f,isReadOnly,impl;
-      Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter io;
-      String file;
-      Absyn.ElementAttributes attr;
-      Absyn.TypeSpec tp;
-      Absyn.Info info;
-      Integer sline,scolumn,eline,ecolumn;
-      Option<Absyn.ConstrainClass> c;
-      Option<Interactive.SymbolTable> st;
-      Ceval.Msg msg;
-      Env.Cache cache;
-    case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
-      equation
-        (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg, info);
-      then
-        (cache,Absyn.ELEMENT(f,r,io,Absyn.COMPONENTS(attr,tp,citems_1),info,c));
-  end match;
-end cevalAstElt;
-
-protected function cevalAstCitems
-"function: cevalAstCitems
-  Helper function to cevalAstElt."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.ComponentItem> inAbsynComponentItemLst;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output list<Absyn.ComponentItem> outAbsynComponentItemLst;
-algorithm
-  (outCache,outAbsynComponentItemLst) :=
-  matchcontinue (inCache,inEnv,inAbsynComponentItemLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      Ceval.Msg msg;
-      list<Absyn.ComponentItem> res,xs;
-      Option<Absyn.Modification> modopt_1,modopt;
-      list<Absyn.Subscript> ad_1,ad;
-      list<Env.Frame> env;
-      String id;
-      Option<Absyn.Exp> cond;
-      Option<Absyn.Comment> cmt;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Absyn.ComponentItem x;
-      Env.Cache cache;
-    case (cache,_,{},_,_,msg,info) then (cache,{});
-    case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg,info) /* If one component fails, the rest should still succeed */
-      equation
-        (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg, info);
-        (cache,modopt_1) = cevalAstModopt(cache,env, modopt, impl, st, msg, info);
-        (cache,ad_1) = cevalAstArraydim(cache,env, ad, impl, st, msg, info);
-      then
-        (cache,Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad_1,modopt_1),cond,cmt) :: res);
-    case (cache,env,(x :: xs),impl,st,msg,info) /* If one component fails, the rest should still succeed */
-      equation
-        (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg, info);
-      then
-        (cache,x :: res);
-  end matchcontinue;
-end cevalAstCitems;
-
-protected function cevalAstModopt
-"function: cevalAstModopt"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Option<Absyn.Modification> inAbsynModificationOption;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output Option<Absyn.Modification> outAbsynModificationOption;
-algorithm
-  (outCache,outAbsynModificationOption) :=
-  match (inCache,inEnv,inAbsynModificationOption,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      Absyn.Modification res,mod;
-      list<Env.Frame> env;
-      Boolean st;
-      Option<Interactive.SymbolTable> impl;
-      Ceval.Msg msg;
-      Env.Cache cache;
-    case (cache,env,SOME(mod),st,impl,msg,info)
-      equation
-        (cache,res) = cevalAstModification(cache,env, mod, st, impl, msg, info);
-      then
-        (cache,SOME(res));
-    case (cache,env,NONE(),_,_,msg,info) then (cache,NONE());
-  end match;
-end cevalAstModopt;
-
-protected function cevalAstModification "function: cevalAstModification
-  This function evaluates Eval(variable) inside an AST Modification  and replaces
-  the Eval operator with the value of the variable if it has a type \"Expression\""
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Modification inModification;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output Absyn.Modification outModification;
-algorithm
-  (outCache,outModification) :=
-  match (inCache,inEnv,inModification,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      Absyn.Exp e_1,e;
-      list<Absyn.ElementArg> eltargs_1,eltargs;
-      list<Env.Frame> env;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Ceval.Msg msg;
-      Env.Cache cache;
-      Absyn.Info info2;
-    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.EQMOD(e,info2)),impl,st,msg,info)
-      equation
-        (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
-        (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
-      then
-        (cache,Absyn.CLASSMOD(eltargs_1,Absyn.EQMOD(e_1,info2)));
-    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.NOMOD()),impl,st,msg,info)
-      equation
-        (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
-      then
-        (cache,Absyn.CLASSMOD(eltargs_1,Absyn.NOMOD()));
-  end match;
-end cevalAstModification;
-
-protected function cevalAstEltargs "function: cevalAstEltargs
-  Helper function to cevalAstModification."
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output list<Absyn.ElementArg> outAbsynElementArgLst;
-algorithm
-  (outCache,outAbsynElementArgLst):=
-  matchcontinue (inCache,inEnv,inAbsynElementArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      list<Env.Frame> env;
-      Ceval.Msg msg;
-      Absyn.Modification mod_1,mod;
-      list<Absyn.ElementArg> res,args;
-      Boolean b,impl;
-      Absyn.Each e;
-      Absyn.ComponentRef cr;
-      Option<String> stropt;
-      Option<Interactive.SymbolTable> st;
-      Absyn.ElementArg m;
-      Env.Cache cache;
-      Absyn.Info mod_info;
-
-    case (cache,env,{},_,_,msg,info) then (cache,{});
-    /* TODO: look through redeclarations for Eval(var) as well */
-    case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,componentRef = cr,modification = SOME(mod),comment = stropt, info = mod_info) :: args),impl,st,msg,info)
-      equation
-        (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg, info);
-        (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);
-      then
-        (cache,Absyn.MODIFICATION(b,e,cr,SOME(mod_1),stropt,mod_info) :: res);
-    case (cache,env,(m :: args),impl,st,msg,info) /* TODO: look through redeclarations for Eval(var) as well */
-      equation
-        (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);
-      then
-        (cache,m :: res);
-  end matchcontinue;
-end cevalAstEltargs;
-
-protected function cevalAstArraydim "function: cevalAstArraydim
-  Helper function to cevaAstCitems"
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.ArrayDim inArrayDim;
-  input Boolean inBoolean;
-  input Option<Interactive.SymbolTable> inInteractiveInteractiveSymbolTableOption;
-  input Ceval.Msg inMsg;
-  input Absyn.Info info;
-  output Env.Cache outCache;
-  output Absyn.ArrayDim outArrayDim;
-algorithm
-  (outCache,outArrayDim) :=
-  match (inCache,inEnv,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg,info)
-    local
-      list<Env.Frame> env;
-      Ceval.Msg msg;
-      list<Absyn.Subscript> res,xs;
-      Boolean impl;
-      Option<Interactive.SymbolTable> st;
-      Absyn.Exp e_1,e;
-      Env.Cache cache;
-    case (cache,env,{},_,_,msg,info) then (cache,{});
-    case (cache,env,(Absyn.NOSUB() :: xs),impl,st,msg,info)
-      equation
-        (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg, info);
-      then
-        (cache,Absyn.NOSUB() :: res);
-    case (cache,env,(Absyn.SUBSCRIPT(subscript = e) :: xs),impl,st,msg,info)
-      equation
-        (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg, info);
-        (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
-      then
-        (cache,Absyn.SUBSCRIPT(e) :: res);
-  end match;
-end cevalAstArraydim;
 
 public function checkModel "function: checkModel
  checks a model and returns number of variables and equations"
@@ -6543,5 +6086,474 @@ algorithm
     
   end match;
 end hasStopTime2;
+
+
+public function cevalCallFunctionEvaluateOrGenerate
+"This function evaluates CALL expressions, i.e. function calls.
+  They are currently evaluated by generating code for the function and
+  then dynamicly load the function and call it."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp;
+  input list<Values.Value> inValuesValueLst;
+  input Boolean impl;
+  input Option<Interactive.SymbolTable> inSymTab;
+  input Ceval.Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outSymTab;
+algorithm
+  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg)
+    local
+      Values.Value newval;
+      list<Env.Frame> env;
+      DAE.Exp e;
+      Absyn.Path funcpath;
+      list<DAE.Exp> expl;
+      Boolean  print_debug;
+      list<Values.Value> vallst;
+      Ceval.Msg msg;
+      Env.Cache cache;
+      list<Interactive.CompiledCFunction> cflist;
+      Option<Interactive.SymbolTable> st;
+      Absyn.Program p;
+      Integer libHandle, funcHandle;
+      String fNew,fOld;
+      Real buildTime, edit, build;
+      AbsynDep.Depends aDep;
+      Option<list<SCode.Element>> a;
+      list<Interactive.InstantiatedClass> b;
+      list<Interactive.Variable> c;
+      list<Interactive.CompiledCFunction> cf;
+      list<Interactive.LoadedFile> lf;
+      Absyn.TimeStamp ts;
+      String funcstr,f;
+      list<Interactive.CompiledCFunction> newCF;
+      String name;
+      Boolean ppref, fpref, epref;
+      Absyn.ClassDef    body;
+      Absyn.Info        info;
+      Absyn.Within      w;
+      list<Absyn.Path> functionDependencies;
+      SCode.Element sc;
+      SCode.ClassDef cdef;
+      String error_Str;
+      DAE.Function func;
+      SCode.Restriction res;
+      Interactive.SymbolTable syt;
+      Absyn.FunctionRestriction funcRest;
+      DAE.Type ty;
+
+    // try function interpretation
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
+      equation
+        false = boolOr(Flags.isSet(Flags.NO_EVAL_FUNC), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS));
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: try constant evaluation: " +& Absyn.pathString(funcpath));
+        (cache, 
+         sc as SCode.CLASS(
+          partialPrefix = SCode.NOT_PARTIAL(), 
+          restriction = res,
+          classDef = cdef),
+         env) = Lookup.lookupClass(cache, env, funcpath, false);
+        isCevaluableFunction(sc);
+        (cache, env, _) = Inst.implicitFunctionInstantiation(
+          cache,
+          env,
+          InnerOuter.emptyInstHierarchy,
+          DAE.NOMOD(),
+          Prefix.NOPRE(),
+          sc,
+          {});
+        func = Env.getCachedInstFunc(cache, funcpath);
+        (cache, newval, st) = CevalFunction.evaluate(cache, env, func, vallst, st);
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation SUCCESS: " +& Absyn.pathString(funcpath));
+      then
+        (cache, newval, st);
+
+    // see if function is in CF list and the build time is less than the edit time
+    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,// (impl as true)
+      (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
+      equation
+        false = Flags.isSet(Flags.NO_GEN);
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
+                
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] check if is in CF list: " +& Absyn.pathString(funcpath));
+        
+        (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(funcRest),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
+        // see if the build time from the class is the same as the build time from the compiled functions list
+        false = stringEq(fNew,""); // see if the WE have a file or not!
+        false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from file] About to execute function present in CF list: " +& Absyn.pathString(funcpath));        
+        
+        print_debug = Flags.isSet(Flags.DYN_LOAD);
+        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        //print("CALL: [func from file] CF LIST:\n\t" +& stringDelimitList(List.map(cflist, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
+      then
+        (cache,newval,st);
+    
+    // see if function is in CF list and the build time is less than the edit time
+    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,// impl as true
+      (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
+      equation
+        false = Flags.isSet(Flags.NO_GEN);
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from buffer] check if is in CF list: " +& Absyn.pathString(funcpath));
+                
+        (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
+        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(funcRest),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
+        // note, this should only work for classes that have no file name!
+        true = stringEq(fNew,""); // see that we don't have a file!
+
+        // see if the build time from the class is the same as the build time from the compiled functions list
+        true = (buildTime >=. build);
+        true = (buildTime >. edit);
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [func from buffer] About to execute function present in CF list: " +& Absyn.pathString(funcpath));
+        
+        print_debug = Flags.isSet(Flags.DYN_LOAD);
+        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
+      then
+        (cache,newval,st);
+
+    // not in CF list, we have a symbol table, generate function and update symtab
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,
+          SOME(syt as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
+      equation
+        false = Flags.isSet(Flags.NO_GEN);
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));        
+        
+        // remove it and all its dependencies as it might be there with an older build time.
+        // get dependencies!
+        (_, functionDependencies, _) = getFunctionDependencies(cache, funcpath);
+        //print("\nFunctions before:\n\t" +& stringDelimitList(List.map(cf, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
+        newCF = Interactive.removeCfAndDependencies(cf, funcpath::functionDependencies);
+        //print("\nFunctions after remove:\n\t" +& stringDelimitList(List.map(newCF, Interactive.dumpCompiledFunction), "\n\t") +& "\n");
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list: removed deps:" +& 
+          stringDelimitList(List.map(functionDependencies, Absyn.pathString) ,", "));
+        //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt)
+        
+        // now is safe to generate code 
+        (cache, funcstr) = cevalGenerateFunction(cache, env, funcpath);
+        print_debug = Flags.isSet(Flags.DYN_LOAD);
+        libHandle = System.loadLibrary(funcstr, print_debug);
+        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        System.freeLibrary(libHandle, print_debug);
+        buildTime = System.getCurrentTime();
+        // update the build time in the class!
+        Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info) = Interactive.getPathedClassInProgram(funcpath, p);
+
+        info = Absyn.setBuildTimeInInfo(buildTime,info);
+        ts = Absyn.setTimeStampBuild(ts, buildTime);
+        w = Interactive.buildWithin(funcpath);
+        
+        Debug.fprintln(Flags.DYN_LOAD, "Updating build time for function path: " +& Absyn.pathString(funcpath) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
+        
+        p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(funcRest),body,info)},w,ts), p);
+        f = Absyn.getFileNameFromInfo(info);
+        
+        syt = Interactive.SYMBOLTABLE(
+                p, aDep, a, b, c,
+                Interactive.CFunction(funcpath,DAE.T_UNKNOWN({funcpath}),funcHandle,buildTime,f)::newCF, 
+                lf);
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [SOME SYMTAB] not in in CF list [finished]: " +& 
+          Absyn.pathString(funcpath));
+        //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt));
+      then
+        (cache,newval,SOME(syt));
+    
+    // no symtab, WE SHOULD NOT EVALUATE! 
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,NONE(),msg) // crap! we have no symboltable!
+      equation
+        false = Flags.isSet(Flags.NO_GEN);
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
+         
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list: " +& Absyn.pathString(funcpath));         
+         
+        // we might actually have a function loaded here already!
+        // we need to unload all functions to not get conflicts!
+        (cache,funcstr) = cevalGenerateFunction(cache, env, funcpath);
+        // generate a uniquely named dll!
+        Debug.fprintln(Flags.DYN_LOAD, "cevalCallFunction: about to execute " +& funcstr);
+        print_debug = Flags.isSet(Flags.DYN_LOAD);
+        libHandle = System.loadLibrary(funcstr, print_debug);
+        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
+        newval = DynLoad.executeFunction(funcHandle, vallst, print_debug);
+        System.freeFunction(funcHandle, print_debug);
+        System.freeLibrary(libHandle, print_debug);
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: [NO SYMTAB] not in in CF list [finished]: " +& Absyn.pathString(funcpath));
+        
+      then
+        (cache,newval,NONE());
+
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
+      equation
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath)); 
+        error_Str = Absyn.pathString(funcpath);
+        //TODO: readd this when testsuite is okay.
+        //Error.addMessage(Error.FAILED_TO_EVALUATE_FUNCTION, {error_Str});
+        true = Flags.isSet(Flags.NO_GEN);
+        Debug.fprint(Flags.FAILTRACE, "- codegeneration is turned off. switch \"nogen\" flag off\n");
+      then
+        fail();
+  
+  end matchcontinue;
+end cevalCallFunctionEvaluateOrGenerate;
+
+
+protected function checkLibraryUsage
+  input String inLibrary;
+  input Absyn.Exp inExp;
+  output Boolean isUsed;
+algorithm
+  isUsed := match(inLibrary, inExp)
+    local
+      String s;
+      list<Absyn.Exp> exps;
+
+    case (_, Absyn.STRING(s)) then stringEq(s, inLibrary);
+    case (_, Absyn.ARRAY(exps))
+      then List.isMemberOnTrue(inLibrary, exps, checkLibraryUsage);
+  end match;
+end checkLibraryUsage;
+
+
+protected function isCevaluableFunction
+  "Checks if an element is a function or external function that can be evaluated
+  by CevalFunction."
+  input SCode.Element inElement;
+algorithm
+  _ := match(inElement)
+    local
+      String fid;
+      SCode.Mod mod;
+      Absyn.Exp lib;
+
+    //only some external functions.
+    case (SCode.CLASS(restriction = SCode.R_FUNCTION(SCode.FR_EXTERNAL_FUNCTION()), 
+      classDef = SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
+        funcName = SOME(fid), 
+        annotation_ = SOME(SCode.ANNOTATION(mod)))))))
+      equation
+        SCode.MOD(binding = SOME((lib, _))) = Mod.getUnelabedSubMod(mod, "Library");
+        true = checkLibraryUsage("Lapack", lib);
+        isCevaluableFunction2(fid);
+      then
+        ();
+        
+    // All other functions can be evaluated.
+    case (SCode.CLASS(restriction = SCode.R_FUNCTION(_))) then ();
+
+  end match;
+end isCevaluableFunction;
+        
+protected function isCevaluableFunction2
+  "Checks if a function name belongs to a known external function that we can
+  constant evaluate."
+  input String inFuncName;
+algorithm
+  _ := match(inFuncName)
+    local
+      // Lapack functions.
+      case "dgbsv" then ();
+      case "dgeev" then ();
+      case "dgegv" then ();
+      case "dgels" then ();
+      case "dgelsx" then ();
+      case "dgeqpf" then ();
+      case "dgesv" then ();
+      case "dgesvd" then ();
+      case "dgetrf" then ();
+      case "dgetri" then ();
+      case "dgetrs" then ();
+      case "dgglse" then ();
+      case "dgtsv" then ();
+      case "dorgqr" then ();
+  end match;
+end isCevaluableFunction2;
+
+public function cevalCallFunction "function: cevalCallFunction
+  This function evaluates CALL expressions, i.e. function calls.
+  They are currently evaluated by generating code for the function and
+  then dynamicly load the function and call it."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp;
+  input list<Values.Value> inValuesValueLst;
+  input Boolean impl;
+  input Option<Interactive.SymbolTable> inSymTab;
+  input Ceval.Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outSymTab;
+algorithm
+  (outCache,outValue,outSymTab) := matchcontinue (inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg)
+    local
+      Values.Value newval;
+      list<Env.Frame> env;
+      DAE.Exp e;
+      Absyn.Path funcpath;
+      list<DAE.Exp> expl;
+      list<Values.Value> vallst;
+      Ceval.Msg msg;
+      Env.Cache cache;
+      Option<Interactive.SymbolTable> st;
+      Absyn.Path complexName;
+      list<Expression.Var> varLst;
+      list<String> varNames;
+      DAE.Type ty;
+      Absyn.Info info;
+      String str;
+    
+    // External functions that are "known" should be evaluated without compilation, e.g. all math functions
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
+      equation
+        (cache,newval) = Ceval.cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
+      then
+        (cache,newval,st);
+
+    // This case prevents the constructor call of external objects of being evaluated
+    case (cache,env as _ :: _,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
+      equation
+        cevalIsExternalObjectConstructor(cache,funcpath,env,msg);
+      then
+        fail();
+       
+    // Record constructors
+    case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),vallst,impl,st,msg)
+      equation
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
+        true = Absyn.pathEqual(funcpath,complexName);
+        varNames = List.map(varLst,Expression.varName);
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: [success] func: " +& Absyn.pathString(funcpath));        
+      then 
+        (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
+
+    // evaluate or generate non-partial and non-replaceable functions
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
+      equation
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
+
+        true = isCompleteFunction(cache, env, funcpath);
+        false = Types.hasMetaArray(ty);
+        
+        (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg);
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
+      then
+        (cache, newval, st);
+
+    // partial and replaceable functions should not be evaluated!
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
+      equation
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
+        
+        false = isCompleteFunction(cache, env, funcpath);
+        
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation failed: " +& Absyn.pathString(funcpath));
+      then
+        fail();
+
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg as Ceval.MSG(info))
+      equation
+        failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
+        true = isCompleteFunction(cache, env, funcpath);
+        true = Types.hasMetaArray(ty);
+        str = ExpressionDump.printExpStr(inExp);
+        Error.addSourceMessage(Error.FUNCTION_RETURNS_META_ARRAY, {str}, info);
+      then fail();
+
+  end matchcontinue;
+end cevalCallFunction;
+
+public function isCompleteFunction
+"a function is complete if is:
+ - not partial
+ - not replaceable (without redeclare)
+ - replaceable and called functions are not partial or not replaceable (without redeclare)"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inFuncPath;
+  output Boolean isComplete;
+algorithm
+ isComplete := matchcontinue(inCache, inEnv, inFuncPath)
+   local
+     Env.Cache cache;
+     Env.Env env;
+     SCode.Element c;
+     Absyn.Path fpath;
+   
+   // if is partial instantiation no function evaluation/generation
+   case (cache, env, fpath)
+     equation
+       true = System.getPartialInstantiation();
+     then
+       false;
+   
+   // partial functions are not complete!
+   case (cache, env, fpath)
+     equation
+       (_, SCode.CLASS(partialPrefix = SCode.PARTIAL()), _) = Lookup.lookupClass(cache, env, fpath, false); 
+     then 
+       false;
+
+   /*/ do not evaluate not known external functions!
+   case (cache, env, fpath)
+     equation
+       (_, c as SCode.CLASS(name = _), _) = Lookup.lookupClass(cache, env, fpath, true);
+       failure(isCevaluableFunction(c)); 
+     then 
+       false;*/
+
+   // replaceable functions are not fine if they don't have an algorithm section!
+   case (cache, env, fpath)
+     equation
+       (_, 
+        c as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.NOT_REDECLARE(), replaceablePrefix = SCode.REPLACEABLE(_))), 
+       _) = 
+       Lookup.lookupClass(cache, env, fpath, false);
+     then 
+       false;
+   
+   case (cache, env, fpath) 
+     then true;
+   
+  end matchcontinue;
+end isCompleteFunction;
+
+
+public function cevalIsExternalObjectConstructor
+  input Env.Cache cache;
+  input Absyn.Path funcpath;
+  input Env.Env env;
+  input Ceval.Msg msg;
+protected
+  Absyn.Path funcpath2;
+  DAE.Type tp;
+  Option<Absyn.Info> info;
+algorithm
+  _ := match(cache, funcpath, env, msg)
+    case (_, _, {}, Ceval.NO_MSG()) then fail();
+    case (_, _, _, Ceval.NO_MSG())
+      equation
+        (funcpath2, Absyn.IDENT("constructor")) = Absyn.splitQualAndIdentPath(funcpath);
+        info = Util.if_(Util.isEqual(msg, Ceval.NO_MSG()), NONE(), SOME(Absyn.dummyInfo));
+        (_, tp, _) = Lookup.lookupType(cache, env, funcpath2, info);
+        Types.externalObjectConstructorType(tp);
+      then
+        ();
+  end match;
+end cevalIsExternalObjectConstructor;
 
 end CevalScript;
