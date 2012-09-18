@@ -181,17 +181,6 @@ algorithm
       then
         fail();
 
-    /*
-    adrpo: this is now done in Static.checkAssignmentToInput
-    // assignment to an input, report error - but keep going anyway; bootstrapping needs this :(
-    case (lhs,_,rhs,_,DAE.ATTR(direction=Absyn.INPUT()),_,source)
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        lhs_str = ExpressionDump.printExpStr(lhs);
-        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"input",lhs_str}, DAEUtil.getElementSourceFileInfo(source));
-      then
-        fail();*/
-
     // assignment to parameter ok in initial algorithm
     case (lhs,lhprop,rhs,rhprop,_,SCode.INITIAL(),source)
       equation
@@ -202,7 +191,6 @@ algorithm
     case (lhs,lhprop,rhs,rhprop,DAE.ATTR(direction=direction),_,source)
       equation
         DAE.C_VAR() = Types.propAnyConst(lhprop);
-        true = Config.acceptMetaModelicaGrammar() or (not valueEq(Absyn.INPUT(),direction));
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 

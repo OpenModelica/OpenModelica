@@ -4624,14 +4624,13 @@ algorithm
       Absyn.Exp left;
       DAE.Pattern pattern;
       DAE.Attributes attr;
-      Absyn.Direction direction;
       DAE.ElementSource source;
    
     // v := expr;
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops,_) 
       equation     
-        (cache,SOME((DAE.CREF(ce,t),cprop,attr as DAE.ATTR(direction = direction)))) = Static.elabCref(cache, env, cr, impl, false, pre, info);
-        Static.checkAssignmentToInput(Dump.printComponentRefStr(cr), direction, info, Static.bDisallowTopLevelInputs);
+        (cache,SOME((DAE.CREF(ce,t),cprop,attr))) = Static.elabCref(cache, env, cr, impl, false, pre, info);
+        Static.checkAssignmentToInput(var, attr, env, Static.bDisallowTopLevelInputs, info);
         (cache, ce_1) = Static.canonCref(cache, env, ce, impl);
         (cache, ce_1) = PrefixUtil.prefixCref(cache, env, ih, pre, ce_1);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
@@ -4657,8 +4656,8 @@ algorithm
     // v[i] := expr (in e.g. for loops)
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,info,source,initial_,impl,unrollForLoops,_)
       equation 
-        (cache,SOME((cre,cprop,attr as DAE.ATTR(direction = direction)))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
-        Static.checkAssignmentToInput(Dump.printComponentRefStr(cr), direction, info, Static.bDisallowTopLevelInputs);
+        (cache,SOME((cre,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        Static.checkAssignmentToInput(var, attr, env, Static.bDisallowTopLevelInputs, info);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -4674,7 +4673,7 @@ algorithm
         (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
-        Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
+        Static.checkAssignmentToInputs(expl, attrs, env, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
@@ -4690,7 +4689,7 @@ algorithm
         (cache, e_1 as DAE.MATCHEXPRESSION(matchType=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,expl_1,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache, env, expl, impl, NONE(), false, pre, info, Error.getNumErrorMessages());
-        Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
+        Static.checkAssignmentToInputs(expl, attrs, env, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
         stmt = Algorithm.makeTupleAssignment(expl_2, cprops, e_2, eprop, initial_, source);
@@ -4713,7 +4712,7 @@ algorithm
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
         (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), Ceval.MSG(info));
         (cache,expl_2,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache,env, expl, impl,NONE(),false,pre,info, Error.getNumErrorMessages());
-        Static.checkAssignmentToInputs(cache, env, expl, attrs, pre, info, impl);
+        Static.checkAssignmentToInputs(expl, attrs, env, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
         eprops = Types.propTuplePropList(eprop);
         source = DAEUtil.addElementSourceFileInfo(source, info);

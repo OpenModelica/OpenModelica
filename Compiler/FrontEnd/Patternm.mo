@@ -195,6 +195,7 @@ algorithm
       Absyn.Direction direction;
       Env.Cache cache;
       Absyn.Exp lhs;
+      DAE.Attributes attr;
 
     case (cache,env,Absyn.INTEGER(i),ty,info,_,_)
       equation
@@ -299,8 +300,9 @@ algorithm
 
     case (cache,env,Absyn.AS(id,exp),ty2,info,_,allowTopLevelInputs)
       equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = DAE.ATTR(direction = direction)),_,_) = Lookup.lookupIdent(cache,env,id);
-        Static.checkAssignmentToInput(id, direction, info, allowTopLevelInputs);
+        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_) = Lookup.lookupIdent(cache,env,id);
+        lhs = Absyn.CREF(Absyn.CREF_IDENT(id, {}));
+        Static.checkAssignmentToInput(lhs, attr, env, allowTopLevelInputs, info);
         et = validPatternType(ty1,ty2,inLhs,info);
         (cache,pattern) = elabPattern(cache,env,exp,ty2,info,Static.bDisallowTopLevelInputs);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,pattern), DAE.PAT_AS(id,et,pattern));
@@ -308,8 +310,8 @@ algorithm
 
     case (cache,env,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,info,_,allowTopLevelInputs)
       equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = DAE.ATTR(direction = direction)),_,_) = Lookup.lookupIdent(cache,env,id);
-        Static.checkAssignmentToInput(id, direction, info, allowTopLevelInputs);
+        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_) = Lookup.lookupIdent(cache,env,id);
+        Static.checkAssignmentToInput(inLhs, attr, env, allowTopLevelInputs, info);
         et = validPatternType(ty1,ty2,inLhs,info);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
       then (cache,pattern);

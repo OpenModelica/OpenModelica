@@ -289,52 +289,72 @@ algorithm
 end elabExp;
 
 public function checkAssignmentToInput
-  input Absyn.Ident inName;
-  input Absyn.Direction inDirection;
+  input Absyn.Exp inExp;
+  input DAE.Attributes inAttributes;
+  input Env.Env inEnv;
+  input Boolean inAllowTopLevelInputs;
   input Absyn.Info inInfo;
-  input Boolean allowTopLevelInputs;
 algorithm
-  _ := matchcontinue(inName, inDirection, inInfo, allowTopLevelInputs)
-    // assignment to an input, report error - but keep going anyway; bootstrapping needs this :(
-    case (inName, Absyn.INPUT(), inInfo, false)
+  _ := matchcontinue(inExp, inAttributes, inEnv, inAllowTopLevelInputs, inInfo)
+    case (_, _, _, _, _)
       equation
-        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"input",inName}, inInfo);
+        true = inAllowTopLevelInputs or not Env.inFunctionScope(inEnv);
       then
-        fail();
-    case (inName, _, inInfo, _) then ();
+        ();
+
+    else
+      equation
+        checkAssignmentToInput2(inExp, inAttributes, inInfo);
+      then
+        ();
+
   end matchcontinue;
 end checkAssignmentToInput;
 
-public function checkAssignmentToInputs
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  input list<Absyn.Exp> inExpsCrefs;
-  input list<DAE.Attributes> inAttributes;
-  input Prefix.Prefix inPre;
+protected function checkAssignmentToInput2
+  input Absyn.Exp inExp;
+  input DAE.Attributes inAttributes;
   input Absyn.Info inInfo;
-  input Boolean impl;
 algorithm
-  _ := matchcontinue(inCache, inEnv, inExpsCrefs, inAttributes, inPre, inInfo, impl)
+  _ := match(inExp, inAttributes, inInfo)
     local
       Absyn.ComponentRef cr;
-      list<Absyn.Exp> rest;
-      Absyn.Direction direction;
-      list<DAE.Attributes> restAttr;
-    
-    case (inCache, inEnv, {}, {}, inPre, inInfo, impl) then ();
-      
-    case (inCache, inEnv, Absyn.CREF(cr)::rest, DAE.ATTR(direction=direction)::restAttr,inPre, inInfo, impl)
+      String cr_str;
+
+    case (Absyn.CREF(cr), DAE.ATTR(direction = Absyn.INPUT()), _)
       equation
-        checkAssignmentToInput(Dump.printComponentRefStr(cr), direction, inInfo, bDisallowTopLevelInputs);
-        checkAssignmentToInputs(inCache, inEnv, rest, restAttr, inPre, inInfo, impl);
+        cr_str = Dump.printComponentRefStr(cr);
+        Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR,
+          {"input", cr_str}, inInfo);
+      then
+        fail();
+
+    else ();
+
+  end match;
+end checkAssignmentToInput2;
+
+public function checkAssignmentToInputs
+  input list<Absyn.Exp> inExpCrefs;
+  input list<DAE.Attributes> inAttributes;
+  input Env.Env inEnv;
+  input Absyn.Info inInfo;
+protected
+  Boolean func_scope;
+algorithm
+  _ := matchcontinue(inExpCrefs, inAttributes, inEnv, inInfo)
+    case (_, _, _, _)
+      equation
+        false = Env.inFunctionScope(inEnv);
       then
         ();
-        
-    case (inCache, inEnv, _::rest, _::restAttr, inPre, inInfo, impl)
+
+    else
       equation
-        checkAssignmentToInputs(inCache, inEnv, rest, restAttr, inPre, inInfo, impl);
+        List.threadMap1_0(inExpCrefs, inAttributes, checkAssignmentToInput2, inInfo);
       then
         ();
+
   end matchcontinue;
 end checkAssignmentToInputs;
 

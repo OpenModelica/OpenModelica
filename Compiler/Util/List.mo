@@ -5368,6 +5368,40 @@ algorithm
   end match;
 end threadMap1_tail;
 
+public function threadMap1_0
+  "Takes two lists and a function, and applies the function to each element of
+   the lists in a pairwise fashion. This function also takes an extra argument
+   which is passed to the mapping function, but returns no result."
+  input list<ElementType1> inList1;
+  input list<ElementType2> inList2;
+  input MapFunc inMapFunc;
+  input ArgType1 inArg1;
+
+  partial function MapFunc
+    input ElementType1 inElement1;
+    input ElementType2 inElement2;
+    input ArgType1 inArg1;
+  end MapFunc;
+algorithm
+  _ := match(inList1, inList2, inMapFunc, inArg1)
+    local
+      ElementType1 e1;
+      list<ElementType1> rest1;
+      ElementType2 e2;
+      list<ElementType2> rest2;
+      ElementOutType res;
+
+    case ({}, {}, _, _) then ();
+    case (e1 :: rest1, e2 :: rest2, _, _)
+      equation
+        inMapFunc(e1, e2, inArg1);
+        threadMap1_0(rest1, rest2, inMapFunc, inArg1);
+      then
+        ();
+  end match;
+end threadMap1_0;
+
+
 public function threadMap2
   "Takes two lists and a function and threads (interleaves) and maps the
    elements of two lists, creating a new list. This function also takes two
