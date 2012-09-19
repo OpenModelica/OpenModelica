@@ -254,8 +254,8 @@ algorithm
       String cref_str1, cref_str2;
 
     // Both connectors are non-expandable, check them.
-    case ((lhs_ty, lhs_cty, lhs_var, lhs_dir), SIMPLE_CONNECTOR,
-        (rhs_ty, rhs_cty, rhs_var, rhs_dir), SIMPLE_CONNECTOR, err_info)
+    case ((lhs_ty, lhs_cty, lhs_var, lhs_dir), SIMPLE_CONNECTOR(),
+        (rhs_ty, rhs_cty, rhs_var, rhs_dir), SIMPLE_CONNECTOR(), err_info)
       equation
         compatibleConnectorTypes(lhs_cty, rhs_cty, err_info);
         compatibleDirection(lhs_dir, rhs_dir, err_info);
