@@ -63,6 +63,13 @@ public type Root = Connect2.Root;
 public type Component = InstTypes.Component;
 
 public type TupleErrorInfo = tuple<DAE.ComponentRef, DAE.ComponentRef, Absyn.Info>;
+public type ConnectorTuple = tuple<DAE.Type, ConnectorType, DAE.VarKind, DAE.VarDirection>;
+
+protected uniontype ConnectorStatus
+  record POTENTIALLY_PRESENT end POTENTIALLY_PRESENT;
+  record EXPANDABLE_CONNECTOR end EXPANDABLE_CONNECTOR;
+  record SIMPLE_CONNECTOR end SIMPLE_CONNECTOR;
+end ConnectorStatus;
 
 public function crefIsValidNode
   "A node given as argument to branch, root or potentialRoot must be on the form
@@ -169,40 +176,125 @@ public function compatibleConnectors
   input Absyn.Info inInfo;
 protected
   DAE.ComponentRef lhs_name, rhs_name;
-  ConnectorType lhs_cty, rhs_cty;
-  DAE.Type lhs_ty, rhs_ty;
-  DAE.VarKind lhs_var, rhs_var;
-  DAE.VarDirection lhs_dir, rhs_dir;
+  ConnectorTuple lhs_conn, rhs_conn;
   TupleErrorInfo info;
 algorithm
-  Connect2.CONNECTOR(name = lhs_name, ty = lhs_ty, cty = lhs_cty, attr =
-    Connect2.CONN_ATTR(variability = lhs_var, direction = lhs_dir)) := inLhsConnector;
-  Connect2.CONNECTOR(name = rhs_name, ty = rhs_ty, cty = rhs_cty, attr =
-    Connect2.CONN_ATTR(variability = rhs_var, direction = rhs_dir)) := inRhsConnector;
-
+  (lhs_conn, lhs_name) := makeConnectorTuple(inLhsConnector);
+  (rhs_conn, rhs_name) := makeConnectorTuple(inRhsConnector);
   info := (lhs_name, rhs_name, inInfo);
-  compatibleConnectors2(lhs_ty, lhs_cty, lhs_var, lhs_dir,
-                        rhs_ty, rhs_cty, rhs_var, rhs_dir, info);
+  compatibleConnectors2(lhs_conn, rhs_conn, info);
 end compatibleConnectors;
-        
+  
+protected function makeConnectorTuple
+  input Connector inConnector;
+  output ConnectorTuple outTuple;
+  output DAE.ComponentRef outName;
+protected
+  DAE.Type ty;
+  ConnectorType cty;
+  DAE.VarKind var;
+  DAE.VarDirection dir;
+algorithm
+  Connect2.CONNECTOR(name = outName, ty = ty, cty = cty, attr =
+    Connect2.CONN_ATTR(variability = var, direction = dir)) := inConnector;
+  outTuple := (ty, cty, var, dir);
+end makeConnectorTuple;
+
 protected function compatibleConnectors2
+  "Helper function to compatibleConnectors3. Calls the different check function."
+  input ConnectorTuple inLhsConnector;
+  input ConnectorTuple inRhsConnector;
+  input TupleErrorInfo inErrorInfo;
+protected
+  ConnectorStatus cs1, cs2;
+algorithm
+  cs1 := connectorStatus(inLhsConnector);
+  cs2 := connectorStatus(inRhsConnector);
+  compatibleConnectors3(inLhsConnector, cs1, inRhsConnector, cs2, inErrorInfo);
+end compatibleConnectors2;
+
+protected function connectorStatus
+  input ConnectorTuple inConnector;
+  output ConnectorStatus outStatus;
+algorithm
+  outStatus := matchcontinue(inConnector)
+    local
+      DAE.Type ty;
+
+    case ((ty, _, _, _))
+      equation
+        true = Types.isComplexExpandableConnector(ty);
+      then
+        EXPANDABLE_CONNECTOR();
+
+    case ((_, Connect2.NO_TYPE(), _, _)) then POTENTIALLY_PRESENT();
+    else SIMPLE_CONNECTOR();
+
+  end matchcontinue;
+end connectorStatus;
+
+protected function compatibleConnectors3
   "Helper function to compatibleConnectors2. Calls the different check function."
-  input DAE.Type inLhsType;
-  input ConnectorType inLhsConnectorType;
-  input DAE.VarKind inLhsVariability;
-  input DAE.VarDirection inLhsDirection;
-  input DAE.Type inRhsType;
-  input ConnectorType inRhsConnectorType;
-  input DAE.VarKind inRhsVariability;
-  input DAE.VarDirection inRhsDirection;
+  input ConnectorTuple inLhsConnector;
+  input ConnectorStatus inLhsConnectorStatus;
+  input ConnectorTuple inRhsConnector;
+  input ConnectorStatus inRhsConnectorStatus;
   input TupleErrorInfo inErrorInfo;
 algorithm
-  compatibleConnectorTypes(inLhsConnectorType, inRhsConnectorType, inErrorInfo);
-  compatibleDirection(inLhsDirection, inRhsDirection, inErrorInfo);
-  compatibleVariability(inLhsVariability, inLhsType, inLhsConnectorType,
-    inRhsVariability, inRhsType, inRhsConnectorType, inErrorInfo);
-  complexConnectorTypeCompatibility(inLhsType, inRhsType, inErrorInfo);
-end compatibleConnectors2;
+  _ := match(inLhsConnector, inLhsConnectorStatus, inRhsConnector,
+      inRhsConnectorStatus, inErrorInfo)
+    local
+      DAE.Type lhs_ty, rhs_ty;
+      ConnectorType lhs_cty, rhs_cty;
+      DAE.VarKind lhs_var, rhs_var;
+      DAE.VarDirection lhs_dir, rhs_dir;
+      TupleErrorInfo err_info;
+      DAE.ComponentRef lhs_cref, rhs_cref;
+      Absyn.Info info;
+      String cref_str1, cref_str2;
+
+    // Both connectors are non-expandable, check them.
+    case ((lhs_ty, lhs_cty, lhs_var, lhs_dir), SIMPLE_CONNECTOR,
+        (rhs_ty, rhs_cty, rhs_var, rhs_dir), SIMPLE_CONNECTOR, err_info)
+      equation
+        compatibleConnectorTypes(lhs_cty, rhs_cty, err_info);
+        compatibleDirection(lhs_dir, rhs_dir, err_info);
+        compatibleVariability(lhs_var, lhs_ty, lhs_cty, rhs_var, rhs_ty, rhs_cty, err_info);
+        complexConnectorTypeCompatibility(lhs_ty, rhs_ty, err_info);
+      then
+        ();
+
+    // One of the connectors is only potentially present
+    case (_, POTENTIALLY_PRESENT(), _, _, _) then ();
+    case (_, _, _, POTENTIALLY_PRESENT(), _) then ();
+
+    // Both connectors are expandable, check them later.
+    case (_, EXPANDABLE_CONNECTOR(), _, EXPANDABLE_CONNECTOR(), _) then ();
+
+    // One is expandable and one is non-expandable, show error.
+    case (_, _, _, _, (lhs_cref, rhs_cref, info))
+      equation
+        cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
+        cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
+        (cref_str1, cref_str2) =
+          Util.swap(isExpandableStatus(inRhsConnectorStatus), cref_str1, cref_str2);
+        Error.addSourceMessage(Error.EXPANDABLE_NON_EXPANDABLE_CONNECTION,
+          {cref_str1, cref_str2}, info);
+      then
+        fail();
+
+  end match;
+end compatibleConnectors3;
+
+protected function isExpandableStatus
+  input ConnectorStatus inConnectorStatus;
+  output Boolean outIsExpandable;
+algorithm
+  outIsExpandable := match(inConnectorStatus)
+    case EXPANDABLE_CONNECTOR() then true;
+    else false;
+  end match;
+end isExpandableStatus;
 
 protected function compatibleConnectorTypes
   "Check that two connector types (flow/stream) are compatible with each other,
@@ -441,52 +533,47 @@ algorithm
   outDummy := match(inLhsVar, inRhsVar, inErrorInfo)
     local
       DAE.ComponentRef lhs_cref, rhs_cref;
-      DAE.Type lhs_ty, rhs_ty;
-      ConnectorType lhs_cty, rhs_cty;
-      DAE.VarKind lhs_var, rhs_var;
-      DAE.VarDirection lhs_dir, rhs_dir;
+      ConnectorTuple lhs_conn, rhs_conn;
       Absyn.Info info;
       TupleErrorInfo err_info;
 
     case (_, _, (lhs_cref, rhs_cref, info))
       equation
-        (lhs_cref, lhs_ty, lhs_cty, lhs_var, lhs_dir) =
-          getVarConnectorData(inLhsVar, lhs_cref);
-        (rhs_cref, rhs_ty, rhs_cty, rhs_var, rhs_dir) =
-          getVarConnectorData(inRhsVar, rhs_cref);
+        (lhs_cref, lhs_conn) = varConnectorTuple(inLhsVar, lhs_cref);
+        (rhs_cref, rhs_conn) = varConnectorTuple(inRhsVar, rhs_cref);
         err_info = (lhs_cref, rhs_cref, info);
-
-        compatibleConnectors2(lhs_ty, lhs_cty, lhs_var, lhs_dir, rhs_ty,
-          rhs_cty, rhs_var, rhs_dir, (lhs_cref, rhs_cref, info));
+        compatibleConnectors2(lhs_conn, rhs_conn, err_info);
       then
         0;
 
   end match;
 end varConnectorTypeCompatibility;
 
-protected function getVarConnectorData
+protected function varConnectorTuple
   "Helper function to varConnectorTypeCompatibility, extracts the relevant
    fields from a DAE.Var."
   input DAE.Var inVar;
   input DAE.ComponentRef inPrefix;
   output DAE.ComponentRef outName;
-  output DAE.Type outType;
-  output ConnectorType outConnectorType;
-  output DAE.VarKind outVariability;
-  output DAE.VarDirection outDirection;
+  output ConnectorTuple outTuple;
 protected
   DAE.Ident name;
+  DAE.Type ty;
   SCode.ConnectorType scty;
+  ConnectorType cty;
   SCode.Variability svar;
+  DAE.VarKind var;
   Absyn.Direction adir;
+  DAE.VarDirection dir;
 algorithm
-  DAE.TYPES_VAR(name = name, ty = outType, attributes = DAE.ATTR(
+  DAE.TYPES_VAR(name = name, ty = ty, attributes = DAE.ATTR(
     connectorType = scty, variability = svar, direction = adir)) := inVar;
-  outConnectorType := ConnectUtil2.translateSCodeConnectorType(scty);
-  outVariability := InstUtil.translateVariability(svar);
-  outDirection := InstUtil.translateDirection(adir);
+  cty := ConnectUtil2.translateSCodeConnectorType(scty);
+  var := InstUtil.translateVariability(svar);
+  dir := InstUtil.translateDirection(adir);
   // Prefix the name with the given prefix.
-  outName := ComponentReference.crefPrependIdent(inPrefix, name, {}, outType);
-end getVarConnectorData;
+  outName := ComponentReference.crefPrependIdent(inPrefix, name, {}, ty);
+  outTuple := (ty, cty, var, dir);
+end varConnectorTuple;
 
 end ConnectCheck;

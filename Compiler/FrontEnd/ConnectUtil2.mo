@@ -746,10 +746,10 @@ algorithm
     case (_, Connect2.POTENTIAL()) then generatePotentialEquations(inSet);
     case (_, Connect2.FLOW()) then generateFlowEquations(inSet);
     case (_, Connect2.STREAM(_)) then generateStreamEquations(inSet);
-    else
+    case (_, Connect2.NO_TYPE())
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
-          {"ConnectUtil.generateEquation_dispatch failed because of unknown reason."});
+          {"ConnectUtil.generateEquation_dispatch failed because of unknown connector type."});
       then
         fail();
 

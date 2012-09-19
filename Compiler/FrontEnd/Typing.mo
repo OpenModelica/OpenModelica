@@ -1535,8 +1535,8 @@ algorithm
 
     case (_, _, _, _)
       equation
-        (cref, comp, pre_comp) = 
-          lookupConnectorCref2(inCref, inPrefix, inSymbolTable);
+        cref = InstUtil.prefixCref(inCref, inPrefix);
+        (comp, pre_comp) = lookupConnectorCref2(cref, inSymbolTable);
       then
         (cref, comp, pre_comp);
 
@@ -1558,50 +1558,35 @@ protected function lookupConnectorCref2
    returns the component for a, since this is needed to determine the face of the
    connection element."
   input DAE.ComponentRef inCref;
-  input Prefix inPrefix;
   input SymbolTable inSymbolTable;
-  output DAE.ComponentRef outCref;
   output Option<Component> outComponent;
   output Option<Component> outPrefixComponent;
 algorithm
-  (outCref, outComponent, outPrefixComponent) :=
-  matchcontinue(inCref, inPrefix, inSymbolTable)
+  (outComponent, outPrefixComponent) := matchcontinue(inCref, inSymbolTable)
     local
       Component comp;
-      DAE.ComponentRef cref, cref2;
+      DAE.ComponentRef cref;
       Option<Component> opt_comp, opt_pre_comp;
       
-    case (DAE.CREF_IDENT(ident = _), _, _)
+    case (_, _)
       equation
-        cref = InstUtil.prefixCref(inCref, inPrefix);
-        comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
-      then
-        (cref, SOME(comp), NONE());
-
-    case (DAE.CREF_QUAL(ident = _), _, _)
-      equation
-        (cref, cref2) = ComponentReference.splitCrefFirst(inCref);
-        cref = InstUtil.prefixCref(cref, inPrefix);
-        cref = ComponentReference.joinCrefs(cref, cref2);
-        comp = InstSymbolTable.lookupCref(cref, inSymbolTable);
+        comp = InstSymbolTable.lookupCref(inCref, inSymbolTable);
         opt_pre_comp = InstUtil.getComponentParent(comp);
       then
-        (cref, SOME(comp), opt_pre_comp);
+        (SOME(comp), opt_pre_comp);
 
     // If the cref is qualified but we couldn't find it, it might be part of a
     // deleted conditional component (i.e. it hasn't been instantiated). It
     // might also be part of an expandable connector. In that case, strip the
     // last identifier and look again to see if we can find a deleted component
     // that is a prefix of the given cref.
-    case (DAE.CREF_QUAL(ident = _), _, _)
+    case (DAE.CREF_QUAL(ident = _), _)
       equation
         cref = ComponentReference.crefStripLastIdent(inCref);
-        cref = InstUtil.prefixCref(cref, inPrefix);
-        (_, opt_comp, opt_pre_comp) =
-          lookupConnectorCref2(cref, InstTypes.emptyPrefix, inSymbolTable);
+        (opt_comp, opt_pre_comp) = lookupConnectorCref2(cref, inSymbolTable);
         (opt_comp, opt_pre_comp) = lookupConnectorCref3(opt_comp, opt_pre_comp);
       then
-        (cref, opt_comp, opt_pre_comp);
+        (opt_comp, opt_pre_comp);
 
   end matchcontinue;
 end lookupConnectorCref2;
