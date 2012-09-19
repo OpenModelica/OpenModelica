@@ -5890,7 +5890,6 @@ public function checkSystemForMatching
 algorithm
   _ := matchcontinue (nvars,neqns,inMatchingOptions)
     local
-      Integer esize,vars_size;
       String esize_str,vsize_str;
     case (_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED())) then ();
     case (_,_,_)
@@ -5901,20 +5900,16 @@ algorithm
     case (_,_,_)
       equation
         true = intGt(nvars,neqns);
-        esize = neqns - 1;
-        vars_size = nvars - 1 "remove dummy var" ;
-        esize_str = intString(esize) "remove dummy var" ;
-        vsize_str = intString(vars_size);
+        esize_str = intString(neqns);
+        vsize_str = intString(nvars);
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
         fail();
     case (_,_,_)
       equation
         true = intLt(nvars,neqns);
-        esize = neqns - 1;
-        vars_size = nvars - 1 "remove dummy var" ;
-        esize_str = intString(esize) "remove dummy var" ;
-        vsize_str = intString(vars_size);
+        esize_str = intString(neqns) ;
+        vsize_str = intString(nvars);
         Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
         fail();

@@ -202,9 +202,7 @@ algorithm
         vars_size = BackendVariable.varsSize(vars);
         esize = BackendDAEUtil.equationSize(eqns);
         (esize < vars_size) = true;
-        esize = esize - 1;
-        vars_size = vars_size - 1 "remove dummy var" ;
-        esize_str = intString(esize) "remove dummy var" ;
+        esize_str = intString(esize);
         vsize_str = intString(vars_size);
         Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
@@ -214,9 +212,7 @@ algorithm
         vars_size = BackendVariable.varsSize(vars);
         esize = BackendDAEUtil.equationSize(eqns);
         (esize > vars_size) = true;
-        esize = esize - 1;
-        vars_size = vars_size - 1 "remove dummy var" ;
-        esize_str = intString(esize) "remove dummy var" ;
+        esize_str = intString(esize);
         vsize_str = intString(vars_size);
         Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
       then
