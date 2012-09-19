@@ -48,6 +48,7 @@ protected import BaseHashTable;
 protected import ComponentReference;
 protected import Debug;
 protected import Error;
+protected import List;
 protected import System;
 protected import Util;
 
@@ -464,10 +465,9 @@ algorithm
     local
       list<Key> klst;
       list<Value> vlst;
-      BinTree bt;
-    case (bt)
+    case (_)
       equation
-        (klst,vlst) = bintreeToList2(bt, {}, {});
+        (klst,vlst) = bintreeToList2(inBinTree, {}, {});
       then
         (klst,vlst);
     case (_)
@@ -495,19 +495,19 @@ algorithm
       Value value;
       Option<BinTree> left,right;
     
-    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),klst,vlst) 
-      then (klst,vlst);
+    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),_,_) 
+      then (inKeyLst,inValueLst);
     
-    case (TREENODE(value = SOME(TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),klst,vlst)
+    case (TREENODE(value = SOME(TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),_,_)
       equation
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) = bintreeToListOpt(left, key::inKeyLst, value::inValueLst);
         (klst,vlst) = bintreeToListOpt(right, klst, vlst);
       then
-        ((key :: klst),(value :: vlst));
+        (klst,vlst);
     
-    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = right),klst,vlst)
+    case (TREENODE(value = NONE(),leftSubTree = left,rightSubTree = right),_,_)
       equation
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
+        (klst,vlst) = bintreeToListOpt(left, inKeyLst, inValueLst);
         (klst,vlst) = bintreeToListOpt(left, klst, vlst);
       then
         (klst,vlst);
@@ -529,14 +529,49 @@ algorithm
       list<Value> vlst;
       BinTree bt;
     
-    case (NONE(),klst,vlst) then (klst,vlst);
+    case (NONE(),_,_) then (inKeyLst,inValueLst);
     
-    case (SOME(bt),klst,vlst)
+    case (SOME(bt),_,_)
       equation
-        (klst,vlst) = bintreeToList2(bt, klst, vlst);
+        (klst,vlst) = bintreeToList2(bt, inKeyLst,inValueLst);
       then
         (klst,vlst);
   end match;
 end bintreeToListOpt;
+
+public function binTreeintersection
+"Author: Frenkel TUD 2012-09
+  at all key member of bt1 and bt2 to iBt"
+  input BinTree bt1;
+  input BinTree bt2;
+  input BinTree iBt;
+  output BinTree oBt;
+protected
+  list<DAE.ComponentRef> keys;
+algorithm
+  (keys,_) := bintreeToList(bt1);
+  oBt := List.fold1(keys, binTreeintersection1, bt2,iBt); 
+end binTreeintersection;
+
+protected function binTreeintersection1
+"Author: Frenkel TUD 2012-09
+  Helper for binTreeintersection1"
+  input DAE.ComponentRef key;
+  input BinTree bt2;
+  input BinTree iBt;
+  output BinTree oBt;
+algorithm
+  oBt := matchcontinue(key,bt2,iBt)
+    local
+     BinTree bt;  
+    case(_,_,_)
+      equation
+        _ = treeGet(bt2,key);
+        bt = treeAdd(iBt,key,0);
+      then
+        bt;
+    else then iBt;
+  end matchcontinue;  
+end binTreeintersection1;
 
 end BinaryTree;

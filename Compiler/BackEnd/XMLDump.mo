@@ -588,7 +588,7 @@ algorithm
   _:=
   match(inList,offset)
       local
-        BackendDAE.Value el;
+        Integer el;
         list<Integer> remList;
     case ({},_) then ();
     case(el :: remList,_)
@@ -1252,7 +1252,7 @@ algorithm
   _:=
   match (inEquationLst,inInteger,addMathMLCode,dumpResiduals)
     local
-      BackendDAE.Value index;
+      Integer index;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
       Boolean addMMLCode;
@@ -3181,7 +3181,7 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,inInteger,addMathMLCode)
     local
-      BackendDAE.Value varno;
+      Integer varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -3244,7 +3244,7 @@ See dumpVariable for more details on the XML output.
 algorithm
   _ := match (inVarLst,crefIdxLstArr,inInteger,addMathMLCode)
     local
-      BackendDAE.Value varno;
+      Integer varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -3369,7 +3369,7 @@ algorithm
     local
       DAE.Exp e;
       Boolean addMMLCode;
-      list<BackendDAE.Value> eq,wc;
+      list<Integer> eq,wc;
       list<BackendDAE.ZeroCrossing> zcLst;
     case ({},_) then ();
     case (BackendDAE.ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc) :: zcLst,addMMLCode)

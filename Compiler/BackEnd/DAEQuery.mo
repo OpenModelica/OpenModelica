@@ -644,7 +644,7 @@ protected function incidenceRowExp "function: incidenceRowExp
 algorithm
   outStringLst := matchcontinue (inExp,inVariables)
     local
-      list<BackendDAE.Value> p,p_1;
+      list<Integer> p,p_1;
       list<String> pStr,s1,s2,s3;
       String s, ss, ss1, ss2, ss3, opStr, sb;
       list<list<String>> lst;

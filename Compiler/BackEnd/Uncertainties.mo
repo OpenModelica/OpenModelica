@@ -100,7 +100,7 @@ algorithm
         (dae,cache,env) = flattenModel(className,p,cache);
 
         Debug.fprintln(Flags.UNCERTAINTIES, "- Flatten ok\n");   
-        dlow = BackendDAECreate.lower(dae,cache,env,true);
+        dlow = BackendDAECreate.lower(dae,cache,env);
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
         (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({}));
         Debug.fprintln(Flags.UNCERTAINTIES,"* Lowered Ok \n");

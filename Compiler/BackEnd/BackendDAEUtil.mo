@@ -61,6 +61,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
+protected import BinaryTree;
 protected import CheckModel;
 protected import ComponentReference;
 protected import Ceval;
@@ -895,7 +896,7 @@ algorithm
   (outnx,outny,outnp,outng,outng_sample,outnext, outny_string, outnp_string, outny_int, outnp_int, outny_bool, outnp_bool):=
   match (inBackendDAE)
     local
-      BackendDAE.Value np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string,np_int,np_bool,ny_int,ny_1_int,ny_bool,ny_1_bool;
+      Integer np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string,np_int,np_bool,ny_int,ny_1_int,ny_bool,ny_1_bool;
       BackendDAE.Variables vars,knvars,extvars;
       list<WhenClause> wc;
       list<ZeroCrossing> zc;
@@ -924,7 +925,7 @@ algorithm
   (outng,outng_sample):=
   match (inBackendDAE)
     local
-      BackendDAE.Value ng,nsam;
+      Integer ng,nsam;
       list<ZeroCrossing> zc;
     case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc))))
       equation
@@ -973,13 +974,13 @@ end calculateNumberZeroCrossings;
 protected function calculateParamSizes "function: calculateParamSizes
   author: PA
   Helper function to calculateSizes"
-  input tuple<Var, tuple<BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value>> inTpl;
-  output tuple<Var, tuple<BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value>> outTpl;
+  input tuple<Var, tuple<Integer,Integer,Integer,Integer>> inTpl;
+  output tuple<Var, tuple<Integer,Integer,Integer,Integer>> outTpl;
 algorithm
   outTpl :=
   matchcontinue (inTpl)
     local
-      BackendDAE.Value s1,s2,s3, s4;
+      Integer s1,s2,s3, s4;
       Var var;
     case ((var,(s1,s2,s3,s4)))
       equation
@@ -1008,13 +1009,13 @@ end calculateParamSizes;
 protected function calculateVarSizes "function: calculateVarSizes
   author: PA
   Helper function to calculateSizes"
-  input tuple<Var, tuple<BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value>> inTpl;
-  output tuple<Var, tuple<BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value,BackendDAE.Value>> outTpl;
+  input tuple<Var, tuple<Integer,Integer,Integer,Integer,Integer>> inTpl;
+  output tuple<Var, tuple<Integer,Integer,Integer,Integer,Integer>> outTpl;
 algorithm
   outTpl :=
   matchcontinue (inTpl)      
     local
-      BackendDAE.Value nx,ny,ny_string, ny_int, ny_bool;
+      Integer nx,ny,ny_string, ny_int, ny_bool;
       Var var;
 
     case ((var as BackendDAE.VAR(varKind = BackendDAE.VARIABLE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool)))
@@ -1198,48 +1199,6 @@ algorithm
   outType := inType;
 end makeExpType;
 
-public function statesDaelow
-"function: statesDaelow
-  author: PA
-  Returns a BackendDAE.BinTree of all states in the BackendDAE
-  This function is used in matching algorithm."
-  input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  outBinTree := match (inBackendDAE)
-    local
-      list<DAE.ComponentRef> cr_lst;
-      BackendDAE.BinTree bt;
-      BackendDAE.Variables v;
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{}))
-      equation
-        cr_lst = BackendVariable.traverseBackendDAEVars(v,traversingisStateVarCrefFinder,{});
-        bt = treeAddList(BackendDAE.emptyBintree,cr_lst);
-      then
-        bt;
-  end match;
-end statesDaelow;
-
-protected function traversingisStateVarCrefFinder
-"autor: Frenkel TUD 2010-11"
- input tuple<Var, list<DAE.ComponentRef>> inTpl;
- output tuple<Var, list<DAE.ComponentRef>> outTpl;
-algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      Var v;
-      list<DAE.ComponentRef> cr_lst;
-      DAE.ComponentRef cr;
-    case ((v,cr_lst))
-      equation
-        true = BackendVariable.isStateVar(v);
-        cr = BackendVariable.varCref(v);
-      then ((v,cr::cr_lst));
-    case inTpl then inTpl;
-  end matchcontinue;
-end traversingisStateVarCrefFinder;
-
 public function emptyVars
 "function: emptyVars
   author: PA
@@ -1302,7 +1261,7 @@ algorithm
     local
       array<Option<BackendDAE.Equation>> arr;
       BackendDAE.Equation elt;
-      BackendDAE.Value n,size;
+      Integer n,size;
       list<BackendDAE.Equation> lst;
     
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = 0,equOptArr = arr)) then {};
@@ -1443,7 +1402,7 @@ algorithm
     local
       array<Option<Var>> arr;
       Var elt;
-      BackendDAE.Value n,size;
+      Integer n,size;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 0,varOptArr = arr)) then {};
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 1,varOptArr = arr))
       equation
@@ -1724,96 +1683,6 @@ algorithm
   end matchcontinue;
 end isKindDiscrete;
 
-public function bintreeToList "function: bintreeToList
-  author: PA
-
-  This function takes a BackendDAE.BinTree and transform it into a list
-  representation, i.e. two lists of keys and values
-"
-  input BackendDAE.BinTree inBinTree;
-  output list<BackendDAE.Key> outKeyLst;
-  output list<BackendDAE.Value> outValueLst;
-algorithm
-  (outKeyLst,outValueLst):=
-  matchcontinue (inBinTree)
-    local
-      list<BackendDAE.Key> klst;
-      list<BackendDAE.Value> vlst;
-      BackendDAE.BinTree bt;
-    case (bt)
-      equation
-        (klst,vlst) = bintreeToList2(bt, {}, {});
-      then
-        (klst,vlst);
-    case (_)
-      equation
-        print("- BackendDAEUtil.bintreeToList failed\n");
-      then
-        fail();
-  end matchcontinue;
-end bintreeToList;
-
-protected function bintreeToList2 "function: bintreeToList2
-  author: PA
-  helper function to bintreeToList"
-  input BackendDAE.BinTree inBinTree;
-  input list<BackendDAE.Key> inKeyLst;
-  input list<BackendDAE.Value> inValueLst;
-  output list<BackendDAE.Key> outKeyLst;
-  output list<BackendDAE.Value> outValueLst;
-algorithm
-  (outKeyLst,outValueLst) := matchcontinue (inBinTree,inKeyLst,inValueLst)
-    local
-      list<BackendDAE.Key> klst;
-      list<BackendDAE.Value> vlst;
-      DAE.ComponentRef key;
-      BackendDAE.Value value;
-      Option<BackendDAE.BinTree> left,right;
-    
-    case (BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),klst,vlst) 
-      then (klst,vlst);
-    
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(key=key,value=value)),leftSubTree = left,rightSubTree = right),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToListOpt(right, klst, vlst);
-      then
-        ((key :: klst),(value :: vlst));
-    
-    case (BackendDAE.TREENODE(value = NONE(),leftSubTree = left,rightSubTree = right),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-        (klst,vlst) = bintreeToListOpt(left, klst, vlst);
-      then
-        (klst,vlst);
-  end matchcontinue;
-end bintreeToList2;
-
-protected function bintreeToListOpt "function: bintreeToListOpt
-  author: PA
-  helper function to bintreeToList"
-  input Option<BackendDAE.BinTree> inBinTreeOption;
-  input list<BackendDAE.Key> inKeyLst;
-  input list<BackendDAE.Value> inValueLst;
-  output list<BackendDAE.Key> outKeyLst;
-  output list<BackendDAE.Value> outValueLst;
-algorithm
-  (outKeyLst,outValueLst) := match (inBinTreeOption,inKeyLst,inValueLst)
-    local
-      list<BackendDAE.Key> klst;
-      list<BackendDAE.Value> vlst;
-      BackendDAE.BinTree bt;
-    
-    case (NONE(),klst,vlst) then (klst,vlst);
-    
-    case (SOME(bt),klst,vlst)
-      equation
-        (klst,vlst) = bintreeToList2(bt, klst, vlst);
-      then
-        (klst,vlst);
-  end match;
-end bintreeToListOpt;
-
 public function statesAndVarsExp
 "function: statesAndVarsExp
   This function investigates an expression and returns as subexpressions
@@ -2076,7 +1945,7 @@ algorithm
   matchcontinue (inEquationArray,inInteger)
     local
       BackendDAE.Equation e;
-      BackendDAE.Value n,pos;
+      Integer n,pos;
       array<Option<BackendDAE.Equation>> arr;
       String str;
       
@@ -2125,7 +1994,7 @@ public function equationSize "function: equationSize
 algorithm
   outInteger:=
   match (inEquationArray)
-    local BackendDAE.Value n;
+    local Integer n;
     case (BackendDAE.EQUATION_ARRAY(size = n)) then n;
   end match;
 end equationSize;
@@ -2158,7 +2027,7 @@ public function equationArraySize "function: equationArraySize
 algorithm
   outInteger:=
   match (inEquationArray)
-    local BackendDAE.Value n;
+    local Integer n;
     case (BackendDAE.EQUATION_ARRAY(numberOfElement = n)) then n;
   end match;
 end equationArraySize;
@@ -2281,13 +2150,13 @@ algorithm
   (outCompsStates,outCompsNoStates):=
   matchcontinue syst
     local
-      BackendDAE.Value size;
-      array<BackendDAE.Value> arr,arr_1;
+      Integer size;
+      array<Integer> arr,arr_1;
       BackendDAE.StrongComponents comps,blt_states,blt_no_states;
       BackendDAE.Variables v,kv;
       EquationArray e,se,ie;
-      array<BackendDAE.Value> ass1,ass2;
-      array<list<BackendDAE.Value>> m,mt;
+      array<Integer> ass1,ass2;
+      array<list<Integer>> m,mt;
     case (syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass1,ass2,comps)))
       equation
         size = arrayLength(ass1) "equation_size(e) => size &" ;
@@ -2318,8 +2187,8 @@ algorithm
     local
       BackendDAE.StrongComponents comps,states,output_;
       BackendDAE.StrongComponent comp;
-      list<BackendDAE.Value> eqns;
-      array<BackendDAE.Value> arr;
+      list<Integer> eqns;
+      array<Integer> arr;
     
     case ({},_) then ({},{});
         
@@ -2352,10 +2221,10 @@ public function blockIsDynamic "function blockIsDynamic
 algorithm
   outBoolean := matchcontinue (inIntegerLst,inIntegerArray)
     local
-      BackendDAE.Value x,mark_value;
+      Integer x,mark_value;
       Boolean res;
-      list<BackendDAE.Value> xs;
-      array<BackendDAE.Value> arr;
+      list<Integer> xs;
+      array<Integer> arr;
     
     case ({},_) then false;
     
@@ -2468,12 +2337,12 @@ algorithm
   outTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray:=
   matchcontinue (inIntegerLst,inTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray)
     local
-      array<BackendDAE.Value> marks,marks_1,marks_2,marks_3;
-      array<list<BackendDAE.Value>> m,mt,m_1,mt_1;
-      array<BackendDAE.Value> a1,a2,a1_1,a2_1;
-      BackendDAE.Value eqn,mark_value,len;
-      list<BackendDAE.Value> inv_reachable,inv_reachable_1,eqns;
-      list<list<BackendDAE.Value>> inv_reachable_2;
+      array<Integer> marks,marks_1,marks_2,marks_3;
+      array<list<Integer>> m,mt,m_1,mt_1;
+      array<Integer> a1,a2,a1_1,a2_1;
+      Integer eqn,mark_value,len;
+      list<Integer> inv_reachable,inv_reachable_1,eqns;
+      list<list<Integer>> inv_reachable_2;
       String eqnstr,lens,ms;
     
     case ({},(marks,m,mt,a1,a2)) then ((marks,m,mt,a1,a2));
@@ -2565,9 +2434,9 @@ protected function invReachableNodes2 "function: invReachableNodes2
 algorithm
   outIntegerLst := matchcontinue (inIntegerLst,inIntegerArray)
     local
-      list<BackendDAE.Value> eqns,vs;
-      BackendDAE.Value eqn,v;
-      array<BackendDAE.Value> a1;
+      list<Integer> eqns,vs;
+      Integer eqn,v;
+      array<Integer> a1;
     
     case ({},_) then {};
     
@@ -2614,9 +2483,9 @@ public function eqnsForVarWithStates
 algorithm
   outIntegerLst := matchcontinue (inIncidenceMatrixT,inInteger)
     local
-      BackendDAE.Value n,indx;
-      list<BackendDAE.Value> res,res_1;
-      array<list<BackendDAE.Value>> mt;
+      Integer n,indx;
+      list<Integer> res,res_1;
+      array<list<Integer>> mt;
       String s;
     
     case (mt,n)
@@ -2829,367 +2698,6 @@ public function getFunctions
 algorithm
   BackendDAE.SHARED(functionTree=functionTree) := shared;
 end getFunctions;
-
-/**************************
-  BackendDAE.BinTree stuff
- **************************/
-
-protected function keyCompareNinjaSecretHashTricks
-  "Super ninja secret that allows you to implement a binary tree based on the hash of strings.
-  And only do string comparisons for those rare conflicts (we use 63-bit integers, so conflicts should be
-  very, very rare)"
-  input String lstr;
-  input Integer lhash;
-  input String rstr;
-  input Integer rhash;
-  output Integer cmp;
-algorithm
-  cmp := Util.intSign(lhash-rhash);
-  cmp := Debug.bcallret2(cmp == 0, stringCompare, lstr, rstr, cmp);
-end keyCompareNinjaSecretHashTricks;
-
-public function treeGet "function: treeGet
-  author: PA
-
-  Copied from generic implementation. Changed that no hashfunction is passed
-  since a string can not be uniquely mapped to an int. Therefore we need to compare two strings
-  to get a unique ordering.
-"
-  input BackendDAE.BinTree bt;
-  input BackendDAE.Key key;
-  output BackendDAE.Value v;
-protected
-  String keystr;
-  Integer keyhash;
-algorithm
-  keystr := ComponentReference.printComponentRefStr(key);
-  keyhash := System.stringHashDjb2Mod(keystr,BaseHashTable.hugeBucketSize);
-  v := treeGet3(bt, keystr, keyhash, treeGet2(bt, keystr, keyhash));
-end treeGet;
-
-protected function treeGet2
-  "Helper function to treeGet"
-  input BackendDAE.BinTree inBinTree;
-  input String keystr;
-  input Integer keyhash;
-  output Integer compResult;
-algorithm
-  compResult := match (inBinTree,keystr,keyhash)
-    local
-      String rkeystr;
-      Integer rkeyhash;
-      
-    // found it
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(str=rkeystr,hash=rkeyhash))),keystr,keyhash)
-      then keyCompareNinjaSecretHashTricks(rkeystr, rkeyhash, keystr, keyhash);
-  end match;
-end treeGet2;
-
-protected function treeGet3
-  "Helper function to treeGet"
-  input BackendDAE.BinTree inBinTree;
-  input String keystr;
-  input Integer keyhash;
-  input Integer inCompResult;
-  output BackendDAE.Value outValue;
-algorithm
-  outValue := match (inBinTree,keystr,keyhash,inCompResult)
-    local
-      BackendDAE.Value rval;
-      BackendDAE.BinTree right, left;
-      Integer compResult;
-      
-    // found it
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(value=rval))),keystr,keyhash,0) then rval;
-    // search right
-    case (BackendDAE.TREENODE(rightSubTree = SOME(right)),keystr,keyhash,1)
-      equation
-        compResult = treeGet2(right, keystr, keyhash);
-      then treeGet3(right, keystr, keyhash, compResult);
-    // search left
-    case (BackendDAE.TREENODE(leftSubTree = SOME(left)),keystr,keyhash,-1)
-      equation
-        compResult = treeGet2(left, keystr, keyhash);
-      then treeGet3(left, keystr, keyhash, compResult);
-  end match;
-end treeGet3;
-
-public function treeAddList "function: treeAddList
-  author: Frenkel TUD"
-  input BackendDAE.BinTree inBinTree;
-  input list<BackendDAE.Key> inKeyLst;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  outBinTree := match (inBinTree,inKeyLst)
-    local
-      BackendDAE.Key key;
-      list<BackendDAE.Key> res;
-      BackendDAE.BinTree bt,bt_1,bt_2;
-    
-    case (bt,{}) then bt;
-    
-    case (bt,key::res)
-      equation
-        bt_1 = treeAdd(bt,key,0);
-        bt_2 = treeAddList(bt_1,res);
-      then 
-        bt_2;
-  end match;
-end treeAddList;
-
-public function treeAdd "function: treeAdd
-  author: PA
-  Copied from generic implementation. Changed that no hashfunction is passed
-  since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
-  to get a unique ordering.
-  
-  Actually, hashing is still important in order to speed up comparison of strings... So it was re-added in a
-  good way, see function keyCompareNinjaSecretHashTricks"
-  input BackendDAE.BinTree inBinTree;
-  input BackendDAE.Key inKey;
-  input BackendDAE.Value inValue;
-  output BackendDAE.BinTree outBinTree;
-protected
-  String str;
-algorithm
-  str := ComponentReference.printComponentRefStr(inKey);
-  // We use modulo hashes in order to avoid problems with boxing/unboxing of integers in bootstrapped OMC
-  outBinTree := treeAdd2(inBinTree,inKey,System.stringHashDjb2Mod(str,BaseHashTable.hugeBucketSize),str,inValue);
-end treeAdd;
-
-protected function treeAdd2 "function: treeAdd
-  author: PA
-  Copied from generic implementation. Changed that no hashfunction is passed
-  since a string (ComponentRef) can not be uniquely mapped to an int. Therefore we need to compare two strings
-  to get a unique ordering."
-  input BackendDAE.BinTree inBinTree;
-  input BackendDAE.Key inKey;
-  input Integer keyhash;
-  input String keystr;
-  input BackendDAE.Value inValue;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  outBinTree := matchcontinue (inBinTree,inKey,keyhash,keystr,inValue)
-    local
-      DAE.ComponentRef key,rkey;
-      BackendDAE.Value value,rval;
-      String rkeystr;
-      Option<BackendDAE.BinTree> left,right;
-      BackendDAE.BinTree t_1,t,right_1,left_1;
-      Integer rhash;
-      Option<BackendDAE.TreeValue> optVal;
-    
-    case (BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),key,keyhash,keystr,value)
-      then 
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(key,keystr,keyhash,value)),NONE(),NONE());
-    
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = right),key,keyhash,keystr,value)
-      equation
-        0 = keyCompareNinjaSecretHashTricks(rkeystr,rhash,keystr,keyhash);
-      then
-        BackendDAE.TREENODE(SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,value)),left,right);
-    
-    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,keyhash,keystr,value)
-      equation
-        1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-        t_1 = treeAdd2(t, key, keyhash, keystr, value);
-      then
-        BackendDAE.TREENODE(optVal,left,SOME(t_1));
-    
-    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,keyhash,keystr,value)
-      equation
-        1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-        right_1 = treeAdd2(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
-      then
-        BackendDAE.TREENODE(optVal,left,SOME(right_1));
-    
-    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,keyhash,keystr,value)
-      equation
-        -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-        t_1 = treeAdd2(t, key, keyhash, keystr, value);
-      then
-        BackendDAE.TREENODE(optVal,SOME(t_1),right);
-    
-    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,keyhash,keystr,value)
-      equation
-        -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-        left_1 = treeAdd2(BackendDAE.TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
-      then
-        BackendDAE.TREENODE(optVal,SOME(left_1),right);
-    
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"- BackendDAEUtil.treeAdd2 failed\n"});
-      then
-        fail();
-  end matchcontinue;
-end treeAdd2;
-
-protected function treeDelete2 "function: treeDelete
-  author: PA
-  This function deletes an entry from the BinTree."
-  input BackendDAE.BinTree inBinTree;
-  input String keystr;
-  input Integer keyhash;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  outBinTree := matchcontinue (inBinTree,keystr,keyhash)
-    local
-      BackendDAE.BinTree bt,right,left,t;
-      DAE.ComponentRef key,rkey;
-      String rkeystr;
-      BackendDAE.TreeValue rightmost;
-      Option<BackendDAE.BinTree> optRight,optLeft,optTree;
-      BackendDAE.Value rval;
-      Option<BackendDAE.TreeValue> optVal;
-      Integer rhash;
-      
-    case ((bt as BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE())),_,_) 
-      then bt;
-    
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(right)),keystr,keyhash)
-      equation
-        0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-        (rightmost,right) = treeDeleteRightmostValue(right);
-        optRight = treePruneEmptyNodes(right);
-      then
-        BackendDAE.TREENODE(SOME(rightmost),optLeft,optRight);
-    
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = SOME(left as BackendDAE.TREENODE(value=_)),rightSubTree = NONE()),keystr,keyhash)
-      equation
-        0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-      then
-        left;
-    
-    case (BackendDAE.TREENODE(value = SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = NONE(),rightSubTree = NONE()),keystr,keyhash)
-      equation
-        0 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-      then
-        BackendDAE.TREENODE(NONE(),NONE(),NONE());
-    
-    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = optLeft,rightSubTree = SOME(t)),keystr,keyhash)
-      equation
-        1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-        t = treeDelete2(t, keystr, keyhash);
-        optTree = treePruneEmptyNodes(t);
-      then
-        BackendDAE.TREENODE(optVal,optLeft,optTree);
-    
-    case (BackendDAE.TREENODE(value = optVal as SOME(BackendDAE.TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree =  SOME(t),rightSubTree = optRight),keystr,keyhash)
-      equation
-        -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
-        t = treeDelete2(t, keystr, keyhash);
-        optTree = treePruneEmptyNodes(t);
-      then
-        BackendDAE.TREENODE(optVal,optTree,optRight);
-    
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"- BackendDAEUtil.treeDelete failed\n"});
-      then
-        fail();
-  end matchcontinue;
-end treeDelete2;
-
-protected function treeDeleteRightmostValue "function: treeDeleteRightmostValue
-  author: PA
-  This function takes a BackendDAE.BinTree and deletes the rightmost value of the tree.
-  Tt returns this value and the updated BinTree. This function is used in
-  the binary tree deletion function \'tree_delete\'.
-  inputs:  (BinTree)
-  outputs: (TreeValue, /* deleted value */
-              BackendDAE.BinTree    /* updated bintree */)
-"
-  input BackendDAE.BinTree inBinTree;
-  output BackendDAE.TreeValue outTreeValue;
-  output BackendDAE.BinTree outBinTree;
-algorithm
-  (outTreeValue,outBinTree) := matchcontinue (inBinTree)
-    local
-      BackendDAE.TreeValue treeVal,value;
-      BackendDAE.BinTree left,right,bt;
-      Option<BackendDAE.BinTree> optRight, optLeft;
-      Option<BackendDAE.TreeValue> optTreeVal;
-    
-    case (BackendDAE.TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = NONE())) 
-      then (treeVal,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
-    
-    case (BackendDAE.TREENODE(value = SOME(treeVal),leftSubTree = SOME(left),rightSubTree = NONE())) 
-      then (treeVal,left);
-    
-    case (BackendDAE.TREENODE(value = optTreeVal,leftSubTree = optLeft,rightSubTree = SOME(right)))
-      equation
-        (value,right) = treeDeleteRightmostValue(right);
-        optRight = treePruneEmptyNodes(right);
-      then
-        (value,BackendDAE.TREENODE(optTreeVal,optLeft,optRight));
-    
-    case (BackendDAE.TREENODE(value = SOME(treeVal),leftSubTree = NONE(),rightSubTree = SOME(right)))
-      equation
-        failure((_,_) = treeDeleteRightmostValue(right));
-        print("- Backend.treeDeleteRightmostValue: right value was empty, left NONE\n");
-      then
-        (treeVal,BackendDAE.TREENODE(NONE(),NONE(),NONE()));
-    
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"- Backend.treeDeleteRightmostValue failed\n"});
-      then
-        fail();
-  end matchcontinue;
-end treeDeleteRightmostValue;
-
-protected function treePruneEmptyNodes "function: treePruneEmtpyNodes
-  author: PA
-  This function is a helper function to tree_delete
-  It is used to delete empty nodes of the BackendDAE.BinTree 
-  representation, that might be introduced when deleting nodes."
-  input BackendDAE.BinTree inBinTree;
-  output Option<BackendDAE.BinTree> outBinTreeOption;
-algorithm
-  outBinTreeOption := matchcontinue (inBinTree)
-    local BackendDAE.BinTree bt;
-    case BackendDAE.TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()) then NONE();
-    case bt then SOME(bt);
-  end matchcontinue;
-end treePruneEmptyNodes;
-
-protected function bintreeDepth "function: bintreeDepth
-  author: PA
-  This function calculates the depth of the Binary Tree given
-  as input. It can be used for debugging purposes to investigate
-  how balanced binary trees are."
-  input BackendDAE.BinTree inBinTree;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inBinTree)
-    local
-      BackendDAE.Value ld,rd,res;
-      BackendDAE.BinTree left,right;
-    
-    case (BackendDAE.TREENODE(leftSubTree = NONE(),rightSubTree = NONE())) then 1;
-    
-    case (BackendDAE.TREENODE(leftSubTree = SOME(left),rightSubTree = SOME(right)))
-      equation
-        ld = bintreeDepth(left);
-        rd = bintreeDepth(right);
-        res = intMax(ld, rd);
-      then
-        res + 1;
-    
-    case (BackendDAE.TREENODE(leftSubTree = SOME(left),rightSubTree = NONE()))
-      equation
-        ld = bintreeDepth(left);
-      then
-        ld;
-    
-    case (BackendDAE.TREENODE(leftSubTree = NONE(),rightSubTree = SOME(right)))
-      equation
-        rd = bintreeDepth(right);
-      then
-        rd;
-  end matchcontinue;
-end bintreeDepth;
 
 /************************************
   stuff that deals with extendArrExp
@@ -4214,13 +3722,13 @@ public function incidenceRowExp
   variables, returning variable indexes."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
-  input list<BackendDAE.Value> inIntegerLst;
+  input list<Integer> inIntegerLst;
   input BackendDAE.IndexType inIndexType;  
-  output list<BackendDAE.Value> outIntegerLst;
+  output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst := match (inExp,inVariables,inIntegerLst,inIndexType)
     local
-      list<BackendDAE.Value> vallst;
+      list<Integer> vallst;
   case(inExp,inVariables,inIntegerLst,BackendDAE.SPARSE())      
     equation
       ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinderwithInput, (inVariables,inIntegerLst));
@@ -4244,8 +3752,8 @@ end incidenceRowExp;
 public function traversingincidenceRowExpSolvableFinder "
 Author: Frenkel TUD 2010-11
 Helper for statesAndVarsExp"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> outTpl;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<Integer>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
   local
@@ -4335,12 +3843,12 @@ end traversingincidenceRowExpSolvableFinder;
 public function traversingincidenceRowExpFinder "
 Author: Frenkel TUD 2010-11
 Helper for statesAndVarsExp"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> outTpl;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<Integer>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-      list<BackendDAE.Value> p,pa,res;
+      list<Integer> p,pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2;
@@ -4439,12 +3947,12 @@ end incidenceRowExp1;
 public function traversingincidenceRowExpFinderwithInput "
 Author: wbraun
 Helper for statesAndVarsExp"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<BackendDAE.Value>>> outTpl;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<Integer>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-      list<BackendDAE.Value> p,pa,res;
+      list<Integer> p,pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e;
@@ -4556,7 +4064,7 @@ public function transposeMatrix
   input BackendDAE.IncidenceMatrix m;
   output BackendDAE.IncidenceMatrixT mt;
 protected
-  list<list<BackendDAE.Value>> mlst,mtlst;
+  list<list<Integer>> mlst,mtlst;
 algorithm
   mlst := arrayList(m);
   mtlst := transposeMatrix2(mlst);
@@ -4572,8 +4080,8 @@ protected function transposeMatrix2
 algorithm
   outIntegerLstLst := matchcontinue (inIntegerLstLst)
     local
-      BackendDAE.Value neq;
-      list<list<BackendDAE.Value>> mt,m;
+      Integer neq;
+      list<list<Integer>> mt,m;
     case (m)
       equation
         neq = listLength(m);
@@ -4600,9 +4108,9 @@ protected function transposeMatrix3
 algorithm
   outIntegerLstLst := matchcontinue (inIntegerLstLst1,inInteger2,inInteger3,inIntegerLstLst4)
     local
-      BackendDAE.Value neq_1,eqno_1,neq,eqno;
-      list<list<BackendDAE.Value>> mt_1,m,mt;
-      list<BackendDAE.Value> row;
+      Integer neq_1,eqno_1,neq,eqno;
+      list<list<Integer>> mt_1,m,mt;
+      list<Integer> row;
     case (_,0,_,_) then {};
     case (m,neq,eqno,mt)
       equation
@@ -4622,7 +4130,7 @@ public function absIncidenceMatrix
   This can be used when e.g. der(x) and x are considered the same variable."
   input BackendDAE.IncidenceMatrix m;
   output BackendDAE.IncidenceMatrix res;
-  list<list<BackendDAE.Value>> lst,lst_1;
+  list<list<Integer>> lst,lst_1;
 algorithm
   lst := arrayList(m);
   lst_1 := List.mapList(lst, intAbs);
@@ -4636,7 +4144,7 @@ public function varsIncidenceMatrix
   matrix, i.e. all elements of the matrix."
   input BackendDAE.IncidenceMatrix m;
   output list<Integer> res;
-  list<list<BackendDAE.Value>> mlst;
+  list<list<Integer>> mlst;
 algorithm
   mlst := arrayList(m);
   res := List.flatten(mlst);
@@ -4658,9 +4166,9 @@ protected function transposeRow
 algorithm
   outIntegerLst := matchcontinue (inIntegerLstLst1,inInteger2,inInteger3)
     local
-      BackendDAE.Value eqn_1,varno,eqn,varno_1,eqnneg;
-      list<BackendDAE.Value> res,m;
-      list<list<BackendDAE.Value>> ms;
+      Integer eqn_1,varno,eqn,varno_1,eqnneg;
+      list<Integer> res,m;
+      list<list<Integer>> ms;
     case ({},_,_) then {};
     case ((m :: ms),varno,eqn)
       equation
@@ -4715,7 +4223,7 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      list<BackendDAE.Value> eqns;
+      list<Integer> eqns;
       BackendDAE.Variables vars;
       EquationArray daeeqns;
       BackendDAE.Matching matching;
@@ -4750,9 +4258,9 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m,m_1,m_2;
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
-      BackendDAE.Value e_1,e,abse;
+      Integer e_1,e,abse;
       BackendDAE.Equation eqn;
-      list<BackendDAE.Value> row,invars,outvars,eqns,oldvars;
+      list<Integer> row,invars,outvars,eqns,oldvars;
 
     case (_,_,m,mt,{}) then (m,mt);
 
@@ -4939,9 +4447,9 @@ algorithm
 end updateIncidenceMatrixScalar2;
 
 protected function getOldVars
-  input array<list<BackendDAE.Value>> m;
+  input array<list<Integer>> m;
   input Integer pos;
-  output  list<BackendDAE.Value> oldvars;
+  output  list<Integer> oldvars;
 algorithm
   oldvars := matchcontinue(m,pos)
   local
@@ -4970,8 +4478,8 @@ algorithm
     local
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2;
       BackendDAE.IncidenceMatrixElement mlst,mlst1;
-      list<BackendDAE.Value> keys;
-      BackendDAE.Value k,kabs;
+      list<Integer> keys;
+      Integer k,kabs;
       Integer v,v_1;
     case (_,{},mt) then mt;
     case (v,k :: keys,mt)
@@ -5010,8 +4518,8 @@ algorithm
     local
       BackendDAE.IncidenceMatrixT mt,mt_1,mt_2;
       BackendDAE.IncidenceMatrixElement mlst;
-      list<BackendDAE.Value> keys;
-      BackendDAE.Value k,kabs;
+      list<Integer> keys;
+      Integer k,kabs;
       Integer v,v_1;
     case (_,{},mt) then mt;
     case (v,k :: keys,mt)
@@ -5553,7 +5061,7 @@ algorithm
   outIncidenceArrayT := matchcontinue (eqns, eqnsindxs, inIncidenceArrayT)
     local
       BackendDAE.AdjacencyMatrixElementEnhanced row,rest,newrow;
-      BackendDAE.Value v,vabs;
+      Integer v,vabs;
       BackendDAE.AdjacencyMatrixTEnhanced mT;
       BackendDAE.Solvability solva;
       list<Integer> eqnsindxs1;
@@ -6064,9 +5572,9 @@ protected function adjacencyRowExpEnhanced
   variables, returning variable indexes, and mark the solvability."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
-  input list<BackendDAE.Value> inRow;
+  input list<Integer> inRow;
   input tuple<Integer,array<Integer>> inTpl;  
-  output list<BackendDAE.Value> outRow;
+  output list<Integer> outRow;
 algorithm
   ((_,(_,_,_,outRow))) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpSolvableEnhancedFinder, (inVariables,false,inTpl,inRow));
 end adjacencyRowExpEnhanced;
@@ -6074,12 +5582,12 @@ end adjacencyRowExpEnhanced;
 public function traversingadjacencyRowExpSolvableEnhancedFinder "
 Author: Frenkel TUD 2010-11
   Helper for adjacencyRowExpEnhanced"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,tuple<Integer,array<Integer>>,list<BackendDAE.Value>>> inTpl "(exp,(variables,unsolvable,(mark,rowmark),row))";
-  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,Boolean,tuple<Integer,array<Integer>>,list<BackendDAE.Value>>> outTpl;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,tuple<Integer,array<Integer>>,list<Integer>>> inTpl "(exp,(variables,unsolvable,(mark,rowmark),row))";
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,Boolean,tuple<Integer,array<Integer>>,list<Integer>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-      list<BackendDAE.Value> p,pa,res;
+      list<Integer> p,pa,res;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2,e3;
@@ -6088,7 +5596,7 @@ algorithm
       Boolean b,bs;
       Integer mark;
       array<Integer> rowmark;
-      BackendDAE.BinTree bt;
+      BinaryTree.BinTree bt;
     case ((e as DAE.LUNARY(exp = e1),(vars,bs,(mark,rowmark),pa)))
       equation
         ((_,(vars,_,_,pa))) = Expression.traverseExpTopDown(e1, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
@@ -6109,7 +5617,7 @@ algorithm
         ((_,(vars,_,_,pa))) = Expression.traverseExpTopDown(e2, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,bs,(mark,rowmark),pa));
         ((_,(vars,_,_,pa))) = Expression.traverseExpTopDown(e3, traversingadjacencyRowExpSolvableEnhancedFinder, (vars,true,(mark,rowmark),pa));
         // mark all vars which are not in alle branches unsolvable
-        ((_,bt)) = Expression.traverseExpTopDown(e,getIfExpBranchVarOccurency,BackendDAE.emptyBintree);
+        ((_,bt)) = Expression.traverseExpTopDown(e,getIfExpBranchVarOccurency,BinaryTree.emptyBinTree);
         ((_,(_,_,_,_))) = Expression.traverseExp(e1,markBranchVars,(mark,rowmark,vars,bt));
         ((_,(_,_,_,_))) = Expression.traverseExp(e2,markBranchVars,(mark,rowmark,vars,bt));
       then
@@ -6163,15 +5671,15 @@ end traversingadjacencyRowExpSolvableEnhancedFinder;
 protected function markBranchVars
 "Author: Frenkel TUD 2012-09
   mark all vars of a if expression which are not in all branches as unsolvable"
-  input tuple<DAE.Exp, tuple<Integer,array<Integer>,BackendDAE.Variables,BackendDAE.BinTree>> inTuple;
-  output tuple<DAE.Exp, tuple<Integer,array<Integer>,BackendDAE.Variables,BackendDAE.BinTree>> outTuple;
+  input tuple<DAE.Exp, tuple<Integer,array<Integer>,BackendDAE.Variables,BinaryTree.BinTree>> inTuple;
+  output tuple<DAE.Exp, tuple<Integer,array<Integer>,BackendDAE.Variables,BinaryTree.BinTree>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
-      BackendDAE.BinTree bt;
+      BinaryTree.BinTree bt;
       list<Integer> ilst;
       Integer mark;
       array<Integer> rowmark;
@@ -6205,7 +5713,7 @@ protected function markBranchVars1
   input list<Integer> iIlst;
   input Integer mark;
   input array<Integer> rowmark;
-  input BackendDAE.BinTree bt;
+  input BinaryTree.BinTree bt;
 algorithm
   _ := matchcontinue(varlst,iIlst,mark,rowmark,bt)
     local
@@ -6216,7 +5724,7 @@ algorithm
     case({},_,_,_,_) then ();
     case(BackendDAE.VAR(varName=cr)::vlst,_::ilst,_,_,_)
       equation
-        _ = treeGet(bt,cr);
+        _ = BinaryTree.treeGet(bt,cr);
         markBranchVars1(vlst,ilst,mark,rowmark,bt);
       then
         ();
@@ -6232,21 +5740,21 @@ end markBranchVars1;
 protected function getIfExpBranchVarOccurency
 "Author: Frenkel TUD 2012-09
   Helper for getIfExpBranchVarOccurency"
-  input tuple<DAE.Exp, BackendDAE.BinTree> inTpl "(exp,allbranchvars)";
-  output tuple<DAE.Exp, Boolean, BackendDAE.BinTree> outTpl;  
+  input tuple<DAE.Exp, BinaryTree.BinTree> inTpl "(exp,allbranchvars)";
+  output tuple<DAE.Exp, Boolean, BinaryTree.BinTree> outTpl;  
 algorithm
   outTpl := match(inTpl)
     local
       DAE.ComponentRef cr;
       DAE.Exp e,e1,e2;
-      BackendDAE.BinTree bt,bt_then,bt_else;
+      BinaryTree.BinTree bt,bt_then,bt_else;
       Boolean b;
       list<DAE.Exp> elst;
     case ((e as DAE.IFEXP(expThen = e1,expElse = e2),bt))
       equation
-        ((_,bt_then)) = Expression.traverseExpTopDown(e1,getIfExpBranchVarOccurency,BackendDAE.emptyBintree);
-        ((_,bt_else)) = Expression.traverseExpTopDown(e2,getIfExpBranchVarOccurency,BackendDAE.emptyBintree);
-        bt = binTreeintersection(bt_then,bt_else,bt);
+        ((_,bt_then)) = Expression.traverseExpTopDown(e1,getIfExpBranchVarOccurency,BinaryTree.emptyBinTree);
+        ((_,bt_else)) = Expression.traverseExpTopDown(e2,getIfExpBranchVarOccurency,BinaryTree.emptyBinTree);
+        bt = BinaryTree.binTreeintersection(bt_then,bt_else,bt);
       then
         ((e,false,bt));
     // skip relations,ranges,asubs
@@ -6267,17 +5775,17 @@ algorithm
     // add crefs
     case ((e as DAE.CREF(componentRef = cr),bt))
       equation
-        bt = treeAdd(bt,cr,0);
+        bt = BinaryTree.treeAdd(bt,cr,0);
       then
         ((e,false,bt));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),bt))
       equation
-        bt = treeAdd(bt,cr,0);
+        bt = BinaryTree.treeAdd(bt,cr,0);
       then
         ((e,false,bt));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),bt))
       equation
-        bt = treeAdd(bt,cr,0);
+        bt = BinaryTree.treeAdd(bt,cr,0);
       then
         ((e,false,bt));
     // pre(v) is considered a known variable 
@@ -6290,41 +5798,6 @@ algorithm
     case ((e,bt)) then ((e,true,bt));        
   end match;
 end getIfExpBranchVarOccurency;
-
-protected function binTreeintersection
-"Author: Frenkel TUD 2012-09
-  at all key member of bt1 and bt2 to iBt"
-  input BackendDAE.BinTree bt1;
-  input BackendDAE.BinTree bt2;
-  input BackendDAE.BinTree iBt;
-  output BackendDAE.BinTree oBt;
-protected
-  list<DAE.ComponentRef> keys;
-algorithm
-  (keys,_) := bintreeToList(bt1);
-  oBt := List.fold1(keys, binTreeintersection1, bt2,iBt); 
-end binTreeintersection;
-
-protected function binTreeintersection1
-"Author: Frenkel TUD 2012-09
-  Helper for binTreeintersection1"
-  input DAE.ComponentRef key;
-  input BackendDAE.BinTree bt2;
-  input BackendDAE.BinTree iBt;
-  output BackendDAE.BinTree oBt;
-algorithm
-  oBt := matchcontinue(key,bt2,iBt)
-    local
-     BackendDAE.BinTree bt;  
-    case(_,_,_)
-      equation
-        _ = treeGet(bt2,key);
-        bt = treeAdd(iBt,key,0);
-      then
-        bt;
-    else then iBt;
-  end matchcontinue;  
-end binTreeintersection1;
 
 protected function adjacencyRowExpEnhanced1
 "function: adjacencyRowExpEnhanced1
@@ -6525,7 +5998,7 @@ algorithm
   matchcontinue (inVariables,inEquationArray,inIncidenceMatrix,differentiateIfExp,iShared)
     local
       list<BackendDAE.Equation> eqn_lst;
-      list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       BackendDAE.Variables vars;
       EquationArray eqns;
       BackendDAE.IncidenceMatrix m;
@@ -6553,7 +6026,7 @@ algorithm
   matchcontinue (vars,eqns,m,differentiateIfExp,iShared)
     local
       list<BackendDAE.Equation> eqn_lst;
-      list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
     case (_,_,_,_,_)
       equation
         eqn_lst = equationList(eqns);
@@ -6952,7 +6425,7 @@ algorithm
   outJacobianType:=
   matchcontinue (vars,eqns,inTplIntegerIntegerEquationLstOption)
     local
-      list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
       Boolean b,b1;
     case (_,_,SOME(jac))
       equation
@@ -7126,7 +6599,7 @@ algorithm
   outBoolean := matchcontinue (inExp,inVariables)
     local
       DAE.Exp e;
-      list<BackendDAE.Key> crefs;
+      list<DAE.ComponentRef> crefs;
       list<Boolean> b_lst;
       Boolean res,res_1;
       BackendDAE.Variables vars;
@@ -7157,7 +6630,7 @@ algorithm
   outBoolean := matchcontinue (inTplIntegerIntegerEquationLst)
     local
       DAE.Exp e1,e2,e;
-      list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> eqns;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
     case ({}) then true;
     case (((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2)) :: eqns)) /* TODO: Algorithms and ArrayEquations */
       equation
@@ -7190,7 +6663,7 @@ algorithm
   outBoolean := matchcontinue (vars,inTplIntegerIntegerEquationLst)
     local
       DAE.Exp e1,e2,e;
-      list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> xs;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> xs;
 
     case (vars,((_,_,BackendDAE.EQUATION(exp = e1,scalar = e2)) :: xs))
       equation
@@ -7265,7 +6738,7 @@ algorithm
   outBoolean := matchcontinue (inExpComponentRefLst,inVariables)
     local
       DAE.ComponentRef cr;
-      list<BackendDAE.Key> crefs;
+      list<DAE.ComponentRef> crefs;
       BackendDAE.Variables vars;
     case ({},_) then false;
     case ((cr :: crefs),vars)
@@ -8689,7 +8162,7 @@ algorithm
   outInt :=
   match (inComps,inInt)
     local
-      list<BackendDAE.Value> ilst;
+      list<Integer> ilst;
       list<String> ls;
       String s;
       Integer i,i1;

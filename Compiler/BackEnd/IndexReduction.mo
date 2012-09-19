@@ -3700,7 +3700,7 @@ algorithm
       BackendDAE.Type b;
       Option<DAE.Exp> c;
       Option<Values.Value> d;
-      BackendDAE.Value g;
+      Integer g;
       DAE.ComponentRef dummyder,cr;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;

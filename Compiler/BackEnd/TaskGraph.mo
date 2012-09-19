@@ -646,7 +646,7 @@ algorithm
       list<Integer> predtaskids;
       BackendDAE.BackendDAE dae;
       BackendDAE.StrongComponent comp;
-      list<BackendDAE.Value> eqns,vars;
+      list<Integer> eqns,vars;
     case (dae,comp)
       equation
         print("build system\n");

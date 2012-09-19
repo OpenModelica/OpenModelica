@@ -139,8 +139,8 @@ algorithm
   _:=
   match (inIntegerLst,syst)
     local
-      BackendDAE.Value n;
-      list<BackendDAE.Value> rest;
+      Integer n;
+      list<Integer> rest;
     case ({},_) then ();
     case ((n :: rest),syst)
       equation
@@ -160,7 +160,7 @@ algorithm
   _:=
   match (inInteger,syst)
     local
-      BackendDAE.Value eqno_1,eqno;
+      Integer eqno_1,eqno;
       BackendDAE.Equation eq;
       BackendDAE.EquationArray eqns;
     case (eqno,BackendDAE.EQSYSTEM(orderedEqs = eqns))
@@ -218,7 +218,7 @@ end dumpEquation;
 protected function printVarsStatistics "function: printVarsStatistics
   author: PA
 
-  Prints statistics on variables, currently depth of BinTree, etc.
+  Prints statistics on variables, etc.
 "
   input BackendDAE.Variables inVariables1;
   input BackendDAE.Variables inVariables2;
@@ -228,7 +228,7 @@ algorithm
     local
       String lenstr,bstr;
       BackendDAE.VariableArray v1,v2;
-      BackendDAE.Value bsize1,n1,bsize2,n2;
+      Integer bsize1,n1,bsize2,n2;
     case (BackendDAE.VARIABLES(varArr = v1,bucketSize = bsize1,numberOfVars = n1),BackendDAE.VARIABLES(varArr = v2,bucketSize = bsize2,numberOfVars = n2))
       equation
         print("Variable Statistics\n");
@@ -475,7 +475,7 @@ algorithm
   String eq_s,wc_s,str,str2,str_index;
   DAE.Exp e;
   Integer index_;
-  list<BackendDAE.Value> eq,wc;
+  list<Integer> eq,wc;
   case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq,occurWhenLst = wc)
   equation
   eq_s_list = List.map(eq, intString);
@@ -678,7 +678,7 @@ algorithm
   match (inShared)
     local
       list<BackendDAE.Var> knvars,extvars;
-      BackendDAE.Value varlen,eqnlen;
+      Integer varlen,eqnlen;
       String varlen_str,eqnlen_str,s;
       list<BackendDAE.Equation> reqnsl,ieqnsl;
       list<String> ss;
@@ -866,7 +866,7 @@ algorithm
     local
       list<String> res;
       String res_1;
-      list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> eqns;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
     case (SOME(eqns))
       equation
         res = dumpJacobianStr2(eqns);
@@ -888,9 +888,9 @@ algorithm
     local
       String estr,rowstr,colstr,str;
       list<String> strs;
-      BackendDAE.Value row,col;
+      Integer row,col;
       DAE.Exp e;
-      list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> eqns;
+      list<tuple<Integer, Integer, BackendDAE.Equation>> eqns;
     case ({}) then {};
     case (((row,col,BackendDAE.RESIDUAL_EQUATION(exp = e)) :: eqns))
       equation
@@ -1101,7 +1101,7 @@ algorithm
   _ := match (inEquationLst,inInteger)
     local
       String es,is;
-      BackendDAE.Value index_1,index;
+      Integer index_1,index;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
     case ({},_) then ();
@@ -1140,7 +1140,7 @@ algorithm
   strs := match (inEquationLst,inInteger,inAcc)
     local
       String es,is,str;
-      BackendDAE.Value index_1,index;
+      Integer index_1,index;
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns;
       list<String> acc;
@@ -1363,7 +1363,7 @@ algorithm
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
-      BackendDAE.Value varno_1,varno;
+      Integer varno_1,varno;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
       BackendDAE.VarKind kind;
@@ -1660,9 +1660,9 @@ public function dumpIncidenceMatrix
   Prints the incidence matrix on stdout."
   input BackendDAE.IncidenceMatrix m;
 protected
-  BackendDAE.Value mlen;
+  Integer mlen;
   String mlen_str;
-  list<list<BackendDAE.Value>> m_1;
+  list<list<Integer>> m_1;
 algorithm
   print("Incidence Matrix (row == equation)\n");
   print("====================================\n");
@@ -1681,9 +1681,9 @@ public function dumpIncidenceMatrixT
   Prints the transposed incidence matrix on stdout."
   input BackendDAE.IncidenceMatrix m;
 protected
-  BackendDAE.Value mlen;
+  Integer mlen;
   String mlen_str;
-  list<list<BackendDAE.Value>> m_1;
+  list<list<Integer>> m_1;
 algorithm
   print("Transpose Incidence Matrix (row == var)\n");
   print("=====================================\n");
@@ -1705,8 +1705,8 @@ protected function dumpIncidenceMatrix2
 algorithm
   _ := match (inIntegerLstLst,rowIndex)
     local
-      list<BackendDAE.Value> row;
-      list<list<BackendDAE.Value>> rows;
+      list<Integer> row;
+      list<list<Integer>> rows;
     case ({},_) then ();
     case ((row :: rows),rowIndex)
       equation
@@ -1727,8 +1727,8 @@ algorithm
   _ := match (inIntegerLst)
     local
       String s;
-      BackendDAE.Value x;
-      list<BackendDAE.Value> xs;
+      Integer x;
+      list<Integer> xs;
     case ({})
       equation
         print("\n");
@@ -1751,7 +1751,7 @@ public function dumpAdjacencyMatrixEnhanced
   Prints the incidence matrix on stdout."
   input BackendDAE.AdjacencyMatrixEnhanced m;
 protected
-  BackendDAE.Value mlen;
+  Integer mlen;
   String mlen_str;
   list<BackendDAE.AdjacencyMatrixElementEnhanced> m_1;
 algorithm
@@ -1772,7 +1772,7 @@ public function dumpAdjacencyMatrixTEnhanced
   Prints the transposed incidence matrix on stdout."
   input BackendDAE.AdjacencyMatrixTEnhanced m;
 protected
-  BackendDAE.Value mlen;
+  Integer mlen;
   String mlen_str;
   list<BackendDAE.AdjacencyMatrixElementEnhanced> m_1;
 algorithm
@@ -1818,7 +1818,7 @@ algorithm
   _ := match (inRow)
     local
       String s,s1;
-      BackendDAE.Value x;
+      Integer x;
       BackendDAE.Solvability solva;
       BackendDAE.AdjacencyMatrixElementEnhanced xs;
     case ({})
@@ -1880,7 +1880,7 @@ public function dumpMatching
   prints the matching information on stdout."
   input array<Integer> v;
 protected
-  BackendDAE.Value len;
+  Integer len;
   String len_str;
 algorithm
   print("Matching\n");
@@ -1901,7 +1901,7 @@ protected function dumpMatching2
 algorithm
   _ := matchcontinue (v,i)
     local
-      BackendDAE.Value len,eqn;
+      Integer len,eqn;
       String s,s2;
     case (_,_)
       equation
@@ -1936,10 +1936,10 @@ algorithm
   outString := match (syst,inIntegerLst)
     local
       String s1,s2,s3,res;
-      BackendDAE.Value e_1,e;
+      Integer e_1,e;
       BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns;
-      list<BackendDAE.Value> es;
+      list<Integer> es;
     case (_,{}) then "";
     case (syst as BackendDAE.EQSYSTEM(orderedEqs = eqns),(e :: es))
       equation
@@ -1964,10 +1964,10 @@ algorithm
   match (syst,inIntegerLst)
     local
       String s1,s2,res,s3;
-      BackendDAE.Value v;
+      Integer v;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
-      list<BackendDAE.Value> vs;
+      list<Integer> vs;
     case (_,{}) then "";
     case (syst as BackendDAE.EQSYSTEM(orderedVars = vars),(v :: vs))
       equation
@@ -2076,11 +2076,11 @@ algorithm
   _:=
   match (inIntegerLstLst,inInteger)
     local
-      BackendDAE.Value i_1,i;
+      Integer i_1,i;
       list<String> ls;
       String s;
-      list<BackendDAE.Value> l;
-      list<list<BackendDAE.Value>> lst;
+      list<Integer> l;
+      list<list<Integer>> lst;
     case ({},_) then ();
     case ((l :: lst),i)
       equation
@@ -2234,11 +2234,11 @@ algorithm
   _:=
   match (inIntegerLstLst,inInteger,v2,vars)
     local
-      BackendDAE.Value ni,i_1,i;
+      Integer ni,i_1,i;
       list<String> ls;
       String s;
-      list<BackendDAE.Value> l;
-      list<list<BackendDAE.Value>> lst;
+      list<Integer> l;
+      list<list<Integer>> lst;
     case ({},_,_,_) then ();
     case ((l :: lst),i,v2,vars)
       equation
@@ -2268,10 +2268,10 @@ algorithm
   _:=
   match (inIntegerLst,v2,vars)
     local
-      BackendDAE.Value i,v;
+      Integer i,v;
       list<String> ls;
       String s;
-      list<BackendDAE.Value> l;
+      list<Integer> l;
       DAE.ComponentRef c;
       BackendDAE.Var var;
       Boolean b;
@@ -2322,8 +2322,8 @@ algorithm
   _:=
   match (inComp)
     local
-      BackendDAE.Value i,v;
-      list<BackendDAE.Value> ilst,vlst;
+      Integer i,v;
+      list<Integer> ilst,vlst;
       list<String> ls;
       String s;
       BackendDAE.JacobianType jacType;
@@ -2452,8 +2452,8 @@ algorithm
   outS:=
   match (inComp)
     local
-      BackendDAE.Value i,v;
-      list<BackendDAE.Value> ilst,vlst;
+      Integer i,v;
+      list<Integer> ilst,vlst;
       list<String> ls,ls1;
       String s,s1,s2,sl,sj;
       BackendDAE.JacobianType jacType;
@@ -2650,8 +2650,8 @@ algorithm
   outTpl:=
   match (inComp,inTpl)
     local
-      BackendDAE.Value e,d;
-      list<BackendDAE.Value> ilst,ilst1;
+      Integer e,d;
+      list<Integer> ilst,ilst1;
       Integer seq,salg,sarr,sce;
       list<Integer> e_jc,e_jt,e_jn,e_nj,m_se,m_salg,m_sarr,m_sec;
       list<tuple<Integer,Integer>> me_jc,me_jt,me_jn,me_nj,te_l,te_nl;

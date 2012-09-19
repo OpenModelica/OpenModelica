@@ -358,35 +358,6 @@ uniontype Assignments "Assignments of variables to equations and vice versa are 
 end Assignments;
 
 public
-uniontype BinTree "Generic Binary tree implementation
-  - Binary Tree"
-  record TREENODE
-    Option<TreeValue> value "value ; Value" ;
-    Option<BinTree> leftSubTree "leftSubTree ; left subtree" ;
-    Option<BinTree> rightSubTree "rightSubTree ; right subtree" ;
-  end TREENODE;
-
-end BinTree;
-
-public
-uniontype TreeValue "Each node in the binary tree can have a value associated with it.
-  - Tree Value"
-  record TREEVALUE
-    Key key "Key" ;
-    String str;
-    Integer hash;
-    Value value "Value" ;
-  end TREEVALUE;
-
-end TreeValue;
-
-public
-type Key = .DAE.ComponentRef "A key is a Component Reference";
-
-public
-type Value = Integer "- Value" ;
-
-public
 uniontype IndexType
   record ABSOLUTE "produce incidence matrix with absolute indexes"          end ABSOLUTE;
   record NORMAL   "produce incidence matrix with positive/negative indexes" end NORMAL;
@@ -506,42 +477,42 @@ end StateOrder;
 public
 uniontype StrongComponent
   record SINGLEEQUATION
-    Value eqn;  
-    Value var;
+    Integer eqn;  
+    Integer var;
   end SINGLEEQUATION;
    
   record EQUATIONSYSTEM
-    list<Value> eqns;
-    list<Value> vars "be carefule with states, this are solved for der(x)";
+    list<Integer> eqns;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
     Option<list<tuple<Integer, Integer, Equation>>> jac;
     JacobianType jacType;
   end EQUATIONSYSTEM; 
   
   record MIXEDEQUATIONSYSTEM
     StrongComponent condSystem;
-    list<Value> disc_eqns;
-    list<Value> disc_vars;
+    list<Integer> disc_eqns;
+    list<Integer> disc_vars;
   end MIXEDEQUATIONSYSTEM;   
   
   record SINGLEARRAY
-    Value eqn;
-    list<Value> vars "be carefule with states, this are solved for der(x)";
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
   end SINGLEARRAY;
 
   record SINGLEALGORITHM
-    Value eqn;
-    list<Value> vars "be carefule with states, this are solved for der(x)";
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
   end SINGLEALGORITHM;
 
   record SINGLECOMPLEXEQUATION
-    Value eqn;
-    list<Value> vars "be carefule with states, this are solved for der(x)";
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
   end SINGLECOMPLEXEQUATION;
 
   record TORNSYSTEM
-    list<Value> tearingvars;
-    list<Value> residualequations;
-    list<tuple<Value,list<Value>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
+    list<Integer> tearingvars;
+    list<Integer> residualequations;
+    list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
     Boolean linear;
   end TORNSYSTEM; 
 
@@ -555,8 +526,6 @@ uniontype DivZeroExpReplace "- Should the division operator replaced by a operat
   record ALL  " check all expressions" end ALL;
   record ONLY_VARIABLES  " for expressions with variable variables(no parameters)" end ONLY_VARIABLES;
 end DivZeroExpReplace;
-
-public constant BinTree emptyBintree=TREENODE(NONE(),NONE(),NONE()) " Empty binary tree " ;
 
 
 public 

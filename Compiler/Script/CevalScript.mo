@@ -1098,7 +1098,7 @@ algorithm
         (cache, env, _, dae) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, scodeP, path);
         dae  = DAEUtil.transformationsBeforeBackend(cache,env,dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
-        daelow = BackendDAECreate.lower(dae,cache,env, false) "no dummy state" ;
+        daelow = BackendDAECreate.lower(dae,cache,env);
         (optdae as BackendDAE.DAE({syst},shared)) = BackendDAEUtil.preOptimiseBackendDAE(daelow,NONE());
         (syst,m,mt) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
         vars = BackendVariable.daeVars(syst);
@@ -2690,7 +2690,7 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
-        dlow = BackendDAECreate.lower(dae,cache,env, false);
+        dlow = BackendDAECreate.lower(dae,cache,env);
         dlow = BackendDAECreate.findZeroCrossings(dlow);
         flatModelicaStr = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
@@ -3233,7 +3233,7 @@ algorithm
       // sort all variable names in the distribution order
       // TODO FIXME
       funcs = Env.getFunctionTree(cache);
-      dlow = BackendDAECreate.lower(dae,cache,env,true);      
+      dlow = BackendDAECreate.lower(dae,cache,env);      
       //print("lowered class\n");      
       //print("calling generateOpenTurnsInterface\n");  
       scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
@@ -3693,7 +3693,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
-        dlow = BackendDAECreate.lower(dae,cache,env, true); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
         xml_filename = stringAppendList({filenameprefix,".xml"});
@@ -3717,7 +3717,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
-        dlow = BackendDAECreate.lower(dae,cache,env, true); //Verificare cosa fa
+        dlow = BackendDAECreate.lower(dae,cache,env); //Verificare cosa fa
         dlow_1 = BackendDAEUtil.preOptimiseBackendDAE(dlow,NONE());
         dlow_1 = BackendDAEUtil.transformBackendDAE(dlow_1,NONE(),NONE(),NONE());
         dlow_1 = BackendDAECreate.findZeroCrossings(dlow_1);
@@ -3742,7 +3742,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae_1);
-        dlow = BackendDAECreate.lower(dae,cache,env, true);
+        dlow = BackendDAECreate.lower(dae,cache,env);
         indexed_dlow = BackendDAEUtil.getSolvedSystem(dlow, NONE(), NONE(), NONE(), NONE());
         xml_filename = stringAppendList({filenameprefix,".xml"});
         Print.clearBuf();

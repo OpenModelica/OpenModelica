@@ -1911,7 +1911,7 @@ protected function vararrayLength
   output Integer outInteger;
 algorithm
   outInteger := match (inVariableArray)
-    local BackendDAE.Value n;
+    local Integer n;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n)) then n;
   end match;
 end vararrayLength;
@@ -1927,7 +1927,7 @@ protected function vararrayAdd
 algorithm
   outVariableArray := matchcontinue (inVariableArray,inVar)
     local
-      BackendDAE.Value n_1,n,size,expandsize,expandsize_1,newsize;
+      Integer n_1,n,size,expandsize,expandsize_1,newsize;
       array<Option<BackendDAE.Var>> arr_1,arr,arr_2;
       BackendDAE.Var v;
       Real rsize,rexpandsize;
@@ -1979,7 +1979,7 @@ algorithm
   outVariableArray := matchcontinue (inVariableArray,inInteger,inVar)
     local
       array<Option<BackendDAE.Var>> arr_1,arr;
-      BackendDAE.Value n,size,pos;
+      Integer n,size,pos;
       BackendDAE.Var v;
 
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),pos,v)
@@ -2010,7 +2010,7 @@ algorithm
   outVar := matchcontinue (inVariableArray,inInteger)
     local
       BackendDAE.Var v;
-      BackendDAE.Value n,pos;
+      Integer n,pos;
       array<Option<BackendDAE.Var>> arr;
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,varOptArr = arr),pos)
       equation
@@ -2081,7 +2081,7 @@ public function varsSize "function: varsSize
 algorithm
   outInteger:=
   match (inVariables)
-    local BackendDAE.Value n;
+    local Integer n;
     case (BackendDAE.VARIABLES(numberOfVars = n)) then n;
   end match;
 end varsSize;
@@ -2148,65 +2148,6 @@ algorithm
     case (BackendDAE.DISCRETE()) then ();
   end match;
 end isVarKindVariable;
-
-public function moveVariables
-"function: moveVariables
-  This function takes the two variable lists of a dae (states+alg) and
-  known vars and moves a set of variables from the first to the second set.
-  This function is needed to manage this in complexity O(n) by only
-  traversing the set once for all variables.
-  inputs:  (algAndState: Variables, /* alg+state */
-              known: Variables,       /* known */
-              binTree: BinTree)       /* vars to move from first7 to second */
-  outputs:  (Variables,        /* updated alg+state vars */
-               Variables)             /* updated known vars */
-"
-  input BackendDAE.Variables inVariables1;
-  input BackendDAE.Variables inVariables2;
-  input BackendDAE.BinTree inBinTree3;
-  output BackendDAE.Variables outVariables1;
-  output BackendDAE.Variables outVariables2;
-algorithm
-  (outVariables1,outVariables2):=
-  match (inVariables1,inVariables2,inBinTree3)
-    local
-      BackendDAE.Variables v1,vars,knvars,vars1,vars2;
-      BackendDAE.BinTree mvars;
-    case (vars1,vars2,mvars)
-      equation
-        v1 = BackendDAEUtil.emptyVars();
-        ((vars,knvars,_)) = traverseBackendDAEVars(vars1,moveVariables2,(v1,vars2,mvars));
-      then
-        (vars,knvars);
-  end match;
-end moveVariables;
-
-protected function moveVariables2
-"autor: Frenkel TUD 2010-11"
- input tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.BinTree>> inTpl;
- output tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.BinTree>> outTpl;
-algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      BackendDAE.Var v;
-      BackendDAE.Variables vars1,vars2,newvars;
-      BackendDAE.BinTree mvars;
-      DAE.ComponentRef cr;
-    case ((v as BackendDAE.VAR(varName = cr),(vars1,vars2,mvars)))
-      equation
-        _ = BackendDAEUtil.treeGet(mvars, cr) "alg var moved to known vars" ;
-        newvars = addVar(v,vars2);
-      then
-        ((v,(vars1,newvars,mvars)));
-    case ((v as BackendDAE.VAR(varName = cr),(vars1,vars2,mvars)))
-      equation
-        failure(_ = BackendDAEUtil.treeGet(mvars, cr)) "alg var not moved to known vars" ;
-        newvars = addVar(v,vars1);
-      then
-        ((v,(newvars,vars2,mvars)));
-  end matchcontinue;
-end moveVariables2;
 
 public function isTopLevelInputOrOutput
 "function isTopLevelInputOrOutput
@@ -2397,7 +2338,7 @@ algorithm
   matchcontinue (inVarPos,inVariables)
     local
       Integer pos,pos_1;
-      BackendDAE.Value hashindx,bsize,n;
+      Integer hashindx,bsize,n;
       list<BackendDAE.CrefIndex> indexes,indexes1;
       BackendDAE.Var v;
       DAE.ComponentRef cr;
@@ -2436,7 +2377,7 @@ algorithm
   (outVar,outVariableArray) := matchcontinue (inVariableArray,inInteger)
     local
       array<Option<BackendDAE.Var>> arr_1,arr;
-      BackendDAE.Value n,size,pos;
+      Integer n,size,pos;
       BackendDAE.Var v;
 
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),pos)
@@ -2588,7 +2529,7 @@ public function addVar
 algorithm
   outVariables := matchcontinue (inVar,inVariables)
     local
-      BackendDAE.Value indx,newpos,n_1,bsize,n,indx_1;
+      Integer indx,newpos,n_1,bsize,n,indx_1;
       BackendDAE.VariableArray varr_1,varr;
       list<BackendDAE.CrefIndex> indexes;
       array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
@@ -2644,7 +2585,7 @@ public function addNewVar
 algorithm
   outVariables := matchcontinue (inVar,inVariables)
     local
-      BackendDAE.Value indx,newpos,n_1,bsize,n;
+      Integer indx,newpos,n_1,bsize,n;
       BackendDAE.VariableArray varr_1,varr;
       list<BackendDAE.CrefIndex> indexes;
       array<list<BackendDAE.CrefIndex>> hashvec_1,hashvec;
@@ -2701,7 +2642,7 @@ public function expandVars
 algorithm
   outVariables := matchcontinue (needed,inVariables)
     local
-      BackendDAE.Value size,noe,bsize,n,size1,expandsize;
+      Integer size,noe,bsize,n,size1,expandsize;
       array<list<BackendDAE.CrefIndex>> hashvec;
       BackendDAE.Variables vars;
       array<Option<BackendDAE.Var>> arr,arr_1;
@@ -2737,7 +2678,7 @@ public function getVarAt
 algorithm
   outVar := matchcontinue (inVariables,inInteger)
     local
-      BackendDAE.Value pos,n;
+      Integer pos,n;
       BackendDAE.Var v;
       BackendDAE.VariableArray vararr;
     case (BackendDAE.VARIABLES(varArr = vararr),n)
@@ -2795,8 +2736,8 @@ algorithm
   (outVarLst,outIntegerLst) := matchcontinue (cr,inVariables)
     local
       BackendDAE.Var v;
-      BackendDAE.Value indx;
-      list<BackendDAE.Value> indxs;
+      Integer indx;
+      list<Integer> indxs;
       list<BackendDAE.Var> vLst;
       list<DAE.ComponentRef> crlst;    
     case (_,_)
@@ -2862,7 +2803,7 @@ protected function getVar2
 algorithm
   (outVar,outInteger) := match (inComponentRef,inVariables)
     local
-      BackendDAE.Value hashindx,indx,indx_1,bsize,n;
+      Integer hashindx,indx,indx_1,bsize,n;
       list<BackendDAE.CrefIndex> indexes;
       BackendDAE.Var v;
       DAE.ComponentRef cr2,cr;
@@ -2892,7 +2833,7 @@ protected function getVar3
 algorithm
   outInteger := match (cr,ivs,firstMatches)
     local
-      BackendDAE.Value v; list<BackendDAE.CrefIndex> vs;
+      Integer v; list<BackendDAE.CrefIndex> vs;
     case (cr,BackendDAE.CREFINDEX(index = v)::_,true) then v;
     case (cr,_::vs,false) then getVar3(cr,vs,getVar4(cr,vs));
   end match;
@@ -3041,6 +2982,40 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEVars;
 
+public function traverseBackendDAEVarsWithStop "function: traverseBackendDAEVarsWithStop
+  author: Frenkel TUD
+
+  traverse all vars of a BackenDAE.Variables array.
+"
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.Variables inVariables;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Var, Type_a> inTpl;
+    output tuple<BackendDAE.Var, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA:=
+  matchcontinue (inVariables,func,inTypeA)
+    local
+      array<Option<BackendDAE.Var>> varOptArr;
+      Integer n;
+      Type_a ext_arg_1;
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),func,inTypeA)
+      equation
+        ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(varOptArr,func,traverseBackendDAEVarWithStop,1,n,inTypeA);
+      then
+        ext_arg_1;
+    case (_,_,_)
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVarsWithStop failed");
+      then
+        fail();
+  end matchcontinue;
+end traverseBackendDAEVarsWithStop;
+
 protected function traverseBackendDAEVar "function: traverseBackendDAEVar
   author: Frenkel TUD
   Helper traverseBackendDAEVars."
@@ -3059,19 +3034,53 @@ algorithm
     local
       BackendDAE.Var v;
       Type_a ext_arg;
-    case (NONE(),func,inTypeA) then inTypeA;
-    case (SOME(v),func,inTypeA)
+    case (NONE(),_,_) then inTypeA;
+    case (SOME(v),_,_)
       equation
         ((_,ext_arg)) = func((v,inTypeA));
       then
         ext_arg;
-    case (_,_,_)
+    else
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVar failed");
       then
         fail();
   end matchcontinue;
 end traverseBackendDAEVar;
+
+protected function traverseBackendDAEVarWithStop "function: traverseBackendDAEVarWithStop
+  author: Frenkel TUD
+  Helper traverseBackendDAEVars."
+  replaceable type Type_a subtypeof Any;
+  input Option<BackendDAE.Var> inVar;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Boolean outBoolean;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Var, Type_a> inTpl;
+    output tuple<BackendDAE.Var, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outTypeA,outBoolean):=
+  matchcontinue (inVar,func,inTypeA)
+    local
+      BackendDAE.Var v;
+      Type_a ext_arg;
+      Boolean b;
+    case (NONE(),_,_) then (true,inTypeA);
+    case (SOME(v),_,_)
+      equation
+        ((_,b,ext_arg)) = func((v,inTypeA));
+      then
+        (b,ext_arg);
+    else
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVarWithStop failed");
+      then
+        fail();
+  end matchcontinue;
+end traverseBackendDAEVarWithStop;
 
 public function traverseBackendDAEVarsWithUpdate "function: traverseBackendDAEVarsWithUpdate
   author: Frenkel TUD

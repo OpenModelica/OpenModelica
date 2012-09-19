@@ -607,7 +607,7 @@ algorithm
         System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
         funcs = Env.getFunctionTree(cache);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae,cache,env,true);
+        dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
@@ -810,7 +810,7 @@ algorithm
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
         dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-        dlow = BackendDAECreate.lower(dae,cache,env,true);
+        dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
         (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
           generateModelCode(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt, args);
@@ -1780,6 +1780,96 @@ algorithm
   end matchcontinue;
 end elaborateStatement;
 
+protected function addDummyStateIfNeeded
+"function addDummyStateIfNeeded
+  author: Frenkel TUD 2012-09
+  adds a dummy state if dae contains no states"
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+  Boolean daeContainsNoStates;  
+algorithm
+  BackendDAE.DAE(eqs=systs,shared=shared) := inBackendDAE;
+  // check if the DAE has states
+  daeContainsNoStates := addDummyStateIfNeeded1(systs);
+  // adrpo: add the dummy derivative state ONLY IF the DAE contains no states
+  systs := Debug.bcallret1(daeContainsNoStates,addDummyState,systs,systs);
+  outBackendDAE := Util.if_(daeContainsNoStates,BackendDAE.DAE(systs,shared),inBackendDAE);
+end addDummyStateIfNeeded;
+
+protected function addDummyStateIfNeeded1
+  input BackendDAE.EqSystems iSysts;
+  output Boolean oContainsNoStates;
+algorithm
+  oContainsStates := match(iSysts)
+    local
+      BackendDAE.EqSystems systs;
+      BackendDAE.Variables vars;
+      Boolean containsNoStates;
+    case ({}) then true;
+    case (BackendDAE.EQSYSTEM(orderedVars = vars)::systs)
+      equation
+        containsNoStates = BackendVariable.traverseBackendDAEVarsWithStop(vars, traverserVaraddDummyStateIfNeeded, true);
+        containsNoStates = Debug.bcallret1(containsNoStates,addDummyStateIfNeeded1,systs,containsNoStates);
+      then
+        containsNoStates;
+  end match;
+end addDummyStateIfNeeded1;
+
+protected function traverserVaraddDummyStateIfNeeded
+ input tuple<BackendDAE.Var, Boolean> inTpl;
+ output tuple<BackendDAE.Var, Boolean, Boolean> outTpl;
+algorithm
+  outTpl:= match (inTpl)
+    local
+      BackendDAE.Var v;
+      Boolean b;
+    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE()),_))
+      then ((v,false,false));
+    case ((v,b)) then ((v,b,b));
+  end match;
+end traverserVaraddDummyStateIfNeeded;
+
+protected function addDummyState
+"function: addDummyState
+  In order for the solver to work correctly at least one state variable
+  must exist in the equation system. This function therefore adds a
+  dummy state variable and an equation for that variable."
+  input BackendDAE.EqSystems isysts;
+  output BackendDAE.EqSystems osysts;
+protected
+  DAE.ComponentRef cr;
+  BackendDAE.Var v;
+  BackendDAE.Variables vars;
+  DAE.Exp exp;
+  BackendDAE.Equation eqn;
+  BackendDAE.EquationArray eqns;
+  array<Integer> ass;
+  BackendDAE.EqSystem syst;
+algorithm
+  // generate dummy state
+  cr := ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
+  v := BackendDAE.VAR(cr, BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
+                            DAE.emptyElementSource,
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+                            NONE(),DAE.NON_CONNECTOR());
+  // generate vars
+  vars := BackendDAEUtil.listVar({v});
+  /*
+   * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
+   */
+  exp := Expression.crefExp(cr);
+  eqn := BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),DAE.RCONST(0.0), DAE.emptyElementSource);
+  eqns := BackendDAEUtil.listEquation({eqn});
+  // generate equationsystem
+  ass := listArray({1});
+  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(ass,ass,{BackendDAE.SINGLEEQUATION(1,1)}));
+  // add system to list of systems
+  osysts := syst::isysts;
+end addDummyState;
+
 // Copied from SimCodegen.generateSimulationCode.
 protected function createSimCode
   input BackendDAE.BackendDAE inBackendDAE;
@@ -1852,6 +1942,9 @@ algorithm
         ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
          //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
+       
+        // check if the Sytems has states
+        dlow = addDummyStateIfNeeded(dlow);
        
         (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
         BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 

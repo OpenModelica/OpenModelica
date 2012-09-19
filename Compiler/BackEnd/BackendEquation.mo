@@ -84,9 +84,9 @@ algorithm
   outIntegerLst:=
   matchcontinue (inBackendDAE,inInteger)
     local
-      list<BackendDAE.Value> res;
+      list<Integer> res;
       list<BackendDAE.ZeroCrossing> zcLst;
-      BackendDAE.Value when_index;
+      Integer when_index;
     case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zcLst))),when_index)
       equation
         res = getZeroCrossingIndicesFromWhenClause2(zcLst, 0, when_index);
@@ -106,8 +106,8 @@ algorithm
   outIntegerLst:=
   matchcontinue (inZeroCrossingLst1,inInteger2,inInteger3)
     local
-      BackendDAE.Value count_1,count,when_index;
-      list<BackendDAE.Value> resx,whenClauseList;
+      Integer count_1,count,when_index;
+      list<Integer> resx,whenClauseList;
       list<BackendDAE.ZeroCrossing> rest;
     case ({},_,_) then {};
     case ((BackendDAE.ZERO_CROSSING(occurWhenLst = whenClauseList) :: rest),count,when_index)
@@ -1420,11 +1420,11 @@ end equationSetnth;
 public function getEqns "function: getEqns
   author: Frenkel TUD 2011-05
   retursn the equations given by the list of indexes"
-  input list<BackendDAE.Value> inIndxes;
+  input list<Integer> inIndxes;
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEqns;
 protected
-  list<BackendDAE.Value> indxs;
+  list<Integer> indxs;
 algorithm
   indxs := List.map1(inIndxes, intSub, 1);
   outEqns := List.map1r(indxs, BackendDAEUtil.equationNth, inEquationArray);  

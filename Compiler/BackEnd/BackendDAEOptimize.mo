@@ -1751,61 +1751,6 @@ algorithm
   end match;
 end replaceWhenClauseTraverser;
 
-protected function replaceAlgorithmTraverser "function: replaceAlgorithmTraverser
-  author: Frenkel TUD 2010-04
-  It is possible to change the algorithm.
-"
-  input tuple<DAE.Algorithm,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>>> inTpl;
-  output tuple<DAE.Algorithm,tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>>> outTpl;
-algorithm
-  outTpl:=
-  match (inTpl)
-    local 
-      list<DAE.Statement> statementLst,statementLst_1;
-      BackendVarTransform.VariableReplacements repl;
-      list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttpllst;
-      BackendDAE.Variables vars;
-      DAE.Algorithm alg;
-      Boolean b;
-    case ((DAE.ALGORITHM_STMTS(statementLst=statementLst),(repl,vars,inouttpllst)))
-      equation
-        (statementLst_1,b) = BackendVarTransform.replaceStatementLst(statementLst,repl,NONE(),{},false);
-        (alg,(repl,vars,inouttpllst)) =  replaceAlgorithmTraverser1(b,statementLst_1,(repl,vars,inouttpllst));
-      then
-        ((alg,(repl,vars,inouttpllst)));
-  end match;
-end replaceAlgorithmTraverser;
-
-protected function replaceAlgorithmTraverser1 "function: replaceAlgorithmTraverser1
-  author: Frenkel TUD 2010-04
-  It is possible to change the algorithm.
-"
-  input Boolean b;
-  input list<DAE.Statement> inStms;
-  input tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> inTpl;
-  output DAE.Algorithm outAlg;
-  output tuple<BackendVarTransform.VariableReplacements,BackendDAE.Variables,list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>>> outTpl;
-algorithm
-  (outAlg,outTpl):=
-  match (b,inStms,inTpl)
-    local 
-      list<DAE.Statement> statementLst;
-      BackendVarTransform.VariableReplacements repl;
-      list<Option<tuple<list<DAE.Exp>,list<DAE.Exp>>>> inouttpllst;
-      tuple<list<DAE.Exp>,list<DAE.Exp>> inouttpl;
-      BackendDAE.Variables vars;
-      DAE.Algorithm alg;
-      case (false,statementLst,(repl,vars,inouttpllst))
-        then (DAE.ALGORITHM_STMTS(statementLst),(repl,vars,NONE()::inouttpllst));
-    case (true,statementLst,(repl,vars,inouttpllst))
-      equation
-        alg = DAE.ALGORITHM_STMTS(statementLst);
-        inouttpl = ({},{}); // BackendDAECreate.lowerAlgorithmInputsOutputs(vars,alg);
-      then
-        (alg,(repl,vars,SOME(inouttpl)::inouttpllst));
-  end match;
-end replaceAlgorithmTraverser1;
-
 protected function replacementsInEqns2
 "function: replacementsInEqns1
   author: Frenkel TUD 2011-04"
@@ -2929,13 +2874,11 @@ protected function countsimpleEquation
 algorithm
   _ := matchcontinue(elem,length,pos,syst,shared)
     local 
-      DAE.ComponentRef cr,cr2;
-      Integer i,j,pos_1,k,eqTy;
+      DAE.ComponentRef cr;
+      Integer i,j,pos_1;
       DAE.Exp es,cre,e1,e2;
-      BackendDAE.BinTree newvars,newvars1;
       BackendDAE.Variables vars,knvars;
-      BackendDAE.Var var,var2,var3;
-      BackendDAE.BackendDAE dae1;
+      BackendDAE.Var var;
       BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn;
       Boolean negate;
@@ -2944,7 +2887,7 @@ algorithm
     // wbraun:
     // speacial case for Jacobains, since there are all known variablen
     // time depending input variables    
-    case ({i},length,pos,syst,shared as BackendDAE.SHARED(backendDAEType = BackendDAE.JACOBIAN()))
+    case ({i},_,_,_,BackendDAE.SHARED(backendDAEType = BackendDAE.JACOBIAN()))
       equation 
         vars = BackendVariable.daeVars(syst);
         var = BackendVariable.getVarAt(vars,intAbs(i));
@@ -2964,7 +2907,7 @@ algorithm
         (_,{}) = ExpressionSolve.solve(e1,e2,cre);
       then ();              
     // a = const
-    case ({i},length,pos,syst,shared)
+    case ({i},_,_,_,_)
       equation 
         vars = BackendVariable.daeVars(syst);
         var = BackendVariable.getVarAt(vars,intAbs(i));
@@ -2984,7 +2927,7 @@ algorithm
         (_,{}) = ExpressionSolve.solve(e1,e2,cre);
       then ();
     // a = der(b) 
-    case ({i,j},length,pos,syst,shared)
+    case ({i,j},_,_,_,_)
       equation
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
@@ -2995,7 +2938,7 @@ algorithm
         ((_::_),(_::_)) = BackendVariable.getVar(cr,vars);
       then ();
     // a = b 
-    case ({i,j},length,pos,syst,shared)
+    case ({i,j},_,_,_,_)
       equation
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
@@ -3840,8 +3783,8 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
       DAE.Exp exp,e1,e2,ecr;
-      list<BackendDAE.Value> expvars,controleqns,expvars1;
-      list<list<BackendDAE.Value>> expvarseqns;
+      list<Integer> expvars,controleqns,expvars1;
+      list<list<Integer>> expvarseqns;
       
     case ((elem,pos,m,(mT,vars,eqns,changed)))
       equation
@@ -3920,10 +3863,10 @@ protected function varEqns
   autor Frenkel TUD 2011-04"
   input Integer v;
   input tuple<Integer,BackendDAE.IncidenceMatrixT> inTpl;
-  output list<BackendDAE.Value> outVarEqns;
+  output list<Integer> outVarEqns;
 protected
   Integer pos;
-  list<BackendDAE.Value> vareqns,vareqns1;
+  list<Integer> vareqns,vareqns1;
   BackendDAE.IncidenceMatrix mT;
 algorithm
   pos := Util.tuple21(inTpl);
@@ -3936,14 +3879,14 @@ end varEqns;
 protected function getControlEqns
 "function getControlEqns
   autor Frenkel TUD 2011-04"
-  input list<BackendDAE.Value> inVarsEqn;
-  input list<list<BackendDAE.Value>> inVarsEqns;
-  output list<BackendDAE.Value> outEqns;
+  input list<Integer> inVarsEqn;
+  input list<list<Integer>> inVarsEqns;
+  output list<Integer> outEqns;
 algorithm
   outEqns := match(inVarsEqn,inVarsEqns)
     local  
-      list<BackendDAE.Value> a,b,c,d;
-      list<list<BackendDAE.Value>> rest;
+      list<Integer> a,b,c,d;
+      list<list<Integer>> rest;
     case (a,{}) then a;
     case (a,b::rest)
       equation 
@@ -4617,7 +4560,6 @@ algorithm
       list<list<Real>> jacVals;
       Integer linInfo;
       list<DAE.ComponentRef> names;
-      BackendDAE.BinTree movedVars;
       BackendDAE.Matching matching;
       DAE.FunctionTree funcs;
   BackendDAE.Shared shared;
@@ -5519,17 +5461,17 @@ end getEqFromTupleLst;
 protected function correctAssignments
 " function: correctAssignments
   Correct the assignments"
-  input array<BackendDAE.Value> inV1;
-  input array<BackendDAE.Value> inV2;
+  input array<Integer> inV1;
+  input array<Integer> inV2;
   input list<Integer> inRLst;
   input list<Integer> inTLst;
-  output array<BackendDAE.Value> outV1;
-  output array<BackendDAE.Value> outV2;
+  output array<Integer> outV1;
+  output array<Integer> outV2;
 algorithm
   (outV1,outV2):=
   match (inV1,inV2,inRLst,inTLst)
     local
-      array<BackendDAE.Value> v1,v2,v1_1,v2_1,v1_2,v2_2;
+      array<Integer> v1,v2,v1_1,v2_1,v1_2,v2_2;
       list<Integer> rlst,tlst;
       Integer r,t;
     case (v1,v2,{},{}) then (v1,v2);
@@ -5547,20 +5489,20 @@ protected function getTearingVars
 " function: getTearingVars
   Substracts all interesting vars for tearing"
   input BackendDAE.IncidenceMatrix inM;
-  input array<BackendDAE.Value> inV1;
-  input array<BackendDAE.Value> inV2;
-  input list<BackendDAE.Value> inComp;
+  input array<Integer> inV1;
+  input array<Integer> inV2;
+  input list<Integer> inComp;
   input BackendDAE.BackendDAE inDlow;
-  output list<BackendDAE.Value> outVarLst;
+  output list<Integer> outVarLst;
   output list<DAE.ComponentRef> outCrLst;
 algorithm
   (outVarLst,outCrLst):=
   match (inM,inV1,inV2,inComp,inDlow)
     local
       BackendDAE.IncidenceMatrix m;
-      array<BackendDAE.Value> v1,v2;
-      BackendDAE.Value c,v;
-      list<BackendDAE.Value> comp,varlst;
+      array<Integer> v1,v2;
+      Integer c,v;
+      list<Integer> comp,varlst;
       BackendDAE.BackendDAE dlow;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
@@ -5619,7 +5561,7 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<Integer> eqns,eqns_1;
       BackendDAE.EqSystem syst;
-      tuple<Real,BackendDAE.Value> tupl;
+      tuple<Real,Integer> tupl;
        
     case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqns,tearingvars,tearingeqns,crlst)
       equation
@@ -5722,7 +5664,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       
-      tuple<Real,BackendDAE.Value> tupl;
+      tuple<Real,Integer> tupl;
       
       array<Option<BackendDAE.Equation>> equOptArr1,equOptArr;
       
@@ -5907,24 +5849,24 @@ end tearingSystem3;
 protected function residualEquation
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;
-  input list<BackendDAE.Value> inLst;
-  input list<BackendDAE.Value> inComp;
+  input list<Integer> inLst;
+  input list<Integer> inComp;
   input Real inMax;
-  input BackendDAE.Value inEq;
-  input list<BackendDAE.Value> inExclude;
-  input BackendDAE.Value inTearVar;
-  output tuple<Real,BackendDAE.Value> outTupl;
+  input Integer inEq;
+  input list<Integer> inExclude;
+  input Integer inTearVar;
+  output tuple<Real,Integer> outTupl;
 algorithm
   outTupl := matchcontinue(inM,inMT,inLst,inComp,inMax,inEq,inExclude,inTearVar)
   local
     BackendDAE.IncidenceMatrix m;
     BackendDAE.IncidenceMatrixT mt;
-    list<BackendDAE.Value> rest,comp,exclude;
-    BackendDAE.Value e,eq,tearVar;
+    list<Integer> rest,comp,exclude;
+    Integer e,eq,tearVar;
     Real max;
     //Real e2,t;
-    list<tuple<Real,BackendDAE.Value>> tupls;
-    tuple<Real,BackendDAE.Value> tupl;
+    list<tuple<Real,Integer>> tupls;
+    tuple<Real,Integer> tupl;
   case (m,mt,e::rest,comp,max,eq,exclude,tearVar)
     equation
       tupls = edgeDegree(mt[tearVar],{(0.0,0)},m);
@@ -5941,9 +5883,9 @@ end residualEquation;
 
 protected function edgeDegree
   input list<Integer> inLst;
-  input list<tuple<Real,BackendDAE.Value>> inTupls;
+  input list<tuple<Real,Integer>> inTupls;
   input BackendDAE.IncidenceMatrix inM;
-  output list<tuple<Real,BackendDAE.Value>> outTupls;
+  output list<tuple<Real,Integer>> outTupls;
 algorithm
   outTupls := matchcontinue(inLst,inTupls,inM)
   local
@@ -5951,8 +5893,8 @@ algorithm
     Integer e,deg;
     list<Integer> rest,incLst;
     Real degReal;
-    tuple<Real,BackendDAE.Value> tupl;
-    list<tuple<Real,BackendDAE.Value>> tupls,tupls1;
+    tuple<Real,Integer> tupl;
+    list<tuple<Real,Integer>> tupls,tupls1;
   case (e::rest,tupls,m)
     equation
       true = (e > 0);
@@ -5979,18 +5921,18 @@ end edgeDegree;
 
 protected function getMaxFromListWithTuples
 "gets the argument v such that f(v) is maximal; list<tuple> = {(f,v)}"
-  input list<tuple<Real,BackendDAE.Value>> inLst;
-  input tuple<Real,BackendDAE.Value> oldTupl;
-  input list<BackendDAE.Value> inExclude;
-  output tuple<Real,BackendDAE.Value> outTupl;
+  input list<tuple<Real,Integer>> inLst;
+  input tuple<Real,Integer> oldTupl;
+  input list<Integer> inExclude;
+  output tuple<Real,Integer> outTupl;
 algorithm
   outTupl := matchcontinue(inLst,oldTupl,inExclude)
   local
-    list<tuple<Real,BackendDAE.Value>> rest;
+    list<tuple<Real,Integer>> rest;
     Real weight,oldWeight;
-    BackendDAE.Value var,oldVar;
-    tuple<Real,BackendDAE.Value> tupl;
-    list<BackendDAE.Value> exclude;
+    Integer var,oldVar;
+    tuple<Real,Integer> tupl;
+    list<Integer> exclude;
   case ((weight,var)::rest,(oldWeight,oldVar),exclude)
     equation
       true = (var > 0);
@@ -6036,22 +5978,22 @@ protected function tearingVariable
 "chooses the variable with maximum weight"
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;
-  input list<BackendDAE.Value> inLst;
-  input list<BackendDAE.Value> inComp;
+  input list<Integer> inLst;
+  input list<Integer> inComp;
   input Real inMax;
-  input BackendDAE.Value inVar;
-  input list<BackendDAE.Value> inExclude;
+  input Integer inVar;
+  input list<Integer> inExclude;
   output tuple<Real,Integer> outTupl;
 algorithm
   outTupl := matchcontinue(inM,inMT,inLst,inComp,inMax,inVar,inExclude)
   local
     BackendDAE.IncidenceMatrix m;
     BackendDAE.IncidenceMatrixT mt;
-    list<BackendDAE.Value> rest,comp,exclude;
-    BackendDAE.Value v,var;
+    list<Integer> rest,comp,exclude;
+    Integer v,var;
     Real max;
-    list<tuple<Real,BackendDAE.Value>> tupls;
-    tuple<Real,BackendDAE.Value> tupl;
+    list<tuple<Real,Integer>> tupls;
+    tuple<Real,Integer> tupl;
   case (m,mt,v::rest,comp,max,var,exclude)
     equation
       tupls = weightVariables(m,mt,v::rest,comp,{(0.0,0)},exclude);
@@ -6094,21 +6036,21 @@ end printIntList;
 protected function weightVariables
   input BackendDAE.IncidenceMatrix inM; 
   input BackendDAE.IncidenceMatrixT inMT;
-  input list<BackendDAE.Value> inVars;
-  input list<BackendDAE.Value> inComp;
-  input list<tuple<Real,BackendDAE.Value>> inTupls;
-  input list<BackendDAE.Value> inExclude;
-  output list<tuple<Real,BackendDAE.Value>> outTuple;  //(weight,variable)
+  input list<Integer> inVars;
+  input list<Integer> inComp;
+  input list<tuple<Real,Integer>> inTupls;
+  input list<Integer> inExclude;
+  output list<tuple<Real,Integer>> outTuple;  //(weight,variable)
 algorithm
   outTuple := matchcontinue(inM,inMT,inVars,inComp,inTupls,inExclude)
   local
     BackendDAE.IncidenceMatrix m;
     BackendDAE.IncidenceMatrixT mt;
-    list<BackendDAE.Value> rest,comp,exclude,incidenceLst;
-    BackendDAE.Value v;
+    list<Integer> rest,comp,exclude,incidenceLst;
+    Integer v;
     Real weight1;
-    tuple<Real,BackendDAE.Value> tupl2;
-    list<tuple<Real,BackendDAE.Value>> tupls,tupls1;
+    tuple<Real,Integer> tupl2;
+    list<tuple<Real,Integer>> tupls,tupls1;
   case (m,mt,{},comp,tupls,exclude)
     then
       tupls;
@@ -6139,16 +6081,16 @@ end weightVariables;
 
 protected function weightVariables1 "helper function for weightVariables"
   input BackendDAE.IncidenceMatrix inM;
-  input list<BackendDAE.Value> inIncidenceLst;
-  input list<BackendDAE.Value> inExclude;
+  input list<Integer> inIncidenceLst;
+  input list<Integer> inExclude;
   input Real inWeight;
   output Real outWeight;
 algorithm
   outWeight := matchcontinue(inM,inIncidenceLst,inExclude,inWeight)
   local
     BackendDAE.IncidenceMatrix m;
-    list<BackendDAE.Value> rest,lst1,exclude;
-    BackendDAE.Value eq,deg;
+    list<Integer> rest,lst1,exclude;
+    Integer eq,deg;
     Real weight,weight1,deg_real;
   case (m,{},exclude,weight) then weight;
   case (m,eq::rest,exclude,weight)
@@ -6275,20 +6217,20 @@ protected function getMaxfromListList
   If more than once is there the first will
   be selected."
   input BackendDAE.IncidenceMatrixT inM;
-  input list<BackendDAE.Value> inLst;
-  input list<BackendDAE.Value> inComp;
-  input BackendDAE.Value inMax;
-  input BackendDAE.Value inEqn;
-  input list<BackendDAE.Value> inExclude;
-  output BackendDAE.Value outEqn;
-  output BackendDAE.Value outMax;
+  input list<Integer> inLst;
+  input list<Integer> inComp;
+  input Integer inMax;
+  input Integer inEqn;
+  input list<Integer> inExclude;
+  output Integer outEqn;
+  output Integer outMax;
 algorithm
   (outEqn,outMax):=
   matchcontinue (inM,inLst,inComp,inMax,inEqn,inExclude)
     local
       BackendDAE.IncidenceMatrixT m;
-      list<BackendDAE.Value> rest,eqn,eqn_1,eqn_2,eqn_3,comp,exclude;
-      BackendDAE.Value v,v1,v2,max,max_1,en,en_1,en_2;
+      list<Integer> rest,eqn,eqn_1,eqn_2,eqn_3,comp,exclude;
+      Integer v,v1,v2,max,max_1,en,en_1,en_2;
     case (m,{},comp,max,en,exclude) then (en,max);
     case (m,v::rest,comp,max,en,exclude)
       equation
@@ -6319,21 +6261,21 @@ protected function getMaxfromListListVar
 " function: getMaxfromArrayListVar
   same as getMaxfromListList but prefers states."
   input BackendDAE.IncidenceMatrixT inM;
-  input list<BackendDAE.Value> inLst;
-  input list<BackendDAE.Value> inComp;
-  input BackendDAE.Value inMax;
-  input BackendDAE.Value inEqn;
-  input list<BackendDAE.Value> inExclude;
+  input list<Integer> inLst;
+  input list<Integer> inComp;
+  input Integer inMax;
+  input Integer inEqn;
+  input list<Integer> inExclude;
   input BackendDAE.Variables inVars;
-  output BackendDAE.Value outEqn;
-  output BackendDAE.Value outMax;
+  output Integer outEqn;
+  output Integer outMax;
 algorithm
   (outEqn,outMax):=
   matchcontinue (inM,inLst,inComp,inMax,inEqn,inExclude,inVars)
     local
       BackendDAE.IncidenceMatrixT m;
-      list<BackendDAE.Value> rest,eqn,eqn_1,eqn_2,eqn_3,comp,exclude;
-      BackendDAE.Value v,v1,v2,max,max_1,en,en_1,en_2;
+      list<Integer> rest,eqn,eqn_1,eqn_2,eqn_3,comp,exclude;
+      Integer v,v1,v2,max,max_1,en,en_1,en_2;
       BackendDAE.Variables vars;
       BackendDAE.Var var;
       Boolean b;
@@ -6371,14 +6313,14 @@ end getMaxfromListListVar;
 protected function removeMultiple
 " function: removeMultiple
   remove mulitple entries from the list"
-  input list<BackendDAE.Value> inLst;
-  output list<BackendDAE.Value> outLst;
+  input list<Integer> inLst;
+  output list<Integer> outLst;
 algorithm
   outLst:=
   matchcontinue (inLst)
     local
-      list<BackendDAE.Value> rest,lst;
-      BackendDAE.Value v;
+      list<Integer> rest,lst;
+      Integer v;
     case ({}) then {};
     case (v::{})
       then

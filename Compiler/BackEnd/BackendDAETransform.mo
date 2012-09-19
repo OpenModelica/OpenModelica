@@ -185,7 +185,7 @@ public function checkMatching
 algorithm
   _ := matchcontinue (syst,inMatchingOptions)
     local
-      BackendDAE.Value esize,vars_size;
+      Integer esize,vars_size;
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       String esize_str,vsize_str;
@@ -238,9 +238,9 @@ protected function assignmentsVector
 algorithm
   outIntegerArray := matchcontinue (inAssignments)
     local
-      array<BackendDAE.Value> newarr,newarr_1,arr;
-      array<BackendDAE.Value> vec;
-      BackendDAE.Value size;
+      array<Integer> newarr,newarr_1,arr;
+      array<Integer> vec;
+      Integer size;
     case (BackendDAE.ASSIGNMENTS(actualSize = size,arrOfIndices = arr))
       equation
         newarr = arrayCreate(size, 0);
@@ -267,8 +267,8 @@ protected function assignmentsCreate
   input Integer v;
   output BackendDAE.Assignments outAssignments;
 protected
-  list<BackendDAE.Value> lst;
-  array<BackendDAE.Value> arr;
+  list<Integer> lst;
+  array<Integer> arr;
 algorithm
   arr := arrayCreate(memsize, 0);
   outAssignments := BackendDAE.ASSIGNMENTS(n,memsize,arr);
@@ -287,8 +287,8 @@ protected function assignmentsSetnth
 algorithm
   outAssignments := matchcontinue (inAssignments1,n,v)
     local
-      array<BackendDAE.Value> arr;
-      BackendDAE.Value s,ms;
+      array<Integer> arr;
+      Integer s,ms;
     case (BackendDAE.ASSIGNMENTS(actualSize = s,allocatedSize = ms,arrOfIndices = arr),_,_)
       equation
         arr = arrayUpdate(arr, n, v);
@@ -315,7 +315,7 @@ algorithm
   outAssignments := matchcontinue (inAssignments,n)
     local
       BackendDAE.Assignments ass,ass_1,ass_2;
-      BackendDAE.Value n_1;
+      Integer n_1;
     case (ass,0) then ass;
     case (ass,_)
       equation
@@ -349,8 +349,8 @@ algorithm
   outAssignments := matchcontinue (inAssignments,v)
     local
       Real msr,msr_1;
-      BackendDAE.Value ms_1,s_1,ms_2,s,ms;
-      array<BackendDAE.Value> arr_1,arr_2,arr;
+      Integer ms_1,s_1,ms_2,s,ms;
+      array<Integer> arr_1,arr_2,arr;
 
     case (BackendDAE.ASSIGNMENTS(actualSize = s,allocatedSize = ms,arrOfIndices = arr),_)
       equation
@@ -562,7 +562,7 @@ protected function assignOneInEqn "function: assignOneInEqn
   output BackendDAE.Assignments outAssignments1;
   output BackendDAE.Assignments outAssignments2;
 protected
-  list<BackendDAE.Value> vars;
+  list<Integer> vars;
 algorithm
   vars := BackendDAEUtil.varsInEqn(m, i);
   (outAssignments1,outAssignments2):= assignFirstUnassigned(i, vars, ass1, ass2);
@@ -590,8 +590,8 @@ algorithm
   matchcontinue (i,inIntegerLst2,ass1,ass2)
     local
       BackendDAE.Assignments ass1_1,ass2_1;
-      BackendDAE.Value v;
-      list<BackendDAE.Value> vs;
+      Integer v;
+      list<Integer> vs;
     case (_,(v :: vs),_,_)
       equation
         false = intGt(getAssigned(v, ass1),0);
@@ -620,7 +620,7 @@ algorithm
   outInteger:=
   match (inInteger1,inAssignments)
     local
-      array<BackendDAE.Value> m;
+      array<Integer> m;
     case (_,BackendDAE.ASSIGNMENTS(arrOfIndices = m)) then m[inInteger1];
   end match;
 end getAssigned;
@@ -665,7 +665,7 @@ protected function forallUnmarkedVarsInEqn
   output BackendDAE.Assignments outAssignments1;
   output BackendDAE.Assignments outAssignments2;
 protected
-  list<BackendDAE.Value> vars,vars_1;
+  list<Integer> vars,vars_1;
 algorithm
   vars := BackendDAEUtil.varsInEqn(m, i);
   vars_1 := List.filter(vars, isNotVMarked);
@@ -704,9 +704,9 @@ algorithm
   (outAssignments1,outAssignments2):=
   matchcontinue (m,mt,i,inIntegerLst4,ass1,ass2)
     local
-      BackendDAE.Value assarg,v;
+      Integer assarg,v;
       BackendDAE.Assignments ass1_1,ass2_1,ass1_2,ass2_2;
-      list<BackendDAE.Value> vars,vs;
+      list<Integer> vars,vs;
     case (_,_,_,(vars as (v :: vs)),_,_)
       equation
         BackendDAEEXT.vMark(v);
@@ -889,7 +889,7 @@ algorithm
     local
       list<Integer> comp,vlst,eqngetlst;
       list<BackendDAE.Var> varlst;
-      list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst;
+      list<tuple<BackendDAE.Var,Integer>> var_varindx_lst;
       array<Integer> ass1,ass2;
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> eqn_lst;
@@ -1024,8 +1024,8 @@ algorithm
   outComp:=
   match (inComp,syst,shared,inAss1,inAss2)
     local
-      list<BackendDAE.Value> comp;
-      list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst;
+      list<Integer> comp;
+      list<tuple<BackendDAE.Var,Integer>> var_varindx_lst;
       array<Integer> ass1,ass2;
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> eqn_lst;
@@ -1048,7 +1048,7 @@ end analyseStrongComponent;
 protected function analyseStrongComponentBlock"function: analyseStrongComponentBlock
   author: Frenkel TUD 2011-05 
   helper for analyseStrongComponent."
-  input list<BackendDAE.Value> inComp;  
+  input list<Integer> inComp;  
   input list<BackendDAE.Equation> inEqnLst;
   input list<tuple<BackendDAE.Var,Integer>> inVarVarindxLst; 
   input BackendDAE.EqSystem isyst;
@@ -1062,8 +1062,8 @@ algorithm
   matchcontinue (inComp,inEqnLst,inVarVarindxLst,isyst,ishared,inAss1,inAss2,inLoop)
     local
       Integer compelem,v;
-      list<BackendDAE.Value> comp,varindxs;
-      list<tuple<BackendDAE.Var,BackendDAE.Value>> var_varindx_lst,var_varindx_lst_cond;
+      list<Integer> comp,varindxs;
+      list<tuple<BackendDAE.Var,Integer>> var_varindx_lst,var_varindx_lst_cond;
       array<Integer> ass1,ass2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -1813,8 +1813,8 @@ algorithm
   outIntegerLst:=
   matchcontinue (eqn,m,mt,a1,a2)
     local
-      BackendDAE.Value var;
-      list<BackendDAE.Value> reachable,reachable_1;
+      Integer var;
+      list<Integer> reachable,reachable_1;
       String eqnstr;
     case (_,_,_,_,_)
       equation
@@ -1922,8 +1922,8 @@ algorithm
   (ostack,ocomps):=
   matchcontinue (v,istack,number,lowlink)
     local
-      BackendDAE.Value lv,nv;
-      list<BackendDAE.Value> comps,stack;
+      Integer lv,nv;
+      list<Integer> comps,stack;
     case (_,_,_,_)
       equation
         lv = lowlink[v];
@@ -2676,9 +2676,9 @@ algorithm
   matchcontinue (eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
     local
       list<Integer> eqns1,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
-      list<BackendDAE.Key> states;
-      array<list<BackendDAE.Value>> mt;
-      BackendDAE.Value stateno;
+      list<DAE.ComponentRef> states;
+      array<list<Integer>> mt;
+      Integer stateno;
       DAE.ComponentRef state,dummy_der;
       list<String> es;
       String es_1;
@@ -2819,7 +2819,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
-      list<BackendDAE.Value> indx;
+      list<Integer> indx;
       BackendDAE.Variables vars_1,vars;
       BackendDAE.EquationArray e;
       Option<BackendDAE.IncidenceMatrix> om,omT;
@@ -2865,12 +2865,12 @@ protected function propagateDummyFixedAttribute
 algorithm
   osyst := matchcontinue (syst,inIntegerLst,inComponentRef,inInteger)
     local
-      list<BackendDAE.Value> eqns;
+      list<Integer> eqns;
       list<BackendDAE.Equation> eqns_lst;
-      list<BackendDAE.Key> crefs;
+      list<DAE.ComponentRef> crefs;
       DAE.ComponentRef state,dummy;
       BackendDAE.Var v,v_1,v_2;
-      BackendDAE.Value indx,indx_1,dummy_no;
+      Integer indx,indx_1,dummy_no;
       Boolean dummy_fixed;
       BackendDAE.Variables vars_1,vars,kv,ev,av;
       BackendDAE.BackendDAE dae;
@@ -2928,7 +2928,7 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
-      list<BackendDAE.Key> crs;
+      list<DAE.ComponentRef> crs;
 
     case (vars,(cr :: crs))
       equation
@@ -2971,8 +2971,8 @@ algorithm
   (osyst,oshared):=
   matchcontinue (inExp1,inExp2,isyst,ishared,inIntegerLst6)
     local
-      Option<array<list<BackendDAE.Value>>> m,mt;
-      BackendDAE.Value e_1,e;
+      Option<array<list<Integer>>> m,mt;
+      Integer e_1,e;
       BackendDAE.Equation eqn,eqn_1;
       BackendDAE.Variables v_1,v,kv,ev,av;
       BackendDAE.EquationArray eqns_1,eqns,seqns,seqns1,ie,ie1;
@@ -2983,7 +2983,7 @@ algorithm
       DAE.FunctionTree funcs;
       list<BackendDAE.WhenClause> wclst;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst;
-      list<BackendDAE.Value> rest;
+      list<Integer> rest;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.Exp stateexpcall,dummyderexp;
@@ -3600,7 +3600,7 @@ algorithm
   matchcontinue (varCrefs,varIndices,syst,mapIncRowEqn,so)
     local
       DAE.ComponentRef s;
-      BackendDAE.Value sn;
+      Integer sn;
       BackendDAE.Variables vars;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -4089,12 +4089,12 @@ algorithm
   matchcontinue (inExpComponentRefLst,inIntegerLst,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT)
     local
       DAE.ComponentRef cr;
-      BackendDAE.Value indx,prio;
-      list<tuple<BackendDAE.Key, BackendDAE.Value, BackendDAE.Value>> res;
-      list<BackendDAE.Key> crs;
-      list<BackendDAE.Value> indxs;
+      Integer indx,prio;
+      list<tuple<DAE.ComponentRef, Integer, Integer>> res;
+      list<DAE.ComponentRef> crs;
+      list<Integer> indxs;
       BackendDAE.BackendDAE dae;
-      array<list<BackendDAE.Value>> m,mt;
+      array<list<Integer>> m,mt;
     case ({},{},_,_,_) then {};
     case ((cr :: crs),(indx :: indxs),dae,m,mt)
       equation
@@ -4119,9 +4119,9 @@ algorithm
   matchcontinue (inComponentRef,inInteger,inBackendDAE,inIncidenceMatrix,inIncidenceMatrixT)
     local
       DAE.ComponentRef cr;
-      BackendDAE.Value indx;
+      Integer indx;
       BackendDAE.BackendDAE dae;
-      array<list<BackendDAE.Value>> m,mt;
+      array<list<Integer>> m,mt;
     case (cr,indx,dae,m,mt) then (cr,indx,0);
   end matchcontinue;
 end calculateDummyStatePriority;
@@ -4147,12 +4147,12 @@ algorithm
   (outExpComponentRefLst,outIntegerLst):=
   matchcontinue (inIntegerLst,syst,inExpComponentRefLst,inIntegerLst1)
     local
-      list<BackendDAE.Key> res1,res11;
-      list<BackendDAE.Value> res2,res22,rest;
-      BackendDAE.Value e;
+      list<DAE.ComponentRef> res1,res11;
+      list<Integer> res2,res22,rest;
+      Integer e;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      array<list<BackendDAE.Value>> m;
+      array<list<Integer>> m;
       String se;
       Integer e_1;
       DAE.ElementSource source;
@@ -4195,10 +4195,10 @@ algorithm
   (outExpComponentRefLst,outIntegerLst):=
   matchcontinue (vars,inIntegerLst,inExpComponentRefLst,inIntegerLst1)
     local
-      BackendDAE.Value v,v_1;
+      Integer v,v_1;
       DAE.ComponentRef cr;
-      list<BackendDAE.Key> res1;
-      list<BackendDAE.Value> res2,rest;
+      list<DAE.ComponentRef> res1;
+      list<Integer> res2,rest;
     case (vars,{},_,_) then (inExpComponentRefLst,inIntegerLst1);
     case (vars,(v :: rest),_,_)
       equation
@@ -4253,11 +4253,11 @@ algorithm
   (osyst,oshared,outIntegerLst6,outStateOrd,outOrgEqnsLst):=
   matchcontinue (isyst,ishared,inIntegerLst6,inStateOrd,inOrgEqnsLst)
     local
-      array<list<BackendDAE.Value>> m,mt;
-      BackendDAE.Value e_1,leneqns,e;
+      array<list<Integer>> m,mt;
+      Integer e_1,leneqns,e;
       BackendDAE.Equation eqn,eqn_1;
       BackendDAE.EquationArray eqns_1,eqns;
-      list<BackendDAE.Value> reqns,es;
+      list<Integer> reqns,es;
       BackendDAE.Variables v;
       list<BackendDAE.Var> ev;
       BackendDAE.Matching matching;

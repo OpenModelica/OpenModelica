@@ -733,7 +733,7 @@ algorithm
     case (cache,env,dae,ap,classname)
       equation
         true = runBackendQ();
-        dlow = BackendDAECreate.lower(dae,cache,env,true);
+        dlow = BackendDAECreate.lower(dae,cache,env);
         dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(),NONE(),NONE(),NONE());
         modpar(dlow_1);
         Debug.execStat("Lowering Done",CevalScript.RT_CLOCK_EXECSTAT_MAIN);
