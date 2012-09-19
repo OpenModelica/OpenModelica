@@ -398,7 +398,7 @@ protected function generateEquation
   output list<SimCode.SimEqSystem> oInitialEquations;
   output Integer oindex;
 algorithm
-  (oEquations,oInitialEquations) := match(inElement,iEquations,iInitialEquations,index)
+  (oEquations,oInitialEquations,oindex) := match(inElement,iEquations,iInitialEquations,index)
     local 
       DAE.Exp e1,e2,res;
       DAE.ComponentRef cr1,cr2;
