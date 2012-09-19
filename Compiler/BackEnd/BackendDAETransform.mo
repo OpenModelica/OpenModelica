@@ -2243,59 +2243,6 @@ algorithm
   end matchcontinue;
 end getOrgEqn;
 
-protected function getVarsOfOrgEqn
-"function: getVarsOfOrgEqn
-  author: Frenkel TUD 2011-05
-  returns the first equation of each orgeqn list."
-  input BackendDAE.ConstraintEquations inOrgEqns;
-  input BackendDAE.Variables inVars;
-  output BackendDAE.Variables outVars;
-algorithm
-  outVars :=
-  matchcontinue (inOrgEqns,inVars)
-    local
-      list<BackendDAE.Equation> eqns;
-      list<BackendDAE.Equation> orgeqn;
-      BackendDAE.ConstraintEquations rest;
-      BackendDAE.Variables vars,v,vars1;
-    
-    case ({},_) then BackendDAEUtil.emptyVars();
-    case ((_,orgeqn)::rest,v)
-      equation
-        vars = getVarsOfOrgEqn(rest,v);
-        vars1 = BackendEquation.equationsLstVars(orgeqn,v,vars);
-      then
-        vars1;
-  end matchcontinue;
-end getVarsOfOrgEqn;
-
-public function getVarsOfOrgEqn1
-"function: getVarsOfOrgEqn1
-  author: Frenkel TUD 2011-05
-  returns the first equation of each orgeqn list."
-  input list<tuple<Integer,Integer,Integer>> inOrgEqns;
-  input BackendDAE.EqSystem syst;
-  output BackendDAE.Variables outVars;
-algorithm
-  outVars :=
-  match (inOrgEqns,syst)
-    local
-      list<BackendDAE.Equation> orgeqn;
-      list<Integer> orgeqn_indxs;
-      BackendDAE.Variables vars,v,vars1;
-    
-    case ({},_) then BackendDAEUtil.emptyVars();
-    case (inOrgEqns,syst)
-      equation
-        orgeqn_indxs = List.map(inOrgEqns,Util.tuple32);
-        orgeqn = BackendEquation.getEqns(orgeqn_indxs,BackendEquation.daeEqns(syst));
-        vars = BackendDAEUtil.emptyVars();
-        vars1 = BackendEquation.equationsLstVars(orgeqn,BackendVariable.daeVars(syst),vars);
-      then
-        vars1;
-  end match;
-end getVarsOfOrgEqn1;
-
 public function dumpStateOrder
 "function: dumpStateOrder
   author: Frenkel TUD 2011-05
@@ -4311,7 +4258,8 @@ algorithm
       BackendDAE.Equation eqn,eqn_1;
       BackendDAE.EquationArray eqns_1,eqns;
       list<BackendDAE.Value> reqns,es;
-      BackendDAE.Variables v,ev;
+      BackendDAE.Variables v;
+      list<BackendDAE.Var> ev;
       BackendDAE.Matching matching;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -4324,8 +4272,8 @@ algorithm
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        ev = BackendEquation.equationsLstVarsWithoutRelations({eqn},v,BackendDAEUtil.emptyVars());
-        false = BackendVariable.hasContinousVar(BackendDAEUtil.varList(ev));
+        ev = BackendEquation.equationsLstVarsWithoutRelations({eqn},v);
+        false = BackendVariable.hasContinousVar(ev);
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared, es,inStateOrd,inOrgEqnsLst);
       then

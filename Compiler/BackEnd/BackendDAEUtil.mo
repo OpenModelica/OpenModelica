@@ -6910,7 +6910,7 @@ algorithm
         es = calculateJacobianRow3(eqn_indx,vindx,e_2,source,iAcc);
       then
         calculateJacobianRow2(inExp, vars, eqn_indx, vindxs, differentiateIfExp,iShared,source,es);
-    case (_,_,_,_,_,_,_,_)
+    else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         str = ExpressionDump.printExpStr(inExp);
@@ -6953,6 +6953,7 @@ algorithm
   matchcontinue (vars,eqns,inTplIntegerIntegerEquationLstOption)
     local
       list<tuple<BackendDAE.Value, BackendDAE.Value, BackendDAE.Equation>> jac;
+      Boolean b,b1;
     case (_,_,SOME(jac))
       equation
         true = jacobianConstant(jac);
@@ -6961,13 +6962,84 @@ algorithm
         BackendDAE.JAC_CONSTANT();
     case (_,_,SOME(jac))
       equation
-        true = jacobianNonlinear(vars, jac);
+        b = jacobianNonlinear(vars, jac);
+        // check also if variables occure in if expressions
+        ((_,false)) = Debug.bcallret3(not b,traverseBackendDAEExpsEqnsWithStop,eqns,varsNotInRelations,(vars,true),(vars,false));
       then
         BackendDAE.JAC_NONLINEAR();
     case (_,_,SOME(jac)) then BackendDAE.JAC_TIME_VARYING();
     case (_,_,NONE()) then BackendDAE.JAC_NO_ANALYTIC();
   end matchcontinue;
 end analyzeJacobian;
+
+protected function varsNotInRelations "function varsNotInRelations
+  author: Frenkel TUD 2012-09"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> inTplExpTypeA;
+  output tuple<DAE.Exp,Boolean, tuple<BackendDAE.Variables,Boolean>> outTplExpBoolTypeA;
+algorithm
+  outTplExpBoolTypeA := match(inTplExpTypeA)
+    local
+      DAE.Exp cond,t,f,e,e1;
+      BackendVarTransform.VariableReplacements repl;
+      BackendDAE.Variables vars;
+      Boolean b,b1;
+      Absyn.Path path;
+      list<DAE.Exp> expLst;
+      Option<DAE.FunctionTree> funcs;
+    case ((DAE.IFEXP(cond,t,f),(vars,b)))
+      equation
+        // check if vars not in condition
+        ((_,(_,b))) = Expression.traverseExpTopDown(cond, getEqnsysRhsExp2, (vars,b));
+        ((t,(_,b))) = Expression.traverseExpTopDown(t, varsNotInRelations, (vars,b));
+        ((f,(_,b))) = Expression.traverseExpTopDown(f, varsNotInRelations, (vars,b));
+      then
+        ((DAE.IFEXP(cond,t,f),false,(vars,b)));
+    case ((e as DAE.CALL(path = path as Absyn.IDENT(name = "der")),(vars,b)))
+      then
+        ((e,true,(vars,b)));         
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b)))
+      then
+        ((e,false,(vars,b)));         
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(vars,b)))
+      then
+        ((e,false,(vars,b))); 
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(vars,b)))
+      then
+        ((e,false,(vars,b)));
+    case ((e as DAE.CALL(expLst=expLst),(vars,b)))
+      equation
+        // check if vars not in condition
+        ((_,(_,b))) = Expression.traverseExpListTopDown(expLst, getEqnsysRhsExp2, (vars,b));
+      then
+        ((e,false,(vars,b)));
+    case ((e as DAE.LBINARY(exp1=_),(vars,b)))
+      equation
+        // check if vars not in condition
+        ((_,(_,b))) = Expression.traverseExpTopDown(e, getEqnsysRhsExp2, (vars,b));
+      then
+        ((e,false,(vars,b)));
+    case ((e as DAE.LUNARY(exp=_),(vars,b)))
+      equation
+        // check if vars not in condition
+        ((_,(_,b))) = Expression.traverseExpTopDown(e, getEqnsysRhsExp2, (vars,b));
+      then
+        ((e,false,(vars,b)));
+    case ((e as DAE.RELATION(exp1=_),(vars,b)))
+      equation
+        // check if vars not in condition
+        ((_,(_,b))) = Expression.traverseExpTopDown(e, getEqnsysRhsExp2, (vars,b));
+      then
+        ((e,false,(vars,b)));
+    case ((e as DAE.ASUB(exp=e1,sub=expLst),(vars,b)))
+      equation
+        // check if vars not in condition
+        ((_,(_,b))) = Expression.traverseExpTopDown(e1, varsNotInRelations, (vars,b));
+        ((_,(_,b))) = Debug.bcallret3(b,Expression.traverseExpListTopDown,expLst, getEqnsysRhsExp2, (vars,b),(expLst,(vars,b)));
+      then
+        ((e,false,(vars,b)));        
+    case ((e,(vars,b))) then ((e,b,(vars,b)));
+  end match;
+end varsNotInRelations;
 
 protected function rhsConstant "function: rhsConstant
   author: PA
@@ -7038,7 +7110,7 @@ algorithm
         res = Expression.isConst(rhs_exp);
       then
         ((eqn,res,(vars,b and res)));
-    case ((eqn,(vars,b))) then ((eqn,true,(vars,b)));
+    case ((eqn,(vars,_))) then ((eqn,false,(vars,false)));
   end matchcontinue;
 end rhsConstant2;
 
@@ -7648,16 +7720,14 @@ algorithm
   outTypeB := matchcontinue(inArray,func,arrayfunc,pos,len,inTypeB)
     local 
       Type_b ext_arg_1,ext_arg_2;
+      Boolean b;
     case(_,_,_,_,_,_) equation 
       true = pos > len;
     then inTypeB;    
     case(_,_,_,_,_,_) equation
-      (true,ext_arg_1) = arrayfunc(inArray[pos],func,inTypeB);
-      ext_arg_2 = traverseBackendDAEArrayNoCopyWithStop(inArray,func,arrayfunc,pos+1,len,ext_arg_1);
+      (b,ext_arg_1) = arrayfunc(inArray[pos],func,inTypeB);
+      ext_arg_2 = Debug.bcallret6(b,traverseBackendDAEArrayNoCopyWithStop,inArray,func,arrayfunc,pos+1,len,ext_arg_1,ext_arg_1);
     then ext_arg_2;
-    case(_,_,_,_,_,_) equation
-      (false,ext_arg_1) = arrayfunc(inArray[pos],func,inTypeB);
-    then ext_arg_1;
   end matchcontinue;
 end traverseBackendDAEArrayNoCopyWithStop;
 
@@ -7993,6 +8063,35 @@ algorithm
   end matchcontinue;
 end traverseBackendDAEExpsEqns;
 
+public function traverseBackendDAEExpsEqnsWithStop "function: traverseBackendDAEExpsEqnsWithStop
+  author: Frenkel TUD
+
+  Helper for traverseBackendDAEExpsEqns
+"
+  replaceable type Type_a subtypeof Any;
+  input EquationArray inEquationArray;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  outTypeA :=
+  matchcontinue (inEquationArray,func,inTypeA)
+    local
+      array<Option<BackendDAE.Equation>> equOptArr;
+    case ((BackendDAE.EQUATION_ARRAY(equOptArr = equOptArr)),_,_)
+      then traverseBackendDAEArrayNoCopyWithStop(equOptArr,func,traverseBackendDAEExpsOptEqnWithStop,1,arrayLength(equOptArr),inTypeA);
+    else
+      equation
+        Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.traverseBackendDAEExpsEqnsWithStop failed");
+      then
+        fail();
+  end matchcontinue;
+end traverseBackendDAEExpsEqnsWithStop;
+
 public function traverseBackendDAEExpsEqnsWithUpdate "function: traverseBackendDAEExpsEqns
   author: Frenkel TUD
 
@@ -8039,6 +8138,34 @@ protected function traverseBackendDAEExpsOptEqn "function: traverseBackendDAEExp
 algorithm
   (_,outTypeA) := traverseBackendDAEExpsOptEqnWithUpdate(inEquation,func,inTypeA);
 end traverseBackendDAEExpsOptEqn;
+
+protected function traverseBackendDAEExpsOptEqnWithStop "function: traverseBackendDAEExpsOptEqnWithStop
+  author: Frenkel TUD 2010-11
+  Helper for traverseBackendDAEExpsOptEqnWithStop."
+  replaceable type Type_a subtypeof Any;
+  input Option<BackendDAE.Equation> inEquation;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output Boolean outBoolean;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outBoolean,outTypeA) := match (inEquation,func,inTypeA)
+    local
+      BackendDAE.Equation eqn;
+      Type_a ext_arg_1;
+      Boolean b;
+    case (NONE(),_,_) then (true,inTypeA);
+    case (SOME(eqn),_,_)
+      equation
+        (b,ext_arg_1) = BackendEquation.traverseBackendDAEExpsEqnWithStop(eqn,func,inTypeA);
+      then
+        (b,ext_arg_1);
+  end match;
+end traverseBackendDAEExpsOptEqnWithStop;
 
 protected function traverseBackendDAEExpsOptEqnWithUpdate "function: traverseBackendDAEExpsOptEqn
   author: Frenkel TUD 2010-11
@@ -8429,13 +8556,11 @@ algorithm
         (isyst,ishared,NONE());      
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
       equation
-        //print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
+        //  print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE());
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);
-        profilerinit();
         (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, sssHandler, arg);
-        //profilerresults();        
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,SOME(arg));
     else

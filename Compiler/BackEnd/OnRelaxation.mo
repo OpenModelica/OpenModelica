@@ -3798,7 +3798,7 @@ algorithm
       equation
         false = intGt(vec2[id],0);
         e = Expression.expSub(e1,e2);
-        vlst = BackendDAEUtil.varList(BackendEquation.equationVars(eqn,vars));
+        vlst =BackendEquation.equationVars(eqn,vars);
         (cr,i) = getConstOneVariable(vlst,e,vec1,vars);
         vec1 = arrayUpdate(vec1,i,id);
         vec2 = arrayUpdate(vec2,id,i);

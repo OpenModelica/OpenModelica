@@ -1280,7 +1280,7 @@ algorithm
   end matchcontinue;
 end getCalledFunctionReferences;
 
-protected function elaborateFunctions
+public function elaborateFunctions
   input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
   input list<DAE.Exp> literals;
@@ -4323,7 +4323,7 @@ algorithm
     local
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,cont_var,disc_var,var_lst_1;
-      BackendDAE.Variables vars_1,vars,knvars,exvars,knvars_1,ave;
+      BackendDAE.Variables vars_1,vars,knvars,exvars,ave;
       BackendDAE.EquationArray eqns_1,eqns,eeqns;
       BackendDAE.BackendDAE subsystem_dae;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
@@ -4369,10 +4369,9 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar1(var_lst_1);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
         // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
         jac_tp = changeJactype(jac_tp);
-        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs,jac, jac_tp,helpVarInfo,funcs,iuniqueEqIndex,itempvars);
+        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars,eqns_1,constrs,clsAttrs,jac, jac_tp,helpVarInfo,funcs,iuniqueEqIndex,itempvars);
       then
         (equations_,equations_,uniqueEqIndex,tempvars);
     case (_,skipDiscInAlgorithm,true,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, constraints = constrs, classAttrs=clsAttrs,cache=cache,env=env,functionTree=funcs, eventInfo = ev, extObjClasses = eoc),comp as BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=disc_eqns,disc_vars=disc_vars),helpVarInfo,_,_)
@@ -4439,9 +4438,8 @@ algorithm
         ave = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         funcs = DAEUtil.avlTreeNew();
-        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(knvars_1,exvars,ave,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,ev,eoc,BackendDAE.ALGEQSYSTEM(),{});
+        shared = BackendDAE.SHARED(knvars,exvars,ave,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,ev,eoc,BackendDAE.ALGEQSYSTEM(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE());
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,SOME(m),SOME(mt),BackendDAE.NO_MATCHING());
         subsystem_dae = BackendDAE.DAE({syst},shared);
@@ -4472,8 +4470,7 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar1(var_lst_1);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        knvars_1 = BackendEquation.equationsVars(eqns_1,knvars);
-        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars_1,eqns_1,constrs,clsAttrs, jac, jac_tp, helpVarInfo,funcs,iuniqueEqIndex,itempvars);
+        (equations_,uniqueEqIndex,tempvars) = createOdeSystem2(false, skipDiscInAlgorithm, vars_1,knvars,eqns_1,constrs,clsAttrs, jac, jac_tp, helpVarInfo,funcs,iuniqueEqIndex,itempvars);
       then
         (equations_,equations_,uniqueEqIndex,tempvars);
     case (_, skipDiscInAlgorithm, false,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),_,comp as BackendDAE.TORNSYSTEM(tearingvars=tf, residualequations=rf, otherEqnVarTpl=eqnvartpllst, linear=b),helpVarInfo,_,_)
@@ -7758,16 +7755,15 @@ algorithm
   end matchcontinue;
 end getAliasVar1;
 
-protected function getArrayCref
-  input BackendDAE.Var var;
+public function getArrayCref
+  input DAE.ComponentRef name;
   output Option<DAE.ComponentRef> arrayCref;
 algorithm
   arrayCref :=
-  matchcontinue (var)
+  matchcontinue (name)
     local
-      DAE.ComponentRef name;
       DAE.ComponentRef arrayCrefInner;
-    case (BackendDAE.VAR(varName=name))
+    case (_)
       equation
         true = ComponentReference.crefIsFirstArrayElt(name);
         arrayCrefInner = ComponentReference.crefStripLastSubs(name);
@@ -9083,7 +9079,7 @@ algorithm
         isFixed = BackendVariable.varFixed(dlowVar);
         type_ = tp;
         isDiscrete = BackendVariable.isVarDiscrete(dlowVar);
-        arrayCref = getArrayCref(dlowVar);
+        arrayCref = getArrayCref(cr);
         aliasvar = getAliasVar(dlowVar,optAliasVars);
         caus = getCausality(dlowVar,vars);
         numArrayElement=arraydim1(inst_dims);
@@ -11690,15 +11686,15 @@ algorithm
   end match;
 end getFilesFromSimVar;
 
-protected function arraydim1 ""
-  input list<Expression.Subscript> subscript1;
+public function arraydim1 ""
+  input list<DAE.Subscript> subscript1;
   output list<String> outString;
 algorithm outString := match(subscript1)
   local
-     Expression.Subscript subscript;
+     DAE.Subscript subscript;
     String s1;
     list<String> s2;
-    list<Expression.Subscript> rest;
+    list<DAE.Subscript> rest;
   case({}) then {};
   case( subscript::rest )
     equation

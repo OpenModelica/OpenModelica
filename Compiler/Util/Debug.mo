@@ -460,7 +460,7 @@ end bcallret3;
 
 public function bcallret4
 "Boolean controlled calling of given function (2nd arg).
-  The passed function gets 3 arguments.
+  The passed function gets 4 arguments.
   The last parameter is returned if the given flag is not set."
   input Boolean flag;
   input FuncAB_C func;
@@ -492,6 +492,83 @@ algorithm
     else default;
   end match;
 end bcallret4;
+
+public function bcallret6
+"Boolean controlled calling of given function (2nd arg).
+  The passed function gets 6 arguments.
+  The last parameter is returned if the given flag is not set."
+  input Boolean flag;
+  input FuncAB_C func;
+  input Type_a arg1;
+  input Type_b arg2;
+  input Type_c arg3;
+  input Type_d arg4;
+  input Type_e arg5;
+  input Type_f arg6;
+  input Type_g default;
+  output Type_g res;
+  partial function FuncAB_C
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    input Type_e inTypeE;
+    input Type_f f;
+    output Type_g g;
+  end FuncAB_C;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  replaceable type Type_f subtypeof Any;
+  replaceable type Type_g subtypeof Any;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  res := match (flag,func,arg1,arg2,arg3,arg4,arg5,arg6,default)
+    case (true,_,_,_,_,_,_,_,_)
+      equation
+        res = func(arg1,arg2,arg3,arg4,arg5,arg6);
+      then res;
+    else default;
+  end match;
+end bcallret6;
+
+public function bcallret3_2
+"Boolean controlled calling of given function (2nd arg).
+  The passed function gets 3 arguments.
+  The last two parameters are returned if the given flag is not set."
+  input Boolean flag;
+  input FuncAB_C func;
+  input Type_a arg1;
+  input Type_b arg2;
+  input Type_c arg3;
+  input Type_d default1;
+  input Type_e default2;
+  output Type_d res1;
+  output Type_e res2;
+  partial function FuncAB_C
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    output Type_d outTypeD;
+    output Type_e outTypeE;
+  end FuncAB_C;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  (res1,res2) := match (flag,func,arg1,arg2,arg3,default1,default2)
+    case (true,_,_,_,_,_,_)
+      equation
+        (res1,res2) = func(arg1,arg2,arg3);
+      then (res1,res2);
+    else (default1,default2);
+  end match;
+end bcallret3_2;
 
 public function bcall
 "function: bcall
