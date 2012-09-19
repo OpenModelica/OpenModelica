@@ -207,7 +207,8 @@ VarTransform.mo \
 SCRIPT = \
 CevalScript.mo \
 Interactive.mo \
-Refactor.mo
+Refactor.mo \
+StaticScript.mo
 
 MAIN = \
 Main.mo 
