@@ -468,7 +468,7 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Env.Cache cache;
       Prefix.Prefix pre;
-	case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info,_)
+  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info,_)
       equation
         Debug.fprintln(Flags.SEI, "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
@@ -519,7 +519,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       Ident fnstr;
-	case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,info,numErrorMessages) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
+  case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,info,numErrorMessages) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
         (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
