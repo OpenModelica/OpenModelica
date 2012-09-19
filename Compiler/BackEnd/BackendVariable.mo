@@ -3062,7 +3062,7 @@ protected function traverseBackendDAEVarWithStop "function: traverseBackendDAEVa
     output tuple<BackendDAE.Var, Boolean, Type_a> outTpl;
   end FuncExpType;
 algorithm
-  (outTypeA,outBoolean):=
+  (outBoolean,outTypeA):=
   matchcontinue (inVar,func,inTypeA)
     local
       BackendDAE.Var v;
