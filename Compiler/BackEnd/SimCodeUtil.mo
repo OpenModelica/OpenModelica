@@ -1803,7 +1803,7 @@ protected function addDummyStateIfNeeded1
   input BackendDAE.EqSystems iSysts;
   output Boolean oContainsNoStates;
 algorithm
-  oContainsStates := match(iSysts)
+  oContainsNoStates := match(iSysts)
     local
       BackendDAE.EqSystems systs;
       BackendDAE.Variables vars;
