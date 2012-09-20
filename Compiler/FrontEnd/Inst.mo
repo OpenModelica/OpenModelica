@@ -2034,81 +2034,81 @@ algorithm
       DAE.SubMod smod;
       DAE.Mod mym;
     
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("unit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("unit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"unit",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("displayUnit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("displayUnit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"displayUnit",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     // min, the case of non-expanded arrays      
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     // max, the case of non-expanded arrays      
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     // start, the case of non-expanded arrays      
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,ty,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("stateSelect",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("stateSelect",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"stateSelect",optVal,exp,stateSelectType,p);
       then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("uncertain",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("uncertain",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"uncertain",optVal,exp,uncertaintyType,p);
       then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("distribution",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre,ty)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("distribution",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"distribution",optVal,exp,distributionType,p);
@@ -2146,43 +2146,43 @@ algorithm
       String s1;
       DAE.SubMod smod;
     
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
 
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("uncertain",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("uncertain",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"uncertain",optVal,exp,uncertaintyType,p);
       then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("distribution",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("distribution",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"distribution",optVal,exp,distributionType,p);
@@ -2218,12 +2218,12 @@ algorithm
       String s1;
       DAE.SubMod smod;
     
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instStringClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instStringClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_STRING_DEFAULT,p);
@@ -2272,17 +2272,17 @@ algorithm
       String s1; 
       DAE.SubMod smod;
     
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_BOOL_DEFAULT,p);
       then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
@@ -2324,27 +2324,27 @@ algorithm
       String s1;
       DAE.SubMod smod;
     
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
-   case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+   case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{},DAE.emptyTypeSource),p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{},DAE.emptyTypeSource),p);
         then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{},{},DAE.emptyTypeSource),p);
       then v::varLst;
-    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
+    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
@@ -8278,7 +8278,7 @@ algorithm
         dims_1 = instDimExpLst(dims, impl);
                 
         //get the equation modification 
-        SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
         //Instantiate type of the component, skip dae/not flattening (but extract functions)
         // adrpo: do not send in the modifications as it will fail if the modification is an ARRAY. 
         //        anyhow the modifications are handled below.
@@ -8347,7 +8347,7 @@ algorithm
         (cache, env, ih, store, dae, csets, ty, graph);
 
     // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension]. 
-    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,n,cl,attr,pf,
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_,_)))),pre,n,cl,attr,pf,
         ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       equation
         true = Config.splitArrays();
@@ -8364,7 +8364,7 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty_1,graph);
 
     // Array variables with unknown dimensions, non-expanding case 
-    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,n,cl,attr,pf,
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_,_)))),pre,n,cl,attr,pf,
       ((dim as DAE.DIM_UNKNOWN()) :: dims),idxs,inst_dims,impl,comment,info,graph, csets)
       equation
         false = Config.splitArrays();
@@ -8822,7 +8822,7 @@ algorithm
 
     case(tp,mod,c,pr,n,_)
       equation
-        SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
         (e1,DAE.PROP(_,c1)) = Types.matchProp(e,p,DAE.PROP(tp,c),true);
         checkHigherVariability(c,c1,pr,n,e,source);
       then
@@ -8832,7 +8832,7 @@ algorithm
     // shouldn't print an error.
     case (tp, mod, c, pr, n, _)
       equation
-        SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_,_)) = Mod.modEquation(mod);
         true = Types.isEmptyArray(bt);
       then
         NONE();
@@ -8840,7 +8840,7 @@ algorithm
     // If Types.matchProp fails, print an error.
     case (tp, mod, c, pr, n, _)
       equation
-        SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_,_)) = Mod.modEquation(mod);
         failure((e1,DAE.PROP(_,c1)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
         v_str = n;
         b_str = ExpressionDump.printExpStr(e);
@@ -8853,7 +8853,7 @@ algorithm
 
     case (_,mod,_,_,_,_)
       equation
-        failure(SOME(DAE.TYPED(_,_,_,_)) = Mod.modEquation(mod));
+        failure(SOME(DAE.TYPED(info=_)) = Mod.modEquation(mod));
       then 
         NONE();
   end matchcontinue;
@@ -10225,7 +10225,7 @@ algorithm
     /* component environment If is a function var. */
     case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,n,(cl,attr),pf,i,DAE.DIM_UNKNOWN(),dims,idxs,inst_dims,impl,comment,info,graph, csets)
       equation
-        SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
+        SOME(DAE.TYPED(e,_,p,_,_)) = Mod.modEquation(mod);
         (cache,env_1,ih,store,dae1,_,ty,st,_,graph) =
           instClass(cache,env,ih,store, mod, pre, cl, inst_dims, true, INNER_CALL(),graph, csets) "Which has an expression binding";
         ty_1 = Types.simplifyType(ty);
@@ -10532,14 +10532,14 @@ protected function elabArraydim
   input Boolean performVectorization;
   input Boolean isFunctionInput;
   input Prefix.Prefix inPrefix;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   input InstDims inInstDims;
   output Env.Cache outCache;
   output DAE.Dimensions outDimensionLst;
 algorithm
   (outCache,outDimensionLst) :=
   matchcontinue
-    (inCache,inEnv,inComponentRef,path,inArrayDim,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,isFunctionInput,inPrefix,info,inInstDims)
+    (inCache,inEnv,inComponentRef,path,inArrayDim,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,isFunctionInput,inPrefix,inInfo,inInstDims)
     local
       DAE.Dimensions dim,dim1,dim2;
       DAE.Dimensions dim3;
@@ -10558,6 +10558,7 @@ algorithm
       Absyn.Exp aexp;
       Option<DAE.EqMod> eq;
       InstDims inst_dims;
+      Absyn.Info info;
 
     // The size of function input arguments should not be set here, since they
     // may vary depending on the inputs. So we ignore any modifications on input
@@ -10573,7 +10574,7 @@ algorithm
         (cache,dim) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
       then
         (cache,dim);
-    case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,prop,_)),impl,st,doVect, _ ,pre,info,inst_dims) /* Untyped expressions must be elaborated. */
+    case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,prop,_,info)),impl,st,doVect, _ ,pre,_,inst_dims) /* Untyped expressions must be elaborated. */
       equation
         t = Types.getPropType(prop);
         (cache,dim1) = Static.elabArrayDims(cache,env, cref, ad, impl, st,doVect,pre,info);
@@ -10582,7 +10583,7 @@ algorithm
         dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
-    case (cache,env,cref,path,ad,SOME(DAE.UNTYPED(aexp)),impl,st,doVect, _,pre,info,inst_dims)
+    case (cache,env,cref,path,ad,SOME(DAE.UNTYPED(aexp,info)),impl,st,doVect, _,pre,_,inst_dims)
       equation
         (cache,e_1,prop,_) = Static.elabExp(cache,env, aexp, impl, st,doVect,pre,info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
@@ -10593,7 +10594,7 @@ algorithm
         dim3 = List.threadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3);
-    case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_)),impl,st,doVect, _,pre,info,inst_dims)
+    case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_,info)),impl,st,doVect, _,pre,_,inst_dims)
       equation
         // adrpo: do not display error when running checkModel 
         //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
@@ -13747,7 +13748,7 @@ algorithm
     case (mod,varLst,expected_type,{},bind_name,useConstValue) /* No subscript/index */
       equation
         mod2 = Mod.lookupCompModification(mod, bind_name);
-        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_)) = Mod.modEquation(mod2);
+        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
         (e_1,ty_1) = Types.matchType(e, ty2, expected_type, true);
         e_1 = checkUseConstValue(useConstValue,e_1,optVal);
       then
@@ -13806,7 +13807,7 @@ algorithm
     case (mod,etype,(index :: {}),bind_name,useConstValue) /* Only one element in the index-list */
       equation
         mod2 = Mod.lookupIdxModification(mod, index);
-        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_)) = Mod.modEquation(mod2);
+        SOME(DAE.TYPED(e,optVal,DAE.PROP(ty2,_),_,_)) = Mod.modEquation(mod2);
         (e_1,ty_1) = Types.matchType(e, ty2, etype, true);
         e_1 = checkUseConstValue(useConstValue,e_1,optVal);
       then
@@ -14310,20 +14311,20 @@ algorithm
 
     // Record constructors are different
     // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
-    case (cr,DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(_,DAE.C_CONST()),_)))),source,impl)
+    case (cr,DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(_,DAE.C_CONST()),_,_)))),source,impl)
       then DAEUtil.emptyDae;
     
     // Special case if the dimensions of the expression is 0.
     // If this is true, and it is instantiated normally, matching properties
     // will result in error messages (Real[0] is not Real), so we handle it here.      
-    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_)))),source,impl)
+    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_,_)))),source,impl)
       equation
         DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(0)}) = Types.getPropType(prop2);
       then
         DAEUtil.emptyDae;
     
     // Regular cases
-    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_)))),source,impl)
+    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_,_)))),source,impl)
       equation
         t = Types.simplifyType(ty1);
         lhs = Expression.makeCrefExp(cr, t);
@@ -14384,11 +14385,11 @@ public function makeBinding
   input DAE.Type inType;
   input Prefix.Prefix inPrefix;
   input String componentName;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Binding outBinding;
 algorithm
-  (outCache,outBinding) := matchcontinue (inCache,inEnv,inAttributes,inMod,inType,inPrefix,componentName,info)
+  (outCache,outBinding) := matchcontinue (inCache,inEnv,inAttributes,inMod,inType,inPrefix,componentName,inInfo)
     local
       DAE.Type tp,e_tp;
       DAE.Exp e_1,e;
@@ -14402,6 +14403,7 @@ algorithm
       list<DAE.Var> complex_vars;
       Absyn.Path tpath;
       list<DAE.SubMod> sub_mods;
+      Absyn.Info info;
 
     case (cache,_,_,DAE.NOMOD(),tp,_,_,_) then (cache,DAE.UNBOUND());
     
@@ -14418,7 +14420,7 @@ algorithm
     case (cache,_,SCode.ATTR(variability = SCode.PARAM()),inMod as DAE.MOD(eqModOption = NONE()),tp,inPrefix,componentName,_)
       equation
         startValueModification = Mod.lookupCompModification(inMod, "start");
-        (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName,info);
+        (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName,inInfo);
         binding = DAEUtil.setBindingSource(binding, DAE.BINDING_FROM_START_VALUE());
       then 
         (cache,binding);
@@ -14430,7 +14432,7 @@ algorithm
       equation
         (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
            varLst = complex_vars)) = Types.arrayElementType(inType);
-        binding = makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, sub_mods, info);
+        binding = makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, sub_mods, inInfo);
       then
         (cache, binding);
         
@@ -14444,7 +14446,7 @@ algorithm
         (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
     
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_,_) /* default */
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),tp,_,_,_) /* default */
       equation
         c = Types.propAllConst(prop);
         (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
@@ -14452,14 +14454,14 @@ algorithm
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
     
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_,_)
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,_))),tp,_,_,_)
       equation
         c = Types.propAllConst(prop);
         (e_1, _) = Types.matchProp(e, prop, DAE.PROP(tp, DAE.C_UNKNOWN()), false);
       then
         (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
     
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,inPrefix,componentName,_)
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_,info))),tp,inPrefix,componentName,_)
       equation
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);

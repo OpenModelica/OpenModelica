@@ -2027,7 +2027,7 @@ algorithm
     case (cache,env,cl as SCode.CLASS(name=id,info=info))
       equation
         (cache,env,funcelts,elts) = buildRecordConstructorClass2(cache,env,cl,DAE.NOMOD());
-        reselt = buildRecordConstructorResultElt(funcelts,id,env);
+        reselt = buildRecordConstructorResultElt(funcelts,id,env,info);
         cl = SCode.CLASS(id,SCode.defaultPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_FUNCTION(SCode.FR_RECORD_CONSTRUCTOR()),SCode.PARTS((reselt :: funcelts),{},{},{},{},{},{},NONE(),{},NONE()),info);
       then
         (cache,env,cl);
@@ -2233,6 +2233,7 @@ protected function buildRecordConstructorResultElt
   input list<SCode.Element> elts;
   input SCode.Ident id;
   input Env.Env env;
+  input Absyn.Info info;
   output SCode.Element outElement;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
@@ -2243,7 +2244,7 @@ algorithm
   outElement := SCode.COMPONENT("result",SCode.defaultPrefixes,
           SCode.ATTR({},SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE()),
-          SCode.NOMOD(),NONE(),NONE(),Absyn.dummyInfo);
+          SCode.NOMOD(),NONE(),NONE(),info);
 end buildRecordConstructorResultElt;
 
 public function isInBuiltinEnv

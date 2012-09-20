@@ -1883,7 +1883,7 @@ algorithm
       then 
         str;
         
-    case(DAE.UNTYPED(e2)) 
+    case(DAE.UNTYPED(exp=e2)) 
       equation
         str = Dump.printExpStr(e2);
       then str;

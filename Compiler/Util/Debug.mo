@@ -559,7 +559,7 @@ public function bcallret3_2
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;
   replaceable type Type_e subtypeof Any;
-  annotation(__OpenModelica_EarlyInline = true);
+  // Apparently cannot inline stuff with function pointers... annotation(__OpenModelica_EarlyInline = true);
 algorithm
   (res1,res2) := match (flag,func,arg1,arg2,arg3,default1,default2)
     case (true,_,_,_,_,_,_)

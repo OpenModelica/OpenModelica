@@ -1444,7 +1444,7 @@ algorithm
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, vis,
           Absyn.COMPONENTS(attr,t,xs), info);
-        mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), Absyn.dummyInfo);
+        mod = translateMod(m, SCode.NOT_FINAL(), SCode.NOT_EACH(), info);
         prl1 = translateParallelism(parallelism);
         var1 = translateVariability(variability);
         // PR. This adds the arraydimension that may be specified together with the type of the component. 
@@ -1957,7 +1957,7 @@ algorithm
         componentRef = cref, modification = mod, info = info) :: rest_args, _)
       equation
         smod = translateMod(mod, SCode.boolFinal(fp), translateEach(ep), info);
-        sub = translateSub(cref, smod);
+        sub = translateSub(cref, smod, info);
       then
         translateArgs_tail(rest_args, sub :: inAccumSubs);
 
@@ -1984,9 +1984,10 @@ protected function translateSub
   of modifications into a number of nested SCode.SUBMOD."
   input Absyn.ComponentRef inComponentRef;
   input SCode.Mod inMod;
+  input Absyn.Info info;
   output SCode.SubMod outSubMod;
 algorithm
-  outSubMod := match (inComponentRef,inMod)
+  outSubMod := match (inComponentRef,inMod,info)
     local
       String c_str,mod_str,i;
       Absyn.ComponentRef c,path;
@@ -1995,30 +1996,30 @@ algorithm
       SCode.SubMod sub;
 
     // First some rules to prevent bad modifications
-    case ((c as Absyn.CREF_IDENT(subscripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))))
+    case ((c as Absyn.CREF_IDENT(subscripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))),info)
       equation
         c_str = Dump.printComponentRefStr(c);
         mod_str = SCodeDump.printModStr(mod);
-        Error.addMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str});
+        Error.addSourceMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str}, info);
       then
         fail();
-    case ((c as Absyn.CREF_QUAL(subscripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))))
+    case ((c as Absyn.CREF_QUAL(subscripts = (_ :: _))),(mod as SCode.MOD(subModLst = (_ :: _))),info)
       equation
         c_str = Dump.printComponentRefStr(c);
         mod_str = SCodeDump.printModStr(mod);
-        Error.addMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str});
+        Error.addSourceMessage(Error.ILLEGAL_MODIFICATION, {mod_str,c_str}, info);
       then
         fail();
     // Then the normal rules
-    case (Absyn.CREF_IDENT(name = i,subscripts = ss),mod)
+    case (Absyn.CREF_IDENT(name = i,subscripts = ss),mod,_)
       equation
         mod_1 = translateSubSub(ss, mod);
       then
         SCode.NAMEMOD(i,mod_1);
-    case (Absyn.CREF_QUAL(name = i,subscripts = ss,componentRef = path),mod)
+    case (Absyn.CREF_QUAL(name = i,subscripts = ss,componentRef = path),mod,info)
       equation
-        sub = translateSub(path, mod);
-        mod = SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE(),Absyn.dummyInfo);
+        sub = translateSub(path, mod, info);
+        mod = SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{sub},NONE(),info);
         mod_1 = translateSubSub(ss, mod);
       then
         SCode.NAMEMOD(i,mod_1);

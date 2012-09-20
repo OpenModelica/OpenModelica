@@ -105,11 +105,11 @@ public function elabMod "
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Mod outMod;
 algorithm
-  (outCache,outMod) := match (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info)
+  (outCache,outMod) := match (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,inInfo)
     local
       Boolean impl;
       SCode.Final finalPrefix;
@@ -127,6 +127,7 @@ algorithm
       SCode.Element elem;
       Env.Cache cache;
       InstanceHierarchy ih;
+      Absyn.Info info;
 
     // no modifications
     case (cache,_,_,_,SCode.NOMOD(),impl,_) then (cache,DAE.NOMOD());
@@ -139,7 +140,7 @@ algorithm
         (cache,DAE.MOD(finalPrefix,each_,subs_1,NONE()));
 
     // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,false)))),impl,info)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,false)), info=info)),impl,_)
       equation
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl,info);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
@@ -150,15 +151,15 @@ algorithm
         "Bug: will cause elaboration of parameters without value to fail,
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
       then
-        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e)))));
+        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e),info))));
 
     // Delayed type checking
-    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,true)))),impl,info)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,true)), info = info)),impl,_)
       equation
         // print("Mod.elabMod: delayed mod : " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
         (cache,subs_1) = elabSubmods(cache, env, ih, pre, subs, impl, info);
       then
-        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e))));
+        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e,info))));
 
     // redeclarations
     case (cache,env,ih,pre,(m as SCode.REDECL(finalPrefix = finalPrefix, eachPrefix = each_, element = elem)),impl,info)
@@ -396,6 +397,7 @@ algorithm
       SCode.Element elem;
       DAE.Exp dexp;
       String str;
+      Absyn.Info info;
       
     case (DAE.NOMOD()) then SCode.NOMOD();
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = NONE())))
@@ -403,30 +405,30 @@ algorithm
         subs_1 = unelabSubmods(subs);
       then
         SCode.MOD(finalPrefix,each_,subs_1,NONE(),Absyn.dummyInfo);
-    case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))))
+    case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e,info)))))
       equation
         subs_1 = unelabSubmods(subs);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false)),Absyn.dummyInfo); // Default type checking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false)),info); // Default type checking non-delayed
 
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
-                        eqModOption = SOME(DAE.TYPED(_,_,p,SOME(absynExp))))))
+                        eqModOption = SOME(DAE.TYPED(_,_,p,SOME(absynExp),info)))))
       equation
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
         e_1 = absynExp; //Expression.unelabExp(e);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),Absyn.dummyInfo); // default typechecking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed
 
     case ((m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,
-                        eqModOption = SOME(DAE.TYPED(dexp,_,p,NONE())))))
+                        eqModOption = SOME(DAE.TYPED(dexp,_,p,NONE(),info)))))
       equation
         //es = ExpressionDump.printExpStr(e);
         subs_1 = unelabSubmods(subs);
         (dexp,_) = ExpressionSimplify.simplify1(dexp);
         e_1 = Expression.unelabExp(dexp);
       then
-        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),Absyn.dummyInfo); // default typechecking non-delayed
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false)),info); // default typechecking non-delayed
 
     case ((m as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each_,tplSCodeElementModLst = {(elem, _)})))
       then
@@ -521,11 +523,11 @@ public function updateMod
   input Prefix.Prefix inPrefix;
   input DAE.Mod inMod;
   input Boolean inBoolean;
-  input Absyn.Info info;
+  input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Mod outMod;
 algorithm
-  (outCache,outMod) := matchcontinue (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,info)
+  (outCache,outMod) := matchcontinue (inCache,inEnv,inIH,inPrefix,inMod,inBoolean,inInfo)
     local
       Boolean impl;
       SCode.Final f;
@@ -542,12 +544,13 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       String str;
+      Absyn.Info info;
     
     case (cache,_,_,_,DAE.NOMOD(),impl,info) then (cache,DAE.NOMOD());
 
     case (cache,_,_,_,(m as DAE.REDECL(finalPrefix = _)),impl,info) then (cache,m);
 
-    case (cache,env,ih,pre,(m as DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))),impl,info)
+    case (cache,env,ih,pre,(m as DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e,info)))),impl,_)
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
@@ -555,15 +558,15 @@ algorithm
         (cache,e_val) = elabModValue(cache,env,e_1,prop,info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         Debug.fprint(Flags.UPDMOD, "Updated mod: ");
-        Debug.fprintln(Flags.UPDMOD, Debug.fcallret1(Flags.UPDMOD, printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,SOME(e)))),""));
+        Debug.fprintln(Flags.UPDMOD, Debug.fcallret1(Flags.UPDMOD, printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,SOME(e),info))),""));
       then
-        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e)))));
+        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e),info))));
 
-    case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.TYPED(e_1,e_val,p,eOpt))),impl,info)
+    case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = SOME(DAE.TYPED(e_1,e_val,p,eOpt,info))),impl,_)
       equation
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
       then
-        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_1,e_val,p,eOpt))));
+        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_1,e_val,p,eOpt,info))));
 
     case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,eqModOption = NONE()),impl,info)
       equation
@@ -682,17 +685,18 @@ algorithm
       Absyn.Exp e;
       SCode.Element elem;
       Ident s;
+      Absyn.Info info;
     case (SCode.NOMOD(),_,_) then DAE.NOMOD();
     case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = NONE())),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
         DAE.MOD(finalPrefix,each_,subs_1,NONE());
-    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)))),env,pre)
+    case ((m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,binding = SOME((e,_)),info = info)),env,pre)
       equation
         subs_1 = elabUntypedSubmods(subs, env, pre);
       then
-        DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e)));
+        DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e,info)));
     case ((m as SCode.REDECL(finalPrefix = finalPrefix,eachPrefix = each_, element = elem)),env,pre)
       then
         DAE.REDECL(finalPrefix,each_,{(elem, DAE.NOMOD())});
@@ -943,13 +947,14 @@ algorithm
       DAE.Const const;
       Ident str;
       Values.Value val, indexVal;
+      Absyn.Info info;
       
     case ({},_,_,_) then {};
     case ({},_,_,_) then {};
       
     // try to do value indexing on e_val as SOME(val) first!
     case ((x :: xs),restSubscripts,n,(m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = {},
-                                       eqModOption = SOME(DAE.TYPED(e,SOME(val),DAE.PROP(t,const),_)))))
+                                       eqModOption = SOME(DAE.TYPED(e,SOME(val),DAE.PROP(t,const),_,info)))))
       equation
         e_2 = DAE.ICONST(n);
         //print("FULLValue: " +& ValuesUtil.printValStr(val) +& "\n");
@@ -959,7 +964,7 @@ algorithm
         e_1 = ValuesUtil.valueExp(indexVal);
         t_1 = Types.unliftArray(t);
         unfoldedMod = DAE.MOD(finalPrefix,each_,{},
-                              SOME(DAE.TYPED(e_1,SOME(indexVal),DAE.PROP(t_1,const),NONE())));
+                              SOME(DAE.TYPED(e_1,SOME(indexVal),DAE.PROP(t_1,const),NONE(),info)));
         //print("IDXValue: " +& ValuesUtil.printValStr(indexVal) +& "\n");
         //print("Idx: " +& ExpressionDump.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");
         mods1 = makeIdxmods(DAE.INDEX(x) :: restSubscripts,unfoldedMod);
@@ -972,14 +977,14 @@ algorithm
     // value indexing didn't work, try to index DAE.EXP
     case ((x :: xs),restSubscripts,n, 
           (m as DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = {},
-                        eqModOption = SOME(DAE.TYPED(e,e_val,DAE.PROP(t,const),_)))))
+                        eqModOption = SOME(DAE.TYPED(e,e_val,DAE.PROP(t,const),_,info)))))
       equation
         e_2 = DAE.ICONST(n);
         //print("FULLExpression: " +& ExpressionDump.printExpStr(e) +& "\n");
         (e_1,_) = ExpressionSimplify.simplify1(Expression.makeASUB(e,{e_2}));
         t_1 = Types.unliftArray(t);
         unfoldedMod = DAE.MOD(finalPrefix,each_,{},
-                              SOME(DAE.TYPED(e_1,NONE(),DAE.PROP(t_1,const),NONE())));
+                              SOME(DAE.TYPED(e_1,NONE(),DAE.PROP(t_1,const),NONE(),info)));
         //print("IDXExpression: " +& ExpressionDump.printExpStr(e_1) +& "\n");
         //print("Idx: " +& ExpressionDump.printExpStr(x) +& " mod: " +& printModStr(unfoldedMod) +& "\n");
         mods1 = makeIdxmods((DAE.INDEX(x) :: restSubscripts),unfoldedMod);
@@ -1248,14 +1253,15 @@ algorithm
       list<DAE.Var> varLst;
       DAE.Mod mod;
       DAE.Exp e;
+      Absyn.Info info;
     
     case(NONE(),_,_,_) then DAE.NOMOD();
     
     case(SOME(DAE.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),
-                        DAE.PROP(DAE.T_COMPLEX(varLst = varLst),_),_)),
+                        DAE.PROP(DAE.T_COMPLEX(varLst = varLst),_),_,info)),
          n,finalPrefix,each_) 
       equation
-        mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_);
+        mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_,info);
       then mod;
     
     case(_,_,_,_) then DAE.NOMOD();
@@ -1270,9 +1276,10 @@ protected function lookupComplexCompModification2 "Help function to lookupComple
   input String name;
   input SCode.Final finalPrefix;
   input SCode.Each each_;
+  input Absyn.Info info;
   output DAE.Mod mod;
 algorithm
-  mod := matchcontinue(inValues,inNames,inVars,name,finalPrefix,each_)
+  mod := matchcontinue(inValues,inNames,inVars,name,finalPrefix,each_,info)
     local 
       DAE.Type tp;
       Values.Value v; 
@@ -1282,17 +1289,17 @@ algorithm
       list<Ident> names;
       list<DAE.Var> vars;
       
-    case(v::_,name1::_,DAE.TYPES_VAR(name=name2,ty=tp)::_,name,finalPrefix,each_) 
+    case(v::_,name1::_,DAE.TYPES_VAR(name=name2,ty=tp)::_,name,finalPrefix,each_,info) 
       equation
         true = (name1 ==& name2);
         true = (name2 ==& name);
         e = ValuesUtil.valueExp(v);
       then 
-        DAE.MOD(finalPrefix,each_,{},SOME(DAE.TYPED(e,SOME(v),DAE.PROP(tp,DAE.C_CONST()),NONE())));
+        DAE.MOD(finalPrefix,each_,{},SOME(DAE.TYPED(e,SOME(v),DAE.PROP(tp,DAE.C_CONST()),NONE(),info)));
 
-    case(_::values,_::names,_::vars,name,finalPrefix,each_) 
+    case(_::values,_::names,_::vars,name,finalPrefix,each_,info) 
       equation
-        mod = lookupComplexCompModification2(values,names,vars,name,finalPrefix,each_);
+        mod = lookupComplexCompModification2(values,names,vars,name,finalPrefix,each_,info);
       then 
         mod;
 
@@ -1651,36 +1658,37 @@ algorithm
       Integer x;
       list<Integer> xs;
       DAE.EqMod eq;
+      Absyn.Info info;
       String exp_str;
 
     case (NONE(),_) then NONE();
     case (emod,{}) then emod;
 
     // Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) 
-    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_)),xs) then NONE();
+    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_,_)),xs) then NONE();
 
     // For modifiers with value, retrieve nth element
-    case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c),_)),(x :: xs))
+    case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c),_,info)),(x :: xs))
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
         (exp,_) = ExpressionSimplify.simplify1(Expression.makeASUB(e,{exp2}));
         e_val_1 = ValuesUtil.nthArrayelt(e_val, x);
-        emod = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c),NONE())), xs);
+        emod = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c),NONE(),info)), xs);
       then
         emod;
 
     // For modifiers without value, apply subscript operator
-    case (SOME(DAE.TYPED(e,NONE(),DAE.PROP(t,c),_)),(x :: xs))
+    case (SOME(DAE.TYPED(e,NONE(),DAE.PROP(t,c),_,info)),(x :: xs))
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
         (exp,_) = ExpressionSimplify.simplify1(Expression.makeASUB(e,{exp2}));
-        emod = indexEqmod(SOME(DAE.TYPED(exp,NONE(),DAE.PROP(t_1,c),NONE())), xs);
+        emod = indexEqmod(SOME(DAE.TYPED(exp,NONE(),DAE.PROP(t_1,c),NONE(),info)), xs);
       then
         emod;
 
-    case (SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = t))), _)
+    case (SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = t), info = info)), _)
       equation
         // Trying to apply a non-array modifier to an array, which isn't really
         // allowed but working anyway. Some standard Modelica libraries are
@@ -1688,7 +1696,7 @@ algorithm
         // and therefore relying on this behaviour, so just print a warning here.
         failure(t_1 = Types.unliftArray(t));
         exp_str = ExpressionDump.printExpStr(exp);
-        Error.addMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str});
+        Error.addSourceMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str}, info);
       then 
         fail();
 
@@ -2061,8 +2069,7 @@ algorithm
   outTypesEqModOption := match (inTypesEqModOption1,inTypesEqModOption2)
     local Option<DAE.EqMod> e;
     // Outer assignments take precedence
-    case ((e as SOME(DAE.TYPED(modifierAsExp = _))),_) then e;
-    case ((e as SOME(DAE.UNTYPED(_))),_) then e;
+    case ((e as SOME(_)),_) then e;
     case (NONE(),e) then e;
   end match;
 end mergeEq;
@@ -2154,33 +2161,32 @@ algorithm
       then equal;
     
     // typed vs. untyped mods
-    case(SOME(DAE.TYPED(exp1,_,_,SOME(aexp1))),SOME(DAE.UNTYPED(aexp2))) 
+    case(SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp1))),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         //aexp1 = Expression.unelabExp(exp1);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
-    case(SOME(DAE.TYPED(exp1,_,_,NONE())),SOME(DAE.UNTYPED(aexp2))) 
+    case(SOME(DAE.TYPED(exp1,_,_,NONE(),_)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         aexp1 = Expression.unelabExp(exp1);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     // untyped vs. typed 
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,SOME(aexp2)))) 
+    case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp2)))) 
       equation
-        //aexp2 = Expression.unelabExp(exp2);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE()))) 
+    case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE(),_))) 
       equation
         aexp2 = Expression.unelabExp(exp2);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     // untyped mods
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.UNTYPED(aexp2))) 
+    case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
@@ -2345,39 +2351,37 @@ algorithm
     case(NONE(),NONE()) then true;
 
     // typed equmods
-    case(SOME(DAE.TYPED(exp1,_,_,_)),SOME(DAE.TYPED(exp2,_,_,_))) 
+    case(SOME(DAE.TYPED(modifierAsExp=exp1)),SOME(DAE.TYPED(modifierAsExp=exp2))) 
       equation
         equal = Expression.expEqual(exp1,exp2);
       then equal;
 
     // typed vs. untyped equmods
-    case(SOME(DAE.TYPED(exp1,_,_,SOME(aexp1))),SOME(DAE.UNTYPED(aexp2))) 
+    case(SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp1))),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        //aexp1 = Expression.unelabExp(exp1);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
-    case(SOME(DAE.TYPED(exp1,_,_,NONE())),SOME(DAE.UNTYPED(aexp2))) 
+    case(SOME(DAE.TYPED(exp1,_,_,NONE(),_)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         aexp1 = Expression.unelabExp(exp1);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     // untyped vs. typed equmods
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,SOME(aexp2)))) 
+    case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp2)))) 
       equation
-        //aexp2 = Expression.unelabExp(exp2);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE()))) 
+    case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE(),_))) 
       equation
         aexp2 = Expression.unelabExp(exp2);
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
 
     // untyped equmods
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.UNTYPED(aexp2))) 
+    case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         equal = Absyn.expEqual(aexp1,aexp2);
       then equal;
@@ -2678,7 +2682,7 @@ algorithm
       DAE.Properties prop;
       Absyn.Exp ae;
     case NONE() then "";
-    case SOME(DAE.TYPED(e,SOME(e_val),prop,_))
+    case SOME(DAE.TYPED(e,SOME(e_val),prop,_,_))
       equation
         str = ExpressionDump.printExpStr(e);
         str2 = Types.printPropStr(prop);
@@ -2686,14 +2690,14 @@ algorithm
         res = stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
       then
         res;
-    case SOME(DAE.TYPED(e,NONE(),prop,_))
+    case SOME(DAE.TYPED(e,NONE(),prop,_,_))
       equation
         str = ExpressionDump.printExpStr(e);
         str2 = Types.printPropStr(prop);
         res = stringAppendList({" = (typed)",str,str2});
       then
         res;
-    case SOME(DAE.UNTYPED(ae))
+    case SOME(DAE.UNTYPED(exp=ae))
       equation
         str = Dump.printExpStr(ae);
         res = stringAppend(" =(untyped) ", str);
