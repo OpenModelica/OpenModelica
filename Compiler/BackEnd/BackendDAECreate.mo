@@ -45,8 +45,10 @@ public import DAE;
 public import Env;
 
 protected import BackendDAEUtil;
+protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
+protected import BackendVarTransform;
 protected import BaseHashTable;
 protected import CheckModel;
 protected import ComponentReference;
@@ -97,7 +99,7 @@ protected
   BackendDAE.ExternalObjectClasses extObjCls;
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.EventInfo einfo;
-  list<DAE.Element> elems;
+  list<DAE.Element> elems,aliaseqns;
   list<BackendDAE.ZeroCrossing> zero_crossings;
   DAE.FunctionTree functionTree;
 algorithm
@@ -108,8 +110,11 @@ algorithm
   vars := BackendDAEUtil.emptyVars();
   knvars := BackendDAEUtil.emptyVars();
   extVars := BackendDAEUtil.emptyVars();
-  (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls) := lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {});
+  (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns) := lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {});
   whenclauses_1 := listReverse(whenclauses);
+  aliasVars := BackendDAEUtil.emptyVars();
+  // handle alias equations
+  (vars,knvars,extVars,aliasVars,eqns,reqns,ieqns,whenclauses_1) := handleAliasEquations(aliaseqns,vars,knvars,extVars,aliasVars,eqns,reqns,ieqns,whenclauses_1);
   vars_1 := detectImplicitDiscrete(vars,knvars,eqns);
   eqnarr := BackendDAEUtil.listEquation(eqns);
   reqnarr := BackendDAEUtil.listEquation(reqns);
@@ -117,7 +122,6 @@ algorithm
   constrarra := listArray(constrs);
   clsattrsarra := listArray(clsAttrs);
   einfo := BackendDAE.EVENT_INFO(whenclauses_1,{});
-  aliasVars := BackendDAEUtil.emptyVars();
   outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,constrarra,clsattrsarra,inCache,inEnv,functionTree,einfo,extObjCls,BackendDAE.SIMULATION(),{}));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO,print,"No. of Equations: " +& intString(BackendDAEUtil.equationSize(eqnarr)) +& "\nNo. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
@@ -138,6 +142,7 @@ protected function lower2
   input list<DAE.ClassAttributes> inClassAttributeLst;
   input list<BackendDAE.WhenClause> inWhenClauseLst;
   input BackendDAE.ExternalObjectClasses inExtObjClasses;
+  input list<DAE.Element> iAliaseqns "List with all EqualityEquations";
   output BackendDAE.Variables outVariables;
   output BackendDAE.Variables outKnownVariables;
   output BackendDAE.Variables outExternalVariables;
@@ -148,11 +153,12 @@ protected function lower2
   output list<DAE.ClassAttributes> outClassAttributeLst;
   output list<BackendDAE.WhenClause> outWhenClauseLst;
   output BackendDAE.ExternalObjectClasses outExtObjClasses;
+  output list<DAE.Element> oAliaseqns;
 algorithm
   (outVariables,outKnownVariables,outExternalVariables,oEqnsLst,oREqnsLst,oIEqnsLst,
-   outConstraintLst,outClassAttributeLst,outWhenClauseLst,outExtObjClasses):=
+   outConstraintLst,outClassAttributeLst,outWhenClauseLst,outExtObjClasses,oAliaseqns):=
    match (inElements,functionTree,inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,
-      inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses)
+      inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns)
     local
       BackendDAE.Variables vars,knvars,extVars;
       list<BackendDAE.WhenClause> whenclauses;
@@ -161,22 +167,22 @@ algorithm
       list<DAE.ClassAttributes> clsAttrs;
       BackendDAE.ExternalObjectClasses extObjCls;
       DAE.Element daeEl;
-      list<DAE.Element> daeLstRest;
+      list<DAE.Element> daeLstRest,aliaseqns;
       
     // the empty case 
-    case ({},_,_,_,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
-    case (daeEl::daeLstRest,_,_,_,_,_,_,_,_,_,_,_)
+    case (daeEl::daeLstRest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls) =
-        lower3(daeEl,functionTree,inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns) =
+        lower3(daeEl,functionTree,inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
-        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls) =
-        lower2(daeLstRest,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls);
+        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns) =
+        lower2(daeLstRest,functionTree,vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls);
+        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns);
                
   end match;
 end lower2;
@@ -195,6 +201,7 @@ protected function lower3
   input list<DAE.ClassAttributes> inClassAttributeLst;
   input list<BackendDAE.WhenClause> inWhenClauseLst;
   input BackendDAE.ExternalObjectClasses inExtObjClasses;
+  input list<DAE.Element> iAliaseqns "List with all EqualityEquations";
   output BackendDAE.Variables outVariables;
   output BackendDAE.Variables outKnownVariables;
   output BackendDAE.Variables outExternalVariables;
@@ -205,13 +212,14 @@ protected function lower3
   output list<DAE.ClassAttributes> outClassAttributeLst;
   output list<BackendDAE.WhenClause> outWhenClauseLst;
   output BackendDAE.ExternalObjectClasses outExtObjClasses;
+  output list<DAE.Element> oAliaseqns;
 algorithm
   (outVariables,outKnownVariables,outExternalVariables,oEqnsLst,oREqnsLst,oIEqnsLst,
-   outConstraintLst,outClassAttributeLst,outWhenClauseLst,outExtObjClasses):=
+   outConstraintLst,outClassAttributeLst,outWhenClauseLst,outExtObjClasses,oAliaseqns):=
    match (inElement,functionTree,inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,
-      inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses)
+      inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns)
     local
-      list<DAE.Element> daeElts;
+      list<DAE.Element> daeElts,aliaseqns;
       DAE.Constraint cons_1;
       list<DAE.Constraint> constrs;
       list<DAE.ClassAttributes> clsAttrs;
@@ -226,162 +234,160 @@ algorithm
       DAE.Exp e2;
 
     // class for external object
-    case (DAE.EXTOBJECTCLASS(path,source),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.EXTOBJECTCLASS(path,source),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         extObjCl = BackendDAE.EXTOBJCLASS(path,source);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,extObjCl::inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,extObjCl::inExtObjClasses,iAliaseqns);
 
     // variables
-    case (DAE.VAR(componentRef = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.VAR(componentRef = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (vars,knvars,extVars,eqns) = lowerVar(inElement,functionTree,inVars,inKnVars,inExVars,inEqnsLst);
       then
-        (vars,knvars,extVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (vars,knvars,extVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
     
       /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
-    case(DAE.EQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_,_,_,_,_,_,_,_)
+    case(DAE.EQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
        (eqns,reqns,ieqns) = lowerAlgorithm(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
-    case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_,_,_,_,_,_,_,_)
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+    case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
         
     // scalar equations
-    case (DAE.EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         eqns = lowerEqn(inElement,functionTree,inEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
     
     // initial equations
-    case (DAE.INITIALEQUATION(exp1 = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.INITIALEQUATION(exp1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
-    // effort variable equality equations
-    case (DAE.EQUEQUATION(cr1 = _),_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        eqns = lowerEqn(inElement,functionTree,inEqnsLst);
+    // effort variable equality equations, seperated to generate alias variables
+    case (DAE.EQUEQUATION(cr1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,inElement::iAliaseqns);
     
     // a solved equation 
-    case (DAE.DEFINE(componentRef = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.DEFINE(componentRef = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         eqns = lowerEqn(inElement,functionTree,inEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // complex equations
-    case (DAE.COMPLEX_EQUATION(lhs = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.COMPLEX_EQUATION(lhs = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         eqns = lowerEqn(inElement,functionTree,inEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
  
     // complex initial equations
-    case (DAE.INITIAL_COMPLEX_EQUATION(lhs = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.INITIAL_COMPLEX_EQUATION(lhs = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // array equations
-    case (DAE.ARRAY_EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.ARRAY_EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         eqns = lowerEqn(inElement,functionTree,inEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
        
     // initial array equations
-    case (DAE.INITIAL_ARRAY_EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.INITIAL_ARRAY_EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
        
     // when equations
-    case (DAE.WHEN_EQUATION(condition = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.WHEN_EQUATION(condition = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,whenclauses) = lowerWhenEqn(inElement,functionTree,inEqnsLst,inWhenClauseLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,whenclauses,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,whenclauses,inExtObjClasses,iAliaseqns);
 
     // if equation that cannot be translated to if expression but have initial() as condition
-    case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))},equations2=_::{},equations3={}),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))},equations2=_::{},equations3={}),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // if equation
-    case (DAE.IF_EQUATION(condition1 = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.IF_EQUATION(condition1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         eqns = lowerEqn(inElement,functionTree,inEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // initial if equation
-    case (DAE.INITIAL_IF_EQUATION(condition1 = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.INITIAL_IF_EQUATION(condition1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // algorithm
-    case (DAE.ALGORITHM(algorithm_ = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.ALGORITHM(algorithm_ = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // initial algorithm
-    case (DAE.INITIALALGORITHM(algorithm_ = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.INITIALALGORITHM(algorithm_ = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
    
     // flat class / COMP
-    case (DAE.COMP(dAElist = daeElts),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.COMP(dAElist = daeElts),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls) = lower2(listReverse(daeElts),functionTree,inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns) = lower2(listReverse(daeElts),functionTree,inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls);
+        (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns);
     
     // assert in equation section is converted to ALGORITHM
-    case (DAE.ASSERT(condition = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.ASSERT(condition = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
  
     // terminate in equation section is converted to ALGORITHM
-    case (DAE.TERMINATE(message = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.TERMINATE(message = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
     
-    case (DAE.NORETCALL(functionName = _),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.NORETCALL(functionName = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (eqns,reqns,ieqns) = lowerAlgorithm(inElement,functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
  
     // constraint (Optimica) Just pass the constraints for now. Should anything more be done here?
-    case (DAE.CONSTRAINT(constraints = cons_1),_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.CONSTRAINT(constraints = cons_1),_,_,_,_,_,_,_,_,_,_,_,_)
       then
-        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,cons_1::inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,cons_1::inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
     
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // show only on failtrace!
         true = Flags.isSet(Flags.FAILTRACE);
@@ -1537,6 +1543,577 @@ algorithm
   end matchcontinue;
 end lowerAlgorithm;
 
+/*
+ *  alias Equations
+ */ 
+
+protected function handleAliasEquations
+"function handleAliasEquations
+  author Frenkel TUD 2012-09"
+  input list<DAE.Element> iAliasEqns;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables iExtVars;
+  input BackendDAE.Variables iAVars;
+  input list<BackendDAE.Equation> iEqns;
+  input list<BackendDAE.Equation> iREqns;
+  input list<BackendDAE.Equation> iIEqns;
+  input list<BackendDAE.WhenClause> iWhenclauses;
+  output BackendDAE.Variables oVars;
+  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables oExtVars;
+  output BackendDAE.Variables oAVars;
+  output list<BackendDAE.Equation> oEqns;
+  output list<BackendDAE.Equation> oREqns;
+  output list<BackendDAE.Equation> oIEqns;
+  output list<BackendDAE.WhenClause> oWhenclauses;
+algorithm
+  (oVars,oKnVars,oExtVars,oAVars,oEqns,oREqns,oIEqns,oWhenclauses) := 
+  match (iAliasEqns,iVars,iKnVars,iExtVars,iAVars,iEqns,iREqns,iIEqns,iWhenclauses)
+    local
+      BackendDAE.Variables vars,knvars,extvars,avars;
+      list<BackendDAE.Equation> eqns,reqns,ieqns;
+      list<BackendDAE.WhenClause> whenclauses;
+    case ({},_,_,_,_,_,_,_,_) then (iVars,iKnVars,iExtVars,iAVars,iEqns,iREqns,iIEqns,iWhenclauses);
+    case (_,_,_,_,_,_,_,_,_)
+      equation
+        (vars,knvars,extvars,avars,eqns,reqns,ieqns,whenclauses) = handleAliasEquations1(iAliasEqns,iVars,iKnVars,iExtVars,iAVars,iEqns,iREqns,iIEqns,iWhenclauses);
+      then
+        (vars,knvars,extvars,avars,eqns,reqns,ieqns,whenclauses);
+  end match;
+end handleAliasEquations;
+
+protected function handleAliasEquations1
+"function handleAliasEquations
+  author Frenkel TUD 2012-09"
+  input list<DAE.Element> iAliasEqns;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables iExtVars;
+  input BackendDAE.Variables iAVars;
+  input list<BackendDAE.Equation> iEqns;
+  input list<BackendDAE.Equation> iREqns;
+  input list<BackendDAE.Equation> iIEqns;
+  input list<BackendDAE.WhenClause> iWhenclauses;
+  output BackendDAE.Variables oVars;
+  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables oExtVars;
+  output BackendDAE.Variables oAVars;
+  output list<BackendDAE.Equation> oEqns;
+  output list<BackendDAE.Equation> oREqns;
+  output list<BackendDAE.Equation> oIEqns;
+  output list<BackendDAE.WhenClause> oWhenclauses;
+protected
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  repl := BackendVarTransform.emptyReplacements();
+  // get alias vars and replacements
+  (oVars,oKnVars,oExtVars,oAVars,repl,oEqns) := handleAliasEquations2(iAliasEqns,iVars,iKnVars,iExtVars,iAVars,repl,iEqns);
+  // replace alias bindings
+  (oAVars,_) := BackendVariable.traverseBackendDAEVarsWithUpdate(oAVars,replaceAliasVarTraverser,repl);
+  // compress vars array
+  oVars := BackendVariable.compressVariables(oVars);
+  // perform replacements
+  (oEqns,_) := BackendVarTransform.replaceEquations(oEqns,repl,NONE());
+  (oREqns,_) := BackendVarTransform.replaceEquations(iREqns,repl,NONE());
+  (oIEqns,_) := BackendVarTransform.replaceEquations(iIEqns,repl,NONE());
+  (oWhenclauses,_) := BackendVarTransform.replaceWhenClauses(iWhenclauses,repl,NONE());
+end handleAliasEquations1;
+
+protected function replaceAliasVarTraverser
+"autor: Frenkel TUD 2011-03"
+ input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
+ output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
+algorithm
+  outTpl:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.Var v,v1;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.Exp e,e1;
+      Boolean b;
+    case ((v as BackendDAE.VAR(bindExp=SOME(e)),repl))
+      equation
+        (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
+        b = Expression.isConst(e1);
+        v1 = Debug.bcallret2(not b,BackendVariable.setBindExp,v,e1,v);
+      then ((v1,repl));
+    case inTpl then inTpl;
+  end matchcontinue;
+end replaceAliasVarTraverser;
+
+protected function handleAliasEquations2
+"function handleAliasEquations
+  author Frenkel TUD 2012-09"
+  input list<DAE.Element> iAliasEqns;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables iExtVars;
+  input BackendDAE.Variables iAVars;
+  input BackendVarTransform.VariableReplacements iRepl;
+  input list<BackendDAE.Equation> iEqns;
+  output BackendDAE.Variables oVars;
+  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables oExtVars;
+  output BackendDAE.Variables oAVars;
+  output BackendVarTransform.VariableReplacements oRepl;
+  output list<BackendDAE.Equation> oEqns;
+algorithm
+  (oVars,oKnVars,oExtVars,oAVars,oRepl,oEqns) := match (iAliasEqns,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns)
+    local
+      BackendDAE.Variables vars,knvars,extvars,avars;
+      list<DAE.Element> aliaseqns;
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cr1,cr2;
+      DAE.ElementSource source;
+      list<BackendDAE.Equation> eqns;
+      DAE.Exp ecr1,ecr2;
+    case ({},_,_,_,_,_,_) then (iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+    case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source=source)::aliaseqns,_,_,_,_,_,_)
+      equation
+        // perform replacements
+        ecr1 = Expression.crefExp(cr1);
+        (ecr1,_) = BackendVarTransform.replaceExp(ecr1,iRepl,NONE());
+        ecr2 = Expression.crefExp(cr2);
+        (ecr2,_) = BackendVarTransform.replaceExp(ecr2,iRepl,NONE());
+        // select alias
+        (vars,knvars,extvars,avars,repl,eqns) = selectAlias(ecr1,ecr2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+        // next
+        (vars,knvars,extvars,avars,repl,eqns) = handleAliasEquations2(aliaseqns,vars,knvars,extvars,avars,repl,eqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+  end match;
+end handleAliasEquations2;
+
+protected function selectAlias
+  input DAE.Exp exp1;
+  input DAE.Exp exp2;
+  input DAE.ElementSource source;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables iExtVars;
+  input BackendDAE.Variables iAVars;
+  input BackendVarTransform.VariableReplacements iRepl;
+  input list<BackendDAE.Equation> iEqns;
+  output BackendDAE.Variables oVars;
+  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables oExtVars;
+  output BackendDAE.Variables oAVars;
+  output BackendVarTransform.VariableReplacements oRepl;
+  output list<BackendDAE.Equation> oEqns;
+algorithm
+  (oVars,oKnVars,oExtVars,oAVars,oRepl,oEqns) := matchcontinue (exp1,exp2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns)
+    local
+      BackendDAE.Variables vars,knvars,extvars,avars;
+      BackendVarTransform.VariableReplacements repl;
+      list<BackendDAE.Equation> eqns;
+      DAE.ComponentRef cr1,cr2;
+      list<DAE.Exp> explst1,explst2;
+      list<list<DAE.Exp>> explstlst1,explstlst2;
+      list<DAE.Var> varLst1,varLst2;
+      list<DAE.ComponentRef> crefs1,crefs2;
+      DAE.Dimensions dims1,dims2;
+      Integer arrayTyp1,arrayTyp2,i1,i2;
+      BackendDAE.Var v1,v2;
+    // array array case
+    case (DAE.ARRAY(array=explst1),DAE.ARRAY(array=explst2),_,_,_,_,_,_,_)
+      equation
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+    // cref-array array case
+    case (DAE.CREF(componentRef=cr1,ty=DAE.T_ARRAY(dims = dims1)),DAE.ARRAY(array=explst2),_,_,_,_,_,_,_)
+      equation
+        crefs1 = ComponentReference.expandArrayCref(cr1,dims1);
+        explst1 = List.map(crefs1,Expression.crefExp);
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+    // array cref-array case
+    case (DAE.ARRAY(array=explst1),DAE.CREF(componentRef=cr2,ty=DAE.T_ARRAY(dims = dims2)),_,_,_,_,_,_,_)
+      equation
+        crefs2 = ComponentReference.expandArrayCref(cr2,dims2);
+        explst2 = List.map(crefs2,Expression.crefExp);
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+    // cref-array cref-array case
+    case (DAE.CREF(componentRef=cr1,ty=DAE.T_ARRAY(dims = dims1)),DAE.CREF(componentRef=cr2,ty=DAE.T_ARRAY(dims = dims2)),_,_,_,_,_,_,_)
+      equation
+        crefs1 = ComponentReference.expandArrayCref(cr1,dims1);
+        explst1 = List.map(crefs1,Expression.crefExp);
+        crefs2 = ComponentReference.expandArrayCref(cr2,dims2);
+        explst2 = List.map(crefs2,Expression.crefExp);
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+
+    // matrix matrix case
+    case (DAE.MATRIX(matrix=explstlst1),DAE.MATRIX(matrix=explstlst2),_,_,_,_,_,_,_)
+      equation
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(List.flatten(explstlst1),List.flatten(explstlst2),source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+    // cref complex cref complex
+    case (DAE.CREF(componentRef=cr1,ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(_))),
+          DAE.CREF(componentRef=cr2,ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(_))),_,_,_,_,_,_,_)
+      equation
+        // Create a list of crefs from names
+        crefs1 = List.map(varLst1,ComponentReference.creffromVar);
+        crefs1 = List.map1r(crefs1,ComponentReference.joinCrefs,cr1);
+        explst1 = List.map(crefs1,Expression.crefExp);
+        crefs2 = List.map(varLst2,ComponentReference.creffromVar);
+        crefs2 = List.map1r(crefs2,ComponentReference.joinCrefs,cr2);
+        explst2 = List.map(crefs2,Expression.crefExp);
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+    // call complex call complex
+    case (DAE.CALL(expLst=explst1,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
+          DAE.CALL(expLst=explst2,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),_,_,_,_,_,_,_)
+      equation
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+    // call complex cref complex
+    case (DAE.CALL(expLst=explst1,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
+          DAE.CREF(componentRef=cr2,ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(_))),_,_,_,_,_,_,_)
+      equation
+        // Create a list of crefs from names
+        crefs2 = List.map(varLst2,ComponentReference.creffromVar);
+        crefs2 = List.map1r(crefs2,ComponentReference.joinCrefs,cr2);
+        explst2 = List.map(crefs2,Expression.crefExp);
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+    // cref complex CALL complex
+    case (DAE.CREF(componentRef=cr1,ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(_))),
+          DAE.CALL(expLst=explst2,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),_,_,_,_,_,_,_)
+      equation
+        // Create a list of crefs from names
+        crefs1 = List.map(varLst1,ComponentReference.creffromVar);
+        crefs1 = List.map1r(crefs1,ComponentReference.joinCrefs,cr1);
+        explst1 = List.map(crefs1,Expression.crefExp);
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+    // scalar case  
+    case (DAE.CREF(componentRef=cr1),
+          DAE.CREF(componentRef=cr2),_,_,_,_,_,_,_)
+      equation
+        (v1,i1,arrayTyp1) = getVar(cr1,iVars,iKnVars,iExtVars);
+        (v2,i2,arrayTyp2) = getVar(cr2,iVars,iKnVars,iExtVars);
+        (vars,knvars,extvars,avars,repl) = selectAliasVar(v1,i1,arrayTyp1,exp1,v2,i2,arrayTyp2,exp2,source,iVars,iKnVars,iExtVars,iAVars,iRepl);
+      then
+        (vars,knvars,extvars,avars,repl,iEqns);
+    // if no alias selectable add as equation
+    case (_,_,_,_,_,_,_,_,_)
+      then
+        (iVars,iKnVars,iExtVars,iAVars,iRepl,BackendDAE.EQUATION(exp1,exp2,source)::iEqns);
+  end matchcontinue;
+end selectAlias;
+
+protected function getVar
+  input DAE.ComponentRef cr;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables iExtVars;
+  output BackendDAE.Var oVar;
+  output Integer index;
+  output Integer varrArray;  
+algorithm
+  (oVar,index,varrArray) := matchcontinue(cr,iVars,iKnVars,iExtVars)
+    local
+      BackendDAE.Var v;
+      Integer i;
+    case(_,_,_,_)
+      equation
+        (v::{},i::{}) = BackendVariable.getVar(cr,iVars);
+      then
+        (v,i,1);
+    case(_,_,_,_)
+      equation
+        (v::{},i::{}) = BackendVariable.getVar(cr,iKnVars);
+      then
+        (v,i,2);
+    case(_,_,_,_)
+      equation
+        (v::{},i::{}) = BackendVariable.getVar(cr,iExtVars);
+      then
+        (v,i,3);
+  end matchcontinue; 
+end getVar;
+
+protected function selectAliasLst
+  input list<DAE.Exp> iexplst1;
+  input list<DAE.Exp> iexplst2;
+  input DAE.ElementSource source;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables iExtVars;
+  input BackendDAE.Variables iAVars;
+  input BackendVarTransform.VariableReplacements iRepl;
+  input list<BackendDAE.Equation> iEqns;
+  output BackendDAE.Variables oVars;
+  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables oExtVars;
+  output BackendDAE.Variables oAVars;
+  output BackendVarTransform.VariableReplacements oRepl;
+  output list<BackendDAE.Equation> oEqns;
+algorithm
+  (oVars,oKnVars,oExtVars,oAVars,oRepl,oEqns) := match (iexplst1,iexplst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns)
+    local
+      BackendDAE.Variables vars,knvars,extvars,avars;
+      BackendVarTransform.VariableReplacements repl;
+      list<BackendDAE.Equation> eqns;
+      DAE.Exp e1,e2;
+      list<DAE.Exp> explst1,explst2;
+    case ({},{},_,_,_,_,_,_,_)
+      then
+        (iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+    case (e1::explst1,e2::explst2,_,_,_,_,_,_,_)
+      equation
+        // perform replacements
+        (e1,_) = BackendVarTransform.replaceExp(e1,iRepl,NONE());
+        (e2,_) = BackendVarTransform.replaceExp(e2,iRepl,NONE());
+        // select alias
+        (vars,knvars,extvars,avars,repl,eqns) = selectAlias(e1,e2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+        // next
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,vars,knvars,extvars,avars,repl,eqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);
+  end match;
+end selectAliasLst;
+
+protected function selectAliasVar
+  input BackendDAE.Var v1;
+  input Integer index1;
+  input Integer arrayIndx1;
+  input DAE.Exp e1;
+  input BackendDAE.Var v2;
+  input Integer index2;
+  input Integer arrayIndx2;
+  input DAE.Exp e2;
+  input DAE.ElementSource source;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.Variables iKnVars;
+  input BackendDAE.Variables iExtVars;
+  input BackendDAE.Variables iAVars;
+  input BackendVarTransform.VariableReplacements iRepl;
+  output BackendDAE.Variables oVars;
+  output BackendDAE.Variables oKnVars;
+  output BackendDAE.Variables oExtVars;
+  output BackendDAE.Variables oAVars;
+  output BackendVarTransform.VariableReplacements oRepl;
+algorithm
+  (oVars,oKnVars,oExtVars,oAVars,oRepl) := 
+   match (v1,index1,arrayIndx1,e1,v2,index2,arrayIndx2,e2,source,iVars,iKnVars,iExtVars,iAVars,iRepl)
+    local
+      BackendDAE.Variables vars,knvars,extvars,avars;
+      BackendVarTransform.VariableReplacements repl;
+      list<DAE.SymbolicOperation> ops;
+      BackendDAE.Var var,avar;
+      DAE.ComponentRef cr1,cr2,acr,cr;
+      Integer w1,w2,aindx;
+      Boolean b,b1,b2;
+      DAE.Exp e,ae;
+    // state variable
+    case (BackendDAE.VAR(varKind=BackendDAE.STATE()),_,1,_,
+          BackendDAE.VAR(varName=cr2),_,1,_,_,_,_,_,_,_)
+      equation
+        // check if replacable
+        false = BackendVariable.isStateVar(v2);
+        replaceableAlias(v2);
+        // merge fixed,start,nominal
+        var = BackendVariable.mergeAliasVars(v1,v2,false);
+        // setAliasType
+        ops = DAEUtil.getSymbolicTransformations(source);
+        avar = BackendVariable.mergeVariableOperations(v2,DAE.SOLVED(cr2,e1)::ops);
+        avar = BackendVariable.setBindExp(avar, e1);
+        // remove from vars
+        (vars,_) = BackendVariable.removeVar(index2,iVars);
+        // add to alias
+        avars = BackendVariable.addVar(avar,iAVars);
+        // add to vars
+        vars = BackendVariable.addVar(var,vars);
+        // add replacement
+        repl = BackendVarTransform.addReplacement(iRepl,cr2,e1,NONE());
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr2," = ",e1," found (4).\n"));
+      then
+        (vars,iKnVars,iExtVars,avars,repl);
+    // state variable
+    case (BackendDAE.VAR(varName=cr1),_,1,_,
+          BackendDAE.VAR(varKind=BackendDAE.STATE()),_,1,_,_,_,_,_,_,_)
+      equation
+        // check if replacable
+        false = BackendVariable.isStateVar(v1);
+        replaceableAlias(v1);
+        // merge fixed,start,nominal
+        var = BackendVariable.mergeAliasVars(v2,v1,false);
+        // setAliasType
+        ops = DAEUtil.getSymbolicTransformations(source);
+        avar = BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr1,e2)::ops);
+        avar = BackendVariable.setBindExp(avar, e2);
+        // remove from vars
+        (vars,_) = BackendVariable.removeVar(index1,iVars);
+        // add to alias
+        avars = BackendVariable.addVar(avar,iAVars);
+        // add to vars
+        vars = BackendVariable.addVar(var,vars);
+        // add replacement
+        repl = BackendVarTransform.addReplacement(iRepl,cr1,e2,NONE());
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found (4).\n"));
+      then
+        (vars,iKnVars,iExtVars,avars,repl);
+    // var var / state state
+    case (BackendDAE.VAR(varName=cr1),_,1,_,
+          BackendDAE.VAR(varName=cr2),_,1,_,_,_,_,_,_,_)
+      equation
+        // check if replacable
+        b1 = BackendVariable.isStateVar(v1);
+        b2 = BackendVariable.isStateVar(v2);
+        true = boolEq(b1,b2);
+        replaceableAlias(v1);
+        replaceableAlias(v2);
+        // calc wights
+        w1 = BackendVariable.calcAliasKey(cr1,v1);
+        w2 = BackendVariable.calcAliasKey(cr2,v2);
+        b = intGt(w2,w1);
+        // select alias
+        ((acr,avar,aindx,ae,cr,var,e)) = Util.if_(b,(cr2,v2,index2,e2,cr1,v1,e1),(cr1,v1,index1,e1,cr2,v2,e2));
+        // merge fixed,start,nominal
+        var = BackendVariable.mergeAliasVars(var,avar,false);
+        // setAliasType
+        ops = DAEUtil.getSymbolicTransformations(source);
+        avar = BackendVariable.mergeVariableOperations(avar,DAE.SOLVED(acr,e)::ops);
+        avar = BackendVariable.setBindExp(avar, e);
+        avar = Debug.bcallret2(b1,BackendVariable.setVarKind,avar,BackendDAE.DUMMY_STATE(),avar);
+        // remove from vars
+        (vars,_) = BackendVariable.removeVar(aindx,iVars);
+        // add to alias
+        avars = BackendVariable.addVar(avar,iAVars);
+        // add to vars
+        vars = BackendVariable.addVar(var,vars);
+        // add replacement
+        repl = BackendVarTransform.addReplacement(iRepl,acr,e,NONE());
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (4).\n"));
+      then
+        (vars,iKnVars,iExtVars,avars,repl);
+    // var/state parameter
+    case (BackendDAE.VAR(varName=cr1),_,1,_,
+          BackendDAE.VAR(varName=cr2),_,2,_,_,_,_,_,_,_)
+      equation
+        // check if replacable
+        replaceableAlias(v1);
+        // merge fixed,start,nominal
+        var = BackendVariable.mergeAliasVars(v2,v1,false);
+        // setAliasType
+        ops = DAEUtil.getSymbolicTransformations(source);
+        avar = BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr1,e2)::ops);
+        avar = BackendVariable.setBindExp(avar, e2);
+        avar = Debug.bcallret2(BackendVariable.isStateVar(v1),BackendVariable.setVarKind,avar,BackendDAE.DUMMY_STATE(),avar);
+        // remove from vars
+        (vars,_) = BackendVariable.removeVar(index1,iVars);
+        // add to alias
+        avars = BackendVariable.addVar(avar,iAVars);
+        // add to knvars
+        knvars = BackendVariable.addVar(var,iKnVars);
+        // add replacement
+        repl = BackendVarTransform.addReplacement(iRepl,cr1,e2,NONE());
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found (4).\n"));
+      then
+        (vars,knvars,iExtVars,avars,repl);
+    // parameter var/state 
+    case (BackendDAE.VAR(varName=cr1),_,2,_,
+          BackendDAE.VAR(varName=cr2),_,1,_,_,_,_,_,_,_)
+      equation
+        // check if replacable
+        replaceableAlias(v2);
+        // merge fixed,start,nominal
+        var = BackendVariable.mergeAliasVars(v1,v2,false);
+        // setAliasType
+        ops = DAEUtil.getSymbolicTransformations(source);
+        avar = BackendVariable.mergeVariableOperations(v2,DAE.SOLVED(cr2,e1)::ops);
+        avar = BackendVariable.setBindExp(avar, e1);
+        avar = Debug.bcallret2(BackendVariable.isStateVar(v2),BackendVariable.setVarKind,avar,BackendDAE.DUMMY_STATE(),avar);
+        // remove from vars
+        (vars,_) = BackendVariable.removeVar(index2,iVars);
+        // add to alias
+        avars = BackendVariable.addVar(avar,iAVars);
+        // add to knvars
+        knvars = BackendVariable.addVar(var,iKnVars);
+        // add replacement
+        repl = BackendVarTransform.addReplacement(iRepl,cr2,e1,NONE());
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr2," = ",e1," found (4).\n"));
+      then
+        (vars,knvars,iExtVars,avars,repl);
+    // var/state extvar
+    case (BackendDAE.VAR(varName=cr1),_,1,_,
+          BackendDAE.VAR(varName=cr2),_,3,_,_,_,_,_,_,_)
+      equation
+        // check if replacable
+        replaceableAlias(v1);
+        // merge fixed,start,nominal
+        var = BackendVariable.mergeAliasVars(v2,v1,false);
+        // setAliasType
+        ops = DAEUtil.getSymbolicTransformations(source);
+        avar = BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr1,e2)::ops);
+        avar = BackendVariable.setBindExp(avar, e2);
+        avar = Debug.bcallret2(BackendVariable.isStateVar(v1),BackendVariable.setVarKind,avar,BackendDAE.DUMMY_STATE(),avar);
+        // remove from vars
+        (vars,_) = BackendVariable.removeVar(index1,iVars);
+        // add to alias
+        avars = BackendVariable.addVar(avar,iAVars);
+        // add to extvars
+        extvars = BackendVariable.addVar(var,iExtVars);
+        // add replacement
+        repl = BackendVarTransform.addReplacement(iRepl,cr1,e2,NONE());
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr1," = ",e2," found (4).\n"));
+      then
+        (vars,iKnVars,extvars,avars,repl);
+    // extvar var/state 
+    case (BackendDAE.VAR(varName=cr1),_,3,_,
+          BackendDAE.VAR(varName=cr2),_,1,_,_,_,_,_,_,_)
+      equation
+        // check if replacable
+        replaceableAlias(v2);
+        // merge fixed,start,nominal
+        var = BackendVariable.mergeAliasVars(v1,v2,false);
+        // setAliasType
+        ops = DAEUtil.getSymbolicTransformations(source);
+        avar = BackendVariable.mergeVariableOperations(v2,DAE.SOLVED(cr2,e1)::ops);
+        avar = BackendVariable.setBindExp(avar, e1);
+        avar = Debug.bcallret2(BackendVariable.isStateVar(v2),BackendVariable.setVarKind,avar,BackendDAE.DUMMY_STATE(),avar);
+        // remove from vars
+        (vars,_) = BackendVariable.removeVar(index2,iVars);
+        // add to alias
+        avars = BackendVariable.addVar(avar,iAVars);
+        // add to knvars
+        extvars = BackendVariable.addVar(var,iExtVars);
+        // add replacement
+        repl = BackendVarTransform.addReplacement(iRepl,cr2,e1,NONE());
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr2," = ",e1," found (4).\n"));
+      then
+        (vars,iKnVars,extvars,avars,repl);
+  end match;
+end selectAliasVar;
+
+protected function replaceableAlias
+"function replaceableAlias
+  autor Frenkel TUD 2011-08
+  check if the variable is a replaceable alias."
+  input BackendDAE.Var var;
+algorithm
+  _ := match (var)
+    case (var)
+      equation
+        false = BackendVariable.isVarOnTopLevelAndOutput(var);
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
+        false = BackendVariable.varHasUncertainValueRefine(var);
+      then
+        ();
+  end match;
+end replaceableAlias;
 
 /*
  *     other helping functions
