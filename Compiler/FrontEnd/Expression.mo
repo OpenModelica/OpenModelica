@@ -1776,7 +1776,7 @@ algorithm
       equation
          tys = List.map(exps, typeof);
       then 
-        DAE.T_METATYPE(DAE.T_TUPLE(tys, DAE.emptyTypeSource), DAE.emptyTypeSource) ;
+        DAE.T_TUPLE(tys, DAE.emptyTypeSource);
     case (DAE.META_OPTION(_))then DAE.T_METATYPE(DAE.T_NONE_DEFAULT, DAE.emptyTypeSource);
     case (DAE.METARECORDCALL(path=p, index = i)) 
       equation
@@ -2495,9 +2495,9 @@ algorithm
         tExisting = ComponentReference.crefLastType(cref);
         failure(equality(tGiven = tExisting)); // false = valueEq(tGiven, tExisting);
         Debug.traceln("Warning: Expression.makeCrefExp: given type DAE.CREF.ty: " +& 
-                      ExpressionDump.typeString(tGiven) +&
+                      Types.unparseType(tGiven) +&
                       " is different from existing DAE.CREF.componentRef.ty: " +&
-                      ExpressionDump.typeString(tExisting));
+                      Types.unparseType(tExisting));
         e = DAE.CREF(cref, tGiven);
       then
         e;
@@ -6075,7 +6075,7 @@ algorithm
       equation
         //print(" verify subvars: " +& s1 +& " and " +& s2 +& " to go: " +& intString(listLength(vars1)) +& " , " +& intString(listLength(vars2))  +& "\n");
         true = stringEq(s1,s2);
-        //print(" types: " +& ExpressionDump.typeString(t1) +& " and " +& ExpressionDump.typeString(t2) +& "\n");
+        //print(" types: " +& Types.unparseType(t1) +& " and " +& Types.unparseType(t2) +& "\n");
         true = equalTypes(t1,t2);
         //print(s1 +& " and " +& s2 +& " EQUAL \n\n");
       then

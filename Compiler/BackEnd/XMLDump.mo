@@ -98,6 +98,7 @@ protected import ExpressionDump;
 protected import List;
 protected import Print;
 protected import Util;
+protected import Types;
 protected import DAEDump;
 protected import ValuesUtil;
 protected import ClassInf;
@@ -1811,7 +1812,7 @@ algorithm
       then ();
     case (DAE.CAST(ty = tp,exp = e))
       equation
-        str = ExpressionDump.typeString(tp);
+        str = Types.unparseType(tp);
         dumpStrOpenTag(MathMLApply);
         dumpStrOpenTag(MathMLOperator);
         Print.printBuf("(");

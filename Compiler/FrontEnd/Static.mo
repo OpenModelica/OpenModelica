@@ -576,7 +576,7 @@ algorithm
       equation
         Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(e);
         (cache,e1_1,prop1,st_1) = elabExp(cache,env, e1, impl, st,doVect,pre,info) "if expressions";
-        (cache,e_1,prop,st_2) = elabIfExp(cache,env,e1_1,prop1,e2,e3,impl,st,doVect,pre,info);
+        (cache,e_1,prop,st_2) = elabIfExp(cache,env,e1_1,prop1,e2,e3,impl,st_1,doVect,pre,info);
       then
         (cache,e_1,prop,st_2);
 

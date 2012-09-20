@@ -84,6 +84,7 @@ protected import Matching;
 protected import OnRelaxation;
 protected import SCode;
 protected import System;
+protected import Types;
 protected import Util;
 protected import Values;
 
@@ -190,8 +191,8 @@ algorithm
         eqnstr = BackendDump.equationStr(eqn);
         t1 = Expression.typeof(e1);
         t2 = Expression.typeof(e2);
-        t1str = ExpressionDump.typeString(t1);
-        t2str = ExpressionDump.typeString(t2);
+        t1str = Types.unparseType(t1);
+        t2str = Types.unparseType(t2);
         tstr = stringAppendList({t1str," != ", t2str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
       then ();
@@ -200,8 +201,8 @@ algorithm
         eqnstr = BackendDump.equationStr(eqn);
         t1 = Expression.typeof(e1);
         t2 = ComponentReference.crefLastType(cr);
-        t1str = ExpressionDump.typeString(t1);
-        t2str = ExpressionDump.typeString(t2);
+        t1str = Types.unparseType(t1);
+        t2str = Types.unparseType(t2);
         tstr = stringAppendList({t1str," != ", t2str});
         Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {eqnstr,tstr}, DAEUtil.getElementSourceFileInfo(source));
       then ();

@@ -3290,7 +3290,7 @@ template extType(Type type, Boolean isInput, Boolean isArray)
   case T_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePath(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
-  else error(sourceInfo(), 'Unknown external C type <%typeString(type)%>')
+  else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
 end extType;
 
@@ -3309,7 +3309,7 @@ template extTypeF77(Type type, Boolean isReference)
   case T_COMPLEX(complexClassType=RECORD(path=rname))
                          then 'struct <%underscorePath(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__) then "void*"
-  else error(sourceInfo(), 'Unknown external F77 type <%typeString(type)%>')
+  else error(sourceInfo(), 'Unknown external F77 type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isReference then '<%s%>*' else s
 end extTypeF77;
   
@@ -5738,6 +5738,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as TSUB(__)            then '<%daeExp(exp, context, &preExp, &varDecls)%>.c1'
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  case e as TUPLE(__)           then daeExpTuple(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as LIST(__)            then daeExpList(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as CONS(__)            then daeExpCons(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as META_TUPLE(__)      then daeExpMetaTuple(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -6402,22 +6403,29 @@ case IFEXP(__) then
       '(<%condExp%>?<%eThen%>:<%eElse%>)'
     else
       let condVar = tempDecl("modelica_boolean", &varDecls /*BUFD*/)
-      let resVarType = expTypeFromExpArrayIf(expThen)
-      let resVar = tempDecl(resVarType, &varDecls /*BUFD*/)
+      let resVar = tempDeclTuple(typeof(exp), &varDecls /*BUFD*/)
       let &preExp +=  
       <<
       <%condVar%> = (modelica_boolean)<%condExp%>;
       if (<%condVar%>) {
         <%preExpThen%>
-        <%if eThen then '<%resVar%> = (<%resVarType%>)<%eThen%>;'%>
+        <%if eThen then resultVarAssignment(typeof(exp),resVar,eThen)%>
       } else {
         <%preExpElse%>
-        <%if eElse then '<%resVar%> = (<%resVarType%>)<%eElse%>;'%>
+        <%if eElse then resultVarAssignment(typeof(exp),resVar,eElse)%>
       }<%\n%>
       >>
       resVar)
 end daeExpIf;
 
+template resultVarAssignment(DAE.Type ty, Text lhs, Text rhs) "Tuple need to be considered"
+::=
+match ty
+case T_TUPLE(__) then
+  (tupleType |> t hasindex i1 fromindex 1 => '<%lhs%>.c<%i1%> = <%rhs%>.c<%i1%>;' ; separator="\n")
+else
+  '<%lhs%> = <%rhs%>;'
+end resultVarAssignment;
 
 template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a function call."
@@ -7119,7 +7127,10 @@ template daeExpMatch(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varD
 ::=
 match exp
 case exp as MATCHEXPRESSION(__) then
-  let res = match et case T_NORETCALL(__) then "ERROR_MATCH_EXPRESSION_NORETCALL" else tempDecl(expTypeModelica(et), &varDecls)
+  let res = match et
+    case T_NORETCALL(__) then "#error ERROR_MATCH_EXPRESSION_NORETCALL"
+    case T_TUPLE(tupleType={}) then "#error ERROR_MATCH_EXPRESSION_EMPTY_TUPLE"
+    else tempDecl(expTypeModelica(et), &varDecls)
   let startIndexOutputs = "ERROR_INDEX"
   daeExpMatch2(exp,listExpLength1,res,startIndexOutputs,context,&preExp,&varDecls)
 end daeExpMatch;
@@ -7345,6 +7356,31 @@ case CONS(__) then
   tmp
 end daeExpCons;
 
+template tempDeclTuple(DAE.Type inType, Text &varDecls)
+::=
+  match inType
+  case T_TUPLE(__) then
+  let tmpVar = 'tmp<%System.tmpTick()%>'
+  let &varDecls +=
+  <<
+  struct {
+    <%tupleType |> ty hasindex i1 fromindex 1 => '<%expTypeModelica(ty)%> c<%i1%>;'%>
+  } <%tmpVar%>;
+  >>
+  tmpVar
+  else tempDecl(expTypeArrayIf(inType),&varDecls)
+end tempDeclTuple;
+
+template daeExpTuple(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Generates code for a meta modelica tuple expression."
+::=
+match exp
+case TUPLE(__) then
+  let tmpVar = tempDeclTuple(typeof(exp),&varDecls)
+  let tmp = (PR |> e hasindex i1 fromindex 1 => '<%tmpVar%>.c<%i1%> = <%daeExp(e, context, &preExp, &varDecls)%>;<%\n%>')
+  let &preExp += tmp
+  tmpVar
+end daeExpTuple;
 
 template daeExpMetaTuple(Exp exp, Context context, Text &preExp /*BUFP*/,
                          Text &varDecls /*BUFP*/)
@@ -7588,7 +7624,7 @@ template expTypeShort(DAE.Type type)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   case T_UNKNOWN(__) then "complex" /* TODO: Don't do this to me! */
   case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
-  else error(sourceInfo(),'expTypeShort:<%typeString(type)%>')
+  else error(sourceInfo(),'expTypeShort:<%unparseType(type)%>')
 end expTypeShort;
 
 template mmcVarType(Variable var)
@@ -7662,14 +7698,6 @@ template expTypeFromExpArray(Exp exp)
 ::=
   expTypeFromExpFlag(exp, 3)
 end expTypeFromExpArray;
-
-
-template expTypeFromExpArrayIf(Exp exp)
- "Generate type helper."
-::=
-  expTypeFromExpFlag(exp, 4)
-end expTypeFromExpArrayIf;
-
 
 template expTypeFlag(DAE.Type ty, Integer flag)
  "Generate type helper."
@@ -7801,9 +7829,11 @@ template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecl
     let &preExp = buffer ""
     let &assignments = buffer ""
     let expPart = daeExp(s.exp, context, &preExp, &varDecls)
-    <</* Pattern-matching assignment */
+    <<
     <%preExp%>
-    <%patternMatch(lhs.pattern,expPart,"MMC_THROW()",&varDecls,&assignments)%><%assignments%>>>
+    /* Pattern-matching assignment */
+    <%patternMatch(lhs.pattern,expPart,"MMC_THROW()",&varDecls,&assignments)%><%assignments%>
+    >>
 end algStmtAssignPattern;
 
 template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls, Text &assignments)

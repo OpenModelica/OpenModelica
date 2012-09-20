@@ -610,7 +610,7 @@ algorithm
     case DAE.PAT_CONS(head,tail) then patternStr(head) +& "::" +& patternStr(tail);
 
     case DAE.PAT_CONSTANT(exp=exp) then ExpressionDump.printExpStr(exp);
-    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" +& ExpressionDump.typeString(et) +& ")" +& ExpressionDump.printExpStr(exp);
+    // case DAE.PAT_CONSTANT(SOME(et),exp) then "(" +& Types.unparseType(et) +& ")" +& ExpressionDump.printExpStr(exp);
     case DAE.PAT_AS(id=id,pat=pat) then id +& " as " +& patternStr(pat);
     case DAE.PAT_AS_FUNC_PTR(id, pat) then id +& " as " +& patternStr(pat);
     else
@@ -720,7 +720,7 @@ algorithm
         (optPatternMatrix,numNonEmptyColumns) = removeWildPatternColumnsFromMatrix(patternMatrix,{},0);
         tpl = findPatternToConvertToSwitch(optPatternMatrix,0,numNonEmptyColumns,info);
         (_,ty,_) = tpl;
-        str = ExpressionDump.typeString(ty);
+        str = Types.unparseType(ty);
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO),Error.MATCH_TO_SWITCH_OPTIMIZATION, {str}, info);
       then DAE.MATCH(SOME(tpl));
     else DAE.MATCH(NONE());

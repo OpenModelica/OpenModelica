@@ -56,6 +56,7 @@ protected import Global;
 protected import List;
 protected import Print;
 protected import System;
+protected import Types;
 protected import Util;
 
 // do not make this public. instead use the function below.
@@ -626,7 +627,7 @@ algorithm
         str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "}" , "");
         // this printing way will be useful when adressin the  'crefEqual' bug.
         // str = ComponentReference.printComponentRef2Str(s, subs);
-        str2 = ExpressionDump.typeString(ty);
+        str2 = Types.unparseType(ty);
         str = stringAppendList({str," [",str2,"]"});
       then
         str;
@@ -635,7 +636,7 @@ algorithm
       equation
         true = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
-        str2 = ExpressionDump.typeString(ty);
+        str2 = Types.unparseType(ty);
         strrest = debugPrintComponentRefTypeStr(cr);
         str = stringAppendList({str," [",str2,"] ", "__", strrest});
       then
@@ -645,7 +646,7 @@ algorithm
       equation
         false = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
-        str2 = ExpressionDump.typeString(ty);
+        str2 = Types.unparseType(ty);
         strrest = debugPrintComponentRefTypeStr(cr);
         str = stringAppendList({str," [",str2,"] ", ".", strrest});
       then

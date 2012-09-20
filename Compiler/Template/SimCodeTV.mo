@@ -2288,10 +2288,6 @@ package ExpressionDump
     input DAE.Exp e;
     output String s;
   end printExpStr;
-  function typeString
-    input DAE.Type et;
-    output String s;
-  end typeString;
 end ExpressionDump;
 
 package Config

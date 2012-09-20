@@ -1271,7 +1271,7 @@ template extTypeXml(Type type, Boolean isInput, Boolean isArray)
   case T_COMPLEX(complexClassType=RECORD(path=rname))
                       then 'struct <%underscorePathXml(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__)    then "modelica_metatype"
-  else error(sourceInfo(), 'Unknown external C type <%typeString(type)%>')
+  else error(sourceInfo(), 'Unknown external C type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isInput then (if isArray then '<%match s case "const char*" then "" else "const "%><%s%>*' else s) else '<%s%>*'
 end extTypeXml;
 
@@ -1290,7 +1290,7 @@ template extTypeF77Xml(Type type, Boolean isReference)
   case T_COMPLEX(complexClassType=RECORD(path=rname))
                          then 'struct <%underscorePathXml(rname)%>'
   case T_METATYPE(__) case T_METABOXED(__) then "void*"
-  else error(sourceInfo(), 'Unknown external F77 type <%typeString(type)%>')
+  else error(sourceInfo(), 'Unknown external F77 type <%unparseType(type)%>')
   match type case T_ARRAY(__) then s else if isReference then '<%s%>*' else s
 end extTypeF77Xml;
 
@@ -3816,7 +3816,7 @@ template expTypeShortXml(DAE.Type type)
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
   case T_UNKNOWN(__) then "complex" /* TODO: Don't do this to me! */
   case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
-  else error(sourceInfo(),'expTypeShortXml:<%typeString(type)%>')
+  else error(sourceInfo(),'expTypeShortXml:<%unparseType(type)%>')
 end expTypeShortXml;
 
 template mmcVarTypeXml(Variable var)

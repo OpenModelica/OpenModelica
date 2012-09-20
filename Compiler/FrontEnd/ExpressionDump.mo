@@ -98,64 +98,6 @@ algorithm
   end match;
 end subscriptString;
 
-public function typeString "function typeString
-  Converts a type into a String"
-  input Type inType;
-  output String outString;
-algorithm
-  outString := matchcontinue (inType)
-    local
-      list<Ident> ss;
-      Type t;
-      DAE.Dimensions dims;
-      String s1,ts,res,s;
-      list<Var> vars;
-      ClassInf.State ci;
-      
-    case DAE.T_INTEGER(varLst = _) then "T_INT";
-    case DAE.T_REAL(varLst = _) then "T_REAL";
-    case DAE.T_BOOL(varLst = _) then "T_BOOL";
-    case DAE.T_STRING(varLst = _) then "T_STRING";
-    case DAE.T_ENUMERATION(path = _) then "T_ENUMERATION";
-    case DAE.T_UNKNOWN(source = _) then "T_UNKNOWN";
-    case DAE.T_ANYTYPE(source = _) then "T_ANYTYPE";
-    
-    case (DAE.T_ARRAY(ty = t,dims = dims))
-      equation
-        ss = List.map(dims, dimensionString);
-        s1 = Util.stringDelimitListNonEmptyElts(ss, ", ");
-        ts = typeString(t);
-        res = stringAppendList({"/tp:",ts,"[",s1,"]/"});
-      then
-        res;
-    
-    case(DAE.T_COMPLEX(varLst=vars,complexClassType=ci))
-      equation
-        s = "DAE.T_COMPLEX(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci);
-      then s;
-        
-    case(DAE.T_SUBTYPE_BASIC(varLst=vars,complexClassType=ci, complexType = t))
-      equation
-        s = "DAE.T_SUBTYPE_BASIC(" +& typeVarsStr(vars) +& "):" +& ClassInf.printStateStr(ci) +& 
-            " extending basic type: " +& typeString(t);
-      then s;
-    
-    case (DAE.T_METATYPE(ty = _)) then "T_METATYPE";
-    case (DAE.T_METABOXED(ty = _)) then "T_METABOXED";
-    case (DAE.T_NORETCALL(source = _)) then "T_NORETCALL";
-    case (DAE.T_FUNCTION_REFERENCE_VAR(functionType = _)) then "T_FUNCTION_REFERENCE_VAR";
-    case (DAE.T_FUNCTION_REFERENCE_FUNC(builtin=_)) then "T_FUNCTION_REFERENCE_FUNC";
-    
-    else
-      equation
-        ts = Types.printTypeStr(inType);
-        s = "ExpressionDump.typeString failed on type: " +& ts;
-        Error.addMessage(Error.INTERNAL_ERROR,{s});
-        s = "#" +& s +& "#";
-      then s;
-  end matchcontinue;
-end typeString;
-
 public function binopSymbol "
 function: binopSymbol
   Return a string representation of the Operator."
@@ -258,28 +200,28 @@ algorithm
     
     case (DAE.ADD(ty = t))
       equation
-        ts = typeString(t);
+        ts = Types.unparseType(t);
         s = stringAppendList({" +<", ts, "> "});
       then
         s;
     
     case (DAE.SUB(ty = t)) 
       equation
-        ts = typeString(t);
+        ts = Types.unparseType(t);
         s = stringAppendList({" -<", ts, "> "});
       then
         s;
     
     case (DAE.MUL(ty = t)) 
       equation
-        ts = typeString(t);
+        ts = Types.unparseType(t);
         s = stringAppendList({" *<", ts, "> "});
       then
         s;
     
     case (DAE.DIV(ty = t))
       equation
-        ts = typeString(t);
+        ts = Types.unparseType(t);
         s = stringAppendList({" /<", ts, "> "});
       then
         s;
@@ -287,20 +229,20 @@ algorithm
     case (DAE.POW(ty = t)) then " ^ ";
     case (DAE.ADD_ARR(ty = t))
       equation
-        ts = typeString(t);
+        ts = Types.unparseType(t);
         s = stringAppendList({" +<ADD_ARR><", ts, "> "});
       then
         s;
     case (DAE.SUB_ARR(ty = t))
       equation
-        ts = typeString(t);
+        ts = Types.unparseType(t);
         s = stringAppendList({" -<SUB_ARR><", ts, "> "});
       then
         s;
     case (DAE.MUL_ARR(ty = _)) then " *<MUL_ARRAY> ";
     case (DAE.DIV_ARR(ty = t))
       equation
-        ts = typeString(t);
+        ts = Types.unparseType(t);
         s = stringAppendList({" /<DIV_ARR><", ts, "> "});
       then
         s;
@@ -729,7 +671,7 @@ algorithm
     
     case (DAE.ARRAY(array = es,ty=tp), _, _, _)
       equation
-        // s3 = typeString(tp); // adrpo: not used!
+        // s3 = Types.unparseType(tp); // adrpo: not used!
         s = stringDelimitList(
           List.map3(es, printExp2Str, stringDelimiter, opcreffunc, opcallfunc), ",");
         s = stringAppendList({"{", s, "}"});
@@ -746,7 +688,7 @@ algorithm
     
     case (DAE.MATRIX(matrix = lstes,ty=tp), _, _, _)
       equation
-        // s3 = typeString(tp); // adrpo: not used!
+        // s3 = Types.unparseType(tp); // adrpo: not used!
         s = stringDelimitList(List.map1(lstes, printRowStr, stringDelimiter), "},{");
         s = stringAppendList({"{{",s,"}}"});
       then
@@ -790,7 +732,7 @@ algorithm
     
     case (DAE.CAST(ty = tp,exp = e), _, _, _)
       equation
-        str = typeString(tp);
+        str = Types.unparseType(tp);
         s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
         res = stringAppendList({"DAE.CAST(",str,", ",s,")"});
       then
@@ -900,7 +842,7 @@ algorithm
     case (DAE.SHARED_LITERAL(index=i,ty=et), _, _, _)
       equation
         s1 = intString(i);
-        s2 = typeString(et);
+        s2 = Types.unparseType(et);
         s = stringAppendList({"#SHARED_LITERAL_",s1," (",s2,")#"});
       then s;
 
@@ -1243,7 +1185,7 @@ algorithm
     
     case (DAE.CAST(ty = ty,exp = e))
       equation
-        tystr = typeString(ty);
+        tystr = Types.unparseType(ty);
         ct = dumpExpGraphviz(e);
       then
         Graphviz.LNODE("CAST",{tystr},{},{ct});
@@ -1354,7 +1296,7 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         s = /*ComponentReference.printComponentRefStr*/ComponentReference.debugPrintComponentRefTypeStr(c);
-        tpStr= typeString(ty);
+        tpStr= Types.unparseType(ty);
         res_str = stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then
         res_str;
@@ -1366,7 +1308,7 @@ algorithm
         new_level2 = level + 1;
         sym = debugBinopSymbol(op);
         tp = Expression.typeof(exp);
-        str = typeString(tp);
+        str = Types.unparseType(tp);
         lt = dumpExpStr(e1, new_level1);
         rt = dumpExpStr(e2, new_level2);
         res_str = stringAppendList({gen_str,"BINARY ",sym," ",str,"\n",lt,rt,""});
@@ -1379,7 +1321,7 @@ algorithm
         new_level1 = level + 1;
         sym = unaryopSymbol(op);
         ct = dumpExpStr(e, new_level1);
-        str = "expType:"+&typeString(Expression.typeof(e))+&" optype:"+&typeString(Expression.typeofOp(op))+&"\n";
+        str = "expType:"+&Types.unparseType(Expression.typeof(e))+&" optype:"+&Types.unparseType(Expression.typeofOp(op))+&"\n";
         res_str = stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
@@ -1460,7 +1402,7 @@ algorithm
         nodes = List.map1(es, dumpExpStr, new_level1);
         nodes_1 = stringAppendList(nodes);
         s = boolString(b);
-        tpStr = typeString(tp);
+        tpStr = Types.unparseType(tp);
         res_str = stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
       then
         res_str;
@@ -1512,7 +1454,7 @@ algorithm
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
-        tystr = typeString(ty);
+        tystr = Types.unparseType(ty);
         ct = dumpExpStr(e, new_level1);
         res_str = stringAppendList({gen_str,"CAST ","\n",ct,""});
       then
@@ -1648,30 +1590,8 @@ protected
   Type ty;
 algorithm
   ty := Expression.typeof(inExp);
-  str := typeString(ty);
+  str := Types.unparseType(ty);
 end typeOfString;
-
-protected function typeVarsStr "help function to typeString"
-  input list<Var> vars;
-  output String s;
-algorithm
-  s := stringDelimitList(List.map(vars,typeVarString),",");
-end typeVarsStr;
-
-protected function typeVarString "help function to typeVarsStr"
-  input Var v;
-  output String s;
-algorithm
-  s := match (v)
-    local 
-      String name; Type ty;
-    
-    case(DAE.TYPES_VAR(name = name,ty = ty)) 
-      equation
-        s = name +& ":" +& typeString(ty);
-      then s;
-  end match;
-end typeVarString;
 
 public function debugPrintComponentRefExp "
 This function takes an DAE.Exp and tries to print ComponentReferences.
