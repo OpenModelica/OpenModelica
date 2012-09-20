@@ -308,6 +308,12 @@ public function systemCall
   external "C" outInteger=SystemImpl__systemCall(inString) annotation(Library = "omcruntime");
 end systemCall;
 
+public function systemCallParallel
+  input list<String> inStrings;
+  output list<Integer> outIntegers;
+  external "C" outIntegers=SystemImpl__systemCallParallel(inStrings) annotation(Library = "omcruntime");
+end systemCallParallel;
+
 public function spawnCall
   input String path "The absolute path to the executable";
   input String str "The list of arguments with executable";

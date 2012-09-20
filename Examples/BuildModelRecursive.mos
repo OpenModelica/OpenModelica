@@ -1,6 +1,6 @@
 // Note: Run with +g=MetaModelica
 
-setCommandLineOptions("+g=Modelica");
+setCommandLineOptions({"+g=Modelica","+d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
 MSLVersion:="3.1";
@@ -36,6 +36,7 @@ deleteClass(Modelica.Utilities);
 system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
+
 a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(recursive=true,sort=true)};
 getErrorString();
 
@@ -43,11 +44,15 @@ getErrorString();
 
 print("Number of classes to build: " + String(size(a,1)));
 system("rm -f Modelica.* " + log);
+
+/*** This is the stuff executed for each model ***/
+
 min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 statFile := \""+s+".stat\";
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
 loadModel(Modelica,{\"3.1\"});"+loadModelicaTest+"
+setCommandLineOptions(\"+d=nogen\");
 res:=buildModel("+s+");
 errFile:=\""+s+".err\";
 simFile:=\""+s+".sim\";
@@ -98,7 +103,7 @@ str:=\"<tr><td>\" + (if err <> \"\" then \"<a href=\"+errFile+\">"+s+"</a>\" els
 writeFile(statFile,str);getErrorString();
 ") for s in a);
 getErrorString();
-min(0==system("ulimit -t "+ulimitOmc+" ; " + omc + " " + s + ".mos") for s in a);
+results := system_parallel({"ulimit -t "+ulimitOmc+" ; " + omc + " " + s + ".mos" for s in a});
 getErrorString();
 
 echo(false);

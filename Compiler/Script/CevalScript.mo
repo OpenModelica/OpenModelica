@@ -1568,6 +1568,13 @@ algorithm
       then
         (cache,Values.INTEGER(resI),st);
         
+    case (cache,env,"system_parallel",{Values.ARRAY(valueLst=vals)},st,msg)
+      equation
+        strs = List.map(vals, ValuesUtil.extractValueString);
+        v = ValuesUtil.makeIntArray(System.systemCallParallel(strs));
+      then
+        (cache,v,st);
+
     case (cache,env,"timerClear",{Values.INTEGER(i)},st,msg)
       equation
         System.realtimeClear(i);

@@ -28,8 +28,6 @@
  *
  */
 
-extern "C" {
-
 #if defined(_MSC_VER)
 #include <Windows.h>
 #endif
@@ -665,6 +663,4 @@ extern const char* System_snprintff(const char *fmt, int len, double d)
   snprintf(buf,len,fmt,d);
   buf[1023] = 0;
   return buf;
-}
-
 }

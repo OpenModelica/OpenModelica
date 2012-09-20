@@ -565,6 +565,42 @@ int SystemImpl__systemCall(const char* str)
   return ret_val;
 }
 
+void* SystemImpl__systemCallParallel(void *lst)
+{
+  void *tmp = lst;
+  int sz = 0, i;
+  char **calls;
+  int *results;
+  while (RML_NILHDR != RML_GETHDR(tmp)) {
+    sz++;
+    tmp = RML_CDR(tmp);
+  }
+  if (sz == 0) return mk_nil();
+  calls = (char**) malloc(sz*sizeof(char*));
+  assert(calls);
+  results = (int*) malloc(sz*sizeof(int));
+  assert(results);
+  tmp = lst;
+  sz = 0;
+  while (RML_NILHDR != RML_GETHDR(tmp)) {
+    calls[sz++] = RML_STRINGDATA(RML_CAR(tmp));
+    tmp = RML_CDR(tmp);
+  }
+#pragma omp parallel for private(i) schedule(dynamic)
+  for (i=0; i<sz; i++) {
+    /* fprintf(stderr, "Starting call %s\n", calls[i]); */
+    results[i] = system(calls[i]);
+    /* fprintf(stderr, "Finished call %s=%d\n", calls[i], results[i]); */
+  }
+  free(calls);
+  free(results);
+  tmp = mk_nil();
+  for (i=sz-1; i>=0; i--) {
+    tmp = mk_cons(mk_icon(results[i]),tmp);
+  }
+  return tmp;
+}
+
 int SystemImpl__spawnCall(const char* path, const char* str)
 {
   int ret_val = -1;

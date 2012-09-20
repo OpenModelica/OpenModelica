@@ -578,9 +578,9 @@ else
 fi
 
 if test "Darwin" != `uname`; then
-  RT_LDFLAGS="$RT_LDFLAGS -lrt"
+  RT_LDFLAGS="$RT_LDFLAGS -lrt -fopenmp"
 else
-  RT_LDFLAGS="$RT_LDFLAGS -liconv"
+  RT_LDFLAGS="$RT_LDFLAGS -liconv -fopenmp"
 fi
 
 dnl should we compile modpar
@@ -628,6 +628,8 @@ else
   MODELICA_SPEC_PLATFORM=$OPENMODELICA_SPEC_PLATFORM
 fi
 AC_MSG_RESULT([$MODELICA_SPEC_PLATFORM])
+
+CFLAGS="$CFLAGS"
 
 date=`date "+%Y-%m-%d %H:%M:%S"`
 

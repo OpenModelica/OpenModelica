@@ -792,6 +792,13 @@ RML_BEGIN_LABEL(System__systemCall)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__systemCallParallel)
+{
+  rmlA0 = SystemImpl__systemCallParallel(rmlA0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__spawnCall)
 {
   const char* path = RML_STRINGDATA(rmlA0);

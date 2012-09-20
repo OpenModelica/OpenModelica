@@ -989,6 +989,13 @@ external "builtin" annotation(__OpenModelica_Impure=true);
 annotation(preferredView="text");
 end system;
 
+function system_parallel "Similar to system(3). Executes the given commands in the system shell, in parallel if omc was compiled using OpenMP."
+  input String callStr[:] "String to call: bash -c $callStr";
+  output Integer retval[:] "Return value of the system call; usually 0 on success";
+external "builtin" annotation(__OpenModelica_Impure=true);
+annotation(preferredView="text");
+end system_parallel;
+
 function saveAll "save the entire loaded AST to file."
   input String fileName;
   output Boolean success;
