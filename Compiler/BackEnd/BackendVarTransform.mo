@@ -1434,7 +1434,7 @@ protected function replaceWhenClausesLst
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;  
 algorithm
-  (outWhenClauseLst,oReplacementPerformed) :=
+  (oWhenclauses,oReplacementPerformed) :=
    match (inWhenClauseLst,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed,iAcc)
     local
       Option<Integer> elsindx;
