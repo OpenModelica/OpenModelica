@@ -373,7 +373,7 @@ void read_input_xml(int argc, char **argv,
 
   /* Read all static data from File for every variable */
   /* Read states static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for states:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for states:");
   for(int i=0; i<modelData->nStates; i++)
   {
     /* read var info */
@@ -405,14 +405,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rSta[i]["min"], &(modelData->realVarsData[i].attribute.min));
     read_value(mi.rSta[i]["max"], &(modelData->realVarsData[i].attribute.max));
 
-    DEBUG_INFO_AL10(LOG_SOLVER, "| Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[i].info.name, (modelData->realVarsData[i].attribute.useStart)?"":"{", modelData->realVarsData[i].attribute.start, (modelData->realVarsData[i].attribute.useStart)?"":"}", (modelData->realVarsData[i].attribute.fixed)?"true":"false", (modelData->realVarsData[i].attribute.useNominal)?"":"{", modelData->realVarsData[i].attribute.nominal, (modelData->realVarsData[i].attribute.useNominal)?"":"}", modelData->realVarsData[i].attribute.min, modelData->realVarsData[i].attribute.max);
+    DEBUG_INFO_AL10(LOG_DEBUG, "| Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[i].info.name, (modelData->realVarsData[i].attribute.useStart)?"":"{", modelData->realVarsData[i].attribute.start, (modelData->realVarsData[i].attribute.useStart)?"":"}", (modelData->realVarsData[i].attribute.fixed)?"true":"false", (modelData->realVarsData[i].attribute.useNominal)?"":"{", modelData->realVarsData[i].attribute.nominal, (modelData->realVarsData[i].attribute.useNominal)?"":"}", modelData->realVarsData[i].attribute.min, modelData->realVarsData[i].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[i].info.name)] = i;
   }
 
   /* Read stateDerivatives static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for stateDerivatives:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for stateDerivatives:");
   for(int i=0; i<modelData->nStates; i++)
   {
     /* read var info */
@@ -444,14 +444,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rDer[i]["min"], &(modelData->realVarsData[modelData->nStates+i].attribute.min));
     read_value(mi.rDer[i]["max"], &(modelData->realVarsData[modelData->nStates+i].attribute.max));
 
-    DEBUG_INFO_AL10(LOG_SOLVER, "| Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[modelData->nStates+i].info.name, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.start, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"}", (modelData->realVarsData[modelData->nStates+i].attribute.fixed)?"true":"false", (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.nominal, (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"}", modelData->realVarsData[modelData->nStates+i].attribute.min, modelData->realVarsData[modelData->nStates+i].attribute.max);
+    DEBUG_INFO_AL10(LOG_DEBUG, "| Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[modelData->nStates+i].info.name, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.start, (modelData->realVarsData[modelData->nStates+i].attribute.useStart)?"":"}", (modelData->realVarsData[modelData->nStates+i].attribute.fixed)?"true":"false", (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"{", modelData->realVarsData[modelData->nStates+i].attribute.nominal, (modelData->realVarsData[modelData->nStates+i].attribute.useNominal)?"":"}", modelData->realVarsData[modelData->nStates+i].attribute.min, modelData->realVarsData[modelData->nStates+i].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[modelData->nStates+i].info.name)]= modelData->nStates+i;
   }
 
   /* Read real algebraics static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for real algebraic:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for real algebraic:");
   for(int i=0; i<(modelData->nVariablesReal - 2*modelData->nStates); i++)
   {
     int j = 2*modelData->nStates + i;
@@ -485,14 +485,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rAlg[i]["min"], &(modelData->realVarsData[j].attribute.min));
     read_value(mi.rAlg[i]["max"], &(modelData->realVarsData[j].attribute.max));
 
-    DEBUG_INFO_AL10(LOG_SOLVER, "| Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[j].info.name, (modelData->realVarsData[j].attribute.useStart)?"":"{", modelData->realVarsData[j].attribute.start, (modelData->realVarsData[j].attribute.useStart)?"":"}", (modelData->realVarsData[j].attribute.fixed)?"true":"false", (modelData->realVarsData[j].attribute.useNominal)?"":"{", modelData->realVarsData[j].attribute.nominal, (modelData->realVarsData[j].attribute.useNominal)?"":"}", modelData->realVarsData[j].attribute.min, modelData->realVarsData[j].attribute.max);
+    DEBUG_INFO_AL10(LOG_DEBUG, "| Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realVarsData[j].info.name, (modelData->realVarsData[j].attribute.useStart)?"":"{", modelData->realVarsData[j].attribute.start, (modelData->realVarsData[j].attribute.useStart)?"":"}", (modelData->realVarsData[j].attribute.fixed)?"true":"false", (modelData->realVarsData[j].attribute.useNominal)?"":"{", modelData->realVarsData[j].attribute.nominal, (modelData->realVarsData[j].attribute.useNominal)?"":"}", modelData->realVarsData[j].attribute.min, modelData->realVarsData[j].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->realVarsData[j].info.name)]= j;
   }
 
   /* Read integer variables static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for integer algebraic:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for integer algebraic:");
   for(int i=0; i<modelData->nVariablesInteger; i++)
   {
     /* read var info */
@@ -522,13 +522,13 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.iAlg[i]["min"], &(modelData->integerVarsData[i].attribute.min));
     read_value(mi.iAlg[i]["max"], &(modelData->integerVarsData[i].attribute.max));
 
-    DEBUG_INFO_AL7(LOG_SOLVER, "| Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerVarsData[i].info.name, (modelData->integerVarsData[i].attribute.useStart)?"":"{", modelData->integerVarsData[i].attribute.start, (modelData->integerVarsData[i].attribute.useStart)?"":"}", (modelData->integerVarsData[i].attribute.fixed)?"true":"false", modelData->integerVarsData[i].attribute.min, modelData->integerVarsData[i].attribute.max);
+    DEBUG_INFO_AL7(LOG_DEBUG, "| Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerVarsData[i].info.name, (modelData->integerVarsData[i].attribute.useStart)?"":"{", modelData->integerVarsData[i].attribute.start, (modelData->integerVarsData[i].attribute.useStart)?"":"}", (modelData->integerVarsData[i].attribute.fixed)?"true":"false", modelData->integerVarsData[i].attribute.min, modelData->integerVarsData[i].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->integerVarsData[i].info.name)]= i;
   }
 
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for boolean algebraic:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for boolean algebraic:");
   /* Read boolean variables static data */
   for(int i=0; i<modelData->nVariablesBoolean; i++)
   {
@@ -557,14 +557,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.bAlg[i]["start"], &(modelData->booleanVarsData[i].attribute.start));
     read_value(mi.bAlg[i]["fixed"], &(modelData->booleanVarsData[i].attribute.fixed));
 
-    DEBUG_INFO_AL5(LOG_SOLVER, "| Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.useStart?"":"{", modelData->booleanVarsData[i].attribute.start?"true":"false", modelData->booleanVarsData[i].attribute.useStart?"":"}", modelData->booleanVarsData[i].attribute.fixed?"true":"false");
+    DEBUG_INFO_AL5(LOG_DEBUG, "| Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanVarsData[i].info.name, modelData->booleanVarsData[i].attribute.useStart?"":"{", modelData->booleanVarsData[i].attribute.start?"true":"false", modelData->booleanVarsData[i].attribute.useStart?"":"}", modelData->booleanVarsData[i].attribute.fixed?"true":"false");
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->booleanVarsData[i].info.name)]= i;
   }
 
   /* read string variables static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for string algebraic:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for string algebraic:");
   for(int i=0; i<modelData->nVariablesString; i++)
   {
     /* read var info */
@@ -591,7 +591,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.sAlg[i]["useStart"], &(modelData->stringVarsData[i].attribute.useStart));
     read_value(mi.sAlg[i]["start"], &(modelData->stringVarsData[i].attribute.start));
 
-    DEBUG_INFO_AL4(LOG_SOLVER, "| String %s(%sstart=%s%s)", modelData->stringVarsData[i].info.name, (modelData->stringVarsData[i].attribute.useStart)?"":"{", modelData->stringVarsData[i].attribute.start, (modelData->stringVarsData[i].attribute.useStart)?"":"}");
+    DEBUG_INFO_AL4(LOG_DEBUG, "| String %s(%sstart=%s%s)", modelData->stringVarsData[i].info.name, (modelData->stringVarsData[i].attribute.useStart)?"":"{", modelData->stringVarsData[i].attribute.start, (modelData->stringVarsData[i].attribute.useStart)?"":"}");
 
     /* create a mapping for Alias variable to get the correct index */
     mapAlias[(modelData->stringVarsData[i].info.name)]=i;
@@ -601,7 +601,7 @@ void read_input_xml(int argc, char **argv,
    * real all parameters
    */
   /* read Parameters static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for real parameters:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for real parameters:");
   for(int i=0; i<modelData->nParametersReal; i++)
   {
     /* read var info */
@@ -633,14 +633,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.rPar[i]["min"], &(modelData->realParameterData[i].attribute.min));
     read_value(mi.rPar[i]["max"], &(modelData->realParameterData[i].attribute.max));
 
-    DEBUG_INFO_AL10(LOG_SOLVER, "| parameter Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.useStart?"":"{", modelData->realParameterData[i].attribute.start, modelData->realParameterData[i].attribute.useStart?"":"}", modelData->realParameterData[i].attribute.fixed?"true":"false", modelData->realParameterData[i].attribute.useNominal?"":"{", modelData->realParameterData[i].attribute.nominal, modelData->realParameterData[i].attribute.useNominal?"":"}", modelData->realParameterData[i].attribute.min, modelData->realParameterData[i].attribute.max);
+    DEBUG_INFO_AL10(LOG_DEBUG, "| parameter Real %s(%sstart=%g%s, fixed=%s, %snominal=%g%s, min=%g, max=%g)", modelData->realParameterData[i].info.name, modelData->realParameterData[i].attribute.useStart?"":"{", modelData->realParameterData[i].attribute.start, modelData->realParameterData[i].attribute.useStart?"":"}", modelData->realParameterData[i].attribute.fixed?"true":"false", modelData->realParameterData[i].attribute.useNominal?"":"{", modelData->realParameterData[i].attribute.nominal, modelData->realParameterData[i].attribute.useNominal?"":"}", modelData->realParameterData[i].attribute.min, modelData->realParameterData[i].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAliasParam[(modelData->realParameterData[i].info.name)]=i;
   }
 
   /* Read integer parameters static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for integer parameters:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for integer parameters:");
   for(int i=0; i<modelData->nParametersInteger; i++)
   {
     /* read var info */
@@ -670,14 +670,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.iPar[i]["min"], &(modelData->integerParameterData[i].attribute.min));
     read_value(mi.iPar[i]["max"], &(modelData->integerParameterData[i].attribute.max));
 
-    DEBUG_INFO_AL7(LOG_SOLVER, "| parameter Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerParameterData[i].info.name, modelData->integerParameterData[i].attribute.useStart?"":"{", modelData->integerParameterData[i].attribute.start, modelData->integerParameterData[i].attribute.useStart?"":"}", modelData->integerParameterData[i].attribute.fixed?"true":"false", modelData->integerParameterData[i].attribute.min, modelData->integerParameterData[i].attribute.max);
+    DEBUG_INFO_AL7(LOG_DEBUG, "| parameter Integer %s(%sstart=%ld%s, fixed=%s, min=%ld, max=%ld)", modelData->integerParameterData[i].info.name, modelData->integerParameterData[i].attribute.useStart?"":"{", modelData->integerParameterData[i].attribute.start, modelData->integerParameterData[i].attribute.useStart?"":"}", modelData->integerParameterData[i].attribute.fixed?"true":"false", modelData->integerParameterData[i].attribute.min, modelData->integerParameterData[i].attribute.max);
 
     /* create a mapping for Alias variable to get the correct index */
     mapAliasParam[(modelData->integerParameterData[i].info.name)]=i;
   }
 
   /* Read boolean parameters static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for boolean parameters:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for boolean parameters:");
   for(int i=0; i<modelData->nParametersBoolean; i++)
   {
     /* read var info */
@@ -705,14 +705,14 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.bPar[i]["start"], &(modelData->booleanParameterData[i].attribute.start));
     read_value(mi.bPar[i]["fixed"], &(modelData->booleanParameterData[i].attribute.fixed));
 
-    DEBUG_INFO_AL5(LOG_SOLVER, "| parameter Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].attribute.useStart?"":"{", modelData->booleanParameterData[i].attribute.start?"true":"false", modelData->booleanParameterData[i].attribute.useStart?"":"}", modelData->booleanParameterData[i].attribute.fixed?"true":"false");
+    DEBUG_INFO_AL5(LOG_DEBUG, "| parameter Boolean %s(%sstart=%s%s, fixed=%s)", modelData->booleanParameterData[i].info.name, modelData->booleanParameterData[i].attribute.useStart?"":"{", modelData->booleanParameterData[i].attribute.start?"true":"false", modelData->booleanParameterData[i].attribute.useStart?"":"}", modelData->booleanParameterData[i].attribute.fixed?"true":"false");
 
     /* create a mapping for Alias variable to get the correct index */
     mapAliasParam[(modelData->booleanParameterData[i].info.name)]=i;
   }
 
   /* Read string parameters static data */
-  DEBUG_INFO((LOG_SOLVER|LOG_DEBUG), "read xml file for string parameters:");
+  DEBUG_INFO(LOG_DEBUG, "read xml file for string parameters:");
   for(int i=0; i<modelData->nParametersString; i++)
   {
     /* read var info */
@@ -739,7 +739,7 @@ void read_input_xml(int argc, char **argv,
     read_value(mi.sPar[i]["useStart"], &(modelData->stringParameterData[i].attribute.useStart));
     read_value(mi.sPar[i]["start"], &(modelData->stringParameterData[i].attribute.start));
 
-    DEBUG_INFO_AL4(LOG_SOLVER, "| parameter String %s(%sstart=%s%s)", modelData->stringParameterData[i].info.name, modelData->stringParameterData[i].attribute.useStart?"":"{", modelData->stringParameterData[i].attribute.start, modelData->stringParameterData[i].attribute.useStart?"":"}");
+    DEBUG_INFO_AL4(LOG_DEBUG, "| parameter String %s(%sstart=%s%s)", modelData->stringParameterData[i].info.name, modelData->stringParameterData[i].attribute.useStart?"":"{", modelData->stringParameterData[i].attribute.start, modelData->stringParameterData[i].attribute.useStart?"":"}");
 
     /* create a mapping for Alias variable to get the correct index */
     mapAliasParam[(modelData->stringParameterData[i].info.name)]=i;

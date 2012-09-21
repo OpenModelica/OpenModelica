@@ -107,6 +107,11 @@ const char* getNameString(const char** ptr);
 int
 functionODE_residual(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 
+/* function for calculating zeroCrossings */
+/*used in DDASRT fortran function*/
+int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
+        fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
+
 
 extern int jac_flag;  /* Flag for DASSL to work with analytical Jacobian */
 extern int num_jac_flag;  /* Flag for DASSL to work with selfmade numerical Jacobian */

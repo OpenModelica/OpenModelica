@@ -177,7 +177,7 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionAlgebraic(algebraicEquations)%>
       
-    <%functionOnlyZeroCrossing(zeroCrossings)%>
+    <%functionZeroCrossing(zeroCrossings)%>
     
     <%functionCheckForDiscreteChanges(discreteModelVars)%>
     
@@ -1196,7 +1196,7 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen,
   >>
 end functionDAE;
 
-template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings) "template functionOnlyZeroCrossing
+template functionZeroCrossing(list<ZeroCrossing> zeroCrossings) "template functionOnlyZeroCrossing
   Generates function in simulation file.
   This is a helper of template simulationFile."
 ::=
@@ -1204,7 +1204,7 @@ template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings) "template fu
   let zeroCrossingsCode = zeroCrossingsTpl2(zeroCrossings, &varDecls /*BUFD*/)
   
   <<
-  int function_onlyZeroCrossings(DATA *data, double *gout,double *t)
+  int function_ZeroCrossings(DATA *data, double *gout,double *t)
   {
     state mem_state;
     <%varDecls%>
@@ -1216,7 +1216,7 @@ template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings) "template fu
     return 0;
   }
   >>
-end functionOnlyZeroCrossing;
+end functionZeroCrossing;
 
 template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "template functionCheckForDiscreteChanges
   Generates function in simulation file.

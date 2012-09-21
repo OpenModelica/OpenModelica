@@ -88,7 +88,7 @@ void SaveZeroCrossings(DATA* data)
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
 
-  function_onlyZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
+  function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
 }
 
 /*! \fn copyStartValuestoInitValues
@@ -759,4 +759,3 @@ double GreaterEq(double a, double b)
 {
   return b - a;
 }
-

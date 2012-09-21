@@ -339,6 +339,7 @@ int solver_main(DATA* simData, double start, double stop, double step,
     /* Check for Events */
     if (measure_time_flag)
       rt_tick(SIM_TIMER_EVENT);
+
     if (CheckForNewEvent(simData, &(solverInfo.sampleEventActivated), &(solverInfo.currentTime))) {
       DEBUG_INFO(LOG_SOLVER,"###### STATE EVENT DONE ########");
       solverInfo.stateEvents++;
@@ -408,6 +409,8 @@ int solver_main(DATA* simData, double start, double stop, double step,
     }
 
     /* Check for termination of terminate() or assert() */
+    /* INFO3("Check for Asserts and Termination : %d, %d, %d", terminationAssert, terminationTerminate, simData->simulationInfo.modelErrorCode);*/
+    checkForAsserts(simData);
     if (terminationAssert ||
         terminationTerminate ||
         simData->simulationInfo.modelErrorCode) {

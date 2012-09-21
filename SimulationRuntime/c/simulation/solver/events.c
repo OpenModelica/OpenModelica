@@ -347,7 +347,6 @@ int CheckForNewEvent(DATA* simData, modelica_boolean* sampleactived, double* cur
   initializeZeroCrossings(simData);
   eventList = allocList(sizeof(long));
 
-  DEBUG_INFO(LOG_EVENTS, "Check for events ...");
   for (i = 0; i < simData->modelData.nZeroCrossings; i++)
     {
       DEBUG_INFO4(LOG_ZEROCROSSINGS, "ZeroCrossing ID: %ld \t old = %g \t current = %g \t Direction = %d",
@@ -514,7 +513,7 @@ void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
                 value = fvalue;
             }
         }
-        DEBUG_INFO1(LOG_ZEROCROSSINGS, "Minimum value: %f", value);
+        DEBUG_INFO1(LOG_ZEROCROSSINGS, "Minimum value: %e", value);
       for (it=listFirstNode(eventList); it; it=listNextNode(it))
         {
             if (value == fabs(simData->simulationInfo.zeroCrossings[*((long*)listNodeData(it))]))
@@ -547,9 +546,9 @@ void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
   }
   DEBUG_INFO_NELA(LOG_EVENTS, "\n");
 
- DEBUG_INFO1(LOG_EVENTS, "at time: %f", *EventTime);
- DEBUG_INFO1(LOG_EVENTS, "Time at Point left: %f", time_left);
- DEBUG_INFO1(LOG_EVENTS, "Time at Point right: %f", time_right);
+ DEBUG_INFO1(LOG_EVENTS, "at time: %e", *EventTime);
+ DEBUG_INFO1(LOG_EVENTS, "Time at Point left: %e", time_left);
+ DEBUG_INFO1(LOG_EVENTS, "Time at Point right: %e", time_right);
 
   /*determined system at t_e - epsilon */
   simData->localData[0]->timeValue = time_left;
@@ -592,8 +591,8 @@ double BiSection(DATA* simData, double* a, double* b, double* states_a,
     backup_gout[i] = simData->simulationInfo.zeroCrossings[i];
   }
 
-  DEBUG_INFO2(LOG_ZEROCROSSINGS, "Check interval [%g, %g]", *a, *b);
-  DEBUG_INFO1(LOG_ZEROCROSSINGS, "TTOL is set to: %g", TTOL);
+  DEBUG_INFO2(LOG_ZEROCROSSINGS, "Check interval [%e, %e]", *a, *b);
+  DEBUG_INFO1(LOG_ZEROCROSSINGS, "TTOL is set to: %e", TTOL);
 
   while (fabs(*b - *a) > TTOL) {
 
@@ -609,7 +608,7 @@ double BiSection(DATA* simData, double* a, double* b, double* states_a,
     functionODE(simData);
     functionAlgebraics(simData);
 
-    function_onlyZeroCrossings(simData, simData->simulationInfo.zeroCrossings,
+    function_ZeroCrossings(simData, simData->simulationInfo.zeroCrossings,
         &(simData->localData[0]->timeValue));
     if (CheckZeroCrossings(simData, tmpEventList, eventList)) { /*If Zerocrossing in left Section */
 
@@ -691,7 +690,7 @@ void SaveZeroCrossingsAfterEvent(DATA* simData)
 
   DEBUG_INFO(LOG_ZEROCROSSINGS, "Save ZeroCrossings after an Event!");
 
-  function_onlyZeroCrossings(simData, simData->simulationInfo.zeroCrossings, &(simData->localData[0]->timeValue));
+  function_ZeroCrossings(simData, simData->simulationInfo.zeroCrossings, &(simData->localData[0]->timeValue));
   for(i=0;i<simData->modelData.nZeroCrossings;i++){
       simData->simulationInfo.zeroCrossingsPre[i] = simData->simulationInfo.zeroCrossings[i];
   }
@@ -713,6 +712,8 @@ void initializeZeroCrossings(DATA* simData)
       }
     }
 }
+
+
 
 void correctDirectionZeroCrossings(DATA* simData)
 {

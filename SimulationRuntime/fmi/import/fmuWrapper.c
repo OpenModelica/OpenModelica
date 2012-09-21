@@ -8,9 +8,9 @@
 
 
 /* Define for Debuging */
-/*#define _PRINT_OUT__
-  #define _DEBUG_
-*/
+/*#define _PRINT_OUT__ */
+/*#define _DEBUG_ */
+
 
 #define BUFSIZE 4096
 

@@ -37,7 +37,7 @@ extern "C" {
 #include "simulation_data.h"
 
 #define ZEROCROSSING(ind,exp) { \
-  data->simulationInfo.zeroCrossings[ind] = exp; \
+  gout[ind] = exp; \
 }
 
 #define RELATIONTOZC(res,exp1,exp2,index,op_w,op) { \
@@ -95,6 +95,7 @@ double Less(double a, double b);
 double LessEq(double a, double b);
 double Greater(double a, double b);
 double GreaterEq(double a, double b);
+
 
 #ifdef __cplusplus
 }

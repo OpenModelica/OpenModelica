@@ -465,28 +465,16 @@ int callSolver(DATA* simData, string method, string outputFormat,
       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
     }
     retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
-  } else if (method == std::string("dassl") || method == std::string("dassl2")) {
-    if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
-    }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
-  } else if (method == std::string("dassljac")) {
-    if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
-    }
-    jac_flag = 1;
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
-  } else if (method == std::string("dasslnum")) {
-    if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
-    }
-    num_jac_flag = 1;
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
-  } else if (method == std::string("dopri5")) {
-       if (DEBUG_FLAG(LOG_SOLVER)) {
-       cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
-       }
-       retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 6, outVars);
+  } else if (method == std::string("dassl") ||
+          method == std::string("dasslwort")  ||
+          method == std::string("dasslSymJac") ||
+          method == std::string("dasslNumJac") ||
+          method == std::string("dasslColorSymJac") ||
+          method == std::string("dasslColorNumJac")) {
+	if (DEBUG_FLAG(LOG_SOLVER)) {
+	  cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
+	}
+	retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (method == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       cout << "Recognized solver: " << method
@@ -520,7 +508,7 @@ int callSolver(DATA* simData, string method, string outputFormat,
 #endif
   } else {
     cout << "Unrecognized solver: " << method
-        << "; valid solvers are dassl,euler,rungekutta,dopri5,inline-euler,inline-rungekutta,qss."
+        << "; valid solvers are dassl,euler,rungekutta,inline-euler,inline-rungekutta,qss, dasslwort, dasslSymJac."
         << endl; fflush(NULL);
     retVal = 1;
   }

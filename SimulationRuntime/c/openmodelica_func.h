@@ -146,7 +146,7 @@ extern int updateBoundParameters(DATA *data);
 extern int checkForAsserts(DATA *data);
 
 /* functions for event handling */
-extern int function_onlyZeroCrossings(DATA *data, double* gout, double* t);
+extern int function_ZeroCrossings(DATA *data, double* gout, double* t);
 extern int function_updateSample(DATA *data);
 extern int checkForDiscreteChanges(DATA *data);
 

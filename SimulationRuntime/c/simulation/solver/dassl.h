@@ -39,8 +39,22 @@ static const unsigned int maxOrder = 5;
 static const unsigned int numStatistics = 5;
 static const unsigned int infoLength = 15;
 
+enum DASSL_METHOD
+{
+  DASSL_UNKNOWN = 0,
+  DASSL_RT,
+  DASSL_WORT,
+  DASSL_SYMJAC,
+  DASSL_NUMJAC,
+  DASSL_COLOREDSYMJAC,
+  DASSL_COLOREDNUMJAC,
+  DASSL_MAX
+};
 
 typedef struct DASSL_DATA{
+
+  int dasslMethod;
+
   unsigned int* dasslStatistics;
   unsigned int* dasslStatisticsTmp;
 
@@ -55,8 +69,11 @@ typedef struct DASSL_DATA{
   /* work arrays for DASSL */
   fortran_integer *iwork;
   double *rwork;
+  double *rtol;
+  double *atol;
 
-  fortran_integer NG_var;
+  fortran_integer ngdummy;
+  fortran_integer ng;
   fortran_integer *jroot;
 
   /* Used when calculating residual for its side effects. (alg. var calc) */

@@ -38,6 +38,18 @@
 
 #include <string.h>
 
+const char *dasslMethodStr[DASSL_MAX] = {"unknown", "dassl", "dasslwort", "dasslSymJac",
+                                          "dasslNumJac", "dasslColorSymJac",
+                                          "dasslColorNumJac"};
+
+const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown", "normal dassl",
+											                        "dassl without internal root finding",
+                                              "dassl with symbolic jacobian",
+                                              "dassl with numerical jacobian",
+                                              "dassl with colored symbolic jacobian",
+                                              "dassl with colored numerical jacobian"};
+
+
 
 /* provides a dummy Jacobian to be used with DASSL */
 int
@@ -50,7 +62,6 @@ dummy_zeroCrossing(fortran_integer *neqm, double *t, double *y,
                    fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar) {
   return 0;
 }
-
 
 int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
     double *rpar, fortran_integer* ipar);
@@ -91,17 +102,42 @@ int
 dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 
   /* work arrays for DASSL */
+  int i;
+  SIMULATION_INFO *simInfo = &(simData->simulationInfo);
+
+  for(i=0; i< DASSL_MAX;i++){
+    if(!strcmp((const char*)simInfo->solverMethod, dasslMethodStr[i])){
+      dasslData->dasslMethod = i;
+    }
+  }
+
+  if(dasslData->dasslMethod == DASSL_UNKNOWN)
+  {
+    WARNING1("unrecognized solver method %s", simInfo->solverMethod);
+    WARNING_AL("current options are:");
+    for(i=1; i < DASSL_MAX; ++i)
+      WARNING_AL2("  %-15s [%s]", dasslMethodStr[i], dasslMethodStrDescStr[i]);
+    THROW("see last warning");
+  }else{
+    DEBUG_INFO2(LOG_SOLVER,"Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
+  }
+
+
   dasslData->liw = 20 + simData->modelData.nStates;
-  dasslData->lrw =  52 + (maxOrder + 4) * simData->modelData.nStates
-      + simData->modelData.nStates * simData->modelData.nStates;
+  dasslData->lrw = 50 + ((maxOrder + 4) * simData->modelData.nStates)
+              + (simData->modelData.nStates * simData->modelData.nStates)  + (3*simData->modelData.nZeroCrossings);
   dasslData->rwork = (double*) calloc(dasslData->lrw, sizeof(double));
   ASSERT(dasslData->rwork,"out of memory");
   dasslData->iwork = (fortran_integer*)  calloc(dasslData->liw, sizeof(fortran_integer));
   ASSERT(dasslData->iwork,"out of memory");
-  dasslData->jroot = NULL;
+  dasslData->ng = (fortran_integer) simData->modelData.nZeroCrossings;
+  dasslData->ngdummy = (fortran_integer) 0;
+  dasslData->jroot = (fortran_integer*)  calloc(simData->modelData.nZeroCrossings, sizeof(fortran_integer));
   dasslData->rpar = NULL;
   dasslData->ipar = (fortran_integer*) calloc(numStatistics, sizeof(fortran_integer));
   ASSERT(dasslData->ipar,"out of memory");
+  dasslData->atol = (double*) malloc(simData->modelData.nStates*sizeof(double));
+  dasslData->rtol = (double*) malloc(simData->modelData.nStates*sizeof(double));
   dasslData->ipar[0] = DEBUG_FLAG(LOG_JAC);
   dasslData->ipar[1] = DEBUG_FLAG(LOG_ENDJAC);
   dasslData->info = (fortran_integer*) calloc(infoLength, sizeof(fortran_integer));
@@ -122,17 +158,32 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
    *rwork[1] = *step;  //define max. stepsize
    *********************************************************************/
 
-  if (num_jac_flag)
-    dasslData->info[4] = 1; /* use sub-routine JAC */
-
-  if (jac_flag){
-    dasslData->info[4] = 1; /* use sub-routine JAC */
+  if (dasslData->dasslMethod == DASSL_SYMJAC ||
+      dasslData->dasslMethod == DASSL_COLOREDSYMJAC ||
+      dasslData->dasslMethod == DASSL_COLOREDNUMJAC){
     if (initialAnalyticJacobianA(simData)){
-      INFO("Jacobian not generated or failed to initialize!");
-      return 1;
+      INFO("Jacobian not generated or failed to initialize! Switch back to normal.");
+      dasslData->dasslMethod = DASSL_RT;
+    }else{
+      dasslData->info[4] = 1; /* use sub-routine JAC */
     }
-
+  }else if (dasslData->dasslMethod ==  DASSL_NUMJAC){
+    dasslData->info[4] = 1; /* use sub-routine JAC */
   }
+
+  /* Setup nominal values of the states
+   * as relative tolerances */
+  if (dasslData->dasslMethod == DASSL_WORT){
+    dasslData->rtol[0] = simData->simulationInfo.tolerance;
+    dasslData->atol[0] = simData->simulationInfo.tolerance;
+  } else {
+    dasslData->info[1] = 1;
+    for(i=0;i<simData->modelData.nStates;++i){
+      dasslData->rtol[i] = simData->simulationInfo.tolerance;
+      dasslData->atol[i] = simData->simulationInfo.tolerance * simData->modelData.realVarsData[i].attribute.nominal;
+    }
+  }
+
 
 
   return 0;
@@ -168,7 +219,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   MODEL_DATA *mData = (MODEL_DATA*) &simData->modelData;
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
   modelica_real* stateDer = sDataOld->realVars + simData->modelData.nStates;
-  fortran_integer tmpZero = 0;
   dasslData->rpar = (double*) (void*) simData;
   ASSERT(dasslData->rpar, "simDat could not passed to DASSL");
 
@@ -206,9 +256,9 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       solverInfo->currentTime, tout);
   do
   {
-    DEBUG_INFO2(LOG_SOLVER, "**Start step %g to %g", solverInfo->currentTime, tout);
+    DEBUG_INFO2(LOG_DEBUG, "**Start step %g to %g", solverInfo->currentTime, tout);
     if (dasslData->idid == 1){
-      DEBUG_INFO(LOG_SOLVER, "Rotate Ringbuffer!");
+      DEBUG_INFO(LOG_DEBUG, "Rotate Ringbuffer!");
 
       /* rotate RingBuffer before step is calculated */
       rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
@@ -227,35 +277,32 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       }
     }
 
-    if (jac_flag)
+    if (dasslData->dasslMethod ==  DASSL_SYMJAC)
     {
       DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
-          dasslData->info, &simData->simulationInfo.tolerance,
-          &simData->simulationInfo.tolerance, &dasslData->idid,
+          dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
-          dasslData->rpar, dasslData->ipar, Jacobian, dummy_zeroCrossing,
-          &tmpZero, NULL);
+          dasslData->rpar, dasslData->ipar, Jacobian,  function_ZeroCrossingsDASSL,
+          (fortran_integer*) &dasslData->ng, dasslData->jroot);
     }
-    else if (num_jac_flag)
+    else if (dasslData->dasslMethod ==  DASSL_WORT)
     {
       DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
-          dasslData->info, &simData->simulationInfo.tolerance,
-          &simData->simulationInfo.tolerance, &dasslData->idid,
+          dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
-          dasslData->rpar, dasslData->ipar, Jacobian_num, dummy_zeroCrossing,
-          &tmpZero, NULL);
+          dasslData->rpar, dasslData->ipar, dummy_Jacobian, dummy_zeroCrossing,
+          &dasslData->ngdummy, NULL);
     }
     else
     {
       DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
-          dasslData->info, &simData->simulationInfo.tolerance,
-          &simData->simulationInfo.tolerance, &dasslData->idid,
+          dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
-          dasslData->rpar, dasslData->ipar, dummy_Jacobian, dummy_zeroCrossing,
-          &tmpZero, NULL);
+          dasslData->rpar, dasslData->ipar, dummy_Jacobian, function_ZeroCrossingsDASSL,
+          (fortran_integer*) &dasslData->ng, dasslData->jroot);
     }
 
     if (dasslData->idid == -1)
@@ -281,6 +328,22 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   } while (dasslData->idid == 1 || (dasslData->idid == -1
       && solverInfo->currentTime <= simData->simulationInfo.stopTime));
 
+  if (dasslData->idid == 4){
+    /* go a small step with Euler to get a bit after the event */
+    /* TODO: change that euler step against a more stable method */
+    double newTime = 1e-9;
+    solverInfo->currentTime += newTime;
+    for (i = 0; i < simData->modelData.nStates; i++){
+      sData->realVars[i] = sData->realVars[i]+ stateDer[i] * newTime;
+    }
+  }
+
+  /* at the of one step evaluate the system again */
+  sData->timeValue = solverInfo->currentTime;
+  functionODE(simData);
+
+
+
   if (DEBUG_FLAG(LOG_SOLVER))
   {
     INFO1("DASSL call | value of idid: %d", dasslData->idid);
@@ -301,8 +364,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
    dasslData->dasslStatisticsTmp[i] = dasslData->iwork[10 + i];
   }
 
-  sData->timeValue = solverInfo->currentTime;
-  functionODE(simData);
 
   DEBUG_INFO(LOG_SOLVER, "*** Finished DDASRT step! ***");
 
@@ -392,6 +453,63 @@ int functionODE_residual(double *t, double *x, double *xd, double *delta,
 
   return 0;
 }
+
+int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
+        fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar)
+{
+  DATA* data = (DATA*)(void*)rpar;
+
+
+
+  double timeBackup;
+
+  fortran_integer i;
+
+  timeBackup = data->localData[0]->timeValue;
+
+  data->localData[0]->timeValue = *t;
+  functionODE(data);
+  functionAlgebraics(data);
+
+  function_ZeroCrossings(data, gout, t);
+
+  DEBUG_INFO1(LOG_ZEROCROSSINGS, "Check ZeroCrossing at time: %g", *t);
+  for (i=0; i < *ng; i++) {
+    DEBUG_INFO_NELA1(LOG_ZEROCROSSINGS, "ZeroCrossing %d : ", i);
+    DEBUG_INFO_NELA1(LOG_ZEROCROSSINGS, " %d ", data->simulationInfo.zeroCrossingEnabled[i]);
+
+    DEBUG_INFO_NELA1(LOG_ZEROCROSSINGS, " %g \n", gout[i]);
+
+    /* For the first evaluation  gout[i] != 0 has to be
+     * of ZeroCrossings by dassl.
+     *
+     */
+    if (!(data->simulationInfo.zeroCrossingEnabled[i]==0)){
+      if (gout[i] == 0.0 && data->simulationInfo.zeroCrossingEnabled[i] >=1){
+        gout[i] = DBL_EPSILON;
+      } else if (gout[i] == 0.0 && data->simulationInfo.zeroCrossingEnabled[i] <= -1){
+        gout[i] = -DBL_EPSILON;
+      }
+    }else{
+      if (data->simulationInfo.zeroCrossingEnabled[i]==1)
+        gout[i] = 0.1;
+      else if (data->simulationInfo.zeroCrossingEnabled[i]==-1)
+        gout[i] = -0.1;
+      else{
+        if (data->simulationInfo.zeroCrossingsPre[i]>=0)
+          gout[i] = 1;
+        else if (data->simulationInfo.zeroCrossingsPre[i]<0)
+            gout[i] = -1;
+        else
+          gout[i] = 1;
+      }
+    }
+  }
+  data->localData[0]->timeValue = timeBackup;
+
+  return 0;
+}
+
 
 /*
  * provides a analytical Jacobian to be used with DASSL
