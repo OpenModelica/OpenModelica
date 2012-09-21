@@ -4275,10 +4275,11 @@ algorithm
   outValues := matchcontinue(inStart, inStep, inStop)
     local
       String error_str;
+      Integer steps;
 
     case (_, _, _)
       equation
-        equality(inStep = 0.0);
+        true = realAbs(inStep) <=. 1e-14;
         error_str = stringDelimitList(
           List.map({inStart, inStep, inStop}, realString), ":");
         Error.addMessage(Error.ZERO_STEP_IN_ARRAY_CONSTRUCTOR, {error_str});
@@ -4290,54 +4291,40 @@ algorithm
         equality(inStart = inStop);
       then {inStart};
 
-    case (_, _, _)
+    else
       equation
-        true = (inStep >. 0.0);
-      then simplifyRangeReal2(inStart, inStep, inStop, realGt, {});
+        steps = Util.realRangeSize(inStart, inStep, inStop) - 1;
+      then
+        simplifyRangeReal2(inStart, inStep, steps, {});
 
-    case (_, _, _)
-      equation
-        true = (inStep <. 0.0);
-      then simplifyRangeReal2(inStart, inStep, inStop, realLt, {});
   end matchcontinue;
 end simplifyRangeReal;
 
 protected function simplifyRangeReal2
-  "Helper function to cevalRangeReal."
+  "Helper function to simplifyRangeReal."
   input Real inStart;
   input Real inStep;
-  input Real inStop;
-  input CompFunc compFunc;
+  input Integer inSteps;
   input list<Real> inValues;
   output list<Real> outValues;
-
-  partial function CompFunc
-    input Real inValue1;
-    input Real inValue2;
-    output Boolean outRes;
-  end CompFunc;
 algorithm
-  outValues := matchcontinue(inStart, inStep, inStop, compFunc, inValues)
+  outValues := match(inStart, inStep, inSteps, inValues)
     local
       Real next;
       list<Real> vals;
 
-    case (_, _, _, _, _)
-      equation
-        true = compFunc(inStart, inStop);
-      then
-        listReverse(inValues);
+    case (_, _, -1, _) then inValues;
 
-    case (_, _, _, _, _)
+    else
       equation
-        next = inStart +. inStep;
-        vals = inStart :: inValues;
-        vals = simplifyRangeReal2(next, inStep, inStop, compFunc, vals);
+        next = inStart +. inStep *. intReal(inSteps);
+        vals = next :: inValues;
       then
-        vals;
-  end matchcontinue;
+        simplifyRangeReal2(inStart, inStep, inSteps - 1, vals);
+
+  end match;
 end simplifyRangeReal2;
-        
+
 protected function simplifyReduction
   input DAE.Exp inReduction;
   input Boolean b;

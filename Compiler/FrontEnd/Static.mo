@@ -2138,22 +2138,11 @@ algorithm
         dim;
 
     case (Values.REAL(real_start), NONE(), Values.REAL(real_stop))
-      equation
-        r = real_stop -. real_start;
-        r = realFloor(r);
-        dim = realInt(r) + 1;
-      then
-        dim;
+      then Util.realRangeSize(real_start, 1.0, real_stop);
 
     case (Values.REAL(real_start), SOME(Values.REAL(real_step)), 
           Values.REAL(real_stop))
-      equation
-        r = real_stop -. real_start;
-        r = realDiv(r, real_step);
-        r = realFloor(r);
-        dim = realInt(r) + 1;
-      then
-        dim;
+      then Util.realRangeSize(real_start, real_step, real_stop);
 
     case (Values.ENUM_LITERAL(index = int_start), NONE(),
           Values.ENUM_LITERAL(index = int_stop))

@@ -3498,4 +3498,15 @@ algorithm
   end match;
 end swap;
 
+public function realRangeSize
+  "Calculates the size of a Real range given the start, step and stop values."
+  input Real inStart;
+  input Real inStep;
+  input Real inStop;
+  output Integer outSize;
+algorithm
+  outSize := realInt(realFloor(((inStop -. inStart) /. inStep) +. 5e-15)) + 1;
+  outSize := intMax(outSize, 0);
+end realRangeSize;
+
 end Util;
