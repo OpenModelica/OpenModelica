@@ -256,7 +256,7 @@ void simulation_result_mat::emit(DATA *data)
     }
   for (int i = 0; i < data->modelData.nAliasBoolean; i++) if (!data->modelData.booleanAlias[i].filterOutput)
     {
-	  if (data->modelData.booleanAlias[i].negate)
+      if (data->modelData.booleanAlias[i].negate)
       {
         datPoint = (double) (data->localData[0]->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
         fp.write((char*)&datPoint,sizeof(double));
