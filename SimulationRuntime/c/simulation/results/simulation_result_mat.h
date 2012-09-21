@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -59,7 +59,7 @@ public:
   virtual ~simulation_result_mat();
   virtual void emit(DATA *data);
   void writeParameterData(MODEL_DATA *modelData);
-  virtual const char* result_type() { 
+  virtual const char* result_type() {
     /* return "Dymosim's compatible MAT-file"; */
     return "mat";
   }
@@ -82,16 +82,17 @@ private:
   INTMAP i_indx_parammap;
   INTMAP b_indx_map;
   INTMAP b_indx_parammap;
-  
+
+  unsigned int negatedboolaliases;
   int numVars;
 
-  /* helper functions */  
+  /* helper functions */
   long flattenStrBuf(int dims, const struct VAR_INFO** src,
-          char* &dest, int& longest, int& nstrings, 
+          char* &dest, int& longest, int& nstrings,
           bool fixNames, bool useComment);
   void writeMatVer4MatrixHeader(const char *name, int rows, int cols,
         unsigned int size);
-  void writeMatVer4Matrix(const char *name, int rows, int cols, 
+  void writeMatVer4Matrix(const char *name, int rows, int cols,
         const void *data, unsigned int size);
   void generateDataInfo(int* &dataInfo, int& rows, int& cols,
              const MODEL_DATA *mdl_data, int nVars, int nParams);

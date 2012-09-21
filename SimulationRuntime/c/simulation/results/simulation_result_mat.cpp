@@ -68,8 +68,14 @@ int simulation_result_mat::calcDataSize(MODEL_DATA *modelData)
     if (!modelData->realAlias[i].filterOutput) sz++;
   for (int i = 0; i < modelData->nAliasInteger; i++)
     if (!modelData->integerAlias[i].filterOutput) sz++;
+  negatedboolaliases = 0;
   for (int i = 0; i < modelData->nAliasBoolean; i++)
-    if (!modelData->booleanAlias[i].filterOutput) sz++;
+    if (!modelData->booleanAlias[i].filterOutput)
+    {
+       if (modelData->booleanAlias[i].negate)
+          negatedboolaliases++;
+       sz++;
+    }
   return sz;
 }
 
@@ -189,7 +195,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     /* remember data2HdrPos */
     data2HdrPos = fp.tellp();
     /* write `data_2' header */
-    writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1 /* add one more for timeValue*/, 0, sizeof(double));
+    writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/, 0, sizeof(double));
 
     free(doubleMatrix);
     free(intMatrix);
@@ -217,7 +223,7 @@ simulation_result_mat::~simulation_result_mat()
   if (fp) {
     try {
       fp.seekp(data2HdrPos);
-      writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + 1 /* add one more for timeValue*/, ntimepoints, sizeof(double));
+      writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/, ntimepoints, sizeof(double));
       fp.close();
     } catch (...) {
       /* just ignore, we are in destructor */
@@ -247,6 +253,14 @@ void simulation_result_mat::emit(DATA *data)
     {
       datPoint = (double) data->localData[0]->booleanVars[i];
       fp.write((char*)&datPoint,sizeof(double));
+    }
+  for (int i = 0; i < data->modelData.nAliasBoolean; i++) if (!data->modelData.booleanAlias[i].filterOutput)
+    {
+	  if (data->modelData.booleanAlias[i].negate)
+      {
+        datPoint = (double) (data->localData[0]->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
+        fp.write((char*)&datPoint,sizeof(double));
+      }
     }
   if (!fp)
     THROW1("Error while writing file %s",filename);
@@ -365,6 +379,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
   /* size_t nVars = mdl_data->nStates*2+mdl_data->nAlgebraic;
     rows = 1+nVars+mdl_data->nParameters+mdl_data->nVarsAliases; */
   size_t ccol = 0; /* current column - index offset */
+  size_t indx = 1;
   INTMAP::iterator it;
   /* assign rows & cols */
   rows = nVars + nParams;
@@ -377,11 +392,12 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
       /* row 1 - which table */
       dataInfo[ccol++] = 2;
       /* row 2 - index of var in table (variable 'Time' have index 1) */
-      dataInfo[ccol++] = i+1;
+      dataInfo[ccol++] = indx;
       /* row 3 - linear interpolation == 0 */
       dataInfo[ccol++] = 0;
       /* row 4 - not defined outside of the defined time range == -1 */
       dataInfo[ccol++] = -1;
+      indx++;
   }
   /* alias variables */
   for (int i = 0; i < mdl_data->nAliasReal; i++) {
@@ -457,17 +473,23 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
     if (!mdl_data->booleanAlias[i].filterOutput)
     {
       int table = 0;
-      if (mdl_data->booleanAlias[i].aliasType == 0) /* variable */
+
+      if (mdl_data->booleanAlias[i].negate)
+        table = 2;
+      else
       {
-        it = b_indx_map.find(mdl_data->booleanAlias[i].nameID);
-        if (it != b_indx_map.end())
-          table = 2;
-      }
-      else if (mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
-      {
-        it = b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
-        if (it != b_indx_map.end())
-          table = 1;
+        if (mdl_data->booleanAlias[i].aliasType == 0) /* variable */
+        {
+          it = b_indx_map.find(mdl_data->booleanAlias[i].nameID);
+          if (it != b_indx_map.end())
+            table = 2;
+        }
+        else if (mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
+        {
+          it = b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
+          if (it != b_indx_map.end())
+            table = 1;
+        }
       }
       if(table)
       {
@@ -475,7 +497,10 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
         dataInfo[ccol] = table;
         /* row 2 - index of var in table (variable 'Time' have index 1) */
         if (mdl_data->booleanAlias[i].negate)
-          dataInfo[ccol+1] = -(it->second+1);
+        {
+          dataInfo[ccol+1] = indx;
+          indx++;
+        }
         else
           dataInfo[ccol+1] = it->second+1;
         /* row 3 - linear interpolation == 0 */
