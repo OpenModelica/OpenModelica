@@ -42,7 +42,7 @@ AC_SUBST(OMSHELL_TERMINAL)
 AC_SUBST(MODELICA_SPEC_PLATFORM)
 AC_SUBST(OPENMODELICA_SPEC_PLATFORM)
 AC_SUBST(SQLITE3_LIBS)
-AC_SUBST(OPENMP_CFLAGS)
+AC_SUBST(OPENMP)
 AC_SUBST(MAKE)
 AC_SUBST(LIBREADLINE)
 AC_SUBST(LD_LAPACK)
@@ -238,6 +238,25 @@ return 0;
 }
 ], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],
       [AC_MSG_RESULT([no])])
+
+dnl Check if OpenMP is available
+AC_MSG_CHECKING([for OpenMP])
+
+CFLAGS_OLD="$CFLAGS"
+CFLAGS="$CFLAGS -fopenmp"
+AC_TRY_LINK([
+#include <omp.h>
+#include <stdio.h>
+], [int main() {
+  int i;
+#pragma omp parallel for private(i) schedule(dynamic)
+  for (i=0; i<16; i++)
+    printf("Thread %d\n", i);
+  return 0;
+}
+], [AC_MSG_RESULT([yes]); OPENMP=-fopenmp],
+      [AC_MSG_RESULT([no])])
+CFLAGS="$CFLAGS_OLD"
 
 dnl check for lpsolve55
 
@@ -578,9 +597,9 @@ else
 fi
 
 if test "Darwin" != `uname`; then
-  RT_LDFLAGS="$RT_LDFLAGS -lrt -fopenmp"
+  RT_LDFLAGS="$RT_LDFLAGS -lrt $OPENMP"
 else
-  RT_LDFLAGS="$RT_LDFLAGS -liconv -fopenmp"
+  RT_LDFLAGS="$RT_LDFLAGS -liconv $OPENMP"
 fi
 
 dnl should we compile modpar
