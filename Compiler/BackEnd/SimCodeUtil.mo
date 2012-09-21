@@ -7829,6 +7829,7 @@ algorithm
     case (DAE.CREF(componentRef=name),inVar) then SimCode.ALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)),inVar) then SimCode.NEGATEDALIAS(name);
     case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)),inVar) then SimCode.NEGATEDALIAS(name);
+    case (DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=name)),inVar) then SimCode.NEGATEDALIAS(name);
     case (DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)}),inVar)
       equation
       Builtin.isDer(fname);

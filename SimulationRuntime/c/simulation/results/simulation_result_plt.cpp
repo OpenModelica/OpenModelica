@@ -109,7 +109,7 @@ void simulation_result_plt::emit(DATA *data)
     maxPoints = (long)(1.4*maxPoints + (maxPoints-actualPoints) + 2000);
     /* cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl; */
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
-    if (!simulationResultData) 
+    if (!simulationResultData)
       THROW1("Error allocating simulation result data of size %ld",maxPoints * dataSize);
     add_result(simulationResultData,&actualPoints,data);
   }
@@ -177,7 +177,7 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
     if (!simData->modelData.booleanAlias[i].filterOutput) {
       ss << simData->modelData.booleanAlias[i].info.name << "\n";
       if (simData->modelData.booleanAlias[i].negate)
-        ss << (data[currentPos++] = -simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]) << "\n";
+        ss << (data[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]==1?0:1) << "\n";
       else
         ss << (data[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]) << "\n";
     }
@@ -229,12 +229,12 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
     for (int i = 0; i < simData->modelData.nAliasBoolean; i++) {
       if (!simData->modelData.booleanAlias[i].filterOutput) {
         if (simData->modelData.booleanAlias[i].negate)
-          data[currentPos++] = -simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID];
+          data[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]==1?0:1;
         else
           data[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID];
       }
     }
-  } 
+  }
 
   /*cerr << "  ... done" << endl; */
   (*actualPoints)++;

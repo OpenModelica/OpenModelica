@@ -523,8 +523,9 @@ algorithm
       DAE.Exp e;
     
     // to avoid unnessecary --e
-    case(DAE.UNARY(DAE.UMINUS(t),e)) then e;
-    case(DAE.UNARY(DAE.UMINUS_ARR(t),e)) then e;
+    case(DAE.UNARY(DAE.UMINUS(_),e)) then e;
+    case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then e;
+    case(DAE.LUNARY(DAE.NOT(_),e)) then e;
 
     case (DAE.ICONST(i))
       equation
@@ -545,6 +546,12 @@ algorithm
         true = isZero(e);
       then 
         e;
+    // not e
+    case(e) 
+      equation
+        (t as DAE.T_BOOL(source=_)) = typeof(e);
+      then 
+        DAE.LUNARY(DAE.NOT(t),e);
 
     case(e) 
       equation

@@ -82,7 +82,7 @@ void simulation_result_csv::emit(DATA *data)
   }
   for (int i = 0; i < data->modelData.nAliasBoolean; i++) if (!data->modelData.booleanAlias[i].filterOutput){
     if (data->modelData.booleanAlias[i].negate)
-      fprintf(fout, formatbool, -(data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
+      fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
     else
       fprintf(fout, formatbool, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
   }

@@ -1908,6 +1908,11 @@ algorithm
         equation
           ne = Expression.negate(e2);
         then (cr1,cr2,e1,ne,true);
+      // -a = -b;
+      case (BackendDAE.EQUATION(exp=DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),scalar=DAE.UNARY(DAE.UMINUS(_),e2 as  DAE.CREF(componentRef = cr2))))
+        then (cr1,cr2,e1,e2,false);
+      case (BackendDAE.EQUATION(exp=DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),scalar=DAE.UNARY(DAE.UMINUS_ARR(_),e2 as  DAE.CREF(componentRef = cr2))))
+        then (cr1,cr2,e1,e2,false);
       // a + b = 0
       case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
         equation
@@ -1996,6 +2001,20 @@ algorithm
           true = Expression.isZero(e);
           ne = Expression.negate(e2);
         then (cr1,cr2,e1,ne,true);
+      // a = not b;
+      case (BackendDAE.EQUATION(exp=e1 as DAE.CREF(componentRef = cr1),scalar=e2 as  DAE.LUNARY(DAE.NOT(_),DAE.CREF(componentRef = cr2))))
+        equation
+          ne = Expression.negate(e1);
+        then (cr1,cr2,ne,e2,true);
+      // not a = b;
+      case (BackendDAE.EQUATION(exp=e1 as  DAE.LUNARY(DAE.NOT(_),DAE.CREF(componentRef = cr1)),scalar=e2 as  DAE.CREF(componentRef = cr2)))
+        equation
+          ne = Expression.negate(e2);
+        then (cr1,cr2,e1,ne,true);
+      // not a = not b;
+      case (BackendDAE.EQUATION(exp=DAE.LUNARY(DAE.NOT(_),e1 as  DAE.CREF(componentRef = cr1)),scalar=DAE.LUNARY(DAE.NOT(_),e2 as  DAE.CREF(componentRef = cr2))))
+        then (cr1,cr2,e1,e2,false);
+
   end match;
 end aliasEquation;
 
