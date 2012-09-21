@@ -334,7 +334,8 @@ package SimCode
       Integer numStringParamVars;
       Integer numStringAliasVars;
       Integer numJacobianVars;
-      Integer numNonLinearResFunctions;      
+      Integer numEquations;
+      Integer numNonLinearResFunctions;   
       Option <Integer> dimODE1stOrder;
       Option <Integer> dimODE2ndOrder; 
     end VARINFO;

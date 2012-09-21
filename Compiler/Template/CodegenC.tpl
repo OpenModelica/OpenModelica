@@ -267,7 +267,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;
     data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
     data->modelData.nFunctions = <%listLength(functions)%>;
-    data->modelData.nEquations = <%listLength(allEquations)%>;
+    data->modelData.nEquations = <%varInfo.numEquations%>;
     data->modelData.nNonLinearSystems = <%varInfo.numNonLinearResFunctions%>;
     
     data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
@@ -309,7 +309,7 @@ template functionSimProfDef(SimEqSystem eq, Integer value)
     >>
   case SES_MIXED(__) then
     <<
-    <%functionSimProfDef(cont,value)%>
+    #define SIM_PROF_EQ_<%index%> <%value%><%\n%>
     >>
   case SES_LINEAR(__) then
     <<
@@ -338,7 +338,7 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
       <%equationInfo(allEquations)%>
      */
      let &eqnsDefines = buffer ""
-     let eqnInfo = equationInfo(allEquations,&eqnsDefines)
+     let eqnInfo = equationInfo(allEquations,&eqnsDefines,varInfo.numEquations)
     <<
     /* Some empty lines, since emptyCount is not implemented in susan! */
     <%eqnsDefines%>
@@ -8140,7 +8140,7 @@ match eq
   else '<%error(sourceInfo(), 'Unkown Equation Type in equationInfo1')%>'
 end equationInfo1;
 
-template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines)
+template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines, Integer numEqns)
 ::=
   match eqs
   case {} then "const struct EQUATION_INFO equation_info[1] = {{0, NULL}};"
@@ -8149,7 +8149,7 @@ template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines)
     let &preBuf = buffer ""
     let res =
     <<
-    const struct EQUATION_INFO equationInfo[<%listLength(eqs)%>] = {
+    const struct EQUATION_INFO equationInfo[<%numEqns%>] = {
       <% eqs |> eq =>
         <<<%equationInfo1(eq,preBuf,eqnsDefines)%>
         >> ; separator=",\n"%>
