@@ -17057,7 +17057,7 @@ algorithm
   end matchcontinue;
 end mergeClassComments;
 
-protected function toConst
+public function toConst
 "Translates SCode.Variability to DAE.Const"
 input SCode.Variability inVar;
 output DAE.Const outConst;

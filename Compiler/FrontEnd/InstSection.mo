@@ -4027,11 +4027,12 @@ algorithm
       DAE.InlineType inlineType1, inlineType2;
       Absyn.Path fpath1, fpath2;
       Integer idim1,idim2,dim_int;
-      DAE.Exp zeroVector, crefExp1, crefExp2;
-      list<DAE.Element>  breakDAEElements;
+      DAE.Exp zeroVector, crefExp1, crefExp2, exp;
+      list<DAE.Element>  breakDAEElements, elts;
       SCode.Element equalityConstraintFunction;
       DAE.Dimensions dims,dims2;
       list<DAE.ComponentRef> crefs1, crefs2;
+      DAE.Const const1,const2;
 
     // connections to outer components
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,ct,io1,io2,graph,info)
@@ -4075,14 +4076,15 @@ algorithm
 
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
+        // Evaluate constant crefs away
+        const1 = Inst.toConst(vt1);
+        const2 = Inst.toConst(vt2);
+        (cache, crefExp1, _) = Ceval.cevalIfConstant(cache, env, crefExp1, DAE.PROP(t1,const1), true, info);
+        (cache, crefExp2, _) = Ceval.cevalIfConstant(cache, env, crefExp2, DAE.PROP(t2,const2), true, info);
+        (exp,_) = ExpressionSimplify.simplify(DAE.RELATION(crefExp1,DAE.EQUAL(DAE.T_BOOL_DEFAULT),crefExp2,-1,NONE()));
+        elts = DAE.ASSERT(exp,DAE.SCONST("automatically generated from connect"),DAE.ASSERTIONLEVEL_ERROR,source)::{};
       then
-        (cache,env,ih,sets,DAE.DAE({
-          DAE.ASSERT(
-            DAE.RELATION(crefExp1,DAE.EQUAL(DAE.T_BOOL_DEFAULT),crefExp2,-1,NONE()),
-            DAE.SCONST("automatically generated from connect"),
-            DAE.ASSERTIONLEVEL_ERROR,
-            source) // set the origin of the element
-          }),graph);
+        (cache,env,ih,sets,DAE.DAE(elts),graph);
 
     // Connection of two components of basic type.
     case (cache, env, ih, sets, pre, c1, f1, t1, vt1, c2, f2, t2, vt2, _, io1, io2, graph, info)
