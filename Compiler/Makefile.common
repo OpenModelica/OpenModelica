@@ -162,6 +162,7 @@ CodegenQSS.mo \
 CodegenCpp.mo \
 CodegenCSharp.mo \
 CodegenXML.mo \
+CodegenJava.mo \
 DAEDumpTpl.mo \
 InstDumpTpl.mo \
 ExpressionDumpTpl.mo \

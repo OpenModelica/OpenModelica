@@ -92,6 +92,7 @@ protected import CodegenAdevs;
 protected import CodegenCSharp;
 protected import CodegenCpp;
 protected import CodegenXML;
+protected import CodegenJava;
 protected import ComponentReference;
 protected import Config;
 protected import DAEDump;
@@ -732,6 +733,10 @@ algorithm
     case (simCode,_,"XML")
       equation
         Tpl.tplNoret(CodegenXML.translateModel, simCode);
+      then ();
+    case (simCode,_,"Java")
+      equation
+        Tpl.tplNoret(CodegenJava.translateModel, simCode);
       then ();
     case (_,_,target)
       equation
