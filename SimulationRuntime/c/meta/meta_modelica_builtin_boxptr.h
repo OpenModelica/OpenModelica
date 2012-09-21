@@ -57,6 +57,7 @@ boxptr_binOp(boxptr_realGt,mmc_mk_bcon,mmc_unbox_real,>)
 boxptr_unOp(boxptr_realInt,mmc_mk_icon,mmc_unbox_real,(modelica_integer))
 boxptr_unOp(boxptr_realString,(void*),mmc_unbox_real,realString)
 
+boxptr_unOp(boxptr_stringInt,mmc_unbox_integer,(void*),stringInt)
 boxptr_unOp(boxptr_stringCharInt,mmc_mk_icon,(void*),stringCharInt)
 boxptr_unOp(boxptr_intStringChar,(void*),mmc_unbox_integer,intStringChar)
 
