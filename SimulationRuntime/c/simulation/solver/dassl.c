@@ -38,16 +38,23 @@
 
 #include <string.h>
 
-const char *dasslMethodStr[DASSL_MAX] = {"unknown", "dassl", "dasslwort", "dasslSymJac",
-                                          "dasslNumJac", "dasslColorSymJac",
-                                          "dasslColorNumJac"};
+const char *dasslMethodStr[DASSL_MAX] = {"unknown", 
+                                         "dassl", 
+                                         "dasslwort",
+                                         "dasslSymJac",
+                                         "dasslNumJac",
+                                         "dasslColorSymJac",
+                                         "dasslColorNumJac"
+                                        };
 
-const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown", "normal dassl",
-											                        "dassl without internal root finding",
-                                              "dassl with symbolic jacobian",
-                                              "dassl with numerical jacobian",
-                                              "dassl with colored symbolic jacobian",
-                                              "dassl with colored numerical jacobian"};
+const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown", 
+                                                "normal dassl",
+                                                "dassl without internal root finding",
+                                                "dassl with symbolic jacobian",
+                                                "dassl with numerical jacobian",
+                                                "dassl with colored symbolic jacobian",
+                                                "dassl with colored numerical jacobian"
+                                               };
 
 
 
