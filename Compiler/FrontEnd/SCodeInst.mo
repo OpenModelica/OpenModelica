@@ -159,15 +159,15 @@ algorithm
         // that might be used as conditions.
         (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
         // Type the instantiated class again, to type any instantiated
-        // conditional components that might have been added.
+                // conditional components that might have been added.
         (cls, symtab) = Typing.typeClass(cls, Typing.CONTEXT_MODEL(), symtab);
+        
+        // Type check the typed class components.
+        (cls, symtab) = TypeCheck.checkClassComponents(cls, Typing.CONTEXT_MODEL(), symtab);        
+        
         // Type all equation and algorithm sections in the class.
         (cls, conn) = Typing.typeSections(cls, symtab);
         
-        // Type check the typed class.
-        (cls, symtab) = TypeCheck.check(cls, symtab);
-
-
         flows = ConnectUtil2.collectFlowConnectors(cls);
         dae_conn = ConnectUtil2.generateEquations(conn, flows);
 
@@ -924,7 +924,7 @@ algorithm
     case (_, InstTypes.COMPLEX_CLASS(_ :: _, {}, {}, {}, {}))
       equation
         name = InstUtil.prefixToPath(inPrefix);
-        el = InstTypes.ELEMENT(InstTypes.PACKAGE(name), inClass);
+        el = InstTypes.ELEMENT(InstTypes.PACKAGE(name, NONE()), inClass);
       then
         SOME(el);
 
@@ -954,15 +954,17 @@ algorithm
       SCode.Enum enum_lit;
       list<SCode.Enum> rest_lits;
       Element el;
+      list<Element> acc;
 
     case ({}, _, _, _, _) then inAccumEl;
 
     case (enum_lit :: rest_lits, _, _, _, _)
       equation
         el = instEnumLiteral(enum_lit, inEnumPath, inType, inIndex);
+        // adrpo: we need to append it because otherwise is reverse and has the wrong index!
+        acc = listAppend(inAccumEl, {el});
       then
-        instEnumLiterals(rest_lits, inEnumPath, inType, inIndex + 1, 
-          el :: inAccumEl);
+        instEnumLiterals(rest_lits, inEnumPath, inType, inIndex + 1, acc);
 
   end match;
 end instEnumLiterals;

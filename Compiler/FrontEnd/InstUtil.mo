@@ -410,8 +410,8 @@ algorithm
     case (InstTypes.OUTER_COMPONENT(_, inner_name), _)
       then InstTypes.OUTER_COMPONENT(inName, inner_name);
 
-    case (InstTypes.PACKAGE(_), _)
-      then InstTypes.PACKAGE(inName);
+    case (InstTypes.PACKAGE(_,p), _)
+      then InstTypes.PACKAGE(inName,p);
 
   end match;
 end setComponentName;
@@ -472,6 +472,24 @@ algorithm
 
   end match;
 end getComponentType;
+
+public function getComponentTypeDimensions
+  input Component inComponent;
+  output DAE.Dimensions outDims;
+algorithm
+  outDims := match(inComponent)
+    local
+      DAE.Type ty;
+      array<Dimension> idimensions;
+      list<Dimension> idims;
+      DAE.Dimensions dims;
+    
+    case InstTypes.TYPED_COMPONENT(ty = ty)
+      equation 
+        dims = Types.getDimensions(ty);
+      then dims;
+  end match;
+end getComponentTypeDimensions;
 
 public function getComponentBinding
   input Component inComponent;
@@ -687,6 +705,36 @@ algorithm
 
   end match;
 end getBindingExpOpt;
+
+public function getBindingTypeOpt
+  input Binding inBinding;
+  output Option<DAE.Type> outTy;
+algorithm
+  outTy := match(inBinding)
+    local
+      DAE.Type ty;
+
+    case InstTypes.TYPED_BINDING(bindingType = ty) then SOME(ty);
+    else NONE();
+
+  end match;
+end getBindingTypeOpt;
+
+public function getBindingPropagatedDimsOpt
+  input Binding inBinding;
+  output Option<Integer> outPropagatedDimsOpt;
+algorithm
+  outPropagatedDimsOpt := match(inBinding)
+    local
+      Integer pd;
+
+    case InstTypes.TYPED_BINDING(propagatedDims = pd) then SOME(pd);
+    case InstTypes.RAW_BINDING(propagatedDims = pd) then SOME(pd);
+    case InstTypes.UNTYPED_BINDING(propagatedDims = pd) then SOME(pd);
+    else NONE();
+
+  end match;
+end getBindingPropagatedDimsOpt;
 
 public function makeEnumType
   input list<SCode.Enum> inEnumLiterals;
@@ -1742,6 +1790,7 @@ algorithm
       Option<Component> parent;
 
     case InstTypes.TYPED_COMPONENT(parent = parent) then parent;
+    case InstTypes.PACKAGE(parent = parent) then parent;
     else NONE();
 
   end match;
@@ -1751,15 +1800,26 @@ public function setComponentParent
   input Component inComponent;
   input Option<Component> inParent;
   output Component outComponent;
-protected
-  Absyn.Path name;
-  DAE.Type ty;
-  DaePrefixes pref;
-  Binding binding;
-  Absyn.Info info;
 algorithm
-  InstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info) := inComponent;
-  outComponent := InstTypes.TYPED_COMPONENT(name, ty, inParent, pref, binding, info);
+  outComponent := matchcontinue(inComponent, inParent)
+    local
+      Absyn.Path name;
+      DAE.Type ty;
+      DaePrefixes pref;
+      Binding binding;
+      Absyn.Info info;
+    
+    case (_, NONE()) then inComponent; 
+    
+    case (InstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info), inParent)
+    then InstTypes.TYPED_COMPONENT(name, ty, inParent, pref, binding, info);
+    
+    case (InstTypes.PACKAGE(name, _), inParent)
+    then InstTypes.PACKAGE(name, inParent);
+    
+    case (_, _) then inComponent;
+    
+  end matchcontinue;
 end setComponentParent;
       
 public function makeTypedComponentCref

@@ -63,6 +63,7 @@ protected import InstUtil;
 protected import List;
 protected import Types;
 protected import Util;
+protected import TypeCheck;
 
 public type Binding = InstTypes.Binding;
 public type Class = InstTypes.Class;
@@ -161,6 +162,7 @@ algorithm
 
     case (InstTypes.ELEMENT(comp, cls), _, _, st)
       equation
+        comp = InstUtil.setComponentParent(comp, inParent);
         (cls, st) = typeClass2(cls, SOME(comp), inContext, st);
       then
         (InstTypes.ELEMENT(comp, cls), st);
@@ -211,8 +213,16 @@ algorithm
         st = InstSymbolTable.updateComponent(comp, st);
       then
         (comp, st);
-
+    
     case (InstTypes.TYPED_COMPONENT(name = _), _, _, st) then (inComponent, st);
+        
+    case (InstTypes.PACKAGE(parent = NONE()), SOME(_), _, st)
+      equation
+        comp = InstUtil.setComponentParent(inComponent, inParent);
+      then
+        (comp, st);
+
+    case (InstTypes.PACKAGE(name = _), _, _, st) then (inComponent, st);
 
     case (InstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, _, st)
       equation
@@ -580,6 +590,7 @@ algorithm
         info = info), _, _, st)
       equation
         (binding, ty, st) = typeExp(binding, inEvalPolicy, inContext, st);
+        checkBindingTypeOk(ty, Expression.typeof(binding), binding, info);
       then
         (InstTypes.TYPED_BINDING(binding, ty, pd, info), st);
 
@@ -590,6 +601,37 @@ algorithm
 
   end match;
 end typeBinding;
+
+protected function checkBindingTypeOk
+  input DAE.Type inTy1;
+  input DAE.Type inTy2;
+  input DAE.Exp inExp;
+  input Absyn.Info inInfo;
+algorithm
+  _ := matchcontinue(inTy1, inTy2, inExp, inInfo)
+    local
+      DAE.Type t1, t2;
+      DAE.Exp e;
+      Absyn.Info info;
+      String str;
+      
+    case (t1, t2, e, info)
+      equation
+        (_, _) = Types.matchType(e, t2, t1, true);
+      then
+        ();
+      
+    case (t1, t2, e, info)
+      equation
+        str = ExpressionDump.printExpStr(e);
+        str = "Typing.checkBindingTypeOk: expression: " +& str;
+        str = str +& ", binding type: " +& Types.unparseType(t1);
+        str = str +& " != expression type: " +& Types.unparseType(t2);
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, info);
+      then
+        fail();
+  end matchcontinue;
+end checkBindingTypeOk;
 
 protected function updateComplexComponentType
   input Component inComponent;
@@ -728,9 +770,9 @@ algorithm
     case (DAE.RCONST(real = _), _, _, st) then (inExp, DAE.T_REAL_DEFAULT, st);
     case (DAE.SCONST(string = _), _, _, st) then (inExp, DAE.T_STRING_DEFAULT, st);
     case (DAE.BCONST(bool = _), _, _, st) then (inExp, DAE.T_BOOL_DEFAULT, st);
-    case (DAE.CREF(componentRef = cref), ep, _, st)
+    case (DAE.CREF(componentRef = cref), ep, c, st)
       equation
-        (e1, ty, st) = typeCref(cref, ep, st);
+        (e1, ty, st) = typeCref(cref, ep, c, st);
       then
         (e1, ty, st);
         
@@ -822,13 +864,14 @@ end dimensionExp;
 protected function typeCref
   input DAE.ComponentRef inCref;
   input EvalPolicy inEvalPolicy;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outSymbolTable) :=
-  matchcontinue(inCref, inEvalPolicy, inSymbolTable)
+  matchcontinue(inCref, inEvalPolicy, inContext, inSymbolTable)
     local
       SymbolTable st;
       Component comp;
@@ -838,20 +881,21 @@ algorithm
       Boolean eval;
       DAE.ComponentRef cref;
       EvalPolicy ep;
+      Context c;
 
-    case (_, ep, st)
+    case (_, ep, c, st)
       equation
         comp = InstSymbolTable.lookupCref(inCref, st);
         var = InstUtil.getEffectiveComponentVariability(comp);
         eval = shouldEvaluate(var, ep);
-        (exp, ty, st) = typeCref2(inCref, comp, eval, ep, st);
+        (exp, ty, st) = typeCref2(inCref, comp, eval, ep, c, st);
       then
         (exp, ty, st);
 
-    case (_, ep, st)
+    case (_, ep, c, st)
       equation
         (cref, st) = InstUtil.replaceCrefOuterPrefix(inCref, st);
-        (exp, ty, st) = typeCref(cref, ep, st);
+        (exp, ty, st) = typeCref(cref, ep, c, st);
       then
         (exp, ty, st);
 
@@ -883,13 +927,14 @@ protected function typeCref2
   input Component inComponent;
   input Boolean inShouldEvaluate;
   input EvalPolicy inEvalPolicy;
+  input Context inContext;
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outSymbolTable) :=
-  match(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inSymbolTable)
+  match(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Type ty;
       Binding binding;
@@ -900,8 +945,9 @@ algorithm
       DAE.ComponentRef inner_cref;
       EvalPolicy ep;
       Boolean se;
+      Context c;
 
-    case (_, InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), true, _, st)
+    case (_, InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), true, ep, c, st)
       equation
         /* ------------------------------------------------------------------*/
         // TODO: The start value should be used if a parameter or constant has
@@ -911,19 +957,21 @@ algorithm
         /* ------------------------------------------------------------------*/
         // TODO: Apply cref subscripts to the expression.
         /* ------------------------------------------------------------------*/
+        // type the actual expression as the cref might have WRONG TYPE!
+        (exp, ty, st) = typeExp(exp, ep, c, st); 
       then
         (exp, ty, st);
 
-    case (_, InstTypes.TYPED_COMPONENT(ty = ty), false, _, st)
+    case (_, InstTypes.TYPED_COMPONENT(ty = ty), false, _, c, st)
       equation
         ty = propagateCrefSubsToType(ty, inCref);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
-    case (_, InstTypes.UNTYPED_COMPONENT(name = _), true, _, st)
+    case (_, InstTypes.UNTYPED_COMPONENT(name = _), true, _, c, st)
       equation
         (InstTypes.TYPED_COMPONENT(ty = ty, binding = binding), st) =
-          typeComponent(inComponent, NONE(), CONTEXT_MODEL(), st);
+          typeComponent(inComponent, NONE(), c, st);
         exp = InstUtil.getBindingExp(binding);
         /* ------------------------------------------------------------------*/
         // TODO: Apply cref subscripts to the expression.
@@ -931,19 +979,19 @@ algorithm
       then
         (exp, ty, st);
 
-    case (_, InstTypes.UNTYPED_COMPONENT(name = _), false, _, st)
+    case (_, InstTypes.UNTYPED_COMPONENT(name = _), false, _, c, st)
       equation
-        (ty, st) = typeComponentDims(inComponent, CONTEXT_MODEL(), st);
+        (ty, st) = typeComponentDims(inComponent, c, st);
         ty = propagateCrefSubsToType(ty, inCref);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
-    case (_, InstTypes.OUTER_COMPONENT(name = _), se, ep, st)
+    case (_, InstTypes.OUTER_COMPONENT(name = _), se, ep, c, st)
       equation
-        (inner_comp, st) = typeComponent(inComponent, NONE(), CONTEXT_MODEL(), st);
+        (inner_comp, st) = typeComponent(inComponent, NONE(), c, st);
         inner_name = InstUtil.getComponentName(inner_comp);
         inner_cref = InstUtil.removeCrefOuterPrefix(inner_name, inCref);
-        (exp, ty, st) = typeCref2(inner_cref, inner_comp, se, ep, st);
+        (exp, ty, st) = typeCref2(inner_cref, inner_comp, se, ep, c, st);
       then
         (exp, ty, st);
 
@@ -1188,7 +1236,7 @@ algorithm
       String name;
       Integer index;
       list<Equation> eql;
-      DAE.Type ty;
+      DAE.Type ty, ty1, ty2, tty1, tty2;
       list<tuple<DAE.Exp, list<Equation>>> branches;
       list<Equation> acc_el;
       Absyn.Path iter_name;
@@ -1198,9 +1246,12 @@ algorithm
 
     case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el, _)
       equation
-        (rhs, _, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st);
-        (lhs, _, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st);
-        eq = InstTypes.EQUALITY_EQUATION(lhs, rhs, info);
+        (lhs, ty1, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (rhs, ty2, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st);
+        
+        (lhs, tty1, rhs, tty2) = TypeCheck.checkExpEquality(lhs, ty1, rhs, ty2, "equ", info);
+        
+        eq = InstTypes.EQUALITY_EQUATION(lhs, rhs, info); 
       then
         (eq :: acc_el, inConnections);
 
@@ -1270,7 +1321,7 @@ algorithm
 
     case (InstTypes.REINIT_EQUATION(cref1, exp1, info), st, acc_el, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), st);
+        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
         (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.REINIT_EQUATION(cref1, exp1, info);
       then
@@ -1334,14 +1385,14 @@ algorithm
     case ("branch", {DAE.CREF(componentRef = cref1),
         DAE.CREF(componentRef = cref2)}, st, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), st);
-        (DAE.CREF(componentRef = cref2), _, _) = typeCref(cref2, NO_EVAL(), st);
+        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
+        (DAE.CREF(componentRef = cref2), _, _) = typeCref(cref2, NO_EVAL(), CONTEXT_MODEL(), st);
       then
         ConnectUtil2.makeBranch(cref1, cref2, inInfo);
 
     case ("root", {DAE.CREF(componentRef = cref1)}, st, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), st);
+        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
       then
         ConnectUtil2.makeRoot(cref1, inInfo);
 
@@ -1715,7 +1766,7 @@ algorithm
       equation
         (lhs,lty,_) = typeExp(lhs, NO_EVAL(), c, st);
         (rhs,rty,_) = typeExp(rhs, EVAL_CONST(), c, st);
-        // rhs = typeCheck(rhs,lty,rty)
+        (lhs, _, rhs, _) = TypeCheck.checkExpEquality(lhs, lty, rhs, rty, "alg", info);
       then typeAssignment(lhs,rhs,info,inAcc);
     case (InstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),c,st,_)
       equation

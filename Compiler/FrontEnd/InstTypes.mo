@@ -174,6 +174,7 @@ public uniontype Component
 
   record PACKAGE
     Absyn.Path name;
+    Option<Component> parent; //NO_COMPONENT?
   end PACKAGE;
 end Component;
 

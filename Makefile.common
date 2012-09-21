@@ -87,7 +87,7 @@ runtimeCPP:
 
 runtimeCPPinstall: 
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) install
-	time $(MAKE) -C testsuite/cppruntime -f Makefile
+	(time $(MAKE) -C testsuite/cppruntime -f Makefile)
 
 testlibrariemsl31cpp:
 	(cd testsuite/cppruntime/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-cpp-trace.txt 2>&1)
@@ -109,20 +109,20 @@ fmil:
 testfast: test
 
 test:
-	time $(MAKE) -C testsuite -f Makefile
+	(time $(MAKE) -C testsuite -f Makefile)
 
 testlog:
-	time $(MAKE) -C testsuite -f Makefile > testsuite-trace.txt 2>&1
+	(time $(MAKE) -C testsuite -f Makefile > testsuite-trace.txt 2>&1)
 	echo "log is in testsuite/testsuite-trace.txt"
 	echo "Failed models: "
 	cat testsuite/testsuite-trace.txt | grep "==== Log" | wc -l
 	cat testsuite/testsuite-trace.txt | grep "==== Log" ; echo DONE!
 
 testmos:
-	time $(MAKE) -C testsuite/mosfiles -f Makefile
+	(time $(MAKE) -C testsuite/mosfiles -f Makefile)
 
 testsimulation:
-	time $(MAKE) -C testsuite -f Makefile simulation
+	(time $(MAKE) -C testsuite -f Makefile simulation)
 
 testmo:
 	(cd testsuite/mofiles && time $(MAKE) -f Makefile test)

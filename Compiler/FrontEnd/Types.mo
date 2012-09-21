@@ -1266,6 +1266,7 @@ algorithm
       list<FuncArg> farg1,farg2;
       DAE.CodeType c1,c2;
       DAE.Exp e1,e2;
+      DAE.TypeSource ts;
     
     case (DAE.T_ANYTYPE(anyClassType = _),_) then true;
     case (_,DAE.T_ANYTYPE(anyClassType = _)) then true;
@@ -1291,7 +1292,26 @@ algorithm
         true = subtype(t1, t2);
       then
         true;
-        
+    
+    // try dims as list vs. dims as tree 
+    // T_ARRAY(a::b::c) vs. T_ARRAY(a, T_ARRAY(b, T_ARRAY(c)))
+    case (DAE.T_ARRAY(dims = {dim1}, ty = t1),
+          DAE.T_ARRAY(dims = dim2::(dlst2 as _::_), ty = t2, source = ts))
+      equation
+        true = Expression.dimensionsEqual(dim1, dim2);
+        true = subtype(t1, DAE.T_ARRAY(t2, dlst2, ts));
+      then
+        true;
+    
+    // try subtype of dimension list vs. dimension tree
+    case (DAE.T_ARRAY(dims = dim1::(dlst1 as _::_), ty = t1, source = ts),
+          DAE.T_ARRAY(dims = {dim2}, ty = t2))
+      equation
+        true = Expression.dimensionsEqual(dim1, dim2);
+        true = subtype(DAE.T_ARRAY(t1, dlst1, ts), t2);
+      then
+        true;
+    
     case (DAE.T_ARRAY(ty = t1),DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t2))
       equation
         true = subtype(t1, t2);
@@ -3523,7 +3543,7 @@ algorithm
     
     case (t as DAE.T_ARRAY(source = _))
       equation
-        (_,dims) = flattenArrayTypeOpt(t);        
+        (_,dims) = flattenArrayTypeOpt(t);
         t = arrayElementType(t);
         t_1 = simplifyType(t);
       then
@@ -3945,6 +3965,65 @@ algorithm
   end matchcontinue;
 end vectorizableType2;
 
+public function unflattenArrayType
+"transforms T_ARRAY(a::b::c) to T_ARRAY(a, T_ARRAY(b, T_ARRAY(c)))
+ Always call it with "
+  input DAE.Type inTy; 
+  output DAE.Type outTy;
+algorithm
+  outTy := unflattenArrayType2(inTy, false);
+end unflattenArrayType;
+
+protected function unflattenArrayType2
+"transforms T_ARRAY(a::b::c) to T_ARRAY(a, T_ARRAY(b, T_ARRAY(c)))
+ Always call it with "
+  input DAE.Type inTy;
+  input Boolean last; 
+  output DAE.Type outTy;
+algorithm
+  outTy := matchcontinue(inTy, last)
+    local
+      DAE.Type ty, t;
+      DAE.TypeSource ts;
+      DAE.Dimensions dims;
+      DAE.Dimension dim;
+      ClassInf.State ci;
+      list<DAE.Var> vl;
+      EqualityConstraint eqc;
+    
+    // subtype basic crap
+    case (DAE.T_SUBTYPE_BASIC(ci, vl, ty, eqc, ts), _)
+      equation
+        ty = unflattenArrayType(ty);
+      then 
+        DAE.T_SUBTYPE_BASIC(ci, vl, ty, eqc, ts);
+    
+    // already in the way we want it
+    case (DAE.T_ARRAY(t, {dim}, ts), _)
+      equation
+        t = unflattenArrayType(t);
+      then 
+        DAE.T_ARRAY(t, {dim}, ts);
+    
+    // we might get here via true!
+    case (DAE.T_ARRAY(t, {}, ts), true)
+      equation
+        t = unflattenArrayType(t);
+      then 
+        t;
+    
+    // the usual case
+    case (DAE.T_ARRAY(t, dim::dims, ts), _)
+      equation
+        ty = unflattenArrayType2(DAE.T_ARRAY(t, dims, ts), true);
+        ty = DAE.T_ARRAY(ty, {dim}, ts); 
+      then
+        ty;
+    
+    case (ty, false) then ty;    
+  end matchcontinue;
+end unflattenArrayType2;
+
 protected function typeConvert "function: typeConvert
   This functions converts the expression in the first argument to
   the type specified in the third argument.  The current type of the
@@ -3966,7 +4045,7 @@ algorithm
       Boolean sc, a;
       Integer nmax;
       DAE.Dimension dim1, dim2, dim11, dim22;
-      DAE.Dimensions dims;
+      DAE.Dimensions dims,dims1,dims2;
       Type ty1,ty2,t1,t2,t_1,t_2,ty0,ty;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
       list<list<DAE.Exp>> ell_1,ell,elist_big;
@@ -3983,6 +4062,30 @@ algorithm
       DAE.MatchType matchTy;
       list<DAE.Element> localDecls;
       DAE.TypeSource ts,ts1,ts2;
+    
+    // try dims as list T_ARRAY(a::b::c)
+    case (e,
+          ty1 as DAE.T_ARRAY(dims = _::_::_),
+          ty2,
+          printFailtrace)
+      equation
+         ty1 = unflattenArrayType(ty1);
+         ty2 = unflattenArrayType(ty2);
+         (e, ty) = typeConvert(e, ty1, ty2, printFailtrace);
+      then
+        (e, ty);
+        
+    // try dims as list T_ARRAY(a::b::c)
+    case (e,
+          ty1,
+          ty2 as DAE.T_ARRAY(dims = _::_::_),
+          printFailtrace)
+      equation
+         ty1 = unflattenArrayType(ty1);
+         ty2 = unflattenArrayType(ty2);
+         (e, ty) = typeConvert(e, ty1, ty2, printFailtrace);
+      then
+        (e, ty);
 
     // Array expressions: expression dimension [dim1], expected dimension [dim2]
     case (DAE.ARRAY(array = elist),
