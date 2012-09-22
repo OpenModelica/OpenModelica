@@ -102,10 +102,10 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
 
   <%\t%>private static DATA localData = new DATA();
   <%\t%>//final time localData.timeValue = 0;
-		
+    
   <%\t%>//final double $P$old$Ptime = localData.oldTime;
   <%\t%>//final double $P$current_step_size = globalData.current_stepsize;
-	    
+      
   <%\t%><%addGlobalInitialization(modelInfo)%>
   
   >>
@@ -233,11 +233,11 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   <%\t%>public <%dotPath(modelInfo.name)%>()
   <%\t%>{
   <%\t%><%\t%>//localData = data;
-	  	
+      
   <%\t%><%\t%>//$Px = localData.states[0];
   <%\t%>//$P$DER$Px = localData.statesDerivatives[0];
   <%\t%>}
-	  
+    
   >>
 end functionModelConstructor;
 
@@ -245,17 +245,17 @@ template functionInitializeDataStruc()
  "Generates function in simulation file."
 ::=
   <<
-	  // Used to initialize the data structure 
-	  /*
-	  public DATA initializeDataStruc(DATA_FLAGS flags)
-	  {
-		  DATA returnData = new DATA(fortran_integer, fortran_integer, fortran_integer, long, long, 
-			  fortran_integer, long, long, long, long, long);
-	  
-		  return returnData;
-	  }
-	  */
-	    
+    // Used to initialize the data structure 
+    /*
+    public DATA initializeDataStruc(DATA_FLAGS flags)
+    {
+      DATA returnData = new DATA(fortran_integer, fortran_integer, fortran_integer, long, long, 
+        fortran_integer, long, long, long, long, long);
+    
+      return returnData;
+    }
+    */
+      
   >>
 end functionInitializeDataStruc; 
 
@@ -265,17 +265,17 @@ template functionDeInitializeDataStruc(ExtObjInfo extObjInfo)
 match extObjInfo
 case EXTOBJINFO(__) then
   <<
-		protected void finalize () 
-		{
-			System.out.println("memsucker %d destroyed...\n");
-		}
-	  
-		// used to deinitialize the data structure
-		public void deInitializeDataStruc(DATA data, DATA_FLAGS flags)
-		{
-			/* In java, memory deallocation is automatically handled. so no need to free the memory explicitly. */ 
-		}
-		
+    protected void finalize () 
+    {
+      System.out.println("memsucker %d destroyed...\n");
+    }
+    
+    // used to deinitialize the data structure
+    public void deInitializeDataStruc(DATA data, DATA_FLAGS flags)
+    {
+      /* In java, memory deallocation is automatically handled. so no need to free the memory explicitly. */ 
+    }
+    
   >>
 end functionDeInitializeDataStruc;
 
@@ -285,14 +285,14 @@ template functionInput(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-		public int input_function()
-		{
-			<%vars.inputVars |> SIMVAR(__) hasindex i0 => 
-			'<%cref(name)%> = localData.inputVars[<%i0%>];'
-			;separator="\n"%>
-			return 0;
-		}
-		
+    public int input_function()
+    {
+      <%vars.inputVars |> SIMVAR(__) hasindex i0 => 
+      '<%cref(name)%> = localData.inputVars[<%i0%>];'
+      ;separator="\n"%>
+      return 0;
+    }
+    
   >>
 end functionInput;
 
@@ -302,14 +302,14 @@ template functionOutput(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-		public int output_function()
-		{
-			<%vars.outputVars |> SIMVAR(__) hasindex i0 => 
-			'localData.outputVars[<%i0%>] = <%cref(name)%>;'
-			;separator="\n"%>
-			return 0;
-		}
-		
+    public int output_function()
+    {
+      <%vars.outputVars |> SIMVAR(__) hasindex i0 => 
+      'localData.outputVars[<%i0%>] = <%cref(name)%>;'
+      ;separator="\n"%>
+      return 0;
+    }
+    
   >>
 end functionOutput;
 
@@ -317,42 +317,42 @@ template functionDaeRes()
   "Generates function in simulation file."
 ::=
   <<
-  		@SuppressWarnings("null") // To avoid  "null" warnings in Java
-		public int functionDAE_res(double t, double[] x, double[] xd, double[] delta, double ires, double rpar, double ipar)
-		{
-			int i;
-			double[] temp_xd = null;
-			double[] statesBackup;
-			double[] statesDerivativesBackup;
-			double timeBackup;
-	  
-			statesBackup = localData.states;
-			statesDerivativesBackup = localData.statesDerivatives;
-			timeBackup = localData.timeValue;
-			localData.states = x;
-	  
-			for (i = 0; i < localData.nStates; i++) {
-				temp_xd[i] = localData.statesDerivatives[i];
-			}
-	  
-			localData.statesDerivatives = temp_xd;
-			localData.timeValue = t;
-	  
-			functionODE();
-	  
-			/* get the difference between the temp_xd(=localData->statesDerivatives)
-				and xd(=statesDerivativesBackup) */
-			for (i = 0; i < localData.nStates; i++) {
-				delta[i] = localData.statesDerivatives[i] - statesDerivativesBackup[i];
-			}
-	  
-			localData.states = statesBackup;
-			localData.statesDerivatives = statesDerivativesBackup;
-			localData.timeValue = timeBackup;
-	  
-			return 0;
-		}
-		
+      @SuppressWarnings("null") // To avoid  "null" warnings in Java
+    public int functionDAE_res(double t, double[] x, double[] xd, double[] delta, double ires, double rpar, double ipar)
+    {
+      int i;
+      double[] temp_xd = null;
+      double[] statesBackup;
+      double[] statesDerivativesBackup;
+      double timeBackup;
+    
+      statesBackup = localData.states;
+      statesDerivativesBackup = localData.statesDerivatives;
+      timeBackup = localData.timeValue;
+      localData.states = x;
+    
+      for (i = 0; i < localData.nStates; i++) {
+        temp_xd[i] = localData.statesDerivatives[i];
+      }
+    
+      localData.statesDerivatives = temp_xd;
+      localData.timeValue = t;
+    
+      functionODE();
+    
+      /* get the difference between the temp_xd(=localData->statesDerivatives)
+        and xd(=statesDerivativesBackup) */
+      for (i = 0; i < localData.nStates; i++) {
+        delta[i] = localData.statesDerivatives[i] - statesDerivativesBackup[i];
+      }
+    
+      localData.states = statesBackup;
+      localData.statesDerivatives = statesDerivativesBackup;
+      localData.timeValue = timeBackup;
+    
+      return 0;
+    }
+    
   >>
 end functionDaeRes;
 
@@ -370,18 +370,18 @@ template functionStoreDelayed(DelayedExpression delayed)
       >>
     ))
   <<
-		/* 
-		 * extern int const numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
-		*/
-		public int function_storeDelayed()
-		{
-			<%varDecls%>
-	
-			<%storePart%>
-	
-			return 0;
-		}
-		
+    /* 
+     * extern int const numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
+    */
+    public int function_storeDelayed()
+    {
+      <%varDecls%>
+  
+      <%storePart%>
+  
+      return 0;
+    }
+    
   >>
 end functionStoreDelayed;
 
@@ -393,19 +393,19 @@ template functionODE(list<SimEqSystem> derivativEquations, ModelInfo modelInfo)
       equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")
   <<
-  		public int functionODE(DATA localData)
-  		{
-  			<%addGlobalDefinition(modelInfo)%>
-  			 	
-			<%varDecls%>
+      public int functionODE(DATA localData)
+      {
+        <%addGlobalDefinition(modelInfo)%>
+           
+      <%varDecls%>
   
-			<%odeEquations%>
-			
-			<%addVarReverseDefinition(modelInfo)%>
-				  
-  			return 0;
-  		}
-	  
+      <%odeEquations%>
+      
+      <%addVarReverseDefinition(modelInfo)%>
+          
+        return 0;
+      }
+    
   }// end main class
 
   >>
@@ -1238,7 +1238,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   #<%\t%>cp TestModel.java $(simulation_dir) 
   #<%\t%>cp TestModel_init.txt $(top_dir) 
   #<%\t%>(cd $(top_dir); make -f Makefile) 
-  		
+      
   JFLAGS = -g
   JC = javac
   .SUFFIXES: .java .class
@@ -1305,9 +1305,9 @@ end simulationInitFile;
 
 template initVals(list<SimVar> varsLst) ::=
   varsLst |> SIMVAR(__) =>
-	<<
-	<%match initialValue 
-  	  case SOME(v) then 
+  <<
+  <%match initialValue 
+      case SOME(v) then 
         match v
         case ICONST(__) then integer
         case RCONST(__) then real
@@ -1317,7 +1317,7 @@ template initVals(list<SimVar> varsLst) ::=
         else "*ERROR* initial value of unknown type"
       else "0.0 //default"
     %> 
-    >>	
+    >>  
   ;separator="\n"
 end initVals;
 
