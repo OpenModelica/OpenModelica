@@ -3563,7 +3563,7 @@ algorithm
         false = Util.getStatefulBoolean(stopInst);
 
         // no meta-modelica
-        false = Config.acceptMetaModelicaGrammar();        
+        // false = Config.acceptMetaModelicaGrammar();        
         // no types, enums or connectors please!
         false = valueEq(re, SCode.R_TYPE());
         // false = valueEq(re, SCode.R_FUNCTION());
@@ -4845,7 +4845,7 @@ algorithm
           re,partialPrefix,vis,inst_dims,className,info)
       equation
         // no meta-modelica
-        false = Config.acceptMetaModelicaGrammar();        
+        // false = Config.acceptMetaModelicaGrammar();        
         // no types, enums or connectors please!
         false = valueEq(re, SCode.R_TYPE());
         // false = valueEq(re, SCode.R_FUNCTION());
@@ -6617,7 +6617,7 @@ algorithm
     case (inCache, inEnv, inIH, inMod, inPrefix, inState as ClassInf.FUNCTION(path = path), inDirection, 
           inClass as SCode.CLASS(name = name, restriction = SCode.R_RECORD()), inInstDims)
       equation
-        false = Config.acceptMetaModelicaGrammar();
+        // false = Config.acceptMetaModelicaGrammar();
         true = Absyn.isInputOrOutput(inDirection);
         // TODO, add the env path to the check!
         false = stringEq(Absyn.pathLastIdent(path), name);
@@ -11020,16 +11020,6 @@ algorithm
     // do NOT fully quallify again a fully qualified path!
     case (cache,env,Absyn.FULLYQUALIFIED(path)) then (cache, inPath);
     
-    // try to lookup the first class only if not MetaModelica!  
-    case (cache,env,path as Absyn.QUALIFIED(name, restPath))
-      equation
-        false = Config.acceptMetaModelicaGrammar(); 
-        (cache,cl as SCode.CLASS(name = name),env_1) = Lookup.lookupClass(cache, env, Absyn.IDENT(name), false);
-        // use the name we get back as it could be an import stuff!
-        path_2 = makeFullyQualified2(env_1,Absyn.joinPaths(Absyn.IDENT(name), restPath));
-      then
-        (cache,Absyn.FULLYQUALIFIED(path_2));
-        
     // To make a class fully qualified, the class path is looked up in the environment.
     // The FQ path consist of the simple class name appended to the environment path of the looked up class. 
     case (cache,env,path)

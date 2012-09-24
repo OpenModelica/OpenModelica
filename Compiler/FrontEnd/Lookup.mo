@@ -1291,8 +1291,6 @@ algorithm
     // Search among unqualified imports, e.g. import A.B.* 
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,inState)
       equation
-        // no unqual import in MetaModelica!
-        //false = Config.acceptMetaModelicaGrammar();
         (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv,name) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
         reportSeveralNamesError(unique,id);
         Util.setStatefulBoolean(inState,true);
@@ -1315,23 +1313,6 @@ algorithm
         fail();
   end matchcontinue;
 end lookupVarInPackages;
-
-protected function makeOptIdentOrNone "
-Author: BZ, 2009-04
-Helper function for lookupVarInPackages
-Makes an optional DAE.ComponentRef if the input DAE.ComponentRef is a DAE.CREF_IDENT otherwise
-'NONE' is returned"
-  input DAE.ComponentRef incr;
-  output Option<DAE.ComponentRef> ocR;
-algorithm
-  ocR := matchcontinue(incr)
-    case(incr as DAE.CREF_IDENT(_,_,_))
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-      then SOME(incr);
-    case(_) then NONE();
-  end matchcontinue;
-end makeOptIdentOrNone;
 
 public function lookupVarLocal "function: lookupVarLocal
 
