@@ -3825,6 +3825,7 @@ algorithm
         b = hasBooleanNamedAnnotation(rest,annotationName);
       then
         b;
+    case ({}, _) then false;
   end matchcontinue;
 end hasBooleanNamedAnnotation;
 
@@ -3873,6 +3874,7 @@ algorithm
         b = hasBooleanNamedAnnotation3(rest,namedAnnotation);
       then
         b;
+    case ({}, _) then false;
   end matchcontinue;
 end hasBooleanNamedAnnotation3;
 
