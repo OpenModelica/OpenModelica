@@ -52,20 +52,20 @@ const size_t SIZERINGBUFFER = 3;
  */
 void update_DAEsystem(DATA *data)
 {
-  int needToIterate = 0;
+  data->simulationInfo.needToIterate = 0;
   int IterationNum = 0;
 
-  functionDAE(data, &needToIterate);
+  functionDAE(data);
 
-  while(checkForDiscreteChanges(data) || needToIterate)
+  while(checkForDiscreteChanges(data) || data->simulationInfo.needToIterate)
   {
-    if(needToIterate)
+    if(data->simulationInfo.needToIterate)
       DEBUG_INFO(LOG_EVENTS, "reinit() call. Iteration needed!");
     else
       DEBUG_INFO(LOG_EVENTS, "discrete Variable changed. Iteration needed!");
 
     storePreValues(data);
-    functionDAE(data, &needToIterate);
+    functionDAE(data);
 
     IterationNum++;
     if(IterationNum > IterationMax)

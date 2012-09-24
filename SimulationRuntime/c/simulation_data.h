@@ -328,6 +328,7 @@
     modelica_boolean terminal;       /* =1 at the end of the simulation, 0 otherwise. */
     modelica_integer modelErrorCode; /* =1 if modelEquation result is wrong, 0 otherwise. */
     modelica_boolean discreteCall;   /* =1 for a discrete step, otherwise 0 */
+    modelica_boolean needToIterate;  /* =1 if reinit has been activated, iteration about the system is needed */
 
     void** extObjs; /* External objects */
 

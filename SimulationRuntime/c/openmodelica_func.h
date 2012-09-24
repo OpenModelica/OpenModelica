@@ -98,7 +98,7 @@ extern int functionAlgebraics(DATA *data);
 
 /* function for calculating all equation sorting order
    uses in EventHandle  */
-extern int functionDAE(DATA *data, int *needToIterate);
+extern int functionDAE(DATA *data);
 
 /* functions for input and output */
 extern int input_function(DATA*);

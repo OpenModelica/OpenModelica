@@ -984,9 +984,12 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
       let &preExp = buffer "" /*BUFD*/
       let val = daeExp(value, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
+      if (DEBUG_FLAG(LOG_EVENTS)) {
+        INFO1("reinit <%cref(stateVar)%>  = %f", <%val%>);
+      }
       <%preExp%>
       <%cref(stateVar)%> = <%val%>;
-      *needToIterate=1;
+      data->simulationInfo.needToIterate = 1;
       >>
     case TERMINATE(__) then 
       let &preExp = buffer "" /*BUFD*/
@@ -1180,11 +1183,11 @@ template functionDAE(list<SimEqSystem> allEquationsPlusWhen,
   
   <<
   <%&tmp%>
-  int functionDAE(DATA *data, int *needToIterate)
+  int functionDAE(DATA *data)
   {
     state mem_state;
     <%varDecls%>
-    *needToIterate = 0;
+    data->simulationInfo.needToIterate = 0;
     data->simulationInfo.discreteCall = 1;
     mem_state = get_memory_state();
     <%eqs%>
@@ -5624,11 +5627,12 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     if (DEBUG_FLAG(LOG_EVENTS)) {
-      printf("reinit <%expPart1%> = %f\n", <%expPart1%>);
+      INFO1("reinit <%expPart1%> = %f", <%expPart1%>);
     }
     $P$PRE<%expPart1%> = <%expPart1%>;
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
+    data->simulationInfo.needToIterate = 1;
     >>
 end algStmtReinit;
 

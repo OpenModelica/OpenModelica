@@ -559,10 +559,8 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiEventUpdate: Start Event Update! Next Sample Event %g",eventInfo->nextEventTime);
 
-  int needtoiterate=0;
-
   storePreValues(comp->fmuData);
-  functionDAE(comp->fmuData, &needtoiterate);
+  functionDAE(comp->fmuData);
 
   /*
   if (comp->loggingOn){
@@ -581,10 +579,10 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiEventUpdate: Sample Event!");
     storePreValues(comp->fmuData);
-    functionDAE(comp->fmuData, &needtoiterate);
+    functionDAE(comp->fmuData);
     deactivateSampleEventsandEquations(comp->fmuData);
   }
-  if(checkForDiscreteChanges(comp->fmuData) || needtoiterate){
+  if(checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate){
     intermediateResults = fmiTrue;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiEventUpdate: Need to iterate(discrete changes)!");
