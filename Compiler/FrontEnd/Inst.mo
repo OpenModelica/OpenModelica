@@ -141,6 +141,7 @@ protected import HashTable;
 protected import HashTable5;
 protected import InstSection;
 protected import InstExtends;
+protected import InstUtil;
 protected import Interactive;
 protected import List;
 protected import Lookup;
@@ -8531,7 +8532,7 @@ algorithm
           PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
 
         // Instantiate the components binding.
-        opt_binding = makeVariableBinding(ty, inMod, toConst(vt), inPrefix, inName, source);
+        opt_binding = makeVariableBinding(ty, inMod, InstUtil.toConst(vt), inPrefix, inName, source);
         start = instStartBindingExp(inMod, ty, vt);
 
         // Add the component to the DAE.
@@ -17046,18 +17047,6 @@ algorithm
         SOME(SCode.CLASS_COMMENT(al1, cmt));
   end matchcontinue;
 end mergeClassComments;
-
-public function toConst
-"Translates SCode.Variability to DAE.Const"
-input SCode.Variability inVar;
-output DAE.Const outConst;
-algorithm
-  outConst := matchcontinue (inVar)
-    case(SCode.CONST()) then DAE.C_CONST();
-    case(SCode.PARAM()) then DAE.C_PARAM();
-    case _ then DAE.C_VAR();
-  end matchcontinue;
-end toConst;
 
 protected function makeNonExpSubscript
   input DAE.Subscript inSubscript;

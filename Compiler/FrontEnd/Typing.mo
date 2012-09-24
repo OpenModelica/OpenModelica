@@ -403,7 +403,7 @@ algorithm
     case (InstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, _, st, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, InstTypes.UNTYPED_DIMENSION(dim, true));
-        (dim_exp, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), inContext, st);
+        (dim_exp, _, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), inContext, st);
         (dim_exp, _) = ExpressionSimplify.simplify(dim_exp);
         dim = InstUtil.makeDimension(dim_exp);
         typed_dim = InstTypes.TYPED_DIMENSION(dim);
@@ -589,7 +589,7 @@ algorithm
     case (InstTypes.UNTYPED_BINDING(bindingExp = binding, propagatedDims = pd,
         info = info), _, _, st)
       equation
-        (binding, ty, st) = typeExp(binding, inEvalPolicy, inContext, st);
+        (binding, ty, _, st) = typeExp(binding, inEvalPolicy, inContext, st);
         checkBindingTypeOk(ty, Expression.typeof(binding), binding, info);
       then
         (InstTypes.TYPED_BINDING(binding, ty, pd, info), st);
@@ -678,9 +678,10 @@ protected function typeExpList
   input SymbolTable inSymbolTable;
   output list<DAE.Exp> outExpList;
   output DAE.Type outType;
+  output list<DAE.Const> outConstList;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExpList, outType, outSymbolTable) :=
+  (outExpList, outType, outConstList, outSymbolTable) :=
   match(inExpList, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Exp exp;
@@ -689,15 +690,17 @@ algorithm
       SymbolTable st;
       DAE.Type ty;
       Context c;
+      list<DAE.Const> constList;
+      DAE.Const const;
 
-    case ({}, _, _, st) then ({}, DAE.T_UNKNOWN_DEFAULT, st);
+    case ({}, _, _, st) then ({}, DAE.T_UNKNOWN_DEFAULT, {}, st);
 
     case (exp :: rest_expl, ep, c, st)
       equation
-        (exp, ty, st) = typeExp(exp, ep, c, st);
-        (rest_expl, _, st) = typeExpList(rest_expl, ep, c, st);
+        (exp, ty, const, st) = typeExp(exp, ep, c, st);
+        (rest_expl, _, constList, st) = typeExpList(rest_expl, ep, c, st);
       then
-        (exp :: rest_expl, ty, st);
+        (exp :: rest_expl, ty, const::constList, st);
 
   end match;
 end typeExpList;
@@ -709,21 +712,23 @@ public function typeExpOpt
   input SymbolTable inSymbolTable;
   output Option<DAE.Exp> outExp;
   output Option<DAE.Type> outType;
+  output DAE.Const outConst;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExp, outType, outSymbolTable) := match(inExp, inEvalPolicy, inContext, inSymbolTable)
+  (outExp, outType, outConst, outSymbolTable) := match(inExp, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Exp exp;
       SymbolTable st;
       DAE.Type ty;
+      DAE.Const const;
 
     case (SOME(exp), _, _, st)
       equation
-        (exp, ty, st) = typeExp(exp, inEvalPolicy, inContext, st);
+        (exp, ty, const, st) = typeExp(exp, inEvalPolicy, inContext, st);
       then
-        (SOME(exp), SOME(ty), st);
+        (SOME(exp), SOME(ty), const, st);
 
-    else (NONE(), NONE(), inSymbolTable);
+    else (NONE(), NONE(), DAE.C_CONST(), inSymbolTable);
 
   end match;
 end typeExpOpt;
@@ -748,9 +753,10 @@ public function typeExp
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
+  output DAE.Const outConst;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExp, outType, outSymbolTable) :=
+  (outExp, outType, outConst, outSymbolTable) :=
   match(inExp, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Exp e1, e2;
@@ -765,72 +771,78 @@ algorithm
       EvalPolicy ep;
       Option<DAE.Exp> oe;
       Context c;
+      DAE.Const const,const1,const2,const3;
+      list<DAE.Const> constList;
 
-    case (DAE.ICONST(integer = _), _, _, st) then (inExp, DAE.T_INTEGER_DEFAULT, st);
-    case (DAE.RCONST(real = _), _, _, st) then (inExp, DAE.T_REAL_DEFAULT, st);
-    case (DAE.SCONST(string = _), _, _, st) then (inExp, DAE.T_STRING_DEFAULT, st);
-    case (DAE.BCONST(bool = _), _, _, st) then (inExp, DAE.T_BOOL_DEFAULT, st);
+    case (DAE.ICONST(integer = _), _, _, st) then (inExp, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
+    case (DAE.RCONST(real = _), _, _, st) then (inExp, DAE.T_REAL_DEFAULT, DAE.C_CONST(), st);
+    case (DAE.SCONST(string = _), _, _, st) then (inExp, DAE.T_STRING_DEFAULT, DAE.C_CONST(), st);
+    case (DAE.BCONST(bool = _), _, _, st) then (inExp, DAE.T_BOOL_DEFAULT, DAE.C_CONST(), st);
     case (DAE.CREF(componentRef = cref), ep, c, st)
       equation
-        (e1, ty, st) = typeCref(cref, ep, c, st);
+        (e1, ty, const, st) = typeCref(cref, ep, c, st);
       then
-        (e1, ty, st);
+        (e1, ty, const, st);
         
     case (DAE.ARRAY(array = expl), ep, c, st)
       equation
-        (expl, ty, st) = typeExpList(expl, ep, c, st);
+        (expl, ty, constList, st) = typeExpList(expl, ep, c, st);
         dim_int = listLength(expl);
         ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(dim_int)}, DAE.emptyTypeSource);
+        const = List.fold(constList, Types.constAnd, DAE.C_CONST());
       then
-        (DAE.ARRAY(ty, true, expl), ty, st);
+        (DAE.ARRAY(ty, true, expl), ty, const, st);
 
     case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
       equation
-        (e1, ty, st) = typeExp(e1, ep, c, st);
-        (e2, ty, st) = typeExp(e2, ep, c, st);
+        (e1, ty, const1, st) = typeExp(e1, ep, c, st);
+        (e2, ty, const2, st) = typeExp(e2, ep, c, st);
         // get the type of the operator, not the types of 
         // the last operand as for == it DOES NOT HOLD
         tyOp = Expression.typeofOp(op);
         ty = selectType(tyOp, ty);
+        const = Types.constAnd(const1, const2);
       then
-        (DAE.BINARY(e1, op, e2), ty, st);
+        (DAE.BINARY(e1, op, e2), ty, const, st);
 
     case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
       equation
-        (e1, ty, st) = typeExp(e1, ep, c, st);
-        (e2, ty, st) = typeExp(e2, ep, c, st);
+        (e1, ty, const1, st) = typeExp(e1, ep, c, st);
+        (e2, ty, const2, st) = typeExp(e2, ep, c, st);
         tyOp = Expression.typeofOp(op);
         ty = selectType(tyOp, ty);
+        const = Types.constAnd(const1, const2);
       then
-        (DAE.LBINARY(e1, op, e2), ty, st);
+        (DAE.LBINARY(e1, op, e2), ty, const, st);
 
     case (DAE.LUNARY(operator = op, exp = e1), ep, c, st)
       equation
-        (e1, ty, st) = typeExp(e1, ep, c, st);
+        (e1, ty, const, st) = typeExp(e1, ep, c, st);
         tyOp = Expression.typeofOp(op);
         ty = selectType(tyOp, ty);
       then
-        (DAE.LUNARY(op, e1), ty, st);
+        (DAE.LUNARY(op, e1), ty, const, st);
 
     case (DAE.SIZE(exp = e1 as DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, c, st)
       equation
-        (e2 as DAE.ICONST(dim_int), _, st) = typeExp(e2, EVAL_CONST_PARAM(), c, st);
+        (e2 as DAE.ICONST(dim_int), _, _, st) = typeExp(e2, EVAL_CONST_PARAM(), c, st);
         comp = InstSymbolTable.lookupCref(cref, st);
         (dim, st) = typeComponentDim(comp, dim_int, c, st);
         e1 = dimensionExp(dim, e1, e2, c);
       then
-        (e1, DAE.T_INTEGER_DEFAULT, st);
+        (e1, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
 
     case (DAE.RANGE(start = e1, step = oe, stop = e2), ep, c, st)
       equation
-        (e1, ty, st) = typeExp(e1, ep, c, st);
-        (oe, _, st) = typeExpOpt(oe, ep, c, st);
-        (e2, _, st) = typeExp(e2, ep, c, st);
+        (e1, ty, const1, st) = typeExp(e1, ep, c, st);
+        (oe, _, const2, st) = typeExpOpt(oe, ep, c, st);
+        (e2, _, const3, st) = typeExp(e2, ep, c, st);
         ty = Expression.liftArrayLeft(ty, DAE.DIM_UNKNOWN());
+        const = Types.constAnd(const1,Types.constAnd(const2,const3));
       then
-        (DAE.RANGE(ty, e1, oe, e2), ty, st);
+        (DAE.RANGE(ty, e1, oe, e2), ty, const, st);
 
-    else (inExp, DAE.T_UNKNOWN_DEFAULT, inSymbolTable);
+    else (inExp, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), inSymbolTable);
     //else
     //  equation
     //    print("typeExp: unknown expression " +&
@@ -868,9 +880,10 @@ protected function typeCref
   input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
+  output DAE.Const outConst;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExp, outType, outSymbolTable) :=
+  (outExp, outType, outConst, outSymbolTable) :=
   matchcontinue(inCref, inEvalPolicy, inContext, inSymbolTable)
     local
       SymbolTable st;
@@ -882,22 +895,24 @@ algorithm
       DAE.ComponentRef cref;
       EvalPolicy ep;
       Context c;
+      DAE.Const const;
 
     case (_, ep, c, st)
       equation
         comp = InstSymbolTable.lookupCref(inCref, st);
         var = InstUtil.getEffectiveComponentVariability(comp);
+        const = InstUtil.toConst(var);
         eval = shouldEvaluate(var, ep);
         (exp, ty, st) = typeCref2(inCref, comp, eval, ep, c, st);
       then
-        (exp, ty, st);
+        (exp, ty, const, st);
 
     case (_, ep, c, st)
       equation
         (cref, st) = InstUtil.replaceCrefOuterPrefix(inCref, st);
-        (exp, ty, st) = typeCref(cref, ep, c, st);
+        (exp, ty, const, st) = typeCref(cref, ep, c, st);
       then
-        (exp, ty, st);
+        (exp, ty, const, st);
 
     else
       equation
@@ -958,7 +973,7 @@ algorithm
         // TODO: Apply cref subscripts to the expression.
         /* ------------------------------------------------------------------*/
         // type the actual expression as the cref might have WRONG TYPE!
-        (exp, ty, st) = typeExp(exp, ep, c, st); 
+        (exp, ty, _, st) = typeExp(exp, ep, c, st); 
       then
         (exp, ty, st);
 
@@ -1246,8 +1261,8 @@ algorithm
 
     case (InstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el, _)
       equation
-        (lhs, ty1, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st);
-        (rhs, ty2, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (lhs, ty1, _, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (rhs, ty2, _, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st);
         
         (lhs, tty1, rhs, tty2) = TypeCheck.checkExpEquality(lhs, ty1, rhs, ty2, "equ", info);
         
@@ -1264,7 +1279,7 @@ algorithm
 
     case (InstTypes.FOR_EQUATION(name, index, _, SOME(exp1), eql, info), st, acc_el, conn)
       equation
-        (exp1, ty, _) = typeExp(exp1, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st);
+        (exp1, ty, _, _) = typeExp(exp1, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st);
         ty = rangeToIteratorType(ty, exp1, info);
         iter_name = Absyn.IDENT(name);
         iter = InstUtil.makeIterator(iter_name, ty, info);
@@ -1305,24 +1320,24 @@ algorithm
 
     case (InstTypes.ASSERT_EQUATION(exp1, exp2, exp3, info), st, acc_el, _)
       equation
-        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
-        (exp2, _, _) = typeExp(exp2, EVAL_CONST(), CONTEXT_MODEL(), st);
-        (exp3, _, _) = typeExp(exp3, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp2, _, _, _) = typeExp(exp2, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp3, _, _, _) = typeExp(exp3, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.ASSERT_EQUATION(exp1, exp2, exp3, info);
       then
         (eq :: acc_el, Connect2.emptyConnections);
 
     case (InstTypes.TERMINATE_EQUATION(exp1, info), st, acc_el, _)
       equation
-        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.TERMINATE_EQUATION(exp1, info);
       then
         (eq :: acc_el, Connect2.emptyConnections);
 
     case (InstTypes.REINIT_EQUATION(cref1, exp1, info), st, acc_el, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
-        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
+        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.REINIT_EQUATION(cref1, exp1, info);
       then
         (eq :: acc_el, Connect2.emptyConnections);
@@ -1336,7 +1351,7 @@ algorithm
 
     case (InstTypes.NORETCALL_EQUATION(exp1, info), st, acc_el, _)
       equation
-        (exp1, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
         eq = InstTypes.NORETCALL_EQUATION(exp1, info);
       then
         (eq :: acc_el, Connect2.emptyConnections);
@@ -1385,20 +1400,20 @@ algorithm
     case ("branch", {DAE.CREF(componentRef = cref1),
         DAE.CREF(componentRef = cref2)}, st, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
-        (DAE.CREF(componentRef = cref2), _, _) = typeCref(cref2, NO_EVAL(), CONTEXT_MODEL(), st);
+        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
+        (DAE.CREF(componentRef = cref2), _, _, _) = typeCref(cref2, NO_EVAL(), CONTEXT_MODEL(), st);
       then
         ConnectUtil2.makeBranch(cref1, cref2, inInfo);
 
     case ("root", {DAE.CREF(componentRef = cref1)}, st, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
+        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
       then
         ConnectUtil2.makeRoot(cref1, inInfo);
 
     case ("potentialRoot", {DAE.CREF(componentRef = cref1), prio}, st, _)
       equation
-        (prio, _, _) = typeExp(prio, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st);
+        (prio, _, _, _) = typeExp(prio, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st);
       then
         ConnectUtil2.makePotentialRoot(cref1, prio, inInfo);
 
@@ -1720,7 +1735,7 @@ algorithm
 
     case ((cond_exp, branch_body), _, conn)
       equation
-        (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), CONTEXT_MODEL(), inSymbolTable);
+        (cond_exp, _, _, _) = typeExp(cond_exp, EVAL_CONST(), CONTEXT_MODEL(), inSymbolTable);
         (branch_body, conn) = typeEquations(branch_body, inSymbolTable, conn);
       then
         ((cond_exp, branch_body), conn);
@@ -1764,8 +1779,8 @@ algorithm
 
     case (InstTypes.ASSIGN_STMT(lhs=lhs,rhs=rhs,info=info),c,st,_)
       equation
-        (lhs,lty,_) = typeExp(lhs, NO_EVAL(), c, st);
-        (rhs,rty,_) = typeExp(rhs, EVAL_CONST(), c, st);
+        (lhs,lty,_,_) = typeExp(lhs, NO_EVAL(), c, st);
+        (rhs,rty,_,_) = typeExp(rhs, EVAL_CONST(), c, st);
         (lhs, _, rhs, _) = TypeCheck.checkExpEquality(lhs, lty, rhs, rty, "alg", info);
       then typeAssignment(lhs,rhs,info,inAcc);
     case (InstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),c,st,_)
@@ -1775,7 +1790,7 @@ algorithm
     case (InstTypes.NORETCALL_STMT(exp=exp, info=info),c,st,_)
       equation
         // Let's try skipping evaluation. Maybe helps some external functions
-        (exp,_,_) = typeExp(exp, NO_EVAL(), c, st);
+        (exp,_,_,_) = typeExp(exp, NO_EVAL(), c, st);
         /* ------------------------------------------------------------------*/
         // TODO: Check variability/etc to potentially reduce the statement?
         /* ------------------------------------------------------------------*/
@@ -1832,7 +1847,7 @@ algorithm
 
     case ((cond_exp, branch_body), c, _)
       equation
-        (cond_exp, _, _) = typeExp(cond_exp, EVAL_CONST(), c, inSymbolTable);
+        (cond_exp, _, _, _) = typeExp(cond_exp, EVAL_CONST(), c, inSymbolTable);
         /* ------------------------------------------------------------------*/
         // TODO: Type-check the condition
         /* ------------------------------------------------------------------*/

@@ -3562,7 +3562,7 @@ algorithm
     case (InstTypes.CONDITIONAL_COMPONENT(name, cond_exp, sel, mod, prefs, env,
         prefix, info), st, functions)
       equation
-        (cond_exp, ty, st) = Typing.typeExp(cond_exp, Typing.EVAL_CONST_PARAM(),
+        (cond_exp, ty, _, st) = Typing.typeExp(cond_exp, Typing.EVAL_CONST_PARAM(),
           Typing.CONTEXT_MODEL(), st);
         (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
         cond = evaluateConditionalExp(cond_exp, ty, name, info);

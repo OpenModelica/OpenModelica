@@ -1930,4 +1930,16 @@ algorithm
   end match;
 end typeCrefWithComponent2;
 
+public function toConst
+"Translates SCode.Variability to DAE.Const"
+input SCode.Variability inVar;
+output DAE.Const outConst;
+algorithm
+  outConst := matchcontinue (inVar)
+    case(SCode.CONST()) then DAE.C_CONST();
+    case(SCode.PARAM()) then DAE.C_PARAM();
+    case _ then DAE.C_VAR();
+  end matchcontinue;
+end toConst;
+
 end InstUtil;
