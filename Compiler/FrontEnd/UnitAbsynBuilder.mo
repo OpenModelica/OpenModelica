@@ -70,7 +70,7 @@ algorithm
      case(_,_) equation
        (_,_,env as Env.FRAME(defineUnits = du)::_) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
      then du;
-     case(p,tpl) then {};
+     case (_,tpl) then {};
   end matchcontinue;
 end retrieveUnitsFromEnv;
 
@@ -112,7 +112,7 @@ algorithm
        SCode.DEFINEUNIT("Sv",SCode.PUBLIC(),SOME("cd.sr"),NONE()),
        SCode.DEFINEUNIT("kat",SCode.PUBLIC(),SOME("s-1.mol"),NONE())
        });   then ();
-     case(du) equation registerUnitWeightDefineunits2(du); then ();
+     case _ equation registerUnitWeightDefineunits2(du); then ();
   end matchcontinue;
 end registerUnitWeightDefineunits;
 
@@ -686,7 +686,7 @@ algorithm
       equation
         false = Flags.getConfigBool(Flags.UNIT_CHECKING);
       then(UnitAbsyn.noStore,{});
-    case(env,dae,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
+    case (_,dae,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
     case(_,_,_,UnitAbsyn.INSTSTORE(st,ht,res))
       equation
         (terms,st) = buildTerms(env,dae,ht,st);
@@ -926,7 +926,7 @@ algorithm
       list<DAE.Element> elts;
       UnitAbsyn.Store store;
     
-    case(env,DAE.DAE(elementLst={}),ht,store) then ({},store);
+    case (_,DAE.DAE(elementLst={}),ht,store) then ({},store);
     
     case(_,DAE.DAE(elementLst=DAE.EQUATION(e1,e2,_)::elts),_,store) equation
       (ut1,terms1,store) = buildTermExp(env,e1,false,ht,store);
@@ -1245,7 +1245,7 @@ algorithm
       list<DAE.Exp> expl;
       UnitAbsyn.Store store;
       
-    case(env,{},ht,store) then ({},{},store);
+    case (_,{},ht,store) then ({},{},store);
     case(_,e::expl,_,store) equation
       (ut,eterms1,store) =  buildTermExp(env,e,false,ht,store);
       (terms,eterms2,store) = buildTermExpList(env,expl,ht,store);
@@ -1370,10 +1370,10 @@ protected function buildTermOp "Takes two UnitTerms and and DAE.Operator and cre
   output UnitAbsyn.UnitTerm ut;
 algorithm
   ut := match(ut1,ut2,op,origExp)
-    case(ut1,ut2,DAE.ADD(ty=_),origExp) then UnitAbsyn.ADD(ut1,ut2,origExp);
-    case(ut1,ut2,DAE.SUB(ty=_),origExp) then UnitAbsyn.SUB(ut1,ut2,origExp);
-    case(ut1,ut2,DAE.MUL(ty=_),origExp) then UnitAbsyn.MUL(ut1,ut2,origExp);
-    case(ut1,ut2,DAE.DIV(ty=_),origExp) then UnitAbsyn.DIV(ut1,ut2,origExp);
+    case (_,ut2,DAE.ADD(ty=_),origExp) then UnitAbsyn.ADD(ut1,ut2,origExp);
+    case (_,ut2,DAE.SUB(ty=_),origExp) then UnitAbsyn.SUB(ut1,ut2,origExp);
+    case (_,ut2,DAE.MUL(ty=_),origExp) then UnitAbsyn.MUL(ut1,ut2,origExp);
+    case (_,ut2,DAE.DIV(ty=_),origExp) then UnitAbsyn.DIV(ut1,ut2,origExp);
   end match;
 end buildTermOp;
 

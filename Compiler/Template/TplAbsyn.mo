@@ -788,11 +788,11 @@ algorithm
       Ident ident;
       TypeSignature ts;
       
-    case ( (ident, ts), prefix )
+    case ((ident,ts),_)
       equation
         ident = encodeIdent(ident, prefix);
       then
-        ( (ident, ts) );
+        ((ident,ts));
         
     //should not ever happen
     case ( _, _)
@@ -3256,7 +3256,7 @@ algorithm
         
     case ( argval as (mmexp, exptype), _, 
            (mexp,exp) :: mcases, 
-           hasImplicitLookup, locals, accCaseLocals, scEnv, 
+           _, locals, accCaseLocals, scEnv, 
            tplPackage as TEMPL_PACKAGE(astDefs = astdefs), accMMDecls )
       equation
         mexp = typeCheckMatchingExp(mexp, exptype, astdefs);

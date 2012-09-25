@@ -1284,7 +1284,7 @@ protected function classDefEqual
         failure(equality(cdef1=cdef2));
       then false;*/
     
-    case(cdef1, cdef2) then fail();   
+    case (_, cdef2) then fail();   
   end match;
 end classDefEqual;
 
@@ -3481,7 +3481,7 @@ algorithm
       Absyn.ArrayDim ad1,ad2,ad;
       ConnectorType ct1, ct2, ct;
     
-    case(ele,NONE()) then SOME(ele);
+    case (_,NONE()) then SOME(ele);
     case(ATTR(ad1,ct1,p1,v1,d1), SOME(ATTR(ad2,ct2,p2,v2,d2)))
       equation
         ct = propagateConnectorType(ct1, ct2);
@@ -3533,8 +3533,8 @@ protected function propagateVariability
   output Variability v;
 algorithm 
   v := matchcontinue(v1,v2)
-    case(v1,VAR()) then v1;
-    case(v1,_) then v1;
+    case (_,VAR()) then v1;
+    case (_,_) then v1;
   end matchcontinue;
 end propagateVariability;
 
@@ -3546,7 +3546,7 @@ protected function propagateDirection
 algorithm 
   d := matchcontinue(d1,d2)
     case(Absyn.BIDIR(),d2) then d2;
-    case(d1,Absyn.BIDIR()) then d1;
+    case (_,Absyn.BIDIR()) then d1;
     case(_,_)
       equation
         equality(d1 = d2);

@@ -1508,7 +1508,7 @@ algorithm
               values = attr,
               comment = comment,
               connectorType = ct),
-          inBindExp)
+          _)
     equation
       oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,SOME(inBindExp),v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 5, SOME(inBindExp));
     then 
@@ -2834,8 +2834,8 @@ algorithm
   outInteger := match (cr,ivs,firstMatches)
     local
       Integer v; list<BackendDAE.CrefIndex> vs;
-    case (cr,BackendDAE.CREFINDEX(index = v)::_,true) then v;
-    case (cr,_::vs,false) then getVar3(cr,vs,getVar4(cr,vs));
+    case (_,BackendDAE.CREFINDEX(index = v)::_,true) then v;
+    case (_,_::vs,false) then getVar3(cr,vs,getVar4(cr,vs));
   end match;
 end getVar3;
 
@@ -2880,7 +2880,7 @@ algorithm
        (_,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
       then ((v,(vars,v_lst)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversingisVarIndexVarFinder;
 
@@ -2913,7 +2913,7 @@ algorithm
        (vlst,indxlst) = getVar(cr, vars);
        v_lst = listAppend(v_lst,indxlst);
       then ((v,(vars,v_lst)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversingVarIndexFinder;
 
@@ -3175,7 +3175,7 @@ algorithm
       equation
         cr = varCref(v);
       then ((v,cr::cr_lst));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversingVarCrefFinder;
 
@@ -3225,7 +3225,7 @@ algorithm
       equation
         true = isStateVar(v);
       then ((v,v::v_lst));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversingisStateVarFinder;
 

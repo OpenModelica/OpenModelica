@@ -1191,7 +1191,7 @@ protected function selectEqMod
 algorithm
   mod := match (subMod, eqMod, n)
     // eqmod is nomod!
-    case (subMod, DAE.NOMOD(), _) then subMod;
+    case (_, DAE.NOMOD(), _) then subMod;
     case (_, eqMod as DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))), _) then eqMod;
     case (_, _, _)
       equation
@@ -1259,7 +1259,7 @@ algorithm
     
     case(SOME(DAE.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),
                         DAE.PROP(DAE.T_COMPLEX(varLst = varLst),_),_,info)),
-         n,_,_) 
+         _,_,_) 
       equation
         mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_,info);
       then mod;
@@ -1318,7 +1318,7 @@ algorithm
       String s1,s2,s;
 
     case(DAE.NOMOD(),mod2,_) then mod2;
-    case(mod1,DAE.NOMOD(),_) then mod1;
+    case (_,DAE.NOMOD(),_) then mod1;
     // if they are equal, return the second one!
     case(_,_,_) 
       equation
@@ -1741,7 +1741,7 @@ algorithm
       then doMerge(inModOuter,inModInner,inEnv,inPrefix);
 
     // two exactly the same redeclares, return just one!
-    case(DAE.REDECL(finalPrefix = _),inModInner  as DAE.REDECL(finalPrefix = _),_,_)
+    case(DAE.REDECL(finalPrefix = _),DAE.REDECL(finalPrefix = _),_,_)
       equation
         true = valueEq(inModOuter,inModInner);
       then 
@@ -2125,7 +2125,7 @@ algorithm
     case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_))
       then false;
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
-    case(mod1, mod2) then false;
+    case (_, mod2) then false;
     case(_, _) 
       equation
         //true = Flags.isSet(Flags.FAILTRACE);
@@ -2730,7 +2730,7 @@ algorithm
       then 
         DAE.MOD(finalPrefix,each_,subModLst,eqModOption);
     
-    case (mod,_,_) then mod;
+    case (_,_,_) then mod;
     
   end matchcontinue;
 end renameTopLevelNamedSubMod;
@@ -2749,7 +2749,7 @@ algorithm
       equation
         true = id ==& oldIdent;
       then DAE.NAMEMOD(newIdent,mod);
-    case (submod,_,_) then submod;
+    case (_,_,_) then submod;
   end matchcontinue;
 end renameNamedSubMod;
 
@@ -2966,7 +2966,7 @@ algorithm
       SCode.Each eachPrefix;
     
     // DAE.NOMOD empty case, no more dive in
-    case (inTopCref, DAE.NOMOD()) then {};
+    case (_, DAE.NOMOD()) then {};
     
     // DAE.MOD
     case (_, DAE.MOD(subModLst = subModLst))
@@ -3166,7 +3166,7 @@ algorithm
       DAE.ComponentRef cr;
       String str;
     
-    case (MOD(cr, mod),        inDepth)
+    case (MOD(cr, mod),        _)
       equation
         str = ComponentReference.printComponentRefStr(cr) +& ": " +& prettyPrintMod(mod, inDepth);
       then

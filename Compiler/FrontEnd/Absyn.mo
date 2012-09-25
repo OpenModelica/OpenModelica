@@ -5271,7 +5271,7 @@ algorithm
     // crefs, add to list
     case ((e as CREF(cr), lst)) then ((e,e::lst));
     // anything else, return the same!
-    case(tpl) then tpl;
+    case _ then tpl;
 
   end matchcontinue;
 end onlyLiteralsInExp;

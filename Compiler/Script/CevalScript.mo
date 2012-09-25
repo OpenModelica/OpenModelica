@@ -530,7 +530,7 @@ algorithm
       Integer iNumberOfIntervals;
       String name,msg;
       
-    case (inSimOpt, {}) then inSimOpt;
+    case (_, {}) then inSimOpt;
     
     case (SIMULATION_OPTIONS(startTime, stopTime, numberOfIntervals, stepSize, tolerance, method, fileNamePrefix, storeInTemp, noClean, options, outputFormat, variableFilter, measureTime, cflags, simflags), 
           Absyn.NAMEDARG(argName = "Tolerance", argValue = exp)::rest)
@@ -2083,7 +2083,7 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
         },
         st,
-        msg)
+        _)
       equation
         // check if plot is set to silent or not
         false = Config.getPlotSilent();
@@ -2122,7 +2122,7 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
         },
         st,
-        msg)
+        _)
       equation
         // check if plot is set to silent or not
         true = Config.getPlotSilent();
@@ -3598,14 +3598,14 @@ algorithm
         true = Absyn.pathEqual(Absyn.joinPaths(path2,Absyn.IDENT(name)),path);
         ts =Absyn.setTimeStampBool(ts,false);
       then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),SOME(path),path));
-    case(inTpl) then inTpl;
+    case _ then inTpl;
 
     case((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE(),path))
       equation
         true = Absyn.pathEqual(Absyn.IDENT(name),path);
         ts =Absyn.setTimeStampBool(ts,false);
       then ((Absyn.CLASS(name,p,f,e,r,cdef,Absyn.INFO(fname,ro,i1,i2,i3,i4,ts)),NONE(),path));
-    case(inTpl) then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end setBuildTimeVisitor;
 
@@ -4256,7 +4256,7 @@ algorithm
         Absyn.QUALIFIED(name,Absyn.IDENT(_)) = ComponentReference.crefToPath(cr);
         acc = List.consOnTrue(not listMember(name,acc),name,acc);
       then ((e,acc));
-    case itpl then itpl;
+    case _ then itpl;
   end match;
 end matchQualifiedCalls;
 

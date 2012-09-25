@@ -276,7 +276,7 @@ algorithm
         lstExpCrefs1 = Util.if_(listLength(crefs)>0,(exp,crefs)::lstExpCrefs,lstExpCrefs);
        then
         ((exp,(vars,lstExpCrefs1)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end checkBackendDAEExp;
 
@@ -341,7 +341,7 @@ algorithm
       then
         ((e, (vars,cr::crefs)));
     
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end traversecheckBackendDAEExp;
 
@@ -389,7 +389,7 @@ algorithm
       then ((e,wrongEqns1));
        
       //
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end checkEquationSize;
 
@@ -1003,7 +1003,7 @@ algorithm
         true = BackendVariable.isParam(var);
       then
         ((var,(s1 + 1,s2,s3,s4)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end calculateParamSizes;
 
@@ -1087,7 +1087,7 @@ algorithm
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end calculateVarSizes;
 
@@ -2814,7 +2814,7 @@ algorithm outExp := matchcontinue(inExp)
         restpl = Expression.traverseExp(e_new, traversingextendArrExp, (funcs,true));
     then 
       (restpl);
-  case(inExp) then inExp;
+  case _ then inExp;
 end matchcontinue;
 end traversingextendArrExp;
 
@@ -2978,7 +2978,7 @@ algorithm
         (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, collateArrExp, infuncs);
       then
         DAE.ALGORITHM_STMTS(statementLst);
-    case(inAlg,infuncs) then inAlg;
+    case (_,infuncs) then inAlg;
   end matchcontinue;
 end collateAlgorithm;
 
@@ -3015,7 +3015,7 @@ algorithm
       DAE.Exp e;
       Option<DAE.FunctionTree> funcs;
     case ((e,funcs)) then Expression.traverseExp(e, traversingcollateArrExp, funcs);
-    case itpl then itpl;
+    case _ then itpl;
   end matchcontinue;
 end collateArrExp;
   
@@ -3059,7 +3059,7 @@ algorithm outExp := matchcontinue(inExp)
         true = Expression.expEqual(e,e1_2);
       then     
         ((e1_1,funcs));
-  case(inExp) then inExp;
+  case _ then inExp;
 end matchcontinue;
 end traversingcollateArrExp;
 
@@ -3278,10 +3278,10 @@ algorithm
   outLst := match(inLst, inIndexType)
     
     // transform to absolute indexes
-    case (inLst, BackendDAE.ABSOLUTE()) then Util.absIntegerList(inLst);
+    case (_, BackendDAE.ABSOLUTE()) then Util.absIntegerList(inLst);
     
     // leave as it is 
-    case (inLst, _) then inLst;
+    case (_, _) then inLst;
     
 
   end match;
@@ -4462,7 +4462,7 @@ algorithm
         oldvars = m[pos];
       then
         oldvars;
-    case(m,pos) then {};
+    case (_,pos) then {};
   end matchcontinue;
 end getOldVars;
 
@@ -5561,7 +5561,7 @@ algorithm
       then
         ((e, vars ));
     
-    case(inExp) then inExp;
+    case _ then inExp;
     
   end matchcontinue;
 end replaceVartraverser;
@@ -5703,7 +5703,7 @@ algorithm
       then
         ((e, (mark,rowmark,vars,bt)));
    
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end markBranchVars;
 
@@ -6073,7 +6073,7 @@ algorithm
         eqns = listAppend(reqn,eqns);
       then
         ((eqn,eqns));
-    case (inTpl) then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traverseequationToScalarResidualForm;
 

@@ -519,7 +519,7 @@ algorithm
   local 
     DAE.ComponentRef cr;
     
-    case(var) equation
+    case _ equation
       cr = BackendVariable.varCref(var);
       true = isCorrelationVarCref(cr);      
     then true;

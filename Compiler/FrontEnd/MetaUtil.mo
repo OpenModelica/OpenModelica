@@ -235,7 +235,7 @@ algorithm
         body = Absyn.PARTS(typeVars,classAttrs,classParts,comment);
       then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
     
-    case (cl) then cl;
+    case _ then cl;
   end matchcontinue;
 end createMetaClassesFromPackage;
 
@@ -260,7 +260,7 @@ algorithm
         els = List.flatten(lels);
       then Absyn.PROTECTED(els);
     
-    case (classPart) then classPart;
+    case _ then classPart;
   end matchcontinue;
 end createMetaClassesFromClassParts;
 
@@ -282,7 +282,7 @@ algorithm
         classes = cl2 :: metaClasses;
         elementItems = List.map1r(classes,setElementItemClass,elementItem);
       then elementItems;
-    case (elementItem) then {elementItem};
+    case _ then {elementItem};
   end matchcontinue;
 end createMetaClassesFromElementItem;
 
@@ -742,7 +742,7 @@ algorithm
         failure(equality(names = innames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The input does not match"}, info);
       then false;
-    case (increfs,{Absyn.CREF(Absyn.WILD())},innames,{},info) then true;
+    case (_,{Absyn.CREF(Absyn.WILD())},innames,{},info) then true;
     case (_,_,_,_,_)
       equation
         names = List.map(outcrefs, Absyn.expComponentRefStr);

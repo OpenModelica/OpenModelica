@@ -399,7 +399,7 @@ algorithm
       list<Boolean> blist;
       Env.Cache cache;
       
-    case (acc,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,env)
+    case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,env)
       equation
         //print(" (Initial if)To ceval: " +& stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") +& "\n");
         (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Ceval.NO_MSG());
@@ -1082,8 +1082,8 @@ algorithm
         ("VariableName",  DAE.T_CODE(DAE.C_VARIABLENAME(),DAE.emptyTypeSource)),
         ("VariableNames", DAE.T_CODE(DAE.C_VARIABLENAMES(),DAE.emptyTypeSource))
         });
-    case (ty,false) then ty;
-    case (ty,true) then Types.makeFunctionPolymorphicReference(ty);
+    case (_,false) then ty;
+    case (_,true) then Types.makeFunctionPolymorphicReference(ty);
   end matchcontinue;
 end fixInstClassType;
 
@@ -2119,9 +2119,9 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Real";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case(cache,env,DAE.MOD(f,e,{},eqmod),pre,ty) then {};
-    case(cache,env,DAE.NOMOD(),pre,ty) then {};
-    case(cache,env,DAE.REDECL(_,_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,env,DAE.MOD(f,e,{},eqmod),pre,ty) then {};
+    case (_,env,DAE.NOMOD(),pre,ty) then {};
+    case (_,env,DAE.REDECL(_,_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instRealClass;
 
@@ -2193,9 +2193,9 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Integer";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
-    case(cache,env,DAE.NOMOD(),pre) then {};
-    case(cache,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,env,DAE.MOD(f,e,{},eqmod),pre) then {};
+    case (_,env,DAE.NOMOD(),pre) then {};
+    case (_,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instIntegerClass;
 
@@ -2293,8 +2293,8 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Boolean";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
-    case(cache,env,DAE.NOMOD(),pre) then {};
+    case (_,env,DAE.MOD(f,e,{},eqmod),pre) then {};
+    case (_,env,DAE.NOMOD(),pre) then {};
     case(_,_,DAE.REDECL(_,_,_),_)
       equation
         print("Inst.instBooleanClass: ignoring wrong modifier:" +& Mod.printModStr(mods) +& "\n"); 
@@ -2355,9 +2355,9 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Enumeration";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
-    case(cache,env,DAE.NOMOD(),pre) then {};
-    case(cache,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,env,DAE.MOD(f,e,{},eqmod),pre) then {};
+    case (_,env,DAE.NOMOD(),pre) then {};
+    case (_,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instEnumerationClass;
 
@@ -3133,11 +3133,11 @@ protected function addExpandable
 algorithm
   outEqs := matchcontinue(inEqs, inExpandable)
     // nothing
-    case (inEqs, {}) then inEqs;
+    case (_, {}) then inEqs;
     // if is only one, don't append!
-    case (inEqs, {_}) then inEqs;
+    case (_, {_}) then inEqs;
     // if is more than one, append
-    case (inEqs, inExpandable) then listAppend(inEqs, inExpandable);
+    case (_, inExpandable) then listAppend(inEqs, inExpandable);
   end matchcontinue;
 end addExpandable;
 
@@ -3890,7 +3890,7 @@ algorithm
     // case({}, _, allComps, className) then {};
     
     // handle none
-    case(inComps,NONE(), allComps, className) then inComps;
+    case (_,NONE(), allComps, className) then inComps;
 
     // handle StateSelect as we will NEVER find it! 
     // case(inComps, SOME(DAE.CREF_QUAL(ident="StateSelect")), allComps, className) then inComps;
@@ -3943,7 +3943,7 @@ algorithm
         //print(" failure to find: " +& ComponentReference.printComponentRefStr(cr) +& " in scope: " +& className +& "\n");
       then {};
     case({},_,_,_,_) then fail();
-    case(inComps,NONE(),_,_,_) then inComps;
+    case (_,NONE(),_,_,_) then inComps;
       /*
     case( (selem as SCode.CLASS(name=name2))::comps,SOME(DAE.CREF_IDENT(ident=name)),allComps,className,existing)
       equation
@@ -7621,7 +7621,7 @@ algorithm
       list<DAE.SubMod> subs;
       list<String> compNames;
     
-    case(inMod,{}) then inMod;
+    case (_,{}) then inMod;
     case(DAE.NOMOD(),_ ) then DAE.NOMOD();
     case(DAE.REDECL(_,_,_),_) then inMod;
     case(DAE.MOD(f,e,subs,oe),_)
@@ -9433,7 +9433,7 @@ algorithm
         (cache,env,ih,updatedComps);
       
     // If first part of ident is a class, e.g StateSelect.None, nothing to update
-    case (cache,env,ih,_,mods,(cref /*as Absyn.CREF_QUAL(name = id)*/),_,_,updatedComps,_)
+    case (cache,env,ih,_,mods,_,_,_,updatedComps,_)
       equation
         id = Absyn.crefFirstIdent(cref);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
@@ -10345,7 +10345,7 @@ algorithm
 
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl,attr),pf,i,
       DAE.DIM_ENUM(literals = {}),dims,idxs,inst_dims,impl,comment,
-      info,graph, csets)
+      _,graph, csets)
       then
         (cache,env,ih,store,DAEUtil.emptyDae,csets,DAE.T_UNKNOWN_DEFAULT,graph);
 
@@ -11533,7 +11533,7 @@ algorithm element := matchcontinue(inSubs,elemDecl,baseFunc,inCache,inEnv,inIH,i
   case({},_,_,_,_,_,_,_) then fail();
 
   case(SCode.NAMEMOD("derivative",(m as SCode.MOD(subModLst = subs2,binding=SOME(((ae as Absyn.CREF(acr)),_)))))::subs,
-       elemDecl,_,_,_,_,_,_)
+       _,_,_,_,_,_,_)
     equation
       deriveFunc = Absyn.crefToPath(acr);
       (_,deriveFunc) = makeFullyQualified(inCache,inEnv,deriveFunc);
@@ -12895,7 +12895,7 @@ algorithm
     case (vn,ci_state,ty,
           SCode.ATTR(connectorType = ct, parallelism = prl, variability = var,
             direction = dir),
-          vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,declareComplexVars )
+          vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
       equation 
         DAE.SOURCE(info,_,_,_,_,_,_) = source;
         ct1 = DAEUtil.toConnectorType(ct, ci_state);
@@ -12953,17 +12953,17 @@ algorithm
         dae = daeDeclare3(vn, ty, ct, DAE.VARIABLE(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,ct,SCode.DISCRETE(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,declareComplexVars )
+    case (vn,ty,ct,SCode.DISCRETE(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
       equation 
         dae = daeDeclare3(vn, ty, ct, DAE.DISCRETE(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (vn,ty,ct,SCode.PARAM(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,declareComplexVars )
+    case (vn,ty,ct,SCode.PARAM(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
       equation 
         dae = daeDeclare3(vn, ty, ct, DAE.PARAM(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (vn,ty,ct,SCode.CONST(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,declareComplexVars )
+    case (vn,ty,ct,SCode.CONST(),dir,daePrl,vis,e,inst_dims,start,dae_var_attr,comment,_,_,_,_)
       equation 
         dae = daeDeclare3(vn, ty, ct,DAE.CONST(), dir, daePrl, vis, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
@@ -16290,14 +16290,14 @@ algorithm
       SCode.Variability vt;
 
     // if classprefix is variable, keep component variability
-    case(attr,Prefix.PREFIX(_,Prefix.CLASSPRE(SCode.VAR()))) then attr;
+    case (_,Prefix.PREFIX(_,Prefix.CLASSPRE(SCode.VAR()))) then attr;
     // if variability is constant, do not override it!
     case(attr as SCode.ATTR(variability = SCode.CONST()),_) then attr;
     // if classprefix is parameter or constant, override component variability
     case(SCode.ATTR(ad,ct,prl,_,dir),Prefix.PREFIX(_,Prefix.CLASSPRE(vt)))
       then SCode.ATTR(ad,ct,prl,vt,dir);
     // anything else
-    case(attr,_) then attr;
+    case (_,_) then attr;
   end matchcontinue;
 end propagateClassPrefix;
 
@@ -16354,9 +16354,9 @@ This function merged derived SCode.Attributes with the current input SCode.Attri
 algorithm 
   v3 := matchcontinue(v1,optDerAttr)
     local Absyn.Direction v2;
-    case(v1,NONE()) then v1;
+    case (_,NONE()) then v1;
     case(Absyn.BIDIR(),SOME(SCode.ATTR(direction=v2))) then v2;
-    case(v1,SOME(SCode.ATTR(direction=Absyn.BIDIR()))) then v1;
+    case (_,SOME(SCode.ATTR(direction=Absyn.BIDIR()))) then v1;
     case(_,SOME(SCode.ATTR(direction=v2)))
       equation
         equality(v1 = v2);
@@ -17296,7 +17296,7 @@ algorithm
       then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,name::outvars);
     case (_,(elt as DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),direction=DAE.INPUT()))::elts,_,_,_,_)
       then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,name::invars,outvars);
-    case (path,elt::elts,oalg,acc,invars,outvars) then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,outvars);
+    case (_,elt::elts,oalg,acc,invars,outvars) then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,outvars);
   end match;
 end optimizeFunctionCheckForLocals;
 
@@ -17317,7 +17317,7 @@ algorithm
       equation
         stmt = optimizeStatementTail(path,stmt,invars,outvars);
       then listReverse(stmt::acc);
-    case (path,stmt::stmts,invars,outvars,acc) then optimizeLastStatementTail(path,stmts,invars,outvars,stmt::acc);
+    case (_,stmt::stmts,invars,outvars,acc) then optimizeLastStatementTail(path,stmts,invars,outvars,stmt::acc);
   end match;
 end optimizeLastStatementTail;
 
@@ -17571,7 +17571,7 @@ algorithm
       HashTable.HashTable ht;
       list<DAE.ComponentRef> crs;
     
-    case (cache,ht,pre,{}) then ht;
+    case (_,ht,pre,{}) then ht;
     case (_,ht,_,cr::crs)
       equation
         (_,cr) = PrefixUtil.prefixCref(cache, {}, InnerOuter.emptyInstHierarchy, pre, cr);

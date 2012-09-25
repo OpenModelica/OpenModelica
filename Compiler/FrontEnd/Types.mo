@@ -444,7 +444,7 @@ algorithm
         DAE.T_METABOXED(ty, ts);
     
     // the rest fall in line!    
-    case(inType) then inType;
+    case _ then inType;
     
   end matchcontinue;
 end expTypetoTypesType;
@@ -2789,7 +2789,7 @@ algorithm
       equation
         {p} = getTypeSource(inType); 
       then SOME(p);
-    case (inType) then NONE();
+    case _ then NONE();
   end matchcontinue;
 end getClassnameOpt;
 
@@ -4067,7 +4067,7 @@ algorithm
     case (e,
           ty1 as DAE.T_ARRAY(dims = _::_::_),
           ty2,
-          printFailtrace)
+          _)
       equation
          ty1 = unflattenArrayType(ty1);
          ty2 = unflattenArrayType(ty2);
@@ -4079,7 +4079,7 @@ algorithm
     case (e,
           ty1,
           ty2 as DAE.T_ARRAY(dims = _::_::_),
-          printFailtrace)
+          _)
       equation
          ty1 = unflattenArrayType(ty1);
          ty2 = unflattenArrayType(ty2);
@@ -4091,7 +4091,7 @@ algorithm
     case (DAE.ARRAY(array = elist),
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
           ty0 as DAE.T_ARRAY(dims = {dim2},ty = ty2,source = ts),
-          printFailtrace)
+          _)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         elist_1 = typeConvertArray(elist,ty1,ty2,printFailtrace);
@@ -4121,7 +4121,7 @@ algorithm
     case (DAE.ARRAY(array = elist),
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
           ty0 as DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = ty2, source = ts),
-          printFailtrace)
+          _)
       equation
         true = Expression.dimensionKnown(dim1);
         elist_1 = typeConvertArray(elist,ty1,ty2,printFailtrace);
@@ -4141,7 +4141,7 @@ algorithm
     case (DAE.RANGE(ty = t,start = begin,step = SOME(step),stop = stop),
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
           ty0 as DAE.T_ARRAY(dims = {dim2}, ty = ty2, source = ts),
-          printFailtrace)
+          _)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
@@ -4155,7 +4155,7 @@ algorithm
     case (DAE.RANGE(ty = t,start = begin,step = NONE(),stop = stop),
           DAE.T_ARRAY(dims = {dim1}, ty = ty1),
           ty0 as DAE.T_ARRAY(dims = {dim2}, ty = ty2, source = ts),
-          printFailtrace)
+          _)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
@@ -4168,7 +4168,7 @@ algorithm
     case (DAE.MATRIX(integer = nmax,matrix = ell),
           DAE.T_ARRAY(dims = {dim1},ty = DAE.T_ARRAY(dims = {dim11},ty = t1)),
           ty0 as DAE.T_ARRAY(dims = {dim2},ty = DAE.T_ARRAY(dims = {dim22},ty = t2,source = ts1), source = ts2),
-          printFailtrace)
+          _)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         true = Expression.dimensionsKnownAndEqual(dim11, dim22);
@@ -4181,7 +4181,7 @@ algorithm
     case (DAE.MATRIX(integer = nmax,matrix = ell),
           DAE.T_ARRAY(dims = {dim1},ty = DAE.T_ARRAY(dims = {dim11},ty = t1)),
           ty0 as DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = DAE.T_ARRAY(dims = {dim22},ty = t2, source = ts1), source = ts2),
-          printFailtrace)
+          _)
       equation
         true = Expression.dimensionsKnownAndEqual(dim11, dim22);
         ell_1 = typeConvertMatrix(ell,t1,t2,printFailtrace);
@@ -4194,7 +4194,7 @@ algorithm
     case (e,
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
           ty0 as DAE.T_ARRAY(dims = {dim2},ty = ty2,source = ts2),
-          printFailtrace)
+          _)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
@@ -4207,7 +4207,7 @@ algorithm
     case (e,
           DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = ty1),
           DAE.T_ARRAY(dims = {dim2},ty = ty2,source = ts2),
-          printFailtrace)
+          _)
       equation
         (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN());
@@ -4218,7 +4218,7 @@ algorithm
     case (e,
           DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = ty1),
           DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = ty2,source = ts2),
-          printFailtrace)
+          _)
       equation
         (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN());
@@ -4229,7 +4229,7 @@ algorithm
     case (e,
           DAE.T_ARRAY(dims = {dim1},ty = ty1),
           DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()},ty = ty2, source = ts2),
-          printFailtrace)
+          _)
       equation
         (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,dim1);
@@ -4240,7 +4240,7 @@ algorithm
     case (DAE.TUPLE(PR = elist),
           DAE.T_TUPLE(tupleType = tys1),
           DAE.T_TUPLE(tupleType = tys2, source = ts2),
-          printFailtrace)
+          _)
       equation
         (elist_1,tys_1) = typeConvertList(elist, tys1, tys2, printFailtrace);
       then
@@ -4266,7 +4266,7 @@ algorithm
     case (e,
           DAE.T_INTEGER(varLst = v),
           DAE.T_REAL(varLst = _),
-          printFailtrace)
+          _)
       then 
         (DAE.CAST(DAE.T_REAL_DEFAULT,e),expected);
 
@@ -4413,7 +4413,7 @@ algorithm
     case (e as DAE.CALL(path = path1, expLst = elist), 
           t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v, source = {path2}), 
           DAE.T_METABOXED(ty = t2),
-          printFailtrace)
+          _)
       equation
         true = subtype(t1,t2);
         true = Absyn.pathEqual(path1, path2);
@@ -5210,7 +5210,7 @@ algorithm
       then 
         DAE.T_METATUPLE(tys,DAE.emptyTypeSource); // TODO?! should now propagate the type source?
     
-    case ty then Util.if_(isBoxedType(ty), ty, DAE.T_METABOXED(ty,DAE.emptyTypeSource));
+    case _ then Util.if_(isBoxedType(ty), ty, DAE.T_METABOXED(ty,DAE.emptyTypeSource));
     
   end matchcontinue;
 end boxIfUnboxedType;
@@ -6490,7 +6490,7 @@ algorithm
         /* So we can verify that the contents of the tuple is boxed */
         (oexp,oty) = matchType(exp,ty,DAE.T_METABOXED_DEFAULT,false);
       then (oexp,oty);
-    case (exp,ty) then (exp,ty);
+    case (_,ty) then (exp,ty);
   end match;
 end convertTupleToMetaTuple;
 

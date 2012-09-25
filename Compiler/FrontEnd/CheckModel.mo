@@ -846,7 +846,7 @@ algorithm
       then
         ((e, (hs,crefs)));
     
-    case(inExp) then inExp;
+    case _ then inExp;
     
   end matchcontinue;
 end traversingComponentRefFinder;

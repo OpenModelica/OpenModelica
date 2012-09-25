@@ -895,7 +895,7 @@ algorithm
        DAE.Type t;
     case (DAE.T_FUNCTION(funcResultType=DAE.T_TUPLE(tupleType=tlst))) then tlst;
     case (DAE.T_FUNCTION(funcResultType=t)) then {t};
-    case (inType) then {inType};
+    case _ then {inType};
   end matchcontinue;
 end getFunctionResultTypes;
 
@@ -1063,7 +1063,7 @@ algorithm
       list<tuple<Integer,DAE.derivativeCond>> crlst;
     
     // no conditions
-    case(inblst,{},expl,inVarsandFuncs) then inblst;
+    case (_,{},expl,inVarsandFuncs) then inblst;
     
     // zeroDerivative
     case(_,(i,DAE.ZERO_DERIVATIVE())::crlst,_,_)

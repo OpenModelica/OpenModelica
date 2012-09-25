@@ -2513,7 +2513,7 @@ algorithm
         ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
       then CACHE(envCache,ienv,ef,ht,p);
     // Non-FQ paths mean aliased functions; do not add these to the cache
-    case (cache,_) then (cache);
+    case (_,_) then (cache);
   end matchcontinue;
 end addCachedInstFuncGuard;
 

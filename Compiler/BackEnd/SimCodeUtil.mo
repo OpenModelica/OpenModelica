@@ -194,7 +194,7 @@ algorithm
       DAE.ComponentRef crNew;
       list<DAE.Subscript> indexes;
       
-    case (cref, {}) then cref;
+    case (_, {}) then cref;
     case (DAE.CREF(componentRef=crNew, ty=ty), _)
       equation
         indexes = List.map(subs, Expression.makeIndexSubscript);
@@ -312,7 +312,7 @@ algorithm
       then 
         crefExp;
         
-    case(inExp, _) then inExp;
+    case (_, _) then inExp;
         
   end matchcontinue;
 end hackArrayReverseToCref;
@@ -369,7 +369,7 @@ algorithm
       then 
         crefExp;
         
-    case(inExp, _) then inExp;
+    case (_, _) then inExp;
         
   end matchcontinue;
 end hackMatrixReverseToCref;
@@ -1753,7 +1753,7 @@ algorithm
       Option<DAE.Exp> v;
       Integer currentIndex;
     
-    case (cref, {}, currentIndex) then (-1,false);
+    case (_, {}, currentIndex) then (-1,false);
     case (_, SimCode.VARIABLE(name=name,value=v) :: restOutVars, currentIndex)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cref,name);
@@ -2610,7 +2610,7 @@ algorithm
       list<DAE.Exp> l;
     case ((e as DAE.CALL(path = Absyn.IDENT("delay")), l))
     then ((e, e :: l));
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end collectDelayExpressions;
 
@@ -3178,7 +3178,7 @@ algorithm
         addAssert = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)});
       then ((e, addAssert::inasserts));
     
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end findSqrtCallsforAssertsExps;
 
@@ -3224,7 +3224,7 @@ algorithm
       equation
         (se,uniqueEqIndex) = dlowEqToSimEqSystem(e,uniqueEqIndex);
       then ((e,(uniqueEqIndex,se::seqnlst)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversedlowEqToSimEqSystem;
 
@@ -3272,7 +3272,7 @@ algorithm
         true = BackendDAEUtil.isVarDiscrete(v);
         cr = BackendVariable.varCref(v);
       then ((v,cr::cr_lst));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversingisVarDiscreteCrefFinder;
 
@@ -3540,7 +3540,7 @@ algorithm
       list<SimCode.SimEqSystem> equations_,equations1,noDiscEquations1;
       list<SimCode.SimVar> tempvars;
       // handle empty
-    case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, _, _, {}, helpVarInfo,_,_) then ({},{},iuniqueEqIndex,itempvars);
+    case (_, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, _, _, {}, helpVarInfo,_,_) then ({},{},iuniqueEqIndex,itempvars);
       
       // ignore when equations if we should not generate them
     case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index) :: restComps, _, _,_)
@@ -3560,7 +3560,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
         
         // ignore discrete in zero crossing if we should not generate them
-    case (_, true, _,  skipDiscInAlgorithm, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
+    case (_, true, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
       equation
         v = BackendVariable.getVarAt(vars,vindex);
         true = BackendVariable.isVarDiscrete(v);
@@ -3571,7 +3571,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
         
         // single equation 
-    case (_, _, _,  skipDiscInAlgorithm, _, _, _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
+    case (_, _, _, _, _, _, _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
       equation
         (equations1,uniqueEqIndex,tempvars) = createEquation(index, vindex, syst, shared, helpVarInfo, linearSystem, skipDiscInAlgorithm,iuniqueEqIndex,itempvars);
         (equations,noDiscEquations,uniqueEqIndex,tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo,uniqueEqIndex,tempvars);
@@ -3581,7 +3581,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
        
       // A single array equation
-    case (_, _, _,  skipDiscInAlgorithm, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEARRAY(eqn=index)) :: restComps, _, _,_)
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEARRAY(eqn=index)) :: restComps, _, _,_)
       equation
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
@@ -3594,7 +3594,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
         
         // A single algorithm section for several variables.
-    case (_, _, _,  skipDiscInAlgorithm, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEALGORITHM(eqn=index)) :: restComps, _, _,_)
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEALGORITHM(eqn=index)) :: restComps, _, _,_)
       equation
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         varlst = List.map(varlst, transformXToXd);
@@ -3606,7 +3606,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);      
        
       // A single complex equation
-    case (_, _, _,  skipDiscInAlgorithm, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=index)) :: restComps, _, _,_)
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=index)) :: restComps, _, _,_)
       equation
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
@@ -3693,7 +3693,7 @@ algorithm
       list<SimCode.SimVar> tempvars;
       // solve always a linear equations 
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_,
-        helpVarInfo, true, _,_,_)
+        _, true, _,_,_)
       equation
         BackendDAE.EQUATION(e1, e2, source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.VAR(varName = cr, varKind = kind) = BackendVariable.getVarAt(vars,varNum);
@@ -3706,7 +3706,7 @@ algorithm
         
         // non-state non-linear
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,
-        helpVarInfo, true, _,_,_)
+        _, true, _,_,_)
       equation
         (eqn as BackendDAE.EQUATION(e1, e2, source)) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         (v as BackendDAE.VAR(varName = cr, varKind = kind)) = BackendVariable.getVarAt(vars,varNum);
@@ -3721,7 +3721,7 @@ algorithm
         // when eq without else
     case (_, _,
         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
-        helpVarInfo, false, _,_,_)
+        _, false, _,_,_)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(cond, left, right, NONE()) = whenEquation;
@@ -3733,7 +3733,7 @@ algorithm
         // when eq with else
     case (_, _,
         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),
-        helpVarInfo, false, _,_,_)
+        _, false, _,_,_)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation=whenEquation,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.WHEN_EQ(cond, left, right, SOME(elseWhen)) = whenEquation;
@@ -3746,7 +3746,7 @@ algorithm
         // single equation: non-state
     case (_, _,
         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_,
-        helpVarInfo, false, _,_,_)
+        _, false, _,_,_)
       equation
         BackendDAE.EQUATION(e1, e2, source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         (v as BackendDAE.VAR(varName = cr, varKind = kind, values=values)) = BackendVariable.getVarAt(vars,varNum);
@@ -3761,7 +3761,7 @@ algorithm
         // single equation: state
     case (_, _,
         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_,
-        helpVarInfo, false, _,_,_)
+        _, false, _,_,_)
       equation
         BackendDAE.EQUATION(e1, e2, source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE(), values=values) = BackendVariable.getVarAt(vars,varNum);        
@@ -3775,7 +3775,7 @@ algorithm
         // non-state non-linear
     case (_, _,
         BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,
-        helpVarInfo, false, _,_,_)
+        _, false, _,_,_)
       equation
         (eqn as BackendDAE.EQUATION(e1, e2, source)) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         (v as BackendDAE.VAR(varName = cr, varKind = kind)) = BackendVariable.getVarAt(vars,varNum);
@@ -3790,7 +3790,7 @@ algorithm
         // state nonlinear
     case (_, _,
         BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,
-        helpVarInfo, false, _,_,_)
+        _, false, _,_,_)
       equation
         (eqn as BackendDAE.EQUATION(e1, e2, source)) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()) = BackendVariable.getVarAt(vars,varNum); 
@@ -6410,7 +6410,7 @@ algorithm
       case ((eqn as BackendDAE.ALGORITHM(alg=alg),algs))
         then
           ((eqn,alg::algs));
-    case (inTpl) then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traverseAlgorithmFinder;
 
@@ -6442,7 +6442,7 @@ algorithm
       then
         ((var,(initialEquation :: eqns,av)));
  
-    case (inTpl) then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end createInitialAssignmentsFromStart;
 
@@ -6501,7 +6501,7 @@ algorithm
       then
         ((var,asserts2));
         
-    case inTpl
+    case _
       then inTpl;
   end matchcontinue;
 end createVarAsserts;
@@ -6528,7 +6528,7 @@ algorithm
       then
         ((var,asserts1));
         
-    case inTpl
+    case _
       then inTpl;
   end matchcontinue;
 end createVarNominalAssert;
@@ -6555,7 +6555,7 @@ algorithm
       then
         ((var,asserts1));
         
-    case inTpl
+    case _
       then inTpl;
   end matchcontinue;
 end createVarMinMaxAssert;
@@ -6904,7 +6904,7 @@ algorithm
     local
       Integer ng, ng_sam, ng_sam_1, ng_1, numInitialResiduals;
     case (_, _, _, _, _, _, _, _, _, _, _,
-                 ny_int, _, _, _, _, _, _, _, _,_,_)
+                 _, _, _, _, _, _, _, _, _,_,_)
       equation
         (ng, ng_sam) = BackendDAEUtil.numberOfZeroCrossings(dlow);
         ng_1 = filterNg(ng);
@@ -6976,7 +6976,7 @@ algorithm
         vars = extractVarFromVar(var,aliasVars,v,vars);
       then
         ((var,(vars,aliasVars,v)));
-    case (inTpl) then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end extractVarsFromList;
 
@@ -8605,7 +8605,7 @@ algorithm
         (e22,rhs);
         
         // not succeded to solve, return unsolved equation., catched later.
-    case(v,e1,e2) then (e1,e2);
+    case (_,e1,e2) then (e1,e2);
   end matchcontinue;
 end solveTrivialArrayEquation;
 
@@ -9259,7 +9259,7 @@ algorithm
       equation
         sv = dlowvarToSimvar(v,NONE(),vars);
       then ((v,(sv::sv_lst,vars)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end match;
 end traversingdlowvarToSimvar;
 
@@ -9358,7 +9358,7 @@ algorithm
         path = Absyn.crefToPath(getCrefFromExp(e));
         false = List.isMemberOnTrue(path,filter,Absyn.pathEqual);
       then ((e,(path::acc,filter)));
-    case itpl then itpl;
+    case _ then itpl;
   end matchcontinue;
 end matchNonBuiltinCallsAndFnRefPaths;
 
@@ -9390,7 +9390,7 @@ algorithm
       equation
         false = -1 == index;
       then ((e,e::acc));
-    case itpl then itpl;
+    case _ then itpl;
   end matchcontinue;
 end matchMetarecordCalls;
 
@@ -9789,7 +9789,7 @@ algorithm
       equation
         (se,false) = traversingDivExpFinder1(e,e2,source,(vars,varlst,dzer));
       then ((e, (source,vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, DAE.CALL_ATTR(ty, false, true, DAE.NO_INLINE(), DAE.NO_TAIL()))::divLst) ));
-    case(inExp) then (inExp);
+    case _ then (inExp);
   end matchcontinue;
 end traversingDivExpFinder;
 
@@ -9973,7 +9973,7 @@ algorithm
         divtplLst2 = listAppend(divtplLst,divtplLst1);
       then
         (SimCode.SES_WHEN(index,cr,e,conditions,SOME(elseWhenEq),source),divtplLst2);
-    case (inSES,_) then (inSES,{});
+    case (_,_) then (inSES,{});
   end matchcontinue;
 end addDivExpErrorMsgtoSimEqSystem;
 
@@ -11332,8 +11332,8 @@ algorithm (new_index) := matchcontinue(var,odered_vars)
   local DAE.ComponentRef cr;
         list<tuple<DAE.ComponentRef, Integer>> rest;
         Integer i;
-  case(_,{}) then (-1);
-  case(var ,((cr,i)::_))    
+  case (_,{}) then (-1);
+  case (_,((cr,i)::_))    
     equation
       true = ComponentReference.crefEqual(var,cr);
     Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStrIntStr,(" found state variable ",var," with index: ",i,"\n"));
@@ -11528,9 +11528,9 @@ Helper function for setVectorIndexes;
   output list<SimCode.SimVar>  out_1;
   output list<SimCode.SimVar>  out_2;
 algorithm (out_0,out_1,out_2) := matchcontinue(in_0,in_1,in_2,variable,variable_index)
-  case(in_0,in_1,in_2,variable,0) then (variable::in_0,in_1,in_2);
-  case(in_0,in_1,in_2,variable,1) then (in_0,variable::in_1,in_2);
-  case(in_0,in_1,in_2,variable,2) then (in_0,in_1,variable::in_2);
+  case (_,in_1,in_2,variable,0) then (variable::in_0,in_1,in_2);
+  case (_,in_1,in_2,variable,1) then (in_0,variable::in_1,in_2);
+  case (_,in_1,in_2,variable,2) then (in_0,in_1,variable::in_2);
   case(_,_,_,_,_) equation print(" failure in addVariableToStateVector  \n"); then fail();
 end matchcontinue;
 end addVariableToStateVector;

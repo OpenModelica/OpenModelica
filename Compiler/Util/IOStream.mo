@@ -282,7 +282,7 @@ algorithm
       then
         ();
 
-    case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), whereToPrint )
+    case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), _)
       equation
         IOStreamExt.printBuffer(bufferID, whereToPrint);
       then

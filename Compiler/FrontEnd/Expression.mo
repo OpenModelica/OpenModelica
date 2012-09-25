@@ -434,7 +434,7 @@ algorithm
       then
         DAE.ICONST(i);
     
-    case  (inVal) then DAE.RCONST(inVal);
+    case _ then DAE.RCONST(inVal);
   end matchcontinue;
 end realToIntIfPossible;
 
@@ -457,7 +457,7 @@ algorithm
       then 
         DAE.T_ARRAY(elt_tp,dims,ts);
         
-    case(tp,n) then DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
+    case (_,n) then DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
 
   end matchcontinue;
 end liftArrayR;
@@ -1163,7 +1163,7 @@ algorithm
   outType := matchcontinue(inType,x)
     local Type ty;
     
-    case(inType,0) then inType;
+    case (_,0) then inType;
     case(_,_)
       equation
         ty = unliftArray(inType);
@@ -2431,7 +2431,7 @@ algorithm
       equation
         expLst = List.flatten(List.map(List.flatten(mexpl),flattenArrayExpToList));
       then expLst;
-    case(e) then {e};
+    case _ then {e};
   end matchcontinue;
 end flattenArrayExpToList;
 
@@ -2783,7 +2783,7 @@ algorithm
       true = isZero(e1);
     then negate(e2);
 
-    case(e1,e2) then expSub(e1,e2);
+    case (_,e2) then expSub(e1,e2);
   end matchcontinue;
 end makeDiff;
 
@@ -3115,7 +3115,7 @@ output Type outTp;
 algorithm
   outTp := matchcontinue(inTp)
     case (DAE.T_UNKNOWN(_)) then DAE.T_REAL_DEFAULT;
-    case (inTp) then inTp;
+    case _ then inTp;
   end matchcontinue;
 end checkIfOther;
 
@@ -3149,7 +3149,7 @@ algorithm
     case(_,_) equation
       true = isOne(e2);
     then e1;
-    case(e1,e2) then expDiv(e1,e2);
+    case (_,e2) then expDiv(e1,e2);
   end matchcontinue;
 end makeDiv;
 
@@ -4743,7 +4743,7 @@ algorithm
       then
         ((e, true));
     
-    case (inExp) then inExp;
+    case _ then inExp;
     
   end matchcontinue;
 end traversingComponentRefPresent;
@@ -4769,7 +4769,7 @@ algorithm
       then
         ((e, crefs ));
     
-    case(inExp) then inExp;
+    case _ then inExp;
     
   end matchcontinue;
 end traversingComponentRefFinder;
@@ -4978,7 +4978,7 @@ algorithm
       then
         ((e, (func,arg1) ));
     
-    case(inExp) then inExp;
+    case _ then inExp;
     
   end matchcontinue;
 end traversingCrefFinder;
@@ -6062,7 +6062,7 @@ algorithm b := matchcontinue(t1,t2)
       true = equalTypes(ty1,ty2);
     then
       true;
-  case(t1,t2) then false;
+  case (_,t2) then false;
   end matchcontinue;
 end equalTypes;
 

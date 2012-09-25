@@ -80,7 +80,7 @@ algorithm
          ((exp1,dae)) = Expression.traverseExp(exp,elabExp,dae);
        then
         ((exp1,dae));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end partEvalExp;
 

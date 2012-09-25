@@ -97,7 +97,7 @@ algorithm
       p = Interactive.updateProgram(p1,p2);
       // Debug.fprintln(Flags.DEPS, Dump.unparseStr(p, false));
     then p;
-    case(modelName,p) then p;
+    case (_,p) then p;
   end matchcontinue;
 end getTotalProgram;
 
@@ -274,8 +274,8 @@ output Absyn.Path outPath;
 algorithm
   outPath := match(path,scope)
   local Absyn.Path scopePath;
-    case(path,NONE()) then path;
-    case(path,SOME(scopePath)) then Absyn.joinPaths(scopePath,path);
+    case (_,NONE()) then path;
+    case (_,SOME(scopePath)) then Absyn.joinPaths(scopePath,path);
   end match;
 end addPathScope;
 
@@ -923,7 +923,7 @@ algorithm
         ((e,(optPath,cname,(d,p,env,ht))));
 
     // any other case
-    case(tpl) then tpl;
+    case _ then tpl;
   end matchcontinue;
 end buildClassDependsInExpVisitor;
 

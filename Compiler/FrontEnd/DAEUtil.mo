@@ -2286,7 +2286,7 @@ algorithm
     local
       String msg;
 
-    case (path,functions) then Util.getOption(avlTreeGet(functions, path));
+    case (_,functions) then Util.getOption(avlTreeGet(functions, path));
     case (_,_)
       equation
         msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
@@ -3578,7 +3578,7 @@ algorithm
       then 
         ((exp,oarg));
     
-    case(inTplExpExpString) then inTplExpExpString;
+    case _ then inTplExpExpString;
     
   end matchcontinue;
 end addUniqueIdentifierToCref;
@@ -3684,12 +3684,12 @@ algorithm
       list<tuple<DAE.AvlKey,DAE.AvlValue>> lst, lstInvalid;
       String str;
       
-    case ft
+    case _
       equation
         lst = avlTreeToList(ft);
       then 
         List.mapMap(lst, Util.tuple22, Util.getOption);
-    case ft
+    case _
       equation
         lst = avlTreeToList(ft);
         lstInvalid = List.select(lst, isInvalidFunctionEntry);
@@ -4571,7 +4571,7 @@ algorithm
     local
       Absyn.Path classPath;
       DAE.ElementSource src;
-    case (inSource, NONE()) then inSource; // no source change.
+    case (_, NONE()) then inSource; // no source change.
     case (_, SOME(classPath))
       equation
         src = addElementSourceType(inSource, classPath);
@@ -4676,7 +4676,7 @@ algorithm
       list<SCode.Comment> comment;
 
     // a top level
-    case (inSource, NONE()) then inSource;
+    case (_, NONE()) then inSource;
     case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), _)
       then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst,operations,comment);
   end matchcontinue;
@@ -5027,7 +5027,7 @@ algorithm
     case(_,bt) equation
       bt = doBalance2(difference,bt);
     then bt;
-    case(difference,bt) then bt;
+    case (_,bt) then bt;
   end  matchcontinue;
 end doBalance;
 
@@ -5562,7 +5562,7 @@ algorithm
   outPaths := match elements
     local
       list<DAE.Element> els,els1,els2;
-    case elements
+    case _
       equation
         (_,(_,els1)) = traverseDAEFunctions(elements, Expression.traverseSubexpressionsHelper, (collectLocalDecls,{}));
         els2 = getFunctionsElements(elements);
@@ -5772,7 +5772,7 @@ algorithm
       equation
         acc = List.fold(decls, collectFunctionRefVarPaths, acc);
       then ((exp,acc));
-    case itpl then itpl;
+    case _ then itpl;
   end matchcontinue;
 end collectValueblockFunctionRefVars;
 

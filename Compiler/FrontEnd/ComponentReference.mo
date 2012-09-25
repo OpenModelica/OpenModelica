@@ -1172,10 +1172,10 @@ algorithm
     DAE.Dimensions dims;
     
     /* No subscripts */
-    case(cr) equation {} = crefLastSubs(cr); then true;
+    case _ equation {} = crefLastSubs(cr); then true;
       
       /* constant Subscripts that match type => true */ 
-    case(cr) equation
+    case _ equation
       (subs as (_::_))= crefLastSubs(cr);
       true = Expression.subscriptConstants(subs);
       tp = crefLastType(cr);
@@ -1188,7 +1188,7 @@ algorithm
     then true;
       
       /* All other cases are false */
-    case(cr) then false;
+    case _ then false;
   end matchcontinue;
 end crefHasScalarSubscripts;
 

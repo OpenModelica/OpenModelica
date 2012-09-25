@@ -1184,7 +1184,7 @@ algorithm
         repl_1 = makeTransitive12(lst,repl,singleRepl);
       then
         (repl_1,src,dst);
-    case (repl,src,dst) then (repl,src,dst);
+    else (repl,src,dst);
   end matchcontinue;
 end makeTransitive1;
 
@@ -1230,13 +1230,13 @@ algorithm
     local
       DAE.Exp dst_1;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
-    case (repl ,_,_)
+    case (_,_,_)
       equation
         (dst_1,_) = replaceExp(dst,repl,NONE());
       then
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
-    case (repl,src,dst) then (repl,src,dst);  /* dst has no own replacement, return */
+    case (_,src,dst) then (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
 
@@ -1328,7 +1328,7 @@ TODO: find out why array residual functions containing arrays as xloc[] does not
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
   case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),inType) then Expression.makeCrefExp(cr,inType);
-  case(inExp,_) then inExp;
+  case (_,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
 

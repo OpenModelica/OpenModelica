@@ -2346,7 +2346,7 @@ algorithm
         true = BackendVariable.isState(cr,v);
         so1 = addStateOrder(cr,dcr,so);
       then ((e,(so1,v)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traverseStateOrderFinder;
 
@@ -3042,7 +3042,7 @@ algorithm
          (e1,ext_arg_1) = traverseBackendDAEExpsEqn(e,func,ext_arg);
       then
         ((e1,(func,ext_arg_1)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversereplaceDummyDer;
 
@@ -3459,7 +3459,7 @@ algorithm
         v = BackendVariable.setBindExp(v,en);
         v = BackendVariable.mergeVariableOperations(v,{DAE.SUBSTITUTION({en},e)});
       then ((v,(e1,e2)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traverseReplaceAliasVarsBindExp;
 
@@ -3515,7 +3515,7 @@ algorithm
       then
         ((e, (vars_1,i+1)));
 
-    case inExp then inExp;
+    case _ then inExp;
 
   end matchcontinue;
 end replaceDummyDerOthersExpFinder;
@@ -3902,7 +3902,7 @@ algorithm
       equation
         ((_,true)) = BackendVariable.traverseBackendDAEVars(vars,varInSameComponent,(cr,false));
       then -1.0;
-    case(cr,vars) then 0.0;
+    case (_,vars) then 0.0;
   end matchcontinue;
 end varStateSelectHeuristicPrio2;
 
@@ -4195,7 +4195,7 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> res1;
       list<Integer> res2,rest;
-    case (vars,{},_,_) then (inExpComponentRefLst,inIntegerLst1);
+    case (_,{},_,_) then (inExpComponentRefLst,inIntegerLst1);
     case (_,(v :: rest),_,_)
       equation
         false = intGt(v,0);

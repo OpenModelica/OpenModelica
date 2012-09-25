@@ -1278,7 +1278,7 @@ algorithm
         dae;
 
     case (e1, (p1 as DAE.PROP(type_ = t1)),
-          e2, (p2 as DAE.PROP(type_ = t2, constFlag = c)), source, initial_, impl) /* If it fails then this rule is matched. */ 
+          e2, (p2 as DAE.PROP(type_ = t2, constFlag = c)), _, initial_, impl) /* If it fails then this rule is matched. */ 
       equation 
         (e2_1, DAE.PROP(t_1, _)) = Types.matchProp(e2, p2, p1, true);
         dae = instEqEquation2(e1, e2_1, t_1, c, source, initial_);
@@ -1994,7 +1994,7 @@ algorithm
         expCref = Expression.makeCrefExp(cr, cr_type);
       then
         ((Expression.makeASUB(expCref, exp_subs), fi));
-    case itpl then itpl;
+    case _ then itpl;
   end matchcontinue;
 end replaceLoopDependentCrefInExp;
 

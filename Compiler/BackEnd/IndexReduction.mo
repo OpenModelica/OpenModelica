@@ -1100,7 +1100,7 @@ algorithm
          ((exp,_)) = Expression.traverseExp(exp,replaceDerStatesStatesExp,so);
        then
         ((exp,so));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end replaceDerStatesStates;
 
@@ -3202,7 +3202,7 @@ algorithm
         e = BaseHashTable.get(cr,ht);
       then 
         ((e,ht));
-    case tpl then tpl;
+    case _ then tpl;
   end matchcontinue;
 end replaceDummyDerivativesExp;
 
@@ -3788,7 +3788,7 @@ algorithm
       then
         ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
 
-    case inExp then inExp;
+    case _ then inExp;
 
   end matchcontinue;
 end changeDerVariablestoStatesFinder;
@@ -3947,7 +3947,7 @@ algorithm
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
         g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +&ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
       then ((v,(id+1,g)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end addVarGraph;
 
@@ -3980,7 +3980,7 @@ algorithm
         //g = GraphML.addNode("v" +& intString(id),intString(id),color,GraphML.ELLIPSE(),g);
         g = GraphML.addNode("v" +& intString(id),intString(id) +& ":" +& ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
       then ((v,(id+1,vec1,g)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end addVarGraphMatch;
 

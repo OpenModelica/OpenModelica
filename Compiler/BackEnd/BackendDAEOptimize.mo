@@ -717,7 +717,7 @@ algorithm
       then
         ((de,r));
     
-    case(inExp) then inExp;
+    case _ then inExp;
     
   end matchcontinue;
 end replaceDerEquationsFinder1;
@@ -1688,7 +1688,7 @@ algorithm
         v1 = Debug.bcallret2(not b,BackendVariable.setBindExp,v,e1,v);
         varlst = List.consOnTrue(b, v1, varlst);
       then ((v1,(repl,varlst)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end replaceAliasVarTraverser;
 
@@ -1708,7 +1708,7 @@ algorithm
         (e1,true) = BackendVarTransform.replaceExp(e, repl, NONE());
         v1 = BackendVariable.setBindExp(v,e1);
       then ((v1,repl));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end replaceVarTraverser;
 
@@ -1747,7 +1747,7 @@ algorithm
         (e1,_) = BackendVarTransform.replaceExp(e, repl, NONE());
       then
         ((e1,repl));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end match;
 end replaceWhenClauseTraverser;
 
@@ -1836,7 +1836,7 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(cr,dcr);
       then
         ((de,(de,dcr)));
-    case inExp then inExp;
+    case _ then inExp;
   end matchcontinue;
 end replaceAliasDerFinder;
 
@@ -3076,7 +3076,7 @@ algorithm
         exp = ValuesUtil.valueExp(bindValue);
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
       then ((v,(repl_1,vars)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end removeFinalParametersFinder;
 
@@ -3172,7 +3172,7 @@ algorithm
       (exp,_) = BackendVarTransform.replaceExp(exp,repl,NONE());      
     then ((exp,repl));
     
-    case(inTpl) then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traverseExpVisitorWrapper;
 
@@ -3267,7 +3267,7 @@ algorithm
         exp = ValuesUtil.valueExp(bindValue);
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
       then ((v,(repl_1,vars)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end removeParametersFinder;
 
@@ -3361,7 +3361,7 @@ algorithm
         exp = ValuesUtil.valueExp(bindValue);
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
       then ((v,repl_1));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end protectedParametersFinder;
 
@@ -4033,7 +4033,7 @@ algorithm
          ((_,(_,vars1))) = Expression.traverseExp(exp,checkUnusedParameterExp,(vars,vars1));
        then
         ((exp,(vars,vars1)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end checkUnusedParameter;
 
@@ -4090,7 +4090,7 @@ algorithm
       then
         ((e, (vars,vars1)));
     
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end checkUnusedParameterExp;
 
@@ -4151,7 +4151,7 @@ algorithm
          ((_,(_,vars1))) = Expression.traverseExp(exp,checkUnusedVariablesExp,(vars,vars1));
        then
         ((exp,(vars,vars1)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end checkUnusedVariables;
 
@@ -4208,7 +4208,7 @@ algorithm
       then
         ((e, (vars,vars1)));
     
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end checkUnusedVariablesExp;
 
@@ -4335,7 +4335,7 @@ algorithm
          ((_,(_,usefuncs1))) = Expression.traverseExp(exp,checkUnusedFunctionsExp,(func,usefuncs));
        then
         ((exp,(func,usefuncs1)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end checkUnusedFunctions;
 
@@ -4384,7 +4384,7 @@ algorithm
       then
         ((e, (func,usefuncs1)));
             
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end checkUnusedFunctionsExp;
 
@@ -6532,7 +6532,7 @@ algorithm
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, {inStartNode}, inSparseT);
         outSparseT = prepareSparsePatternT(inSparseT, inStartNode+1, inEndNode, inMatrixT);
       then outSparseT;     
-    case (inSparseT,_,_,_) then inSparseT;
+    case (_,_,_,_) then inSparseT;
   end matchcontinue;
 end prepareSparsePatternT;
 
@@ -8854,7 +8854,7 @@ protected function mergeIf
   output DAE.Exp outExp;
 algorithm
   outExp := match(inExp1,inExp2,inOrgExp1)
-    case (inExp1,inExp2,inOrgExp1) then DAE.IFEXP(inOrgExp1, inExp1, inExp2);
+    case (_,inExp2,inOrgExp1) then DAE.IFEXP(inOrgExp1, inExp1, inExp2);
  end match;
 end mergeIf;
 
@@ -9383,7 +9383,7 @@ algorithm
         (_,_) = BackendVariable.getVar(cr, vars);
       then
         ((DAE.BCONST(false),(vars,true)));
-    case tpl then tpl;
+    case _ then tpl;
   end matchcontinue;
 end traverserExpsimplifyTimeIndepFuncCalls;
 
@@ -11678,7 +11678,7 @@ algorithm
     case ((exp,(i1,i2,i3))) equation
       ((_,(i1_1,i2_1,i3_1))) = Expression.traverseExp(exp,traversecountOperationsExp,(i1,i2,i3));
     then ((exp,(i1_1,i2_1,i3_1)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end countOperationsExp;
 
@@ -11700,7 +11700,7 @@ algorithm
     case ((e as DAE.BINARY(operator=op),(i1,i2,i3))) equation
       (i1_1,i2_1,i3_1) = countOperator(op,i1,i2,i3);
       then ((e, (i1_1,i2_1,i3_1)));
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end traversecountOperationsExp;
 
@@ -11890,7 +11890,7 @@ algorithm
         e = BackendVariable.varBindExpStartValue(v);    
       then
         ((e,knvars));
-    case tpl1 then tpl1;   
+    case _ then tpl1;   
   end matchcontinue;
 end simplifyevaluatedParamter;
 
@@ -12823,7 +12823,7 @@ algorithm
         v = BackendVariable.setVarFixed(v, true);
         Debug.fcall(Flags.DUMPOPTINIT,BackendDump.debugStrCrefStrExpStr,("Set Var ",varName," (start= ",exp,", fixed=true)\n"));
       then ((v,(initalAliases,true)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end optimizeInitialAliasesFinder;
 

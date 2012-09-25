@@ -148,7 +148,7 @@ algorithm
    local
       String arg,value;
       list<String> args;
-   case(flag,{}) then "";
+   case (_,{}) then "";
    case(_,arg::{})
       equation
         0 = stringCompare(flag,arg);
@@ -373,7 +373,7 @@ algorithm
       e = array[pos];
       true = func(e);
     then SOME(e);
-    case(array,func,pos) then  arrayFindFirstOnTrue2(array,func,pos+1);
+    case (_,func,pos) then  arrayFindFirstOnTrue2(array,func,pos+1);
   end matchcontinue;
 end arrayFindFirstOnTrue2; 
 
@@ -1877,7 +1877,7 @@ public function intSign
 algorithm
   o := match i local Integer j;
     case 0 then 0;
-    case i
+    case _
       equation
         j = if_(i>0,1,-1);
       then j;
@@ -2629,7 +2629,7 @@ algorithm
         true = (sz <= maxSz);
       then allCombinations2(lst);
 
-    case (lst,NONE(),info) then allCombinations2(lst);
+    case (_,NONE(),info) then allCombinations2(lst);
 
     case (_,SOME(_),_)
       equation
@@ -2698,8 +2698,8 @@ algorithm
       list<list<Type_a>> lst;
       list<list<Type_a>> acc;      
     
-    case (x,{},acc) then {x}::acc;
-    case (x,{l},acc) then (x::l)::acc;
+    case (_,{},acc) then {x}::acc;
+    case (_,{l},acc) then (x::l)::acc;
     case (_,l::lst,acc)
       equation
         acc = allCombinations4(x, lst, (x::l)::acc);

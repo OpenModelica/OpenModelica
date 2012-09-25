@@ -223,7 +223,7 @@ algorithm
         res = stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs," prefixes: ",prefStr,")"});
       then
         res;
-    case inElement
+    case _
       equation
         res = printClassStr(inElement);
       then

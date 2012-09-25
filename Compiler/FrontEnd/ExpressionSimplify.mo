@@ -993,7 +993,7 @@ algorithm
         etp = DAE.T_ARRAY(etp,dim11::ndim::dims,ts);
         e = DAE.MATRIX(etp,i,mss);
       then simplifyCat(dim,e::es,acc,true);
-    case (dim,e::es,acc,changed) then simplifyCat(dim,es,e::acc,changed);
+    case (_,e::es,acc,changed) then simplifyCat(dim,es,e::acc,changed);
   end matchcontinue;
 end simplifyCat;
 
@@ -3420,8 +3420,8 @@ protected function simplifyBinaryCommutative
   output DAE.Exp exp;
 algorithm
   exp := matchcontinue (op,lhs,rhs)
-    case (op,lhs,rhs) then simplifyBinaryCommutativeWork(op,lhs,rhs);
-    case (op,lhs,rhs) then simplifyBinaryCommutativeWork(op,rhs,lhs);
+    case (_,lhs,rhs) then simplifyBinaryCommutativeWork(op,lhs,rhs);
+    case (_,lhs,rhs) then simplifyBinaryCommutativeWork(op,rhs,lhs);
   end matchcontinue;
 end simplifyBinaryCommutative;
 
@@ -4367,7 +4367,7 @@ algorithm
         expr = simplifyReductionFoldPhase(str,ety,values,defaultValue);
       then expr;
         
-    case (inReduction,true) then inReduction;
+    case (_,true) then inReduction;
     
   end matchcontinue;
 end simplifyReduction;

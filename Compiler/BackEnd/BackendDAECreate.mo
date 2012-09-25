@@ -1990,7 +1990,7 @@ algorithm
         (e2,_) = ExpressionSimplify.simplify(e2);
         ((_,vars)) = Expression.traverseExp(e2,derCrefsExp,vars);
       then ((e2,(vars,shared,true)));
-    case tpl then tpl;
+    case _ then tpl;
   end matchcontinue;
 end expandDerExp;
 
@@ -2011,7 +2011,7 @@ algorithm outExp := matchcontinue(inExp)
       vars = updateStatesVars(vars,varlst,false);
     then
       ((e,vars));
-  case(inExp) then inExp;
+  case _ then inExp;
 end matchcontinue;
 end derCrefsExp;
 
@@ -2562,7 +2562,7 @@ algorithm
         //Debug.fcall(Flags.RELIDX,print, " zerocrossingindex 2: results "  +& ExpressionDump.printExpStr(e_1)+& "index: " +& intString(indx) +& " lenght: " +& intString(length) +& "\n");
       then 
         ((e_1,zeroCrossings,indx));
-    case (exp ,_,_,_)
+    case (_,_,_,_)
       equation
         str = " failure in zerocrossingindex for: "  +& ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -3107,7 +3107,7 @@ protected function whenEquationsIndices "Returns all equation-indices that conta
   output list<Integer> res;
 algorithm
    res := match (eqns)
-     case(eqns) equation
+     case _ equation
          res=whenEquationsIndices2(1,BackendDAEUtil.equationArraySize(eqns),eqns);
        then res;
    end match;

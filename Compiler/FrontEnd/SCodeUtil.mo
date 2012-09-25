@@ -597,7 +597,7 @@ algorithm
   case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
     then translateAlternativeExternalAnnotation(decl,cls);
   // not found
-    case (decl,_) then decl;
+    case (_,_) then decl;
   end matchcontinue;
 end translateAlternativeExternalAnnotation;
 
@@ -1432,7 +1432,7 @@ algorithm
       then
         {SCode.EXTENDS(path,vis,mod,SOME(ann),info)};
 
-    case (cc,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
+    case (_,_,_,_,_,Absyn.COMPONENTS(components = {}),info) then {};
 
     case (_,_,_,repl,vis,Absyn.COMPONENTS(attributes =
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
@@ -2091,7 +2091,7 @@ algorithm
       Absyn.Exp exp;
       SCode.Ident ident;
     // deal with the empty list
-    case (prefix, {}) then {};
+    case (_, {}) then {};
     // deal with named modifiers
     case (_, SCode.NAMEMOD(ident, SCode.MOD(binding = SOME((exp,_))))::subModLst)
       equation

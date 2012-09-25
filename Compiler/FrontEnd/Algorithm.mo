@@ -763,7 +763,7 @@ public function makeTerminate "
   output Statement outStatement;
 algorithm
   outStatement := match (msg,props,source)
-    case (msg,DAE.PROP(type_ = DAE.T_STRING(varLst = _)),source) then DAE.STMT_TERMINATE(msg,source);
+    case (_,DAE.PROP(type_ = DAE.T_STRING(varLst = _)),source) then DAE.STMT_TERMINATE(msg,source);
   end match;
 end makeTerminate;
 

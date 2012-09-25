@@ -591,7 +591,7 @@ algorithm
       equation
         true = id ==& sid;
       then (SOME(frame),prevFrames);
-    case (id,_) then (NONE(),{});
+    case (_,_) then (NONE(),{});
   end matchcontinue;
 end lookupPrevFrames;
 
@@ -2077,7 +2077,7 @@ protected function selectModifier
 algorithm
   outMod := matchcontinue (inModID, inModNoID)
     case (DAE.NOMOD(), inModNoID) then inModNoID;
-    case (inModID, _) then inModID;
+    case (_, _) then inModID;
   end matchcontinue;
 end selectModifier;
 

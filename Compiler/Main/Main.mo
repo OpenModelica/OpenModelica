@@ -647,7 +647,7 @@ algorithm
       isFlatModelicaFile(filename);
       outP = Interactive.transformFlatProgram(p);
       then outP;
-    case(p,filename) then p;
+    case (_,filename) then p;
   end matchcontinue;
 end transformFlatProgram;
 
@@ -1034,7 +1034,7 @@ protected
   list<String> args_1;
 algorithm
   _ := matchcontinue args
-    case args
+    case _
       equation
         args_1 = Flags.new(args);
         System.gettextInit(Util.if_(Config.getRunningTestsuite(),"C",Flags.getConfigString(Flags.LOCALE_FLAG)));
@@ -1069,7 +1069,7 @@ algorithm
         print("\n");
       then ();
 
-    case args
+    case _
       equation
         true = not System.userIsRoot() or Config.getRunningTestsuite();
         true = Flags.isSet(Flags.INTERACTIVE);
@@ -1079,7 +1079,7 @@ algorithm
         interactivemode(symbolTable);
       then ();
 
-    case args
+    case _
       equation
         true = not System.userIsRoot() or Config.getRunningTestsuite();
         false = Flags.isSet(Flags.INTERACTIVE);

@@ -504,12 +504,12 @@ algorithm
     local
       Integer len;
     case {} then ();
-    case constrs
+    case _
       equation
         len = listLength(constrs);
         len >= 1 = false;
     then();
-    case constrs
+    case _
       equation
         len = listLength(constrs);
         len >= 1 = true;

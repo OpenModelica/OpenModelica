@@ -266,7 +266,7 @@ algorithm
     local
       Tree t1,t2;
       T ts;
-    case (t,{}) then {t};
+    case (_,{}) then {t};
     case (t1,t2::ts) then
       Util.if_(rank(t1) < rank(t2),t1::t2::ts,ins(link(t1,t2),ts));
   end match;

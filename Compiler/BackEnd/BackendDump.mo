@@ -2638,7 +2638,7 @@ algorithm
       equation
         true = BackendVariable.isVarOnTopLevelAndInput(v);
       then ((v,(inp+1,st,states)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversingisStateTopInputVarFinder;
 

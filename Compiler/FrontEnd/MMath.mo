@@ -68,7 +68,7 @@ protected function normalizeZero "if numerator is zero, set denominator to 1"
 algorithm
   outR := matchcontinue(r)
     case(RATIONAL(0,_)) then RATIONAL(0,1);
-    case(r) then r;
+    case _ then r;
   end matchcontinue;
 end normalizeZero;
 
@@ -141,8 +141,8 @@ public function intGcd "returns the greatest common divisor for two Integers"
   output Integer i;
 algorithm
   i := matchcontinue(i1,i2)
-    case(i1,0) then i1;
-    case(i1,i2) then intGcd(i2,intMod(i1,i2));
+    case (_,0) then i1;
+    case (_,i2) then intGcd(i2,intMod(i1,i2));
   end matchcontinue;
 end intGcd;
 

@@ -522,11 +522,11 @@ protected function addMissingForQuotedNames " Wraps name in Missing if quoted na
   output String res; 
 algorithm
   res := matchcontinue(name)
-    case(name) equation
+    case _ equation
       false = -1 == System.stringFind(name,"'");
       res = "Missing[\"QuotedName\",\""+&System.stringReplace(name,"\\","\\\\")+&"\"]";
     then res;
-    case(name) then name;
+    case _ then name;
   end matchcontinue; 
 end addMissingForQuotedNames;
 

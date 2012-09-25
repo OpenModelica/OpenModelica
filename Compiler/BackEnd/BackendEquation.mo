@@ -191,7 +191,7 @@ algorithm
          ((_,(_,bt))) = Expression.traverseExpWithoutRelations(exp,checkEquationsVarsExp,(vars,bt));
        then
         ((exp,(vars,bt)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end checkEquationsVarsWithoutRelations;
 
@@ -282,7 +282,7 @@ algorithm
          ((_,(_,bt))) = Expression.traverseExp(exp,checkEquationsVarsExp,(vars,bt));
        then
         ((exp,(vars,bt)));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end checkEquationsVars;
 
@@ -315,7 +315,7 @@ algorithm
       then
         ((e, (vars,bt)));
     
-    case inTuple then inTuple;
+    case _ then inTuple;
   end matchcontinue;
 end checkEquationsVarsExp;
 
@@ -405,7 +405,7 @@ algorithm
       equation
         (_,cr_lst1) = traverseBackendDAEExpsEqn(e,extractCrefsFromExp,cr_lst);
       then ((e,cr_lst1));
-    case inTpl then inTpl;
+    case _ then inTpl;
   end matchcontinue;
 end traversingEquationCrefFinder;
 

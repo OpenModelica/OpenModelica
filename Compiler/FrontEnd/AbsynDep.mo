@@ -492,7 +492,7 @@ algorithm
     case(_,bt) equation
       bt = doBalance2(difference,bt);
     then bt;
-    case(difference,bt) then bt;
+    case (_,bt) then bt;
   end  matchcontinue;
 end doBalance;
 
@@ -680,7 +680,7 @@ algorithm
     case(_,_) equation
       val = avlTreeGet(tree,key);
     then val;
-    case(tree,key) then {};
+    case (_,key) then {};
   end matchcontinue;
 end avlTreeGetOrEmpty;
 

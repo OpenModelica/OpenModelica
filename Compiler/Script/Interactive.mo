@@ -4168,7 +4168,7 @@ algorithm
         comps;
     */    
     // if we have a qualified class, a modification into it can affect any other
-    case (_, path /*as Absyn.QUALIFIED(name=_)*/)
+    case (_, _)
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (_,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
@@ -4797,7 +4797,7 @@ algorithm
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {});
       then env_2;
-    case (p,p_class) then {};
+    case (_,p_class) then {};
   end matchcontinue;
 end getClassEnv;
 
@@ -6664,8 +6664,8 @@ algorithm
       equation
         true = Absyn.crefEqual(cr,cr2);
       then true;
-    case (cr,_::rest) then findCrefModification(cr,rest);
-    case (cr,{}) then false;
+    case (_,_::rest) then findCrefModification(cr,rest);
+    case (_,{}) then false;
   end matchcontinue;
 end findCrefModification;
 
@@ -8403,7 +8403,7 @@ algorithm
       then
         str;
     
-    case (cr, p) then "{}";
+    case (_, p) then "{}";
     
   end matchcontinue;
 end getShortDefinitionBaseClassInformation;
@@ -8445,7 +8445,7 @@ algorithm
       then
         str;
   
-    case (cr, p) then "{}";
+    case (_, p) then "{}";
     
   end matchcontinue;
 end getExternalFunctionSpecification;
@@ -10145,16 +10145,16 @@ protected function getDefaultInnerOuter "helper function to getDefaultPrefixes"
   output Absyn.InnerOuter io;
 algorithm
     io := matchcontinue(str)
-      case(str) equation
+      case _ equation
         -1 = System.stringFind(str,"inner");
        -1 = System.stringFind(str,"outer");
       then Absyn.NOT_INNER_OUTER();
 
-      case(str) equation
+      case _ equation
        -1 = System.stringFind(str,"outer");
       then Absyn.INNER();
 
-      case(str) equation
+      case _ equation
        -1 = System.stringFind(str,"inner");
       then Absyn.OUTER();
       end matchcontinue;
@@ -10165,10 +10165,10 @@ protected function getDefaultReplaceable "helper function to getDefaultPrefixes"
   output Option<Absyn.RedeclareKeywords> repl;
 algorithm
     repl := matchcontinue(str)
-      case(str) equation
+      case _ equation
         -1 = System.stringFind(str,"replaceable");
       then NONE();
-      case(str) equation
+      case _ equation
        failure(-1 = System.stringFind(str,"replaceable"));
       then SOME(Absyn.REPLACEABLE());
       end matchcontinue;
@@ -10179,18 +10179,18 @@ protected function getDefaultAttr "helper function to getDefaultPrefixes"
   output Absyn.ElementAttributes attr;
 algorithm
     attr := matchcontinue(str)
-      case(str) equation
+      case _ equation
         failure(-1 = System.stringFind(str,"parameter"));
       then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.PARAM(),Absyn.BIDIR(),{});
 
-      case(str) equation
+      case _ equation
         failure(-1 = System.stringFind(str,"constant"));
       then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.CONST(),Absyn.BIDIR(),{});
 
-      case(str) equation
+      case _ equation
         failure(-1 = System.stringFind(str,"discrete"));
       then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.DISCRETE(),Absyn.BIDIR(),{});
-      case(str) then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),{});
+      case _ then Absyn.ATTR(false,false,Absyn.NON_PARALLEL(),Absyn.VAR(),Absyn.BIDIR(),{});
   end matchcontinue;
 end getDefaultAttr;
 
@@ -10203,7 +10203,7 @@ algorithm
     case(SOME(Absyn.CLASSMOD(eqMod = Absyn.EQMOD(exp=e)))) equation
       docStr = Dump.printExpStr(e);
     then docStr;
-    case(mod) then "";
+    case _ then "";
   end matchcontinue;
 end getDefaultComponentPrefixesModStr;
 
@@ -10948,7 +10948,7 @@ algorithm
     case ({}, _, inClass, inFullProgram, inModelPath) then "{}";
 
     case ((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = mapType),modification = mod)) :: _,_,
-          inClass, _, _)
+          _, _, _)
       equation
         // make sure is the given type: IconMap or DiagramMap
         true = stringEqual(mapType, inMapType);
@@ -13868,7 +13868,7 @@ algorithm
       then 
         docStr;
     
-    case(mod) then "";
+    case _ then "";
 
   end matchcontinue;
 end getDefaultComponentNameModStr;
@@ -14491,14 +14491,14 @@ algorithm
 
     case (Absyn.EQUATIONITEM(info=info, equation_ = Absyn.EQ_CONNECT(connector1 = _),
       comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annotations)),_))),
-      inClass, _, _)
+      _, _, _)
     equation
         res = getConnectionAnnotationStrElArgs(annotations, info, inClass, inFullProgram, inModelPath);
         gexpstr = stringDelimitList(res, ", ");
     then
       gexpstr;
     case (Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = _),comment = NONE()),
-          inClass, _, _) 
+          _, _, _) 
       then 
         fail();
   end match;
@@ -14939,7 +14939,7 @@ algorithm
       list<Absyn.ComponentItem> lst;
     
     case (Absyn.ELEMENT(specification = Absyn.COMPONENTS(components = lst),constrainClass = NONE()),
-          inClass,_,_)
+          _,_,_)
       equation
         str = getComponentitemsAnnotation(lst, inClass,inFullProgram,inModelPath);
       then
@@ -14991,7 +14991,7 @@ algorithm
     
     case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT("Placement",_)) :: _)))),_))) ::
       (rest as (_ :: _))),
-      inClass,_,_)
+      _,_,_)
       equation
         s1 = getAnnotationString(Absyn.ANNOTATION(mod), inClass, inFullProgram, inModelPath);
         str = getComponentitemsAnnotation(rest, inClass, inFullProgram, inModelPath);
@@ -14999,21 +14999,21 @@ algorithm
       then
         res;
     case ({Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION((mod as (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT("Placement",_)) :: _)))),_)))},
-      inClass,_,_)
+      _,_,_)
       equation
         s1 = getAnnotationString(Absyn.ANNOTATION(mod),inClass,inFullProgram,inModelPath);
         res = stringAppendList({"{", s1, "}"});
       then
         res;
     case ((Absyn.COMPONENTITEM(comment = SOME(Absyn.COMMENT(NONE(),_))) :: (rest as (_ :: _))),
-      inClass,_,_)
+      _,_,_)
       equation
         str = getComponentitemsAnnotation(rest,inClass,inFullProgram,inModelPath);
         res = stringAppend("{nada},", str);
       then
         res;
     case ((Absyn.COMPONENTITEM(comment = NONE()) :: (rest as (_ :: _))),
-      inClass,_,_)
+      _,_,_)
       equation
         str = getComponentitemsAnnotation(rest,inClass,inFullProgram,inModelPath);
         res = stringAppend("{},", str);
@@ -15194,9 +15194,9 @@ algorithm
       Absyn.Info info;
 
     case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
-          inClass,
-          inFullProgram,
-          inModelPath)
+          _,
+          _,
+          _)
       equation
         // print(Dump.unparseStr(graphicProgram, false));
         // print("Annotation(Icon) 1: " +& Dump.unparseMod1Str(mod) +& "\n");
@@ -15231,9 +15231,9 @@ algorithm
 
     // First line in the first rule above fails if return value from stripGraphicsAndInteractionModification doesn't match the lhs
     case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
-          inClass,
-          inFullProgram,
-          inModelPath)
+          _,
+          _,
+          _)
       equation
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
@@ -15257,9 +15257,9 @@ algorithm
         str;
 
     case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)),info = info)}),
-          inClass,
-          inFullProgram,
-          inModelPath)
+          _,
+          _,
+          _)
       equation
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Diagram): " +& Dump.unparseMod1Str(mod) +& "\n");
@@ -15290,9 +15290,9 @@ algorithm
 
     // First line in the first rule above fails if return value from stripGraphicsAndInteractionModification doesn't match the lhs
     case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
-          inClass,
-          inFullProgram,
-          inModelPath)
+          _,
+          _,
+          _)
       equation
         // print(Dump.unparseStr(p, false));
         // print("Annotation(Icon): " +& Dump.unparseMod1Str(mod) +& "\n");
@@ -15317,9 +15317,9 @@ algorithm
         str;
 
     case (Absyn.ANNOTATION(elementArgs = {Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = anncname),modification = SOME(Absyn.CLASSMOD(mod,_)), info = info)}),
-          inClass,
-          inFullProgram,
-          inModelPath)
+          _,
+          _,
+          _)
       equation
         // print(Dump.unparseStr(p, false));
         // print("Annotation(" +& anncname +& "): " +& Dump.unparseMod1Str(mod) +& "\n");
@@ -18201,7 +18201,7 @@ input Absyn.Program p;
 output Absyn.Program newP;
 algorithm
   newP := match(p)
-    case(p) equation
+    case _ equation
       ((newP,_,_)) = traverseClasses(p,NONE(), transformFlatClass, 0, true) "traverse protected" ;
       then newP;
   end match;
@@ -18524,7 +18524,7 @@ algorithm
   local Absyn.ComponentRef cr1;
     list<Absyn.Subscript> ss;
     String s;
-    case (cr) equation
+    case _ equation
       ss = Absyn.crefLastSubs(cr);
       cr1 = Absyn.crefStripLastSubs(cr);
       s = Dump.printComponentRefStr(cr1);
@@ -19396,7 +19396,7 @@ algorithm
   out := match (path)
     // Doesn't work because we only know the AST after parsing... case (Absyn.FULLYQUALIFIED(path)) then "#" +& Absyn.pathString(path);
     // Thus, scope/lookup is done by the application recieving this information
-    case path then Absyn.pathString(path);
+    case _ then Absyn.pathString(path);
   end match;
 end getDefinitionPathString;
 
@@ -19535,7 +19535,7 @@ algorithm
       ident = "(" +& ident +& ")";
       res = getDefinitionComponents(typeStr,dirStr,numDim,rest);
     then ident :: res;
-    case (typeStr,dirStr,numDim,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
+    case (_,dirStr,numDim,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
   end matchcontinue;
 end getDefinitionComponents;
 

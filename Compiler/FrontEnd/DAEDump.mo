@@ -2741,7 +2741,7 @@ algorithm
 
     case(DAE.T_SUBTYPE_BASIC(complexType = bc_tp)) then Types.unparseType(bc_tp);
 
-    case(tp) then Types.unparseType(tp);
+    case _ then Types.unparseType(tp);
   end matchcontinue;
 end unparseType;
 

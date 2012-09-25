@@ -769,7 +769,7 @@ protected function convertInnerOuterInnerToOuter
 algorithm
   oio := matchcontinue(io)
     case(Absyn.INNER()) then Absyn.OUTER();
-    case(io) then io;
+    case _ then io;
   end matchcontinue;
 end convertInnerOuterInnerToOuter;
 
@@ -1561,7 +1561,7 @@ algorithm
       then Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env);
 
     // leave unchanged
-    case (inItem, _) then inItem;
+    case (_, _) then inItem;
   end matchcontinue;
 end switchInnerToOuterInAvlTreeValue;
 

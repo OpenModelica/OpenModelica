@@ -245,7 +245,7 @@ algorithm
       equation
         ei = listAppend(ei1,ei2);
       then Absyn.PROTECTED(ei)::rest;
-    case (cp,cps) then cp::cps;
+    case (_,cps) then cp::cps;
   end match;
 end mergeBefore;
 
@@ -586,7 +586,7 @@ algorithm
       Boolean b;
       String n1,n2;
       list<String> rest1,rest2;
-    case (names,{},_) then (names,true);
+    case (_,{},_) then (names,true);
     case (n1::rest1,n2::rest2,_)
       equation
         true = n1 ==& n2;
