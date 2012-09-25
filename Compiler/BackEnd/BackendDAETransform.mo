@@ -893,7 +893,7 @@ algorithm
       BackendDAE.StrongComponent compX;
       Integer mark,low,high;
       Boolean foundequal;
-    case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_,_,_,_)
+    case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2,_,_,_,_)
       equation
         vlst = List.map1r(comp,arrayGet,ass2);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
@@ -1027,7 +1027,7 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponent compX;
-    case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2)
+    case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2)
       equation
         (eqn_lst,var_varindx_lst) = List.map3_2(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);
         compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,ass1,ass2,false);   
@@ -1342,7 +1342,7 @@ algorithm
         e = List.first(elst);        
       then
         (eqnlst,varlst,e);        
-    case (inComp,eqns,vars)
+    case (_,eqns,vars)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("BackendDAETransform.getEquationAndSolvedVar failed!");
@@ -1478,7 +1478,7 @@ algorithm
   (contEqnLst,contVarLst,discEqnLst,discVarLst,indxcontEqnLst,indxcontVarLst,indxdiscEqnLst,indxdiscVarLst):=
   match (eqnLst, indxEqnLst, varLst, indxVarLst)
     local list<tuple<BackendDAE.Equation,Integer>> eqnindxlst;
-    case (eqnLst,indxEqnLst,varLst,indxVarLst) equation
+    case (_,_,_,_) equation
       (discVarLst,contVarLst,indxdiscVarLst,indxcontVarLst) = splitVars(varLst,indxVarLst,BackendDAEUtil.isVarDiscrete,{},{},{},{});
       eqnindxlst = List.map1(discVarLst,findDiscreteEquation,(eqnLst,indxEqnLst));
       discEqnLst = List.map(eqnindxlst,Util.tuple21);
@@ -1595,15 +1595,15 @@ algorithm
       list<Integer> ilst;
       list<BackendDAE.Equation> eqnLst;
       String errstr;
-    case (v,(((eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_),i::_)) equation
+    case (_,(((eqn as BackendDAE.EQUATION(DAE.CREF(cr,_),e2,_))::_),i::_)) equation
       cr1=BackendVariable.varCref(v);
       true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
     then ((eqn,i));
-    case(v,(((eqn as BackendDAE.EQUATION(e2,DAE.CREF(cr,_),_))::_),i::_)) equation
+    case(_,(((eqn as BackendDAE.EQUATION(e2,DAE.CREF(cr,_),_))::_),i::_)) equation
       cr1=BackendVariable.varCref(v);
       true = ComponentReference.crefEqualNoStringCompare(cr1,cr);
     then ((eqn,i));
-    case(v,(_::eqnLst,_::ilst)) equation
+    case(_,(_::eqnLst,_::ilst)) equation
       ((eqn,i)) = findDiscreteEquation(v,(eqnLst,ilst));
     then ((eqn,i));
     else equation
@@ -1891,7 +1891,7 @@ algorithm
       then
         (i1,stack,comps);
 
-    case ((_ :: ws),_,_,_,_,_,_,i,_,_,_)
+    case ((_ :: ws),_,_,_,_,_,_,_,_,_,_)
       equation
         (i1,stack,comps) = iterateReachableNodes(ws, m, mt, a1, a2, number, lowlink, i, v, istack, icomps);
       then
@@ -2179,7 +2179,7 @@ algorithm
       BackendDAE.ConstraintEquations rest,orgeqnslst;
     
     case ({},_,_) then {(e,{inEqn})};
-    case ((e1,orgeqns)::rest,e,inEqn)
+    case ((e1,orgeqns)::rest,_,_)
       equation
         true = intGt(e1,e);
       then
@@ -2366,10 +2366,10 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
       Integer i,l;
       list<Integer> rest,eqns,ilst,ilst1; 
-    case ({},inIntegerLst2,_,_)
+    case ({},_,_,_)
       then 
         inIntegerLst2;
-    case (i::rest,inIntegerLst2,mt,l)
+    case (i::rest,_,mt,l)
       equation
         true = intLt(i,l);
         eqns = List.map(mt[i],intAbs);
@@ -2377,12 +2377,12 @@ algorithm
         ilst1 = collectVarEqns(rest,ilst,mt,l);  
       then 
         ilst1;
-    case (i::rest,inIntegerLst2,mt,l)
+    case (i::rest,_,mt,l)
       equation
         ilst1 = collectVarEqns(rest,inIntegerLst2,mt,l);  
       then 
         ilst1;        
-    case (i::rest,inIntegerLst2,mt,l)
+    case (i::rest,_,mt,l)
       equation
         print("collectVarEqns failed for eqn " +& intString(i) +& "\n");
       then fail();
@@ -2687,7 +2687,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
 
-    case (eqns,_,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,ass1,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn))
+    case (_,_,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,ass1,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn))
       equation
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
@@ -2730,7 +2730,7 @@ algorithm
       then
         (changedeqns,actualEqn,syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn));
 
-    case (eqns,_,syst,shared,_,_,(_,_,_,mapIncRowEqn))
+    case (_,_,syst,shared,_,_,(_,_,_,mapIncRowEqn))
       equation
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
@@ -3306,21 +3306,21 @@ algorithm
 
     case ({},func,inTypeA) then ({},inTypeA);
 
-    case (BackendDAE.REINIT(stateVar=cr,value=cond,source=source)::res,func,inTypeA)
+    case (BackendDAE.REINIT(stateVar=cr,value=cond,source=source)::res,_,_)
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
         ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
       then
         (BackendDAE.REINIT(cr,cond1,source)::res1,ext_arg_2);
 
-    case (BackendDAE.ASSERT(condition=cond,message=msg,level=level,source=source)::res,func,inTypeA)
+    case (BackendDAE.ASSERT(condition=cond,message=msg,level=level,source=source)::res,_,_)
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
         ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
       then
         (BackendDAE.ASSERT(cond1,msg,level,source)::res1,ext_arg_2);
 
-    case (wop::res,func,inTypeA)
+    case (wop::res,_,_)
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
       then
@@ -3358,7 +3358,7 @@ algorithm
 
     case ({},func,inTypeA) then ({},inTypeA);
 
-    case (BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx)::wclst,func,inTypeA)
+    case (BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx)::wclst,_,_)
       equation
         ((cond1,ext_arg_1)) = func((cond,inTypeA));
         (reinitStmtLst1,ext_arg_2) = traverseBackendDAEExpsWhenOperator(reinitStmtLst,func,ext_arg_1);
@@ -3551,7 +3551,7 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
 
-    case (var,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching),op)
+    case (var,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching),_)
       equation
         ((BackendDAE.VAR(name,kind,dir,prl,tp,bind,value,dim,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(var, vars);
         dummyvar_cr = ComponentReference.crefPrefixDer(name);
@@ -3603,14 +3603,14 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
 
-    case (varCrefs,varIndices,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),_,_)
+    case (_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),_,_)
       equation
         prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,mapIncRowEqn,so,{});
         //print("priorities:");print(stringDelimitList(List.map(prioTuples,printPrioTuplesStr),","));print("\n");
         (s,sn) = selectMinPrio(prioTuples);
       then (s,sn);
 
-    case ({},_,syst,_,_)
+    case ({},_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAETransform.selectDummyState: no state to select"});
         BackendDump.dumpEqSystem(syst);
@@ -3857,7 +3857,7 @@ protected function varStateSelectHeuristicPrio3
 algorithm
   prio := match(cr,vars)
     local Integer i; Real c;
-    case(cr,vars)
+    case(_,_)
       equation
         ((_,i)) = BackendVariable.traverseBackendDAEVars(vars,varHasSameLastIdent,(cr,0));
         c = intReal(i);
@@ -3898,7 +3898,7 @@ protected function varStateSelectHeuristicPrio2
 algorithm
   prio := matchcontinue(cr,vars)
     local
-    case(cr,vars)
+    case(_,_)
       equation
         ((_,true)) = BackendVariable.traverseBackendDAEVars(vars,varInSameComponent,(cr,false));
       then -1.0;
@@ -3946,7 +3946,7 @@ algorithm
       DAE.ComponentRef dcr;
       
     case(_,{},_,_) then 0.0;
-    case(_,e::eqnLst,vars,eqns)
+    case(_,e::eqnLst,_,_)
       equation
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
         true = isStateConstraintEquation(cr,eqn,vars);
@@ -3985,7 +3985,7 @@ algorithm
       DAE.Exp e2;
 
     // s = expr(s1,..,sn)  where s1 .. sn are states
-    case(cr,BackendDAE.EQUATION(exp = DAE.CREF(cr2,_), scalar = e2),vars)
+    case(_,BackendDAE.EQUATION(exp = DAE.CREF(cr2,_), scalar = e2),_)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Expression.terms(e2);
@@ -3994,7 +3994,7 @@ algorithm
         // fails if not all mapped calls return true
       then List.mapAllValueBool(List.flatten(crVars),BackendVariable.isStateVar,true);
 
-    case(cr,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)),vars)
+    case(_,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)),_)
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Expression.terms(e2);
@@ -4021,14 +4021,14 @@ algorithm
       DAE.ComponentRef cr2;
       DAE.Exp e2;
 
-    case(cr,BackendDAE.EQUATION(exp = DAE.CREF(cr2,_), scalar = e2))
+    case(_,BackendDAE.EQUATION(exp = DAE.CREF(cr2,_), scalar = e2))
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         false = Expression.expHasCref(e2, cr);
         //_::_::_ = Expression.terms(e2);
       then true;
 
-    case(cr,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)))
+    case(_,BackendDAE.EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)))
       equation
         true = ComponentReference.crefEqualNoStringCompare(cr,cr2);
         false = Expression.expHasCref(e2, cr);
@@ -4196,7 +4196,7 @@ algorithm
       list<DAE.ComponentRef> res1;
       list<Integer> res2,rest;
     case (vars,{},_,_) then (inExpComponentRefLst,inIntegerLst1);
-    case (vars,(v :: rest),_,_)
+    case (_,(v :: rest),_,_)
       equation
         false = intGt(v,0);
         v_1 = intAbs(v);
@@ -4205,7 +4205,7 @@ algorithm
         (res1,res2) = statesInVars(vars, rest,cr :: inExpComponentRefLst,v_1 :: inIntegerLst1);
       then
         (res1,res2);
-    case (vars,(v :: rest),_,_)
+    case (_,(v :: rest),_,_)
       equation
         (res1,res2) = statesInVars(vars, rest,inExpComponentRefLst,inIntegerLst1);
       then

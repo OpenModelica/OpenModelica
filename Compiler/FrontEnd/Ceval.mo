@@ -4844,7 +4844,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,e1,inBinding,_,_)
+    case (cache,env,e1,_,_,_)
       equation
         true = Flags.isSet(Flags.CEVAL);
         s1 = ComponentReference.printComponentRefStr(e1);
@@ -4865,7 +4865,7 @@ input DAE.Exp exp;
 output Boolean res;
 algorithm
   res := matchcontinue(cr,exp)
-    case(cr,exp) equation
+    case(_,_) equation
       res = Util.boolOrList(List.map1(Expression.extractCrefsFromExp(exp),ComponentReference.crefEqual,cr));
     then res;
     case(_,_) then false;
@@ -5121,7 +5121,7 @@ algorithm
     local 
       DAE.ComponentRef cr;
     
-    case(c,(v as DAE.EQBOUND(DAE.CREF(cr,_),NONE(),_,_)))
+    case(_,(v as DAE.EQBOUND(DAE.CREF(cr,_),NONE(),_,_)))
       then ComponentReference.crefEqual(c,cr);
     
     else false;
@@ -5144,7 +5144,7 @@ algorithm
     
     case(Values.ARRAY(valueLst = {}),_) then true;
     
-    case(Values.ARRAY(valueLst = Values.INTEGER(indx)::vlst, dimLst = dim::dims),dimSize) 
+    case(Values.ARRAY(valueLst = Values.INTEGER(indx)::vlst, dimLst = dim::dims),_) 
       equation
         dim = dim-1;
         dims = dim::dims;
@@ -5187,17 +5187,17 @@ algorithm
       list<list<Values.Value>> valueMatrix;
       Option<Values.Value> curValue;
       
-    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), exp, exprType, foldExp, iteratorNames, {}, iterTypes, impl, st, msg)
+    case (cache, _, Absyn.IDENT("listReverse"), SOME(Values.LIST(vals)), _, _, _, _, {}, _, _, st, _)
       equation
         vals = listReverse(vals);
       then (cache, SOME(Values.LIST(vals)), st);
-    case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, {}, iterTypes, impl, st, msg)
+    case (cache, _, Absyn.IDENT("array"), SOME(Values.ARRAY(vals,dims)), _, _, _, _, {}, _, _, st, _)
       then (cache, SOME(Values.ARRAY(vals,dims)), st);
 
-    case (cache, _, _, curValue, _, _, _, _, {}, iterTypes, impl, st, msg)
+    case (cache, _, _, curValue, _, _, _, _, {}, _, _, st, _)
       then (cache, curValue, st);
 
-    case (cache, env, _, curValue, _, _, _, iteratorNames, vals :: valueMatrix, iterTypes, impl, st, msg)
+    case (cache, env, _, curValue, _, _, _, _, vals :: valueMatrix, _, _, st, _)
       equation
         // Bind the iterator
         // print("iterator: " +& iteratorName +& " => " +& ValuesUtil.valString(value) +& "\n");
@@ -5256,7 +5256,7 @@ algorithm
       Env.Env env;
       Option<Interactive.SymbolTable> st;
       
-    case (cache,env,_,curValue,exp,exprType,foldExp,impl,st,msg)
+    case (cache,env,_,curValue,_,_,_,_,st,_)
       equation
         (cache, value, st) = ceval(cache, env, exp, impl, st, msg);
         // print("cevalReductionEval: " +& ExpressionDump.printExpStr(exp) +& " => " +& ValuesUtil.valString(value) +& "\n");
@@ -5301,10 +5301,10 @@ algorithm
       equation
         value = valueCons(ValuesUtil.unboxIfBoxedVal(inValue),value);
       then (cache,SOME(value),st);
-    case (cache,env,_,NONE(),inValue,_,exprType,impl,st,msg)
+    case (cache,env,_,NONE(),_,_,_,_,st,_)
       then (cache,SOME(inValue),st);
 
-    case (cache,env,_,SOME(value),inValue,SOME(exp),exprType,impl,st,msg)
+    case (cache,env,_,SOME(value),_,SOME(exp),_,_,st,_)
       equation
         // print("cevalReductionFold " +& ExpressionDump.printExpStr(exp) +& ", " +& ValuesUtil.valString(inValue) +& ", " +& ValuesUtil.valString(value) +& "\n");
         /* TODO: Store the actual types somewhere... */
@@ -5921,7 +5921,7 @@ algorithm
       list<DAE.ReductionIterator> iterators;
       
     case (cache,env,{},_,st,_) then (cache,{},{},{},{},st);
-    case (cache,env,DAE.REDUCTIONITER(id,exp,guardExp,ty)::iterators,impl,st,msg)
+    case (cache,env,DAE.REDUCTIONITER(id,exp,guardExp,ty)::iterators,_,st,_)
       equation
         (cache,val,st) = ceval(cache,env,exp,impl,st,msg);
         iterVals = ValuesUtil.arrayOrListVals(val,true);
@@ -5957,7 +5957,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
     
    case (cache,env,_,_,{},_,_,st,_) then (cache,{},st);
-    case (cache,env,id,ty,val::vals,SOME(exp),impl,st,msg)
+    case (cache,env,_,_,val::vals,SOME(exp),_,st,_)
       equation
         new_env = Env.extendFrameForIterator(env, id, ty, DAE.VALBOUND(val, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (cache,Values.BOOL(b),st) = ceval(cache,new_env,exp,impl,st,msg);
@@ -6005,7 +6005,7 @@ algorithm
       list<Values.Value> vals;
       Values.Value value;
     case (_,value,{_}) then value;
-    case (Absyn.IDENT("array"),Values.ARRAY(valueLst=vals),dims)
+    case (Absyn.IDENT("array"),Values.ARRAY(valueLst=vals),_)
       equation
         value = backpatchArrayReduction3(vals,listReverse(dims));
         // print(ValuesUtil.valString(value));print("\n");
@@ -6089,33 +6089,33 @@ algorithm
     case (cache,_,(e as Absyn.STRING(value = _)),_,_,_,info) then (cache,e);
     case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_,info) then (cache,e);
     
-    case (cache,env,Absyn.BINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg,info)
+    case (cache,env,Absyn.BINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg,_)
       equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
       then
         (cache,Absyn.BINARY(e1_1,op,e2_1));
     
-    case (cache,env,Absyn.UNARY(op = op,exp = e),impl,st,msg,info)
+    case (cache,env,Absyn.UNARY(op = op,exp = e),impl,st,msg,_)
       equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
       then
         (cache,Absyn.UNARY(op,e_1));
     
-    case (cache,env,Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg,info)
+    case (cache,env,Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg,_)
       equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
       then
         (cache,Absyn.LBINARY(e1_1,op,e2_1));
     
-    case (cache,env,Absyn.LUNARY(op = op,exp = e),impl,st,msg,info)
+    case (cache,env,Absyn.LUNARY(op = op,exp = e),impl,st,msg,_)
       equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
       then
         (cache,Absyn.LUNARY(op,e_1));
     
-    case (cache,env,Absyn.RELATION(exp1 = e1,op = op,exp2 = e2),impl,st,msg,info)
+    case (cache,env,Absyn.RELATION(exp1 = e1,op = op,exp2 = e2),impl,st,msg,_)
       equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
@@ -6131,7 +6131,7 @@ algorithm
       then
         (cache,Absyn.IFEXP(cond_1,then_1,else_1,nest_1));
     
-    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg,info)
+    case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg,_)
       equation
         (cache,daeExp,_,_) = Static.elabExp(cache, env, e, impl, st, true, Prefix.NOPRE(), info);
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = ceval(cache, env, daeExp, impl, st, msg);
@@ -6140,19 +6140,19 @@ algorithm
     
     case (cache,env,(e as Absyn.CALL(function_ = cr,functionArgs = fa)),_,_,msg,info) then (cache,e);
     
-    case (cache,env,Absyn.ARRAY(arrayExp = expl),impl,st,msg,info)
+    case (cache,env,Absyn.ARRAY(arrayExp = expl),impl,st,msg,_)
       equation
         (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg, info);
       then
         (cache,Absyn.ARRAY(expl_1));
     
-    case (cache,env,Absyn.MATRIX(matrix = lstExpl),impl,st,msg,info)
+    case (cache,env,Absyn.MATRIX(matrix = lstExpl),impl,st,msg,_)
       equation
         (cache,lstExpl_1) = cevalAstExpListList(cache, env, lstExpl, impl, st, msg, info);
       then
         (cache,Absyn.MATRIX(lstExpl_1));
     
-    case (cache,env,Absyn.RANGE(start = e1,step = SOME(e2),stop = e3),impl,st,msg,info)
+    case (cache,env,Absyn.RANGE(start = e1,step = SOME(e2),stop = e3),impl,st,msg,_)
       equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);
@@ -6160,14 +6160,14 @@ algorithm
       then
         (cache,Absyn.RANGE(e1_1,SOME(e2_1),e3_1));
     
-    case (cache,env,Absyn.RANGE(start = e1,step = NONE(),stop = e3),impl,st,msg,info)
+    case (cache,env,Absyn.RANGE(start = e1,step = NONE(),stop = e3),impl,st,msg,_)
       equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg, info);
       then
         (cache,Absyn.RANGE(e1_1,NONE(),e3_1));
     
-    case (cache,env,Absyn.TUPLE(expressions = expl),impl,st,msg,info)
+    case (cache,env,Absyn.TUPLE(expressions = expl),impl,st,msg,_)
       equation
         (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg, info);
       then
@@ -6206,7 +6206,7 @@ algorithm
     
     case (cache,env,{},_,_,msg,info) then (cache,{});
     
-    case (cache,env,(e :: es),impl,st,msg,info)
+    case (cache,env,(e :: es),impl,st,msg,_)
       equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
         (cache,res) = cevalAstExpList(cache,env, es, impl, st, msg, info);
@@ -6239,7 +6239,7 @@ algorithm
     
     case (cache,env,{},_,_,msg,info) then (cache,{});
     
-    case (cache,env,(e :: es),impl,st,msg,info)
+    case (cache,env,(e :: es),impl,st,msg,_)
       equation
         (cache,e_1) = cevalAstExpList(cache,env, e, impl, st, msg, info);
         (cache,res) = cevalAstExpListList(cache,env, es, impl, st, msg, info);
@@ -6315,14 +6315,14 @@ algorithm
       Absyn.ComponentItem x;
       Env.Cache cache;
     case (cache,_,{},_,_,msg,info) then (cache,{});
-    case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg,info) /* If one component fails, the rest should still succeed */
+    case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg,_) /* If one component fails, the rest should still succeed */
       equation
         (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg, info);
         (cache,modopt_1) = cevalAstModopt(cache,env, modopt, impl, st, msg, info);
         (cache,ad_1) = cevalAstArraydim(cache,env, ad, impl, st, msg, info);
       then
         (cache,Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad_1,modopt_1),cond,cmt) :: res);
-    case (cache,env,(x :: xs),impl,st,msg,info) /* If one component fails, the rest should still succeed */
+    case (cache,env,(x :: xs),impl,st,msg,_) /* If one component fails, the rest should still succeed */
       equation
         (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg, info);
       then
@@ -6351,7 +6351,7 @@ algorithm
       Option<Interactive.SymbolTable> impl;
       Msg msg;
       Env.Cache cache;
-    case (cache,env,SOME(mod),st,impl,msg,info)
+    case (cache,env,SOME(mod),st,impl,msg,_)
       equation
         (cache,res) = cevalAstModification(cache,env, mod, st, impl, msg, info);
       then
@@ -6384,13 +6384,13 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Absyn.Info info2;
-    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.EQMOD(e,info2)),impl,st,msg,info)
+    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.EQMOD(e,info2)),impl,st,msg,_)
       equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
       then
         (cache,Absyn.CLASSMOD(eltargs_1,Absyn.EQMOD(e_1,info2)));
-    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.NOMOD()),impl,st,msg,info)
+    case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,eqMod = Absyn.NOMOD()),impl,st,msg,_)
       equation
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg, info);
       then
@@ -6434,7 +6434,7 @@ algorithm
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);
       then
         (cache,Absyn.MODIFICATION(b,e,cr,SOME(mod_1),stropt,mod_info) :: res);
-    case (cache,env,(m :: args),impl,st,msg,info) /* TODO: look through redeclarations for Eval(var) as well */
+    case (cache,env,(m :: args),impl,st,msg,_) /* TODO: look through redeclarations for Eval(var) as well */
       equation
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);
       then
@@ -6465,12 +6465,12 @@ algorithm
       Absyn.Exp e_1,e;
       Env.Cache cache;
     case (cache,env,{},_,_,msg,info) then (cache,{});
-    case (cache,env,(Absyn.NOSUB() :: xs),impl,st,msg,info)
+    case (cache,env,(Absyn.NOSUB() :: xs),impl,st,msg,_)
       equation
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg, info);
       then
         (cache,Absyn.NOSUB() :: res);
-    case (cache,env,(Absyn.SUBSCRIPT(subscript = e) :: xs),impl,st,msg,info)
+    case (cache,env,(Absyn.SUBSCRIPT(subscript = e) :: xs),impl,st,msg,_)
       equation
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg, info);
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg, info);
@@ -6503,7 +6503,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
     case (cache,_,{},_,_,msg,info) then (cache,{});
-    case (cache,env,((e1,e2) :: xs),impl,st,msg,info)
+    case (cache,env,((e1,e2) :: xs),impl,st,msg,_)
       equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg, info);

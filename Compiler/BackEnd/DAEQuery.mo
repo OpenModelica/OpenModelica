@@ -67,7 +67,7 @@ algorithm
       String file, strIMatrix, strVariables, flatStr, strEquations;
       array<list<String>> m;
     
-    case (dlow, fileNamePrefix, flatStr)
+    case (_, _, flatStr)
       equation
         file = stringAppend(fileNamePrefix, "_imatrix.m");
         m = incidenceMatrix(dlow);
@@ -152,7 +152,7 @@ algorithm
       then
         res;
     
-    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=condition,left = cr,right = e2)), wcLst)
+    case (BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=condition,left = cr,right = e2)), _)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = ExpressionDump.printExpStr(e2);
@@ -210,13 +210,13 @@ algorithm
       list<list<String>> rows;
       String str, str1, str2;
     case ({},_) then "";
-    case ((row :: {}),rowIndex)
+    case ((row :: {}),_)
       equation
         str1 = getIncidenceRow(row);
         str = stringAppendList({"{", str1, "}"});
       then
         str;
-    case ((row :: rows),rowIndex)
+    case ((row :: rows),_)
       equation
         str1 = getIncidenceRow(row);
         str2 = getIncidenceMatrix2(rows,rowIndex+1);

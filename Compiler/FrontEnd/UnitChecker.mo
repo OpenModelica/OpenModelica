@@ -137,7 +137,7 @@ algorithm
     
     case ({},_,st2) then (true,st2);
     
-    case (SOME(u1)::lst,indx,st2) 
+    case (SOME(u1)::lst,_,st2) 
       equation
         (u2,st3) = normalize(indx,st2);
         false = unitHasUnknown(u2);
@@ -145,7 +145,7 @@ algorithm
       then 
         (comp1,st3);
     
-    case (SOME(u1)::lst,indx,st2) 
+    case (SOME(u1)::lst,_,st2) 
       equation
         (u2,st3) = normalize(indx,st2);
         true = unitHasUnknown(u2);
@@ -552,7 +552,7 @@ algorithm
       list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2;
       list<MMath.Rational> unitvec1,unitvec2;
     
-    case(UnitAbsyn.SPECUNIT(params1,unitvec1),expo) 
+    case(UnitAbsyn.SPECUNIT(params1,unitvec1),_) 
       equation
         params2 = powUnitParams(params1,expo);
         unitvec2 = powUnitVec(unitvec1,expo);
@@ -674,10 +674,10 @@ algorithm
       list<MMath.Rational> unitvec1,unitvec2;
       UnitAbsyn.Store st2;
     
-    case (UnitAbsyn.UNSPECIFIED(),st)
+    case (UnitAbsyn.UNSPECIFIED(),_)
       then (UnitAbsyn.UNSPECIFIED(),st);
     
-    case (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params1,unitvec1)),st) 
+    case (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params1,unitvec1)),_) 
       equation
         (UnitAbsyn.SPECUNIT(params2,unitvec2),st2) = normalizeParamsValues(params1,UnitAbsyn.SPECUNIT({},unitvec1),st);
         params3 = normalizeParamsExponents(params2);
@@ -755,13 +755,13 @@ algorithm
     
     case ({},loc) then (false,MMath.RATIONAL(1,1),{});
     
-    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc2))::rest,loc) 
+    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc2))::rest,_) 
       equation
         true = intEq(loc2, loc);
       then 
         (true,expo,rest);
     
-    case (param::rest,loc) 
+    case (param::rest,_) 
       equation
         (found2,expo,rest2) = getParam(rest,loc);
       then 
@@ -793,7 +793,7 @@ algorithm
     
     case ({},suin,st) then (suin,st);
     
-    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::rest,suin,st) 
+    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::rest,_,_) 
       equation
         (u2,st2) = normalize(loc,st);
         su2 = mulSpecUnitWithNorm(suin,u2,name,loc,expo);
@@ -822,10 +822,10 @@ algorithm
       list<MMath.Rational> unitvec;
       UnitAbsyn.SpecUnit su2,sunorm,su3,su4;
     
-    case (UnitAbsyn.SPECUNIT(params,unitvec),UnitAbsyn.UNSPECIFIED(),name,loc,expo)
+    case (UnitAbsyn.SPECUNIT(params,unitvec),UnitAbsyn.UNSPECIFIED(),_,_,_)
       then (UnitAbsyn.SPECUNIT((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::params,unitvec));
     
-    case (su2,UnitAbsyn.SPECIFIED(sunorm),name,loc,expo) 
+    case (su2,UnitAbsyn.SPECIFIED(sunorm),_,_,_) 
       equation
         su3 = powSpecUnit(sunorm,expo);
         su4 = mulSpecUnit(su2,su3);

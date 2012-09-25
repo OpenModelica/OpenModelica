@@ -95,17 +95,17 @@ algorithm
       String fileName;
       Integer fileID, bufferID;
       
-    case (streamName, FILE(fileName))
+    case (_, FILE(fileName))
       equation
         fileID = IOStreamExt.createFile(fileName);
       then
         IOSTREAM(streamName, streamType, FILE_DATA(fileID));
         
-    case (streamName, LIST())
+    case (_, LIST())
       then
         IOSTREAM(streamName, streamType, LIST_DATA({}));
         
-    case (streamName, BUFFER())
+    case (_, BUFFER())
       equation
         bufferID = IOStreamExt.createBuffer();
       then
@@ -126,17 +126,17 @@ algorithm
       String streamName;
       IOStreamType streamType;
       
-    case (fStream as IOSTREAM(data = FILE_DATA(fileID)), inString)
+    case (fStream as IOSTREAM(data = FILE_DATA(fileID)), _)
       equation
         IOStreamExt.appendFile(fileID, inString);
       then
         fStream;
         
-    case (lStream as IOSTREAM(streamName, streamType, LIST_DATA(listData)), inString)
+    case (lStream as IOSTREAM(streamName, streamType, LIST_DATA(listData)), _)
       then
         IOSTREAM(streamName, streamType, LIST_DATA(inString::listData));
         
-    case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), inString)
+    case (bStream as IOSTREAM(data = BUFFER_DATA(bufferID)), _)
       equation
         IOStreamExt.appendBuffer(bufferID, inString);
       then
@@ -276,7 +276,7 @@ algorithm
       Integer fileID, bufferID;
       IOStream fStream, lStream, bStream;
       
-    case (fStream as IOSTREAM(data = FILE_DATA(fileID)), whereToPrint)
+    case (fStream as IOSTREAM(data = FILE_DATA(fileID)), _)
       equation
         IOStreamExt.printFile(fileID, whereToPrint);
       then
@@ -288,7 +288,7 @@ algorithm
       then
         ();
         
-    case (lStream as IOSTREAM(data = LIST_DATA(listData)), whereToPrint)
+    case (lStream as IOSTREAM(data = LIST_DATA(listData)), _)
       equation
         IOStreamExt.printReversedList(listData, whereToPrint);
       then

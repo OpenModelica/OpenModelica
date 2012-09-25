@@ -167,7 +167,7 @@ algorithm
   res_1 := matchcontinue (inFlag,res)
     local
       String debugstr,res_with_debug,flagstr;
-    case (Flags.DEBUG_FLAG(name = flagstr),res)
+    case (Flags.DEBUG_FLAG(name = flagstr),_)
       equation
         true = Flags.isSet(inFlag);
         debugstr = Print.getString();
@@ -369,15 +369,15 @@ protected function showErrors
 algorithm
   _ := matchcontinue(errorString, errorMessages)
     case("", "") then ();
-    case(errorString, "")
+    case(_, "")
       equation
         print(errorString); print("\n");
       then ();
-    case("", errorMessages)
+    case("", _)
       equation
         print(errorMessages); print("\n");
       then ();
-    case(errorString, errorMessages)
+    case(_, _)
       equation
         print(errorString); print("\n");
         print(errorMessages); print("\n");
@@ -643,7 +643,7 @@ input String filename;
 output Absyn.Program outP;
 algorithm
   outP := matchcontinue(p,filename)
-    case(p,filename) equation
+    case(_,_) equation
       isFlatModelicaFile(filename);
       outP = Interactive.transformFlatProgram(p);
       then outP;
@@ -730,7 +730,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
 
-    case (cache,env,dae,ap,classname)
+    case (cache,env,_,_,classname)
       equation
         true = runBackendQ();
         dlow = BackendDAECreate.lower(dae,cache,env);

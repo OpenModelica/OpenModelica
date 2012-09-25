@@ -138,7 +138,7 @@ algorithm
       Integer rkeyhash;
       
     // found it
-    case (TREENODE(value = SOME(TREEVALUE(str=rkeystr,hash=rkeyhash))),keystr,keyhash)
+    case (TREENODE(value = SOME(TREEVALUE(str=rkeystr,hash=rkeyhash))),_,_)
       then keyCompareNinjaSecretHashTricks(rkeystr, rkeyhash, keystr, keyhash);
   end match;
 end treeGet2;
@@ -160,12 +160,12 @@ algorithm
     // found it
     case (TREENODE(value = SOME(TREEVALUE(value=rval))),keystr,keyhash,0) then rval;
     // search right
-    case (TREENODE(rightSubTree = SOME(right)),keystr,keyhash,1)
+    case (TREENODE(rightSubTree = SOME(right)),_,_,1)
       equation
         compResult = treeGet2(right, keystr, keyhash);
       then treeGet3(right, keystr, keyhash, compResult);
     // search left
-    case (TREENODE(leftSubTree = SOME(left)),keystr,keyhash,-1)
+    case (TREENODE(leftSubTree = SOME(left)),_,_,-1)
       equation
         compResult = treeGet2(left, keystr, keyhash);
       then treeGet3(left, keystr, keyhash, compResult);
@@ -237,38 +237,38 @@ algorithm
       Integer rhash;
       Option<TreeValue> optVal;
     
-    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),key,keyhash,keystr,value)
+    case (TREENODE(value = NONE(),leftSubTree = NONE(),rightSubTree = NONE()),key,_,_,value)
       then 
         TREENODE(SOME(TREEVALUE(key,keystr,keyhash,value)),NONE(),NONE());
     
-    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = right),key,keyhash,keystr,value)
+    case (TREENODE(value = SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = right),key,_,_,value)
       equation
         0 = keyCompareNinjaSecretHashTricks(rkeystr,rhash,keystr,keyhash);
       then
         TREENODE(SOME(TREEVALUE(rkey,rkeystr,rhash,value)),left,right);
     
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,keyhash,keystr,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as SOME(t))),key,_,_,value)
       equation
         1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         t_1 = treeAdd2(t, key, keyhash, keystr, value);
       then
         TREENODE(optVal,left,SOME(t_1));
     
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,keyhash,keystr,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = left,rightSubTree = (right as NONE())),key,_,_,value)
       equation
         1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         right_1 = treeAdd2(TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);
       then
         TREENODE(optVal,left,SOME(right_1));
     
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,keyhash,keystr,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as SOME(t)),rightSubTree = right),key,_,_,value)
       equation
         -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         t_1 = treeAdd2(t, key, keyhash, keystr, value);
       then
         TREENODE(optVal,SOME(t_1),right);
     
-    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,keyhash,keystr,value)
+    case (TREENODE(value = optVal as SOME(TREEVALUE(rkey,rkeystr,rhash,rval)),leftSubTree = (left as NONE()),rightSubTree = right),key,_,_,value)
       equation
         -1 = keyCompareNinjaSecretHashTricks(rkeystr, rhash, keystr, keyhash);
         left_1 = treeAdd2(TREENODE(NONE(),NONE(),NONE()), key, keyhash, keystr, value);

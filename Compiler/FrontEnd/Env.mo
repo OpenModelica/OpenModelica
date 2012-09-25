@@ -384,7 +384,7 @@ algorithm
       SCode.Encapsulated enc;
       list<SCode.Element> defineUnits;
 
-    case(FRAME(optName,st,clsAndVars,types,imports,crefs,enc,defineUnits)::fs,classEnv)
+    case(FRAME(optName,st,clsAndVars,types,imports,crefs,enc,defineUnits)::fs,_)
       equation
         clsAndVars = updateEnvClassesInTree(clsAndVars,classEnv);
       then 
@@ -407,7 +407,7 @@ algorithm
       Integer h;
    
    // Classes
-   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env))),h,l,r),classEnv) 
+   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env))),h,l,r),_) 
      equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
@@ -415,7 +415,7 @@ algorithm
        AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,classEnv))),h,l,r);
 
    // Other items
-   case(AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r),classEnv) 
+   case(AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r),_) 
      equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
@@ -423,7 +423,7 @@ algorithm
        AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r);
 
    // nothing
-   case(AVLTREENODE(NONE(),h,l,r),classEnv) 
+   case(AVLTREENODE(NONE(),h,l,r),_) 
      equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
@@ -441,7 +441,7 @@ algorithm
   outTree := match(tree,classEnv)
     local AvlTree t;
     case(NONE(),classEnv) then NONE();
-    case(SOME(t),classEnv) 
+    case(SOME(t),_) 
       equation
         t = updateEnvClassesInTree(t,classEnv);
       then 
@@ -774,7 +774,7 @@ algorithm
       Env fs;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),defunit)
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),_)
     then (FRAME(sid,st,ht,httypes,imps,crs,encflag,defunit::defineUnits) :: fs);
   end match;
 end extendFrameDefunit;
@@ -792,7 +792,7 @@ algorithm
   new_env := match(env, name, type_, binding, variability, constOfForIteratorRange)
     local
       Env new_env_1;
-    case (_, _, _, _,variability,constOfForIteratorRange)
+    case (_, _, _, _,_,_)
       equation
         new_env_1 = extendFrameV(env,
           DAE.TYPES_VAR(
@@ -817,13 +817,13 @@ algorithm
       Absyn.Import imp2;
     
     // first import in the list matches  
-    case (IMPORT(imp2)::ims,imp)
+    case (IMPORT(imp2)::ims,_)
       equation
         true = Absyn.importEqual(imp2, imp);
       then true;
     
     // move to next  
-    case (_::ims,imp) 
+    case (_::ims,_) 
       equation
         res=memberImportList(ims,imp);
       then res;
@@ -999,12 +999,12 @@ algorithm
   outPath := matchcontinue(inEnv,inPath)
     local
       Absyn.Path envPath;
-    case (inEnv,inPath)
+    case (_,_)
       equation
         SOME(envPath) = getEnvPath(inEnv);
         envPath = Absyn.joinPaths(envPath,inPath);
       then envPath;
-    case (inEnv,inPath)
+    case (_,_)
       equation
         NONE() = getEnvPath(inEnv);
       then inPath;
@@ -1328,7 +1328,7 @@ algorithm
       StructuralParameters ht;
       Absyn.Path p;
 
-    case (CACHE(envCache,_,ef,ht,p),env)
+    case (CACHE(envCache,_,ef,ht,p),_)
       then CACHE(envCache,SOME(env),ef,ht,p);
   end match;
 end setCachedInitialEnv;
@@ -1359,7 +1359,7 @@ algorithm
     local
       CacheTree tree;
       array<EnvCache> arr;
-   case (scope,path,CACHE(envCache=SOME(arr)))
+   case (_,_,CACHE(envCache=SOME(arr)))
       equation
         ENVCACHE(tree) = arr[1];
         env = cacheGetEnv(scope,path,tree);
@@ -1380,7 +1380,7 @@ algorithm
     
     case (_,inCache as CACHE(envCache=NONE()),_) then inCache;
 
-    case (fullpath,CACHE(envCache=SOME(arr)),env)
+    case (_,CACHE(envCache=SOME(arr)),_)
       equation
         ENVCACHE(tree)=arr[1];
         // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
@@ -1411,7 +1411,7 @@ algorithm
       Absyn.Path path;
     
     // +d=noCache
-    case (inCache,id,env)
+    case (_,_,_)
       equation
         true = Flags.isSet(Flags.NO_CACHE);
       then 
@@ -1419,13 +1419,13 @@ algorithm
     
     case (inCache as CACHE(envCache=NONE()),id,env) then inCache;
 
-    case (inCache,id,env)
+    case (_,_,_)
       equation
         SOME(path) = getEnvPath(env);
         outCache = cacheAdd(path,inCache,env);
       then outCache;
 
-    case(inCache,id,env)
+    case(_,_,_)
       equation
         // this should be placed in the global environment
         // how do we do that??
@@ -1447,7 +1447,7 @@ algorithm
       Absyn.Path path2;
 
       // Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
-    case (path2,path,tree)
+    case (path2,_,_)
       equation
         env = cacheGetEnv2(path2,path,tree);
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
@@ -1471,7 +1471,7 @@ algorithm
       Absyn.Path path2;
     
     //  Simple name found in children, search for model from this scope.
-    case (Absyn.IDENT(id1),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
+    case (Absyn.IDENT(id1),_,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
       equation
         true = stringEq(id1, id2);
         //print("found (1) ");print(id); print("\n");
@@ -1480,7 +1480,7 @@ algorithm
         env;
     
     //  Simple name. try next.
-    case (scope as Absyn.IDENT(id1),path,CACHETREE(id2,env2,_::children))
+    case (scope as Absyn.IDENT(id1),_,CACHETREE(id2,env2,_::children))
       equation
         //print("try next ");print(id);print("\n");
         env = cacheGetEnv2(scope,path,CACHETREE(id2,env2,children));
@@ -1488,7 +1488,7 @@ algorithm
         env;
 
     // for qualified name, found first matching identifier in child
-     case (Absyn.QUALIFIED(id1,path2),path,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
+     case (Absyn.QUALIFIED(id1,path2),_,CACHETREE(_,_,CACHETREE(id2,env2,children2)::_))
        equation
          true = stringEq(id1, id2);
          //print("found qualified (1) ");print(id);print("\n");
@@ -1545,7 +1545,7 @@ algorithm
       CacheTree child;
 
     // simple names already added
-    case (Absyn.IDENT(id1),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),env)
+    case (Absyn.IDENT(id1),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),_)
       equation
         // print(id);print(" already added\n");
         true = stringEq(id1, id2);
@@ -1554,19 +1554,19 @@ algorithm
       then tree;
 
     // simple names try next
-    case (Absyn.IDENT(id1),tree as CACHETREE(globalID,globalEnv,child::children),env)
+    case (Absyn.IDENT(id1),tree as CACHETREE(globalID,globalEnv,child::children),_)
       equation
         CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,children),env);
       then CACHETREE(globalID,globalEnv,child::children);
 
     // Simple names, not found
-    case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,{}),env)
+    case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,{}),_)
       equation
         // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then CACHETREE(globalID,globalEnv,{CACHETREE(id1,env,{})});
 
     // Qualified names.
-    case (path as Absyn.QUALIFIED(_,_),CACHETREE(globalID,globalEnv,children),env)
+    case (path as Absyn.QUALIFIED(_,_),CACHETREE(globalID,globalEnv,children),_)
       equation
         children=cacheAddEnv2(path,children,env);
       then CACHETREE(globalID,globalEnv,children);
@@ -1594,14 +1594,14 @@ algorithm
       Absyn.Path path;
 
     // qualified name, found matching
-    case(Absyn.QUALIFIED(id1,path),CACHETREE(id2,env2,children2)::children,env)
+    case(Absyn.QUALIFIED(id1,path),CACHETREE(id2,env2,children2)::children,_)
       equation
         true = stringEq(id1, id2);
         children2 = cacheAddEnv2(path,children2,env);
       then CACHETREE(id2,env2,children2)::children;
 
     // simple name, found matching
-    case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,env)
+    case (Absyn.IDENT(id1),CACHETREE(id2,env2,children2)::children,_)
       equation
         true = stringEq(id1, id2);
         // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
@@ -1609,14 +1609,14 @@ algorithm
       then CACHETREE(id2,env2,children2)::children;
 
     // try next
-    case(path,child::children,env)
+    case(path,child::children,_)
       equation
         //print("try next\n");
         children = cacheAddEnv2(path,children,env);
       then child::children;
     
     // qualified name no child found, create one.
-    case (Absyn.QUALIFIED(id1,path),{},env)
+    case (Absyn.QUALIFIED(id1,path),{},_)
       equation
         children = cacheAddEnv2(path,{},env);
         // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
@@ -1624,7 +1624,7 @@ algorithm
       then {CACHETREE(id1,emptyEnv,children)};
     
     // simple name no child found, create one.
-    case (Absyn.IDENT(id1),{},env)
+    case (Absyn.IDENT(id1),{},_)
       equation
         // print("simple name no child found, create one.\n");
         // Debug.fprintln(Flags.ENV, ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
@@ -2015,7 +2015,7 @@ algorithm
     case(0,bt) then computeHeight(bt);
     case(1,bt) then computeHeight(bt);
       /* d < -1 or d > 1 */
-    case(difference,bt)
+    case(_,bt)
       equation
         bt = doBalance2(difference < 0,bt);
       then bt;
@@ -2503,7 +2503,7 @@ algorithm
       StructuralParameters ht;
       Absyn.Path p;
       /* Don't overwrite SOME() with NONE() */
-    case (cache, func)
+    case (_, _)
       equation
         checkCachedInstFuncGuard(cache, func);
       then cache;
@@ -2530,7 +2530,7 @@ algorithm
       Option<Env> ienv;
       StructuralParameters ht;
       Absyn.Path p;
-    case (CACHE(envCache,ienv,ef,ht,p),funcs)
+    case (CACHE(envCache,ienv,ef,ht,p),_)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
       then CACHE(envCache,ienv,ef,ht,p);
@@ -2550,7 +2550,7 @@ algorithm
       Option<Env> ienv;
       StructuralParameters ht;
       Absyn.Path p;
-    case (CACHE(envCache,ienv,ef,ht,p),funcs)
+    case (CACHE(envCache,ienv,ef,ht,p),_)
       equation
         ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
       then CACHE(envCache,ienv,ef,ht,p);
@@ -2566,7 +2566,7 @@ algorithm
   func := match(inCache,path)
     local
       array<DAE.FunctionTree> ef;
-    case(CACHE(functions=ef),path)
+    case(CACHE(functions=ef),_)
       equation
         SOME(func) = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
       then func;
@@ -2581,7 +2581,7 @@ algorithm
   _ := match(inCache,path)
     local
       array<DAE.FunctionTree> ef;
-    case(CACHE(functions=ef),path) equation
+    case(CACHE(functions=ef),_) equation
       _ = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
     then ();
   end match;
@@ -2643,7 +2643,7 @@ algorithm
       list<list<DAE.ComponentRef>> st;
       list<DAE.ComponentRef> crs;
       Absyn.Path p;
-    case (CACHE(envCache,initialEnv,functions,(ht,crs::st),p),SCode.PARAM(),cr)
+    case (CACHE(envCache,initialEnv,functions,(ht,crs::st),p),SCode.PARAM(),_)
       equation
         str = ComponentReference.printComponentRefStr(cr);
       then CACHE(envCache,initialEnv,functions,(ht,(cr::crs)::st),p);
@@ -2679,7 +2679,7 @@ algorithm
       StructuralParameters ht;
       Option<Env> ienv;
 
-    case (CACHE(envCache,ienv,ef,ht,_),p)
+    case (CACHE(envCache,ienv,ef,ht,_),_)
       then CACHE(envCache,ienv,ef,ht,p);
   end match;
 end setCacheClassName;

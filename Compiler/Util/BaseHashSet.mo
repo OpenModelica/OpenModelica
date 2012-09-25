@@ -262,7 +262,7 @@ algorithm
       array<list<tuple<Key,Integer>>> hashvec;
       FuncsTuple fntpl;
       /* adding when already present => Updating value */
-    case (key,(hashvec,varr,bsize,n,fntpl))
+    case (_,(hashvec,varr,bsize,n,fntpl))
       equation
         (_,indx) = get1(key, hashSet);
         indx_1 = indx - 1;
@@ -318,7 +318,7 @@ algorithm
       FuncEq keyEqual;
       FuncHash hashFunc;
       
-    case (key,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_)))
+    case (_,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_)))
       equation
         hashindx = hashFunc(key, bsize);
         indexes = hashvec[hashindx + 1];
@@ -343,14 +343,14 @@ algorithm
       list<tuple<Key,Integer>> xs;
         
     // search for the key, found the good one
-    case (key,((key2,index) :: _),keyEqual)
+    case (_,((key2,index) :: _),_)
       equation
         true = keyEqual(key, key2);
       then
         index;
     
     // search more
-    case (key,(_ :: xs),keyEqual)
+    case (_,(_ :: xs),_)
       equation
         index = get2(key, xs, keyEqual);
       then
@@ -467,7 +467,7 @@ algorithm
       Integer n_1,n,size,expandsize,expandsize_1,newsize;
       array<Option<Key>> arr_1,arr,arr_2;
       Real rsize,rexpandsize;
-    case ((n,size,arr),entry)
+    case ((n,size,arr),_)
       equation
         (n < size) = true "Have space to add array elt." ;
         n_1 = n + 1;
@@ -475,7 +475,7 @@ algorithm
       then
         ((n_1,size,arr_1));
 
-    case ((n,size,arr),entry)
+    case ((n,size,arr),_)
       equation
         (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
@@ -508,7 +508,7 @@ algorithm
     local
       array<Option<Key>> arr_1,arr;
       Integer n,size;
-    case ((n,size,arr),pos,entry)
+    case ((n,size,arr),_,_)
       equation
         (pos < size) = true;
         arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
@@ -532,7 +532,7 @@ algorithm
     local
       array<Option<Key>> arr_1,arr;
       Integer n,size;
-    case ((n,size,arr),pos)
+    case ((n,size,arr),_)
       equation
         (pos < size) = true;
         arr_1 = arrayUpdate(arr, pos + 1,NONE());
@@ -557,7 +557,7 @@ algorithm
       Key k;
       Integer n;
       array<Option<Key>> arr;
-    case ((n,_,arr),pos)
+    case ((n,_,arr),_)
       equation
         (pos <= n) = true;
         SOME(k) = arr[pos + 1];

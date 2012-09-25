@@ -142,7 +142,7 @@ algorithm
       Integer n;
       list<Integer> rest;
     case ({},_) then ();
-    case ((n :: rest),syst)
+    case ((n :: rest),_)
       equation
         printEquations(rest, syst);
         printEquationNo(n, syst);
@@ -808,7 +808,7 @@ algorithm
       list<DAE.Constraint> constrs;
       
     case({},_) then ();
-    case(DAE.CONSTRAINT_EXPS(exps)::constrs,indx) 
+    case(DAE.CONSTRAINT_EXPS(exps)::constrs,_) 
       equation
         is = intString(indx);
         myStream = IOStream.create("", IOStream.LIST());
@@ -845,7 +845,7 @@ algorithm
     list<Integer> elem;
     String sparsepatternStr; 
     case({},inInteger) then ();
-    case(elem::rest,inInteger)
+    case(elem::rest,_)
       equation  
       sparsepatternStr = List.toString(elem, intString,"Row[" +& intString(inInteger) +& "] = ","{",";","}",true);
       print(sparsepatternStr +& "\n");
@@ -1014,7 +1014,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,eqns,vars) 
+    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,_,vars) 
       equation
         print("ArrayEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
@@ -1024,7 +1024,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,eqns,vars) 
+    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,_,vars) 
       equation
         print("Algorithm:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
@@ -1034,7 +1034,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,eqns,vars) 
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,_,vars) 
       equation
         print("ComplexEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
@@ -1044,7 +1044,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.TORNSYSTEM(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst,linear=b)::rest,eqns,vars) 
+    case (BackendDAE.TORNSYSTEM(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst,linear=b)::rest,_,_) 
       equation
         s = Util.if_(b,"linear","nonlinear");
         print("torn " +& s +& " Equationsystem:\n");
@@ -1708,7 +1708,7 @@ algorithm
       list<Integer> row;
       list<list<Integer>> rows;
     case ({},_) then ();
-    case ((row :: rows),rowIndex)
+    case ((row :: rows),_)
       equation
         print(intString(rowIndex));print(":");
         dumpIncidenceRow(row);
@@ -1799,7 +1799,7 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced row;
       list<BackendDAE.AdjacencyMatrixElementEnhanced> rows;
     case ({},_) then ();
-    case ((row :: rows),rowIndex)
+    case ((row :: rows),_)
       equation
         print(intString(rowIndex));print(":");
         dumpAdjacencyRowEnhanced(row);
@@ -2019,10 +2019,10 @@ algorithm
       list<Integer> eqns;
       list<String> strLst,slst;
       String str;
-    case(i,n,m,mT,ass1,ass2) equation
+    case(_,_,_,_,_,_) equation
       true = (i > n);
       then {};
-    case(i,n,m,mT,ass1,ass2)
+    case(_,_,_,_,_,_)
       equation
         eqns = BackendDAETransform.reachableNodes(i, m, mT, ass1, ass2);
         llst = List.map(eqns,List.create);

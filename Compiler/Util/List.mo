@@ -6451,12 +6451,12 @@ algorithm
     ElementType h; Boolean ret;
     case({},_)
       then false;
-    case(h::t,inFindFunc) 
+    case(h::t,_) 
       equation 
         true = inFindFunc(h);
     then 
       true;
-    case(_::t,inFindFunc)
+    case(_::t,_)
        equation
          ret = exist(t,inFindFunc);
        then ret;      
@@ -7379,7 +7379,7 @@ algorithm
     list<Type_a> a;
     Integer i;
     case({}, inLength) then inLength;
-    case(a::rest, inLength) 
+    case(a::rest, _) 
       equation
         i = inLength+listLength(a);
         outLength = lengthListElementsHelp(rest, i);

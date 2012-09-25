@@ -391,7 +391,7 @@ algorithm
     DAE.ComponentRef cr;
     list<DAE.Exp> expl1,expl2;
     
-    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),dae) equation
+    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) equation
       // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
       // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
       args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
@@ -401,7 +401,7 @@ algorithm
       str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)\n";
     then (str,(varName,distVar));    
     
-    case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),dae) equation
+    case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) equation
       // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
       // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
       args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
@@ -409,7 +409,7 @@ algorithm
       distVar ="distribution"+&varName; 
       str = distVar+& " = " +& name +& "("+&args+&")\n";
     then (str,(varName,distVar));
-    case((DAE.DISTRIBUTION(e1,e2,e3),cr),dae) equation
+    case((DAE.DISTRIBUTION(e1,e2,e3),cr),_) equation
       ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
       ((e3_1,_)) = BackendDAEUtil.extendArrExp((e3,(NONE(),false)));
       false = Expression.expEqual(e2,e2_1); // Prevent infinte recursion

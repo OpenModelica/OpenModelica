@@ -126,7 +126,7 @@ algorithm
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.Matching matching;
       Boolean b1,b2;
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching),tpl)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching),_)
       equation
         (orderedVars,b1) = inlineVariables(orderedVars,tpl);
         (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);       
@@ -1335,12 +1335,12 @@ algorithm
     local
       DAE.Type ty1,ty2;
       Boolean b;
-    case (inExp1, inExp2)
+    case (_, _)
       equation
         // adrpo: DO NOT COMPARE TYPES for equivalence for MetaModelica!
         true = Config.acceptMetaModelicaGrammar();
       then true;
-    case (inExp1, inExp2)
+    case (_, _)
       equation
         false = Config.acceptMetaModelicaGrammar();
         ty1 = Expression.typeof(inExp1);
@@ -1563,7 +1563,7 @@ algorithm
       DAE.ComponentRef c1,e1;
       DAE.Exp exp;
     
-    case(DAE.TYPES_VAR(name=name,ty=tp),c,e) 
+    case(DAE.TYPES_VAR(name=name,ty=tp),_,_) 
       equation
         c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
         e1 = ComponentReference.crefPrependIdent(e,name,{},tp);
@@ -1590,7 +1590,7 @@ algorithm
       String name;
       DAE.ComponentRef c1;
       
-    case(DAE.TYPES_VAR(name=name,ty=tp),c) 
+    case(DAE.TYPES_VAR(name=name,ty=tp),_) 
       equation
         c1 = ComponentReference.crefPrependIdent(c,name,{},tp);
       then c1;
@@ -1613,7 +1613,7 @@ algorithm
     local
       list<DAE.Element> body;
       DAE.FunctionTree ftree;
-    case(p,(SOME(ftree),_))
+    case(_,(SOME(ftree),_))
       equation
         SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_)) = DAEUtil.avlTreeGet(ftree,p);
       then body;

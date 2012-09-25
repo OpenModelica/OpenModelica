@@ -88,7 +88,7 @@ public function bprint
   // annotation(__OpenModelica_EarlyInline=true);
 algorithm
   _ := match (cond,str)
-    case (true,str)
+    case (true,_)
       equation
         Print.printErrorBuf(str);
       then ();
@@ -105,7 +105,7 @@ public function bprintln
   // annotation(__OpenModelica_EarlyInline=true);
 algorithm
   _ := match (cond,str)
-    case (true,str)
+    case (true,_)
       equation
         Print.printErrorBuf(str);
         Print.printErrorBuf("\n");
@@ -165,7 +165,7 @@ algorithm
       Type_a arg1;
       Type_b arg2;
     
-    case (_,func,arg1,arg2)
+    case (_,_,arg1,arg2)
       equation
         true = Flags.isSet(inFlag);
         func(arg1,arg2);
@@ -302,7 +302,7 @@ public function fcallret2
   replaceable type Type_c subtypeof Any;
 algorithm
   res := matchcontinue (inFlag,func,arg1,arg2,default)
-    case (_,func,arg1,arg2,_)
+    case (_,_,_,_,_)
       equation
         true = Flags.isSet(inFlag);
         res = func(arg1,arg2);
@@ -684,7 +684,7 @@ algorithm
       Type_a a;
       Type_b b;
       Type_c c;
-    case (true,fn,a,b,c)
+    case (true,_,a,b,c)
       equation
         fn(a, b, c);
       then
@@ -805,7 +805,7 @@ algorithm
       Real t;
       Integer used,allocated;
     case (false,_,_) then ();
-    case (_,name,clockIndex)
+    case (_,_,_)
       equation
         t = System.realtimeTock(clockIndex);
         (used,allocated) = System.getGCStatus();

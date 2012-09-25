@@ -428,7 +428,7 @@ algorithm
       list<Absyn.NamedArg> named;
     
     // search inside annotation(experiment(...))
-    case (inSymTab, inModelPath, inFileNamePrefix)
+    case (_, _, _)
       equation
         defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
         
@@ -456,7 +456,7 @@ algorithm
         simOpt;
 
     // if we fail, just use the defaults
-    case (inSymTab, inModelPath, inFileNamePrefix)
+    case (_, _, _)
       equation
         defaults = setFileNamePrefixInSimulationOptions(defaultSimulationOptions, inFileNamePrefix);
       then
@@ -662,7 +662,7 @@ algorithm
       list<tuple<Absyn.Path,list<String>>> modelsToLoad;
       
     case ({},_,p,_,_) then (p,true);
-    case ((path,strings)::modelsToLoad,modelicaPath,p,forceLoad,notifyLoad)
+    case ((path,strings)::modelsToLoad,_,p,_,_)
       equation
         b = checkModelLoaded((path,strings),p,forceLoad,NONE());
         pnew = Debug.bcallret4(not b, ClassLoader.loadClass, path, strings, modelicaPath, NONE(), Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp));
@@ -673,7 +673,7 @@ algorithm
         (p,b1) = loadModel(Interactive.getUsesAnnotationOrDefault(pnew),modelicaPath,p,false,notifyLoad);
         (p,b2) = loadModel(modelsToLoad,modelicaPath,p,forceLoad,notifyLoad);
       then (p,b1 and b2);
-    case ((path,strings)::_,modelicaPath,p,_,_)
+    case ((path,strings)::_,_,p,_,_)
       equation
         pathStr = Absyn.pathString(path);
         versions = stringDelimitList(strings,",");
@@ -697,7 +697,7 @@ algorithm
       Absyn.Path path;
 
     case (_,_,true,_) then false;
-    case ((path,str1::_),p,false,_)
+    case ((path,str1::_),_,false,_)
       equation
         cdef = Interactive.getPathedClassInProgram(path,p);
         ostr2 = Interactive.getNamedAnnotationInClass(cdef,"version",Interactive.getAnnotationStringValueOrFail);
@@ -724,12 +724,12 @@ algorithm
       equation
         true = stringEq(str1,str2);
       then ();
-    case (path,str1,SOME(str2))
+    case (_,str1,SOME(str2))
       equation
         pathStr = Absyn.pathString(path);
         Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS,{pathStr,str1,str2});
       then ();
-    case (path,str1,NONE())
+    case (_,str1,NONE())
       equation
         pathStr = Absyn.pathString(path);
         Error.addMessage(Error.LOAD_MODEL_DIFFERENT_VERSIONS,{pathStr,str1,"unknown"});
@@ -764,7 +764,7 @@ algorithm
       Option<Interactive.SymbolTable> stOpt;
       
       // This needs to be first because otherwise it takes 0 time to get the value :)
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,msg)
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "timing"),expLst = {exp}),st,_)
       equation
         t1 = System.time();
         (cache,value,SOME(st)) = Ceval.ceval(cache,env, exp, true, SOME(st),msg);
@@ -773,7 +773,7 @@ algorithm
       then
         (cache,Values.REAL(time),st);
 
-    case (cache,env,DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst=eLst),st,msg)
+    case (cache,env,DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst=eLst),st,_)
       equation
         (cache,valLst,stOpt) = Ceval.cevalList(cache,env,eLst,true,SOME(st),msg);
         valLst = List.map1(valLst,evalCodeTypeName,env);
@@ -855,7 +855,7 @@ algorithm
       BackendDAE.Shared shared;
       SimCode.SimulationSettings simSettings;
     
-    case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,msg)
+    case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
         Absyn.PROGRAM(classes=classes,within_=within_) = Parser.parsestring(str1,str2);
         paths = List.map(classes,Absyn.className);
@@ -863,10 +863,10 @@ algorithm
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"parseString",_,st,msg)
+    case (cache,env,"parseString",_,st,_)
       then (cache,ValuesUtil.makeArray({}),st);
 
-    case (cache,env,"parseFile",{Values.STRING(str1),Values.STRING(encoding)},st,msg)
+    case (cache,env,"parseFile",{Values.STRING(str1),Values.STRING(encoding)},st,_)
       equation
         // clear the errors before!
         Error.clearMessages() "Clear messages";
@@ -875,7 +875,7 @@ algorithm
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"loadFileInteractiveQualified",{Values.STRING(str1),Values.STRING(encoding)},st,msg)
+    case (cache,env,"loadFileInteractiveQualified",{Values.STRING(str1),Values.STRING(encoding)},st,_)
       equation
         // clear the errors before!
         Error.clearMessages() "Clear messages";
@@ -884,7 +884,7 @@ algorithm
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"loadFileInteractive",{Values.STRING(str1),Values.STRING(encoding)},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         pnew = ClassLoader.loadFile(str1,encoding) "System.regularFileExists(name) => 0 &    Parser.parse(name) => p1 &" ;
         vals = List.map(Interactive.getTopClassnames(pnew),ValuesUtil.makeCodeTypeName);
@@ -892,33 +892,33 @@ algorithm
         st = Interactive.setSymbolTableAST(st, p);
       then (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getSourceFile",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"getSourceFile",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         str = Interactive.getSourceFile(path, p);
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,"setSourceFile",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"setSourceFile",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         (b,p) = Interactive.setSourceFile(path, str, p);
         st = Interactive.setSymbolTableAST(st,p);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"setClassComment",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"setClassComment",{Values.CODE(Absyn.C_TYPENAME(path)),Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         (p,b) = Interactive.setClassComment(path, str, p);
         st = Interactive.setSymbolTableAST(st, p);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache, env, "isShortDefinition", {Values.CODE(Absyn.C_TYPENAME(path))}, st as Interactive.SYMBOLTABLE(ast = p), msg)
+    case (cache, env, "isShortDefinition", {Values.CODE(Absyn.C_TYPENAME(path))}, st as Interactive.SYMBOLTABLE(ast = p), _)
       equation
         b = isShortDefinition(path, p);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         paths = Interactive.getTopClassnames(p);
@@ -927,7 +927,7 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(false),Values.BOOL(b),Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         paths = Interactive.getClassnamesInPath(path, p, showProtected);
@@ -937,7 +937,7 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,showProtected,{});
@@ -947,7 +947,7 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassNames",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(true),_,Values.BOOL(sort),Values.BOOL(builtin),Values.BOOL(showProtected)},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         p = Debug.bcallret2(builtin,Interactive.updateProgram,p,Builtin.getInitialFunctions(),p);
         (_,paths) = Interactive.getClassNamesRecursive(SOME(path),p,showProtected,{});
@@ -957,25 +957,25 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
         
-    case (cache,env,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         Absyn.CLASS(_,_,_,_,_,cdef,_) = Interactive.getPathedClassInProgram(path, p);
         str = Interactive.getClassComment(cdef);
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getClassComment",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),_)
       then
         (cache,Values.STRING(""),st);
 
-    case (cache,env,"getPackages",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getPackages",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses")))},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         paths = Interactive.getTopPackages(p);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
       then
         (cache,ValuesUtil.makeArray(vals),st);
 
-    case (cache,env,"getPackages",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"getPackages",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         paths = Interactive.getPackagesInPath(path, p);
         vals = List.map(paths,ValuesUtil.makeCodeTypeName);
@@ -999,29 +999,29 @@ algorithm
         (cache,Values.STRING(str),st);
      */
      
-    case (cache,env,"basename",{Values.STRING(str)},st,msg)
+    case (cache,env,"basename",{Values.STRING(str)},st,_)
       equation
         str = System.basename(str);
       then (cache,Values.STRING(str),st);
     
-    case (cache,env,"dirname",{Values.STRING(str)},st,msg)
+    case (cache,env,"dirname",{Values.STRING(str)},st,_)
       equation
         str = System.dirname(str);
       then (cache,Values.STRING(str),st);
     
-    case (cache,env,"codeToString",{Values.CODE(codeNode)},st,msg)
+    case (cache,env,"codeToString",{Values.CODE(codeNode)},st,_)
       equation
         str = Dump.printCodeStr(codeNode);
       then (cache,Values.STRING(str),st);
     
-    case (cache,env,"typeOf",{Values.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(name = varid)))},(st as Interactive.SYMBOLTABLE(lstVarVal = iv)),msg)
+    case (cache,env,"typeOf",{Values.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(name = varid)))},(st as Interactive.SYMBOLTABLE(lstVarVal = iv)),_)
       equation
         tp = Interactive.getTypeOfVariable(varid, iv);
         str = Types.unparseType(tp);
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"clear",{},st,msg)
+    case (cache,env,"clear",{},st,_)
       then (cache,Values.BOOL(true),Interactive.emptySymboltable);
     
     case (cache,env,"clearVariables",{},
@@ -1031,7 +1031,7 @@ algorithm
           explodedAst = fp,
           instClsLst = ic,
           compiledFunctions = cf,
-          loadedFiles = lf)),msg)
+          loadedFiles = lf)),_)
       equation
         newst = Interactive.SYMBOLTABLE(p,aDep,fp,ic,{},cf,lf);
       then
@@ -1042,13 +1042,13 @@ algorithm
         (st as Interactive.SYMBOLTABLE(
           ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
           lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)),msg)
+          loadedFiles = lf)),_)
       equation
         newst = Interactive.SYMBOLTABLE(p,aDep,fp,{},iv,cf,lf);
       then
         (cache,Values.BOOL(true),newst);
     
-    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,msg)
+    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,_)
       equation
         (n,strs) = System.regex(str,re,i,extended,insensitive);
         vals = List.map(strs,ValuesUtil.makeString);
@@ -1056,7 +1056,7 @@ algorithm
       then
         (cache,Values.TUPLE({Values.INTEGER(n),v}),st);
 
-    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,msg)
+    case (cache,env,"regex",{Values.STRING(str),Values.STRING(re),Values.INTEGER(i),Values.BOOL(extended),Values.BOOL(insensitive)},st,_)
       equation
         strs = List.fill("",i);
         vals = List.map(strs,ValuesUtil.makeString);
@@ -1064,13 +1064,13 @@ algorithm
       then
         (cache,Values.TUPLE({Values.INTEGER(-1),v}),st);
 
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         str = Dump.unparseStr(p,false);
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(b1),Values.BOOL(b2)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(b1),Values.BOOL(b2)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         absynClass = Debug.bcallret1(b1,Absyn.getFunctionInterface,absynClass,absynClass);
@@ -1081,7 +1081,7 @@ algorithm
     
     case (cache,env,"list",_,st,msg) then (cache,Values.STRING(""),st);
     
-    case (cache,env,"listVariables",{},st as Interactive.SYMBOLTABLE(lstVarVal = iv),msg)
+    case (cache,env,"listVariables",{},st as Interactive.SYMBOLTABLE(lstVarVal = iv),_)
       equation
         v = ValuesUtil.makeArray(getVariableNames(iv,{}));
       then
@@ -1091,7 +1091,7 @@ algorithm
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,explodedAst = fp,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+            loadedFiles = lf)),_)
       equation
         ptot = Dependency.getTotalProgram(path,p);
         scodeP = SCodeUtil.translateAbsyn2SCode(ptot);
@@ -1108,23 +1108,23 @@ algorithm
       then
         (cache,Values.STRING(res),Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
     
-    case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_,_,_,_},st,msg)
+    case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_,_,_,_},st,_)
       equation
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
         (cache,ret_val,st_1,_,_,_,_) = translateModel(cache, env, className, st, filenameprefix, true, SOME(simSettings));
       then
         (cache,ret_val,st_1);
    
-    case (cache,env,"translateModel",_,st,msg)
+    case (cache,env,"translateModel",_,st,_)
       then (cache,Values.STRING("There were errors during translation. Use getErrorString() to see them."),st);
 
-    case (cache,env,"modelEquationsUC",vals as {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(outputFile)},st,msg)
+    case (cache,env,"modelEquationsUC",vals as {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(outputFile)},st,_)
       equation
         (cache,ret_val,st_1) = Uncertainties.modelEquationsUC(cache, env, className, st, outputFile);
       then
         (cache,ret_val,st_1);
    
-    case (cache,env,"modelEquationsUC",_,st,msg)
+    case (cache,env,"modelEquationsUC",_,st,_)
       then (cache,Values.STRING("There were errors during extraction of uncertainty equations. Use getErrorString() to see them."),st);     
 
     /*case (cache,env,"translateModelCPP",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
@@ -1133,20 +1133,20 @@ algorithm
       then
         (cache,ret_val,st_1);*/
         
-    case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
+    case (cache,env,"translateModelFMU",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
       equation
         filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
         (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, filenameprefix, true, NONE());
       then
         (cache,ret_val,st_1);
     
-    case (cache,env,"exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,msg)
+    case (cache,env,"exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
       equation
         (cache,ret_val,st_1,_) = getIncidenceMatrix(cache,env, className, st, msg, filenameprefix);
       then
         (cache,ret_val,st_1);
     
-    case (cache,env,"checkModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,msg)
+    case (cache,env,"checkModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
         Flags.setConfigBool(Flags.CHECK_MODEL, true);
         (cache,ret_val,st_1) = checkModel(cache, env, className, st, msg);
@@ -1154,139 +1154,139 @@ algorithm
       then
         (cache,ret_val,st_1);
     
-    case (cache,env,"checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected)},st,msg)
+    case (cache,env,"checkAllModelsRecursive",{Values.CODE(Absyn.C_TYPENAME(className)),Values.BOOL(showProtected)},st,_)
       equation
         (cache,ret_val,st_1) = checkAllModelsRecursive(cache, env, className, showProtected, st, msg);
       then
         (cache,ret_val,st_1);
     
-    case (cache,env,"translateGraphics",{Values.CODE(Absyn.C_TYPENAME(className))},st,msg)
+    case (cache,env,"translateGraphics",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
         (cache,ret_val,st_1) = translateGraphics(cache,env, className, st, msg);
       then
         (cache,ret_val,st_1);
     
-    case (cache,env,"setCompileCommand",{Values.STRING(cmd)},st,msg)
+    case (cache,env,"setCompileCommand",{Values.STRING(cmd)},st,_)
       equation
         // cmd = Util.rawStringToInputString(cmd);
         Settings.setCompileCommand(cmd);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"getCompileCommand",{},st,msg)
+    case (cache,env,"getCompileCommand",{},st,_)
       equation
         res = Settings.getCompileCommand();
       then
         (cache,Values.STRING(res),st);
         
-    case (cache,env,"setPlotCommand",{Values.STRING(cmd)},st,msg)
+    case (cache,env,"setPlotCommand",{Values.STRING(cmd)},st,_)
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"setTempDirectoryPath",{Values.STRING(cmd)},st,msg)
+    case (cache,env,"setTempDirectoryPath",{Values.STRING(cmd)},st,_)
       equation
         // cmd = Util.rawStringToInputString(cmd);
         Settings.setTempDirectoryPath(cmd);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"getTempDirectoryPath",{},st,msg)
+    case (cache,env,"getTempDirectoryPath",{},st,_)
       equation
         res = Settings.getTempDirectoryPath();
       then
         (cache,Values.STRING(res),st);
         
-    case (cache,env,"setEnvironmentVar",{Values.STRING(varid),Values.STRING(str)},st,msg)
+    case (cache,env,"setEnvironmentVar",{Values.STRING(varid),Values.STRING(str)},st,_)
       equation
         b = 0 == System.setEnv(varid,str,true);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"getEnvironmentVar",{Values.STRING(varid)},st,msg)
+    case (cache,env,"getEnvironmentVar",{Values.STRING(varid)},st,_)
       equation
         res = Util.makeValueOrDefault(System.readEnv, varid, "");
       then
         (cache,Values.STRING(res),st);
 
-    case (cache,env,"setInstallationDirectoryPath",{Values.STRING(cmd)},st,msg)
+    case (cache,env,"setInstallationDirectoryPath",{Values.STRING(cmd)},st,_)
       equation
         // cmd = Util.rawStringToInputString(cmd);
         Settings.setInstallationDirectoryPath(cmd);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"getInstallationDirectoryPath",{},st,msg)
+    case (cache,env,"getInstallationDirectoryPath",{},st,_)
       equation
         res = Settings.getInstallationDirectoryPath();
       then
         (cache,Values.STRING(res),st);
         
-    case (cache,env,"getModelicaPath",{},st,msg)
+    case (cache,env,"getModelicaPath",{},st,_)
       equation
         res = Settings.getModelicaPath();
       then
         (cache,Values.STRING(res),st);
         
-    case (cache,env,"setModelicaPath",{Values.STRING(cmd)},st,msg)
+    case (cache,env,"setModelicaPath",{Values.STRING(cmd)},st,_)
       equation
         // cmd = Util.rawStringToInputString(cmd);
         Settings.setModelicaPath(cmd);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"setModelicaPath",_,st,msg)
+    case (cache,env,"setModelicaPath",_,st,_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"getAnnotationVersion",{},st,msg)
+    case (cache,env,"getAnnotationVersion",{},st,_)
       equation
         res = Config.getAnnotationVersion();
       then
         (cache,Values.STRING(res),st);
 
-    case (cache,env,"getNoSimplify",{},st,msg)
+    case (cache,env,"getNoSimplify",{},st,_)
       equation
         b = Config.getNoSimplify();
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"setNoSimplify",{Values.BOOL(b)},st,msg)
+    case (cache,env,"setNoSimplify",{Values.BOOL(b)},st,_)
       equation
         Config.setNoSimplify(b);
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,"getShowAnnotations",{},st,msg)
+    case (cache,env,"getShowAnnotations",{},st,_)
       equation
         b = Config.showAnnotations();
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"setShowAnnotations",{Values.BOOL(b)},st,msg)
+    case (cache,env,"setShowAnnotations",{Values.BOOL(b)},st,_)
       equation
         Config.setShowAnnotations(b);
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,"getVectorizationLimit",{},st,msg)
+    case (cache,env,"getVectorizationLimit",{},st,_)
       equation
         i = Config.vectorizationLimit();
       then
         (cache,Values.INTEGER(i),st);
 
-    case (cache,env,"getOrderConnections",{},st,msg)
+    case (cache,env,"getOrderConnections",{},st,_)
       equation
         b = Config.orderConnections();
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"getLanguageStandard",{},st,msg)
+    case (cache,env,"getLanguageStandard",{},st,_)
       equation
         res = Config.languageStandardString(Config.getLanguageStandard());
       then
         (cache,Values.STRING(res),st);
 
-    case (cache,env,"buildModel",vals,st,msg)
+    case (cache,env,"buildModel",vals,st,_)
       equation
         List.map_0(buildModelClocks,System.realtimeClear);
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
@@ -1295,22 +1295,22 @@ algorithm
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
         
-    case(cache,env,"buildOpenTURNSInterface",vals,st,msg) 
+    case(cache,env,"buildOpenTURNSInterface",vals,st,_) 
       equation
         (cache,scriptFile,st) = buildOpenTURNSInterface(cache,env,vals,st,msg);
       then    
         (cache,Values.STRING(scriptFile),st);
         
-    case(cache,env,"runOpenTURNSPythonScript",vals,st,msg) 
+    case(cache,env,"runOpenTURNSPythonScript",vals,st,_) 
       equation
         (cache,logFile,st) = runOpenTURNSPythonScript(cache,env,vals,st,msg);
       then    
         (cache,Values.STRING(logFile),st);
         
-    case (cache,env,"buildModel",_,st,msg) /* failing build_model */
+    case (cache,env,"buildModel",_,st,_) /* failing build_model */
       then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st);
         
-    case (cache,env,"buildModelBeast",vals,st,msg)
+    case (cache,env,"buildModelBeast",vals,st,_)
       equation
         (cache,st,compileDir,executable,method_str,initfilename) = buildModelBeast(cache,env,vals,st,msg);
         executable = Util.if_(not Config.getRunningTestsuite(),compileDir +& executable,executable);
@@ -1319,7 +1319,7 @@ algorithm
     
     // Remove output.log before simulate in case it already exists. 
     // This is so we can check for the presence of output.log later.
-    case (cache,env,"simulate",vals,st,msg)
+    case (cache,env,"simulate",vals,st,_)
       equation
         true = System.regularFileExists("output.log");
         false = 0 == System.removeFile("output.log");
@@ -1327,7 +1327,7 @@ algorithm
       then (cache,simValue,st);
         
     // adrpo: see if the model exists before simulation!
-    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         crefCName = Absyn.pathToCref(className);
         false = Interactive.existClass(crefCName, p);
@@ -1336,7 +1336,7 @@ algorithm
       then
         (cache,simValue,st);
         
-    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,msg)
+    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
       equation
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
         (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
@@ -1368,7 +1368,7 @@ algorithm
       then
         (cache,simValue,newst);
         
-    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,msg)
+    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         true = System.regularFileExists("output.log");
         res = System.readFile("output.log");
@@ -1378,7 +1378,7 @@ algorithm
       then
         (cache,simValue,st);
 
-    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,msg)
+    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         errorStr = Error.printMessagesStr();
@@ -1388,7 +1388,7 @@ algorithm
       then
         (cache,simValue,st);
         
-    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,msg)
+    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         str = Absyn.pathString(className);
         simValue = createSimulationResultFailure(
@@ -1398,14 +1398,14 @@ algorithm
       then
         (cache,simValue,st);
         
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,msg)
+    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
         (cache,env,dae,st) = runFrontEnd(cache,env,className,st,true);
         str = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
       then
         (cache,Values.STRING(str),st);
         
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         cr_1 = Absyn.pathToCref(className);
         false = Interactive.existClass(cr_1, p);
@@ -1413,7 +1413,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
         
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},st,msg)
+    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},st,_)
       equation
         b = Error.getNumMessages() == 0;
         cname = Absyn.pathString(path);
@@ -1423,13 +1423,13 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,"reopenStandardStream",{Values.ENUM_LITERAL(index=i),Values.STRING(filename)},st,msg)
+    case (cache,env,"reopenStandardStream",{Values.ENUM_LITERAL(index=i),Values.STRING(filename)},st,_)
       equation
         b = System.reopenStandardStream(i-1,filename);
       then
         (cache,Values.BOOL(b),st);
     
-    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir)},st,msg)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir)},st,_)
       equation
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
@@ -1442,11 +1442,11 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"importFMU",_,st,msg)
+    case (cache,env,"importFMU",_,st,_)
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,msg)
+    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,_)
       equation
         true = System.regularFileExists(filename);
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
@@ -1466,70 +1466,70 @@ algorithm
       then
         (cache,Values.STRING(filename_1),st);
         
-    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,msg)
+    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,_)
       equation
         false = System.regularFileExists(filename);
         Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
       then
         (cache,Values.STRING(""),st);
     
-    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,msg)
+    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,_)
       then
         (cache,Values.STRING(""),st);
         
-    case (cache,env,"iconv",{Values.STRING(str),Values.STRING(from),Values.STRING(to)},st,msg)
+    case (cache,env,"iconv",{Values.STRING(str),Values.STRING(from),Values.STRING(to)},st,_)
       equation
         str = System.iconv(str,from,to);
       then
         (cache,Values.STRING(str),st);
         
-    case (cache,env,"setCompiler",{Values.STRING(str)},st,msg)
+    case (cache,env,"setCompiler",{Values.STRING(str)},st,_)
       equation
         System.setCCompiler(str);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"setCXXCompiler",{Values.STRING(str)},st,msg)
+    case (cache,env,"setCXXCompiler",{Values.STRING(str)},st,_)
       equation
         System.setCXXCompiler(str);
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,"setCompilerFlags",{Values.STRING(str)},st,msg)
+    case (cache,env,"setCompilerFlags",{Values.STRING(str)},st,_)
       equation
         System.setCFlags(str);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"setLinker",{Values.STRING(str)},st,msg)
+    case (cache,env,"setLinker",{Values.STRING(str)},st,_)
       equation
         System.setLinker(str);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"setLinkerFlags",{Values.STRING(str)},st,msg)
+    case (cache,env,"setLinkerFlags",{Values.STRING(str)},st,_)
       equation
         System.setLDFlags(str);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"setCommandLineOptions",{Values.STRING(str)},st,msg)
+    case (cache,env,"setCommandLineOptions",{Values.STRING(str)},st,_)
       equation
         args = System.strtok(str, " ");
         _ = Flags.readArgs(args);
       then
         (Env.emptyCache(),Values.BOOL(true),st);
         
-    case (cache,env,"setCommandLineOptions",_,st,msg)
+    case (cache,env,"setCommandLineOptions",_,st,_)
       then (cache,Values.BOOL(false),st);
         
-    case (cache,env,"cd",{Values.STRING("")},st,msg)
+    case (cache,env,"cd",{Values.STRING("")},st,_)
       equation
         str_1 = System.pwd();
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,"cd",{Values.STRING(str)},st,msg)
+    case (cache,env,"cd",{Values.STRING(str)},st,_)
       equation
         resI = System.cd(str);
         (resI == 0) = true;
@@ -1537,126 +1537,126 @@ algorithm
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,"cd",{Values.STRING(str)},st,msg)
+    case (cache,env,"cd",{Values.STRING(str)},st,_)
       equation
         failure(true = System.directoryExists(str));
         res = stringAppendList({"Error, directory ",str," does not exist,"});
       then
         (cache,Values.STRING(res),st);
         
-    case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("OpenModelica")))},st,msg)
+    case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("OpenModelica")))},st,_)
       equation
         str_1 = Settings.getVersionNr();
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"getVersion",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         str_1 = getPackageVersion(path,p);
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,"getTempDirectoryPath",{},st,msg)
+    case (cache,env,"getTempDirectoryPath",{},st,_)
       equation
         str_1 = Settings.getTempDirectoryPath();
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,"system",{Values.STRING(str)},st,msg)
+    case (cache,env,"system",{Values.STRING(str)},st,_)
       equation
         resI = System.systemCall(str);
       then
         (cache,Values.INTEGER(resI),st);
         
-    case (cache,env,"system_parallel",{Values.ARRAY(valueLst=vals)},st,msg)
+    case (cache,env,"system_parallel",{Values.ARRAY(valueLst=vals)},st,_)
       equation
         strs = List.map(vals, ValuesUtil.extractValueString);
         v = ValuesUtil.makeIntArray(System.systemCallParallel(strs));
       then
         (cache,v,st);
 
-    case (cache,env,"timerClear",{Values.INTEGER(i)},st,msg)
+    case (cache,env,"timerClear",{Values.INTEGER(i)},st,_)
       equation
         System.realtimeClear(i);
       then
         (cache,Values.NORETCALL(),st);
 
-    case (cache,env,"timerTick",{Values.INTEGER(i)},st,msg)
+    case (cache,env,"timerTick",{Values.INTEGER(i)},st,_)
       equation
         System.realtimeTick(i);
       then
         (cache,Values.NORETCALL(),st);
 
-    case (cache,env,"timerTock",{Values.INTEGER(i)},st,msg)
+    case (cache,env,"timerTock",{Values.INTEGER(i)},st,_)
       equation
         true = System.realtimeNtick(i) > 0;
         r = System.realtimeTock(i);
       then
         (cache,Values.REAL(r),st);
 
-    case (cache,env,"timerTock",_,st,msg)
+    case (cache,env,"timerTock",_,st,_)
       then (cache,Values.REAL(-1.0),st);
 
-    case (cache,env,"regularFileExists",{Values.STRING(str)},st,msg)
+    case (cache,env,"regularFileExists",{Values.STRING(str)},st,_)
       equation
         b = System.regularFileExists(str);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"readFile",{Values.STRING(str)},st,msg)
+    case (cache,env,"readFile",{Values.STRING(str)},st,_)
       equation
         str_1 = System.readFile(str);
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,"writeFile",{Values.STRING(str),Values.STRING(str1),Values.BOOL(false)},st,msg)
+    case (cache,env,"writeFile",{Values.STRING(str),Values.STRING(str1),Values.BOOL(false)},st,_)
       equation
         System.writeFile(str,str1);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"writeFile",{Values.STRING(str),Values.STRING(str1),Values.BOOL(true)},st,msg)
+    case (cache,env,"writeFile",{Values.STRING(str),Values.STRING(str1),Values.BOOL(true)},st,_)
       equation
         System.appendFile(str, str1);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"writeFile",_,st,msg)
+    case (cache,env,"writeFile",_,st,_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"readFileNoNumeric",{Values.STRING(str)},st,msg)
+    case (cache,env,"readFileNoNumeric",{Values.STRING(str)},st,_)
       equation
         str_1 = System.readFileNoNumeric(str);
       then
         (cache,Values.STRING(str_1),st);
         
-    case (cache,env,"getErrorString",{},st,msg)
+    case (cache,env,"getErrorString",{},st,_)
       equation
         str = Error.printMessagesStr();
       then
         (cache,Values.STRING(str),st);
         
-    case (cache,env,"clearMessages",{},st,msg)
+    case (cache,env,"clearMessages",{},st,_)
       equation
         Error.clearMessages();
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"getMessagesStringInternal",{},st,msg)
+    case (cache,env,"getMessagesStringInternal",{},st,_)
       equation
         v = ValuesUtil.makeArray(List.map(Error.getMessages(),errorToValue));
       then
         (cache,v,st);
         
-    case (cache,env,"runScript",{Values.STRING(str)},st,msg)
+    case (cache,env,"runScript",{Values.STRING(str)},st,_)
       equation
         istmts = Parser.parseexp(str);
         (res,newst) = Interactive.evaluate(istmts, st, true);
       then
         (cache,Values.STRING(res),newst);
         
-    case (cache,env,"runScript",_,st,msg)
+    case (cache,env,"runScript",_,st,_)
     then (cache,Values.STRING("Failed"),st);
       
     case (cache,env,"getIndexReductionMethod",_,st,_)
@@ -1695,42 +1695,42 @@ algorithm
         v = ValuesUtil.makeArray(List.map(Absyn.pathToStringList(path),ValuesUtil.makeString));
       then (cache,v,st);
 
-    case (cache,env,"generateHeader",{Values.STRING(filename)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"generateHeader",{Values.STRING(filename)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         str = Tpl.tplString(Unparsing.programExternalHeader, SCodeUtil.translateAbsyn2SCode(p));
         System.writeFile(filename,str);
       then
         (cache,Values.BOOL(true),st);
 
-    case (cache,env,"generateHeader",_,st,msg)
+    case (cache,env,"generateHeader",_,st,_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateCode",{Values.CODE(Absyn.C_TYPENAME(path))},st,msg)
+    case (cache,env,"generateCode",{Values.CODE(Absyn.C_TYPENAME(path))},st,_)
       equation
         (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache, env, path, false, NONE(), true);
         (cache,_) = cevalGenerateFunction(cache,env,path);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"generateCode",_,st,msg)
+    case (cache,env,"generateCode",_,st,_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateSeparateCode",{},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"generateSeparateCode",{},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
         deps = generateFunctions(cache,env,sp,{});
       then (cache,Values.BOOL(true),st);
 
-    case (cache,env,"generateSeparateCode",{},st,msg)
+    case (cache,env,"generateSeparateCode",{},st,_)
       then (cache,Values.BOOL(false),st);
 
     case (cache,env,"loadModel",{Values.CODE(Absyn.C_TYPENAME(path)),Values.ARRAY(valueLst=cvars),Values.BOOL(b)},
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg) /* add path to symboltable for compiled functions
+            loadedFiles = lf)),_) /* add path to symboltable for compiled functions
             Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
             but where to get t? */
       equation
@@ -1742,7 +1742,7 @@ algorithm
       then
         (Env.emptyCache(),Values.BOOL(b),newst);
         
-    case (cache,env,"loadModel",Values.CODE(Absyn.C_TYPENAME(path))::_,st,msg)
+    case (cache,env,"loadModel",Values.CODE(Absyn.C_TYPENAME(path))::_,st,_)
       equation
         pathstr = Absyn.pathString(path);
         Error.addMessage(Error.LOAD_MODEL_ERROR, {pathstr});
@@ -1753,21 +1753,21 @@ algorithm
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+            loadedFiles = lf)),_)
       equation
         newp = ClassLoader.loadFile(name,encoding);
         newp = Interactive.updateProgram(newp, p);
       then
         (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
         
-    case (cache,env,"loadFile",_,st,msg)
+    case (cache,env,"loadFile",_,st,_)
       then (cache,Values.BOOL(false),st);
         
     case (cache,env,"loadString",{Values.STRING(str),Values.STRING(name),Values.STRING(encoding)},
           (st as Interactive.SYMBOLTABLE(
             ast = p,depends=aDep,instClsLst = ic,
             lstVarVal = iv,compiledFunctions = cf,
-            loadedFiles = lf)),msg)
+            loadedFiles = lf)),_)
       equation
         str = Debug.bcallret3(not (encoding ==& "UTF-8"), System.iconv, str, encoding, "UTF-8", str);
         newp = Parser.parsestring(str,name);
@@ -1775,10 +1775,10 @@ algorithm
       then
         (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,NONE(),ic,iv,cf,lf));
         
-    case (cache,env,"loadString",_,st,msg)
+    case (cache,env,"loadString",_,st,_)
     then (cache,Values.BOOL(false),st);
         
-    case (cache,env,"saveModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"saveModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
         str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true) ;
@@ -1786,7 +1786,7 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"saveTotalModel",{Values.STRING(filename),Values.CODE(Absyn.C_TYPENAME(classpath))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
         ptot = Dependency.getTotalProgram(classpath,p);
@@ -1795,7 +1795,7 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"save",{Values.CODE(Absyn.C_TYPENAME(className))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"save",{Values.CODE(Absyn.C_TYPENAME(className))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         (newp,filename) = Interactive.getContainedClassAndFile(className, p);
         str = Dump.unparseStr(newp,true);
@@ -1803,24 +1803,24 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"save",{Values.CODE(Absyn.C_TYPENAME(className))},st,msg)
+    case (cache,env,"save",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
     then (cache,Values.BOOL(false),st);
         
-    case (cache,env,"saveAll",{Values.STRING(filename)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"saveAll",{Values.STRING(filename)},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         str = Dump.unparseStr(p,true);
         System.writeFile(filename, str);
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"help",{},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"help",{},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         str = Flags.printUsage();
       then
         (cache,Values.STRING(str),st);
         
     case (cache,env,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},
-        (st as Interactive.SYMBOLTABLE(ast = p)),msg)
+        (st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(classpath, p);
         str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),true);
@@ -1828,7 +1828,7 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
     
-    case (cache,env,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},st,msg)
+    case (cache,env,"saveModel",{Values.STRING(name),Values.CODE(Absyn.C_TYPENAME(classpath))},st,_)
       equation
         cname = Absyn.pathString(classpath);
         Error.addMessage(Error.LOOKUP_ERROR, {cname,"global"});
@@ -1836,7 +1836,7 @@ algorithm
         (cache,Values.BOOL(false),st);
         
     case (cache, env, "saveTotalSCode", 
-        {Values.STRING(filename), Values.CODE(Absyn.C_TYPENAME(classpath))}, st, msg)
+        {Values.STRING(filename), Values.CODE(Absyn.C_TYPENAME(classpath))}, st, _)
       equation
         (scodeP, st) = Interactive.symbolTableToSCode(st);
         (scodeP, _, _) = SCodeFlatten.flattenClassInProgram(classpath, scodeP);
@@ -1846,26 +1846,26 @@ algorithm
       then
         (cache, Values.BOOL(true), st);
         
-    case (cache, env, "saveTotalSCode", _, st, msg)
+    case (cache, env, "saveTotalSCode", _, st, _)
       then (cache, Values.BOOL(false), st);
         
-    case (cache,env,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"getDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         ((str1,str2)) = Interactive.getNamedAnnotation(classpath, p, "Documentation", SOME(("","")),Interactive.getDocumentationAnnotationString);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(str1),Values.STRING(str2)}),st);
 
-    case (cache,env,"addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_EXPRESSION(aexp))},Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf),msg)
+    case (cache,env,"addClassAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.CODE(Absyn.C_EXPRESSION(aexp))},Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf),_)
       equation
         p = Interactive.addClassAnnotation(Absyn.pathToCref(classpath), Absyn.NAMEDARG("annotate",aexp)::{}, p);
       then
         (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(p,aDep,NONE(),ic,iv,cf,lf));
 
-    case (cache,env,"addClassAnnotation",_,st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"addClassAnnotation",_,st as Interactive.SYMBOLTABLE(ast=p),_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"setDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1),Values.STRING(str2)},Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf),msg)
+    case (cache,env,"setDocumentationAnnotation",{Values.CODE(Absyn.C_TYPENAME(classpath)),Values.STRING(str1),Values.STRING(str2)},Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf),_)
       equation
         nargs = List.consOnTrue(not stringEq(str1,""), Absyn.NAMEDARG("info",Absyn.STRING(str1)), {});
         nargs = List.consOnTrue(not stringEq(str2,""), Absyn.NAMEDARG("revisions",Absyn.STRING(str2)), nargs);
@@ -1874,63 +1874,63 @@ algorithm
       then
         (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(p,aDep,NONE(),ic,iv,cf,lf));
 
-    case (cache,env,"setDocumentationAnnotation",_,st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"setDocumentationAnnotation",_,st as Interactive.SYMBOLTABLE(ast=p),_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"isPackage",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isPackage",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isPackage(classpath, p);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"isPartial",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isPartial",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isPartial(classpath, p);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"isModel",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isModel",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isModel(classpath, p);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"isOperator",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isOperator",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isOperator(classpath, p);
       then
         (cache,Values.BOOL(b),st);
     
-    case (cache,env,"isOperatorRecord",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isOperatorRecord",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isOperatorRecord(classpath, p);
       then
         (cache,Values.BOOL(b),st);
     
-    case (cache,env,"isOperatorFunction",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isOperatorFunction",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isOperatorFunction(classpath, p);
       then
         (cache,Values.BOOL(b),st);
         
-    case (cache,env,"isProtectedClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isProtectedClass",{Values.CODE(Absyn.C_TYPENAME(classpath)), Values.STRING(name)},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.isProtectedClass(classpath, name, p);
       then
         (cache,Values.BOOL(b),st);
     
-    case (cache,env,"isExperiment",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isExperiment",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         b = Interactive.getNamedAnnotation(classpath, p, "experiment", SOME(false), hasStopTime);
       then
         (cache,Values.BOOL(b),st);
 
-    case (cache,env,"isExperiment",_,st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"isExperiment",_,st as Interactive.SYMBOLTABLE(ast=p),_)
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         Print.clearBuf();
         Dump.getAstAsCorbaString(p);
@@ -1939,7 +1939,7 @@ algorithm
       then
         (cache,Values.STRING(res),st);
 
-    case (cache,env,"getAstAsCorbaString",{Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),msg)
+    case (cache,env,"getAstAsCorbaString",{Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         Print.clearBuf();
         Dump.getAstAsCorbaString(p);
@@ -1949,24 +1949,24 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,"getAstAsCorbaString",_,st,msg)
+    case (cache,env,"getAstAsCorbaString",_,st,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"getAstAsCorbaString failed"});
       then (cache,Values.STRING(""),st);
         
-    case (cache,env,"strtok",{Values.STRING(str),Values.STRING(token)},st,msg)
+    case (cache,env,"strtok",{Values.STRING(str),Values.STRING(token)},st,_)
       equation
         vals = List.map(System.strtok(str,token), ValuesUtil.makeString);
         i = listLength(vals);
       then (cache,Values.ARRAY(vals,{i}),st);
 
-    case (cache,env,"stringReplace",{Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)},st,msg)
+    case (cache,env,"stringReplace",{Values.STRING(str1),Values.STRING(str2),Values.STRING(str3)},st,_)
       equation
         str = System.stringReplace(str1, str2, str3);
       then (cache,Values.STRING(str),st);
 
         /* Checks the installation of OpenModelica and tries to find common errors */
-    case (cache,env,"checkSettings",{},st,msg)
+    case (cache,env,"checkSettings",{},st,_)
       equation
         vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMDEV_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","RTLIBS","C_COMPILER","C_COMPILER_RESPONDING","HAVE_CORBA","CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
@@ -2006,7 +2006,7 @@ algorithm
                 Values.STRING(confcmd)};
       then (cache,Values.RECORD(Absyn.IDENT("OpenModelica.Scripting.CheckSettingsResult"),vals,vars_1,-1),st);
         
-    case (cache,env,"readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)},st,msg)
+    case (cache,env,"readSimulationResult",{Values.STRING(filename),Values.ARRAY(valueLst=cvars),Values.INTEGER(size)},st,_)
       equation
         vars_1 = List.map(cvars, ValuesUtil.printCodeVariableName);
         pwd = System.pwd();
@@ -2021,7 +2021,7 @@ algorithm
         Error.addMessage(Error.SCRIPT_READ_SIM_RES_ERROR, {});
       then (cache,Values.META_FAIL(),st);
         
-    case (cache,env,"readSimulationResultSize",{Values.STRING(filename)},st,msg)
+    case (cache,env,"readSimulationResultSize",{Values.STRING(filename)},st,_)
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
@@ -2030,7 +2030,7 @@ algorithm
       then
         (cache,Values.INTEGER(i),st);
         
-    case (cache,env,"readSimulationResultVars",{Values.STRING(filename)},st,msg)
+    case (cache,env,"readSimulationResultVars",{Values.STRING(filename)},st,_)
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
@@ -2041,7 +2041,7 @@ algorithm
       then
         (cache,v,st);
 
-    case (cache,env,"compareSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(x1),Values.REAL(x2),Values.ARRAY(valueLst=cvars)},st,msg)
+    case (cache,env,"compareSimulationResults",{Values.STRING(filename),Values.STRING(filename_1),Values.STRING(filename2),Values.REAL(x1),Values.REAL(x2),Values.ARRAY(valueLst=cvars)},st,_)
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
@@ -2055,10 +2055,10 @@ algorithm
       then
         (cache,v,st);
         
-    case (cache,env,"compareSimulationResults",_,st,msg)
+    case (cache,env,"compareSimulationResults",_,st,_)
       then (cache,Values.STRING("Error in compareSimulationResults"),st);
         
-    case (cache,env,"getPlotSilent",{},st,msg)
+    case (cache,env,"getPlotSilent",{},st,_)
       equation
         b = Config.getPlotSilent();
       then
@@ -2143,7 +2143,7 @@ algorithm
       then
         (cache,v,st);
     
-    case (cache,env,"plotAll",_,st,msg)
+    case (cache,env,"plotAll",_,st,_)
       then (cache,Values.BOOL(false),st);
 
     // plot(x, model)
@@ -2162,7 +2162,7 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
         },
-        st,msg)
+        st,_)
       equation
         // check if plot is set to silent or not
         false = Config.getPlotSilent();
@@ -2205,7 +2205,7 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
         },
-        st,msg)
+        st,_)
       equation
         // check if plot is set to silent or not
         true = Config.getPlotSilent();
@@ -2234,7 +2234,7 @@ algorithm
       then
         (cache,v,st);
         
-    case (cache,env,"plot",_,st,msg)
+    case (cache,env,"plot",_,st,_)
       then
         (cache,Values.BOOL(false),st);
         
@@ -2244,7 +2244,7 @@ algorithm
           Values.CODE(Absyn.C_TYPENAME(className)),
           Values.BOOL(externalWindow),
           Values.STRING(filename)
-        },(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+        },(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
@@ -2269,11 +2269,11 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"visualize",_,st,msg)
+    case (cache,env,"visualize",_,st,_)
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"val",{cvar,Values.REAL(timeStamp),Values.STRING(filename)},st,msg)
+    case (cache,env,"val",{cvar,Values.REAL(timeStamp),Values.STRING(filename)},st,_)
       equation
         (cache,Values.STRING(str),_) = Ceval.ceval(cache,env,buildCurrentSimulationResultExp(), true, SOME(st),msg);
         filename = Util.if_(stringEq(filename,"<default>"),str,filename);
@@ -2281,13 +2281,13 @@ algorithm
         val = SimulationResults.val(filename,varNameStr,timeStamp);
       then (cache,Values.REAL(val),st);
 
-    case (cache,env,"closeSimulationResultFile",_,st,msg)
+    case (cache,env,"closeSimulationResultFile",_,st,_)
       equation
         SimulationResults.close();
       then
         (cache,Values.BOOL(true),st);
             
-    case (cache,env,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = listLength(getAlgorithms(absynClass));
@@ -2296,7 +2296,7 @@ algorithm
     
     case (cache,env,"getAlgorithmCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthAlgorithm(absynClass, n);
@@ -2305,7 +2305,7 @@ algorithm
     
     case (cache,env,"getNthAlgorithm",_,st,msg) then (cache,Values.STRING(""),st);
       
-    case (cache,env,"getInitialAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getInitialAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = listLength(getInitialAlgorithms(absynClass));
@@ -2314,7 +2314,7 @@ algorithm
     
     case (cache,env,"getInitialAlgorithmCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthInitialAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthInitialAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthInitialAlgorithm(absynClass, n);
@@ -2323,7 +2323,7 @@ algorithm
     
     case (cache,env,"getNthInitialAlgorithm",_,st,msg) then (cache,Values.STRING(""),st);
       
-    case (cache,env,"getAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = getAlgorithmItemsCount(absynClass);
@@ -2332,7 +2332,7 @@ algorithm
     
     case (cache,env,"getAlgorithmItemsCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthAlgorithmItem(absynClass, n);
@@ -2341,7 +2341,7 @@ algorithm
     
     case (cache,env,"getNthAlgorithmItem",_,st,msg) then (cache,Values.STRING(""),st);
     
-    case (cache,env,"getInitialAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getInitialAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = getInitialAlgorithmItemsCount(absynClass);
@@ -2350,7 +2350,7 @@ algorithm
     
     case (cache,env,"getInitialAlgorithmItemsCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthInitialAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthInitialAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthInitialAlgorithmItem(absynClass, n);
@@ -2359,7 +2359,7 @@ algorithm
     
     case (cache,env,"getNthInitialAlgorithmItem",_,st,msg) then (cache,Values.STRING(""),st);
     
-    case (cache,env,"getEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = listLength(getEquations(absynClass));
@@ -2368,7 +2368,7 @@ algorithm
     
     case (cache,env,"getEquationCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthEquation(absynClass, n);
@@ -2377,7 +2377,7 @@ algorithm
     
     case (cache,env,"getNthEquation",_,st,msg) then (cache,Values.STRING(""),st);
       
-    case (cache,env,"getInitialEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getInitialEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = listLength(getInitialEquations(absynClass));
@@ -2386,7 +2386,7 @@ algorithm
     
     case (cache,env,"getInitialEquationCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthInitialEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthInitialEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthInitialEquation(absynClass, n);
@@ -2395,7 +2395,7 @@ algorithm
     
     case (cache,env,"getNthInitialEquation",_,st,msg) then (cache,Values.STRING(""),st);
     
-    case (cache,env,"getEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = getEquationItemsCount(absynClass);
@@ -2404,7 +2404,7 @@ algorithm
     
     case (cache,env,"getEquationItemsCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthEquationItem(absynClass, n);
@@ -2413,7 +2413,7 @@ algorithm
     
     case (cache,env,"getNthEquationItem",_,st,msg) then (cache,Values.STRING(""),st);
     
-    case (cache,env,"getInitialEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getInitialEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = getInitialEquationItemsCount(absynClass);
@@ -2422,7 +2422,7 @@ algorithm
     
     case (cache,env,"getInitialEquationItemsCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthInitialEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthInitialEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthInitialEquationItem(absynClass, n);
@@ -2431,7 +2431,7 @@ algorithm
     
     case (cache,env,"getNthInitialEquationItem",_,st,msg) then (cache,Values.STRING(""),st);
       
-    case (cache,env,"getAnnotationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getAnnotationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = getAnnotationCount(absynClass);
@@ -2440,7 +2440,7 @@ algorithm
     
     case (cache,env,"getAnnotationCount",_,st,msg) then (cache,Values.INTEGER(0),st);
       
-    case (cache,env,"getNthAnnotationString",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthAnnotationString",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         str = getNthAnnotationString(absynClass, n);
@@ -2449,7 +2449,7 @@ algorithm
     
     case (cache,env,"getNthAnnotationString",_,st,msg) then (cache,Values.STRING(""),st);
     
-    case (cache,env,"getImportCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getImportCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         n = getImportCount(absynClass);
@@ -2458,7 +2458,7 @@ algorithm
     
     case (cache,env,"getImportCount",_,st,msg) then (cache,Values.INTEGER(0),st);
 
-    case (cache,env,"getNthImport",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,"getNthImport",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         vals = getNthImport(absynClass, n);
@@ -2484,7 +2484,7 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
         },
-        st,msg)
+        st,_)
       equation
         // check if plot is set to silent or not
         false = Config.getPlotSilent();
@@ -2526,7 +2526,7 @@ algorithm
           Values.ARRAY(valueLst={Values.REAL(x1),Values.REAL(x2)}),
           Values.ARRAY(valueLst={Values.REAL(y1),Values.REAL(y2)})
         },
-        st,msg)
+        st,_)
       equation
         // check if plot is set to silent or not
         true = Config.getPlotSilent();
@@ -2553,53 +2553,53 @@ algorithm
       then
         (cache,v,st);
     
-    case (cache,env,"plotParametric",_,st,msg)
+    case (cache,env,"plotParametric",_,st,_)
       then (cache,Values.BOOL(false),st);
     
-    case (cache,env,"echo",{v as Values.BOOL(bval)},st,msg)
+    case (cache,env,"echo",{v as Values.BOOL(bval)},st,_)
       equation
         setEcho(bval);
       then (cache,v,st);
 
-    case (cache,env,"strictRMLCheck",_,st as Interactive.SYMBOLTABLE(ast = p),msg)
+    case (cache,env,"strictRMLCheck",_,st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         _ = List.map1r(List.map(Interactive.getFunctionsInProgram(p), SCodeUtil.translateClass), MetaUtil.strictRMLCheck, true);
         str = Error.printMessagesStr();
         v = Values.STRING(str);
       then (cache,v,st);
 
-    case (cache,env,"dumpXMLDAE",vals,st,msg)
+    case (cache,env,"dumpXMLDAE",vals,st,_)
       equation
         (cache,st,xml_filename,xml_contents) = dumpXMLDAE(cache,env,vals,st, msg);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(xml_filename),Values.STRING(xml_contents)}),st);
         
-    case (cache,env,"dumpXMLDAE",_,st,msg)
+    case (cache,env,"dumpXMLDAE",_,st,_)
       equation
         str = Error.printMessagesStr();
       then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING(str)}),st);
         
-    case (cache,env,"uriToFilename",{Values.STRING(str)},st,msg)
+    case (cache,env,"uriToFilename",{Values.STRING(str)},st,_)
       equation
         str = getFullPathFromUri(str,true);
       then (cache,Values.STRING(str),st);
 
-    case (cache,env,"uriToFilename",_,st,msg)
+    case (cache,env,"uriToFilename",_,st,_)
       then (cache,Values.STRING(""),st);
         
-    case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})},st,msg)
+    case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=1 /*dgesv*/),Values.ARRAY(valueLst={Values.INTEGER(-1)})},st,_)
       equation
         (realVals,i) = System.dgesv(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v));
         v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
       then (cache,Values.TUPLE({v,Values.INTEGER(i)}),st);
 
-    case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=2 /*lpsolve55*/),Values.ARRAY(valueLst=vals2)},st,msg)
+    case (cache,env,"solveLinearSystem",{Values.ARRAY(valueLst=vals),v,Values.ENUM_LITERAL(index=2 /*lpsolve55*/),Values.ARRAY(valueLst=vals2)},st,_)
       equation
         (realVals,i) = System.lpsolve55(List.map(vals,ValuesUtil.arrayValueReals),ValuesUtil.arrayValueReals(v),List.map(vals2,ValuesUtil.valueInteger));
         v = ValuesUtil.makeArray(List.map(realVals,ValuesUtil.makeReal));
       then (cache,Values.TUPLE({v,Values.INTEGER(i)}),st);
 
-    case (cache,env,"solveLinearSystem",{_,v,_,_},st,msg)
+    case (cache,env,"solveLinearSystem",{_,v,_,_},st,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Unknown input to solveLinearSystem scripting function"});
       then (cache,Values.TUPLE({v,Values.INTEGER(-1)}),st);
@@ -2688,7 +2688,7 @@ algorithm
       Env.Cache cache;
       String flatModelicaStr;
 
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,filenameprefix) /* mo file directory */
+    case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,_) /* mo file directory */
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) =
@@ -2772,7 +2772,7 @@ algorithm
       then
         (cache, env, dae, st);
 
-    case (cache,env,className,Interactive.SYMBOLTABLE(p,aDep,fp,ic,iv,cf,lf),relaxedFrontEnd,_)
+    case (cache,env,_,Interactive.SYMBOLTABLE(p,aDep,fp,ic,iv,cf,lf),_,_)
       equation
         false = Flags.isSet(Flags.SCODE_INST);
         str = Absyn.pathString(className);
@@ -2810,14 +2810,14 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
       then (cache,env,dae,Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
 
-    case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),_,_)
+    case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),_,_)
       equation
         str = Absyn.pathString(className);
         failure(_ = Interactive.getPathedClassInProgram(className, p));
         Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then fail();
         
-    case (cache,env,className,st,_,numError)
+    case (cache,env,_,st,_,_)
       equation
         str = Absyn.pathString(className);
         true = Error.getNumErrorMessages() == numError;
@@ -2857,7 +2857,7 @@ algorithm
       String file_dir, fileNamePrefix;
       Absyn.Program p;
     
-    case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p),fileNamePrefix,addDummy,inSimSettingsOpt)
+    case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),fileNamePrefix,_,_)
       equation
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
           SimCodeUtil.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
@@ -2929,7 +2929,7 @@ algorithm
       list<String> libs;
       Values.Value outValMsg;
       String file_dir, fileNamePrefix, str;
-    case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
+    case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
       equation
         (cache, outValMsg, st, indexed_dlow, libs, file_dir, _) =
           SimCodeUtil.translateModelFMU(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
@@ -2940,7 +2940,7 @@ algorithm
           
       then
         (cache,outValMsg,st);
-    case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
+    case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
       equation
          str = Error.printMessagesStr();
       then
@@ -2979,7 +2979,7 @@ algorithm
       Absyn.Program p1;
       Boolean strEmpty;
 
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,_,ic,iv,cf,lf)),msg)
+    case (cache,env,_,(st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,_,ic,iv,cf,lf)),msg)
       equation
         cls = Interactive.getPathedClassInProgram(className, p);
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
@@ -3061,7 +3061,7 @@ algorithm
     case (v::rest, _) then (v, rest);
     
     // ups, we're missing an argument
-    case ({}, errorMessage)
+    case ({}, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
       then
@@ -3231,7 +3231,7 @@ algorithm
     DAE.FunctionTree funcs;
     Interactive.SymbolTable st;
     
-    case(cache,inEnv,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile)},inSt as Interactive.SYMBOLTABLE(ast=p),inMsg) equation      
+    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile)},inSt as Interactive.SYMBOLTABLE(ast=p),_) equation      
       (cache,env,dae,st) = runFrontEnd(cache,inEnv,className,inSt,false);
       //print("instantiated class\n");
       dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
@@ -3263,7 +3263,7 @@ algorithm
     local
       String pythonScriptFile, logFile;
       Env.Cache cache; 
-    case(cache,inEnv,{Values.STRING(pythonScriptFile)},inSt,inMsg)       
+    case(cache,_,{Values.STRING(pythonScriptFile)},_,_)       
       equation
         logFile = OpenTURNS.runPythonScript(pythonScriptFile);
       then 
@@ -3348,7 +3348,7 @@ algorithm
 
     // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
     // adrpo 2009-11-29: use ALL THE TIME $OPENMODELICAHOME/bin/Compile
-    case (fileprefix,libs,file_dir,noClean,solverMethod)
+    case (fileprefix,libs,file_dir,_,_)
       equation
         pd = System.pathDelimiter();
         omhome = Settings.getInstallationDirectoryPath();
@@ -3492,7 +3492,7 @@ algorithm
       Absyn.Class c;
  
     // handle normal models
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         Error.clearMessages() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
@@ -3512,7 +3512,7 @@ algorithm
         (cache,Values.STRING(retStr),st); 
 
     // handle functions
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         (c as Absyn.CLASS(restriction=restriction)) = Interactive.getPathedClassInProgram(className, p);
         true = Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction);
@@ -3531,7 +3531,7 @@ algorithm
       then
         (cache,Values.STRING(retStr),st);
 
-    case (cache,env,className,st as Interactive.SYMBOLTABLE(ast=p), _)
+    case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p), _)
       equation
         classNameStr = Absyn.pathString(className);
         false = Interactive.existClass(Absyn.pathToCref(className), p);
@@ -3540,7 +3540,7 @@ algorithm
         (cache,Values.STRING(errorMsg),st);
 
     // errors
-    case (cache,env,className,st,_)
+    case (cache,env,_,st,_)
       equation
       classNameStr = Absyn.pathString(className);
       errorMsg = Error.printMessagesStr();
@@ -3844,7 +3844,7 @@ algorithm
       Absyn.Program p;
       list<Absyn.Path> result_path_lst, result;
       Boolean b;
-    case (inPath, b, p)
+    case (_, b, p)
       equation
         cdef = Interactive.getPathedClassInProgram(inPath, p);
         strlst = getClassnamesInClassList(inPath, p, cdef, b);
@@ -3852,7 +3852,7 @@ algorithm
         result = List.flatten(List.map2(result_path_lst, getAllClassPathsRecursive, b, p));
       then
         inPath::result;
-    case (inPath, b, _)
+    case (_, b, _)
       equation
         parent_string = Absyn.pathString(inPath);
         s = Error.printMessagesStr();
@@ -3905,7 +3905,7 @@ algorithm
       list<Env.Frame> env;
       Boolean b;
     
-    case (cache,env,className,b,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,_,b,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, b, p);
         // allClassPaths = List.select(allClassPaths, filterLib);
@@ -3917,7 +3917,7 @@ algorithm
       then
         (cache,Values.STRING(ret),st);
     
-    case (cache,env,className,b,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
+    case (cache,env,_,b,(st as Interactive.SYMBOLTABLE(ast = p)),msg)
       equation
         ret = stringAppend("Error checking: ", Absyn.pathString(className));
     then
@@ -4315,9 +4315,9 @@ algorithm
       String mp;
       list<String> mps;
       
-    case (mp::_,names)
+    case (mp::_,_)
       then findModelicaPath2(mp,names,false);
-    case (_::mps,names)
+    case (_::mps,_)
       then findModelicaPath(mps,names);
   end matchcontinue;
 end findModelicaPath;
@@ -4332,16 +4332,16 @@ algorithm
     local
       list<String> names;
       String name;
-    case (mp,name::names,_)
+    case (_,name::names,_)
       equation
         true = System.directoryExists(mp +& "/" +& name);
       then findModelicaPath2(mp,names,true);
-    case (mp,name::names,_)
+    case (_,name::names,_)
       equation
         true = System.regularFileExists(mp +& "/" +& name +& ".mo");
       then mp;
       // This class is part of the current package.mo, or whatever... 
-    case (mp,name::names,true)
+    case (_,name::names,true)
       then mp;
   end matchcontinue;
 end findModelicaPath2;
@@ -4456,9 +4456,9 @@ algorithm
       list<Interactive.Variable> vs;
       String p;
     case ({},acc) then listReverse(acc);
-    case (Interactive.IVAR(varIdent = "$echo") :: vs,acc)
+    case (Interactive.IVAR(varIdent = "$echo") :: vs,_)
       then getVariableNames(vs,acc);
-    case (Interactive.IVAR(varIdent = p) :: vs,acc)
+    case (Interactive.IVAR(varIdent = p) :: vs,_)
       then getVariableNames(vs,Values.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(p,{})))::acc);
   end match;
 end getVariableNames;
@@ -6017,7 +6017,7 @@ algorithm
   res := matchcontinue (val,env)
     local
       Absyn.Path path;
-    case (Values.CODE(Absyn.C_TYPENAME(path)),env)
+    case (Values.CODE(Absyn.C_TYPENAME(path)),_)
       equation
         (_,_,_,DAE.VALBOUND(valBound=Values.CODE(A=Absyn.C_TYPENAME(path=path))),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env, ComponentReference.pathToCref(path));
       then Values.CODE(Absyn.C_TYPENAME(path));
@@ -6052,7 +6052,7 @@ protected function getPackageVersion
   output String version;
 algorithm
   version := matchcontinue (path,p)
-    case (path,p)
+    case (_,_)
       equation
         Config.setEvaluateParametersInAnnotations(true);
         Absyn.STRING(version) = Interactive.getNamedAnnotation(path, p, "version", SOME(Absyn.STRING("")), Interactive.getAnnotationExp);
@@ -6149,7 +6149,7 @@ algorithm
       DAE.Type ty;
 
     // try function interpretation
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
       equation
         false = boolOr(Flags.isSet(Flags.NO_EVAL_FUNC), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS));
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
@@ -6176,7 +6176,7 @@ algorithm
         (cache, newval, st);
 
     // see if function is in CF list and the build time is less than the edit time
-    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,// (impl as true)
+    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// (impl as true)
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
         false = Flags.isSet(Flags.NO_GEN);
@@ -6199,7 +6199,7 @@ algorithm
         (cache,newval,st);
     
     // see if function is in CF list and the build time is less than the edit time
-    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,// impl as true
+    case (cache,env,(e as DAE.CALL(path = funcpath, expLst = expl, attr = DAE.CALL_ATTR(builtin = false))),vallst,_,// impl as true
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),msg)
       equation
         false = Flags.isSet(Flags.NO_GEN);
@@ -6224,7 +6224,7 @@ algorithm
         (cache,newval,st);
 
     // not in CF list, we have a symbol table, generate function and update symtab
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,
           SOME(syt as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),msg) // yeha! we have a symboltable!
       equation
         false = Flags.isSet(Flags.NO_GEN);
@@ -6275,7 +6275,7 @@ algorithm
         (cache,newval,SOME(syt));
     
     // no symtab, WE SHOULD NOT EVALUATE! 
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,impl,NONE(),msg) // crap! we have no symboltable!
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = false))),vallst,_,NONE(),msg) // crap! we have no symboltable!
       equation
         false = Flags.isSet(Flags.NO_GEN);
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env,msg));
@@ -6299,7 +6299,7 @@ algorithm
       then
         (cache,newval,NONE());
 
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg)
       equation
         Debug.fprintln(Flags.DYN_LOAD, "CALL: FAILED to constant evaluate function: " +& Absyn.pathString(funcpath)); 
         error_Str = Absyn.pathString(funcpath);
@@ -6419,21 +6419,21 @@ algorithm
       String str;
     
     // External functions that are "known" should be evaluated without compilation, e.g. all math functions
-    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg)
       equation
         (cache,newval) = Ceval.cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
       then
         (cache,newval,st);
 
     // This case prevents the constructor call of external objects of being evaluated
-    case (cache,env as _ :: _,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,msg)
+    case (cache,env as _ :: _,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,_,st,msg)
       equation
         cevalIsExternalObjectConstructor(cache,funcpath,env,msg);
       then
         fail();
        
     // Record constructors
-    case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),vallst,impl,st,msg)
+    case(cache,env,(e as DAE.CALL(path = funcpath,attr = DAE.CALL_ATTR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst)))),vallst,_,st,msg)
       equation
         Debug.fprintln(Flags.DYN_LOAD, "CALL: record constructor: func: " +& Absyn.pathString(funcpath) +& " type path: " +& Absyn.pathString(complexName));
         true = Absyn.pathEqual(funcpath,complexName);
@@ -6443,7 +6443,7 @@ algorithm
         (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
     // evaluate or generate non-partial and non-replaceable functions
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
@@ -6458,7 +6458,7 @@ algorithm
         (cache, newval, st);
 
     // partial and replaceable functions should not be evaluated!
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg)
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
@@ -6469,7 +6469,7 @@ algorithm
       then
         fail();
 
-    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, impl, st, msg as Ceval.MSG(info))
+    case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg as Ceval.MSG(info))
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
         true = isCompleteFunction(cache, env, funcpath);

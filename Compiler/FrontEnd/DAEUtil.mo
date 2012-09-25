@@ -763,13 +763,13 @@ algorithm
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,_,i,f,n,ss,unc,distOpt,eb,ip,fn)),minMax)
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,_,i,f,n,ss,unc,distOpt,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_INT(q,_,i,f,unc,distOpt,eb,ip,fn)),minMax)
+    case (SOME(DAE.VAR_ATTR_INT(q,_,i,f,unc,distOpt,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,_,u,du,eb,ip,fn)),minMax)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,_,u,du,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn));
-    case (NONE(),minMax)
+    case (NONE(),_)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),minMax,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setMinMax;
@@ -831,7 +831,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt; Absyn.InnerOuter io;
 
-    case(DAE.VAR(cr,k,d,prl,v,ty,b,dims,ct,source,_,cmt,io),varOpt)
+    case(DAE.VAR(cr,k,d,prl,v,ty,b,dims,ct,source,_,cmt,io),_)
       then DAE.VAR(cr,k,d,prl,v,ty,b,dims,ct,source,varOpt,cmt,io);
   end match;
 end setVariableAttributes;
@@ -852,17 +852,17 @@ algorithm
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,_,f,n,ss,unc,distOpt,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,_,f,n,ss,unc,distOpt,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,SOME(start),f,n,ss,unc,distOpt,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,_,f,unc,distOpt,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,_,f,unc,distOpt,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_INT(q,minMax,SOME(start),f,unc,distOpt,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_BOOL(q,SOME(start),f,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_STRING(q,SOME(start),eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,SOME(start),du,eb,ip,fn));
-    case (NONE(),start)
+    case (NONE(),_)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setStartAttr;
@@ -897,9 +897,9 @@ algorithm
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,_,ss,unc,distOpt,eb,ip,fn)),nominal)
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,_,ss,unc,distOpt,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,SOME(nominal),ss,unc,distOpt,eb,ip,fn));
-    case (NONE(),nominal)
+    case (NONE(),_)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),SOME(nominal),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setNominalAttr;
@@ -921,9 +921,9 @@ algorithm
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn)),unit)
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_REAL(q,SOME(unit),du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn));
-    case (NONE(),unit)
+    case (NONE(),_)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),SOME(unit),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setUnitAttr;
@@ -945,17 +945,17 @@ algorithm
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,_,fn)),isProtected)
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,_,fn)),_)
     then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,SOME(isProtected),fn));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,_,fn)),isProtected)
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,_,fn)),_)
     then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,SOME(isProtected),fn));
-    case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,_,fn)),isProtected)
+    case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,_,fn)),_)
     then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,SOME(isProtected),fn));
-    case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,_,fn)),isProtected)
+    case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,_,fn)),_)
     then SOME(DAE.VAR_ATTR_STRING(q,i,eb,SOME(isProtected),fn));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn)),isProtected)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,SOME(isProtected),fn));
-    case (NONE(),isProtected)
+    case (NONE(),_)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(isProtected),NONE()));
   end match;
 end setProtectedAttr;
@@ -994,15 +994,15 @@ algorithm
       Option<DAE.Distribution> distOpt;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,_,n,ss,unc,distOpt,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,_,n,ss,unc,distOpt,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,start,n,ss,unc,distOpt,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,ini,_,unc,distOpt,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,ini,_,unc,distOpt,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_INT(q,minMax,ini,start,unc,distOpt,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_BOOL(q,ini,_,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_BOOL(q,ini,_,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_BOOL(q,ini,start,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn));
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,_,eb,ip,fn)),start)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,_,eb,ip,fn)),_)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,start,eb,ip,fn));
   end match;
 end setFixedAttr;
@@ -1023,19 +1023,19 @@ algorithm
       Option<DAE.Exp> eb;
       Option<Boolean> ip;
     
-    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,ip,_)),finalPrefix)
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,ip,_)),_)
     then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,i,f,n,ss,unc,distOpt,eb,ip,SOME(finalPrefix)));
-    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,ip,_)),finalPrefix)
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,ip,_)),_)
     then SOME(DAE.VAR_ATTR_INT(q,minMax,i,f,unc,distOpt,eb,ip,SOME(finalPrefix)));
-    case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,_)),finalPrefix)
+    case (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,_)),_)
     then SOME(DAE.VAR_ATTR_BOOL(q,i,f,eb,ip,SOME(finalPrefix)));
-    case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,_)),finalPrefix)
+    case (SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,_)),_)
     then SOME(DAE.VAR_ATTR_STRING(q,i,eb,ip,SOME(finalPrefix)));
 
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,_)),finalPrefix)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,_)),_)
     then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,SOME(finalPrefix)));
 
-    case (NONE(),finalPrefix)
+    case (NONE(),_)
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),SOME(finalPrefix)));
   end match;
 end setFinalAttr;
@@ -2152,7 +2152,7 @@ algorithm
       Option<DAE.VariableAttributes> a11;
       Option<SCode.Comment> a12; Absyn.InnerOuter a13;
       
-    case(newCr, DAE.VAR(a1,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13))
+    case(_, DAE.VAR(a1,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13))
       then DAE.VAR(newCr,a2,a3,prl,a4,a5,a6,a7,ct,source,a11,a12,a13);
   end match;
 end replaceCrefInVar;
@@ -2287,7 +2287,7 @@ algorithm
       String msg;
 
     case (path,functions) then Util.getOption(avlTreeGet(functions, path));
-    case (path,functions)
+    case (_,_)
       equation
         msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
         msg = "DAEUtil.getNamedFunction failed: " +& Absyn.pathString(path) +& "\nThe following functions were part of the cache:\n  ";
@@ -2388,7 +2388,7 @@ algorithm
       list<DAE.Exp> exps;
       
     case ({},acc,_) then acc;
-    case (e::exps,acc,source)
+    case (e::exps,acc,_)
       equation
         acc = verifyWhenEquationStatements({DAE.EQUATION(e,e,source)},acc);
       then verifyWhenEquationStatements2(exps,acc,source);
@@ -3605,7 +3605,7 @@ algorithm
     
     case(NONE(),func,extraArg) then (NONE(),extraArg);
     
-    case(SOME(e),func,extraArg)
+    case(SOME(e),_,extraArg)
       equation
         ((e,extraArg)) = func((e,extraArg));
       then
@@ -3635,7 +3635,7 @@ algorithm
     
     case({},func,extraArg) then ({},extraArg);
     
-    case(e::exps,func,extraArg)
+    case(e::exps,_,extraArg)
       equation
         ((e,extraArg)) = func((e,extraArg));
         (oexps,extraArg) = traverseDAEExpList(exps,func,extraArg);
@@ -3666,7 +3666,7 @@ algorithm
     
     case({},func,extraArg) then ({},extraArg);
     
-    case(branch::daeList,func,extraArg)
+    case(branch::daeList,_,extraArg)
       equation
         (branch2,extraArg) = traverseDAE2(branch,func,extraArg);
         (recRes,extraArg) = traverseDAEList(daeList,func,extraArg);
@@ -3736,7 +3736,7 @@ algorithm
      DAE.FunctionTree funcs;
      Type_a extraArg;
 
-  case(DAE.DAE(elts),funcs,func,extraArg) equation
+  case(DAE.DAE(elts),funcs,_,extraArg) equation
      (elts,extraArg) = traverseDAE2(elts,func,extraArg);
      (funcLst,extraArg) = traverseDAEFuncLst(avlTreeToList(funcs),func,extraArg);
      funcs = avlTreeAddLst(funcLst,avlTreeNew());
@@ -3762,7 +3762,7 @@ algorithm
       list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
 
     case({},func,extraArg) then ({},extraArg);
-    case((p,SOME(daeFunc))::funcLst,func,extraArg)
+    case((p,SOME(daeFunc))::funcLst,_,extraArg)
       equation
         (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
         (funcLst,extraArg) = traverseDAEFuncLst(funcLst,func,extraArg);
@@ -3792,7 +3792,7 @@ algorithm
       Type_a extraArg;
       
     case({},func,extraArg) then ({},extraArg);
-    case(daeFunc::funcLst,func,extraArg)
+    case(daeFunc::funcLst,_,extraArg)
       equation
         (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
         (funcLst,extraArg) = traverseDAEFunctions(funcLst,func,extraArg);
@@ -3822,17 +3822,17 @@ algorithm
       Option<SCode.Comment> cmt;
       Type_a extraArg;
     
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),func,extraArg)
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),_,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
       then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source,cmt),extraArg);
     
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),func,extraArg)
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source,cmt),_,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
       then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE(),source,cmt),extraArg);
     
-    case(DAE.RECORD_CONSTRUCTOR(path,tp,source),func,extraArg)
+    case(DAE.RECORD_CONSTRUCTOR(path,tp,source),_,extraArg)
       then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);
   end match;
 end traverseDAEFunc;
@@ -3878,7 +3878,7 @@ algorithm
       then 
         (accumulator,extraArg);
   
-    case(elt::dae,func,extraArg,accumulator)
+    case(elt::dae,_,extraArg,accumulator)
       equation
         (elt,extraArg) = traverseDAE2_tail2(elt,func,extraArg);
         (dae2,extraArg) = traverseDAE2_tail(dae,func,extraArg,elt::accumulator);
@@ -3926,7 +3926,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       Type_a extraArg;
   
-    case(DAE.VAR(cr,kind,dir,prl,prot,tp,optExp,dims,ct,source,attr,cmt,io),func,extraArg)
+    case(DAE.VAR(cr,kind,dir,prl,prot,tp,optExp,dims,ct,source,attr,cmt,io),_,extraArg)
       equation
         ((maybeCrExp,extraArg)) = func((Expression.crefExp(cr), extraArg));
         // If the result is DAE.CREF, we replace the name of the variable.
@@ -3938,7 +3938,7 @@ algorithm
       then 
         (elt,extraArg);
  
-    case(DAE.DEFINE(cr,e,source),func,extraArg)
+    case(DAE.DEFINE(cr,e,source),_,extraArg)
       equation
         ((e2,extraArg)) = func((e, extraArg));
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
@@ -3946,7 +3946,7 @@ algorithm
       then 
         (elt,extraArg);
   
-    case(DAE.INITIALDEFINE(cr,e,source),func,extraArg)
+    case(DAE.INITIALDEFINE(cr,e,source),_,extraArg)
       equation
         ((e2,extraArg)) = func((e, extraArg));
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
@@ -3954,7 +3954,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.EQUEQUATION(cr,cr1,source),func,extraArg)
+    case(DAE.EQUEQUATION(cr,cr1,source),_,extraArg)
       equation
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr), extraArg));
         ((DAE.CREF(cr1_2,_),extraArg)) = func((Expression.crefExp(cr1), extraArg));
@@ -3962,7 +3962,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.EQUATION(e1,e2,source),func,extraArg)
+    case(DAE.EQUATION(e1,e2,source),_,extraArg)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         ((e22,extraArg)) = func((e2, extraArg));
@@ -3970,7 +3970,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.COMPLEX_EQUATION(e1,e2,source),func,extraArg)
+    case(DAE.COMPLEX_EQUATION(e1,e2,source),_,extraArg)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         ((e22,extraArg)) = func((e2, extraArg));
@@ -3978,7 +3978,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.ARRAY_EQUATION(idims,e1,e2,source),func,extraArg)
+    case(DAE.ARRAY_EQUATION(idims,e1,e2,source),_,extraArg)
       equation
         ((e11, extraArg)) = func((e1, extraArg));
         ((e22, extraArg)) = func((e2, extraArg));
@@ -3986,7 +3986,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source),func,extraArg)
+    case(DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source),_,extraArg)
       equation
         ((e11, extraArg)) = func((e1, extraArg));
         ((e22, extraArg)) = func((e2, extraArg));
@@ -3994,7 +3994,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.WHEN_EQUATION(e1,elist,SOME(elt),source),func,extraArg)
+    case(DAE.WHEN_EQUATION(e1,elist,SOME(elt),source),_,extraArg)
       equation
         ((e11, extraArg)) = func((e1, extraArg));
         ({elt2}, extraArg)= traverseDAE2_tail({elt},func,extraArg,{});
@@ -4003,7 +4003,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.WHEN_EQUATION(e1,elist,NONE(),source),func,extraArg)
+    case(DAE.WHEN_EQUATION(e1,elist,NONE(),source),_,extraArg)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         (elist2,extraArg) = traverseDAE2_tail(elist,func,extraArg,{});
@@ -4011,7 +4011,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.INITIALEQUATION(e1,e2,source),func,extraArg)
+    case(DAE.INITIALEQUATION(e1,e2,source),_,extraArg)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         ((e22,extraArg)) = func((e2, extraArg));
@@ -4019,7 +4019,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source),func,extraArg)
+    case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source),_,extraArg)
       equation
         ((e11,extraArg)) = func((e1, extraArg));
         ((e22,extraArg)) = func((e2, extraArg));
@@ -4027,17 +4027,17 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.COMP(id,elist,source,cmt),func,extraArg)
+    case(DAE.COMP(id,elist,source,cmt),_,extraArg)
       equation
         (elist2,extraArg) = traverseDAE2_tail(elist,func,extraArg,{});
         elt = DAE.COMP(id,elist2,source,cmt);
       then 
         (elt,extraArg);
         
-    case(elt as DAE.EXTOBJECTCLASS(path,source),func,extraArg)
+    case(elt as DAE.EXTOBJECTCLASS(path,source),_,extraArg)
       then (elt,extraArg);
         
-    case(DAE.ASSERT(e1,e2,e3,source),func,extraArg)
+    case(DAE.ASSERT(e1,e2,e3,source),_,extraArg)
       equation
         ((e11,extraArg)) = func((e1,extraArg));
         ((e22,extraArg)) = func((e2,extraArg));
@@ -4046,21 +4046,21 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.TERMINATE(e1,source),func,extraArg)
+    case(DAE.TERMINATE(e1,source),_,extraArg)
       equation
         ((e11,extraArg)) = func((e1,extraArg));
         elt = DAE.TERMINATE(e11,source);
       then 
         (elt,extraArg);
         
-    case(DAE.NORETCALL(path,expl,source),func,extraArg)
+    case(DAE.NORETCALL(path,expl,source),_,extraArg)
       equation
         (expl,extraArg) = traverseDAEExpList(expl,func,extraArg);
         elt = DAE.NORETCALL(path,expl,source);
       then 
         (elt,extraArg);
         
-    case(DAE.REINIT(cr,e1,source),func,extraArg)
+    case(DAE.REINIT(cr,e1,source),_,extraArg)
       equation
         ((e11,extraArg)) = func((e1,extraArg));
         ((DAE.CREF(cr2,_),extraArg)) = func((Expression.crefExp(cr),extraArg));
@@ -4068,32 +4068,32 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source),func,extraArg)
+    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source),_,extraArg)
       equation
         (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         elt = DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source);
       then 
         (elt,extraArg);
         
-    case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts),source),func,extraArg)
+    case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts),source),_,extraArg)
       equation
         (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         elt = DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source);
       then 
         (elt,extraArg);
     
-    case(DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),source),func,extraArg)
+    case(DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps),source),_,extraArg)
       equation
         (exps_1,extraArg) = traverseDAEExpList(exps,func,extraArg);
         elt = DAE.CONSTRAINT(DAE.CONSTRAINT_EXPS(exps_1),source);
       then 
         (elt,extraArg);
     
-    case(elt as DAE.CLASS_ATTRIBUTES(_),func,extraArg)
+    case(elt as DAE.CLASS_ATTRIBUTES(_),_,extraArg)
       then 
         (elt,extraArg);
         
-    case(DAE.IF_EQUATION(conds,tbs,elist2,source),func,extraArg)
+    case(DAE.IF_EQUATION(conds,tbs,elist2,source),_,extraArg)
       equation
         (conds_1,extraArg) = traverseDAEExpList(conds, func, extraArg);
         (tbs_1,extraArg) = traverseDAEList(tbs,func,extraArg);
@@ -4102,7 +4102,7 @@ algorithm
       then 
         (elt,extraArg);
         
-    case(DAE.INITIAL_IF_EQUATION(conds,tbs,elist2,source),func,extraArg)
+    case(DAE.INITIAL_IF_EQUATION(conds,tbs,elist2,source),_,extraArg)
       equation
         (conds_1,extraArg) = traverseDAEExpList(conds, func, extraArg);
         (tbs_1,extraArg) = traverseDAEList(tbs,func,extraArg);
@@ -4112,7 +4112,7 @@ algorithm
         (elt,extraArg);
     
     // Empty function call - stefan
-    case(DAE.NORETCALL(_, _, _),func,extraArg)
+    case(DAE.NORETCALL(_, _, _),_,extraArg)
       equation
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Empty function call in equations", "Move the function calls to appropriate algorithm section"});
       then 
@@ -4160,28 +4160,28 @@ algorithm
       
     case ({},_,extraArg) then ({},extraArg);
       
-    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e, source = source) :: xs),func,extraArg)
+    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e, source = source) :: xs),_,extraArg)
       equation
         ((e_1,extraArg)) = func((e, extraArg));
         ((e_2,extraArg)) = func((e2, extraArg));
         (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1,extraArg);
         
-    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source) :: xs),func,extraArg)
+    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source) :: xs),_,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         (expl2, extraArg) = traverseDAEExpList(expl1,func,extraArg);
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then ((DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1),extraArg);
         
-    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source) :: xs),func,extraArg)
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source) :: xs),_,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         ((e_2 as DAE.CREF(cr_1,_), extraArg)) = func((Expression.crefExp(cr), extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source)) :: xs),_,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), extraArg)));
@@ -4193,7 +4193,7 @@ algorithm
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: xs),_,extraArg)
       equation
         (algElse,extraArg) = traverseDAEEquationsStmtsElse(algElse,func,extraArg);
         (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
@@ -4202,35 +4202,35 @@ algorithm
         stmts1 = Algorithm.optimizeIf(e_1,stmts2,algElse,source);
       then (listAppend(stmts1, xs_1),extraArg);
         
-    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)) :: xs),_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         ((e_1, extraArg)) = func((e, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source) :: xs_1,extraArg);
     
-    case (((x as DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)) :: xs),_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         ((e_1, extraArg)) = func((e, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         ((e_1, extraArg)) = func((e, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: xs),_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         ((e_1, extraArg)) = func((e, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_WHEN(e_1,stmts2,NONE(),li,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),_,extraArg)
       equation
         ({ew_1}, extraArg) = traverseDAEEquationsStmts({ew},func,extraArg);
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
@@ -4238,7 +4238,7 @@ algorithm
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_WHEN(e_1,stmts2,SOME(ew),li,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, level=e3, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, level=e3, source = source)) :: xs),_,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         ((e_2, extraArg)) = func((e2, extraArg));
@@ -4246,60 +4246,60 @@ algorithm
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_ASSERT(e_1,e_2,e_3,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_TERMINATE(msg = e, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_TERMINATE(msg = e, source = source)) :: xs),_,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_TERMINATE(e_1,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_REINIT(var = e,value=e2, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_REINIT(var = e,value=e2, source = source)) :: xs),_,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         ((e_2, extraArg)) = func((e2, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_NORETCALL(exp = e, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_NORETCALL(exp = e, source = source)) :: xs),_,extraArg)
       equation
         ((e_1, extraArg)) = func((e, extraArg));
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_NORETCALL(e_1,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_RETURN(source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_RETURN(source = source)) :: xs),_,extraArg)
       equation
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (x :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_BREAK(source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_BREAK(source = source)) :: xs),_,extraArg)
       equation
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (x :: xs_1,extraArg);
         
     // MetaModelica extension. KS
-    case (((x as DAE.STMT_FAILURE(body=stmts, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_FAILURE(body=stmts, source = source)) :: xs),_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_FAILURE(stmts2,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_TRY(tryBody=stmts, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_TRY(tryBody=stmts, source = source)) :: xs),_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_TRY(stmts2,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source)) :: xs),_,extraArg)
       equation
         (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (DAE.STMT_CATCH(stmts2,source) :: xs_1,extraArg);
         
-    case (((x as DAE.STMT_THROW(source = source)) :: xs),func,extraArg)
+    case (((x as DAE.STMT_THROW(source = source)) :: xs),_,extraArg)
       equation
         (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
       then (x :: xs_1,extraArg);
         
-    case ((x :: xs),func,extraArg)
+    case ((x :: xs),_,extraArg)
       equation
         str = DAEDump.ppStatementStr(x);
         str = "DAEUtil.traverseDAEEquationsStmts not implemented correctly: " +& str;
@@ -4327,13 +4327,13 @@ algorithm
     Algorithm.Else el,el_1;
     Type_a extraArg;
   case (DAE.NOELSE(),_,extraArg) then (DAE.NOELSE(),extraArg);
-  case (DAE.ELSEIF(e,st,el),func,extraArg)
+  case (DAE.ELSEIF(e,st,el),_,extraArg)
     equation
       (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
       (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);
       ((e_1,extraArg)) = func((e, extraArg));
     then (Algorithm.optimizeElseIf(e_1,st_1,el_1),extraArg);
-  case(DAE.ELSE(st),func,extraArg)
+  case(DAE.ELSE(st),_,extraArg)
     equation
       (st_1,extraArg) = traverseDAEEquationsStmts(st,func,extraArg);
     then (DAE.ELSE(st_1),extraArg);
@@ -4360,7 +4360,7 @@ algorithm
       Option<DAE.Distribution> distribution;
       Option<Boolean> ip,fn;
       Type_a extraArg;
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn)),func,extraArg)
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn)),_,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
         (unit,extraArg) = traverseDAEOptExp(unit,func,extraArg);
@@ -4372,7 +4372,7 @@ algorithm
         (nominal,extraArg) = traverseDAEOptExp(nominal,func,extraArg);
       then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,uncertainty,distribution,eb,ip,fn)),extraArg);
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,uncertainty,distribution,eb,ip,fn)),func,extraArg)
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,uncertainty,distribution,eb,ip,fn)),_,extraArg)
       equation
         (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
         (min,extraArg) = traverseDAEOptExp(min,func,extraArg);
@@ -4381,20 +4381,20 @@ algorithm
         (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
       then (SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,uncertainty,distribution,eb,ip,fn)),extraArg);
 
-      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),func,extraArg)
+      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),_,extraArg)
         equation
           (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
           (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
           (fixed,extraArg) = traverseDAEOptExp(fixed,func,extraArg);
         then (SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),extraArg);
 
-      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn)),func,extraArg)
+      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn)),_,extraArg)
         equation
           (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
           (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
         then (SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn)),extraArg);
 
-      case(SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),initial_,fixed,eb,ip,fn)),func,extraArg)
+      case(SOME(DAE.VAR_ATTR_ENUMERATION(quantity,(min,max),initial_,fixed,eb,ip,fn)),_,extraArg)
         equation
           (quantity,extraArg) = traverseDAEOptExp(quantity,func,extraArg);
           (initial_,extraArg) = traverseDAEOptExp(initial_,func,extraArg);
@@ -4489,7 +4489,7 @@ algorithm
   outDae := match (inDae,newtype)
     local
       list<DAE.Element> elts;
-    case (DAE.DAE(elts),newtype)
+    case (DAE.DAE(elts),_)
       equation
         elts = List.map1(elts,addComponentType2,newtype);
       then DAE.DAE(elts);
@@ -4557,7 +4557,7 @@ algorithm
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations,comment), classPath)
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations,comment), _)
       then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst, operations,comment);
   end match;
 end addElementSourceType;
@@ -4572,7 +4572,7 @@ algorithm
       Absyn.Path classPath;
       DAE.ElementSource src;
     case (inSource, NONE()) then inSource; // no source change.
-    case (inSource, SOME(classPath))
+    case (_, SOME(classPath))
       equation
         src = addElementSourceType(inSource, classPath);
       then src;
@@ -4594,7 +4594,7 @@ algorithm
       list<DAE.SymbolicOperation> operations;
       list<SCode.Comment> comment;
 
-    case (DAE.SOURCE(info,partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations,comment), withinPath)
+    case (DAE.SOURCE(info,partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations,comment), _)
       then DAE.SOURCE(info,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations,comment);
   end match;
 end addElementSourcePartOf;
@@ -4609,11 +4609,11 @@ algorithm
       Absyn.Path classPath;
       DAE.ElementSource src;
     // a top level
-    case (inSource, NONE())
+    case (_, NONE())
       equation
         src = addElementSourcePartOf(inSource, Absyn.TOP());
       then inSource;
-    case (inSource, SOME(classPath))
+    case (_, SOME(classPath))
       equation
         src = addElementSourcePartOf(inSource, Absyn.WITHIN(classPath));
       then src;
@@ -4655,7 +4655,7 @@ algorithm
       list<SCode.Comment> comment;
 
     // a NONE() means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
-    case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), instanceOpt)
+    case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), _)
       then DAE.SOURCE(info,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst,operations,comment);
   end match;
 end addElementSourceInstanceOpt;
@@ -4677,7 +4677,7 @@ algorithm
 
     // a top level
     case (inSource, NONE()) then inSource;
-    case (inSource as DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), connectEquationOpt)
+    case (inSource as DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), _)
       then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst,operations,comment);
   end matchcontinue;
 end addElementSourceConnectOpt;
@@ -5024,7 +5024,7 @@ algorithm
     case(0,bt) then computeHeight(bt);
     case(1,bt) then computeHeight(bt);
       /* d < -1 or d > 1 */
-    case(difference,bt) equation
+    case(_,bt) equation
       bt = doBalance2(difference,bt);
     then bt;
     case(difference,bt) then bt;
@@ -5038,12 +5038,12 @@ protected function doBalance2 "help function to doBalance"
 algorithm
   outBt := matchcontinue(difference,inBt)
     local DAE.AvlTree bt;
-    case(difference,bt) equation
+    case(_,bt) equation
       true = difference < 0;
       bt = doBalance3(bt);
       bt = rotateLeft(bt);
      then bt;
-    case(difference,bt) equation
+    case(_,bt) equation
       true = difference > 0;
       bt = doBalance4(bt);
       bt = rotateRight(bt);
@@ -5544,7 +5544,7 @@ algorithm
       equation
         false = Config.acceptMetaModelicaGrammar();
       then {};
-    case (funcs, els)
+    case (_, _)
       equation
         paths1 = getUniontypePathsFunctions(funcs);
         paths2 = getUniontypePathsElements(els);
@@ -5692,13 +5692,13 @@ algorithm
       DAE.ElementSource source;
       Option<SCode.Comment> cmt;
       DAE.Element elt;
-    case (DAE.VAR(componentRef=cr,kind=DAE.PARAM(),variableAttributesOption=varOpt),ht)
+    case (DAE.VAR(componentRef=cr,kind=DAE.PARAM(),variableAttributesOption=varOpt),_)
       equation
         _ = BaseHashTable.get(cr,ht);
         // print("Make cr final " +& ComponentReference.printComponentRefStr(cr) +& "\n");
         elt = setVariableAttributes(ielt,setFinalAttr(varOpt,true));
       then elt;
-    case (DAE.COMP(id,elts,source,cmt),ht)
+    case (DAE.COMP(id,elts,source,cmt),_)
       equation
         elts = List.map1(elts,makeEvaluatedParamFinal,ht);
       then DAE.COMP(id,elts,source,cmt);
@@ -5785,7 +5785,7 @@ algorithm
   outAcc := matchcontinue (inElem,acc)
     local
       Absyn.Path path;
-    case (DAE.VAR(ty = DAE.T_FUNCTION(source = {path})),acc)
+    case (DAE.VAR(ty = DAE.T_FUNCTION(source = {path})),_)
       then path::acc;
     case (_,acc) then acc;
   end matchcontinue;
@@ -5888,7 +5888,7 @@ algorithm
         es = listAppend(es2,es1);
       then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, DAE.SUBSTITUTION(es,t1)::operations,comment);
 
-    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations, comment),op)
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations, comment),_)
       then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, op::operations,comment);
   end matchcontinue;
 end addSymbolicTransformation;
@@ -5900,7 +5900,7 @@ public function condAddSymbolicTransformation
   output DAE.ElementSource outSource;
 algorithm
   outSource := match (cond,source,op)
-    case (true,source,op)
+    case (true,_,_)
       then addSymbolicTransformation(source,op);
     else source;
   end match;

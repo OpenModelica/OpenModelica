@@ -192,7 +192,7 @@ protected
   Item item;
 algorithm
   outEnv := matchcontinue(inEnv, inName)
-    case (inEnv, inName)
+    case (_, _)
       equation
         FRAME(clsAndVars = cls_and_vars) :: _ = inEnv;
         item = avlTreeGet(cls_and_vars, inName);
@@ -201,7 +201,7 @@ algorithm
         outEnv = enterFrame(cls_env, inEnv);
       then
         outEnv;
-    case (inEnv, inName)
+    case (_, _)
       equation
         print("Failed to enterScope: " +& inName +& " in env: " +& printEnvStr(inEnv) +& "\n");
       then

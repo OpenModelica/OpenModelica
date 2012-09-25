@@ -684,12 +684,12 @@ algorithm
       list<Connect.OuterConnect> oc;
       Connect.OuterConnect new_oc;
     // First check if already added
-    case(scope, Connect.SETS(outerConnects = oc),cr1,cr2,io1,io2,f1,f2,_)
+    case(_, Connect.SETS(outerConnects = oc),_,_,_,_,_,_,_)
       equation
         _::_ = List.select2(oc,outerConnectionMatches,cr1,cr2);
       then sets;
     // add the outerconnect
-    case(scope,_,cr1,cr2,io1,io2,f1,f2,source)
+    case(_,_,_,_,_,_,_,_,_)
       equation
         new_oc = Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source);
       then addOuterConnect(sets, new_oc);
@@ -2845,18 +2845,18 @@ algorithm
       InnerOuter.InstHierarchy ih;
 
     // is a non-qualified cref => OUTSIDE
-    case (env,ih,DAE.CREF_IDENT(ident = _)) 
+    case (_,ih,DAE.CREF_IDENT(ident = _)) 
       then Connect.OUTSIDE();
 
     // is a qualified cref and is a connector => OUTSIDE 
-    case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) 
+    case (_,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) 
       equation
        (_,_,DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_,_,_,_,_,_) 
          = Lookup.lookupVar(Env.emptyCache(),env,ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}));
       then Connect.OUTSIDE();
 
     // is a qualified cref and is NOT a connector => INSIDE
-    case (env,ih,DAE.CREF_QUAL(componentRef =_)) 
+    case (_,ih,DAE.CREF_QUAL(componentRef =_)) 
       then Connect.INSIDE();
   end matchcontinue;
 end componentFace;

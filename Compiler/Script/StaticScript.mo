@@ -57,7 +57,7 @@ algorithm
       Env.Env env;
     
     // special case for Parham Vaseles OpenModelica Interactive, where buildModel takes stepSize instead of startTime, stopTime and numberOfIntervals
-    case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,inSimOpt)
+    case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,_)
       equation
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.        
@@ -75,7 +75,7 @@ algorithm
         (cache, startTime, stopTime, numberOfIntervals);
         
     // normal case, fill in defaults
-    case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,inSimOpt)
+    case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,_)
       equation
         // An ICONST is used as the default value of stepSize so that this case
         // fails if stepSize isn't given as argument to buildModel.        
@@ -261,7 +261,7 @@ public function elabCallInteractive "function: elabCallInteractive
       list<DAE.Exp> simulationArgs;
       String name;
     
-    case (cache,env,cr2 as Absyn.CREF_IDENT(name = name),inExps,inNamedArgs,impl,SOME(st),_,_)
+    case (cache,env,cr2 as Absyn.CREF_IDENT(name = name),_,_,impl,SOME(st),_,_)
       equation
         ErrorExt.setCheckpoint("Scripting");
         cr = Absyn.joinCrefs(Absyn.CREF_QUAL("OpenModelica",{},Absyn.CREF_IDENT("Scripting",{})),cr2);
@@ -468,7 +468,7 @@ algorithm
       list<Absyn.NamedArg> nargs;
       Env.Cache cache;
       Prefix.Prefix pre;
-  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,info,_)
+  case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect,pre,_,_)
       equation
         Debug.fprintln(Flags.SEI, "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e_1,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st,pre,info,Error.getNumErrorMessages());
@@ -477,7 +477,7 @@ algorithm
         Debug.fprintln(Flags.SEI, "elab_exp CALL done");
       then
         (cache,e_1,prop,st_1);
-    case (cache,env,exp,impl,st,doVect,pre,info,numErrorMessages)
+    case (cache,env,exp,impl,st,doVect,pre,_,_)
       equation
         (cache,e_1,prop,st_1) = Static.elabExp(cache,env,exp,impl,st,doVect,pre,info);
       then
@@ -519,7 +519,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       Ident fnstr;
-  case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,info,numErrorMessages) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
+  case (cache,env,fn,args,nargs,impl,st as SOME(_),pre,_,_) /* impl LS: Check if a builtin function call, e.g. size() and calculate if so */
       equation
         (cache,e,prop,st) = elabCallInteractive(cache,env, fn, args, nargs, impl,st,pre,info) "Elaborate interactive function calls, such as simulate(), plot() etc." ;
       then
@@ -554,12 +554,12 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
     // Function calls
-    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre,info)
+    case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre,_)
       equation
         (cache,e_1,prop,_) = elabCall(cache,env, fn, args, nargs, true,NONE(),pre,info,Error.getNumErrorMessages());
       then
         (cache,e_1,prop);
-    case (cache,env,e,impl,pre,info)
+    case (cache,env,e,impl,pre,_)
       equation
         (cache,e_1,prop) = Static.elabGraphicsExp(cache,env,e,impl,pre,info);
       then

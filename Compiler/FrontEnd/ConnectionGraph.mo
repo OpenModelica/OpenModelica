@@ -117,7 +117,7 @@ algorithm
     // no dae
     // case (graph, DAE.DAE({},_)) then DAEUtil.emptyDae;
     // handle the connection braking
-    case (graph, DAE.DAE(elts), modelNameQualified)
+    case (graph, DAE.DAE(elts), _)
       equation
 
         Debug.fprintln(Flags.CGRAPH, "Summary: \n\t" +& 
@@ -136,7 +136,7 @@ algorithm
       then
         DAE.DAE(elts);
     // handle the connection braking
-    case (graph, dae, modelNameQualified)
+    case (graph, dae, _)
       equation
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.handleOverconstrainedConnections failed for model: " +& modelNameQualified);
       then
@@ -547,133 +547,133 @@ algorithm
       Boolean b;
   
      // var
-    case (DAE.VAR(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.VAR(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
      // define
-    case (DAE.DEFINE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.DEFINE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
      // initial define
-    case (DAE.INITIALDEFINE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.INITIALDEFINE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // equation
-    case (DAE.EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // initial equation
-    case (DAE.INITIALEQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.INITIALEQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // equequation
-    case (DAE.EQUEQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.EQUEQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // array equation
-    case (DAE.ARRAY_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.ARRAY_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // initial array equation
-    case (DAE.INITIAL_ARRAY_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.INITIAL_ARRAY_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // complex equation
-    case (DAE.COMPLEX_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.COMPLEX_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // initial complex equation
-    case (DAE.INITIAL_COMPLEX_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.INITIAL_COMPLEX_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // when equation
-    case (DAE.WHEN_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.WHEN_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // if equation
-    case (DAE.IF_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.IF_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // initial if equation
-    case (DAE.INITIAL_IF_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.INITIAL_IF_EQUATION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // algorithm
-    case (DAE.ALGORITHM(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.ALGORITHM(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // initial algorithm
-    case (DAE.INITIALALGORITHM(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.INITIALALGORITHM(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // a component
-    case (DAE.COMP(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.COMP(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // external object
-    case (DAE.EXTOBJECTCLASS(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.EXTOBJECTCLASS(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // assert
-    case (DAE.ASSERT(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.ASSERT(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // terminate
-    case (DAE.TERMINATE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.TERMINATE(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // reinit
-    case (DAE.REINIT(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.REINIT(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // no return call
-    case (DAE.NORETCALL(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
+    case (DAE.NORETCALL(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), _, _)
       equation
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
     // TODO! FIXME! CHECK THIS! anything else could not have come from a connect, ignore!
-    case (inElement, left, right)
+    case (_, _, _)
       equation
          //debug_print("element", inElement);
          //debug_print("left", left);
@@ -700,7 +700,7 @@ algorithm
     case ({}, left, right) then false;
 
     // try direct match
-    case (SOME((crLeft, crRight))::rest, left, right)
+    case (SOME((crLeft, crRight))::rest, _, _)
       equation
         b1 = ComponentReference.crefPrefixOf(left, crLeft);
         b2 = ComponentReference.crefPrefixOf(right, crRight);
@@ -710,7 +710,7 @@ algorithm
       then
         true;
     // try inverse match
-    case (SOME((crLeft, crRight))::rest, left, right)      
+    case (SOME((crLeft, crRight))::rest, _, _)      
       equation
         b1 = ComponentReference.crefPrefixOf(right, crLeft);
         b2 = ComponentReference.crefPrefixOf(left, crRight);
@@ -720,13 +720,13 @@ algorithm
       then
         true;
     // try the rest
-    case (_::rest, left, right)      
+    case (_::rest, _, _)      
       equation
         b = isInConnectionList(rest, left, right);
       then
         b;
     // failure
-    case (_, left, right)
+    case (_, _, _)
       equation
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGrap.isInConnectionList failed!");
       then
@@ -930,12 +930,12 @@ algorithm
       list<tuple<String,String>> userBrokenTplLst;
 
     // deal with empty connection graph
-    case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {}), inDAE, modelNameQualified) 
+    case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {}), _, _) 
       then ({}, inDAE, {});
 
     // we have something in the connection graph
     case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots,
-                   branches = branches, connections = connections), inDAE, modelNameQualified)
+                   branches = branches, connections = connections), _, _)
       equation
         // reverse the conenction list to have them as in the model
         connections = listReverse(connections);
@@ -971,7 +971,7 @@ algorithm
         
     // we have something in the connection graph
     case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots,
-                   branches = branches, connections = connections), inDAE, modelNameQualified)
+                   branches = branches, connections = connections), _, _)
       equation
         // reverse the conenction list to have them as in the model
         connections = listReverse(connections);
@@ -1042,7 +1042,7 @@ algorithm
     // handle empty case
     case ({}, _) then {};
     // handle match
-    case ((e as (c1, c2, els))::rest, inUserSelectedBreaking) 
+    case ((e as (c1, c2, els))::rest, _) 
       equation
         sc1 = ComponentReference.printComponentRefStr(c1);
         sc2 = ComponentReference.printComponentRefStr(c2);
@@ -1056,7 +1056,7 @@ algorithm
       then
         ordered;
     // handle miss
-    case ((e as (c1, c2, els))::rest, inUserSelectedBreaking) 
+    case ((e as (c1, c2, els))::rest, _) 
       equation
         sc1 = ComponentReference.printComponentRefStr(c1);
         sc2 = ComponentReference.printComponentRefStr(c2);
@@ -1390,7 +1390,7 @@ algorithm
   outDae := matchcontinue(inRoots, inDae)
     case ({}, {}) then {};
     case ({}, inDae) then inDae;
-    case (inRoots, inDae)
+    case (_, _)
       equation
         (outDae, _) = DAEUtil.traverseDAE2(inDae, evalIsRootHelper, inRoots);
       then outDae;
@@ -1707,17 +1707,17 @@ algorithm
       DaeEdges connections, connections1, connections2;
 
     // left is empty, return right
-    case (inGraph1, GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},branches = {},connections = {}))
+    case (_, GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},branches = {},connections = {}))
       then
         inGraph1;
     
     // right is empty, return left
-    case (GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},branches = {},connections = {}), inGraph2)
+    case (GRAPH(updateGraph = _,definiteRoots = {},potentialRoots = {},branches = {},connections = {}), _)
       then
         inGraph2;
 
     // they are equal, return any
-    case (inGraph1, inGraph2)
+    case (_, _)
       equation
         equality(inGraph1 = inGraph2);
       then
@@ -1764,7 +1764,7 @@ protected function graphVizDaeEdge
 algorithm
   out := match(inDaeEdge, inBrokenDaeEdges)
     local DAE.ComponentRef c1, c2; String sc1, sc2, strDaeEdge, label, labelFontSize, decorate, color, style, fontColor; Boolean isBroken;
-    case ((c1, c2, _), inBrokenDaeEdges)
+    case ((c1, c2, _), _)
       equation
         isBroken = listMember((c1,c2), inBrokenDaeEdges);
         label = Util.if_(isBroken, "[[broken connect]]", "connect");
@@ -1796,7 +1796,7 @@ protected function graphVizDefiniteRoot
 algorithm
   out := match(inDefiniteRoot, inFinalRoots)
     local DAE.ComponentRef c; String strDefiniteRoot; Boolean isSelectedRoot;
-    case (c, inFinalRoots)
+    case (c, _)
       equation
         isSelectedRoot = listMember(c, inFinalRoots);
         strDefiniteRoot = "\"" +& ComponentReference.printComponentRefStr(c) +& "\"" +& 
@@ -1814,7 +1814,7 @@ protected function graphVizPotentialRoot
 algorithm
   out := match(inPotentialRoot, inFinalRoots)
     local DAE.ComponentRef c; Real priority; String strPotentialRoot; Boolean isSelectedRoot;
-    case ((c, priority), inFinalRoots)
+    case ((c, priority), _)
       equation
         isSelectedRoot = listMember(c, inFinalRoots);
         strPotentialRoot = "\"" +& ComponentReference.printComponentRefStr(c) +& "\"" +&  
@@ -1845,13 +1845,13 @@ algorithm
       list<String> infoNode;
     
     // don't do anything if we don't have +d=cgraphGraphVizFile or +d=cgraphGraphVizShow
-    case(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
+    case(_, _, _, _, _, _, _)
       equation
         false = boolOr(Flags.isSet(Flags.CGRAPH_GRAPHVIZ_FILE), Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW));
       then
         "";
       
-    case(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
+    case(_, _, _, _, _, _, _)
       equation
         tStart = clock();
         i = "\t";
@@ -1951,13 +1951,13 @@ algorithm
       Integer leftyExitStatus;
       
     // do not start graphviz if we don't have +d=cgraphGraphVizShow
-    case (fileNameGraphViz, modelNameQualified)
+    case (_, _)
       equation
         false = Flags.isSet(Flags.CGRAPH_GRAPHVIZ_SHOW);
       then
         "";
         
-    case (fileNameGraphViz, modelNameQualified)
+    case (_, _)
       equation
         fileNameTraceRemovedConnections = modelNameQualified +& "_removed_connections.txt";
         Debug.traceln("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable");

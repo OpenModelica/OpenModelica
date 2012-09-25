@@ -128,7 +128,7 @@ algorithm
     local
       list<DAE.Element> daelist;
     
-    case (DAE.DAE(daelist),functionTree)
+    case (DAE.DAE(daelist),_)
       equation
         List.map_0(sortFunctions(DAEUtil.getFunctionList(functionTree)),dumpFunction);
         List.map_0(daelist, dumpExtObjectClass);
@@ -184,7 +184,7 @@ protected function funcGreaterThan "sorting function for two DAE.Element that ar
   output Boolean res;
 algorithm
   res := matchcontinue(func1,func2)
-    case(func1,func2) equation
+    case(_,_) equation
       res = stringCompare(functionNameStr(func1),functionNameStr(func2)) > 0;
     then res;
     else true;
@@ -2761,7 +2761,7 @@ algorithm
     // nothing gives nothing
     case ({}, true) then "";
     // dims give something
-    case (dims, true)
+    case (_, true)
      equation
        str = "[" +& stringDelimitList(List.map(dims, ExpressionDump.printSubscriptStr), ", ") +& "]";
      then
@@ -2784,7 +2784,7 @@ algorithm
       splitElements splElems;  
       list<compWithSplitElements> fixedDae;   
       functionList funList;
-    case (DAE.DAE(daelist), functionTree)
+    case (DAE.DAE(daelist), _)
       equation
     
         true = Flags.isSet(Flags.DUMP_DAE);
@@ -2798,7 +2798,7 @@ algorithm
       then
         str;
         
-    case (inDAElist,functionTree)
+    case (_,_)
       equation
         myStream = IOStream.create("dae", IOStream.LIST());
         myStream = dumpStream(inDAElist, functionTree, myStream);
@@ -2887,7 +2887,7 @@ algorithm
       list<DAE.Function> funcs;
       IOStream.IOStream str;
 
-    case (DAE.DAE(daelist), functionTree, str)
+    case (DAE.DAE(daelist), _, str)
       equation
         funcs = DAEUtil.getFunctionList(functionTree);
         funcs = sortFunctions(funcs);
@@ -3003,7 +3003,7 @@ algorithm
       IOStream.IOStream str;
       list<DAE.Element> v,o,ie,ia,e,a,ca,co;
       
-    case (l, str)
+    case (_, str)
      equation
        // classify DAE 
        (v,ie,ia,e,a,ca,co,o) = DAEUtil.splitElements(l);
@@ -3429,7 +3429,7 @@ algorithm
     // handle nothingness
     case ({},_,inStream) then inStream;
     // the usual case
-    case (first :: rest, printTypeDimension, str)
+    case (first :: rest, _, str)
       equation
         str = dumpVarStream(first, printTypeDimension, str);
         str = dumpVarsStream(rest, printTypeDimension, str);
@@ -3471,7 +3471,7 @@ algorithm
              binding = NONE(),
              source = source,
              variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment), printTypeDimension, str)
+             absynCommentOption = comment), _, str)
       equation
         sFinal = Util.if_(DAEUtil.getFinalAttr(dae_var_attr),"final ", "");
         s1 = dumpKindStr(kind);
@@ -3497,7 +3497,7 @@ algorithm
              binding = SOME(e),
              source = source,
              variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment), printTypeDimension, str)
+             absynCommentOption = comment), _, str)
       equation
         sFinal = Util.if_(DAEUtil.getFinalAttr(dae_var_attr),"final ", "");
         s1 = dumpKindStr(kind);

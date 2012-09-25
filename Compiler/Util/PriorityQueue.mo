@@ -131,11 +131,11 @@ algorithm
     local
       T ts1,ts2;
       
-    case (true,_,t1,ts1,t2,ts2)
+    case (true,_,_,ts1,_,ts2)
       equation
         ts = meld(ts1,t2::ts2);
       then t1::ts;
-    case (_,true,t1,ts1,t2,ts2)
+    case (_,true,_,ts1,_,ts2)
       equation
         ts = meld(t1::ts1,ts2);
       then t2::ts;
@@ -200,7 +200,7 @@ algorithm
       Element elt;
       T ts;
     case ({},acc) then listReverse(acc);
-    case (ts,acc)
+    case (ts,_)
       equation
         (ts,elt) = deleteAndReturnMin(ts);
       then elements2(ts,elt::acc);

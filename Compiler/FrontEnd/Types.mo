@@ -1177,7 +1177,7 @@ algorithm
       Option<DAE.Const> cnstForRange;
       DAE.Attributes attr;
     
-    case (DAE.TYPES_VAR(name,attr,tp,bind,cnstForRange),ty)
+    case (DAE.TYPES_VAR(name,attr,tp,bind,cnstForRange),_)
     then DAE.TYPES_VAR(name,attr,ty,bind,cnstForRange);
 
   end match;
@@ -3762,13 +3762,13 @@ algorithm
       Const c,c1,c2,c_1;
       TupleConst tc,tc1,tc2;
       Properties prop;
-    case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP(type_ = et,constFlag = c2),printFailtrace)
+    case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP(type_ = et,constFlag = c2),_)
       equation
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         c = constAnd(c1, c2);
       then
         (e_1,DAE.PROP(t_1,c));
-    case (e,DAE.PROP_TUPLE(type_ = gt,tupleConst = tc1),DAE.PROP_TUPLE(type_ = et,tupleConst = tc2),printFailtrace)
+    case (e,DAE.PROP_TUPLE(type_ = gt,tupleConst = tc1),DAE.PROP_TUPLE(type_ = et,tupleConst = tc2),_)
       equation
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
         tc = constTupleAnd(tc1, tc2);
@@ -3777,7 +3777,7 @@ algorithm
         
     // The problem with MetaModelica tuple is that it is a datatype (should use PROP instead of PROP_TUPLE)
     // this case converts a TUPLE to META_TUPLE
-    case (e,DAE.PROP_TUPLE(type_ = gt as DAE.T_TUPLE(source = _),tupleConst = tc1), DAE.PROP(type_ = et as DAE.T_METATUPLE(source = _),constFlag = c2),printFailtrace)
+    case (e,DAE.PROP_TUPLE(type_ = gt as DAE.T_TUPLE(source = _),tupleConst = tc1), DAE.PROP(type_ = et as DAE.T_METATUPLE(source = _),constFlag = c2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
@@ -3785,7 +3785,7 @@ algorithm
         c = constAnd(c_1, c2);
       then
         (e_1,DAE.PROP(t_1,c));
-    case (e,DAE.PROP_TUPLE(type_ = gt as DAE.T_TUPLE(source = _),tupleConst = tc1), DAE.PROP(type_ = et as DAE.T_METABOXED(source = _),constFlag = c2),printFailtrace)
+    case (e,DAE.PROP_TUPLE(type_ = gt as DAE.T_TUPLE(source = _),tupleConst = tc1), DAE.PROP(type_ = et as DAE.T_METABOXED(source = _),constFlag = c2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (e_1,t_1) = matchType(e, gt, et, printFailtrace);
@@ -3794,7 +3794,7 @@ algorithm
       then
         (e_1,DAE.PROP(t_1,c));
 
-    case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP_TUPLE(type_ = _),printFailtrace)
+    case (e,DAE.PROP(type_ = gt,constFlag = c1),DAE.PROP_TUPLE(type_ = _),_)
       equation
         prop = propTupleFirstProp(inExpectedType);
         (e_1, prop) = matchProp(e, inActualType, prop, printFailtrace);
@@ -3803,7 +3803,7 @@ algorithm
       then
         (e_1, prop);
              
-    case (e,DAE.PROP_TUPLE(type_ = _),DAE.PROP(type_ = _),printFailtrace)
+    case (e,DAE.PROP_TUPLE(type_ = _),DAE.PROP(type_ = _),_)
       equation
         (prop as DAE.PROP(type_ = gt)) = propTupleFirstProp(inActualType);
         (e_1, prop) = matchProp(e, prop, inExpectedType, printFailtrace);
@@ -3839,7 +3839,7 @@ algorithm
       Type tp,t1,t2;
       list<Type> res;
     case ({},_,_,_) then ({},{});
-    case (e::rest,t1,t2,printFailtrace)
+    case (e::rest,t1,t2,_)
       equation
         (e_1,tp) = matchType(e,t1,t2,printFailtrace);
         (e_2,res) = matchTypeList(rest,t1,t2,printFailtrace);
@@ -3871,7 +3871,7 @@ algorithm
       Type tp,t1,t2;
       list<Type> res,ts1,ts2;
     case ({},{},{},_) then ({},{});
-    case (e::rest,(t1 :: ts1),(t2 :: ts2),printFailtrace)
+    case (e::rest,(t1 :: ts1),(t2 :: ts2),_)
       equation
         (e_1,tp) = matchType(e,t1,t2,printFailtrace);
         (e_2,res) = matchTypeTuple(rest,ts1,ts2,printFailtrace);
@@ -3950,13 +3950,13 @@ algorithm
       PolymorphicBindings polymorphicBindings;
       DAE.Dimension dim;
       DAE.Dimensions dims;
-    case (e,e_type,current_type,dims,expected_type,fnPath)
+    case (e,e_type,current_type,dims,expected_type,_)
       equation
         expected_type_vectorized = liftArrayListDims(expected_type, dims);
         (e_1,e_type_1,polymorphicBindings) = matchTypePolymorphic(e, e_type, expected_type_vectorized, fnPath, {}, true);
       then
         (e_1,e_type_1,dims,polymorphicBindings);
-    case (e,e_type,DAE.T_ARRAY(ty = current_type, dims = {dim}),dims,expected_type,fnPath)
+    case (e,e_type,DAE.T_ARRAY(ty = current_type, dims = {dim}),dims,expected_type,_)
       equation
         dims = listAppend(dims, {dim});
         (e_1,e_type_1,dims,polymorphicBindings) = vectorizableType2(e, e_type, current_type, dims, expected_type, fnPath);
@@ -4271,29 +4271,29 @@ algorithm
         (DAE.CAST(DAE.T_REAL_DEFAULT,e),expected);
 
     // Complex type inheriting primitive type
-    case (e, DAE.T_SUBTYPE_BASIC(complexType = t1),t2,printFailtrace) equation
+    case (e, DAE.T_SUBTYPE_BASIC(complexType = t1),t2,_) equation
       (e_1,t_1) = typeConvert(e,t1,t2,printFailtrace);
     then (e_1,t_1);
-    case (e, t1,DAE.T_SUBTYPE_BASIC(complexType = t2),printFailtrace) equation
+    case (e, t1,DAE.T_SUBTYPE_BASIC(complexType = t2),_) equation
       (e_1,t_1) = typeConvert(e,t1,t2,printFailtrace);
     then (e_1,t_1);
 
     // MetaModelica Option
-    case (DAE.META_OPTION(SOME(e)),DAE.T_METAOPTION(optionType = t1),DAE.T_METAOPTION(t2,ts2),printFailtrace)
+    case (DAE.META_OPTION(SOME(e)),DAE.T_METAOPTION(optionType = t1),DAE.T_METAOPTION(t2,ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (e_1, t_1) = matchType(e,t1,t2,printFailtrace);
       then
         (DAE.META_OPTION(SOME(e_1)),DAE.T_METAOPTION(t_1,ts2));
     
-    case (DAE.META_OPTION(NONE()),_,DAE.T_METAOPTION(t2,ts2),printFailtrace)
+    case (DAE.META_OPTION(NONE()),_,DAE.T_METAOPTION(t2,ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
       then
         (DAE.META_OPTION(NONE()),DAE.T_METAOPTION(t2,ts2));
 
     // MetaModelica Tuple
-    case (DAE.TUPLE(elist),DAE.T_TUPLE(tupleType = tys1),DAE.T_METATUPLE(tys2,ts2),printFailtrace)
+    case (DAE.TUPLE(elist),DAE.T_TUPLE(tupleType = tys1),DAE.T_METATUPLE(tys2,ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         tys2 = List.map(tys2, boxIfUnboxedType);
@@ -4301,7 +4301,7 @@ algorithm
       then
         (DAE.META_TUPLE(elist_1),DAE.T_METATUPLE(tys_1,ts2));
     
-    case (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),actual,expected,printFailtrace)
+    case (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),_,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         elist = Patternm.resultExps(cases);
@@ -4311,14 +4311,14 @@ algorithm
       then
         (DAE.MATCHEXPRESSION(matchTy,inputs,localDecls,cases,et),expected);
     
-    case (DAE.META_TUPLE(elist),DAE.T_METATUPLE(types = tys1),DAE.T_METATUPLE(tys2,ts2),printFailtrace)
+    case (DAE.META_TUPLE(elist),DAE.T_METATUPLE(types = tys1),DAE.T_METATUPLE(tys2,ts2),_)
       equation
         tys2 = List.map(tys2, boxIfUnboxedType);
         (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
         (DAE.META_TUPLE(elist_1),DAE.T_METATUPLE(tys_1,ts2));
     
-    case (DAE.TUPLE(elist),DAE.T_TUPLE(tupleType = tys1),ty2 as DAE.T_METABOXED(ty = DAE.T_UNKNOWN(source =_), source = ts2),printFailtrace)
+    case (DAE.TUPLE(elist),DAE.T_TUPLE(tupleType = tys1),ty2 as DAE.T_METABOXED(ty = DAE.T_UNKNOWN(source =_), source = ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         e_1 = DAE.META_TUPLE(elist);
@@ -4338,7 +4338,7 @@ algorithm
     //   / sjoelund 2009-08-13
     case (e as DAE.ARRAY(DAE.T_ARRAY(ty = t),_,elist),
           DAE.T_ARRAY(ty=t1),
-          DAE.T_METALIST(t2,ts2),printFailtrace)
+          DAE.T_METALIST(t2,ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         t2 = boxIfUnboxedType(t2);
@@ -4349,7 +4349,7 @@ algorithm
     
     case (e as DAE.ARRAY(DAE.T_ARRAY(ty = t),_,elist),
           DAE.T_ARRAY(ty=t1),
-          DAE.T_METABOXED(t2,ts2),printFailtrace)
+          DAE.T_METABOXED(t2,ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
@@ -4360,14 +4360,14 @@ algorithm
         t2 = DAE.T_METALIST(t2,DAE.emptyTypeSource);
       then (e_1, t2);
     
-    case (e as DAE.MATRIX(DAE.T_ARRAY(ty = t),_,elist_big),t1,t2,printFailtrace)
+    case (e as DAE.MATRIX(DAE.T_ARRAY(ty = t),_,elist_big),t1,t2,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (elist,ty2) = typeConvertMatrixToList(elist_big,t1,t2,printFailtrace);
         e_1 = DAE.LIST(elist);
       then (e_1,ty2);
     
-    case (e as DAE.LIST(elist),DAE.T_METALIST(listType = t1),DAE.T_METALIST(t2,ts2),printFailtrace)
+    case (e as DAE.LIST(elist),DAE.T_METALIST(listType = t1),DAE.T_METALIST(t2,ts2),_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
@@ -4376,7 +4376,7 @@ algorithm
         t2 = DAE.T_METALIST(t2,DAE.emptyTypeSource);
       then (e_1, t2);
 
-    case (e, t1 as DAE.T_INTEGER(varLst = _), DAE.T_METABOXED(ty = t2),printFailtrace)
+    case (e, t1 as DAE.T_INTEGER(varLst = _), DAE.T_METABOXED(ty = t2),_)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
@@ -4384,7 +4384,7 @@ algorithm
         e = Expression.boxExp(e);
       then (e,t2);
 
-    case (e, t1 as DAE.T_BOOL(varLst = _), DAE.T_METABOXED(ty = t2),printFailtrace)
+    case (e, t1 as DAE.T_BOOL(varLst = _), DAE.T_METABOXED(ty = t2),_)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
@@ -4392,7 +4392,7 @@ algorithm
         e = Expression.boxExp(e);
       then (e,t2);
 
-    case (e, t1 as DAE.T_REAL(varLst = _), DAE.T_METABOXED(ty = t2),printFailtrace)
+    case (e, t1 as DAE.T_REAL(varLst = _), DAE.T_METABOXED(ty = t2),_)
       equation
         (e,t1) = matchType(e,t1,unboxedType(t2),printFailtrace);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
@@ -4427,7 +4427,7 @@ algorithm
 
     case (e as DAE.CALL(path = _), 
           t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v), 
-          DAE.T_METABOXED(ty = t2),printFailtrace)
+          DAE.T_METABOXED(ty = t2),_)
       equation
         Debug.fprintln(Flags.FAILTRACE, "- Not yet implemented: Converting record calls (not constructor) into boxed records");
       then 
@@ -4435,7 +4435,7 @@ algorithm
 
     case (e as DAE.CREF(cref,_), 
           t1 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v, source = {path}), 
-          DAE.T_METABOXED(ty = t2),printFailtrace)
+          DAE.T_METABOXED(ty = t2),_)
       equation
         true = subtype(t1,t2);
         t2 = DAE.T_METABOXED(t1,DAE.emptyTypeSource);
@@ -4451,34 +4451,34 @@ algorithm
         e_1 = DAE.METARECORDCALL(path, elist, l, -1);
       then (e_1,t2);
 
-    case (DAE.BOX(e),DAE.T_METABOXED(ty = t1),t2,printFailtrace)
+    case (DAE.BOX(e),DAE.T_METABOXED(ty = t1),t2,_)
       equation
         true = subtype(t1,t2);
         (e_1,t2) = matchType(e,t1,t2,printFailtrace);
       then (e_1,t2);
 
-    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_INTEGER(varLst = _),printFailtrace)
+    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_INTEGER(varLst = _),_)
       equation
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
-    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_REAL(varLst = _),printFailtrace)
+    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_REAL(varLst = _),_)
       equation
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
-    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_BOOL(varLst = _),printFailtrace)
+    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_BOOL(varLst = _),_)
       equation
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
         t = simplifyType(t2);
       then (DAE.UNBOX(e,t),t2);
 
-    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v),printFailtrace)
+    case (e,DAE.T_METABOXED(ty = t1),t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), varLst = v),_)
       equation
         true = subtype(t1,t2);
         (e_1,_) = matchType(e,t1,t2,printFailtrace);
@@ -4514,7 +4514,7 @@ type."
 algorithm
   res := matchcontinue(ie,dim)
     local DAE.Type ty,ty1; DAE.Exp e;
-    case(DAE.CAST(ty,e),dim)
+    case(DAE.CAST(ty,e),_)
       equation
         ty1 = Expression.liftArrayR(ty,dim);
       then DAE.CAST(ty1,e);
@@ -4572,7 +4572,7 @@ algorithm
       list<DAE.Exp> first_1,first;
       Type ty1,ty2;
     case ({},_,_,_) then {};
-    case ((first :: rest),ty1,ty2,printFailtrace)
+    case ((first :: rest),ty1,ty2,_)
       equation
         rest_1 = typeConvertMatrix(rest,ty1,ty2,printFailtrace);
         first_1 = typeConvertArray(first,ty1,ty2,printFailtrace);
@@ -4599,7 +4599,7 @@ algorithm
       DAE.Exp first_1,first;
       Type ty_1,ty1,ty2;
     case ({},_,_,_) then ({},{});
-    case ((first :: rest),(ty1 :: ty1rest),(ty2 :: ty2rest),printFailtrace)
+    case ((first :: rest),(ty1 :: ty1rest),(ty2 :: ty2rest),_)
       equation
         (rest_1,tyrest_1) = typeConvertList(rest, ty1rest, ty2rest,printFailtrace);
         (first_1,ty_1) = typeConvert(first, ty1, ty2, printFailtrace);
@@ -4626,7 +4626,7 @@ algorithm
       DAE.Exp e;
       
     case ({},_,_,_) then ({},DAE.T_UNKNOWN_DEFAULT);
-    case (expl::rest, DAE.T_ARRAY(ty=DAE.T_ARRAY(ty=t1)), DAE.T_METALIST(DAE.T_METALIST(listType=t2),ts2),printFailtrace)
+    case (expl::rest, DAE.T_ARRAY(ty=DAE.T_ARRAY(ty=t1)), DAE.T_METALIST(DAE.T_METALIST(listType=t2),ts2),_)
       equation
         (e,t1) = typeConvertMatrixRowToList(expl, t1, t2, printFailtrace);
         t = simplifyType(t1);
@@ -4775,7 +4775,7 @@ algorithm
       then
         DAE.PROP(DAE.T_REAL_DEFAULT,c);
   
-    case(inProperties1,inProperties2,inBoolean3) 
+    case(_,_,_) 
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE,"- Types.matchWithPromote failed on: " +& 
@@ -5273,7 +5273,7 @@ algorithm
       list<DAE.Exp> elist;
       
     case ({},{},_) then ({}, DAE.T_UNKNOWN_DEFAULT);
-    case (e :: _, ty :: _,printFailtrace)
+    case (e :: _, ty :: _,_)
       equation
         st = List.reduce(typeList, superType);
         st = superType(st,st);
@@ -5302,7 +5302,7 @@ algorithm
       list<Type> trest;
       String str;
     case ({},{},_,_) then {};
-    case (e::erest, t::trest, st, printFailtrace)
+    case (e::erest, t::trest, _, _)
       equation
         (e,t) = matchType(e,t,st,printFailtrace);
         erest = listMatchSuperType2(erest,trest,st,printFailtrace);
@@ -5426,20 +5426,20 @@ algorithm
       Type e_type,expected_type,e_type_1,actual,expected;
       PolymorphicBindings polymorphicBindings;
 
-    case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
+    case (exp,actual,expected,_,polymorphicBindings,_)
       equation
         false = Config.acceptMetaModelicaGrammar();
         (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
       then 
         (e_1,e_type_1,polymorphicBindings);
-    case (exp,actual,expected,_,polymorphicBindings,printFailtrace)
+    case (exp,actual,expected,_,polymorphicBindings,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         {} = getAllInnerTypesOfType(expected, isPolymorphic);
         (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
       then 
         (e_1,e_type_1,polymorphicBindings);
-    case (exp,actual,expected,envPath,polymorphicBindings,_)
+    case (exp,actual,expected,_,polymorphicBindings,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
         // print("match type: " +& ExpressionDump.printExpStr(exp) +& " of " +& unparseType(actual) +& " with " +& unparseType(expected) +& "\n");
@@ -5471,13 +5471,13 @@ algorithm
     local
       DAE.Exp e,e_1;
       Type e_type,expected_type,e_type_1;
-    case (e,e_type,expected_type,printFailtrace)
+    case (e,e_type,expected_type,_)
       equation
         true = subtype(e_type, expected_type);
         /* TODO: Don't return ANY as type here; use the most restrictive... Else we get issues... */
       then
         (e,e_type);
-    case (e,e_type,expected_type,printFailtrace)
+    case (e,e_type,expected_type,_)
       equation
         false = subtype(e_type, expected_type);
         (e_1,e_type_1) = typeConvert(e,e_type,expected_type,printFailtrace);
@@ -5508,13 +5508,13 @@ algorithm
       list<DAE.Exp> exps;
       
     case ({},{},_,_) then ({},{});
-    case (e::exps,ty::tys,expected,printFailtrace)
+    case (e::exps,ty::tys,_,_)
       equation
         (e,ty) = matchType(e,ty,expected,printFailtrace);
         (exps,otys) = matchTypes(exps,tys,expected,printFailtrace);
       then
         (e::exps,ty::otys);
-    case (e::_,ty::_,expected,true)
+    case (e::_,ty::_,_,true)
       equation
         print("- Types.matchTypes failed for " +& ExpressionDump.printExpStr(e) +& " from " +& unparseType(ty) +& " to " +& unparseType(expected) +& "\n");
       then fail();
@@ -5533,13 +5533,13 @@ protected function printFailure
   input Type expected_type;
 algorithm
   _ := matchcontinue (flag, source, e, e_type, expected_type)
-    case (flag, source, e, e_type, expected_type)
+    case (_, _, _, _, _)
       equation
         true = Flags.isSet(flag);
         Debug.traceln("- Types." +& source +& " failed on:" +& ExpressionDump.printExpStr(e));
         Debug.traceln("  type:" +& unparseType(e_type) +& " differs from expected\n  type:" +& unparseType(expected_type));
       then ();
-    case (flag, source, e, e_type, expected_type)
+    case (_, _, _, _, _)
       equation
         false = Flags.isSet(flag);
       then ();
@@ -5595,42 +5595,42 @@ algorithm
       list<DAE.Const> cs;
       list<Option<DAE.Exp>> oe;
 
-    case (DAE.T_METAPOLYMORPHIC(name = id),prefix,bindings,info)
+    case (DAE.T_METAPOLYMORPHIC(name = id),_,_,_)
       equation
         {t1} = polymorphicBindingsLookup(prefix +& id, bindings);
         t1 = fixPolymorphicRestype2(t1, "", bindings, info);
       then t1;
     
-    case (DAE.T_METALIST(listType = t1),prefix,bindings,info)
+    case (DAE.T_METALIST(listType = t1),_,_,_)
       equation
         t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
         t2 = boxIfUnboxedType(t2);
       then DAE.T_METALIST(t2,DAE.emptyTypeSource);
     
-    case (DAE.T_METAARRAY(ty = t1),prefix,bindings,info)
+    case (DAE.T_METAARRAY(ty = t1),_,_,_)
       equation
         t2 = fixPolymorphicRestype2(t1,prefix,bindings, info);
         t2 = boxIfUnboxedType(t2);
       then DAE.T_METAARRAY(t2,DAE.emptyTypeSource);
     
-    case (DAE.T_METAOPTION(optionType = t1),prefix,bindings,info)
+    case (DAE.T_METAOPTION(optionType = t1),_,_,_)
       equation
         t2 = fixPolymorphicRestype2(t1, prefix,bindings, info);
         t2 = boxIfUnboxedType(t2);
       then DAE.T_METAOPTION(t2,DAE.emptyTypeSource);
     
-    case (DAE.T_METATUPLE(types = tys),prefix,bindings,info)
+    case (DAE.T_METATUPLE(types = tys),_,_,_)
       equation
         tys = List.map3(tys, fixPolymorphicRestype2, prefix, bindings, info);
         tys = List.map(tys, boxIfUnboxedType);
       then DAE.T_METATUPLE(tys,DAE.emptyTypeSource);
     
-    case (DAE.T_TUPLE(tupleType = tys),prefix,bindings,info)
+    case (DAE.T_TUPLE(tupleType = tys),_,_,_)
       equation
         tys = List.map3(tys, fixPolymorphicRestype2, prefix, bindings, info);
       then DAE.T_TUPLE(tys,DAE.emptyTypeSource);
     
-    case (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts1),prefix,bindings,info)
+    case (DAE.T_FUNCTION(args1,ty1,functionAttributes,ts1),_,_,_)
       equation
         names1 = List.map(args1, Util.tuple41);
         tys1 = List.map(args1, Util.tuple42);
@@ -5643,12 +5643,12 @@ algorithm
       then ty1;
  
     // Add Uniontype, Function reference(?)
-    case (ty,prefix,bindings,info)
+    case (_,_,_,_)
       equation
         // failure(isPolymorphic(ty)); Recursive functions like to return polymorphic crap we don't know of
       then ty;
     
-    case (ty,prefix,bindings,info)
+    case (_,_,_,_)
       equation
         tstr = unparseType(ty);
         bstr = polymorphicBindingsStr(bindings);
@@ -5668,11 +5668,11 @@ algorithm
       String id2;
       list<Type> tys;
       PolymorphicBindings rest;
-    case (id, (id2,tys)::_)
+    case (_, (id2,tys)::_)
       equation
         true = id ==& id2;
       then List.map(tys, boxIfUnboxedType);
-    case (id, _::rest)
+    case (_, _::rest)
       equation
         tys = polymorphicBindingsLookup(id,rest);
       then tys;
@@ -5712,56 +5712,56 @@ algorithm
     
     case ({},_,_) then inAcc;
     
-    case ((first as DAE.T_ARRAY(ty = ty))::rest,acc,fn)
+    case ((first as DAE.T_ARRAY(ty = ty))::rest,acc,_)
       then getAllInnerTypes(ty::rest,List.consOnSuccess(first,acc,fn),fn);
     
-    case ((first as DAE.T_METALIST(listType = ty))::rest,acc,fn)
+    case ((first as DAE.T_METALIST(listType = ty))::rest,acc,_)
       then getAllInnerTypes(ty::rest,List.consOnSuccess(first,acc,fn),fn);
     
-    case ((first as DAE.T_METAARRAY(ty = ty))::rest,acc,fn)
+    case ((first as DAE.T_METAARRAY(ty = ty))::rest,acc,_)
       then getAllInnerTypes(ty::rest,List.consOnSuccess(first,acc,fn),fn);
     
-    case ((first as DAE.T_METABOXED(ty = ty))::rest,acc,fn)
+    case ((first as DAE.T_METABOXED(ty = ty))::rest,acc,_)
       then getAllInnerTypes(ty::rest,List.consOnSuccess(first,acc,fn),fn);
     
-    case ((first as DAE.T_METAOPTION(optionType = ty))::rest,acc,fn)
+    case ((first as DAE.T_METAOPTION(optionType = ty))::rest,acc,_)
       then getAllInnerTypes(ty::rest,List.consOnSuccess(first,acc,fn),fn);
 
-    case ((first as DAE.T_TUPLE(tupleType = tys))::rest,acc,fn)
+    case ((first as DAE.T_TUPLE(tupleType = tys))::rest,acc,_)
       equation
         acc = getAllInnerTypes(tys,List.consOnSuccess(first,acc,fn),fn);
       then getAllInnerTypes(rest,acc,fn);
     
-    case ((first as DAE.T_METATUPLE(types = tys))::rest,acc,fn)
+    case ((first as DAE.T_METATUPLE(types = tys))::rest,acc,_)
       equation
         acc = getAllInnerTypes(tys,List.consOnSuccess(first,acc,fn),fn);
       then getAllInnerTypes(rest,acc,fn);
 
-    case ((first as DAE.T_METARECORD(fields = fields))::rest,acc,fn)
+    case ((first as DAE.T_METARECORD(fields = fields))::rest,acc,_)
       equation
         tys = List.map(fields, getVarType);
         acc = getAllInnerTypes(tys,List.consOnSuccess(first,acc,fn),fn);
       then getAllInnerTypes(rest,acc,fn);
     
-    case ((first as DAE.T_COMPLEX(varLst = fields))::rest,acc,fn)
+    case ((first as DAE.T_COMPLEX(varLst = fields))::rest,acc,_)
       equation
         tys = List.map(fields, getVarType);
         acc = getAllInnerTypes(tys,List.consOnSuccess(first,acc,fn),fn);
       then getAllInnerTypes(rest,acc,fn);
     
-    case ((first as DAE.T_SUBTYPE_BASIC(varLst = fields))::rest,acc,fn)
+    case ((first as DAE.T_SUBTYPE_BASIC(varLst = fields))::rest,acc,_)
       equation
         tys = List.map(fields, getVarType);
         acc = getAllInnerTypes(tys,List.consOnSuccess(first,acc,fn),fn);
       then getAllInnerTypes(rest,acc,fn);
 
-    case ((first as DAE.T_FUNCTION(funcArgs,ty,_,_))::rest,acc,fn)
+    case ((first as DAE.T_FUNCTION(funcArgs,ty,_,_))::rest,acc,_)
       equation
         tys = List.map(funcArgs, Util.tuple42);
         acc = getAllInnerTypes(tys,List.consOnSuccess(first,acc,fn),fn);
       then getAllInnerTypes(ty::rest,acc,fn);
 
-    case (first::rest,acc,fn)
+    case (first::rest,acc,_)
       then getAllInnerTypes(rest,List.consOnSuccess(first,acc,fn),fn);
   end matchcontinue;
 end getAllInnerTypes;
@@ -5959,7 +5959,7 @@ algorithm
       tuple<String,list<Type>> first;
       Type ty;
     
-    case (id,ty,{})
+    case (_,ty,{})
       equation
         ty = unboxedType(ty);
         ty = boxIfUnboxedType(ty);
@@ -5970,7 +5970,7 @@ algorithm
         ty = unboxedType(ty);
         ty = boxIfUnboxedType(ty);
       then (id2,ty::tys)::rest;
-    case (id,ty,first::rest)
+    case (_,ty,first::rest)
       equation
         rest = addPolymorphicBinding(id,ty,rest);
       then first::rest;
@@ -6008,7 +6008,7 @@ algorithm
     
     case (_,_,{},_,_) then ();
     
-    case (bindings, solvedBindings, unsolvedBindings, info, pathLst)
+    case (_, _, _, _, _)
       equation
         pathStr = stringDelimitList(List.map(pathLst, Absyn.pathString), ", ");
         bindingsStr = polymorphicBindingsStr(bindings);
@@ -6193,7 +6193,7 @@ algorithm
         ({ty1},solvedBindings) = solveBindings({ty1},{ty2},solvedBindings);
         (tys2,solvedBindings) = solveBindingsThread(tys1,tys2,true,solvedBindings);
       then (ty1::tys2,solvedBindings);
-    case (ty1::tys1,ty2::tys2,changed,solvedBindings)
+    case (ty1::tys1,ty2::tys2,_,solvedBindings)
       equation
         (tys2,solvedBindings) = solveBindingsThread(tys1,tys2,changed,solvedBindings);
       then (ty1::tys2,solvedBindings);
@@ -6214,12 +6214,12 @@ algorithm
       PolymorphicBindings solvedBindings;
       
     case ({},_,true) then {};
-    case (ty::tys,solvedBindings,changed)
+    case (ty::tys,solvedBindings,_)
       equation
         ty = replaceSolvedBinding(ty,solvedBindings);
         tys = replaceSolvedBindings(tys,solvedBindings,true);
       then ty::tys;
-    case (ty::tys,solvedBindings,changed)
+    case (ty::tys,solvedBindings,_)
       equation
         tys = replaceSolvedBindings(tys,solvedBindings,changed);
       then ty::tys;
@@ -6308,18 +6308,18 @@ algorithm
       list<String> ids;
       PolymorphicBindings bindings;
     
-    case (actual,DAE.T_METAPOLYMORPHIC(name = id),envPath,bindings)
+    case (_,DAE.T_METAPOLYMORPHIC(name = id),_,bindings)
       then addPolymorphicBinding("$" +& id,actual,bindings);
     
-    case (DAE.T_METAPOLYMORPHIC(name = id),expected,envPath,bindings)
+    case (DAE.T_METAPOLYMORPHIC(name = id),_,_,bindings)
       then addPolymorphicBinding("$$" +& id,expected,bindings);
     
-    case (DAE.T_METABOXED(ty = ty1),ty2,envPath,bindings)
+    case (DAE.T_METABOXED(ty = ty1),ty2,_,bindings)
       equation
         ty1 = unboxedType(ty1);
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
     
-    case (ty1,DAE.T_METABOXED(ty = ty2),envPath,bindings)
+    case (ty1,DAE.T_METABOXED(ty = ty2),_,bindings)
       equation
         ty2 = unboxedType(ty2);
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
@@ -6330,25 +6330,25 @@ algorithm
     case (DAE.T_STRING(source = _),DAE.T_STRING(source = _),envPath,bindings) then bindings;
     case (DAE.T_BOOL(source = _),DAE.T_BOOL(source = _),envPath,bindings) then bindings;
     
-    case (DAE.T_METAARRAY(ty = ty1),DAE.T_METAARRAY(ty = ty2),envPath,bindings)
+    case (DAE.T_METAARRAY(ty = ty1),DAE.T_METAARRAY(ty = ty2),_,bindings)
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
-    case (DAE.T_METALIST(listType = ty1),DAE.T_METALIST(listType = ty2),envPath,bindings)
+    case (DAE.T_METALIST(listType = ty1),DAE.T_METALIST(listType = ty2),_,bindings)
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
-    case (DAE.T_METAOPTION(optionType = ty1),DAE.T_METAOPTION(optionType = ty2),envPath,bindings)
+    case (DAE.T_METAOPTION(optionType = ty1),DAE.T_METAOPTION(optionType = ty2),_,bindings)
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
-    case (DAE.T_METATUPLE(types = tList1),DAE.T_METATUPLE(types = tList2),envPath,bindings)
+    case (DAE.T_METATUPLE(types = tList1),DAE.T_METATUPLE(types = tList2),_,bindings)
       then subtypePolymorphicList(tList1,tList2,envPath,bindings);
     
-    case (DAE.T_TUPLE(tupleType = tList1),DAE.T_TUPLE(tupleType = tList2),envPath,bindings)
+    case (DAE.T_TUPLE(tupleType = tList1),DAE.T_TUPLE(tupleType = tList2),_,bindings)
       then subtypePolymorphicList(tList1,tList2,envPath,bindings);
     
-    case (DAE.T_METAUNIONTYPE(source = {path1}),DAE.T_METAUNIONTYPE(source = {path2}),envPath,bindings)
+    case (DAE.T_METAUNIONTYPE(source = {path1}),DAE.T_METAUNIONTYPE(source = {path2}),_,bindings)
       equation
         true = Absyn.pathEqual(path1,path2);
       then bindings;
     
     // MM Function Reference. sjoelund
-    case (DAE.T_FUNCTION(farg1,ty1,_,{path1}),DAE.T_FUNCTION(farg2,ty2,_,{path2}),envPath,bindings)
+    case (DAE.T_FUNCTION(farg1,ty1,_,{path1}),DAE.T_FUNCTION(farg2,ty2,_,{path2}),_,bindings)
       equation
         true = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1); // Don't rename the result type for recursive calls...
         tList1 = List.map(farg1, Util.tuple42);
@@ -6357,7 +6357,7 @@ algorithm
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
 
-    case (DAE.T_FUNCTION(source = {path1}),DAE.T_FUNCTION(farg2,ty2,_,{path2}),envPath,bindings)
+    case (DAE.T_FUNCTION(source = {path1}),DAE.T_FUNCTION(farg2,ty2,_,{path2}),_,bindings)
       equation
         false = Absyn.pathPrefixOf(Util.getOptionOrDefault(envPath,Absyn.IDENT("$TOP$")),path1);
         prefix = "$" +& Absyn.pathString(path1) +& ".";
@@ -6368,21 +6368,21 @@ algorithm
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
       then bindings;
     
-    case (DAE.T_UNKNOWN(source = _),ty2,envPath,bindings)
+    case (DAE.T_UNKNOWN(source = _),ty2,_,bindings)
       equation
         tys = getAllInnerTypesOfType(ty2, isPolymorphic);
         ids = List.map(tys, polymorphicTypeName);
         bindings = List.fold1(ids, addPolymorphicBinding, actual, bindings);
       then bindings;
     
-    case (DAE.T_ANYTYPE(source = _),ty2,envPath,bindings)
+    case (DAE.T_ANYTYPE(source = _),ty2,_,bindings)
       equation
         tys = getAllInnerTypesOfType(ty2, isPolymorphic);
         ids = List.map(tys, polymorphicTypeName);
         bindings = List.fold1(ids, addPolymorphicBinding, actual, bindings);
       then bindings;
 
-    case (actual,expected,_,_)
+    case (_,_,_,_)
       equation
         // print("subtypePolymorphic failed: " +& unparseType(actual) +& " and " +& unparseType(expected) +& "\n");
       then fail();
@@ -6405,7 +6405,7 @@ algorithm
       list<Type> tList1,tList2;
       PolymorphicBindings bindings;
     case ({},{},envPath,bindings) then bindings;
-    case (ty1::tList1,ty2::tList2,envPath,bindings)
+    case (ty1::tList1,ty2::tList2,_,bindings)
       equation
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);
         bindings = subtypePolymorphicList(tList1,tList2,envPath,bindings);
@@ -6485,7 +6485,7 @@ public function convertTupleToMetaTuple "Needed when pattern-matching"
   output Type oty;
 algorithm
   (oexp,oty) := match (exp,ty)
-    case (DAE.TUPLE(_),ty)
+    case (DAE.TUPLE(_),_)
       equation
         /* So we can verify that the contents of the tuple is boxed */
         (oexp,oty) = matchType(exp,ty,DAE.T_METABOXED_DEFAULT,false);
@@ -6693,7 +6693,7 @@ algorithm
       A a;
 
     case ({},a,fn) then ({},a);
-    case (ty::tys,a,fn)
+    case (ty::tys,a,_)
       equation
         ((ty,a)) = traverseType((ty,a),fn);
         (tys,a) = traverseTupleType(tys,a,fn);
@@ -6721,7 +6721,7 @@ algorithm
       A a;
       
     case ({},a,fn) then ({},a);
-    case (var::vars,a,fn)
+    case (var::vars,a,_)
       equation
         ty = getVarType(var);
         ((ty,a)) = traverseType((ty,a),fn);
@@ -6753,7 +6753,7 @@ algorithm
       A a;
             
     case ({},a,fn) then ({},a);
-    case ((b,ty,c,d)::args,a,fn)
+    case ((b,ty,c,d)::args,a,_)
       equation
         ((ty,a)) = traverseType((ty,a),fn);
         (args,a) = traverseFuncArg(args,a,fn);
@@ -6996,7 +6996,7 @@ algorithm
       DAE.TypeSource ts;
       
     case (DAE.T_ARRAY(ty1,{_},ts),1) then DAE.T_ARRAY(ty1,{DAE.DIM_UNKNOWN()},ts);
-    case (DAE.T_ARRAY(ty1,{ad},ts),dim)
+    case (DAE.T_ARRAY(ty1,{ad},ts),_)
       equation
         ty1 = makeNthDimUnknown(ty1,dim-1);
       then 
@@ -7033,7 +7033,7 @@ algorithm
       equation
         true = subtype(ty1,ty2);
       then ty1;
-    case (ty1,info,ty2)
+    case (ty1,_,ty2)
       equation
         str1 = unparseType(ty1);
         str2 = unparseType(ty2);

@@ -101,7 +101,7 @@ algorithm
       String msg,id;
       SCode.Element elt;
     case ({},_) then ();
-    case (id::_,program)
+    case (id::_,_)
       equation
         elt = SCode.getElementNamedFromElts(id,program);
         msg = stringDelimitList(duplicateNames, ",");

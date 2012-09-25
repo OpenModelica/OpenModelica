@@ -160,7 +160,7 @@ algorithm
       then
         fail();
 
-    case (inEquation,_,_)
+    case (_,_,_)
       equation
         msg = "- Derive.differentiateEquationTime failed for " +& BackendDump.equationStr(inEquation) +& "\n";
         source = BackendEquation.equationSource(inEquation);
@@ -382,14 +382,14 @@ algorithm
         // ({BackendDAE.VAR(varKind = BackendDAE.STATE())},_) = BackendVariable.getVar(cr, timevars);
       then DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
 
-    case (DAE.CALL(path = Absyn.IDENT("sin"),expLst = {e}),inVariables)
+    case (DAE.CALL(path = Absyn.IDENT("sin"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables) "der(sin(x)) = der(x)cos(x)" ;
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.CALL(Absyn.IDENT("cos"),{e},DAE.callAttrBuiltinReal));
 
-    case (DAE.CALL(path = Absyn.IDENT("cos"),expLst = {e}),inVariables)
+    case (DAE.CALL(path = Absyn.IDENT("cos"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables) "der(cos(x)) = -der(x)sin(x)" ;
       then
@@ -397,7 +397,7 @@ algorithm
           DAE.CALL(Absyn.IDENT("sin"),{e},DAE.callAttrBuiltinReal)));
 
         // der(arccos(x)) = -der(x)/sqrt(1-x^2)
-    case (DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e}),inVariables)
+    case (DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables);
       then
@@ -406,7 +406,7 @@ algorithm
                    DAE.callAttrBuiltinReal)));
 
         // der(arcsin(x)) = der(x)/sqrt(1-x^2)
-      case (DAE.CALL(path = Absyn.IDENT("asin"),expLst = {e}),inVariables)
+      case (DAE.CALL(path = Absyn.IDENT("asin"),expLst = {e}),_)
         equation
           e_1 = differentiateExpTime(e, inVariables)  ;
         then
@@ -415,14 +415,14 @@ algorithm
                      DAE.callAttrBuiltinReal));
 
         // der(arctan(x)) = der(x)/1+x^2
-      case (DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e}),inVariables)
+      case (DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e}),_)
         equation
           e_1 = differentiateExpTime(e, inVariables)  ;
         then
           DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e)));
 
         // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
-      case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),inVariables)
+      case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),_)
         equation
           true = Expression.isZero(e1);
           (exp,_) = Expression.makeZeroExpression({});
@@ -430,7 +430,7 @@ algorithm
           exp;
 
         // der(arctan2(y,x)) = der(y/x)/1+(y/x)^2
-      case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),inVariables)
+      case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),_)
         equation
           false = Expression.isZero(e1);
           exp = Expression.makeDiv(e,e1);
@@ -438,34 +438,34 @@ algorithm
         then
           DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e)));
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("exp"),expLst = {e}),inVariables)
+    case (DAE.CALL(path = fname as Absyn.IDENT("exp"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables) "der(exp(x)) = der(x)exp(x)" ;
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.CALL(fname,{e},DAE.callAttrBuiltinReal));
 
-    case (DAE.CALL(path = Absyn.IDENT("log"),expLst = {e}),inVariables)
+    case (DAE.CALL(path = Absyn.IDENT("log"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables) "der(log(x)) = der(x)/x";
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),e);
 
-    case (DAE.CALL(path = Absyn.IDENT("log10"),expLst = {e}),inVariables)
+    case (DAE.CALL(path = Absyn.IDENT("log10"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables) "der(log10(x)) = der(x)/(ln(10)*x)";
         r = realLn(10.0);
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(r),DAE.MUL(DAE.T_REAL_DEFAULT),e));
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.GREATER(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), e1_1, e2_1);
 
-    case (e as DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (e as DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         /* TODO: Implement Derivative of max(a,b,...,n)  */
         e_str = ExpressionDump.printExpStr(e);
@@ -473,14 +473,14 @@ algorithm
       then
         fail();
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(e1,DAE.LESS(tp),e2,-1,NONE())},DAE.callAttrBuiltinBool), e1_1, e2_1);
 
-    case (e as DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (e as DAE.CALL(path = fname as Absyn.IDENT("min"),expLst = expl,attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         /* TODO: Implement Derivative of min(a,b,...,n)  */
         e_str = ExpressionDump.printExpStr(e);
@@ -488,14 +488,14 @@ algorithm
       then
         fail();
 
-    case (e0 as DAE.CALL(path = Absyn.IDENT("sqrt"),expLst = {e}),inVariables)
+    case (e0 as DAE.CALL(path = Absyn.IDENT("sqrt"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables) "sqrt(x) = der(x)/(2*sqrt(x))" ;
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),
           DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.T_REAL_DEFAULT),e0));
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("cross"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (DAE.CALL(path = fname as Absyn.IDENT("cross"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
@@ -504,27 +504,27 @@ algorithm
       then
         DAE.BINARY(call1,DAE.ADD_ARR(tp),call2);
         
-    case (DAE.CALL(path = fname as Absyn.IDENT("smooth"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (DAE.CALL(path = fname as Absyn.IDENT("smooth"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         e2_1;
 
-    case (DAE.CALL(path = fname as Absyn.IDENT("transpose"),expLst=expl,attr=DAE.CALL_ATTR(ty=tp)),inVariables)
+    case (DAE.CALL(path = fname as Absyn.IDENT("transpose"),expLst=expl,attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         Expression.makeBuiltinCall("transpose",expl_1,tp);
 
     // abs(x)
-    case (DAE.CALL(path=Absyn.IDENT("abs"), expLst={exp},attr=DAE.CALL_ATTR(ty=tp)),inVariables) 
+    case (DAE.CALL(path=Absyn.IDENT("abs"), expLst={exp},attr=DAE.CALL_ATTR(ty=tp)),_) 
       equation
         e1_1 = differentiateExpTime(exp, inVariables);
       then 
         DAE.IFEXP(DAE.RELATION(exp,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()), e1_1, DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),e1_1));
 
     // x^r
-    case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(real=r))),inVariables) /* ax^(a-1) */
+    case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(real=r))),_) /* ax^(a-1) */
       equation
         d_e1 = differentiateExpTime(e1, inVariables) "e^x => xder(e)e^x-1" ;
         // false = Expression.expContains(e2, Expression.makeCrefExp(tv,tp));
@@ -537,7 +537,7 @@ algorithm
         exp;
 
     // r^x 
-    case (e0 as DAE.BINARY(exp1 = (e1 as DAE.RCONST(real=r)),operator = DAE.POW(tp),exp2 = e2),inVariables) /* r^x*ln(r)*der(x) */
+    case (e0 as DAE.BINARY(exp1 = (e1 as DAE.RCONST(real=r)),operator = DAE.POW(tp),exp2 = e2),_) /* r^x*ln(r)*der(x) */
       equation
         d_e1 = differentiateExpTime(e2, inVariables);
         r = realLn(r);
@@ -545,21 +545,21 @@ algorithm
       then
         exp;
 
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),inVariables)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.BINARY(e1_1,DAE.ADD(tp),e2_1);
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2),inVariables)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.BINARY(e1_1,DAE.SUB(tp),e2_1);
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2),inVariables) /* f\'g + fg\' */
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2),_) /* f\'g + fg\' */
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
@@ -567,7 +567,7 @@ algorithm
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e2_1),DAE.ADD(tp),
           DAE.BINARY(e1_1,DAE.MUL(tp),e2));
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e2),inVariables) /* (f\'g - fg\' ) / g^2 */
+    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e2),_) /* (f\'g - fg\' ) / g^2 */
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
@@ -576,20 +576,20 @@ algorithm
           DAE.BINARY(DAE.BINARY(e1_1,DAE.MUL(tp),e2),DAE.SUB(tp),
           DAE.BINARY(e1,DAE.MUL(tp),e2_1)),DAE.DIV(tp),DAE.BINARY(e2,DAE.MUL(tp),e2));
     
-    case (DAE.UNARY(operator = op,exp = e),inVariables)
+    case (DAE.UNARY(operator = op,exp = e),_)
       equation
         e_1 = differentiateExpTime(e, inVariables);
       then
         DAE.UNARY(op,e_1);
     
-    case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),inVariables)
+    case ((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),_)
       equation
         e_str = ExpressionDump.printExpStr(e) "The derivative of logic expressions are non-existent" ;
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
     
-    case (DAE.LUNARY(operator = op,exp = e),inVariables)
+    case (DAE.LUNARY(operator = op,exp = e),_)
       equation
         e_1 = differentiateExpTime(e, inVariables);
       then
@@ -606,14 +606,14 @@ algorithm
         DAE.RELATION(e1_1,rel,e2_1);
     */
     
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),inVariables)
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),_)
       equation
         e2_1 = differentiateExpTime(e2, inVariables);
         e3_1 = differentiateExpTime(e3, inVariables);
       then
         DAE.IFEXP(e1,e2_1,e3_1);
     
-    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,attr=attr),inVariables)
+    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,attr=attr),_)
       equation
         expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
@@ -647,34 +647,34 @@ algorithm
       then
         differentiateExpTime(e1,inVariables);  
     
-    case (e as DAE.CALL(path = a,expLst = expl),inVariables)
+    case (e as DAE.CALL(path = a,expLst = expl),_)
       equation
         e_str = ExpressionDump.printExpStr(e);
         Error.addMessage(Error.NON_EXISTING_DERIVATIVE, {e_str});
       then
         fail();
     
-    case (DAE.ARRAY(ty = tp,scalar = b,array = expl),inVariables)
+    case (DAE.ARRAY(ty = tp,scalar = b,array = expl),_)
       equation
         expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         DAE.ARRAY(tp,b,expl_1);
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = tp),exp2 = e2),inVariables)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = tp),exp2 = e2),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.BINARY(e1_1,DAE.ADD_ARR(tp),e2_1);
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = tp),exp2 = e2),inVariables)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = tp),exp2 = e2),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.BINARY(e1_1,DAE.SUB_ARR(tp),e2_1);
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = tp),exp2 = e2),inVariables) /* f\'g + fg\' */
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = tp),exp2 = e2),_) /* f\'g + fg\' */
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
@@ -682,7 +682,7 @@ algorithm
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARR(tp),e2_1),DAE.ADD_ARR(tp),
           DAE.BINARY(e1_1,DAE.MUL_ARR(tp),e2));
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARRAY_SCALAR(ty = tp),exp2 = e2),inVariables) /* f\'g + fg\' */
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARRAY_SCALAR(ty = tp),exp2 = e2),_) /* f\'g + fg\' */
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
@@ -690,21 +690,21 @@ algorithm
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1),DAE.ADD_ARR(tp),
           DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2));
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARRAY_SCALAR(ty = tp),exp2 = e2),inVariables)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARRAY_SCALAR(ty = tp),exp2 = e2),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.BINARY(e1_1,DAE.ADD_ARRAY_SCALAR(tp),e2_1);
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_SCALAR_ARRAY(ty = tp),exp2 = e2),inVariables)
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_SCALAR_ARRAY(ty = tp),exp2 = e2),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
       then
         DAE.BINARY(e1_1,DAE.SUB_SCALAR_ARRAY(tp),e2_1);
     
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARRAY_SCALAR(ty = tp),exp2 = e2),inVariables) /* (f\'g - fg\' ) / g^2 */
+    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARRAY_SCALAR(ty = tp),exp2 = e2),_) /* (f\'g - fg\' ) / g^2 */
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
         e2_1 = differentiateExpTime(e2, inVariables);
@@ -714,31 +714,31 @@ algorithm
           DAE.BINARY(DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2),DAE.SUB_ARR(tp),
           DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1)),DAE.DIV_ARRAY_SCALAR(tp),DAE.BINARY(e2,DAE.MUL(tp1),e2));
     
-    case ((e as DAE.MATRIX(ty = tp,integer=i,matrix=explstlst)),inVariables)
+    case ((e as DAE.MATRIX(ty = tp,integer=i,matrix=explstlst)),_)
       equation
         explstlst1 = differentiateMatrixTime(explstlst,inVariables);
       then
         DAE.MATRIX(tp,i,explstlst1);
     
-    case (DAE.TUPLE(PR = expl),inVariables)
+    case (DAE.TUPLE(PR = expl),_)
       equation
         expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
         DAE.TUPLE(expl_1);
     
-    case (DAE.CAST(ty = tp,exp = e),inVariables)
+    case (DAE.CAST(ty = tp,exp = e),_)
       equation
         e_1 = differentiateExpTime(e, inVariables);
       then
         DAE.CAST(tp,e_1);
     
-    case (DAE.ASUB(exp = e,sub = sub),inVariables)
+    case (DAE.ASUB(exp = e,sub = sub),_)
       equation
         e_1 = differentiateExpTime(e, inVariables);
       then
         Expression.makeASUB(e_1,sub);
     
-    case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters),inVariables)
+    case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);
       then
@@ -772,7 +772,7 @@ algorithm
     
     case ({},_) then ({});
     
-    case ((row :: rows),inVariables)
+    case ((row :: rows),_)
       equation
         row_1 = List.map1(row, differentiateExpTime, inVariables);
         rows_1 = differentiateMatrixTime(rows, inVariables);
@@ -805,7 +805,7 @@ algorithm
       String typstring,dastring;
     
     // order=1  
-    case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
+    case (DAE.CALL(path=a),DAE.CALL(path=da),_,_,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=1),tp) = getFunctionMapper(a,functions);
@@ -848,7 +848,7 @@ algorithm
         fail();
     
     // order>1  
-    case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
+    case (DAE.CALL(path=a),DAE.CALL(path=da),_,_,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
         // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
@@ -967,7 +967,7 @@ algorithm
       list<DAE.FuncArg> falst,falst1,falst2,dfalst;
       list<DAE.Type> tlst,dtlst;
       Boolean ret;
-      case (blst,DAE.T_FUNCTION(funcArg=falst),DAE.T_FUNCTION(funcArg=dfalst))
+      case (_,DAE.T_FUNCTION(funcArg=falst),DAE.T_FUNCTION(funcArg=dfalst))
       equation
         // generate expected function inputs
         (falst1,_) = List.splitOnBoolList(falst,blst);
@@ -1011,7 +1011,7 @@ algorithm
       DAE.Type tp;
       
     // check conditions, order=1  
-    case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),DAE.T_FUNCTION(funcArg=funcArg),expl,inVarsandFuncs)
+    case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),DAE.T_FUNCTION(funcArg=funcArg),_,_)
       equation
          true = intEq(1,derivativeOrder);
          tplst = List.map(funcArg,Util.tuple42);
@@ -1020,7 +1020,7 @@ algorithm
       then
         (inDFuncName,bl1);
     // check conditions, order>1  
-    case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),tp,expl,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
+    case (_,DAE.FUNCTION_DER_MAPPER(derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr),tp,_,inVarsandFuncs as (timevars,BackendDAE.SHARED(functionTree=functions)))
       equation
          failure(true = intEq(1,derivativeOrder));
          // get n-1 func name
@@ -1037,7 +1037,7 @@ algorithm
       then
         (inDFuncName,bl3);
     // conditions failed use default 
-    case (inFuncName,DAE.FUNCTION_DER_MAPPER(derivedFunction=fname,derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr,defaultDerivative=SOME(default),lowerOrderDerivatives=lowerOrderDerivatives),tp,expl,inVarsandFuncs)
+    case (_,DAE.FUNCTION_DER_MAPPER(derivedFunction=fname,derivativeFunction=inDFuncName,derivativeOrder=derivativeOrder,conditionRefs=cr,defaultDerivative=SOME(default),lowerOrderDerivatives=lowerOrderDerivatives),tp,_,_)
       equation
           (da,bl) = differentiateFunctionTime1(inFuncName,DAE.FUNCTION_DER_MAPPER(fname,default,derivativeOrder,{},SOME(default),lowerOrderDerivatives),tp,expl,inVarsandFuncs);
       then
@@ -1066,7 +1066,7 @@ algorithm
     case(inblst,{},expl,inVarsandFuncs) then inblst;
     
     // zeroDerivative
-    case(inblst,(i,DAE.ZERO_DERIVATIVE())::crlst,expl,inVarsandFuncs)
+    case(_,(i,DAE.ZERO_DERIVATIVE())::crlst,_,_)
       equation
         // get expression
         e = listGet(expl,i);
@@ -1083,7 +1083,7 @@ algorithm
         bl;
     
     // noDerivative
-    case(inblst,(i,DAE.NO_DERIVATIVE(binding=DAE.CALL(path=p1)))::crlst,expl,inVarsandFuncs)
+    case(_,(i,DAE.NO_DERIVATIVE(binding=DAE.CALL(path=p1)))::crlst,_,_)
       equation
         // get expression
         DAE.CALL(path=p2) = listGet(expl,i);
@@ -1098,7 +1098,7 @@ algorithm
         bl;
     
     // noDerivative  
-    case(inblst,(i,DAE.NO_DERIVATIVE(binding=DAE.ICONST(_)))::crlst,expl,inVarsandFuncs)
+    case(_,(i,DAE.NO_DERIVATIVE(binding=DAE.ICONST(_)))::crlst,_,_)
       equation
         // remove input from list
         ba = listArray(inblst);
@@ -1128,7 +1128,7 @@ algorithm
       list<DAE.FunctionDefinition> flst;
       list<Absyn.Path> lowerOrderDerivatives;
       Absyn.Path name;
-    case(fname,functions)
+    case(_,_)
       equation
           SOME(DAE.FUNCTION(functions=flst)) = DAEUtil.avlTreeGet(functions,fname);
           DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) = getFunctionMapper1(flst);
@@ -1150,12 +1150,12 @@ algorithm
       DAE.Type t;
       DAE.FunctionDefinition m;
       String s;
-    case(fname,functions)
+    case(_,_)
       equation
         SOME(DAE.FUNCTION(functions=flst,type_=t)) = DAEUtil.avlTreeGet(functions,fname);
         m = getFunctionMapper1(flst);
       then (m,t);
-    case (fname,functions)
+    case (_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         s = Absyn.pathString(fname);

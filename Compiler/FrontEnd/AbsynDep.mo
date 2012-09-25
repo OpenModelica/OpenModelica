@@ -121,7 +121,7 @@ algorithm
    outDepends := match(depends,cl)
    local
      AvlTree uses, usedBy;
-     case(DEPENDS(uses,usedBy),cl) equation
+     case(DEPENDS(uses,usedBy),_) equation
          uses = avlTreeAdd(uses,cl,{});
      then DEPENDS(uses,usedBy);
    end match;
@@ -136,7 +136,7 @@ public function addDependency "add a dependency tha a class 'cl' uses another cl
    outDepends := match(depends,cl,usesClass)
    local
      AvlTree uses, usedBy;
-     case(DEPENDS(uses,usedBy),cl,usesClass) equation
+     case(DEPENDS(uses,usedBy),_,_) equation
          uses = avlTreeAdd(uses,cl,{usesClass});
          usedBy = avlTreeAdd(usedBy,usesClass,{cl});
      then DEPENDS(uses,usedBy);
@@ -161,7 +161,7 @@ public function getUses "Retrive an avltree of classes (with empty class lists)
 algorithm
   uses := match(depends,cl)
     local AvlValue v;
-    case(DEPENDS(uses,_),cl) equation
+    case(DEPENDS(uses,_),_) equation
       v = avlTreeGet(uses,cl);
       uses = avlAddUses(avlTreeNew(),v);
     then uses;
@@ -489,7 +489,7 @@ algorithm
     case(0,bt)  then computeHeight(bt);
     case(1,bt)  then computeHeight(bt);
     // d < -1 or d > 1 
-    case(difference,bt) equation
+    case(_,bt) equation
       bt = doBalance2(difference,bt);
     then bt;
     case(difference,bt) then bt;
@@ -504,12 +504,12 @@ algorithm
   outBt := matchcontinue(difference,inBt)
     local
       AvlTree bt;
-    case(difference,bt) equation
+    case(_,bt) equation
       true = difference < 0;
       bt = doBalance3(bt);
       bt = rotateLeft(bt);
      then bt;
-    case(difference,bt) equation
+    case(_,bt) equation
       true = difference > 0;
       bt = doBalance4(bt);
       bt = rotateRight(bt);
@@ -677,7 +677,7 @@ public function avlTreeGetOrEmpty "  Get a value from the binary tree given a ke
   output AvlValue val "or empty list if not in tree";
 algorithm
   val := matchcontinue(tree,key)
-    case(tree,key) equation
+    case(_,_) equation
       val = avlTreeGet(tree,key);
     then val;
     case(tree,key) then {};

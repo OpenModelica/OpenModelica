@@ -1788,7 +1788,7 @@ algorithm
         cl;      
     
     // not equal, change
-    case(name, CLASS(_,prefixes,e,p,r,parts,info)) 
+    case(_, CLASS(_,prefixes,e,p,r,parts,info)) 
       then CLASS(name,prefixes,e,p,r,parts,info);
   end matchcontinue;
 end setClassName;
@@ -1816,7 +1816,7 @@ algorithm
         cl;
     
     // not the same, change
-    case(partialPrefix,CLASS(id,prefixes,e,_,restriction,parts,info)) 
+    case(_,CLASS(id,prefixes,e,_,restriction,parts,info)) 
       then CLASS(id,prefixes,e,partialPrefix,restriction,parts,info);
   end matchcontinue;
 end setClassPartialPrefix;
@@ -3076,7 +3076,7 @@ algorithm
       then name;
     case (CLASS(restriction=R_FUNCTION(FR_PARALLEL_FUNCTION()),classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("builtin"))))),_,_)
       then name;
-    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),inVars,{outVar1})
+    case (CLASS(restriction=R_FUNCTION(FR_EXTERNAL_FUNCTION()), classDef=PARTS(externalDecl=SOME(EXTERNALDECL(funcName=SOME(name),lang=SOME("C"),output_=SOME(Absyn.CREF_IDENT(outVar2,{})),args=args)))),_,{outVar1})
       equation
         true = listMember(name,knownExternalCFunctions);
         true = outVar2 ==& outVar1;
@@ -3512,9 +3512,9 @@ protected function propagateParallelism
   output Parallelism p;
 algorithm 
   p := matchcontinue(p1,p2)
-    case(p1,NON_PARALLEL()) 
+    case(_,NON_PARALLEL()) 
       then p1;
-    case(p1,p2) 
+    case(_,_) 
       equation
         true = parallelismEqual(p1,p2);
       then p1;
@@ -3547,7 +3547,7 @@ algorithm
   d := matchcontinue(d1,d2)
     case(Absyn.BIDIR(),d2) then d2;
     case(d1,Absyn.BIDIR()) then d1;
-    case(d1,d2)
+    case(_,_)
       equation
         equality(d1 = d2);
       then d1;
@@ -3779,10 +3779,10 @@ algorithm
     local
       list<Annotation> anns;
 
-    case(CLASS(classDef = PARTS(annotationLst = anns)),namedAnnotation)
+    case(CLASS(classDef = PARTS(annotationLst = anns)),_)
       then hasBooleanNamedAnnotation(anns,namedAnnotation);
 
-    case(CLASS(classDef = CLASS_EXTENDS(composition = PARTS(annotationLst = anns))),namedAnnotation)
+    case(CLASS(classDef = CLASS_EXTENDS(composition = PARTS(annotationLst = anns))),_)
       then hasBooleanNamedAnnotation(anns,namedAnnotation);
     else false;
   end matchcontinue;
@@ -3814,12 +3814,12 @@ algorithm
       Boolean b;
       list<Annotation> rest;
       Mod mod;
-    case (ANNOTATION(modification = mod) :: rest,annotationName)
+    case (ANNOTATION(modification = mod) :: rest,_)
       equation
         true = hasBooleanNamedAnnotation2(mod,annotationName);
       then
         true;
-    case (ANNOTATION(modification = mod) :: rest,annotationName)
+    case (ANNOTATION(modification = mod) :: rest,_)
       equation
         false = hasBooleanNamedAnnotation2(mod,annotationName);
         b = hasBooleanNamedAnnotation(rest,annotationName);
@@ -3839,7 +3839,7 @@ algorithm
     local
       Boolean b;
       list<SubMod> subModLst;
-    case (MOD(subModLst=subModLst),annotationName)
+    case (MOD(subModLst=subModLst),_)
       equation
         b = hasBooleanNamedAnnotation3(subModLst,annotationName);
       then
@@ -3860,16 +3860,16 @@ algorithm
       SubMod submod;
       Mod mod;
       String id;
-    case (NAMEMOD(ident = id,A=MOD(binding=SOME((Absyn.BOOL(value=true),_)))) :: rest,namedAnnotation)
+    case (NAMEMOD(ident = id,A=MOD(binding=SOME((Absyn.BOOL(value=true),_)))) :: rest,_)
       equation
         true = id ==& namedAnnotation;
       then true;
-    case (IDXMOD(an=mod) :: rest,namedAnnotation)
+    case (IDXMOD(an=mod) :: rest,_)
       equation
         true = hasBooleanNamedAnnotation2(mod,namedAnnotation);
       then
         true;
-    case (submod :: rest,namedAnnotation)
+    case (submod :: rest,_)
       equation
         b = hasBooleanNamedAnnotation3(rest,namedAnnotation);
       then

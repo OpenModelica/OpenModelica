@@ -255,7 +255,7 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              connectorType = ct),inExp)
+              connectorType = ct),_)
       equation
         oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
@@ -271,7 +271,7 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              connectorType = ct),inExp)
+              connectorType = ct),_)
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setStartAttr(SOME(attr),inExp);
@@ -302,7 +302,7 @@ algorithm
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
       
-    case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,s,ct),attr)
+    case(BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,_,s,ct),_)
       then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,attr,s,ct);  
   end match;
 end setVarAttributes; 
@@ -462,7 +462,7 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              connectorType = ct),finalPrefix)
+              connectorType = ct),_)
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
@@ -479,7 +479,7 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              connectorType = ct),finalPrefix)
+              connectorType = ct),_)
       equation
         oattr1 = DAEUtil.setFinalAttr(SOME(attr),finalPrefix);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
@@ -521,7 +521,7 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              connectorType = ct),minMax)
+              connectorType = ct),_)
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
@@ -538,7 +538,7 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              connectorType = ct),minMax)
+              connectorType = ct),_)
       equation
         oattr1 = DAEUtil.setMinMax(SOME(attr),minMax);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
@@ -593,7 +593,7 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              connectorType = ct),inExp)
+              connectorType = ct),_)
       equation
         attr = getVariableAttributefromType(d);
         oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
@@ -610,7 +610,7 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              connectorType = ct),inExp)
+              connectorType = ct),_)
       equation
         oattr1 = DAEUtil.setNominalAttr(SOME(attr),inExp);
     then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
@@ -1550,7 +1550,7 @@ algorithm
               source = source,
               values = attr,
               comment = comment,
-              connectorType = ct),inBindValue)
+              connectorType = ct),_)
     equation
       oVar = BackendDAE.VAR(cr,kind,dir,prl,tp,bind,SOME(inBindValue),dim,source,attr,comment,ct); // referenceUpdate(inVar, 6, SOME(inBindValue));
     then 
@@ -1606,7 +1606,7 @@ algorithm
               source = source,
               values = attr,
               comment = comment,
-              connectorType = ct),varDirection)
+              connectorType = ct),_)
     equation
       oVar = BackendDAE.VAR(cr,kind,varDirection,prl,tp,bind,v,dim,source,attr,comment,ct); // referenceUpdate(inVar, 3, varDirection);
     then 
@@ -1760,7 +1760,7 @@ algorithm
       DAE.Type tp;
     
     case(_,_,_,BackendDAE.CONST(),_) then {};
-    case (attr,name,source,_,vartype)
+    case (_,_,_,_,_)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.printComponentRefStr(name);
@@ -1797,13 +1797,13 @@ algorithm
   match (ominmax,e,tp)
     local
       DAE.Exp min,max;
-    case (SOME(min)::(SOME(max)::{}),e,tp)
+    case (SOME(min)::(SOME(max)::{}),_,_)
       then DAE.LBINARY(DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE()),
                             DAE.AND(DAE.T_BOOL_DEFAULT),
                             DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE()));
-    case (SOME(min)::(NONE()::{}),e,tp)
+    case (SOME(min)::(NONE()::{}),_,_)
       then DAE.RELATION(e,DAE.GREATEREQ(tp),min,-1,NONE());
-    case (NONE()::(SOME(max)::{}),e,tp)
+    case (NONE()::(SOME(max)::{}),_,_)
       then DAE.RELATION(e,DAE.LESSEQ(tp),max,-1,NONE());
   end match;
 end getMinMaxAsserts1;
@@ -1826,7 +1826,7 @@ algorithm
       DAE.Type tp;
     
     case(_,_,_,BackendDAE.CONST(),_) then {};
-    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),name,source,_,vartype)
+    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),_,_,_,_)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.printComponentRefStr(name);
@@ -2969,7 +2969,7 @@ algorithm
       array<Option<BackendDAE.Var>> varOptArr;
       Integer n;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),func,inTypeA)
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),_,_)
       equation
         ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopy(varOptArr,func,traverseBackendDAEVar,1,n,inTypeA);
       then
@@ -3003,7 +3003,7 @@ algorithm
       array<Option<BackendDAE.Var>> varOptArr;
       Integer n;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),func,inTypeA)
+    case (BackendDAE.VARIABLES(varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=n,varOptArr=varOptArr)),_,_)
       equation
         ext_arg_1 = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithStop(varOptArr,func,traverseBackendDAEVarWithStop,1,n,inTypeA);
       then
@@ -3105,7 +3105,7 @@ algorithm
       Integer bucketSize,numberOfVars,numberOfElements,arrSize;
       array<Option<BackendDAE.Var>> varOptArr,varOptArr1;
       Type_a ext_arg_1;
-    case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=numberOfElements,arrSize=arrSize,varOptArr=varOptArr),bucketSize=bucketSize,numberOfVars=numberOfVars),func,inTypeA)
+    case (BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr,varArr = BackendDAE.VARIABLE_ARRAY(numberOfElements=numberOfElements,arrSize=arrSize,varOptArr=varOptArr),bucketSize=bucketSize,numberOfVars=numberOfVars),_,_)
       equation
         (varOptArr1,ext_arg_1) = BackendDAEUtil.traverseBackendDAEArrayNoCopyWithUpdate(varOptArr,func,traverseBackendDAEVarWithUpdate,1,arrayLength(varOptArr),inTypeA);
       then
@@ -3139,7 +3139,7 @@ algorithm
       BackendDAE.Var v,v1;
       Type_a ext_arg;
     case (ovar as NONE(),func,inTypeA) then (ovar,inTypeA);
-    case (ovar as SOME(v),func,inTypeA)
+    case (ovar as SOME(v),_,_)
       equation
         ((v1,ext_arg)) = func((v,inTypeA));
         ovar = Util.if_(referenceEq(v,v1),ovar,SOME(v1));
@@ -3289,7 +3289,7 @@ algorithm
               source = source,
               values = oattr,
               comment = s,
-              connectorType = ct),iops)
+              connectorType = ct),_)
       equation
         ops = listReverse(iops);
         source = List.foldr(ops,DAEUtil.addSymbolicTransformation,source);

@@ -149,17 +149,17 @@ algorithm
       String arg,value;
       list<String> args;
    case(flag,{}) then "";
-   case(flag,arg::{})
+   case(_,arg::{})
       equation
         0 = stringCompare(flag,arg);
       then
         "";
-   case(flag,arg::value::args)
+   case(_,arg::value::args)
       equation
         0 = stringCompare(flag,arg);
       then
         value;
-   case(flag,arg::args)
+   case(_,arg::args)
       equation
         value = flagValue(flag,args);
       then
@@ -179,7 +179,7 @@ this function does equal(e1,e2) and returns true if it succedes."
   output Boolean isequal;
   replaceable type Type_a subtypeof Any;
 algorithm isequal := matchcontinue(input1,input2)
-  case(input1,input2)
+  case(_,_)
     equation
       equality(input1 = input2);
       then true;
@@ -366,10 +366,10 @@ algorithm
   local 
     Type_a e;
      
-    case(array,func,pos) equation
+    case(_,_,_) equation
       true = pos > arrayLength(array);
     then NONE();
-    case(array,func,pos) equation
+    case(_,_,_) equation
       e = array[pos];
       true = func(e);
     then SOME(e);
@@ -405,7 +405,7 @@ algorithm
     list<Integer> rest;
     Type_a elmt;
     case(_,{},inArray,_) then inArray;
-    case(array,pos::rest,inArray,i) equation 
+    case(_,pos::rest,_,i) equation 
       elmt = array[pos];
       outArray = arrayUpdate(inArray,i,elmt);
       outArray = arraySelectHelp(array,rest,inArray,i+1);
@@ -437,14 +437,14 @@ protected
 algorithm    
   outArray := matchcontinue(array, func)
     // if the array is empty, use list transformations to fix the types!
-    case (array, func)
+    case (_, _)
       equation
         true = intEq(0, arrayLength(array));
         outArray = listArray({});
       then
         outArray;
     // otherwise, use the first element to create the new array
-    case (array, func)
+    case (_, _)
       equation
         false = intEq(0, arrayLength(array));
         initElt = func(array[1]);
@@ -474,11 +474,11 @@ algorithm
       Type_b newElt;
       array<Type_b> newArray;
     
-    case(array,newArray,func,pos,len) equation 
+    case(_,newArray,_,_,_) equation 
       true = pos > len;
     then newArray;
     
-    case(array,newArray,func,pos,len) equation
+    case(_,newArray,_,_,_) equation
       newElt = func(array[pos]);
       newArray = arrayUpdate(newArray,pos,newElt);
       newArray = arrayMapHelp1(array,newArray,func,pos+1,len);
@@ -723,7 +723,7 @@ when sending function as an input argument."
   output Boolean b;
   replaceable type Type_a subtypeof Any;
 algorithm b := matchcontinue(arg1,arg2)
-  case(arg1,arg2)
+  case(_,_)
     equation
       equality(arg1 = arg2);
     then
@@ -1676,7 +1676,7 @@ algorithm
       Type_a a;
       Type_c c;
     case (NONE(),_,_) then NONE();
-    case (SOME(a),func,b)
+    case (SOME(a),_,_)
       equation
         c = func(a,b);
       then SOME(c);
@@ -2260,7 +2260,7 @@ algorithm
   res := matchcontinue (inFunc,inArg,default)
     local
       FuncAToB fn;
-    case (fn,inArg,_)
+    case (fn,_,_)
       equation
         res = fn(inArg);
       then res;
@@ -2540,17 +2540,17 @@ algorithm
       Boolean b;
       
       
-    case ({},comp,uniqueAcc,duplicateAcc)
+    case ({},_,uniqueAcc,duplicateAcc)
       equation
         uniqueAcc = listReverse(uniqueAcc);
         duplicateAcc = listReverse(duplicateAcc);
       then (uniqueAcc,duplicateAcc);
-    case ({a1},comp,uniqueAcc,duplicateAcc)
+    case ({a1},_,uniqueAcc,duplicateAcc)
       equation
         uniqueAcc = listReverse(a1::uniqueAcc);
         duplicateAcc = listReverse(duplicateAcc);
       then (uniqueAcc,duplicateAcc);
-    case (a1::a2::rest,comp,uniqueAcc,duplicateAcc)
+    case (a1::a2::rest,_,uniqueAcc,duplicateAcc)
       equation
         b = comp(a1,a2);
         (uniqueAcc,duplicateAcc) = splitUniqueOnBoolWork(a2::rest,comp,if_(b,uniqueAcc,a1::uniqueAcc),if_(b,a1::duplicateAcc,duplicateAcc));
@@ -2623,7 +2623,7 @@ algorithm
   out := matchcontinue (lst,maxTotalSize,info)
     local
       Integer sz,maxSz;
-    case (lst,SOME(maxSz),info)
+    case (_,SOME(maxSz),_)
       equation
         sz = intMul(listLength(lst),List.fold(List.map(lst,listLength),intMul,1));
         true = (sz <= maxSz);
@@ -2700,7 +2700,7 @@ algorithm
     
     case (x,{},acc) then {x}::acc;
     case (x,{l},acc) then (x::l)::acc;
-    case (x,l::lst,acc)
+    case (_,l::lst,acc)
       equation
         acc = allCombinations4(x, lst, (x::l)::acc);
       then acc;

@@ -1127,13 +1127,13 @@ public function setTimeStampBool ""
   output TimeStamp ots;
 algorithm ots := match(its,which)
   local Real timer; TimeStamp ts; 
-  case(its,true)
+  case(_,true)
     equation
       timer = System.getCurrentTime();
       ts = setTimeStampEdit(its,timer);
     then
       ts;
-  case(its,false)
+  case(_,false)
     equation
       timer = System.getCurrentTime();
       ts = setTimeStampBuild(its,timer);
@@ -1689,7 +1689,7 @@ algorithm
    local Exp e1,e2,e11,e21; Type_a ext_arg;
      list<tuple<Exp,Exp>> lst;
     case({},rel,ext_arg) then (({},ext_arg));
-    case((e1,e2)::lst,rel,ext_arg) equation
+    case((e1,e2)::lst,_,ext_arg) equation
       ((lst,ext_arg)) = traverseExpElseIfBranch(lst,rel,iext_arg);
       ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
       ((e21,ext_arg)) = traverseExp(e2, rel, ext_arg);
@@ -1717,13 +1717,13 @@ algorithm
       list<Exp> expl,expl_1;
       ForIterators iterators;
       Type_a ext_arg;
-    case(FUNCTIONARGS(expl,nargs),rel,ext_arg)
+    case(FUNCTIONARGS(expl,nargs),_,ext_arg)
       equation
         ((expl_1,ext_arg)) = traverseExpPosArgs(expl,rel,ext_arg);
         ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
       then ((FUNCTIONARGS(expl_1,nargs),ext_arg));
 
-    case(inArgs as FOR_ITER_FARG(exp = forExp,iterators=iterators),rel,ext_arg)
+    case(inArgs as FOR_ITER_FARG(exp = forExp,iterators=iterators),_,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExp(forExp, rel, ext_arg);
         /* adrpo: TODO! travese iterators! */
@@ -1750,7 +1750,7 @@ algorithm
       Type_a ext_arg;
       list<NamedArg> nargs;
     case({},rel,ext_arg) then (({},ext_arg));
-    case(NAMEDARG(id,e1)::nargs,rel,ext_arg)
+    case(NAMEDARG(id,e1)::nargs,_,ext_arg)
       equation
         ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
         ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
@@ -1776,7 +1776,7 @@ algorithm
       list<Exp> pargs;
       Type_a ext_arg;
     case({},rel,ext_arg) then (({},ext_arg));
-    case(e1::pargs,rel,ext_arg)
+    case(e1::pargs,_,ext_arg)
       equation
         ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
         ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
@@ -2456,7 +2456,7 @@ algorithm ots := match(its,editTime)
   local
     Real buildTime;
     TimeStamp ts;
-  case(TIMESTAMP(buildTime,_),editTime)
+  case(TIMESTAMP(buildTime,_),_)
     equation
       ts = TIMESTAMP(buildTime,editTime);
     then
@@ -2474,7 +2474,7 @@ algorithm ots := match(its,buildTime)
   local
     Real editTime;
     TimeStamp ts;
-  case(TIMESTAMP(_,editTime),buildTime)
+  case(TIMESTAMP(_,editTime),_)
     equation
       ts = TIMESTAMP(buildTime,editTime);
     then
@@ -3004,13 +3004,13 @@ public function pathSuffixOf "returns true if suffix_path is a suffix of path"
 algorithm
   res := matchcontinue(suffix_path,path)
   local Path p;
-    case(suffix_path,path)
+    case(_,_)
       equation
       true = pathEqual(suffix_path,path);
       then true;
-    case(suffix_path,FULLYQUALIFIED(path = p))
+    case(_,FULLYQUALIFIED(path = p))
       then pathSuffixOf(suffix_path,p);
-    case(suffix_path,QUALIFIED(name=_,path = p))
+    case(_,QUALIFIED(name=_,path = p))
       then pathSuffixOf(suffix_path,p);
     case(_,_) then false;
   end matchcontinue;
@@ -3063,17 +3063,17 @@ algorithm
       list<Subscript> subs;
       String id;
       ComponentRef cr;
-    case (CREF_IDENT(id,subs),i)
+    case (CREF_IDENT(id,subs),_)
       equation
         subs = listAppend(subs,i);
       then
         CREF_IDENT(id,subs);
-    case (CREF_QUAL(id,subs,cr),i)
+    case (CREF_QUAL(id,subs,cr),_)
       equation
         cr = addSubscriptsLast(cr,i);
       then
         CREF_QUAL(id,subs,cr);
-    case (CREF_FULLYQUALIFIED(cr),i)
+    case (CREF_FULLYQUALIFIED(cr),_)
       equation
         cr = addSubscriptsLast(cr,i);
       then
@@ -3094,16 +3094,16 @@ algorithm
     local
       list<Subscript> subs;
       ComponentRef cr,cref;
-    case (CREF_FULLYQUALIFIED(componentRef = cr),replPath)
+    case (CREF_FULLYQUALIFIED(componentRef = cr),_)
       equation
         cr = crefReplaceFirstIdent(cr,replPath);
       then CREF_FULLYQUALIFIED(cr);
-    case (CREF_QUAL(componentRef = cr, subscripts = subs),replPath)
+    case (CREF_QUAL(componentRef = cr, subscripts = subs),_)
       equation
         cref = pathToCref(replPath);
         cref = addSubscriptsLast(cref,subs);
       then joinCrefs(cref,cr);
-    case (CREF_IDENT(subscripts = subs),replPath)
+    case (CREF_IDENT(subscripts = subs),_)
       equation
         cref = pathToCref(replPath);
         cref = addSubscriptsLast(cref,subs);
@@ -3409,38 +3409,38 @@ algorithm
         l1 = getCrefsFromSubs(subs);
       then cr::l1;
 
-    case (BINARY(exp1 = e1,op = op,exp2 = e2),checkSubs)
+    case (BINARY(exp1 = e1,op = op,exp2 = e2),_)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
-    case (UNARY(op = op,exp = e1),checkSubs)
+    case (UNARY(op = op,exp = e1),_)
       equation
         res = getCrefFromExp(e1,checkSubs);
       then
         res;
-    case (LBINARY(exp1 = e1,op = op,exp2 = e2),checkSubs)
+    case (LBINARY(exp1 = e1,op = op,exp2 = e2),_)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
-    case (LUNARY(op = op,exp = e1),checkSubs)
+    case (LUNARY(op = op,exp = e1),_)
       equation
         res = getCrefFromExp(e1,checkSubs);
       then
         res;
-    case (RELATION(exp1 = e1,op = op,exp2 = e2),checkSubs)
+    case (RELATION(exp1 = e1,op = op,exp2 = e2),_)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
-    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4),checkSubs)
+    case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4),_)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
@@ -3449,28 +3449,28 @@ algorithm
         res = listAppend(l1, l2) "TODO elseif\'s e4" ;
       then
         res;
-    case (CALL(functionArgs = farg),checkSubs)
+    case (CALL(functionArgs = farg),_)
       equation
         res = getCrefFromFarg(farg,checkSubs) "res = List.map(expl,get_cref_from_exp)" ;
       then
         res;
-    case (PARTEVALFUNCTION(functionArgs = farg),checkSubs)
+    case (PARTEVALFUNCTION(functionArgs = farg),_)
       equation
         res = getCrefFromFarg(farg,checkSubs);
       then
         res;
-    case (ARRAY(arrayExp = expl),checkSubs)
+    case (ARRAY(arrayExp = expl),_)
       equation
         lstres1 = List.map1(expl, getCrefFromExp, checkSubs);
         res = List.flatten(lstres1);
       then
         res;
-    case (MATRIX(matrix = expll),checkSubs)
+    case (MATRIX(matrix = expll),_)
       equation
         res = List.flatten(List.flatten(List.map1List(expll, getCrefFromExp,checkSubs)));
       then
         res;
-    case (RANGE(start = e1,step = SOME(e3),stop = e2),checkSubs)
+    case (RANGE(start = e1,step = SOME(e3),stop = e2),_)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
@@ -3479,7 +3479,7 @@ algorithm
         res = listAppend(l1, l2);
       then
         res;
-    case (RANGE(start = e1,step = NONE(),stop = e2),checkSubs)
+    case (RANGE(start = e1,step = NONE(),stop = e2),_)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
@@ -3488,7 +3488,7 @@ algorithm
         res;
     case (END(),checkSubs) then {};
 
-    case (TUPLE(expressions = expl),checkSubs)
+    case (TUPLE(expressions = expl),_)
       equation
         crefll = List.map1(expl,getCrefFromExp,checkSubs);
         res = List.flatten(crefll);
@@ -3498,7 +3498,7 @@ algorithm
     case (CODE(_),_) then {};
 
     case (AS(exp = e1),checkSubs) then getCrefFromExp(e1,checkSubs);
-    case (CONS(e1,e2),checkSubs)
+    case (CONS(e1,e2),_)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
@@ -3506,7 +3506,7 @@ algorithm
       then
         res;
 
-    case (LIST(expl),checkSubs)
+    case (LIST(expl),_)
       equation
         crefll = List.map1(expl,getCrefFromExp,checkSubs);
         res = List.flatten(crefll);
@@ -3536,7 +3536,7 @@ algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
       list<NamedArg> nargl;
       ForIterators iterators;
       Exp exp;
-    case (FUNCTIONARGS(args = expl,argNames = nargl),checkSubs)
+    case (FUNCTIONARGS(args = expl,argNames = nargl),_)
       equation
         l1 = List.map1(expl, getCrefFromExp,checkSubs);
         fl1 = List.flatten(l1);
@@ -3545,7 +3545,7 @@ algorithm outComponentRefLst := match (inFunctionArgs,checkSubs)
         res = listAppend(fl1, fl2);
       then
         res;
-    case (FOR_ITER_FARG(exp,iterators),checkSubs)
+    case (FOR_ITER_FARG(exp,iterators),_)
       equation
         l1 = List.map1Option(List.map(iterators,iteratorRange),getCrefFromExp,checkSubs);
         l2 = List.map1Option(List.map(iterators,iteratorGuard),getCrefFromExp,checkSubs);
@@ -3615,7 +3615,7 @@ algorithm outComponentRefLst := match (inNamedArg,checkSubs)
     local
       list<ComponentRef> res;
       ComponentCondition exp;
-    case (NAMEDARG(argValue = exp),checkSubs)
+    case (NAMEDARG(argValue = exp),_)
       equation
         res = getCrefFromExp(exp,checkSubs);
       then
@@ -4984,7 +4984,7 @@ algorithm
       Integer columnNumberEnd "columnNumberEnd";
       Real lastBuildTime "Last Build Time";
       Real lastEditTime "Last Edit Time";
-    case (buildTime, INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart,
+    case (_, INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart,
                           lineNumberEnd, columnNumberEnd, TIMESTAMP(lastBuildTime,lastEditTime)))
     then
       (INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd, TIMESTAMP(buildTime,lastEditTime)));

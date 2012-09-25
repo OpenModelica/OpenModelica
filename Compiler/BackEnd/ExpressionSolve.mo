@@ -440,7 +440,7 @@ algorithm
   res := matchcontinue(e1,e2)
     
     // try normal
-    case(e1,e2) 
+    case(_,_) 
       equation
         true = Expression.isZero(e1);
         // More than two factors
@@ -451,7 +451,7 @@ algorithm
         true;
       
     // swapped args
-    case(e2,e1) 
+    case(_,_) 
       equation
         true = Expression.isZero(e1);
         _::_::_ = Expression.factors(e2);
@@ -482,7 +482,7 @@ algorithm
   res := matchcontinue(e,cr)
     local DAE.ComponentRef cr2; DAE.Exp e1;
     
-    case(DAE.BINARY(e1,DAE.DIV(_),DAE.CREF(componentRef = cr2)),cr)
+    case(DAE.BINARY(e1,DAE.DIV(_),DAE.CREF(componentRef = cr2)),_)
       equation
         true = Expression.isConstOne(e1);
         true = ComponentReference.crefEqual(cr,cr2);

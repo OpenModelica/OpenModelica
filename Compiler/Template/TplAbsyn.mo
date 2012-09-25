@@ -1896,7 +1896,7 @@ algorithm
         ( stmts, locals, scEnv, accMMDecls, intxt);
     
     //an option -> match it case SOME(val) then val // if exp = SOME(val) then val 
-    case (_, mmexp, exptype as OPTION_TYPE(_), inSourceInfo, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
+    case (_, mmexp, exptype as OPTION_TYPE(_), _, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
       equation
         warnIfSomeOptions(mmopts);
         //internal encodeing of val is not needed as the val is bound tightly, it hides possible val from upper scope 
@@ -1912,7 +1912,7 @@ algorithm
         ( (stmt :: stmts), locals, scEnv, accMMDecls, intxt);
     
     //a list expression -> concat 
-    case (_, mmexp, exptype as LIST_TYPE(_), inSourceInfo, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
+    case (_, mmexp, exptype as LIST_TYPE(_), _, mmopts, stmts, intxt, outtxt, locals, scEnv, tplPackage,  accMMDecls)
       equation
         mapctx = MAP_CONTEXT(BIND_MATCH("it"), (BOUND_VALUE(IDENT("it")),dummySourceInfo) , mmopts, NONE(), false);
         (stmts, locals, scEnv, accMMDecls, intxt)
@@ -1938,7 +1938,7 @@ algorithm
         ( (stmt :: stmts), locals, scEnv, accMMDecls, outtxt);
         
     //try to-string conversion
-    case (_, mmexp, exptype, inSourceInfo, mmopts, stmts, intxt, outtxt, locals, scEnv, _,  accMMDecls)
+    case (_, mmexp, exptype, _, mmopts, stmts, intxt, outtxt, locals, scEnv, _,  accMMDecls)
       equation
         warnIfSomeOptions(mmopts);
         mmexp = mmExpToString(mmexp, exptype, inSourceInfo);
@@ -2024,7 +2024,7 @@ algorithm
         MM_FN_CALL(IDENT(reason),{ mmexp });
     
     //trying to convert a value when there is no conversion for its type
-    case (mmexp, ts, inSourceInfo)
+    case (mmexp, ts, _)
       equation
         str = "Elaborated expression '" +& mmExpString(mmexp) +& "' of type '" 
            +& typeSignatureString(ts) +& "' has no automatic to-string conversion.";
@@ -2397,7 +2397,7 @@ algorithm
       TypedIdents locals;
 
     //concrete type to its option SOME - when from a value of the concrete type
-    case ( mmarg, argtype, sinfo, OPTION_TYPE(ofType = targettype), stmts, locals, astdefs)
+    case ( mmarg, argtype, _, OPTION_TYPE(ofType = targettype), stmts, locals, astdefs)
       equation
         targettype = deAliasedType(targettype, astdefs);
         (mmarg, stmts, locals) = typeAdaptMMOption(mmarg, argtype, sinfo, targettype, stmts, locals, astdefs);
@@ -2405,7 +2405,7 @@ algorithm
       then
         (mmarg, stmts, locals);
     
-    case ( mmarg, argtype, sinfo, targettype, stmts, locals, astdefs)
+    case ( mmarg, argtype, _, targettype, stmts, locals, astdefs)
       equation
         argtype = deAliasedType(argtype, astdefs);
         (mmarg,_) = typeAdaptMMArg(mmarg, argtype, sinfo, false, targettype, {}, {}, astdefs);
@@ -2422,7 +2422,7 @@ algorithm
         (mmarg, stmts, locals);
     
     //stringStrTok - when from a value of type string or others (int, real, bool)
-    case ( mmarg, argtype, sinfo, STRING_TOKEN_TYPE(), stmts, locals, astdefs)
+    case ( mmarg, argtype, _, STRING_TOKEN_TYPE(), stmts, locals, astdefs)
       equation
         mmarg = mmExpToString(mmarg, argtype, sinfo);
         (mmarg, stmts, locals) = mmEnsureNonFunctionArg(mmarg, STRING_TYPE(), stmts, locals);
@@ -3079,7 +3079,7 @@ algorithm
       Ident fname, matchArgName, implicitValueName;
       list<Ident> assignedIdents;
     
-    case ( argval as (mmexp, exptype, sinfo), mcases, inArgExp, hasImplicitLookup, scEnv, tplPackage, accMMDecls )
+    case ( argval as (mmexp, exptype, sinfo), mcases, _, _, scEnv, tplPackage, accMMDecls )
       equation
         //TODO: when mmexp is an identifier, it should be made available through implicit context
         //so we will prepend it before each mexp in every case (instead 'it')
@@ -3248,13 +3248,13 @@ algorithm
       list<Ident> assignedIdents;
       list<tuple<Ident, Ident>> localNames;
        
-    case ( _, _, {}, _, locals, inAccCaseLocals, scEnv, _, accMMDecls)
+    case ( _, _, {}, _, locals, _, scEnv, _, accMMDecls)
       equation
         locals = listAppend(inAccCaseLocals, locals);
       then 
         ( {}, locals, scEnv, accMMDecls, {});
         
-    case ( argval as (mmexp, exptype), inImplicitValueName, 
+    case ( argval as (mmexp, exptype), _, 
            (mexp,exp) :: mcases, 
            hasImplicitLookup, locals, accCaseLocals, scEnv, 
            tplPackage as TEMPL_PACKAGE(astDefs = astdefs), accMMDecls )
@@ -3532,7 +3532,7 @@ algorithm
       then 
         {};
     
-    case ( (ident, mexp) :: fms, fields, astDefs)
+    case ( (ident, mexp) :: fms, _, astDefs)
       equation
         mtype = lookupTupleList(fields, ident);
         mexp = typeCheckMatchingExp(mexp, mtype, astDefs);
@@ -3540,7 +3540,7 @@ algorithm
       then 
         ((ident, mexp) :: fms);
     
-    case ( (ident, mexp) :: fms, fields, astDefs)
+    case ( (ident, mexp) :: fms, _, astDefs)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         failure( _ = lookupTupleList(fields, ident) );
@@ -3655,7 +3655,7 @@ algorithm
     
     case ( BIND_AS_MATCH(
              bindIdent = bid,
-             matchingExp = mexp ), mtype, inLocalNames, usedLocals, astDefs)
+             matchingExp = mexp ), mtype, _, usedLocals, astDefs)
       equation
         localIdent = lookupTupleList(inLocalNames, bid);
         //TODO: a better error report - non stopping one here
@@ -3668,14 +3668,14 @@ algorithm
     //eliminate the non-used binding
     case ( BIND_AS_MATCH(
              bindIdent = bid,
-             matchingExp = mexp ), mtype, inLocalNames, usedLocals, astDefs)
+             matchingExp = mexp ), mtype, _, usedLocals, astDefs)
       equation
         failure(_ = lookupTupleList(inLocalNames, bid));
         (mexp, usedLocals) = rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
       then 
         (mexp, usedLocals);
     
-    case ( BIND_MATCH(bindIdent = bid), mtype, inLocalNames, usedLocals, _)
+    case ( BIND_MATCH(bindIdent = bid), mtype, _, usedLocals, _)
       equation
         localIdent = lookupTupleList(inLocalNames, bid);
         //TODO: a better error report - use match expression source info
@@ -3684,7 +3684,7 @@ algorithm
         (BIND_MATCH(localIdent), usedLocals);
     
     //eliminate the non-used binding
-    case ( BIND_MATCH(bindIdent = bid), _, inLocalNames, usedLocals, _)
+    case ( BIND_MATCH(bindIdent = bid), _, _, usedLocals, _)
       equation
         failure(_ = lookupTupleList(inLocalNames, bid));
       then 
@@ -3706,7 +3706,7 @@ algorithm
     case ( RECORD_MATCH(
              tagName = tagpath,
              fieldMatchings = fms ), 
-           mtype, inLocalNames, usedLocals, astDefs )
+           mtype, _, usedLocals, astDefs )
       equation
         mtype = deAliasedType(mtype, astDefs);
         (fields, tagpath) = getFieldsForRecord(mtype, tagpath, astDefs);
@@ -3715,7 +3715,7 @@ algorithm
         (RECORD_MATCH(tagpath, fms ), usedLocals);
         
     case ( SOME_MATCH(
-             value = mexp ), mtype, inLocalNames, usedLocals, astDefs)
+             value = mexp ), mtype, _, usedLocals, astDefs)
       equation
         OPTION_TYPE(ofType = mtype) = deAliasedType(mtype, astDefs);
         (mexp, usedLocals) = rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
@@ -3724,7 +3724,7 @@ algorithm
     
     case ( TUPLE_MATCH(
              tupleArgs = mexpLst), 
-           mtype, inLocalNames, usedLocals, astDefs )
+           mtype, _, usedLocals, astDefs )
       equation
         TUPLE_TYPE(ofTypes = otLst) = deAliasedType(mtype, astDefs);
         //equality( listLength(mexpLst) = listLength(otLst) );
@@ -3734,7 +3734,7 @@ algorithm
     
     case ( LIST_MATCH(
              listElts = mexpLst), 
-           mtype, inLocalNames, usedLocals, astDefs )
+           mtype, _, usedLocals, astDefs )
       equation
         LIST_TYPE(ofType = ot) = deAliasedType(mtype, astDefs);
         otLst = List.fill(ot, listLength(mexpLst));
@@ -3745,7 +3745,7 @@ algorithm
     case ( LIST_CONS_MATCH(
              head = mexp,
              rest = restmexp), 
-           mtype, inLocalNames, usedLocals, astDefs )
+           mtype, _, usedLocals, astDefs )
       equation
         mtype = deAliasedType(mtype, astDefs);
         LIST_TYPE(ofType = ot) = mtype;
@@ -3788,11 +3788,11 @@ algorithm
       list<ASTDef> astDefs;
       String reason;
     
-    case ( {}, _, _, inUsedLocals, _)
+    case ( {}, _, _, _, _)
       then 
         ({}, inUsedLocals);
     
-    case ( (ident, mexp) :: fms, fields, inLocalNames, usedLocals, astDefs)
+    case ( (ident, mexp) :: fms, _, _, usedLocals, astDefs)
       equation
         mtype = lookupTupleList(fields, ident);
         (mexp, usedLocals) = rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
@@ -3801,7 +3801,7 @@ algorithm
         ((ident, mexp) :: fms, usedLocals);
     
     //TODO: should we report an error here? ... perhaps, only internal as the mexp shpuld be already checked
-    case ( (ident, mexp) :: fms, fields, inLocalNames, usedLocals, astDefs)
+    case ( (ident, mexp) :: fms, _, _, usedLocals, astDefs)
       equation
         failure( _ = lookupTupleList(fields, ident) );
         reason = "#Error - unresolved type - cannot find field '" +& ident +& "'#";
@@ -3847,7 +3847,7 @@ algorithm
       then 
         ({}, usedLocals);
     
-    case ( mexp :: mexpLst, mtype :: tsLst, inLocalNames, usedLocals, astDefs)
+    case ( mexp :: mexpLst, mtype :: tsLst, _, usedLocals, astDefs)
       equation
         (mexp, usedLocals)    = rewriteMatchExpByLocalNames(mexp, mtype, inLocalNames, usedLocals, astDefs);
         (mexpLst, usedLocals) = rewriteMatchExpByLocalNamesList(mexpLst, tsLst, inLocalNames, usedLocals, astDefs);
@@ -4083,7 +4083,7 @@ algorithm
         ( (MM_IDENT(IDENT(strid)), STRING_TYPE(), sinfo), emptyExpression, stmt::stmts,  locals);
         
    //other types are ok for the match statement
-   case ( argval, inArgExp, stmts, locals, _)
+   case ( argval, _, stmts, locals, _)
       then 
         ( argval, inArgExp, stmts,  locals);
         
@@ -4348,7 +4348,7 @@ algorithm
       PathIdent path;
       String reason, msg;
       
-    case ( path, UNRESOLVED_TYPE(reason), msg, inInfo)
+    case ( path, UNRESOLVED_TYPE(reason), msg, _)
       equation
 
         //true = Flags.isSet(Flags.FAILTRACE);
@@ -4383,7 +4383,7 @@ algorithm
     //already handled by checkResolvedType
     case (inType as UNRESOLVED_TYPE(_),_ , _, _) then inType;
       
-    case ( ts, inIdent, msg, inInfo)
+    case ( ts, _, msg, _)
       equation
         msg = "(" +& msg +& ") identifier '" +& inIdent +& "' was expected to have Text& type but resolved to " +& typeSignatureString(ts) 
            +& ".\n Only Text& typed variables can be appended to.";
@@ -4487,13 +4487,13 @@ algorithm
         (ident, mexp);
         
     //replace a wild match with the inMatchArgName
-    case (REST_MATCH(), inMatchArgName)
+    case (REST_MATCH(), _)
       then
         (inMatchArgName, BIND_MATCH(inMatchArgName));
     
     //all the rest cases creates an "as" binding of matchArgName
     //no need to addToLocals because it is already in the locals
-    case (mexp, inMatchArgName)              
+    case (mexp, _)              
       then
         (inMatchArgName, BIND_AS_MATCH(inMatchArgName, mexp) );
             
@@ -4537,7 +4537,7 @@ algorithm
         fail();
     
     //OK - no recursive usage, look up
-    case (ident, path, canDoImplicitLookup, 
+    case (ident, path, _, 
           (scope as RECURSIVE_SCOPE(recIdent = letIdent)) :: restEnv, astdefs)
       equation
         false = stringEq(ident, letIdent);
@@ -4557,7 +4557,7 @@ algorithm
          LET_SCOPE(letIdent, idtype, freshIdent, true) :: restEnv);
     
     //let scope failed - look up
-    case (ident, path, canDoImplicitLookup, 
+    case (ident, path, _, 
           (scope as LET_SCOPE(ident = _)) :: restEnv, astdefs)
       equation
         // false = stringEq(ident, letIdent);
@@ -4578,7 +4578,7 @@ algorithm
         (ident, idtype, scEnv);
         
     //not in the function scope, look up
-    case (ident, path, canDoImplicitLookup,
+    case (ident, path, _,
           FUN_SCOPE(args = fargs, localArgs = localArgs)::restEnv, astdefs)
       equation
         //failure(_ = lookupTupleList(fargs, ident));
@@ -4642,7 +4642,7 @@ algorithm
     
     //ident refers to the matched argument itself (originally to 'it')
     //avoid to look up --> find/create the binding of the whole pattern expression
-    case ( ident, path, canDoImplicitLookup,
+    case ( ident, path, _,
            CASE_SCOPE(
              mExp = mexp, 
              mType = mtype,
@@ -4673,7 +4673,7 @@ algorithm
     */
     
     //not in the case scope, look up
-    case ( ident, path, canDoImplicitLookup,
+    case ( ident, path, _,
            CASE_SCOPE( 
              mExp = mexp, 
              mType = mtype, 
@@ -4715,7 +4715,7 @@ algorithm
       then 
         ident;
     
-    case ( ident, inPostfix)
+    case ( ident, _)
       equation
         ident = ident +& "_" +& intString(inPostfix);
       then 
@@ -4745,14 +4745,14 @@ algorithm
       list<tuple<Ident,Ident>> localNames;
     
     //already in localNames
-    case ( ident, inEncIdent, inPostfix, inType, localNames, locals)
+    case ( ident, _, _, _, localNames, locals)
       equation
         encIdent = lookupTupleList(localNames, ident);
       then 
         (encIdent, localNames, locals);
     
     //not yet in locals
-    case ( ident, inEncIdent, inPostfix, inType, localNames, locals)
+    case ( ident, _, _, _, localNames, locals)
       equation
         failure( _ = lookupTupleList(localNames, ident) );
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
@@ -4763,7 +4763,7 @@ algorithm
          (encIdent, inType) :: locals);
     
     //re-use from locals
-    case ( ident, inEncIdent, inPostfix, inType, localNames, locals)
+    case ( ident, _, _, _, localNames, locals)
       equation
         failure( _ = lookupTupleList(localNames, ident) );
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
@@ -4773,7 +4773,7 @@ algorithm
         (encIdent, (ident, encIdent) :: localNames, locals);
     
     //try the next postfix
-    case ( ident, inEncIdent, inPostfix, inType, localNames, locals)
+    case ( ident, _, _, _, localNames, locals)
       equation
         failure( _ = lookupTupleList(localNames, ident) );
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
@@ -4808,7 +4808,7 @@ algorithm
       Ident letIdent, freshIdent;
       ScopeEnv restEnv;
 
-    case (inIdent, inFreshIdent,
+    case (_, _,
            LET_SCOPE(ident = letIdent, freshIdent = freshIdent) :: _)
       equation
         true = stringEq(inIdent, letIdent);
@@ -4816,14 +4816,14 @@ algorithm
       then
         true;
     
-    case (inIdent, inFreshIdent,
+    case (_, _,
            LET_SCOPE(ident = _) :: restEnv)
       //equation
-        //false = stringEq(inIdent, letIdent) and stringEq(inFreshIdent, freshIdent);
+        //false = stringEq(_, letIdent) and stringEq(_, freshIdent);
       then
         usedInImmediateLetScope(inIdent, inFreshIdent, restEnv);
     
-    case (inIdent, inFreshIdent,
+    case (_, _,
            RECURSIVE_SCOPE(recIdent = letIdent, freshIdent = freshIdent) :: _)
       equation
         true = stringEq(inIdent, letIdent);
@@ -4831,10 +4831,10 @@ algorithm
       then
         true;
     
-    case (inIdent, inFreshIdent,
+    case (_, _,
            RECURSIVE_SCOPE(recIdent = _) :: restEnv)
       //equation
-        //false = stringEq(inIdent, letIdent) and stringEq(inFreshIdent, freshIdent);
+        //false = stringEq(_, letIdent) and stringEq(_, freshIdent);
       then
         usedInImmediateLetScope(inIdent, inFreshIdent, restEnv);
         
@@ -4865,7 +4865,7 @@ algorithm
       TypedIdents locals;
     
     //not yet in locals, add
-    case (inIdent, inEncIdent, inPostfix, inType, inLocals, inScopeEnv)
+    case (_, _, _, _, _, _)
       equation
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
         failure( _ = lookupTupleList(inLocals, encIdent));
@@ -4873,7 +4873,7 @@ algorithm
         (encIdent, (encIdent, inType) :: inLocals);
     
     //already in locals, but not the same type, try postfix+1
-    case (inIdent, inEncIdent, inPostfix, inType, inLocals, inScopeEnv)
+    case (_, _, _, _, _, _)
       equation
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
         loctype = lookupTupleList(inLocals, encIdent);
@@ -4884,7 +4884,7 @@ algorithm
         (encIdent, locals);
         
     //already in locals, the same type, not used in the immediate scope, OK
-    case (inIdent, inEncIdent, inPostfix, inType, inLocals, inScopeEnv)
+    case (_, _, _, _, _, _)
       equation
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
         loctype = lookupTupleList(inLocals, encIdent);
@@ -4894,7 +4894,7 @@ algorithm
         (encIdent, inLocals);
         
     //already in locals, the same type, but used in the immediate scope, try postfix+1
-    case (inIdent, inEncIdent, inPostfix, inType, inLocals, inScopeEnv)
+    case (_, _, _, _, _, _)
       equation
         encIdent = addPostfixToIdent(inEncIdent, inPostfix);
         loctype = lookupTupleList(inLocals, encIdent);
@@ -5906,7 +5906,7 @@ algorithm
       then 
         (fname, iargs, oargs, {});
     
-    case (fname as IDENT(templname), inSourceInfo, TEMPL_PACKAGE(templateDefs = templateDefs))
+    case (fname as IDENT(templname), _, TEMPL_PACKAGE(templateDefs = templateDefs))
       equation
         _  =  lookupTupleList(templateDefs, templname);
         msg = "Constant template '" +& templname +& "' is used in a function/template context (while it is defined as a constant).";
@@ -5926,7 +5926,7 @@ algorithm
       then 
         (fname, iargs, oargs, tyVars);
         
-    case (fname, inSourceInfo, _)
+    case (fname, _, _)
       equation
         msg = "Unresolved template/function name '" +& pathIdentString(fname) +& "'.";
         addSusanError(msg, inSourceInfo);

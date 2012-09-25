@@ -1820,15 +1820,15 @@ algorithm
   outAcc := matchcontinue (lhs,rhs,info,inAcc)
     local
       list<DAE.Exp> el;
-    case (DAE.TUPLE(PR=el),rhs,info,inAcc)
+    case (DAE.TUPLE(PR=el),_,_,_)
       equation
         false = List.exist(el,Expression.isNotWild);
       then InstTypes.NORETCALL_STMT(rhs,info)::inAcc;
-    case (DAE.TUPLE(PR=el),rhs,info,inAcc)
+    case (DAE.TUPLE(PR=el),_,_,_)
       equation
         false = List.exist(el,Expression.isNotCref);
       then InstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
-    case (lhs as DAE.CREF(componentRef=_),rhs,info,inAcc)
+    case (lhs as DAE.CREF(componentRef=_),_,_,_)
       then InstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
   end matchcontinue;
 end typeAssignment;

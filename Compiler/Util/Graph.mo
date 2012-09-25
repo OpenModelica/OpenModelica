@@ -940,7 +940,7 @@ algorithm
     Integer color;
     list<tuple<Integer, list<Integer>>> restGraph;
     case ({},_,_,_,inColored) then inColored;          
-    case (((node,nodes))::restGraph, inforbiddenColor, inColors, inGraph, inColored)
+    case (((node,nodes))::restGraph, _, _, _, _)
       equation
         forbiddenColor = addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
         color = arrayFindMinColorIndexInt(forbiddenColor, node, 1);
@@ -968,7 +968,7 @@ algorithm
     list<Integer> rest;
     list<Integer> indexes;
     case (inNode, {}, _, inForbiddenColor, _) then inForbiddenColor;
-    case (inNode, node::rest, inColored, inForbiddenColor, inGraph)
+    case (_, node::rest, _, _, _)
       equation
         ((_,indexes)) = arrayGet(inGraph,node);
         updateForbiddenColorArrayInt(indexes, inColored, inForbiddenColor, inNode); 
@@ -993,14 +993,14 @@ algorithm
     list<Integer> rest;
     Integer colorIndex;
     case ({}, _, _, _) then ();
-    case (index::rest, inColored, inForbiddenColor, inNode)
+    case (index::rest, _, _, _)
       equation
       colorIndex = arrayGet(inColored, index);
       true = intGt(colorIndex,0);
       _ = arrayUpdate(inForbiddenColor, colorIndex, SOME({inNode}));
       updateForbiddenColorArrayInt(rest, inColored, inForbiddenColor, inNode);
     then ();
-    case (index::rest, inColored, inForbiddenColor, inNode)
+    case (index::rest, _, _, _)
       equation
       colorIndex = arrayGet(inColored, index);
       false = intGt(colorIndex,0);
@@ -1019,19 +1019,19 @@ algorithm
   local
     list<Integer> nodes;
     Integer index;
-    case (inForbiddenColor, inNode, inIndex)
+    case (_, _, _)
       equation
         NONE() = arrayGet(inForbiddenColor, inIndex);
         //print("Found color on index : " +& intString(inIndex) +& "\n");
       then inIndex;        
-    case (inForbiddenColor, inNode, inIndex)
+    case (_, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );
         failure(_ = List.getMemberOnTrue(inNode, nodes, intEq));
         //print("Found color on index : " +& intString(inIndex) +& "\n");
       then inIndex;
-    case (inForbiddenColor, inNode, inIndex)
+    case (_, _, _)
       equation
         SOME(nodes) = arrayGet(inForbiddenColor, inIndex);
         //inPrintFunc(nodes,"FobiddenColors:" );

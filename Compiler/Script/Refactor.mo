@@ -58,7 +58,7 @@ algorithm
   changedClass := match (wholeAST, classToRefactor)
     local
       Absyn.Class c;
-    case(wholeAST, classToRefactor)
+    case(_, _)
       equation
         c = refactorGraphAnnInClass(classToRefactor,wholeAST,Absyn.IDENT(""));
       then
@@ -187,7 +187,7 @@ algorithm
       Absyn.ClassPart firstPart,resultPart;
       Absyn.Path cPath;
     case({},_,_,_) then {};
-    case(firstPart :: restParts ,p,cPath, env)
+    case(firstPart :: restParts ,p,cPath, _)
       equation
         resultPart = refactorGraphAnnInClassPart(firstPart,p,cPath,env);
         resParts = refactorGraphAnnInClassParts(restParts,p,cPath,env);
@@ -287,7 +287,7 @@ algorithm
       Absyn.Path cPath;
       Env.Env env;
     case({},_,_,_,_) then {};
-    case(firstItem :: restList,refactorGraphAnnInItem,p,cPath,env)
+    case(firstItem :: restList,_,p,cPath,env)
       equation
         resultItem = refactorGraphAnnInItem(firstItem,p,cPath,env);
         resList = refactorGraphAnnInContentList(restList,refactorGraphAnnInItem,p,cPath,env);
@@ -1771,7 +1771,7 @@ protected function nameArgWithName
 algorithm
   res := match(narg,argName)
   local String name;
-    case(Absyn.NAMEDARG(name,_),argName) equation
+    case(Absyn.NAMEDARG(name,_),_) equation
       res = (name ==& argName);
     then res;
   end match;
@@ -1938,7 +1938,7 @@ algorithm
     local Context context;
 
       /* If is Rectangle, Ellipse, Polygon or Text and no color attribute, set default to lineColor={0,0,255} */
-    case(inArgs,resultList, context)
+    case(_,_, context)
       equation
         true = isLinebasedGraphic(context);
         {} = List.select(inArgs,isLineColorModifier);
@@ -1947,7 +1947,7 @@ algorithm
       then outArgs;
 
       /* If is Line and no color attribute, set default to color={0,0,255} */
-    case(inArgs,resultList, context)
+    case(_,_, context)
       equation
         true = isLineGraphic(context);
         {} = List.select(inArgs,isLineColorModifier);
@@ -1955,7 +1955,7 @@ algorithm
         SOME(Absyn.CLASSMOD({},Absyn.EQMOD(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}),Absyn.dummyInfo))),NONE(),Absyn.dummyInfo)::inArgs,resultList,context);
       then outArgs;
 
-    case(inArgs,resultList, context)
+    case(_,_, context)
       equation
         outArgs = cleanStyleAttrs2(inArgs,resultList,context);
       then outArgs;

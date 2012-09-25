@@ -478,13 +478,13 @@ algorithm
       Boolean const;
       array<Boolean> dereqnarray;
     // a = constant
-    case (0,cr,i,exp,pos,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
+    case (0,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
       equation
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared1 = BackendVariable.addKnVarDAE(v, shared);
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared1,repl,inDerrepl,inDereqnarray,pos::meqns);
-    case (4,cr,i,exp,pos,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
+    case (4,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
       equation
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
@@ -493,7 +493,7 @@ algorithm
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());        
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared1,repl_1,inDerrepl,inDereqnarray,pos::meqns);
     // a = b alias
-    case (1,cr,i,exp,pos,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
+    case (1,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
       equation
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
@@ -502,13 +502,13 @@ algorithm
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared1,repl_1,inDerrepl,inDereqnarray,pos::meqns);
     // a = der(b) der replacement
-    case (2,cr,i,exp,pos,repl,_,_,syst as BackendDAE.EQSYSTEM(mT=mT),shared,meqns)
+    case (2,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(mT=mT),shared,meqns)
       equation
         derrepl = BaseHashTable.add((cr,exp),inDerrepl);
         dereqnarray = arrayUpdate(inDereqnarray,pos,false);
       then (syst,shared,repl,derrepl,dereqnarray,meqns);
     // self generated
-    case (5,cr,i,exp,pos,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
+    case (5,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),shared,meqns)
       equation
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
@@ -978,7 +978,7 @@ algorithm
       HashTable2.HashTable derrepl;
       array<Boolean> dereqnarray;
       
-    case (0,cr,i,exp,pos,_,_,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
+    case (0,_,_,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
       equation
         // equations of var
         vareqns = mT[i];
@@ -986,7 +986,7 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared1 = BackendVariable.addKnVarDAE(v, shared);
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl,inDerrepl,iDereqnarray,pos::meqns);
-    case (4,cr,i,exp,pos,_,_,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
+    case (4,_,_,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
       equation
         // equations of var
         vareqns = mT[i];
@@ -997,7 +997,7 @@ algorithm
         repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl_1,inDerrepl,iDereqnarray,pos::meqns);
     // Alias a = b 
-    case (1,cr,i,exp,pos,_,_,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
+    case (1,_,_,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
       equation
         // equations of var
         vareqns = mT[i];
@@ -1010,7 +1010,7 @@ algorithm
         matching = updateAliasMatching(matching,i,pos);
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl_1,inDerrepl,iDereqnarray,pos::meqns);
     // a = der(b) -> replace der(b) with a in all other eqns
-    case (2,cr,i,exp,pos,_,_,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
+    case (2,_,_,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
       equation
         // equations of var
         vareqns = mT[i];
@@ -1028,7 +1028,7 @@ algorithm
         dereqnarray = arrayUpdate(iDereqnarray,pos,false);
       then (vareqns1,syst,shared,repl,derrepl,dereqnarray,meqns);
     // self generated   
-    case (5,cr,i,exp,pos,_,_,repl,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
+    case (5,_,_,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
       equation
         // equations of var
         vareqns = mT[i];
@@ -1591,7 +1591,7 @@ algorithm
       BackendDAE.EqSystems systs,systs1;  
       list<BackendDAE.Var> ordvarslst,varlst;
     case (false,_,_) then inDAE;
-    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs)),repl)
+    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst),eoc,btp,symjacs)),_)
       equation
         // replace moved vars in knvars,ineqns,remeqns
         (aliasVars,(_,varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceAliasVarTraverser,(repl,{}));
@@ -1771,7 +1771,7 @@ algorithm
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.Matching matching;
     case ({},_,_,_,_) then (inSyst,inShared);
-    case (inEqsLst,derExp,inCr,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching),_)
+    case (_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching),_)
       equation
         eqns1 = replacementsInEqns3(inEqsLst,derExp,inCr,eqns);
       then (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),inShared);
@@ -1795,7 +1795,7 @@ algorithm
       Integer pos,pos_1;
       list<Integer> rest;
     case ({},_,_,_) then inEqns;
-    case (pos::rest,derExp,inCr,_)
+    case (pos::rest,_,_,_)
       equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(inEqns,pos_1);
@@ -1930,7 +1930,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
     // self generated
-    case (var,cr,exp,syst,shared,ops)
+    case (_,_,_,syst,shared,_)
       equation
         true = selfGeneratedVar(cr);
         Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Self Generated Var ",cr," = ",exp," found (1).\n"));
@@ -1939,7 +1939,7 @@ algorithm
       then
         (i,syst,shared,5);
     // alias a
-    case (var,cr,exp,syst,shared,ops)
+    case (_,_,_,syst,shared,_)
       equation
         (negate,cra) = aliasExp(exp);
         // no State
@@ -1965,7 +1965,7 @@ algorithm
       then
         (i,syst,shared,1);     
     // const
-    case (var,cr,exp,syst,shared,ops)
+    case (_,_,_,syst,shared,_)
       equation
         // add bindExp
         var2 = BackendVariable.setBindExp(var,exp);
@@ -2100,7 +2100,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       
-    case (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,negate,source)
+    case (_,_,_,_,_,_,_,_,syst,shared,_,_)
       equation
         replaceableAlias(var1);
         replaceableAlias(var2);
@@ -2111,13 +2111,13 @@ algorithm
         (syst,shared) = selectAlias2(acr,cr,avar,var,ae,e,syst,shared,negate,source);
       then
         (acr,e,aipos,syst,shared);
-    case (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,negate,source)
+    case (_,_,_,_,_,_,_,_,syst,shared,_,_)
       equation
         replaceableAlias(var1);
         (syst,shared) = selectAlias2(cr1,cr2,var1,var2,e1,e2,syst,shared,negate,source);
       then
         (cr1,e2,ipos1,syst,shared);
-    case (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,negate,source)
+    case (_,_,_,_,_,_,_,_,syst,shared,_,_)
       equation
         replaceableAlias(var2);
         (syst,shared) = selectAlias2(cr2,cr1,var2,var1,e2,e1,syst,shared,negate,source);
@@ -2229,12 +2229,12 @@ algorithm
       DAE.ComponentRef cr,cra;
       DAE.Exp sa,sb,e;
       String s,s1,s2,s3,s4,s5;
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),negate)
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_)
       equation
         e = getNonZeroStart(sa,sb,negate);
         v1 = BackendVariable.setVarStartValue(v,e);
       then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),negate)
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Util.if_(negate," = -"," = ");
@@ -2244,14 +2244,14 @@ algorithm
         s = stringAppendList({"Alias variables ",s1,s2,s3," both fixed and have start values ",s4," != ",s5,". Use value from ",s1,".\n"});
         Error.addMessage(Error.COMPILER_WARNING,{s});
       then v;
-    case (v,true,SOME(sa),va,true,NONE(),negate)
+    case (v,true,SOME(sa),va,true,NONE(),_)
       then v;
-    case (v,true,SOME(sa),va,false,SOME(sb),negate)
+    case (v,true,SOME(sa),va,false,SOME(sb),_)
       equation
         e = getNonZeroStart(sa,sb,negate);
         v1 = BackendVariable.setVarStartValue(v,e);
       then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Util.if_(negate," = -"," = ");
@@ -2261,31 +2261,31 @@ algorithm
         s = stringAppendList({"Alias variables ",s1,s2,s3," have start values ",s4," != ",s5,". Use value from ",s1," because this is fixed.\n"});
         Error.addMessage(Error.COMPILER_WARNING,{s});        
       then v;
-    case (v,true,SOME(sa),va,false,NONE(),negate)
+    case (v,true,SOME(sa),va,false,NONE(),_)
       then v;
-    case (v,true,NONE(),va,true,SOME(sb),negate)
+    case (v,true,NONE(),va,true,SOME(sb),_)
       equation
         v1 = BackendVariable.setVarStartValue(v,sb); 
       then v1;
-    case (v,true,NONE(),va,true,NONE(),negate)
+    case (v,true,NONE(),va,true,NONE(),_)
       then v;
-    case (v,true,NONE(),va,false,SOME(sb),negate)
+    case (v,true,NONE(),va,false,SOME(sb),_)
       equation
         v1 = BackendVariable.setVarStartValue(v,sb); 
       then v1;
-    case (v,true,NONE(),va,false,NONE(),negate)
+    case (v,true,NONE(),va,false,NONE(),_)
       then v;   
-    case (v,false,SOME(sa),va,true,SOME(sb),negate)
+    case (v,false,SOME(sa),va,true,SOME(sb),_)
       equation
         e = getNonZeroStart(sa,sb,negate);
         v1 = BackendVariable.setVarStartValue(v,e);
         v2 = BackendVariable.setVarFixed(v1,true);
       then v2;
-    case (v,false,SOME(sa),va,true,NONE(),negate)
+    case (v,false,SOME(sa),va,true,NONE(),_)
       equation
         v1 = BackendVariable.setVarFixed(v,true);
       then v1;
-    case (v,false,SOME(sa),va,false,SOME(sb),negate)
+    case (v,false,SOME(sa),va,false,SOME(sb),_)
       equation
         e = getNonZeroStart(sa,sb,negate);
         v1 = BackendVariable.setVarStartValue(v,e);
@@ -2294,14 +2294,14 @@ algorithm
     // adrpo: TODO! FIXME! maybe we should use another heuristic here such as:
     //        use the value from the variable that is closer to the top of the 
     //        hierarchy i.e. A.B value has priority over X.Y.Z value!
-    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
+    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_)
       equation
         true = intGt(ComponentReference.crefDepth(cr), ComponentReference.crefDepth(cra));
         // invert arguments
         v = mergeStartFixed(inAVar,fixeda,sva,inVar,fixed,sv,negate);
       then v;
 
-    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),negate)
+    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Util.if_(negate," = -"," = ");
@@ -2311,24 +2311,24 @@ algorithm
         s = stringAppendList({"Alias variables ",s1,s2,s3," have start values ",s4," != ",s5,". Use value from ",s1,".\n"});
         Error.addMessage(Error.COMPILER_WARNING,{s});        
       then v;
-    case (v,false,SOME(sa),va,false,NONE(),negate)
+    case (v,false,SOME(sa),va,false,NONE(),_)
       then v;
-    case (v,false,NONE(),va,true,SOME(sb),negate)
+    case (v,false,NONE(),va,true,SOME(sb),_)
       equation
         e = negateif(negate,sb);
         v1 = BackendVariable.setVarStartValue(v,e);
         v2 = BackendVariable.setVarFixed(v1,true);
       then v2;
-    case (v,false,NONE(),va,true,NONE(),negate)
+    case (v,false,NONE(),va,true,NONE(),_)
       equation
         v1 = BackendVariable.setVarFixed(v,true);
       then v1;
-    case (v,false,NONE(),va,false,SOME(sb),negate)
+    case (v,false,NONE(),va,false,SOME(sb),_)
       equation
         e = negateif(negate,sb);
         v1 = BackendVariable.setVarStartValue(v,e);
       then v1;
-    case (v,false,NONE(),va,false,NONE(),negate)
+    case (v,false,NONE(),va,false,NONE(),_)
       then v; 
   end matchcontinue;
 end mergeStartFixed;
@@ -2344,16 +2344,16 @@ algorithm
   matchcontinue (exp1,exp2,negate)
     local
       DAE.Exp ne;
-    case (exp1,exp2,negate) 
+    case (_,_,_) 
       equation
         true = Expression.isZero(exp2);
       then exp1;
-    case (exp1,exp2,negate) 
+    case (_,_,_) 
       equation
         true = Expression.isZero(exp1);
         ne = negateif(negate,exp2);
       then ne;      
-    case (exp1,exp2,negate) 
+    case (_,_,_) 
       equation
         ne = negateif(negate,exp2);
         true = Expression.expEqual(exp1,ne);
@@ -2371,7 +2371,7 @@ algorithm
   match (negate,exp)
     local
       DAE.Exp ne;
-    case (true,exp)
+    case (true,_)
       equation
         ne = Expression.negate(exp);
       then ne;
@@ -2390,7 +2390,7 @@ algorithm
     local
       BackendDAE.Var v,var,var1;
       DAE.Exp e,e_1,e1,esum,eaverage;
-    case (v,var,negate)
+    case (v,var,_)
       equation 
         // nominal
         e = BackendVariable.varNominalValue(v);
@@ -2401,7 +2401,7 @@ algorithm
         (eaverage,_) = ExpressionSimplify.simplify(eaverage); 
         var1 = BackendVariable.setVarNominalValue(var,eaverage);
       then var1;
-    case (v,var,negate)
+    case (v,var,_)
       equation 
         // nominal
         e = BackendVariable.varNominalValue(v);
@@ -2426,7 +2426,7 @@ algorithm
       list<Option<DAE.Exp>> ominmax,ominmax1;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
       DAE.ComponentRef cr,cr1;
-    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),negate)
+    case (v as BackendDAE.VAR(values = attr),var as BackendDAE.VAR(values = attr1),_)
       equation 
         // minmax
         ominmax = DAEUtil.getMinMax(attr);
@@ -2454,14 +2454,14 @@ algorithm
       Option<DAE.Exp> omin1,omax1,omin2,omax2;
       DAE.Exp min,max,min1,max1;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
-    case (false,{omin1,omax1},{omin2,omax2},cr,cr1)
+    case (false,{omin1,omax1},{omin2,omax2},_,_)
       equation
         minMax = mergeMinMax1({omin1,omax1},{omin2,omax2});
         checkMinMax(minMax,cr,cr1,negate);
       then
         minMax;
     // in case of a=-b, min and max have to be changed and negated
-    case (true,{SOME(min),SOME(max)},{omin2,omax2},cr,cr1)
+    case (true,{SOME(min),SOME(max)},{omin2,omax2},_,_)
       equation
         min1 = Expression.negate(min);
         max1 = Expression.negate(max);
@@ -2469,14 +2469,14 @@ algorithm
         checkMinMax(minMax,cr,cr1,negate);
       then
         minMax;        
-    case (true,{NONE(),SOME(max)},{omin2,omax2},cr,cr1)
+    case (true,{NONE(),SOME(max)},{omin2,omax2},_,_)
       equation
         max1 = Expression.negate(max);
         minMax = mergeMinMax1({SOME(max1),NONE()},{omin2,omax2});
         checkMinMax(minMax,cr,cr1,negate);
       then
         minMax;        
-    case (true,{SOME(min),NONE()},{omin2,omax2},cr,cr1)
+    case (true,{SOME(min),NONE()},{omin2,omax2},_,_)
       equation
         min1 = Expression.negate(min);
         minMax = mergeMinMax1({NONE(),SOME(min1)},{omin2,omax2});
@@ -2498,7 +2498,7 @@ algorithm
       DAE.Exp min,max;
       String s,s1,s2,s3,s4,s5;
       Real rmin,rmax;
-    case ((SOME(min),SOME(max)),cr1,cr2,negate)
+    case ((SOME(min),SOME(max)),_,_,_)
       equation
         rmin = Expression.expReal(min);
         rmax = Expression.expReal(max);
@@ -2682,10 +2682,10 @@ algorithm
       Type_a extArg,extArg1,extArg2;
       list<Integer> eqns,eqns1;
     
-    case(inM,func,pos,len,true,inTypeA)
+    case(_,_,_,_,true,_)
     then (inM,inTypeA);
     
-    case(inM,func,pos,len,false,inTypeA)
+    case(_,_,_,_,false,_)
       equation
         ((eqns,m,extArg)) = func((inM[pos],pos,inM,inTypeA));
         eqns1 = List.removeOnTrue(pos,intLt,eqns);
@@ -2722,7 +2722,7 @@ algorithm
           
     case({},inM,_,_,_,inTypeA) then (inM,inTypeA);
     
-    case(pos::rest,inM,func,len,maxpos,inTypeA) equation
+    case(pos::rest,_,_,_,_,_) equation
       // do not leave the list
       true = intLt(pos,len+1);
       // do not more than necesary
@@ -2733,7 +2733,7 @@ algorithm
       (m1,extArg1) = traverseIncidenceMatrixList(alleqns,m,func,len,maxpos,extArg);
     then (m1,extArg1);
 
-    case(pos::rest,inM,func,len,maxpos,inTypeA) equation
+    case(pos::rest,_,_,_,_,_) equation
       // do not leave the list
       true = intLt(pos,len+1);
       (m,extArg) = traverseIncidenceMatrixList(rest,inM,func,len,maxpos,inTypeA);
@@ -2799,7 +2799,7 @@ algorithm
     local 
      Values.Value value;
      BackendDAE.Var var;
-    case(inExp,inVar)
+    case(_,_)
       equation
         true = Expression.isConst(inExp);
         value = ValuesUtil.expValue(inExp);
@@ -3829,29 +3829,29 @@ algorithm
         DAE.Exp e1,e2;
         DAE.Operator op;
         
-      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef = _)),inVars)
+      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef = _)),_)
         then fail();
-      case (e1 as DAE.CREF(componentRef = cr),DAE.CREF(componentRef = _),inVars)
+      case (e1 as DAE.CREF(componentRef = cr),DAE.CREF(componentRef = _),_)
         then fail();
-      case (DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e1 as DAE.CREF(componentRef = cr)),DAE.CREF(componentRef = _),inVars)
+      case (DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e1 as DAE.CREF(componentRef = cr)),DAE.CREF(componentRef = _),_)
         then fail();
       // a = -f(...);
-      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e2),inVars)
+      case (e1 as DAE.CREF(componentRef = cr),DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e2),_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (DAE.UNARY(op,e1),e2);
       // a = f(...);
-      case (e1 as DAE.CREF(componentRef = cr),e2,inVars)
+      case (e1 as DAE.CREF(componentRef = cr),e2,_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (e1,e2);
       // a = -f(...);
-      case (DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e1),e2 as DAE.CREF(componentRef = cr),inVars)
+      case (DAE.UNARY(operator=op as DAE.UMINUS(ty=_),exp=e1),e2 as DAE.CREF(componentRef = cr),_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (DAE.UNARY(op,e2),e1);
       // f(...)=a;
-      case (e1,e2 as DAE.CREF(componentRef = cr),inVars)
+      case (e1,e2 as DAE.CREF(componentRef = cr),_)
         equation
           ((_::_),(_::_)) = BackendVariable.getVar(cr,inVars);
         then (e2,e1);
@@ -4646,7 +4646,7 @@ algorithm
       DAE.Exp exp;
       Integer i1,i2;
       Real r;
-    case ((i1,i2,BackendDAE.RESIDUAL_EQUATION(exp=exp)),vals)
+    case ((i1,i2,BackendDAE.RESIDUAL_EQUATION(exp=exp)),_)
       equation
         Values.REAL(r) = Ceval.cevalSimple(exp);
         _ = arrayUpdate(arrayGet(vals,i1),i2,r);
@@ -4665,7 +4665,7 @@ algorithm
     local
       String infoStr,syst,varnames,varname,rhsStr,jacStr,eqnstr;
     case (0,_,_,_,_) then ();
-    case (info,vars,jac,rhs,_)
+    case (_,_,_,_,_)
       equation
         true = info > 0;
         varname = ComponentReference.printComponentRefStr(listGet(vars,info));
@@ -4677,7 +4677,7 @@ algorithm
         syst = stringAppendList({"\n",eqnstr,"\n[\n  ", jacStr, "\n]\n  *\n[\n  ",varnames,"\n]\n  =\n[\n  ",rhsStr,"\n]"});
         Error.addMessage(Error.LINEAR_SYSTEM_SINGULAR, {syst,infoStr,varname});
       then fail();
-    case (info,vars,jac,rhs,_)
+    case (_,_,_,_,_)
       equation
         true = info < 0;
         varnames = stringDelimitList(List.map(vars,ComponentReference.printComponentRefStr)," ;\n  ");
@@ -5011,7 +5011,7 @@ algorithm
     list<BackendDAE.Var> varLst; 
     BackendDAE.EqSystem eqsys1;
     list<Integer> fixedIndex;
-    case(eqnIndxLst,varIndxLst,dae) equation
+    case(_,_,_) equation
       BackendDAE.DAE(eqs=(eqsys1::_)) = dae;
        fixedIndex = List.map1r(eqnIndxLst,intAdd,-1);
        eqnLst = List.map1r(fixedIndex,BackendDAEUtil.equationNth,BackendEquation.daeEqns(eqsys1)); //daeArrayEqns equationNth
@@ -5344,7 +5344,7 @@ algorithm
     DAE.ComponentRef cr;
     BackendDAE.Equation eq;
     list<DAE.ComponentRef> varcrefs; 
-  case (jac,_,_,_,_,inExpArr,inLstRef)
+  case (_,_,_,_,_,_,_)
     equation
       true = intEq(col,1);
       false = intLt(size,col);  //col<=size
@@ -5358,7 +5358,7 @@ algorithm
       (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,inExpArr,varcrefs); 
     then
       (expArr,varcrefs);
-  case (jac,_,_,_,_,inExpArr,inLstRef)
+  case (_,_,_,_,_,_,_)
     equation
       true = intEq(col,1);
       false = intLt(size,col);  //col<=size
@@ -5374,13 +5374,13 @@ algorithm
       (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,expArr,varcrefs); 
     then
       (expArr,varcrefs);
-  case (jac,_,_,_,_,inExpArr,inLstRef)
+  case (_,_,_,_,_,_,_)
     equation
       true = intGt(col,size);  //col>size
       (expArr,varcrefs) = matrixVectorMultiplication(jac,row+1,1,vars,size,inExpArr,inLstRef);
     then
       (expArr,varcrefs);
-  case (jac,_,_,_,_,inExpArr,inLstRef)
+  case (_,_,_,_,_,_,_)
     equation
       false = intEq(col,1);
       false = intLt(size,col);  //col<=size
@@ -5397,7 +5397,7 @@ algorithm
       (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,expArr,varcrefs); 
     then
       (expArr,inLstRef);
-  case (jac,_,_,_,_,inExpArr,inLstRef)
+  case (_,_,_,_,_,_,_)
     equation
       false = intEq(col,1);
       false = intLt(size,col);  //col<=size
@@ -5411,7 +5411,7 @@ algorithm
       (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,inExpArr,varcrefs);
     then
       (expArr,inLstRef);
-  case (jac,_,_,_,_,inExpArr,inLstRef)
+  case (_,_,_,_,_,_,_)
     equation
       true = intGt(row,size);  //row>size
     then
@@ -5434,25 +5434,25 @@ algorithm
     list<tuple<Integer, Integer, BackendDAE.Equation>> rest;
     Integer i1,i2;
     BackendDAE.Equation eq;
-  case ((i1,i2,eq)::rest,r,c)
+  case ((i1,i2,eq)::rest,_,_)
     equation
       true = intEq(i1,r);  //i1 = r
       true = intEq(i2,c);  //i2 = c
     then
       eq;
-  case ((i1,i2,eq)::rest,r,c)
+  case ((i1,i2,eq)::rest,_,_)
     equation
       false = intEq(i1,r);  //i1 <>r
       eq = getEqFromTupleLst(rest,r,c);
     then
       eq;
-  case ((i1,i2,eq)::rest,r,c)
+  case ((i1,i2,eq)::rest,_,_)
     equation
       false = intEq(i2,c);  //i2 <>c
       eq = getEqFromTupleLst(rest,r,c);
     then
       eq;
-  case ({},r,c)
+  case ({},_,_)
     then
       BackendDAE.RESIDUAL_EQUATION(DAE.RCONST(0.0),DAE.emptyElementSource);  //(r,c) does not appear in jac
   end matchcontinue;
@@ -5949,18 +5949,18 @@ algorithm
       tupl = getMaxFromListWithTuples(rest,(oldWeight,oldVar),exclude);
     then
       tupl;
-  case ({},oldTupl,exclude)
+  case ({},_,exclude)
     equation
     then
       oldTupl;
-  case ((weight,var)::rest,oldTupl,exclude)
+  case ((weight,var)::rest,_,exclude)
     equation
       true = (var > 0);
       true = listMember(var,exclude);
       tupl = getMaxFromListWithTuples(rest,oldTupl,exclude);
     then
       tupl;
-  case ((weight,var)::rest,oldTupl,exclude)
+  case ((weight,var)::rest,_,exclude)
     equation
       false = (var > 0);
       tupl = getMaxFromListWithTuples(rest,oldTupl,exclude);
@@ -6473,11 +6473,11 @@ protected function createBipartiteGraph
   output list<Integer> outEdges; 
 algorithm
   outEdges := matchcontinue(inNode,inSparsePattern)
-    case(inNode, inSparsePattern)
+    case(_, _)
       equation
         outEdges = arrayGet(inSparsePattern,inNode);
     then outEdges;
-    case(inNode, _)
+    case(_, _)
       then {};        
   end matchcontinue;
 end createBipartiteGraph;
@@ -6525,7 +6525,7 @@ algorithm
   outSparseT := matchcontinue(inSparseT,inStartNode,inEndNode,inMatrixT)
   local
     list<Integer> rowElements;
-    case (inSparseT,inStartNode,inEndNode,inMatrixT)
+    case (_,_,_,_)
       equation
         true = (inStartNode <= inEndNode);
         rowElements = arrayGet(inMatrixT,inStartNode);
@@ -6551,7 +6551,7 @@ algorithm
     BackendDAE.StrongComponents rest;
     list<list<Integer>>  rowElementsList, eqnlstList;
     case ({},inResults,_,_) then inResults;
-    case(BackendDAE.SINGLEEQUATION(eqn=eqn,var=var)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.SINGLEEQUATION(eqn=eqn,var=var)::rest,result,_,_)
       equation
         // get incedece row for curent equation set
         //print("find for dependecies for  eqn:" +& intString(eqn) +& " \n");
@@ -6560,7 +6560,7 @@ algorithm
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);    
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;        
-    case(BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars)::rest,result,_,_)
       equation
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
@@ -6569,7 +6569,7 @@ algorithm
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=eqns,disc_vars=vars)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=eqns,disc_vars=vars)::rest,result,_,_)
       equation
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
@@ -6578,7 +6578,7 @@ algorithm
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
-    case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=vars)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=vars)::rest,result,_,_)
       equation
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
@@ -6586,7 +6586,7 @@ algorithm
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
-    case(BackendDAE.SINGLEALGORITHM(eqn=eqn,vars=vars)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.SINGLEALGORITHM(eqn=eqn,vars=vars)::rest,result,_,_)
       equation
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
@@ -6594,7 +6594,7 @@ algorithm
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;          
-    case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqn,vars=vars)::rest,result,inMatrix,inMatrixT)
+    case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqn,vars=vars)::rest,result,_,_)
       equation
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
@@ -6641,7 +6641,7 @@ public function generateSparsePattern
       
      case (_,{},_) then ({{}},{});
      case (_,_,{}) then ({{}},{});
-     case(inBackendDAE as BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}, shared=shared),inDiffVars,inDiffedVars)
+     case(inBackendDAE as BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}, shared=shared),_,_)
        equation
         // Generate Graph for determine sparse structure
         Debug.fcall(Flags.JAC_DUMP,print," start getting sparsity pattern diff Vars : " +& intString(listLength(inDiffedVars))  +& " diffed vars: " +& intString(listLength(inDiffVars)) +&"\n");
@@ -6748,7 +6748,7 @@ algorithm
     list<list<Integer>> rest;
     array<list<Integer>>  accumList;
     case ({}, inAccumList, _) then inAccumList;
-    case (oneElem::rest, inAccumList, inValue)
+    case (oneElem::rest, _, _)
       equation
         accumList = transposeSparsePattern2(oneElem, inAccumList, inValue);
        then transposeSparsePattern(rest, accumList, inValue+1); 
@@ -6767,7 +6767,7 @@ algorithm
     list<Integer> rest, tmplist;
     array<list<Integer>>  accumList;
     case ({},inAccumList, _) then inAccumList;
-    case (oneElem::rest,inAccumList, inValue)
+    case (oneElem::rest,_, _)
       equation
         tmplist = arrayGet(inAccumList,oneElem);
         tmplist = listAppend(tmplist,{inValue});
@@ -7426,7 +7426,7 @@ algorithm
       jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, constrs, clsAttrs, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{}));
     then jacobian;
      
-    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs ,cache=cache,env=env,  functionTree=functions)), vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, matrixName) equation
+    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs ,cache=cache,env=env,  functionTree=functions)), vars, diffedVars, _, stateVars, inputVars, paramVars, matrixName) equation
 
       // Generate tmp varibales
       diffvars = BackendDAEUtil.varList(orderedVars);
@@ -7468,7 +7468,7 @@ algorithm
       
     then jacobian;
  
-    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, functionTree=functions)), vars, diffedVars, inseedVars, stateVars, inputVars, paramVars, _) equation
+    case(bDAE as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=BackendDAE.MATCHING(ass2=ass2))::{}, BackendDAE.SHARED(knownVars=knownVars, removedEqs=removedEqs, functionTree=functions)), vars, diffedVars, _, stateVars, inputVars, paramVars, _) equation
       
       diffvars = BackendDAEUtil.varList(orderedVars);
       (derivedVariables,comref_diffvars) = generateJacobianVars(diffvars, vars, (inMatrixName,false));
@@ -7523,7 +7523,7 @@ algorithm
     case({}, _, _)
     then ({},{});
       
-    case(currVar::restVar, vars2, inMatrixName) equation
+    case(currVar::restVar, vars2, _) equation
       (r1,res1) = generateJacobianVars2(currVar, vars2, inMatrixName);
       (r2,res2) = generateJacobianVars(restVar, vars2, inMatrixName);
       res = listAppend(res1, res2);
@@ -7604,11 +7604,11 @@ algorithm
     case({}, _, _, _, _,_)
     then listReverse(iVars);
     // skip for dicrete variable
-    case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.DISCRETE())::restVar,cref,inAllVars,inIndex, _, _) equation
+    case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.DISCRETE())::restVar,cref,_,_, _, _) equation
      then
        creatallDiffedVars(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);    
  
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,inAllVars,inIndex, _, _) equation
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
@@ -7616,21 +7616,21 @@ algorithm
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars);
       
-    case(BackendDAE.VAR(varName=currVar)::restVar,cref,inAllVars,inIndex, _, _) equation
+    case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.STATE_DER(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars); 
  
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,inAllVars,inIndex, _, _) equation
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex, inMatrixName,r1::iVars);
       
-    case(BackendDAE.VAR(varName=currVar)::restVar,cref,inAllVars,inIndex, _, _) equation
+    case(BackendDAE.VAR(varName=currVar)::restVar,cref,_,_, _, _) equation
       derivedCref = differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       r1 = BackendDAE.VAR(derivedCref, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
     then 
@@ -8023,7 +8023,7 @@ algorithm
       Integer nArgs1, nArgs2;
       DAE.CallAttributes attr;
     case ( _, {}, _, _, _) then (DAE.RCONST(0.0));
-    case (currVar::restVar, currDerVar::restDerVar, functionCall as DAE.CALL(expLst=varExpListTotal, attr=attr), derFname, nDerArgs)
+    case (currVar::restVar, currDerVar::restDerVar, functionCall as DAE.CALL(expLst=varExpListTotal, attr=attr), _, _)
       equation
         e = partialAnalyticalDifferentiation(restVar, restDerVar, functionCall, derFname, nDerArgs);
         nArgs1 = listLength(varExpListTotal);
@@ -8050,7 +8050,7 @@ algorithm
       Integer nArgs1, nArgs2;
       DAE.CallAttributes attr;
     case ({}, _, _, _) then (DAE.RCONST(0.0));
-    case (currVar::restVar, currDerVar::restDerVar, inState, functionCall as DAE.CALL(path=fname, expLst=varExpListTotal, attr=attr))
+    case (currVar::restVar, currDerVar::restDerVar, _, functionCall as DAE.CALL(path=fname, expLst=varExpListTotal, attr=attr))
       equation
         e = partialNumericalDifferentiation(restVar, restDerVar, inState, functionCall);
         absCurr = DAE.LBINARY(DAE.RELATION(currVar,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.RCONST(1e-8),-1,NONE()),DAE.OR(DAE.T_BOOL_DEFAULT),DAE.RELATION(currVar,DAE.LESS(DAE.T_REAL_DEFAULT),DAE.RCONST(-1e-8),-1,NONE()));
@@ -8234,7 +8234,7 @@ algorithm
       derivedStatements1 = listAppend(derivedStatements1, derivedStatements2);
     then derivedStatements1;
       
-    case(DAE.STMT_WHEN(exp=exp)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, inMatrixName)
+    case(DAE.STMT_WHEN(exp=exp)::restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, _)
     equation
       //derivedStatements1 = differentiateAlgorithmStatements(restStatements, var, functions, inputVars, paramVars, stateVars, controlVars, knownVars, allVars, diffVars, inMatrixName);
       Debug.fcall(Flags.JAC_DUMP,print,"BackendDAEOptimize.differentiateAlgorithmStatements: WHEN has been removed.\n");
@@ -8337,7 +8337,7 @@ algorithm
         dxlist = createDiffListMeta(e,xlist,diffInt, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars, inMatrixName)));
     then dxlist;
       
-    case( e as DAE.RCONST(_), xlist,functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars, inMatrixName)
+    case( e as DAE.RCONST(_), xlist,functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars, _)
       equation
         dxlist = createDiffListMeta(e,xlist,diffRealZero, SOME((functions, inputVars, paramVars, stateVars, knownVars, allVars,  diffVars, inMatrixName)));
     then dxlist;
@@ -8501,7 +8501,7 @@ algorithm
     
      case(e, {}, _, _) then {};
      
-     case(e, diff_cref::rest, func, typea)
+     case(e, diff_cref::rest, _, typea)
        equation
          e1 = func((e, diff_cref, typea));
          res = createDiffListMeta(e,rest,func,typea);
@@ -8717,37 +8717,37 @@ algorithm
   local
     DAE.Exp e;
     //sin(x)
-    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sin")))
+    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sin")))
       equation
         e = DAE.BINARY(inExp1, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("cos"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // cos(x)
-    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("cos")))
+    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("cos")))
       equation
         e = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), DAE.BINARY(inExp1,DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("sin"),{inExp2},DAE.callAttrBuiltinReal)));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // ln(x)
-    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log")))
+    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log")))
       equation
         e = DAE.BINARY(inExp1, DAE.DIV(DAE.T_REAL_DEFAULT), inExp2);
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // log10(x)
-    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log10")))
+    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log10")))
       equation
         e = DAE.BINARY(inExp1, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.BINARY(inExp2, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},DAE.callAttrBuiltinReal)));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // exp(x)
-    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("exp")))
+    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("exp")))
       equation
         e = DAE.BINARY(inExp1,DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("exp"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // sqrt(x)
-    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sqrt")))
+    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sqrt")))
       equation
         e = DAE.BINARY(
           DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),
@@ -8756,14 +8756,14 @@ algorithm
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
    // abs(x)
-    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("abs")))
+    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("abs")))
       equation
         e = DAE.IFEXP(DAE.RELATION(inExp2,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()), inExp1, DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),inExp1));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
 
     // openmodelica build call $_start(x)
-    case (inExp1,inExp2,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("$_start")))
+    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("$_start")))
       equation
         e = DAE.RCONST(0.0);
       then e;
@@ -8802,38 +8802,38 @@ algorithm
   local
     DAE.Exp e,z1,z2;
     DAE.Type et;
-    case (inExp1,inExp2,inOp as DAE.ADD(_), _, _)
+    case (_,_,inOp as DAE.ADD(_), _, _)
       equation
         e = DAE.BINARY(inExp1,inOp,inExp2);
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    case (inExp1,inExp2,inOp as DAE.SUB(_), _, _)
+    case (_,_,inOp as DAE.SUB(_), _, _)
       equation
         e = DAE.BINARY(inExp1,inOp,inExp2);
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    case (inExp1,inExp2,DAE.MUL(et),inOrgExp1,inOrgExp2)
+    case (_,_,DAE.MUL(et),_,_)
       equation
         e = DAE.BINARY(DAE.BINARY(inExp1, DAE.MUL(et), inOrgExp2), DAE.ADD(et), DAE.BINARY(inOrgExp1, DAE.MUL(et), inExp2));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    case (inExp1,inExp2,DAE.MUL_ARRAY_SCALAR(et),inOrgExp1,inOrgExp2)
+    case (_,_,DAE.MUL_ARRAY_SCALAR(et),_,_)
       equation
         e = DAE.BINARY(DAE.BINARY(inExp1, DAE.MUL_ARRAY_SCALAR(et), inOrgExp2), DAE.ADD_ARR(et), DAE.BINARY(inOrgExp1, DAE.MUL_ARRAY_SCALAR(et), inExp2));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;        
-    case (inExp1,inExp2,DAE.DIV(et),inOrgExp1,inOrgExp2)
+    case (_,_,DAE.DIV(et),_,_)
       equation
         e = DAE.BINARY(DAE.BINARY(DAE.BINARY(inExp1, DAE.MUL(et), inOrgExp2), DAE.SUB(et), DAE.BINARY(inOrgExp1, DAE.MUL(et), inExp2)), DAE.DIV(et), DAE.BINARY(inOrgExp2, DAE.MUL(et), inOrgExp2));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    case (inExp1,inExp2,inOp as DAE.POW(et),inOrgExp1,inOrgExp2)
+    case (_,_,inOp as DAE.POW(et),_,_)
       equation
         true = Expression.isConst(inOrgExp2);
         e = DAE.BINARY(inExp1, DAE.MUL(et), DAE.BINARY(inOrgExp2, DAE.MUL(et), DAE.BINARY(inOrgExp1, DAE.POW(et), DAE.BINARY(inOrgExp2, DAE.SUB(et), DAE.RCONST(1.0)))));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    case (inExp1,inExp2,inOp as DAE.POW(et),inOrgExp1,inOrgExp2)
+    case (_,_,inOp as DAE.POW(et),_,_)
       equation
         z1 = DAE.BINARY(inExp1, DAE.DIV(et), inOrgExp1);
         z1 = DAE.BINARY(inOrgExp2, DAE.MUL(et), z1);
@@ -8866,7 +8866,7 @@ algorithm
   outExp := match(inExp1,inOp)
   local
     DAE.Exp e;
-    case (inExp1,inOp)
+    case (_,_)
       equation
         e = DAE.UNARY(inOp,inExp1);
         (e,_) = ExpressionSimplify.simplify(e);
@@ -8882,7 +8882,7 @@ algorithm
   outExp := match(inExp1,inType)
   local
     DAE.Exp e;
-    case (inExp1,inType)
+    case (_,_)
       equation
         e = DAE.CAST(inType,inExp1);
         (e,_) = ExpressionSimplify.simplify(e);
@@ -9037,7 +9037,7 @@ algorithm
       list<list<BackendDAE.Var>> vl;
       Integer i1,i2;
       String s1,s2;
-    case (n,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=arr),ixs,mT)
+    case (_,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=arr),_,_)
       equation
         ea = arrayCreate(n,{});
         va = arrayCreate(n,{});
@@ -9098,7 +9098,7 @@ algorithm
       list<BackendDAE.Equation> lst;
       BackendDAE.Equation eq;
     case (0,_,_,_) then ();
-    case (n,arr,ixs,ea)
+    case (_,_,_,_)
       equation
         ix = ixs[n];
         lst = ea[ix];
@@ -9129,7 +9129,7 @@ algorithm
       String name;
       Absyn.Info info;
     case (0,_,_,_,_,_) then ();
-    case (n,arr,vars,ixs,mT,va)
+    case (_,_,_,_,_,_)
       equation
         v = BackendVariable.getVarAt(vars,n);
         cr = BackendVariable.varCref(v);
@@ -9165,7 +9165,7 @@ algorithm
     local
       Boolean b;
     case (0,n2,_,_,_) then n2;
-    case (n,n2,m,mT,ixs)
+    case (_,_,_,_,_)
       equation
         b = partitionIndependentBlocks1(n,n2+1,m,mT,ixs);
       then partitionIndependentBlocks0(n-1,Util.if_(b,n2+1,n2),m,mT,ixs);
@@ -9199,7 +9199,7 @@ algorithm
       array<Integer> ixs;
       
     case (false,ix,n,m,mT,ixs) then false;
-    case (true,ix,n,m,mT,ixs)
+    case (true,_,_,_,_,ixs)
       equation
         // i = ixs[ix];
         // print(intString(ix) +& "; update crap\n");
@@ -11967,14 +11967,14 @@ algorithm
       list<String> strs;
       String str,eqstr;
       list<Integer> nrOfEquationsBranches;
-    case (trueBranches,falseBranch,source)
+    case (_,_,_)
       equation
         nrOfEquations = BackendEquation.equationLstSize(falseBranch);
         nrOfEquationsBranches = List.map(trueBranches, BackendEquation.equationLstSize);
         b = List.map1(nrOfEquationsBranches, intEq, nrOfEquations);
         true = List.reduce(b,boolAnd);
       then (nrOfEquations);
-    case (trueBranches,falseBranch,source)
+    case (_,_,_)
       equation
         nrOfEquations = BackendEquation.equationLstSize(falseBranch);
         nrOfEquationsBranches = List.map(trueBranches, BackendEquation.equationLstSize);

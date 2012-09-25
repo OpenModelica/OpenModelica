@@ -130,7 +130,7 @@ algorithm
     case (cache,env,ih,mod,pre,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
       
     /* instantiate a base class */
-    case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,ci_state,className,impl,isPartialInst)
+    case (cache,env,ih,mod,pre,(elt as SCode.EXTENDS(info = info, baseClassPath = tp, modifications = emod, visibility = vis)) :: rest,ci_state,className,impl,_)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "EXTENDS: " +& Env.printEnvPathStr(env) +& " el: " +& SCodeDump.unparseElementStr(elt) +& " mods: " +& Mod.printModStr(mod));        
         //print("EXTENDS: " +& Env.printEnvPathStr(env) +& "/" +& Absyn.pathString(tp) +& "(" +& SCodeDump.printModStr(emod) +& ") outemod: " +& Mod.printModStr(mod) +& "\n");
@@ -235,7 +235,7 @@ algorithm
           modifications = scodeMod, 
           prefixes = SCode.PREFIXES(finalPrefix=finalPrefix),
           comment = cmt)) :: rest,
-          ci_state,className,impl,isPartialInst)
+          ci_state,className,impl,_)
       equation 
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
@@ -248,7 +248,7 @@ algorithm
 
     // Classdefs
     case (cache,env,ih,mod,pre,(elt as SCode.CLASS(name = cn)) :: rest,
-          ci_state,className,impl,isPartialInst)
+          ci_state,className,impl,_)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
@@ -256,7 +256,7 @@ algorithm
         (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
 
     /* instantiate elements that are not extends */
-    case (cache,env,ih,mod,pre,(elt as SCode.IMPORT(imp = _)) :: rest,ci_state,className,impl,isPartialInst)
+    case (cache,env,ih,mod,pre,(elt as SCode.IMPORT(imp = _)) :: rest,ci_state,className,impl,_)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache,env,ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
@@ -694,7 +694,7 @@ algorithm
       then
         ((comp, cmod, b), inMod);
 
-    case ((comp,cmod,b),inEnv,inMod)
+    case ((comp,cmod,b),_,_)
       equation
         Debug.fprintln(
           Flags.FAILTRACE, 
@@ -733,7 +733,7 @@ algorithm
       list<Type_A> elts;
       
     case ({},ht,getIdent) then ht;
-    case (elt::elts,ht,getIdent)
+    case (elt::elts,ht,_)
       equation
         ht = getIdent(elt,ht);
         ht = getLocalIdentList(elts,ht,getIdent);
@@ -1431,7 +1431,7 @@ protected function lookupVarNoErrorMessage
   output String id;
 algorithm
   (outEnv, id) := matchcontinue(inCache, inEnv, inComponentRef)
-    case (inCache, inEnv, inComponentRef)
+    case (_, _, _)
       equation
         ErrorExt.setCheckpoint("InstExtends.lookupVarNoErrorMessage");        
         (_,_,_,_,_,_,outEnv,_,id) = Lookup.lookupVar(inCache, inEnv, inComponentRef);
@@ -1845,7 +1845,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,NONE(),ht,fixA) then (cache,NONE());
-    case (cache,env,SOME(A),ht,fixA)
+    case (cache,env,SOME(A),ht,_)
       equation
         (cache,A) = fixA(cache,env,A,ht);
       then (cache,SOME(A));
@@ -1881,7 +1881,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,{},ht,fixA) then (cache,{});
-    case (cache,env,A::lstA,ht,fixA)
+    case (cache,env,A::lstA,ht,_)
       equation
         (cache,A) = fixA(cache,env,A,ht);
         (cache,lstA) = fixList(cache,env,lstA,ht,fixA);
@@ -1918,7 +1918,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,{},ht,fixA) then (cache,{});
-    case (cache,env,A::lstA,ht,fixA)
+    case (cache,env,A::lstA,ht,_)
       equation
         (cache,A) = fixList(cache,env,A,ht,fixA);
         (cache,lstA) = fixListList(cache,env,lstA,ht,fixA);
@@ -1966,7 +1966,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
 
     case (cache,env,{},ht,fixA,fixB) then (cache,{});
-    case (cache,env,(a,b)::rest,ht,fixA,fixB)
+    case (cache,env,(a,b)::rest,ht,_,_)
       equation
         (cache,a) = fixA(cache,env,a,ht);
         (cache,b) = fixB(cache,env,b,ht);

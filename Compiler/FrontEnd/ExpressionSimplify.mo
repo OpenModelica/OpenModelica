@@ -152,7 +152,7 @@ algorithm
         Error.assertionOrAddSourceMessage(Expression.isConstValue(eNew), Error.INTERNAL_ERROR, {"eval exp failed"}, Absyn.dummyInfo);
         b = not Expression.expEqual(e,eNew);
       then (eNew,b);
-    case (e,options)
+    case (e,_)
       equation
         false = Config.getNoSimplify();
         //print("SIMPLIFY BEFORE->" +& ExpressionDump.printExpStr(e) +& "\n");
@@ -163,7 +163,7 @@ algorithm
         b = not Expression.expEqual(e,eNew);
         //print("SIMPLIFY FINAL->" +& ExpressionDump.printExpStr(eNew) +& "\n");
       then (eNew,b);
-    case (e,options)
+    case (e,_)
       equation
         (eNew,b) = simplify1WithOptions(e,options);
       then (eNew,b);
@@ -421,7 +421,7 @@ algorithm
       Boolean b;
       String s1,s2,s3,s4;
     case (false,_,_) then ();
-    case (true,before,after)
+    case (true,_,_)
       equation
         c1 = Expression.complexity(before);
         c2 = Expression.complexity(after);
@@ -461,7 +461,7 @@ algorithm
         str2 = ExpressionDump.printExpStr(exp);
         Error.addMessage(Error.SIMPLIFY_FIXPOINT_MAXIMUM, {str1,str2});
       then (exp,false); 
-    case (exp,options,n,_)
+    case (exp,options,_,_)
       equation
         // print("simplify1 start: " +& ExpressionDump.printExpStr(exp) +& "\n");
         ErrorExt.setCheckpoint("ExpressionSimplify");
@@ -528,7 +528,7 @@ algorithm
         exp = DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT), exp);
       then exp;
       // Are the branches equal?
-    case (cond,tb,fb)
+    case (_,_,_)
       equation
         true = Expression.expEqual(tb,fb);
       then tb;
@@ -657,20 +657,20 @@ algorithm
         DAE.RCONST(r);
       
     // cast of unary
-    case(DAE.UNARY(DAE.UMINUS_ARR(_),e),tp) 
+    case(DAE.UNARY(DAE.UMINUS_ARR(_),e),_) 
       equation
         e = addCast(e,tp);
       then
         DAE.UNARY(DAE.UMINUS_ARR(tp),e);
     // cast of unary
-    case(DAE.UNARY(DAE.UMINUS(_),e),tp) 
+    case(DAE.UNARY(DAE.UMINUS(_),e),_) 
       equation
         e = addCast(e,tp);
       then
         DAE.UNARY(DAE.UMINUS(tp),e);
     
     // cast of array
-    case(DAE.ARRAY(t,b,exps),tp) 
+    case(DAE.ARRAY(t,b,exps),_) 
       equation
         tp_1 = Expression.unliftArray(tp);
         exps_1 = List.map1(exps, addCast, tp_1);
@@ -687,14 +687,14 @@ algorithm
         DAE.RANGE(tp2,e1,eo,e2);
     
     // simplify cast in an if expression
-    case (DAE.IFEXP(cond,e1,e2),tp) 
+    case (DAE.IFEXP(cond,e1,e2),_) 
       equation
         e1_1 = DAE.CAST(tp,e1);
         e2_1 = DAE.CAST(tp,e2);
       then DAE.IFEXP(cond,e1_1,e2_1);
     
     // simplify cast of matrix expressions
-    case (DAE.MATRIX(t,n,mexps),tp) 
+    case (DAE.MATRIX(t,n,mexps),_) 
       equation
         tp1 = Expression.unliftArray(tp);
         tp2 = Expression.unliftArray(tp1);
@@ -702,7 +702,7 @@ algorithm
       then DAE.MATRIX(tp,n,mexps_1);
     
     // fill(e, ...) can be simplified
-    case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),tp) 
+    case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),_) 
       equation
         tp_1 = List.fold(exps,Expression.unliftArrayIgnoreFirst,tp);
         e = DAE.CAST(tp_1,e);
@@ -710,7 +710,7 @@ algorithm
       then e;
 
     // expression already has a specified cast type.
-    case(e,tp) 
+    case(e,_) 
       equation
         t1 = Expression.arrayEltType(tp);
         t2 = Expression.arrayEltType(Expression.typeof(e));
@@ -971,14 +971,14 @@ algorithm
       DAE.TypeSource ts;
       
     case (_,{},acc,true) then listReverse(acc);
-    case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts))::DAE.ARRAY(array=es2,ty=DAE.T_ARRAY(dims=dim2::_))::es,acc,_)
+    case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts))::DAE.ARRAY(array=es2,ty=DAE.T_ARRAY(dims=dim2::_))::es,_,_)
       equation
         esn = listAppend(es1,es2);
         ndim = Expression.addDimensions(dim1,dim2);
         etp = DAE.T_ARRAY(etp,ndim::dims,ts);
         e = DAE.ARRAY(etp,sc,esn);
       then simplifyCat(dim,e::es,acc,true);
-    case (1,DAE.MATRIX(matrix=ms1,integer=i1,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts))::DAE.MATRIX(matrix=ms2,integer=i2,ty=DAE.T_ARRAY(dims=dim2::_))::es,acc,_)
+    case (1,DAE.MATRIX(matrix=ms1,integer=i1,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts))::DAE.MATRIX(matrix=ms2,integer=i2,ty=DAE.T_ARRAY(dims=dim2::_))::es,_,_)
       equation
         i = i1+i2;
         mss = listAppend(ms1,ms2);
@@ -986,7 +986,7 @@ algorithm
         etp = DAE.T_ARRAY(etp,ndim::dims,ts);
         e = DAE.MATRIX(etp,i,mss);
       then simplifyCat(dim,e::es,acc,true);
-    case (2,DAE.MATRIX(matrix=ms1,integer=i,ty=DAE.T_ARRAY(dims=dim11::dim1::dims,ty=etp,source=ts))::DAE.MATRIX(matrix=ms2,ty=DAE.T_ARRAY(dims=_::dim2::_))::es,acc,_)
+    case (2,DAE.MATRIX(matrix=ms1,integer=i,ty=DAE.T_ARRAY(dims=dim11::dim1::dims,ty=etp,source=ts))::DAE.MATRIX(matrix=ms2,ty=DAE.T_ARRAY(dims=_::dim2::_))::es,_,_)
       equation
         mss = List.threadMap(ms1,ms2,listAppend);
         ndim = Expression.addDimensions(dim1,dim2);
@@ -1249,14 +1249,14 @@ algorithm
       list<DAE.Exp> rowExps;
       DAE.Exp arrExp;
     
-    case(row,n) // bottom right
+    case(_,_) // bottom right
       equation
         true = intEq(row,n);
         rowExps = simplifyIdentityMakeRow(n,1,row);
       then
        {DAE.ARRAY(DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(n)}, DAE.emptyTypeSource),true,rowExps)};
     
-    case(row,n) // bottom right
+    case(_,_) // bottom right
       equation
         true = row < n;
         rowExps = simplifyIdentityMakeRow(n,1,row);
@@ -1277,14 +1277,14 @@ algorithm
     local
       Integer i;
     
-    case(n,col,row)
+    case(_,_,_)
       equation
         true = intEq(n,col);
         i = Util.if_(intEq(col,row),1,0);
       then
         {DAE.ICONST(i)};
     
-    case(n,col,row)
+    case(_,_,_)
       equation
         true = col < n;
         i = Util.if_(intEq(col,row),1,0);
@@ -1750,36 +1750,36 @@ algorithm
   res := matchcontinue(e1,op,e2)
     local DAE.Exp a1;
     
-    case(e1,op,e2) 
+    case(_,_,_) 
       equation
         a1 = simplifyVectorBinary(e1,op,e2);
       then a1;
     
-    case(e1,DAE.ADD(ty=_),e2) 
+    case(_,DAE.ADD(ty=_),_) 
       equation
         true = Expression.isZero(e1);
       then 
         e2;
         
-    case(e1,DAE.ADD_ARR(ty=_),e2) 
+    case(_,DAE.ADD_ARR(ty=_),_) 
       equation
         true = Expression.isZero(e1);
       then 
         e2;
 
-    case(e1,DAE.SUB_ARR(ty=_),e2) 
+    case(_,DAE.SUB_ARR(ty=_),_) 
       equation
         true = Expression.isZero(e1);
       then 
         Expression.negate(e2);
 
-    case(e1,DAE.SUB(ty=_),e2) 
+    case(_,DAE.SUB(ty=_),_) 
       equation
         true = Expression.isZero(e1);
       then 
         Expression.negate(e2);
     
-    case(e1,op,e2) 
+    case(_,_,_) 
       equation
         true = Expression.isZero(e2);
       then 
@@ -2731,7 +2731,7 @@ algorithm
       Integer n;
     
     // subscript of an array
-    case(DAE.ARRAY(t,b,exps),sub) 
+    case(DAE.ARRAY(t,b,exps),_) 
       equation
         exp = listNth(exps, sub - 1);
       then 
@@ -2743,32 +2743,32 @@ algorithm
       then
         DAE.BCONST(b);
       
-    case (DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),NONE(),DAE.ICONST(istop)),sub) 
+    case (DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),NONE(),DAE.ICONST(istop)),_) 
       equation
         ival = listGet(simplifyRange(istart,1,istop),sub);
         exp = DAE.ICONST(ival);
       then exp;
         
-    case (DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop)),sub) 
+    case (DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop)),_) 
       equation
         ival = listGet(simplifyRange(istart,istep,istop),sub);
         exp = DAE.ICONST(ival);
       then exp;
     
-    case (DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),NONE(),DAE.RCONST(rstop)),sub) 
+    case (DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),NONE(),DAE.RCONST(rstop)),_) 
       equation
         rval = listGet(simplifyRangeReal(rstart,1.0,rstop),sub);
         exp = DAE.RCONST(rval);
       then exp;
         
-    case (DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),SOME(DAE.RCONST(rstep)),DAE.RCONST(rstop)),sub) 
+    case (DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),SOME(DAE.RCONST(rstep)),DAE.RCONST(rstop)),_) 
       equation
         rval = listGet(simplifyRangeReal(rstart,rstep,rstop),sub);
         exp = DAE.RCONST(rval);
       then exp;
 
     // subscript of a matrix
-    case(DAE.MATRIX(t,n,mexps),sub) 
+    case(DAE.MATRIX(t,n,mexps),_) 
       equation
         t1 = Expression.unliftArray(t);
         (mexpl) = listNth(mexps, sub - 1);
@@ -2776,7 +2776,7 @@ algorithm
         DAE.ARRAY(t1,true,mexpl);
     
     // subscript of an if-expression
-    case(DAE.IFEXP(cond,e1,e2),sub) 
+    case(DAE.IFEXP(cond,e1,e2),_) 
       equation
         e1 = Expression.makeASUB(e1,{DAE.ICONST(sub)});
         e2 = Expression.makeASUB(e2,{DAE.ICONST(sub)});
@@ -2785,7 +2785,7 @@ algorithm
         e;
     
     // name subscript
-    case(DAE.CREF(c,t),sub) 
+    case(DAE.CREF(c,t),_) 
       equation
         t = Expression.unliftArray(t);
         c_1 = simplifyAsubCref(c,sub);
@@ -2810,7 +2810,7 @@ algorithm
       DAE.Dimensions dims;
     
     // simple name subscript
-    case (DAE.CREF_IDENT(idn,t2,s),sub) 
+    case (DAE.CREF_IDENT(idn,t2,s),_) 
       equation
         /* TODO: Make sure that the IDENT has enough dimensions? */
         s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
@@ -2819,7 +2819,7 @@ algorithm
         c_1;
 
     //  qualified name subscript
-    case (DAE.CREF_QUAL(idn,t2 as DAE.T_ARRAY(dims=dims),s,c),sub)
+    case (DAE.CREF_QUAL(idn,t2 as DAE.T_ARRAY(dims=dims),s,c),_)
       equation
         true = listLength(dims) > listLength(s);
         s_1 = Expression.subscriptsAppend(s, DAE.ICONST(sub));
@@ -2827,7 +2827,7 @@ algorithm
       then 
         c_1;
 
-    case (DAE.CREF_QUAL(idn,t2,s,c),sub)
+    case (DAE.CREF_QUAL(idn,t2,s,c),_)
       equation
         c_1 = simplifyAsubCref(c,sub);
         c_1 = ComponentReference.makeCrefQual(idn,t2,s,c_1);
@@ -3368,7 +3368,7 @@ algorithm
       Real rv1,rv2,rv3;
       Integer ires;
     
-    case (val1,val2, MULOP())
+    case (_,_, MULOP())
       equation
         rv1 = intReal(val1);
         rv2 = intReal(val2);
@@ -3377,13 +3377,13 @@ algorithm
       then
         outv;
     
-    case (val1,val2, DIVOP())
+    case (_,_, DIVOP())
       equation
         ires = intDiv(val1,val2);
       then
         DAE.ICONST(ires);
         
-    case (val1,val2, SUBOP())
+    case (_,_, SUBOP())
       equation
         rv1 = intReal(val1);
         rv2 = intReal(val2);
@@ -3392,7 +3392,7 @@ algorithm
       then
         outv;
     
-    case (val1,val2, ADDOP())
+    case (_,_, ADDOP())
       equation
         rv1 = intReal(val1);
         rv2 = intReal(val2);
@@ -3401,7 +3401,7 @@ algorithm
       then
         outv;
     
-    case (val1,val2, POWOP())
+    case (_,_, POWOP())
       equation
         rv1 = intReal(val1);
         rv2 = intReal(val2);
@@ -4122,7 +4122,7 @@ algorithm
       list<DAE.Exp> row;
       list<list<DAE.Exp>> mexpl;
     case ({},op,s1,arrayScalar) then {};
-    case (row::mexpl,op,s1,arrayScalar)
+    case (row::mexpl,_,_,_)
       equation
         row = simplifyVectorScalarMatrixRow(row,op,s1,arrayScalar);
         mexpl = simplifyVectorScalarMatrix(mexpl,op,s1,arrayScalar);
@@ -4144,13 +4144,13 @@ algorithm
       list<DAE.Exp> row;
     case({},op,s1,arrayScalar) then {};
       /* array op scalar */
-    case(e::row,op,s1,true)
+    case(e::row,_,_,true)
       equation
         row = simplifyVectorScalarMatrixRow(row,op,s1,true);
       then (DAE.BINARY(e,op,s1)::row);
 
     /* scalar op array */
-    case(e::row,op,s1,false)
+    case(e::row,_,_,false)
       equation
         row = simplifyVectorScalarMatrixRow(row,op,s1,false);
       then (DAE.BINARY(s1,op,e)::row);
@@ -4385,13 +4385,13 @@ algorithm
       Values.Value val;
     case (_,_,{},SOME(val)) then ValuesUtil.valueExp(val);
     case (_,_,{},NONE()) then fail();
-    case ("array",ty,exps,_)
+    case ("array",_,_,_)
       then DAE.ARRAY(ty, true, exps);
-    case ("min",ty,exps,_)
+    case ("min",_,_,_)
       equation
         len = listLength(exps);
       then Expression.makeBuiltinCall("min",{DAE.ARRAY(DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(len)}, DAE.emptyTypeSource), true, exps)},ty);
-    case ("max",ty,exps,_)
+    case ("max",_,_,_)
       equation
         len = listLength(exps);
       then Expression.makeBuiltinCall("max",{DAE.ARRAY(DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(len)}, DAE.emptyTypeSource), true, exps)},ty);

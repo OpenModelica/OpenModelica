@@ -452,12 +452,12 @@ algorithm
       Integer len;
     case ({},_)
       then();
-    case (absynPathLst,Content)
+    case (_,_)
       equation
         len = listLength(absynPathLst);
         len >= 1 = false;
       then ();
-    case (absynPathLst,Content)
+    case (_,_)
       equation
         len = listLength(absynPathLst);
         len >= 1 = true;
@@ -568,7 +568,7 @@ algorithm
          dumpStrTagAttrNoChild(stringAppend(INVOLVED,EQUATION_), stringAppend(EQUATION,ID_), intString(e+offset));
       then
         ();
-    case (inComp,_)
+    case (_,_)
       equation
         (elst,_) = BackendDAETransform.getEquationAndSolvedVarIndxes(inComp);
         dumpBltInvolvedEquations1(elst,offset);        
@@ -1121,7 +1121,7 @@ sudh as:
    case (SOME(DAE.VAR_ATTR_STRING(NONE(),NONE(),_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_ENUMERATION(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,min_max,Initial,fixed,nominal,stateSel,unc,distrOpt,
-                                equationBound,isProtected,finalPrefix)),Content,addMMLCode)
+                                equationBound,isProtected,finalPrefix)),_,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
@@ -1136,7 +1136,7 @@ sudh as:
         // adrpo: TODO! FIXME! add the new information about equationBound,isProtected,finalPrefix
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed,unc,distrOpt,equationBound,isProtected,finalPrefix)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_INT(quant,min_max,Initial,fixed,unc,distrOpt,equationBound,isProtected,finalPrefix)),_,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
@@ -1146,7 +1146,7 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed,equationBound,isProtected,finalPrefix)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_BOOL(quant,Initial,fixed,equationBound,isProtected,finalPrefix)),_,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
@@ -1154,14 +1154,14 @@ sudh as:
         dumpOptExp(fixed,VAR_ATTR_FIXED,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial,_,_,_)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_STRING(quant,Initial,_,_,_)),_,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
         dumpOptExp(Initial,VAR_ATTR_INITIALVALUE,addMMLCode);
         dumpStrCloseTag(Content);
       then();
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed,_,_,_)),Content,addMMLCode)
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,min_max,Initial,fixed,_,_,_)),_,addMMLCode)
       equation
         dumpStrOpenTag(Content);
         dumpOptExp(quant,VAR_ATTR_QUANTITY,addMMLCode);
@@ -1225,12 +1225,12 @@ algorithm
       Boolean addMMLCode;
       Integer len;
     case ({},_,_,_) then ();
-    case (eqns,inContent,_,_)
+    case (_,_,_,_)
       equation
         len = listLength(eqns);
         len >= 1 = false;
       then();
-    case (eqns,inContent,addMMLCode,dumpResiduals)
+    case (_,_,addMMLCode,_)
       equation
         len = listLength(eqns);
         len >= 1 = true;
@@ -1899,12 +1899,12 @@ algorithm
      Integer len;
      BackendDAE.ExternalObjectClasses xs;
     case ({},_) then ();
-    case (xs,Content)
+    case (xs,_)
       equation
         len = listLength(xs);
         len >= 1 = false;
       then ();
-    case (xs,Content)
+    case (xs,_)
       equation
         len = listLength(xs);
         len >= 1 = true;
@@ -2404,11 +2404,11 @@ algorithm
         list<Integer> t;
     case ({},_) then ();
     case ({h},"") then ();
-    case ({h},inElementName)
+    case ({h},_)
       equation
         dumpStrTagContent(inElementName,intString(h));
     then  ();
-    case ((h :: t),inElementName)
+    case ((h :: t),_)
       equation
         dumpStrTagContent(inElementName,intString(h));
         dumpLstInt(t,inElementName);
@@ -2558,7 +2558,7 @@ algorithm
     local
       DAE.Exp e;
     case (NONE(),_,_) then ();
-    case (SOME(e),_,addMathMLCode)
+    case (SOME(e),_,_)
       equation
         dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(e));
         dumpExp(e,addMathMLCode);
@@ -2617,7 +2617,7 @@ algorithm
       Values.Value v;
       Boolean addMMLCode;
     case (NONE(),_,_)  then ();
-    case (SOME(v),Content,addMMLCode)
+    case (SOME(v),_,addMMLCode)
       equation
         dumpStrOpenTagAttr(Content,EXP_STRING,printExpStr(ValuesUtil.valueExp(v)));
         dumpExp(ValuesUtil.valueExp(v),addMMLCode);
@@ -3029,7 +3029,7 @@ algorithm
   _:=
   matchcontinue (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,comment)
       //local String str;
-    case (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,"")
+    case (_,_,_,_,_,_,_,_,_,"")
     equation
     /*
       str= stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
@@ -3047,7 +3047,7 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
       Print.printBuf("\">");
     then();
-    case (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,comment)
+    case (_,_,_,_,_,_,_,_,_,_)
     equation
       Print.printBuf("\n<");Print.printBuf(VARIABLE);Print.printBuf(" ");Print.printBuf(VAR_ID);Print.printBuf("=\"");Print.printBuf(varno);
       Print.printBuf("\" ");Print.printBuf(VAR_NAME);Print.printBuf("=\"");Print.printBuf(cr);
@@ -3131,12 +3131,12 @@ algorithm
       Boolean addMMLCode;
     case ({},_,_,_)
       then();
-    case (vars,crefIdxLstArr,Content,_)
+    case (_,_,_,_)
       equation
         len = listLength(vars);
         len >= 1 = false;
       then ();
-    case (vars,crefIdxLstArr,Content,addMMLCode)
+    case (_,_,_,addMMLCode)
       equation
         len = listLength(vars);
         len >= 1 = true;
@@ -3150,7 +3150,7 @@ algorithm
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then();
-    case (vars,_,Content,addMMLCode)
+    case (_,_,_,addMMLCode)
       equation
         len = listLength(vars);
         len >= 1 = true;
@@ -3161,7 +3161,7 @@ algorithm
         dumpStrCloseTag(stringAppend(VARIABLES,LIST_));
         dumpStrCloseTag(Content);
       then ();
-    case (vars,_,_,_)
+    case (_,_,_,_)
       equation
         len = listLength(vars);
         len >= 1 = false;
@@ -3323,12 +3323,12 @@ algorithm
     local
       Integer len;
     case ({},_,_) then ();
-    case (zeroCross,inContent,_)
+    case (_,_,_)
       equation
         len = listLength(zeroCross);
         len >= 1 = false;
       then();
-    case (zeroCross,inContent,addMathMLCode)
+    case (_,_,_)
       equation
         len = listLength(zeroCross);
         len >= 1 = true;

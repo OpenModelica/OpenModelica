@@ -546,7 +546,7 @@ algorithm
          s= stringAppend(s,";");
        then s;
 
-       case (_,{h},_,_,_,_,true,zc_exps,offset) 
+       case (_,{h},_,_,_,_,true,_,_) 
        equation
          BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("/* We are adding a new discrete variable for ","");
@@ -578,7 +578,7 @@ algorithm
          s= stringAppend(s,";");
          ((e1,_))=Expression.replaceExp(scalar,condition,DAE.RCONST(0.0));
        then s;
-       case (_,{h},_,_,_,_,false,zc_exps,offset) 
+       case (_,{h},_,_,_,_,false,_,_) 
        equation
          BackendDAE.EQUATION(exp=exp,scalar=scalar) = BackendDAEUtil.equationNth(eqs,h-1);
          s = stringAppend("/* We are adding a new discrete variable for ","");
@@ -614,7 +614,7 @@ algorithm
       list<SimCode.SimVar> vars;
       DAE.ComponentRef cref;
       list<DAE.ComponentRef> vars_cref;
-    case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,i_algs) 
+    case (SimCode.SES_SIMPLE_ASSIGN(cref=cref) :: tail,_,_) 
     equation
       true = List.notMember(cref,List.map(states,ComponentReference.crefPrefixDer));
       true = List.notMember(cref,states);
@@ -622,14 +622,14 @@ algorithm
       print(ComponentReference.printComponentRefStr(cref));
       print("\n");
     then computeAlgs(tail,states,listAppend(i_algs,{cref}));
-    case ((SimCode.SES_LINEAR(vars=vars)) :: tail,_,i_algs) 
+    case ((SimCode.SES_LINEAR(vars=vars)) :: tail,_,_) 
     equation
       vars_cref = List.map(vars,SimCodeUtil.varName);
     then computeAlgs(tail,states,listAppend(i_algs,vars_cref));
-    case ({},_,i_algs)
+    case ({},_,_)
     equation
       then i_algs;
-    case (_ :: tail,_,i_algs) 
+    case (_ :: tail,_,_) 
     then computeAlgs(tail,states,i_algs);
   end matchcontinue;
 end computeAlgs;
@@ -668,7 +668,7 @@ algorithm
           list<DAE.Exp> tail;
           list<DAE.ComponentRef> l;
     case ({},acc) then acc;
-    case (e1 :: tail ,acc) 
+    case (e1 :: tail ,_) 
     equation
       ((_,l)) = Expression.traverseExp(e1,getExpCrefs,{});
       then getCrefs(tail,listAppend(acc,l));
@@ -953,7 +953,7 @@ algorithm
     case ({},_) then {};
     case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_BOOL(_,_))) :: tail,zc) then newDiscreteVariables(tail,zc);
     case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_INTEGER(_,_))) :: tail,zc) then newDiscreteVariables(tail,zc);
-    case ( _ :: tail,zc) 
+    case ( _ :: tail,_) 
     equation
       print("Found one discontinuous equation\n");
       s = stringAppend("zc ",intString(zc));

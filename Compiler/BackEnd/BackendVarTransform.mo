@@ -222,7 +222,7 @@ algorithm
     local
       HashTable3.HashTable invHt_1;
       list<DAE.ComponentRef> dests;
-    case (invHt,src,dst) equation
+    case (_,_,_) equation
       dests = Expression.extractCrefsFromExp(dst);
       invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
       then
@@ -249,13 +249,13 @@ algorithm
     local
       HashTable3.HashTable invHt_1;
       list<DAE.ComponentRef> srcs;
-    case (invHt,dst,src)
+    case (_,_,_)
       equation
         failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src" ;
         invHt_1 = BaseHashTable.add((dst, {src}),invHt);
       then
         invHt_1;
-    case (invHt,dst,src)
+    case (_,_,_)
       equation
         srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
         srcs = List.union({},src::srcs);
@@ -297,7 +297,7 @@ algorithm
       DAE.ComponentRef src_1,src_2;
       DAE.Exp dst_1,dst_2,dst_3;
       
-    case (repl,src,dst,_)
+    case (_,_,_,_)
       equation
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst,inFuncTypeExpExpToBooleanOption);
         (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1,inFuncTypeExpExpToBooleanOption);
@@ -332,7 +332,7 @@ algorithm
       HashTable3.HashTable invHt;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
-    case ((repl as REPLACEMENTS(ht,invHt,eht)),src,dst,_)
+    case ((repl as REPLACEMENTS(ht,invHt,eht)),_,_,_)
       equation
         lst = BaseHashTable.get(src, invHt);
         singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
@@ -364,7 +364,7 @@ algorithm
       VariableReplacements repl1,repl2;
       HashTable2.HashTable ht;
     case({},repl,_,_) then repl;
-    case(cr::crs,repl as REPLACEMENTS(hashTable=ht),singleRepl,_)
+    case(cr::crs,repl as REPLACEMENTS(hashTable=ht),_,_)
       equation
         crDst = BaseHashTable.get(cr,ht);
         (crDst,_) = replaceExp(crDst,singleRepl,inFuncTypeExpExpToBooleanOption);
@@ -395,7 +395,7 @@ algorithm
     local
       DAE.Exp dst_1;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
-    case (repl ,src,dst,_)
+    case (repl ,_,_,_)
       equation
         (dst_1,_) = replaceExp(dst,repl,inFuncTypeExpExpToBooleanOption);
       then
@@ -426,14 +426,14 @@ algorithm
       list<DAE.Var> varLst;
       list<DAE.ComponentRef> crefs;
       String s;
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),NONE())
+    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),SOME(pcr))
+    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -441,7 +441,7 @@ algorithm
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
+    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
@@ -451,7 +451,7 @@ algorithm
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr),erepl);
       then erepl;
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst),subscriptLst=subscriptLst),SOME(pcr))
+    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst),subscriptLst=subscriptLst),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,cr);
@@ -462,14 +462,14 @@ algorithm
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr1),erepl);        
       then erepl;      
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
+    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
       then erepl;          
-    case (extendrepl,cr as DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
+    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -477,10 +477,10 @@ algorithm
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (extendrepl,DAE.CREF_IDENT(ident=_),_)
+    case (_,DAE.CREF_IDENT(ident=_),_)
       then 
         extendrepl;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (_,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
@@ -489,7 +489,7 @@ algorithm
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn));
       then erepl1;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (_,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -501,18 +501,18 @@ algorithm
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn1));
       then erepl1;
     // all other
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (_,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         erepl = addExtendReplacement(extendrepl,subcr,SOME(precrn));
       then erepl;
-    case (extendrepl,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (_,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         precrn1 = ComponentReference.joinCrefs(pcr,precrn);
         erepl = addExtendReplacement(extendrepl,subcr,SOME(precrn1));
       then erepl;
-    case (extendrepl,cr,_)
+    case (_,_,_)
       equation
         s = ComponentReference.printComponentRefStr(cr);
         Debug.fprintln(Flags.FAILTRACE, "- BackendVarTransform.addExtendReplacement failed for " +& s);
@@ -837,7 +837,7 @@ algorithm
       list<DAE.Subscript> subs,subs_1;
       Boolean c1,c2;
 
-    case (inCref as DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), repl, cond)
+    case (inCref as DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, _)
       equation
         (subs_1, c1) = replaceCrefSubs2(subs, repl, cond);
         (cr_1, c2) = replaceCrefSubs(cr, repl, cond);
@@ -847,7 +847,7 @@ algorithm
       then
         (cr, c1 or c2);
 
-    case (inCref as DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), repl, cond)
+    case (inCref as DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, _)
       equation
         (subs, c1) = replaceCrefSubs2(subs, repl, cond);
         cr = Util.if_(c1,DAE.CREF_IDENT(name, ty, subs),inCref);
@@ -876,26 +876,26 @@ algorithm
       list<DAE.Subscript> subs;
       
     case ({}, repl, cond) then ({},false);
-    case (DAE.WHOLEDIM()::subs, repl, cond)
+    case (DAE.WHOLEDIM()::subs, _, _)
       equation
         (subs,c1) = replaceCrefSubs2(subs,repl,cond);
       then (DAE.WHOLEDIM()::subs, c1);
 
-    case (DAE.SLICE(exp = exp)::subs, repl, cond)
+    case (DAE.SLICE(exp = exp)::subs, _, _)
       equation
         (exp,c2) = replaceExp(exp, repl, cond);
         (subs,c1) = replaceCrefSubs2(subs,repl,cond);
       then
         (DAE.SLICE(exp)::subs, c1 or c2);
 
-    case (DAE.INDEX(exp = exp)::subs, repl, cond)
+    case (DAE.INDEX(exp = exp)::subs, _, _)
       equation
         (exp,c2) = replaceExp(exp, repl, cond);
         (subs,c1) = replaceCrefSubs2(subs,repl,cond);
       then
         (DAE.INDEX(exp)::subs, c1 or c2);
 
-    case (DAE.WHOLE_NONEXP(exp = exp)::subs, repl, cond)
+    case (DAE.WHOLE_NONEXP(exp = exp)::subs, _, _)
       equation
         (exp,c2) = replaceExp(exp, repl, cond);
         (subs,c1) = replaceCrefSubs2(subs,repl,cond);
@@ -925,7 +925,7 @@ algorithm
       list<DAE.Exp> expl, acc1;
       
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
-    case (exp::expl,repl,cond,acc1,acc2)
+    case (exp::expl,_,_,acc1,acc2)
       equation
         (exp,c) = replaceExp(exp,repl,cond);
         (acc1,acc2) = replaceExpList(expl,repl,cond,exp::acc1,c or acc2);
@@ -954,7 +954,7 @@ algorithm
       list<DAE.Exp> expl, acc1;
       
     case ({},_,_,acc1,acc2) then (listReverse(acc1),listReverse(acc2));
-    case (exp::expl,repl,cond,acc1,acc2)
+    case (exp::expl,_,_,acc1,acc2)
       equation
         (exp,c) = replaceExp(exp,repl,cond);
         (acc1,acc2) = replaceExpList1(expl,repl,cond,exp::acc1,c::acc2);
@@ -988,19 +988,19 @@ algorithm
       Boolean acc2;
       
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
-    case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,repl,cond,acc1,_)
+    case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,_,_,acc1,_)
       equation
         (exp,true) = replaceExp(exp, repl, cond);
         (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,NONE(),ty)::acc1,true);
       then (iters,true);
-    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,repl,cond,acc1,acc2)
+    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_,_,acc1,acc2)
       equation
         (exp,b1) = replaceExp(exp, repl, cond);
         (gexp,b2) = replaceExp(gexp, repl, cond);
         true = b1 or b2;
         (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::acc1,true);
       then (iters,true);
-    case (iter::iters,repl,cond,acc1,acc2)
+    case (iter::iters,_,_,acc1,acc2)
       equation
         (iters,acc2) = replaceExpIters(iters,repl,cond,iter::acc1,acc2);
       then (iters,acc2);

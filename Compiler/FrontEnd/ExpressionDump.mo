@@ -538,7 +538,7 @@ algorithm
       then
         s;
     
-    case (DAE.SCONST(string = s), stringDelimiter, _, _)
+    case (DAE.SCONST(string = s), _, _, _)
       equation
         s = System.escapedString(s,false);
         s = stringAppendList({stringDelimiter, s, stringDelimiter});
@@ -1724,7 +1724,7 @@ algorithm
       Integer pparent,pexpr;
     
     // expr, prio. parent expr, prio. expr
-    case (str,pparent,pexpr,rightOpParenthesis)
+    case (str,pparent,pexpr,_)
       equation
         (pparent > pexpr) = true;
         str_1 = stringAppendList({"(",str,")"});

@@ -461,11 +461,11 @@ algorithm
     local
       DAE.Ident s,ns,ss;
       DAE.ComponentRef n;
-    case (inPreString,DAE.CREF_IDENT(ident = s),_)
+    case (_,DAE.CREF_IDENT(ident = s),_)
       equation
         ss = stringAppend(inPreString, s);
       then ss;
-    case (inPreString,DAE.CREF_QUAL(ident = s,componentRef = n),inNameSeparator)
+    case (_,DAE.CREF_QUAL(ident = s,componentRef = n),_)
       equation
         ns = stringAppendList({inPreString, s, inNameSeparator});
         ss = crefToStr(ns,n,inNameSeparator);
@@ -863,7 +863,7 @@ algorithm
       DAE.ComponentRef cr1,cr2;
       
     // check for pointer equality first, if they point to the same thing, they are equal
-    case (inComponentRef1,inComponentRef2)
+    case (_,_)
       equation
         true = referenceEq(inComponentRef1,inComponentRef2);
       then
@@ -1529,11 +1529,11 @@ algorithm
       DAE.Type tp1; String id1; list<DAE.Subscript> subs1;
       DAE.ComponentRef cr;
     
-    case(DAE.CREF_IDENT(id1,tp1,subs1),ident,subs,tp) 
+    case(DAE.CREF_IDENT(id1,tp1,subs1),_,_,_) 
       then 
         makeCrefQual(id1,tp1,subs1,makeCrefIdent(ident,tp,subs));
     
-    case(DAE.CREF_QUAL(id1,tp1,subs1,cr),ident,subs,tp)
+    case(DAE.CREF_QUAL(id1,tp1,subs1,cr),_,_,_)
       equation
         cr = crefPrependIdent(cr,ident,subs,tp);
       then 
@@ -1731,10 +1731,10 @@ algorithm
       DAE.ComponentRef cr_1,cr;
       DAE.Type t2;
     
-    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = subs),insubs) 
+    case (DAE.CREF_IDENT(ident = id,identType = t2,subscriptLst = subs),_) 
       then makeCrefIdent(id,t2,insubs);
     
-    case (DAE.CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr),insubs)
+    case (DAE.CREF_QUAL(ident = id,identType = t2,subscriptLst = s,componentRef = cr),_)
       equation
         cr_1 = crefSetLastSubs(cr,insubs);
       then
@@ -2191,15 +2191,15 @@ algorithm
       list<DAE.Subscript> ss;
       DAE.ComponentRef cr;
       
-    case (DAE.CREF_QUAL(id,et,ss,cr),index)
+    case (DAE.CREF_QUAL(id,et,ss,cr),_)
       equation
         ss = replaceWholeDimSubscript2(ss,index);
       then DAE.CREF_QUAL(id,et,ss,cr);
-    case (DAE.CREF_QUAL(id,et,ss,cr),index)
+    case (DAE.CREF_QUAL(id,et,ss,cr),_)
       equation
         cr = replaceWholeDimSubscript(cr,index);
       then DAE.CREF_QUAL(id,et,ss,cr);
-    case (DAE.CREF_IDENT(id,et,ss),index)
+    case (DAE.CREF_IDENT(id,et,ss),_)
       equation
         ss = replaceWholeDimSubscript2(ss,index);
       then DAE.CREF_IDENT(id,et,ss);
@@ -2216,12 +2216,12 @@ algorithm
       DAE.Subscript sub;
       list<DAE.Subscript> subs;
       
-    case (DAE.WHOLEDIM()::subs,index)
+    case (DAE.WHOLEDIM()::subs,_)
       equation
         sub = DAE.INDEX(DAE.ICONST(index));
       then sub::subs;
     // TODO: SLICE, NONEXP
-    case (sub::subs,index)
+    case (sub::subs,_)
       equation
         subs = replaceWholeDimSubscript2(subs,index);
       then sub::subs;

@@ -156,7 +156,7 @@ algorithm
       Absyn.Direction direction;
 
     // assign to parameter in algorithm okay if record
-    case ((lhs as DAE.CREF(componentRef=cr)),lhprop,rhs,rhprop,_,SCode.NON_INITIAL(),source)
+    case ((lhs as DAE.CREF(componentRef=cr)),lhprop,rhs,rhprop,_,SCode.NON_INITIAL(),_)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lhprop);
         true = ComponentReference.isRecord(cr);
@@ -164,7 +164,7 @@ algorithm
       then outStatement;
 
     // assign to parameter in algorithm produce error
-    case (lhs,lprop,rhs,rprop,_,SCode.NON_INITIAL(),source)
+    case (lhs,lprop,rhs,rprop,_,SCode.NON_INITIAL(),_)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lprop);
         lhs_str = ExpressionDump.printExpStr(lhs);
@@ -174,7 +174,7 @@ algorithm
         fail();
     
     // assignment to a constant, report error
-    case (lhs,_,rhs,_,DAE.ATTR(variability = SCode.CONST()),_,source)
+    case (lhs,_,rhs,_,DAE.ATTR(variability = SCode.CONST()),_,_)
       equation
         lhs_str = ExpressionDump.printExpStr(lhs);
         Error.addSourceMessage(Error.ASSIGN_READONLY_ERROR, {"constant",lhs_str}, DAEUtil.getElementSourceFileInfo(source));
@@ -182,20 +182,20 @@ algorithm
         fail();
 
     // assignment to parameter ok in initial algorithm
-    case (lhs,lhprop,rhs,rhprop,_,SCode.INITIAL(),source)
+    case (lhs,lhprop,rhs,rhprop,_,SCode.INITIAL(),_)
       equation
         DAE.C_PARAM() = Types.propAnyConst(lhprop);
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 
-    case (lhs,lhprop,rhs,rhprop,DAE.ATTR(direction=direction),_,source)
+    case (lhs,lhprop,rhs,rhprop,DAE.ATTR(direction=direction),_,_)
       equation
         DAE.C_VAR() = Types.propAnyConst(lhprop);
         outStatement = makeAssignment2(lhs,lhprop,rhs,rhprop,source);
       then outStatement;
 
     /* report an error */
-    case (lhs,lprop,rhs,rprop,_,_,source)
+    case (lhs,lprop,rhs,rprop,_,_,_)
       equation
         lt = Types.getPropType(lprop);
         rt = Types.getPropType(rprop);
@@ -210,7 +210,7 @@ algorithm
         fail();
 
      /* failing */
-    case (lhs,lprop,rhs,rprop,_,_,source)
+    case (lhs,lprop,rhs,rprop,_,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Algorithm.makeAssignment failed");
@@ -239,7 +239,7 @@ algorithm
       DAE.Type t,ty;
       list<DAE.Exp> ea2;
     
-    case (lhs as DAE.CREF(componentRef = c,ty = _),lhprop,rhs,rhprop,source)
+    case (lhs as DAE.CREF(componentRef = c,ty = _),_,_,_,_)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         false = Types.isPropArray(lhprop);
@@ -255,7 +255,7 @@ algorithm
       then
         DAE.STMT_ASSIGN(t,e1,rhs_1);
       */
-    case (DAE.CREF(componentRef = c,ty = _),lhprop,rhs,rhprop,source)
+    case (DAE.CREF(componentRef = c,ty = _),_,_,_,_)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
@@ -264,7 +264,7 @@ algorithm
       then
         DAE.STMT_ASSIGN_ARR(t,c,rhs_1,source);
 
-    case(e3 as DAE.ASUB(e1,ea2),lhprop,rhs,rhprop,source)
+    case(e3 as DAE.ASUB(e1,ea2),_,_,_,_)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         //false = Types.isPropArray(lhprop);
@@ -327,7 +327,7 @@ algorithm
       list<DAE.Type> lhrtypes,tpl;
       list<DAE.TupleConst> clist;
       
-    case (lhs,lprop,rhs,rprop,initial_,source)
+    case (lhs,lprop,rhs,rprop,_,_)
       equation
         bvals = List.map(lprop, Types.propAnyConst);
         DAE.C_CONST() = List.reduce(bvals, Types.constOr);
@@ -338,7 +338,7 @@ algorithm
         Error.addSourceMessage(Error.ASSIGN_CONSTANT_ERROR, {lhs_str,rhs_str}, DAEUtil.getElementSourceFileInfo(source));
       then
         fail();
-    case (lhs,lprop,rhs,rprop,SCode.NON_INITIAL(),source)
+    case (lhs,lprop,rhs,rprop,SCode.NON_INITIAL(),_)
       equation
         bvals = List.map(lprop, Types.propAnyConst);
         DAE.C_PARAM() = List.reduce(bvals, Types.constOr);
@@ -350,7 +350,7 @@ algorithm
       then
         fail();
     // a normal prop in rhs that contains a T_TUPLE!
-    case (expl,lhprops,rhs,DAE.PROP(type_ = DAE.T_TUPLE(tupleType = tpl)),_,source)
+    case (expl,lhprops,rhs,DAE.PROP(type_ = DAE.T_TUPLE(tupleType = tpl)),_,_)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -361,7 +361,7 @@ algorithm
       then
         DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,rhs,source);
     // a tuple in rhs        
-    case (expl,lhprops,rhs,DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl),tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)),_,source)
+    case (expl,lhprops,rhs,DAE.PROP_TUPLE(type_ = DAE.T_TUPLE(tupleType = tpl),tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)),_,_)
       equation
         bvals = List.map(lhprops, Types.propAnyConst);
         DAE.C_VAR() = List.reduce(bvals, Types.constOr);
@@ -370,7 +370,7 @@ algorithm
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then
         DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,rhs,source);
-    case (lhs,lprop,rhs,rprop,initial_,source)
+    case (lhs,lprop,rhs,rprop,_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         sl = List.map(lhs, ExpressionDump.printExpStr);
@@ -423,19 +423,19 @@ algorithm
       Ident e_str,t_str;
       DAE.Type t;
       DAE.Properties prop;
-    case (DAE.BCONST(true),_,tb,eib,fb,source)
+    case (DAE.BCONST(true),_,tb,eib,fb,_)
       then tb;
-    case (DAE.BCONST(false),_,_,{},fb,source)
+    case (DAE.BCONST(false),_,_,{},fb,_)
       then fb;
-    case (DAE.BCONST(false),_,_,(e,prop,tb)::eib,fb,source)
+    case (DAE.BCONST(false),_,_,(e,prop,tb)::eib,fb,_)
       then makeIf(e,prop,tb,eib,fb,source);
-    case (e,DAE.PROP(type_ = t),tb,eib,fb,source)
+    case (e,DAE.PROP(type_ = t),tb,eib,fb,_)
       equation
         (e,_) = Types.matchType(e,t,DAE.T_BOOL_DEFAULT,true);
         else_ = makeElse(eib, fb);
       then
         {DAE.STMT_IF(e,tb,else_,source)};
-    case (e,DAE.PROP(type_ = t),_,_,_,source)
+    case (e,DAE.PROP(type_ = t),_,_,_,_)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -576,14 +576,14 @@ algorithm
       list<Statement> stmts;
       DAE.Dimensions dims;
     
-    case (i,e,DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)),stmts,source)
+    case (i,e,DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)),stmts,_)
       equation
         isArray = Types.isArray(t, dims);
         et = Types.simplifyType(t);
       then
         DAE.STMT_FOR(t,isArray,i,-1,e,stmts,source);
     
-    case (_,e,DAE.PROP(type_ = t),_,source)
+    case (_,e,DAE.PROP(type_ = t),_,_)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -614,14 +614,14 @@ algorithm
       list<Statement> stmts;
       DAE.Dimensions dims;
     
-    case (i,e,DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)),stmts,_,source)
+    case (i,e,DAE.PROP(type_ = DAE.T_ARRAY(ty = t, dims = dims)),stmts,_,_)
       equation
         isArray = Types.isArray(t, dims);
         et = Types.simplifyType(t);
       then
         DAE.STMT_PARFOR(t,isArray,i,-1,e,stmts,inLoopPrlVars,source);
     
-    case (_,e,DAE.PROP(type_ = t),_,_,source)
+    case (_,e,DAE.PROP(type_ = t),_,_,_)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -648,7 +648,7 @@ algorithm
       Ident e_str,t_str;
       DAE.Type t;
     case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,source) then DAE.STMT_WHILE(e,stmts,source);
-    case (e,DAE.PROP(type_ = t),_,source)
+    case (e,DAE.PROP(type_ = t),_,_)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -678,7 +678,7 @@ algorithm
       DAE.Type t;
     case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
     case (e,DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _))),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
-    case (e,DAE.PROP(type_ = t),_,_,source)
+    case (e,DAE.PROP(type_ = t),_,_,_)
       equation
         e_str = ExpressionDump.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -702,13 +702,13 @@ algorithm
   matchcontinue (inExp1,inExp2,inProperties3,inProperties4,source)
     local DAE.Exp var,val,var_1,val_1; DAE.Properties prop1,prop2;
       DAE.Type tp1,tp2;
-    case (var as DAE.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_),source)
+    case (var as DAE.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_),_)
       equation
         (val_1,_) = Types.matchType(val,tp2,DAE.T_REAL_DEFAULT,true);
         (var_1,_) = Types.matchType(var,tp1,DAE.T_REAL_DEFAULT,true);
       then DAE.STMT_REINIT(var_1,val_1,source);
 
-   case (_,_,prop1,prop2,source)  equation
+   case (_,_,prop1,prop2,_)  equation
       Error.addSourceMessage(Error.INTERNAL_ERROR,{"reinit called with wrong args"},DAEUtil.getElementSourceFileInfo(source));
     then fail();
 
@@ -733,11 +733,11 @@ algorithm
       Absyn.Info info;
       DAE.Type t1,t2,t3;
       String strTy,strExp;
-    case (DAE.BCONST(true),_,_,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))),source)
+    case (DAE.BCONST(true),_,_,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))),_)
       then {};
-    case (cond,msg,level,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))),source)
+    case (_,_,_,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),DAE.PROP(type_ = DAE.T_STRING(varLst = _)),DAE.PROP(type_ = DAE.T_ENUMERATION(path=Absyn.FULLYQUALIFIED(Absyn.IDENT("AssertionLevel")))),_)
       then {DAE.STMT_ASSERT(cond,msg,level,source)};
-    case (cond,msg,level,DAE.PROP(type_ = t1),DAE.PROP(type_ = t2),DAE.PROP(type_ = t3),source)
+    case (_,_,_,DAE.PROP(type_ = t1),DAE.PROP(type_ = t2),DAE.PROP(type_ = t3),_)
       equation
         info = DAEUtil.getElementSourceFileInfo(source);
         strExp = ExpressionDump.printExpStr(cond);

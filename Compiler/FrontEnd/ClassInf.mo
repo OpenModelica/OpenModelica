@@ -576,12 +576,12 @@ algorithm
       State st;
       SCode.Restriction re;
       String str1,str2,str3;
-    case (st,re,info)
+    case (st,re,_)
       equation
         valid(st, re);
       then
         ();
-    case (st,re,info)
+    case (st,re,_)
       equation
         str1 = Absyn.pathString(getStateName(st));
         str2 = printStateStr(st);
@@ -604,9 +604,9 @@ algorithm
     local
       State st;
       String str1,str2,str3;
-    case (st,event,info)
+    case (st,_,_)
       then trans(st, event);
-    case (st,event,info)
+    case (st,_,_)
       equation
         str1 = Absyn.pathString(getStateName(st));
         str2 = printStateStr(st);

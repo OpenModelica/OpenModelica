@@ -299,7 +299,7 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> constrainClass;
       Boolean replaceable_;
-    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,info=info,constrainClass=constrainClass)),class_)
+    case (Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.CLASSDEF(replaceable_=replaceable_),finalPrefix=finalPrefix,redeclareKeywords=redeclareKeywords,innerOuter=innerOuter,info=info,constrainClass=constrainClass)),_)
       then Absyn.ELEMENTITEM(Absyn.ELEMENT(finalPrefix,redeclareKeywords,innerOuter,Absyn.CLASSDEF(replaceable_,class_),info,constrainClass));
     /* Annotations, comments */
     else elementItem;
@@ -408,7 +408,7 @@ algorithm
     local
       Absyn.Ident ident;
       Absyn.Path path;
-    case(Absyn.R_RECORD(),name,index,singleton)
+    case(Absyn.R_RECORD(),_,_,_)
       equation
         ident = name;
         path = Absyn.IDENT(ident);
@@ -435,7 +435,7 @@ algorithm
       Absyn.ClassDef b;
       Absyn.Info i;
 
-    case(Absyn.CLASS(n,p,f,e,res,b,i),name,index,singleton)
+    case(Absyn.CLASS(n,p,f,e,res,b,i),_,_,_)
       equation
         res = fixRestriction(res,name,index,singleton);
       then Absyn.CLASS(n,p,f,e,res,b,i);
@@ -455,7 +455,7 @@ algorithm
     local
       Boolean rep;
       Absyn.Class c;
-    case(Absyn.CLASSDEF(rep,c),name,index,singleton)
+    case(Absyn.CLASSDEF(rep,c),_,_,_)
       equation
         c = fixClass(c,name,index,singleton);
       then Absyn.CLASSDEF(rep,c);
@@ -479,7 +479,7 @@ algorithm
       Absyn.ElementSpec spec;
       Absyn.Info inf;
       Option<Absyn.ConstrainClass> con;
-    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, specification=spec, info=inf, constrainClass=con),name,index,singleton)
+    case(Absyn.ELEMENT(finalPrefix = f, redeclareKeywords = r, innerOuter=i, specification=spec, info=inf, constrainClass=con),_,_,_)
       equation
         spec = fixElementSpecification(spec,name,index,singleton);
       then Absyn.ELEMENT(f,r,i,spec,inf,con);
@@ -498,12 +498,12 @@ algorithm
   elementItemout := match(elementItemin,name,index,singleton)
     local
       Absyn.Element element;
-    case(Absyn.ELEMENTITEM(element),name,index,singleton)
+    case(Absyn.ELEMENTITEM(element),_,_,_)
       equation
         element = fixElement(element,name,index,singleton);
       then Absyn.ELEMENTITEM(element);
       // Don't fix comments, annotations
-    case(_,name,index,singleton)
+    case(_,_,_,_)
       then elementItemin;
   end match;
 end fixElementItem;
@@ -520,12 +520,12 @@ algorithm
     local
       Absyn.ElementItem element;
       list<Absyn.ElementItem> rest;
-    case(element::rest,name,index,singleton)
+    case(element::rest,_,_,_)
       equation
         element = fixElementItem(element,name,index,singleton);
         rest = fixElementItems(rest,name,index+1,singleton);
       then (element::rest);
-    case(element::{},name,index,singleton)
+    case(element::{},_,_,_)
       equation
         element = fixElementItem(element,name,index,singleton);
       then (element::{});
@@ -576,7 +576,7 @@ algorithm
       Boolean b;
       DAE.TypeSource ts;
     
-    case (ClassInf.META_UNIONTYPE(p),t,SCode.PARTS(elementLst = els))
+    case (ClassInf.META_UNIONTYPE(p),_,SCode.PARTS(elementLst = els))
       equation
         p = Absyn.FULLYQUALIFIED(p);
         slst = getListOfStrings(els);
@@ -658,7 +658,7 @@ algorithm
   (outExp,outTy) := match (exp,ty)
     local
       DAE.Type flatType;
-    case (exp,ty)
+    case (_,_)
       equation
         (flatType,_) = Types.flattenArrayType(ty);
         false = (not Types.isString(flatType) and Types.isBoxedType(flatType)) or Flags.isSet(Flags.RML) "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
@@ -711,39 +711,39 @@ algorithm
   b := matchcontinue (increfs,outcrefs,innames,outnames,info)
     local
       list<String> names;
-    case (increfs,outcrefs,innames,outnames,info)
+    case (_,_,_,_,_)
       equation
         true = (listLength(increfs) <> listLength(innames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of input arguments don't match"}, info);
       then false;
-    case (increfs,outcrefs,innames,outnames as _::_,info)
+    case (_,_,_,outnames as _::_,_)
       equation
         true = (listLength(outcrefs) <> listLength(outnames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of output arguments don't match"}, info);
       then false;
-    case (increfs,outcrefs,innames,outnames,info)
+    case (_,_,_,_,_)
       equation
         false = (listLength(outnames)+listLength(innames)) == listLength(List.union(innames,outnames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"An argument in the output has the same name as one in the input"}, info);
       then false;
-    case (increfs,outcrefs,innames,outnames,info)
+    case (_,_,_,_,_)
       equation
         failure(_ = List.map(increfs, Absyn.expCref));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Input expression was not a tuple of component references"}, info);
       then false;
-    case (increfs,outcrefs,innames,outnames,info)
+    case (_,_,_,_,_)
       equation
         failure(_ = List.map(outcrefs, Absyn.expCref));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Output expression was not a tuple of component references"}, info);
       then false;
-    case (increfs,outcrefs,innames,outnames,info)
+    case (_,_,_,_,_)
       equation
         names = List.map(increfs, Absyn.expComponentRefStr);
         failure(equality(names = innames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The input does not match"}, info);
       then false;
     case (increfs,{Absyn.CREF(Absyn.WILD())},innames,{},info) then true;
-    case (increfs,outcrefs,innames,outnames,info)
+    case (_,_,_,_,_)
       equation
         names = List.map(outcrefs, Absyn.expComponentRefStr);
         failure(equality(names = outnames));

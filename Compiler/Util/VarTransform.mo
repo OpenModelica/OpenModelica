@@ -1051,7 +1051,7 @@ algorithm
     local
       HashTable3.HashTable invHt_1;
       list<DAE.ComponentRef> dests;
-    case (invHt,src,dst) equation
+    case (_,_,_) equation
       dests = Expression.extractCrefsFromExp(dst);
       invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
       then
@@ -1078,13 +1078,13 @@ algorithm
     local
       HashTable3.HashTable invHt_1;
       list<DAE.ComponentRef> srcs;
-    case (invHt,src,dst)
+    case (_,_,_)
       equation
         failure(_ = BaseHashTable.get(dst,invHt)) "No previous elt for dst -> src" ;
         invHt_1 = BaseHashTable.add((dst, {src}),invHt);
       then
         invHt_1;
-    case (invHt,src,dst)
+    case (_,_,_)
       equation
         srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
         srcs = List.union({},src::srcs);
@@ -1147,7 +1147,7 @@ algorithm
       DAE.ComponentRef src_1,src_2;
       DAE.Exp dst_1,dst_2,dst_3;
       
-    case (repl,src,dst)
+    case (_,_,_)
       equation
         (repl_1,src_1,dst_1) = makeTransitive1(repl, src, dst);
         (repl_2,src_2,dst_2) = makeTransitive2(repl_1, src_1, dst_1);
@@ -1177,7 +1177,7 @@ algorithm
       HashTable3.HashTable invHt;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
-    case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
+    case ((repl as REPLACEMENTS(ht,invHt)),_,_)
       equation
         lst = BaseHashTable.get(src, invHt);
         singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
@@ -1204,7 +1204,7 @@ algorithm
       VariableReplacements repl1,repl2;
       HashTable2.HashTable ht;
     case({},repl,_) then repl;
-    case(cr::crs,repl as REPLACEMENTS(hashTable=ht),singleRepl)
+    case(cr::crs,repl as REPLACEMENTS(hashTable=ht),_)
       equation
         crDst = BaseHashTable.get(cr,ht);
         (crDst,_) = replaceExp(crDst,singleRepl,NONE());
@@ -1230,7 +1230,7 @@ algorithm
     local
       DAE.Exp dst_1;
       // for rule a->b1+..+bn, replace all b1 to bn's in the expression;
-    case (repl ,src,dst)
+    case (repl ,_,_)
       equation
         (dst_1,_) = replaceExp(dst,repl,NONE());
       then
@@ -1585,7 +1585,7 @@ algorithm
       Boolean acc2;
       
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
-    case (exp::expl,repl,cond,acc1,acc2)
+    case (exp::expl,_,_,acc1,acc2)
       equation
         (exp,c) = replaceExp(exp,repl,cond);
         (acc1,acc2) = replaceExpList(expl,repl,cond,exp::acc1,c or acc2);
@@ -1618,19 +1618,19 @@ algorithm
       Boolean acc2;
       
     case ({},_,_,acc1,acc2) then (listReverse(acc1),acc2);
-    case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,repl,cond,acc1,_)
+    case (DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,_,_,acc1,_)
       equation
         (exp,true) = replaceExp(exp, repl, cond);
         (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,NONE(),ty)::acc1,true);
       then (iters,true);
-    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,repl,cond,acc1,acc2)
+    case (DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_,_,acc1,acc2)
       equation
         (exp,b1) = replaceExp(exp, repl, cond);
         (gexp,b2) = replaceExp(gexp, repl, cond);
         true = b1 or b2;
         (iters,_) = replaceExpIters(iters,repl,cond,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::acc1,true);
       then (iters,true);
-    case (iter::iters,repl,cond,acc1,acc2)
+    case (iter::iters,_,_,acc1,acc2)
       equation
         (iters,acc2) = replaceExpIters(iters,repl,cond,iter::acc1,acc2);
       then (iters,acc2);

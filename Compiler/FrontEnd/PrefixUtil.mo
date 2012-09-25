@@ -175,10 +175,10 @@ algorithm
       list<DAE.Subscript> s;
       Prefix.ComponentPrefix p;
       
-    case (i,s,Prefix.PREFIX(p,_),vt,ci_state) 
+    case (i,s,Prefix.PREFIX(p,_),_,_) 
       then Prefix.PREFIX(Prefix.PRE(i,s,p,ci_state),Prefix.CLASSPRE(vt));
     
-    case(i,s,Prefix.NOPRE(),vt,ci_state) 
+    case(i,s,Prefix.NOPRE(),_,_) 
       then Prefix.PREFIX(Prefix.PRE(i,s,Prefix.NOCOMPPRE(),ci_state),Prefix.CLASSPRE(vt));
   end match;
 end prefixAdd;
@@ -385,13 +385,13 @@ algorithm
       
     case (cache,env,inIH,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
-    case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
+    case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       equation
         cref_ = ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource),s);
         (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         (cache,cref_1);
-    case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
+    case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
         (cache,cref) = prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
         cref_2 = ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource),s,cref);
@@ -493,10 +493,10 @@ algorithm
     DAE.ComponentRef cr;
     
     
-    case(cache,env,inIH,pre,DAE.CREF_IDENT(id,tp,subs)) equation
+    case(cache,env,_,_,DAE.CREF_IDENT(id,tp,subs)) equation
      (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
     then (cache,ComponentReference.makeCrefIdent(id,tp,subs));
-    case(cache,env,inIH,pre,DAE.CREF_QUAL(id,tp,subs,cr)) equation
+    case(cache,env,_,_,DAE.CREF_QUAL(id,tp,subs,cr)) equation
       (cache,cr) = prefixSubscriptsInCref(cache,env,inIH,pre,cr);
       (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
     then (cache,ComponentReference.makeCrefQual(id,tp,subs,cr));
@@ -522,7 +522,7 @@ algorithm
   
     case(cache,env,inIH,pre,{}) then (cache,{});
   
-    case(cache,env,inIH,pre,sub::subs) equation
+    case(cache,env,_,_,sub::subs) equation
     (cache,sub) = prefixSubscript(cache,env,inIH,pre,sub);
     (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
     then (cache,sub::subs);
@@ -546,15 +546,15 @@ algorithm
     
     case(cache,env,inIH,pre,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
     
-    case(cache,env,inIH,pre,DAE.SLICE(exp)) equation
+    case(cache,env,_,_,DAE.SLICE(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.SLICE(exp));
     
-    case(cache,env,inIH,pre,DAE.WHOLE_NONEXP(exp)) equation
+    case(cache,env,_,_,DAE.WHOLE_NONEXP(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.WHOLE_NONEXP(exp));
     
-    case(cache,env,inIH,pre,DAE.INDEX(exp)) equation
+    case(cache,env,_,_,DAE.INDEX(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
     then (cache,DAE.INDEX(exp));
     
@@ -903,14 +903,14 @@ algorithm
       DAE.ReductionIterators iters;
 
     case (cache,env,ih,{},pre) then (cache,{});
-    case (cache,env,ih,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,pre)
+    case (cache,env,_,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_)
       equation
         (cache,exp) = prefixExp(cache,env,ih,exp,pre);
         (cache,gexp) = prefixExp(cache,env,ih,gexp,pre);
         iter = DAE.REDUCTIONITER(id,exp,SOME(gexp),ty);
         (cache,iters) = prefixIterators(cache,env,ih,iters,pre);
       then (cache,iter::iters);
-    case (cache,env,ih,DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,pre)
+    case (cache,env,_,DAE.REDUCTIONITER(id,exp,NONE(),ty)::iters,_)
       equation
         (cache,exp) = prefixExp(cache,env,ih,exp,pre);
         iter = DAE.REDUCTIONITER(id,exp,NONE(),ty);

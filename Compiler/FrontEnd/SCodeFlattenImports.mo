@@ -472,7 +472,7 @@ algorithm
       SCode.Element el;
       Absyn.Info info;
 
-    case (SCode.MOD(fp, ep, sub_mods, opt_exp, info), _, inInfo)
+    case (SCode.MOD(fp, ep, sub_mods, opt_exp, info), _, _)
       equation
         opt_exp = flattenModOptExp(opt_exp, inEnv, inInfo);
         sub_mods = List.map2(sub_mods, flattenSubMod, inEnv, inInfo);

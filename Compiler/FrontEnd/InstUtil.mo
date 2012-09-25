@@ -1811,10 +1811,10 @@ algorithm
     
     case (_, NONE()) then inComponent; 
     
-    case (InstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info), inParent)
+    case (InstTypes.TYPED_COMPONENT(name, ty, _, pref, binding, info), _)
     then InstTypes.TYPED_COMPONENT(name, ty, inParent, pref, binding, info);
     
-    case (InstTypes.PACKAGE(name, _), inParent)
+    case (InstTypes.PACKAGE(name, _), _)
     then InstTypes.PACKAGE(name, inParent);
     
     case (_, _) then inComponent;

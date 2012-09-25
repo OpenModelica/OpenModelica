@@ -2289,7 +2289,7 @@ algorithm
     case (_,_,{},_,{},_,_,res) then (res,{},{});
     
     // all algorithm stmts are processed firstly
-   case (v,knvars,((e as BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(stmts), source= source_)) :: xs),eq_count,{},_,countZC,zcs)
+   case (v,_,((e as BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(stmts), source= source_)) :: xs),eq_count,{},_,countZC,zcs)
       equation
         eq_count = eq_count + 1;
         ((stmts_1,(_,_,_,(res,countZC),(_,_,_)))) = traverseStmtsExps(stmts, collectZCAlgs, (DAE.RCONST(0.0),{},DAE.RCONST(0.0),(zcs,countZC),(eq_count,v,knvars)),knvars);
@@ -2298,7 +2298,7 @@ algorithm
         (res1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(stmts_1),source_)::eq_reslst,wc_reslst);
          
     // then all when clauses are processed 
-    case (v,knvars,el,eq_count,((wc as BackendDAE.WHEN_CLAUSE(condition = daeExp,reinitStmtLst=whenOperations , elseClause = elseClause_ )) :: xsWhen),wc_count,countZC,zcs)
+    case (v,_,el,eq_count,((wc as BackendDAE.WHEN_CLAUSE(condition = daeExp,reinitStmtLst=whenOperations , elseClause = elseClause_ )) :: xsWhen),wc_count,countZC,zcs)
       equation
         wc_count = wc_count + 1;
         (eres1,countZC,res) = findZeroCrossings3(daeExp,zcs,countZC,-1,wc_count,v,knvars);
@@ -2307,7 +2307,7 @@ algorithm
         (res1,eq_reslst,BackendDAE.WHEN_CLAUSE(eres1,whenOperations,elseClause_)::wc_reslst);
 
     // check when equation condition 
-    case (v,knvars,((e as BackendDAE.WHEN_EQUATION(size=size, whenEquation=weqn, source= source_)) :: xs),eq_count,{},wc_count,countZC,zcs)
+    case (v,_,((e as BackendDAE.WHEN_EQUATION(size=size, whenEquation=weqn, source= source_)) :: xs),eq_count,{},wc_count,countZC,zcs)
       equation
         eq_count = eq_count + 1;
         (weqn,countZC,res) = findZeroCrossingsWhenEqns(weqn,zcs,countZC,eq_count,-1,v,knvars);
@@ -2316,7 +2316,7 @@ algorithm
         (res1,BackendDAE.WHEN_EQUATION(size,weqn,source_)::eq_reslst,wc_reslst);
 
     // after all algorithms and when clauses are processed, all equations are processed 
-    case (v,knvars,((e as BackendDAE.EQUATION(exp = e1,scalar = e2, source= source_)) :: xs),eq_count,{},_,countZC,zcs)
+    case (v,_,((e as BackendDAE.EQUATION(exp = e1,scalar = e2, source= source_)) :: xs),eq_count,{},_,countZC,zcs)
       equation
         eq_count = eq_count + 1;
         (eres1,countZC,zcs1) = findZeroCrossings3(e1,zcs,countZC,eq_count,-1,v,knvars);
@@ -2324,7 +2324,7 @@ algorithm
         (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,res);
       then
         (res1,BackendDAE.EQUATION(eres1,eres2,source_)::eq_reslst,wc_reslst);
-    case (v,knvars,((e as BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2,source=source)) :: xs),eq_count,{},_,countZC,zcs)
+    case (v,_,((e as BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2,source=source)) :: xs),eq_count,{},_,countZC,zcs)
       equation
         eq_count = eq_count + 1;
         (eres1,countZC,zcs1) = findZeroCrossings3(e1,zcs,countZC,eq_count,-1,v,knvars);
@@ -2332,7 +2332,7 @@ algorithm
         (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,res);
       then
         (res1,BackendDAE.COMPLEX_EQUATION(size,eres1,eres2,source)::eq_reslst,wc_reslst);
-    case (v,knvars,((e as BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2,source=source)) :: xs),eq_count,{},_,countZC,zcs)
+    case (v,_,((e as BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2,source=source)) :: xs),eq_count,{},_,countZC,zcs)
       equation
         eq_count = eq_count + 1;
         (eres1,countZC,zcs1) = findZeroCrossings3(e1,zcs,countZC,eq_count,-1,v,knvars);
@@ -2340,14 +2340,14 @@ algorithm
         (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,res);
       then
         (res1,BackendDAE.ARRAY_EQUATION(dimsize,eres1,eres2,source)::eq_reslst,wc_reslst);
-    case (v,knvars,((e as BackendDAE.SOLVED_EQUATION(componentRef = cref,exp = e1,source= source_)) :: xs),eq_count,{},_,countZC,zcs)
+    case (v,_,((e as BackendDAE.SOLVED_EQUATION(componentRef = cref,exp = e1,source= source_)) :: xs),eq_count,{},_,countZC,zcs)
       equation
         eq_count_1 = eq_count + 1;
         (eres1,countZC,res) = findZeroCrossings3(e1,zcs,countZC,eq_count,-1,v,knvars);
         (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,res);
       then
         (res1,BackendDAE.SOLVED_EQUATION(cref,eres1,source_)::eq_reslst,wc_reslst);
-    case (v,knvars,((e as BackendDAE.RESIDUAL_EQUATION(exp = e1,source= source_)) :: xs),eq_count,{},_,countZC,zcs)
+    case (v,_,((e as BackendDAE.RESIDUAL_EQUATION(exp = e1,source= source_)) :: xs),eq_count,{},_,countZC,zcs)
       equation
         eq_count = eq_count + 1;
         (eres1,countZC,res) = findZeroCrossings3(e1,zcs,countZC,eq_count,-1,v,knvars);
@@ -2355,7 +2355,7 @@ algorithm
       then
         (res1,BackendDAE.RESIDUAL_EQUATION(eres1,source_)::eq_reslst,wc_reslst);
 
-    case (v,knvars,((e as BackendDAE.IF_EQUATION(conditions=conds, eqnstrue=eqnslst, eqnsfalse=el, source= source_)) :: xs),eq_count,{},_,countZC,zcs)
+    case (v,_,((e as BackendDAE.IF_EQUATION(conditions=conds, eqnstrue=eqnslst, eqnsfalse=el, source= source_)) :: xs),eq_count,{},_,countZC,zcs)
       equation
         print("Warning If equations not handled propper in findZeroCrossings2\n");
         eq_count = eq_count + 1;
@@ -2364,7 +2364,7 @@ algorithm
         (res1,BackendDAE.IF_EQUATION(conds,eqnslst,el,source_)::eq_reslst,wc_reslst);
 
     // let when equation pass they are discrete and can't contain ZeroCrossings 
-    case (v,knvars,(e :: xs),eq_count,{},_,countZC,res)
+    case (v,_,(e :: xs),eq_count,{},_,countZC,res)
       equation
         eq_count = eq_count + 1;
         (res1,eq_reslst,wc_reslst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countZC,res);
@@ -2547,14 +2547,14 @@ algorithm
       BackendDAE.ZeroCrossing z_c;
       Integer indx,length;
       String str;
-    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
+    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),_,_,z_c)
       equation
         {} = List.select1(zeroCrossings, sameZeroCrossing,z_c/*zc1*/);
         zc_lst = listAppend(zeroCrossings, {z_c});
         //Debug.fcall(Flags.RELIDX,print, " zerocrossingindex 1 : "  +& ExpressionDump.printExpStr(exp) +& " index: " +& intString(index) +& "\n");
       then 
          ((exp,zc_lst,index));
-    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),index,zeroCrossings,z_c)
+    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),_,_,z_c)
       equation
         newzero= List.select1(zeroCrossings, sameZeroCrossing,z_c);
         length=listLength(newzero);
@@ -2607,28 +2607,28 @@ algorithm
       
     case ({},_,extraArg,knvars) then (({},extraArg));
       
-    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e, source = source) :: xs),func, extraArg, knvars)
+    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e, source = source) :: xs),_, extraArg, _)
       equation
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         ((e_2,extraArg)) = Expression.traverseExpTopDown(e2, func, extraArg);
         ((xs_1,extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1,extraArg));
         
-    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source) :: xs),func, extraArg, knvars)
+    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source) :: xs),_, extraArg, _)
       equation
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         ((expl2, extraArg)) = Expression.traverseExpListTopDown(expl1,func,extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1,extraArg));
         
-    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source) :: xs),func, extraArg, knvars)
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source) :: xs),_, extraArg, _)
       equation
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         ((e_2 as DAE.CREF(cr_1,_),_, extraArg)) = func((Expression.crefExp(cr), extraArg));
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source)) :: xs),_, extraArg, _)
       equation
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         failure(((DAE.CREF(_,_),_,_)) = func((Expression.crefExp(cr), extraArg)));
@@ -2638,7 +2638,7 @@ algorithm
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: xs), func, extraArg, knvars)
+    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: xs), _, extraArg, _)
       equation
         ((algElse,extraArg)) = traverseStmtsElseExps(algElse, func, extraArg, knvars);
         ((stmts2,extraArg)) = traverseStmtsExps(stmts, func, extraArg, knvars);
@@ -2646,7 +2646,7 @@ algorithm
         ((xs_1,extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_IF(e_1,stmts2,algElse,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)) :: xs),_, extraArg, _)
       equation
         cr = ComponentReference.makeCrefIdent(id1, tp, {});
         iteratorExp = Expression.crefExp(cr);
@@ -2655,7 +2655,7 @@ algorithm
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_FOR(tp,b1,id1,ix,e,stmts2,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars= loopPrlVars, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars= loopPrlVars, source = source)) :: xs),_, extraArg, _)
       equation
         cr = ComponentReference.makeCrefIdent(id1, tp, {});
         iteratorExp = Expression.crefExp(cr);
@@ -2664,21 +2664,21 @@ algorithm
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_PARFOR(tp,b1,id1,ix,e,stmts2,loopPrlVars,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),_, extraArg, _)
       equation
         ((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: xs),_, extraArg, _)
       equation
         ((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_WHEN(e_1,stmts2,NONE(),li,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),_, extraArg, _)
       equation
         (({ew_1}, extraArg)) = traverseStmtsExps({ew},func, extraArg, knvars);
         ((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);
@@ -2686,62 +2686,62 @@ algorithm
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_WHEN(e_1,stmts2,SOME(ew),li,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, source = source)) :: xs),_, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_TERMINATE(msg = e, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_TERMINATE(msg = e, source = source)) :: xs),_, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_REINIT(var = e,value=e2, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_REINIT(var = e,value=e2, source = source)) :: xs),_, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_NORETCALL(exp = e, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_NORETCALL(exp = e, source = source)) :: xs),_, extraArg, _)
       equation
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_NORETCALL(e_1,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_RETURN(source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_RETURN(source = source)) :: xs),_, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_BREAK(source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_BREAK(source = source)) :: xs),_, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x :: xs_1,extraArg));
         
         // MetaModelica extension. KS
-    case (((x as DAE.STMT_FAILURE(body=stmts, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_FAILURE(body=stmts, source = source)) :: xs),_, extraArg, _)
       equation
         ((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_FAILURE(stmts2,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_TRY(tryBody=stmts, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_TRY(tryBody=stmts, source = source)) :: xs),_, extraArg, _)
       equation
         ((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_TRY(stmts2,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source)) :: xs),_, extraArg, _)
       equation
         ((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((DAE.STMT_CATCH(stmts2,source) :: xs_1,extraArg));
         
-    case (((x as DAE.STMT_THROW(source = source)) :: xs),func, extraArg, knvars)
+    case (((x as DAE.STMT_THROW(source = source)) :: xs),_, extraArg, _)
       equation
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
       then ((x :: xs_1,extraArg));
         
-    case ((x :: xs),func, extraArg, knvars)
+    case ((x :: xs),_, extraArg, _)
       equation
         str = DAEDump.ppStatementStr(x);
         str = "Algorithm.traverseStmtsExps not implemented correctly: " +& str;
@@ -2773,13 +2773,13 @@ algorithm
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables>> extraArg;
       
     case(DAE.NOELSE(),_,extraArg,knvars) then ((DAE.NOELSE(),extraArg));
-    case(DAE.ELSEIF(e,st,el),func,extraArg,knvars)
+    case(DAE.ELSEIF(e,st,el),_,extraArg,_)
       equation
         ((el_1,extraArg)) = traverseStmtsElseExps(el,func,extraArg,knvars);
         ((st_1,extraArg)) = traverseStmtsExps(st,func,extraArg,knvars);
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
       then ((DAE.ELSEIF(e_1,st_1,el_1),extraArg));
-    case(DAE.ELSE(st),func,extraArg,knvars)
+    case(DAE.ELSE(st),_,extraArg,_)
       equation
         ((st_1,extraArg)) = traverseStmtsExps(st,func,extraArg,knvars);
       then ((DAE.ELSE(st_1),extraArg));
@@ -2923,7 +2923,7 @@ algorithm
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables>> extraArg;
       
     case (_,{},_,statementLst,knvars,_,extraArg) then ((statementLst,extraArg));
-    case (ie,inExplst,range,statementLst,knvars,func,(_,_,_,(zcs,idx),(alg_idx,v,kn)))
+    case (ie,_,range,statementLst,_,_,(_,_,_,(zcs,idx),(alg_idx,v,kn)))
       equation
         ((statementLst, extraArg )) = traverseStmtsExps(statementLst, collectZCAlgsFor, (ie,inExplst,range,(zcs,idx),(alg_idx,v,kn)), knvars);
       then
@@ -3121,16 +3121,16 @@ protected function whenEquationsIndices2
   output list<Integer> eqnLst;
 algorithm
   eqnLst := matchcontinue(i,size,eqns)
-    case(i,size,eqns)
+    case(_,_,_)
       equation
         true = (i > size );
       then {};
-    case(i,size,eqns)
+    case(_,_,_)
       equation
         BackendDAE.WHEN_EQUATION(whenEquation = _) = BackendDAEUtil.equationNth(eqns,i-1);
         eqnLst = whenEquationsIndices2(i+1,size,eqns);
       then i::eqnLst;
-    case(i,size,eqns)
+    case(_,_,_)
       equation
         eqnLst=whenEquationsIndices2(i+1,size,eqns);
       then eqnLst;

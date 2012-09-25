@@ -311,7 +311,7 @@ algorithm
       FuncEq keyEqual;
       FuncHash hashFunc;
       
-    case (key,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_,_)))
+    case (_,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_,_)))
       equation
         hashindx = hashFunc(key, bsize);
         indexes = hashvec[hashindx + 1];
@@ -336,14 +336,14 @@ algorithm
       list<tuple<Key,Integer>> xs;
         
     // search for the key, found the good one
-    case (key,((key2,index) :: _),keyEqual)
+    case (_,((key2,index) :: _),_)
       equation
         true = keyEqual(key, key2);
       then
         index;
     
     // search more
-    case (key,(_ :: xs),keyEqual)
+    case (_,(_ :: xs),_)
       equation
         index = get2(key, xs, keyEqual);
       then
@@ -374,7 +374,7 @@ algorithm
       Key k;
       Value v;
       String sk,sv;
-    case((k,v),printKey,printValue)
+    case((k,v),_,_)
       equation
         sk = printKey(k);
         sv = printValue(v);
@@ -498,7 +498,7 @@ algorithm
       Integer n_1,n,size,expandsize,expandsize_1,newsize;
       array<Option<tuple<Key,Value>>> arr_1,arr,arr_2;
       Real rsize,rexpandsize;
-    case ((n,size,arr),entry)
+    case ((n,size,arr),_)
       equation
         (n < size) = true "Have space to add array elt." ;
         n_1 = n + 1;
@@ -506,7 +506,7 @@ algorithm
       then
         ((n_1,size,arr_1));
 
-    case ((n,size,arr),entry)
+    case ((n,size,arr),_)
       equation
         (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
@@ -539,7 +539,7 @@ algorithm
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
       Integer n,size;
-    case ((n,size,arr),pos,entry)
+    case ((n,size,arr),_,_)
       equation
         (pos < size) = true;
         arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
@@ -590,7 +590,7 @@ algorithm
       Value v;
       Integer n;
       array<Option<tuple<Key,Value>>> arr;
-    case ((n,_,arr),pos)
+    case ((n,_,arr),_)
       equation
         (pos <= n) = true;
         SOME((k,v)) = arr[pos + 1];

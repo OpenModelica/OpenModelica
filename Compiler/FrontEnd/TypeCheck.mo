@@ -396,21 +396,21 @@ algorithm
       String e1Str, t1Str, e2Str, t2Str, s1, s2;
     
     // all fine
-    case (inExp1, inTy1, inExp2, inTy2, _, inInfo)
+    case (_, _, _, _, _, _)
       equation
         (e, t) = Types.matchType(inExp1, inTy1, inTy2, true);
       then
         (e, t, inExp2, t);
     
     // the other way arround just for equations!
-    case (inExp1, inTy1, inExp2, inTy2, _, inInfo)
+    case (_, _, _, _, _, _)
       equation
         (e, t) = Types.matchType(inExp2, inTy2, inTy1, true);
       then
         (inExp1, t, e, t);
     
     // not really fine!
-    case (inExp1, inTy1, inExp2, inTy2, "equ", inInfo)
+    case (_, _, _, _, "equ", _)
       equation
         e1Str = ExpressionDump.printExpStr(inExp1);
         t1Str = Types.unparseType(inTy1);
@@ -423,7 +423,7 @@ algorithm
       then
         fail();
     
-    case (inExp1, inTy1, inExp2, inTy2, "alg", inInfo)
+    case (_, _, _, _, "alg", _)
       equation
         e1Str = ExpressionDump.printExpStr(inExp1);
         t1Str = Types.unparseType(inTy1);

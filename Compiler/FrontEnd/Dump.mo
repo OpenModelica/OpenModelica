@@ -119,7 +119,7 @@ algorithm
       list<Absyn.Class> cs;
       Absyn.Within w;
     case (Absyn.PROGRAM(classes = {}),_) then "";
-    case (Absyn.PROGRAM(classes = cs,within_ = w),markup)
+    case (Absyn.PROGRAM(classes = cs,within_ = w),_)
       equation
         s1 = unparseWithin(0, w);
         s2 = unparseClassList(0, cs);
@@ -253,7 +253,7 @@ algorithm
       then
         str;
     
-    case (indent,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+    case (_,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                              body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = cmt)),fi,re,io)
       equation
         is = indentStr(indent);
@@ -7172,7 +7172,7 @@ algorithm
     local
       Type_a a;
       Type_b b;
-    case ((a,b),fnA,fnB)
+    case ((a,b),_,_)
       equation
         Print.printBuf("(");
         fnA(a);

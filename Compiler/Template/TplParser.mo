@@ -95,7 +95,7 @@ algorithm
       LineInfo endlinfo;
       String  fileName;
             
-    case ( (startL, startC), inEndChars, endlinfo as LINE_INFO(parseInfo = PARSE_INFO(fileName = fileName)) )
+    case ( (startL, startC), _, endlinfo as LINE_INFO(parseInfo = PARSE_INFO(fileName = fileName)) )
       equation
         (endL, endC) = getPosition(inEndChars, endlinfo);
         outSourceInfo = Absyn.INFO(fileName, false, startL, startC, endL, endC, Absyn.dummyTimeStamp);
@@ -647,7 +647,7 @@ algorithm
       list<TplAbsyn.ASTDef> astDefs;
       TplAbsyn.PathIdent pid;
       
-    case (interfaceName, astDefs)
+    case (_, astDefs)
       equation
         file = TplAbsyn.pathIdentString(interfaceName) +& ".mo";
         (chars, linfo, errOpt) = openFile(file);
@@ -685,7 +685,7 @@ algorithm
       TplAbsyn.TemplPackage tplPackage;
       list<tuple<TplAbsyn.Ident,TplAbsyn.TemplateDef>> templateDefs;
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> astTypes;
-    case (packageName, isUnqualifiedImport, astDefs)
+    case (_, _, astDefs)
       equation
         file = TplAbsyn.pathIdentString(packageName) +& ".tpl";
         (chars, linfo, errOpt) = openFile(file);
@@ -1710,7 +1710,7 @@ algorithm
       TplAbsyn.PathIdent pid;
       list<TplAbsyn.ASTDef> astDefs;
     
-    case (chars, linfo, inAccASTDefs)
+    case (chars, linfo, _)
       equation
         (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"i","n","t","e","r","f","a","c","e"}, true);
         (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"p","a","c","k","a","g","e"}, true);
@@ -2323,7 +2323,7 @@ algorithm
         (chars, linfo, tyvars) = typeVars(chars, linfo, id::tyvars);
       then (chars, linfo, tyvars);
     
-    case (chars, linfo, inTyVars)
+    case (chars, linfo, _)
       then (chars, linfo, inTyVars);
                 
   end matchcontinue;
@@ -2874,7 +2874,7 @@ algorithm
       list<TplAbsyn.EscOption> opts;
       SourceInfo sinfo;
    case (_, _, exp, {})  then exp;
-   case (inEndChars, inEndLineInfo, exp, opts as (_::_)) 
+   case (_, _, exp, opts as (_::_)) 
      equation
        sinfo = sourceInfo(startPositionFromExp(exp), inEndChars, inEndLineInfo);
      then ((TplAbsyn.ESCAPED(exp, opts), sinfo));
