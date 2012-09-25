@@ -1781,7 +1781,7 @@ algorithm
       Ident id;
       
     // check if restrictions are equal, so you can return the same thing!
-    case(name, CLASS(name = id))
+    case(_, CLASS(name = id))
       equation
         true = stringEqual(name, id);
       then 
@@ -1809,7 +1809,7 @@ algorithm
       Partial oldPartialPrefix;
     
     // check if partial prefix are equal, so you can return the same thing!
-    case(partialPrefix,CLASS(partialPrefix = oldPartialPrefix))
+    case(_,CLASS(partialPrefix = oldPartialPrefix))
       equation
         true = valueEq(partialPrefix, oldPartialPrefix); 
       then 

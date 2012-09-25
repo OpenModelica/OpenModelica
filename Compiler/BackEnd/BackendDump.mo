@@ -1004,7 +1004,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst,jacType=jacType)::rest,eqns,vars) 
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst,jacType=jacType)::rest,_,_) 
       equation
         print("Equationsystem " +& jacobianTypeStr(jacType) +& ":\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
@@ -1014,7 +1014,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,_,vars) 
+    case (BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)::rest,_,_) 
       equation
         print("ArrayEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
@@ -1024,7 +1024,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,_,vars) 
+    case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,_,_) 
       equation
         print("Algorithm:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
@@ -1034,7 +1034,7 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
-    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,_,vars) 
+    case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)::rest,_,_) 
       equation
         print("ComplexEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);

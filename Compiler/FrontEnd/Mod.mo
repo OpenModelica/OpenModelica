@@ -1289,7 +1289,7 @@ algorithm
       list<Ident> names;
       list<DAE.Var> vars;
       
-    case(v::_,name1::_,DAE.TYPES_VAR(name=name2,ty=tp)::_,name,_,_,_) 
+    case(v::_,name1::_,DAE.TYPES_VAR(name=name2,ty=tp)::_,_,_,_,_) 
       equation
         true = (name1 ==& name2);
         true = (name2 ==& name);

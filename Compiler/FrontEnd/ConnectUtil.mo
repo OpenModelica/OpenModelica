@@ -706,7 +706,7 @@ protected function outerConnectionMatches
 algorithm
   matches := match(oc,cr1,cr2)
     local DAE.ComponentRef cr11,cr22;
-    case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),cr1,cr2) 
+    case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),_,_) 
       equation
         matches =
         ComponentReference.crefEqual(cr11,cr1) and ComponentReference.crefEqual(cr22,cr2) or
