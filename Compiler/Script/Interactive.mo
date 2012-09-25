@@ -18439,7 +18439,7 @@ protected function transformFlatArrayDim
 algorithm
   outAd := match(ad)
     local Absyn.ArrayDim adTransformed;
-    case(ad)
+    case _
       equation
         adTransformed = List.map(ad,transformFlatSubscript);
       then adTransformed;

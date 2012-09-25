@@ -1019,7 +1019,7 @@ public function addCompilerWarning
   input String message;
 algorithm
   _ := match (message)
-    case (message)
+    case _
       equation
         addMessage(COMPILER_WARNING, {message});
       then 

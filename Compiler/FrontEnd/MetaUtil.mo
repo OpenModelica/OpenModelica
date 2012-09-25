@@ -194,7 +194,7 @@ algorithm
       Absyn.Within w;
       Absyn.TimeStamp ts;
     
-    case (program)
+    case _
       equation
         false = Config.acceptMetaModelicaGrammar();
       then program;

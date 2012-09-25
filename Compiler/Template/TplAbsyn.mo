@@ -557,7 +557,7 @@ algorithm
       TemplPackage tp;
       list<ASTDef> astDefs;
       
-    case (inTplPackage)
+    case _
       equation
         tp = fullyQualifyTemplatePackage(inTplPackage);
         TEMPL_PACKAGE(name, astDefs, templateDefs) = tp;

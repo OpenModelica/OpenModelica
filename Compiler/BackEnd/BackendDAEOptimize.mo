@@ -2053,7 +2053,7 @@ algorithm
   _ := match (var)
     local
       BackendDAE.VarKind kind;
-    case (var)
+    case _
       equation
         // no State
         false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
@@ -12118,7 +12118,7 @@ algorithm
       then
         oExp;
     // failure
-    case(eq)
+    case _
       equation
         str = "- BackendDAEOptimize.makeEquationToResidualExp failed to transform equation: " +& BackendDump.equationStr(eq) +& " to residual form!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});

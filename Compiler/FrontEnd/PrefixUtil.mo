@@ -466,7 +466,7 @@ algorithm
       then
         c;
     
-    case(pre)
+    case _
       equation
         c = prefixToCref(pre);
       then
@@ -1204,7 +1204,7 @@ public function makePrefixString "helper function for Mod.verifySingleMod, prett
 algorithm 
   str := matchcontinue(pre)
     case(Prefix.NOPRE()) then "from top scope";
-    case(pre)
+    case _
       equation
         str = "from calling scope: " +& printPrefixStr(pre);
       then str;

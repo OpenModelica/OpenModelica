@@ -1903,7 +1903,7 @@ protected function varStateSelectHeuristicPrio2
   output Real prio;
 algorithm
   prio := matchcontinue(v)
-    case(v)
+    case _
       equation
         true = BackendVariable.varFixed(v);
       then 1.0;
@@ -1922,7 +1922,7 @@ algorithm
   prio := matchcontinue(v)
     local 
       DAE.Exp e;
-    case(v)
+    case _
       equation
         e = BackendVariable.varStartValueFail(v);
         true = Expression.isZero(e);

@@ -2818,7 +2818,7 @@ algorithm
       IOStream.IOStream myStream;
       String str;
 
-    case (els)
+    case _
       equation
         myStream = IOStream.create("dae", IOStream.LIST());
         myStream = dumpElementsStream(els, myStream);
@@ -2838,7 +2838,7 @@ algorithm
       IOStream.IOStream myStream;
       String str;
 
-    case (algs)
+    case _
       equation
         myStream = IOStream.create("algs", IOStream.LIST());
         myStream = dumpAlgorithmsStream(algs, myStream);
@@ -2859,7 +2859,7 @@ algorithm
       IOStream.IOStream myStream;
       String str;
 
-    case (constrs)
+    case _
       equation
         myStream = IOStream.create("constrs", IOStream.LIST());
         myStream = dumpConstraintStream(constrs, myStream);
@@ -2949,7 +2949,7 @@ algorithm
       list<DAE.Function> funcs;
       functionList funList;
 
-    case (functionTree)
+    case _
       equation
         funcs = DAEUtil.getFunctionList(functionTree);
         funcs = sortFunctions(funcs);
@@ -3587,7 +3587,7 @@ algorithm
     local
       String s1,s2;
 
-    case(inElement)
+    case _
       equation
         s1 = Print.getString();
         Print.clearBuf();

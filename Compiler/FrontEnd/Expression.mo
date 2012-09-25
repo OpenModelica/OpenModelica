@@ -428,7 +428,7 @@ algorithm
     local
       Integer i;
     
-    case  (inVal)
+    case  _
       equation
         i = realInt(inVal);
       then
@@ -2520,14 +2520,14 @@ algorithm cref := matchcontinue(cr)
   local
     Type ty1,ty2;
     list<Subscript> subs;
-  case(cr)
+  case _
     equation
       (ty1 as DAE.T_ARRAY(ty = _)) = ComponentReference.crefLastType(cr);
       subs = ComponentReference.crefLastSubs(cr);
       ty2 = unliftArrayTypeWithSubs(subs,ty1);
     then
       DAE.CREF(cr,ty2);
-  case(cr)
+  case _
     equation
       ty1 = ComponentReference.crefLastType(cr);
     then
@@ -4702,7 +4702,7 @@ algorithm
     local 
       list<ComponentRef> crefs;
     
-    case(inExp)
+    case _
       equation
         ((_,crefs)) = traverseExp(inExp, traversingComponentRefFinder, {});
       then
@@ -4720,7 +4720,7 @@ algorithm
     local
       Boolean b;
       
-    case(inExp)
+    case _
       equation
         ((_,b)) = traverseExp(inExp, traversingComponentRefPresent, false);
       then

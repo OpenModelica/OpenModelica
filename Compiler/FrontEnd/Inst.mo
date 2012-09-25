@@ -4307,7 +4307,7 @@ input  list<SCode.Element> els;
 output Boolean res;
 algorithm
  res := matchcontinue(els)
- case (els)
+ case _
    equation
     true = hasExtendsOfExternalObject(els);
     true = hasExternalObjectDestructor(els);
@@ -4491,7 +4491,7 @@ Rollsback errors on builtin classes and deletes checkpoint for other classes."
   input Absyn.Path p;
 algorithm _ := matchcontinue(p)
   local String n;
-  case (p)
+  case _
     equation
       n = Absyn.pathString(p);
       true = isBuiltInClass(n);
@@ -15047,14 +15047,14 @@ algorithm
       list<tuple<SCode.Element, DAE.Mod>> innerElts, innerouterElts, otherElts, sorted;
 
     // no sorting if we don't have any inner/outer in the model
-    case (inTplLstElementMod) 
+    case _ 
       equation
         false = System.getHasInnerOuterDefinitions();
       then
         inTplLstElementMod;
 
     // do sorting only if we have inner-outer
-    case (inTplLstElementMod)
+    case _
       equation
         // split into inner, inner outer and other elements
         (innerElts, innerouterElts, otherElts) = splitInnerAndOtherTplLstElementMod(inTplLstElementMod);

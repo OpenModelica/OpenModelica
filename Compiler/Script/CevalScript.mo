@@ -3932,7 +3932,7 @@ function failOrSuccess
 algorithm
   outStr := matchcontinue(inStr)
     local Integer res;
-    case (inStr)
+    case _
       equation
         res = System.stringFind(inStr, "successfully");
         true = (res >= 0);

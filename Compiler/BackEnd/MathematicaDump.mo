@@ -691,7 +691,7 @@ algorithm
   (states,algs,outputs,inputs) := match(vars)
     local
       list<BackendDAE.Var> varLst;
-    case(vars)      
+    case _      
       equation
         varLst = BackendDAEUtil.varList(vars); 
         varLst = listReverse(varLst); //So the order is the same as for generated c-code.

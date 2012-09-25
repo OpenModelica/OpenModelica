@@ -133,7 +133,7 @@ algorithm
       varLst = List.threadMap(eltTps,nameLst,valueExpTypeExpVar);
     then DAE.T_COMPLEX(ClassInf.RECORD(path),varLst,NONE(),DAE.emptyTypeSource);
     
-    case(inValue)
+    case _
       equation
         print("valueExpType on "+&valString(inValue) +& " not implemented yet\n");
       then fail();

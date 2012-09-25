@@ -3627,7 +3627,7 @@ protected function selectMinPrio
   output Integer sn;
 algorithm
   (s,sn) := match(tuples)
-    case(tuples)
+    case _
       equation
         ((s,sn,_)) = List.reduce(tuples,ssPrioTupleMin);
       then (s,sn);
@@ -3818,7 +3818,7 @@ protected function varStateSelectHeuristicPrio5
   output Real prio;
 algorithm
   prio := matchcontinue(v)
-    case(v)
+    case _
       equation
         true = BackendVariable.varFixed(v);
       then 1.0;

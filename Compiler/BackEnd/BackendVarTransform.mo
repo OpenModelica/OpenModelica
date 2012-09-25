@@ -102,7 +102,7 @@ algorithm
   outVariableReplacements := match (size)
       local HashTable2.HashTable ht,eht;
         HashTable3.HashTable invHt;
-    case (size)
+    case _
       equation
         ht = HashTable2.emptyHashTableSized(size);
         invHt = HashTable3.emptyHashTableSized(size);

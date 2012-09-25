@@ -385,7 +385,7 @@ algorithm
     local
       String lib;
     
-    case(libs)
+    case _
       equation
         lib = List.last(libs);
         lib = System.stringReplace(lib,"-l","");
@@ -2546,7 +2546,7 @@ algorithm
         outjacobianMatrixes = {inSymJacs,({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
       then
         outjacobianMatrixes;
-    case (injacobianMatrixes)      
+    case _      
       equation
         true = (4 == listLength(injacobianMatrixes));
       then
@@ -2634,7 +2634,7 @@ algorithm
   (delayedExps,maxDelayedExpIndex) := matchcontinue(dlow)
     local
       list<DAE.Exp> exps;
-    case (dlow)
+    case _
       equation
         exps = BackendDAEUtil.traverseBackendDAEExps(dlow,findDelaySubExpressions,{});
         delayedExps = List.map(exps, extractIdAndExpFromDelayExp);
@@ -10909,14 +10909,14 @@ algorithm
   outS := 
   matchcontinue (i)
     local String s;
-    case (i)
+    case _
       equation
         (i < 10) = true;
         s = intString(i);
         s = stringAppend("0",s);
       then
         s;
-    case (i)
+    case _
       then
         intString(i);
   end matchcontinue;
@@ -11432,7 +11432,7 @@ output list<SimCode.SimVar> out_vars;
 algorithm out_vars := matchcontinue(in_vars)
   local
     list<SimCode.SimVar>  vars1,vars2,vars3,vars4,vars5;
-  case(in_vars)
+  case _
     equation
       (vars1,vars2,vars3) =  partitionStatesVector(in_vars);
        vars4 = listAppend(vars1,vars2);

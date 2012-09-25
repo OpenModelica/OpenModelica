@@ -663,7 +663,7 @@ algorithm
   outStrLogFile := match(inStrPythonScriptFile)
     local
       String cmdContents, logFile, cmdFile;
-    case (inStrPythonScriptFile)
+    case _
       equation
         cmdContents = System.readFile(getFullShareFileName(cStrInvokeOpenTurnsCmd));
         cmdContents = System.stringReplace(cmdContents, "<%pythonScriptOpenModelica%>", inStrPythonScriptFile);
@@ -680,13 +680,13 @@ protected function runCommand
   input String cmd;
 algorithm
   _ := matchcontinue(cmd)
-    case (cmd)
+    case _
       equation
         print("running: " +& cmd +& "\n");
         0 = System.systemCall(cmd);
       then
         ();
-    case (cmd)
+    case _
       equation
         print("running: " +& cmd +& "\n\tfailed!\nCheck the log file!\n");
       then

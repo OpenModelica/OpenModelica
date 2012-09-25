@@ -1979,7 +1979,7 @@ algorithm
   _ := matchcontinue (funcelems)
     local
     case ({}) then();
-    case (funcelems)
+    case _
       equation
         dumpStrOpenTag(FUNCTIONS);
         dumpFunctions2(funcelems);
@@ -2015,7 +2015,7 @@ Help function to dumpFunctions2
 algorithm
   _:= matchcontinue (fun)
     case DAE.FUNCTION(type_ = DAE.T_FUNCTION(functionAttributes = DAE.FUNCTION_ATTRIBUTES(isBuiltin = DAE.FUNCTION_BUILTIN(_)))) then ();
-    case(fun)
+    case _
       equation
         dumpStrOpenTagAttr(FUNCTION, FUNCTION_NAME, Util.xmlEscape(Absyn.pathStringNoQual(DAEUtil.functionName(fun))));
         dumpStrOpenTag(MODELICA_IMPLEMENTATION);

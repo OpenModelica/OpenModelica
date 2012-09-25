@@ -80,7 +80,7 @@ algorithm
       SCode.Program spInitial, spAbsyn, sp;
       list<Absyn.Class> inClasses,initialClasses;
 
-    case (inProgram)
+    case _
       equation
         setGlobalRoot(Global.instHashIndex, Inst.emptyInstHashTable());
         setGlobalRoot(Global.typesIndex,  Types.createEmptyTypeMemory());

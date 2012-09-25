@@ -734,7 +734,7 @@ public function isNonStateVar
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    case (inVar)
+    case _
     equation
       failIfNonState(inVar);
      then true;
@@ -1064,7 +1064,7 @@ algorithm
     case (BackendDAE.VAR(varType = typeVar as DAE.T_STRING(source = _)))
       then false;
     /* non-string variable */
-    case (var)
+    case _
       equation
         true = isConst(var);
       then true;
@@ -1149,7 +1149,7 @@ algorithm
     case (BackendDAE.VAR(varType = typeVar as DAE.T_ENUMERATION(source = _)))
       then false;
     /* non-string variable */
-    case (var)
+    case _
       equation
         true = isParam(var);
       then true;

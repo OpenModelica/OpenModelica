@@ -531,7 +531,7 @@ input Type tp;
 output Boolean res;
 algorithm
  res := matchcontinue(tp)
-   case(tp) 
+   case _ 
      equation
        DAE.T_REAL(varLst = _) = arrayElementType(tp);
      then true;
@@ -643,7 +643,7 @@ public function isInteger "Returns true if type is Integer"
   output Boolean res;
 algorithm
  res := matchcontinue(tp)
-   case(tp) 
+   case _ 
      equation 
        DAE.T_INTEGER(varLst = _) = arrayElementType(tp); 
      then true;
@@ -658,7 +658,7 @@ public function isBoolean "Returns true if type is Boolean"
   output Boolean res;
 algorithm
  res := matchcontinue(tp)
-   case(tp) 
+   case _ 
      equation 
        DAE.T_BOOL(varLst = _) = arrayElementType(tp); 
       then true;
@@ -2785,7 +2785,7 @@ public function getClassnameOpt "function: getClassname
 algorithm
   outPath := matchcontinue(inType)
     local Absyn.Path p;
-    case (inType)
+    case _
       equation
         {p} = getTypeSource(inType); 
       then SOME(p);
@@ -3408,7 +3408,7 @@ public function isPropTuple
   output Boolean b;
 algorithm
   b := matchcontinue (p)
-    case(p)
+    case _
       equation
         DAE.T_TUPLE(source = _) = getPropType(p);
       then
