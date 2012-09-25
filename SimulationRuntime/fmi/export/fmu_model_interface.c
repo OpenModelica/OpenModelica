@@ -155,9 +155,9 @@ fmiStatus fmiSetDebugLogging(fmiComponent c, fmiBoolean loggingOn) {
   ModelInstance* comp = (ModelInstance *)c;
   if (invalidState(comp, "fmiSetDebugLogging", not_modelError))
     return fmiError;
+  comp->loggingOn = loggingOn;
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiSetDebugLogging: loggingOn=%d", loggingOn);
-  comp->loggingOn = loggingOn;
   return fmiOK;
 }
 

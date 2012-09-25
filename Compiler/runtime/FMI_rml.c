@@ -29,42 +29,37 @@
  */
 
 #include "rml.h"
+#include "../FMI.h"
 #include "FMIImpl.c"
 
-void FMI_5finit(void)
+void FMIExt_5finit(void)
 {
 
 }
 
-RML_BEGIN_LABEL(FMI__initializeFMIImport)
+RML_BEGIN_LABEL(FMIExt__initializeFMIImport)
 {
   const char* filename = RML_STRINGDATA(rmlA0);
   const char* workingDirectory = RML_STRINGDATA(rmlA1);
   void* fmiContext;
   void* fmiInstance;
-  const char* modelIdentifier;
-  const char* description;
-  double experimentStartTime;
-  double experimentStopTime;
-  double experimentTolerance;
+  void* fmiInfo;
+  void* experimentAnnotation;
   void* modelVariablesInstance;
   void* modelVariablesList;
-  rmlA0 = FMIImpl__initializeFMIImport(filename, workingDirectory, RML_UNTAGFIXNUM(rmlA2), &fmiContext, &fmiInstance, &modelIdentifier, &description,
-      &experimentStartTime, &experimentStopTime, &experimentTolerance, &modelVariablesInstance, &modelVariablesList) ? RML_TRUE : RML_FALSE;
+  rmlA0 = FMIImpl__initializeFMIImport(filename, workingDirectory, RML_UNTAGFIXNUM(rmlA2), &fmiContext, &fmiInstance, &fmiInfo, &experimentAnnotation,
+      &modelVariablesInstance, &modelVariablesList) ? RML_TRUE : RML_FALSE;
   rmlA1 = (void*) mk_icon(fmiContext);
   rmlA2 = (void*) mk_icon(fmiInstance);
-  rmlA3 = (void*) mk_scon(modelIdentifier);
-  rmlA4 = (void*) mk_scon(description);
-  rmlA5 = (void*) mk_rcon(experimentStartTime);
-  rmlA6 = (void*) mk_rcon(experimentStopTime);
-  rmlA7 = (void*) mk_rcon(experimentTolerance);
-  rmlA8 = (void*) mk_icon(modelVariablesInstance);
-  rmlA9 = modelVariablesList;
+  rmlA3 = fmiInfo;
+  rmlA4 = experimentAnnotation;
+  rmlA5 = (void*) mk_icon(modelVariablesInstance);
+  rmlA6 = modelVariablesList;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(FMI__releaseFMIImport)
+RML_BEGIN_LABEL(FMIExt__releaseFMIImport)
 {
   FMIImpl__releaseFMIImport(RML_UNTAGFIXNUM(rmlA0), RML_UNTAGFIXNUM(rmlA1), RML_UNTAGFIXNUM(rmlA2));
   RML_TAILCALLK(rmlSC);

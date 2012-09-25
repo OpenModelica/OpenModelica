@@ -33,131 +33,268 @@
   package:     FMI
   description: This file contains FMI's import specific function, which are implemented in C."
 
-uniontype FmiImport
+public uniontype Info
+  record INFO
+    String fmiVersion;
+    String fmiModelName;
+    String fmiModelIdentifier;
+    String fmiGuid;
+    String fmiDescription;
+    String fmiGenerationTool;
+    String fmiGenerationDateAndTime;
+    String fmiVariableNamingConvention;
+    Integer fmiNumberOfContinuousStates;
+    Integer fmiNumberOfEventIndicators;
+  end INFO;
+end Info;
+
+public uniontype ExperimentAnnotation
+  record EXPERIMENTANNOTATION
+    Real fmiExperimentStartTime;
+    Real fmiExperimentStopTime;
+    Real fmiExperimentTolerance;
+  end EXPERIMENTANNOTATION;
+end ExperimentAnnotation;
+
+public uniontype ModelVariables
+  record REALVARIABLE
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    Real startValue;
+    Boolean isFixed;
+    Integer valueReference;
+  end REALVARIABLE;
+  
+  record INTEGERVARIABLE
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    Integer startValue;
+    Boolean isFixed;
+    Integer valueReference;
+  end INTEGERVARIABLE;
+  
+  record BOOLEANVARIABLE
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    Boolean startValue;
+    Boolean isFixed;
+    Integer valueReference;
+  end BOOLEANVARIABLE;
+  
+  record STRINGVARIABLE
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    String startValue;
+    Boolean isFixed;
+    Integer valueReference;
+  end STRINGVARIABLE;
+  
+  record ENUMERATIONVARIABLE
+    Integer instance;
+    String name;
+    String description;
+    String baseType;
+    String variability;
+    String causality;
+    Boolean hasStartValue;
+    Integer startValue;
+    Boolean isFixed;
+    Integer valueReference;
+  end ENUMERATIONVARIABLE;
+end ModelVariables;
+
+public uniontype FmiImport
   record FMIIMPORT
     String fmuFileName;
     String fmuWorkingDirectory;
     Integer fmiLogLevel;
     Integer fmiContext;
     Integer fmiInstance;
-    String fmiModelIdentifier;
-    String fmiDescription;
-    Real fmiExperimentStartTime;
-    Real fmiExperimentStopTime;
-    Real fmiExperimentTolerance;
+    Info fmiInfo;
+    ExperimentAnnotation fmiExperimentAnnotation;
     Integer fmiModelVariablesInstance;
-    list<Integer> fmiModelVariablesList;
+    list<ModelVariables> fmiModelVariablesList;
   end FMIIMPORT;
 end FmiImport;
 
-public function initializeFMIImport
-  input String inFileName;
-  input String inWorkingDirectory;
-  input Integer inFMILogLevel;
-  output Boolean result;
-  output Integer outFMIContext;
-  output Integer outFMIInstance;
-  output String outModelIdentifier;
-  output String outDescription;
-  output Real outExperimentStartTime;
-  output Real outExperimentStopTime;
-  output Real outExperimentTolerance;
-  output Integer outModelVariablesInstance;
-  output list<Integer> outModelVariablesList;
-  external "C" result=FMIImpl__initializeFMIImport(inFileName, inWorkingDirectory, inFMILogLevel, outFMIContext, outFMIInstance, outModelIdentifier, outDescription,
-  outExperimentStartTime, outExperimentStopTime, outExperimentTolerance,
-  outModelVariablesInstance, outModelVariablesList) annotation(Library = {"omcruntime","fmilib"});
-end initializeFMIImport;
+public function countRealVariables
+  input list<ModelVariables> inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inVariables)
+    local
+      Integer res;
+      String v;
+      list<ModelVariables> vars;
+    /* Don't count the parameters */
+    case (REALVARIABLE(variability = v) :: vars)
+      equation
+        true = stringEq(v,"");
+        res = countRealVariables(vars);
+      then
+        res + 1;
+    case (_ :: vars)
+      equation
+        res = countRealVariables(vars);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countRealVariables;
 
-public function releaseFMIImport
-  input Integer inFMIModelVariablesInstance;
-  input Integer inFMIInstance;
-  input Integer inFMIContext;
-  external "C" FMIImpl__releaseFMIImport(inFMIModelVariablesInstance, inFMIInstance, inFMIContext) annotation(Library = {"omcruntime","fmilib"});
-end releaseFMIImport;
+public function countIntegerVariables
+  input list<ModelVariables> inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inVariables)
+    local
+      Integer res;
+      String v;
+      list<ModelVariables> vars;
+    /* Don't count the parameters */
+    case (INTEGERVARIABLE(variability = v) :: vars)
+      equation
+        true = stringEq(v,"");
+        res = countIntegerVariables(vars);
+      then
+        res + 1;
+    case (_ :: vars)
+      equation
+        res = countIntegerVariables(vars);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countIntegerVariables;
 
-public function getFMIModelVariableVariability
-  input Integer inFMIModelVariable;
-  output String outFMIModelVariableVariability;
-  external "C" outFMIModelVariableVariability=FMIImpl__getFMIModelVariableVariability(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIModelVariableVariability;
+public function countBooleanVariables
+  input list<ModelVariables> inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inVariables)
+    local
+      Integer res;
+      String v;
+      list<ModelVariables> vars;
+    /* Don't count the parameters */
+    case (BOOLEANVARIABLE(variability = v) :: vars)
+      equation
+        true = stringEq(v,"");
+        res = countBooleanVariables(vars);
+      then
+        res + 1;
+    case (_ :: vars)
+      equation
+        res = countBooleanVariables(vars);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countBooleanVariables;
 
-public function getFMIModelVariableCausality
-  input Integer inFMIModelVariable;
-  output String outFMIModelVariableCausality;
-  external "C" outFMIModelVariableCausality=FMIImpl__getFMIModelVariableCausality(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIModelVariableCausality;
+public function countStringVariables
+  input list<ModelVariables> inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inVariables)
+    local
+      Integer res;
+      String v;
+      list<ModelVariables> vars;
+    /* Don't count the parameters */
+    case (STRINGVARIABLE(variability = v) :: vars)
+      equation
+        true = stringEq(v,"");
+        res = countStringVariables(vars);
+      then
+        res + 1;
+    case (_ :: vars)
+      equation
+        res = countStringVariables(vars);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countStringVariables;
 
-public function getFMIModelVariableBaseType
-  input Integer inFMIModelVariable;
-  output String outFMIModelVariableBaseType;
-  external "C" outFMIModelVariableBaseType=FMIImpl__getFMIModelVariableBaseType(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIModelVariableBaseType;
+public function countEnumerationVariables
+  input list<ModelVariables> inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inVariables)
+    local
+      Integer res;
+      String v;
+      list<ModelVariables> vars;
+    /* Don't count the parameters */
+    case (ENUMERATIONVARIABLE(variability = v) :: vars)
+      equation
+        true = stringEq(v,"");
+        res = countEnumerationVariables(vars);
+      then
+        res + 1;
+    case (_ :: vars)
+      equation
+        res = countEnumerationVariables(vars);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countEnumerationVariables;
 
-public function getFMIModelVariableName
-  input Integer inFMIModelVariable;
-  output String outFMIModelVariableName;
-  external "C" outFMIModelVariableName=FMIImpl__getFMIModelVariableName(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIModelVariableName;
+public function getFMIModelIdentifier
+  input Info inFMIInfo;
+  output String fmiModelIdentifier;
+algorithm
+  fmiModelIdentifier := match(inFMIInfo)
+    local
+      String modelIdentifier;
+    case (INFO(fmiModelIdentifier = modelIdentifier)) then modelIdentifier;
+  end match;
+end getFMIModelIdentifier;
 
-public function getFMIModelVariableDescription
-  input Integer inFMIModelVariable;
-  output String outFMIModelVariableDescription;
-  external "C" outFMIModelVariableDescription=FMIImpl__getFMIModelVariableDescription(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIModelVariableDescription;
-
-public function getFMINumberOfContinuousStates
-  input Integer inFMIInstance;
-  output Integer outFMINumberOfContinuousStates;
-  external "C" outFMINumberOfContinuousStates=FMIImpl__getFMINumberOfContinuousStates(inFMIInstance) annotation(Library = {"omcruntime","fmilib"});
-end getFMINumberOfContinuousStates;
-
-public function getFMINumberOfEventIndicators
-  input Integer inFMIInstance;
-  output Integer outFMINumberOfEventIndicators;
-  external "C" outFMINumberOfEventIndicators=FMIImpl__getFMINumberOfEventIndicators(inFMIInstance) annotation(Library = {"omcruntime","fmilib"});
-end getFMINumberOfEventIndicators;
-
-public function getFMIModelVariableHasStart
-  input Integer inFMIModelVariable;
-  output Boolean outFMIModelVariableHasStart;
-  external "C" outFMIModelVariableHasStart=FMIImpl__getFMIModelVariableHasStart(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIModelVariableHasStart;
-
-public function getFMIModelVariableIsFixed
-  input Integer inFMIModelVariable;
-  output Boolean outFMIModelVariableHasFixed;
-  external "C" outFMIModelVariableHasFixed=FMIImpl__getFMIModelVariableIsFixed(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIModelVariableIsFixed;
-
-public function getFMIRealVariableStartValue
-  input Integer inFMIModelVariable;
-  output Real outFMIRealVariableStartValue;
-  external "C" outFMIRealVariableStartValue=FMIImpl__getFMIRealVariableStartValue(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIRealVariableStartValue;
-
-public function getFMIIntegerVariableStartValue
-  input Integer inFMIModelVariable;
-  output Integer outFMIIntegerVariableStartValue;
-  external "C" outFMIIntegerVariableStartValue=FMIImpl__getFMIIntegerVariableStartValue(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIIntegerVariableStartValue;
-
-public function getFMIBooleanVariableStartValue
-  input Integer inFMIModelVariable;
-  output Boolean outFMIBooleanVariableStartValue;
-  external "C" outFMIBooleanVariableStartValue=FMIImpl__getFMIBooleanVariableStartValue(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIBooleanVariableStartValue;
-
-public function getFMIStringVariableStartValue
-  input Integer inFMIModelVariable;
-  output String outFMIStringVariableStartValue;
-  external "C" outFMIStringVariableStartValue=FMIImpl__getFMIStringVariableStartValue(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIStringVariableStartValue;
-
-public function getFMIEnumerationVariableStartValue
-  input Integer inFMIModelVariable;
-  output Integer outFMIEnumerationVariableStartValue;
-  external "C" outFMIEnumerationVariableStartValue=FMIImpl__getFMIEnumerationVariableStartValue(inFMIModelVariable) annotation(Library = {"omcruntime","fmilib"});
-end getFMIEnumerationVariableStartValue;
+public function printVariables
+  input list<ModelVariables> variables;
+  output Boolean b;
+algorithm
+  b := matchcontinue(variables)
+    local
+      list<ModelVariables> vars;
+      String v_name;
+      Boolean b1;
+      case (BOOLEANVARIABLE(name = v_name) :: vars)
+        equation
+          print(v_name +& "\n");
+          b1 = printVariables(vars);
+        then
+          true;
+      case (REALVARIABLE(name = v_name) :: vars)
+        equation
+          print(v_name +& "\n");
+          b1 = printVariables(vars);
+        then
+          true;
+  end matchcontinue;
+end printVariables;
 
 end FMI;

@@ -34,7 +34,6 @@ extern "C" {
 
 #include <stdio.h>
 
-#include "meta_modelica.h"
 #include "systemimpl.h"
 #include "errorext.h"
 
@@ -104,9 +103,9 @@ const char* getModelVariableVariability(fmi1_import_variable_t* variable)
     case fmi1_variability_enu_parameter:
       return "parameter";
     case fmi1_variability_enu_discrete:
-      return "discrete";
     case fmi1_variability_enu_continuous:
     case fmi1_variability_enu_unknown:
+    default:
       return "";
   }
 }
@@ -125,6 +124,7 @@ const char* getModelVariableCausality(fmi1_import_variable_t* variable)
     case fmi1_causality_enu_internal:
     case fmi1_causality_enu_none:
     case fmi1_causality_enu_unknown:
+    default:
       return "";
   }
 }
@@ -146,6 +146,8 @@ const char* getModelVariableBaseType(fmi1_import_variable_t* variable)
       return "String";
     case fmi1_base_type_enum:
       return "enumeration";
+    default:                    /* Should never be reached. */
+      return "";
   }
 }
 
@@ -168,22 +170,50 @@ char* getModelVariableName(fmi1_import_variable_t* variable)
 }
 
 /*
+ * Reads the model variable start value.
+ */
+void* getModelVariableStartValue(fmi1_import_variable_t* variable)
+{
+  fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(variable);
+  fmi1_import_real_variable_t* fmiRealModelVariable;
+  fmi1_import_integer_variable_t* fmiIntegerModelVariable;
+  fmi1_import_bool_variable_t* fmiBooleanModelVariable;
+  fmi1_import_string_variable_t* fmiStringModelVariable;
+  fmi1_import_enum_variable_t * fmiEnumerationModelVariable;
+  switch (type) {
+    case fmi1_base_type_real:
+      fmiRealModelVariable = fmi1_import_get_variable_as_real(variable);
+      return fmiRealModelVariable ? mk_rcon(fmi1_import_get_real_variable_start(fmiRealModelVariable)) : mk_rcon(0);
+    case fmi1_base_type_int:
+      fmiIntegerModelVariable = fmi1_import_get_variable_as_integer(variable);
+      return fmiIntegerModelVariable ? mk_icon(fmi1_import_get_integer_variable_start(fmiIntegerModelVariable)) : mk_icon(0);
+    case fmi1_base_type_bool:
+      fmiBooleanModelVariable = fmi1_import_get_variable_as_boolean(variable);
+      return fmiBooleanModelVariable ? mk_bcon(fmi1_import_get_boolean_variable_start(fmiBooleanModelVariable)) : mk_bcon(0);
+    case fmi1_base_type_str:
+      fmiStringModelVariable = fmi1_import_get_variable_as_string(variable);
+      return fmiStringModelVariable ? mk_scon(fmi1_import_get_string_variable_start(fmiStringModelVariable)) : mk_scon(0);
+    case fmi1_base_type_enum:
+      fmiEnumerationModelVariable = fmi1_import_get_variable_as_enum(variable);
+      return fmiEnumerationModelVariable ? mk_icon(fmi1_import_get_enum_variable_start(fmiEnumerationModelVariable)) : mk_icon(0);
+    default:
+      return 0;
+  }
+}
+
+/*
  * Initializes FMI Import.
  * Reads the Model Identifier name.
  * Reads the experiment annotation.
  * Reads the model variables.
  */
 int FMIImpl__initializeFMIImport(const char* file_name, const char* working_directory, int fmi_log_level, void** fmiContext, void** fmiInstance,
-    const char** modelIdentifier, const char** description, double* experimentStartTime, double* experimentStopTime, double* experimentTolerance,
-    void** modelVariablesInstance, void** modelVariablesList)
+    void** fmiInfo, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList)
 {
   *fmiContext = NULL;
   *fmiInstance = NULL;
-  *modelIdentifier = "";
-  *description = "";
-  *experimentStartTime = 0;
-  *experimentStopTime = 0;
-  *experimentTolerance = 0;
+  *fmiInfo = NULL;
+  *experimentAnnotation = NULL;
   *modelVariablesInstance = NULL;
   *modelVariablesList = NULL;
   static int init = 0;
@@ -232,25 +262,82 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Could not create the DLL loading mechanism(C-API)."), NULL, 0);
     return 0;
   }
+  /* Read the model name from FMU's modelDescription.xml file. */
+  const char* modelName = fmi1_import_get_model_name(fmi);
   /* Read the model identifier from FMU's modelDescription.xml file. */
-  *modelIdentifier = fmi1_import_get_model_identifier(fmi);
+  const char* modelIdentifier = fmi1_import_get_model_identifier(fmi);
+  /* Read the FMI GUID from FMU's modelDescription.xml file. */
+  const char* guid = fmi1_import_get_GUID(fmi);
   /* Read the FMI description from FMU's modelDescription.xml file. */
-  *description = fmi1_import_get_description(fmi);
+  const char* description = fmi1_import_get_description(fmi);
+  /* Read the FMI generation tool from FMU's modelDescription.xml file. */
+  const char* generationTool = fmi1_import_get_generation_tool(fmi);
+  /* Read the FMI generation date and time from FMU's modelDescription.xml file. */
+  const char* generationDateAndTime = fmi1_import_get_generation_date_and_time(fmi);
+  /* Read the FMI Variable Naming convention from FMU's modelDescription.xml file. */
+  const char* namingConvention = fmi1_naming_convention_to_string(fmi1_import_get_naming_convention(fmi));
+  /* Read the FMI number of continuous states from FMU's modelDescription.xml file. */
+  unsigned int numberOfContinuousStates = fmi1_import_get_number_of_continuous_states(fmi);
+  /* Read the FMI number of event indicators from FMU's modelDescription.xml file. */
+  unsigned int numberOfEventIndicators = fmi1_import_get_number_of_event_indicators(fmi);
+  /* construct FMIINFO record */
+  *fmiInfo = FMI__INFO(mk_scon(fmi_version_to_string(version)), mk_scon(modelName), mk_scon(modelIdentifier), mk_scon(guid), mk_scon(description),
+      mk_scon(generationTool), mk_scon(generationDateAndTime), mk_scon(namingConvention), mk_icon(numberOfContinuousStates), mk_icon(numberOfEventIndicators));
   /* Read the FMI Default Experiment Start value from FMU's modelDescription.xml file. */
-  *experimentStartTime = fmi1_import_get_default_experiment_start(fmi);
+  double experimentStartTime = fmi1_import_get_default_experiment_start(fmi);
   /* Read the FMI Default Experiment Stop value from FMU's modelDescription.xml file. */
-  *experimentStopTime = fmi1_import_get_default_experiment_stop(fmi);
+  double experimentStopTime = fmi1_import_get_default_experiment_stop(fmi);
   /* Read the FMI Default Experiment Tolerance value from FMU's modelDescription.xml file. */
-  *experimentTolerance = fmi1_import_get_default_experiment_tolerance(fmi);
+  double experimentTolerance = fmi1_import_get_default_experiment_tolerance(fmi);
+  *experimentAnnotation = FMI__EXPERIMENTANNOTATION(mk_rcon(experimentStartTime), mk_rcon(experimentStopTime), mk_rcon(experimentTolerance));
   /* Read the model variables from the FMU's modelDescription.xml file and create a list of it. */
   fmi1_import_variable_list_t* model_variables_list = fmi1_import_get_variable_list(fmi);
   *modelVariablesInstance = model_variables_list;
   size_t model_variables_list_size = fmi1_import_get_variable_list_size(model_variables_list);
+  /* get model variables value reference list */
+  const fmi1_value_reference_t* model_variables_value_reference_list = fmi1_import_get_value_referece_list(model_variables_list);
   int i = 0;
-  *modelVariablesList = mmc_mk_nil();
+  *modelVariablesList = mk_nil();
+  int realCount, integerCount, booleanCount, stringCount, enumerationCount;
+  realCount = integerCount = booleanCount = stringCount = enumerationCount = 0;
   for (i ; i < model_variables_list_size ; i++) {
     fmi1_import_variable_t* model_variable = fmi1_import_get_variable(model_variables_list, i);
-    *modelVariablesList = mmc_mk_cons(mmc_mk_icon(model_variable), *modelVariablesList);
+    void* variable_instance = mk_icon((int)model_variable);
+    void* variable_name = mk_scon(getModelVariableName(model_variable));
+    const char* description = fmi1_import_get_variable_description(model_variable);
+    void* variable_description = description ? mk_scon(description) : mk_scon("");
+    void* variable_base_type = mk_scon(getModelVariableBaseType(model_variable));
+    void* variable_variability = mk_scon(getModelVariableVariability(model_variable));
+    void* variable_causality = mk_scon(getModelVariableCausality(model_variable));
+    void* variable_has_start_value = mk_bcon(fmi1_import_get_variable_has_start(model_variable));
+    void* variable_start_value = getModelVariableStartValue(model_variable);
+    void* variable_is_fixed = mk_bcon(fmi1_import_get_variable_is_fixed(model_variable));
+    void* variable_value_reference = mk_icon(model_variables_value_reference_list[i]);
+    void* variable;
+    fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(model_variable);
+    switch (type) {
+      case fmi1_base_type_real:
+        variable = FMI__REALVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference);
+        break;
+      case fmi1_base_type_int:
+        variable = FMI__INTEGERVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference);
+        break;
+      case fmi1_base_type_bool:
+        variable = FMI__BOOLEANVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference);
+        break;
+      case fmi1_base_type_str:
+        variable = FMI__STRINGVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference);
+        break;
+      case fmi1_base_type_enum:
+        variable = FMI__ENUMERATIONVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference);
+        break;
+    }
+    *modelVariablesList = mk_cons(variable, *modelVariablesList);
   }
   /* everything is OK return success */
   return 1;

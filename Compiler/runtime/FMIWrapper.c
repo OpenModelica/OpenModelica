@@ -151,14 +151,49 @@ int fmiInitialize_OMC(void* fmi)
   return fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, &eventInfo);
 }
 
-int fmiGetContinuousStates_OMC(void* fmi, const double* states, int numberOfContinuousStates)
+int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
+{
+  return fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
+}
+
+int fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, const double* states)
 {
   return fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
-int fmiGetEventIndicators_OMC(void* fmi, const double* events, int numberOfEventIndicators)
+int fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, const double* states)
+{
+  return fmi1_import_set_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+}
+
+int fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, const double* events)
 {
   return fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
+}
+
+void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* states)
+{
+  fmi1_status_t fmistatus = fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  fprintf(stderr, "fmiGetDerivatives_OMC Result = %d", fmistatus);fflush(NULL);
+}
+
+void fmiGetReal_OMC(void* fmi, const double* states, const double* states1)
+{
+  fmi1_import_t* fmi1 = (fmi1_import_t*)fmi;
+  fmi1_import_variable_list_t* model_variables_list = fmi1_import_get_variable_list(fmi);
+  size_t model_variables_list_size = fmi1_import_get_variable_list_size(model_variables_list);
+  fmi1_value_reference_t* model_variables_value_reference_list = fmi1_import_get_value_referece_list(model_variables_list);
+  int i = 0;
+  for (i ; i < model_variables_list_size ; i++) {
+    fprintf(stderr, "VR %d = %d\n", i, model_variables_value_reference_list[i]);fflush(NULL);
+    }
+  fmi1_real_t* value = malloc(model_variables_list_size);
+  fmi1_status_t fmistatus = fmi1_import_get_real(fmi1, model_variables_value_reference_list, model_variables_list_size, value);
+  i = 0;
+    for (i ; i < model_variables_list_size ; i++) {
+      fprintf(stderr, "R %d = %d\n", i, value[i]);fflush(NULL);
+      }
+  fprintf(stderr, "Result = %d", fmistatus);fflush(NULL);
 }
 
 #ifdef __cplusplus

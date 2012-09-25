@@ -117,6 +117,7 @@ protected import ComponentReference;
 protected import Uncertainties;
 protected import OpenTURNS;
 protected import FMI;
+protected import FMIExt;
 
 public constant Integer RT_CLOCK_SIMULATE_TOTAL = 8;
 public constant Integer RT_CLOCK_SIMULATE_SIMULATION = 9;
@@ -830,10 +831,10 @@ algorithm
       Values.Value ret_val,simValue,value,v,cvar,cvar2,v1,v2;
       Absyn.ComponentRef cr_1;
       Integer size,resI,i,n;
-      Integer fmiContext, fmiInstance, fmiModelVariablesInstance, fmiLogLevel;
-      list<Integer> fmiModelVariablesList, fmiModelVariablesList1;
-      Real fmiExperimentStartTime, fmiExperimentStopTime, fmiExperimentTolerance;
-      String fmiModelIdentifier, fmiDescription;
+      Integer fmiContext, fmiInstance, fmiModelVariablesInstance, fmiLogLevel, fmiNumberOfRealModelVariables, fmiNumberOfIntegerModelVariables, fmiNumberOfBooleanModelVariables, fmiNumberOfStringModelVariables, fmiNumberOfEnumerationModelVariables;
+      list<FMI.ModelVariables> fmiModelVariablesList, fmiModelVariablesList1;
+      FMI.ExperimentAnnotation fmiExperimentAnnotation;
+      FMI.Info fmiInfo;
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts; 
@@ -1448,27 +1449,29 @@ algorithm
         
     case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,_)
       equation
+        Error.clearMessages() "Clear messages";
         true = System.regularFileExists(filename);
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
         /* Initialize FMI objects */
-        (b, fmiContext, fmiInstance, fmiModelIdentifier, fmiDescription, fmiExperimentStartTime, fmiExperimentStopTime, fmiExperimentTolerance,
-        fmiModelVariablesInstance, fmiModelVariablesList) = FMI.initializeFMIImport(filename, workdir, fmiLogLevel);
+        (b, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel);
         true = b; /* if something goes wrong while initializing */
         fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(filename, workdir, fmiLogLevel, fmiContext, fmiInstance, fmiModelIdentifier, fmiDescription,
-                                                                        fmiExperimentStartTime, fmiExperimentStopTime, fmiExperimentTolerance,
+        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(filename, workdir, fmiLogLevel, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation,
                                                                         fmiModelVariablesInstance, fmiModelVariablesList1));
         pd = System.pathDelimiter();
-        filename_1 = stringAppendList({workdir,pd,fmiModelIdentifier,"FMUImportNew.mo"});
+        filename_1 = FMI.getFMIModelIdentifier(fmiInfo);
+        filename_1 = stringAppendList({workdir,pd,filename_1,"FMUImportNew.mo"});
         System.writeFile(filename_1, str);
+        //b = FMI.printVariables(fmiModelVariablesList1);
         /* Release FMI objects */
-        FMI.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext);
+        FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext);
       then
         (cache,Values.STRING(filename_1),st);
         
     case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,_)
       equation
         false = System.regularFileExists(filename);
+        Error.clearMessages() "Clear messages";
         Error.addMessage(Error.FILE_NOT_FOUND_ERROR, {filename});
       then
         (cache,Values.STRING(""),st);
@@ -6775,6 +6778,5 @@ algorithm
          (DAE.CALL(p, el, DAE.CALL_ATTR(cevalType, t, b, i, tc)), DAE.PROP(ty, DAE.C_PARAM()));
   end match;
 end cevalWholedimRetCall;
-
 
 end CevalScript;

@@ -3,6 +3,126 @@
 extern "C" {
 #endif
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef FMI_Info_INFO__desc_added
+#define FMI_Info_INFO__desc_added
+ADD_METARECORD_DEFINTIONS const char* FMI_Info_INFO__desc__fields[10] = {"fmiVersion","fmiModelName","fmiModelIdentifier","fmiGuid","fmiDescription","fmiGenerationTool","fmiGenerationDateAndTime","fmiVariableNamingConvention","fmiNumberOfContinuousStates","fmiNumberOfEventIndicators"};
+ADD_METARECORD_DEFINTIONS struct record_description FMI_Info_INFO__desc = {
+  "FMI_Info_INFO",
+  "FMI.Info.INFO",
+  FMI_Info_INFO__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_Info_INFO__desc;
+#endif
+#define FMI__INFO_3dBOX10 3
+#define FMI__INFO(fmiVersion,fmiModelName,fmiModelIdentifier,fmiGuid,fmiDescription,fmiGenerationTool,fmiGenerationDateAndTime,fmiVariableNamingConvention,fmiNumberOfContinuousStates,fmiNumberOfEventIndicators) (mmc_mk_box(11, 3,&FMI_Info_INFO__desc,fmiVersion,fmiModelName,fmiModelIdentifier,fmiGuid,fmiDescription,fmiGenerationTool,fmiGenerationDateAndTime,fmiVariableNamingConvention,fmiNumberOfContinuousStates,fmiNumberOfEventIndicators))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc_added
+#define FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc_added
+ADD_METARECORD_DEFINTIONS const char* FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc__fields[3] = {"fmiExperimentStartTime","fmiExperimentStopTime","fmiExperimentTolerance"};
+ADD_METARECORD_DEFINTIONS struct record_description FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc = {
+  "FMI_ExperimentAnnotation_EXPERIMENTANNOTATION",
+  "FMI.ExperimentAnnotation.EXPERIMENTANNOTATION",
+  FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc;
+#endif
+#define FMI__EXPERIMENTANNOTATION_3dBOX3 3
+#define FMI__EXPERIMENTANNOTATION(fmiExperimentStartTime,fmiExperimentStopTime,fmiExperimentTolerance) (mmc_mk_box4(3,&FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc,fmiExperimentStartTime,fmiExperimentStopTime,fmiExperimentTolerance))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef FMI_ModelVariables_REALVARIABLE__desc_added
+#define FMI_ModelVariables_REALVARIABLE__desc_added
+ADD_METARECORD_DEFINTIONS const char* FMI_ModelVariables_REALVARIABLE__desc__fields[10] = {"instance","name","description","baseType","variability","causality","hasStartValue","startValue","isFixed","valueReference"};
+ADD_METARECORD_DEFINTIONS struct record_description FMI_ModelVariables_REALVARIABLE__desc = {
+  "FMI_ModelVariables_REALVARIABLE",
+  "FMI.ModelVariables.REALVARIABLE",
+  FMI_ModelVariables_REALVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_REALVARIABLE__desc;
+#endif
+#define FMI__REALVARIABLE_3dBOX10 3
+#define FMI__REALVARIABLE(instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference) (mmc_mk_box(11, 3,&FMI_ModelVariables_REALVARIABLE__desc,instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef FMI_ModelVariables_INTEGERVARIABLE__desc_added
+#define FMI_ModelVariables_INTEGERVARIABLE__desc_added
+ADD_METARECORD_DEFINTIONS const char* FMI_ModelVariables_INTEGERVARIABLE__desc__fields[10] = {"instance","name","description","baseType","variability","causality","hasStartValue","startValue","isFixed","valueReference"};
+ADD_METARECORD_DEFINTIONS struct record_description FMI_ModelVariables_INTEGERVARIABLE__desc = {
+  "FMI_ModelVariables_INTEGERVARIABLE",
+  "FMI.ModelVariables.INTEGERVARIABLE",
+  FMI_ModelVariables_INTEGERVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_INTEGERVARIABLE__desc;
+#endif
+#define FMI__INTEGERVARIABLE_3dBOX10 4
+#define FMI__INTEGERVARIABLE(instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference) (mmc_mk_box(11, 4,&FMI_ModelVariables_INTEGERVARIABLE__desc,instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef FMI_ModelVariables_BOOLEANVARIABLE__desc_added
+#define FMI_ModelVariables_BOOLEANVARIABLE__desc_added
+ADD_METARECORD_DEFINTIONS const char* FMI_ModelVariables_BOOLEANVARIABLE__desc__fields[10] = {"instance","name","description","baseType","variability","causality","hasStartValue","startValue","isFixed","valueReference"};
+ADD_METARECORD_DEFINTIONS struct record_description FMI_ModelVariables_BOOLEANVARIABLE__desc = {
+  "FMI_ModelVariables_BOOLEANVARIABLE",
+  "FMI.ModelVariables.BOOLEANVARIABLE",
+  FMI_ModelVariables_BOOLEANVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_BOOLEANVARIABLE__desc;
+#endif
+#define FMI__BOOLEANVARIABLE_3dBOX10 5
+#define FMI__BOOLEANVARIABLE(instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference) (mmc_mk_box(11, 5,&FMI_ModelVariables_BOOLEANVARIABLE__desc,instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef FMI_ModelVariables_STRINGVARIABLE__desc_added
+#define FMI_ModelVariables_STRINGVARIABLE__desc_added
+ADD_METARECORD_DEFINTIONS const char* FMI_ModelVariables_STRINGVARIABLE__desc__fields[10] = {"instance","name","description","baseType","variability","causality","hasStartValue","startValue","isFixed","valueReference"};
+ADD_METARECORD_DEFINTIONS struct record_description FMI_ModelVariables_STRINGVARIABLE__desc = {
+  "FMI_ModelVariables_STRINGVARIABLE",
+  "FMI.ModelVariables.STRINGVARIABLE",
+  FMI_ModelVariables_STRINGVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_STRINGVARIABLE__desc;
+#endif
+#define FMI__STRINGVARIABLE_3dBOX10 6
+#define FMI__STRINGVARIABLE(instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference) (mmc_mk_box(11, 6,&FMI_ModelVariables_STRINGVARIABLE__desc,instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef FMI_ModelVariables_ENUMERATIONVARIABLE__desc_added
+#define FMI_ModelVariables_ENUMERATIONVARIABLE__desc_added
+ADD_METARECORD_DEFINTIONS const char* FMI_ModelVariables_ENUMERATIONVARIABLE__desc__fields[10] = {"instance","name","description","baseType","variability","causality","hasStartValue","startValue","isFixed","valueReference"};
+ADD_METARECORD_DEFINTIONS struct record_description FMI_ModelVariables_ENUMERATIONVARIABLE__desc = {
+  "FMI_ModelVariables_ENUMERATIONVARIABLE",
+  "FMI.ModelVariables.ENUMERATIONVARIABLE",
+  FMI_ModelVariables_ENUMERATIONVARIABLE__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_ModelVariables_ENUMERATIONVARIABLE__desc;
+#endif
+#define FMI__ENUMERATIONVARIABLE_3dBOX10 7
+#define FMI__ENUMERATIONVARIABLE(instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference) (mmc_mk_box(11, 7,&FMI_ModelVariables_ENUMERATIONVARIABLE__desc,instance,name,description,baseType,variability,causality,hasStartValue,startValue,isFixed,valueReference))
+#ifdef ADD_METARECORD_DEFINTIONS
+#ifndef FMI_FmiImport_FMIIMPORT__desc_added
+#define FMI_FmiImport_FMIIMPORT__desc_added
+ADD_METARECORD_DEFINTIONS const char* FMI_FmiImport_FMIIMPORT__desc__fields[9] = {"fmuFileName","fmuWorkingDirectory","fmiLogLevel","fmiContext","fmiInstance","fmiInfo","fmiExperimentAnnotation","fmiModelVariablesInstance","fmiModelVariablesList"};
+ADD_METARECORD_DEFINTIONS struct record_description FMI_FmiImport_FMIIMPORT__desc = {
+  "FMI_FmiImport_FMIIMPORT",
+  "FMI.FmiImport.FMIIMPORT",
+  FMI_FmiImport_FMIIMPORT__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description FMI_FmiImport_FMIIMPORT__desc;
+#endif
+#define FMI__FMIIMPORT_3dBOX9 3
+#define FMI__FMIIMPORT(fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiContext,fmiInstance,fmiInfo,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList) (mmc_mk_box(10, 3,&FMI_FmiImport_FMIIMPORT__desc,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiContext,fmiInstance,fmiInfo,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Util_ReplacePattern_REPLACEPATTERN__desc_added
 #define Util_ReplacePattern_REPLACEPATTERN__desc_added
 ADD_METARECORD_DEFINTIONS const char* Util_ReplacePattern_REPLACEPATTERN__desc__fields[2] = {"from","to"};

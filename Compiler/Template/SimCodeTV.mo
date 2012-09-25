@@ -68,7 +68,13 @@ package builtin
     input Integer b;
     output Boolean c;
   end intEq;
-
+  
+  function intGt
+    input Integer i1;
+    input Integer i2;
+    output Boolean b;
+  end intGt;
+  
   function arrayList 
     replaceable type TypeVar subtypeof Any;    
     input TypeVar[:] arr;
@@ -2555,7 +2561,96 @@ package Types
 end Types;
 
 package FMI
+  uniontype Info
+    record INFO
+      String fmiVersion;
+      String fmiModelName;
+      String fmiModelIdentifier;
+      String fmiGuid;
+      String fmiDescription;
+      String fmiGenerationTool;
+      String fmiGenerationDateAndTime;
+      String fmiVariableNamingConvention;
+      Integer fmiNumberOfContinuousStates;
+      Integer fmiNumberOfEventIndicators;
+    end INFO;
+  end Info;
   
+  uniontype ExperimentAnnotation
+    record EXPERIMENTANNOTATION
+      Real fmiExperimentStartTime;
+      Real fmiExperimentStopTime;
+      Real fmiExperimentTolerance;
+    end EXPERIMENTANNOTATION;
+  end ExperimentAnnotation;
+
+  uniontype ModelVariables
+    record REALVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      Real startValue;
+      Boolean isFixed;
+      Integer valueReference;
+    end REALVARIABLE;
+  
+    record INTEGERVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      Integer startValue;
+      Boolean isFixed;
+      Integer valueReference;
+    end INTEGERVARIABLE;
+  
+    record BOOLEANVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      Boolean startValue;
+      Boolean isFixed;
+      Integer valueReference;
+    end BOOLEANVARIABLE;
+  
+    record STRINGVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      String startValue;
+      Boolean isFixed;
+      Integer valueReference;
+    end STRINGVARIABLE;
+  
+    record ENUMERATIONVARIABLE
+      Integer instance;
+      String name;
+      String description;
+      String baseType;
+      String variability;
+      String causality;
+      Boolean hasStartValue;
+      Integer startValue;
+      Boolean isFixed;
+      Integer valueReference;
+    end ENUMERATIONVARIABLE;
+  end ModelVariables;
+
   uniontype FmiImport
     record FMIIMPORT
       String fmuFileName;
@@ -2563,86 +2658,37 @@ package FMI
       Integer fmiLogLevel;
       Integer fmiContext;
       Integer fmiInstance;
-      String fmiModelIdentifier;
-      String fmiDescription;
-      Real fmiExperimentStartTime;
-      Real fmiExperimentStopTime;
-      Real fmiExperimentTolerance;
+      Info fmiInfo;
+      ExperimentAnnotation fmiExperimentAnnotation;
       Integer fmiModelVariablesInstance;
-      list<Integer> fmiModelVariablesList;
+      list<ModelVariables> fmiModelVariablesList;
     end FMIIMPORT;
   end FmiImport;
-    
-  function getFMIModelVariableVariability
-    input Integer inFMIModelVariable;
-    output String outFMIModelVariableVariability;
-  end getFMIModelVariableVariability;
-
-  function getFMIModelVariableCausality
-    input Integer inFMIModelVariable;
-    output String outFMIModelVariableCausality;
-  end getFMIModelVariableCausality;
-
-  function getFMIModelVariableBaseType
-    input Integer inFMIModelVariable;
-    output String outFMIModelVariableBaseType;
-  end getFMIModelVariableBaseType;  
-
-  function getFMIModelVariableName
-    input Integer inFMIModelVariable;
-    output String outFMIModelVariableName;
-  end getFMIModelVariableName;
   
-  function getFMIModelVariableDescription
-    input Integer inFMIModelVariable;
-    output String outFMIModelVariableDescription;
-  end getFMIModelVariableDescription;
+  function countRealVariables
+    input list<ModelVariables> inVariables;
+    output Integer outInteger;
+  end countRealVariables;
   
-  function getFMINumberOfContinuousStates
-    input Integer inFMIInstance;
-    output Integer outFMINumberOfContinuousStates;
-  end getFMINumberOfContinuousStates;
+  function countIntegerVariables
+    input list<ModelVariables> inVariables;
+    output Integer outInteger;
+  end countIntegerVariables;
 
-  function getFMINumberOfEventIndicators
-    input Integer inFMIInstance;
-    output Integer outFMINumberOfEventIndicators;
-  end getFMINumberOfEventIndicators;
-  
-  function getFMIModelVariableHasStart
-    input Integer inFMIModelVariable;
-    output Boolean outFMIModelVariableHasStart;
-  end getFMIModelVariableHasStart;
+  function countBooleanVariables
+    input list<ModelVariables> inVariables;
+    output Integer outInteger;
+  end countBooleanVariables;
 
-  function getFMIModelVariableIsFixed
-    input Integer inFMIModelVariable;
-    output Boolean outFMIModelVariableHasFixed;
-  end getFMIModelVariableIsFixed;
-  
-  function getFMIRealVariableStartValue
-    input Integer inFMIModelVariable;
-    output Real outFMIRealVariableStartValue;
-  end getFMIRealVariableStartValue;
+  function countStringVariables
+    input list<ModelVariables> inVariables;
+    output Integer outInteger;
+  end countStringVariables;
 
-  function getFMIIntegerVariableStartValue
-    input Integer inFMIModelVariable;
-    output Integer outFMIIntegerVariableStartValue;
-  end getFMIIntegerVariableStartValue;
-
-  function getFMIBooleanVariableStartValue
-    input Integer inFMIModelVariable;
-    output Boolean outFMIBooleanVariableStartValue;
-  end getFMIBooleanVariableStartValue;
-
-  function getFMIStringVariableStartValue
-    input Integer inFMIModelVariable;
-    output String outFMIStringVariableStartValue;
-  end getFMIStringVariableStartValue;
-
-  function getFMIEnumerationVariableStartValue
-    input Integer inFMIModelVariable;
-    output Integer outFMIEnumerationVariableStartValue;
-  end getFMIEnumerationVariableStartValue;
-  
+  function countEnumerationVariables
+    input list<ModelVariables> inVariables;
+    output Integer outInteger;
+  end countEnumerationVariables;
 end FMI;
 
 end SimCodeTV;

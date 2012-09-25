@@ -183,6 +183,7 @@ Config.mo \
 Debug.mo \
 Error.mo \
 Flags.mo \
+FMI.mo \
 Graph.mo \
 HashSet.mo \
 HashTable.mo \
@@ -233,8 +234,7 @@ Socket.mo \
 System.mo \
 TaskGraphExt.mo \
 BackendDAEEXT.mo \
-FMI.mo \
-
+FMIExt.mo \
 
 
 # all modules
