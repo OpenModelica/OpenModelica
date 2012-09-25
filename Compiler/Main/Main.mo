@@ -1107,7 +1107,7 @@ algorithm
       then 
         fail();
     
-    case args as _::_
+    case _::_
       equation
         false = Flags.isSet(Flags.INTERACTIVE);
         false = Flags.isSet(Flags.INTERACTIVE_CORBA);

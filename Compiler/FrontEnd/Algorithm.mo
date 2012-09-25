@@ -239,7 +239,7 @@ algorithm
       DAE.Type t,ty;
       list<DAE.Exp> ea2;
     
-    case (lhs as DAE.CREF(componentRef = c,ty = _),_,_,_,_)
+    case (DAE.CREF(componentRef = c,ty = _),_,_,_,_)
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, true);
         false = Types.isPropArray(lhprop);

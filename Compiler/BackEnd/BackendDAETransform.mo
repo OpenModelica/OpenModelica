@@ -893,7 +893,7 @@ algorithm
       BackendDAE.StrongComponent compX;
       Integer mark,low,high;
       Boolean foundequal;
-    case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2,_,_,_,_)
+    case (comp,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2,_,_,_,_)
       equation
         vlst = List.map1r(comp,arrayGet,ass2);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,vars);
@@ -1027,7 +1027,7 @@ algorithm
       list<BackendDAE.Equation> eqn_lst;
       BackendDAE.EquationArray eqns;
       BackendDAE.StrongComponent compX;
-    case (comp,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2)
+    case (comp,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,ass1,ass2)
       equation
         (eqn_lst,var_varindx_lst) = List.map3_2(comp, getEquationAndSolvedVar_Internal, eqns, vars, ass2);
         compX = analyseStrongComponentBlock(comp,eqn_lst,var_varindx_lst,syst,shared,ass1,ass2,false);   
@@ -2005,7 +2005,7 @@ algorithm
         dht1 = BaseHashTable.add((dcr, {cr}),dht); 
       then
        BackendDAE.STATEORDER(ht1,dht1);
-    case (_,_,inStateOrder as BackendDAE.STATEORDER(ht,dht))
+    case (_,_,BackendDAE.STATEORDER(ht,dht))
       equation
         ht1 = BaseHashTable.add((cr, dcr),ht);
         crlst = getDerStateOrder(dcr,inStateOrder);
@@ -4154,7 +4154,7 @@ algorithm
       DAE.ElementSource source;
       
     case ({},_,_,_) then (inExpComponentRefLst,inIntegerLst1);
-    case ((e :: rest),syst as BackendDAE.EQSYSTEM(orderedVars = vars,m=SOME(m)),_,_)
+    case ((e :: rest),BackendDAE.EQSYSTEM(orderedVars = vars,m=SOME(m)),_,_)
       equation
         (res11,res22) = statesInVars(vars, m[e],inExpComponentRefLst,inIntegerLst1);
         (res1,res2) = statesInEqns(rest, syst, res11, res22);

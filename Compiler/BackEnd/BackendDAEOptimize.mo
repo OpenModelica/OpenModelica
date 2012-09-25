@@ -6641,7 +6641,7 @@ public function generateSparsePattern
       
      case (_,{},_) then ({{}},{});
      case (_,_,{}) then ({{}},{});
-     case(inBackendDAE as BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}, shared=shared),_,_)
+     case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}, shared=shared),_,_)
        equation
         // Generate Graph for determine sparse structure
         Debug.fcall(Flags.JAC_DUMP,print," start getting sparsity pattern diff Vars : " +& intString(listLength(inDiffedVars))  +& " diffed vars: " +& intString(listLength(inDiffVars)) +&"\n");
@@ -8023,7 +8023,7 @@ algorithm
       Integer nArgs1, nArgs2;
       DAE.CallAttributes attr;
     case ( _, {}, _, _, _) then (DAE.RCONST(0.0));
-    case (currVar::restVar, currDerVar::restDerVar, functionCall as DAE.CALL(expLst=varExpListTotal, attr=attr), _, _)
+    case (currVar::restVar, currDerVar::restDerVar, DAE.CALL(expLst=varExpListTotal, attr=attr), _, _)
       equation
         e = partialAnalyticalDifferentiation(restVar, restDerVar, functionCall, derFname, nDerArgs);
         nArgs1 = listLength(varExpListTotal);
@@ -8050,7 +8050,7 @@ algorithm
       Integer nArgs1, nArgs2;
       DAE.CallAttributes attr;
     case ({}, _, _, _) then (DAE.RCONST(0.0));
-    case (currVar::restVar, currDerVar::restDerVar, _, functionCall as DAE.CALL(path=fname, expLst=varExpListTotal, attr=attr))
+    case (currVar::restVar, currDerVar::restDerVar, _, DAE.CALL(path=fname, expLst=varExpListTotal, attr=attr))
       equation
         e = partialNumericalDifferentiation(restVar, restDerVar, inState, functionCall);
         absCurr = DAE.LBINARY(DAE.RELATION(currVar,DAE.GREATER(DAE.T_REAL_DEFAULT),DAE.RCONST(1e-8),-1,NONE()),DAE.OR(DAE.T_BOOL_DEFAULT),DAE.RELATION(currVar,DAE.LESS(DAE.T_REAL_DEFAULT),DAE.RCONST(-1e-8),-1,NONE()));
@@ -8717,37 +8717,37 @@ algorithm
   local
     DAE.Exp e;
     //sin(x)
-    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sin")))
+    case (_,_,DAE.CALL(path=Absyn.IDENT("sin")))
       equation
         e = DAE.BINARY(inExp1, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("cos"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // cos(x)
-    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("cos")))
+    case (_,_,DAE.CALL(path=Absyn.IDENT("cos")))
       equation
         e = DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), DAE.BINARY(inExp1,DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("sin"),{inExp2},DAE.callAttrBuiltinReal)));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // ln(x)
-    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log")))
+    case (_,_,DAE.CALL(path=Absyn.IDENT("log")))
       equation
         e = DAE.BINARY(inExp1, DAE.DIV(DAE.T_REAL_DEFAULT), inExp2);
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // log10(x)
-    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("log10")))
+    case (_,_,DAE.CALL(path=Absyn.IDENT("log10")))
       equation
         e = DAE.BINARY(inExp1, DAE.DIV(DAE.T_REAL_DEFAULT), DAE.BINARY(inExp2, DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},DAE.callAttrBuiltinReal)));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // exp(x)
-    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("exp")))
+    case (_,_,DAE.CALL(path=Absyn.IDENT("exp")))
       equation
         e = DAE.BINARY(inExp1,DAE.MUL(DAE.T_REAL_DEFAULT), DAE.CALL(Absyn.IDENT("exp"),{inExp2},DAE.callAttrBuiltinReal));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
     // sqrt(x)
-    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("sqrt")))
+    case (_,_,DAE.CALL(path=Absyn.IDENT("sqrt")))
       equation
         e = DAE.BINARY(
           DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.T_REAL_DEFAULT),
@@ -8756,14 +8756,14 @@ algorithm
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
    // abs(x)
-    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("abs")))
+    case (_,_,DAE.CALL(path=Absyn.IDENT("abs")))
       equation
         e = DAE.IFEXP(DAE.RELATION(inExp2,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()), inExp1, DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),inExp1));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
 
     // openmodelica build call $_start(x)
-    case (_,_,inOrgExp1 as DAE.CALL(path=Absyn.IDENT("$_start")))
+    case (_,_,DAE.CALL(path=Absyn.IDENT("$_start")))
       equation
         e = DAE.RCONST(0.0);
       then e;
@@ -8781,7 +8781,7 @@ algorithm
     DAE.Exp e,z1,z2;
     DAE.Exp dz1,dz2;
     //max(x,y)
-    case ({dz1,dz2},inOrgExp1 as DAE.CALL(path=Absyn.IDENT("max"),expLst={z1,z2}))
+    case ({dz1,dz2},DAE.CALL(path=Absyn.IDENT("max"),expLst={z1,z2}))
       equation
         e = DAE.IFEXP(DAE.RELATION(z1, DAE.GREATER(DAE.T_REAL_DEFAULT), z2, -1, NONE()),
                       dz1, dz2);
@@ -8802,12 +8802,12 @@ algorithm
   local
     DAE.Exp e,z1,z2;
     DAE.Type et;
-    case (_,_,inOp as DAE.ADD(_), _, _)
+    case (_,_,DAE.ADD(_), _, _)
       equation
         e = DAE.BINARY(inExp1,inOp,inExp2);
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    case (_,_,inOp as DAE.SUB(_), _, _)
+    case (_,_,DAE.SUB(_), _, _)
       equation
         e = DAE.BINARY(inExp1,inOp,inExp2);
         (e,_) = ExpressionSimplify.simplify(e);
@@ -8827,13 +8827,13 @@ algorithm
         e = DAE.BINARY(DAE.BINARY(DAE.BINARY(inExp1, DAE.MUL(et), inOrgExp2), DAE.SUB(et), DAE.BINARY(inOrgExp1, DAE.MUL(et), inExp2)), DAE.DIV(et), DAE.BINARY(inOrgExp2, DAE.MUL(et), inOrgExp2));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    case (_,_,inOp as DAE.POW(et),_,_)
+    case (_,_,DAE.POW(et),_,_)
       equation
         true = Expression.isConst(inOrgExp2);
         e = DAE.BINARY(inExp1, DAE.MUL(et), DAE.BINARY(inOrgExp2, DAE.MUL(et), DAE.BINARY(inOrgExp1, DAE.POW(et), DAE.BINARY(inOrgExp2, DAE.SUB(et), DAE.RCONST(1.0)))));
         (e,_) = ExpressionSimplify.simplify(e);
       then e;
-    case (_,_,inOp as DAE.POW(et),_,_)
+    case (_,_,DAE.POW(et),_,_)
       equation
         z1 = DAE.BINARY(inExp1, DAE.DIV(et), inOrgExp1);
         z1 = DAE.BINARY(inOrgExp2, DAE.MUL(et), z1);
@@ -9037,7 +9037,7 @@ algorithm
       list<list<BackendDAE.Var>> vl;
       Integer i1,i2;
       String s1,s2;
-    case (_,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=arr),_,_)
+    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=arr),_,_)
       equation
         ea = arrayCreate(n,{});
         va = arrayCreate(n,{});

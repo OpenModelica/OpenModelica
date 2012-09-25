@@ -1251,8 +1251,8 @@ protected function classDefEqual
        then 
          true;
          
-     case (cdef1 as CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_,anns1,_)),
-           cdef2 as CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_,anns2,_)))
+     case (CLASS_EXTENDS(bcName1,mod1,PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,cons1,clsttrs1,_,anns1,_)),
+           CLASS_EXTENDS(bcName2,mod2,PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,cons2,clsttrs2,_,anns2,_)))
        equation
          List.threadMapAllValue(elts1,elts2,elementEqual,true);
          List.threadMapAllValue(eqns1,eqns2,equationEqual,true);
@@ -1266,7 +1266,7 @@ protected function classDefEqual
        then
          true;
          
-     case (cdef1 as PDER(p1,ilst1,_),cdef2 as PDER(p2,ilst2,_))
+     case (PDER(p1,ilst1,_),PDER(p2,ilst2,_))
        equation
          List.threadMapAllValue(ilst1,ilst2,stringEq,true);
        then 

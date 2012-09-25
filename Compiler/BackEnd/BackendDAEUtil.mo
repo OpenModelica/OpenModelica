@@ -2274,7 +2274,7 @@ algorithm
       BackendDAE.IncidenceMatrixT mt;
       BackendDAE.Variables v;
     
-    case (syst as BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt)),arr,a1,a2)
+    case (BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt)),arr,a1,a2)
       equation
         (_,statevarindx_lst) = BackendVariable.getAllStateVarIndexFromVariables(v);
         ((arr_1,_,_,_,_)) = List.fold(statevarindx_lst, markStateEquation, (arr,m,mt,a1,a2));
@@ -4587,7 +4587,7 @@ algorithm
       EquationArray eq;
       BackendDAE.Matching matching;
       BackendDAE.IndexType it;
-    case(syst as BackendDAE.EQSYSTEM(v,eq,NONE(),_,matching),it)
+    case(BackendDAE.EQSYSTEM(v,eq,NONE(),_,matching),it)
       equation
         (m,mT) = incidenceMatrix(syst, it);
       then
@@ -4597,7 +4597,7 @@ algorithm
         mT = transposeMatrix(m);
       then
         (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
-    case(syst as BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),_)
+    case(BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),_)
       then
         (syst,m,mT);
   end match;
@@ -4618,7 +4618,7 @@ algorithm
       EquationArray eq;
       BackendDAE.Matching matching;
       BackendDAE.IndexType it;
-    case(syst as BackendDAE.EQSYSTEM(v,eq,_,_,matching),it)
+    case(BackendDAE.EQSYSTEM(v,eq,_,_,matching),it)
       equation
         (m,mT) = incidenceMatrix(syst, it);
       then
@@ -4645,7 +4645,7 @@ algorithm
       BackendDAE.IndexType it;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;      
-    case(syst as BackendDAE.EQSYSTEM(v,eq,_,_,matching),it)
+    case(BackendDAE.EQSYSTEM(v,eq,_,_,matching),it)
       equation
         (m,mT,mapEqnIncRow,mapIncRowEqn) = incidenceMatrixScalar(syst, it);
       then

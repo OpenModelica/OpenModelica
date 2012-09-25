@@ -136,7 +136,7 @@ algorithm
       String s;
     
     // Adding when not existing previously
-    case (key,(hashSet as (hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
+    case (key,((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_))))
       equation
         failure((_) = get(key, hashSet));
         indx = hashFunc(key, bsize);
@@ -148,7 +148,7 @@ algorithm
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
 
     // adding when already present => Updating value
-    case (key,(hashSet as (hashvec,varr,bsize,n,fntpl)))
+    case (key,((hashvec,varr,bsize,n,fntpl)))
       equation
         (_,indx) = get1(key, hashSet);
         //print("adding when present, indx =" );print(intString(indx));print("\n");
@@ -156,7 +156,7 @@ algorithm
         varr_1 = valueArraySetnth(varr, indx, key);
       then ((hashvec,varr_1,bsize,n,fntpl));
     
-    case (key,(hashSet as (hashvec,varr,bsize,n,(hashFunc,_,keystrFunc))))
+    case (key,((hashvec,varr,bsize,n,(hashFunc,_,keystrFunc))))
       equation
         print("- BaseHashSet.add failed: ");
         print("bsize: ");

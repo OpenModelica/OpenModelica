@@ -434,7 +434,7 @@ algorithm
         cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));
       then
         cref_1;
-    case (inPrefix as Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
+    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation
         cref_ = ComponentReference.makeCrefQual(i,DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")), {}, NONE(), DAE.emptyTypeSource),s,cref);
         cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(cref_));

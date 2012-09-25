@@ -716,7 +716,7 @@ algorithm
         true = (listLength(increfs) <> listLength(innames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of input arguments don't match"}, info);
       then false;
-    case (_,_,_,outnames as _::_,_)
+    case (_,_,_,_::_,_)
       equation
         true = (listLength(outcrefs) <> listLength(outnames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"Number of output arguments don't match"}, info);

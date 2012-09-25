@@ -141,7 +141,7 @@ algorithm
       String s;
     
     // Adding when not existing previously
-    case ((v as (key,value)),(hashTable as (hashvec,varr,bsize,n,fntpl as (hashFunc,_,_,_))))
+    case ((v as (key,value)),((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_,_))))
       equation
         failure((_) = get(key, hashTable));
         indx = hashFunc(key, bsize);
@@ -153,7 +153,7 @@ algorithm
       then ((hashvec_1,varr_1,bsize,n_1,fntpl));
 
     // adding when already present => Updating value
-    case ((newv as (key,value)),(hashTable as (hashvec,varr,bsize,n,fntpl)))
+    case ((newv as (key,value)),((hashvec,varr,bsize,n,fntpl)))
       equation
         (_,indx) = get1(key, hashTable);
         //print("adding when present, indx =" );print(intString(indx));print("\n");
@@ -161,7 +161,7 @@ algorithm
         varr_1 = valueArraySetnth(varr, indx, newv);
       then ((hashvec,varr_1,bsize,n,fntpl));
     
-    case ((v as (key,value)),(hashTable as (hashvec,varr,bsize,n,(hashFunc,_,keystrFunc,_))))
+    case ((v as (key,value)),((hashvec,varr,bsize,n,(hashFunc,_,keystrFunc,_))))
       equation
         print("- BaseHashTable.add failed: ");
         print("bsize: ");
@@ -236,7 +236,7 @@ algorithm
     
     // Adding when not existing previously
     case ((v as (key, value)), 
-        (hashTable as (hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _))))
+        ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _))))
       equation
         failure((_) = get(key, hashTable));
         indx = hashFunc(key, bsize);

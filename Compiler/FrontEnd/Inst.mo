@@ -1174,7 +1174,7 @@ algorithm
       list<DAE.Element> elts;
 
       /* Only traverse on top scope */
-    case (true,store as UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE(elts))
+    case (true,UnitAbsyn.INSTSTORE(UnitAbsyn.STORE(vec,_),ht,_),DAE.DAE(elts))
       equation
         elts = List.map2(elts,updateDeducedUnits2,vec,ht);
       then DAE.DAE(elts);
@@ -3251,7 +3251,7 @@ algorithm
     // This rule describes how to instantiate a class definition
     // that extends a basic type. (No equations or algorithms allowed)
     case (cache,env,ih,store,mods,pre,ci_state,_,
-          inClassDef6 as SCode.PARTS(elementLst = els,
+          SCode.PARTS(elementLst = els,
                       normalEquationLst = {}, initialEquationLst = {},
                       normalAlgorithmLst = {}, initialAlgorithmLst = {}),
           re,vis,_,_,inst_dims,impl,_,graph,_,_,_,_)
@@ -3896,7 +3896,7 @@ algorithm
     // case(inComps, SOME(DAE.CREF_QUAL(ident="StateSelect")), allComps, className) then inComps;
 
     // handle some
-    case(_, ocr as SOME(cr), _, _)
+    case(_, SOME(cr), _, _)
       equation
         outComps = extractConstantPlusDeps2(inComps, ocr, allComps, className,{});
         true = listLength(outComps) >= 1;
@@ -3977,20 +3977,20 @@ algorithm
         allComps = selem::allComps;
       then extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
 
-    case((compMod as SCode.EXTENDS(baseClassPath=p))::comps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
+    case((compMod as SCode.EXTENDS(baseClassPath=p))::comps,(SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
       equation
         allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
         then
           compMod::recDeps;
-    case((compMod as SCode.IMPORT(imp=_))::comps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
+    case((compMod as SCode.IMPORT(imp=_))::comps,(SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
       equation
         allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
       then
         compMod::recDeps;
 
-    case((compMod as SCode.DEFINEUNIT(name=_))::comps,(ocr as SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
+    case((compMod as SCode.DEFINEUNIT(name=_))::comps,(SOME(DAE.CREF_IDENT(ident=_))),allComps,_,existing)
       equation
         allComps = compMod::allComps;
         recDeps = extractConstantPlusDeps2(comps,ocr,allComps,className,existing);
@@ -6056,7 +6056,7 @@ algorithm
     case (env,ih,pre,{},_,_) then (env,ih);
 
     // we have a redeclaration of an enumeration.
-    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)) :: xs),impl,redeclareMod as SOME(_))
+    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)) :: xs),impl,SOME(_))
       equation
         enumclass = instEnumeration(s, enumLst, cmt, info);
         env_1 = Env.extendFrameC(env, enumclass);
@@ -6066,7 +6066,7 @@ algorithm
         (env_2,ih);
     
     // we do have a redeclaration of class.
-    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s)) :: xs),impl,redeclareMod as SOME(_))
+    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s)) :: xs),impl,SOME(_))
       equation
         // extend first
         env_1 = Env.extendFrameC(env, sel1);
@@ -6615,8 +6615,8 @@ algorithm
       Absyn.Path path;
     
     // add it to the cache if we have a input record component 
-    case (_, _, _, _, _, inState as ClassInf.FUNCTION(path = path), _, 
-          inClass as SCode.CLASS(name = name, restriction = SCode.R_RECORD()), _)
+    case (_, _, _, _, _, ClassInf.FUNCTION(path = path), _, 
+          SCode.CLASS(name = name, restriction = SCode.R_RECORD()), _)
       equation
         // false = Config.acceptMetaModelicaGrammar();
         true = Absyn.isInputOrOutput(inDirection);
@@ -7465,7 +7465,7 @@ algorithm
       Absyn.Path path;
 
     // uncomment for debugging! 
-    case (cache,env,ih,inMod as DAE.REDECL(finalPrefix = _),_,
+    case (cache,env,ih,DAE.REDECL(finalPrefix = _),_,
           pre,ci_state,impl,cmod)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "redeclareType\nmodifier: " +& Mod.printModStr(inMod) +& "\nelement\n:" +& SCodeDump.unparseElementStr(inElement));
@@ -9050,7 +9050,7 @@ algorithm
           
     /* Derived classes with restriction type, e.g. type Point = Real[3]; */
     case (cache,env,ih,mods,pre,
-      inClass as SCode.CLASS(name = id,restriction = SCode.R_TYPE(),info=info,
+      SCode.CLASS(name = id,restriction = SCode.R_TYPE(),info=info,
                              classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
           dims,impl)
       equation
@@ -12796,7 +12796,7 @@ algorithm
   _ := match (arg,ty,c,info)
     local
       String str;
-    case (_,ty as DAE.T_ARRAY(ty = _),_,_)
+    case (_,DAE.T_ARRAY(ty = _),_,_)
       equation
         str = Types.unparseType(ty);
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,{str},info);
@@ -14408,7 +14408,7 @@ algorithm
     //             Modelica.Electrical.Machines.Examples.SMEE_Generator 
     //             (BUG: #1156 at https://openmodelica.org:8443/cb/issue/1156)
     //             and maybe a lot others.
-    case (cache,_,SCode.ATTR(variability = SCode.PARAM()),inMod as DAE.MOD(eqModOption = NONE()),tp,_,_,_)
+    case (cache,_,SCode.ATTR(variability = SCode.PARAM()),DAE.MOD(eqModOption = NONE()),tp,_,_,_)
       equation
         startValueModification = Mod.lookupCompModification(inMod, "start");
         (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName,inInfo);
@@ -15428,7 +15428,7 @@ algorithm
 
     case(_,ih,pre,NONE(),_) then fail();
 
-    case(_,ih,pre, SOME(mo as DAE.MOD(_,_, lsm ,_)), sele as SCode.CLASS(name=str))
+    case(_,ih,pre, SOME(mo as DAE.MOD(_,_, lsm ,_)), SCode.CLASS(name=str))
       equation
         // Debug.fprintln(Flags.INST_TRACE, "Mods in addClassdefsToEnv3: " +& Mod.printModStr(mo) +& " class name: " +& str);
         (mo2,lsm2) = extractCorrectClassMod2(lsm,str,{});

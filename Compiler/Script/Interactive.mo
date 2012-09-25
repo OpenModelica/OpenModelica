@@ -18263,7 +18263,7 @@ algorithm
                     how about the modifications also??
      *        before it was: case (cdef as Absyn.CLASS_EXTENDS(baseClassName = _) then cdef;
      */
-    case(cdef as Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
+    case(Absyn.CLASS_EXTENDS(baseClassName = baseClassName,
                                      modifications = modifications,
                                      comment = cmt,
                                      parts = parts))
@@ -18485,7 +18485,7 @@ algorithm
       then
         Absyn.MODIFICATION(f,e,cr1,mod1,cmt,info);
     // redeclarations not in flat Modelica
-    case(eltArg as Absyn.REDECLARATION(finalPrefix = _))
+    case(Absyn.REDECLARATION(finalPrefix = _))
       then eltArg;
   end match;
 end transformFlatElementArg;
@@ -18547,7 +18547,7 @@ algorithm
       equation
         eqn1 = transformFlatEquation(eqn);
       then Absyn.EQUATIONITEM(eqn1,cmt,info);
-    case(eqnitem as Absyn.EQUATIONITEMANN(annotation_=_))
+    case(Absyn.EQUATIONITEMANN(annotation_=_))
     then eqnitem;
   end match;
 end transformFlatEquationItem;
@@ -18649,7 +18649,7 @@ algorithm
         namedArgs1 = List.map(namedArgs,transformFlatNamedArg);
       then
         Absyn.FUNCTIONARGS(expl1,namedArgs1);
-    case(fargs as Absyn.FOR_ITER_FARG(exp = _))
+    case(Absyn.FOR_ITER_FARG(exp = _))
       then fargs;
   end match;
 end transformFlatFunctionArgs;

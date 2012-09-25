@@ -2402,7 +2402,7 @@ algorithm
     case (((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
                                     diffVars, diffedVars, alldiffedVars))::rest,
-                                    inBackendDAE as BackendDAE.DAE(eqs=systs),_)
+                                    BackendDAE.DAE(eqs=systs),_)
       equation
         
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
@@ -3421,7 +3421,7 @@ algorithm
       // handle empty
     case (_, _, _, {}, helpVarInfo,_,_) then ({},{},{},iuniqueEqIndex,itempvars);
         // single equation 
-    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
+    case (_, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
       equation
         eqn = BackendDAEUtil.equationNth(eqns, index-1);
         // ignore when equations if we should not generate them
@@ -3440,7 +3440,7 @@ algorithm
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);
        
       // A single array equation
-    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEARRAY(eqn=e)) :: restComps, _, _,_)
+    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEARRAY(eqn=e)) :: restComps, _, _,_)
       equation
         // block is dynamic, belong in dynamic section
         bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
@@ -3456,7 +3456,7 @@ algorithm
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);
         
         // A single algorithm section for several variables.
-    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEALGORITHM(eqn=e)) :: restComps, _, _,_)
+    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEALGORITHM(eqn=e)) :: restComps, _, _,_)
       equation
         // block is dynamic, belong in dynamic section
         bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
@@ -3471,7 +3471,7 @@ algorithm
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);      
        
       // A single complex equation
-    case (_, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)) :: restComps, _, _,_)
+    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)) :: restComps, _, _,_)
       equation
         // block is dynamic, belong in dynamic section
         bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
@@ -3543,7 +3543,7 @@ algorithm
     case (includeWhen, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, _, _, {}, helpVarInfo,_,_) then ({},{},iuniqueEqIndex,itempvars);
       
       // ignore when equations if we should not generate them
-    case (false, _, _, _, _, syst as BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index) :: restComps, _, _,_)
+    case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index) :: restComps, _, _,_)
       equation
         BackendDAE.WHEN_EQUATION(size=_) = BackendDAEUtil.equationNth(eqns, index-1);
         (equations,noDiscEquations,uniqueEqIndex,tempvars) = createEquations(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo, iuniqueEqIndex,itempvars);
@@ -3551,7 +3551,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
         
         // ignore discrete if we should not generate them
-    case (_, _, false, _, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(var=index) :: restComps, _, _,_)
+    case (_, _, false, _, _, BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(var=index) :: restComps, _, _,_)
       equation
         v = BackendVariable.getVarAt(vars,index);
         true = BackendVariable.isVarDiscrete(v);
@@ -3560,7 +3560,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
         
         // ignore discrete in zero crossing if we should not generate them
-    case (_, true, _,  skipDiscInAlgorithm, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
+    case (_, true, _,  skipDiscInAlgorithm, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
       equation
         v = BackendVariable.getVarAt(vars,vindex);
         true = BackendVariable.isVarDiscrete(v);
@@ -3581,7 +3581,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
        
       // A single array equation
-    case (_, _, _,  skipDiscInAlgorithm, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEARRAY(eqn=index)) :: restComps, _, _,_)
+    case (_, _, _,  skipDiscInAlgorithm, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEARRAY(eqn=index)) :: restComps, _, _,_)
       equation
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
@@ -3594,7 +3594,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
         
         // A single algorithm section for several variables.
-    case (_, _, _,  skipDiscInAlgorithm, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEALGORITHM(eqn=index)) :: restComps, _, _,_)
+    case (_, _, _,  skipDiscInAlgorithm, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEALGORITHM(eqn=index)) :: restComps, _, _,_)
       equation
         (eqnlst,varlst,_) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         varlst = List.map(varlst, transformXToXd);
@@ -3606,7 +3606,7 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars);      
        
       // A single complex equation
-    case (_, _, _,  skipDiscInAlgorithm, _, syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=index)) :: restComps, _, _,_)
+    case (_, _, _,  skipDiscInAlgorithm, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLECOMPLEXEQUATION(eqn=index)) :: restComps, _, _,_)
       equation
         (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
         // States are solved for der(x) not x.
@@ -3890,7 +3890,7 @@ algorithm
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       list<DAE.Exp> conditions;
       // when eq without else
-    case (elseWhen as BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart= NONE()), _, _, _)
+    case (BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart= NONE()), _, _, _)
       equation
         conditions = getConditionList(cond);
         conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
@@ -3898,7 +3898,7 @@ algorithm
         SimCode.SES_WHEN(0,left, right, conditionsWithHindex, NONE(), source);
         
         // when eq with else
-    case (elseWhen as BackendDAE.WHEN_EQ(condition=cond, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), _, _, _)
+    case (BackendDAE.WHEN_EQ(condition=cond, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), _, _, _)
       equation
         simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo,source);
         conditions = getConditionList(cond);
@@ -5448,14 +5448,14 @@ algorithm
       array<Integer> Ass2;
       list<SimCode.SimVar> tempvars;
       DAE.FunctionTree funcs;
-    case ({r},_,syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass2=Ass2)),_,_,_,_)
+    case ({r},_,BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(ass2=Ass2)),_,_,_,_)
       equation
         i = Ass2[r];
         (reqns,uniqueEqIndex,tempvars) = createEquation(r, i, syst, shared, helpVarInfo, false, false,iuniqueEqIndex,itempvars);
       then 
         (reqns,uniqueEqIndex,tempvars);
         
-    case (block_ as _::_::_,_,syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn),shared as BackendDAE.SHARED(knownVars=kv,functionTree=funcs), _,_,_)
+    case (block_ as _::_::_,_,BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn),BackendDAE.SHARED(knownVars=kv,functionTree=funcs), _,_,_)
       equation
         (m,mT) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL());
         //mT = BackendDAEUtil.transposeMatrix(m);
@@ -6028,7 +6028,7 @@ algorithm
       Integer uniqueEqIndex;
       
     case ((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared=shared), name, diffVars, diffedVars, alldiffedVars),
-          inBackendDAE as BackendDAE.DAE(eqs=systs),
+          BackendDAE.DAE(eqs=systs),
           uniqueEqIndex) equation
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         (columnEquations, _, uniqueEqIndex,_) = createEquations(false, false, false, false, true, syst, shared, comps, {}, uniqueEqIndex,{});
@@ -9163,7 +9163,7 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Variables vars;
       SimCode.Causality caus;
-    case ((dlowVar as BackendDAE.VAR(varName = cr,
+    case ((BackendDAE.VAR(varName = cr,
       varKind = kind,
       varDirection = dir,
       arryDim = inst_dims,
@@ -9864,7 +9864,7 @@ algorithm
       Integer a,b;
       SimCode.SimEqSystem ses;
       list<tuple<DAE.Exp,DAE.ElementSource>> divLst;
-    case ( inJac as (a,b,ses),_) 
+    case ( (a,b,ses),_) 
       equation
         (ses,divLst) = addDivExpErrorMsgtoSimEqSystem(ses,inDlowMode);
       then
@@ -10434,7 +10434,7 @@ algorithm
       SimCode.Key key;
       SimCode.Value value;
       /* Adding when not existing previously */
-    case ((v as (key,value)),(hashTable as SimCode.HASHTABLE(hashvec,varr,bsize,n)))
+    case ((v as (key,value)),(SimCode.HASHTABLE(hashvec,varr,bsize,n)))
       equation
         failure((_) = get(key, hashTable));
         hval = hashFunc(key);
@@ -10447,7 +10447,7 @@ algorithm
       then SimCode.HASHTABLE(hashvec_1,varr_1,bsize,n_1);
         
         /* adding when already present => Updating value */
-    case ((newv as (key,value)),(hashTable as SimCode.HASHTABLE(hashvec,varr,bsize,n)))
+    case ((newv as (key,value)),(SimCode.HASHTABLE(hashvec,varr,bsize,n)))
       equation
         (_,indx) = get1(key, hashTable);
         //print("adding when present, indx =" );print(intString(indx));print("\n");
@@ -10601,7 +10601,7 @@ algorithm
       array<list<tuple<SimCode.Key,Integer>>> hashvec;
       SimCode.ValueArray varr;
       SimCode.Key k;
-    case (_,(hashTable as SimCode.HASHTABLE(hashvec,varr,bsize,n)))
+    case (_,(SimCode.HASHTABLE(hashvec,varr,bsize,n)))
       equation
         hval = hashFunc(key);
         hashindx = intMod(hval, bsize);
@@ -11120,7 +11120,7 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
     tuple<DAE.ComponentRef, Integer> highestIndex;
     
   case( (derExp as DAE.CALL( expLst = {DAE.CREF(cr,_)})), {},_) then ((cr,0),{});
-  case( (derExp as DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,_)
+  case( (DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,_)
     equation
       true = Expression.expEqual(e1,derExp);
       eqsOrg = List.removeOnTrue(eq,Util.isEqual,inEqnsOrg);
@@ -11132,7 +11132,7 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
       //highestIndex = (cr,1);
     then
       (highestIndex,crefs);
-  case( (derExp as DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,_)
+  case( (DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,_)
     equation
       true = Expression.expEqual(e2,derExp);
       eqsOrg = List.removeOnTrue(eq,Util.isEqual,inEqnsOrg);
@@ -11310,7 +11310,7 @@ algorithm (OutInteger1,OutInteger2):= matchcontinue(dae_low)
     Integer nvar1,nvar2;
     list<tuple<DAE.ComponentRef, Integer>> ordered_states;
     BackendDAE.EqSystems eqsystems;
-  case(dae_low as BackendDAE.DAE(eqs=eqsystems))
+  case(BackendDAE.DAE(eqs=eqsystems))
     equation
        ordered_states=setVariableDerIndex(dae_low,eqsystems);
       (nvar1,nvar2)=calculateVariableDimensions(ordered_states);
@@ -11408,7 +11408,7 @@ algorithm (outSimVar):= match(stateVars,dae_low)
     Option<Integer> variable_index;
     list<String> numArrayElement;
     BackendDAE.EqSystems eqsystems;
-  case(SimCode.SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,minValue=minValue,maxValue=maxValue,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),dae_low as BackendDAE.DAE(eqs=eqsystems))
+  case(SimCode.SIMVAR(name=name,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,minValue=minValue,maxValue=maxValue,initialValue=initialValue,nominalValue=nominalValue,isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,arrayCref=arrayCref,aliasvar=aliasvar,source=source,causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),BackendDAE.DAE(eqs=eqsystems))
      equation
       Debug.fcall(Flags.CPP_VAR_INDEX,BackendDump.debugStrCrefStr,(" search index for state variable ",name,"\n"));
       ordered_states=setVariableDerIndex(dae_low,eqsystems);

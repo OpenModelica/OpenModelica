@@ -145,7 +145,7 @@ algorithm
      // then
      //   fail();
      
-    case ((repl as REPLACEMENTS(ht,invHt,eht)),src,dst,_)
+    case ((REPLACEMENTS(ht,invHt,eht)),src,dst,_)
       equation        
         (REPLACEMENTS(ht,invHt,eht),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
         /*s1 = ComponentReference.printComponentRefStr(src);
@@ -186,12 +186,12 @@ algorithm
       DAE.Exp dst,olddst;
       HashTable2.HashTable ht,ht_1,eht,eht_1;
       HashTable3.HashTable invHt,invHt_1;
-    case ((repl as REPLACEMENTS(ht,invHt,eht)),src,dst) /* source dest */
+    case ((REPLACEMENTS(ht,invHt,eht)),src,dst) /* source dest */
       equation
         olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
         fail();
-    case ((repl as REPLACEMENTS(ht,invHt,eht)),src,dst)
+    case ((REPLACEMENTS(ht,invHt,eht)),src,dst)
       equation
         ht_1 = BaseHashTable.add((src, dst),ht);
         invHt_1 = addReplacementInv(invHt, src, dst);
@@ -332,7 +332,7 @@ algorithm
       HashTable3.HashTable invHt;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
-    case ((repl as REPLACEMENTS(ht,invHt,eht)),_,_,_)
+    case ((REPLACEMENTS(ht,invHt,eht)),_,_,_)
       equation
         lst = BaseHashTable.get(src, invHt);
         singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
@@ -364,7 +364,7 @@ algorithm
       VariableReplacements repl1,repl2;
       HashTable2.HashTable ht;
     case({},repl,_,_) then repl;
-    case(cr::crs,repl as REPLACEMENTS(hashTable=ht),_,_)
+    case(cr::crs,REPLACEMENTS(hashTable=ht),_,_)
       equation
         crDst = BaseHashTable.get(cr,ht);
         (crDst,_) = replaceExp(crDst,singleRepl,inFuncTypeExpExpToBooleanOption);
@@ -426,14 +426,14 @@ algorithm
       list<DAE.Var> varLst;
       list<DAE.ComponentRef> crefs;
       String s;
-    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),NONE())
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),SOME(pcr))
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_ARRAY(ty=_)),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -441,7 +441,7 @@ algorithm
         // update Replacements
         erepl = BaseHashTable.add((precr1, DAE.RCONST(0.0)),extendrepl);
       then erepl;
-    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst)),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
@@ -451,7 +451,7 @@ algorithm
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr),erepl);
       then erepl;
-    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst),subscriptLst=subscriptLst),SOME(pcr))
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_),varLst=varLst),subscriptLst=subscriptLst),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,cr);
@@ -462,14 +462,14 @@ algorithm
         crefs =  List.map(varLst,ComponentReference.creffromVar);
         erepl = List.fold1r(crefs,addExtendReplacement,SOME(precr1),erepl);        
       then erepl;      
-    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
         // update Replacements
         erepl = BaseHashTable.add((precr, DAE.RCONST(0.0)),extendrepl);
       then erepl;          
-    case (_,cr as DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
+    case (_,DAE.CREF_IDENT(ident=ident,identType=ty,subscriptLst=_::_),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -480,7 +480,7 @@ algorithm
     case (_,DAE.CREF_IDENT(ident=_),_)
       then 
         extendrepl;
-    case (_,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         failure(_ = BaseHashTable.get(precr,extendrepl));
@@ -489,7 +489,7 @@ algorithm
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn));
       then erepl1;
-    case (_,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precr = ComponentReference.makeCrefIdent(ident,ty,{});
         precr1 = ComponentReference.joinCrefs(pcr,precr);
@@ -501,12 +501,12 @@ algorithm
         erepl1 = addExtendReplacement(erepl,subcr,SOME(precrn1));
       then erepl1;
     // all other
-    case (_,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
+    case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),NONE())
       equation
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         erepl = addExtendReplacement(extendrepl,subcr,SOME(precrn));
       then erepl;
-    case (_,cr as DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
+    case (_,DAE.CREF_QUAL(ident=ident,identType=ty,subscriptLst=subscriptLst,componentRef=subcr),SOME(pcr))
       equation
         precrn = ComponentReference.makeCrefIdent(ident,ty,subscriptLst);
         precrn1 = ComponentReference.joinCrefs(pcr,precrn);
@@ -837,7 +837,7 @@ algorithm
       list<DAE.Subscript> subs,subs_1;
       Boolean c1,c2;
 
-    case (inCref as DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, _)
+    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, _)
       equation
         (subs_1, c1) = replaceCrefSubs2(subs, repl, cond);
         (cr_1, c2) = replaceCrefSubs(cr, repl, cond);
@@ -847,7 +847,7 @@ algorithm
       then
         (cr, c1 or c2);
 
-    case (inCref as DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, _)
+    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, _)
       equation
         (subs, c1) = replaceCrefSubs2(subs, repl, cond);
         cr = Util.if_(c1,DAE.CREF_IDENT(name, ty, subs),inCref);

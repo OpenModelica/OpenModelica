@@ -1480,7 +1480,7 @@ algorithm
         env;
     
     //  Simple name. try next.
-    case (scope as Absyn.IDENT(id1),_,CACHETREE(id2,env2,_::children))
+    case (Absyn.IDENT(id1),_,CACHETREE(id2,env2,_::children))
       equation
         //print("try next ");print(id);print("\n");
         env = cacheGetEnv2(scope,path,CACHETREE(id2,env2,children));
@@ -1545,7 +1545,7 @@ algorithm
       CacheTree child;
 
     // simple names already added
-    case (Absyn.IDENT(id1),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),_)
+    case (Absyn.IDENT(id1),(CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),_)
       equation
         // print(id);print(" already added\n");
         true = stringEq(id1, id2);
@@ -1554,7 +1554,7 @@ algorithm
       then tree;
 
     // simple names try next
-    case (Absyn.IDENT(id1),tree as CACHETREE(globalID,globalEnv,child::children),_)
+    case (Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,child::children),_)
       equation
         CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id1),CACHETREE(globalID,globalEnv,children),env);
       then CACHETREE(globalID,globalEnv,child::children);
@@ -2508,7 +2508,7 @@ algorithm
         checkCachedInstFuncGuard(cache, func);
       then cache;
 
-    case (CACHE(envCache,ienv,ef,ht,p),func as Absyn.FULLYQUALIFIED(_))
+    case (CACHE(envCache,ienv,ef,ht,p),Absyn.FULLYQUALIFIED(_))
       equation
         ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
       then CACHE(envCache,ienv,ef,ht,p);

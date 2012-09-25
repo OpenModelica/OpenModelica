@@ -1826,7 +1826,7 @@ algorithm
       DAE.Type tp;
     
     case(_,_,_,BackendDAE.CONST(),_) then {};
-    case (attr as SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),_,_,_,_)
+    case (SOME(DAE.VAR_ATTR_REAL(nominal=SOME(e))),_,_,_,_)
       equation 
         ominmax = DAEUtil.getMinMax(attr);
         str = ComponentReference.printComponentRefStr(name);

@@ -2566,7 +2566,7 @@ algorithm
         exp;
     
     // check the DAE.ASUB so that the given expression is NOT a cref
-    case(inExp as DAE.CREF(componentRef = _), _) 
+    case(DAE.CREF(componentRef = _), _) 
       equation
         true = Flags.isSet(Flags.CHECK_ASUB);
         Debug.traceln("Warning: makeASUB: given expression: " +& 
@@ -5409,7 +5409,7 @@ algorithm
       Type_a arg;
       Integer ix;
 
-    case (inCref as DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, arg)
+    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, arg)
       equation
         (subs_1, arg) = traverseExpSubs(subs, rel, arg);
         (cr_1, arg) = traverseExpCref(cr, rel, arg);
@@ -5417,14 +5417,14 @@ algorithm
       then
         (cr, arg);
 
-    case (inCref as DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, arg)
+    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _, arg)
       equation
         (subs_1, arg) = traverseExpSubs(subs, rel, arg);
         cr = Util.if_(referenceEq(subs,subs_1),inCref,DAE.CREF_IDENT(name, ty, subs_1));
       then
         (cr, arg);
 
-    case (inCref as DAE.CREF_ITER(ident = name, index = ix, identType = ty, subscriptLst = subs), _, arg)
+    case (DAE.CREF_ITER(ident = name, index = ix, identType = ty, subscriptLst = subs), _, arg)
       equation
         (subs_1, arg) = traverseExpSubs(subs, rel, arg);
         cr = Util.if_(referenceEq(subs,subs_1),inCref,DAE.CREF_ITER(name, ix, ty, subs_1));

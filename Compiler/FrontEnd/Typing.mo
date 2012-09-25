@@ -1828,7 +1828,7 @@ algorithm
       equation
         false = List.exist(el,Expression.isNotCref);
       then InstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
-    case (lhs as DAE.CREF(componentRef=_),_,_,_)
+    case (DAE.CREF(componentRef=_),_,_,_)
       then InstTypes.ASSIGN_STMT(lhs,rhs,info)::inAcc;
   end matchcontinue;
 end typeAssignment;

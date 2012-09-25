@@ -1723,7 +1723,7 @@ algorithm
         ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
       then ((FUNCTIONARGS(expl_1,nargs),ext_arg));
 
-    case(inArgs as FOR_ITER_FARG(exp = forExp,iterators=iterators),_,ext_arg)
+    case(FOR_ITER_FARG(exp = forExp,iterators=iterators),_,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExp(forExp, rel, ext_arg);
         /* adrpo: TODO! travese iterators! */

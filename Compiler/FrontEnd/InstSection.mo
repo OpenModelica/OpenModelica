@@ -926,14 +926,14 @@ algorithm
       equation
         failure(Absyn.TUPLE(_) = left);
       then ();
-    case (left as Absyn.TUPLE(crs),_,_)
+    case (Absyn.TUPLE(crs),_,_)
       equation
         s1 = Dump.printExpStr(left);
         s2 = Dump.printExpStr(right);
         s = stringAppendList({s1," = ",s2,";"});
         Error.addSourceMessage(Error.TUPLE_ASSIGN_CREFS_ONLY,{s},info);
       then fail();
-    case (left as Absyn.TUPLE(crs),_,_)
+    case (Absyn.TUPLE(crs),_,_)
       equation
         failure(Absyn.CALL(_,_) = right);
         s1 = Dump.printExpStr(left);
@@ -1066,7 +1066,7 @@ algorithm
     
   case(Absyn.TUPLE(aexpl), 
     DAE.PROP_TUPLE( DAE.T_TUPLE(typeList, _), _),
-    (propTuple as DAE.PROP_TUPLE(DAE.T_TUPLE(lst,ts), DAE.TUPLE_CONST(tupleConst)
+    (DAE.PROP_TUPLE(DAE.T_TUPLE(lst,ts), DAE.TUPLE_CONST(tupleConst)
     )))
     equation
       fillValue = (listLength(typeList)-listLength(aexpl));
@@ -1452,7 +1452,7 @@ algorithm
     
     case (DAE.CREF(componentRef = c1,ty = t1),DAE.CREF(componentRef = c2,ty = t2),
           DAE.T_COMPLEX(complexClassType = cs,varLst = (DAE.TYPES_VAR(name = n,ty = tt) :: vs),
-          equalityConstraint = ec, source = ts), _, source,initial_)
+          equalityConstraint = ec, source = ts), _, _,initial_)
       equation 
         ty2 = Types.simplifyType(tt);
         c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty2);

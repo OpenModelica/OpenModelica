@@ -1245,7 +1245,7 @@ algorithm
         instInner;
     
     // if we fail return nothing
-    case (inTIH as TOP_INSTANCE(_, ht, outerPrefixes), prefix, name)
+    case (TOP_INSTANCE(_, ht, outerPrefixes), prefix, name)
       equation
         // Debug.fprintln(Flags.INNER_OUTER, "InnerOuter.lookupInnerInIH : looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name +& " NOT FOUND!");
         // dumpInstHierarchyHashTable(ht);
@@ -1657,7 +1657,7 @@ algorithm
         ih;*/
     
     // no hashtable, create one!
-    case({},_,_,inInstInner as INST_INNER(name=name))
+    case({},_,_,INST_INNER(name=name))
       equation
         // print ("InnerOuter.updateInstHierarchy creating an empty hash table! \n");
         ht = emptyInstHierarchyHashTable();
@@ -1668,7 +1668,7 @@ algorithm
     
     // add to the hierarchy
     case((tih as TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH,_,_,
-         inInstInner as INST_INNER(name=name, io=io))
+         INST_INNER(name=name, io=io))
       equation
         // prefix the name!
         cref_ = ComponentReference.makeCrefIdent(name, DAE.T_UNKNOWN_DEFAULT, {});
@@ -1681,7 +1681,7 @@ algorithm
         TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
     
     // failure
-    case(ih,_,_,inInstInner as INST_INNER(name=name, io=io))
+    case(ih,_,_,INST_INNER(name=name, io=io))
       equation
         // prefix the name!
         //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, ComponentReference.makeCrefIdent("UNKNOWN", DAE.T_UNKNOWN_DEFAULT, {}));
@@ -2067,7 +2067,7 @@ algorithm
       Key key;
       Value value;
       /* Adding when not existing previously */
-    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+    case ((v as (key,value)),(HASHTABLE(hashvec,varr,bsize,n)))
       equation
         failure((_) = get(key, hashTable));
         hval = hashFunc(key);
@@ -2081,7 +2081,7 @@ algorithm
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
 
       /* adding when already present => Updating value */
-    case ((newv as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+    case ((newv as (key,value)),(HASHTABLE(hashvec,varr,bsize,n)))
       equation
         (_,indx) = get1(key, hashTable);
         //print("adding when present, indx =" );print(intString(indx));print("\n");
@@ -2194,7 +2194,7 @@ algorithm
       ValueArray varr;
       Key k;
     
-    case (_,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+    case (_,(HASHTABLE(hashvec,varr,bsize,n)))
       equation
         hval = hashFunc(key);
         hashindx = intMod(hval, bsize);

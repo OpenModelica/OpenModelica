@@ -577,10 +577,10 @@ algorithm
         ann = translateAnnotation(aann);
       then SOME(SCode.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
-    case(decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(_::els)::cls)
+    case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(_::els)::cls)
     then translateAlternativeExternalAnnotation(decl,Absyn.PUBLIC(els)::cls);
   // Next classpart list
-    case (decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC({})::cls)
+    case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC({})::cls)
     then translateAlternativeExternalAnnotation(decl,cls);
 
   case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(aann)::_)::_)
@@ -588,13 +588,13 @@ algorithm
       ann = translateAnnotation(aann);
     then SOME(SCode.EXTERNALDECL(name,l,out,a,SOME(ann)));
     // Next element in public list
-    case(decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(_::els)::cls)
+    case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(_::els)::cls)
     then translateAlternativeExternalAnnotation(decl,Absyn.PROTECTED(els)::cls);
   // Next classpart list
-    case(decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED({})::cls)
+    case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED({})::cls)
     then translateAlternativeExternalAnnotation(decl,cls);
   // Next in list
-  case(decl as SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
+  case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
     then translateAlternativeExternalAnnotation(decl,cls);
   // not found
     case (decl,_) then decl;

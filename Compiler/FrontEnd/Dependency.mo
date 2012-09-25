@@ -494,19 +494,19 @@ algorithm
       Absyn.Path usesName,path,cname2;
       AbsynDep.Depends d; Absyn.Program p; Env.Env env;
       HashTable2.HashTable ht;
-    case(Absyn.NAMED_IMPORT(path=path),optPath as SOME(cname2),_,(d,p,env,ht))
+    case(Absyn.NAMED_IMPORT(path=path),SOME(cname2),_,(d,p,env,ht))
       equation
         usesName = absynCheckFullyQualified(path,optPath,cname,env,p);
         d = AbsynDep.addDependency(d,cname2,usesName);
       then d;
 
-    case(Absyn.QUAL_IMPORT(path),optPath as SOME(cname2),_,(d,p,env,ht))
+    case(Absyn.QUAL_IMPORT(path),SOME(cname2),_,(d,p,env,ht))
       equation
         usesName = absynCheckFullyQualified(path,optPath,cname,env,p);
         d = AbsynDep.addDependency(d,cname2,usesName);
       then d;
 
-    case(Absyn.UNQUAL_IMPORT(path),optPath as SOME(cname2),_,(d,p,env,ht))
+    case(Absyn.UNQUAL_IMPORT(path),SOME(cname2),_,(d,p,env,ht))
       equation
         usesName = absynCheckFullyQualified(path,optPath,cname,env,p);
         d = AbsynDep.addDependency(d,cname2,usesName);
@@ -1085,7 +1085,7 @@ algorithm
       AbsynDep.Depends d; Absyn.Program p; Env.Env env;
       Option<Absyn.ArrayDim> adOpt;HashTable2.HashTable ht;
     
-    case(Absyn.TPATH(path = path,arrayDim=adOpt),optPath as SOME(cname2),_,(d,p,env,ht)) 
+    case(Absyn.TPATH(path = path,arrayDim=adOpt),SOME(cname2),_,(d,p,env,ht)) 
       equation
         d = buildClassDependsinArrayDimOpt(adOpt,optPath,cname,(d,p,env,ht));
         usesName = absynMakeFullyQualified(path,optPath,cname,env,p);

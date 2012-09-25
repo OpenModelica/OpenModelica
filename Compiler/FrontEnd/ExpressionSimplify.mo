@@ -146,7 +146,7 @@ algorithm
     local
       DAE.Exp e, eNew;
       Boolean b;
-    case (e,options as (_,DO_EVAL()))
+    case (e,(_,DO_EVAL()))
       equation
         (eNew,_) = simplify1WithOptions(e,options); // Basic local simplifications
         Error.assertionOrAddSourceMessage(Expression.isConstValue(eNew), Error.INTERNAL_ERROR, {"eval exp failed"}, Absyn.dummyInfo);

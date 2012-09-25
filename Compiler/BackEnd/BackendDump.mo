@@ -1941,7 +1941,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       list<Integer> es;
     case (_,{}) then "";
-    case (syst as BackendDAE.EQSYSTEM(orderedEqs = eqns),(e :: es))
+    case (BackendDAE.EQSYSTEM(orderedEqs = eqns),(e :: es))
       equation
         s1 = dumpMarkedEqns(syst, es);
         e_1 = e - 1;
@@ -1969,7 +1969,7 @@ algorithm
       BackendDAE.Variables vars;
       list<Integer> vs;
     case (_,{}) then "";
-    case (syst as BackendDAE.EQSYSTEM(orderedVars = vars),(v :: vs))
+    case (BackendDAE.EQSYSTEM(orderedVars = vars),(v :: vs))
       equation
         s1 = dumpMarkedVars(syst, vs);
         BackendDAE.VAR(varName = cr) = BackendVariable.getVarAt(vars, v);

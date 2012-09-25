@@ -249,7 +249,7 @@ algorithm
         fail();
 
     // MetaModelica Uniontype Constructor. sjoelund 2009-05-18
-    case (cache,env,inExp as DAE.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,stOpt,msg)
+    case (cache,env,DAE.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,stOpt,msg)
       equation
         (cache,vallst,stOpt) = cevalList(cache,env, expl, impl, stOpt, msg);
       then (cache,Values.RECORD(funcpath,vallst,fieldNames,index),stOpt);
@@ -4225,7 +4225,7 @@ algorithm
     local
       list<Values.Value> transposed_row,rest,vlst;
       Integer indx_1,indx,dim1;
-    case (vlst,indx,inDims as (dim1::_))
+    case (vlst,indx,(dim1::_))
       equation
         (indx <= dim1) = true;
         transposed_row = List.map1(vlst, ValuesUtil.nthArrayelt, indx);
@@ -5121,7 +5121,7 @@ algorithm
     local 
       DAE.ComponentRef cr;
     
-    case(_,(v as DAE.EQBOUND(DAE.CREF(cr,_),NONE(),_,_)))
+    case(_,(DAE.EQBOUND(DAE.CREF(cr,_),NONE(),_,_)))
       then ComponentReference.crefEqual(c,cr);
     
     else false;
@@ -6428,7 +6428,7 @@ algorithm
 
     case (cache,env,{},_,_,msg,info) then (cache,{});
     /* TODO: look through redeclarations for Eval(var) as well */
-    case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,componentRef = cr,modification = SOME(mod),comment = stropt, info = mod_info) :: args),impl,st,msg,info)
+    case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,componentRef = cr,modification = SOME(mod),comment = stropt, info = mod_info) :: args),impl,st,msg,_)
       equation
         (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg, info);
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg, info);

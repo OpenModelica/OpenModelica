@@ -1741,7 +1741,7 @@ algorithm
       then doMerge(inModOuter,inModInner,inEnv,inPrefix);
 
     // two exactly the same redeclares, return just one!
-    case(inModOuter as DAE.REDECL(finalPrefix = _),inModInner  as DAE.REDECL(finalPrefix = _),_,_)
+    case(DAE.REDECL(finalPrefix = _),inModInner  as DAE.REDECL(finalPrefix = _),_,_)
       equation
         true = valueEq(inModOuter,inModInner);
       then 
@@ -3204,14 +3204,14 @@ algorithm
         ();
     
     // do not add a message
-    case(fullMod::rest,_,_,_,addErrorMessage as false)
+    case(fullMod::rest,_,_,_,false)
       equation
         true = List.isMemberOnTrue(fullMod,rest,fullModCrefsEqual);
       then
         fail();
     
     // add a message
-    case(fullMod::rest,_,_,_,addErrorMessage as true)
+    case(fullMod::rest,_,_,_,true)
       equation
         true = List.isMemberOnTrue(fullMod,rest,fullModCrefsEqual);
         duplicates = List.select1(rest, fullModCrefsEqual, fullMod);
@@ -3455,7 +3455,7 @@ algorithm
   
     case(DAE.NOMOD(),_) then DAE.NOMOD();
   
-    case((inmod as DAE.REDECL(f,e,redecls)),_)
+    case((DAE.REDECL(f,e,redecls)),_)
       equation
         //Debug.fprint(Flags.REDECL,"Removing redeclare mods: " +& componentModified +&" before" +& Mod.printModStr(inmod) +& "\n");  
         redecls = removeRedeclareMods(redecls,componentModified);

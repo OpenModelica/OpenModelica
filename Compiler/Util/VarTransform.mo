@@ -969,7 +969,7 @@ algorithm
      // then
      //   fail();
      
-    case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
+    case ((REPLACEMENTS(ht,invHt)),src,dst)
       equation        
         (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
         /*s1 = ComponentReference.printComponentRefStr(src);
@@ -1016,12 +1016,12 @@ algorithm
       DAE.Exp dst,olddst;
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;
-    case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
+    case ((REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
       equation
         olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
         fail();
-    case ((repl as REPLACEMENTS(ht,invHt)),src,dst)
+    case ((REPLACEMENTS(ht,invHt)),src,dst)
       equation
         ht_1 = BaseHashTable.add((src, dst),ht);
         invHt_1 = addReplacementInv(invHt, src, dst);
@@ -1177,7 +1177,7 @@ algorithm
       HashTable3.HashTable invHt;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
-    case ((repl as REPLACEMENTS(ht,invHt)),_,_)
+    case ((REPLACEMENTS(ht,invHt)),_,_)
       equation
         lst = BaseHashTable.get(src, invHt);
         singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
@@ -1204,7 +1204,7 @@ algorithm
       VariableReplacements repl1,repl2;
       HashTable2.HashTable ht;
     case({},repl,_) then repl;
-    case(cr::crs,repl as REPLACEMENTS(hashTable=ht),_)
+    case(cr::crs,REPLACEMENTS(hashTable=ht),_)
       equation
         crDst = BaseHashTable.get(cr,ht);
         (crDst,_) = replaceExp(crDst,singleRepl,NONE());

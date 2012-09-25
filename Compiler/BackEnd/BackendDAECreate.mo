@@ -1800,7 +1800,7 @@ algorithm
     case((e,(s,t))) equation
       ((e1,_)) = Expression.replaceExp(e,s,t);
     then ((e1,(s,t)));
-    case tpl then tpl;
+    else tpl;
   end matchcontinue;
 end replaceExp;
 
@@ -1911,7 +1911,7 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       Env.Cache cache;
       Env.Env env;      
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),shared as BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
         (eqns1,(vars1,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,shared));
         (inieqns1,(vars2,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,shared));
@@ -2547,14 +2547,14 @@ algorithm
       BackendDAE.ZeroCrossing z_c;
       Integer indx,length;
       String str;
-    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),_,_,z_c)
+    case ((DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),_,_,z_c)
       equation
         {} = List.select1(zeroCrossings, sameZeroCrossing,z_c/*zc1*/);
         zc_lst = listAppend(zeroCrossings, {z_c});
         //Debug.fcall(Flags.RELIDX,print, " zerocrossingindex 1 : "  +& ExpressionDump.printExpStr(exp) +& " index: " +& intString(index) +& "\n");
       then 
          ((exp,zc_lst,index));
-    case ((exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),_,_,z_c)
+    case ((DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),_,_,z_c)
       equation
         newzero= List.select1(zeroCrossings, sameZeroCrossing,z_c);
         length=listLength(newzero);

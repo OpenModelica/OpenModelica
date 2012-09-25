@@ -960,14 +960,14 @@ algorithm
       SCode.Visibility vis;
     
     // unqualified component reference
-    case(cache,env,cr as DAE.CREF_IDENT(ident=_)) 
+    case(cache,env,DAE.CREF_IDENT(ident=_)) 
       equation
         (cache,attr1,ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
       then 
         (cache,attr1,ty1);
 
     // qualified component reference
-    case(cache,env,cr as DAE.CREF_QUAL(ident=_)) 
+    case(cache,env,DAE.CREF_QUAL(ident=_)) 
       equation
         (cache,attr1 as DAE.ATTR(ct,prl,var,dir,_,vis),ty1,_,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
         cr1 = ComponentReference.crefStripLastIdent(cr);
@@ -2040,7 +2040,7 @@ algorithm
       Env.Env env,env1;
 
     /* a class with parts */
-    case (cache,env,cl as SCode.CLASS(name = name,info = info),_)
+    case (cache,env,SCode.CLASS(name = name,info = info),_)
       equation
         (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),cl,true,info);
         env = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(name), SOME(Env.CLASS_SCOPE()));

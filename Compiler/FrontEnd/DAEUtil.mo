@@ -4677,7 +4677,7 @@ algorithm
 
     // a top level
     case (inSource, NONE()) then inSource;
-    case (inSource as DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), _)
+    case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst,operations,comment), _)
       then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst,operations,comment);
   end matchcontinue;
 end addElementSourceConnectOpt;
