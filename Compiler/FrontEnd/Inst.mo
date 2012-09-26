@@ -399,7 +399,7 @@ algorithm
       list<Boolean> blist;
       Env.Cache cache;
       
-    case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,env)
+    case (_,DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source),cache,_)
       equation
         //print(" (Initial if)To ceval: " +& stringDelimitList(List.map(conds,ExpressionDump.printExpStr),", ") +& "\n");
         (cache,valList,_) = Ceval.cevalList(cache,env, conds, true, NONE(), Ceval.NO_MSG());
@@ -2119,8 +2119,8 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Real";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case (_,_,DAE.MOD(f,e,{},eqmod),pre,ty) then {};
-    case (_,_,DAE.NOMOD(),pre,ty) then {};
+    case (_,_,DAE.MOD(_,_,{},_),_,_) then {};
+    case (_,_,DAE.NOMOD(),_,_) then {};
     case (_,_,DAE.REDECL(_,_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instRealClass;
@@ -2447,7 +2447,7 @@ algorithm
         Error.addMessage(Error.TYPE_ERROR,{s1,s2});
       then fail();
     
-    case(cache,env,id,SOME(v),bind,expectedTp,bindProp) equation
+    case(cache,env,id,SOME(v),_,expectedTp,_) equation
       true = Flags.isSet(Flags.FAILTRACE);
       Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: " +& ValuesUtil.printValStr(v) +&
@@ -2455,7 +2455,7 @@ algorithm
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
                                   " type props: " +& Types.printPropStr(bindProp));
     then fail();
-    case(cache,env,_,_,_,expectedTp,bindProp) equation
+    case(cache,env,_,_,_,expectedTp,_) equation
       true = Flags.isSet(Flags.FAILTRACE);
       Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: NONE()" +&
@@ -10505,7 +10505,7 @@ algorithm
         (cache,res) = elabArraydim(cache,env, owncref, path,ad, eq, impl, st,doVect, false,pre,info,inst_dims);
       then
         (cache,res);
-    case (cache,env,owncref,path,NONE(),eq,impl,st,doVect,_,_,_) then (cache,{});
+    case (cache,_,_,_,NONE(),_,_,_,_,_,_,_) then (cache,{});
   end match;
 end elabArraydimOpt;
 
@@ -12022,7 +12022,7 @@ algorithm
       list<DAE.Function> resfns1,resfns2;
       SCode.Restriction rest;
       
-    case (cache,env,ih,pre,{}) then (cache,ih,{});
+    case (cache,_,ih,_,{}) then (cache,ih,{});
 
     // Instantiate each function, add its FQ name to the type, needed when deoverloading  
     case (cache,env,ih,_,(fn :: fns))
@@ -17571,7 +17571,7 @@ algorithm
       HashTable.HashTable ht;
       list<DAE.ComponentRef> crs;
     
-    case (_,ht,pre,{}) then ht;
+    case (_,ht,_,{}) then ht;
     case (_,ht,_,cr::crs)
       equation
         (_,cr) = PrefixUtil.prefixCref(cache, {}, InnerOuter.emptyInstHierarchy, pre, cr);

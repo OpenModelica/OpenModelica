@@ -6324,11 +6324,11 @@ algorithm
         ty2 = unboxedType(ty2);
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
     
-    case (DAE.T_NORETCALL(source = _),DAE.T_NORETCALL(source = _),envPath,bindings) then bindings;
-    case (DAE.T_INTEGER(source = _),DAE.T_INTEGER(source = _),envPath,bindings) then bindings;
-    case (DAE.T_REAL(source = _),DAE.T_INTEGER(source = _),envPath,bindings) then bindings;
-    case (DAE.T_STRING(source = _),DAE.T_STRING(source = _),envPath,bindings) then bindings;
-    case (DAE.T_BOOL(source = _),DAE.T_BOOL(source = _),envPath,bindings) then bindings;
+    case (DAE.T_NORETCALL(source = _),DAE.T_NORETCALL(source = _),_,bindings) then bindings;
+    case (DAE.T_INTEGER(source = _),DAE.T_INTEGER(source = _),_,bindings) then bindings;
+    case (DAE.T_REAL(source = _),DAE.T_INTEGER(source = _),_,bindings) then bindings;
+    case (DAE.T_STRING(source = _),DAE.T_STRING(source = _),_,bindings) then bindings;
+    case (DAE.T_BOOL(source = _),DAE.T_BOOL(source = _),_,bindings) then bindings;
     
     case (DAE.T_METAARRAY(ty = ty1),DAE.T_METAARRAY(ty = ty2),_,bindings)
       then subtypePolymorphic(ty1,ty2,envPath,bindings);
@@ -6404,7 +6404,7 @@ algorithm
       Type ty1,ty2;
       list<Type> tList1,tList2;
       PolymorphicBindings bindings;
-    case ({},{},envPath,bindings) then bindings;
+    case ({},{},_,bindings) then bindings;
     case (ty1::tList1,ty2::tList2,_,bindings)
       equation
         bindings = subtypePolymorphic(ty1,ty2,envPath,bindings);

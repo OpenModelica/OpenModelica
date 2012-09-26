@@ -1253,7 +1253,7 @@ algorithm
       DAE.Type tp;
       DAE.ComponentRef thisCr;
       list<DAE.Var> varLst;
-    case(ht,recordCr,{}) then ht;
+    case (ht,_,{}) then ht;
     // found array
     case(ht,_,DAE.TYPES_VAR(name=name,ty=tp)::varLst) equation
       true = Expression.isArrayType(tp);

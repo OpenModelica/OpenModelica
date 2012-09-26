@@ -95,7 +95,7 @@ algorithm
       Absyn.Ident firstFieldName;
       Absyn.Exp exp;
       list<Absyn.NamedArg> localNamedArgList;
-    case ({},namedArgList,localAccList) then (listReverse(localAccList),namedArgList);
+    case ({},_,localAccList) then (listReverse(localAccList),namedArgList);
     case (firstFieldName :: restFieldNames,localNamedArgList,localAccList)
       equation
         (exp,localNamedArgList) = findFieldExpInList(firstFieldName,localNamedArgList);
@@ -328,7 +328,7 @@ algorithm
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
-    case (cache,env,Absyn.CREF(Absyn.WILD()),_,_,_,_) then (cache,DAE.PAT_WILD());
+    case (cache,_,Absyn.CREF(Absyn.WILD()),_,_,_,_) then (cache,DAE.PAT_WILD());
 
     case (cache,_,lhs,_,_,_,_)
       equation
@@ -360,7 +360,7 @@ algorithm
       list<Absyn.Exp> exps;
       list<DAE.Type> tys;
     
-    case (cache,env,{},{},_,_,_) then (cache,{});
+    case (cache,_,{},{},_,_,_) then (cache,{});
     
     case (cache,_,exp::exps,ty::tys,_,_,_)
       equation
@@ -1129,7 +1129,7 @@ algorithm
       list<DAE.Pattern> pats;
       TypeA a;
       
-    case ({},func,a) then ({},a);
+    case ({},_,a) then ({},a);
     case (pat::pats,_,a)
       equation
         ((pat,a)) = traversePattern((pat,a),func);
@@ -1248,7 +1248,7 @@ algorithm
       list<DAE.Element> acc;
       HashTableStringToPath.HashTable unusedHt;
 
-    case ({},ht,acc,unusedHt) then (listReverse(acc),unusedHt);
+    case ({},_,acc,unusedHt) then (listReverse(acc),unusedHt);
     case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name), source=DAE.SOURCE(info=info))::rest,_,acc,unusedHt)
       equation
         failure(_ = BaseHashTable.get(name, ht));
@@ -1303,7 +1303,7 @@ algorithm
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
         acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
       then acc;
-    case (_,(case_ as DAE.CASE(patterns=pats))::rest,prevPatterns,acc,_) then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,case_::acc,iter);
+    case (_,(case_ as DAE.CASE(patterns=pats))::rest,_,acc,_) then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,case_::acc,iter);
   end matchcontinue;
 end caseDeadCodeEliminiation;
 
@@ -1625,7 +1625,7 @@ algorithm
       list<DAE.Exp> accExps;
       list<DAE.Type> accTypes;
 
-    case (cache,env,{},tys,impl,st,performVectorization,pre,accExps,accTypes) then (cache,{},listReverse(accExps),listReverse(accTypes),st);
+    case (cache,env,{},_,_,st,performVectorization,pre,accExps,accTypes) then (cache,{},listReverse(accExps),listReverse(accTypes),st);
     case (cache,env,case_::rest,_,_,st,_,_,accExps,accTypes)
       equation
         (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre);
@@ -1669,7 +1669,7 @@ algorithm
       Env.Env env;
       Option<Interactive.SymbolTable> st;
       
-    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),tys,impl,st,performVectorization,pre)
+    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,performVectorization,pre)
       equation
         (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
@@ -1683,7 +1683,7 @@ algorithm
       then (cache,DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),tys,impl,st,performVectorization,pre)
+    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,performVectorization,pre)
       equation
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);

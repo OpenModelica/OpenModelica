@@ -593,7 +593,7 @@ algorithm
   match(inType,infunc)
     local 
       Type_A a;
-    case(SOME(a),infunc) equation infunc(a); then ();
+    case(SOME(a),_) equation infunc(a); then ();
     else
       then ();
   end match;

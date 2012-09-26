@@ -926,7 +926,7 @@ algorithm
       list<DAE.Element> elts;
       UnitAbsyn.Store store;
     
-    case (_,DAE.DAE(elementLst={}),ht,store) then ({},store);
+    case (_,DAE.DAE(elementLst={}),_,store) then ({},store);
     
     case(_,DAE.DAE(elementLst=DAE.EQUATION(e1,e2,_)::elts),_,store) equation
       (ut1,terms1,store) = buildTermExp(env,e1,false,ht,store);
@@ -1218,7 +1218,7 @@ algorithm
       list<UnitAbsyn.UnitTerm> terms1,terms2,extraTerms1,extraTerms2; DAE.Type tp;
       list<DAE.Type> functps; 
       UnitAbsyn.Store store;
-    case({},funcInstId,funcCallExp,store) then ({},{},store);
+    case({},_,_,store) then ({},{},store);
     case(tp::functps,_,_,store) equation
       (terms1,extraTerms1,store) = buildResultTerms(tp,funcInstId,funcCallExp,store);
       (terms2,extraTerms2,store) = buildTupleResultTerms(functps,funcInstId,funcCallExp,store);
@@ -1245,7 +1245,7 @@ algorithm
       list<DAE.Exp> expl;
       UnitAbsyn.Store store;
       
-    case (_,{},ht,store) then ({},{},store);
+    case (_,{},_,store) then ({},{},store);
     case(_,e::expl,_,store) equation
       (ut,eterms1,store) =  buildTermExp(env,e,false,ht,store);
       (terms,eterms2,store) = buildTermExpList(env,expl,ht,store);
@@ -1292,7 +1292,7 @@ algorithm
       list<DAE.FuncArg> fargs;
       UnitAbsyn.Store store;
       
-    case({},funcInstId,store) then (store,{});
+    case({},_,store) then (store,{});
     case((_,tp,_,_)::fargs,_,store) equation
       unitStr = getUnitStr(tp);
 

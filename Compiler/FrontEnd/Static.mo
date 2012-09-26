@@ -226,7 +226,7 @@ algorithm
       Prefix.Prefix pre;
       DAE.Properties p1;
 
-    case (cache,_,{},_,impl,st,doVect,_,_) then (cache,{},{},st);
+    case (cache,_,{},_,_,_,_,_,_) then (cache,{},{},st);
     case (cache,env,(e :: rest),_,impl,_,doVect,pre,_)
       equation
         (cache,exp,p as p1::_,st_1) = elabExpList2(cache,env,e,ty,impl,st,doVect,pre,info);
@@ -7847,7 +7847,7 @@ algorithm
     case (cache,_,_, path) equation
       (cache,true) = isExternalObjectFunction(cache,env,path);
       then (cache,DAE.C_VAR());
-    case (cache,env,inConst,path) then (cache,inConst);
+    case (cache,_,_,_) then (cache,inConst);
   end matchcontinue;
 end determineConstSpecialFunc;
 

@@ -3603,7 +3603,7 @@ algorithm
       DAE.Exp e;
       Type_a extraArg;
     
-    case(NONE(),func,extraArg) then (NONE(),extraArg);
+    case(NONE(),_,extraArg) then (NONE(),extraArg);
     
     case(SOME(e),_,extraArg)
       equation
@@ -3633,7 +3633,7 @@ algorithm
       Type_a extraArg;
       list<DAE.Exp> exps;
     
-    case({},func,extraArg) then ({},extraArg);
+    case({},_,extraArg) then ({},extraArg);
     
     case(e::exps,_,extraArg)
       equation
@@ -3664,7 +3664,7 @@ algorithm
       list<list<DAE.Element>> recRes,daeList;
       Type_a extraArg;
     
-    case({},func,extraArg) then ({},extraArg);
+    case({},_,extraArg) then ({},extraArg);
     
     case(branch::daeList,_,extraArg)
       equation
@@ -3761,7 +3761,7 @@ algorithm
       Type_a extraArg;
       list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
 
-    case({},func,extraArg) then ({},extraArg);
+    case({},_,extraArg) then ({},extraArg);
     case((p,SOME(daeFunc))::funcLst,_,extraArg)
       equation
         (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
@@ -3791,7 +3791,7 @@ algorithm
       list<DAE.Function> funcLst;
       Type_a extraArg;
       
-    case({},func,extraArg) then ({},extraArg);
+    case({},_,extraArg) then ({},extraArg);
     case(daeFunc::funcLst,_,extraArg)
       equation
         (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);

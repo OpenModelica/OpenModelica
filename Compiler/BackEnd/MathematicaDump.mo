@@ -403,7 +403,7 @@ algorithm
         str = stringAppendList({"Dimensions[",crstr,"]"});
       then
         str;
-    case (DAE.REDUCTION(DAE.REDUCTIONINFO(path = fcn),exp,(DAE.REDUCTIONITER(id = id,exp = iterexp)::_)),vars,knvars) //TODO: need to suport more then one iterator.
+    case (DAE.REDUCTION(DAE.REDUCTIONINFO(path = fcn),exp,(DAE.REDUCTIONITER(id = id,exp = iterexp)::_)),_,_) //TODO: need to suport more than one iterator.
       equation 
         fs = Absyn.pathString(fcn);
         expstr = printExpMmaStr(exp,vars,knvars); 

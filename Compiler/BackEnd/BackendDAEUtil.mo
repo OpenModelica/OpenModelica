@@ -7435,7 +7435,7 @@ algorithm
  local
    DAE.Exp name,arr,sarr;
    
-   case(NONE(),func,outExtraArg) then (NONE(),outExtraArg);
+   case(NONE(),_,outExtraArg) then (NONE(),outExtraArg);
    
    case(SOME(DAE.DISTRIBUTION(name,arr,sarr)),_,_) equation
      ((arr,_)) = extendArrExp((arr,(NONE(),false)));

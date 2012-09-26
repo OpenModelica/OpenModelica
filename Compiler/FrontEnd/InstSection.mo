@@ -2403,7 +2403,7 @@ algorithm
       InstanceHierarchy ih;
 
     // empty case 
-    case (cache,env,ih,pre,ci_state,{},source,initial_,impl,_) then (cache,{});
+    case (cache,_,_,_,_,{},_,_,_,_) then (cache,{});
 
     // general case       
     case (cache,env,ih,pre,_,(x :: xs),_,_,impl,_)
@@ -3012,7 +3012,7 @@ algorithm
       Prefix.Prefix pre;
       InstanceHierarchy ih;
       
-    case (cache,env,ih,pre,ci_state,{},source,initial_,impl,_,_) then (cache,{});
+    case (cache,_,_,_,_,{},_,_,_,_,_) then (cache,{});
 
     case (cache,env,ih,pre,_,((e,l) :: tail),_,_,impl,_,_)
       equation

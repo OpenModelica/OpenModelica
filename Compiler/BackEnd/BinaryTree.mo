@@ -158,7 +158,7 @@ algorithm
       Integer compResult;
       
     // found it
-    case (TREENODE(value = SOME(TREEVALUE(value=rval))),keystr,keyhash,0) then rval;
+    case (TREENODE(value = SOME(TREEVALUE(value=rval))),_,_,0) then rval;
     // search right
     case (TREENODE(rightSubTree = SOME(right)),_,_,1)
       equation

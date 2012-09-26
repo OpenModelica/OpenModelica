@@ -970,7 +970,7 @@ algorithm
       Boolean sc;
       DAE.TypeSource ts;
       
-    case (_,{},acc,true) then listReverse(acc);
+    case (_,{},_,true) then listReverse(acc);
     case (1,DAE.ARRAY(array=es1,scalar=sc,ty=DAE.T_ARRAY(dims=dim1::dims,ty=etp,source=ts))::DAE.ARRAY(array=es2,ty=DAE.T_ARRAY(dims=dim2::_))::es,_,_)
       equation
         esn = listAppend(es1,es2);

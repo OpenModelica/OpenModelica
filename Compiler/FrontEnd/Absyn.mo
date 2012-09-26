@@ -1688,7 +1688,7 @@ algorithm
   outTplExpTypeA:= match(inLst,rel,iext_arg)
    local Exp e1,e2,e11,e21; Type_a ext_arg;
      list<tuple<Exp,Exp>> lst;
-    case({},rel,ext_arg) then (({},ext_arg));
+    case({},_,ext_arg) then (({},ext_arg));
     case((e1,e2)::lst,_,ext_arg) equation
       ((lst,ext_arg)) = traverseExpElseIfBranch(lst,rel,iext_arg);
       ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
@@ -1749,7 +1749,7 @@ algorithm
       Ident id;
       Type_a ext_arg;
       list<NamedArg> nargs;
-    case({},rel,ext_arg) then (({},ext_arg));
+    case({},_,ext_arg) then (({},ext_arg));
     case(NAMEDARG(id,e1)::nargs,_,ext_arg)
       equation
         ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
@@ -1775,7 +1775,7 @@ algorithm
       Exp e1,e11;
       list<Exp> pargs;
       Type_a ext_arg;
-    case({},rel,ext_arg) then (({},ext_arg));
+    case({},_,ext_arg) then (({},ext_arg));
     case(e1::pargs,_,ext_arg)
       equation
         ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);

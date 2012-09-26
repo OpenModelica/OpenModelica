@@ -380,11 +380,11 @@ algorithm
       Env.Cache cache;
       Env.Env env;
     
-    case (cache,env,inIH,Prefix.NOPRE(),NONE()) then fail();
-    case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),NONE()) then fail();
+    case (_,_,_,Prefix.NOPRE(),NONE()) then fail();
+    case (_,_,_,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),NONE()) then fail();
       
-    case (cache,env,inIH,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
-    case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
+    case (cache,_,_,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
+    case (cache,_,_,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
     case (cache,env,_,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE())
       equation
         cref_ = ComponentReference.makeCrefIdent(i,DAE.T_COMPLEX(ci_state, {}, NONE(), DAE.emptyTypeSource),s);
@@ -520,12 +520,13 @@ algorithm
       Env.Env env;
       list<DAE.Subscript> subs;
   
-    case(cache,env,inIH,pre,{}) then (cache,{});
+    case (cache,_,_,_,{}) then (cache,{});
   
-    case(cache,env,_,_,sub::subs) equation
-    (cache,sub) = prefixSubscript(cache,env,inIH,pre,sub);
-    (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
-    then (cache,sub::subs);
+    case (cache,env,_,_,sub::subs)
+      equation
+        (cache,sub) = prefixSubscript(cache,env,inIH,pre,sub);
+        (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
+      then (cache,sub::subs);
   end match;
 end prefixSubscripts;
 
@@ -544,7 +545,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
     
-    case(cache,env,inIH,pre,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
+    case(cache,env,_,_,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
     
     case(cache,env,_,_,DAE.SLICE(exp)) equation
       (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
@@ -902,7 +903,7 @@ algorithm
       Env.Env env;
       DAE.ReductionIterators iters;
 
-    case (cache,env,ih,{},_) then (cache,{});
+    case (cache,_,_,{},_) then (cache,{});
     case (cache,env,_,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_)
       equation
         (cache,exp) = prefixExp(cache,env,ih,exp,pre);

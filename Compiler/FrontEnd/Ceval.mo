@@ -6122,7 +6122,7 @@ algorithm
       then
         (cache,Absyn.RELATION(e1_1,op,e2_1));
     
-    case (cache,env,Absyn.IFEXP(ifExp = cond,trueBranch = then_,elseBranch = else_,elseIfBranch = nest),impl,st,msg,info)
+    case (cache,env,Absyn.IFEXP(ifExp = cond,trueBranch = then_,elseBranch = else_,elseIfBranch = nest),impl,st,msg,_)
       equation
         (cache,cond_1) = cevalAstExp(cache,env, cond, impl, st, msg, info);
         (cache,then_1) = cevalAstExp(cache,env, then_, impl, st, msg, info);

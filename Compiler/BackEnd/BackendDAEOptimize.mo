@@ -6766,7 +6766,7 @@ algorithm
     Integer oneElem;
     list<Integer> rest, tmplist;
     array<list<Integer>>  accumList;
-    case ({},inAccumList, _) then inAccumList;
+    case ({},_,_) then inAccumList;
     case (oneElem::rest,_, _)
       equation
         tmplist = arrayGet(inAccumList,oneElem);
@@ -9198,7 +9198,7 @@ algorithm
       list<list<Integer>> lsts;
       array<Integer> ixs;
       
-    case (false,ix,n,m,mT,ixs) then false;
+    case (false,_,_,_,_,_) then false;
     case (true,_,_,_,_,ixs)
       equation
         // i = ixs[ix];
