@@ -62,7 +62,7 @@ static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_statu
 /*
  * Creates an instance of the FMI Import Context i.e fmi_import_context_t
  */
-void* fmi_import_allocate_context_OMC(int fmi_log_level)
+void* fmiImportContext_OMC(int fmi_log_level)
 {
   // JM callbacks
   static int init = 0;
@@ -84,7 +84,7 @@ void* fmi_import_allocate_context_OMC(int fmi_log_level)
 /*
  * Destroys the instance of the FMI Import Context i.e fmi_import_context_t
  */
-void fmi_import_free_context_OMC(void* context)
+void fmiImportFreeContext_OMC(void* context)
 {
   fmi_import_free_context(context);
 }
@@ -133,9 +133,15 @@ void fmiImportFreeInstance_OMC(void* fmi)
   fmi1_import_free(fmi1);
 }
 
-int fmiInstantiateModel_OMC(void* fmi, const char* instanceName)
+void fmiInstantiateModel_OMC(void* fmi, const char* instanceName)
 {
-  return fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
+  jm_status_enu_t jmstatus = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
+  switch (jmstatus) {
+    case jm_status_error:
+    case jm_status_warning:
+      fprintf(stderr, "Error initializing FMI Import in fmiInstantiateModel_OMC.\n");fflush(NULL);
+      break;
+  }
 }
 
 int fmiSetTime_OMC(void* fmi, double time)
@@ -143,12 +149,20 @@ int fmiSetTime_OMC(void* fmi, double time)
   return fmi1_import_set_time((fmi1_import_t*)fmi, time);
 }
 
-int fmiInitialize_OMC(void* fmi)
+void* fmiInitialize_OMC(void* fmi)
 {
   fmi1_boolean_t toleranceControlled = fmi1_true;
   fmi1_real_t relativeTolerance = 0.001;
-  fmi1_event_info_t eventInfo;
-  return fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, &eventInfo);
+  fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
+  fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiInitialize_OMC.\n");fflush(NULL);
+      break;
+  }
+  return eventInfo;
 }
 
 int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
@@ -156,44 +170,64 @@ int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
   return fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
 }
 
-int fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, const double* states)
+void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states)
 {
-  return fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  fmi1_status_t fmistatus = fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiGetContinuousStates_OMC.\n");fflush(NULL);
+      break;
+  }
 }
 
-int fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, const double* states)
+int fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states)
 {
   return fmi1_import_set_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
-int fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, const double* events)
+void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* events)
 {
-  return fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
+  fmi1_status_t fmistatus = fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiGetEventIndicators_OMC.\n");fflush(NULL);
+      break;
+  }
 }
 
 void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* states)
 {
   fmi1_status_t fmistatus = fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
-  fprintf(stderr, "fmiGetDerivatives_OMC Result = %d", fmistatus);fflush(NULL);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiGetDerivatives_OMC.\n");fflush(NULL);
+      break;
+  }
 }
 
-void fmiGetReal_OMC(void* fmi, const double* states, const double* states1)
+void fmiGetReal_OMC(void* fmi, int numberOfReferences, int* in_realVR, double* out_realV)
 {
-  fmi1_import_t* fmi1 = (fmi1_import_t*)fmi;
-  fmi1_import_variable_list_t* model_variables_list = fmi1_import_get_variable_list(fmi);
-  size_t model_variables_list_size = fmi1_import_get_variable_list_size(model_variables_list);
-  fmi1_value_reference_t* model_variables_value_reference_list = fmi1_import_get_value_referece_list(model_variables_list);
-  int i = 0;
-  for (i ; i < model_variables_list_size ; i++) {
-    fprintf(stderr, "VR %d = %d\n", i, model_variables_value_reference_list[i]);fflush(NULL);
-    }
-  fmi1_real_t* value = malloc(model_variables_list_size);
-  fmi1_status_t fmistatus = fmi1_import_get_real(fmi1, model_variables_value_reference_list, model_variables_list_size, value);
-  i = 0;
-    for (i ; i < model_variables_list_size ; i++) {
-      fprintf(stderr, "R %d = %d\n", i, value[i]);fflush(NULL);
-      }
-  fprintf(stderr, "Result = %d", fmistatus);fflush(NULL);
+  fmi1_status_t fmistatus = fmi1_import_get_real((fmi1_import_t*)fmi, in_realVR, numberOfReferences, out_realV);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiGetReal_OMC.\n");fflush(NULL);
+      break;
+  }
+}
+
+int fmiCompletedIntegratorStep_OMC(void* fmi, int in_callEventUpdate)
+{
+  fmi1_status_t fmistatus = fmi1_import_completed_integrator_step((fmi1_import_t*)fmi, (fmi1_boolean_t*)&in_callEventUpdate);
+  fprintf(stderr, "fmiCompletedIntegratorStep_OMC in_callEventUpdate = %d\n", in_callEventUpdate);fflush(NULL);
+  return in_callEventUpdate;
 }
 
 #ifdef __cplusplus
