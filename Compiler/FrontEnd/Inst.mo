@@ -16534,7 +16534,7 @@ algorithm
         checkVariabilityOfUpdatedComponent(variability,cref);
       then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
 
-    case (_,_,cref,mods,cmod,_) then (mods,cmod,m);
+    case (_,_,_,_,cmod,_) then (mods,cmod,m);
   end matchcontinue;
 end noModForUpdatedComponents;
 

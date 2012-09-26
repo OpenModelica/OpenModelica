@@ -1314,7 +1314,7 @@ algorithm
       array<Option<BackendDAE.Var>> varOptArr;
       BackendDAE.Var elimVar;
 
-    case ({},_,_,knvars,mvars,repl,_,_,elimVarIndexList,false) then
+    case ({},_,_,_,_,_,_,_,_,false) then
       ({},{},mvars,repl); 
       
     case (e::eqns,_,_,_,_,_,_,_,_,false) equation

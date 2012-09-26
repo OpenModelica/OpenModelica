@@ -2338,7 +2338,7 @@ algorithm
         fail();
 
     // impl array contains mixed Integer and Real types 
-    case (inExpl as _ :: _, _, _, _)       
+    case (_ :: _, _, _, _)       
       equation
         t = elabArrayHasMixedIntReals(inProps);
         c = elabArrayConst(inProps);
@@ -2347,7 +2347,7 @@ algorithm
       then
         (expl, DAE.PROP(t, c));
 
-    case (inExpl as _ :: _, _, _, _)
+    case (_ :: _, _, _, _)
       equation
         (expl, prop) = elabArray2(inExpl, inProps, inPrefix, inInfo);
       then
@@ -2921,7 +2921,7 @@ algorithm
   outType :=  matchcontinue(inType,n)
     local
       DAE.Type tp1,tp2;
-    case(inType,0) then inType;
+    case (_,0) then inType;
     case(_,_)
       equation
       tp1=Expression.liftArrayRight(inType, DAE.DIM_INTEGER(1));
@@ -8368,10 +8368,10 @@ algorithm
       DAE.Type restype;
       DAE.FunctionAttributes functionAttributes;
     
-    case(tp,_,true) then tp;
+    case (_,_,true) then tp;
     
     // When not checking types, create function type by looking at the filled slots
-    case(tp as DAE.T_FUNCTION(params,restype,functionAttributes,ts),_,false) 
+    case(DAE.T_FUNCTION(params,restype,functionAttributes,ts),_,false) 
       equation
         slotParams = funcargLstFromSlots(slots);
     then 
@@ -9156,7 +9156,7 @@ algorithm
     case (cache, _, {}, _, slots, _, impl, polymorphicBindings,_,pre,_)
       then (cache,slots,{},polymorphicBindings);
 
-    case (cache, env, (e :: es), ((farg as (_,DAE.T_CODE(ct,_),_,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (_,DAE.T_CODE(ct,_),_,_)) :: vs), slots, true, impl, polymorphicBindings,_,pre,_)
       equation
         e_1 = elabCodeExp(e,cache,env,ct,info);
         (cache,slots_1,clist,polymorphicBindings) =
@@ -9166,7 +9166,7 @@ algorithm
         (cache,newslots,(DAE.C_VAR() :: clist),polymorphicBindings);
 
     // exact match
-    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, true, impl, polymorphicBindings,_,pre,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st, true,pre,info);
         t = Types.getPropType(props);
@@ -9180,7 +9180,7 @@ algorithm
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check if vectorized argument
-    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (id,vt,c2,_)) :: vs), slots, true, impl, polymorphicBindings,_,pre,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
@@ -9194,7 +9194,7 @@ algorithm
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // not checking types
-    case (cache, env, (e :: es), ((farg as (id,vt,_,_)) :: vs), slots, checkTypes as false, impl, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (id,vt,_,_)) :: vs), slots, false, impl, polymorphicBindings,_,pre,_)
       equation
         (cache,e_1,props,_) = elabExp(cache,env, e, impl,st,true,pre,info);
         t = Types.getPropType(props);
@@ -9207,7 +9207,7 @@ algorithm
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check types and display error
-    case (cache, env, (e :: es), ((farg as (_,vt,_,_)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,_,pre,_)
+    case (cache, env, (e :: es), ((farg as (_,vt,_,_)) :: vs), slots, true, impl, polymorphicBindings,_,pre,_)
       equation
         /* FAILTRACE REMOVE
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env,e,impl,NONE(),true,pre,info);
@@ -9281,7 +9281,7 @@ algorithm
     case (cache,_,{},_,slots,_,impl,polymorphicBindings,_,_,_)
       then (cache,slots,{},polymorphicBindings);
 
-    case (cache, env, (Absyn.NAMEDARG(argName = id,argValue = e) :: nas), farg, slots, checkTypes as true, impl, polymorphicBindings,_,pre,_)
+    case (cache, env, (Absyn.NAMEDARG(argName = id,argValue = e) :: nas), farg, slots, true, impl, polymorphicBindings,_,pre,_)
       equation
         (vt as DAE.T_CODE(ty=ct)) = findNamedArgType(id, farg);
         e_1 = elabCodeExp(e,cache,env,ct,info);
@@ -9292,7 +9292,7 @@ algorithm
         (cache,newslots,(DAE.C_VAR() :: clist),polymorphicBindings);
 
     // check types exact match
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl,polymorphicBindings,_,pre,_)
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,true,impl,polymorphicBindings,_,pre,_)
       equation
         vt = findNamedArgType(id, farg);
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
@@ -9304,7 +9304,7 @@ algorithm
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // check types vectorized argument
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as true,impl,polymorphicBindings,_,pre,_)
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,true,impl,polymorphicBindings,_,pre,_)
       equation
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache, env, e, impl,st, true,pre,info);
         vt = findNamedArgType(id, farg);
@@ -9316,7 +9316,7 @@ algorithm
         (cache,newslots,(c1 :: clist),polymorphicBindings);
 
     // do not check types
-    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,checkTypes as false,impl,polymorphicBindings,_,pre,_)
+    case (cache,env,(Absyn.NAMEDARG(argName = id,argValue = e) :: nas),farg,slots,false,impl,polymorphicBindings,_,pre,_)
       equation
         (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env, e, impl,st,true,pre,info);
         vt = findNamedArgType(id, farg);
@@ -9414,7 +9414,7 @@ algorithm
         fail();
 
     // fail if slot already filled
-    case ((fa1,_,_,_),exp,ds,(SLOT(an = (fa2,b,_,_),slotFilled = true) :: xs),checkTypes ,pre,_)
+    case ((fa1,_,_,_),exp,ds,(SLOT(an = (fa2,b,_,_),slotFilled = true) :: xs), _,pre,_)
       equation
         true = stringEq(fa1, fa2);
         ps = PrefixUtil.printPrefixStr3(pre);
@@ -13341,7 +13341,7 @@ algorithm
         types = List.flatten({scalars, boolarrs});
       then types;
 
-    case op
+    case _
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("- Static.operatorsUnary failed, op: " +& Dump.opSymbol(op));

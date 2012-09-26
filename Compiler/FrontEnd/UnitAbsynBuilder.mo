@@ -686,7 +686,7 @@ algorithm
       equation
         false = Flags.getConfigBool(Flags.UNIT_CHECKING);
       then(UnitAbsyn.noStore,{});
-    case (_,_,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
+    case (_,_,_,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
     case(_,_,_,UnitAbsyn.INSTSTORE(st,ht,res))
       equation
         (terms,st) = buildTerms(env,dae,ht,st);

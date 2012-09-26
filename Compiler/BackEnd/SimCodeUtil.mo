@@ -413,7 +413,7 @@ algorithm
       Integer r,c;
       DAE.ComponentRef cr;
     case({}, _,_,_) then true;
-    case({} :: restRows, inCref,_,_) then isMatrixExpansion(restRows, inCref, rowIndex+1, 1);
+    case({} :: restRows,_,_,_) then isMatrixExpansion(restRows, inCref, rowIndex+1, 1);
     case ( (DAE.CREF(componentRef=cr) :: restElems) :: restRows, _, _, _) 
       equation
         { DAE.INDEX(DAE.ICONST(r)), DAE.INDEX(DAE.ICONST(c)) } = ComponentReference.crefLastSubs(cr);
@@ -3540,7 +3540,7 @@ algorithm
       list<SimCode.SimEqSystem> equations_,equations1,noDiscEquations1;
       list<SimCode.SimVar> tempvars;
       // handle empty
-    case (_,_, genDiscrete,_,_,_, _, {},_,_,_) then ({},{},iuniqueEqIndex,itempvars);
+    case (_,_,_,_,_,_, _, {},_,_,_) then ({},{},iuniqueEqIndex,itempvars);
       
       // ignore when equations if we should not generate them
     case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index) :: restComps, _, _,_)

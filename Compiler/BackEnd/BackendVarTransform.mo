@@ -339,7 +339,7 @@ algorithm
         repl_1 = makeTransitive12(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption);
       then
         (repl_1,src,dst);
-    case (_,_,dst,_) then (repl,src,dst);
+    case (_,_,_,_) then (repl,src,dst);
   end matchcontinue;
 end makeTransitive1;
 
@@ -401,7 +401,7 @@ algorithm
       then
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
-    case (_,_,dst,_) then (repl,src,dst);  /* dst has no own replacement, return */
+    case (_,_,_,_) then (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
 
