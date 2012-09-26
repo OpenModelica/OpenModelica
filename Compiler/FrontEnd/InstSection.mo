@@ -952,7 +952,7 @@ algorithm
   dae := match(expCall,source)
   local Absyn.Path fn; list<DAE.Exp> expl; DAE.Type ty; Boolean s; DAE.Exp e;
     DAE.DAElist dae1,dae2;
-    case(expCall as DAE.CALL(path=fn,expLst=expl),_) equation
+    case(DAE.CALL(path=fn,expLst=expl),_) equation
       then DAE.DAE({DAE.NORETCALL(fn,expl,source)});
     case(DAE.ARRAY(ty,s,e::expl),_)
       equation

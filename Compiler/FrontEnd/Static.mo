@@ -8996,7 +8996,7 @@ algorithm
       DAE.Const c2;
       Ident id;
     
-    case (slot as SLOT(slotFilled = true,expExpOption = e as SOME(_)),_) then slot;
+    case (SLOT(slotFilled = true,expExpOption = e as SOME(_)),_) then slot;
     
     case (SLOT(an = (id,tp,c2,e as SOME(exp_1)),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds),_)
       then

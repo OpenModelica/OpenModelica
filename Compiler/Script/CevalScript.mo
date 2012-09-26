@@ -3234,7 +3234,7 @@ algorithm
     DAE.FunctionTree funcs;
     Interactive.SymbolTable st;
     
-    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile)},inSt as Interactive.SYMBOLTABLE(ast=p),_) equation      
+    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile)},Interactive.SYMBOLTABLE(ast=p),_) equation      
       (cache,env,dae,st) = runFrontEnd(cache,inEnv,className,inSt,false);
       //print("instantiated class\n");
       dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);

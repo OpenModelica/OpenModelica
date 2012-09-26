@@ -302,11 +302,11 @@ algorithm
       Absyn.Class cl,cl2;
       Absyn.Program p;
 
-    case(p as Absyn.PROGRAM(globalBuildTimes=timeStamp),modelName as Absyn.IDENT(id)) equation
+    case(p as Absyn.PROGRAM(globalBuildTimes=timeStamp),Absyn.IDENT(id)) equation
       cl = Interactive.getPathedClassInProgram(modelName,p);
     then Absyn.PROGRAM({cl},Absyn.TOP(),timeStamp);
 
-    case(p as Absyn.PROGRAM(globalBuildTimes=timeStamp),modelName as Absyn.QUALIFIED(name=_)) equation
+    case(p as Absyn.PROGRAM(globalBuildTimes=timeStamp),Absyn.QUALIFIED(name=_)) equation
       cl2 = createTopLevelTotalClass(modelName);
       p = Absyn.PROGRAM({cl2},Absyn.TOP(),timeStamp);
     then p;
@@ -334,13 +334,13 @@ algorithm
         Env.Env env2;
         HashTable2.HashTable ht;
         /* If extending external object, also add dependency to constructor and destructor functions */
-        case(_,Absyn.EXTENDS(path=path as Absyn.IDENT("ExternalObject"), elementArg=eltarg),optPath as SOME(cname2),_,(d,p,env,ht)) equation
+        case(_,Absyn.EXTENDS(path=path as Absyn.IDENT("ExternalObject"), elementArg=eltarg),SOME(cname2),_,(d,p,env,ht)) equation
           d = AbsynDep.addDependency(d,cname2,Absyn.joinPaths(cname2,Absyn.IDENT("constructor")));
           d = AbsynDep.addDependency(d,cname2,Absyn.joinPaths(cname2,Absyn.IDENT("destructor")));
           d = buildClassDependsInElementargs(eltarg,optPath,cname,(d,p,env,ht));
         then d;
 
-        case(_,Absyn.EXTENDS(path=path, elementArg=eltarg),optPath as SOME(cname2),_,(d,p,env,ht)) equation
+        case(_,Absyn.EXTENDS(path=path, elementArg=eltarg),SOME(cname2),_,(d,p,env,ht)) equation
           usesName = absynMakeFullyQualified(path,optPath,cname,env,p);
           d = AbsynDep.addDependency(d,cname2,usesName);
           d = buildClassDependsInElementargs(eltarg,optPath,cname,(d,p,env,ht));
@@ -791,7 +791,7 @@ algorithm
      then 
        d;
 
-   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(cr,fargs))::eqns,optPath as SOME(cname2),cname,(d,p,env,ht)) 
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(cr,fargs))::eqns,SOME(cname2),cname,(d,p,env,ht)) 
      equation
        d = buildClassDependsInFuncargs(fargs,optPath,cname,(d,p,env,ht));
        path = Absyn.crefToPath(cr);

@@ -5720,7 +5720,7 @@ algorithm
       DAE.Const cnst "constant";
       Values.Value valBound;
         
-    case (inBinding as DAE.UNBOUND(), _) then inBinding;
+    case (DAE.UNBOUND(), _) then inBinding;
     case (DAE.EQBOUND(exp, evaluatedExp, cnst, _),_) then DAE.EQBOUND(exp, evaluatedExp, cnst, bindingSource);
     case (DAE.VALBOUND(valBound, _),_) then DAE.VALBOUND(valBound, bindingSource);
  end match;

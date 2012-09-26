@@ -4378,10 +4378,10 @@ algorithm
       TypeSignature ts;
       
     //OK
-    case (inType as TEXT_TYPE(),_, _, _) then inType;
+    case (TEXT_TYPE(),_, _, _) then inType;
     
     //already handled by checkResolvedType
-    case (inType as UNRESOLVED_TYPE(_),_ , _, _) then inType;
+    case (UNRESOLVED_TYPE(_),_ , _, _) then inType;
       
     case ( ts, _, msg, _)
       equation

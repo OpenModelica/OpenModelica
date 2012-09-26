@@ -565,7 +565,7 @@ algorithm
     // none
     case (NONE(),_) then NONE();
     // Already filled.
-    case (decl as SOME(SCode.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
+    case (SOME(SCode.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
     // EXTERNALDECL.
     case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.EXTERNAL(_,SOME(aann))::_)
       equation

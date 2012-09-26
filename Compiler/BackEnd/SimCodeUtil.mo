@@ -11119,7 +11119,7 @@ algorithm (out,sysOrdOneVars) := matchcontinue(derExp,inEqns,inEqnsOrg)
     Integer rec,i1;
     tuple<DAE.ComponentRef, Integer> highestIndex;
     
-  case( (derExp as DAE.CALL( expLst = {DAE.CREF(cr,_)})), {},_) then ((cr,0),{});
+  case( (DAE.CALL( expLst = {DAE.CREF(cr,_)})), {},_) then ((cr,0),{});
   case( (DAE.CALL( expLst = {deriveVar as DAE.CREF(cr,_)})), (eq as BackendDAE.EQUATION(e1,e2,_))::eqs,_)
     equation
       true = Expression.expEqual(e1,derExp);

@@ -6527,7 +6527,7 @@ algorithm
   matchcontinue (inAbsynElementArgLst,eqMod)
     local
       list<Absyn.ElementArg> args;
-    case({},eqMod as Absyn.EQMOD(exp=_)) then SOME(Absyn.CLASSMOD({},eqMod));
+    case({},Absyn.EQMOD(exp=_)) then SOME(Absyn.CLASSMOD({},eqMod));
     case ({},_) then NONE();
     case (args,_) then SOME(Absyn.CLASSMOD(args,eqMod));
   end matchcontinue;
@@ -17696,8 +17696,8 @@ protected function selectAnnotation
   output Option<Absyn.Annotation> outAnn;
 algorithm
   outAnn := match(newAnn, oldAnn)
-    case(newAnn as SOME(_), _) then newAnn;
-    case(newAnn as NONE(),_) then oldAnn;
+    case(SOME(_), _) then newAnn;
+    case(NONE(),_) then oldAnn;
   end match;
 end selectAnnotation;
 
@@ -18249,10 +18249,10 @@ algorithm
       Option<String> cmt;
       list<String> typeVars;
       list<Absyn.NamedArg> classAttrs;
-    case(cdef as Absyn.DERIVED(typeSpec=_)) then cdef;
-    case(cdef as Absyn.ENUMERATION(enumLiterals = _)) then cdef;
-    case(cdef as Absyn.OVERLOAD(functionNames =_)) then cdef;
-    case(cdef as Absyn.PDER(functionName=_)) then cdef;
+    case(Absyn.DERIVED(typeSpec=_)) then cdef;
+    case(Absyn.ENUMERATION(enumLiterals = _)) then cdef;
+    case(Absyn.OVERLOAD(functionNames =_)) then cdef;
+    case(Absyn.PDER(functionName=_)) then cdef;
     case(Absyn.PARTS(typeVars,classAttrs,parts,cmt))
       equation
         partsTransformed = List.map(parts,transformFlatPart);
@@ -18311,7 +18311,7 @@ algorithm
       equation
         algitems1 = List.map(algitems,transformFlatAlgorithmItem);
       then Absyn.INITIALALGORITHMS(algitems1);
-    case(part as Absyn.EXTERNAL(_,_)) then part;
+    case(Absyn.EXTERNAL(_,_)) then part;
     case(_)
       equation print("Interactive.transformFlatPart failed\n");
       then fail();
@@ -18327,7 +18327,7 @@ algorithm
   outEitem := match(eitem)
   local Absyn.Element elt,elt1;
     case(Absyn.ELEMENTITEM(elt)) equation elt1 = transformFlatElement(elt); then (Absyn.ELEMENTITEM(elt1));
-    case(eitem as Absyn.ANNOTATIONITEM(_)) then eitem;
+    case(Absyn.ANNOTATIONITEM(_)) then eitem;
   end match;
 end transformFlatElementItem;
 
@@ -18345,7 +18345,7 @@ algorithm
       Absyn.ElementSpec spec,spec1;
       Absyn.Info info ;
       Option<Absyn.ConstrainClass> constr;
-    case (elt as Absyn.TEXT(optName=_)) then elt;
+    case (Absyn.TEXT(optName=_)) then elt;
     case(Absyn.ELEMENT(f,r,io,spec,info,constr))
       equation
         spec1=transformFlatElementSpec(spec);
@@ -18382,7 +18382,7 @@ algorithm
         eargs1 = List.map(eargs,transformFlatElementArg);
       then Absyn.EXTENDS(path,eargs1,annOpt);
 
-    case(eltSpec as Absyn.IMPORT(import_ = _)) then eltSpec;
+    case(Absyn.IMPORT(import_ = _)) then eltSpec;
 
     case(Absyn.COMPONENTS(attr,tp,comps))
       equation
@@ -18715,7 +18715,7 @@ algorithm
       equation
         alg1 = transformFlatAlgorithm(alg);
       then Absyn.ALGORITHMITEM(alg1,cmt,info);
-    case(algitem as Absyn.ALGORITHMITEMANN(_)) then algitem;
+    case(Absyn.ALGORITHMITEMANN(_)) then algitem;
   end match;
 end transformFlatAlgorithmItem;
 

@@ -1348,7 +1348,7 @@ algorithm
       DAE.Ident id;
       DAE.ComponentRef res,cr;
     
-    case (inComponentRef as DAE.CREF_IDENT(ident = id)) then inComponentRef;
+    case (DAE.CREF_IDENT(ident = id)) then inComponentRef;
     
     case (DAE.CREF_QUAL(componentRef = cr))
       equation
@@ -1391,8 +1391,8 @@ algorithm
       DAE.Type t2;
       DAE.ComponentRef cr;
     
-    case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
-    case(inRef as DAE.CREF_QUAL(_,_,_,cr)) then crefLastType(cr);
+    case(DAE.CREF_IDENT(_,t2,_)) then t2;
+    case(DAE.CREF_QUAL(_,_,_,cr)) then crefLastType(cr);
   end match;
 end crefLastType;
 
