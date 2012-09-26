@@ -162,7 +162,7 @@ public function elabPattern
   output Env.Cache outCache;
   output DAE.Pattern pattern;
 algorithm
-  (outCache,pattern) := elabPattern2(cache,env,lhs,ty,info,Error.getNumErrorMessages(),allowTopLevelInputs);
+  (outCache,pattern) := elabPattern2(cache,env,lhs,ty,info,Error.getNumErrorMessages(),false);
 end elabPattern;
 
 protected function elabPattern2
@@ -1625,7 +1625,7 @@ algorithm
       list<DAE.Exp> accExps;
       list<DAE.Type> accTypes;
 
-    case (cache,env,{},_,_,st,performVectorization,pre,accExps,accTypes) then (cache,{},listReverse(accExps),listReverse(accTypes),st);
+    case (cache,env,{},_,_,st,_,_,accExps,accTypes) then (cache,{},listReverse(accExps),listReverse(accTypes),st);
     case (cache,env,case_::rest,_,_,st,_,_,accExps,accTypes)
       equation
         (cache,elabCase,optExp,optType,st) = elabMatchCase(cache,env,case_,tys,impl,st,performVectorization,pre);
@@ -1669,7 +1669,7 @@ algorithm
       Env.Env env;
       Option<Interactive.SymbolTable> st;
       
-    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,performVectorization,pre)
+    case (cache,env,Absyn.CASE(pattern=pattern,patternGuard=patternGuard,patternInfo=patternInfo,localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,_,_)
       equation
         (cache,SOME((env,DAE.DAE(caseDecls)))) = addLocalDecls(cache,env,decls,Env.caseScopeName,impl,info);
         patterns = MetaUtil.extractListFromTuple(pattern, 0);
@@ -1683,7 +1683,7 @@ algorithm
       then (cache,DAE.CASE(elabPatterns, dPatternGuard, caseDecls, body, elabResult, resultInfo, 0, info),elabResult,resType,st);
 
       // ELSE is the same as CASE, but without pattern
-    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,performVectorization,pre)
+    case (cache,env,Absyn.ELSE(localDecls=decls,equations=eq1,result=result,resultInfo=resultInfo,info=info),_,_,st,_,_)
       equation
         // Needs to be same length as any other pattern for the simplification algorithms, etc to work properly
         len = listLength(tys);

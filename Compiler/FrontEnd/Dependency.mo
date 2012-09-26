@@ -1157,8 +1157,8 @@ algorithm
       HashTable2.HashTable ht;
       Absyn.ArrayDim ad;
     
-    case({},optPath,cname,(d,p,env,ht)) then d;
-    case(Absyn.NOSUB()::ad,optPath,cname,(d,p,env,ht)) then buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
+    case({},_,_,(d,p,env,ht)) then d;
+    case(Absyn.NOSUB()::ad,_,_,(d,p,env,ht)) then buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
     case(Absyn.SUBSCRIPT(e)::ad,_,_,(d,p,env,ht)) equation
       d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
       d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));

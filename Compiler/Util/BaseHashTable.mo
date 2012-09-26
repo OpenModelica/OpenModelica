@@ -270,7 +270,7 @@ algorithm
       array<list<tuple<Key,Integer>>> hashvec;
       FuncsTuple fntpl;
       /* adding when already present => Updating value */
-    case (key,(hashvec,varr,bsize,n,fntpl))
+    case (_,(hashvec,varr,bsize,n,fntpl))
       equation
         (_,indx) = get1(key, hashTable);
         indx_1 = indx - 1;
@@ -563,7 +563,7 @@ algorithm
     local
       array<Option<tuple<Key,Value>>> arr_1,arr;
       Integer n,size;
-    case ((n,size,arr),pos)
+    case ((n,size,arr),_)
       equation
         (pos < size) = true;
         arr_1 = arrayUpdate(arr, pos + 1,NONE());

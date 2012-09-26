@@ -2121,7 +2121,7 @@ algorithm
       then fail();
     case (_,_,DAE.MOD(_,_,{},_),_,_) then {};
     case (_,_,DAE.NOMOD(),_,_) then {};
-    case (_,_,DAE.REDECL(_,_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,_,DAE.REDECL(_,_,_),_,_) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instRealClass;
 
@@ -2447,7 +2447,7 @@ algorithm
         Error.addMessage(Error.TYPE_ERROR,{s1,s2});
       then fail();
     
-    case(cache,env,id,SOME(v),_,expectedTp,_) equation
+    case(cache,env,_,SOME(v),_,expectedTp,_) equation
       true = Flags.isSet(Flags.FAILTRACE);
       Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: " +& ValuesUtil.printValStr(v) +&
@@ -15010,7 +15010,7 @@ algorithm
         (cache, inEquations, {});
     
     // handle empty case
-    case (cache, inEnv, inIH, inPre, {}, _, eEq, nEq) then (cache, listReverse(eEq), listReverse(nEq));
+    case (cache, _, _, _, {}, _, eEq, nEq) then (cache, listReverse(eEq), listReverse(nEq));
     
     // connect, both expandable
     case (cache, env, _, _, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, info)))::rest, _, eEq, nEq)
