@@ -1378,7 +1378,7 @@ algorithm
   local CacheTree tree;
     array<EnvCache> arr;
     
-    case (_,inCache as CACHE(envCache=NONE()),_) then inCache;
+    case (_,CACHE(envCache=NONE()),_) then inCache;
 
     case (_,CACHE(envCache=SOME(arr)),_)
       equation

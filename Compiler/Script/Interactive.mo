@@ -10945,7 +10945,7 @@ algorithm
       list<Absyn.ElementArg> xs;
       String mapType;
 
-    case ({}, _, inClass, inFullProgram,_) then "{}";
+    case ({}, _,_,_,_) then "{}";
 
     case ((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = mapType),modification = mod)) :: _,_,
           _, _, _)
@@ -14945,7 +14945,7 @@ algorithm
       then
         str;
     
-    case (_,inClass,inFullProgram,_) then "";
+    case (_,_,_,_) then "";
   end matchcontinue;
 end getComponentAnnotation;
 
@@ -19535,7 +19535,7 @@ algorithm
       ident = "(" +& ident +& ")";
       res = getDefinitionComponents(typeStr,dirStr,numDim,rest);
     then ident :: res;
-    case (_,dirStr,numDim,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
+    case (_,_,_,_::rest) then getDefinitionComponents(typeStr,dirStr,numDim,rest);
   end matchcontinue;
 end getDefinitionComponents;
 

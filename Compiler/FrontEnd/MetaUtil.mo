@@ -586,7 +586,7 @@ algorithm
       then 
         SOME(DAE.T_METAUNIONTYPE(paths,b,ts));
     
-    case (_,t,_) then t;
+    case (_,_,_) then t;
   end matchcontinue;
 end fixUniontype;
 

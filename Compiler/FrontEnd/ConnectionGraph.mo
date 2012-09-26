@@ -697,7 +697,7 @@ algorithm
       Boolean b, b1, b2;
 
     // handle empty case
-    case ({}, left,_) then false;
+    case ({},_,_) then false;
 
     // try direct match
     case (SOME((crLeft, crRight))::rest, _, _)

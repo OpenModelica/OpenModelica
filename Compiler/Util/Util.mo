@@ -373,7 +373,7 @@ algorithm
       e = array[pos];
       true = func(e);
     then SOME(e);
-    case (_,func,_) then  arrayFindFirstOnTrue2(array,func,pos+1);
+    case (_,_,_) then  arrayFindFirstOnTrue2(array,func,pos+1);
   end matchcontinue;
 end arrayFindFirstOnTrue2; 
 

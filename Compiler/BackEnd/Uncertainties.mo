@@ -1314,7 +1314,7 @@ algorithm
       array<Option<BackendDAE.Var>> varOptArr;
       BackendDAE.Var elimVar;
 
-    case ({},_,vars,knvars,mvars,repl,_,m,elimVarIndexList,false) then
+    case ({},_,_,knvars,mvars,repl,_,_,elimVarIndexList,false) then
       ({},{},mvars,repl); 
       
     case (e::eqns,_,_,_,_,_,_,_,_,false) equation
@@ -1535,7 +1535,7 @@ algorithm
       list<BackendDAE.Var> varLst;  
        
     case({},repl,func,_) then {};
-    case(v::varLst,_,_,replaceName as true) equation
+    case(v::varLst,_,_,true) equation
       cr = BackendVariable.varCref(v);
       bindExp = varBindingOpt(v);
       bindExp = replaceExpOpt(bindExp,repl,func);
@@ -1546,7 +1546,7 @@ algorithm
       varLst = replaceVars(varLst,repl,func,replaceName);
     then v::varLst;
     
-    case(v::varLst,_,_,replaceName as false) equation
+    case(v::varLst,_,_,false) equation
       bindExp = varBindingOpt(v);
       bindExp = replaceExpOpt(bindExp,repl,func);
       bindExp = applyOptionSimplify(bindExp);

@@ -686,7 +686,7 @@ algorithm
       equation
         false = Flags.getConfigBool(Flags.UNIT_CHECKING);
       then(UnitAbsyn.noStore,{});
-    case (_,dae,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
+    case (_,_,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
     case(_,_,_,UnitAbsyn.INSTSTORE(st,ht,res))
       equation
         (terms,st) = buildTerms(env,dae,ht,st);
@@ -1370,10 +1370,10 @@ protected function buildTermOp "Takes two UnitTerms and and DAE.Operator and cre
   output UnitAbsyn.UnitTerm ut;
 algorithm
   ut := match(ut1,ut2,op,origExp)
-    case (_,ut2,DAE.ADD(ty=_),_) then UnitAbsyn.ADD(ut1,ut2,origExp);
-    case (_,ut2,DAE.SUB(ty=_),_) then UnitAbsyn.SUB(ut1,ut2,origExp);
-    case (_,ut2,DAE.MUL(ty=_),_) then UnitAbsyn.MUL(ut1,ut2,origExp);
-    case (_,ut2,DAE.DIV(ty=_),_) then UnitAbsyn.DIV(ut1,ut2,origExp);
+    case (_,_,DAE.ADD(ty=_),_) then UnitAbsyn.ADD(ut1,ut2,origExp);
+    case (_,_,DAE.SUB(ty=_),_) then UnitAbsyn.SUB(ut1,ut2,origExp);
+    case (_,_,DAE.MUL(ty=_),_) then UnitAbsyn.MUL(ut1,ut2,origExp);
+    case (_,_,DAE.DIV(ty=_),_) then UnitAbsyn.DIV(ut1,ut2,origExp);
   end match;
 end buildTermOp;
 

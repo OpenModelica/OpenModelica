@@ -2408,7 +2408,7 @@ algorithm
         e_1 = negateif(negate,e);
         var1 = BackendVariable.setVarNominalValue(var,e_1);
       then var1;
-    case(_,inVar,_) then inVar;
+    case(_,_,_) then inVar;
   end matchcontinue;
 end mergeNomnialAttribute;
 
@@ -2436,7 +2436,7 @@ algorithm
         minMax = mergeMinMax(negate,ominmax,ominmax1,cr,cr1);
         var1 = BackendVariable.setVarMinMax(var,minMax);
       then var1;
-    case(_,inVar,_) then inVar;
+    case(_,_,_) then inVar;
   end matchcontinue;
 end mergeMinMaxAttribute;
 
@@ -6747,7 +6747,7 @@ algorithm
     list<Integer> oneElem;
     list<list<Integer>> rest;
     array<list<Integer>>  accumList;
-    case ({}, inAccumList, _) then inAccumList;
+    case ({},_,_) then inAccumList;
     case (oneElem::rest, _, _)
       equation
         accumList = transposeSparsePattern2(oneElem, inAccumList, inValue);
@@ -8854,7 +8854,7 @@ protected function mergeIf
   output DAE.Exp outExp;
 algorithm
   outExp := match(inExp1,inExp2,inOrgExp1)
-    case (_,inExp2,_) then DAE.IFEXP(inOrgExp1, inExp1, inExp2);
+    case (_,_,_) then DAE.IFEXP(inOrgExp1, inExp1, inExp2);
  end match;
 end mergeIf;
 

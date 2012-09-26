@@ -413,7 +413,7 @@ algorithm
       Integer r,c;
       DAE.ComponentRef cr;
     case({}, _,_,_) then true;
-    case({} :: restRows, inCref, rowIndex,_) then isMatrixExpansion(restRows, inCref, rowIndex+1, 1);
+    case({} :: restRows, inCref,_,_) then isMatrixExpansion(restRows, inCref, rowIndex+1, 1);
     case ( (DAE.CREF(componentRef=cr) :: restElems) :: restRows, _, _, _) 
       equation
         { DAE.INDEX(DAE.ICONST(r)), DAE.INDEX(DAE.ICONST(c)) } = ComponentReference.crefLastSubs(cr);
@@ -3419,7 +3419,7 @@ algorithm
       Boolean bwhen,bdisc,bdynamic;
       list<SimCode.SimVar> tempvars;
       // handle empty
-    case (_, _, _, {}, helpVarInfo,_,_) then ({},{},{},iuniqueEqIndex,itempvars);
+    case (_, _, _, {},_,_,_) then ({},{},{},iuniqueEqIndex,itempvars);
         // single equation 
     case (_, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
       equation
@@ -3540,7 +3540,7 @@ algorithm
       list<SimCode.SimEqSystem> equations_,equations1,noDiscEquations1;
       list<SimCode.SimVar> tempvars;
       // handle empty
-    case (_, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, _, _, {}, helpVarInfo,_,_) then ({},{},iuniqueEqIndex,itempvars);
+    case (_,_, genDiscrete,_,_,_, _, {},_,_,_) then ({},{},iuniqueEqIndex,itempvars);
       
       // ignore when equations if we should not generate them
     case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index) :: restComps, _, _,_)
@@ -8605,7 +8605,7 @@ algorithm
         (e22,rhs);
         
         // not succeded to solve, return unsolved equation., catched later.
-    case (_,e1,_) then (e1,e2);
+    case (_,_,_) then (e1,e2);
   end matchcontinue;
 end solveTrivialArrayEquation;
 
@@ -11528,9 +11528,9 @@ Helper function for setVectorIndexes;
   output list<SimCode.SimVar>  out_1;
   output list<SimCode.SimVar>  out_2;
 algorithm (out_0,out_1,out_2) := matchcontinue(in_0,in_1,in_2,variable,variable_index)
-  case (_,in_1,in_2,variable,0) then (variable::in_0,in_1,in_2);
-  case (_,in_1,in_2,variable,1) then (in_0,variable::in_1,in_2);
-  case (_,in_1,in_2,variable,2) then (in_0,in_1,variable::in_2);
+  case (_,_,_,_,0) then (variable::in_0,in_1,in_2);
+  case (_,_,_,_,1) then (in_0,variable::in_1,in_2);
+  case (_,_,_,_,2) then (in_0,in_1,variable::in_2);
   case(_,_,_,_,_) equation print(" failure in addVariableToStateVector  \n"); then fail();
 end matchcontinue;
 end addVariableToStateVector;

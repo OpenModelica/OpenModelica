@@ -3420,8 +3420,8 @@ protected function simplifyBinaryCommutative
   output DAE.Exp exp;
 algorithm
   exp := matchcontinue (op,lhs,rhs)
-    case (_,lhs,_) then simplifyBinaryCommutativeWork(op,lhs,rhs);
-    case (_,lhs,_) then simplifyBinaryCommutativeWork(op,rhs,lhs);
+    case (_,_,_) then simplifyBinaryCommutativeWork(op,lhs,rhs);
+    case (_,_,_) then simplifyBinaryCommutativeWork(op,rhs,lhs);
   end matchcontinue;
 end simplifyBinaryCommutative;
 

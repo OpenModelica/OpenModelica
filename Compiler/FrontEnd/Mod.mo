@@ -1192,7 +1192,7 @@ algorithm
   mod := match (subMod, eqMod, n)
     // eqmod is nomod!
     case (_, DAE.NOMOD(), _) then subMod;
-    case (_, eqMod as DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))), _) then eqMod;
+    case (_,DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))), _) then eqMod;
     case (_, _, _)
       equation
         mod = checkDuplicateModifications(subMod,eqMod,n);

@@ -378,7 +378,7 @@ algorithm
       elems = listReverse(List.fold2r(elems,reEvaluateInitialIfEqns2,cache,env,{}));
     then
       DAE.DAE(elems);
-  case(_,_,dae,false) then dae;
+  case(_,_,_,false) then dae;
   end match;
 end reEvaluateInitialIfEqns;
 
@@ -2119,9 +2119,9 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Real";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case (_,env,DAE.MOD(f,e,{},eqmod),pre,ty) then {};
-    case (_,env,DAE.NOMOD(),pre,ty) then {};
-    case (_,env,DAE.REDECL(_,_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,_,DAE.MOD(f,e,{},eqmod),pre,ty) then {};
+    case (_,_,DAE.NOMOD(),pre,ty) then {};
+    case (_,_,DAE.REDECL(_,_,_),pre,ty) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instRealClass;
 
@@ -2193,9 +2193,9 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Integer";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case (_,env,DAE.MOD(f,e,{},eqmod),_) then {};
-    case (_,env,DAE.NOMOD(),_) then {};
-    case (_,env,DAE.REDECL(_,_,_),_) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,_,DAE.MOD(f,e,{},eqmod),_) then {};
+    case (_,_,DAE.NOMOD(),_) then {};
+    case (_,_,DAE.REDECL(_,_,_),_) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instIntegerClass;
 
@@ -2293,8 +2293,8 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Boolean";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case (_,env,DAE.MOD(f,e,{},eqmod),_) then {};
-    case (_,env,DAE.NOMOD(),_) then {};
+    case (_,_,DAE.MOD(f,e,{},eqmod),_) then {};
+    case (_,_,DAE.NOMOD(),_) then {};
     case(_,_,DAE.REDECL(_,_,_),_)
       equation
         print("Inst.instBooleanClass: ignoring wrong modifier:" +& Mod.printModStr(mods) +& "\n"); 
@@ -2355,9 +2355,9 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Enumeration";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case (_,env,DAE.MOD(f,e,{},eqmod),_) then {};
-    case (_,env,DAE.NOMOD(),_) then {};
-    case (_,env,DAE.REDECL(_,_,_),_) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,_,DAE.MOD(f,e,{},eqmod),_) then {};
+    case (_,_,DAE.NOMOD(),_) then {};
+    case (_,_,DAE.REDECL(_,_,_),_) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instEnumerationClass;
 
@@ -2455,7 +2455,7 @@ algorithm
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
                                   " type props: " +& Types.printPropStr(bindProp));
     then fail();
-    case(cache,env,id,_,bind,expectedTp,bindProp) equation
+    case(cache,env,id,_,_,expectedTp,bindProp) equation
       true = Flags.isSet(Flags.FAILTRACE);
       Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: NONE()" +&
@@ -3890,7 +3890,7 @@ algorithm
     // case({}, _, allComps, className) then {};
     
     // handle none
-    case (_,NONE(), allComps,_) then inComps;
+    case (_,NONE(),_,_) then inComps;
 
     // handle StateSelect as we will NEVER find it! 
     // case(inComps, SOME(DAE.CREF_QUAL(ident="StateSelect")), allComps, className) then inComps;
@@ -13210,7 +13210,7 @@ algorithm
       then
         fail();
         
-    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,source,_) then DAEUtil.emptyDae;
+    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then DAEUtil.emptyDae;
   end matchcontinue;
 end daeDeclare4;
 
@@ -16534,7 +16534,7 @@ algorithm
         checkVariabilityOfUpdatedComponent(variability,cref);
       then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
 
-    case (_,updatedComps,cref,mods,cmod,_) then (mods,cmod,m);
+    case (_,_,cref,mods,cmod,_) then (mods,cmod,m);
   end matchcontinue;
 end noModForUpdatedComponents;
 

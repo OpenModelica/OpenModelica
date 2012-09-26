@@ -967,7 +967,7 @@ algorithm
     Integer node;
     list<Integer> rest;
     list<Integer> indexes;
-    case (_, {}, _, inForbiddenColor, _) then inForbiddenColor;
+    case (_, {}, _,_, _) then inForbiddenColor;
     case (_, node::rest, _, _, _)
       equation
         ((_,indexes)) = arrayGet(inGraph,node);

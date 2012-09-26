@@ -401,7 +401,7 @@ algorithm
       d = buildClassDependsinArrayDim(ad,optPath,cname,(d,p,env,ht));
       d = buildClassDependsInComponentItems(citems,optPath,cname,(d,p,env,ht));
     then d;
-    case(_,optPath,cname,(d,p,env,ht)) then d;
+    case(_,_,cname,(d,p,env,ht)) then d;
   end matchcontinue;
 end buildClassDependsInComponentItems;
 
@@ -683,7 +683,7 @@ algorithm
    case(Absyn.ALG_NORETCALL(cr,funcargs),_,_,(d,p,env,ht)) equation
     d = buildClassDependsInExp(Absyn.CALL(cr,funcargs),optPath,cname,(d,p,env,ht));
    then d;
-   case(_,optPath,cname,(d,p,env,ht)) then d;
+   case(_,_,cname,(d,p,env,ht)) then d;
   end matchcontinue;
 end buildClassDependsInAlg;
 

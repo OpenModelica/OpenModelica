@@ -1236,7 +1236,7 @@ algorithm
       then
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
-    case (_,src,_) then (repl,src,dst);  /* dst has no own replacement, return */
+    case (_,_,_) then (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
 

@@ -339,7 +339,7 @@ algorithm
         repl_1 = makeTransitive12(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption);
       then
         (repl_1,src,dst);
-    case (_,src,dst,_) then (repl,src,dst);
+    case (_,_,dst,_) then (repl,src,dst);
   end matchcontinue;
 end makeTransitive1;
 
@@ -401,7 +401,7 @@ algorithm
       then
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
-    case (_,src,dst,_) then (repl,src,dst);  /* dst has no own replacement, return */
+    case (_,_,dst,_) then (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
 
@@ -875,7 +875,7 @@ algorithm
       Boolean c1,c2;
       list<DAE.Subscript> subs;
       
-    case ({}, repl,_) then ({},false);
+    case ({},_,_) then ({},false);
     case (DAE.WHOLEDIM()::subs, _, _)
       equation
         (subs,c1) = replaceCrefSubs2(subs,repl,cond);

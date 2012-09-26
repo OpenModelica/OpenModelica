@@ -328,7 +328,7 @@ algorithm
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
-    case (cache,env,Absyn.CREF(Absyn.WILD()),_,info,_,_) then (cache,DAE.PAT_WILD());
+    case (cache,env,Absyn.CREF(Absyn.WILD()),_,_,_,_) then (cache,DAE.PAT_WILD());
 
     case (cache,env,lhs,ty,info,numError,_)
       equation
