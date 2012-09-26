@@ -2922,7 +2922,7 @@ algorithm
       Integer idx,alg_idx;
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp,tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables>> extraArg;
       
-    case (_,{},_,statementLst,knvars,_,extraArg) then ((statementLst,extraArg));
+    case (_,{},_,statementLst,_,_,extraArg) then ((statementLst,extraArg));
     case (ie,_,range,statementLst,_,_,(_,_,_,(zcs,idx),(alg_idx,v,kn)))
       equation
         ((statementLst, extraArg )) = traverseStmtsExps(statementLst, collectZCAlgsFor, (ie,inExplst,range,(zcs,idx),(alg_idx,v,kn)), knvars);

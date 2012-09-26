@@ -395,7 +395,7 @@ algorithm
       String msg;
       DAE.Type ty;
     
-    case (cache,env,{},impl,st,doVect,pre,info,_) then (cache,{},{},{},st);
+    case (cache,env,{},impl,st,doVect,pre,_,_) then (cache,{},{},{},st);
     
     case (cache,env,Absyn.CREF(componentRef = cr)::rest,impl,st,doVect,pre,_,_) // BoschRexroth specifics
       equation
@@ -2503,7 +2503,7 @@ algorithm
     case ({}, {}, _, _)
       then ({}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()));
 
-    case ({e_1},{prop},pre,_) then ({e_1},prop);
+    case ({e_1},{prop},_,_) then ({e_1},prop);
 
     case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
       equation

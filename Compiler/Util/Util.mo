@@ -404,7 +404,7 @@ algorithm
     Integer pos,i;
     list<Integer> rest;
     Type_a elmt;
-    case(_,{},inArray,_) then inArray;
+    case(_,{},_,_) then inArray;
     case(_,pos::rest,_,i) equation 
       elmt = array[pos];
       outArray = arrayUpdate(inArray,i,elmt);

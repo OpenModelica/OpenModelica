@@ -142,7 +142,7 @@ algorithm
     local
       list<String> argsNames;
       String str1;
-    case ({},status,_) then status;
+    case ({},_,_) then status;
     case (_,_,_)
       equation
         (argsNames,_) = Absyn.getNamedFuncArgNamesAndValues(args);
@@ -360,7 +360,7 @@ algorithm
       list<Absyn.Exp> exps;
       list<DAE.Type> tys;
     
-    case (cache,env,{},{},info,lhs,_) then (cache,{});
+    case (cache,env,{},{},_,_,_) then (cache,{});
     
     case (cache,_,exp::exps,ty::tys,_,_,_)
       equation
@@ -1967,7 +1967,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
 
-    case (cache,env,{},scopeName,impl,_) then (cache,SOME((env,DAEUtil.emptyDae)));
+    case (cache,env,{},_,_,_) then (cache,SOME((env,DAEUtil.emptyDae)));
     case (cache,env,ld,_,_,_)
       equation
         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());

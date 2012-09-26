@@ -791,7 +791,7 @@ algorithm
       Integer loc;
       MMath.Rational expo;
     
-    case ({},suin,_) then (suin,st);
+    case ({},_,_) then (suin,st);
     
     case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::rest,_,_) 
       equation

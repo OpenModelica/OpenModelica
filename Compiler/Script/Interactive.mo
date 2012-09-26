@@ -13734,7 +13734,7 @@ algorithm
         SOME(str);
 
     // try next
-    case (_ :: rest,id,_) then getNamedAnnotationInParts(rest,id,f);
+    case (_ :: rest,_,_) then getNamedAnnotationInParts(rest,id,f);
   end matchcontinue;
 end getNamedAnnotationInParts;
 
@@ -13767,7 +13767,7 @@ algorithm
       then
         SOME(s1);
     
-    case ((_ :: xs),id,_) then getNamedAnnotationInElItems(xs,id,f);
+    case ((_ :: xs),_,_) then getNamedAnnotationInElItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInElItems;
 
@@ -13799,7 +13799,7 @@ algorithm
       then
         SOME(s1);
     
-    case ((_ :: xs),id,_) then getNamedAnnotationInEquItems(xs,id,f);
+    case ((_ :: xs),_,_) then getNamedAnnotationInEquItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInEquItems;
 
@@ -13831,7 +13831,7 @@ algorithm
       then
         SOME(s1);
     
-    case ((_ :: xs),id,_) then getNamedAnnotationInAlgItems(xs,id,f);
+    case ((_ :: xs),_,_) then getNamedAnnotationInAlgItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInAlgItems;
 
@@ -13920,7 +13920,7 @@ algorithm
       then
         SOME(str);
     
-    case ((_ :: xs),id,_) then getNamedAnnotationStr(xs,id,f);
+    case ((_ :: xs),_,_) then getNamedAnnotationStr(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationStr;
 
@@ -14447,7 +14447,7 @@ algorithm
       Absyn.Program lineProgram;
 
     // handle empty
-    case ({},info,inClass,inFullProgram,_) then {};
+    case ({},_,_,_,_) then {};
     
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(annName,_), modification = SOME(Absyn.CLASSMOD(mod,_))) :: rest,_,_, _, _)
       equation
@@ -14841,7 +14841,7 @@ algorithm
       Absyn.Info info;
 
     // handle empty
-    case ({},env,inClass,inFullProgram,_) then {};
+    case ({},env,_,_,_) then {};
     
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(annName,_),
         modification = SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), info = info) :: rest,env,_,_,_)
@@ -14892,7 +14892,7 @@ algorithm
       list<Absyn.ComponentItem> rest;
 
     // handle empty
-    case ({},env,inClass,inFullProgram,_) then {};
+    case ({},env,_,_,_) then {};
     
     case ((Absyn.COMPONENTITEM(comment = SOME(
       Absyn.COMMENT(

@@ -363,7 +363,7 @@ algorithm
       list<DAE.ComponentRef> crs;
       VariableReplacements repl1,repl2;
       HashTable2.HashTable ht;
-    case({},repl,_,_) then repl;
+    case({},_,_,_) then repl;
     case(cr::crs,REPLACEMENTS(hashTable=ht),_,_)
       equation
         crDst = BaseHashTable.get(cr,ht);

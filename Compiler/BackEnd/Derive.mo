@@ -1063,7 +1063,7 @@ algorithm
       list<tuple<Integer,DAE.derivativeCond>> crlst;
     
     // no conditions
-    case (_,{},expl,_) then inblst;
+    case (_,{},_,_) then inblst;
     
     // zeroDerivative
     case(_,(i,DAE.ZERO_DERIVATIVE())::crlst,_,_)

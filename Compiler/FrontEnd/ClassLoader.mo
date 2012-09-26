@@ -534,7 +534,7 @@ algorithm
       list<Absyn.ComponentItem> comps;
       Absyn.ElementItem ei;
       PackageOrder orderElt,load;
-    case (namesToSort,{},po,_) then (po,namesToSort);
+    case (namesToSort,{},_,_) then (po,namesToSort);
 
     case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts,_,_)
       equation

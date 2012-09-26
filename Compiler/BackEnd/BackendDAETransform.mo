@@ -3304,7 +3304,7 @@ algorithm
       DAE.ElementSource source;
       Type_a ext_arg_1,ext_arg_2;
 
-    case ({},func,_) then ({},inTypeA);
+    case ({},_,_) then ({},inTypeA);
 
     case (BackendDAE.REINIT(stateVar=cr,value=cond,source=source)::res,_,_)
       equation
@@ -3356,7 +3356,7 @@ algorithm
       list<BackendDAE.WhenClause> wclst,wclst1;
       Type_a ext_arg_1,ext_arg_2,ext_arg_3;
 
-    case ({},func,_) then ({},inTypeA);
+    case ({},_,_) then ({},inTypeA);
 
     case (BackendDAE.WHEN_CLAUSE(cond,reinitStmtLst,elsindx)::wclst,_,_)
       equation

@@ -3012,7 +3012,7 @@ algorithm
       Prefix.Prefix pre;
       InstanceHierarchy ih;
       
-    case (cache,env,ih,pre,ci_state,{},source,initial_,impl,unrollForLoops,_) then (cache,{});
+    case (cache,env,ih,pre,ci_state,{},source,initial_,impl,_,_) then (cache,{});
 
     case (cache,env,ih,pre,_,((e,l) :: tail),_,_,impl,_,_)
       equation

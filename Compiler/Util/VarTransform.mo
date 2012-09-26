@@ -1203,7 +1203,7 @@ algorithm
       list<DAE.ComponentRef> crs;
       VariableReplacements repl1,repl2;
       HashTable2.HashTable ht;
-    case({},repl,_) then repl;
+    case({},_,_) then repl;
     case(cr::crs,REPLACEMENTS(hashTable=ht),_)
       equation
         crDst = BaseHashTable.get(cr,ht);

@@ -1576,7 +1576,7 @@ algorithm
       list<BackendDAE.Equation> orgeqn,eqns;
       list<Integer> eqnindxlst;
     
-    case ({},inEqns,_,_) then (listReverse(inOrgEqns1),listReverse(inEqns),listReverse(inEqnindxlst));
+    case ({},_,_,_) then (listReverse(inOrgEqns1),listReverse(inEqns),listReverse(inEqnindxlst));
     case ((e,eqn::{},l)::rest,_,_,_)
       equation
         (orgeqns,eqns,eqnindxlst) = getOrgEqn(rest,eqn::inEqns,inOrgEqns1,e::inEqnindxlst);

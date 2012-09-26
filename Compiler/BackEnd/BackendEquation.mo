@@ -1068,7 +1068,7 @@ algorithm
     local
       BackendDAE.Equation eqn;
      Type_a ext_arg;
-    case (NONE(),func,_) then inTypeA;
+    case (NONE(),_,_) then inTypeA;
     case (SOME(eqn),_,_)
       equation
         ((_,ext_arg)) = func((eqn,inTypeA));
@@ -1130,7 +1130,7 @@ algorithm
       BackendDAE.Equation eqn;
      Type_a ext_arg;
      Boolean b;
-    case (NONE(),func,_) then (true,inTypeA);
+    case (NONE(),_,_) then (true,inTypeA);
     case (SOME(eqn),_,_)
       equation
         ((_,b,ext_arg)) = func((eqn,inTypeA));
@@ -1197,7 +1197,7 @@ algorithm
       Option<BackendDAE.Equation> oeqn;
       BackendDAE.Equation eqn,eqn1;
      Type_a ext_arg;
-    case (oeqn as NONE(),func,_) then (oeqn,inTypeA);
+    case (oeqn as NONE(),_,_) then (oeqn,inTypeA);
     case (oeqn as SOME(eqn),_,_)
       equation
         ((eqn1,ext_arg)) = func((eqn,inTypeA));

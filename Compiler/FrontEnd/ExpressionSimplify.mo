@@ -519,8 +519,8 @@ algorithm
       Boolean b,b1;
       DAE.Exp e;
       // Condition is constant
-    case (DAE.BCONST(true),tb,_) then tb;
-    case (DAE.BCONST(false),tb,_) then fb;
+    case (DAE.BCONST(true),_,_) then tb;
+    case (DAE.BCONST(false),_,_) then fb;
       // The expression is the condition
     case (exp,DAE.BCONST(true),DAE.BCONST(false)) then exp;
     case (exp,DAE.BCONST(false),DAE.BCONST(true))
@@ -993,7 +993,7 @@ algorithm
         etp = DAE.T_ARRAY(etp,dim11::ndim::dims,ts);
         e = DAE.MATRIX(etp,i,mss);
       then simplifyCat(dim,e::es,acc,true);
-    case (_,e::es,acc,_) then simplifyCat(dim,es,e::acc,changed);
+    case (_,e::es,_,_) then simplifyCat(dim,es,e::acc,changed);
   end matchcontinue;
 end simplifyCat;
 
@@ -4121,7 +4121,7 @@ algorithm
     local
       list<DAE.Exp> row;
       list<list<DAE.Exp>> mexpl;
-    case ({},op,s1,_) then {};
+    case ({},_,_,_) then {};
     case (row::mexpl,_,_,_)
       equation
         row = simplifyVectorScalarMatrixRow(row,op,s1,arrayScalar);
@@ -4142,7 +4142,7 @@ algorithm
     local
       DAE.Exp e;
       list<DAE.Exp> row;
-    case({},op,s1,_) then {};
+    case({},_,_,_) then {};
       /* array op scalar */
     case(e::row,_,_,true)
       equation
@@ -4395,8 +4395,8 @@ algorithm
       equation
         len = listLength(exps);
       then Expression.makeBuiltinCall("max",{DAE.ARRAY(DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(len)}, DAE.emptyTypeSource), true, exps)},ty);
-    case ("product",ty,exps,_) then Expression.makeProductLst(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
-    case ("sum",ty,exps,_) then Expression.makeSum(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
+    case ("product",_,_,_) then Expression.makeProductLst(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
+    case ("sum",_,_,_) then Expression.makeSum(exps); // TODO: Remove listReverse; it's just needed so I don't need to update expected results
   end match;
 end simplifyReductionFoldPhase;
 

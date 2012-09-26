@@ -515,8 +515,8 @@ public function optimizeElseIf
   output DAE.Else oelse;
 algorithm
   oelse := match (cond,stmts,els)
-    case (DAE.BCONST(true),stmts,_) then DAE.ELSE(stmts);
-    case (DAE.BCONST(false),stmts,_) then els;
+    case (DAE.BCONST(true),_,_) then DAE.ELSE(stmts);
+    case (DAE.BCONST(false),_,_) then els;
     else DAE.ELSEIF(cond,stmts,els);
   end match;
 end optimizeElseIf;

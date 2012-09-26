@@ -2720,7 +2720,7 @@ algorithm
       list<Integer> rest,eqns,eqns1,alleqns;
       Integer pos;
           
-    case({},inM,_,_,_,_) then (inM,inTypeA);
+    case({},_,_,_,_,_) then (inM,inTypeA);
     
     case(pos::rest,_,_,_,_,_) equation
       // do not leave the list
@@ -6550,7 +6550,7 @@ algorithm
     array<list<Integer>> result;
     BackendDAE.StrongComponents rest;
     list<list<Integer>>  rowElementsList, eqnlstList;
-    case ({},inResults,_,_) then inResults;
+    case ({},_,_,_) then inResults;
     case(BackendDAE.SINGLEEQUATION(eqn=eqn,var=var)::rest,result,_,_)
       equation
         // get incedece row for curent equation set
@@ -9164,7 +9164,7 @@ algorithm
   on := match (n,n2,m,mT,ixs)
     local
       Boolean b;
-    case (0,n2,_,_,_) then n2;
+    case (0,_,_,_,_) then n2;
     case (_,_,_,_,_)
       equation
         b = partitionIndependentBlocks1(n,n2+1,m,mT,ixs);

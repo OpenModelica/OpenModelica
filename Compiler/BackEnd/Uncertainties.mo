@@ -1534,7 +1534,7 @@ algorithm
       Option<DAE.Exp> bindExp;
       list<BackendDAE.Var> varLst;  
        
-    case({},repl,func,_) then {};
+    case({},_,_,_) then {};
     case(v::varLst,_,_,true) equation
       cr = BackendVariable.varCref(v);
       bindExp = varBindingOpt(v);

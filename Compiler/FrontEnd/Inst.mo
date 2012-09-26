@@ -2455,7 +2455,7 @@ algorithm
                                   " expected type: " +& Types.printTypeStr(expectedTp) +&
                                   " type props: " +& Types.printPropStr(bindProp));
     then fail();
-    case(cache,env,id,_,_,expectedTp,bindProp) equation
+    case(cache,env,_,_,_,expectedTp,bindProp) equation
       true = Flags.isSet(Flags.FAILTRACE);
       Debug.fprintln(Flags.FAILTRACE, "instBuiltinAttribute failed for: " +& id +&
                                   " value binding: NONE()" +&
@@ -11651,7 +11651,7 @@ algorithm
       then setFunctionInputIndex(elemDecl,str,currPos+1);
 
        /* Other element, do not increaese inputarg pos*/
-      case(_::elemDecl,str,_) then setFunctionInputIndex(elemDecl,str,currPos);
+      case(_::elemDecl,_,_) then setFunctionInputIndex(elemDecl,str,currPos);
   end matchcontinue;
 end setFunctionInputIndex;
 
@@ -11695,14 +11695,14 @@ algorithm defaultDerivative := matchcontinue(inSubs,inCache,inEnv,inPrefix)
     SCode.Mod m;
     list<SCode.SubMod> subs;
     
-  case({},inCache,inEnv,_) then NONE();
+  case({},_,_,_) then NONE();
   case(SCode.NAMEMOD("derivative",(m as SCode.MOD(binding =SOME(((ae as Absyn.CREF(acr)),_)))))::subs,_,_,_)
     equation
       p = Absyn.crefToPath(acr);
       (_,p) = makeFullyQualified(inCache,inEnv, p);
     then
       SOME(p);
-  case(_::subs,inCache,inEnv,_) then getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
+  case(_::subs,_,_,_) then getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
   end matchcontinue;
 end getDerivativeSubModsOptDefault;
 
@@ -16534,7 +16534,7 @@ algorithm
         checkVariabilityOfUpdatedComponent(variability,cref);
       then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
 
-    case (_,_,_,_,cmod,_) then (mods,cmod,m);
+    case (_,_,_,_,_,_) then (mods,cmod,m);
   end matchcontinue;
 end noModForUpdatedComponents;
 
@@ -17275,7 +17275,7 @@ algorithm
       String str,name;
       list<DAE.Element> elts;
     // No algorithm section; allowed
-    case (_,{},NONE(),acc,_,_) then listReverse(acc);
+    case (_,{},NONE(),_,_,_) then listReverse(acc);
     case (_,{},SOME(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)),_,_,_)
       equation
         // Adding tail recursion optimization
@@ -17296,7 +17296,7 @@ algorithm
       then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,name::outvars);
     case (_,(elt as DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),direction=DAE.INPUT()))::elts,_,_,_,_)
       then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,name::invars,outvars);
-    case (_,elt::elts,oalg,acc,invars,_) then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,outvars);
+    case (_,elt::elts,_,_,_,_) then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,outvars);
   end match;
 end optimizeFunctionCheckForLocals;
 
@@ -17317,7 +17317,7 @@ algorithm
       equation
         stmt = optimizeStatementTail(path,stmt,invars,outvars);
       then listReverse(stmt::acc);
-    case (_,stmt::stmts,invars,outvars,_) then optimizeLastStatementTail(path,stmts,invars,outvars,stmt::acc);
+    case (_,stmt::stmts,_,_,_) then optimizeLastStatementTail(path,stmts,invars,outvars,stmt::acc);
   end match;
 end optimizeLastStatementTail;
 

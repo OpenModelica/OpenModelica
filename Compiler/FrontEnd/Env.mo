@@ -1417,7 +1417,7 @@ algorithm
       then 
         inCache;
     
-    case (inCache as CACHE(envCache=NONE()),id,_) then inCache;
+    case (inCache as CACHE(envCache=NONE()),_,_) then inCache;
 
     case (_,_,_)
       equation

@@ -1317,7 +1317,7 @@ algorithm
     local 
       String s1,s2,s;
 
-    case(DAE.NOMOD(),mod2,_) then mod2;
+    case(DAE.NOMOD(),_,_) then mod2;
     case (_,DAE.NOMOD(),_) then mod1;
     // if they are equal, return the second one!
     case(_,_,_) 
@@ -3194,7 +3194,7 @@ algorithm
       list<FullMod> rest, duplicates;
       FullMod fullMod;
     
-    case({},pre,elementName,info,_) then ();
+    case({},_,_,_,_) then ();
     
     case(fullMod::rest,_,_,_,_)
       equation

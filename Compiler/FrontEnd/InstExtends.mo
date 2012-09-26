@@ -1965,7 +1965,7 @@ algorithm
       Env.Env env;
       HashTableStringToPath.HashTable ht;
 
-    case (cache,env,{},ht,fixA,_) then (cache,{});
+    case (cache,env,{},ht,_,_) then (cache,{});
     case (cache,env,(a,b)::rest,ht,_,_)
       equation
         (cache,a) = fixA(cache,env,a,ht);
