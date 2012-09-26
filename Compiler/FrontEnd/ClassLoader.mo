@@ -194,7 +194,6 @@ algorithm
   cl := matchcontinue (id,inIdent,inString,encoding,inWithin,numError)
     local
       String pd,mp_1,packagefile,orderfile,pack,mp,name,str;
-      Absyn.Class cl;
       Absyn.Within within_;
       list<String> tv;
       Boolean pp,fp,ep;

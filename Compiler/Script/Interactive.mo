@@ -19379,8 +19379,6 @@ protected function getEnumerationLiterals
   output String out;
 algorithm
   out := match el
-  local
-    String out;
     case Absyn.ENUMLITERAL(literal = out)
       equation
         out = stringAppendList({"\"",out,"\""});

@@ -1096,8 +1096,6 @@ protected function compareQualifiedImportNames
   input Import inImport1;
   input Import inImport2;
   output Boolean outEqual;
-protected
-  Absyn.Ident name1, name2;
 algorithm
   outEqual := matchcontinue(inImport1, inImport2)
     local

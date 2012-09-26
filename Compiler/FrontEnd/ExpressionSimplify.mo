@@ -1082,7 +1082,7 @@ algorithm
   exp := match (iexpl,iacc,ichange)
     local
       String s1,s2,s;
-      DAE.Exp exp,exp1,exp2;      
+      DAE.Exp exp1,exp2;      
       list<DAE.Exp> rest,acc;
       Boolean change;
       

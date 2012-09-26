@@ -1104,8 +1104,6 @@ public function replaceEquations
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;  
-protected
-  HashTable2.HashTable ht;
 algorithm
   (outEqns,replacementPerformed) := matchcontinue(inEqns,repl,inFuncTypeExpExpToBooleanOption)
     local

@@ -1846,7 +1846,7 @@ protected function expInt "returns the int value of an expression"
 algorithm
   i := match(exp,inKnVariables)
     local 
-      Integer i,i1,i2;
+      Integer i1,i2;
       DAE.ComponentRef cr;
       BackendDAE.Variables knv;
       DAE.Exp e,e1,e2;

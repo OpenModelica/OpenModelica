@@ -87,9 +87,6 @@ protected function analyseClass
   input Absyn.Path inClassName;
   input Env inEnv;
   input Absyn.Info inInfo;
-protected
-  Item item;
-  Env env;
 algorithm
   _ := matchcontinue(inClassName, inEnv, inInfo)
     local

@@ -1360,15 +1360,17 @@ protected function solveEqn2 "solves an equation w.r.t. a variable"
   output DAE.ElementSource source;
 algorithm
   (exp,source) := match(eqn,cr)
-  local DAE.Exp e1,e2;
-    DAE.ElementSource source "origin of equation";
-    case(BackendDAE.EQUATION(e1,e2,source),_) equation
-      (exp,_) = ExpressionSolve.solve(e1,e2,DAE.CREF(cr,DAE.T_REAL_DEFAULT));      
-    then (exp,source);
-    case(_,_) equation
-      /*print("failed solving ");print(Exp.printComponentRefStr(cr));print(" from equation :");
-      print(equationStr(eqn));print("\n");*/
-    then fail();
+    local
+      DAE.Exp e1,e2;
+    case(BackendDAE.EQUATION(e1,e2,source),_)
+      equation
+        (exp,_) = ExpressionSolve.solve(e1,e2,DAE.CREF(cr,DAE.T_REAL_DEFAULT));      
+      then (exp,source);
+    case(_,_)
+      equation
+        /*print("failed solving ");print(Exp.printComponentRefStr(cr));print(" from equation :");
+        print(equationStr(eqn));print("\n");*/
+      then fail();
   end match;
 end solveEqn2;
 

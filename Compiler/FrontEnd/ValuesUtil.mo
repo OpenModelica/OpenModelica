@@ -1147,8 +1147,6 @@ public function matrixValueReals
   "Returns the real values of a Values matrix."
   input Value inValue;
   output list<list<Real>> outReals;
-protected
-  list<Values.Value> vals;
 algorithm
   outReals := matchcontinue(inValue)
     local

@@ -1257,9 +1257,8 @@ algorithm
       DAE.Dimension dim;
       list<DAE.ReductionIterator> diters;
       DAE.Dimensions dims;
-      Boolean hasGuardExp;
       Env.Cache cache;
-      Env.Env envWithIterators,env;
+      Env.Env env;
       DAE.Const iterconst,guardconst;
       DAE.Type fulliterty,iterty;
       Option<Interactive.SymbolTable> st;

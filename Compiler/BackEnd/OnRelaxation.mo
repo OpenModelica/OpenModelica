@@ -2129,9 +2129,9 @@ protected function diagonalEntry
   then it fails"
   input Integer col;
   input list<tuple<Integer,DAE.Exp>> row;
-  output Option<DAE.Exp> e;
+  output Option<DAE.Exp> oe;
 algorithm
-  e := matchcontinue(col,row)
+  oe := matchcontinue(col,row)
     local
       list<tuple<Integer,DAE.Exp>> rest;
       Integer r;

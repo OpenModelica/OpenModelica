@@ -1614,7 +1614,6 @@ algorithm
       Absyn.Case case_;
       list<Absyn.Case> rest;
       DAE.MatchCase elabCase;
-      list<DAE.MatchCase> elabCases;
       Option<DAE.Type> optType;
       Option<DAE.Exp> optExp;
       Env.Cache cache;
@@ -1964,6 +1963,8 @@ algorithm
       String str;
       Env.Cache cache;
       Env.Env env;
+      Boolean b;
+      Option<tuple<Env.Env,DAE.DAElist>> res;
 
     case (cache,env,{},_,_,_) then (cache,SOME((env,DAEUtil.emptyDae)));
     case (cache,env,ld,_,_,_)
@@ -1975,6 +1976,8 @@ algorithm
 
         // Filter out the components (just to be sure)
         true = List.fold(List.map1(ld2, SCode.isComponentWithDirection, Absyn.BIDIR()), boolAnd, true);
+        ((cache,b)) = List.fold1(ld2, checkLocalShadowing, env, (cache,false));
+        ld2 = Util.if_(b,{},ld2);
 
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
@@ -1987,7 +1990,8 @@ algorithm
           cache,env2, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), dummyFunc, ld_mod, {},
           impl, Inst.INNER_CALL(), ConnectionGraph.EMPTY, Connect.emptySet, true);
-      then (cache,SOME((env2,dae1)));
+        res = Util.if_(b,NONE(),SOME((env2,dae1)));
+      then (cache,res);
       
     case (cache,env,ld,_,_,_)
       equation
@@ -2018,6 +2022,36 @@ algorithm
       then (inCache,NONE());
   end matchcontinue;
 end addLocalDecls;
+
+protected function checkLocalShadowing
+  input SCode.Element elt;
+  input Env.Env env;
+  input tuple<Env.Cache,Boolean> inTpl;
+  output tuple<Env.Cache,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue (elt,env,inTpl)
+    local
+      String name;
+      Env.Cache cache;
+      SCode.Variability var;
+      Boolean b;
+      Absyn.Info info;
+      DAE.Type ty;
+    case (SCode.COMPONENT(name=name),_,(cache,_))
+      equation
+        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{})));
+      then inTpl;
+    case (SCode.COMPONENT(name=name),_,(cache,b))
+      equation
+        (cache,DAE.ATTR(variability=SCode.CONST()),_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,DAE.CREF_IDENT(name,DAE.T_UNKNOWN_DEFAULT,{}));
+        // Allow shadowing constants. Should be safe since they become values pretty much straight away.
+      then ((cache,b));
+    case (SCode.COMPONENT(name=name,info=info),_,(cache,b))
+      equation
+        Error.addSourceMessage(Error.MATCH_SHADOWING,{name},info);
+      then ((cache,true));
+  end matchcontinue;
+end checkLocalShadowing;
 
 public function resultExps
   input list<DAE.MatchCase> inCases;

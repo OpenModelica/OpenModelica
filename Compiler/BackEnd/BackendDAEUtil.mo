@@ -5125,7 +5125,6 @@ algorithm
       BackendDAE.WhenEquation we,elsewe;
       list<BackendDAE.WhenClause> wc;
       String eqnstr;
-      Integer size;
       DAE.Algorithm alg;
       BackendDAE.AdjacencyMatrixElementEnhanced row;
       list<list<BackendDAE.Equation>> eqnslst;
@@ -6154,7 +6153,6 @@ algorithm
       Expression.Type t;
       list<list<DAE.Subscript>> subslst;
       DAE.ElementSource source;
-      Integer size;
       DAE.ComponentRef cr;
       String str;
     // residual equations

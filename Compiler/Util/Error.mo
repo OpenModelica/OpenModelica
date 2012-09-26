@@ -615,7 +615,7 @@ public constant Message RECURSION_DEPTH_REACHED = MESSAGE(526, TRANSLATION(), ER
   Util.gettext("The maximum recursion depth was reached, probably due to mutual recursion. The current scope: %s."));
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
-  Util.gettext("Local variable '%s' shadows input or result variables in a match-expression."));
+  Util.gettext("Local variable '%s' shadows another variable."));
 public constant Message META_POLYMORPHIC = MESSAGE(5002, TRANSLATION(), ERROR(),
   Util.gettext("%s uses invalid subtypeof syntax. Only subtypeof Any is supported."));
 public constant Message META_FUNCTION_TYPE_NO_PARTIAL_PREFIX = MESSAGE(5003, TRANSLATION(), ERROR(),

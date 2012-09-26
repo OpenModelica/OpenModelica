@@ -2092,7 +2092,7 @@ algorithm
   (cr,exp,k,osyst,oshared) := 
   matchcontinue (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,isyst,ishared,negate,source)
     local
-      DAE.ComponentRef acr,cr;
+      DAE.ComponentRef acr;
       BackendDAE.Var avar,var;
       DAE.Exp ae,e;
       Integer aipos,i1,i2;
@@ -10436,7 +10436,6 @@ protected function solvable
   output Boolean b;
 algorithm
   b := match(s)
-    local Boolean b;
     case BackendDAE.SOLVABILITY_SOLVED() then true;
     case BackendDAE.SOLVABILITY_CONSTONE() then true;
     case BackendDAE.SOLVABILITY_CONST() then true;

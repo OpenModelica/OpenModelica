@@ -907,7 +907,7 @@ protected function reductionIteratorStr
 algorithm
   str := match riter
     local
-      String id,str;
+      String id;
       DAE.Exp exp,gexp;
     case (DAE.REDUCTIONITER(id=id,exp=exp,guardExp=NONE()))
       equation

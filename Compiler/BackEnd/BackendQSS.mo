@@ -143,7 +143,7 @@ algorithm
   (allVarsList, stateVarsList, orderedVarsList):=
   match (inDAELow1)
     local
-      list<BackendDAE.Var> orderedVarsList, knownVarsList, allVarsList;
+      list<BackendDAE.Var> knownVarsList;
       BackendDAE.BackendDAE dae;
       BackendDAE.Variables v,kn;
   case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},shared=BackendDAE.SHARED(knownVars = kn)))
@@ -794,7 +794,6 @@ algorithm
   local
     DAE.ComponentRef cref;
     DAE.Exp exp;
-    String t;
   case (SimCode.SES_SIMPLE_ASSIGN(cref=cref,exp=exp))
         
   equation

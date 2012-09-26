@@ -756,7 +756,7 @@ algorithm
     local
       Integer n,nx,ny,np;
       BackendDAE.BackendDAE dae;
-      Real l,b,t1,t2,time;
+      Real l,b,t1,t2,t;
       String timestr,nps;
       BackendDAE.StrongComponents comps;
     case _
@@ -773,8 +773,8 @@ algorithm
         t1 = clock();
         TaskGraphExt.mergeTasks(l, b);
         t2 = clock();
-        time = t2 -. t1;
-        timestr = realString(time);
+        t = t2 -. t1;
+        timestr = realString(t);
         print("task merging took ");
         print(timestr);
         print(" seconds\n");

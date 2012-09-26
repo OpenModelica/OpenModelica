@@ -85,9 +85,6 @@ public function expand
   input FunctionHashTable inFunctions;
   output DAE.DAElist outDAE;
   output DAE.FunctionTree outFunctions;
-protected
-  list<DAE.Element> el;
-  DAE.FunctionTree tree;
 algorithm
   (outDAE, outFunctions) := matchcontinue(inName, inClass, inFunctions)
     local

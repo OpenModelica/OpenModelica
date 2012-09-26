@@ -35,9 +35,9 @@ protected function calculateSimulationTimes
   input Absyn.Info inInfo;
   input CevalScript.SimulationOptions inSimOpt;
   output Env.Cache outCache;
-  output DAE.Exp startTime;
-  output DAE.Exp stopTime;
-  output DAE.Exp numberOfIntervals;
+  output DAE.Exp startTime "start time, default 0.0";
+  output DAE.Exp stopTime "stop time, default 1.0";
+  output DAE.Exp numberOfIntervals "number of intervals, default 500";
 algorithm
   (outCache, startTime, stopTime, numberOfIntervals) :=
   matchcontinue (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo, inSimOpt)  
@@ -48,9 +48,6 @@ algorithm
       Interactive.SymbolTable st;
       Prefix.Prefix pre;
       Absyn.Info info;
-      DAE.Exp startTime "start time, default 0.0";
-      DAE.Exp stopTime "stop time, default 1.0";
-      DAE.Exp numberOfIntervals "number of intervals, default 500";
       Integer intervals;
       Real stepTime;
       Env.Cache cache;

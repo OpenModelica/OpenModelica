@@ -2032,7 +2032,7 @@ public function derivativeEquation
 algorithm
   (cr,dcr,e,de,negate) := match (eqn)
       local
-        DAE.Exp e,ne;
+        DAE.Exp ne;
       // a = der(b);
       case (BackendDAE.EQUATION(exp=e as DAE.CREF(componentRef = dcr),scalar=de as  DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})))
         then (cr,dcr,e,de,false);

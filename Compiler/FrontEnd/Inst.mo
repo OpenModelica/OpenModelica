@@ -4262,9 +4262,9 @@ protected function instantiateExternalObjectConstructor
   input SCode.Element cl;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
-  output DAE.Type ty;
+  output DAE.Type outType;
 algorithm
-  (outCache,outIH,ty) := matchcontinue (inCache,env,inIH,cl)
+  (outCache,outIH,outType) := matchcontinue (inCache,env,inIH,cl)
     local
       Env.Cache cache;
       Env.Env env1;
@@ -17257,8 +17257,7 @@ algorithm
 end redeclareBasicType; 
 
 protected function optimizeFunctionCheckForLocals
-  "* Checks for shadowing local declarations
-  * Does tail recursion optimization"
+  "* Does tail recursion optimization"
   input Absyn.Path path;
   input list<DAE.Element> inElts;
   input Option<DAE.Element> oalg;
@@ -17280,7 +17279,6 @@ algorithm
       equation
         // Adding tail recursion optimization
         stmts = optimizeLastStatementTail(path,stmts,listReverse(invars),listReverse(outvars),{});
-        (_,(false,_)) = DAEUtil.traverseDAEEquationsStmts(stmts,checkMatchShadowing,(false,invars));
       then listReverse(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::acc);
       // Remove empty sections
     case (_,(elt1 as DAE.ALGORITHM(algorithm_=DAE.ALGORITHM_STMTS({})))::elts,_,_,_,_)
@@ -17446,49 +17444,6 @@ algorithm
     else (rhs,false);
   end matchcontinue;
 end optimizeStatementTail3;
-
-protected function checkMatchShadowing
-  input tuple<DAE.Exp,tuple<Boolean,list<String>>> inTpl;
-  output tuple<DAE.Exp,tuple<Boolean,list<String>>> outTpl;
-algorithm
-  outTpl := matchcontinue inTpl
-    local
-      DAE.Exp exp;
-      list<String> vars;
-      list<DAE.Element> localDecls;
-      Boolean b;
-    case ((exp as DAE.MATCHEXPRESSION(localDecls=localDecls),(_,vars)))
-      equation
-        b = checkShadowing(localDecls,vars);
-      then ((exp,(b,vars)));
-    else inTpl;
-  end matchcontinue;
-end checkMatchShadowing;
-
-protected function checkShadowing
-  input list<DAE.Element> inElts;
-  input list<String> vars;
-  output Boolean shadows;
-algorithm
-  shadows := matchcontinue (inElts,vars)
-    local
-      String name;
-      DAE.ElementSource source;
-      list<DAE.Element> elts;
-      
-    case ({},_) then false;
-    case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name))::elts,_)
-      equation
-        // TODO: Make this scale better than squared
-        false = listMember(name,vars);
-      then checkShadowing(elts,vars);
-    case (DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),source=source)::elts,_)
-      equation
-        true = listMember(name,vars);
-        Error.addSourceMessage(Error.MATCH_SHADOWING,{name},DAEUtil.getElementSourceFileInfo(source));
-      then true;
-  end matchcontinue;
-end checkShadowing;
 
 protected function optimizeStatementTailMatchCases
   input Absyn.Path path;

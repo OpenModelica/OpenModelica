@@ -1877,10 +1877,6 @@ protected function prefixCrefWithEnv
   input DAE.ComponentRef inCref;
   input Env inEnv;
   output DAE.ComponentRef outCref;
-protected
-  String id;
-  Env env;
-  list<String> env_strl;
 algorithm
   outCref := matchcontinue(inCref, inEnv)
     local

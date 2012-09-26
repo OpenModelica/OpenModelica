@@ -760,7 +760,7 @@ algorithm
       list<Values.Value> valLst;
       String name;
       Values.Value value;
-      Real t1,t2,time;
+      Real t1,t2,t;
       Interactive.SymbolTable st;
       Option<Interactive.SymbolTable> stOpt;
       
@@ -770,9 +770,9 @@ algorithm
         t1 = System.time();
         (cache,value,SOME(st)) = Ceval.ceval(cache,env, exp, true, SOME(st),msg);
         t2 = System.time();
-        time = t2 -. t1;
+        t = t2 -. t1;
       then
-        (cache,Values.REAL(time),st);
+        (cache,Values.REAL(t),st);
 
     case (cache,env,DAE.CALL(path=Absyn.IDENT(name),attr=DAE.CALL_ATTR(builtin=true),expLst=eLst),st,_)
       equation
@@ -2747,9 +2747,7 @@ algorithm
       String str,re;
       Option<SCode.Program> fp;
       SCode.Program scodeP;
-      list<Env.Frame> env;
       list<Interactive.InstantiatedClass> ic,ic_1;
-      Interactive.SymbolTable st;
       Absyn.Program p,ptot;
       list<Interactive.Variable> iv;
       list<Interactive.CompiledCFunction> cf;

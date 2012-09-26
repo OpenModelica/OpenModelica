@@ -2679,9 +2679,9 @@ end typeSpecPathString;
 public function typeSpecPath
 "convert TypeSpec to Path"
   input TypeSpec tp;
-  output Path p;
+  output Path op;
 algorithm
-  p := match(tp)
+  op := match(tp)
     local Path p;
     case(TCOMPLEX(path = p)) then p;
     case(TPATH(path = p)) then p;

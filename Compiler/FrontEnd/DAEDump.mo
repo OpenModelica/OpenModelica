@@ -2947,8 +2947,6 @@ algorithm
   (funList) := match (functionTree)
     local      
       list<DAE.Function> funcs;
-      functionList funList;
-
     case _
       equation
         funcs = DAEUtil.getFunctionList(functionTree);

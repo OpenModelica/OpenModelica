@@ -510,8 +510,6 @@ public function negate
   Negates an expression."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
-protected
-  Type t;
 algorithm
   outExp := matchcontinue(inExp)
     local 

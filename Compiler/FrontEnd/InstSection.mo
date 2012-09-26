@@ -4618,7 +4618,6 @@ algorithm
       list<DAE.Attributes> attrs;
       DAE.Type lt,rt;
       String s,lhs_str,rhs_str,lt_str,rt_str,s1,s2;
-      list<DAE.Statement> stmts;
       Env.Cache cache;
       Prefix.Prefix pre;
       InstanceHierarchy ih;
