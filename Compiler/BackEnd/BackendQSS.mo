@@ -418,7 +418,7 @@ indexs:=
       Integer p;
       list<list<Integer>> acc_1;
 
-    case (_,{},acc) then acc;
+    case (_,{},_) then acc;
     case (_,((SimCode.SES_SIMPLE_ASSIGN(cref=cref))::tail),_) 
     equation
       /*
@@ -667,7 +667,7 @@ algorithm
     local DAE.Exp e1;
           list<DAE.Exp> tail;
           list<DAE.ComponentRef> l;
-    case ({},acc) then acc;
+    case ({},_) then acc;
     case (e1 :: tail ,_) 
     equation
       ((_,l)) = Expression.traverseExp(e1,getExpCrefs,{});
@@ -951,8 +951,8 @@ algorithm
       list<BackendDAE.Equation> tail;
       String s;
     case ({},_) then {};
-    case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_BOOL(_,_))) :: tail,zc) then newDiscreteVariables(tail,zc);
-    case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_INTEGER(_,_))) :: tail,zc) then newDiscreteVariables(tail,zc);
+    case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_BOOL(_,_))) :: tail,_) then newDiscreteVariables(tail,zc);
+    case (BackendDAE.EQUATION(exp=DAE.CREF(ty = DAE.T_INTEGER(_,_))) :: tail,_) then newDiscreteVariables(tail,zc);
     case ( _ :: tail,_) 
     equation
       print("Found one discontinuous equation\n");

@@ -142,7 +142,7 @@ public function intGcd "returns the greatest common divisor for two Integers"
 algorithm
   i := matchcontinue(i1,i2)
     case (_,0) then i1;
-    case (_,i2) then intGcd(i2,intMod(i1,i2));
+    case (_,_) then intGcd(i2,intMod(i1,i2));
   end matchcontinue;
 end intGcd;
 

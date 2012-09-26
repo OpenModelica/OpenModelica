@@ -2193,9 +2193,9 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Integer";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case (_,env,DAE.MOD(f,e,{},eqmod),pre) then {};
-    case (_,env,DAE.NOMOD(),pre) then {};
-    case (_,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,env,DAE.MOD(f,e,{},eqmod),_) then {};
+    case (_,env,DAE.NOMOD(),_) then {};
+    case (_,env,DAE.REDECL(_,_,_),_) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instIntegerClass;
 
@@ -2293,8 +2293,8 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Boolean";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case (_,env,DAE.MOD(f,e,{},eqmod),pre) then {};
-    case (_,env,DAE.NOMOD(),pre) then {};
+    case (_,env,DAE.MOD(f,e,{},eqmod),_) then {};
+    case (_,env,DAE.NOMOD(),_) then {};
     case(_,_,DAE.REDECL(_,_,_),_)
       equation
         print("Inst.instBooleanClass: ignoring wrong modifier:" +& Mod.printModStr(mods) +& "\n"); 
@@ -2355,9 +2355,9 @@ algorithm
         s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Enumeration";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
-    case (_,env,DAE.MOD(f,e,{},eqmod),pre) then {};
-    case (_,env,DAE.NOMOD(),pre) then {};
-    case (_,env,DAE.REDECL(_,_,_),pre) then fail(); /*TODO, report error when redeclaring in Real*/
+    case (_,env,DAE.MOD(f,e,{},eqmod),_) then {};
+    case (_,env,DAE.NOMOD(),_) then {};
+    case (_,env,DAE.REDECL(_,_,_),_) then fail(); /*TODO, report error when redeclaring in Real*/
   end matchcontinue;
 end instEnumerationClass;
 
@@ -3137,7 +3137,7 @@ algorithm
     // if is only one, don't append!
     case (_, {_}) then inEqs;
     // if is more than one, append
-    case (_, inExpandable) then listAppend(inEqs, inExpandable);
+    case (_,_) then listAppend(inEqs, inExpandable);
   end matchcontinue;
 end addExpandable;
 
@@ -3890,7 +3890,7 @@ algorithm
     // case({}, _, allComps, className) then {};
     
     // handle none
-    case (_,NONE(), allComps, className) then inComps;
+    case (_,NONE(), allComps,_) then inComps;
 
     // handle StateSelect as we will NEVER find it! 
     // case(inComps, SOME(DAE.CREF_QUAL(ident="StateSelect")), allComps, className) then inComps;
@@ -6584,7 +6584,7 @@ algorithm
       then 
         SCode.MOD(f, e, SCode.NAMEMOD(name, sm)::subs, b, info);
     
-    case (_, inModInner) then inModInner;
+    case (_,_) then inModInner;
     
   end matchcontinue;
 end chainRedeclares;
@@ -7658,7 +7658,7 @@ algorithm
         osubs = listAppend(osubs2,osubs);
       then
         osubs;
-    case(sub::subs,elems) then keepConstrainingTypeModifersOnly2(subs,elems);
+    case(sub::subs,_) then keepConstrainingTypeModifersOnly2(subs,elems);
     
   end matchcontinue;
 end keepConstrainingTypeModifersOnly2;
@@ -8784,7 +8784,7 @@ protected function liftNonBasicTypes
   output DAE.Type outTp;
 algorithm
   outTp:= matchcontinue(tp,dimt)
-    case (tp as DAE.T_SUBTYPE_BASIC(complexType = _),dimt) then tp;
+    case (tp as DAE.T_SUBTYPE_BASIC(complexType = _),_) then tp;
 
     case (_,_)
       equation  outTp = Types.liftArray(tp, dimt);
@@ -11347,7 +11347,7 @@ algorithm
       SCode.Element cdef;
       list<Absyn.Path> paths;
 
-    case(cache,env,ih,{},path) then (cache);
+    case(cache,env,ih,{},_) then (cache);
       
     // Skipped recursive calls (by looking in cache)
     case(cache,env,ih,p::paths,_)
@@ -11401,7 +11401,7 @@ algorithm
     Option<SCode.Comment> cmt;
     list<DAE.Function> elts;
 
-    case({},path) then {};
+    case({},_) then {};
 
     case(DAE.FUNCTION(p,funcs,tp,part,inlineType,source,cmt)::elts,_)
       equation
@@ -11651,7 +11651,7 @@ algorithm
       then setFunctionInputIndex(elemDecl,str,currPos+1);
 
        /* Other element, do not increaese inputarg pos*/
-      case(_::elemDecl,str,currPos) then setFunctionInputIndex(elemDecl,str,currPos);
+      case(_::elemDecl,str,_) then setFunctionInputIndex(elemDecl,str,currPos);
   end matchcontinue;
 end setFunctionInputIndex;
 
@@ -11695,14 +11695,14 @@ algorithm defaultDerivative := matchcontinue(inSubs,inCache,inEnv,inPrefix)
     SCode.Mod m;
     list<SCode.SubMod> subs;
     
-  case({},inCache,inEnv,inPrefix) then NONE();
+  case({},inCache,inEnv,_) then NONE();
   case(SCode.NAMEMOD("derivative",(m as SCode.MOD(binding =SOME(((ae as Absyn.CREF(acr)),_)))))::subs,_,_,_)
     equation
       p = Absyn.crefToPath(acr);
       (_,p) = makeFullyQualified(inCache,inEnv, p);
     then
       SOME(p);
-  case(_::subs,inCache,inEnv,inPrefix) then getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
+  case(_::subs,inCache,inEnv,_) then getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
   end matchcontinue;
 end getDerivativeSubModsOptDefault;
 
@@ -12545,7 +12545,7 @@ algorithm
       list<Absyn.Exp> rest;
       Env.Cache cache;
       Prefix.Prefix pre;
-    case (cache,_,{},impl,st,_,info) then (cache,{},{},st);
+    case (cache,_,{},impl,st,_,_) then (cache,{},{},st);
     case (cache,env,(e :: rest),impl,st,pre,_)
       equation 
         (cache,exp,p,st_1) = elabExpExt(cache,env, e, impl, st,pre,info);
@@ -15458,7 +15458,7 @@ algorithm (omod,restmods) := matchcontinue( smod , name , premod)
     String id;
     list<DAE.SubMod> rest,rest2;
     
-    case({},_,premod) then (DAE.NOMOD(),premod);
+    case({},_,_) then (DAE.NOMOD(),premod);
     
   case(DAE.NAMEMOD(id, mod) :: rest, _, _)
     equation
@@ -16316,7 +16316,7 @@ algorithm
       Values.Value val;
       DAE.Exp e;
       
-    case(false,e,v) then e;
+    case(false,e,_) then e;
     case(true,_,SOME(val)) equation
       e = ValuesUtil.valueExp(val);
     then e;
@@ -16534,7 +16534,7 @@ algorithm
         checkVariabilityOfUpdatedComponent(variability,cref);
       then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
 
-    case (_,updatedComps,cref,mods,cmod,m) then (mods,cmod,m);
+    case (_,updatedComps,cref,mods,cmod,_) then (mods,cmod,m);
   end matchcontinue;
 end noModForUpdatedComponents;
 
@@ -17296,7 +17296,7 @@ algorithm
       then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,name::outvars);
     case (_,(elt as DAE.VAR(componentRef=DAE.CREF_IDENT(ident=name),direction=DAE.INPUT()))::elts,_,_,_,_)
       then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,name::invars,outvars);
-    case (_,elt::elts,oalg,acc,invars,outvars) then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,outvars);
+    case (_,elt::elts,oalg,acc,invars,_) then optimizeFunctionCheckForLocals(path,elts,oalg,elt::acc,invars,outvars);
   end match;
 end optimizeFunctionCheckForLocals;
 
@@ -17317,7 +17317,7 @@ algorithm
       equation
         stmt = optimizeStatementTail(path,stmt,invars,outvars);
       then listReverse(stmt::acc);
-    case (_,stmt::stmts,invars,outvars,acc) then optimizeLastStatementTail(path,stmts,invars,outvars,stmt::acc);
+    case (_,stmt::stmts,invars,outvars,_) then optimizeLastStatementTail(path,stmts,invars,outvars,stmt::acc);
   end match;
 end optimizeLastStatementTail;
 

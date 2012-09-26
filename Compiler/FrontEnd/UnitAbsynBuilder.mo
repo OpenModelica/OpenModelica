@@ -70,7 +70,7 @@ algorithm
      case(_,_) equation
        (_,_,env as Env.FRAME(defineUnits = du)::_) = Lookup.lookupClass(Util.tuple21(tpl),Util.tuple22(tpl),p,false);
      then du;
-     case (_,tpl) then {};
+     case (_,_) then {};
   end matchcontinue;
 end retrieveUnitsFromEnv;
 
@@ -758,7 +758,7 @@ algorithm
     case(store,DAE.T_SUBTYPE_BASIC(complexType=tp),_) equation
        store = instAddStore(store,tp,cr);
     then store;
-    case(store,_,cr) then store;
+    case(store,_,_) then store;
   end matchcontinue;
 end instAddStore;
 
@@ -1370,10 +1370,10 @@ protected function buildTermOp "Takes two UnitTerms and and DAE.Operator and cre
   output UnitAbsyn.UnitTerm ut;
 algorithm
   ut := match(ut1,ut2,op,origExp)
-    case (_,ut2,DAE.ADD(ty=_),origExp) then UnitAbsyn.ADD(ut1,ut2,origExp);
-    case (_,ut2,DAE.SUB(ty=_),origExp) then UnitAbsyn.SUB(ut1,ut2,origExp);
-    case (_,ut2,DAE.MUL(ty=_),origExp) then UnitAbsyn.MUL(ut1,ut2,origExp);
-    case (_,ut2,DAE.DIV(ty=_),origExp) then UnitAbsyn.DIV(ut1,ut2,origExp);
+    case (_,ut2,DAE.ADD(ty=_),_) then UnitAbsyn.ADD(ut1,ut2,origExp);
+    case (_,ut2,DAE.SUB(ty=_),_) then UnitAbsyn.SUB(ut1,ut2,origExp);
+    case (_,ut2,DAE.MUL(ty=_),_) then UnitAbsyn.MUL(ut1,ut2,origExp);
+    case (_,ut2,DAE.DIV(ty=_),_) then UnitAbsyn.DIV(ut1,ut2,origExp);
   end match;
 end buildTermOp;
 

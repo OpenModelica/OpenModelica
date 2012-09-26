@@ -173,7 +173,7 @@ algorithm
         debugstr = Print.getString();
         res_with_debug = stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
       then res_with_debug;
-    case (_,res) then res;
+    case (_,_) then res;
   end matchcontinue;
 end makeDebugResult;
 
@@ -647,7 +647,7 @@ algorithm
       isFlatModelicaFile(filename);
       outP = Interactive.transformFlatProgram(p);
       then outP;
-    case (_,filename) then p;
+    case (_,_) then p;
   end matchcontinue;
 end transformFlatProgram;
 

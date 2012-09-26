@@ -153,7 +153,7 @@ algorithm
       AbsynDep.Depends dep;
       Absyn.Path className;
 
-    case(dep,Absyn.FULLYQUALIFIED(className),p,env) then getTotalProgramDep(dep,className,p,env);
+    case(dep,Absyn.FULLYQUALIFIED(className),p,_) then getTotalProgramDep(dep,className,p,env);
     /* If already added, skip to prevent infinite recursion */
     case(dep,className,p,_) equation
       _ = AbsynDep.getUses(dep,className);
@@ -200,7 +200,7 @@ protected function getTotalProgramDep2 "help function to getTotalProgramDep"
       v = AbsynDep.avlTreeGet(classUses,className);
       dep = getTotalProgramDepLst(dep,v,p,env);
      then dep;
-     case(dep, Absyn.IDENT(_),p,env) then dep;
+     case(dep, Absyn.IDENT(_),p,_) then dep;
      case(dep as AbsynDep.DEPENDS(classUses,_),className  as Absyn.QUALIFIED(_,_),p,_) equation
        v = AbsynDep.avlTreeGet(classUses,className);
        dep = getTotalProgramDepLst(dep,v,p,env);
@@ -228,7 +228,7 @@ algorithm
       AbsynDep.Depends dep;
       list<Absyn.Path> classNameLst;
 
-    case(dep,{},p,env) then dep;
+    case(dep,{},p,_) then dep;
 
     case(dep,className::classNameLst,p,_) equation
       dep = getTotalProgramDep(dep,className,p,env);
@@ -260,7 +260,7 @@ protected function extendScope "Extends a scope with an identifier"
 algorithm
   outOptPath := match(optPath,id)
   local Absyn.Path p;
-    case(NONE(),id) then SOME(Absyn.IDENT(id));
+    case(NONE(),_) then SOME(Absyn.IDENT(id));
     case(SOME(p),_) equation
       p = Absyn.joinPaths(p,Absyn.IDENT(id));
     then SOME(p);
@@ -1180,7 +1180,7 @@ algorithm outTable := matchcontinue(inparts,inTable)
     list<Absyn.ClassPart> parts;
     list<Absyn.ElementItem> cont;
     HashTable2.HashTable table1,table2;
-  case({},inTable) then inTable;
+  case({},_) then inTable;
   case((part as Absyn.PUBLIC(cont))::parts,_)
     equation
       table1 = createLocalVariableStruct(parts,inTable);
@@ -1214,7 +1214,7 @@ algorithm
     HashTable2.HashTable table1,table2;
     Absyn.ElementSpec spec;
     Absyn.ElementItem elit;
-  case({},inTable) then inTable;
+  case({},_) then inTable;
   case((Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=spec)))::elemis,_)
     equation
       table1 = createLocalVariableStruct2(elemis,inTable);
@@ -1259,7 +1259,7 @@ algorithm
       then
         table1;
   case(Absyn.COMPONENTS(components = comps),inTable) equation print(" failure in createLocalVariableStruct3\n"); then fail();
-  case(_,inTable) then inTable;
+  case(_,_) then inTable;
 end matchcontinue;
 end createLocalVariableStruct3;
 
@@ -1271,7 +1271,7 @@ Author BZ 2008-04 Helper function for createLocalVariableStruct
   output HashTable2.HashTable outTable;
 algorithm outTable := matchcontinue(inComponents,inTable)
   local list<Absyn.ComponentItem> comps; String id; HashTable2.HashTable table1,table2;
-    case({}, inTable) then inTable;
+    case({},_) then inTable;
   case((Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id)))::comps,_)
     equation
       table1 = BaseHashTable.add((ComponentReference.makeCrefIdent(id,DAE.T_UNKNOWN_DEFAULT,{}),DAE.ICONST(0)),inTable);

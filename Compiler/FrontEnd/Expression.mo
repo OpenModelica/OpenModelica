@@ -457,7 +457,7 @@ algorithm
       then 
         DAE.T_ARRAY(elt_tp,dims,ts);
         
-    case (_,n) then DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
+    case (_,_) then DAE.T_ARRAY(tp,{n},DAE.emptyTypeSource);
 
   end matchcontinue;
 end liftArrayR;
@@ -2783,7 +2783,7 @@ algorithm
       true = isZero(e1);
     then negate(e2);
 
-    case (_,e2) then expSub(e1,e2);
+    case (_,_) then expSub(e1,e2);
   end matchcontinue;
 end makeDiff;
 
@@ -2824,7 +2824,7 @@ algorithm
     case ({},DAE.AND(_)) then DAE.BCONST(true);
     case ({},DAE.OR(_)) then DAE.BCONST(false);
     case ({e1},_) then e1;
-    case ({e1, e2},op) then DAE.LBINARY(e1,op,e2);
+    case ({e1, e2},_) then DAE.LBINARY(e1,op,e2);
     case ((e1 :: rest),_)
       equation
         res = makeLBinary(rest,op);
@@ -3149,7 +3149,7 @@ algorithm
     case(_,_) equation
       true = isOne(e2);
     then e1;
-    case (_,e2) then expDiv(e1,e2);
+    case (_,_) then expDiv(e1,e2);
   end matchcontinue;
 end makeDiv;
 
@@ -6062,7 +6062,7 @@ algorithm b := matchcontinue(t1,t2)
       true = equalTypes(ty1,ty2);
     then
       true;
-  case (_,t2) then false;
+  case (_,_) then false;
   end matchcontinue;
 end equalTypes;
 
@@ -7927,8 +7927,8 @@ protected function complexityBuiltin
   output Integer complexity;
 algorithm
   complexity := match (name,tp)
-    case ("identity",tp) then complexityAlloc+tpComplexity(tp);
-    case ("cross",tp) then 3*3;
+    case ("identity",_) then complexityAlloc+tpComplexity(tp);
+    case ("cross",_) then 3*3;
     else 25;
   end match;
 end complexityBuiltin;

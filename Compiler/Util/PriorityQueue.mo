@@ -199,7 +199,7 @@ algorithm
     local
       Element elt;
       T ts;
-    case ({},acc) then listReverse(acc);
+    case ({},_) then listReverse(acc);
     case (ts,_)
       equation
         (ts,elt) = deleteAndReturnMin(ts);

@@ -113,7 +113,7 @@ algorithm
       Edges broken;
 
     // empty graph gives you the same dae
-    case (GRAPH(_, {}, {}, {}, {}), dae, modelNameQualified) then dae;
+    case (GRAPH(_, {}, {}, {}, {}), dae,_) then dae;
     // no dae
     // case (graph, DAE.DAE({},_)) then DAEUtil.emptyDae;
     // handle the connection braking
@@ -697,7 +697,7 @@ algorithm
       Boolean b, b1, b2;
 
     // handle empty case
-    case ({}, left, right) then false;
+    case ({}, left,_) then false;
 
     // try direct match
     case (SOME((crLeft, crRight))::rest, _, _)
@@ -1389,7 +1389,7 @@ protected function evalIsRoot
 algorithm
   outDae := matchcontinue(inRoots, inDae)
     case ({}, {}) then {};
-    case ({}, inDae) then inDae;
+    case ({},_) then inDae;
     case (_, _)
       equation
         (outDae, _) = DAEUtil.traverseDAE2(inDae, evalIsRootHelper, inRoots);

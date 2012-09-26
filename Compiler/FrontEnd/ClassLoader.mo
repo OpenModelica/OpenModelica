@@ -245,7 +245,7 @@ algorithm
       equation
         ei = listAppend(ei1,ei2);
       then Absyn.PROTECTED(ei)::rest;
-    case (_,cps) then cp::cps;
+    case (_,_) then cp::cps;
   end match;
 end mergeBefore;
 
@@ -534,7 +534,7 @@ algorithm
       list<Absyn.ComponentItem> comps;
       Absyn.ElementItem ei;
       PackageOrder orderElt,load;
-    case (namesToSort,{},po,pub) then (po,namesToSort);
+    case (namesToSort,{},po,_) then (po,namesToSort);
 
     case (name1::namesToSort,(ei as Absyn.ELEMENTITEM(Absyn.ELEMENT(specification=Absyn.COMPONENTS(components=comps),info=info)))::elts,_,_)
       equation

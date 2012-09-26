@@ -7378,7 +7378,7 @@ algorithm
     list<list<Type_a>> rest;
     list<Type_a> a;
     Integer i;
-    case({}, inLength) then inLength;
+    case({},_) then inLength;
     case(a::rest, _) 
       equation
         i = inLength+listLength(a);

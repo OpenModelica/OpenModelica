@@ -1236,7 +1236,7 @@ algorithm
       then
         (repl,src,dst_1);
         // replace Exp failed, keep old rule.
-    case (_,src,dst) then (repl,src,dst);  /* dst has no own replacement, return */
+    case (_,src,_) then (repl,src,dst);  /* dst has no own replacement, return */
   end matchcontinue;
 end makeTransitive2;
 
@@ -1327,7 +1327,7 @@ TODO: find out why array residual functions containing arrays as xloc[] does not
   output DAE.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
-  case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),inType) then Expression.makeCrefExp(cr,inType);
+  case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),_) then Expression.makeCrefExp(cr,inType);
   case (_,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;

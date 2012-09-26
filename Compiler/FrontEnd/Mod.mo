@@ -611,7 +611,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       
-    case (cache,_,ih,_,{},impl,info) then (cache,{});  /* impl */
+    case (cache,_,ih,_,{},impl,_) then (cache,{});  /* impl */
     case (cache,env,ih,pre,(x :: xs),impl,_)
       equation
         (cache,x_1) = updateSubmod(cache, env, ih, pre, x, impl, info);
@@ -736,7 +736,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
 
-    case (cache,_,_,_,{},impl,info) then (cache,{});  /* impl */
+    case (cache,_,_,_,{},impl,_) then (cache,{});  /* impl */
     case (cache,env,ih,pre,(x :: xs),impl,_)
       equation
         (cache,x_1) = elabSubmod(cache, env, ih, pre, x, impl,info);
@@ -2125,7 +2125,7 @@ algorithm
     case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_))
       then false;
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
-    case (_, mod2) then false;
+    case (_,_) then false;
     case(_, _) 
       equation
         //true = Flags.isSet(Flags.FAILTRACE);
@@ -2467,7 +2467,7 @@ algorithm
       then 
         str;
 
-    case(DAE.MOD(subModLst = subs, eqModOption=NONE()),depth) then "";
+    case(DAE.MOD(subModLst = subs, eqModOption=NONE()),_) then "";
 
     case(DAE.MOD(finalPrefix = fp, eqModOption=SOME(eq)),_)
       equation
@@ -3194,7 +3194,7 @@ algorithm
       list<FullMod> rest, duplicates;
       FullMod fullMod;
     
-    case({},pre,elementName,info,addErrorMessage) then ();
+    case({},pre,elementName,info,_) then ();
     
     case(fullMod::rest,_,_,_,_)
       equation

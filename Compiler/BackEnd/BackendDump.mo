@@ -844,7 +844,7 @@ algorithm
     list<list<Integer>> rest;
     list<Integer> elem;
     String sparsepatternStr; 
-    case({},inInteger) then ();
+    case({},_) then ();
     case(elem::rest,_)
       equation  
       sparsepatternStr = List.toString(elem, intString,"Row[" +& intString(inInteger) +& "] = ","{",";","}",true);

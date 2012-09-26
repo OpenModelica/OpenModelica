@@ -6083,11 +6083,11 @@ algorithm
       DAE.Exp daeExp;
       list<list<Absyn.Exp>> lstExpl_1,lstExpl;
 
-    case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_,info) then (cache,e);
-    case (cache,_,(e as Absyn.REAL(value = _)),_,_,_,info) then (cache,e);
-    case (cache,_,(e as Absyn.CREF(componentRef = _)),_,_,_,info) then (cache,e);
-    case (cache,_,(e as Absyn.STRING(value = _)),_,_,_,info) then (cache,e);
-    case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_,info) then (cache,e);
+    case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.REAL(value = _)),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.CREF(componentRef = _)),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.STRING(value = _)),_,_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_,_) then (cache,e);
     
     case (cache,env,Absyn.BINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg,_)
       equation
@@ -6138,7 +6138,7 @@ algorithm
       then
         (cache,exp);
     
-    case (cache,env,(e as Absyn.CALL(function_ = cr,functionArgs = fa)),_,_,msg,info) then (cache,e);
+    case (cache,env,(e as Absyn.CALL(function_ = cr,functionArgs = fa)),_,_,msg,_) then (cache,e);
     
     case (cache,env,Absyn.ARRAY(arrayExp = expl),impl,st,msg,_)
       equation
@@ -6173,9 +6173,9 @@ algorithm
       then
         (cache,Absyn.TUPLE(expl_1));
     
-    case (cache,env,Absyn.END(),_,_,msg,info) then (cache,Absyn.END());
+    case (cache,env,Absyn.END(),_,_,msg,_) then (cache,Absyn.END());
     
-    case (cache,env,(e as Absyn.CODE(code = _)),_,_,msg,info) then (cache,e);
+    case (cache,env,(e as Absyn.CODE(code = _)),_,_,msg,_) then (cache,e);
 
   end matchcontinue;
 end cevalAstExp;
@@ -6204,7 +6204,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
     
-    case (cache,env,{},_,_,msg,info) then (cache,{});
+    case (cache,env,{},_,_,msg,_) then (cache,{});
     
     case (cache,env,(e :: es),impl,st,msg,_)
       equation
@@ -6237,7 +6237,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
     
-    case (cache,env,{},_,_,msg,info) then (cache,{});
+    case (cache,env,{},_,_,msg,_) then (cache,{});
     
     case (cache,env,(e :: es),impl,st,msg,_)
       equation
@@ -6314,7 +6314,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Absyn.ComponentItem x;
       Env.Cache cache;
-    case (cache,_,{},_,_,msg,info) then (cache,{});
+    case (cache,_,{},_,_,msg,_) then (cache,{});
     case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg,_) /* If one component fails, the rest should still succeed */
       equation
         (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg, info);
@@ -6356,7 +6356,7 @@ algorithm
         (cache,res) = cevalAstModification(cache,env, mod, st, impl, msg, info);
       then
         (cache,SOME(res));
-    case (cache,env,NONE(),_,_,msg,info) then (cache,NONE());
+    case (cache,env,NONE(),_,_,msg,_) then (cache,NONE());
   end match;
 end cevalAstModopt;
 
@@ -6426,7 +6426,7 @@ algorithm
       Env.Cache cache;
       Absyn.Info mod_info;
 
-    case (cache,env,{},_,_,msg,info) then (cache,{});
+    case (cache,env,{},_,_,msg,_) then (cache,{});
     /* TODO: look through redeclarations for Eval(var) as well */
     case (cache,env,(Absyn.MODIFICATION(finalPrefix = b,eachPrefix = e,componentRef = cr,modification = SOME(mod),comment = stropt, info = mod_info) :: args),impl,st,msg,_)
       equation
@@ -6464,7 +6464,7 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Absyn.Exp e_1,e;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg,info) then (cache,{});
+    case (cache,env,{},_,_,msg,_) then (cache,{});
     case (cache,env,(Absyn.NOSUB() :: xs),impl,st,msg,_)
       equation
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg, info);
@@ -6502,7 +6502,7 @@ algorithm
       Boolean impl;
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
-    case (cache,_,{},_,_,msg,info) then (cache,{});
+    case (cache,_,{},_,_,msg,_) then (cache,{});
     case (cache,env,((e1,e2) :: xs),impl,st,msg,_)
       equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg, info);

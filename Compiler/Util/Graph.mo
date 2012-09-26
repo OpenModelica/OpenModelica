@@ -939,7 +939,7 @@ algorithm
     array<Integer> colored;
     Integer color;
     list<tuple<Integer, list<Integer>>> restGraph;
-    case ({},_,_,_,inColored) then inColored;          
+    case ({},_,_,_,_) then inColored;          
     case (((node,nodes))::restGraph, _, _, _, _)
       equation
         forbiddenColor = addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);

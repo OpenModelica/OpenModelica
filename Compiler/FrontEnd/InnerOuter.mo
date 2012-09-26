@@ -643,7 +643,7 @@ algorithm
       Expression.ComponentRef crefPrefix, crOuter;
     
     // no prefix to strip, return the cref!
-    case (Prefix.NOPRE(), inCref) then inCref;
+    case (Prefix.NOPRE(),_) then inCref;
     
     // we have a prefix, remove it from the cref
     case (_, _)
@@ -1280,7 +1280,7 @@ algorithm
       Error.addMessage(Error.OUTER_MODIFICATION, {s});
     then
       true;
-  case(_,_,_,_,_,_,_,_,impl) then false;
+  case(_,_,_,_,_,_,_,_,_) then false;
   end matchcontinue;
 end modificationOnOuter;
 

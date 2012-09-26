@@ -1534,7 +1534,7 @@ algorithm
       Option<DAE.Exp> bindExp;
       list<BackendDAE.Var> varLst;  
        
-    case({},repl,func,replaceName) then {};
+    case({},repl,func,_) then {};
     case(v::varLst,_,_,replaceName as true) equation
       cr = BackendVariable.varCref(v);
       bindExp = varBindingOpt(v);
@@ -1630,7 +1630,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       DAE.ConnectorType ct;
-    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct),cr) then 
+    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct),_) then 
       BackendDAE.VAR(cr,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct); 
   end match;
 end setVarCref;
@@ -1658,7 +1658,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> cmt;
       DAE.ConnectorType ct;
-    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct),bindExp) then 
+    case (BackendDAE.VAR(name,kind,dir,prl,tp,bind,bindval,ad,source,attr,cmt,ct),_) then 
       BackendDAE.VAR(name,kind,dir,prl,tp,bindExp,bindval,ad,source,attr,cmt,ct); 
   end match;
 end setVarBindingOpt;

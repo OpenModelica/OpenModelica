@@ -3394,10 +3394,10 @@ algorithm
       list<list<ComponentRef>> lstres1;
       list<list<ComponentRef>> crefll;
     
-    case (INTEGER(value = _),checkSubs) then {};
-    case (REAL(value = _),checkSubs) then {};
-    case (STRING(value = _),checkSubs) then {};
-    case (BOOL(value = _),checkSubs) then {};
+    case (INTEGER(value = _),_) then {};
+    case (REAL(value = _),_) then {};
+    case (STRING(value = _),_) then {};
+    case (BOOL(value = _),_) then {};
     case (CREF(componentRef = ALLWILD()),_) then {};
     case (CREF(componentRef = WILD()),_) then {};
     case (CREF(componentRef = CREF_INVALID(componentRef = _)), _) then {};
@@ -3486,7 +3486,7 @@ algorithm
         res = listAppend(l1, l2);
       then
         res;
-    case (END(),checkSubs) then {};
+    case (END(),_) then {};
 
     case (TUPLE(expressions = expl),_)
       equation
@@ -3497,7 +3497,7 @@ algorithm
 
     case (CODE(_),_) then {};
 
-    case (AS(exp = e1),checkSubs) then getCrefFromExp(e1,checkSubs);
+    case (AS(exp = e1),_) then getCrefFromExp(e1,checkSubs);
     case (CONS(e1,e2),_)
       equation
         l1 = getCrefFromExp(e1,checkSubs);
@@ -3513,7 +3513,7 @@ algorithm
       then
         res;
 
-    case (MATCHEXP(matchTy = _),checkSubs) then fail();
+    case (MATCHEXP(matchTy = _),_) then fail();
 
     case (e1,_)
       equation
@@ -5358,8 +5358,8 @@ algorithm
   outPath := match (within_,path)
     local
       Path path1;
-    case (TOP(),path) then path;
-    case (WITHIN(path1),path) then joinPaths(path1,path);
+    case (TOP(),_) then path;
+    case (WITHIN(path1),_) then joinPaths(path1,path);
   end match;
 end joinWithinPath;
 
@@ -5647,7 +5647,7 @@ algorithm
       equation
         elts1 = List.filter(elts1,filterAnnotationItem);
       then listAppend(elts1,elts2);
-    case (_,elts) then elts;
+    case (_,_) then elts;
   end match;
 end getFunctionInterfaceParts;
 

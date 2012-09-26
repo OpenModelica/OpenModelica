@@ -742,7 +742,7 @@ algorithm
         failure(equality(names = innames));
         Error.addSourceMessage(Error.META_STRICT_RML_MATCH_IN_OUT, {"The input does not match"}, info);
       then false;
-    case (_,{Absyn.CREF(Absyn.WILD())},innames,{},info) then true;
+    case (_,{Absyn.CREF(Absyn.WILD())},innames,{},_) then true;
     case (_,_,_,_,_)
       equation
         names = List.map(outcrefs, Absyn.expComponentRefStr);

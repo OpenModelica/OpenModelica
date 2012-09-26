@@ -516,7 +516,7 @@ public function optimizeElseIf
 algorithm
   oelse := match (cond,stmts,els)
     case (DAE.BCONST(true),stmts,_) then DAE.ELSE(stmts);
-    case (DAE.BCONST(false),stmts,els) then els;
+    case (DAE.BCONST(false),stmts,_) then els;
     else DAE.ELSEIF(cond,stmts,els);
   end match;
 end optimizeElseIf;
@@ -647,7 +647,7 @@ algorithm
       list<Statement> stmts;
       Ident e_str,t_str;
       DAE.Type t;
-    case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,source) then DAE.STMT_WHILE(e,stmts,source);
+    case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,_) then DAE.STMT_WHILE(e,stmts,source);
     case (e,DAE.PROP(type_ = t),_,_)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -676,8 +676,8 @@ algorithm
       Option<Statement> elsew;
       Ident e_str,t_str;
       DAE.Type t;
-    case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
-    case (e,DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _))),stmts,elsew,source) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
+    case (e,DAE.PROP(type_ = DAE.T_BOOL(varLst = _)),stmts,elsew,_) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
+    case (e,DAE.PROP(type_ = DAE.T_ARRAY(ty = DAE.T_BOOL(varLst = _))),stmts,elsew,_) then DAE.STMT_WHEN(e,stmts,elsew,{},source);
     case (e,DAE.PROP(type_ = t),_,_,_)
       equation
         e_str = ExpressionDump.printExpStr(e);
@@ -763,7 +763,7 @@ public function makeTerminate "
   output Statement outStatement;
 algorithm
   outStatement := match (msg,props,source)
-    case (_,DAE.PROP(type_ = DAE.T_STRING(varLst = _)),source) then DAE.STMT_TERMINATE(msg,source);
+    case (_,DAE.PROP(type_ = DAE.T_STRING(varLst = _)),_) then DAE.STMT_TERMINATE(msg,source);
   end match;
 end makeTerminate;
 

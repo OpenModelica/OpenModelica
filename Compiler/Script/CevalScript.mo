@@ -1080,7 +1080,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"list",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"list",_,st,_) then (cache,Values.STRING(""),st);
     
     case (cache,env,"listVariables",{},st as Interactive.SYMBOLTABLE(lstVarVal = iv),_)
       equation
@@ -2297,7 +2297,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getAlgorithmCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getAlgorithmCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2306,7 +2306,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthAlgorithm",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthAlgorithm",_,st,_) then (cache,Values.STRING(""),st);
       
     case (cache,env,"getInitialAlgorithmCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2315,7 +2315,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getInitialAlgorithmCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getInitialAlgorithmCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthInitialAlgorithm",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2324,7 +2324,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthInitialAlgorithm",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthInitialAlgorithm",_,st,_) then (cache,Values.STRING(""),st);
       
     case (cache,env,"getAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2333,7 +2333,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getAlgorithmItemsCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getAlgorithmItemsCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2342,7 +2342,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthAlgorithmItem",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthAlgorithmItem",_,st,_) then (cache,Values.STRING(""),st);
     
     case (cache,env,"getInitialAlgorithmItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2351,7 +2351,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getInitialAlgorithmItemsCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getInitialAlgorithmItemsCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthInitialAlgorithmItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2360,7 +2360,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthInitialAlgorithmItem",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthInitialAlgorithmItem",_,st,_) then (cache,Values.STRING(""),st);
     
     case (cache,env,"getEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2369,7 +2369,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getEquationCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getEquationCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2378,7 +2378,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthEquation",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthEquation",_,st,_) then (cache,Values.STRING(""),st);
       
     case (cache,env,"getInitialEquationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2387,7 +2387,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getInitialEquationCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getInitialEquationCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthInitialEquation",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2396,7 +2396,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthInitialEquation",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthInitialEquation",_,st,_) then (cache,Values.STRING(""),st);
     
     case (cache,env,"getEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2405,7 +2405,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getEquationItemsCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getEquationItemsCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2414,7 +2414,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthEquationItem",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthEquationItem",_,st,_) then (cache,Values.STRING(""),st);
     
     case (cache,env,"getInitialEquationItemsCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2423,7 +2423,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getInitialEquationItemsCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getInitialEquationItemsCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthInitialEquationItem",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2432,7 +2432,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthInitialEquationItem",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthInitialEquationItem",_,st,_) then (cache,Values.STRING(""),st);
       
     case (cache,env,"getAnnotationCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2441,7 +2441,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getAnnotationCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getAnnotationCount",_,st,_) then (cache,Values.INTEGER(0),st);
       
     case (cache,env,"getNthAnnotationString",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2450,7 +2450,7 @@ algorithm
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"getNthAnnotationString",_,st,msg) then (cache,Values.STRING(""),st);
+    case (cache,env,"getNthAnnotationString",_,st,_) then (cache,Values.STRING(""),st);
     
     case (cache,env,"getImportCount",{Values.CODE(Absyn.C_TYPENAME(path))},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2459,7 +2459,7 @@ algorithm
       then
         (cache,Values.INTEGER(n),st);
     
-    case (cache,env,"getImportCount",_,st,msg) then (cache,Values.INTEGER(0),st);
+    case (cache,env,"getImportCount",_,st,_) then (cache,Values.INTEGER(0),st);
 
     case (cache,env,"getNthImport",{Values.CODE(Absyn.C_TYPENAME(path)),Values.INTEGER(n)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
@@ -2468,7 +2468,7 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(vals),st);
     
-    case (cache,env,"getNthImport",_,st,msg) then (cache,ValuesUtil.makeArray({}),st);
+    case (cache,env,"getNthImport",_,st,_) then (cache,ValuesUtil.makeArray({}),st);
         
     // plotParametric
     case (cache,env,"plotParametric",
@@ -4458,7 +4458,7 @@ algorithm
     local
       list<Interactive.Variable> vs;
       String p;
-    case ({},acc) then listReverse(acc);
+    case ({},_) then listReverse(acc);
     case (Interactive.IVAR(varIdent = "$echo") :: vs,_)
       then getVariableNames(vs,acc);
     case (Interactive.IVAR(varIdent = p) :: vs,_)

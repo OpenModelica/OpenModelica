@@ -2720,7 +2720,7 @@ algorithm
       list<Integer> rest,eqns,eqns1,alleqns;
       Integer pos;
           
-    case({},inM,_,_,_,inTypeA) then (inM,inTypeA);
+    case({},inM,_,_,_,_) then (inM,inTypeA);
     
     case(pos::rest,_,_,_,_,_) equation
       // do not leave the list
@@ -2806,7 +2806,7 @@ algorithm
         var = BackendVariable.setBindValue(inVar,value);
         var = BackendVariable.setVarStartValue(var,inExp);
       then (var,true);
-    case(_,inVar) then (inVar,false);        
+    case(_,_) then (inVar,false);        
   end matchcontinue;
 end setbindValue;
 
@@ -8854,7 +8854,7 @@ protected function mergeIf
   output DAE.Exp outExp;
 algorithm
   outExp := match(inExp1,inExp2,inOrgExp1)
-    case (_,inExp2,inOrgExp1) then DAE.IFEXP(inOrgExp1, inExp1, inExp2);
+    case (_,inExp2,_) then DAE.IFEXP(inOrgExp1, inExp1, inExp2);
  end match;
 end mergeIf;
 

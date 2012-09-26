@@ -1752,7 +1752,7 @@ algorithm
       list<list<Absyn.Exp>> ess;
       list<list<DAE.Exp>> dess;
 
-    case (cache,_,Absyn.INTEGER(value = i),impl,_,info) then (cache,DAE.ICONST(i),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));  /* impl */
+    case (cache,_,Absyn.INTEGER(value = i),impl,_,_) then (cache,DAE.ICONST(i),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));  /* impl */
     
     case (cache,_,Absyn.REAL(value = r),impl,_,_)
       then
@@ -2503,7 +2503,7 @@ algorithm
     case ({}, {}, _, _)
       then ({}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST()));
 
-    case ({e_1},{prop},pre,info) then ({e_1},prop);
+    case ({e_1},{prop},pre,_) then ({e_1},prop);
 
     case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
       equation
@@ -4183,7 +4183,7 @@ algorithm
       then
         ((exp_2 :: expl_2));
 
-      case ({},t) then {};
+      case ({},_) then {};
   end match;
 end makePreLst;
 
@@ -4206,7 +4206,7 @@ algorithm
         matrixExplPre = List.map1(matrixExpl, makePreLst, t);
       then DAE.MATRIX(ty,i,matrixExplPre);
 
-    case (exp_1,t) then exp_1;
+    case (exp_1,_) then exp_1;
   end matchcontinue;
 end elabBuiltinPreMatrix;
 
@@ -6587,7 +6587,7 @@ algorithm
       Env.Cache cache;
       Prefix.Prefix pre;
       Absyn.Exp aexp;
-    case (cache,_,_,_,_,_,{},exp,_,info) then (cache,exp);  /* The expected type */
+    case (cache,_,_,_,_,_,{},exp,_,_) then (cache,exp);  /* The expected type */
     case (cache,env,st,impl,id,tp,(Absyn.NAMEDARG(argName = id2,argValue = aexp) :: xs),_,pre,_)
       equation
         true = stringEq(id, id2);
@@ -8023,7 +8023,7 @@ algorithm
       list<Slot> slots;
       list<DAE.Exp> acc;
 
-    case ({},{},acc,SOME(e),info) then (listReverse(acc),e);
+    case ({},{},acc,SOME(e),_) then (listReverse(acc),e);
     case ({},{},_,NONE(),_)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Static.vectorizeCallUnknownDimension could not find any slot to vectorize"},info);
@@ -8996,7 +8996,7 @@ algorithm
       DAE.Const c2;
       Ident id;
     
-    case (slot as SLOT(slotFilled = true,expExpOption = e as SOME(_)),info) then slot;
+    case (slot as SLOT(slotFilled = true,expExpOption = e as SOME(_)),_) then slot;
     
     case (SLOT(an = (id,tp,c2,e as SOME(exp_1)),slotFilled = false,expExpOption = NONE(),typesArrayDimLst = ds),_)
       then
@@ -9725,7 +9725,7 @@ algorithm
         exp = Expression.makeASUB(exp,List.map(ss,Expression.subscriptExp));
       then (exp,c);
     
-    case (_,exp,_,c) then (exp,c);
+    case (_,exp,_,_) then (exp,c);
   end matchcontinue;
 end evaluateEmptyVariable;
 

@@ -3427,7 +3427,7 @@ algorithm
       DAE.Element first;
       list<DAE.Element> rest;
     // handle nothingness
-    case ({},_,inStream) then inStream;
+    case ({},_,_) then inStream;
     // the usual case
     case (first :: rest, _, str)
       equation

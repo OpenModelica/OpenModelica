@@ -373,7 +373,7 @@ algorithm
       e = array[pos];
       true = func(e);
     then SOME(e);
-    case (_,func,pos) then  arrayFindFirstOnTrue2(array,func,pos+1);
+    case (_,func,_) then  arrayFindFirstOnTrue2(array,func,pos+1);
   end matchcontinue;
 end arrayFindFirstOnTrue2; 
 
@@ -1808,7 +1808,7 @@ algorithm
   unOption := matchcontinue (inOption,default)
     local Type_a item;
     case (SOME(item),_) then item;
-    case (_,default) then default;
+    case (_,_) then default;
   end matchcontinue;
 end getOptionOrDefault;
 
@@ -2264,7 +2264,7 @@ algorithm
       equation
         res = fn(inArg);
       then res;
-    case (_,_,default) then default;
+    case (_,_,_) then default;
   end matchcontinue;
 end makeValueOrDefault;
 
@@ -2629,7 +2629,7 @@ algorithm
         true = (sz <= maxSz);
       then allCombinations2(lst);
 
-    case (_,NONE(),info) then allCombinations2(lst);
+    case (_,NONE(),_) then allCombinations2(lst);
 
     case (_,SOME(_),_)
       equation

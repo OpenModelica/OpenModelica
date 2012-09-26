@@ -624,7 +624,7 @@ algorithm
       then ComponentReference.pathToCref(path);
 
     // Check next frame.  
-    case (_ :: fs,ident) then lookupQualifiedImportedVarInFrame(fs,ident);
+    case (_ :: fs,_) then lookupQualifiedImportedVarInFrame(fs,ident);
   end matchcontinue;
 end lookupQualifiedImportedVarInFrame;
 
@@ -2076,7 +2076,7 @@ protected function selectModifier
   output DAE.Mod outMod;
 algorithm
   outMod := matchcontinue (inModID, inModNoID)
-    case (DAE.NOMOD(), inModNoID) then inModNoID;
+    case (DAE.NOMOD(),_) then inModNoID;
     case (_, _) then inModID;
   end matchcontinue;
 end selectModifier;

@@ -1303,7 +1303,7 @@ algorithm
         Error.assertionOrAddSourceMessage(not Flags.isSet(Flags.PATTERNM_ALL_INFO), Error.META_DEAD_CODE, {"Empty matchcontinue case"}, info);
         acc = caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,acc,true);
       then acc;
-    case (_,(case_ as DAE.CASE(patterns=pats))::rest,prevPatterns,acc,iter) then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,case_::acc,iter);
+    case (_,(case_ as DAE.CASE(patterns=pats))::rest,prevPatterns,acc,_) then caseDeadCodeEliminiation(matchType,rest,pats::prevPatterns,case_::acc,iter);
   end matchcontinue;
 end caseDeadCodeEliminiation;
 
@@ -1349,7 +1349,7 @@ protected function optimizeContinueJumps
   output list<DAE.MatchCase> outCases;
 algorithm
   outCases := match (matchType,cases)
-    case (Absyn.MATCH(),cases) then cases;
+    case (Absyn.MATCH(),_) then cases;
     else optimizeContinueJumps2(cases);
   end match;
 end optimizeContinueJumps;
@@ -1384,12 +1384,12 @@ algorithm
       list<DAE.Pattern> ps1,ps2;
       list<DAE.MatchCase> cases;
       
-    case (case1,{},jump) then updateMatchCaseJump(case1,jump);
+    case (case1,{},_) then updateMatchCaseJump(case1,jump);
     case (case1 as DAE.CASE(patterns=ps1),DAE.CASE(patterns=ps2)::cases,jump)
       equation
         true = patternListsDoNotOverlap(ps1,ps2);
       then optimizeContinueJump(case1,cases,jump+1);
-    case (case1,_,jump) then updateMatchCaseJump(case1,jump);
+    case (case1,_,_) then updateMatchCaseJump(case1,jump);
   end matchcontinue;
 end optimizeContinueJump;
 
@@ -1840,7 +1840,7 @@ algorithm
       list<DAE.Exp> exps;
       list<DAE.Type> tys;
     
-    case (cases,{},{},info) then (cases,DAE.T_NORETCALL_DEFAULT);
+    case (cases,{},{},_) then (cases,DAE.T_NORETCALL_DEFAULT);
     
     case (cases,exps,tys,info)
       equation
@@ -1967,7 +1967,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
 
-    case (cache,env,{},scopeName,impl,info) then (cache,SOME((env,DAEUtil.emptyDae)));
+    case (cache,env,{},scopeName,impl,_) then (cache,SOME((env,DAEUtil.emptyDae)));
     case (cache,env,ld,scopeName,impl,info)
       equation
         env2 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(scopeName),NONE());

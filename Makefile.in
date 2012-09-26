@@ -67,7 +67,7 @@ omoptimbasis: mkbuilddirs
 	$(MAKE) -C OMOptimBasis/build -f Makefile.unix
 endif
 
-qtclients: omnotebook omshell omedit omplot omoptim omoptimbasis
+qtclients: @OMNOTEBOOK@ omshell omedit omplot omoptim omoptimbasis
 
 qtclean: qtclean-common
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix clean

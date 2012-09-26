@@ -308,7 +308,7 @@ algorithm
         res = func(arg1,arg2);
       then
         res;
-    case (_,_,_,_,default) then default;
+    case (_,_,_,_,_) then default;
   end matchcontinue;
 end fcallret2;
 

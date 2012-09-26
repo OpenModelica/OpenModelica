@@ -2129,7 +2129,7 @@ algorithm
     local
       Absyn.Exp exp;
 
-    case (NONE(), prefix) then NONE();
+    case (NONE(),_) then NONE();
     case (SOME(exp), _)
       equation
         exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
@@ -2148,7 +2148,7 @@ algorithm
       Absyn.Exp exp;
       list<Absyn.Exp> rest;
 
-    case ({}, prefix) then {};
+    case ({},_) then {};
     case (exp::rest, _)
       equation
         exp = prefixUnqualifiedCrefsFromExp(exp, prefix);
@@ -2295,7 +2295,7 @@ algorithm
       then
         Absyn.RANGE(start, expOpt, stop);
     // end
-    case (Absyn.END(), prefix) then exp;
+    case (Absyn.END(),_) then exp;
     // MetaModelica expressions!
     case (Absyn.LIST(es), _)
       equation
@@ -2320,7 +2320,7 @@ algorithm
       then
         Absyn.MATCHEXP(matchType, inputExp, localDecls, cases, comment);
     // something else, just return the expression
-    case (_, prefix) then exp;
+    case (_,_) then exp;
   end matchcontinue;
 end prefixUnqualifiedCrefsFromExp;
 

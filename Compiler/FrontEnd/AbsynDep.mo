@@ -559,7 +559,7 @@ algorithm
       Option<AvlTreeValue> value;
       Option<AvlTree> l,r;
       Integer height;
-    case(AVLTREENODE(value,height,l,r),right) then AVLTREENODE(value,height,l,right);
+    case(AVLTREENODE(value,height,l,r),_) then AVLTREENODE(value,height,l,right);
   end match;
 end setRight;
 
@@ -573,7 +573,7 @@ algorithm
       Option<AvlTreeValue> value;
       Option<AvlTree> l,r;
       Integer height;
-    case(AVLTREENODE(value,height,l,r),left) then AVLTREENODE(value,height,left,r);
+    case(AVLTREENODE(value,height,l,r),_) then AVLTREENODE(value,height,left,r);
   end match;
 end setLeft;
 
@@ -680,7 +680,7 @@ algorithm
     case(_,_) equation
       val = avlTreeGet(tree,key);
     then val;
-    case (_,key) then {};
+    case (_,_) then {};
   end matchcontinue;
 end avlTreeGetOrEmpty;
 

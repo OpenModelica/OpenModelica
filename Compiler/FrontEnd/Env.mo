@@ -440,7 +440,7 @@ protected function updateEnvClassesInTreeOpt "Help function to updateEnvClassesI
 algorithm
   outTree := match(tree,classEnv)
     local AvlTree t;
-    case(NONE(),classEnv) then NONE();
+    case(NONE(),_) then NONE();
     case(SOME(t),_) 
       equation
         t = updateEnvClassesInTree(t,classEnv);
@@ -1417,7 +1417,7 @@ algorithm
       then 
         inCache;
     
-    case (inCache as CACHE(envCache=NONE()),id,env) then inCache;
+    case (inCache as CACHE(envCache=NONE()),id,_) then inCache;
 
     case (_,_,_)
       equation
@@ -2085,7 +2085,7 @@ algorithm
    local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(AVLTREENODE(value,height,l,r),right) then AVLTREENODE(value,height,l,right);
+    case(AVLTREENODE(value,height,l,r),_) then AVLTREENODE(value,height,l,right);
   end match;
 end setRight;
 
@@ -2098,7 +2098,7 @@ algorithm
   local Option<AvlTreeValue> value;
     Option<AvlTree> l,r;
     Integer height;
-    case(AVLTREENODE(value,height,l,r),left) then AVLTREENODE(value,height,left,r);
+    case(AVLTREENODE(value,height,l,r),_) then AVLTREENODE(value,height,left,r);
   end match;
 end setLeft;
 

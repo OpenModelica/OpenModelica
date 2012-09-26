@@ -867,8 +867,8 @@ algorithm
   out := match(e,acc)
     local
       String s;
-    case (COMPONENT(name = s),acc) then s::acc;
-    case (CLASS(name = s),acc) then s::acc;
+    case (COMPONENT(name = s),_) then s::acc;
+    case (CLASS(name = s),_) then s::acc;
     else acc;
   end match;
 end elementNamesWork;
@@ -1284,7 +1284,7 @@ protected function classDefEqual
         failure(equality(cdef1=cdef2));
       then false;*/
     
-    case (_, cdef2) then fail();   
+    case (_,_) then fail();   
   end match;
 end classDefEqual;
 
@@ -2320,7 +2320,7 @@ algorithm
   b := matchcontinue (elt,dir1)
     local
       Absyn.Direction dir2;
-    case (COMPONENT(attributes = ATTR(direction = dir2)),dir1) then directionEqual(dir1,dir2);
+    case (COMPONENT(attributes = ATTR(direction = dir2)),_) then directionEqual(dir1,dir2);
     case (_,_) then false;
   end matchcontinue;
 end isComponentWithDirection;
@@ -3545,7 +3545,7 @@ protected function propagateDirection
   output Absyn.Direction d;
 algorithm 
   d := matchcontinue(d1,d2)
-    case(Absyn.BIDIR(),d2) then d2;
+    case(Absyn.BIDIR(),_) then d2;
     case (_,Absyn.BIDIR()) then d1;
     case(_,_)
       equation

@@ -1540,7 +1540,7 @@ algorithm
       DAE.Type tp;
       DAE.Exp lhs;
     
-    case(Values.RECORD(orderd = {},comp = {}),cr,source) then {};
+    case(Values.RECORD(orderd = {},comp = {}),cr,_) then {};
     
     case(Values.RECORD(p, Values.RECORD(comp=_)::vals,n::names,index),cr,_)
       equation
@@ -2403,7 +2403,7 @@ algorithm
       InstanceHierarchy ih;
 
     // empty case 
-    case (cache,env,ih,pre,ci_state,{},source,initial_,impl,unrollForLoops) then (cache,{});
+    case (cache,env,ih,pre,ci_state,{},source,initial_,impl,_) then (cache,{});
 
     // general case       
     case (cache,env,ih,pre,_,(x :: xs),_,_,impl,_)
@@ -3012,7 +3012,7 @@ algorithm
       Prefix.Prefix pre;
       InstanceHierarchy ih;
       
-    case (cache,env,ih,pre,ci_state,{},source,initial_,impl,unrollForLoops,info) then (cache,{});
+    case (cache,env,ih,pre,ci_state,{},source,initial_,impl,unrollForLoops,_) then (cache,{});
 
     case (cache,env,ih,pre,_,((e,l) :: tail),_,_,impl,_,_)
       equation

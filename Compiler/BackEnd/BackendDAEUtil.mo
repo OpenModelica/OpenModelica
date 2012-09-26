@@ -2978,7 +2978,7 @@ algorithm
         (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, collateArrExp, infuncs);
       then
         DAE.ALGORITHM_STMTS(statementLst);
-    case (_,infuncs) then inAlg;
+    case (_,_) then inAlg;
   end matchcontinue;
 end collateAlgorithm;
 
@@ -4462,7 +4462,7 @@ algorithm
         oldvars = m[pos];
       then
         oldvars;
-    case (_,pos) then {};
+    case (_,_) then {};
   end matchcontinue;
 end getOldVars;
 
@@ -8737,7 +8737,7 @@ algorithm
       BackendDAE.Variables vars;
       EquationArray eqs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (BackendDAE.EQSYSTEM(vars,eqs,m,mT,_),matching) then BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching); 
+    case (BackendDAE.EQSYSTEM(vars,eqs,m,mT,_),_) then BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching); 
   end match;
 end setEqSystemMatching;
 

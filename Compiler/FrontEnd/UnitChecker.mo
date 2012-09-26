@@ -753,7 +753,7 @@ algorithm
       Boolean found2;
       tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
     
-    case ({},loc) then (false,MMath.RATIONAL(1,1),{});
+    case ({},_) then (false,MMath.RATIONAL(1,1),{});
     
     case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc2))::rest,_) 
       equation
@@ -791,7 +791,7 @@ algorithm
       Integer loc;
       MMath.Rational expo;
     
-    case ({},suin,st) then (suin,st);
+    case ({},suin,_) then (suin,st);
     
     case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::rest,_,_) 
       equation

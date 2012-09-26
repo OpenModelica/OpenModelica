@@ -4519,7 +4519,7 @@ algorithm
         ty1 = Expression.liftArrayR(ty,dim);
       then DAE.CAST(ty1,e);
 
-    case(e,dim) then e;
+    case(e,_) then e;
   end matchcontinue;
 end liftExpType;
 
@@ -6490,7 +6490,7 @@ algorithm
         /* So we can verify that the contents of the tuple is boxed */
         (oexp,oty) = matchType(exp,ty,DAE.T_METABOXED_DEFAULT,false);
       then (oexp,oty);
-    case (_,ty) then (exp,ty);
+    case (_,_) then (exp,ty);
   end match;
 end convertTupleToMetaTuple;
 
@@ -6692,7 +6692,7 @@ algorithm
       list<Type> tys;
       A a;
 
-    case ({},a,fn) then ({},a);
+    case ({},a,_) then ({},a);
     case (ty::tys,a,_)
       equation
         ((ty,a)) = traverseType((ty,a),fn);
@@ -6720,7 +6720,7 @@ algorithm
       list<DAE.Var> vars;
       A a;
       
-    case ({},a,fn) then ({},a);
+    case ({},a,_) then ({},a);
     case (var::vars,a,_)
       equation
         ty = getVarType(var);
@@ -6752,7 +6752,7 @@ algorithm
       list<tuple<String,Type,DAE.Const,Option<DAE.Exp>>> args;
       A a;
             
-    case ({},a,fn) then ({},a);
+    case ({},a,_) then ({},a);
     case ((b,ty,c,d)::args,a,_)
       equation
         ((ty,a)) = traverseType((ty,a),fn);
@@ -6777,7 +6777,7 @@ algorithm
         tys = List.map(tys, unboxedType); // Yes. Crazy
       then (DAE.T_TUPLE(tys,DAE.emptyTypeSource));
     
-    case (false,ty) then ty;
+    case (false,_) then ty;
   end match;
 end makeRegularTupleFromMetaTupleOnTrue;
 

@@ -751,7 +751,7 @@ algorithm
       list<Absyn.AlgorithmItem> algitemlst;
       String estr,tstr;
       DAE.Type vtype;
-    case (Values.BOOL(boolean = false),_,_,st,info) then st;
+    case (Values.BOOL(boolean = false),_,_,st,_) then st;
     case (Values.BOOL(boolean = true),exp,algitemlst,st,_)
       equation
         st_1 = evaluateAlgStmtLst(algitemlst, st);
@@ -835,7 +835,7 @@ algorithm
       Absyn.Exp exp;
       list<Absyn.AlgorithmItem> algitemlst;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
-    case ({},st,info) then st;
+    case ({},st,_) then st;
     case (((exp,algitemlst) :: algrest),st,_)
       equation
         (value,st_1) = evaluateExpr(exp, st, info);
@@ -4797,7 +4797,7 @@ algorithm
           Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
             DAE.NOMOD(), Prefix.NOPRE(), ci_state, cl, SCode.PUBLIC(), {});
       then env_2;
-    case (_,p_class) then {};
+    case (_,_) then {};
   end matchcontinue;
 end getClassEnv;
 
@@ -6529,7 +6529,7 @@ algorithm
       list<Absyn.ElementArg> args;
     case({},eqMod as Absyn.EQMOD(exp=_)) then SOME(Absyn.CLASSMOD({},eqMod));
     case ({},_) then NONE();
-    case (args,eqMod) then SOME(Absyn.CLASSMOD(args,eqMod));
+    case (args,_) then SOME(Absyn.CLASSMOD(args,eqMod));
   end matchcontinue;
 end createOptModificationFromEltargs;
 
@@ -8403,7 +8403,7 @@ algorithm
       then
         str;
     
-    case (_, p) then "{}";
+    case (_,_) then "{}";
     
   end matchcontinue;
 end getShortDefinitionBaseClassInformation;
@@ -8445,7 +8445,7 @@ algorithm
       then
         str;
   
-    case (_, p) then "{}";
+    case (_,_) then "{}";
     
   end matchcontinue;
 end getExternalFunctionSpecification;
@@ -10945,7 +10945,7 @@ algorithm
       list<Absyn.ElementArg> xs;
       String mapType;
 
-    case ({}, _, inClass, inFullProgram, inModelPath) then "{}";
+    case ({}, _, inClass, inFullProgram,_) then "{}";
 
     case ((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = mapType),modification = mod)) :: _,_,
           _, _, _)
@@ -13734,7 +13734,7 @@ algorithm
         SOME(str);
 
     // try next
-    case (_ :: rest,id,f) then getNamedAnnotationInParts(rest,id,f);
+    case (_ :: rest,id,_) then getNamedAnnotationInParts(rest,id,f);
   end matchcontinue;
 end getNamedAnnotationInParts;
 
@@ -13767,7 +13767,7 @@ algorithm
       then
         SOME(s1);
     
-    case ((_ :: xs),id,f) then getNamedAnnotationInElItems(xs,id,f);
+    case ((_ :: xs),id,_) then getNamedAnnotationInElItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInElItems;
 
@@ -13799,7 +13799,7 @@ algorithm
       then
         SOME(s1);
     
-    case ((_ :: xs),id,f) then getNamedAnnotationInEquItems(xs,id,f);
+    case ((_ :: xs),id,_) then getNamedAnnotationInEquItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInEquItems;
 
@@ -13831,7 +13831,7 @@ algorithm
       then
         SOME(s1);
     
-    case ((_ :: xs),id,f) then getNamedAnnotationInAlgItems(xs,id,f);
+    case ((_ :: xs),id,_) then getNamedAnnotationInAlgItems(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationInAlgItems;
 
@@ -13920,7 +13920,7 @@ algorithm
       then
         SOME(str);
     
-    case ((_ :: xs),id,f) then getNamedAnnotationStr(xs,id,f);
+    case ((_ :: xs),id,_) then getNamedAnnotationStr(xs,id,f);
   end matchcontinue;
 end getNamedAnnotationStr;
 
@@ -14447,7 +14447,7 @@ algorithm
       Absyn.Program lineProgram;
 
     // handle empty
-    case ({},info,inClass,inFullProgram,inModelPath) then {};
+    case ({},info,inClass,inFullProgram,_) then {};
     
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(annName,_), modification = SOME(Absyn.CLASSMOD(mod,_))) :: rest,_,_, _, _)
       equation
@@ -14841,7 +14841,7 @@ algorithm
       Absyn.Info info;
 
     // handle empty
-    case ({},env,inClass,inFullProgram,inModelPath) then {};
+    case ({},env,inClass,inFullProgram,_) then {};
     
     case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(annName,_),
         modification = SOME(Absyn.CLASSMOD(mod,Absyn.NOMOD())), info = info) :: rest,env,_,_,_)
@@ -14892,7 +14892,7 @@ algorithm
       list<Absyn.ComponentItem> rest;
 
     // handle empty
-    case ({},env,inClass,inFullProgram,inModelPath) then {};
+    case ({},env,inClass,inFullProgram,_) then {};
     
     case ((Absyn.COMPONENTITEM(comment = SOME(
       Absyn.COMMENT(
@@ -14945,7 +14945,7 @@ algorithm
       then
         str;
     
-    case (_,inClass,inFullProgram,inModelPath) then "";
+    case (_,inClass,inFullProgram,_) then "";
   end matchcontinue;
 end getComponentAnnotation;
 
@@ -17697,7 +17697,7 @@ protected function selectAnnotation
 algorithm
   outAnn := match(newAnn, oldAnn)
     case(newAnn as SOME(_), _) then newAnn;
-    case(newAnn as NONE(), oldAnn) then oldAnn;
+    case(newAnn as NONE(),_) then oldAnn;
   end match;
 end selectAnnotation;
 
@@ -19447,7 +19447,7 @@ algorithm
     then listAppend(getDefinitionContent(contents,isFunction,true), getDefinitionParts(rest,isFunction));
     case (Absyn.PROTECTED(contents)::rest,_)
     then listAppend(getDefinitionContent(contents,isFunction,false), getDefinitionParts(rest,isFunction));
-    case (_::rest,isFunction) then getDefinitionParts(rest,isFunction);
+    case (_::rest,_) then getDefinitionParts(rest,isFunction);
   end matchcontinue;
 end getDefinitionParts;
 
@@ -20077,12 +20077,12 @@ algorithm
       Absyn.Class cl;
       list<Absyn.Class> rest;
       
-    case ({},acc) then acc;
+    case ({},_) then acc;
     case ((cl as Absyn.CLASS(restriction = Absyn.R_FUNCTION(_)))::rest,_)
       equation
         funcs = getFunctionsInClasses(rest,cl::acc);
       then funcs;
-    case (_::rest,acc) then getFunctionsInClasses(rest,acc);
+    case (_::rest,_) then getFunctionsInClasses(rest,acc);
   end matchcontinue;
 end getFunctionsInClasses;
 

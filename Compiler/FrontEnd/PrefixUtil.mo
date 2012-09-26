@@ -902,7 +902,7 @@ algorithm
       Env.Env env;
       DAE.ReductionIterators iters;
 
-    case (cache,env,ih,{},pre) then (cache,{});
+    case (cache,env,ih,{},_) then (cache,{});
     case (cache,env,_,DAE.REDUCTIONITER(id,exp,SOME(gexp),ty)::iters,_)
       equation
         (cache,exp) = prefixExp(cache,env,ih,exp,pre);

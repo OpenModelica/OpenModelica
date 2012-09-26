@@ -7834,10 +7834,10 @@ algorithm
       DAE.ComponentRef name;
       Absyn.Path fname;
     
-    case (DAE.CREF(componentRef=name),inVar) then SimCode.ALIAS(name);
-    case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)),inVar) then SimCode.NEGATEDALIAS(name);
-    case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)),inVar) then SimCode.NEGATEDALIAS(name);
-    case (DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=name)),inVar) then SimCode.NEGATEDALIAS(name);
+    case (DAE.CREF(componentRef=name),_) then SimCode.ALIAS(name);
+    case (DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)),_) then SimCode.NEGATEDALIAS(name);
+    case (DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)),_) then SimCode.NEGATEDALIAS(name);
+    case (DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=name)),_) then SimCode.NEGATEDALIAS(name);
     case (DAE.CALL(path=fname, expLst={DAE.CREF(componentRef=name)}),_)
       equation
       Builtin.isDer(fname);
@@ -8605,7 +8605,7 @@ algorithm
         (e22,rhs);
         
         // not succeded to solve, return unsolved equation., catched later.
-    case (_,e1,e2) then (e1,e2);
+    case (_,e1,_) then (e1,e2);
   end matchcontinue;
 end solveTrivialArrayEquation;
 
@@ -8809,7 +8809,7 @@ algorithm
       Absyn.Path path;
       HashTableStringToPath.HashTable ht; 
       
-    case ({},ht,funcs) then ht;
+    case ({},ht,_) then ht;
     case (path::rest,ht,_)
       equation
         ht = getCalledFunctionsInFunction2(path, Absyn.pathStringNoQual(path), ht, funcs);
@@ -12633,7 +12633,7 @@ algorithm
       A a;
       list<list<SimCode.SimEqSystem>> eqs;
     
-    case ({},_,a,acc) then (listReverse(acc),a);
+    case ({},_,a,_) then (listReverse(acc),a);
     case (eq::eqs,_,a,_)
       equation
         (eq,a) = traverseExpsEqSystems(eq,func,a,{});
@@ -12661,7 +12661,7 @@ algorithm
       A a;
       list<SimCode.SimEqSystem> eqs;
     
-    case ({},_,a,acc) then (listReverse(acc),a);
+    case ({},_,a,_) then (listReverse(acc),a);
     case (eq::eqs,_,a,_)
       equation
         (eq,a) = traverseExpsEqSystem(eq,func,a);

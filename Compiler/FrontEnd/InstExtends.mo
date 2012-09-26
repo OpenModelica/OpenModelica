@@ -732,7 +732,7 @@ algorithm
       HashTableStringToPath.HashTable ht;
       list<Type_A> elts;
       
-    case ({},ht,getIdent) then ht;
+    case ({},ht,_) then ht;
     case (elt::elts,ht,_)
       equation
         ht = getIdent(elt,ht);
@@ -752,7 +752,7 @@ algorithm
   (outHt) := match (eltTpl,ht)
     local
       SCode.Element elt;
-    case ((elt,_,_),ht) then getLocalIdentElement(elt,ht);
+    case ((elt,_,_),_) then getLocalIdentElement(elt,ht);
   end match;
 end getLocalIdentElementTpl;
 
@@ -1844,7 +1844,7 @@ algorithm
       Env.Env env;
       HashTableStringToPath.HashTable ht;
 
-    case (cache,env,NONE(),ht,fixA) then (cache,NONE());
+    case (cache,env,NONE(),ht,_) then (cache,NONE());
     case (cache,env,SOME(A),ht,_)
       equation
         (cache,A) = fixA(cache,env,A,ht);
@@ -1880,7 +1880,7 @@ algorithm
       Env.Env env;
       HashTableStringToPath.HashTable ht;
 
-    case (cache,env,{},ht,fixA) then (cache,{});
+    case (cache,env,{},ht,_) then (cache,{});
     case (cache,env,A::lstA,ht,_)
       equation
         (cache,A) = fixA(cache,env,A,ht);
@@ -1917,7 +1917,7 @@ algorithm
       Env.Env env;
       HashTableStringToPath.HashTable ht;
 
-    case (cache,env,{},ht,fixA) then (cache,{});
+    case (cache,env,{},ht,_) then (cache,{});
     case (cache,env,A::lstA,ht,_)
       equation
         (cache,A) = fixList(cache,env,A,ht,fixA);
@@ -1965,7 +1965,7 @@ algorithm
       Env.Env env;
       HashTableStringToPath.HashTable ht;
 
-    case (cache,env,{},ht,fixA,fixB) then (cache,{});
+    case (cache,env,{},ht,fixA,_) then (cache,{});
     case (cache,env,(a,b)::rest,ht,_,_)
       equation
         (cache,a) = fixA(cache,env,a,ht);

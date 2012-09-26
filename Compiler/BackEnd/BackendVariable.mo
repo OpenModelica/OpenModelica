@@ -3138,7 +3138,7 @@ algorithm
       Option<BackendDAE.Var> ovar;
       BackendDAE.Var v,v1;
       Type_a ext_arg;
-    case (ovar as NONE(),func,inTypeA) then (ovar,inTypeA);
+    case (ovar as NONE(),func,_) then (ovar,inTypeA);
     case (ovar as SOME(v),_,_)
       equation
         ((v1,ext_arg)) = func((v,inTypeA));

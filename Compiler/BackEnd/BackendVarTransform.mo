@@ -601,7 +601,7 @@ TODO: find out why array residual functions containing arrays as xloc[] does not
   output DAE.Exp outExp;
 algorithm  outExp := matchcontinue(inExp,inType)
   local DAE.ComponentRef cr;
-  case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),inType) then Expression.makeCrefExp(cr,inType);
+  case(DAE.CREF(cr,DAE.T_UNKNOWN(source = _)),_) then Expression.makeCrefExp(cr,inType);
   case (_,_) then inExp;
   end matchcontinue;
 end avoidDoubleHashLookup;
@@ -875,7 +875,7 @@ algorithm
       Boolean c1,c2;
       list<DAE.Subscript> subs;
       
-    case ({}, repl, cond) then ({},false);
+    case ({}, repl,_) then ({},false);
     case (DAE.WHOLEDIM()::subs, _, _)
       equation
         (subs,c1) = replaceCrefSubs2(subs,repl,cond);

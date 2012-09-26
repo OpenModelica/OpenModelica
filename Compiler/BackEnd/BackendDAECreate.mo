@@ -2605,7 +2605,7 @@ algorithm
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables>> extraArg;
       list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
       
-    case ({},_,extraArg,knvars) then (({},extraArg));
+    case ({},_,extraArg,_) then (({},extraArg));
       
     case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e, source = source) :: xs),_, extraArg, _)
       equation
@@ -2772,7 +2772,7 @@ algorithm
       Algorithm.Else el,el_1;
       tuple<DAE.Exp, list<DAE.Exp>, DAE.Exp, tuple<list<BackendDAE.ZeroCrossing>,Integer>, tuple<Integer,BackendDAE.Variables,BackendDAE.Variables>> extraArg;
       
-    case(DAE.NOELSE(),_,extraArg,knvars) then ((DAE.NOELSE(),extraArg));
+    case(DAE.NOELSE(),_,extraArg,_) then ((DAE.NOELSE(),extraArg));
     case(DAE.ELSEIF(e,st,el),_,extraArg,_)
       equation
         ((el_1,extraArg)) = traverseStmtsElseExps(el,func,extraArg,knvars);
@@ -2879,7 +2879,7 @@ algorithm
       DAE.Operator op;
       list<DAE.Exp> rest,res2;
       Integer index;
-    case (_,_,{},inIndex) then ({},inIndex);
+    case (_,_,{},_) then ({},inIndex);
     case (exp as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),i,e::rest,index) 
       equation
         e_1 = DAE.RELATION(e1,op,e2,index,NONE());

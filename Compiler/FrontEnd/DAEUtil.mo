@@ -2286,7 +2286,7 @@ algorithm
     local
       String msg;
 
-    case (_,functions) then Util.getOption(avlTreeGet(functions, path));
+    case (_,_) then Util.getOption(avlTreeGet(functions, path));
     case (_,_)
       equation
         msg = stringDelimitList(List.mapMap(getFunctionList(functions), functionName, Absyn.pathString), "\n  ");
@@ -5089,7 +5089,7 @@ algorithm
    local Option<DAE.AvlTreeValue> value;
     Option<DAE.AvlTree> l,r;
     Integer height;
-    case(DAE.AVLTREENODE(value,height,l,r),right) then DAE.AVLTREENODE(value,height,l,right);
+    case(DAE.AVLTREENODE(value,height,l,r),_) then DAE.AVLTREENODE(value,height,l,right);
   end match;
 end setRight;
 
@@ -5102,7 +5102,7 @@ algorithm
   local Option<DAE.AvlTreeValue> value;
     Option<DAE.AvlTree> l,r;
     Integer height;
-    case(DAE.AVLTREENODE(value,height,l,r),left) then DAE.AVLTREENODE(value,height,left,r);
+    case(DAE.AVLTREENODE(value,height,l,r),_) then DAE.AVLTREENODE(value,height,left,r);
   end match;
 end setLeft;
 
@@ -5721,8 +5721,8 @@ algorithm
       Values.Value valBound;
         
     case (inBinding as DAE.UNBOUND(), _) then inBinding;
-    case (DAE.EQBOUND(exp, evaluatedExp, cnst, _), bindingSource) then DAE.EQBOUND(exp, evaluatedExp, cnst, bindingSource);
-    case (DAE.VALBOUND(valBound, _), bindingSource) then DAE.VALBOUND(valBound, bindingSource);
+    case (DAE.EQBOUND(exp, evaluatedExp, cnst, _),_) then DAE.EQBOUND(exp, evaluatedExp, cnst, bindingSource);
+    case (DAE.VALBOUND(valBound, _),_) then DAE.VALBOUND(valBound, bindingSource);
  end match;
 end setBindingSource;
 
@@ -5787,7 +5787,7 @@ algorithm
       Absyn.Path path;
     case (DAE.VAR(ty = DAE.T_FUNCTION(source = {path})),_)
       then path::acc;
-    case (_,acc) then acc;
+    case (_,_) then acc;
   end matchcontinue;
 end collectFunctionRefVarPaths;
 

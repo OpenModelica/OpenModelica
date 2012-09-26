@@ -519,8 +519,8 @@ algorithm
       Boolean b,b1;
       DAE.Exp e;
       // Condition is constant
-    case (DAE.BCONST(true),tb,fb) then tb;
-    case (DAE.BCONST(false),tb,fb) then fb;
+    case (DAE.BCONST(true),tb,_) then tb;
+    case (DAE.BCONST(false),tb,_) then fb;
       // The expression is the condition
     case (exp,DAE.BCONST(true),DAE.BCONST(false)) then exp;
     case (exp,DAE.BCONST(false),DAE.BCONST(true))
@@ -993,7 +993,7 @@ algorithm
         etp = DAE.T_ARRAY(etp,dim11::ndim::dims,ts);
         e = DAE.MATRIX(etp,i,mss);
       then simplifyCat(dim,e::es,acc,true);
-    case (_,e::es,acc,changed) then simplifyCat(dim,es,e::acc,changed);
+    case (_,e::es,acc,_) then simplifyCat(dim,es,e::acc,changed);
   end matchcontinue;
 end simplifyCat;
 
@@ -3420,8 +3420,8 @@ protected function simplifyBinaryCommutative
   output DAE.Exp exp;
 algorithm
   exp := matchcontinue (op,lhs,rhs)
-    case (_,lhs,rhs) then simplifyBinaryCommutativeWork(op,lhs,rhs);
-    case (_,lhs,rhs) then simplifyBinaryCommutativeWork(op,rhs,lhs);
+    case (_,lhs,_) then simplifyBinaryCommutativeWork(op,lhs,rhs);
+    case (_,lhs,_) then simplifyBinaryCommutativeWork(op,rhs,lhs);
   end matchcontinue;
 end simplifyBinaryCommutative;
 
@@ -4121,7 +4121,7 @@ algorithm
     local
       list<DAE.Exp> row;
       list<list<DAE.Exp>> mexpl;
-    case ({},op,s1,arrayScalar) then {};
+    case ({},op,s1,_) then {};
     case (row::mexpl,_,_,_)
       equation
         row = simplifyVectorScalarMatrixRow(row,op,s1,arrayScalar);
@@ -4142,7 +4142,7 @@ algorithm
     local
       DAE.Exp e;
       list<DAE.Exp> row;
-    case({},op,s1,arrayScalar) then {};
+    case({},op,s1,_) then {};
       /* array op scalar */
     case(e::row,_,_,true)
       equation
