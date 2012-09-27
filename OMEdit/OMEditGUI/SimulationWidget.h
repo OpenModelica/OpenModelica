@@ -144,4 +144,14 @@ private:
   QPushButton *mpCancelSimulationButton;
 };
 
+class SimulationOutputDialog : public QDialog
+{
+  Q_OBJECT
+public:
+  SimulationOutputDialog(QString modelName, QString simulationOutput, QWidget *pParent = 0);
+private:
+  QPlainTextEdit *mpSimulationOutputTextBox;
+  QPushButton *mpCloseButton;
+};
+
 #endif // SIMULATIONWIDGET_H

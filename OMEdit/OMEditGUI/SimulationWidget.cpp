@@ -581,12 +581,17 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
     // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
     if (mpProgressDialog->isHidden())
       return;
-    if (mpSimulationProcess->exitCode() != 0 || mpSimulationProcess->exitStatus() == QProcess::CrashExit)
+    QString standardOutput = QString(mpSimulationProcess->readAllStandardOutput());
+    if (!standardOutput.isEmpty())
     {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED)
-                            .arg(mpSimulationProcess->errorString().append(" ").append(mpSimulationProcess->readAllStandardOutput())),Helper::ok);
-      return;
+      SimulationOutputDialog *pSimulationOutputDialog;
+      if (mpSimulationProcess->error() != QProcess::UnknownError)
+        standardOutput = QString(mpSimulationProcess->errorString()).append("\n\n").append(standardOutput);
+      pSimulationOutputDialog = new SimulationOutputDialog(projectTab->mModelNameStructure, standardOutput, mpParentMainWindow);
+      int x = mpParentMainWindow->width() < 400 ? pSimulationOutputDialog->x() : mpParentMainWindow->width() - 400;
+      int y = mpParentMainWindow->height() < 200 ? pSimulationOutputDialog->y() : mpParentMainWindow->height() - 200;
+      pSimulationOutputDialog->setGeometry(x, y, pSimulationOutputDialog->width(), pSimulationOutputDialog->height());
+      pSimulationOutputDialog->show();
     }
     // read the output file
     QString output_file = projectTab->mModelNameStructure;
@@ -710,4 +715,24 @@ void ProgressDialog::setText(QString text)
 {
   mpText->setText(text);
   update();
+}
+
+SimulationOutputDialog::SimulationOutputDialog(QString modelName, QString simulationOutput, QWidget *pParent)
+  : QDialog(pParent, Qt::WindowTitleHint)
+{
+  setAttribute(Qt::WA_DeleteOnClose);
+  setWindowTitle(QString(Helper::applicationName).append(" - ").append(modelName).append(" ").append(tr("Simulation Output")));
+  setMinimumSize(400, 200);
+  // Simulation Output TextBox
+  mpSimulationOutputTextBox = new QPlainTextEdit;
+  mpSimulationOutputTextBox->setPlainText(simulationOutput);
+  // Close Button
+  mpCloseButton = new QPushButton(tr("Close"));
+  connect(mpCloseButton, SIGNAL(clicked()), SLOT(close()));
+  // layout
+  QVBoxLayout *pMainLayout = new QVBoxLayout;
+  pMainLayout->setContentsMargins(5, 5, 5, 5);
+  pMainLayout->addWidget(mpSimulationOutputTextBox);
+  pMainLayout->addWidget(mpCloseButton, 0, Qt::AlignRight);
+  setLayout(pMainLayout);
 }
