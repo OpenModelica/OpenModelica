@@ -577,10 +577,7 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
     }
     if (sock) delete sock;
     server.close();
-
-    // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
-    if (mpProgressDialog->isHidden())
-      return;
+    // show simulation output
     QString standardOutput = QString(mpSimulationProcess->readAllStandardOutput());
     if (!standardOutput.isEmpty())
     {
@@ -588,11 +585,14 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
       if (mpSimulationProcess->error() != QProcess::UnknownError)
         standardOutput = QString(mpSimulationProcess->errorString()).append("\n\n").append(standardOutput);
       pSimulationOutputDialog = new SimulationOutputDialog(projectTab->mModelNameStructure, standardOutput, mpParentMainWindow);
-      int x = mpParentMainWindow->width() < 400 ? pSimulationOutputDialog->x() : mpParentMainWindow->width() - 400;
-      int y = mpParentMainWindow->height() < 200 ? pSimulationOutputDialog->y() : mpParentMainWindow->height() - 200;
+      int x = mpParentMainWindow->width() < 550 ? pSimulationOutputDialog->x() : mpParentMainWindow->width() - 550;
+      int y = mpParentMainWindow->height() < 300 ? pSimulationOutputDialog->y() : mpParentMainWindow->height() - 300;
       pSimulationOutputDialog->setGeometry(x, y, pSimulationOutputDialog->width(), pSimulationOutputDialog->height());
       pSimulationOutputDialog->show();
     }
+    // we set the Progress Dialog box to hide when we cancel the simulation, so don't show user the plotting view just return.
+    if (mpProgressDialog->isHidden())
+      return;
     // read the output file
     QString output_file = projectTab->mModelNameStructure;
     if (!mpFileNameTextBox->text().isEmpty())
@@ -722,7 +722,7 @@ SimulationOutputDialog::SimulationOutputDialog(QString modelName, QString simula
 {
   setAttribute(Qt::WA_DeleteOnClose);
   setWindowTitle(QString(Helper::applicationName).append(" - ").append(modelName).append(" ").append(tr("Simulation Output")));
-  setMinimumSize(400, 200);
+  setMinimumSize(550, 300);
   // Simulation Output TextBox
   mpSimulationOutputTextBox = new QPlainTextEdit;
   mpSimulationOutputTextBox->setPlainText(simulationOutput);
