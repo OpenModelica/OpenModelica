@@ -3491,10 +3491,8 @@ public function swap
   replaceable type A subtypeof Any;
 algorithm
   (out1,out2) := match (cond,in1,in2)
-    local
-      A a1,a2;
-    case (true,a1,a2) then (a1,a2);
-    case (false,a2,a1) then (a1,a2);
+    case (true, _, _) then (in2, in1);
+    else (in1, in2);
   end match;
 end swap;
 
