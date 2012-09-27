@@ -50,6 +50,7 @@ qtclients:
 qtclean: qtclean-common
 else
 omnotebook: mkbuilddirs omplot
+	mkdir -p $(builddir_share)/omnotebook
 	$(MAKE) -C OMNotebook/OMNotebookGUI -f Makefile.unix 
 omshell: mkbuilddirs
 	$(MAKE) -C OMShell/OMShellGUI -f Makefile.unix
