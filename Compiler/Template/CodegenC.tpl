@@ -4336,7 +4336,7 @@ case var as VARIABLE(__) then
     let &varAssign += '<%dest%>.c<%ix%> = <%contextCref(var.name,contextFunction)%>;<%\n%>'
     ""
 case var as FUNCTION_PTR(__) then
-    let &varAssign += '<%dest%>.c<%ix%> = (modelica_fnptr) _<%var.name%>;<%\n%>'
+    let &varAssign += '<%dest%>.c<%ix%> = (modelica_fnptr) omc_<%var.name%>;<%\n%>'
     ""
 end varOutput;
 
@@ -6744,7 +6744,7 @@ template daeExpTailCall(list<DAE.Exp> es, list<String> vs, Context context, Text
         // adrpo: ignore _x = _x!
         if stringEq(v, crefStr(cr))
         then '<%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>'
-        else '_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>'
+        else 'omc_<%v%> = <%exp%>;<%\n%><%daeExpTailCall(erest, vrest, context, &preExp, &postExp, &varDecls)%>'
       case _ then
         (if anyExpHasCrefName(erest, v) then
           /* We might overwrite a value with something else, so make an extra copy of it */

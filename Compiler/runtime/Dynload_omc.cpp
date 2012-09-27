@@ -55,11 +55,11 @@ extern void* DynLoad_executeFunction(int _inFuncHandle, void* _inValLst, int _in
   return retarg;
 }
 
-extern void* _Absyn_pathString2(void*,void*);
+extern void* omc_Absyn_pathString2(void*,void*);
 static const char* path_to_name(void* path, char del)
 {
   char delStr[2] = {del,'\0'};
-  return strdup(MMC_STRINGDATA(_Absyn_pathString2(path, mmc_mk_scon(delStr))));
+  return strdup(MMC_STRINGDATA(omc_Absyn_pathString2(path, mmc_mk_scon(delStr))));
 }
 
 }
