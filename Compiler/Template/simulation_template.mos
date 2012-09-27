@@ -1,0 +1,38 @@
+// name:     <XXX>
+// keywords: <insert keywords here>
+// status:   correct
+// 
+//  <insert description here>
+//
+loadFile("<XXX>.mo");
+simulate(<XXX>,numberOfIntervals=2); // 2 intervals == 3 values
+echo(false); // turns of output 
+
+res:=readSimulationResult("<XXX>_res.plt",{x,y,z},3); 
+x:=res[1];
+y:=res[2];
+z:=res[3];
+x:=1000*x;
+y:=1000*y;
+z:=1000*z;
+x:=floor(x);
+y:=floor(y);
+z:=floor(z);
+echo(true); // turns on output
+x/1000.0; // rounded value to 3 digits
+y/1000.0;
+z/1000.0;
+readFile("output.log"); // Check that output log is emtpy
+system("rm -rf <XXX>.* <XXX>_* output.log"); // remove tmp files.
+// Result:
+// true
+// record SimulationResult
+//     resultFile = "LinSys_res.plt"
+// end SimulationResult;
+// true
+// {1.0,1.654,2.169,2.62,3.032,3.418}
+// {2.0,2.0,2.0,2.0,2.0,2.0}
+// {3.0,2.545,2.23,1.979,1.767,1.581}
+// ""
+// 0
+// endResult
