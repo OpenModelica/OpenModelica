@@ -11583,16 +11583,18 @@ algorithm
         (cache,exp,DAE.PROP(t2,c));
     */
     
-    case (cache,env,e1,DAE.PROP(type_ = DAE.T_BOOL(varLst = _),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
+    case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
+        (e1,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true);
         (e2_1,t2_1) = Types.matchType(e2, t2, t3, true);
         c = constIfexp(e1, c1, c2, c3) "then-part type converted to match else-part" ;
         (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2_1, e3, c1, impl, st, inInfo);
       then
         (cache,exp,DAE.PROP(t2_1,c));
 
-    case (cache,env,e1,DAE.PROP(type_ = DAE.T_BOOL(varLst = _),constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
+    case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
+        (e1,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true);
         (e3_1,t3_1) = Types.matchType(e3, t3, t2, true);
         c = constIfexp(e1, c1, c2, c3) "else-part type converted to match then-part" ;
         (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3_1, c1, impl, st, inInfo);
@@ -11601,7 +11603,7 @@ algorithm
 
     case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,pre,_)
       equation
-        failure(equality(t1 = DAE.T_BOOL_DEFAULT));
+        failure((_,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true));
         e_str = ExpressionDump.printExpStr(e1);
         t_str = Types.unparseType(t1);
         pre_str = PrefixUtil.printPrefixStr3(pre);
