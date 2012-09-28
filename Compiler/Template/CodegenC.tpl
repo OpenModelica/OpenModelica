@@ -5127,6 +5127,34 @@ case UNARY(exp = e as CREF(ty= t as DAE.T_ARRAY(__))) then
     >>
   else
     '<%lhsStr%> = -<%rhsStr%>;'
+case CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
+  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  <<
+  <%preExp%>
+  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
+    '<%lhsStr%>$P<%var.name%> = <%rhsStr%>.<%var.name%>;'
+  ; separator="\n"    
+  %>
+  >>
+case UNARY(exp = e as CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
+  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  <<
+  <%preExp%>
+  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
+    '<%lhsStr%>$P<%var.name%> = -<%rhsStr%>.<%var.name%>;'
+  ; separator="\n"    
+  %>
+  >>
+case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty= T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
+  let &preExp = buffer ""
+  <<
+  <%preExp%>
+  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
+    let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls)
+    '<%re%> = <%rhsStr%>.<%var.name%>;'
+  ; separator="\n"    
+  %>
+  >>
 case CREF(__) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
