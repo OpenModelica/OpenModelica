@@ -3835,8 +3835,8 @@ algorithm
   b := selfGeneratedVar(cr);
   i := intAdd(i,Util.if_(b,100,0));
   // length of name (number of dots)
-  d := ComponentReference.crefDepth(cr);
-  i := i+d;
+//  d := ComponentReference.crefDepth(cr);
+//  i := i+d;
 end calcAliasKey;
 
 public function selfGeneratedVar
