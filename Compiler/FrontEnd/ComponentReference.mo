@@ -2309,13 +2309,29 @@ algorithm
     case (DAE.WILD()) then 0;
     case (DAE.CREF_IDENT(ident = _)) then 1;
     case (DAE.CREF_QUAL(componentRef = n))
-      equation
-        d = crefDepth(n);
-        d = d + 1;
       then
-        d;
+        crefDepth1(n,1);
   end match;  
 end crefDepth;
+
+protected function crefDepth1
+  input DAE.ComponentRef inCref;
+  input Integer iDepth;
+  output Integer depth;
+algorithm
+  depth :=
+  match (inCref,iDepth)
+    local
+      DAE.ComponentRef n;
+      Integer d;
+    
+    case (DAE.WILD(),_) then iDepth;
+    case (DAE.CREF_IDENT(ident = _),_) then 1+iDepth;
+    case (DAE.CREF_QUAL(componentRef = n),_)
+      then
+        crefDepth1(n,1+iDepth);
+  end match;  
+end crefDepth1;
 
 public function expandCref
   "Expands an array cref into a list of elements, e.g.:
@@ -2671,6 +2687,57 @@ algorithm
         inCref;
   end match;
 end replaceSubsWithString;
+
+public function expandArrayCref
+  input DAE.ComponentRef inCr;
+  input DAE.Dimensions dims;
+  output list<DAE.ComponentRef> outCrefs;
+protected
+  list<DAE.Subscript> subs;
+  list<list<DAE.Subscript>> subslst;
+algorithm
+  subs := List.fill(DAE.WHOLEDIM(), listLength(dims));
+  // Expand each subscript into a list of subscripts.
+  subslst := List.threadMap(subs, dims, expandSubscript);
+  subslst := listReverse(subslst);
+  // Use expandCref3 to construct a cref for each combination of subscripts.
+  outCrefs := expandArrayCref1(inCr, subslst, {}, {});
+end expandArrayCref;
+
+protected function expandArrayCref1
+  input DAE.ComponentRef inCr;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<DAE.Subscript> inAccumSubs;
+  input list<DAE.ComponentRef> inAccumCrefs;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  outCrefs := match(inCr, inSubscripts, inAccumSubs, inAccumCrefs)
+    local
+      DAE.Subscript sub;
+      list<DAE.Subscript> subs;
+      list<list<DAE.Subscript>> rest_subs;
+      list<DAE.ComponentRef> crefs;
+      DAE.ComponentRef cref;
+
+    case (_, (sub :: subs) :: rest_subs, _, _)
+      equation
+        crefs = expandArrayCref1(inCr, subs :: rest_subs, inAccumSubs, inAccumCrefs);
+        crefs = expandArrayCref1(inCr, rest_subs, sub :: inAccumSubs, crefs);
+      then
+        crefs;
+
+    case (_, _ :: _, _, _)
+      then inAccumCrefs;
+
+    else
+      equation
+        cref = crefSetLastSubs(inCr,inAccumSubs);
+      then
+        cref :: inAccumCrefs;
+
+  end match;
+end expandArrayCref1;
+
 
 end ComponentReference;
 

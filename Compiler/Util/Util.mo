@@ -951,6 +951,39 @@ algorithm
   end match;
 end arrayCopy2;
 
+public function arraySet "function: arraySet
+  Sets from position start to position end_ the value v."
+  input Integer start;
+  input Integer end_;
+  input array<Type_a> arr;
+  input Type_a v;
+  output array<Type_a> oarr;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  oarr := matchcontinue(start,end_,arr,v)
+    local
+      array<Type_a> newarr;
+    case (_,_,_,_)
+      equation
+        // do nothing if start is grather than end_
+        true = intGt(start,end_);
+      then
+        arr;
+    case (_,_,_,_)
+      equation
+        false = intGt(start,end_);
+        newarr = arrayUpdate(arr, start, v);
+      then
+        arraySet(start+1,end_,newarr,v);
+    else
+      equation
+        print("Util.arraySet failed!\n");
+        print("Size: " +& intString(arrayLength(arr)) +& " start: " +& intString(start) +& " end: " +& intString(end_) +& "\n");
+      then
+        fail();
+  end matchcontinue; 
+end arraySet;
+
 public function compareTuple2IntGt
 " function: comparePosTupleList
   Function could used with List.sort to sort a
