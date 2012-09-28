@@ -570,7 +570,8 @@ public constant Message WARNING_DEF_USE = MESSAGE(244, TRANSLATION(), WARNING(),
   Util.gettext("%s was used before it was defined (given a value). Additional such uses may exist for the variable, but some messages were suppressed."));
 public constant Message EXP_TYPE_MISMATCH = MESSAGE(245, TRANSLATION(), ERROR(),
   Util.gettext("Expression %1 has type %3, expected type %2."));
-
+public constant Message PACKAGE_ORDER_DUPLICATES = MESSAGE(246, TRANSLATION(), ERROR(),
+  Util.gettext("Found duplicate names in package.order file: %s."));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"));
 public constant Message BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER = MESSAGE(502, TRANSLATION(), WARNING(),

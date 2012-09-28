@@ -400,8 +400,8 @@ protected function getPackageContentNames
 algorithm
   (po) := matchcontinue (cl,filename,mp,numError)
     local
-      String contents;
-      list<String> namesToFind,    mofiles, subdirs;
+      String contents, duplicatesStr;
+      list<String> duplicates, namesToFind,    mofiles, subdirs;
       list<Absyn.ClassPart> cp;
       Absyn.Info info;
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
@@ -410,6 +410,9 @@ algorithm
         contents = System.readFile(filename);
         namesToFind = System.strtok(contents, "\n");
         namesToFind = List.removeOnTrue("",stringEqual,List.map(namesToFind,System.trimWhitespace));
+        duplicates = List.sortedFilterDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
+        duplicatesStr = stringDelimitList(duplicates, ", ");
+        Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
         po = getPackageContentNamesinParts(namesToFind,cp,{});
         List.map2_0(po,checkPackageOrderFilesExist,mp,info);
       then po;

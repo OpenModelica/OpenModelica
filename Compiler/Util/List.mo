@@ -846,6 +846,49 @@ algorithm
   end match;
 end sort;
 
+public function sortedFilterDuplicates
+  "Checks if the list has any duplicates in it"
+  input list<ElementType> inList;
+  input CompareFunc inCompFunc "Equality comparator";
+  output list<ElementType> duplicates;
+
+  partial function CompareFunc
+    input ElementType inElement1;
+    input ElementType inElement2;
+    output Boolean outRes;
+  end CompareFunc;
+algorithm
+  duplicates := sortedFilterDuplicatesWork(inList,inCompFunc,{});
+end sortedFilterDuplicates;
+
+protected function sortedFilterDuplicatesWork
+  "Checks if the list has any duplicates in it"
+  input list<ElementType> inList;
+  input CompareFunc inCompFunc "Equality comparator";
+  input list<ElementType> inAcc;
+  output list<ElementType> duplicates;
+
+  partial function CompareFunc
+    input ElementType inElement1;
+    input ElementType inElement2;
+    output Boolean outRes;
+  end CompareFunc;
+algorithm
+  duplicates := match(inList, inCompFunc, inAcc)
+    local
+      ElementType e1,e2;
+      list<ElementType> rest;
+      Boolean b;
+
+    case ({}, _, _) then listReverse(inAcc);
+    case (_::{}, _, _) then listReverse(inAcc);
+    case (e1::(rest as e2::_), _, _)
+      equation
+        b = inCompFunc(e1,e2);
+      then sortedFilterDuplicatesWork(rest, inCompFunc, consOnTrue(b, e1, inAcc));
+  end match;
+end sortedFilterDuplicatesWork;
+
 protected function merge
   "Helper function to sort, merges two sorted lists."
   input list<ElementType> inLeft;
