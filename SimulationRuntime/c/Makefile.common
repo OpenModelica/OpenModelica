@@ -6,7 +6,6 @@
 
 include Makefile.objs
 
-AR = ar -ru
 ANSI=# -ansi
 CXXFLAGS := $(CFLAGS) -mfpmath=sse -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I$(UTILPATH)
 CPPFLAGS := $(CFLAGS) -mfpmath=sse -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I$(UTILPATH)
@@ -77,6 +76,12 @@ libSimulationRuntimeC.a: $(ALL_OBJS)
 	$(AR) $@ $(ALL_OBJS)
 	ranlib $@
 
+libOpenModelicaRuntimeC.a: $(BASE_OBJS)
+	@# You have to remove the old archive first or it may contain old objects
+	@rm -f $@
+	$(AR) $@ $(BASE_OBJS)
+	ranlib $@
+
 $(METAOBJSPATH):%.o: %.c $(METAHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(METAPATH) -I$(UTILPATH)
 
@@ -103,9 +108,9 @@ ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,Modelic
 simulation/libf2c/libf2c.a: 
 	$(MAKE) -C simulation/libf2c -f ${LIBMAKEFILE}
 
-install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a simulation/libf2c/libf2c.a $(ALL_OBJS)
+install: ModelicaExternalC/libModelicaExternalC.a libSimulationRuntimeC.a libOpenModelicaRuntimeC.a simulation/libf2c/libf2c.a $(ALL_OBJS)
 	# copy libraries
-	cp -p ./libSimulationRuntimeC.a \
+	cp -p ./libSimulationRuntimeC.a libOpenModelicaRuntimeC.a \
 	   ./ModelicaExternalC/libModelicaExternalC.a \
 	   ../interactive/libinteractive.a $(builddir_lib)
 	test -z "$(LIBF2C)" || cp simulation/libf2c/libf2c.* $(builddir_lib)/

@@ -2640,7 +2640,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%>
-  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
+  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -lOpenModelicaRuntimeC <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   MAINFILE=<%name%><% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
   
