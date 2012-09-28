@@ -169,9 +169,7 @@ build/lib/omlibrary/stamp: libraries/README
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
-	(cd Compiler/omc_debug && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
-	(cd Compiler/omc_profiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
 	rm -f Compiler/.depend
 	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
 	rm -f $(autoconfGeneratedFiles)
@@ -183,9 +181,7 @@ clean: qtclean fmil-clean opencl_rt_clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd Compiler/omc_debug && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) clean)
-	(cd Compiler/omc_profiler && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
 	$(MAKE) -C 3rdParty/modelica3d/build clean || true
