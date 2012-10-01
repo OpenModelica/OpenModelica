@@ -686,7 +686,7 @@ OMOptim/build/OMOptim.config \
 OMOptimBasis/build/Makefile.unix \
 OMOptimBasis/build/OMOptimBasis.config \
 OMVisualize/OMVisualizeGUI/OMVisualizeGUI.config \
-testsuite/bootstrapping/LinkMain.makefile \
+testsuite/openmodelica/bootstrapping/LinkMain.makefile \
 SimulationRuntime/fmi/import/Makefile \
 SimulationRuntime/c/Makefile \
 SimulationRuntime/c/ModelicaExternalC/Makefile \
