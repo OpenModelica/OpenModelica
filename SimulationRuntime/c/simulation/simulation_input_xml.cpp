@@ -94,7 +94,7 @@ typedef struct omc_ModelInput
 // a map for overrides
 typedef std::map<std::string, std::string> omc_CommandLineOverrides;
 // function to handle command line settings override
-omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string* override);
+omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string* override, std::string* overrideFile);
 
 /* reads double value from a string */
 void read_value(std::string s, modelica_real* res);
@@ -288,7 +288,8 @@ void read_input_xml(int argc, char **argv,
 
   // deal with override
   std::string* override = (string*)getFlagValue("override", argc, argv);
-  mi = doOverride(mi, modelData, override);
+  std::string* overrideFile = (string*)getFlagValue("overrideFile", argc, argv);
+  mi = doOverride(mi, modelData, override, overrideFile);
 
   /* read all the DefaultExperiment values */
   DEBUG_INFO(LOG_SOLVER, "read all the DefaultExperiment values:");
@@ -1051,16 +1052,52 @@ inline void read_value(std::string s, int* res)
 }
 
 
-omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string* override)
+omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string* override, std::string* overrideFile)
 {
   omc_CommandLineOverrides mOverrides;
-  if (override)
+  char* overrideStr = NULL;
+  if ((override != NULL) && (overrideFile != NULL))
   {
-    /* read override values */
-    DEBUG_INFO_AL1(LOG_SOLVER, "read override values: %s", override->c_str());
+    THROW("simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
+  }
+
+  if (override != NULL)
+  {
+    overrideStr = strdup(override->c_str());
+  }
+
+  if (overrideFile != NULL)
+  {
+    /* read override values from file */
+    DEBUG_INFO_AL1(LOG_SOLVER, "read override values from file: %s", overrideFile->c_str());
+    std::ifstream infile;
+
+    infile.open(overrideFile->c_str(), ifstream::in);
+    if (infile.is_open() == false)
+    {
+      THROW1("simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile->c_str());
+    }
+
+    std::string line;
+    // get the first line
+    std::getline(infile, line);
+    std::string overrideLine(line);
+    // get the rest of the lines
+    while (std::getline(infile, line))
+    {
+      overrideLine += "," + line;
+    }
+
+    overrideStr = strdup(overrideLine.c_str());
+    infile.close();
+  }
+
+  if (overrideStr != NULL)
+  {
     std::string key, value;
-    char *str = strdup(override->c_str());
-    char *p = strtok(str, ",");
+    /* read override values */
+    DEBUG_INFO_AL1(LOG_SOLVER, "read override values: %s", overrideStr);
+    char *p = strtok(overrideStr, ",");
     while (p)
     {
         std::string *key_val = new string(p);
@@ -1088,6 +1125,8 @@ omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string*
         // move to next
         p = strtok(NULL, ",");
     }
+
+    free(overrideStr);
 
     // now we have all overrides in mOverrides, override mi now
     mi.de["solver"]         = mOverrides.count("solver")         ? mOverrides["solver"]         : mi.de["solver"];
@@ -1152,7 +1191,7 @@ omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string*
     {
       mi.sAli[i]["start"] = mOverrides.count(mi.sAli[i]["name"]) ? mOverrides[mi.sAli[i]["name"]] : mi.sAli[i]["start"];
     }
-    DEBUG_INFO_AL1(LOG_SOLVER, "override done!: %s", override->c_str());
+    DEBUG_INFO(LOG_SOLVER, "override done!");
   }
   else
   {

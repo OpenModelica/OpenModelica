@@ -547,6 +547,11 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
              "startTime=val1,stopTime=val2,stepSize=val3,tolerance=val4,\n\t           "
              "solver=\"see -m\",outputFormat=\"mat|plt|csv|empty\",variableFilter=\"filter\"> "
              "\n\t\t[override the variables or the simulation settings in the XML setup file]" << "\n\t"
+         << "<-overrideFile overrideFileName"
+             "\n\t\t[note that: -overrideFile CANNOT be used with -override]" <<
+             "\n\t\t[use when variables for -override are too many and do not fit in command line size]" <<
+             "\n\t\t[overrideFileName contains lines of the form: var1=start1]" <<
+             "\n\t\t[will override the variables or the simulation settings in the XML setup file with the values from the file]" << "\n\t"
          << "<-output a,b,c>"
              "\n\t\t[output the variables a, b and c at the end of the simulation to the standard output as time = value, a = value, b = value, c = value]" << "\n\t"
          << "<-noemit>"
