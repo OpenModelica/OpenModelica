@@ -78,6 +78,7 @@ protected import List;
 protected import Matching;
 protected import SCode;
 protected import System;
+protected import Types;
 protected import Util;
 protected import Values;
 protected import ValuesUtil;
@@ -11614,9 +11615,12 @@ algorithm
       DAE.Exp e1,e2;
       DAE.ComponentRef cr1;
       String str;
+      DAE.Type ty;
     // normal equation
     case(BackendDAE.EQUATION(exp=e1,scalar=e2))
       equation
+        ty = Expression.typeof(e1);
+        true = Types.isIntegerOrRealOrSubTypeOfEither(ty);
         oExp = Expression.expSub(e1,e2);
       then
         oExp;
