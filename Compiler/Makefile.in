@@ -31,8 +31,6 @@ USE_CORBA = @USE_CORBA@
 CORBAHOME = @CORBAHOME@
 
 PROG = omc
-PROGD = omcd
-PROGP = omcp
 
 SCRIPT_FILES = openmodelica.lefty convert_lines.pl default_profiling.xsl replace-startValue.sh replace-startValue.xsl
 
@@ -41,7 +39,7 @@ SUBDIRS	= runtime modpar
 
 .SUFFIXES:
 .SUFFIXES: .o .mo .h
-.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release omc_debug simcode builtin
+.PHONY: all subdirs report vctarget debug release depend clean dclean test reallyclean omc_release simcode builtin
 
 #all : debug
 all : release
@@ -56,21 +54,11 @@ $(PROG): omc_release
 	echo Copying $(PROG)$(EXEEXT) into $(builddir_bin)
 	cp omc_release/$(PROG)$(EXEEXT) $(builddir_bin)/
 
-$(PROGD): omc_debug
-	echo Copying $(PROGD)$(EXEEXT) into $(builddir_bin)
-	cp omc_debug/$(PROGD)$(EXEEXT) $(builddir_bin)/
-
-$(PROGP): omc_profiler
-	echo Copying $(PROGP)$(EXEEXT) into $(builddir_bin)
-	cp omc_profiler/$(PROGP)$(EXEEXT) $(builddir_bin)/
-
 install_scripts:
 	cd scripts; cp $(SCRIPT_FILES) ../$(builddir_scripts)
 
 install: install_scripts $(PROG)
 	cp OpenModelicaBootstrappingHeader.h $(top_builddir)/build/include/omc/
-
-dinstall: install_scripts $(PROGD)
 
 nodepend:
 	(cd omc_release && $(MAKE))
@@ -112,15 +100,6 @@ clean:
 	-$(RM) -f $(builddir_bin)/$(PROG)$(EXEEXT)
 	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES)
 
-dclean:
-	@for d in $(SUBDIRS); do \
-		(cd $$d ; $(MAKE) clean) \
-	done
-	(cd omc_debug; $(MAKE) clean)
-	-$(RM) -f $(SRCH)
-	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
-	-cd $(builddir_bin) && rm -f $(SCRIPTS_FILES)
-
 reallyclean:
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) reallyclean) \
@@ -128,14 +107,6 @@ reallyclean:
 	(cd omc_release; $(MAKE) reallyclean)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROG)$(EXEEXT)
-
-dreallyclean:
-	@for d in $(SUBDIRS); do \
-		(cd $$d ; $(MAKE) reallyclean) \
-	done
-	(cd omc_debug; $(MAKE) reallyclean)
-	-$(RM) -f $(SRCH)
-	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
 
 report:
 	@(cd report ; $(MAKE))

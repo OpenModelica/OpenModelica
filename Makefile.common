@@ -1,4 +1,4 @@
-inclu.PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean qtclean qtclean-common difftool modelica3d
+inclu.PHONY : all omc release mosh clean .testvariables mkbuilddirs qtclean qtclean-common difftool modelica3d
 
 top_builddir = .
 builddir_app=$(top_builddir)/build/Applications/
@@ -22,7 +22,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc omcd release debug qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall
+.PHONY : interactive omc release qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -37,8 +37,6 @@ mkbuilddirs:
 	mkdir -p $(builddir_doc)/omc/testmodels
 	mkdir -p $(builddir_man)/man1/
 
-debug: .testvariables mkbuilddirs settings omcd
-profiler: .testvariables mkbuilddirs settings omc_profiler
 release: omc 
 
 install-python:
@@ -187,7 +185,7 @@ clean: qtclean fmil-clean opencl_rt_clean
 	$(MAKE) -C 3rdParty/modelica3d/build clean || true
 	(rm -rf 3rdParty/modelica3d/build)
 	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
-	build/bin/omc build/bin/omc.exe build/bin/omcd build/bin/omcd.exe build/bin/omcp build/bin/omcp.exe  build/bin/omc-diff build/bin/omc-diff.exe \
+	build/bin/omc build/bin/omc.exe build/bin/omc-diff build/bin/omc-diff.exe \
 	bom-error.log bom-error.sh tab-error.log
 install-dirs:
 	@test ! "${DESTDIR}/${prefix}" -ef "${top_builddir}/build" || (echo Error: Install and build dirs are the same && false)

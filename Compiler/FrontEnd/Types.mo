@@ -7053,17 +7053,31 @@ algorithm
 end replaceIntegerTypeWithReal;
 
 public function isZeroLengthArray
-  input tuple<Type,Boolean> tpl;
-  output tuple<Type,Boolean> otpl;
+  input Type ty;
+  output Boolean res;
 algorithm
-  otpl := match tpl
+  res := match ty
     local
-      Type ty;
-    case ((ty as DAE.T_ARRAY(dims = {DAE.DIM_INTEGER(integer=0)}),_)) then ((ty,true));
-    case ((ty as DAE.T_ARRAY(dims = {DAE.DIM_ENUM(size=0)}),_)) then ((ty,true));
-    else tpl;
+      list<DAE.Dimension> dims;
+    case DAE.T_ARRAY(dims = dims)
+      equation
+        res = List.fold(dims, isZeroDim, false);
+      then res;
+    else false;
   end match;
 end isZeroLengthArray;
+
+protected function isZeroDim "Check dimensions by folding and checking for zeroes"
+  input DAE.Dimension dim;
+  input Boolean acc;
+  output Boolean res;
+algorithm
+  res := match (dim,acc)
+    case (DAE.DIM_INTEGER(integer=0),_) then true;
+    case (DAE.DIM_ENUM(size=0),_) then true;
+    else acc;
+  end match;
+end isZeroDim;
 
 public function variabilityToConst "translates an SCode.Variability to a DAE.Const"
   input SCode.Variability variability;

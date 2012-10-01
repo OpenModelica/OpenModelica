@@ -11063,7 +11063,7 @@ algorithm
         // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n");
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
         ty = Types.simplifyType(t);
-        ((_,hasZeroSizeDim)) = Types.traverseType((t,hasZeroSizeDim),Types.isZeroLengthArray);
+        hasZeroSizeDim = Types.isZeroLengthArray(ty);
         sl = Types.getDimensions(t);
         // Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters
         (cache,ss_1,const) = elabSubscriptsDims(cache, crefEnv, ss, sl, impl, crefPrefix, info);
