@@ -18799,165 +18799,6 @@ algorithm
   end match;
 end transformFlatElseIfAlgorithm;
 
-protected function expandUnionTypes
-"@auhtor adrpo
- adds records from uniontypes to the upper level class/package "
-  input  Absyn.Program inProgram;
-  output Absyn.Program outProgram;
-algorithm
-  outProgram := matchcontinue(inProgram)
-    local
-      Absyn.Class c1, c1_fixed;
-      list<Absyn.Class> rest, rest_fixed;
-      Absyn.Program prog;
-      Absyn.Within w;
-      Absyn.TimeStamp ts;
-    case (Absyn.PROGRAM(classes = (c1 :: rest), within_ = w, globalBuildTimes=ts))
-      equation
-        c1_fixed = expandUnionTypesInClass(c1);
-        rest_fixed = List.map(rest, expandUnionTypesInClass);
-      then Absyn.PROGRAM(c1_fixed::rest_fixed, w, ts);
-    case (prog) then prog;
-  end matchcontinue;
-end expandUnionTypes;
-
-protected function expandUnionTypesInClass
-"@author adrpo
- adds records from uniontypes to the upper level class/package "
-  input  Absyn.Class inClass;
-  output Absyn.Class outClass;
-algorithm
-  outClass := matchcontinue(inClass)
-    local
-      Absyn.Class x;
-      Absyn.Restriction restriction;
-      Boolean partialPrefix, finalPrefix, encapsulatedPrefix;
-      Absyn.Info info;
-      Absyn.ClassDef body;
-      list<Absyn.ClassPart> parts, new_parts, recordParts;
-      Option<String> comment;
-      String name;
-      list<String> typeVars;
-      list<Absyn.NamedArg> classAttrs;
-    case (Absyn.CLASS(name, partialPrefix, finalPrefix,encapsulatedPrefix,restriction,
-                      body as Absyn.PARTS(typeVars, classAttrs, parts, comment),info))
-      equation
-        recordParts = getRecordsFromUnionTypes(parts);
-        new_parts = listAppend(parts, recordParts);
-      then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,
-                       Absyn.PARTS(typeVars, classAttrs, new_parts, comment),info);
-    case (x) then x;
-  end matchcontinue;
-end expandUnionTypesInClass;
-
-function getRecordsFromUnionTypes
-"@author adrpo
- returns the records from uniontypes "
-  input  list<Absyn.ClassPart> inClassParts;
-  output list<Absyn.ClassPart> outClassParts;
-algorithm
-  outClassParts := matchcontinue(inClassParts)
-    local
-      list<Absyn.ClassPart> parts, returns;
-      list<Absyn.ElementItem>
-        uniontypesPublic, uniontypesProtected,
-        publicElements, protectedElements,
-        recordElementsPublic, recordElementsProtected;
-    case ({}) then {};
-    case (parts)
-      equation
-        publicElements    = getPublicList(parts);
-        protectedElements = getProtectedList(parts);
-        uniontypesPublic    = filterUnionTypeElementItems(publicElements);
-        uniontypesProtected = filterUnionTypeElementItems(protectedElements);
-        recordElementsPublic    = getRecordElementItems(uniontypesPublic);
-        recordElementsProtected = getRecordElementItems(uniontypesProtected);
-        returns = makeRecordsClassParts(recordElementsPublic, recordElementsProtected);
-      then
-        returns;
-  end matchcontinue;
-end getRecordsFromUnionTypes;
-
-function makeRecordsClassParts
-"@author adrpo
- constructs the list if any of the input is not nil "
-  input  list<Absyn.ElementItem> inPublicElItems;
-  input  list<Absyn.ElementItem> inProtectedElItems;
-  output list<Absyn.ClassPart> outElementItems;
-algorithm
-  outElementItems := matchcontinue(inPublicElItems, inProtectedElItems)
-    local list<Absyn.ElementItem> publicElements, protectedElements;
-    case ({}, {}) then {};
-    case ({}, protectedElements) then {Absyn.PROTECTED(protectedElements)};
-    case (publicElements, {})    then {Absyn.PUBLIC(publicElements)};
-    case (publicElements, protectedElements)
-    then Absyn.PUBLIC(publicElements)::{Absyn.PROTECTED(protectedElements)};
-  end matchcontinue;
-end makeRecordsClassParts;
-
-function filterUnionTypeElementItems
-"@author adrpo
- gets the elementitems contained in uniontypes "
-  input  list<Absyn.ElementItem> inElementItems;
-  output list<Absyn.ElementItem> outElementItems;
-algorithm
-  outElementItems := matchcontinue(inElementItems)
-    local
-      list<Absyn.ElementItem> items, unionItems, unionElementItems;
-      Absyn.ElementItem x;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementItem> publicElements, protectedElements;
-    case {} then {};
-    case ((x as
-      Absyn.ELEMENTITEM(
-        Absyn.ELEMENT(
-          specification =
-          Absyn.CLASSDEF(class_ =
-            Absyn.CLASS(restriction = Absyn.R_UNIONTYPE(),
-            body = Absyn.PARTS(classParts = parts))))))::items)
-      equation
-        publicElements    = getPublicList(parts);
-        protectedElements = getProtectedList(parts);
-        unionElementItems = listAppend(publicElements, protectedElements);
-        unionItems = filterUnionTypeElementItems(items);
-        unionItems = listAppend(unionElementItems, unionItems);
-      then
-        unionItems;
-    case (_::items)
-      equation
-        unionItems = filterUnionTypeElementItems(items);
-      then
-        unionItems;
-    end matchcontinue;
-end filterUnionTypeElementItems;
-
-function getRecordElementItems
-"@author adrpo
- filters the elementitems containing records "
-  input  list<Absyn.ElementItem> inElementItems;
-  output list<Absyn.ElementItem> outElementItems;
-algorithm
-  outElementItems := matchcontinue(inElementItems)
-    local
-      list<Absyn.ElementItem> items, recordItems;
-      Absyn.ElementItem x;
-    case {} then {};
-    case ((x as
-      Absyn.ELEMENTITEM(
-        Absyn.ELEMENT(
-          specification = Absyn.CLASSDEF(_, Absyn.CLASS(restriction = Absyn.R_RECORD())))))::items)
-      equation
-        recordItems = getRecordElementItems(items);
-      then
-        x :: recordItems;
-    case (_::items)
-      equation
-        recordItems = getRecordElementItems(items);
-      then
-        recordItems;
-    end matchcontinue;
-end getRecordElementItems;
-
 protected function updateLoadedFiles
 "@author adrpo
  This function updates the loaded files cache.
@@ -19072,7 +18913,6 @@ algorithm
         NONE() = getLoadedFileInfo(f, lf);
         // fall back to basis :)
         parsed = Parser.parse(f,encoding);
-        parsed = expandUnionTypes(parsed);
         newP = updateProgram(parsed, pAst);
         topNamesStr = getTopQualifiedClassnames(parsed);
         // fix the modification and topNames in the list<LoadedFile> cache
@@ -19085,7 +18925,6 @@ algorithm
         NONE() = getLoadedFileInfo(f, lf);
         // fall back to basis :)
         parsed = Parser.parse(f,encoding);
-        parsed = expandUnionTypes(parsed);
         topNamesStr = getTopQualifiedClassnames(parsed);
         // fix the modification and topNames in the list<LoadedFile> cache
         newLF = updateLoadedFiles(f, lf, topNamesStr, {});
