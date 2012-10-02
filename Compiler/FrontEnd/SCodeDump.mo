@@ -235,13 +235,15 @@ algorithm
   end matchcontinue;
 end printElementStr;
 
+public constant String noEachStr = "";
+
 public function unparseElementStr
 "function: unparseElementStr
   Print SCode.Element to a string."
   input SCode.Element inElement;
   output String outString;
 algorithm
-  outString := Tpl.tplString(SCodeDumpTpl.dumpElement, inElement);
+  outString := Tpl.tplString2(SCodeDumpTpl.dumpElement, inElement, noEachStr);
 end unparseElementStr;
 
 public function shortElementStr
