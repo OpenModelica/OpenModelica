@@ -162,6 +162,28 @@ algorithm
   end matchcontinue;
 end countRealVariables;
 
+public function countRealStartVariables
+  input list<ModelVariables> inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inVariables)
+    local
+      Integer res;
+      list<ModelVariables> vars;
+    case (REALVARIABLE(hasStartValue = true) :: vars)
+      equation
+        res = countRealStartVariables(vars);
+      then
+        res + 1;
+    case (_ :: vars)
+      equation
+        res = countRealStartVariables(vars);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countRealStartVariables;
+
 public function countIntegerVariables
   input list<ModelVariables> inVariables;
   output Integer outInteger;
@@ -186,6 +208,28 @@ algorithm
     case ({}) then 0;
   end matchcontinue;
 end countIntegerVariables;
+
+public function countIntegerStartVariables
+  input list<ModelVariables> inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inVariables)
+    local
+      Integer res;
+      list<ModelVariables> vars;
+    case (INTEGERVARIABLE(hasStartValue = true) :: vars)
+      equation
+        res = countIntegerStartVariables(vars);
+      then
+        res + 1;
+    case (_ :: vars)
+      equation
+        res = countIntegerStartVariables(vars);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countIntegerStartVariables;
 
 public function countBooleanVariables
   input list<ModelVariables> inVariables;
@@ -212,6 +256,28 @@ algorithm
   end matchcontinue;
 end countBooleanVariables;
 
+public function countBooleanStartVariables
+  input list<ModelVariables> inVariables;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue(inVariables)
+    local
+      Integer res;
+      list<ModelVariables> vars;
+    case (BOOLEANVARIABLE(hasStartValue = true) :: vars)
+      equation
+        res = countBooleanStartVariables(vars);
+      then
+        res + 1;
+    case (_ :: vars)
+      equation
+        res = countBooleanStartVariables(vars);
+      then
+        res;
+    case ({}) then 0;
+  end matchcontinue;
+end countBooleanStartVariables;
+
 public function countStringVariables
   input list<ModelVariables> inVariables;
   output Integer outInteger;
@@ -237,30 +303,27 @@ algorithm
   end matchcontinue;
 end countStringVariables;
 
-public function countEnumerationVariables
+public function countStringStartVariables
   input list<ModelVariables> inVariables;
   output Integer outInteger;
 algorithm
   outInteger := matchcontinue(inVariables)
     local
       Integer res;
-      String v;
       list<ModelVariables> vars;
-    /* Don't count the parameters */
-    case (ENUMERATIONVARIABLE(variability = v) :: vars)
+    case (STRINGVARIABLE(hasStartValue = true) :: vars)
       equation
-        true = stringEq(v,"");
-        res = countEnumerationVariables(vars);
+        res = countStringStartVariables(vars);
       then
         res + 1;
     case (_ :: vars)
       equation
-        res = countEnumerationVariables(vars);
+        res = countStringStartVariables(vars);
       then
         res;
     case ({}) then 0;
   end matchcontinue;
-end countEnumerationVariables;
+end countStringStartVariables;
 
 public function getFMIModelIdentifier
   input Info inFMIInfo;
@@ -272,29 +335,5 @@ algorithm
     case (INFO(fmiModelIdentifier = modelIdentifier)) then modelIdentifier;
   end match;
 end getFMIModelIdentifier;
-
-public function printVariables
-  input list<ModelVariables> variables;
-  output Boolean b;
-algorithm
-  b := matchcontinue(variables)
-    local
-      list<ModelVariables> vars;
-      String v_name;
-      Boolean b1;
-      case (BOOLEANVARIABLE(name = v_name) :: vars)
-        equation
-          print(v_name +& "\n");
-          b1 = printVariables(vars);
-        then
-          true;
-      case (REALVARIABLE(name = v_name) :: vars)
-        equation
-          print(v_name +& "\n");
-          b1 = printVariables(vars);
-        then
-          true;
-  end matchcontinue;
-end printVariables;
 
 end FMI;

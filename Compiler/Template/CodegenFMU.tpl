@@ -1101,10 +1101,13 @@ template importFMUModelica(FmiImport fmi)
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
   let realVariables = countRealVariables(fmiModelVariablesList)
+  let realStartVariables = countRealStartVariables(fmiModelVariablesList)
   let integerVariables = countIntegerVariables(fmiModelVariablesList)
+  let integerStartVariables = countIntegerStartVariables(fmiModelVariablesList)
   let booleanVariables = countBooleanVariables(fmiModelVariablesList)
+  let booleanStartVariables = countBooleanStartVariables(fmiModelVariablesList)
   let stringVariables = countStringVariables(fmiModelVariablesList)
-  //let enumerationVariables = countEnumerationVariables(fmiModelVariablesList)
+  let stringStartVariables = countStringStartVariables(fmiModelVariablesList)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \"fmiInfo.fmiDescription\""%>
   public
@@ -1114,23 +1117,15 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
     constant Integer numberOfContinuousStates = <%fmiInfo.fmiNumberOfContinuousStates%>;
     Real fmi_x[numberOfContinuousStates] "States";
+    Real fmi_x_new[numberOfContinuousStates] "New States";
     constant Integer numberOfEventIndicators = <%fmiInfo.fmiNumberOfEventIndicators%>;
-    Real fmi_z[numberOfEventIndicators] "Events";
+    Real fmi_z[numberOfEventIndicators] "Events Indicators";
+    Boolean fmi_z_positive[numberOfEventIndicators];
     constant Boolean debugLogging = true;
     Integer fmi_status;
     fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
     fmiImportContext context = fmiImportContext(fmiLogLevel);
     fmiEventInfo eventInfo;
-    <%if not stringEq(realVariables, "0") then "Real realV["+realVariables+"];"%>
-    <%if not stringEq(realVariables, "0") then "Integer realVR["+realVariables+"] = {"+dumpRealVariablesVR(fmiModelVariablesList)+"};"%>
-    <%if not stringEq(integerVariables, "0") then "Integer integerV["+integerVariables+"];"%>
-    <%if not stringEq(integerVariables, "0") then "Integer integerVR["+integerVariables+"] = {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"};"%>
-    <%if not stringEq(booleanVariables, "0") then "Boolean booleanV["+booleanVariables+"];"%>
-    <%if not stringEq(booleanVariables, "0") then "Integer booleanVR["+booleanVariables+"] = {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"};"%>
-    <%if not stringEq(stringVariables, "0") then "String stringV["+stringVariables+"];"%>
-    <%if not stringEq(stringVariables, "0") then "Integer stringVR["+stringVariables+"] = {"+dumpStringVariablesVR(fmiModelVariablesList)+"};"%>
-    <%/*if not stringEq(enumerationVariables, "0") then "Enumeration enumerationV["+enumerationVariables+"];"*/%>
-    <%/*if not stringEq(enumerationVariables, "0") then "Integer enumerationVR["+enumerationVariables+"] = {"+dumpEnumerationVariablesVR(fmiModelVariablesList)+"};"*/%>
     Boolean callEventUpdate = false;
   protected
     class fmiImportContext
@@ -1207,10 +1202,9 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       
       function fmiSetContinuousStates
         input fmiImportInstance fmi;
-        input Integer numberOfContinuousStates;
-        input Real fmi_x[numberOfContinuousStates];
+        input Real fmi_x[:];
         output Integer status;
-        external "C" status = fmiSetContinuousStates_OMC(fmi, numberOfContinuousStates, fmi_x) annotation(Library = {"omcruntime", "fmilib"});
+        external "C" status = fmiSetContinuousStates_OMC(fmi, size(fmi_x, 1), fmi_x) annotation(Library = {"omcruntime", "fmilib"});
       end fmiSetContinuousStates;
       
       function fmiGetEventIndicators
@@ -1225,42 +1219,78 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       function fmiGetDerivatives
         input fmiImportInstance fmi;
         input Integer numberOfContinuousStates;
-        output Real out_fmi_x[numberOfContinuousStates];
-        external "C" fmiGetDerivatives_OMC(fmi, numberOfContinuousStates, out_fmi_x) annotation(Library = {"omcruntime", "fmilib"});
+        output Real fmi_x[numberOfContinuousStates];
+        external "C" fmiGetDerivatives_OMC(fmi, numberOfContinuousStates, fmi_x) annotation(Library = {"omcruntime", "fmilib"});
       end fmiGetDerivatives;
       
       function fmiGetReal
         input fmiImportInstance fmi;
-        input Integer numberOfReferences;
-        input Integer in_realVR[numberOfReferences];
-        output Real out_realV[numberOfReferences];
-        external "C" fmiGetReal_OMC(fmi, numberOfReferences, in_realVR, out_realV) annotation(Library = {"omcruntime", "fmilib"});
+        input Integer realValuesReferences[:];
+        output Real realValues[size(realValuesReferences, 1)];
+        external "C" fmiGetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"});
       end fmiGetReal;
+      
+      function fmiSetReal
+        input fmiImportInstance fmi;
+        input Integer realValuesReferences[:];
+        input Real realValues[size(realValuesReferences, 1)];
+        output Integer status;
+        external "C" status = fmiSetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetReal;
       
       function fmiGetInteger
         input fmiImportInstance fmi;
-        input Integer numberOfReferences;
-        input Integer in_integerVR[numberOfReferences];
-        output Real out_integerV[numberOfReferences];
-        external "C" fmiGetInteger_OMC(fmi, numberOfReferences, in_integerVR, out_integerV) annotation(Library = {"omcruntime", "fmilib"});
+        input Integer integerValuesReferences[:];
+        output Integer integerValues[size(integerValuesReferences, 1)];
+        external "C" fmiGetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"});
       end fmiGetInteger;
+      
+      function fmiSetInteger
+        input fmiImportInstance fmi;
+        input Integer integerValuesReferences[:];
+        input Integer integerValues[size(integerValuesReferences, 1)];
+        output Integer status;
+        external "C" status = fmiSetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetInteger;
       
       function fmiGetBoolean
         input fmiImportInstance fmi;
-        input Integer numberOfReferences;
-        input Integer in_booleanVR[numberOfReferences];
-        output Real out_booleanV[numberOfReferences];
-        external "C" fmiGetBoolean_OMC(fmi, numberOfReferences, in_booleanVR, out_booleanV) annotation(Library = {"omcruntime", "fmilib"});
+        input Integer booleanValuesReferences[:];
+        output Boolean booleanValues[size(booleanValuesReferences, 1)];
+        external "C" fmiGetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"});
       end fmiGetBoolean;
+      
+      function fmiSetBoolean
+        input fmiImportInstance fmi;
+        input Integer booleanValuesReferences[:];
+        input Boolean booleanValues[size(booleanValuesReferences, 1)];
+        output Integer status;
+        external "C" status = fmiSetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetBoolean;
       
       function fmiGetString
         input fmiImportInstance fmi;
-        input Integer numberOfReferences;
-        input Integer in_stringVR[numberOfReferences];
-        output Real out_stringV[numberOfReferences];
-        external "C" fmiGetString_OMC(fmi, numberOfReferences, in_stringVR, out_stringV) annotation(Library = {"omcruntime", "fmilib"});
+        input Integer stringValuesReferences[:];
+        output String stringValues[size(stringValuesReferences, 1)];
+        external "C" fmiGetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"});
       end fmiGetString;
-        
+      
+      function fmiSetString
+        input fmiImportInstance fmi;
+        input Integer stringValuesReferences[:];
+        input String stringValues[size(stringValuesReferences, 1)];
+        output Integer status;
+        external "C" status = fmiSetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetString;
+      
+      function fmiEventUpdate
+        input fmiImportInstance fmi;
+        input Boolean intermediateResults;
+        input fmiEventInfo in_eventInfo;
+        output fmiEventInfo out_eventInfo;
+        external "C" out_eventInfo = fmiEventUpdate_OMC(fmi, intermediateResults, in_eventInfo) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiEventUpdate;
+      
       function fmiCompletedIntegratorStep
         input fmiImportInstance fmi;
         input Boolean in_callEventUpdate;
@@ -1285,27 +1315,40 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     end jmStatus;
   initial algorithm
     fmiFunctions.fmiInstantiateModel(fmi, "<%fmiInfo.fmiModelIdentifier%>");
+    fmi_status := fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
     fmi_status := fmiFunctions.fmiSetTime(fmi, time);
+    <%/*if not stringEq(realStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetReal(fmi, {"+dumpStartRealVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartRealVariablesName(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(integerStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetInteger(fmi, {"+dumpStartIntegerVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartIntegerVariablesName(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(booleanStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetBoolean(fmi, {"+dumpStartBooleanVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartBooleanVariablesName(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(stringStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetString(fmi, {"+dumpStartStringVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartStringVariablesName(fmiModelVariablesList)+"});"*/%>
     eventInfo := fmiFunctions.fmiInitialize(fmi);
     fmi_x := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates);
-    fmi_z := fmiFunctions.fmiGetEventIndicators(fmi, numberOfEventIndicators);
-    fmi_status := fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
   equation
-    fmiFunctions.fmiSetTime(fmi, time);
-    fmi_status = fmiFunctions.fmiSetContinuousStates(fmi, numberOfContinuousStates, fmi_x);
     der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates);
+    //fmi_status = fmiFunctions.fmiSetTime(fmi, time);
+    fmiFunctions.fmiSetTime(fmi, time);
+    <%/*if not stringEq(realStartVariables, "0") then "fmi_status = fmiFunctions.fmiSetReal(fmi, {"+dumpStartRealVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartRealVariablesName(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(integerStartVariables, "0") then "fmi_status = fmiFunctions.fmiSetInteger(fmi, {"+dumpStartIntegerVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartIntegerVariablesName(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(booleanStartVariables, "0") then "fmi_status = fmiFunctions.fmiSetBoolean(fmi, {"+dumpStartBooleanVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartBooleanVariablesName(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(stringStartVariables, "0") then "fmi_status = fmiFunctions.fmiSetString(fmi, {"+dumpStartStringVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartStringVariablesName(fmiModelVariablesList)+"});"*/%>
+    fmi_status = fmiFunctions.fmiSetContinuousStates(fmi, fmi_x);
     fmi_z = fmiFunctions.fmiGetEventIndicators(fmi, numberOfEventIndicators);
-    <%if not stringEq(realVariables, "0") then "realV = fmiFunctions.fmiGetReal(fmi, "+realVariables+", realVR);"%>
-    <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = realV;"%>
-    <%if not stringEq(integerVariables, "0") then "integerV = fmiFunctions.fmiGetInteger(fmi, "+integerVariables+", integerVR);"%>
-    <%if not stringEq(integerVariables, "0") then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = integerV;"%>
-    <%if not stringEq(booleanVariables, "0") then "booleanV = fmiFunctions.fmiGetBoolean(fmi, "+booleanVariables+", booleanVR);"%>
-    <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = booleanV;"%>
-    <%if not stringEq(stringVariables, "0") then "stringV = fmiFunctions.fmiGetString(fmi, "+stringVariables+", stringVR);"%>
-    <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = stringV;"%>
-    <%/*if not stringEq(enumerationVariables, "0") then "enumerationV = fmiFunctions.fmiGetEnumeration(fmi, "+enumerationVariables+", enumerationVR);"*/%>
-    <%/*if not stringEq(enumerationVariables, "0") then "{"+dumpEnumerationVariablesName(fmiModelVariablesList)+"} = enumerationV;"*/%>
+    for i in 1:size(fmi_z,1) loop
+      fmi_z_positive[i] = fmi_z[i] > 0;
+    end for;
+  algorithm 
+    when change(fmi_z_positive) and not initial() then
+      //eventInfo := fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
+      fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
+      fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates);
+      reinit(fmi_x, fmi_x_new);
+    end when;
+  equation
     fmiFunctions.fmiCompletedIntegratorStep(fmi, callEventUpdate);
+    <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(integerVariables, "0") then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"});"%>
     annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
   end <%fmiInfo.fmiModelIdentifier%>_FMU;
   >>
@@ -1461,22 +1504,133 @@ case STRINGVARIABLE(variability = "") then
   >>
 end dumpStringVariableVR;
 
-template dumpEnumerationVariablesVR(list<ModelVariables> fmiModelVariablesList)
- "Generates the Model Variables value reference arrays."
+template dumpStartRealVariablesValueReference(list<ModelVariables> fmiModelVariablesList)
 ::=
   <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpEnumerationVariableVR(fmiModelVariable) ;separator=", "%>
+  <%fmiModelVariablesList |> fmiModelVariable => dumpStartRealVariableValueReference(fmiModelVariable) ;separator=", "%>
   >>
-end dumpEnumerationVariablesVR;
+end dumpStartRealVariablesValueReference;
 
-template dumpEnumerationVariableVR(ModelVariables fmiModelVariable)
+template dumpStartRealVariableValueReference(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case ENUMERATIONVARIABLE(variability = "") then
+case REALVARIABLE(hasStartValue = true) then
   <<
   <%valueReference%>
   >>
-end dumpEnumerationVariableVR;
+end dumpStartRealVariableValueReference;
+
+template dumpStartRealVariablesName(list<ModelVariables> fmiModelVariablesList)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpStartRealVariableName(fmiModelVariable) ;separator=", "%>
+  >>
+end dumpStartRealVariablesName;
+
+template dumpStartRealVariableName(ModelVariables fmiModelVariable)
+::=
+match fmiModelVariable
+case REALVARIABLE(hasStartValue = true) then
+  <<
+  <%name%>
+  >>
+end dumpStartRealVariableName;
+
+template dumpStartIntegerVariablesValueReference(list<ModelVariables> fmiModelVariablesList)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpStartIntegerVariableValueReference(fmiModelVariable) ;separator=", "%>
+  >>
+end dumpStartIntegerVariablesValueReference;
+
+template dumpStartIntegerVariableValueReference(ModelVariables fmiModelVariable)
+::=
+match fmiModelVariable
+case INTEGERVARIABLE(hasStartValue = true) then
+  <<
+  <%valueReference%>
+  >>
+end dumpStartIntegerVariableValueReference;
+
+template dumpStartIntegerVariablesName(list<ModelVariables> fmiModelVariablesList)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpStartIntegerVariableName(fmiModelVariable) ;separator=", "%>
+  >>
+end dumpStartIntegerVariablesName;
+
+template dumpStartIntegerVariableName(ModelVariables fmiModelVariable)
+::=
+match fmiModelVariable
+case INTEGERVARIABLE(hasStartValue = true) then
+  <<
+  <%name%>
+  >>
+end dumpStartIntegerVariableName;
+
+template dumpStartBooleanVariablesValueReference(list<ModelVariables> fmiModelVariablesList)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpStartBooleanVariableValueReference(fmiModelVariable) ;separator=", "%>
+  >>
+end dumpStartBooleanVariablesValueReference;
+
+template dumpStartBooleanVariableValueReference(ModelVariables fmiModelVariable)
+::=
+match fmiModelVariable
+case BOOLEANVARIABLE(hasStartValue = true) then
+  <<
+  <%valueReference%>
+  >>
+end dumpStartBooleanVariableValueReference;
+
+template dumpStartBooleanVariablesName(list<ModelVariables> fmiModelVariablesList)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpStartBooleanVariableName(fmiModelVariable) ;separator=", "%>
+  >>
+end dumpStartBooleanVariablesName;
+
+template dumpStartBooleanVariableName(ModelVariables fmiModelVariable)
+::=
+match fmiModelVariable
+case BOOLEANVARIABLE(hasStartValue = true) then
+  <<
+  <%name%>
+  >>
+end dumpStartBooleanVariableName;
+
+template dumpStartStringVariablesValueReference(list<ModelVariables> fmiModelVariablesList)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpStartStringVariableValueReference(fmiModelVariable) ;separator=", "%>
+  >>
+end dumpStartStringVariablesValueReference;
+
+template dumpStartStringVariableValueReference(ModelVariables fmiModelVariable)
+::=
+match fmiModelVariable
+case STRINGVARIABLE(hasStartValue = true) then
+  <<
+  <%valueReference%>
+  >>
+end dumpStartStringVariableValueReference;
+
+template dumpStartStringVariablesName(list<ModelVariables> fmiModelVariablesList)
+::=
+  <<
+  <%fmiModelVariablesList |> fmiModelVariable => dumpStartStringVariableName(fmiModelVariable) ;separator=", "%>
+  >>
+end dumpStartStringVariablesName;
+
+template dumpStartStringVariableName(ModelVariables fmiModelVariable)
+::=
+match fmiModelVariable
+case STRINGVARIABLE(hasStartValue = true) then
+  <<
+  <%name%>
+  >>
+end dumpStartStringVariableName;
 
 template dumpRealVariablesName(list<ModelVariables> fmiModelVariablesList)
 ::=
@@ -1541,22 +1695,6 @@ case STRINGVARIABLE(variability = "") then
   <%name%>
   >>
 end dumpStringVariableName;
-
-template dumpEnumerationVariablesName(list<ModelVariables> fmiModelVariablesList)
-::=
-  <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpEnumerationVariableName(fmiModelVariable) ;separator=", "%>
-  >>
-end dumpEnumerationVariablesName;
-
-template dumpEnumerationVariableName(ModelVariables fmiModelVariable)
-::=
-match fmiModelVariable
-case ENUMERATIONVARIABLE(variability = "") then
-  <<
-  <%name%>
-  >>
-end dumpEnumerationVariableName;
 
 end CodegenFMU;
 

@@ -135,12 +135,9 @@ void fmiImportFreeInstance_OMC(void* fmi)
 
 void fmiInstantiateModel_OMC(void* fmi, const char* instanceName)
 {
-  jm_status_enu_t jmstatus = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
-  switch (jmstatus) {
-    case jm_status_error:
-    case jm_status_warning:
-      fprintf(stderr, "Error initializing FMI Import in fmiInstantiateModel_OMC.\n");fflush(NULL);
-      break;
+  jm_status_enu_t status = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
+  if (status == jm_status_error) {
+    fprintf(stderr, "FMI Import Error: Error in fmiInstantiateModel_OMC.\n");fflush(NULL);
   }
 }
 
@@ -190,6 +187,11 @@ int fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* 
 void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* events)
 {
   fmi1_status_t fmistatus = fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
+  int i = 0;
+  for (i;i<numberOfEventIndicators;i++)
+  {
+    //fprintf(stderr, "%d value in fmiGetEventIndicators_OMC is = %f\n", i, events[i]);fflush(NULL);
+  }
   switch (fmistatus) {
     case fmi1_status_warning:
     case fmi1_status_error:
@@ -211,9 +213,9 @@ void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* stat
   }
 }
 
-void fmiGetReal_OMC(void* fmi, int numberOfReferences, int* in_realVR, double* out_realV)
+void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesReferences, double* realValues)
 {
-  fmi1_status_t fmistatus = fmi1_import_get_real((fmi1_import_t*)fmi, in_realVR, numberOfReferences, out_realV);
+  fmi1_status_t fmistatus = fmi1_import_get_real((fmi1_import_t*)fmi, (fmi1_value_reference_t*)realValuesReferences, numberOfValueReferences, (fmi1_real_t*)realValues);
   switch (fmistatus) {
     case fmi1_status_warning:
     case fmi1_status_error:
@@ -223,11 +225,84 @@ void fmiGetReal_OMC(void* fmi, int numberOfReferences, int* in_realVR, double* o
   }
 }
 
+int fmiSetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesReferences, double* realValues)
+{
+  return fmi1_import_set_real((fmi1_import_t*)fmi, (fmi1_value_reference_t*)realValuesReferences, numberOfValueReferences, (fmi1_real_t*)realValues);
+}
+
+void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValuesReferences, int* integerValues)
+{
+  fmi1_status_t fmistatus = fmi1_import_get_integer((fmi1_import_t*)fmi, (fmi1_value_reference_t*)integerValuesReferences, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiGetInteger_OMC.\n");fflush(NULL);
+      break;
+  }
+}
+
+int fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValuesReferences, int* integerValues)
+{
+  return fmi1_import_set_integer((fmi1_import_t*)fmi, (fmi1_value_reference_t*)integerValuesReferences, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+}
+
+void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValuesReferences, int* booleanValues)
+{
+  fmi1_status_t fmistatus = fmi1_import_get_boolean((fmi1_import_t*)fmi, (fmi1_value_reference_t*)booleanValuesReferences, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiGetBoolean_OMC.\n");fflush(NULL);
+      break;
+  }
+}
+
+int fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValuesReferences, int* booleanValues)
+{
+  return fmi1_import_set_boolean((fmi1_import_t*)fmi, (fmi1_value_reference_t*)booleanValuesReferences, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+}
+
+void fmiGetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesReferences, char** stringValues)
+{
+  fmi1_status_t fmistatus = fmi1_import_get_string((fmi1_import_t*)fmi, (fmi1_value_reference_t*)stringValuesReferences, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiGetString_OMC.\n");fflush(NULL);
+      break;
+  }
+}
+
+int fmiSetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesReferences, char** stringValues)
+{
+  return fmi1_import_set_string((fmi1_import_t*)fmi, (fmi1_value_reference_t*)stringValuesReferences, numberOfValueReferences, (fmi1_string_t*)stringValues);
+}
+
+void* fmiEventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo)
+{
+  //fprintf(stderr, "yesss in fmiEventUpdate\n");fflush(NULL);
+  fmi1_import_eventUpdate((fmi1_import_t*)fmi, intermediateResults, (fmi1_event_info_t*)eventInfo);
+  return eventInfo;
+}
+
 int fmiCompletedIntegratorStep_OMC(void* fmi, int in_callEventUpdate)
 {
   fmi1_status_t fmistatus = fmi1_import_completed_integrator_step((fmi1_import_t*)fmi, (fmi1_boolean_t*)&in_callEventUpdate);
-  fprintf(stderr, "fmiCompletedIntegratorStep_OMC in_callEventUpdate = %d\n", in_callEventUpdate);fflush(NULL);
+  //fprintf(stderr, "fmiCompletedIntegratorStep_OMC in_callEventUpdate = %d\n", in_callEventUpdate);fflush(NULL);
   return in_callEventUpdate;
+}
+
+void printZ_OMC(int len, int* zVals)
+{
+  //fprintf(stderr, "yesss in fmiEventUpdate %d \n", len);fflush(NULL);
+  int i = 0;
+  for (i;i<len;i++)
+  {
+    //fprintf(stderr, "%d value is = %d\n", i, zVals[i]);fflush(NULL);
+  }
 }
 
 #ifdef __cplusplus

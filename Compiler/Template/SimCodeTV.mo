@@ -2670,25 +2670,40 @@ package FMI
     output Integer outInteger;
   end countRealVariables;
   
+  function countRealStartVariables
+    input list<ModelVariables> inVariables;
+    output Integer outInteger;
+  end countRealStartVariables;
+  
   function countIntegerVariables
     input list<ModelVariables> inVariables;
     output Integer outInteger;
   end countIntegerVariables;
+  
+  function countIntegerStartVariables
+    input list<ModelVariables> inVariables;
+    output Integer outInteger;
+  end countIntegerStartVariables;
 
   function countBooleanVariables
     input list<ModelVariables> inVariables;
     output Integer outInteger;
   end countBooleanVariables;
+  
+  function countBooleanStartVariables
+    input list<ModelVariables> inVariables;
+    output Integer outInteger;
+  end countBooleanStartVariables;
 
   function countStringVariables
     input list<ModelVariables> inVariables;
     output Integer outInteger;
   end countStringVariables;
-
-  function countEnumerationVariables
+  
+  function countStringStartVariables
     input list<ModelVariables> inVariables;
     output Integer outInteger;
-  end countEnumerationVariables;
+  end countStringStartVariables;
 end FMI;
 
 end SimCodeTV;
