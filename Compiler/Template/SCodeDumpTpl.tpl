@@ -19,7 +19,7 @@ match elements
     let spacing = dumpElementSpacing(el)
     let pre_spacing = if not firstElement then 
       dumpPreElementSpacing(spacing, prevSpacing)
-    let el_str = dumpElement(el)
+    let el_str = dumpElement(el,'')
     let vis_str = dumpElementVisibility(el, inPublicSection)
     let rest_str = if vis_str then
         dumpElements2(rest_els, spacing, indent, false, boolNot(inPublicSection))
@@ -68,13 +68,13 @@ match comment
   else '<%\n%>'
 end dumpCommentSpacing;
 
-template dumpElement(SCode.Element element)
+template dumpElement(SCode.Element element, String each)
 ::=
 match element
   case IMPORT(__) then dumpImport(element)
   case EXTENDS(__) then dumpExtends(element)
-  case CLASS(__) then dumpClass(element)
-  case COMPONENT(__) then dumpComponent(element)
+  case CLASS(__) then dumpClass(element, each)
+  case COMPONENT(__) then dumpComponent(element, each)
   case DEFINEUNIT(__) then dumpDefineUnit(element)
   else errorMsg("SCodeDump.dumpElement: Unknown element.")
 end dumpElement;
@@ -128,11 +128,11 @@ match extends
     '<%visibility_str%>extends <%bc_str%><%mod_str%><%ann_str%>' 
 end dumpExtends;
 
-template dumpClass(SCode.Element class)
+template dumpClass(SCode.Element class, String each)
 ::=
 match class
   case CLASS(__) then
-    let prefix_str = dumpPrefixes(prefixes)
+    let prefix_str = dumpPrefixes(prefixes, each)
     let enc_str = dumpEncapsulated(encapsulatedPrefix)
     let partial_str = dumpPartial(partialPrefix)
     let res_str = dumpRestriction(restriction)
@@ -243,11 +243,11 @@ template dumpClassComment(Option<SCode.Comment> comment)
     case SOME(cmt as COMMENT(__)) then dumpComment(cmt)
 end dumpClassComment;
 
-template dumpComponent(SCode.Element component)
+template dumpComponent(SCode.Element component, String each)
 ::=
 match component
   case COMPONENT(__) then
-    let prefix_str = dumpPrefixes(prefixes)
+    let prefix_str = dumpPrefixes(prefixes, each)
     let cc_str = dumpReplaceableConstrainClass(prefixes)
     let attr_pre_str = dumpAttributes(attributes)
     let attr_dim_str = dumpAttributeDim(attributes)
@@ -543,7 +543,7 @@ match when_statement
     >>
 end dumpWhenStatement;
 
-template dumpPrefixes(SCode.Prefixes prefixes)
+template dumpPrefixes(SCode.Prefixes prefixes, String each)
 ::=
 match prefixes
   case PREFIXES(__) then
@@ -551,7 +551,7 @@ match prefixes
     let final_str = dumpFinal(finalPrefix)
     let io_str = dumpInnerOuter(innerOuter)
     let replaceable_str = dumpReplaceable(replaceablePrefix)
-    '<%redeclare_str%><%final_str%><%io_str%><%replaceable_str%>'
+    '<%redeclare_str%><%each%><%final_str%><%io_str%><%replaceable_str%>'
 end dumpPrefixes;
 
 template dumpVisibility(SCode.Visibility visibility)
@@ -667,11 +667,11 @@ match modifier
   case MOD(__) then
     let final_str = dumpFinal(finalPrefix)
     let each_str = dumpEach(eachPrefix)
-    '<%final_str%><%each_str%>'
+    '<%each_str%><%final_str%>'
   case REDECL(__) then
     let final_str = dumpFinal(finalPrefix)
     let each_str = dumpEach(eachPrefix)
-    '<%final_str%><%each_str%>'
+    '<%each_str%><%final_str%>'
 end dumpModifierPrefix;
 
 template dumpRedeclModifier(SCode.Mod modifier)
@@ -679,7 +679,7 @@ template dumpRedeclModifier(SCode.Mod modifier)
 match modifier
   case REDECL(__) then
     let each_str = dumpEach(eachPrefix)
-    '<%each_str%><%dumpElement(element)%>'
+    '<%dumpElement(element, each_str)%>'
 end dumpRedeclModifier;
     
 template dumpModifierBinding(Option<tuple<Absyn.Exp, Boolean>> binding)
