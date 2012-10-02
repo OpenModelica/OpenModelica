@@ -9516,6 +9516,7 @@ algorithm
       DAE.FunctionBuiltin isBuiltin;
       DAE.Attributes attr;
       DAE.Binding binding "binding ; equation modification";
+      Env.Frame frame;
 
     // wildcard
     case (cache,env,c as Absyn.WILD(),impl,doVect,_,_,_)
@@ -9563,6 +9564,25 @@ algorithm
       then
         (cache,SOME((exp,DAE.PROP(t, const),attr)));
         
+    // a normal cref, fully-qualified and lookupVar failed in some weird way in the previous case
+    case (cache,env,Absyn.CREF_FULLYQUALIFIED(c),impl,doVect,pre,_,_) /* impl */
+      equation
+        c = replaceEnd(c);
+        frame = Env.topFrame(env);
+        env = {frame};
+        (cache,c_1,constSubs,hasZeroSizeDim) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, false, info);
+        (cache,attr,t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
+        // variability = applySubscriptsVariability(DAEUtil.getAttrVariability(attr), constSubs);
+        // attr = DAEUtil.setAttrVariability(attr, variability);        
+        // get the binding if is a constant
+        (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
+        const = constCref;
+        exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
+        t = fixEnumerationType(t);
+        (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
+      then
+        (cache,SOME((exp,DAE.PROP(t, const),attr)));
+
     // An enumeration type => array of enumeration literals.
     case (cache, env, c, impl, doVect, pre, _, _)
       equation

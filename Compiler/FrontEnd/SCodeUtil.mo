@@ -1830,7 +1830,7 @@ algorithm
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
                              functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com,info,_)
-      then SCode.EQ_ASSERT(e1,e2,Absyn.CREF(Absyn.CREF_QUAL("AssertionLevel",{},Absyn.CREF_IDENT("error",{}))),com,info);
+      then SCode.EQ_ASSERT(e1,e2,Absyn.CREF(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_QUAL("AssertionLevel",{},Absyn.CREF_IDENT("error",{})))),com,info);
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
                               functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2,e3},argNames = {})),com,info,_)
