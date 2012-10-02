@@ -11440,24 +11440,24 @@ algorithm
       DAE.Exp e;
       list<DAE.Exp> explst;     
       list<list<BackendDAE.Equation>> eqnslst;
-      list<BackendDAE.Equation> eqns;
+      list<BackendDAE.Equation> eqns,elseenqs1;
       
     // no true case left with condition<>false
     case ({},{},_,{},{},_,_,_) 
       equation
         // simplify nested if equations
-        ((elseenqs,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},false));
+        ((eqns,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},false));
       then 
-        listAppend(elseenqs,inEqns);
+        listAppend(eqns,inEqns);
     // true case left with condition<>false
     case ({},{},_,_,_,_,_,_)
       equation
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
         // simplify nested if equations
-        ((elseenqs,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},false));
+        ((elseenqs1,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},false));
       then 
-        simplifyIfEquation1(explst,eqnslst,elseenqs,source,knvars,inEqns);
+        simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns);
     // if true use it
     case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
       equation

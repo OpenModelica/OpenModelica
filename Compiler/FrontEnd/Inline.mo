@@ -487,7 +487,7 @@ public function inlineVar
   output BackendDAE.Var outVar;
   output Boolean inlined;
 algorithm
-  (outVar,inlined) := matchcontinue(inVar,inElementList)
+  (outVar,inlined) := match(inVar,inElementList)
     local
       Functiontuple fns;
       DAE.ComponentRef varName;
@@ -495,7 +495,6 @@ algorithm
       DAE.VarDirection varDirection;
       DAE.VarParallelism varParallelism;
       BackendDAE.Type varType;
-      DAE.Exp startv,startv_1;
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Option<DAE.VariableAttributes> values,values1;
@@ -509,19 +508,65 @@ algorithm
     case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,comment,ct),fns)
       equation
         (bind,source,b1) = inlineExpOpt(bind,fns,source);
-        startv = DAEUtil.getStartAttrFail(values);
-        (startv_1,source,b2) = inlineExp(startv,fns,source);
-        values1 = Debug.bcallret2(b2,DAEUtil.setStartAttr,values,startv_1,values);
+        (values1,source,b2) = inlineStartAttribute(values,source,fns);
       then
         (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values1,comment,ct),b1 or b2);
-    case(BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,comment,ct),fns)
-      equation
-        (bind,source,b1) = inlineExpOpt(bind,fns,source);
-      then
-        (BackendDAE.VAR(varName,varKind,varDirection,varParallelism,varType,bind,bindValue,arrayDim,source,values,comment,ct),b1);
     case(var,_) then (var,false);
-  end matchcontinue;
+  end match;
 end inlineVar;
+
+public function inlineStartAttribute
+  input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  input DAE.ElementSource isource;
+  input Functiontuple fns;
+  output Option<DAE.VariableAttributes> outVariableAttributesOption;
+  output DAE.ElementSource osource;
+  output Boolean b;
+algorithm
+  (outVariableAttributesOption,osource,b):=matchcontinue (inVariableAttributesOption,isource,fns)
+    local
+      DAE.ElementSource source;
+      DAE.Exp r;
+      Option<DAE.Exp> quantity,unit,displayUnit,initial_,fixed,nominal;
+      tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
+      Option<DAE.StateSelect> stateSelectOption;
+      Option<DAE.Uncertainty> uncertainOption;
+      Option<DAE.Distribution> distributionOption;
+      Option<DAE.Exp> equationBound;
+      Option<Boolean> isProtected,finalPrefix;      
+    case (NONE(),_,_) then (NONE(),isource,false);
+    case (SOME(DAE.VAR_ATTR_REAL(quantity=quantity,unit=unit,displayUnit=displayUnit,min=min,initial_ = SOME(r),
+          fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,uncertainOption=uncertainOption,
+          distributionOption=distributionOption,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+      equation
+        (r,source,true) = inlineExp(r,fns,isource);        
+      then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,SOME(r),fixed,nominal,
+          stateSelectOption,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix)),source,true);
+    case (SOME(DAE.VAR_ATTR_INT(quantity=quantity,min=min,initial_ = SOME(r),
+          fixed=fixed,uncertainOption=uncertainOption,distributionOption=distributionOption,equationBound=equationBound,
+          isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+      equation
+        (r,source,true) = inlineExp(r,fns,isource);        
+      then (SOME(DAE.VAR_ATTR_INT(quantity,min,SOME(r),fixed,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix)),source,true);
+    case (SOME(DAE.VAR_ATTR_BOOL(quantity=quantity,initial_ = SOME(r),
+          fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+      equation
+        (r,source,true) = inlineExp(r,fns,isource);        
+      then (SOME(DAE.VAR_ATTR_BOOL(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix)),source,true);
+    case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,initial_ = SOME(r),
+          equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+      equation
+        (r,source,true) = inlineExp(r,fns,isource);        
+      then (SOME(DAE.VAR_ATTR_STRING(quantity,SOME(r),equationBound,isProtected,finalPrefix)),source,true);
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quantity=quantity,min=min,start = SOME(r),
+          fixed=fixed,equationBound=equationBound,
+          isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+      equation
+        (r,source,true) = inlineExp(r,fns,isource);        
+      then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,SOME(r),fixed,equationBound,isProtected,finalPrefix)),source,true);
+    case (_,_,_) then (inVariableAttributesOption,isource,false);
+  end matchcontinue;
+end inlineStartAttribute;
 
 protected function inlineEventInfo
 "function: inlineEventInfo

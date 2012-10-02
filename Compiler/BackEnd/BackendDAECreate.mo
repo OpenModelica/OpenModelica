@@ -419,7 +419,7 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.ElementSource source;
-      BackendDAE.Var backendVar1,backendVar2;
+      BackendDAE.Var backendVar1;
       DAE.Exp e1,e2;
       BackendDAE.Variables vars,knvars,extvars;
       String str;
@@ -427,9 +427,8 @@ algorithm
     // external object variables
     case (DAE.VAR(ty = DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))),_,_,_,_,_)
       equation
-        backendVar1 = lowerExtObjVar(inElement);
-        (backendVar2,_) = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
-        extvars = BackendVariable.addVar(backendVar2, inExVars);
+        backendVar1 = lowerExtObjVar(inElement,functionTree);
+        extvars = BackendVariable.addVar(backendVar1, inExVars);
       then
         (inVars,inKnVars,extvars,inEqnsLst);
 
@@ -439,10 +438,9 @@ algorithm
         // adrpo 2009-09-07 - according to MathCore
         // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(inElement);
-        (backendVar1) = lowerDynamicVar(inElement);
-        (backendVar2,_) = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
+        (backendVar1) = lowerDynamicVar(inElement,functionTree);
         (e2,source,_) = Inline.inlineExp(e2,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
-        vars = BackendVariable.addVar(backendVar2, inVars);
+        vars = BackendVariable.addVar(backendVar1, inVars);
         e1 = Expression.crefExp(cr);
       then
         (vars,inKnVars,inExVars,BackendDAE.EQUATION(e1, e2, source)::inEqnsLst);
@@ -451,18 +449,16 @@ algorithm
     case (DAE.VAR(binding=NONE(), source = source),_,_,_,_,_)
       equation
         true = isStateOrAlgvar(inElement);
-        (backendVar1) = lowerDynamicVar(inElement);
-        (backendVar2,_) = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
-        vars = BackendVariable.addVar(backendVar2, inVars);
+        (backendVar1) = lowerDynamicVar(inElement,functionTree);
+        vars = BackendVariable.addVar(backendVar1, inVars);
       then
         (vars,inKnVars,inExVars,inEqnsLst);
    
     // known variables: parameters and constants
     case (DAE.VAR(componentRef = _),_,_,_,_,_)
       equation
-        backendVar1 = lowerKnownVar(inElement) "in previous rule, lower_var failed." ;
-        (backendVar2,_) = Inline.inlineVar(backendVar1,(SOME(functionTree),{DAE.NORM_INLINE()}));
-        knvars = BackendVariable.addVar(backendVar2, inKnVars);
+        backendVar1 = lowerKnownVar(inElement,functionTree) "in previous rule, lower_var failed." ;
+        knvars = BackendVariable.addVar(backendVar1, inKnVars);
       then
         (inVars,knvars,inExVars,inEqnsLst);
 
@@ -497,9 +493,10 @@ protected function lowerDynamicVar
   inputs: DAE.Element
   outputs: Var"
   input DAE.Element inElement;
+  input DAE.FunctionTree functionTree;
   output BackendDAE.Var outVar;
 algorithm
-  (outVar) := match (inElement)
+  (outVar) := match (inElement,functionTree)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -526,7 +523,7 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  absynCommentOption = comment))
+                  absynCommentOption = comment),_)
       equation
         (kind_1) = lowerVarkind(kind, t, name, dir, ct, dae_var_attr);
         tp = lowerType(t);
@@ -535,6 +532,7 @@ algorithm
         dae_var_attr = setMinMaxFromEnumeration(t,dae_var_attr);
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
+        (dae_var_attr,source,_) = Inline.inlineStartAttribute(dae_var_attr,source,(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
         (BackendDAE.VAR(name,kind_1,dir,prl,tp,NONE(),NONE(),dims,source,dae_var_attr,comment,ct));
   end match;
@@ -544,14 +542,15 @@ protected function lowerKnownVar
 "function: lowerKnownVar
   Helper function to lower2"
   input DAE.Element inElement;
+  input DAE.FunctionTree functionTree;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inElement)
+  outVar := matchcontinue (inElement,functionTree)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
       BackendDAE.VarKind kind_1;
-      Option<DAE.Exp> bind;
+      Option<DAE.Exp> bind,bind1;
       DAE.VarKind kind;
       DAE.VarDirection dir;
       DAE.VarParallelism prl;
@@ -563,7 +562,8 @@ algorithm
       DAE.Type t;
       DAE.VarVisibility protection;
       Boolean b;  
-      String str;    
+      String str;
+      Inline.Functiontuple fnstpl;
 
     case (DAE.VAR(componentRef = name,
                   kind = kind,
@@ -576,7 +576,7 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  absynCommentOption = comment))
+                  absynCommentOption = comment),_)
       equation
         kind_1 = lowerKnownVarkind(kind, name, dir, ct);
         // bind = fixParameterStartBinding(bind,t,dae_var_attr,kind_1);
@@ -586,10 +586,13 @@ algorithm
         dae_var_attr = setMinMaxFromEnumeration(t,dae_var_attr);
         _ = BackendVariable.getMinMaxAsserts(dae_var_attr,name,source,kind_1,tp);
         _ = BackendVariable.getNominalAssert(dae_var_attr,name,source,kind_1,tp);
+        fnstpl = (SOME(functionTree),{DAE.NORM_INLINE()});
+        (bind1,source,b) = Inline.inlineExpOpt(bind,fnstpl,source);
+        (dae_var_attr,source,_) = Inline.inlineStartAttribute(dae_var_attr,source,fnstpl);
       then
-        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,source,dae_var_attr,comment,ct);
+        BackendDAE.VAR(name,kind_1,dir,prl,tp,bind1,NONE(),dims,source,dae_var_attr,comment,ct);
 
-    case (_)
+    else
       equation
         str = "BackendDAECreate.lowerKnownVar failed for " +& DAEDump.dumpElementsStr({inElement});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -805,10 +808,11 @@ protected function lowerExtObjVar
 " Helper function to lower2
   Fails for all variables except external object instances."
   input DAE.Element inElement;
+  input DAE.FunctionTree functionTree;
   output BackendDAE.Var outVar;
 algorithm
   outVar:=
-  match (inElement)
+  match (inElement,functionTree)
     local
       list<DAE.Subscript> dims;
       DAE.ComponentRef name;
@@ -834,10 +838,12 @@ algorithm
                   connectorType = ct,
                   source = source,
                   variableAttributesOption = dae_var_attr,
-                  absynCommentOption = comment))
+                  absynCommentOption = comment),_)
       equation
         kind_1 = lowerExtObjVarkind(t);
         tp = lowerType(t);
+        (bind,source,_) = Inline.inlineExpOpt(bind,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        (dae_var_attr,source,_) = Inline.inlineStartAttribute(dae_var_attr,source,(SOME(functionTree),{DAE.NORM_INLINE()}));
       then
         BackendDAE.VAR(name,kind_1,dir,prl,tp,bind,NONE(),dims,source,dae_var_attr,comment,ct);
   end match;
@@ -1036,12 +1042,21 @@ algorithm
         beqns = List.fold1(elseenqs,lowerEqn,functionTree,{});        
       then 
         BackendDAE.IF_EQUATION(explst, beqnslst, beqns,source)::inEqns;
-    // if true use it
-    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
+    // if true use it if it is the first one
+    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_,_)
       equation
         beqns = List.fold1(eqns,lowerEqn,functionTree,inEqns);
       then 
         beqns; 
+    // if true use it as new else if it is not the first one
+    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_,_)
+      equation
+        explst = listReverse(conditions1);  
+        eqnslst = listReverse(theneqns1);  
+        beqnslst = List.map2(eqnslst,lowerEqns,functionTree,{});
+        beqns = List.fold1(eqns,lowerEqn,functionTree,{});        
+      then 
+        BackendDAE.IF_EQUATION(explst, beqnslst, beqns,source)::inEqns;        
     // if false skip it
     case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_)
       then
@@ -1417,27 +1432,6 @@ algorithm
         lowerTupleAssignment(rest_targets, rest_sources, eq_source, funcs, eqns);
   end match;
 end lowerTupleAssignment;
-
-protected function lowerTupleEquation
-"Lowers a tuple equation, e.g. (a,b) = foo(x,y)
- by transforming it to an algorithm (TUPLE_ASSIGN), e.g. (a,b) := foo(x,y);
- author: PA"
-  input DAE.Element eqn;
-  output DAE.Algorithm alg;
-algorithm
-  alg := match(eqn)
-    local
-      DAE.ElementSource source;
-      DAE.Exp e2;
-      list<DAE.Exp> expl;
-      /* Only succeds for tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
-    case(DAE.EQUATION(DAE.TUPLE(expl),e2 as DAE.CALL(path =_),source))
-    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,e2,source)});
-
-    case(DAE.EQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(expl),source))
-    then DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,expl,e2,source)});
-  end match;
-end lowerTupleEquation;
 
 /*
  *   lower algorithms
