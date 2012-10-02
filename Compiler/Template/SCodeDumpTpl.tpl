@@ -749,7 +749,10 @@ template dumpAnnotation(SCode.Annotation annotation)
 ::=
 if Config.showAnnotations() then
   match annotation
-    case ANNOTATION(__) then ' annotation<%dumpModifier(modification)%>'
+    case ANNOTATION(__) then 
+     let modifStr = '<%dumpModifier(modification)%>'
+     let annStr = if modifStr then modifStr else '()' 
+     ' annotation<%annStr%>'
 end dumpAnnotation;
 
 template dumpAnnotationElement(SCode.Annotation annotation)
