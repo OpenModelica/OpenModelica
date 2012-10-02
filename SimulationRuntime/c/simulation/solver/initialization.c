@@ -533,6 +533,9 @@ char* mapToDymolaVars(const char* varname)
       if(newVarname[pos] == '.')
         break;
 
+    if(pos == 3)
+      break;
+
     memcpy((void*)newVarname, (const void*)(newVarname+4), (pos-3)*sizeof(char));
     memcpy((void*)(newVarname+pos-3), (const void*)"der(", 4*sizeof(char));
   }
@@ -675,8 +678,7 @@ static int importStartValues(DATA *data, const char* pInitFile, double initTime)
  *
  *  \author lochel
  */
-int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
-    const char* pInitFile, double initTime)
+int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)
 {
   int initMethod = IIM_STATE;               /* default method */
   int optiMethod = IOM_NELDER_MEAD_EX;      /* default method */
