@@ -133,6 +133,12 @@ void fmiImportFreeInstance_OMC(void* fmi)
   fmi1_import_free(fmi1);
 }
 
+void fmiFreeEventInfo_OMC(void* eventInfo)
+{
+  if ((fmi1_event_info_t*)eventInfo != NULL)
+    free((fmi1_event_info_t*)eventInfo);
+}
+
 void fmiInstantiateModel_OMC(void* fmi, const char* instanceName)
 {
   jm_status_enu_t status = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);

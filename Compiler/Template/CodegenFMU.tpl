@@ -1163,6 +1163,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         end constructor;
         
         function destructor
+          input fmiEventInfo eventInfo;
+          external "C" fmiFreeEventInfo_OMC(eventInfo) annotation(Library = {"omcruntime", "fmilib"});
         end destructor;
     end fmiEventInfo;
     
@@ -1336,7 +1338,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     for i in 1:size(fmi_z,1) loop
       fmi_z_positive[i] = fmi_z[i] > 0;
     end for;
-  algorithm 
+  algorithm
     when change(fmi_z_positive) and not initial() then
       //eventInfo := fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
       fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
