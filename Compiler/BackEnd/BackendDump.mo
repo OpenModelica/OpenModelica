@@ -1302,7 +1302,7 @@ algorithm
       equation
         se = ExpressionDump.printExpStr(e);
         seqns = stringDelimitList(List.map(eqns,equationStr),"\n  ");
-        s = stringAppendList({iString,"\nelseif ",se," then\n  ",seqns,"\nend if"});
+        s = stringAppendList({iString,"\nelseif ",se," then\n  ",seqns});
       then
         ifequationStr(elst,eqnslst,eqnsfalse,s);
   end match;

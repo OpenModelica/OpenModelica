@@ -1278,10 +1278,17 @@ algorithm
         eqnslst = listReverse(theneqns1);  
       then 
         BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source)::inEqns;
-    // if true use it
-    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_)
+    // if true use it if it is the first one
+    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_)
       then 
         eqns; 
+    // if true use it as new else if it is not the first one
+    case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_)
+      equation
+        explst = listReverse(conditions1);  
+        eqnslst = listReverse(theneqns1);  
+      then 
+        BackendDAE.IF_EQUATION(explst,eqnslst,eqns,source)::inEqns;
     // if false skip it
     case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_)
       then

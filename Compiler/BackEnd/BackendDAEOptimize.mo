@@ -11392,7 +11392,7 @@ algorithm
         // check conditions
         ((explst,_)) = Expression.traverseExpList(explst, simplifyevaluatedParamter, knvars);
         explst = ExpressionSimplify.simplifyList(explst, {});
-        // simplify if equations
+        // simplify if equation
         acc = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc);
       then
         ((acc,true));
@@ -11435,17 +11435,18 @@ protected function simplifyIfEquation
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns)
+  outEqns := match(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns)
     local
       DAE.Exp e;
-      list<DAE.Exp> explst,fbsExp;
-      list<list<DAE.Exp>> tbsExp;      
+      list<DAE.Exp> explst;     
       list<list<BackendDAE.Equation>> eqnslst;
       list<BackendDAE.Equation> eqns;
-
       
     // no true case left with condition<>false
     case ({},{},_,{},{},_,_,_) 
+      equation
+        // simplify nested if equations
+        ((elseenqs,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},false));
       then 
         listAppend(elseenqs,inEqns);
     // true case left with condition<>false
@@ -11453,20 +11454,15 @@ algorithm
       equation
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
-        _ = countEquationsInBranches(eqnslst,elseenqs,source);
-        fbsExp = makeEquationLstToResidualExpLst(elseenqs);
-        tbsExp = List.map(eqnslst, makeEquationLstToResidualExpLst);
-        eqns = makeEquationsFromResiduals(explst, tbsExp, fbsExp, source);
+        // simplify nested if equations
+        ((elseenqs,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},false));
       then 
-        listAppend(eqns,inEqns);
-    case ({},{},_,_,_,_,_,_)
-      equation 
-        explst = listReverse(conditions1);
-        eqnslst = listReverse(theneqns1);
-      then
-        BackendDAE.IF_EQUATION(explst,eqnslst,elseenqs,source)::inEqns;
+        simplifyIfEquation1(explst,eqnslst,elseenqs,source,knvars,inEqns);
     // if true use it
     case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
+      equation
+        // simplify nested if equations
+        ((eqns,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},false));
       then 
         listAppend(eqns,inEqns);
     // if false skip it
@@ -11475,10 +11471,188 @@ algorithm
         simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,knvars,inEqns);
     // all other cases
     case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
+      equation
+        // simplify nested if equations
+        ((eqns,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},false));        
       then
         simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns);
-  end matchcontinue;
+  end match;
 end simplifyIfEquation;
+
+protected function simplifyIfEquation1
+"function: simplifyIfEquation1
+  autor: Frenkel TUD 2012-07
+  helper for simplifyIfEquations"
+  input list<DAE.Exp> conditions;
+  input list<list<BackendDAE.Equation>> theneqns;
+  input list<BackendDAE.Equation> elseenqs;
+  input DAE.ElementSource source;
+  input BackendDAE.Variables knvars;  
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,source,knvars,inEqns)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> explst,fbsExp;
+      list<list<DAE.Exp>> tbsExp;      
+      list<list<BackendDAE.Equation>> eqnslst;
+      list<BackendDAE.Equation> eqns;
+      HashTable2.HashTable ht;
+      list<tuple<DAE.ComponentRef,DAE.Exp>> crexplst;
+      
+    // true case left with condition<>false
+    case (_,_,_,_,_,_)
+      equation
+        _ = countEquationsInBranches(theneqns,elseenqs,source);
+        // simplify if eqution 
+        // if .. then a=.. elseif .. then a=... else a=.. end if;
+        // to 
+        // a=if .. then .. else if .. then else ..;
+        ht = HashTable2.emptyHashTable();
+        ht = simplifySolvedIfEqnsElse(elseenqs,ht);
+        ht = simplifySolvedIfEqns(listReverse(conditions),listReverse(theneqns),ht);
+        crexplst = BaseHashTable.hashTableList(ht);
+        eqns = simplifySolvedIfEqns2(crexplst,inEqns);
+        // ToDo: check if the same cref is not used more than once on the lhs, merge sources        
+      then 
+        eqns;
+    case (_,_,_,_,_,_)
+      equation
+        _ = countEquationsInBranches(theneqns,elseenqs,source);
+        fbsExp = makeEquationLstToResidualExpLst(elseenqs);
+        tbsExp = List.map(theneqns, makeEquationLstToResidualExpLst);
+        eqns = makeEquationsFromResiduals(conditions, tbsExp, fbsExp, source);
+      then 
+        listAppend(eqns,inEqns);
+    case (_,_,_,_,_,_)
+      then
+        BackendDAE.IF_EQUATION(conditions,theneqns,elseenqs,source)::inEqns;
+  end matchcontinue;
+end simplifyIfEquation1;
+
+protected function simplifySolvedIfEqns2
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> crexplst;
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := match(crexplst,inEqns)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e,crexp;
+      list<tuple<DAE.ComponentRef,DAE.Exp>> rest;
+    case ({},_)
+      then
+        inEqns;
+    case ((cr,e)::rest,_)
+      equation
+        crexp = Expression.crefExp(cr);
+      then
+       simplifySolvedIfEqns2(rest,BackendDAE.EQUATION(crexp,e,DAE.emptyElementSource)::inEqns);       
+  end match;
+end simplifySolvedIfEqns2;
+
+protected function simplifySolvedIfEqns
+"function: simplifySolvedIfEqns
+  autor: Frenkel TUD 2012-10
+  helper for simplifyIfEquations"
+  input list<DAE.Exp> conditions;
+  input list<list<BackendDAE.Equation>> theneqns;
+  input HashTable2.HashTable iHt;
+  output HashTable2.HashTable oHt;
+algorithm
+  oHt := match(conditions,theneqns,iHt)
+    local
+      HashTable2.HashTable ht;
+      DAE.Exp c;
+      list<DAE.Exp> explst;
+      list<BackendDAE.Equation> eqns;
+      list<list<BackendDAE.Equation>> rest;
+    case ({},{},_)
+      then
+        iHt;
+    case (c::explst,eqns::rest,_)
+      equation
+        ht = simplifySolvedIfEqns1(c,eqns,iHt);
+      then
+        simplifySolvedIfEqns(explst,rest,ht);
+  end match;
+end simplifySolvedIfEqns;
+
+protected function simplifySolvedIfEqns1
+"function: simplifySolvedIfEqns1
+  autor: Frenkel TUD 2012-10
+  helper for simplifyIfEquations"
+  input DAE.Exp condition;
+  input list<BackendDAE.Equation> brancheqns;
+  input HashTable2.HashTable iHt;
+  output HashTable2.HashTable oHt;
+algorithm
+  oHt := match(condition,brancheqns,iHt)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e,exp;
+      DAE.ElementSource source;
+      HashTable2.HashTable ht;
+      list<BackendDAE.Equation> rest;
+    case (_,{},_)
+      then
+        iHt;
+    case (_,BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest,_)
+      equation
+        false = Expression.expHasCref(e, cr);
+        exp = BaseHashTable.get(cr, iHt);
+        exp = DAE.IFEXP(condition, e, exp);
+        ht = BaseHashTable.add((cr,exp), iHt);
+      then
+        simplifySolvedIfEqns1(condition,rest,ht);
+    case (_,BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(ty=_), exp=DAE.CREF(componentRef=cr)), scalar=e, source=source)::rest,_)
+      equation
+        false = Expression.expHasCref(e, cr);
+        exp = BaseHashTable.get(cr, iHt);
+        e = Expression.negate(e);
+        exp = DAE.IFEXP(condition, e, exp);
+        ht = BaseHashTable.add((cr,exp), iHt);
+      then
+        simplifySolvedIfEqns1(condition,rest,ht);
+  end match;
+end simplifySolvedIfEqns1;
+
+protected function simplifySolvedIfEqnsElse
+"function: simplifySolvedIfEqnsElse
+  autor: Frenkel TUD 2012-10
+  helper for simplifyIfEquations"
+  input list<BackendDAE.Equation> elseenqs;
+  input HashTable2.HashTable iHt;
+  output HashTable2.HashTable oHt;
+algorithm
+  oHt := match(elseenqs,iHt)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+      DAE.ElementSource source;
+      HashTable2.HashTable ht;
+      list<BackendDAE.Equation> rest;
+    case ({},_)
+      then
+        iHt;
+    case (BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest,_)
+      equation
+        failure( _ = BaseHashTable.get(cr, iHt));
+        false = Expression.expHasCref(e, cr);
+        ht = BaseHashTable.add((cr,e), iHt);
+      then
+        simplifySolvedIfEqnsElse(rest,ht);
+    case (BackendDAE.EQUATION(exp=DAE.UNARY(operator=DAE.UMINUS(ty=_), exp=DAE.CREF(componentRef=cr)), scalar=e, source=source)::rest,_)
+      equation
+        failure( _ = BaseHashTable.get(cr, iHt));
+        false = Expression.expHasCref(e, cr);
+        e = Expression.negate(e);
+        ht = BaseHashTable.add((cr,e), iHt);
+      then
+        simplifySolvedIfEqnsElse(rest,ht);
+  end match;
+end simplifySolvedIfEqnsElse;
 
 protected function countEquationsInBranches "
 Checks that the number of equations is the same in all branches
