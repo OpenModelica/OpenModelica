@@ -1115,10 +1115,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     constant Integer fmiLogLevel = <%fmiLogLevel%>;
     <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
-    constant Integer numberOfContinuousStates = <%fmiInfo.fmiNumberOfContinuousStates%>;
+    constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
     Real fmi_x[numberOfContinuousStates] "States";
     Real fmi_x_new[numberOfContinuousStates] "New States";
-    constant Integer numberOfEventIndicators = <%fmiInfo.fmiNumberOfEventIndicators%>;
+    constant Integer numberOfEventIndicators = <%listLength(fmiInfo.fmiNumberOfEventIndicators)%>;
     Real fmi_z[numberOfEventIndicators] "Events Indicators";
     Boolean fmi_z_positive[numberOfEventIndicators];
     constant Boolean debugLogging = true;
@@ -1213,8 +1213,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input fmiImportInstance fmi;
         input Integer numberOfEventIndicators;
         output Real fmi_z[numberOfEventIndicators];
-        //output Integer status;
-        //external "C" status = fmiGetEventIndicators_OMC(fmi, numberOfEventIndicators, fmi_z) annotation(Library = {"omcruntime", "fmilib"});
         external "C" fmiGetEventIndicators_OMC(fmi, numberOfEventIndicators, fmi_z) annotation(Library = {"omcruntime", "fmilib"});
       end fmiGetEventIndicators;
       
@@ -1339,11 +1337,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       fmi_z_positive[i] = fmi_z[i] > 0;
     end for;
   algorithm
-    when change(fmi_z_positive) and not initial() then
+    when (<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial() then
       //eventInfo := fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
       fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
       fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates);
-      reinit(fmi_x, fmi_x_new);
+      <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
     end when;
   equation
     fmiFunctions.fmiCompletedIntegratorStep(fmi, callEventUpdate);

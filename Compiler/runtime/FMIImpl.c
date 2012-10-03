@@ -280,9 +280,21 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   unsigned int numberOfContinuousStates = fmi1_import_get_number_of_continuous_states(fmi);
   /* Read the FMI number of event indicators from FMU's modelDescription.xml file. */
   unsigned int numberOfEventIndicators = fmi1_import_get_number_of_event_indicators(fmi);
+  /* construct continuous states list record */
+  int i = 1;
+  void* continuousStatesList = mk_nil();
+  for (i ; i <= numberOfContinuousStates ; i++) {
+    continuousStatesList = mk_cons(mk_icon(i), continuousStatesList);
+  }
+  /* construct event indicators list record */
+  i = 1;
+  void* eventIndicatorsList = mk_nil();
+  for (i ; i <= numberOfContinuousStates ; i++) {
+    eventIndicatorsList = mk_cons(mk_icon(i), eventIndicatorsList);
+  }
   /* construct FMIINFO record */
   *fmiInfo = FMI__INFO(mk_scon(fmi_version_to_string(version)), mk_scon(modelName), mk_scon(modelIdentifier), mk_scon(guid), mk_scon(description),
-      mk_scon(generationTool), mk_scon(generationDateAndTime), mk_scon(namingConvention), mk_icon(numberOfContinuousStates), mk_icon(numberOfEventIndicators));
+      mk_scon(generationTool), mk_scon(generationDateAndTime), mk_scon(namingConvention), continuousStatesList, eventIndicatorsList);
   /* Read the FMI Default Experiment Start value from FMU's modelDescription.xml file. */
   double experimentStartTime = fmi1_import_get_default_experiment_start(fmi);
   /* Read the FMI Default Experiment Stop value from FMU's modelDescription.xml file. */
@@ -296,7 +308,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   size_t model_variables_list_size = fmi1_import_get_variable_list_size(model_variables_list);
   /* get model variables value reference list */
   const fmi1_value_reference_t* model_variables_value_reference_list = fmi1_import_get_value_referece_list(model_variables_list);
-  int i = 0;
+  i = 0;
   *modelVariablesList = mk_nil();
   int realCount, integerCount, booleanCount, stringCount, enumerationCount;
   realCount = integerCount = booleanCount = stringCount = enumerationCount = 0;

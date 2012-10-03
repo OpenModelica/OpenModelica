@@ -43,8 +43,8 @@ public uniontype Info
     String fmiGenerationTool;
     String fmiGenerationDateAndTime;
     String fmiVariableNamingConvention;
-    Integer fmiNumberOfContinuousStates;
-    Integer fmiNumberOfEventIndicators;
+    list<Integer> fmiNumberOfContinuousStates;
+    list<Integer> fmiNumberOfEventIndicators;
   end INFO;
 end Info;
 
