@@ -2353,7 +2353,7 @@ algorithm
       Absyn.Info info;
       Element el;
       list<Element> rest_el;
-      list<Element> inputs, outputs, locals;
+      list<Element> inputs, outputs, locals, els;
 
     case ({}, _, _, _) then (inAccumInputs, inAccumOutputs, inAccumLocals);
 
@@ -2368,9 +2368,10 @@ algorithm
       then
         (inputs, outputs, locals);
 
-    // ignore EXTENDS -> TODO FIXME should we ignore them??
-    case ((el as InstTypes.EXTENDED_ELEMENTS(baseClass = _)) :: rest_el, inputs, outputs, locals)
+    case (InstTypes.EXTENDED_ELEMENTS(cls = InstTypes.COMPLEX_CLASS(
+        components = els)) :: rest_el, inputs, outputs, locals)
       equation
+        (inputs, outputs, locals) = getFunctionParameters2(els, inputs, outputs, locals);
         (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
       then
         (inputs, outputs, locals);
