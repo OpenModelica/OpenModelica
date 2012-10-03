@@ -289,7 +289,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   /* construct event indicators list record */
   i = 1;
   void* eventIndicatorsList = mk_nil();
-  for (i ; i <= numberOfContinuousStates ; i++) {
+  for (i ; i <= numberOfEventIndicators ; i++) {
     eventIndicatorsList = mk_cons(mk_icon(i), eventIndicatorsList);
   }
   /* construct FMIINFO record */
