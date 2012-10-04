@@ -6492,9 +6492,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     daeExpCallPre(arg, context, preExp, varDecls)
   // a $_start is used to get get start value of a variable
   case CALL(path=IDENT(name="$_start"), expLst={arg}) then
-    daeExpCallStart(arg, context, preExp, varDecls)        
+    daeExpCallStart(arg, context, preExp, varDecls)
   case CALL(path=IDENT(name="edge"), expLst={arg as CREF(__)}) then
     '(<%cref(arg.componentRef)%> && !$P$PRE<%cref(arg.componentRef)%>)'
+  case CALL(path=IDENT(name="edge"), expLst={LUNARY(exp = arg as CREF(__))}) then
+    '(!<%cref(arg.componentRef)%> && $P$PRE<%cref(arg.componentRef)%>)'
   case CALL(path=IDENT(name="edge"), expLst={exp}) then
     error(sourceInfo(), 'Code generation does not support edge(<%printExpStr(exp)%>)')
   case CALL(path=IDENT(name="change"), expLst={arg as CREF(__)}) then
