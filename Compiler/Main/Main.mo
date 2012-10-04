@@ -472,7 +472,7 @@ algorithm
    case (lib::rest, st as Interactive.SYMBOLTABLE(p,aDep,_,ic,iv,cf,lf))
      equation
        path = parsePathFromString(lib);
-       mp = Settings.getModelicaPath();
+       mp = Settings.getModelicaPath(Config.getRunningTestsuite());
        pnew = ClassLoader.loadClass(path, {"default"}, mp, NONE());
        pnew = Interactive.updateProgram(pnew, p);
        newst = Interactive.SYMBOLTABLE(pnew,aDep,NONE(),ic,iv,cf,lf);

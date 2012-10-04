@@ -94,8 +94,9 @@ public function setModelicaPath
 end setModelicaPath;
 
 public function getModelicaPath
+  input Boolean runningTestsuite;
   output String outString;
-  external "C" outString=Settings_getModelicaPath() annotation(Library = "omcruntime");
+  external "C" outString=Settings_getModelicaPath(runningTestsuite) annotation(Library = "omcruntime");
 end getModelicaPath;
 
 public function getEcho

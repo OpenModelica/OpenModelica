@@ -42,6 +42,12 @@
 #include <malloc.h>
 #endif
 
+#if defined(_MSC_VER)
+#else
+#include <unistd.h>
+#include <pwd.h>
+#endif
+
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -96,7 +102,7 @@ const char* SettingsImpl__getInstallationDirectoryPath() {
 char* winLibPath = NULL;
 
 // Do not free the returned variable. It's malloc'ed
-char* SettingsImpl__getModelicaPath() {
+char* SettingsImpl__getModelicaPath(int runningTestsuite) {
   const char *path = getenv("OPENMODELICALIBRARY");
   int i = 0;
   if (path == NULL) {
@@ -105,8 +111,22 @@ char* SettingsImpl__getModelicaPath() {
     if (omhome == NULL)
       return NULL;
     int lenOmhome = strlen(omhome);
-    char *buffer = (char*) malloc(lenOmhome+100);
-    snprintf(buffer,lenOmhome+100,"%s/lib/omlibrary",omhome);
+    char *buffer;
+#if !defined(_MSC_VER)
+    const char *homePath = getenv("HOME");
+    if (homePath == NULL)
+      homePath = getpwuid(getuid())->pw_dir;
+    if (homePath == NULL || runningTestsuite) {
+#endif
+      buffer = (char*) malloc(lenOmhome+100);
+      snprintf(buffer,lenOmhome+100,"%s/lib/omlibrary",omhome);
+#if !defined(_MSC_VER)
+    } else {
+      int lenHome = strlen(homePath);
+      buffer = (char*) malloc(lenOmhome+lenOmhome+100);
+      snprintf(buffer,lenOmhome+100,"%s/lib/omlibrary:%s/.openmodelica/libraries/",omhome,homePath);
+    }
+#endif
     return buffer;
   }
 

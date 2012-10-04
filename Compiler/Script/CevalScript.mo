@@ -1224,7 +1224,7 @@ algorithm
         
     case (cache,env,"getModelicaPath",{},st,_)
       equation
-        res = Settings.getModelicaPath();
+        res = Settings.getModelicaPath(Config.getRunningTestsuite());
       then
         (cache,Values.STRING(res),st);
         
@@ -1737,7 +1737,7 @@ algorithm
             Interactive.SYMBOLTABLE(p,sp,ic,iv,(path,t)::cf),
             but where to get t? */
       equation
-        mp = Settings.getModelicaPath();
+        mp = Settings.getModelicaPath(Config.getRunningTestsuite());
         strings = List.map(cvars, ValuesUtil.extractValueString);
         (p,b) = loadModel({(path,strings)},mp,p,true,b);
         str = Print.getString();
@@ -1973,7 +1973,7 @@ algorithm
       equation
         vars_1 = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMDEV_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","RTLIBS","C_COMPILER","C_COMPILER_RESPONDING","HAVE_CORBA","CONFIGURE_CMDLINE"};
         omhome = Settings.getInstallationDirectoryPath();
-        omlib = Settings.getModelicaPath();
+        omlib = Settings.getModelicaPath(Config.getRunningTestsuite());
         omcpath = omhome +& "/bin/omc" +& System.getExeExt();
         omdev = Util.makeValueOrDefault(System.readEnv,"OMDEV","");
         omcfound = System.regularFileExists(omcpath);
@@ -2781,7 +2781,7 @@ algorithm
         re = Absyn.restrString(restriction);
         Error.assertionOrAddSourceMessage(relaxedFrontEnd or not (Absyn.isFunctionRestriction(restriction) or Absyn.isPackageRestriction(restriction)),
           Error.INST_INVALID_RESTRICTION,{str,re},Absyn.dummyInfo);
-        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(),p,false,true);
+        (p,true) = loadModel(Interactive.getUsesAnnotationOrDefault(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.dummyTimeStamp)),Settings.getModelicaPath(Config.getRunningTestsuite()),p,false,true);
         
         ptot = Dependency.getTotalProgram(className,p);
         
@@ -4355,7 +4355,7 @@ protected
   String str1,str2,str3;
 algorithm
   (str1,str2,str3) := System.uriToClassAndPath(uri);
-  path := getBasePathFromUri(str1,str2,Settings.getModelicaPath(),printError) +& str3;
+  path := getBasePathFromUri(str1,str2,Settings.getModelicaPath(Config.getRunningTestsuite()),printError) +& str3;
 end getFullPathFromUri;
 
 protected function errorToValue

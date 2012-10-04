@@ -134,7 +134,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Settings__getModelicaPath)
 {
-  char *path = SettingsImpl__getModelicaPath();
+  char *path = SettingsImpl__getModelicaPath(RML_UNTAGFIXNUM(rmlA0));
   if (path == NULL)
     RML_TAILCALLK(rmlFC);
   else

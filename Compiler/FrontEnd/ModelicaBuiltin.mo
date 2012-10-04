@@ -1171,7 +1171,8 @@ function getModelicaPath "Get the Modelica Library Path."
   output String modelicaPath;
 external "builtin";
 annotation(Documentation(info="<html>
-See <a href=\"modelica://OpenModelica.Scripting.loadModel\">loadModel()</a> for a description of what the MODELICAPATH is used for.
+<p>The MODELICAPATH is list of paths to search when trying to  <a href=\"modelica://OpenModelica.Scripting.loadModel\">load a library</a>. It is a string separated by colon (:) on all OSes except Windows, which uses semicolon (;).</p>
+<p>To override the default path (<a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">getInstallationDirectoryPath()</a>/lib/omlibrary/:~/.openmodelica/libraries/), set the environment variable OPENMODELICALIBRARY=...</p>
 </html>"),
   preferredView="text");
 end getModelicaPath;
@@ -1691,7 +1692,7 @@ Loads a Modelica library.
 <pre><b>loadModel</b>(Modelica,{\"3.2\"})</pre>
 </blockquote>
 <h4>Description</h4>
-<p>loadModel() begins by parsing the getModelicaPath(), and looking for candidate packages to load in the given paths (separated by : or ; depending on OS).</p>
+<p>loadModel() begins by parsing the <a href=\"modelica://OpenModelica.Scripting.getModelicaPath\">getModelicaPath()</a>, and looking for candidate packages to load in the given paths (separated by : or ; depending on OS).</p>
 <p>The candidate is selected by choosing the one with the highest priority, chosen by looking through the <i>priorityVersion</i> argument to the function.
 If the version searched for is \"default\", the following special priority is used: no version name > highest main release > highest pre-release > lexical sort of others (see table below for examples).
 If none of the searched versions exist, false is returned and an error is added to the buffer.</p>
