@@ -93,7 +93,7 @@ void SimulationWidget::setUpForm()
   mpIntegrationGroup = new QGroupBox(tr("Integration"));
   mpMethodLabel = new QLabel(tr("Method:"));
   mpMethodComboBox = new QComboBox;
-  mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.toLower().split(","));
+  mpMethodComboBox->addItems(Helper::ModelicaSimulationMethods.split(","));
   mpToleranceLabel = new QLabel(tr("Tolerance:"));
   mpToleranceTextBox = new QLineEdit("0.0001");
   // set the layout for integration groupbox
