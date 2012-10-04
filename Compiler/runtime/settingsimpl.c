@@ -42,7 +42,7 @@
 #include <malloc.h>
 #endif
 
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(__MINGW32__)
 #else
 #include <unistd.h>
 #include <pwd.h>
@@ -112,7 +112,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
       return NULL;
     int lenOmhome = strlen(omhome);
     char *buffer;
-#if !defined(_MSC_VER)
+#if !(defined(_MSC_VER) || defined(__MINGW32__))
     const char *homePath = getenv("HOME");
     if (homePath == NULL)
       homePath = getpwuid(getuid())->pw_dir;
@@ -120,7 +120,7 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
 #endif
       buffer = (char*) malloc(lenOmhome+100);
       snprintf(buffer,lenOmhome+100,"%s/lib/omlibrary",omhome);
-#if !defined(_MSC_VER)
+#if !(defined(_MSC_VER) || defined(__MINGW32__))
     } else {
       int lenHome = strlen(homePath);
       buffer = (char*) malloc(lenOmhome+lenOmhome+100);
