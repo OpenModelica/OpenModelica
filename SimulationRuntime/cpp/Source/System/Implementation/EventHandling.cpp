@@ -149,29 +149,18 @@ bool EventHandling::IterateEventQueue(const bool* events)
   IContinous*  countinous_system = dynamic_cast<IContinous*>(_system);
   IEvent* event_system= dynamic_cast<IEvent*>(_system);
 
-  bool drestart=true;
+  bool drestart=false;
   bool crestart=true;
   //store events before handled
   int dimf = event_system->getDimZeroFunc();
   bool* events_before = new bool[dimf];
   memcpy(events_before,events, dimf*sizeof(bool));
   //Handle all events
- /* vector<long>::const_iterator iter;
-  for(iter=_event_queue.begin();iter!=_event_queue.end();++iter)
-  {
-    event_system->handleEvent(*iter);
-    //update continous equations
-    countinous_system->update(IContinous::CONTINOUS);
-  }
-  
-  _event_queue.clear();*/
-  //update discrete equattions
   countinous_system->update();
-
+  event_system->saveDiscreteVars();
   drestart= event_system->checkForDiscreteEvents();
-  //update_event();//Update the event vector
   event_system->checkConditions(0,true);
-  //check if new events occured
+   //check if new events occured
   crestart = !(std::equal (events, events+dimf,events_before));
   return((drestart||crestart)); //returns true if new events occured
 }

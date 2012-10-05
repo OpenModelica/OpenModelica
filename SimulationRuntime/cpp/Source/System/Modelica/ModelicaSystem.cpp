@@ -216,7 +216,10 @@ void Modelica::saveAll()
 {
  
 }
+void Modelica::saveDiscreteVars()
+   {
 
+   }
 void Modelica::resetHelpVar(const int index)
 {
 }

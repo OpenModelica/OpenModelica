@@ -243,6 +243,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
    <%checkConditions(zeroCrossings,whenClauses,simCode)%>
    <%handleSystemEvents(zeroCrossings,whenClauses,simCode)%>
    <%saveall(modelInfo,simCode)%>
+   <%savediscreteVars(modelInfo,simCode)%>
    <%resethelpvar(whenClauses,simCode)%>
    <%LabeledDAE(modelInfo.labels,simCode)%>
    <%functionAnalyticJacobians(jacobianMatrixes,simCode)%>
@@ -2310,6 +2311,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
     virtual bool checkForDiscreteEvents();
      //Saves all variables before an event is handled, is needed for the pre, edge and change operator
     virtual void saveAll();
+    virtual void saveDiscreteVars();
     //Returns the vector with all time events 
     virtual event_times_type getTimeEvents();
     // No input
@@ -3367,6 +3369,34 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
    <%saveconditionvar(zeroCrossings,simCode)%>
    */  
 end saveall;
+
+template savediscreteVars(ModelInfo modelInfo, SimCode simCode)
+ 
+::=
+match simCode
+case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) 
+  then
+  <<  
+    void <%lastIdentOfPath(modelInfo.name)%>::saveDiscreteVars()
+    { 
+     
+      <%{
+       (vars.algVars |> SIMVAR(__) =>
+        '_event_handling.save(<%cref(name)%>,"<%cref(name)%>");'
+      ;separator="\n"),
+      (vars.intAlgVars |> SIMVAR(__) =>
+       '_event_handling.save(<%cref(name)%>,"<%cref(name)%>");'
+      ;separator="\n"),
+      (vars.boolAlgVars |> SIMVAR(__) =>
+        '_event_handling.save(<%cref(name)%>,"<%cref(name)%>");'
+      ;separator="\n")}
+     ;separator="\n"%>
+     
+    
+    
+    }
+  >>  
+ end savediscreteVars;
 
 template initvar(ModelInfo modelInfo,SimCode simCode)
 ::=
@@ -6186,9 +6216,9 @@ template handleSystemEvents(list<ZeroCrossing> zeroCrossings,list<SimWhenClause>
              <%helpvars%>
             //iterate and handle all events inside the eventqueue
             restart=_event_handling.IterateEventQueue(_conditions1);
-           saveAll();
+         
      }
-   
+     saveAll();
      saveConditions();
      resetTimeEvents();
     if(iter>_dimZeroFunc && restart ){
@@ -6573,7 +6603,7 @@ template update( list<SimEqSystem> allEquationsPlusWhen,list<SimWhenClause> when
   { 
     <%varDecls%>
    
-    if(IContinous::RANKING) checkConditions(0,true);
+    if(command & IContinous::RANKING) checkConditions(0,true);
       <%all_equations%>
     <%reinit%>
   }

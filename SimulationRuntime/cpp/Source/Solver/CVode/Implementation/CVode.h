@@ -199,6 +199,6 @@ private:
     _CV_y0,                  ///< Temp      - Initial values in the Cvode Format
     _CV_y,                  ///< Temp      - State in Cvode Format 
       _CV_yWrite;                ///< Temp      - Vector for dense out
-  
+  bool _cvode_initialized;
 };
 

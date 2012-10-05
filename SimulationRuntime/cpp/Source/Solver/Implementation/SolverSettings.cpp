@@ -5,14 +5,14 @@
 
 SolverSettings::SolverSettings( IGlobalSettings* globalSettings)
   : _hInit    (globalSettings->gethOutput() )
-  , _hUpperLimit  (globalSettings->getEndTime() - globalSettings->getStartTime())
+  , _hUpperLimit  (1e-3)
   , _hLowerLimit  (10*UROUND)
-  , _endTimeTol  (1e-6)
-  , _zeroTol    (1e-6)
+  , _endTimeTol  (1e-7)
+  , _zeroTol    (1e-7)
   , _zeroTimeTol  (1e-10)
   ,_zeroRatio(1.0)
-  ,_dRtol(1e-4)
-  ,_dAtol(_dRtol)
+  ,_dRtol(1e-8)
+  ,_dAtol(1e-8)
 
 {  
   _globalSettings = globalSettings ;

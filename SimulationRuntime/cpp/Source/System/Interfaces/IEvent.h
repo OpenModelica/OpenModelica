@@ -35,6 +35,7 @@ public:
   virtual void saveConditions() = 0;
   //Saves all variables before an event is handled, is needed for the pre, edge and change operator
   virtual void saveAll() = 0;
+  virtual void saveDiscreteVars() = 0;
   /// Called to handle all  events occured at same time 
   virtual void handleSystemEvents(const bool* events) = 0;
   /// Called to handle an event 

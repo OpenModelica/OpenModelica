@@ -122,7 +122,7 @@ class Modelica: public IDAESystem ,public IContinous ,public IEvent ,public ISys
 
   // System is able to provide the Jacobian symbolically 
    virtual bool provideSymbolicJacobian() ;
-
+   virtual void saveDiscreteVars();
 private:
 
   //Methods:
