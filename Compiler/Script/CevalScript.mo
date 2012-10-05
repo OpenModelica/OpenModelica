@@ -254,14 +254,13 @@ protected
   list<tuple<String,Values.Value>> resultValues;
   list<Values.Value> vals;
   list<String> fields;
-  Boolean isTestType;
+  Boolean isTestType,notest;
 algorithm
   resultValues := listReverse(inAddResultValues);
   //TODO: maybe we should test if the fields are the ones in simulationResultType_full
-  fields := Util.if_(Config.getRunningTestsuite(), {},
-                     List.map(resultValues, Util.tuple21));
-  vals := Util.if_(Config.getRunningTestsuite(), {}, 
-                   List.map(resultValues, Util.tuple22));
+  notest := not Config.getRunningTestsuite();
+  fields := Debug.bcallret2(notest, List.map, resultValues, Util.tuple21, {});
+  vals := Debug.bcallret2(notest, List.map, resultValues, Util.tuple22, {});
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),
     Values.STRING(resultFile)::Values.STRING(options)::Values.STRING(message)::vals,
     "resultFile"::"simulationOptions"::"messages"::fields,-1);
@@ -1355,30 +1354,13 @@ algorithm
         sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > output.log 2>&1"});
         System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
         SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
-        0 = System.systemCall(sim_call);
+        resI = System.systemCall(sim_call);
         timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
         timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
-        simValue = createSimulationResult(
-           result_file, 
-           simOptionsAsString(vals), 
-           System.readFile("output.log"),
-           ("timeTotal", Values.REAL(timeTotal)) :: 
-           ("timeSimulation", Values.REAL(timeSimulation)) ::
-          resultValues);
-        newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, st);
+        (cache,simValue,newst) = createSimulationResultFromcallModelExecutable(resI,timeTotal,timeSimulation,resultValues,cache,className,vals,st,result_file);
       then
         (cache,simValue,newst);
-        
-    case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
-      equation
-        true = System.regularFileExists("output.log");
-        res = System.readFile("output.log");
-        str = Absyn.pathString(className);
-        res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
-        simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
-      then
-        (cache,simValue,st);
-
+ 
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
@@ -3209,6 +3191,52 @@ algorithm
         fail();
   end matchcontinue;
 end buildModel;
+
+protected function createSimulationResultFromcallModelExecutable
+"function createSimulationResultFromcallModelExecutable
+  This function calls the compiled simulation executable."
+  input Integer callRet;
+  input Real timeTotal;
+  input Real timeSimulation;
+  input list<tuple<String,Values.Value>> resultValues;
+  input Env.Cache inCache;
+  input Absyn.Path className;
+  input list<Values.Value> inVals;
+  input Interactive.SymbolTable inSt;
+  input String result_file;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (callRet,timeTotal,timeSimulation,resultValues,inCache,className,inVals,inSt,result_file)
+    local
+      Interactive.SymbolTable newst;
+      String res,str;
+      Values.Value ret_val,simValue;
+
+    case (0,_,_,_,_,_,_,_,_)
+      equation
+        simValue = createSimulationResult(
+           result_file, 
+           simOptionsAsString(inVals), 
+           System.readFile("output.log"),
+           ("timeTotal", Values.REAL(timeTotal)) :: 
+           ("timeSimulation", Values.REAL(timeSimulation)) ::
+          resultValues);
+        newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, inSt);
+      then
+        (inCache,simValue,newst);
+    else
+      equation
+        true = System.regularFileExists("output.log");
+        res = System.readFile("output.log");
+        str = Absyn.pathString(className);
+        res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
+        simValue = createSimulationResult("", simOptionsAsString(inVals), res, resultValues);
+      then
+        (inCache,simValue,inSt);
+  end matchcontinue;
+end createSimulationResultFromcallModelExecutable;
 
 protected function buildOpenTURNSInterface "builds the OpenTURNS interface by calling the OpenTURNS module"
   input Env.Cache inCache;
