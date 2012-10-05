@@ -1100,6 +1100,18 @@ template importFMUModelica(FmiImport fmi)
 ::=
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
+  match fmiInfo.fmiType
+    case 0 then
+      importFMUModelExchange(fmi)
+    case 1 then
+      importFMUCoSimulationStandAlone(fmi)
+end importFMUModelica;
+
+template importFMUModelExchange(FmiImport fmi)
+ "Generates Modelica code for FMI Model Exchange."
+::=
+match fmi
+case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
   let realVariables = countRealVariables(fmiModelVariablesList)
   let realStartVariables = countRealStartVariables(fmiModelVariablesList)
   let integerVariables = countIntegerVariables(fmiModelVariablesList)
@@ -1109,7 +1121,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringVariables = countStringVariables(fmiModelVariablesList)
   let stringStartVariables = countStringStartVariables(fmiModelVariablesList)
   <<
-  model <%fmiInfo.fmiModelIdentifier%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \"fmiInfo.fmiDescription\""%>
+  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \"fmiInfo.fmiDescription\""%>
   public
     constant String fmuFile = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
@@ -1175,6 +1187,13 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" fmiInstantiateModel_OMC(fmi, instanceName) annotation(Library = {"omcruntime", "fmilib"});
       end fmiInstantiateModel;
       
+      function fmiSetDebugLogging
+        input fmiImportInstance fmi;
+        input Boolean debugLogging;
+        output Integer status;
+        external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetDebugLogging;
+      
       function fmiSetTime
         input fmiImportInstance fmi;
         input Real in_time;
@@ -1187,13 +1206,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output fmiEventInfo eventInfo;
         external "C" eventInfo = fmiInitialize_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"});
       end fmiInitialize;
-      
-      function fmiSetDebugLogging
-        input fmiImportInstance fmi;
-        input Boolean debugLogging;
-        output Integer status;
-        external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"});
-      end fmiSetDebugLogging;
       
       function fmiGetContinuousStates
         input fmiImportInstance fmi;
@@ -1350,9 +1362,217 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"});"%>
     <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"});"%>
     annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
-  end <%fmiInfo.fmiModelIdentifier%>_FMU;
+  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
   >>
-end importFMUModelica;
+end importFMUModelExchange;
+
+template importFMUCoSimulationStandAlone(FmiImport fmi)
+ "Generates Modelica code for FMI Co-simulation stand alone."
+::=
+match fmi
+case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
+  let realVariables = countRealVariables(fmiModelVariablesList)
+  let realStartVariables = countRealStartVariables(fmiModelVariablesList)
+  let integerVariables = countIntegerVariables(fmiModelVariablesList)
+  let integerStartVariables = countIntegerStartVariables(fmiModelVariablesList)
+  let booleanVariables = countBooleanVariables(fmiModelVariablesList)
+  let booleanStartVariables = countBooleanStartVariables(fmiModelVariablesList)
+  let stringVariables = countStringVariables(fmiModelVariablesList)
+  let stringStartVariables = countStringStartVariables(fmiModelVariablesList)
+  <<
+  model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \"fmiInfo.fmiDescription\""%>
+  public
+    constant String fmuFile = "<%fmuFileName%>";
+    constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
+    constant Integer fmiLogLevel = <%fmiLogLevel%>;
+    <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
+    constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
+    constant Integer numberOfEventIndicators = <%listLength(fmiInfo.fmiNumberOfEventIndicators)%>;
+    constant Boolean debugLogging = true;
+    Integer fmi_status;
+    fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
+    fmiImportContext context = fmiImportContext(fmiLogLevel);
+  protected
+    class fmiImportContext
+      extends ExternalObject;
+        function constructor
+          input Integer fmiLogLevel;
+          output fmiImportContext context;
+          external "C" context = fmiImportContext_OMC(fmiLogLevel) annotation(Library = {"omcruntime", "fmilib"});
+        end constructor;
+        
+        function destructor
+          input fmiImportContext context;
+          external "C" fmiImportFreeContext_OMC(context) annotation(Library = {"omcruntime", "fmilib"});
+        end destructor;
+    end fmiImportContext;
+    
+    class fmiImportInstance
+      extends ExternalObject;
+        function constructor
+          input fmiImportContext context;
+          input String tempPath;
+          output fmiImportInstance fmi;
+          external "C" fmi = fmiImportInstance_OMC(context, tempPath) annotation(Library = {"omcruntime", "fmilib"});
+        end constructor;
+        
+        function destructor
+          input fmiImportInstance fmi;
+          external "C" fmiImportFreeInstance_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"});
+        end destructor;
+    end fmiImportInstance;
+    
+    class fmiEventInfo
+      extends ExternalObject;
+        function constructor
+        end constructor;
+        
+        function destructor
+          input fmiEventInfo eventInfo;
+          external "C" fmiFreeEventInfo_OMC(eventInfo) annotation(Library = {"omcruntime", "fmilib"});
+        end destructor;
+    end fmiEventInfo;
+    
+    package fmiFunctions
+      function fmiInstantiateSlave
+        input fmiImportInstance fmi;
+        input String instanceName;
+        input String fmuLocation;
+        input String mimeType;
+        input Real timeout;
+        input Boolean visible;
+        input Boolean interactive;
+        external "C" fmiInstantiateSlave_OMC(fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiInstantiateSlave;
+      
+      function fmiSetDebugLogging
+        input fmiImportInstance fmi;
+        input Boolean debugLogging;
+        output Integer status;
+        external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetDebugLogging;
+      
+      function fmiInitializeSlave
+        input fmiImportInstance fmi;
+        input Real tStart;
+        input Boolean stopTimeDefined;
+        input Real tStop;
+        external "C" fmiInitializeSlave_OMC(fmi, tStart, stopTimeDefined, tStop) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiInitializeSlave;
+      
+      function fmiDoStep
+        input fmiImportInstance fmi;
+        input Real currentCommunicationPoint;
+        input Real communicationStepSize;
+        input Boolean newStep;
+        output Integer status;
+        external "C" status = fmiDoStep_OMC(fmi, currentCommunicationPoint, communicationStepSize, newStep) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiDoStep;
+      
+      function fmiGetReal
+        input fmiImportInstance fmi;
+        input Integer realValuesReferences[:];
+        output Real realValues[size(realValuesReferences, 1)];
+        external "C" fmiGetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiGetReal;
+      
+      function fmiSetReal
+        input fmiImportInstance fmi;
+        input Integer realValuesReferences[:];
+        input Real realValues[size(realValuesReferences, 1)];
+        output Integer status;
+        external "C" status = fmiSetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetReal;
+      
+      function fmiGetInteger
+        input fmiImportInstance fmi;
+        input Integer integerValuesReferences[:];
+        output Integer integerValues[size(integerValuesReferences, 1)];
+        external "C" fmiGetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiGetInteger;
+      
+      function fmiSetInteger
+        input fmiImportInstance fmi;
+        input Integer integerValuesReferences[:];
+        input Integer integerValues[size(integerValuesReferences, 1)];
+        output Integer status;
+        external "C" status = fmiSetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetInteger;
+      
+      function fmiGetBoolean
+        input fmiImportInstance fmi;
+        input Integer booleanValuesReferences[:];
+        output Boolean booleanValues[size(booleanValuesReferences, 1)];
+        external "C" fmiGetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiGetBoolean;
+      
+      function fmiSetBoolean
+        input fmiImportInstance fmi;
+        input Integer booleanValuesReferences[:];
+        input Boolean booleanValues[size(booleanValuesReferences, 1)];
+        output Integer status;
+        external "C" status = fmiSetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetBoolean;
+      
+      function fmiGetString
+        input fmiImportInstance fmi;
+        input Integer stringValuesReferences[:];
+        output String stringValues[size(stringValuesReferences, 1)];
+        external "C" fmiGetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiGetString;
+      
+      function fmiSetString
+        input fmiImportInstance fmi;
+        input Integer stringValuesReferences[:];
+        input String stringValues[size(stringValuesReferences, 1)];
+        output Integer status;
+        external "C" status = fmiSetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiSetString;
+      
+      function fmiEventUpdate
+        input fmiImportInstance fmi;
+        input Boolean intermediateResults;
+        input fmiEventInfo in_eventInfo;
+        output fmiEventInfo out_eventInfo;
+        external "C" out_eventInfo = fmiEventUpdate_OMC(fmi, intermediateResults, in_eventInfo) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiEventUpdate;
+      
+      function fmiCompletedIntegratorStep
+        input fmiImportInstance fmi;
+        input Boolean in_callEventUpdate;
+        output Boolean out_callEventUpdate;
+        external "C" out_callEventUpdate = fmiCompletedIntegratorStep_OMC(fmi, in_callEventUpdate) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiCompletedIntegratorStep;
+    end fmiFunctions;
+    
+    package fmiStatus
+      constant Integer fmiOK=0;
+      constant Integer fmiWarning=1;
+      constant Integer fmiDiscard=2;
+      constant Integer fmiError=3;
+      constant Integer fmiFatal=4;
+      constant Integer fmiPending=5;
+    end fmiStatus;
+    
+    package jmStatus
+      constant Integer jmError=0;
+      constant Integer jmSuccess=1;
+      constant Integer jmWarning=2;
+    end jmStatus;
+  initial algorithm
+    fmiFunctions.fmiInstantiateSlave(fmi, "<%fmiInfo.fmiModelIdentifier%>", "", "", 0.0, false, false);
+    fmi_status := fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
+    fmiFunctions.fmiInitializeSlave(fmi, <%fmiExperimentAnnotation.fmiExperimentStartTime%>, false, <%fmiExperimentAnnotation.fmiExperimentStopTime%>);
+  equation
+    fmi_status = fmiFunctions.fmiDoStep(fmi, time, 0.01, true);
+    <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(integerVariables, "0") then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"});"%>
+    <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"});"%>
+    annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
+  end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
+  >>
+end importFMUCoSimulationStandAlone;
 
 template dumpFMIModelVariablesList(list<ModelVariables> fmiModelVariablesList)
  "Generates the Model Variables code."

@@ -145,7 +145,7 @@ void fmiFreeEventInfo_OMC(void* eventInfo)
 /*
  * Wrapper for the FMI function fmiInstantiateModel.
  */
-void fmiInstantiateModel_OMC(void* fmi, const char* instanceName)
+void fmiInstantiateModel_OMC(void* fmi, char* instanceName)
 {
   jm_status_enu_t status = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
   if (status == jm_status_error) {
@@ -382,6 +382,37 @@ void printZ_OMC(int len, int* zVals)
 //  {
 //    fprintf(stderr, "%d value is = %d\n", i, zVals[i]);fflush(NULL);
 //  }
+}
+
+
+
+
+
+
+
+void fmiInstantiateSlave_OMC(void* fmi, char* instanceName, char* fmuLocation, char* mimeType, double timeout, int visible, int interactive)
+{
+  jm_status_enu_t status = fmi1_import_instantiate_slave((fmi1_import_t*)fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive);
+  if (status == jm_status_error) {
+    fprintf(stderr, "FMI Import Error: Error in fmiInstantiateSlave_OMC.\n");fflush(NULL);
+  }
+}
+
+void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, double tStop)
+{
+  fmi1_status_t fmistatus = fmi1_import_initialize_slave((fmi1_import_t*)fmi, tStart, stopTimeDefined, tStop);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiInitializeSlave_OMC.\n");fflush(NULL);
+      break;
+  }
+}
+
+int fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communicationStepSize, int newStep)
+{
+  return fmi1_import_do_step((fmi1_import_t*)fmi, currentCommunicationPoint, communicationStepSize, newStep);
 }
 
 #ifdef __cplusplus

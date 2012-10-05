@@ -264,6 +264,8 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   }
   /* Read the model name from FMU's modelDescription.xml file. */
   const char* modelName = fmi1_import_get_model_name(fmi);
+  /* Read the FMI type */
+  fmi1_fmu_kind_enu_t fmiType = fmi1_import_get_fmu_kind(fmi);
   /* Read the model identifier from FMU's modelDescription.xml file. */
   const char* modelIdentifier = fmi1_import_get_model_identifier(fmi);
   /* Read the FMI GUID from FMU's modelDescription.xml file. */
@@ -293,7 +295,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     eventIndicatorsList = mk_cons(mk_icon(i), eventIndicatorsList);
   }
   /* construct FMIINFO record */
-  *fmiInfo = FMI__INFO(mk_scon(fmi_version_to_string(version)), mk_scon(modelName), mk_scon(modelIdentifier), mk_scon(guid), mk_scon(description),
+  *fmiInfo = FMI__INFO(mk_scon(fmi_version_to_string(version)), mk_icon(fmiType), mk_scon(modelName), mk_scon(modelIdentifier), mk_scon(guid), mk_scon(description),
       mk_scon(generationTool), mk_scon(generationDateAndTime), mk_scon(namingConvention), continuousStatesList, eventIndicatorsList);
   /* Read the FMI Default Experiment Start value from FMU's modelDescription.xml file. */
   double experimentStartTime = fmi1_import_get_default_experiment_start(fmi);
@@ -325,7 +327,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     void* variable_start_value = getModelVariableStartValue(model_variable);
     void* variable_is_fixed = mk_bcon(fmi1_import_get_variable_is_fixed(model_variable));
     void* variable_value_reference = mk_icon(model_variables_value_reference_list[i]);
-    fprintf(stderr, "%s Variable name = %s, valueReference = %d\n", getModelVariableBaseType(model_variable), getModelVariableName(model_variable), model_variables_value_reference_list[i]);fflush(NULL);
+    //fprintf(stderr, "%s Variable name = %s, valueReference = %d\n", getModelVariableBaseType(model_variable), getModelVariableName(model_variable), model_variables_value_reference_list[i]);fflush(NULL);
     void* variable;
     fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(model_variable);
     switch (type) {

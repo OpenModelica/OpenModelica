@@ -1444,10 +1444,10 @@ algorithm
         str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(filename, workdir, fmiLogLevel, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation,
                                                                         fmiModelVariablesInstance, fmiModelVariablesList1));
         pd = System.pathDelimiter();
-        filename_1 = FMI.getFMIModelIdentifier(fmiInfo);
-        filename_1 = stringAppendList({workdir,pd,filename_1,"FMUImportNew.mo"});
+        str1 = FMI.getFMIModelIdentifier(fmiInfo);
+        str2 = FMI.getFMIType(fmiInfo);
+        filename_1 = stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"});
         System.writeFile(filename_1, str);
-        //b = FMI.printVariables(fmiModelVariablesList1);
         /* Release FMI objects */
         FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext);
       then

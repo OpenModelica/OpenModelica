@@ -5,7 +5,7 @@ extern "C" {
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef FMI_Info_INFO__desc_added
 #define FMI_Info_INFO__desc_added
-ADD_METARECORD_DEFINTIONS const char* FMI_Info_INFO__desc__fields[10] = {"fmiVersion","fmiModelName","fmiModelIdentifier","fmiGuid","fmiDescription","fmiGenerationTool","fmiGenerationDateAndTime","fmiVariableNamingConvention","fmiNumberOfContinuousStates","fmiNumberOfEventIndicators"};
+ADD_METARECORD_DEFINTIONS const char* FMI_Info_INFO__desc__fields[11] = {"fmiVersion","fmiType","fmiModelName","fmiModelIdentifier","fmiGuid","fmiDescription","fmiGenerationTool","fmiGenerationDateAndTime","fmiVariableNamingConvention","fmiNumberOfContinuousStates","fmiNumberOfEventIndicators"};
 ADD_METARECORD_DEFINTIONS struct record_description FMI_Info_INFO__desc = {
   "FMI_Info_INFO",
   "FMI.Info.INFO",
@@ -15,8 +15,8 @@ ADD_METARECORD_DEFINTIONS struct record_description FMI_Info_INFO__desc = {
 #else /* Only use the file as a header */
 extern struct record_description FMI_Info_INFO__desc;
 #endif
-#define FMI__INFO_3dBOX10 3
-#define FMI__INFO(fmiVersion,fmiModelName,fmiModelIdentifier,fmiGuid,fmiDescription,fmiGenerationTool,fmiGenerationDateAndTime,fmiVariableNamingConvention,fmiNumberOfContinuousStates,fmiNumberOfEventIndicators) (mmc_mk_box(11, 3,&FMI_Info_INFO__desc,fmiVersion,fmiModelName,fmiModelIdentifier,fmiGuid,fmiDescription,fmiGenerationTool,fmiGenerationDateAndTime,fmiVariableNamingConvention,fmiNumberOfContinuousStates,fmiNumberOfEventIndicators))
+#define FMI__INFO_3dBOX11 3
+#define FMI__INFO(fmiVersion,fmiType,fmiModelName,fmiModelIdentifier,fmiGuid,fmiDescription,fmiGenerationTool,fmiGenerationDateAndTime,fmiVariableNamingConvention,fmiNumberOfContinuousStates,fmiNumberOfEventIndicators) (mmc_mk_box(12, 3,&FMI_Info_INFO__desc,fmiVersion,fmiType,fmiModelName,fmiModelIdentifier,fmiGuid,fmiDescription,fmiGenerationTool,fmiGenerationDateAndTime,fmiVariableNamingConvention,fmiNumberOfContinuousStates,fmiNumberOfEventIndicators))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc_added
 #define FMI_ExperimentAnnotation_EXPERIMENTANNOTATION__desc_added

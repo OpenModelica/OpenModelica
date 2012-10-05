@@ -2564,6 +2564,7 @@ package FMI
   uniontype Info
     record INFO
       String fmiVersion;
+      Integer fmiType;
       String fmiModelName;
       String fmiModelIdentifier;
       String fmiGuid;
@@ -2704,6 +2705,11 @@ package FMI
     input list<ModelVariables> inVariables;
     output Integer outInteger;
   end countStringStartVariables;
+  
+  function getFMIType
+    input Info inFMIInfo;
+    output String fmiType;
+  end getFMIType;
 end FMI;
 
 end SimCodeTV;

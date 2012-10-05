@@ -36,6 +36,7 @@
 public uniontype Info
   record INFO
     String fmiVersion;
+    Integer fmiType;
     String fmiModelName;
     String fmiModelIdentifier;
     String fmiGuid;
@@ -335,5 +336,16 @@ algorithm
     case (INFO(fmiModelIdentifier = modelIdentifier)) then modelIdentifier;
   end match;
 end getFMIModelIdentifier;
+
+public function getFMIType
+  input Info inFMIInfo;
+  output String fmiType;
+algorithm
+  fmiModelIdentifier := match(inFMIInfo)
+    case (INFO(fmiType = 0)) then "me";
+    case (INFO(fmiType = 1)) then "cs_st";
+    case (INFO(fmiType = 2)) then "cs_t";
+  end match;
+end getFMIType;
 
 end FMI;
