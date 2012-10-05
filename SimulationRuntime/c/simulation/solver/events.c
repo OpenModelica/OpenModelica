@@ -66,7 +66,7 @@ modelica_boolean sample(DATA *data, double start, double interval, int hindex)
    * testsuite fail.
    */
   static const double eps = 0.0001;
-  double retVal;
+  modelica_boolean retVal;
   double tmp = 1;
   int tmpindex = data->simulationInfo.curSampleTimeIx;
 

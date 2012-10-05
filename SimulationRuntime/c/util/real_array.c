@@ -846,7 +846,7 @@ void range_alloc_real_array(modelica_real start, modelica_real stop, modelica_re
 {
     int n;
 
-    n = floor((stop-start)/inc)+1;
+    n = (int)floor((stop-start)/inc)+1;
     simple_alloc_1d_real_array(dest,n);
     range_real_array(start,stop,inc,dest);
 }

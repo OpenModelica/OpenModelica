@@ -220,6 +220,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 {
   double tout = 0;
   int i = 0;
+  unsigned int ui = 0;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*) simData->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*) simData->localData[1];
@@ -365,10 +366,10 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     INFO1("DASSL call | total number of error test failures: %d", dasslData->iwork[14]);
   }
   /* save dassl stats */
-  for (i = 0; i < numStatistics; i++)
+  for (ui = 0; ui < numStatistics; ui++)
   {
-   assert(10 + i < dasslData->liw);
-   dasslData->dasslStatisticsTmp[i] = dasslData->iwork[10 + i];
+   assert(10 + ui < dasslData->liw);
+   dasslData->dasslStatisticsTmp[ui] = dasslData->iwork[10 + ui];
   }
 
 

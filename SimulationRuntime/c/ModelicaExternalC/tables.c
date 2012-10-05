@@ -1255,14 +1255,14 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
         pos = pos + 1;
       }
 
-      a1 = abs(q[3]-q[2]);
-      a2 = abs(q[1]-q[0]);
+      a1 = fabs(q[3]-q[2]);
+      a2 = fabs(q[1]-q[0]);
       if (a1+a2 == 0)
         yd0 = (q[1] + q[2])/2;
       else
         yd0 = (q[1]*a1 + q[2]*a2)/(a1+a2);
-      a1 = abs(q[4]-q[3]);
-      a2 = abs(q[2]-q[1]);
+      a1 = fabs(q[4]-q[3]);
+      a2 = fabs(q[2]-q[1]);
       if (a1+a2 == 0)
         yd1 = (q[2] + q[3])/2;
       else

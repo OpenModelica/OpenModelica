@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-typedef struct FILE_INFO
+typedef struct _FILE_INFO
 {
   const char* filename;
   int lineStart;
@@ -48,7 +48,7 @@ typedef struct FILE_INFO
   int lineEnd;
   int colEnd;
   int readonly;
-}FILE_INFO;
+} FILE_INFO;
 
 extern void printInfo(FILE *stream, FILE_INFO info);
 extern void (*omc_assert)(const char*, FILE_INFO);

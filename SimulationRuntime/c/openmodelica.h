@@ -218,7 +218,7 @@ enum type_desc_e {
 struct type_desc_s {
   enum type_desc_e type;
   int retval : 1;
-  union {
+  union _data {
     modelica_real real;
     real_array_t real_array;
     modelica_integer integer;
@@ -227,12 +227,12 @@ struct type_desc_s {
     boolean_array_t bool_array;
     modelica_string_const string;
     string_array_t string_array;
-    struct {
+    struct _tuple {
       size_t elements;
       struct type_desc_s *element;
     } tuple;
     modelica_complex complex;
-    struct {
+    struct _record {
       const char *record_name;
       size_t elements;
       char **name;
