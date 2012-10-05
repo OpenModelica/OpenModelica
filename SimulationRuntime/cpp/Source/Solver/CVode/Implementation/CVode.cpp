@@ -195,7 +195,7 @@ void Cvode::init()
         _idid = CVodeSetUserData(_cvodeMem, _data);
         if(_idid < 0)
             throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
-        _idid = CVodeSetInitStep(_cvodeMem, 1e-12);							// INITIAL STEPSIZE
+        _idid = CVodeSetInitStep(_cvodeMem, 1e-12);// INITIAL STEPSIZE
         if(_idid < 0)
             throw std::invalid_argument(/*_idid,_tCurrent,*/"Cvode::init()");
         _idid = CVodeSetMaxOrd(_cvodeMem, 5);       // Max Order
@@ -460,8 +460,8 @@ void Cvode::CVodeCore()
         {
             _zeroFound = true;
             continous_system->setTime(_tCurrent);
-        continous_system->setVars(NV_DATA_S(_CV_y));
-        continous_system->update(IContinous::ALL );
+            continous_system->setVars(NV_DATA_S(_CV_y));
+            continous_system->update(IContinous::ALL );
             // Zustände recorden bis hierher
             SolverDefaultImplementation::writeToFile(-99, _tCurrent, _h);
         }
@@ -504,7 +504,7 @@ void Cvode::CVodeCore()
         // Zähler für die Anzahl der ausgegebenen Schritte erhöhen
         ++ _outStps;
         _tLastSuccess = _tCurrent;
-        if( _tEnd   <= _tCurrent)	
+        if( _tEnd   <= _tCurrent)
         {
             _solverStatus = DONE;
             _tCurrent = _tEnd;
