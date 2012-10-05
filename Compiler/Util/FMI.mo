@@ -341,7 +341,7 @@ public function getFMIType
   input Info inFMIInfo;
   output String fmiType;
 algorithm
-  fmiModelIdentifier := match(inFMIInfo)
+  fmiType := match(inFMIInfo)
     case (INFO(fmiType = 0)) then "me";
     case (INFO(fmiType = 1)) then "cs_st";
     case (INFO(fmiType = 2)) then "cs_t";
