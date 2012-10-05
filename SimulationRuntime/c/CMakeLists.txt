@@ -1,6 +1,8 @@
 # Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2011-10-11
 # CMakefile for compilation of OMC 
 
+
+
 # OMDEV PATH
 IF(NOT OMDEV)
   SET(OMDEV $ENV{OMDEV})
@@ -9,8 +11,8 @@ ENDIF(NOT OMDEV)
 INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
 link_directories(${OMDEV}/lib/expat-win32-msvc)
 
+
 # OMC Compiler
-SET(OMC_DEBUG ${OMCTRUNCHOME}/build/bin/omcd.exe)
 MESSAGE(" omc is " ${OMC_DEBUG})
 
 # includes
@@ -118,6 +120,12 @@ ENDMACRO(BUILDMODEL)
 # MACRO BUILDMODEL
 MACRO(BUILDMODELMOS model mos dir Flags CSRC)
 
+IF(WIN32)
+  SET(COPY copy)
+else(WIN32)
+  SET(COPY cp)
+endif(WIN32)
+
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
@@ -145,7 +153,7 @@ MACRO(BUILDMODELMOS model mos dir Flags CSRC)
   SET(expat_CODE   ${OMDEV}/lib/expat-win32-msvc/libexpat.dll)
   SET(expat_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/libexpat.dll)
   ADD_CUSTOM_COMMAND(OUTPUT ${expat_OUTPUT}
-                     COMMAND cp ${expat_CODE} ${expat_OUTPUT}
+                     COMMAND ${COPY} ${expat_CODE} ${expat_OUTPUT}
                      WORKING_DIRECTORY ${dir}
                      COMMENT "copy file ${expat_CODE} to ${expat_OUTPUT}")
   # target fuer OM_OUTPUT
@@ -166,20 +174,22 @@ MACRO(BUILDMODELMOS model mos dir Flags CSRC)
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
                      COMMAND ${OMC_DEBUG} ${Flags} ${mos}
                      WORKING_DIRECTORY ${dir}
-                     COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
+                     COMMENT "Generating code for ${model} with ${OMC_DEBUG}")
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
+					 
+  ADD_CUSTOM_TARGET(${model}codegencpp ALL DEPENDS ${OMC_OUTPUT})
 
-
-  ADD_DEFINITIONS(/TP ${dir}/${model}.c)
+  ADD_DEFINITIONS(/TP)
+  set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c ModelicaExternalC libexpat)
 
   # custom command to copy xml file
   SET(XML_CODE   ${dir}/${model}_init.xml)
   SET(XML_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/${model}_init.xml)
   ADD_CUSTOM_COMMAND(OUTPUT ${XML_OUTPUT}
-                     COMMAND cp ${XML_CODE} ${XML_OUTPUT}
+                     COMMAND ${COPY} ${XML_CODE} ${XML_OUTPUT}
                      WORKING_DIRECTORY ${dir}
                      COMMENT "copy file ${XML_CODE} to ${XML_OUTPUT}")
   # target fuer OM_OUTPUT

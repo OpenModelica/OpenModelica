@@ -6,6 +6,9 @@ ADD_SUBDIRECTORY(libf2c)
 ADD_SUBDIRECTORY(results)
 ADD_SUBDIRECTORY(solver)
 
+# Include Directory of expat
+INCLUDE_DIRECTORIES("${OMCTRUNCHOME}/3rdParty/FMIL/ThirdParty/Expat/expat-2.0.1/lib")
+
 # Quellen und Header
 SET(simulation_sources  options.cpp simulation_input_xml.cpp simulation_runtime.cpp
 					    ../linearization/linearize.cpp)
