@@ -76,6 +76,10 @@ extern modelica_string_const copy_modelica_string(modelica_string_const source);
 
 /* Concatenate strings */
 extern modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_string_const s2);
+
+/* Escape string */
+extern char* omc__escapedString(const char* str, int nl);
+
 #endif
 
 #endif

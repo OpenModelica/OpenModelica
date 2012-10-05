@@ -178,3 +178,53 @@ modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_str
   return dest;
 }
 
+extern int omc__escapedStringLength(const char* str, int nl)
+{
+  int i=0;
+  while (*str) {
+    switch (*str) {
+      case '"':
+      case '\\':
+      case '\a':
+      case '\b':
+      case '\f':
+      case '\v': i++;
+      case '\r': i++; if (nl && str[1] == '\n') str++;
+      case '\n': i++; if (nl && str[1] == '\r') str++;
+      default: i++;
+    }
+    str++;
+  }
+  return i;
+}
+
+/* "\b",_ => "\\b"
+ * "\n",true => "\\n"
+ */
+extern char* omc__escapedString(const char* str, int nl)
+{
+  int len1,len2;
+  char *res;
+  int i=0;
+  len1 = strlen(str);
+  len2 = omc__escapedStringLength(str,nl);
+  if (len1 == len2) return NULL;
+  res = (char*) malloc(len2+1);
+  while (*str) {
+    switch (*str) {
+      case '"': res[i++] = '\\'; res[i++] = '"'; break;
+      case '\\': res[i++] = '\\'; res[i++] = '\\'; break;
+      case '\a': res[i++] = '\\'; res[i++] = 'a'; break;
+      case '\b': res[i++] = '\\'; res[i++] = 'b'; break;
+      case '\f': res[i++] = '\\'; res[i++] = 'f'; break;
+      case '\v': res[i++] = '\\'; res[i++] = 'v'; break;
+      case '\r': if (nl) {res[i++] = '\\'; res[i++] = 'n'; if (str[1] == '\n') str++;} else {res[i++] = *str;} break;
+      case '\n': if (nl) {res[i++] = '\\'; res[i++] = 'n'; if (str[1] == '\r') str++;} else {res[i++] = *str;} break;
+      default: res[i++] = *str;
+    }
+    str++;
+  }
+  res[i] = '\0';
+  return res;
+}
+

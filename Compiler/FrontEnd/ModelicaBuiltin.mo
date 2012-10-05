@@ -1813,6 +1813,7 @@ function list "Lists the contents of the given class, or all loaded classes."
   input TypeName class_ := $TypeName(AllLoadedClasses);
   input Boolean interfaceOnly := false;
   input Boolean shortOnly := false "only short class definitions";
+  input Boolean exportAsCode := false "true if we want a true unparsing of the program";
   output String contents;
 external "builtin";
 annotation(Documentation(info="<html>

@@ -971,4 +971,12 @@ public function gettext
   external "C" msgstr = SystemImpl__gettext(msgid) annotation(Library = {"omcruntime"});
 end gettext;
 
+public function anyStringCode
+  "Takes any boxed input"
+  input Any any;
+  output String str;
+  replaceable type Any subtypeof Any;
+  external "C" str = anyStringCode(any);
+end anyStringCode;
+
 end System;

@@ -1937,7 +1937,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__escapedString)
 {
-  char *str = SystemImpl__escapedString(RML_STRINGDATA(rmlA0),RML_UNTAGFIXNUM(rmlA1));
+  char *str = omc__escapedString(RML_STRINGDATA(rmlA0),RML_UNTAGFIXNUM(rmlA1));
   if (str == NULL) {
     RML_TAILCALLK(rmlSC);
   } else {
@@ -2110,6 +2110,13 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__gettext)
 {
   rmlA0 = mk_scon(SystemImpl__gettext(RML_STRINGDATA(rmlA0)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__anyStringCode)
+{
+  rmlA0 = mk_scon("You need to run the bootstrapped compiler in order to use anyStringCode");
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

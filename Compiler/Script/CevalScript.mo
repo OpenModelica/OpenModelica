@@ -837,7 +837,7 @@ algorithm
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
       Interactive.Statements istmts; 
-      Boolean have_corba, bval, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -1064,18 +1064,21 @@ algorithm
       then
         (cache,Values.TUPLE({Values.INTEGER(-1),v}),st);
 
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(Absyn.IDENT("AllLoadedClasses"))),Values.BOOL(false),Values.BOOL(false),Values.BOOL(anyCode)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
-        str = Dump.unparseStr(p,false);
+        str = Debug.bcallret2(not anyCode, Dump.unparseStr, p, false, "");
+        str = Debug.bcallret1(anyCode, System.anyStringCode, p, str);
       then
         (cache,Values.STRING(str),st);
     
-    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(b1),Values.BOOL(b2)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"list",{Values.CODE(Absyn.C_TYPENAME(path)),Values.BOOL(b1),Values.BOOL(b2),Values.BOOL(anyCode)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         absynClass = Interactive.getPathedClassInProgram(path, p);
         absynClass = Debug.bcallret1(b1,Absyn.getFunctionInterface,absynClass,absynClass);
         absynClass = Debug.bcallret1(b2,Absyn.getShortClass,absynClass,absynClass);
-        str = Dump.unparseStr(Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0)),false) ;
+        p = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
+        str = Debug.bcallret2(not anyCode, Dump.unparseStr, p, false, "");
+        str = Debug.bcallret1(anyCode, System.anyStringCode, p, str);
       then
         (cache,Values.STRING(str),st);
     

@@ -381,6 +381,177 @@ void printAny(void* any)
   fputs(anyStringBuf, stderr);
 }
 
+inline static int anyStringWorkCode(void* any, int ix)
+{
+  mmc_uint_t hdr;
+  int numslots;
+  unsigned ctor;
+  int i;
+  void *data;
+  struct record_description *desc;
+  /* char buf[34] = {0}; */
+
+  if (MMC_IS_IMMEDIATE(any)) {
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "(void*)%ld", (signed long) any);
+    return ix;
+  }
+
+  if (MMC_HDR_IS_FORWARD(MMC_GETHDR(any))) {
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "#Forward");
+    return ix;
+  }
+
+  hdr = MMC_HDR_UNMARK(MMC_GETHDR(any));
+
+  if (hdr == MMC_NILHDR) {
+    checkAnyStringBufSize(ix,20);
+    ix += sprintf(anyStringBuf+ix, "mmc_mk_nil()");
+    return ix;
+  }
+
+  if (hdr == MMC_REALHDR) {
+    checkAnyStringBufSize(ix,50);
+    ix += sprintf(anyStringBuf+ix, "mmc_mk_rcon(%.7g)", (double) mmc_prim_get_real(any));
+    return ix;
+  }
+  if (MMC_HDRISSTRING(hdr)) {
+    MMC_CHECK_STRING(any);
+    checkAnyStringBufSize(ix,strlen(MMC_STRINGDATA(any))+40);
+    char *str = omc__escapedString(MMC_STRINGDATA(any), 1);
+    ix += sprintf(anyStringBuf+ix, "mmc_mk_scon(\"%s\")", str ? str : MMC_STRINGDATA(any));
+    if (str) free(str);
+    return ix;
+  }
+
+  numslots = MMC_HDRSLOTS(hdr);
+  ctor = MMC_HDRCTOR(hdr);
+
+  /* Ugly hack to "detect" function pointers. If these parameters are outside
+   * these bounds, then we probably have a function pointer. This is just to
+   * keep the debugger from crashing. */
+  if (numslots < 0 || numslots > 1024 || ctor > 255) {
+    checkAnyStringBufSize(ix, 100);
+    ix += sprintf(anyStringBuf+ix, "/* function pointer */");
+    return ix;
+  }
+
+  if (numslots>0 && ctor == MMC_FREE_OBJECT_CTOR) { /* FREE OBJECT! */
+    checkAnyStringBufSize(ix,100);
+    ix += sprintf(anyStringBuf+ix, "FREE(%u)", numslots);
+    return ix;
+  }
+  if (numslots>=0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "MetaArray(");
+    for (i=1; i<=numslots; i++) {
+      data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
+      ix = anyStringWorkCode(data, ix);
+      if (i!=numslots) {
+        checkAnyStringBufSize(ix,3);
+        ix += sprintf(anyStringBuf+ix, ", ");
+      }
+    }
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ")");
+    return ix;
+  }
+  if (numslots>0 && ctor > 1) { /* RECORD */
+    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
+    checkAnyStringBufSize(ix,strlen(desc->name)+100);
+    ix += sprintf(anyStringBuf+ix, "mmc_mk_box%d(%d, &%s__desc", numslots, ctor, desc->path);
+    for (i=2; i<=numslots; i++) {
+      checkAnyStringBufSize(ix,3);
+      ix += sprintf(anyStringBuf+ix, ", ");
+      data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
+      ix = anyStringWorkCode(data,ix);
+    }
+    checkAnyStringBufSize(ix,3);
+    ix += sprintf(anyStringBuf+ix, ")\n");
+    return ix;
+  }
+
+  if (numslots>0 && ctor == 0) { /* TUPLE */
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "mmc_mk_box%d(0", numslots);
+    for (i=0; i<numslots; i++) {
+      checkAnyStringBufSize(ix,3);
+      ix += sprintf(anyStringBuf+ix, ", ");
+      ix = anyStringWorkCode(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i+1)),ix);
+    }
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ")");
+    return ix;
+  }
+
+  if (numslots==0 && ctor==1) /* NONE() */ {
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "mmc_mk_none()");
+    return ix;
+  }
+
+  if (numslots==1 && ctor==1) /* SOME(x) */ {
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "mmc_mk_some(");
+    ix = anyStringWorkCode(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)),ix);
+    checkAnyStringBufSize(ix,2);
+    ix += sprintf(anyStringBuf+ix, ")");
+    return ix;
+  }
+
+  if (numslots==2 && ctor==1) { /* CONS-PAIR */
+    int i = 0;
+    while (!MMC_NILTEST(any)) {
+      checkAnyStringBufSize(ix,40);
+      ix += sprintf(anyStringBuf+ix, "mmc_mk_cons(");
+      ix = anyStringWorkCode(MMC_CAR(any),ix);
+      checkAnyStringBufSize(ix,4);
+      ix += sprintf(anyStringBuf+ix, "\n,");
+      any = MMC_CDR(any);
+      i++;
+    }
+    checkAnyStringBufSize(ix,40);
+    ix += sprintf(anyStringBuf+ix, "mmc_mk_nil()");
+    while (i--) {
+      checkAnyStringBufSize(ix,2);
+      ix += sprintf(anyStringBuf+ix, ")");
+    }
+    return ix;
+  }
+
+  fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
+  /* fprintf(stderr, "object: %032s||", ltoa((int)hdr, buf, 2)); */
+  checkAnyStringBufSize(ix,5);
+  ix += sprintf(anyStringBuf+ix, "UNK(");
+  for (i=1; i<=numslots; i++)
+  {
+    ix = anyStringWorkCode(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i)),ix);
+    data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
+    /* fprintf(stderr, "%032s|", ltoa((int)data, buf, 2)); */
+  }
+  checkAnyStringBufSize(ix,2);
+  ix += sprintf(anyStringBuf+ix, ")");
+  fprintf(stderr, "\n"); fflush(NULL);
+  /* EXIT(1); */
+  return ix;
+}
+
+void* mmc_anyStringCode(void* any)
+{
+  initializeStringBuffer();
+  anyStringWorkCode(any,0);
+  return mmc_mk_scon(anyStringBuf);
+}
+
+const char* anyStringCode(void* any)
+{
+  initializeStringBuffer();
+  anyStringWorkCode(any,0);
+  fprintf(stderr, "%s", anyStringBuf);
+  return anyStringBuf;
+}
+
 void printTypeOfAny(void* any) /* for debugging */
 {
   mmc_uint_t hdr;
