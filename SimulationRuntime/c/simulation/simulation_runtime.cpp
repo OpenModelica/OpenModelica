@@ -234,7 +234,7 @@ startInteractiveSimulation(int argc, char**argv)
   int retVal = -1;
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
-#ifndef NO_INTERACTIVE_DEPENDENCY 
+#ifndef NO_INTERACTIVE_DEPENDENCY
   initServiceInterfaceData(argc, argv);
 
   //Create the Control Server Thread
@@ -753,7 +753,7 @@ static void omc_throw_simulation()
 {
   terminationAssert = 1;
   setTermMsg("Assertion triggered by external C function");
-  TermInfo = (struct FILE_INFO){"",-1,-1,-1,-1,1};
+  TermInfo = (FILE_INFO){"",-1,-1,-1,-1,1};
 }
 
 void (*omc_assert)(const char *msg, FILE_INFO info) = omc_assert_simulation;
