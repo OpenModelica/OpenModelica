@@ -74,12 +74,6 @@ You need:
       You can now use the version from the Ubuntu repository
         $ sudo apt-get install liblpsolve55-dev
         
-      It is also possible to copy this library from the Compiler runtime:
-        For 32-bit OSX:
-        $ sudo cp Compiler/runtime/lpsolve/lib/osx/liblpsolve55.dylib /usr/local/lib
-        For 64-bit OSX:
-        $ sudo cp Compiler/runtime/lpsolve/lib/x86_64-osx/liblpsolve55.dylib /usr/local/lib
-        (Note that the Linux versions have been remove now that the configure script has been fixed)
       Alternatively you can compile lpsolve yourself:
         Download the library:
          http://www.cs.sunysb.edu/~algorith/implement/lpsolve/distrib/lp_solve_5.5.0.11_source.tar.gz
