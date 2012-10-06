@@ -54,7 +54,7 @@ protected import Util;
 
 public function checkModel
 "function: checkModel
-  This function perform a model check. Cound Variables and equations and
+  This function perform a model check. Count Variables and equations and
   detect the simple equations."
   input DAE.DAElist inDAELst;
   output Integer varSize;

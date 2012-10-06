@@ -4205,6 +4205,29 @@ algorithm
   end matchcontinue;
 end createNonlinearResidualEquationsComplex;
 
+protected function greateTempVarsforCrefs
+  input list<DAE.Exp> inTmpCrefsLst;
+  input list<SimCode.SimVar> itempvars;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+  otempvars := match(inTmpCrefsLst,itempvars)
+    local
+      list<DAE.Exp> rest;
+      list<SimCode.SimVar> tempvars;
+      DAE.Ident name;
+      DAE.Type ty;
+      DAE.ComponentRef cr;
+      SimCode.SimVar var;
+    case({},_) then itempvars;
+
+    case(DAE.CREF(cr, ty)::rest,_)
+      equation
+        var = SimCode.SIMVAR(cr,BackendDAE.VARIABLE(),"","","",0,NONE(),NONE(),NONE(),NONE(),false,ty,false,NONE(),SimCode.NOALIAS(),DAE.emptyElementSource,SimCode.NONECAUS(),NONE(),{});
+      then
+        greateTempVarsforCrefs(rest,var::itempvars); 
+  end match;
+end greateTempVarsforCrefs;
+
 protected function greateTempVars
   input list<DAE.Var> varLst;
   input DAE.ComponentRef inCrefPrefix;
@@ -4248,7 +4271,7 @@ algorithm
     local
       Integer size,uniqueEqIndex;
       DAE.Exp res_exp,e1,e2,e;
-      list<DAE.Exp> explst,e2lst;
+      list<DAE.Exp> explst,explst1,e2lst;
       list<BackendDAE.Equation> rest;
       BackendDAE.Equation eq;
       list<SimCode.SimEqSystem> eqSystemsRest,eqSystlst;
@@ -4259,7 +4282,7 @@ algorithm
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
       list<tuple<DAE.Exp,DAE.Exp>> exptl,exptl1;
-      list<DAE.ComponentRef> crefs;
+      list<DAE.ComponentRef> crefs, crefstmp;
       list<list<DAE.Subscript>> subslst;
       list<SimCode.SimVar> tempvars;
     case ({},_,_) then ({},iuniqueEqIndex,itempvars);
@@ -4332,11 +4355,29 @@ algorithm
     case ((BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements),source=source) :: rest),_,_)
       equation
         crefs = CheckModel.algorithmOutputs(DAE.ALGORITHM_STMTS(algStatements));
+        //BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ",", "\n"));
+        crefstmp = createTmpCrefs(crefs, iuniqueEqIndex);
+        //BackendDump.debugStrCrefLstStr(("Crefs : ", crefstmp, ",", "\n"));
         explst = List.map(crefs,Expression.crefExp);
         explst = List.map(explst,replaceDerOpInExp);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(explst,makeSES_RESIDUAL,source,iuniqueEqIndex);        
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex,itempvars);
-        eqSystemsRest = SimCode.SES_ALGORITHM(uniqueEqIndex,algStatements)::eqSystemsRest;
+        
+        //BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)},0);
+        (DAE.ALGORITHM_STMTS(algStatements), _) = BackendDAEUtil.traverseAlgorithmExpsWithUpdate(DAE.ALGORITHM_STMTS(algStatements), replaceOutputsbyTmp, (crefs, crefstmp));
+        //BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)},0);
+        
+        explst1 = List.map(crefstmp,Expression.crefExp);
+        explst1 = List.map(explst1,replaceDerOpInExp);
+        tempvars = greateTempVarsforCrefs(explst1,itempvars);
+        
+        // 0 = a - tmp        
+        exptl = List.threadTuple(explst,explst1);
+        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
+
+        eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex,algStatements)::eqSystlst;
+        //Tpl.tplPrint(SimCodeDump.dumpEqs, eqSystlst);
+        
+        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex,tempvars);
+        eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
       then
         (eqSystemsRest,uniqueEqIndex+1,tempvars);   
                 
@@ -4349,6 +4390,68 @@ algorithm
         fail();
   end matchcontinue;
 end createNonlinearResidualEquations;
+
+protected function createTmpCrefs
+  input list<DAE.ComponentRef> inCrefs;
+  input Integer iuniqueEqIndex;
+  output list<DAE.ComponentRef> outCrefs;
+algorithm
+  outCrefs := match(inCrefs, iuniqueEqIndex)
+    local
+      DAE.ComponentRef cref, crtmp;
+      list<DAE.ComponentRef> rest, result;
+      DAE.Type tp;
+      String ident;
+    case({},_) then {};
+    case(cref::rest,_) equation
+      ident = ComponentReference.crefStr(cref);
+      ident = System.stringReplace(ident,".","$P");
+      ident = System.stringReplace(ident,"[","$rB");
+      ident = System.stringReplace(ident,"]","$lB");
+      tp = ComponentReference.crefLastType(cref);
+      crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& "_" +& intString(iuniqueEqIndex), tp, {});
+      result = createTmpCrefs(rest, iuniqueEqIndex);
+    then crtmp::result;
+  end match;
+end createTmpCrefs;
+
+protected function replaceOutputsbyTmp
+  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> inTpl;
+  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> outTpl;
+protected 
+  DAE.Exp exp;
+  list<DAE.ComponentRef> crefsLst, crefsTmpLst;
+algorithm
+  (exp,(crefsLst, crefsTmpLst)) := inTpl;
+  outTpl := Expression.traverseExp(exp, replaceCrefbyTmp, (crefsLst, crefsTmpLst));
+end replaceOutputsbyTmp;
+
+protected function replaceCrefbyTmp
+  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> inTuple;
+  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e, e1;
+      list<DAE.ComponentRef> crefs, crefstmp;
+      DAE.ComponentRef cr, crtmp;
+      Integer pos;
+      DAE.Type tp;
+    case ((e as DAE.CREF(cr, tp as DAE.T_COMPLEX(varLst=_)), (crefs, crefstmp)))
+      equation
+        ((e1,(_,_))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
+        ((e1,_)) = replaceOutputsbyTmp((e1,(crefs,crefstmp)));
+      then
+        ((e1, (crefs, crefstmp)));
+    case ((DAE.CREF(cr, tp), (crefs, crefstmp)))
+      equation
+        pos = List.positionOnTrue(cr, crefs, ComponentReference.crefEqualNoStringCompare);
+        crtmp = listGet(crefstmp, pos+1);
+      then
+        ((DAE.CREF(crtmp,tp),  (crefs, crefstmp)));
+    case (_) then inTuple;
+  end matchcontinue;
+end replaceCrefbyTmp;
 
 protected function makeSES_RESIDUAL
   input DAE.Exp inExp;

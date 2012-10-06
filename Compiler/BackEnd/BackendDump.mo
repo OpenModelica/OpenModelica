@@ -2884,6 +2884,17 @@ algorithm
   print(a +& ExpressionDump.printExpStr(b) +& c);
 end debugStrExpStr;
 
+public function debugStrExpLstStr
+  input tuple<String,list<DAE.Exp>,String,String> inTpl;
+protected
+  list<DAE.Exp> b;
+  String a,c,d;
+algorithm
+  (a,b,c,d) := inTpl;
+  print(a);
+  debuglst((b,ExpressionDump.printExpStr,c,d));
+end debugStrExpLstStr;
+
 public function debugStrExpStrCrefStr
   input tuple<String,DAE.Exp,String,DAE.ComponentRef,String> inTpl;
 protected

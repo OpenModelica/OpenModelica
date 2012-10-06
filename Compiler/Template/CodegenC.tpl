@@ -4894,12 +4894,11 @@ template algStmtAssign(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let rec = daeExp(exp, context, &preExp, &varDecls)
     <<
     <%preExp%>
-    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 1 =>
+    <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
       let re = daeExp(listNth(expLst,i1), context, &preExp, &varDecls)
       '<%re%> = <%rec%>.<%var.name%>;'
     ; separator="\n"    
     %>
-    Record = func;
     >>
   case STMT_ASSIGN(exp1=CREF(__)) then
     let &preExp = buffer "" /*BUFD*/
