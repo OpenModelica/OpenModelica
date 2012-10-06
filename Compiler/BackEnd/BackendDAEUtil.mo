@@ -5129,6 +5129,7 @@ algorithm
       BackendDAE.AdjacencyMatrixElementEnhanced row;
       list<list<BackendDAE.Equation>> eqnslst;
       list<BackendDAE.Equation> eqns;
+      list<DAE.ComponentRef> algoutCrefs;
     
     // EQUATION
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,_,_,_)
@@ -5198,20 +5199,26 @@ algorithm
         (row,size);        
     
     // ALGORITHM For now assume that algorithm will be solvable for 
-    // correct variables. I.e. find all variables in algorithm and add to lst.
-    // If algorithm later on needs to be inverted, i.e. solved for
-    // different variables than calculated, a non linear solver or
-    // analysis of algorithm itself needs to be implemented.
+    // output variables. Mark this as solved and input variables as unsolvable:
     case (vars,BackendDAE.ALGORITHM(size=size,alg=alg),_,_,_,_)
       equation
+        // get outputs
+        algoutCrefs = CheckModel.algorithmOutputs(alg);
+        // mark outputs as solved
+        row = adjacencyRowAlgorithmOutputs(algoutCrefs,vars,mark,rowmark,{});
+        // get inputs
         expl = Algorithm.getAllExps(alg);
-        lst = incidenceRow1(expl, adjacencyRowExpEnhanced, vars, {},(mark,rowmark));
-        row = adjacencyRowEnhanced1(lst,Expression.makeSum(expl),DAE.RCONST(0.0),vars,kvars,mark,rowmark,{});
+        // mark inputs as unsolvable
+        ((_,(_,_,_,row))) = Expression.traverseExpList(expl, adjacencyRowAlgorithmInputs, (vars,mark,rowmark,row));
       then 
         (row,size);
             
     // if Equation
     // TODO : how to handle this?
+    // Proposal:
+    // mark all vars in conditions as unsolvable
+    // vars occure in all branches: check how they are occure
+    // vars occure not in all branches: mark as unsolvable 
     case(vars,BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns),_,_,_,_)
       equation
         print("Warning: BackendDAEUtil.adjacencyRowEnhanced does not handle if-equations propper!\n");
@@ -5228,6 +5235,119 @@ algorithm
         fail();
   end matchcontinue;
 end adjacencyRowEnhanced;    
+
+protected function adjacencyRowAlgorithmOutputs
+"function: adjacencyRowAlgorithmOutputs
+  author: Frenkel TUD 10-2012
+  Helper function to adjacencyRowEnhanced. Mark all algorithm outputs
+  as solved."
+  input list<DAE.ComponentRef> algOutputs;
+  input BackendDAE.Variables inVariables;
+  input Integer mark;
+  input array<Integer> rowmark;
+  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
+algorithm
+  outRow := matchcontinue(algOutputs,inVariables,mark,rowmark,iRow)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> rest;
+      list<Integer> vindx;
+      BackendDAE.AdjacencyMatrixElementEnhanced row;
+    case ({},_,_,_,_) then iRow;
+    case (cr::rest,_,_,_,_)
+      equation
+        (_,vindx) = BackendVariable.getVar(cr,inVariables);
+        row = adjacencyRowAlgorithmOutputs1(vindx,mark,rowmark,iRow);
+      then
+        adjacencyRowAlgorithmOutputs(rest,inVariables,mark,rowmark,row); 
+  end matchcontinue;
+end adjacencyRowAlgorithmOutputs;
+
+protected function adjacencyRowAlgorithmOutputs1
+"function: adjacencyRowAlgorithmOutputs
+  author: Frenkel TUD 10-2012
+  Helper function to adjacencyRowEnhanced. Mark all algorithm outputs
+  as solved."
+  input list<Integer> vindx;
+  input Integer mark;
+  input array<Integer> rowmark;
+  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
+algorithm
+  outRow := matchcontinue(vindx,mark,rowmark,iRow)
+    local
+      Integer i;
+      list<Integer> rest;
+    case ({},_,_,_) then iRow;
+    case (i::rest,_,_,_)
+      equation
+        _ = arrayUpdate(rowmark,i,mark);
+      then
+        adjacencyRowAlgorithmOutputs1(rest,mark,rowmark,(i,BackendDAE.SOLVABILITY_SOLVED())::iRow); 
+  end matchcontinue;
+end adjacencyRowAlgorithmOutputs1;
+
+protected function adjacencyRowAlgorithmInputs
+"function: adjacencyRowAlgorithmInputs
+  author: Frenkel TUD 10-2012
+  Helper function to adjacencyRowEnhanced. Mark all algorithm inputs
+  as unsolvable."
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer,array<Integer>,BackendDAE.AdjacencyMatrixElementEnhanced>> iTpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Integer,array<Integer>,BackendDAE.AdjacencyMatrixElementEnhanced>> oTpl;
+algorithm
+  oTpl := matchcontinue(iTpl)
+    local
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+      BackendDAE.Variables vars;
+      Integer mark;
+      array<Integer>rowmark;
+      BackendDAE.AdjacencyMatrixElementEnhanced row;
+      list<Integer> vindx;
+    case ((e as DAE.CREF(componentRef=cr),(vars,mark,rowmark,row)))
+      equation
+        (_,vindx) = BackendVariable.getVar(cr,vars);
+        row = adjacencyRowAlgorithmInputs1(vindx,mark,rowmark,row);
+      then
+        ((e,(vars,mark,rowmark,row)));
+    else
+      then 
+        iTpl;
+  end matchcontinue;
+end adjacencyRowAlgorithmInputs;
+
+protected function adjacencyRowAlgorithmInputs1
+"function: adjacencyRowAlgorithmInputs1
+  author: Frenkel TUD 10-2012
+  Helper function to adjacencyRowEnhanced. Mark all algorithm inputs
+  as unsolvable."
+  input list<Integer> vindx;
+  input Integer mark;
+  input array<Integer> rowmark;
+  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
+algorithm
+  outRow := matchcontinue(vindx,mark,rowmark,iRow)
+    local
+      Integer i;
+      list<Integer> rest;
+    case ({},_,_,_) then iRow;
+    case (i::rest,_,_,_)
+      equation
+        // not allready handled
+        false = intEq(intAbs(rowmark[i]),mark);
+        _ = arrayUpdate(rowmark,i,-mark);
+      then
+        adjacencyRowAlgorithmInputs1(rest,mark,rowmark,(i,BackendDAE.SOLVABILITY_UNSOLVABLE())::iRow); 
+    case (i::rest,_,_,_)
+      equation
+        // not allready handled
+        true = intEq(intAbs(rowmark[i]),mark);
+      then
+        adjacencyRowAlgorithmInputs1(rest,mark,rowmark,iRow); 
+  end matchcontinue;
+end adjacencyRowAlgorithmInputs1;
 
 protected function adjacencyRowWhenEnhanced
 "function: adjacencyRowWhenEnhanced
