@@ -2101,7 +2101,7 @@ protected function replaceableAlias
   input BackendDAE.Var var;
 algorithm
   _ := match (var)
-    case (var)
+    case (_)
       equation
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
