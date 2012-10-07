@@ -1215,7 +1215,7 @@ algorithm
       DAE.ComponentRef cr,crx,tv;
       DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,cond,zero,call;
       DAE.Type tp;
-      Absyn.Path a;
+      Absyn.Path a,path;
       Boolean b;
       DAE.Operator op;
       String e_str,s,s2,str,name;
@@ -1393,6 +1393,13 @@ algorithm
         e_1 = differentiateExp(exp, tv, differentiateIfExp,inFuncs);
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e)));
+
+    // der(record constructur(..)) =  record constructur(der(.),der(.))
+    case (DAE.CALL(path=a,expLst=expl,attr=attr as DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path)))),tv,_,_)
+      equation
+        true = Absyn.pathEqual(a, path);
+        expl_1 = List.map3(expl, differentiateExp, tv, differentiateIfExp,inFuncs);
+      then DAE.CALL(a,expl_1,attr);
            
     /* 
       this is wrong. The derivative of c > d is not dc > dd. It is the derivative of 

@@ -5513,7 +5513,7 @@ algorithm
     case(r::rest,_,_,_,_,_,_,_)
       equation
         // if negatet rowmark then unsolvable
-        //true = intEq(rowmark[r],-mark); 
+        //true = intEq(rowmark[r],-mark);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow);
   end matchcontinue;
