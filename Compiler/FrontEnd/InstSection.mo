@@ -978,7 +978,7 @@ algorithm
       DAE.Type t;
       DAE.ElementSource source "the origin of the element";
     
-    case(DAE.EQUATION(DAE.CREF(cr1,_),e,source)) 
+    case(DAE.EQUATION(DAE.CREF(componentRef=cr1),e,source)) 
       then DAE.REINIT(cr1,e,source);
     
     case(DAE.DEFINE(cr1,e,source)) 
@@ -990,6 +990,9 @@ algorithm
         e2 = Expression.makeCrefExp(cr2,t);
       then 
         DAE.REINIT(cr1,e2,source);
+  
+    case(DAE.ARRAY_EQUATION(exp=DAE.CREF(componentRef=cr1),array=e,source=source)) 
+      then DAE.REINIT(cr1,e,source);  
   
     case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
     
