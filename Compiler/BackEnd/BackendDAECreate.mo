@@ -1634,7 +1634,7 @@ algorithm
         b = Expression.isConst(e1);
         v1 = Debug.bcallret2(not b,BackendVariable.setBindExp,v,e1,v);
       then ((v1,repl));
-    case inTpl then inTpl;
+    else then inTpl;
   end matchcontinue;
 end replaceAliasVarTraverser;
 

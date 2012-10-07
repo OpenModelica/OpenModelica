@@ -1407,7 +1407,6 @@ protected
 algorithm
   (oWhenclauses,replacementPerformed) := matchcontinue(iWhenclauses,repl,inFuncTypeExpExpToBooleanOption)
     local
-      HashTable2.HashTable ht;
       list<BackendDAE.WhenClause> whenclauses;
     case(_,REPLACEMENTS(hashTable = ht),_)
       equation
