@@ -983,12 +983,17 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
     case REINIT(__) then 
       let &preExp = buffer "" /*BUFD*/
       let val = daeExp(value, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let lhs = match crefLastType(stateVar)
+         case DAE.T_ARRAY(__) then
+           'copy_real_array_data_mem(&<%val%>, &<%cref(stateVar)%>);'
+         else
+           '<%cref(stateVar)%> = <%val%>;'
       <<
       if (DEBUG_FLAG(LOG_EVENTS)) {
         INFO1("reinit <%cref(stateVar)%>  = %f", <%val%>);
       }
       <%preExp%>
-      <%cref(stateVar)%> = <%val%>;
+      <%lhs%>
       data->simulationInfo.needToIterate = 1;
       >>
     case TERMINATE(__) then 
