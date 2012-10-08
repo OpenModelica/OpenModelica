@@ -280,7 +280,7 @@ public constant Message SUBSCRIPT_NOT_INT_OR_INT_ARRAY = MESSAGE(82, TRANSLATION
 public constant Message TYPE_MISMATCH_IF_EXP = MESSAGE(83, TRANSLATION(), ERROR(),
   Util.gettext("Type mismatch in if-expression in component %s. True branch: %s has type %s,  false branch: %s has type %s"));
 public constant Message UNRESOLVABLE_TYPE = MESSAGE(84, TRANSLATION(), ERROR(),
-  Util.gettext("Cannot resolve type of expression %s in component %s"));
+  Util.gettext("Cannot resolve type of expression %s. The operands have types %s in component %s."));
 public constant Message INCOMPATIBLE_TYPES = MESSAGE(85, TRANSLATION(), ERROR(),
   Util.gettext("Incompatible argument types to operation %s in component %s, left type: %s, right type: %s"));
 public constant Message INHERIT_BASIC_WITH_COMPS = MESSAGE(87, TRANSLATION(), ERROR(),

@@ -11954,24 +11954,27 @@ protected function deoverload "function: deoverload
   ."
   input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inTplExpOperatorTypesTypeLstTypesTypeLst;
   input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
+  input Absyn.Exp aexp "for error-messages";
   input Prefix.Prefix inPrefix;
   input Absyn.Info info;
   output DAE.Operator outOperator;
   output list<DAE.Exp> outExpExpLst;
   output DAE.Type outType;
 algorithm
-  (outOperator,outExpExpLst,outType) := matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,inPrefix,info)
+  (outOperator,outExpExpLst,outType) := matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,aexp,inPrefix,info)
     local
-      list<DAE.Exp> args_1;
-      list<DAE.Type> types_1,params;
+      list<DAE.Exp> exps,args_1;
+      list<DAE.Type> types_1,params,tps;
       DAE.Type rtype_1,rtype;
       DAE.Operator op;
       list<tuple<DAE.Exp, DAE.Type>> args;
       list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> xs;
       Prefix.Prefix pre;
       DAE.Type ty;
+      list<String> exps_str,tps_str;
+      String estr, pre_str, s, tpsstr;
 
-    case (((op,params,rtype) :: _),args,pre,_)
+    case (((op,params,rtype) :: _),args,_,pre,_)
       equation
         //Debug.fprint(Flags.DOVL, stringDelimitList(List.map(params, Types.printTypeStr),"\n"));
         //Debug.fprint(Flags.DOVL, "\n===\n");
@@ -11982,19 +11985,18 @@ algorithm
       then
         (op,args_1,rtype_1);
     
-    case ((_ :: xs),args,pre,_)
+    case ((_ :: xs),args,_,pre,_)
       equation
-        (op,args_1,rtype) = deoverload(xs, args,pre,info);
+        (op,args_1,rtype) = deoverload(xs,args,aexp,pre,info);
       then
         (op,args_1,rtype);
         
     //Don't fail and dont print error messages. Operators can be overloaded
     //for records.
     //mahge: TODO move this to the proper place and print.     
-    /*
-    case ({},args,exp,pre,info)
+    case ({},args,_,pre,_)
       equation
-        s = Dump.printExpStr(exp);
+        s = Dump.printExpStr(aexp);
         exps = List.map(args, Util.tuple21);
         tps = List.map(args, Util.tuple22);
         exps_str = List.map(exps, ExpressionDump.printExpStr);
@@ -12002,11 +12004,9 @@ algorithm
         tps_str = List.map(tps, Types.unparseType);
         tpsstr = stringDelimitList(tps_str, ", ");
         pre_str = PrefixUtil.printPrefixStr3(pre);
-        s = stringAppendList({s," (expressions :",estr," types: ",tpsstr,")"});
-        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s,pre_str}, info);
+        Error.addSourceMessage(Error.UNRESOLVABLE_TYPE, {s,tpsstr,pre_str}, info);
       then
         fail();
-        */
   end matchcontinue;
 end deoverload;
 
@@ -12831,8 +12831,10 @@ algorithm
          
      case (_, _, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _) 
        equation
+         false = typeIsRecord(Types.arrayElementType(type1));
+         false = typeIsRecord(Types.arrayElementType(type1));
          (opList, type1,exp1,type2,exp2) = operatorsBinary(aboper, type1, exp1, type2, exp2);
-         (oper, {exp1,exp2}, otype) = deoverload(opList, {(exp1,type1), (exp2,type2)}, inPre, inInfo);
+         (oper, {exp1,exp2}, otype) = deoverload(opList, {(exp1,type1), (exp2,type2)}, AbExp, inPre, inInfo);
          const = Types.constAnd(const1, const2);
          exp = replaceOperatorWithFcall(AbExp, exp1,oper,SOME(exp2), const);
          (exp,_) = ExpressionSimplify.simplify(exp);
@@ -12916,8 +12918,9 @@ algorithm
          
      case (_, _, aboper, DAE.PROP(type1,const), exp1, _, _, _, _, _, _) 
        equation
+         false = typeIsRecord(Types.arrayElementType(type1)); 
          opList = operatorsUnary(aboper);
-         (oper, {exp1}, otype) = deoverload(opList, {(exp1,type1)}, inPre, inInfo);
+         (oper, {exp1}, otype) = deoverload(opList, {(exp1,type1)}, AbExp, inPre, inInfo);
          exp = replaceOperatorWithFcall(AbExp, exp1,oper,NONE(), const);  
          // (exp,_) = ExpressionSimplify.simplify(exp);  
          prop = DAE.PROP(otype,const);             
