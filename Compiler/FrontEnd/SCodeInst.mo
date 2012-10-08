@@ -1738,20 +1738,30 @@ algorithm
       Boolean is_global;
       Absyn.Path path;
       String name_str, env_str;
+      Item item;
 
     // If the name can be found in the local scope, call instLocalCref.
     case (_, _, _, _, _)
       equation
-        (_, path, env, origin) = SCodeLookup.lookupNameInPackage(inCrefPath, inEnv);
+        (_, _, env, origin) = SCodeLookup.lookupNameInPackage(inCrefPath, inEnv);
         is_global = SCodeLookup.originIsGlobal(origin);
         cref = prefixLocalCref(inCref, inPrefix, inEnv, env, is_global);
       then
         cref;
 
     // Otherwise, look it up in the scopes above, and call instGlobalCref.
-    case (_, _, _, _ :: env, _)
+    case (_, Absyn.QUALIFIED(name = _), _, _ :: env, _)
       equation
-        (_, path, env, _) = SCodeLookup.lookupNameSilent(inCrefPath, env, inInfo);
+        path = Absyn.stripLast(inCrefPath);
+        (item, _, env, _) = SCodeLookup.lookupNameSilent(path, env, inInfo);
+        env = SCodeEnv.mergeItemEnv(item, env);
+        cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
+      then
+        cref;
+
+    case (_, Absyn.IDENT(name = _), _, _ :: env, _)
+      equation
+        (_, _, env, _) = SCodeLookup.lookupNameSilent(inCrefPath, env, inInfo);
         cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
       then
         cref;
@@ -1786,8 +1796,10 @@ algorithm
       DAE.Type ty;
       list<DAE.Subscript> subs;
       
-    case (DAE.CREF_IDENT(id,ty,subs), _, _, SCodeEnv.FRAME(frameType=SCodeEnv.IMPLICIT_SCOPE(iterIndex=iterIndex)) :: _, false)
-      then DAE.CREF_ITER(id,iterIndex,ty,subs);
+    // Don't prefix iterators.
+    case (DAE.CREF_IDENT(id, ty, subs), _, _, SCodeEnv.FRAME(frameType =
+        SCodeEnv.IMPLICIT_SCOPE(iterIndex= iterIndex)) :: _, false)
+      then DAE.CREF_ITER(id, iterIndex, ty, subs);
 
     // This case is for a non-global local cref, i.e. the first identifier in the
     // cref is pointing at a local instance and not a local class. In this case

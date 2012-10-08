@@ -286,13 +286,13 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   /* construct continuous states list record */
   int i = 1;
   void* continuousStatesList = mk_nil();
-  for (i ; i <= numberOfContinuousStates ; i++) {
+  for (; i <= numberOfContinuousStates ; i++) {
     continuousStatesList = mk_cons(mk_icon(i), continuousStatesList);
   }
   /* construct event indicators list record */
   i = 1;
   void* eventIndicatorsList = mk_nil();
-  for (i ; i <= numberOfEventIndicators ; i++) {
+  for (; i <= numberOfEventIndicators ; i++) {
     eventIndicatorsList = mk_cons(mk_icon(i), eventIndicatorsList);
   }
   /* construct FMIINFO record */
@@ -315,7 +315,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   *modelVariablesList = mk_nil();
   int realCount, integerCount, booleanCount, stringCount, enumerationCount;
   realCount = integerCount = booleanCount = stringCount = enumerationCount = 0;
-  for (i ; i < model_variables_list_size ; i++) {
+  for (; i < model_variables_list_size ; i++) {
     fmi1_import_variable_t* model_variable = fmi1_import_get_variable(model_variables_list, i);
     void* variable_instance = mk_icon((intptr_t)model_variable);
     void* variable_name = mk_scon(getModelVariableName(model_variable));

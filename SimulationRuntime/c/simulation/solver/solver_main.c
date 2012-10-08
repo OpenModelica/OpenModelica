@@ -460,7 +460,6 @@ int solver_main(DATA* simData, double start, double stop, double step,
   /* save dassl stats before print */
 
   if (DEBUG_FLAG(LOG_STATS)) {
-    int i;
     if (flag == 3){
       for (ui = 0; ui < numStatistics; ui++)
         ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[ui];

@@ -836,6 +836,7 @@ UnitRes UnitParser::parseExpression(Scanner& scan, Unit& unit) {
     if (!res.Ok())
       return res;
     return res;
+  default: break;
   }
   return UnitRes(UnitRes::UNIT_OK);
 }
@@ -1255,6 +1256,8 @@ void TestScanner() {
     case Scanner::TOK_UNKNOWN:
       cout << "** UNKNOWN at pos " << scan.getPos() << "\n";
       return;
+    default:
+      break;
     }
   }
   cout << "\n";

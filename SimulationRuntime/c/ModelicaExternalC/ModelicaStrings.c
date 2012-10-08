@@ -222,7 +222,7 @@ void ModelicaStrings_scanInteger(const char* string, int startIndex, int unsigne
     if (string[token_start-1] == '+' || string[token_start-1] == '-')
         sign = 1;
 
-    if (unsignedNumber==0 || unsignedNumber==1 && sign==0) {
+    if (unsignedNumber==0 || (unsignedNumber==1 && sign==0)) {
         number_length = MatchUnsignedInteger(string, token_start + sign);
         /* Number of characters in unsigned number. */
 

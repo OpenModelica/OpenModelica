@@ -244,8 +244,10 @@ union mmc_double_as_words {
 static inline double mmc_prim_get_real(void *p)
 {
   union mmc_double_as_words u;
-  u.data[0] = MMC_REALDATA(p)[0];
-  u.data[1] = MMC_REALDATA(p)[1];
+  mmc_uint_t *data = &(MMC_REALDATA(p)[0]);
+
+  u.data[0] = *data;
+  u.data[1] = *(data + 1);
   return u.d;
 }
 
@@ -253,8 +255,10 @@ static inline void mmc_prim_set_real(struct mmc_real *p, double d)
 {
   union mmc_double_as_words u;
   u.d = d;
-  p->data[0] = u.data[0];
-  p->data[1] = u.data[1];
+
+  mmc_uint_t *data = &(p->data[0]);
+  *data = u.data[0];
+  *(data + 1) = u.data[1];
 }
 
 static inline void* mmc_mk_scon(const char *s)

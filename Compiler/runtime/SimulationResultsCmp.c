@@ -616,7 +616,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
     if (ncmpvars==0) return mk_cons(mk_scon("Error Get Vars!"),mk_nil());
   }
   cmpdiffvars = (char**)malloc(sizeof(char*)*(ncmpvars));
-  /* fprintf(stderr, "Compare Vars:\n"); /*
+  /* fprintf(stderr, "Compare Vars:\n"); */
   /* for(i=0;i<ncmpvars;i++)
   fprintf(stderr, "Var: %s\n", cmpvars[i]); */
 

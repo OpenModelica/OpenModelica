@@ -1902,7 +1902,7 @@ void SystemImpl__gettextInit(const char *locale)
   int res = *locale == 0 ? setlocale(LC_MESSAGES, "") && setlocale(LC_CTYPE, ""):
     (setlocale(LC_MESSAGES, locale3) && setlocale(LC_CTYPE, locale3))  ||
     (setlocale(LC_MESSAGES, locale2) && setlocale(LC_CTYPE, locale2)) ||
-    setlocale(LC_MESSAGES, locale) && setlocale(LC_CTYPE, locale);
+    (setlocale(LC_MESSAGES, locale) && setlocale(LC_CTYPE, locale));
   if (!res) {
     fprintf(stderr, gettext("Warning: Failed to set locale: '%s'\n"), locale);
   }

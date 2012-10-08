@@ -633,7 +633,7 @@ int is_in_range(modelica_metatype p, modelica_metatype start, size_t bytes)
   size_t diff = 0;
   diff = (char*)p - (char*)start;
   
-  if (diff >= 0 && diff < bytes)
+  if (diff < bytes)
   {
     return 1;
   }

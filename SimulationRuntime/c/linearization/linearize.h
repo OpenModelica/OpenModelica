@@ -34,8 +34,6 @@
 
 #include "simulation_data.h"
 
-using namespace std;
-
 int linearize(DATA* data);
 //int argc, char** argv, string method, double start,
 //double stop, double stepSize , long outputSteps, double tolerance);

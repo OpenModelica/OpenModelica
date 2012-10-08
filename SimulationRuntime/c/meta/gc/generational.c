@@ -235,7 +235,7 @@ mmc_c_heap_region_t* mmc_alloc_c_heap_region(mmc_uint_t nslots) {
  * function to free the managed C heap
  */
 void mmc_free_c_heap_region(void) {
-  mmc_c_heap_region_t* current = mmc_c_heap, *tmp = NULL;
+  mmc_c_heap_region_t* current = mmc_c_heap;
   /* if we haven't use it at all, don't free it */
   if (mmc_c_heap->region == mmc_c_heap->next)
     return;
@@ -465,8 +465,8 @@ static void **mmc_collect(void **scan, char *region_low, mmc_uint_t region_nbyte
   while (scan < next) {
     mmc_uint_t hdr   = *(mmc_uint_t*)scan;
     mmc_uint_t slots = MMC_HDRSLOTS(hdr);
-    mmc_uint_t ctor = MMC_HDRCTOR(hdr);
-    mmc_uint_t start = 0;
+    //mmc_uint_t ctor = MMC_HDRCTOR(hdr);
+    //mmc_uint_t start = 0;
     
     /* we should NOT have forward here! */
     assert(!MMC_HDR_IS_FORWARD(hdr));

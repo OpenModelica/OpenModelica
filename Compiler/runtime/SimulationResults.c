@@ -36,6 +36,7 @@ void SimulationResultsImpl__close(SimulationResult_Globals* simresglob)
   case MATLAB4: omc_free_matlab4_reader(&simresglob->matReader); break;
   case PLT: fclose(simresglob->pltReader); break;
   case CSV: fclose(simresglob->csvReader); break;
+  default: break;
   }
   simresglob->curFormat = UNKNOWN_PLOT;
   if (simresglob->curFileName) free(simresglob->curFileName);

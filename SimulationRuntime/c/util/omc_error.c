@@ -52,8 +52,8 @@ const unsigned int LOG_ZEROCROSSINGS = (1<<9);
 const unsigned int LOG_DEBUG         = (1<<10);
 
 /* Flags for modelErrorCodes */
-extern const int ERROR_NONLINSYS = -1;
-extern const int ERROR_LINSYS = -2;
+const int ERROR_NONLINSYS = -1;
+const int ERROR_LINSYS = -2;
 
 unsigned int globalDebugFlags = 0;
 

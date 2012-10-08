@@ -382,6 +382,8 @@ extern void* ErrorImpl__getMessages()
   return res;
 }
 
+} // extern "C"
+
 // TODO: Use a string builder instead of creating intermediate results all the time?
 extern std::string ErrorImpl__printMessagesStr()
 {
@@ -392,6 +394,4 @@ extern std::string ErrorImpl__printMessagesStr()
     pop_message(false);
   }
   return res;
-}
-
 }
