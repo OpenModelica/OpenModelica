@@ -51,7 +51,7 @@ min(writeFile(s + ".mos","
 writeFile(\""+log+"\",\""+s+"\n\",append=true);
 statFile := \""+s+".stat\";
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
-loadModel(Modelica,{\"3.1\"});"+loadModelicaTest+"
+loadModel(Modelica,{\""+MSLVersion+"\"});"+loadModelicaTest+"
 setCommandLineOptions(\"+d=nogen\");
 res:=buildModel("+s+");
 errFile:=\""+s+".err\";

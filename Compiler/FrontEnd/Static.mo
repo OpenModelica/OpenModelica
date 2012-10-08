@@ -12832,7 +12832,7 @@ algorithm
      case (_, _, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _) 
        equation
          false = typeIsRecord(Types.arrayElementType(type1));
-         false = typeIsRecord(Types.arrayElementType(type1));
+         false = typeIsRecord(Types.arrayElementType(type2));
          (opList, type1,exp1,type2,exp2) = operatorsBinary(aboper, type1, exp1, type2, exp2);
          (oper, {exp1,exp2}, otype) = deoverload(opList, {(exp1,type1), (exp2,type2)}, AbExp, inPre, inInfo);
          const = Types.constAnd(const1, const2);
