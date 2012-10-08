@@ -118,13 +118,13 @@ char* SettingsImpl__getModelicaPath(int runningTestsuite) {
       homePath = getpwuid(getuid())->pw_dir;
     if (homePath == NULL || runningTestsuite) {
 #endif
-      buffer = (char*) malloc(lenOmhome+100);
-      snprintf(buffer,lenOmhome+100,"%s/lib/omlibrary",omhome);
+      buffer = (char*) malloc(lenOmhome+15);
+      snprintf(buffer,lenOmhome+15,"%s/lib/omlibrary",omhome);
 #if !(defined(_MSC_VER) || defined(__MINGW32__))
     } else {
       int lenHome = strlen(homePath);
-      buffer = (char*) malloc(lenOmhome+lenOmhome+100);
-      snprintf(buffer,lenOmhome+100,"%s/lib/omlibrary:%s/.openmodelica/libraries/",omhome,homePath);
+      buffer = (char*) malloc(lenOmhome+lenHome+41);
+      snprintf(buffer,lenOmhome+lenHome+41,"%s/lib/omlibrary:%s/.openmodelica/libraries/",omhome,homePath);
     }
 #endif
     return buffer;
