@@ -804,7 +804,7 @@ algorithm
 
     else
       equation
-        extl = List.map1(inExtends, qualifyExtends, inEnv);
+        extl = List.map1Reverse(inExtends, qualifyExtends, inEnv);
       then
         extl;
   end match;

@@ -256,7 +256,7 @@ algorithm
         ty = instBasicType(name, inMod, vars);
       then 
         (InstTypes.BASIC_TYPE(), ty, InstTypes.NO_PREFIXES(), functions);
-
+        
     // A class with parts, instantiate all elements in it.
     case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, restriction = res,
         classDef = cdef as SCode.PARTS(elementLst = el), info = info),
@@ -306,7 +306,7 @@ algorithm
         ty = InstUtil.makeDerivedClassType(ty, state);
       then
         (cls, ty, prefs, functions);
-        
+
     case (SCodeEnv.CLASS(cls = scls, classType = SCodeEnv.CLASS_EXTENDS(), env = env),
         _, _, _, _, ip, functions)
       equation
@@ -726,6 +726,7 @@ algorithm
       equation
         // Look up the class of the component.
         (item, _, env) = SCodeLookup.lookupClassName(path, inEnv, info);
+        SCodeCheck.checkPartialInstance(item, info);
 
         // Instantiate array dimensions and add them to the prefix.
         (dims,functions) = instDimensions(ad, inEnv, inPrefix, info, functions);

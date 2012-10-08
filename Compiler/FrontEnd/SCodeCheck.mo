@@ -671,4 +671,25 @@ algorithm
   end match;
 end isInstantiableClassRestriction;
 
+public function checkPartialInstance
+  "Checks if the given item is partial, and prints out an error message in that
+   case."
+  input SCodeEnv.Item inItem;
+  input Absyn.Info inInfo;
+algorithm
+  _ := match(inItem, inInfo)
+    local
+      String name;
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = name, partialPrefix =
+        SCode.PARTIAL())), _)
+      equation
+        Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {name}, inInfo);
+      then
+        fail();
+
+    else ();
+  end match;
+end checkPartialInstance;
+        
 end SCodeCheck;
