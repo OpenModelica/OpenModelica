@@ -252,6 +252,7 @@
 
     modelica_integer method;
     modelica_real residualError;
+    modelica_boolean solved; /* flag for  solving */
   }NONLINEAR_SYSTEM_DATA;
 
   typedef struct MODEL_DATA
@@ -326,9 +327,9 @@
 
     modelica_boolean initial;        /* =1 during initialization, 0 otherwise. */
     modelica_boolean terminal;       /* =1 at the end of the simulation, 0 otherwise. */
-    modelica_integer modelErrorCode; /* =1 if modelEquation result is wrong, 0 otherwise. */
     modelica_boolean discreteCall;   /* =1 for a discrete step, otherwise 0 */
     modelica_boolean needToIterate;  /* =1 if reinit has been activated, iteration about the system is needed */
+    modelica_boolean simulationSuccess; /*=0 the simulation run successful, otherwise an error code is set */
 
     void** extObjs; /* External objects */
 

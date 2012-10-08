@@ -52,8 +52,8 @@ const size_t SIZERINGBUFFER = 3;
  */
 void update_DAEsystem(DATA *data)
 {
-  data->simulationInfo.needToIterate = 0;
   int IterationNum = 0;
+  data->simulationInfo.needToIterate = 0;
 
   functionDAE(data);
 
@@ -603,7 +603,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.initial = 0;
 
   /* initialize model error code */
-  data->simulationInfo.modelErrorCode = 0;
+  data->simulationInfo.simulationSuccess = 0;
 
   /* initial delay */
   data->simulationInfo.delayStructure = (RINGBUFFER**)malloc(data->modelData.nDelayExpressions * sizeof(RINGBUFFER*));

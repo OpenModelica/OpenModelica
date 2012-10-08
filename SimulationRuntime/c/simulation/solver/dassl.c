@@ -221,6 +221,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   double tout = 0;
   int i = 0;
   unsigned int ui = 0;
+  int retVal = 0;
 
   SIMULATION_DATA *sData = (SIMULATION_DATA*) simData->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*) simData->localData[1];
@@ -257,7 +258,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     functionODE(simData);
     solverInfo->currentTime = tout;
     /*TODO: interpolate states and evaluate the system again */
-    return 2;
+    return retVal;
   }
 
   DEBUG_INFO2(LOG_SOLVER, "**Calling DDASRT from %g to %g",
@@ -324,13 +325,12 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     {
       fflush(stderr);
       fflush(stdout);
-      if (!continue_DASRT(&dasslData->idid, &simData->simulationInfo.tolerance))
-        solverInfo->currentTime = solverInfo->currentTime
-            + solverInfo->currentStepSize;
+      retVal = continue_DASRT(&dasslData->idid, &simData->simulationInfo.tolerance);
+	  solverInfo->currentTime = solverInfo->currentTime + solverInfo->currentStepSize;
       sData->timeValue = solverInfo->currentTime;
       functionODE(simData);
       INFO1("DASRT can't continue. time = %f", sData->timeValue);
-      return 1;
+      return retVal;
     }
 
   } while (dasslData->idid == 1 || (dasslData->idid == -1
@@ -375,12 +375,12 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
   DEBUG_INFO(LOG_SOLVER, "*** Finished DDASRT step! ***");
 
-  return 0;
+  return retVal;
 }
 
 int
 continue_DASRT(fortran_integer* idid, double* atol) {
-  int retValue = 1;
+  int retValue = -1;
 
   switch (*idid) {
   case 1:
@@ -394,44 +394,44 @@ continue_DASRT(fortran_integer* idid, double* atol) {
     break;
   case -2:
     WARNING("DDASRT: The error tolerances are too stringent");
-    retValue = 0;
+    retValue = -2;
     break;
   case -3:
     /* wbraun: don't throw at this point let the solver handle it */
     /* THROW("DDASRT: THE LAST STEP TERMINATED WITH A NEGATIVE IDID value"); */
-    retValue = 0;
+    retValue = -3;
     break;
   case -6:
     WARNING("DDASRT: DDASSL had repeated error test failures on the last attempted step.");
-    retValue = 0;
+    retValue = -6;
     break;
   case -7:
     WARNING("DDASRT: The corrector could not converge.");
-    retValue = 0;
+    retValue = -7;
     break;
   case -8:
     WARNING("DDASRT: The matrix of partial derivatives is singular.");
-    retValue = 0;
+    retValue = -8;
     break;
   case -9:
     WARNING("DDASRT: The corrector could not converge. There were repeated error test failures in this step.");
-    retValue = 0;
+    retValue = -9;
     break;
   case -10:
     INFO("DDASRT: The corrector could not converge because IRES was equal to minus one.");
-    retValue = 0;
+    retValue = -10;
     break;
   case -11:
     WARNING("DDASRT: IRES equal to -2 was encountered and control is being returned to the calling program.");
-    retValue = 0;
+    retValue = -11;
     break;
   case -12:
     WARNING("DDASRT: DDASSL failed to compute the initial YPRIME.");
-    retValue = 0;
+    retValue = -12;
     break;
   case -33:
     WARNING("DDASRT: The code has encountered trouble from which it cannot recover.");
-    retValue = 0;
+    retValue = -33;
     break;
   }
   return retValue;

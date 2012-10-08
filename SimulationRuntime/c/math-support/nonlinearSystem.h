@@ -68,5 +68,7 @@ int freeNonlinearSystem(DATA *data);
 
 int solve_nonlinear_system(DATA *data, int sysNumber);
 
+int check_nonlinear_solutions(DATA *data);
+
 
 #endif

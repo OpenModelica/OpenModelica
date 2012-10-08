@@ -101,8 +101,6 @@ int sim_noemit = 0; // Flag for not emitting data
 int jac_flag = 0; // Flag usage of jacobian
 int num_jac_flag = 0; // Flag usage of numerical jacobian
 
-int modelErrorCode = 0; // set by model calculations. Can be transferred to num. solver.
-
 const std::string *init_method = NULL; // method for  initialization.
 
 

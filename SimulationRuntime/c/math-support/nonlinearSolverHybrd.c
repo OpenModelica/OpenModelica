@@ -163,7 +163,7 @@ int solveHybrd(DATA *data, int sysNumber) {
 
   int i;
   double xerror, xerror_scaled;
-  char success = 0;
+  int success = 0;
   double local_tol = 1e-12;
   double initial_factor = solverData->factor;
   int nfunc_evals = 0;
@@ -569,7 +569,6 @@ int solveHybrd(DATA *data, int sysNumber) {
 
       /* while the initialization it's ok to every time a solution */
       if (!data->simulationInfo.initial){
-        data->simulationInfo.modelErrorCode = ERROR_NONLINSYS;
         printErrorEqSyst(ERROR_AT_TIME, data->modelData.equationInfo[systemData->simProfEqNr], data->localData[0]->timeValue);
       }
       if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
@@ -597,5 +596,5 @@ int solveHybrd(DATA *data, int sysNumber) {
   /* reset some solving data */
   solverData->factor = initial_factor;
 
-  return 0;
+  return success;
 }

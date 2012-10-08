@@ -124,6 +124,8 @@ int solver_main(DATA* simData, double start, double stop, double step,
 
   int retValIntegrator = 0;
 
+  int retVal = 0;
+
   FILE *fmt = NULL;
   unsigned int stepNo = 0;
 
@@ -410,34 +412,35 @@ int solver_main(DATA* simData, double start, double stop, double step,
     }
 
     /* Check for termination of terminate() or assert() */
-    /* INFO3("Check for Asserts and Termination : %d, %d, %d", terminationAssert, terminationTerminate, simData->simulationInfo.modelErrorCode);*/
     checkForAsserts(simData);
-    if (terminationAssert ||
-        terminationTerminate ||
-        simData->simulationInfo.modelErrorCode) {
-
+    if (terminationAssert || terminationTerminate) {
       terminationAssert = 0;
       terminationTerminate = 0;
       checkForAsserts(simData);
       checkTermination(simData);
-      if (simData->simulationInfo.modelErrorCode)
-        retValIntegrator = 1;
     }
 
-    if (retValIntegrator == 1) {
+  	/* terminate for some cases:
+  	 * 	- integrator fails
+  	 * 	- non-linear system failed to solve
+  	 * 	- assert was called
+  	 */
+    if (simData->simulationInfo.simulationSuccess != 0 || retValIntegrator != 0 || check_nonlinear_solutions(simData)) {
       simData->simulationInfo.terminal = 1;
       update_DAEsystem(simData);
       simData->simulationInfo.terminal = 0;
-      INFO1("model terminate | Simulation terminated at time %g",solverInfo.currentTime);
-      break;
-    }
 
-    DEBUG_INFO3(LOG_SOLVER, "** Step to  %e Done! Run still to stop time %e. time left :%e ", solverInfo.currentTime,simInfo->stopTime,simInfo->stopTime-solverInfo.currentTime);
-    /* debug print */
-    if (DEBUG_FLAG(LOG_DEBUG)){
-      for (i=0; i<3;i++){
-        printAllVars(simData,i);
+      if (simData->simulationInfo.simulationSuccess){
+        retVal = -1;
+    	INFO1("model terminate | Simulation terminated at time %g",solverInfo.currentTime);
+      } else if (retValIntegrator){
+    	retVal = -1 + retValIntegrator;
+        INFO1("model terminate | Integrator failed. | Simulation terminated at time %g",solverInfo.currentTime);
+      } else if (check_nonlinear_solutions(simData)){
+    	retVal = -2;
+		INFO1("model terminate | non-linear system solver failed. | Simulation terminated at time %g",solverInfo.currentTime);
       }
+      break;
     }
   } /* end while solver */
 
@@ -480,12 +483,7 @@ int solver_main(DATA* simData, double start, double stop, double step,
       INFO_AL1("The number of error test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
       INFO_AL1("The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
     }
-    /*
-    if (flag == 6)
-    {
-        INFO1("DOPRI5: total number of steps rejected: %d", reject);
-    }
-    */
+
   }else{
     if (measure_time_flag)
       rt_accumulate(SIM_TIMER_TOTAL);
@@ -515,7 +513,7 @@ int solver_main(DATA* simData, double start, double stop, double step,
   if (fmt)
     fclose(fmt);
 
-  return 0;
+  return retVal;
 }
 
 /***************************************    EULER_EXP     *********************************/
@@ -586,7 +584,7 @@ void checkTermination(DATA* simData)
 {
   if(terminationAssert || terminationTerminate)
   {
-    simData->simulationInfo.modelErrorCode = 1;
+	simData->simulationInfo.simulationSuccess = -1;
     printInfo(stdout, TermInfo);
     fputc(' ', stdout);
   }

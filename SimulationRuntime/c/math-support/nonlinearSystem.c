@@ -111,7 +111,11 @@ int freeNonlinearSystem(DATA *data){
 int solve_nonlinear_system(DATA *data, int sysNumber)
 {
   /* NONLINEAR_SYSTEM_DATA* system = &(data->simulationInfo.nonlinearSystemData[sysNumber]); */
+  int success;
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+
   data->simulationInfo.currentNonlinearSystemIndex = sysNumber;
+
   /* strategy for solving nonlinear system
    *
    *
@@ -120,7 +124,33 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
 
   /* for now just use hybrd solver as before */
-  solveHybrd(data, sysNumber);
+  success = solveHybrd(data, sysNumber);
+  nonlinsys[sysNumber].solved = success;
 
   return 0;
 }
+
+/*! \fn check_nonlinear_solutions
+ *   This function check whether some of non-linear systems
+ *   are failed to solve. if one is failed it return true, otherwise false.
+ *
+ *  \param  [in]  [data]
+ *
+ *  \author wbraun
+ */
+int check_nonlinear_solutions(DATA *data)
+{
+  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
+  int i,returnValue = 0;
+
+  for(i=0;i<data->modelData.nNonLinearSystems;++i){
+	if (nonlinsys[i].solved == 0){
+		returnValue = 1;
+		break;
+	}
+  }
+
+  return returnValue;
+}
+
+
