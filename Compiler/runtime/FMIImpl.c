@@ -33,6 +33,7 @@ extern "C" {
 #endif
 
 #include <stdio.h>
+#include <stdint.h>
 
 #include "systemimpl.h"
 #include "errorext.h"
@@ -316,7 +317,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   realCount = integerCount = booleanCount = stringCount = enumerationCount = 0;
   for (i ; i < model_variables_list_size ; i++) {
     fmi1_import_variable_t* model_variable = fmi1_import_get_variable(model_variables_list, i);
-    void* variable_instance = mk_icon((int)model_variable);
+    void* variable_instance = mk_icon((intptr_t)model_variable);
     void* variable_name = mk_scon(getModelVariableName(model_variable));
     const char* description = fmi1_import_get_variable_description(model_variable);
     void* variable_description = description ? mk_scon(description) : mk_scon("");
@@ -362,145 +363,13 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
  * Releases all the instances of FMI Import.
  * From FMIL docs; Free a variable list. Note that variable lists are allocated dynamically and must be freed when not needed any longer.
  */
-void FMIImpl__releaseFMIImport(int fmiModeVariablesInstance, int fmiInstance, int fmiContext)
+void FMIImpl__releaseFMIImport(intptr_t fmiModeVariablesInstance, intptr_t fmiInstance, intptr_t fmiContext)
 {
   free((fmi1_import_variable_list_t*)fmiModeVariablesInstance);
   fmi1_import_t* fmi = (fmi1_import_t*)fmiInstance;
   fmi1_import_destroy_dllfmu(fmi);
   fmi1_import_free(fmi);
   fmi_import_free_context((fmi_import_context_t*)fmiContext);
-}
-
-/*
- * Reads the model variable variability.
- */
-const char* FMIImpl__getFMIModelVariableVariability(int fmiModelVariable)
-{
-  return getModelVariableVariability((fmi1_import_variable_t*)fmiModelVariable);
-}
-
-/*
- * Reads the model variable causality.
- */
-const char* FMIImpl__getFMIModelVariableCausality(int fmiModelVariable)
-{
-  return getModelVariableCausality((fmi1_import_variable_t*)fmiModelVariable);
-}
-
-/*
- * Reads the model variable type.
- */
-const char* FMIImpl__getFMIModelVariableBaseType(int fmiModelVariable)
-{
-  return getModelVariableBaseType((fmi1_import_variable_t*)fmiModelVariable);
-}
-
-/*
- * Reads the model variable name.
- */
-char* FMIImpl__getFMIModelVariableName(int fmiModelVariable)
-{
-  return getModelVariableName((fmi1_import_variable_t*)fmiModelVariable);
-}
-
-/*
- * Reads the model variable description.
- */
-const char* FMIImpl__getFMIModelVariableDescription(int fmiModelVariable)
-{
-  return fmi1_import_get_variable_description((fmi1_import_variable_t*)fmiModelVariable);
-}
-
-/*
- * Reads the model number of continuous states.
- */
-int FMIImpl__getFMINumberOfContinuousStates(int fmiInstance)
-{
-  return fmi1_import_get_number_of_continuous_states((fmi1_import_t*)fmiInstance);
-}
-
-/*
- * Reads the model number of event indicators.
- */
-int FMIImpl__getFMINumberOfEventIndicators(int fmiInstance)
-{
-  return fmi1_import_get_number_of_event_indicators((fmi1_import_t*)fmiInstance);
-}
-
-/*
- * Checks if the model variable has start.
- */
-int FMIImpl__getFMIModelVariableHasStart(int fmiModelVariable)
-{
-  return fmi1_import_get_variable_has_start((fmi1_import_variable_t*)fmiModelVariable);
-}
-
-/*
- * Check the model variable fixed attribute value.
- */
-int FMIImpl__getFMIModelVariableIsFixed(int fmiModelVariable)
-{
-  return fmi1_import_get_variable_is_fixed((fmi1_import_variable_t*)fmiModelVariable);
-}
-
-/*
- * Reads the start value of the Real model variable.
- */
-double FMIImpl__getFMIRealVariableStartValue(int fmiModelVariable)
-{
-  fmi1_import_real_variable_t* fmiRealModelVariable = fmi1_import_get_variable_as_real((fmi1_import_variable_t*)fmiModelVariable);
-  if (fmiRealModelVariable)
-    return fmi1_import_get_real_variable_start(fmiRealModelVariable);
-  else
-    return 0;
-}
-
-/*
- * Reads the start value of the Integer model variable.
- */
-int FMIImpl__getFMIIntegerVariableStartValue(int fmiModelVariable)
-{
-  fmi1_import_integer_variable_t* fmiIntegerModelVariable = fmi1_import_get_variable_as_integer((fmi1_import_variable_t*)fmiModelVariable);
-  if (fmiIntegerModelVariable)
-    return fmi1_import_get_integer_variable_start(fmiIntegerModelVariable);
-  else
-    return 0;
-}
-
-/*
- * Reads the start value of the Boolean model variable.
- */
-int FMIImpl__getFMIBooleanVariableStartValue(int fmiModelVariable)
-{
-  fmi1_import_bool_variable_t* fmiBooleanModelVariable = fmi1_import_get_variable_as_boolean((fmi1_import_variable_t*)fmiModelVariable);
-  if (fmiBooleanModelVariable)
-    return fmi1_import_get_boolean_variable_start(fmiBooleanModelVariable);
-  else
-    return 0;
-}
-
-/*
- * Reads the start value of the String model variable.
- */
-const char* FMIImpl__getFMIStringVariableStartValue(int fmiModelVariable)
-{
-  fmi1_import_string_variable_t* fmiStringModelVariable = fmi1_import_get_variable_as_string((fmi1_import_variable_t*)fmiModelVariable);
-  if (fmiStringModelVariable)
-    return fmi1_import_get_string_variable_start(fmiStringModelVariable);
-  else
-    return "";
-}
-
-/*
- * Reads the start value of the Enumeration model variable.
- */
-int FMIImpl__getFMIEnumerationVariableStartValue(int fmiModelVariable)
-{
-  fmi1_import_enum_variable_t * fmiEnumerationModelVariable = fmi1_import_get_variable_as_enum((fmi1_import_variable_t*)fmiModelVariable);
-  if (fmiEnumerationModelVariable)
-    return fmi1_import_get_enum_variable_start(fmiEnumerationModelVariable);
-  else
-    return 0;
 }
 
 #ifdef __cplusplus
