@@ -167,7 +167,7 @@ void fmiFreeModelInstance(fmiComponent c) {
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiFreeModelInstance");
 
-  DeinitializeDataStruc(comp->fmuData);
+  //DeinitializeDataStruc(comp->fmuData); /* is already done in fmiTerminate. */
   comp->functions.freeMemory(comp);
 }
 
