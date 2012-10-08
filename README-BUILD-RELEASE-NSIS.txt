@@ -32,12 +32,12 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
     in trunk/doc/*.doc + generate .pdfs
 
 02. If you don't have OpenModelica Development Environment setup then follow the steps in README-OMDev-MINGW.txt until step 9.
-    Then make clean omc.
+    Then make -f Makefile.omdev.mingw clean omc.
     OR
-    From eclipse press Ctrl+B and type: omc
+    From eclipse press Ctrl+B and type: clean omc
 
 03. Additional needed files:
-    - make install-python OR Ctrl+B and type: install-python
+    - make -f Makefile.omdev.mingw install-python OR Ctrl+B and type: install-python
     - svn checkout https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/tools/mingw
       -> to \trunk\build\MinGW
        REMOVE MinGW\lib\mlton
