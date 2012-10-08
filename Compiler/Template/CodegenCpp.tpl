@@ -1423,6 +1423,7 @@ case SIMCODE(modelInfo = MODELINFO(__))  then
     //initialize equations
    <%initBoundParameters%>
   initialAnalyticJacobian();
+  saveAll();
     }
    >>
 end init;
