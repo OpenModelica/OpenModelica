@@ -241,7 +241,7 @@ algorithm
   end match;
 end daePrefixesToDaeAttr;
 
-protected function daeToSCodeVisibility
+public function daeToSCodeVisibility
   input DAE.VarVisibility inVisibility;
   output SCode.Visibility outVisibility;
 algorithm
@@ -251,7 +251,7 @@ algorithm
   end match;
 end daeToSCodeVisibility;
 
-protected function daeToSCodeVariability
+public function daeToSCodeVariability
   input DAE.VarKind inVariability;
   output SCode.Variability outVariability;
 algorithm
@@ -263,7 +263,7 @@ algorithm
   end match;
 end daeToSCodeVariability;
 
-protected function daeToAbsynDirection
+public function daeToAbsynDirection
   input DAE.VarDirection inDirection;
   output Absyn.Direction outDirection;
 algorithm
@@ -835,6 +835,7 @@ algorithm
       Prefixes prefs;
       Absyn.Info info;
       Option<SCode.Comment> comment;
+      String err_str;
 
     case (_, SCode.COMPONENT(prefixes = pf, attributes = attr, comment = comment, info = info), _)
       equation
@@ -842,6 +843,15 @@ algorithm
         prefs = mergePrefixes(prefs, inPrefixes, inComponentName, "variable");
       then
         prefs;
+
+    else
+      equation
+        err_str = Absyn.pathString(inComponentName);
+        err_str = "InstUtil.mergePrefixesFromComponent got " +& err_str +&
+          " which is not a component!";
+        Error.addMessage(Error.INTERNAL_ERROR, {err_str});
+      then
+        fail();
 
   end match;
 end mergePrefixesFromComponent;

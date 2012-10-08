@@ -82,10 +82,14 @@ public constant Integer defaultBucketSize = avgBucketSize;
 public
 replaceable type Key subtypeof Any;
 replaceable type Value subtypeof Any;
+
+type HashEntry = tuple<Key, Value>;
+type HashNode = list<tuple<Key, Integer>>;
 type HashTable = tuple<HashVector, ValueArray, Integer, Integer, FuncsTuple>;
-type HashVector = array<list<tuple<Key,Integer>>>;
-type ValueArray = tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>;
-type FuncsTuple = tuple<FuncHash,FuncEq,FuncKeyString,FuncValString>;
+type HashVector = array<HashNode>;
+type ValueArray = tuple<Integer, Integer, array<Option<HashEntry>>>;
+type FuncsTuple = tuple<FuncHash, FuncEq, FuncKeyString, FuncValString>;
+
 partial function FuncHash input Key key; input Integer mod; output Integer hash; end FuncHash;
 partial function FuncEq input Key key1; input Key key2; output Boolean b; end FuncEq;
 partial function FuncKeyString input Key key; output String str; end FuncKeyString;
@@ -98,7 +102,6 @@ public function bucketToValuesSize
 algorithm
   szArr := realInt(realMul(intReal(szBucket), 0.6)); // intDiv(szBucket, 10); 
 end bucketToValuesSize;
-
 
 public function emptyHashTableWork
   input Integer szBucket;
@@ -118,21 +121,19 @@ algorithm
 end emptyHashTableWork;
 
 public function add
-"
-  Add a Key-Value tuple to hashtable.
-  If the Key-Value tuple already exists, the function updates the Value.
-"
-  input tuple<Key,Value> entry;
+  "Add a Key-Value tuple to hashtable.
+   If the Key-Value tuple already exists, the function updates the Value."
+  input HashEntry entry;
   input HashTable hashTable;
   output HashTable outHashTable;
 algorithm
-  outHashTable := matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue(entry, hashTable)
     local
-      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
-      tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
-      list<tuple<Key,Integer>> indexes;
-      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      tuple<Key,Value> v,newv;
+      Integer hval, indx, newpos, n, bsize;
+      ValueArray varr;
+      HashNode indexes;
+      HashVector hashvec;
+      HashEntry v;
       Key key;
       Value value;
       FuncsTuple fntpl;
@@ -140,28 +141,25 @@ algorithm
       FuncKeyString keystrFunc;
       String s;
     
-    // Adding when not existing previously
-    case ((v as (key,value)),((hashvec,varr,bsize,n,fntpl as (hashFunc,_,_,_))))
+    // Adding when not existing previously.
+    case ((v as (key,value)), 
+        ((hashvec, varr, bsize, n, fntpl as (hashFunc,_,_,_))))
       equation
         failure((_) = get(key, hashTable));
         indx = hashFunc(key, bsize);
         newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, v);
+        varr = valueArrayAdd(varr, v);
         indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
-      then ((hashvec_1,varr_1,bsize,n_1,fntpl));
+        hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n = valueArrayLength(varr);
+      then
+        ((hashvec, varr, bsize, n, fntpl));
 
-    // adding when already present => Updating value
-    case ((newv as (key,value)),((hashvec,varr,bsize,n,fntpl)))
-      equation
-        (_,indx) = get1(key, hashTable);
-        //print("adding when present, indx =" );print(intString(indx));print("\n");
-        indx_1 = indx - 1;
-        varr_1 = valueArraySetnth(varr, indx, newv);
-      then ((hashvec,varr_1,bsize,n,fntpl));
-    
-    case ((v as (key,value)),((hashvec,varr,bsize,n,(hashFunc,_,keystrFunc,_))))
+    // Adding when already present => update value.
+    case (_, _) then update(entry, hashTable);
+
+    case ((v as (key,value)), 
+        ((_, _, bsize, _, (hashFunc, _, keystrFunc, _))))
       equation
         print("- BaseHashTable.add failed: ");
         print("bsize: ");
@@ -169,11 +167,12 @@ algorithm
         print(" key: ");
         s = keystrFunc(key);
         print(s +& " Hash: ");
-        hval = hashFunc(key,bsize);
+        hval = hashFunc(key, bsize);
         print(intString(hval));
         print("\n");
       then
         fail();
+
   end matchcontinue;
 end add;
 
@@ -181,16 +180,16 @@ public function addNoUpdCheck
   "Add a Key-Value tuple to hashtable, without checking if it already exists.
    This function is thus more efficient than add if you already know that the
    Key-Value tuple doesn't already exist in the hashtable."
-  input tuple<Key,Value> entry;
+  input HashEntry entry;
   input HashTable hashTable;
   output HashTable outHashTable;
 algorithm
-  outHashTable := matchcontinue (entry,hashTable)
+  outHashTable := matchcontinue(entry, hashTable)
     local
-      Integer indx,newpos,n,n_1,bsize;
-      tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
-      list<tuple<Key,Integer>> indexes;
-      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
+      Integer indx, newpos, n, bsize;
+      ValueArray varr;
+      HashNode indexes;
+      HashVector hashvec;
       tuple<Key,Value> v;
       Key key;
       Value value;
@@ -198,37 +197,40 @@ algorithm
       FuncHash hashFunc;
     
     // Adding when not existing previously
-    case ((v as (key,value)),(hashvec,varr,bsize,n,fntpl as (hashFunc,_,_,_)))
+    case ((v as (key, value)),
+       (hashvec, varr, bsize, n, fntpl as (hashFunc, _, _, _)))
       equation
         indx = hashFunc(key, bsize);
         newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, v);
+        varr = valueArrayAdd(varr, v);
         indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
-      then ((hashvec_1,varr_1,bsize,n_1,fntpl));
+        hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n = valueArrayLength(varr);
+      then
+        ((hashvec, varr, bsize, n, fntpl));
     
-    case (_,_)
+    else
       equation
         print("- BaseHashTable.addNoUpdCheck failed\n");
       then
         fail();
+
   end matchcontinue;
 end addNoUpdCheck;
 
 public function addUnique
   "Add a Key-Value tuple to hashtable. If the Key is already used it fails."
-  input tuple<Key,Value> entry;
+  input HashEntry entry;
   input HashTable hashTable;
   output HashTable outHashTable;
 algorithm
   outHashTable := match(entry, hashTable)
     local
-      Integer indx,newpos,n,n_1,bsize;
-      tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
-      list<tuple<Key,Integer>> indexes;
-      array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      tuple<Key,Value> v;
+      Integer indx, newpos, n, bsize;
+      ValueArray varr;
+      HashNode indexes;
+      HashVector hashvec;
+      HashEntry v;
       Key key;
       Value value;
       FuncsTuple fntpl;
@@ -241,231 +243,203 @@ algorithm
         failure((_) = get(key, hashTable));
         indx = hashFunc(key, bsize);
         newpos = valueArrayLength(varr);
-        varr_1 = valueArrayAdd(varr, v);
+        varr = valueArrayAdd(varr, v);
         indexes = hashvec[indx + 1];
-        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
-        n_1 = valueArrayLength(varr_1);
+        hashvec = arrayUpdate(hashvec, indx + 1, ((key, newpos) :: indexes));
+        n = valueArrayLength(varr);
       then
-        ((hashvec_1, varr_1, bsize, n_1, fntpl));
+        ((hashvec, varr, bsize, n, fntpl));
 
   end match;
 end addUnique;
 
+public function update
+  "Updates an already existing value in the hashtable. Fails if the entry does
+   not exist."
+  input HashEntry inEntry;
+  input HashTable inHashTable;
+  output HashTable outHashTable;
+protected
+  HashVector hashvec;
+  ValueArray varr;
+  Integer bsize, n, index;
+  FuncsTuple functpl;
+  Key key;
+algorithm
+  (key, _) := inEntry;
+  (hashvec, varr, bsize, n, functpl) := inHashTable;
+  (_, index) := get1(key, inHashTable);
+  varr := valueArraySetnth(varr, index, inEntry);
+  outHashTable := (hashvec, varr, bsize, n, functpl);
+end update;
+    
 public function delete
-"
-  delete the Value associatied with Key from the HashTable.
-  Note: This function does not delete from the index table, only from the tuple<Integer,Integer,array<Option<tuple<Key,Value>>>>.
-  This means that a lot of deletions will not make the HashTable more compact, it will still contain
-  a lot of incices information.
-"
+  "Deletes the Value associatied with Key from the HashTable.
+   Note: This function does not delete from the index table, only from the
+   ValueArray. This means that a lot of deletions will not make the HashTable
+   more compact, it will still contain a lot of incices information."
   input Key key;
   input HashTable hashTable;
   output HashTable outHashTable;
 algorithm
-  outHashTable :=
-  matchcontinue (key,hashTable)
+  outHashTable := matchcontinue(key, hashTable)
     local
-      Integer indx,n,bsize,indx_1;
-      tuple<Integer,Integer,array<Option<tuple<Key,Value>>>> varr_1,varr;
-      array<list<tuple<Key,Integer>>> hashvec;
+      Integer indx, n, bsize;
+      ValueArray varr;
+      HashVector hashvec;
       FuncsTuple fntpl;
-      /* adding when already present => Updating value */
-    case (_,(hashvec,varr,bsize,n,fntpl))
+
+    case (_, (hashvec, varr, bsize, n, fntpl))
       equation
-        (_,indx) = get1(key, hashTable);
-        indx_1 = indx - 1;
-        varr_1 = valueArrayClearnth(varr, indx);
-      then ((hashvec,varr_1,bsize,n,fntpl));
-    case (_,_)
+        (_, indx) = get1(key, hashTable);
+        varr = valueArrayClearnth(varr, indx);
+      then
+        ((hashvec, varr, bsize, n, fntpl));
+
+    else
       equation
         print("-HashTable.delete failed\n");
       then
         fail();
+
   end matchcontinue;
 end delete;
 
-
 public function get
-"Returns a Value given a Key and a HashTable."
+  "Returns a Value given a Key and a HashTable."
   input Key key;
   input HashTable hashTable;
   output Value value;
 algorithm
-  (value,_):= get1(key,hashTable);
+  (value, _) := get1(key, hashTable);
 end get;
 
-protected function get1 "help function to get"
+protected function get1
+  "help function to get"
   input Key key;
   input HashTable hashTable;
   output Value value;
   output Integer indx;
 algorithm
-  (value,indx) := match (key,hashTable)
+  (value, indx) := match(key, hashTable)
     local
-      Integer hashindx,bsize,n;
-      list<tuple<Key,Integer>> indexes;
+      Integer hashindx, bsize, n;
+      HashNode indexes;
       Value v;
-      array<list<tuple<Key,Integer>>> hashvec;
+      HashVector hashvec;
       ValueArray varr;
       Key k;
       FuncEq keyEqual;
       FuncHash hashFunc;
       
-    case (_,(hashvec,varr,bsize,n,(hashFunc,keyEqual,_,_)))
+    case (_, (hashvec, varr, bsize, n, (hashFunc, keyEqual, _, _)))
       equation
         hashindx = hashFunc(key, bsize);
         indexes = hashvec[hashindx + 1];
         indx = get2(key, indexes, keyEqual);
         (k, v) = valueArrayNth(varr, indx);
       then
-        (v,indx);
+        (v, indx);
         
   end match;
 end get1;
 
 protected function get2
-"Helper function to get"
+  "Helper function to get"
   input Key key;
-  input list<tuple<Key,Integer>> keyIndices;
+  input HashNode keyIndices;
   input FuncEq keyEqual;
   output Integer index;
 algorithm
   index := matchcontinue (key,keyIndices,keyEqual)
     local
       Key key2;
-      list<tuple<Key,Integer>> xs;
+      HashNode xs;
         
     // search for the key, found the good one
-    case (_,((key2,index) :: _),_)
+    case (_, (key2,index) :: _, _)
       equation
         true = keyEqual(key, key2);
       then
         index;
     
     // search more
-    case (_,(_ :: xs),_)
+    case (_, _ :: xs, _)
       equation
         index = get2(key, xs, keyEqual);
       then
         index;
+
   end matchcontinue;
 end get2;
 
-public function dumpHashTable ""
+public function dumpHashTable
   input HashTable t;
 protected
   FuncKeyString printKey;
   FuncValString printValue;
 algorithm
-  (_,_,_,_,(_,_,printKey,printValue)) := t;
+  (_, _, _, _, (_, _, printKey, printValue)) := t;
   print("HashTable:\n");
-  print(stringDelimitList(List.map2(hashTableList(t),dumpTuple,printKey,printValue),"\n"));
+  print(stringDelimitList(List.map2(hashTableList(t), dumpTuple, printKey, printValue), "\n"));
   print("\n");
 end dumpHashTable;
 
 protected function dumpTuple
-  input tuple<Key,Value> tpl;
+  input HashEntry tpl;
   input FuncKeyString printKey;
   input FuncValString printValue;
   output String str;
+protected
+  Key k;
+  Value v;
+  String sk, sv;
 algorithm
-  str := match(tpl,printKey,printValue)
-    local
-      Key k;
-      Value v;
-      String sk,sv;
-    case((k,v),_,_)
-      equation
-        sk = printKey(k);
-        sv = printValue(v);
-        str = "{" +& sk +& ",{" +& sv +& "}}";
-      then str;
-  end match;
+  (k, v) := tpl;
+  sk := printKey(k);
+  sv := printValue(v);
+  str := stringAppendList({"{", sk, ",{", sv, "}}"});
 end dumpTuple;
 
-public function hashTableValueList "return the Value entries as a list of Values"
+public function hashTableValueList
+  "Returns the Value entries as a list of Values."
   input HashTable hashTable;
   output list<Value> valLst;
 algorithm
-   valLst := List.map(hashTableList(hashTable),Util.tuple22);
+   valLst := List.map(hashTableList(hashTable), Util.tuple22);
 end hashTableValueList;
 
-public function hashTableKeyList "return the Key entries as a list of Keys"
+public function hashTableKeyList
+  "Returns the Key entries as a list of Keys."
   input HashTable hashTable;
   output list<Key> valLst;
 algorithm
-   valLst := List.map(hashTableList(hashTable),Util.tuple21);
+   valLst := List.map(hashTableList(hashTable), Util.tuple21);
 end hashTableKeyList;
 
-public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
+public function hashTableList
+  "Returns the entries in the hashTable as a list of HashEntries."
   input HashTable hashTable;
-  output list<tuple<Key,Value>> tplLst;
+  output list<HashEntry> outEntries;
+protected
+  ValueArray varr;
 algorithm
-  tplLst := match(hashTable)
-    local
-      ValueArray varr;
-    case((_,varr,_,_,_))
-      equation
-        tplLst = valueArrayList(varr);
-      then tplLst;
-  end match;
+  (_, varr, _, _, _) := hashTable;
+  outEntries := valueArrayList(varr);
 end hashTableList;
 
 public function valueArrayList
-"Transforms a ValueArray to a tuple<Key,Value> list"
+  "Transforms a ValueArray to a HashEntry list."
   input ValueArray valueArray;
-  output list<tuple<Key,Value>> tplLst;
+  output list<HashEntry> outEntries;
+protected
+  array<Option<HashEntry>> arr;
 algorithm
-  tplLst := matchcontinue (valueArray)
-    local
-      array<Option<tuple<Key,Value>>> arr;
-      tuple<Key,Value> elt;
-      Integer lastpos,n,size;
-      list<tuple<Key,Value>> lst;
-    
-    case ((0,_,arr)) then {};
-    case ((1,_,arr))
-      equation
-        SOME(elt) = arr[0 + 1];
-      then
-        {elt};
-    case ((n,size,arr))
-      equation
-        lastpos = n - 1;
-        lst = valueArrayList2(arr, false, 0, lastpos, {});
-      then
-        lst;
-  end matchcontinue;
+  (_, _, arr) := valueArray;
+  outEntries := Util.arrayFold(arr, List.consOption, {});
+  outEntries := listReverse(outEntries);
 end valueArrayList;
-
-protected function valueArrayList2 "Helper function to valueArrayList"
-  input array<Option<tuple<Key,Value>>> inVarOptionArray1;
-  input Boolean posEq;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  input list<tuple<Key,Value>> iacc;
-  output list<tuple<Key,Value>> outVarLst;
-algorithm
-  outVarLst := match (inVarOptionArray1,posEq,inInteger2,inInteger3, iacc)
-    local
-      array<Option<tuple<Key,Value>>> arr;
-      Integer pos,lastpos,pos_1;
-      list<tuple<Key,Value>> acc;
-    
-    case (arr,true,pos,lastpos,acc)
-      equation
-        acc = List.consOption(arr[pos + 1],acc);
-      then listReverse(acc);
-    
-    case (arr,false,pos,lastpos,acc)
-      equation
-        pos_1 = pos + 1;
-        acc = List.consOption(arr[pos + 1],acc);
-      then valueArrayList2(arr, pos_1==lastpos, pos_1, lastpos, acc);
-    
-  end match;
-end valueArrayList2;
-
+ 
 public function hashTableCurrentSize
   "Returns the number of elements inserted into the table"
   input HashTable hashTable;
@@ -473,103 +447,109 @@ public function hashTableCurrentSize
 protected
   ValueArray va;
 algorithm
-  (_,va,_,_,_) := hashTable;
+  (_, va, _, _, _) := hashTable;
   sz := valueArrayLength(va);
 end hashTableCurrentSize;
 
 public function valueArrayLength
-"Returns the number of elements in the ValueArray"
+  "Returns the number of elements in the ValueArray"
   input ValueArray valueArray;
   output Integer sz;
 algorithm
-  (sz,_,_) := valueArray;
+  (sz, _, _) := valueArray;
 end valueArrayLength;
 
 public function valueArrayAdd
-"Adds an entry last to the ValueArray, increasing array size if no space left
-by factor 1.4"
+  "Adds an entry last to the ValueArray, increasing array size if no space left
+   by factor 1.4"
   input ValueArray valueArray;
-  input tuple<Key,Value> entry;
+  input HashEntry entry;
   output ValueArray outValueArray;
 algorithm
-  outValueArray:=
-  matchcontinue (valueArray,entry)
+  outValueArray := matchcontinue(valueArray, entry)
     local
-      Integer n_1,n,size,expandsize,expandsize_1,newsize;
-      array<Option<tuple<Key,Value>>> arr_1,arr,arr_2;
-      Real rsize,rexpandsize;
-    case ((n,size,arr),_)
-      equation
-        (n < size) = true "Have space to add array elt." ;
-        n_1 = n + 1;
-        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
-      then
-        ((n_1,size,arr_1));
+      Integer n, size, expandsize, newsize;
+      array<Option<HashEntry>> arr;
+      Real rsize, rexpandsize;
 
-    case ((n,size,arr),_)
+    case ((n, size, arr), _)
       equation
-        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4" ;
+        (n < size) = true "Have space to add array elt.";
+        n = n + 1;
+        arr = arrayUpdate(arr, n, SOME(entry));
+      then
+        ((n, size, arr));
+
+    case ((n, size, arr), _)
+      equation
+        (n < size) = false "Do NOT have space to add array elt. Expand with factor 1.4";
         rsize = intReal(size);
         rexpandsize = rsize *. 0.4;
         expandsize = realInt(rexpandsize);
-        expandsize_1 = intMax(expandsize, 1);
-        newsize = expandsize_1 + size;
-        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE());
-        n_1 = n + 1;
-        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
+        expandsize = intMax(expandsize, 1);
+        newsize = expandsize + size;
+        arr = Util.arrayExpand(expandsize, arr, NONE());
+        n = n + 1;
+        arr = arrayUpdate(arr, n, SOME(entry));
       then
-        ((n_1,newsize,arr_2));
-    case (_,_)
+        ((n, newsize, arr));
+
+    case (_, _)
       equation
         print("-HashTable.valueArrayAdd failed\n");
       then
         fail();
+
   end matchcontinue;
 end valueArrayAdd;
 
 public function valueArraySetnth
-"Set the n:th variable in the ValueArray to value."
+  "Set the n:th variable in the ValueArray to value."
   input ValueArray valueArray;
   input Integer pos;
-  input tuple<Key,Value> entry;
+  input HashEntry entry;
   output ValueArray outValueArray;
 algorithm
-  outValueArray:=
-  matchcontinue (valueArray,pos,entry)
+  outValueArray := matchcontinue(valueArray, pos, entry)
     local
-      array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size;
-    case ((n,size,arr),_,_)
+      array<Option<HashEntry>> arr;
+      Integer n, size;
+
+    case ((n, size, arr), _, _)
       equation
         (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
+        arr = arrayUpdate(arr, pos + 1, SOME(entry));
       then
-        ((n,size,arr_1));
-    case (_,_,_)
+        ((n, size, arr));
+
+    else
       equation
         print("-HashTable.valueArraySetnth failed\n");
       then
         fail();
+
   end matchcontinue;
 end valueArraySetnth;
 
 public function valueArrayClearnth
-"Clears the n:th variable in the ValueArray (set to NONE())."
+  "Clears the n:th variable in the ValueArray (set to NONE())."
   input ValueArray valueArray;
   input Integer pos;
   output ValueArray outValueArray;
 algorithm
-  outValueArray := matchcontinue (valueArray,pos)
+  outValueArray := matchcontinue(valueArray, pos)
     local
-      array<Option<tuple<Key,Value>>> arr_1,arr;
-      Integer n,size;
-    case ((n,size,arr),_)
+      array<Option<HashEntry>> arr;
+      Integer n, size;
+
+    case ((n, size, arr), _)
       equation
         (pos < size) = true;
-        arr_1 = arrayUpdate(arr, pos + 1,NONE());
+        arr = arrayUpdate(arr, pos + 1,NONE());
       then
-        ((n,size,arr_1));
-    case (_,_)
+        ((n, size, arr));
+
+    else
       equation
         print("-HashTable.valueArrayClearnth failed\n");
       then
@@ -578,24 +558,26 @@ algorithm
 end valueArrayClearnth;
 
 public function valueArrayNth
-"Retrieve the n:th Value from ValueArray, index from 0..n-1."
+  "Retrieve the n:th Value from ValueArray, index from 0..n-1."
   input ValueArray valueArray;
   input Integer pos;
   output Key key;
   output Value value;
 algorithm
-  (key, value) := match (valueArray,pos)
+  (key, value) := match(valueArray, pos)
     local
       Key k;
       Value v;
       Integer n;
-      array<Option<tuple<Key,Value>>> arr;
-    case ((n,_,arr),_)
+      array<Option<HashEntry>> arr;
+
+    case ((n, _, arr), _)
       equation
         (pos <= n) = true;
-        SOME((k,v)) = arr[pos + 1];
+        SOME((k, v)) = arr[pos + 1];
       then
         (k, v);
+
   end match;
 end valueArrayNth;
 

@@ -51,6 +51,7 @@ protected import BaseHashTable;
 protected import ClassInf;
 protected import ComponentReference;
 protected import ConnectCheck;
+protected import ConnectEquations;
 protected import ConnectUtil2;
 protected import DAEUtil;
 protected import Debug;
@@ -842,6 +843,17 @@ algorithm
       then
         (DAE.RANGE(ty, e1, oe, e2), ty, const, st);
 
+    case (DAE.MATRIX(ty = _), _, _, _)
+      equation
+        /* ------------------------------------------------------------------*/
+        // TODO: Remove MATRIX from DAE when we remove the old instantiation.
+        // For now, print an error in case we get such an expression here.
+        /* ------------------------------------------------------------------*/
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"Typing.typeExp got obsolete MATRIX expression."});
+      then
+        fail();
+
     else (inExp, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), inSymbolTable);
     //else
     //  equation
@@ -957,7 +969,7 @@ algorithm
       DAE.Exp exp;
       Absyn.Path inner_name;
       Component inner_comp;
-      DAE.ComponentRef inner_cref;
+      DAE.ComponentRef inner_cref, cref;
       EvalPolicy ep;
       Boolean se;
       Context c;
@@ -980,8 +992,9 @@ algorithm
     case (_, InstTypes.TYPED_COMPONENT(ty = ty), false, _, c, st)
       equation
         ty = propagateCrefSubsToType(ty, inCref);
+        cref = InstUtil.typeCrefWithComponent(inCref, inComponent);
       then
-        (DAE.CREF(inCref, ty), ty, st);
+        (DAE.CREF(cref, ty), ty, st);
 
     case (_, InstTypes.UNTYPED_COMPONENT(name = _), true, _, c, st)
       equation
@@ -1370,8 +1383,12 @@ protected function checkConnectsInWhen
   input Connections inConnections;
   input Absyn.Info inInfo;
 algorithm
-  _ := match(inConnections, inInfo)
-    case (Connect2.CONNECTIONS({}, {}, {}), _) then ();
+  _ := matchcontinue(inConnections, inInfo)
+    case (_, _)
+      equation
+        true = ConnectUtil2.isEmptyConnections(inConnections);
+      then
+        ();
 
     else
       equation
@@ -1379,7 +1396,7 @@ algorithm
       then
         fail();
 
-  end match;
+  end matchcontinue;
 end checkConnectsInWhen;
 
 protected function typeConnectionsEquation
@@ -1497,7 +1514,7 @@ algorithm
     else
       equation
         ConnectCheck.compatibleConnectors(inLhsConnector, inRhsConnector, inInfo);
-        (eql, is_only_const) = ConnectUtil2.generateConnectAssertion(
+        (eql, is_only_const) = ConnectEquations.generateAssertion(
           inLhsConnector, inRhsConnector, inInfo, inEquations);
         conn = ConnectUtil2.addConnectionCond(not is_only_const, inLhsConnector,
           inRhsConnector, inInfo, inConnections);
@@ -1551,7 +1568,7 @@ algorithm
       Face face;
       Component comp;
       DAE.Type ty;
-      DAE.ComponentRef cref;
+      DAE.ComponentRef cref, last_cref;
       DAE.ConnectorType dcty;
       ConnectorType cty;
 
@@ -1565,8 +1582,17 @@ algorithm
 
     // A component that should be added to an expandable connector. It can only
     // be outside, since only connectors on the form m.c are inside.
-    case (_, NONE(), SOME(_), _)
-      then (inCref, Connect2.OUTSIDE(), false);
+    case (_, NONE(), SOME(comp), _)
+      equation
+        /* ------------------------------------------------------------------*/
+        // TODO: This can be made more efficient by just typing everything but
+        // the last cref, without splitting and joining.
+        /* ------------------------------------------------------------------*/
+        (cref, last_cref) = ComponentReference.splitCrefLast(inCref);
+        cref = InstUtil.typeCrefWithComponent(cref, comp);
+        cref = ComponentReference.joinCrefs(cref, last_cref);
+      then
+        (cref, Connect2.OUTSIDE(), false);
 
     // A normal connector.
     case (cref, SOME(comp), _, _)

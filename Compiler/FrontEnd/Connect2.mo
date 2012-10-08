@@ -81,6 +81,9 @@ public uniontype ConnectorAttr
   end CONN_ATTR;
 end ConnectorAttr;
 
+public constant ConnectorAttr DEFAULT_ATTR =
+  CONN_ATTR(DAE.VARIABLE(), DAE.PUBLIC(), DAE.BIDIR());
+
 public uniontype Connection
   record CONNECTION
     Connector lhs;
@@ -114,11 +117,12 @@ end Root;
 public uniontype Connections
   record CONNECTIONS
     list<Connection> connections;
+    list<Connection> expandableConnections;
     list<Connection> branches;
     list<Root> roots;
   end CONNECTIONS;
 end Connections;
 
-public constant Connections emptyConnections := CONNECTIONS({}, {}, {});
+public constant Connections emptyConnections := CONNECTIONS({}, {}, {}, {});
 
 end Connect2;

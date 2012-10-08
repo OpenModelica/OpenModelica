@@ -50,6 +50,7 @@ public import SCodeEnv;
 protected import BaseHashTable;
 protected import ClassInf;
 protected import ComponentReference;
+protected import ConnectEquations;
 protected import ConnectUtil2;
 protected import DAEDump;
 protected import DAEUtil;
@@ -169,7 +170,7 @@ algorithm
         (cls, conn) = Typing.typeSections(cls, symtab);
         
         flows = ConnectUtil2.collectFlowConnectors(cls);
-        dae_conn = ConnectUtil2.generateEquations(conn, flows);
+        dae_conn = ConnectEquations.generateEquations(conn, flows);
 
         System.stopTimer();
 

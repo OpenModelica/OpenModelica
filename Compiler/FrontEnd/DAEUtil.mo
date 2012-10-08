@@ -1273,7 +1273,15 @@ public function isNotParamOrConstVar
 algorithm
   outIsNotParamOrConst := not isParamOrConstVar(inVar);
 end isNotParamOrConstVar;
-
+     
+public function isParamConstOrComplexVar
+  input DAE.Var inVar;
+  output Boolean outIsParamConstComplex;
+algorithm
+  outIsParamConstComplex := isParamOrConstVar(inVar) or
+                            isComplexVar(inVar);
+end isParamConstOrComplexVar;
+ 
 public function isParamOrConstVarKind
   input DAE.VarKind inVarKind;
   output Boolean outIsParamOrConst;

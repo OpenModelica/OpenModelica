@@ -54,6 +54,7 @@ protected import System;
 protected import Util;
 
 public type Connector = Connect2.Connector;
+public type Connection = Connect2.Connection;
 
 public type HashKey = Connector;
 public type HashValue = Integer;
@@ -92,6 +93,7 @@ public uniontype Node
 end Node;
 
 protected function connectorHashFunc
+  "Hashes a connector."
   input Connector inConnector;
   input Integer inMod;
   output Integer outHash;
@@ -100,13 +102,16 @@ protected
   String cref_str;
 algorithm
   Connect2.CONNECTOR(name = cref) := inConnector;
+  /***************************************************************************/
   // TODO: Check if it's better for connectors with different faces to have
-  // different hashes or not.
+  // different hashes or not. Is one way more efficient than the other?
+  /***************************************************************************/
   cref_str := ComponentReference.printComponentRefStr(cref);
   outHash := System.stringHashDjb2Mod(cref_str, inMod);
 end connectorHashFunc;
 
 protected function emptyIndexTableSized
+  "Creates an empty index table with the given size."
   input Integer inSize;
   output IndexTable outTable;
 algorithm
@@ -121,9 +126,11 @@ public function emptySets
 protected
   array<Node> nodes;
   IndexTable indices;
+  Integer sz;
 algorithm
-  nodes := arrayCreate(inConnectionCount, NO_NODE());
-  indices := emptyIndexTableSized(Util.nextPrime(inConnectionCount));
+  sz := intMax(inConnectionCount, 3);
+  nodes := arrayCreate(sz, NO_NODE());
+  indices := emptyIndexTableSized(Util.nextPrime(sz));
   outSets := DISJOINT_SETS(nodes, indices, 0);
 end emptySets;
   
@@ -138,11 +145,29 @@ algorithm
   (_, outSets) := add_impl(inConnector, inSets);
 end add;
 
-public function find
-  "This function finds and returns the set that the given connectors belongs to.
-   The set is represented by the root-node of the tree. If the connector does
-   not have a corresponding node in the forest, then a new set with the
-   connector as the only element will be added to the forest and returned.
+public function update
+  "Updates a node in the disjoint sets by replacing the Connector variable."
+  input Connector inConnector;
+  input DisjointSets inSets;
+  output DisjointSets outSets;
+protected
+  array<Node> nodes;
+  IndexTable indices;
+  Integer nc, index, parent;
+  Node node;
+algorithm
+  DISJOINT_SETS(nodes, indices, nc) := inSets;
+  index := BaseHashTable.get(inConnector, indices);
+  NODE(_, parent, _) := arrayGet(nodes, index);
+  node := NODE(inConnector, parent, index);
+  nodes := arrayUpdate(nodes, index, node);
+  outSets := DISJOINT_SETS(nodes, indices, nc);
+end update;
+  
+protected function find
+  "This function finds and returns the node associated with a given connector.
+   If the connector does not a have a node in the forest, then a new node will
+   be added and returned.
    
    The reason why this function also returns the sets is because it does path
    compression, and the disjoint-set structure may therefore be changed during
@@ -156,19 +181,17 @@ algorithm
     local
       array<Node> nodes;
       IndexTable indices;
-      Integer index, nc;
+      Integer index;
       Node node;
       DisjointSets sets;
 
-    // A node already exists in the forest, return it's root.
+    // A node already exists in the forest, return its root.
     case (_, DISJOINT_SETS(nodes = nodes, indices = indices))
       equation
         // Look up the index for the connector.
         index = BaseHashTable.get(inConnector, indices);
         // Look up the node corresponding to that index.
         node = arrayGet(nodes, index);
-        // Find the root of the tree that the node belongs to.
-        node = findRoot(node, nodes);
       then
         (node, inSets);
 
@@ -181,6 +204,42 @@ algorithm
 
   end matchcontinue;
 end find;
+
+public function findConnector
+  "This function finds and returns a connector from the disjoint sets. It might
+   seem strange that the input also is a connector, but this function can be
+   used to find a connector when you only now e.g. the name of it by
+   constructing a dummy connector."
+  input Connector inConnector;
+  input DisjointSets inSets;
+  output Connector outConnector;
+  output DisjointSets outSets;
+algorithm
+  (NODE(element = outConnector), outSets) := find(inConnector, inSets);
+end findConnector;
+
+public function findSet
+  "This function finds and returns the set that the given connectors belongs to.
+   The set is represented by the root-node of the tree. If the connector does
+   not have a corresponding node in the forest, then a new set with the
+   connector as the only element will be added to the forest and returned.
+   
+   The reason why this function also returns the sets is because it does path
+   compression, and the disjoint-set structure may therefore be changed during
+   look up."
+  input Connector inConnector;
+  input DisjointSets inSets;
+  output Node outNode;
+  output DisjointSets outSets;
+protected
+  array<Node> nodes;
+  Node node;
+  DisjointSets sets;
+algorithm
+  (node, outSets) := find(inConnector, inSets);
+  DISJOINT_SETS(nodes = nodes) := inSets;
+  outNode := findRoot(node, nodes);
+end findSet;
 
 public function merge
   "Merges the two sets that the given connectors belong to."
@@ -196,14 +255,36 @@ algorithm
       
     case (_, _, sets)
       equation
-        (set1, sets) = find(inConnector1, sets);
-        (set2, sets) = find(inConnector2, sets);
+        (set1, sets) = findSet(inConnector1, sets);
+        (set2, sets) = findSet(inConnector2, sets);
       then
         union(set1, set2, sets);
 
   end match;
 end merge;
         
+public function expandAddConnection
+  input Connection inConnection;
+  input DisjointSets inSets;
+  output DisjointSets outSets;
+algorithm
+  outSets := match(inConnection, inSets)
+    local
+      Connector lhs, rhs;
+      list<Connector> lhs_connl, rhs_connl;
+      DisjointSets sets;
+
+    case (Connect2.CONNECTION(lhs = lhs, rhs = rhs), sets)
+      equation
+        lhs_connl = ConnectUtil2.expandConnector(lhs);
+        rhs_connl = ConnectUtil2.expandConnector(rhs);
+        sets = List.threadFold(lhs_connl, rhs_connl, merge, sets);
+      then
+        sets;
+
+  end match;
+end expandAddConnection;
+
 public function getNodeCount
   "Returns the number of nodes in the disjoint-set forest."
   input DisjointSets inSets;
@@ -213,6 +294,7 @@ algorithm
 end getNodeCount;
 
 public function extractSets
+  "Extracts a list of all the sets from the disjoint sets structure."
   input DisjointSets inSets;
   output list<list<Connector>> outSets;
 algorithm
@@ -226,9 +308,14 @@ algorithm
 
     case (DISJOINT_SETS(nodes = nodes, nodeCount = node_count))
       equation
+        // For each node, assign it an index which indicates which set it
+        // belongs to. Collect the nodes in a list.
         (node_list, set_count) = assignSetIndices(nodes, node_count, 1, 0, {});
+        // Create an array of connector lists, and use the nodes' set index to
+        // put them in the array.
         sets = arrayCreate(set_count, {});
         sets = List.fold(node_list, collectSets, sets);
+        // Finally, convert the array into a list and return it.
         set_list = arrayList(sets);
       then
         set_list;
@@ -237,6 +324,8 @@ algorithm
 end extractSets;
 
 protected function assignSetIndices
+  "Assigns each node an index which indicates which set it belongs to, so that
+   they can be sorted into sets by extractSets."
   input array<Node> inNodes;
   input Integer inNodeCount;
   input Integer inPos;
@@ -274,6 +363,10 @@ algorithm
 end assignSetIndices;
 
 protected function assignSetIndex
+  "Assigns a node an index which indicates which set it belongs to. This is done
+   by giving each root node a unique index, and then assigning each node the same
+   index as its parent. This function will thus update all the nodes from the
+   given node up to the root of its tree."
   input Node inNode;
   input array<Node> inNodes;
   input Integer inNextIndex;
@@ -287,8 +380,13 @@ algorithm
       Node node;
       Connector conn;
 
+    // Not a node, should be removed.
     case (NO_NODE(), _, _) then (inNode, inNextIndex, false);
+
+    // A node which has already been assigned an index, nothing to do.
     case (NODE(parent = 0), _, _) then (inNode, inNextIndex, true);
+
+    // A root node, assign it the next available index.
     case (NODE(conn, parent, index), _, _)
       equation
         true = parent < 0;
@@ -298,11 +396,15 @@ algorithm
       then
         (node, next_index, true);
 
+    // An unassigned node, assign it the same index as the root of its tree.
     case (NODE(conn, parent, index), _, _)
       equation
+        // Find the parent.
         node = inNodes[parent];
+        // Assign the parent an index.
         (NODE(index = index2), next_index, _) =
           assignSetIndex(node, inNodes, inNextIndex);
+        // Assign this node its parent's index.
         node = NODE(conn, 0, index2);
         _ = arrayUpdate(inNodes, index, node);
       then
@@ -312,6 +414,8 @@ algorithm
 end assignSetIndex;
 
 protected function collectSets
+  "Adds a connector to the set array at the position indicated by the index of
+   its node."
   input Node inNode;
   input array<list<Connector>> inSets;
   output array<list<Connector>> outSets;
@@ -327,6 +431,7 @@ algorithm
 end collectSets;
 
 protected function makeNode
+  "Creates a node from a connector and an index."
   input Connector inConnector;
   input Integer inIndex;
   output Node outNode;
@@ -399,14 +504,16 @@ algorithm
         // Look up the parent to this node and continue looking.
         parent = arrayGet(inNodes, parent_id);
         (parent as NODE(index = parent_id)) = findRoot(parent, inNodes);
+
         // Path compression. Any node found while looking for the root may as
         // well be attached to the root node directly so that future look up is
         // faster.
-
+        /*********************************************************************/
         // TODO: This should in theory make the algorithm faster, but
         // constructed tests show that it makes it slower due to the
         // array update overhead. The performance needs to be tested on real
         // models to see how it behaves.
+        /*********************************************************************/
         //node = NODE(conn, parent_id, index, rank);
         //_ = arrayUpdate(inNodes, index, node);
       then
@@ -508,6 +615,7 @@ algorithm
 end printSets;
 
 public function printNodes
+  "Prints out a list of nodes for debugging."
   input list<Node> inNodes;
 algorithm
   _ := match(inNodes)
@@ -528,6 +636,7 @@ algorithm
 end printNodes;
 
 protected function printNode
+  "Prints out a node for debugging."
   input Node inNode;
 algorithm
   _ := match(inNode)

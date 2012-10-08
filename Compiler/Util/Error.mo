@@ -221,6 +221,8 @@ public constant Message INVALID_CONNECTOR_TYPE = MESSAGE(48, TRANSLATION(), ERRO
   Util.gettext("Illegal connection: component %s is not a connector."));
 public constant Message EXPANDABLE_NON_EXPANDABLE_CONNECTION = MESSAGE(49, TRANSLATION(), ERROR(),
   Util.gettext("Cannot connect expandable connector %s with non-expandable connector %s."));
+public constant Message UNDECLARED_CONNECTION = MESSAGE(50, TRANSLATION(), ERROR(),
+  Util.gettext("Cannot connect undeclared connectors %s with %s. At least one of them must be declared."));
 public constant Message CONNECT_PREFIX_MISMATCH = MESSAGE(51, TRANSLATION(), ERROR(),
   Util.gettext("Cannot connect %1 component %2 to non-%1 component %3"));
 public constant Message INVALID_CONNECTOR_VARIABLE = MESSAGE(52, TRANSLATION(), ERROR(),

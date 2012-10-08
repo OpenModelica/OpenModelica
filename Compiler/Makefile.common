@@ -45,6 +45,7 @@ ComponentReference.mo \
 Connect.mo \
 Connect2.mo \
 ConnectCheck.mo \
+ConnectEquations.mo \
 ConnectUtil.mo \
 ConnectUtil2.mo \
 ConnectionGraph.mo \

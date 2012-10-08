@@ -264,11 +264,25 @@ algorithm
       then
         ();
 
+    // Both connectors are undeclared, show error.
+    case (_, POTENTIALLY_PRESENT(), _, POTENTIALLY_PRESENT(),
+        (lhs_cref, rhs_cref, info))
+      equation
+        cref_str1 = ComponentReference.printComponentRefStr(lhs_cref);
+        cref_str2 = ComponentReference.printComponentRefStr(rhs_cref);
+        Error.addSourceMessage(Error.UNDECLARED_CONNECTION,
+          {cref_str1, cref_str2}, info);
+      then
+        fail();
+
     // One of the connectors is only potentially present
     case (_, POTENTIALLY_PRESENT(), _, _, _) then ();
     case (_, _, _, POTENTIALLY_PRESENT(), _) then ();
 
     // Both connectors are expandable, check them later.
+    /*-----------------------------------------------------------------------*/
+    // TODO: Check that none of them contains flow components.
+    /*-----------------------------------------------------------------------*/
     case (_, EXPANDABLE_CONNECTOR(), _, EXPANDABLE_CONNECTOR(), _) then ();
 
     // One is expandable and one is non-expandable, show error.
