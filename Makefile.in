@@ -106,7 +106,7 @@ fix-bom:
 	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
 
 SOURCE_DIRS=$(SOURCE_DIRS_UTF8) testsuite/3rdParty/HumMod
-SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ libraries/ testsuite/libraries/ `bash -c echo testsuite/3rdParty/{AVM,PlanarMechanics,siemens,TestMedia,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML
+SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ libraries/ testsuite/libraries/ `bash -c echo testsuite/flattening/libraries/3rdParty/{HumMod,PlanarMechanics,siemens,SiemensPower,ThermoSysPro}` testsuite/openmodelica/modelicaML testsuite/AVM
 
 bom-error:
 	rm -f bom-error.log bom-error.sh
