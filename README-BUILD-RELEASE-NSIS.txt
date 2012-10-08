@@ -37,15 +37,10 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
     From eclipse press Ctrl+B and type: clean omc
 
 03. Additional needed files:
+    - install python 2.7.3 and put it in your path
     - make -f Makefile.omdev.mingw install-python OR Ctrl+B and type: install-python
-    - svn checkout https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/tools/mingw
-      -> to \trunk\build\MinGW
-       REMOVE MinGW\lib\mlton
-       REMOVE MinGW\share\doc\mlton
-      Note that this step will have to be repeated starting from svn checkout 
-      again if anything has changed in svn MinGW directory since last build. 
 
-    - build OMClients i.e OMEdit, OMShell, OMNotebook, OMPlot, OMOptim using Qt SDK. Follow the README.txt of each OMClient.
+    - build OMClients i.e OMEdit, OMShell, OMNotebook, OMPlot, OMOptim, OMVisualize using Qt SDK. Follow the README.txt of each OMClient.
     - put the .exe files into $OMDev\tools\OMTools\bin
     - put the .a files into $OMDev\tools\OMTools\lib
     - add any new dll needed by clients into $OMDev\tools\OMTools\dll
