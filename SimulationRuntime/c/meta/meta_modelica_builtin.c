@@ -773,6 +773,11 @@ void equality(modelica_metatype in1, modelica_metatype in2)
   }
 }
 
+void fail()
+{
+  MMC_THROW();
+}
+
 modelica_metatype getGlobalRoot(int ix) {
   if (!mmc_GC_state->global_roots[ix])
     MMC_THROW();

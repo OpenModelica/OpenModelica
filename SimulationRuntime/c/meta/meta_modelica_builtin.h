@@ -129,6 +129,7 @@ extern void print(modelica_metatype);
 extern modelica_integer tick(void);
 extern modelica_real mmc_clock(void);
 extern void equality(modelica_metatype, modelica_metatype);
+extern void fail();
 
 #define boxptr_print print
 
