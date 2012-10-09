@@ -18,7 +18,9 @@ Windows
 
   Build & Run
   ------------------------------
-  - Load the file OMNotebookGUI.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
+  - Run the OMNotebookGUI/Makefile.omdev.mingw via Qt Command Prompt.
+  OR
+  - Load the file OMNotebookGUI/OMNotebookGUI.pro in Qt Creator IDE. Qt Creator is included in Qt SDK.
   - Build and run the project.
   - Copy omniORB416_rt.dll, omniORB416_rtd.dll, omnithread34_rt.dll and omnithread34_rtd.dll from c:/OMDev/omniORB-4.1.6-mingw/bin/x86_win32 to /location-where-OMNotebook.exe-is-created.
   - Copy qwt5.dll and qwtd5.dll from c:/OMDev/qwt-5.2.1-mingw/lib to /location-where-OMNotebook.exe-is-created.
