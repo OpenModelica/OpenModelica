@@ -420,11 +420,11 @@ int solver_main(DATA* simData, double start, double stop, double step,
       checkTermination(simData);
     }
 
-  	/* terminate for some cases:
-  	 * 	- integrator fails
-  	 * 	- non-linear system failed to solve
-  	 * 	- assert was called
-  	 */
+    /* terminate for some cases:
+     * - integrator fails
+     * - non-linear system failed to solve
+     * - assert was called
+     */
     if (simData->simulationInfo.simulationSuccess != 0 || retValIntegrator != 0 || check_nonlinear_solutions(simData)) {
       simData->simulationInfo.terminal = 1;
       update_DAEsystem(simData);
@@ -432,13 +432,13 @@ int solver_main(DATA* simData, double start, double stop, double step,
 
       if (simData->simulationInfo.simulationSuccess){
         retVal = -1;
-    	INFO1("model terminate | Simulation terminated at time %g",solverInfo.currentTime);
+        INFO1("model terminate | Simulation terminated at time %g",solverInfo.currentTime);
       } else if (retValIntegrator){
-    	retVal = -1 + retValIntegrator;
+        retVal = -1 + retValIntegrator;
         INFO1("model terminate | Integrator failed. | Simulation terminated at time %g",solverInfo.currentTime);
       } else if (check_nonlinear_solutions(simData)){
-    	retVal = -2;
-		INFO1("model terminate | non-linear system solver failed. | Simulation terminated at time %g",solverInfo.currentTime);
+        retVal = -2;
+        INFO1("model terminate | non-linear system solver failed. | Simulation terminated at time %g",solverInfo.currentTime);
       }
       break;
     }
@@ -584,7 +584,7 @@ void checkTermination(DATA* simData)
 {
   if(terminationAssert || terminationTerminate)
   {
-	simData->simulationInfo.simulationSuccess = -1;
+    simData->simulationInfo.simulationSuccess = -1;
     printInfo(stdout, TermInfo);
     fputc(' ', stdout);
   }

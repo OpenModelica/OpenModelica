@@ -326,7 +326,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       fflush(stderr);
       fflush(stdout);
       retVal = continue_DASRT(&dasslData->idid, &simData->simulationInfo.tolerance);
-	  solverInfo->currentTime = solverInfo->currentTime + solverInfo->currentStepSize;
+      solverInfo->currentTime = solverInfo->currentTime + solverInfo->currentStepSize;
       sData->timeValue = solverInfo->currentTime;
       functionODE(simData);
       INFO1("DASRT can't continue. time = %f", sData->timeValue);
