@@ -31,13 +31,14 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   let guid = getUUIDStr()
   <<
   <?xml version="1.0" encoding="UTF-8"?>
-  <OpenModelicaModelDescription>
+  <OpenModelicaModelDescription
     xmlns:exp="https://svn.jmodelica.org/trunk/XML/daeExpressions.xsd"
     xmlns:equ="https://svn.jmodelica.org/trunk/XML/daeEquations.xsd"
     xmlns:fun="https://svn.jmodelica.org/trunk/XML/daeFunctions.xsd"
     xmlns:opt="https://svn.jmodelica.org/trunk/XML/daeOptimization.xsd"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     <%modelDescriptionXml(simCode,guid)%>
+    >
   
     <%vendorAnnotationsXml(simCode)%>
   
@@ -255,7 +256,7 @@ template initValXml(Exp initialValue)
   case ICONST(__) then integer
   case RCONST(__) then real
   case SCONST(__) then '"<%Util.escapeModelicaStringToXmlString(string)%>"'
-  case BCONST(__) then 'if bool then "1" else "0"'
+  case BCONST(__) then (if bool then "1" else "0")
   case ENUM_LITERAL(__) then '<%index%>/*ENUM:<%dotPathXml(name)%>*/'
   else "*ERROR* initial value of unknown type"
 end initValXml;
@@ -2124,7 +2125,7 @@ template daeExpXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDec
   case e as ICONST(__)          then '<exp:IntegerLiteral><%integer%></exp:IntegerLiteral>' 
   case e as RCONST(__)          then '<exp:RealLiteral><%real%></exp:RealLiteral>'
   case e as SCONST(__)          then '<exp:StringLiteral><%daeExpSconstXml(string, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></exp:StringLiteral>'
-  case e as BCONST(__)          then '<exp:BooleanLiteral><%if bool then "1" else "0"%> <exp:BooleanLiteral>'
+  case e as BCONST(__)          then '<exp:BooleanLiteral>' + (if bool then "1" else "0") + '</exp:BooleanLiteral>'
   case e as ENUM_LITERAL(__)    then index
   case e as CREF(__)            then daeExpCrefRhsXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
   case e as BINARY(__)          then daeExpBinaryXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)  
