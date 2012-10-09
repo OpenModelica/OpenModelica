@@ -20,13 +20,6 @@ TRANSLATIONS = \
 TARGET = OMEdit
 TEMPLATE = app
 
-# Generate the CORBA stub files for windows. On Linux we generate them in the makefile.
-win32 {
-    !exists(omc_communication.cc || omc_communication.h) {
-        system($$(OMDEV)/lib/omniORB-4.1.6-mingw/bin/x86_win32/omniidl -bcxx -Wbh=.h -Wbs=.cc ../../Compiler/runtime/omc_communication.idl)
-    }
-}
-
 # This is very evil, lupdate just look for SOURCES variable and creates translations. This section is not compiled at all :)
 evil_hack_to_fool_lupdate {
     SOURCES += ../../OMPlot/OMPlotGUI/*.cpp
