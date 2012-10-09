@@ -225,11 +225,6 @@ int fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* 
 void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* events)
 {
   fmi1_status_t fmistatus = fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
-  int i = 0;
-  for (;i<numberOfEventIndicators;i++)
-  {
-    //fprintf(stderr, "%d value in fmiGetEventIndicators_OMC is = %f\n", i, events[i]);fflush(NULL);
-  }
   switch (fmistatus) {
     case fmi1_status_warning:
     case fmi1_status_error:
@@ -382,22 +377,29 @@ int fmiCompletedIntegratorStep_OMC(void* fmi, int in_callEventUpdate)
   return in_callEventUpdate;
 }
 
-void printZ_OMC(int len, int* zVals)
+/*
+ * Wrapper for the FMI function fmiTerminate.
+ */
+int fmiTerminate_OMC(void* fmi)
 {
-//  fprintf(stderr, "yesss in fmiEventUpdate %d \n", len);fflush(NULL);
-//  int i = 0;
-//  for (i;i<len;i++)
-//  {
-//    fprintf(stderr, "%d value is = %d\n", i, zVals[i]);fflush(NULL);
-//  }
+  fmi1_status_t fmistatus = fmi1_import_terminate((fmi1_import_t*)fmi);
+  switch (fmistatus) {
+    case fmi1_status_ok:
+      fmi1_import_free_model_instance((fmi1_import_t*)fmi);
+      break;
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiTerminate_OMC.\n");fflush(NULL);
+      break;
+    default: break;
+  }
+  return fmistatus;
 }
 
-
-
-
-
-
-
+/*
+ * Wrapper for the FMI function fmiInstantiateSlave.
+ */
 void fmiInstantiateSlave_OMC(void* fmi, char* instanceName, char* fmuLocation, char* mimeType, double timeout, int visible, int interactive)
 {
   jm_status_enu_t status = fmi1_import_instantiate_slave((fmi1_import_t*)fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive);
@@ -406,6 +408,9 @@ void fmiInstantiateSlave_OMC(void* fmi, char* instanceName, char* fmuLocation, c
   }
 }
 
+/*
+ * Wrapper for the FMI function fmiInitializeSlave.
+ */
 void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, double tStop)
 {
   fmi1_status_t fmistatus = fmi1_import_initialize_slave((fmi1_import_t*)fmi, tStart, stopTimeDefined, tStop);
@@ -419,9 +424,32 @@ void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, doubl
   }
 }
 
+/*
+ * Wrapper for the FMI function fmiDoStep.
+ */
 int fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communicationStepSize, int newStep)
 {
   return fmi1_import_do_step((fmi1_import_t*)fmi, currentCommunicationPoint, communicationStepSize, newStep);
+}
+
+/*
+ * Wrapper for the FMI function fmiTerminateSlave.
+ */
+int fmiTerminateSlave_OMC(void* fmi)
+{
+  fmi1_status_t fmistatus = fmi1_import_terminate_slave((fmi1_import_t*)fmi);
+  switch (fmistatus) {
+    case fmi1_status_ok:
+      fmi1_import_free_slave_instance((fmi1_import_t*)fmi);
+      break;
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiTerminateSlave_OMC.\n");fflush(NULL);
+      break;
+    default: break;
+  }
+  return fmistatus;
 }
 
 #ifdef __cplusplus

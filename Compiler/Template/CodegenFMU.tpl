@@ -1309,6 +1309,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Boolean out_callEventUpdate;
         external "C" out_callEventUpdate = fmiCompletedIntegratorStep_OMC(fmi, in_callEventUpdate) annotation(Library = {"omcruntime", "fmilib"});
       end fmiCompletedIntegratorStep;
+      
+      function fmiTerminate
+        input fmiImportInstance fmi;
+        output Integer status;
+        external "C" status = fmiTerminate_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiTerminate;
     end fmiFunctions;
     
     package fmiStatus
@@ -1355,6 +1361,9 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates);
       <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
     end when;
+    when terminal() then
+      fmiFunctions.fmiTerminate(fmi);
+    end when;
   equation
     fmiFunctions.fmiCompletedIntegratorStep(fmi, callEventUpdate);
     <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"});"%>
@@ -1385,9 +1394,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant String fmuFile = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     constant Integer fmiLogLevel = <%fmiLogLevel%>;
+    constant String mimeType = "";
+    constant Real timeout = 0.0;
+    constant Boolean visible = false;
+    constant Boolean interactive = false;
+    constant Real communicationStepSize = 0.005;
     <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
-    constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
-    constant Integer numberOfEventIndicators = <%listLength(fmiInfo.fmiNumberOfEventIndicators)%>;
     constant Boolean debugLogging = true;
     Integer fmi_status;
     fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
@@ -1529,20 +1541,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         external "C" status = fmiSetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"});
       end fmiSetString;
       
-      function fmiEventUpdate
+      function fmiTerminateSlave
         input fmiImportInstance fmi;
-        input Boolean intermediateResults;
-        input fmiEventInfo in_eventInfo;
-        output fmiEventInfo out_eventInfo;
-        external "C" out_eventInfo = fmiEventUpdate_OMC(fmi, intermediateResults, in_eventInfo) annotation(Library = {"omcruntime", "fmilib"});
-      end fmiEventUpdate;
-      
-      function fmiCompletedIntegratorStep
-        input fmiImportInstance fmi;
-        input Boolean in_callEventUpdate;
-        output Boolean out_callEventUpdate;
-        external "C" out_callEventUpdate = fmiCompletedIntegratorStep_OMC(fmi, in_callEventUpdate) annotation(Library = {"omcruntime", "fmilib"});
-      end fmiCompletedIntegratorStep;
+        output Integer status;
+        external "C" status = fmiTerminateSlave_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"});
+      end fmiTerminateSlave;
     end fmiFunctions;
     
     package fmiStatus
@@ -1560,15 +1563,19 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       constant Integer jmWarning=2;
     end jmStatus;
   initial algorithm
-    fmiFunctions.fmiInstantiateSlave(fmi, "<%fmiInfo.fmiModelIdentifier%>", "", "", 0.0, false, false);
+    fmiFunctions.fmiInstantiateSlave(fmi, "<%fmiInfo.fmiModelIdentifier%>", fmuFile, mimeType, timeout, visible, interactive);
     fmi_status := fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
     fmiFunctions.fmiInitializeSlave(fmi, <%fmiExperimentAnnotation.fmiExperimentStartTime%>, false, <%fmiExperimentAnnotation.fmiExperimentStopTime%>);
   equation
-    fmi_status = fmiFunctions.fmiDoStep(fmi, time, 0.01, true);
+    fmi_status = fmiFunctions.fmiDoStep(fmi, time, communicationStepSize, true);
     <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"});"%>
     <%if not stringEq(integerVariables, "0") then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"});"%>
     <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"});"%>
     <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"});"%>
+  algorithm
+    when terminal() then
+      fmiFunctions.fmiTerminateSlave(fmi);
+    end when;
     annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
   end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
   >>

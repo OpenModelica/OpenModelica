@@ -344,7 +344,7 @@ algorithm
   fmiType := match(inFMIInfo)
     case (INFO(fmiType = 0)) then "me";
     case (INFO(fmiType = 1)) then "cs_st";
-    case (INFO(fmiType = 2)) then "cs_t";
+    case (INFO(fmiType = 2)) then "cs_tool";
   end match;
 end getFMIType;
 
