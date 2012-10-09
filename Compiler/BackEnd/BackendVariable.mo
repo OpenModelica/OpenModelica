@@ -3442,7 +3442,8 @@ algorithm
       then v1;     
     case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_)
       equation
-        mergeStartFixed1(cr,sa,cra,sb,negate," both fixed and have start values ","",knVars);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        mergeStartFixed1(cr,sa,cra,e,negate," both fixed and have start values ","",knVars);
       then v;
     case (v,true,SOME(sa),va,true,NONE(),_,_)
       then v;
@@ -3453,19 +3454,22 @@ algorithm
       then v1;     
     case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
       equation
-        mergeStartFixed1(cr,sa,cra,sb,negate," have start values "," because this is fixed",knVars);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        mergeStartFixed1(cr,sa,cra,e,negate," have start values "," because this is fixed",knVars);
       then v;
     case (v,true,SOME(sa),va,false,NONE(),_,_)
       then v;
     case (v,true,NONE(),va,true,SOME(sb),_,_)
       equation
-        v1 = setVarStartValue(v,sb); 
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        v1 = setVarStartValue(v,e); 
       then v1;
     case (v,true,NONE(),va,true,NONE(),_,_)
       then v;
     case (v,true,NONE(),va,false,SOME(sb),_,_)
       equation
-        v1 = setVarStartValue(v,sb); 
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        v1 = setVarStartValue(v,e); 
       then v1;
     case (v,true,NONE(),va,false,NONE(),_,_)
       then v;   
@@ -3497,7 +3501,8 @@ algorithm
 
     case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
       equation
-        mergeStartFixed1(cr,sa,cra,sb,negate," have start values ","",knVars);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        mergeStartFixed1(cr,sa,cra,e,negate," have start values ","",knVars);
       then v;
     case (v,false,SOME(sa),va,false,NONE(),_,_)
       then v;
