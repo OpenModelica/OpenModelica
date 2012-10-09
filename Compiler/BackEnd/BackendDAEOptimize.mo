@@ -1955,7 +1955,7 @@ algorithm
         knvars = BackendVariable.daeKnVars(shared);
         (v::{},_) = BackendVariable.getVar(cra,knvars);
         // merge fixed,start,nominal
-        v1 = BackendVariable.mergeAliasVars(v,var,negate);
+        v1 = BackendVariable.mergeAliasVars(v,var,negate,knvars);
         shared = BackendVariable.addKnVarDAE(v1,shared);
         // store changed var
         vars = BackendVariable.daeVars(syst);
@@ -2140,7 +2140,7 @@ protected
 algorithm
   Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (3).\n"));
   // merge fixed,start,nominal
-  v1 := BackendVariable.mergeAliasVars(ivar,avar,negate);
+  v1 := BackendVariable.mergeAliasVars(ivar,avar,negate,BackendVariable.daeKnVars(shared));
   osyst := BackendVariable.addVarDAE(v1,syst);
   // store changed var
   ops := DAEUtil.getSymbolicTransformations(source);

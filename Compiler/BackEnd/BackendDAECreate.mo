@@ -1921,7 +1921,7 @@ algorithm
         false = BackendVariable.isStateVar(v2);
         replaceableAlias(v2);
         // merge fixed,start,nominal
-        var = BackendVariable.mergeAliasVars(v1,v2,false);
+        var = BackendVariable.mergeAliasVars(v1,v2,false,iKnVars);
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2,DAE.SOLVED(cr2,e1)::ops);
@@ -1945,7 +1945,7 @@ algorithm
         false = BackendVariable.isStateVar(v1);
         replaceableAlias(v1);
         // merge fixed,start,nominal
-        var = BackendVariable.mergeAliasVars(v2,v1,false);
+        var = BackendVariable.mergeAliasVars(v2,v1,false,iKnVars);
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr1,e2)::ops);
@@ -1978,7 +1978,7 @@ algorithm
         // select alias
         ((acr,avar,aindx,ae,cr,var,e)) = Util.if_(b,(cr2,v2,index2,e2,cr1,v1,e1),(cr1,v1,index1,e1,cr2,v2,e2));
         // merge fixed,start,nominal
-        var = BackendVariable.mergeAliasVars(var,avar,false);
+        var = BackendVariable.mergeAliasVars(var,avar,false,iKnVars);
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(avar,DAE.SOLVED(acr,e)::ops);
@@ -2002,7 +2002,7 @@ algorithm
         // check if replacable
         replaceableAlias(v1);
         // merge fixed,start,nominal
-        var = BackendVariable.mergeAliasVars(v2,v1,false);
+        var = BackendVariable.mergeAliasVars(v2,v1,false,iKnVars);
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr1,e2)::ops);
@@ -2026,7 +2026,7 @@ algorithm
         // check if replacable
         replaceableAlias(v2);
         // merge fixed,start,nominal
-        var = BackendVariable.mergeAliasVars(v1,v2,false);
+        var = BackendVariable.mergeAliasVars(v1,v2,false,iKnVars);
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2,DAE.SOLVED(cr2,e1)::ops);
@@ -2050,7 +2050,7 @@ algorithm
         // check if replacable
         replaceableAlias(v1);
         // merge fixed,start,nominal
-        var = BackendVariable.mergeAliasVars(v2,v1,false);
+        var = BackendVariable.mergeAliasVars(v2,v1,false,iKnVars);
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr1,e2)::ops);
@@ -2074,7 +2074,7 @@ algorithm
         // check if replacable
         replaceableAlias(v2);
         // merge fixed,start,nominal
-        var = BackendVariable.mergeAliasVars(v1,v2,false);
+        var = BackendVariable.mergeAliasVars(v1,v2,false,iKnVars);
         // setAliasType
         ops = DAEUtil.getSymbolicTransformations(source);
         avar = BackendVariable.mergeVariableOperations(v2,DAE.SOLVED(cr2,e1)::ops);

@@ -3394,6 +3394,7 @@ public function mergeAliasVars
   input BackendDAE.Var inVar;
   input BackendDAE.Var inAVar "the alias var";
   input Boolean negate;
+  input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
   output BackendDAE.Var outVar;
 protected
   BackendDAE.Var v,va,v1,v2;
@@ -3408,7 +3409,7 @@ algorithm
   // start
   sv := varStartValueOption(inVar);
   sva := varStartValueOption(inAVar);
-  (v1) := mergeStartFixed(inVar,fixed,sv,inAVar,fixeda,sva,negate);
+  (v1) := mergeStartFixed(inVar,fixed,sv,inAVar,fixeda,sva,negate,knVars);
   // nominal
   v2 := mergeNominalAttribute(inAVar,v1,negate);
   // minmax
@@ -3424,72 +3425,61 @@ protected function mergeStartFixed
   input Boolean fixeda;
   input Option<DAE.Exp> sva;
   input Boolean negate;
+  input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
   output BackendDAE.Var outVar;
 algorithm
   outVar :=
-  matchcontinue (inVar,fixed,sv,inAVar,fixeda,sva,negate)
+  matchcontinue (inVar,fixed,sv,inAVar,fixeda,sva,negate,knVars)
     local
       BackendDAE.Var v,va,v1,v2;
       DAE.ComponentRef cr,cra;
       DAE.Exp sa,sb,e;
       String s,s1,s2,s3,s4,s5;
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_)
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_)
       equation
         e = getNonZeroStart(sa,sb,negate);
         v1 = setVarStartValue(v,e);
       then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_)
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_)
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Util.if_(negate," = -"," = ");
-        s3 = ComponentReference.printComponentRefStr(cra);
-        s4 = ExpressionDump.printExpStr(sa);
-        s5 = ExpressionDump.printExpStr(sb);
-        s = stringAppendList({"Alias variables ",s1,s2,s3," both fixed and have start values ",s4," != ",s5,". Use value from ",s1,".\n"});
-        Error.addMessage(Error.COMPILER_WARNING,{s});
+        mergeStartFixed1(cr,sa,cra,sb,negate," both fixed and have start values ","",knVars);
       then v;
-    case (v,true,SOME(sa),va,true,NONE(),_)
+    case (v,true,SOME(sa),va,true,NONE(),_,_)
       then v;
-    case (v,true,SOME(sa),va,false,SOME(sb),_)
+    case (v,true,SOME(sa),va,false,SOME(sb),_,_)
       equation
         e = getNonZeroStart(sa,sb,negate);
         v1 = setVarStartValue(v,e);
       then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_)
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Util.if_(negate," = -"," = ");
-        s3 = ComponentReference.printComponentRefStr(cra);
-        s4 = ExpressionDump.printExpStr(sa);
-        s5 = ExpressionDump.printExpStr(sb);
-        s = stringAppendList({"Alias variables ",s1,s2,s3," have start values ",s4," != ",s5,". Use value from ",s1," because this is fixed.\n"});
-        Error.addMessage(Error.COMPILER_WARNING,{s});        
+        mergeStartFixed1(cr,sa,cra,sb,negate," have start values "," because this is fixed",knVars);
       then v;
-    case (v,true,SOME(sa),va,false,NONE(),_)
+    case (v,true,SOME(sa),va,false,NONE(),_,_)
       then v;
-    case (v,true,NONE(),va,true,SOME(sb),_)
+    case (v,true,NONE(),va,true,SOME(sb),_,_)
       equation
         v1 = setVarStartValue(v,sb); 
       then v1;
-    case (v,true,NONE(),va,true,NONE(),_)
+    case (v,true,NONE(),va,true,NONE(),_,_)
       then v;
-    case (v,true,NONE(),va,false,SOME(sb),_)
+    case (v,true,NONE(),va,false,SOME(sb),_,_)
       equation
         v1 = setVarStartValue(v,sb); 
       then v1;
-    case (v,true,NONE(),va,false,NONE(),_)
+    case (v,true,NONE(),va,false,NONE(),_,_)
       then v;   
-    case (v,false,SOME(sa),va,true,SOME(sb),_)
+    case (v,false,SOME(sa),va,true,SOME(sb),_,_)
       equation
         e = getNonZeroStart(sa,sb,negate);
         v1 = setVarStartValue(v,e);
         v2 = setVarFixed(v1,true);
       then v2;
-    case (v,false,SOME(sa),va,true,NONE(),_)
+    case (v,false,SOME(sa),va,true,NONE(),_,_)
       equation
         v1 = setVarFixed(v,true);
       then v1;
-    case (v,false,SOME(sa),va,false,SOME(sb),_)
+    case (v,false,SOME(sa),va,false,SOME(sb),_,_)
       equation
         e = getNonZeroStart(sa,sb,negate);
         v1 = setVarStartValue(v,e);
@@ -3498,44 +3488,100 @@ algorithm
     // adrpo: TODO! FIXME! maybe we should use another heuristic here such as:
     //        use the value from the variable that is closer to the top of the 
     //        hierarchy i.e. A.B value has priority over X.Y.Z value!
-    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_)
+    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
       equation
         true = intGt(ComponentReference.crefDepth(cr), ComponentReference.crefDepth(cra));
         // invert arguments
-        v = mergeStartFixed(inAVar,fixeda,sva,inVar,fixed,sv,negate);
+        v = mergeStartFixed(inAVar,fixeda,sva,inVar,fixed,sv,negate,knVars);
       then v;
 
-    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_)
+    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
       equation
-        s1 = ComponentReference.printComponentRefStr(cr);
-        s2 = Util.if_(negate," = -"," = ");
-        s3 = ComponentReference.printComponentRefStr(cra);
-        s4 = ExpressionDump.printExpStr(sa);
-        s5 = ExpressionDump.printExpStr(sb);
-        s = stringAppendList({"Alias variables ",s1,s2,s3," have start values ",s4," != ",s5,". Use value from ",s1,".\n"});
-        Error.addMessage(Error.COMPILER_WARNING,{s});        
+        mergeStartFixed1(cr,sa,cra,sb,negate," have start values ","",knVars);
       then v;
-    case (v,false,SOME(sa),va,false,NONE(),_)
+    case (v,false,SOME(sa),va,false,NONE(),_,_)
       then v;
-    case (v,false,NONE(),va,true,SOME(sb),_)
+    case (v,false,NONE(),va,true,SOME(sb),_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         v1 = setVarStartValue(v,e);
         v2 = setVarFixed(v1,true);
       then v2;
-    case (v,false,NONE(),va,true,NONE(),_)
+    case (v,false,NONE(),va,true,NONE(),_,_)
       equation
         v1 = setVarFixed(v,true);
       then v1;
-    case (v,false,NONE(),va,false,SOME(sb),_)
+    case (v,false,NONE(),va,false,SOME(sb),_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         v1 = setVarStartValue(v,e);
       then v1;
-    case (v,false,NONE(),va,false,NONE(),_)
+    case (v,false,NONE(),va,false,NONE(),_,_)
       then v; 
   end matchcontinue;
 end mergeStartFixed;
+
+protected function mergeStartFixed1
+"autor: Frenkel TUD 2011-04"
+  input DAE.ComponentRef cr;
+  input DAE.Exp sv;
+  input DAE.ComponentRef cra;
+  input DAE.Exp sva;
+  input Boolean negate;
+  input String s4;
+  input String s7;
+  input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
+algorithm
+  _ :=
+  matchcontinue (cr,sv,cra,sva,negate,s4,s7,knVars)
+    local
+      String s,s1,s2,s3,s5,s6;
+      DAE.Exp sv1,sva1;
+    // report nothing if equal start values
+    case (_,_,_,_,_,_,_,_)
+      equation
+        true = Expression.expEqual(sv, sva);
+      then 
+        ();
+    case (_,_,_,_,_,_,_,_)
+      equation
+        ((sv1, _)) = Expression.traverseExp(sv, replaceCrefWithBindExp, knVars);
+        ((sva1, _)) = Expression.traverseExp(sva, replaceCrefWithBindExp, knVars);
+        true = Expression.expEqual(sv1, sva1);
+      then 
+        ();         
+    case (_,_,_,_,_,_,_,_)
+      equation
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cra);
+        s5 = ExpressionDump.printExpStr(sv);
+        s6 = ExpressionDump.printExpStr(sva);
+        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,s7,".\n"});
+        Error.addMessage(Error.COMPILER_WARNING,{s});
+      then 
+        ();
+  end matchcontinue;
+end mergeStartFixed1;
+
+public function replaceCrefWithBindExp
+  input tuple<DAE.Exp, BackendDAE.Variables> inTuple;
+  output tuple<DAE.Exp, BackendDAE.Variables> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      BackendDAE.Variables vars;
+      DAE.ComponentRef cr;
+    case ((DAE.CREF(componentRef=cr), vars))
+      equation
+         ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
+         ((e, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, vars);
+      then
+        ((e, vars));
+    else then inTuple;
+  end matchcontinue;
+end replaceCrefWithBindExp;
 
 protected function getNonZeroStart
 "autor: Frenkel TUD 2011-04"
