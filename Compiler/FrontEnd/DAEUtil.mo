@@ -4348,6 +4348,257 @@ algorithm
 end match;
 end traverseDAEEquationsStmtsElse;
 
+public function traverseDAEStmts
+ "function: traverseDAEStmts
+  Author: BZ, 2008-12, wbraun 2012-09
+  Traversing statemeant and provide current statement
+  to FuncExptype
+  Handles the traversing of DAE.Statement."
+  input list<DAE.Statement> inStmts;
+  input FuncExpType func;
+  input Type_a iextraArg;
+  output list<DAE.Statement> outStmts;
+  output Type_a oextraArg;
+  partial function FuncExpType
+    input tuple<DAE.Exp, DAE.Statement, Type_a> arg; 
+    output tuple<DAE.Exp, Type_a> oarg; 
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outStmts,oextraArg) := matchcontinue(inStmts,func,iextraArg)
+    local
+      DAE.Exp e_1,e_2,e,e2,e3,e_3;
+      list<DAE.Exp> expl1,expl2;
+      DAE.ComponentRef cr_1,cr;
+      list<DAE.Statement> xs_1,xs,stmts,stmts1,stmts2;
+      DAE.Type tp;
+      DAE.Statement x,ew,ew_1;
+      Boolean b1;
+      String id1,str;
+      list<Integer> li;
+      Integer ix;
+      DAE.ElementSource source;
+      Algorithm.Else algElse;
+      Type_a extraArg;
+      list<tuple<DAE.ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
+      
+    case ({},_,extraArg) then ({},extraArg);
+
+    case (((x as DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e, source = source)) :: xs),_,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        ((e_2, extraArg)) = func((e2, x, extraArg));
+        (xs_1,extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1,extraArg);
+
+    case (((x as DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source)) :: xs),_,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, x,  extraArg));
+        (expl2, extraArg) = traverseDAEExpListStmt(expl1,func, x, extraArg);
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then ((DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1),extraArg);
+        
+    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source)) :: xs),_,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, x,  extraArg));
+        ((e_2 as DAE.CREF(cr_1,_), extraArg)) = func((Expression.crefExp(cr),  x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source)) :: xs),_,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        failure(((DAE.CREF(_,_), _)) = func((Expression.crefExp(cr), x, extraArg)));
+        // We need to pass this through because simplify/etc may scalarize the cref...
+        // true = Flags.isSet(Flags.FAILTRACE);
+        // print(DAEDump.ppStatementStr(x));
+        // print("Warning, not allowed to set the componentRef to a expression in DAEUtil.traverseDAEEquationsStmts\n");
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_ASSIGN_ARR(tp,cr,e_1,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = algElse, source = source)) :: xs),_,extraArg)
+      equation
+        (algElse,extraArg) = traverseDAEStmtsElse(algElse,func, x, extraArg);
+        (stmts2,extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        ((e_1,extraArg)) = func((e, x, extraArg));
+        (xs_1,extraArg) = traverseDAEStmts(xs, func, extraArg);
+        stmts1 = Algorithm.optimizeIf(e_1,stmts2,algElse,source);
+      then (listAppend(stmts1, xs_1),extraArg);
+        
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, source = source)) :: xs),_,extraArg)
+      equation
+        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_FOR(tp,b1,id1,ix,e_1,stmts2,source) :: xs_1,extraArg);
+    
+    case (((x as DAE.STMT_PARFOR(type_=tp,iterIsArray=b1,iter=id1,index=ix,range=e,statementLst=stmts, loopPrlVars=loopPrlVars, source = source)) :: xs),_,extraArg)
+      equation
+        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_PARFOR(tp,b1,id1,ix,e_1,stmts2,loopPrlVars,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),_,extraArg)
+      equation
+        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: xs),_,extraArg)
+      equation
+        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_WHEN(e_1,stmts2,NONE(),li,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),_,extraArg)
+      equation
+        ({ew_1}, extraArg) = traverseDAEStmts({ew},func,extraArg);
+        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_WHEN(e_1,stmts2,SOME(ew),li,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, level=e3, source = source)) :: xs),_,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        ((e_2, extraArg)) = func((e2, x, extraArg));
+        ((e_3, extraArg)) = func((e3, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_ASSERT(e_1,e_2,e_3,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_TERMINATE(msg = e, source = source)) :: xs),_,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_TERMINATE(e_1,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_REINIT(var = e,value=e2, source = source)) :: xs),_,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        ((e_2, extraArg)) = func((e2, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_NORETCALL(exp = e, source = source)) :: xs),_,extraArg)
+      equation
+        ((e_1, extraArg)) = func((e, x, extraArg));
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_NORETCALL(e_1,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_RETURN(source = source)) :: xs),_,extraArg)
+      equation
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (x :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_BREAK(source = source)) :: xs),_,extraArg)
+      equation
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (x :: xs_1,extraArg);
+        
+    // MetaModelica extension. KS
+    case (((x as DAE.STMT_FAILURE(body=stmts, source = source)) :: xs),_,extraArg)
+      equation
+        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_FAILURE(stmts2,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_TRY(tryBody=stmts, source = source)) :: xs),_,extraArg)
+      equation
+        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_TRY(stmts2,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_CATCH(catchBody=stmts, source = source)) :: xs),_,extraArg)
+      equation
+        (stmts2, extraArg) = traverseDAEStmts(stmts,func,extraArg);
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (DAE.STMT_CATCH(stmts2,source) :: xs_1,extraArg);
+        
+    case (((x as DAE.STMT_THROW(source = source)) :: xs),_,extraArg)
+      equation
+        (xs_1, extraArg) = traverseDAEStmts(xs, func, extraArg);
+      then (x :: xs_1,extraArg);
+      
+    case ((x :: xs),_,extraArg)
+      equation
+        str = DAEDump.ppStatementStr(x);
+        str = "DAEUtil.traverseDAEStmts not implemented correctly: " +& str;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end matchcontinue;
+end traverseDAEStmts;
+
+protected function traverseDAEStmtsElse "
+Author: BZ, 2008-12
+Helper function for traverseDAEEquationsStmts
+"
+  input Algorithm.Else inElse;
+  input FuncExpType func;
+  input DAE.Statement istmt;
+  input Type_a iextraArg;
+  output Algorithm.Else outElse;
+  output Type_a oextraArg;
+  partial function FuncExpType 
+    input tuple<DAE.Exp, DAE.Statement, Type_a> arg;
+    output tuple<DAE.Exp, Type_a> oarg; 
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (outElse,oextraArg) := match(inElse, func, istmt, iextraArg)
+  local
+    DAE.Exp e,e_1;
+    list<DAE.Statement> st,st_1;
+    Algorithm.Else el,el_1;
+    Type_a extraArg;
+  case (DAE.NOELSE(),_,_,extraArg) then (DAE.NOELSE(),extraArg);
+  case (DAE.ELSEIF(e,st,el),_,_,extraArg)
+    equation
+      (el_1,extraArg) = traverseDAEStmtsElse(el,func,istmt,extraArg);
+      (st_1,extraArg) = traverseDAEStmts(st,func,extraArg);
+      ((e_1,extraArg)) = func((e, istmt, extraArg));
+    then (Algorithm.optimizeElseIf(e_1,st_1,el_1),extraArg);
+  case(DAE.ELSE(st),_,_,extraArg)
+    equation
+      (st_1,extraArg) = traverseDAEStmts(st,func,extraArg);
+    then (DAE.ELSE(st_1),extraArg);
+end match;
+end traverseDAEStmtsElse;
+
+protected function traverseDAEExpListStmt "
+Author: BZ, 2008-12
+Traverse an list of expressions, helper function for traverseDAE"
+  input list<DAE.Exp> iexps;
+  input FuncExpType func;
+  input DAE.Statement istmt;
+  input Type_a iextraArg;
+  output list<DAE.Exp> oexps;
+  output Type_a oextraArg;
+  partial function FuncExpType 
+    input tuple<DAE.Exp, DAE.Statement, Type_a> arg;
+    output tuple<DAE.Exp,Type_a> oarg;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (oexps,oextraArg) := match(iexps, func, istmt, iextraArg)
+    local 
+      DAE.Exp e;
+      Type_a extraArg;
+      list<DAE.Exp> exps;
+    
+    case({},_,_,extraArg) then ({},extraArg);
+    
+    case(e::exps,_,_,extraArg)
+      equation
+        ((e,extraArg)) = func((e, istmt, extraArg));
+        (oexps,extraArg) = traverseDAEExpListStmt(exps, func, istmt, extraArg);
+      then
+        (e::oexps,extraArg);
+  end match;
+end traverseDAEExpListStmt;
+
 protected function traverseDAEVarAttr "
 Author: BZ, 2008-12
 Help function to traverseDAE

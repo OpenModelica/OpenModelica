@@ -2975,12 +2975,97 @@ algorithm
     local list<DAE.Statement> statementLst;
     case(DAE.ALGORITHM_STMTS(statementLst=statementLst),_)
       equation
-        (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, collateArrExp, infuncs);
+        (statementLst,_) = DAEUtil.traverseDAEStmts(statementLst, collateArrExpStmt, infuncs);
       then
         DAE.ALGORITHM_STMTS(statementLst);
     case (_,_) then inAlg;
   end matchcontinue;
 end collateAlgorithm;
+
+protected function collateArrExpStmt
+" Author: Frenkel TUD 2010-07
+  wbraun: added as workaround for when condition.
+  As long as we don't support fully array helpVars, we
+  we can't collate the expression of a when condition.
+  "
+  input tuple<DAE.Exp, DAE.Statement, Option<DAE.FunctionTree>> itpl;
+  output tuple<DAE.Exp, Option<DAE.FunctionTree>> otpl;
+algorithm 
+  otpl := matchcontinue itpl
+    local
+      DAE.Exp e;
+      DAE.Statement x;
+      Option<DAE.FunctionTree> funcs;
+    case ((e, x, funcs))
+      equation
+       ((e, (_, _))) = Expression.traverseExp(e, traversingcollateArrExpStmt, (x, funcs));
+      then ((e,funcs));
+    case ((e, x, funcs)) then ((e,funcs));
+  end matchcontinue;
+end collateArrExpStmt;
+  
+protected function traversingcollateArrExpStmt "
+Author: Frenkel TUD 2010-07.
+  wbraun: added as workaround for when condition.
+  As long as we don't support fully array helpVars, we
+  we can't collate the expression of a when condition.
+"
+  input tuple<DAE.Exp, tuple<DAE.Statement, Option<DAE.FunctionTree>> > inExp;
+  output tuple<DAE.Exp, tuple<DAE.Statement, Option<DAE.FunctionTree>> > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local
+    Option<DAE.FunctionTree> funcs;
+    DAE.ComponentRef cr;
+    DAE.Type ty;
+    Integer i;
+    DAE.Exp e,e1,e1_1,e1_2;
+    Boolean b;
+    DAE.Statement x;
+    // do nothing if try to collate when codition expression
+    case ((e as DAE.MATRIX(ty=ty,integer=i,matrix=((e1 as DAE.CREF(componentRef = cr))::_)::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
+      then     
+        ((e,(x,funcs)));
+    case ((e as DAE.MATRIX(ty=ty,integer=i,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))))::_)::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
+      then     
+        ((e,(x,funcs)));
+    case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.CREF(componentRef = cr))::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
+      then     
+        ((e,(x,funcs)));
+    case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr)))::_), (x as DAE.STMT_WHEN(exp=_), funcs)))
+      then     
+        ((e,(x,funcs)));
+     // collate in other cases
+    case ((e as DAE.MATRIX(ty=ty,integer=i,matrix=((e1 as DAE.CREF(componentRef = cr))::_)::_), (x, funcs)))
+      equation
+        e1_1 = Expression.expStripLastSubs(e1);
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
+        true = Expression.expEqual(e,e1_2);
+      then     
+        ((e1_1,(x,funcs)));
+    case ((e as DAE.MATRIX(ty=ty,integer=i,matrix=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))))::_)::_), (x, funcs)))
+      equation
+        e1_1 = Expression.expStripLastSubs(e1);
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
+        true = Expression.expEqual(e,e1_2);
+      then     
+        ((e1_1,(x,funcs)));
+    case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.CREF(componentRef = cr))::_), (x, funcs)))
+      equation
+        e1_1 = Expression.expStripLastSubs(e1);
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
+        true = Expression.expEqual(e,e1_2);
+      then     
+        ((e1_1,(x,funcs)));
+    case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr)))::_), (x, funcs)))
+      equation
+        e1_1 = Expression.expStripLastSubs(e1);
+        ((e1_2,(_,true))) = extendArrExp((e1_1,(funcs,false)));
+        true = Expression.expEqual(e,e1_2);
+      then     
+        ((e1_1,(x,funcs)));
+  case _ then inExp;
+end matchcontinue;
+end traversingcollateArrExpStmt;
 
 public function collateArrExpList
 "function collateArrExpList
@@ -2996,7 +3081,7 @@ algorithm
       list<DAE.Exp> expl1,expl;
     
     case({},_) then {};
-    
+   
     case(e::expl,_) equation
       ((e1,_)) = collateArrExp((e,optfunc));
       expl1 = collateArrExpList(expl,optfunc);
@@ -3007,7 +3092,7 @@ end collateArrExpList;
 
 public function collateArrExp "
 Author: Frenkel TUD 2010-07"
-  input tuple<DAE.Exp,Option<DAE.FunctionTree>> itpl;
+  input tuple<DAE.Exp, Option<DAE.FunctionTree>> itpl;
   output tuple<DAE.Exp,Option<DAE.FunctionTree>> otpl;
 algorithm 
   otpl := matchcontinue itpl
