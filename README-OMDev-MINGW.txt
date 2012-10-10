@@ -95,7 +95,12 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
 13. To install the OpenModelica Python Interface:
     - Ctrl+B and type: install-python
       Generates the python stub files.
-      Copy the OMPython files in trunk\build\share\omc\scripts\PythonInterface
+      Copies the OMPython files in trunk\build\share\omc\scripts\PythonInterface
+      
+14. To build the OpenModelica clients:
+    - Ctrl+B and type: qtclients
+      Compiles OMNotebook, OMShell, OMEdit, OMPlot, OMVisualize, OMOptim
+      Copies the binaries in trunk\build\bin and libraries in trunk\build\lib
 
 ***NOTES*** ON PROBLEMS WITH THE ECLIPSE PROJECT/OMDev BUILDER:
 ---------------------------------------------------------------

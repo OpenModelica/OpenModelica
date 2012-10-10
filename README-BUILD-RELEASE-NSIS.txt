@@ -40,7 +40,10 @@ NOTE: for checkout of any of the SVN directories you will need this user/pass:
     - install python 2.7.3 and put it in your path
     - make -f Makefile.omdev.mingw install-python OR Ctrl+B and type: install-python
 
-    - build OMClients i.e OMEdit, OMShell, OMNotebook, OMPlot, OMOptim, OMVisualize using Qt SDK. Follow the README.txt of each OMClient. Use the makefiles (recommended).
+    - build OMClients i.e OMEdit, OMShell, OMNotebook, OMPlot, OMOptim, OMVisualize using Qt SDK.
+    - make -f Makefile.omdev.mingw qtclients OR Ctrl+B and type: clean-qtclients qtclients
+    - You must download and install QtSDK 4.8.0. Add Qt in your PATH.
+    
     - add any new dll needed by clients into $OMDev\tools\OMTools\dll
     - if a new language file is added to OMEdit then add the corresponding qt language file into $OMDev\tools\OMTools\nls
 
