@@ -203,8 +203,8 @@ algorithm
     // builtin, do not enter!
     case (env, inName, _)
       equation
-        SCodeEnv.CLASS(env = {cls_env}, classType = cls_ty) = 
-          SCodeEnv.getItemInEnv(inName, env);
+        (SCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) = 
+          SCodeLookup.lookupInClass(inName, env);
         
         // make sure is builtin!
         true = valueEq(cls_ty, SCodeEnv.BUILTIN());
@@ -214,8 +214,8 @@ algorithm
     // not builtin
     case (env, inName, _)
       equation
-        SCodeEnv.CLASS(env = {cls_env}, classType = cls_ty) = 
-          SCodeEnv.getItemInEnv(inName, env);
+        (SCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) = 
+          SCodeLookup.lookupInClass(inName, env);
         
         // make sure is NOT builtin!
         false = valueEq(cls_ty, SCodeEnv.BUILTIN());

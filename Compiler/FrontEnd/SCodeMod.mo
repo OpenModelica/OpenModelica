@@ -175,13 +175,12 @@ algorithm
       String name, pre_str;
       Modifier mod;
       Absyn.Path path;
-      SCodeEnv.AvlTree tree;
       Absyn.Info info;
 
     // Check if the element can be found in the local scope first.
-    case ((name, mod), SCodeEnv.FRAME(clsAndVars = tree) :: _, _)
+    case ((name, mod), _, _)
       equation
-        _ = SCodeLookup.lookupInTree(name, tree);
+        (_, _) = SCodeLookup.lookupInClass(name, inEnv);
       then
         ((name, NONE(), mod));
 

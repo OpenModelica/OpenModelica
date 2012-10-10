@@ -486,7 +486,7 @@ algorithm
         binding = InstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, functions)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
-          Absyn.IDENT(tspec)))) = SCodeLookup.lookupInTree(ident, inAttributes);
+          Absyn.IDENT(tspec)))) = SCodeEnv.avlTreeGet(inAttributes, ident);
         ty = instBasicTypeAttributeType(tspec);
         (inst_exp,functions) = instExp(bind_exp, env, prefix, info, functions);
         binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(), 
@@ -894,21 +894,22 @@ algorithm
       Item item;
       Class cls;
       FunctionHashTable functions;
+      Env env;
       
     case (SCode.CLASS(partialPrefix = SCode.PARTIAL()), _, _, _, _)
       then (NONE(),inFunctions);
 
     case (SCode.CLASS(name = name), _, _, _, functions)
       equation
-        item = SCodeLookup.lookupInClass(name, inEnv);
+        (item, env) = SCodeLookup.lookupInClass(name, inEnv);
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
-        (cls, _, _, functions) = instClassItem(item, inMod, InstTypes.NO_PREFIXES(), inEnv,
+        (cls, _, _, functions) = instClassItem(item, inMod, InstTypes.NO_PREFIXES(), env,
           prefix, INST_ONLY_CONST(), functions);
         oel = makeConstantsPackage(prefix, cls);
       then
-        (oel,functions);
+        (oel, functions);
 
-    else (NONE(),inFunctions);
+    else (NONE(), inFunctions);
 
   end match;
 end instPackageConstants;

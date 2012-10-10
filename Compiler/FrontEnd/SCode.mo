@@ -833,10 +833,10 @@ algorithm
     local
       Absyn.Info i;
     
-    case(IMPORT(info = i)) then i;
-    case(EXTENDS(info = i)) then i;
-    case(CLASS(info = i)) then i;
     case(COMPONENT(info = i)) then i;
+    case(CLASS(info = i)) then i;
+    case(EXTENDS(info = i)) then i;
+    case(IMPORT(info = i)) then i;
     case(DEFINEUNIT(name = _)) then fail();    
     
   end match;
@@ -851,6 +851,22 @@ algorithm
     case (CLASS(name = s)) then s;
   end match;
 end elementName;
+
+public function elementNameInfo
+  input Element inElement;
+  output String outName;
+  output Absyn.Info outInfo;
+algorithm
+  (outName, outInfo) := match(inElement)
+    local
+      String name;
+      Absyn.Info info;
+
+    case COMPONENT(name = name, info = info) then (name, info);
+    case CLASS(name = name, info = info) then (name, info);
+
+  end match;
+end elementNameInfo;
 
 public function elementNames "Gets all elements that have an element name from the list"
   input list<Element> elts;

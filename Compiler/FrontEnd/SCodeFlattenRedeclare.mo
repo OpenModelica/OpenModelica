@@ -352,28 +352,19 @@ algorithm
     local
       SCode.Ident cls_name, name;
       Absyn.Info info;
-      Absyn.Path path;
+      Absyn.Path ext_path, env_path;
       Env env;
       Item base_item, item;
       SCode.Element redecl;
 
-    // redeclare-as-element class
-    case (redecl as SCode.CLASS(name = cls_name, info = info), _)
+    case (_, _)
       equation
-        (path, base_item) = lookupElementRedeclaration(cls_name, inEnv, info);
-        (SOME(item), _, _) = SCodeLookup.lookupInLocalScope(cls_name, inEnv, {});
-        item = SCodeEnv.linkItemUsage(base_item, item);
-        env = addRedeclareToEnvExtendsTable(item, path, inEnv, info);
-      then
-        env;
-
-    // redeclare-as-element component
-    case (redecl as SCode.COMPONENT(name = name, info = info), _)
-      equation
-        (path, base_item) = lookupElementRedeclaration(name, inEnv, info);
-        item = SCodeEnv.newVarItem(redecl, true);
-        item = SCodeEnv.linkItemUsage(base_item, item);
-        env = addRedeclareToEnvExtendsTable(item, path, inEnv, info);
+        name = SCode.elementName(inRedeclare);
+        info = SCode.elementInfo(inRedeclare);
+        (ext_path, _) = lookupElementRedeclaration(name, inEnv, info);
+        env_path = SCodeEnv.getEnvPath(inEnv);
+        item = SCodeEnv.ALIAS(name, SOME(env_path), info);
+        env = addRedeclareToEnvExtendsTable(item, ext_path, inEnv, info);
       then
         env;
 
@@ -447,18 +438,7 @@ algorithm
       Absyn.Info info;
       SCodeEnv.Redeclaration redecl;
 
-    // redeclare-as-class 
-    case (SCodeEnv.CLASS(cls = _), _, SCodeEnv.EXTENDS(bc, el, info) :: exl)
-      equation
-        true = Absyn.pathEqual(inBaseClass, bc);
-        redecl = SCodeEnv.PROCESSED_MODIFIER(inRedeclaredElement);
-        SCodeCheck.checkDuplicateRedeclarations(redecl, el);
-        ex = SCodeEnv.EXTENDS(bc, redecl :: el, info);
-      then
-        ex :: exl;
-
-    // redeclare-as-element component
-    case (SCodeEnv.VAR(var = _), _, SCodeEnv.EXTENDS(bc, el, info) :: exl)
+    case (_, _, SCodeEnv.EXTENDS(bc, el, info) :: exl)
       equation
         true = Absyn.pathEqual(inBaseClass, bc);
         redecl = SCodeEnv.PROCESSED_MODIFIER(inRedeclaredElement);
@@ -1020,7 +1000,14 @@ algorithm
       then
         SCodeEnv.CLASS(el2, env2, ty2);
 
+    /*************************************************************************/
+    // TODO: Attributes should probably be propagated for alias items too. If
+    // the original is an alias, look up the referenced item and use those
+    // attributes. If the new item is an alias, look up the referenced item and
+    // apply the attributes to it.
+    /*************************************************************************/
     case (SCodeEnv.ALIAS(path = _), _) then inNewItem;
+    case (_, SCodeEnv.ALIAS(path = _)) then inNewItem;
 
     else
       equation

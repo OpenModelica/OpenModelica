@@ -145,7 +145,9 @@ public uniontype Item
 
   record ALIAS 
     "An alias for another Item, see comment in SCodeFlattenRedeclare package."
-    Absyn.Path path;
+    String name;
+    Option<Absyn.Path> path;
+    Absyn.Info info;
   end ALIAS;
 end Item;
 
@@ -186,21 +188,24 @@ public function enterScope
   input Env inEnv;
   input SCode.Ident inName;
   output Env outEnv;
-protected
-  Frame cls_env;
-  AvlTree cls_and_vars;
-  Item item;
 algorithm
   outEnv := matchcontinue(inEnv, inName)
+    local
+      Frame cls_env;
+      AvlTree cls_and_vars;
+      Item item;
+
     case (_, _)
       equation
-        FRAME(clsAndVars = cls_and_vars) :: _ = inEnv;
-        item = avlTreeGet(cls_and_vars, inName);
-        item = resolveAlias(item, cls_and_vars);
+        /*********************************************************************/
+        // TODO: Should we use the environment returned by lookupInClass?
+        /*********************************************************************/
+        (item, _) = SCodeLookup.lookupInClass(inName, inEnv);
         {cls_env} = getItemEnv(item);
         outEnv = enterFrame(cls_env, inEnv);
       then
         outEnv;
+
     case (_, _)
       equation
         print("Failed to enterScope: " +& inName +& " in env: " +& printEnvStr(inEnv) +& "\n");
@@ -208,6 +213,35 @@ algorithm
         fail();
   end matchcontinue;
 end enterScope;
+
+public function enterScopePath
+  input Env inEnv;
+  input Absyn.Path inPath;
+  output Env outEnv;
+algorithm
+  outEnv := match(inEnv, inPath)
+    local
+      Absyn.Ident name;
+      Absyn.Path path;
+      Env env;
+
+    case (_, Absyn.QUALIFIED(name = name, path = path))
+      equation
+        env = enterScope(inEnv, name);
+      then
+        enterScopePath(env, path);
+
+    case (_, Absyn.IDENT(name = name))
+      then enterScope(inEnv, name);
+
+    case (_, Absyn.FULLYQUALIFIED(path = path))
+      equation
+        env = getEnvTopScope(inEnv);
+      then
+        enterScopePath(env, path);
+
+  end match;
+end enterScopePath;
 
 public function enterFrame
   input Frame inFrame;
@@ -527,6 +561,8 @@ algorithm
     case VAR(isUsed = SOME(is_used))
       then Util.getStatefulBoolean(is_used);
 
+    case ALIAS(name = _) then true;
+
     else false;
   end match;
 end isItemUsed;
@@ -573,21 +609,22 @@ algorithm
       Env class_env, env;
       SCode.ClassDef cdef;
       ClassType cls_type;
+      Absyn.Info info;
 
     // A class extends.
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)), _)
       then
         SCodeFlattenRedeclare.extendEnvWithClassExtends(inClassDefElement, inEnv);
 
-    case (SCode.CLASS(name = cls_name, classDef = cdef, 
-        prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _)
+    case (SCode.CLASS(name = cls_name, classDef = cdef, prefixes = SCode.PREFIXES(
+        replaceablePrefix = SCode.REPLACEABLE(_)), info = info), _)
       equation
         class_env = makeClassEnvironment(inClassDefElement, false);
         cls_type = getClassType(cdef);
         alias_name = cls_name +& BASE_CLASS_SUFFIX;
         env = extendEnvWithItem(newClassItem(inClassDefElement, class_env, cls_type),
           inEnv, alias_name);
-        env = extendEnvWithItem(ALIAS(Absyn.IDENT(alias_name)), env, cls_name);
+        env = extendEnvWithItem(ALIAS(alias_name, NONE(), info), env, cls_name);
       then
         env;
 
@@ -676,29 +713,6 @@ algorithm
   tree := avlTreeReplace(tree, inItemName, inItem);
   outEnv := FRAME(name, ty, tree, exts, imps, is_used) :: rest;
 end updateItemInEnv;
-
-public function getItemInEnv
-  input String inItemName;
-  input Env inEnv;
-  output Item outItem;
-protected
-  AvlTree tree;
-algorithm
-  outItem := matchcontinue(inItemName, inEnv)
-    case (inItemName, inEnv)
-      equation
-        FRAME(clsAndVars = tree) :: _ = inEnv;
-        outItem = avlTreeGet(tree, inItemName);
-        outItem = resolveAlias(outItem, tree);
-      then
-        outItem;
-    case (inItemName, inEnv)
-      equation
-        print("- SCodeEnv.getItemInEnv failed on: " +& inItemName +& " in env:" +& printEnvStr(inEnv) +& "\n");
-      then
-        fail();
-  end matchcontinue;
-end getItemInEnv;
 
 protected function extendEnvWithImport
   "Extends the environment with an import element."
@@ -1459,6 +1473,7 @@ algorithm
 
     case VAR(var = SCode.COMPONENT(info = info)) then info;
     case CLASS(cls = SCode.CLASS(info = info)) then info;
+    case ALIAS(info = info) then info;
   end match;
 end getItemInfo;
 
@@ -1489,6 +1504,7 @@ algorithm
 
     case VAR(var = SCode.COMPONENT(name = name)) then name;
     case CLASS(cls = SCode.CLASS(name = name)) then name;
+    case ALIAS(name = name) then name;
   end match;
 end getItemName;
 
@@ -1648,25 +1664,64 @@ algorithm
   end match;
 end getRedeclarationElement;
 
-public function resolveAlias
-  "Resolved an alias by looking up the aliased item recursively in the AvlTree
-  until a non-alias item is found."
-  input Item inItem;
-  input AvlTree inTree;
-  output Item outItem;
+public function getRedeclarationNameInfo
+  input Redeclaration inRedeclare;
+  output String outName;
+  output Absyn.Info outInfo;
 algorithm
-  outItem := match(inItem, inTree)
+  (outName, outInfo) := match(inRedeclare)
+    local
+      SCode.Element el;
+      String name;
+      Absyn.Info info;
+
+    case PROCESSED_MODIFIER(modifier = ALIAS(name = name, info = info))
+      then (name, info);
+
+    else
+      equation
+        el = getRedeclarationElement(inRedeclare);
+        (name, info) = SCode.elementNameInfo(el);
+      then
+        (name, info);
+        
+  end match;
+end getRedeclarationNameInfo;
+
+public function resolveAlias
+  "Resolved an alias by looking up the aliased item recursively in the
+   environment until a non-alias item is found."
+  input Item inItem;
+  input Env inEnv;
+  output Item outItem;
+  output Env outEnv;
+algorithm
+  (outItem, outEnv) := match(inItem, inEnv)
     local
       String name;
       Item item;
+      Absyn.Path path;
+      Env env;
+      AvlTree tree;
 
-    case (ALIAS(path = Absyn.IDENT(name)), _)
+    case (ALIAS(name = name, path = NONE()), FRAME(clsAndVars = tree) :: _)
       equation
-        item = avlTreeGet(inTree, name);
+        item = avlTreeGet(tree, name);
+        (item, env) = resolveAlias(item, inEnv);
       then
-        resolveAlias(item, inTree);
+        (item, env);
 
-    else inItem;
+    case (ALIAS(name = name, path = SOME(path)), _)
+      equation
+        env = getEnvTopScope(inEnv);
+        env = enterScopePath(env, path);
+        FRAME(clsAndVars = tree) :: _ = env;
+        item = avlTreeGet(tree, name);
+        (item, env) = resolveAlias(item, env);
+      then
+        (item, env);
+
+    else (inItem, inEnv);
   end match;
 end resolveAlias;
 
@@ -1824,7 +1879,7 @@ public function printAvlValueStr
 algorithm
   outString := match(inValue)
     local
-      String key_str, alias_str;
+      String key_str, alias_str, name;
       Absyn.Path path;
 
     case (AVLTREEVALUE(key = key_str, value = CLASS(cls = _)))
@@ -1833,11 +1888,14 @@ algorithm
     case (AVLTREEVALUE(key = key_str, value = VAR(var = _)))
       then "\t\tVar " +& key_str +& "\n";
 
-    case (AVLTREEVALUE(key = key_str, value = ALIAS(path = path)))
+    case (AVLTREEVALUE(key = key_str, value = ALIAS(name = name, path = SOME(path))))
       equation
-        alias_str = Absyn.pathString(path);
+        alias_str = Absyn.pathString(path) +& "." +& name;
       then
         "\t\tAlias " +& key_str +& " -> " +& alias_str +& "\n";
+
+    case (AVLTREEVALUE(key = key_str, value = ALIAS(name = name)))
+      then "\t\tAlias " +& key_str +& " -> " +& name +& "\n";
 
   end match;
 end printAvlValueStr;

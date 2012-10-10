@@ -1781,9 +1781,12 @@ algorithm
     case (SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix =
         SCode.REPLACEABLE(cc)), ep, pp, res, cdef, info), _, _, _, _, _ , consts)
       equation
+        /*********************************************************************/
+        // TODO: Fix the usage of alias items in this case.
+        /*********************************************************************/
         // Check if the class is used.
         item = SCodeEnv.avlTreeGet(inClsAndVars, name);
-        resolved_item = SCodeEnv.resolveAlias(item, inClsAndVars);
+        (resolved_item, _) = SCodeEnv.resolveAlias(item, inEnv);
         true = checkClassUsed(resolved_item, cdef);
         // The class is used, recursively collect its contents.
         {class_frame} = SCodeEnv.getItemEnv(resolved_item);
@@ -2111,7 +2114,7 @@ protected
   String name;
   Item item;
 algorithm
-  name := SCode.elementName(SCodeEnv.getRedeclarationElement(inRedeclare));
+  (name, _) := SCodeEnv.getRedeclarationNameInfo(inRedeclare);
   (item, _, _) := SCodeLookup.lookupSimpleName(name, inEnv);
   true := SCodeEnv.isItemUsed(item);
 end removeUnusedRedeclares3;

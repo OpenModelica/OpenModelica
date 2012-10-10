@@ -495,9 +495,7 @@ protected
   String el_name;
   Absyn.Info el_info;
 algorithm
-  el := SCodeEnv.getRedeclarationElement(inRedeclare);
-  el_name := SCode.elementName(el);
-  el_info := SCode.elementInfo(el);
+  (el_name, el_info) := SCodeEnv.getRedeclarationNameInfo(inRedeclare);
   false := checkDuplicateRedeclarations2(el_name, el_info, inRedeclarations);
 end checkDuplicateRedeclarations;
 
@@ -521,10 +519,8 @@ algorithm
 
     case (_, _, redecl :: rest_redecls)
       equation
-        el = SCodeEnv.getRedeclarationElement(redecl);
-        el_name = SCode.elementName(el);
+        (el_name, el_info) = SCodeEnv.getRedeclarationNameInfo(redecl);
         true = stringEqual(inRedeclareName, el_name);
-        el_info = SCode.elementInfo(el);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, el_info);
         Error.addSourceMessage(Error.DUPLICATE_REDECLARATION,
           {inRedeclareName}, inRedeclareInfo);

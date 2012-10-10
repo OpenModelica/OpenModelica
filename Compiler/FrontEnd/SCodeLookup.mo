@@ -474,7 +474,6 @@ public function lookupInLocalScope
 algorithm
   (outItem, outPath, outEnv) := matchcontinue(inName, inEnv, inVisitedScopes)
     local
-      AvlTree cls_and_vars;
       Env rest_env, env;
       Item item;
       Option<Item> opt_item;
@@ -484,11 +483,11 @@ algorithm
       Option<Env> opt_env;
 
     // Look among the locally declared components.
-    case (_, SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _, _)
+    case (_, _, _)
       equation
-        item = lookupInTree(inName, cls_and_vars);
+        (item, env) = lookupInClass(inName, inEnv);
       then
-        (SOME(item), SOME(Absyn.IDENT(inName)), SOME(inEnv));
+        (SOME(item), SOME(Absyn.IDENT(inName)), SOME(env));
 
     // Look among the inherited components.
     case (_, _, _)
@@ -532,22 +531,14 @@ public function lookupInClass
   input Absyn.Ident inName;
   input Env inEnv;
   output Item outItem;
+  output Env outEnv;
 protected
   AvlTree tree;
 algorithm
   SCodeEnv.FRAME(clsAndVars = tree) :: _ := inEnv;
-  outItem := lookupInTree(inName, tree);
+  outItem := SCodeEnv.avlTreeGet(tree, inName);
+  (outItem, outEnv) := SCodeEnv.resolveAlias(outItem, inEnv);
 end lookupInClass;
-
-public function lookupInTree
-  "Looks up an identifier in an AvlTree."
-  input Absyn.Ident inName;
-  input AvlTree inTree;
-  output Item outItem;
-algorithm
-  outItem := SCodeEnv.avlTreeGet(inTree, inName);
-  outItem := SCodeEnv.resolveAlias(outItem, inTree);
-end lookupInTree;
 
 public function lookupInBaseClasses
   "Looks up an identifier by following the extends clauses in a scope."

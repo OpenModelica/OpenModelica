@@ -86,7 +86,7 @@ algorithm
 
     case (SCode.CLASS(name = name, classDef = cdef, info = info), _)
       equation
-        SCodeEnv.CLASS(env = {cls_env}, classType = cls_ty) = 
+        (SCodeEnv.CLASS(env = {cls_env}, classType = cls_ty), _) = 
           SCodeLookup.lookupInClass(name, inEnv);
         env = SCodeEnv.enterFrame(cls_env, inEnv);
 
