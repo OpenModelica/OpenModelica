@@ -3434,29 +3434,36 @@ algorithm
       BackendDAE.Var v,va,v1,v2;
       DAE.ComponentRef cr,cra;
       DAE.Exp sa,sb,e;
-      String s,s1,s2,s3,s4,s5;
+      Integer i,ia;
     case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_)
       equation
-        e = getNonZeroStart(sa,sb,negate);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = getNonZeroStart(sa,e,knVars);
         v1 = setVarStartValue(v,e);
       then v1;     
     case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        mergeStartFixed1(cr,sa,cra,e,negate," both fixed and have start values ","",knVars);
-      then v;
+        // according to MSL
+        // use the value from the variable that is closer to the top of the 
+        // hierarchy i.e. A.B value has priority over X.Y.Z value!        
+        i = ComponentReference.crefDepth(cr);
+        ia = ComponentReference.crefDepth(cra);
+      then
+        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,negate," both fixed and have start values ","");
     case (v,true,SOME(sa),va,true,NONE(),_,_)
       then v;
     case (v,true,SOME(sa),va,false,SOME(sb),_,_)
       equation
-        e = getNonZeroStart(sa,sb,negate);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = getNonZeroStart(sa,e,knVars);
         v1 = setVarStartValue(v,e);
       then v1;     
     case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        mergeStartFixed1(cr,sa,cra,e,negate," have start values "," because this is fixed",knVars);
-      then v;
+      then 
+         mergeStartFixed1(false,v,cr,sa,cra,e,negate," have start values "," because this is fixed");
     case (v,true,SOME(sa),va,false,NONE(),_,_)
       then v;
     case (v,true,NONE(),va,true,SOME(sb),_,_)
@@ -3475,7 +3482,8 @@ algorithm
       then v;   
     case (v,false,SOME(sa),va,true,SOME(sb),_,_)
       equation
-        e = getNonZeroStart(sa,sb,negate);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = getNonZeroStart(sa,e,knVars);
         v1 = setVarStartValue(v,e);
         v2 = setVarFixed(v1,true);
       then v2;
@@ -3485,25 +3493,20 @@ algorithm
       then v1;
     case (v,false,SOME(sa),va,false,SOME(sb),_,_)
       equation
-        e = getNonZeroStart(sa,sb,negate);
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        e = getNonZeroStart(sa,e,knVars);
         v1 = setVarStartValue(v,e);
       then v1;     
-    
-    // adrpo: TODO! FIXME! maybe we should use another heuristic here such as:
-    //        use the value from the variable that is closer to the top of the 
-    //        hierarchy i.e. A.B value has priority over X.Y.Z value!
-    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
-      equation
-        true = intGt(ComponentReference.crefDepth(cr), ComponentReference.crefDepth(cra));
-        // invert arguments
-        v = mergeStartFixed(inAVar,fixeda,sva,inVar,fixed,sv,negate,knVars);
-      then v;
-
     case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        mergeStartFixed1(cr,sa,cra,e,negate," have start values ","",knVars);
-      then v;
+        // according to MSL
+        // use the value from the variable that is closer to the top of the 
+        // hierarchy i.e. A.B value has priority over X.Y.Z value!        
+        i = ComponentReference.crefDepth(cr);
+        ia = ComponentReference.crefDepth(cra);
+      then
+        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,negate," have start values ","");
     case (v,false,SOME(sa),va,false,NONE(),_,_)
       then v;
     case (v,false,NONE(),va,true,SOME(sb),_,_)
@@ -3528,6 +3531,8 @@ end mergeStartFixed;
 
 protected function mergeStartFixed1
 "autor: Frenkel TUD 2011-04"
+  input Boolean b "true if Alias Var have less dots in the name";
+  input BackendDAE.Var inVar;
   input DAE.ComponentRef cr;
   input DAE.Exp sv;
   input DAE.ComponentRef cra;
@@ -3535,27 +3540,16 @@ protected function mergeStartFixed1
   input Boolean negate;
   input String s4;
   input String s7;
-  input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
+  output BackendDAE.Var outVar;
 algorithm
-  _ :=
-  matchcontinue (cr,sv,cra,sva,negate,s4,s7,knVars)
+  outVar :=
+  matchcontinue (b,inVar,cr,sv,cra,sva,negate,s4,s7)
     local
       String s,s1,s2,s3,s5,s6;
       DAE.Exp sv1,sva1;
-    // report nothing if equal start values
-    case (_,_,_,_,_,_,_,_)
-      equation
-        true = Expression.expEqual(sv, sva);
-      then 
-        ();
-    case (_,_,_,_,_,_,_,_)
-      equation
-        ((sv1, _)) = Expression.traverseExp(sv, replaceCrefWithBindExp, knVars);
-        ((sva1, _)) = Expression.traverseExp(sva, replaceCrefWithBindExp, knVars);
-        true = Expression.expEqual(sv1, sva1);
-      then 
-        ();         
-    case (_,_,_,_,_,_,_,_)
+      BackendDAE.Var v;
+    // alias var has more dots in the name
+    case (false,_,_,_,_,_,_,_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Util.if_(negate," = -"," = ");
@@ -3565,25 +3559,43 @@ algorithm
         s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,s7,".\n"});
         Error.addMessage(Error.COMPILER_WARNING,{s});
       then 
-        ();
+        inVar;     
+    case (true,_,_,_,_,_,_,_,_)
+      equation
+        s1 = ComponentReference.printComponentRefStr(cr);
+        s2 = Util.if_(negate," = -"," = ");
+        s3 = ComponentReference.printComponentRefStr(cra);
+        s5 = ExpressionDump.printExpStr(sv);
+        s6 = ExpressionDump.printExpStr(sva);
+        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s2,s7,".\n"});
+        Error.addMessage(Error.COMPILER_WARNING,{s});
+        v = setVarStartValue(inVar,sva);
+      then 
+        v;
   end matchcontinue;
 end mergeStartFixed1;
 
 public function replaceCrefWithBindExp
-  input tuple<DAE.Exp, BackendDAE.Variables> inTuple;
-  output tuple<DAE.Exp, BackendDAE.Variables> outTuple;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
       DAE.Exp e;
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
-    case ((DAE.CREF(componentRef=cr), vars))
+      Boolean b;
+    // true if crefs replaced in expression
+    case ((DAE.CREF(componentRef=cr), (vars,_)))
       equation
          ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
-         ((e, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, vars);
+         ((e, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars,false));
       then
-        ((e, vars));
+        ((e, (vars,true)));
+    // true if crefs in expression
+    case ((e as DAE.CREF(componentRef=cr), (vars,_)))
+      then
+        ((e, (vars,true)));        
     else then inTuple;
   end matchcontinue;
 end replaceCrefWithBindExp;
@@ -3592,13 +3604,14 @@ protected function getNonZeroStart
 "autor: Frenkel TUD 2011-04"
   input DAE.Exp exp1;
   input DAE.Exp exp2;
-  input Boolean negate;
+  input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
   output DAE.Exp outExp;
 algorithm
   outExp :=
-  matchcontinue (exp1,exp2,negate)
+  matchcontinue (exp1,exp2,knVars)
     local
-      DAE.Exp ne;
+      DAE.Exp exp2_1,exp1_1;
+      Boolean b;
     case (_,_,_)
       equation
         true = Expression.isZero(exp2);
@@ -3606,13 +3619,20 @@ algorithm
     case (_,_,_)
       equation
         true = Expression.isZero(exp1);
-        ne = Debug.bcallret1(negate,Expression.negate,exp2,exp2);
-      then ne;      
+      then exp2;
     case (_,_,_)
       equation
-        ne = Debug.bcallret1(negate,Expression.negate,exp2,exp2);
-        true = Expression.expEqual(exp1,ne);
-      then ne;            
+        true = Expression.expEqual(exp1,exp2);
+      then exp1;
+    case (_,_,_)
+      equation
+        // simple evaluation, by replace crefs with bind expressions recursivly
+        ((exp1_1, (_,b))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false));
+        ((exp2_1, _)) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false));
+        true = Expression.expEqual(exp1_1, exp2_1);
+        exp1_1 = Util.if_(b,exp1,exp2);
+      then 
+        exp1_1;         
   end matchcontinue;
 end getNonZeroStart;
 

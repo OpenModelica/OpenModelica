@@ -2136,7 +2136,6 @@ protected function selectAlias2
 protected
   BackendDAE.Var v1,av1;
   list<DAE.SymbolicOperation> ops;
-  BackendDAE.Var var;
 algorithm
   Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (3).\n"));
   // merge fixed,start,nominal
@@ -2144,8 +2143,8 @@ algorithm
   osyst := BackendVariable.addVarDAE(v1,syst);
   // store changed var
   ops := DAEUtil.getSymbolicTransformations(source);
-  var := BackendVariable.mergeVariableOperations(avar,DAE.SOLVED(acr,e)::ops);
-  av1 := BackendVariable.setBindExp(avar, e);
+  av1 := BackendVariable.mergeVariableOperations(avar,DAE.SOLVED(acr,e)::ops);
+  av1 := BackendVariable.setBindExp(av1, e);
   osyst := BackendVariable.addVarDAE(av1,osyst);
   oshared := shared;
 end selectAlias2;
