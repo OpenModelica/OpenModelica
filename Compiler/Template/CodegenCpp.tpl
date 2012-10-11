@@ -5833,7 +5833,7 @@ case CREF(ty= t as DAE.T_ARRAY(__)) then
   match context
   case SIMULATION(__) then
     <<
-    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+    assign_array(<%lhsStr%>,<%rhsStr%> );
     >>
   else
     '<%lhsStr%> = <%rhsStr%>;'
@@ -7128,9 +7128,9 @@ template copyArrayData(DAE.Type ty, String exp, DAE.ComponentRef cr,
   let cref = contextArrayCref(cr, context)
   match context
   case FUNCTION_CONTEXT(__) then
-    'copy_<%type%>_data(&<%exp%>, &<%cref%>);'
+    'assign_array(<%cref%>,<%exp%>);'
   else
-    'copy_<%type%>_data_mem(&<%exp%>, &<%cref%>);'
+    'assign_array(<%cref%>,<%exp%>);'
 end copyArrayData;
 
 template algStmtWhen(DAE.Statement when, Context context, Text &varDecls /*BUFP*/,SimCode simCode)
