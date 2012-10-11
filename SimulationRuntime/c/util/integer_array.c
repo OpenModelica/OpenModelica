@@ -1637,3 +1637,12 @@ void convert_alloc_integer_array_from_f77(const integer_array_t * a,
     }
     transpose_integer_array (a,dest);
 }
+
+void sizes_of_dimensions_base_array(const base_array_t *a, integer_array_t *dest)
+{
+  int i = ndims_base_array(a);
+  simple_alloc_1d_integer_array(dest, i);
+  while (i--) {
+    integer_set(dest, i, a->dim_size[i]);
+  }
+}

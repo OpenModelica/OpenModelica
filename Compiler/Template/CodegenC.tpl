@@ -7037,7 +7037,12 @@ template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
     let typeStr = '<%expTypeArray(exp.ty)%>'
     let &preExp += '<%resVar%> = size_of_dimension_<%typeStr%>(<%expPart%>, <%dimPart%>);<%\n%>'
     resVar
-  else "size(X) not implemented"
+  case SIZE(exp=CREF(__)) then
+    let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let resVar = tempDecl("integer_array", &varDecls /*BUFD*/)
+    let &preExp += 'sizes_of_dimensions_base_array(&<%expPart%>, &<%resVar%>);<%\n%>'
+    resVar
+  else error(sourceInfo(), printExpStr(exp) + " not implemented")
 end daeExpSize;
 
 
