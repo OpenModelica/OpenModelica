@@ -3799,7 +3799,7 @@ match eq
 case SES_MIXED(__) then
   let contEqs = equation_(cont, context, &varDecls /*BUFD*/, simCode)
   let numDiscVarsStr = listLength(discVars) 
-  let valuesLenStr = listLength(values)
+//  let valuesLenStr = listLength(values)
   let &preDisc = buffer "" /*BUFD*/
   let num = index
   let discvars2 = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
@@ -3809,7 +3809,8 @@ case SES_MIXED(__) then
       new_disc_vars<%num%>[<%i0%>] = <%cref(cref)%>;
       >>
     ;separator="\n")
-  <<
+  << 
+  	<% /*
       bool values<%num%>[<%valuesLenStr%>] = {<%values ;separator=", "%>};
       bool pre_disc_vars<%num%>[<%numDiscVarsStr%>];
       bool new_disc_vars<%num%>[<%numDiscVarsStr%>];
@@ -3832,7 +3833,7 @@ case SES_MIXED(__) then
         //throw std::runtime_error("Number of iteration steps exceeded for discrete varibales check . ");
         cout << "Number of iteration steps exceeded for discrete varibales check at time " << time << std::endl;
     }
-  
+    */ %>
   >>
 end equationMixed;
 

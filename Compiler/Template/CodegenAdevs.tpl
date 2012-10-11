@@ -1016,7 +1016,9 @@ match eq
 case SES_MIXED(__) then
   let contEqs = equation_(cont, context, &varDecls /*BUFD*/)
   let numDiscVarsStr = listLength(discVars) 
+  /*
   let valuesLenStr = listLength(values)
+  */
   let &preDisc = buffer "" /*BUFD*/
   let discLoc2 = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
       let expPart = daeExp(exp, context, &preDisc /*BUFC*/, &varDecls /*BUFD*/)
@@ -1026,6 +1028,7 @@ case SES_MIXED(__) then
       >>
     ;separator="\n")
   <<
+  <%/*
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
   #endif
@@ -1046,6 +1049,7 @@ case SES_MIXED(__) then
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
   #endif<%\n%>
+  */%>
   >>
 end equationMixed;
 

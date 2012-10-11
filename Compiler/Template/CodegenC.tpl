@@ -220,6 +220,7 @@ template simulationFileHeader(SimCode simCode)
     #include "simulation_data.h"  
     #include "simulation_runtime.h"
     #include "omc_error.h"
+    #include "model_help.h"
     
     #include <assert.h>
     #include <string.h>
@@ -2118,7 +2119,6 @@ match eq
 case SES_MIXED(__) then
   let contEqs = equation_(cont, context, &varDecls /*BUFD*/, &tmp)
   let numDiscVarsStr = listLength(discVars) 
-  let valuesLenStr = listLength(values)
   let &preDisc = buffer "" /*BUFD*/
   let discLoc2 = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
       let expPart = daeExp(exp, context, &preDisc /*BUFC*/, &varDecls /*BUFD*/)
@@ -2131,9 +2131,8 @@ case SES_MIXED(__) then
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
   #endif
+  modelica_boolean boolVar_<%index%>[<%numDiscVarsStr%>];
   mixed_equation_system(<%numDiscVarsStr%>);
-  modelica_boolean values[<%valuesLenStr%>] = {<%values ;separator=", "%>};
-  int value_dims[<%numDiscVarsStr%>] = {<%value_dims ;separator=", "%>};
   <%discVars |> SIMVAR(__) hasindex i0 => 'discrete_loc[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
   {
     <%contEqs%>
@@ -2142,7 +2141,8 @@ case SES_MIXED(__) then
   <%discLoc2%>
   {
     modelica_boolean *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(modelica_boolean*)&<%cref(name)%>' ;separator=", "%>};
-    check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
+    modelica_boolean *loc_prePtrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(modelica_boolean*)&$P$PRE<%cref(name)%>' ;separator=", "%>};
+    check_discrete_values(boolVar_<%index%>,<%numDiscVarsStr%>,<%index%>);
   }
   mixed_equation_system_end(<%numDiscVarsStr%>);
   #ifdef _OMC_MEASURE_TIME

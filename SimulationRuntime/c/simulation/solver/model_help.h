@@ -96,6 +96,7 @@ double LessEq(double a, double b);
 double Greater(double a, double b);
 double GreaterEq(double a, double b);
 
+modelica_boolean nextVar(modelica_boolean *b, int n);
 
 #ifdef __cplusplus
 }

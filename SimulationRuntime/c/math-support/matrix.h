@@ -105,7 +105,6 @@ free(ipiv); \
 (data->localData[1]->timeValue-data->localData[2]->timeValue))
 
 #define mixed_equation_system(size) do { \
-    int cur_value_indx = 0; \
     data->simulationInfo.found_solution = 0; \
     do { \
         double discrete_loc[size] = {0}; \
@@ -114,11 +113,11 @@ free(ipiv); \
 #define mixed_equation_system_end(size) } while (!data->simulationInfo.found_solution); \
  } while(0)
 
-#define check_discrete_values(size,numValues) \
+#define check_discrete_values(boolVar, size, index) \
 do { \
   int i = 0; \
   if (data->simulationInfo.found_solution == -1) { \
-  /*system of equations failed */ \
+      /*system of equations failed */ \
       data->simulationInfo.found_solution = 0; \
   } else { \
       data->simulationInfo.found_solution = 1; \
@@ -130,26 +129,26 @@ do { \
       }\
   }\
   if (!data->simulationInfo.found_solution ) { \
-      cur_value_indx++; \
-      if (cur_value_indx >= numValues/size) { \
-          data->simulationInfo.found_solution = -1; \
-      } else {\
+    if (nextVar(boolVar,size)) { \
       /* try next set of values*/ \
-          for (i = 0; i < size; i++) { \
-              *loc_ptrs[i] = (modelica_boolean)values[cur_value_indx * size + i];  \
-          } \
+      for (i = 0; i < size; i++) { \
+        *loc_ptrs[i] = *loc_prePtrs[i] != boolVar[i];  \
       } \
+    } else  {\
+      WARNING1("Error solving hybrid equation system with index", index); \
+      /*TODO: "break simulation?"*/ \
+    } \
   } \
   /* we found a solution*/ \
   if (data->simulationInfo.found_solution && DEBUG_FLAG(LOG_NONLIN_SYS)){ \
-      int i = 0; \
-      printf("Result of mixed system discrete variables:\n"); \
-      for (i = 0; i < size; i++) { \
+    int i = 0; \
+    printf("Result of mixed system discrete variables:\n"); \
+    for (i = 0; i < size; i++) { \
         int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
         const char *__name = data->modelData.booleanVarsData[ix].info.name; \
         printf("%s = %d  pre(%s)= %d\n",__name, *loc_ptrs[i], __name, data->simulationInfo.booleanVarsPre[ix]); \
-      } \
-      fflush(NULL); \
+    } \
+    fflush(NULL); \
   } \
 } while(0)
 

@@ -2584,11 +2584,11 @@ algorithm
         (res, indx1, indx2) = indexNonLinSysandCountEqns(rest,inCountEquation+1,inNonLinSysIndex+1);
         res = listAppend({SimCode.SES_NONLINEAR(index, eqs, crefs, inNonLinSysIndex)},res);
       then (res, indx1, indx2);
-    case(SimCode.SES_MIXED(index, cont, discVars, discEqs, values, value_dims)::rest, _, _)
+    case(SimCode.SES_MIXED(index, cont, discVars, discEqs)::rest, _, _)
       equation
         ({cont}, indx1, indx2) = indexNonLinSysandCountEqns({cont},inCountEquation,inNonLinSysIndex);  
         (res, indx1, indx2) = indexNonLinSysandCountEqns(rest, indx1+1, indx2);
-        res = listAppend({SimCode.SES_MIXED(index, cont, discVars, discEqs, values, value_dims)},res);
+        res = listAppend({SimCode.SES_MIXED(index, cont, discVars, discEqs)},res);
       then (res, indx1, indx2);          
     case(eq::rest, _, _)
       equation
@@ -4618,15 +4618,9 @@ algorithm
         (_,{equation_},uniqueEqIndex,tempvars) = createEquations(true,false,false,skipDiscInAlgorithm,false,syst,shared,{comp1},helpVarInfo,iuniqueEqIndex,itempvars);
         simVarsDisc = List.map2(disc_var, dlowvarToSimvar,NONE(),knvars);
         discEqs = extractDiscEqs(disc_eqn, disc_var);
-        // adrpo: TODO! FIXME! THIS FUNCTION is madness!
-        //        for 34 discrete values you need a list of 34 about 4926277576697053184 times!!!
-        (ieqns,ivars) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp1);
-        cont_eqn = BackendEquation.getEqns(ieqns,eqns);
-        cont_var = List.map1r(ivars, BackendVariable.getVarAt, vars);
-        (values, value_dims) = extractValuesAndDims(disc_var); // ({1,0},{2});
-        //(values, value_dims) = ({1,0},{2});
+        //was madness        
       then
-        ({SimCode.SES_MIXED(uniqueEqIndex, equation_, simVarsDisc, discEqs, values, value_dims)},{equation_},uniqueEqIndex+1,tempvars);
+        ({SimCode.SES_MIXED(uniqueEqIndex, equation_, simVarsDisc, discEqs)},{equation_},uniqueEqIndex+1,tempvars);
         
         // continuous system of equations try tearing algorithm
     case (_, _, false,syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),shared as BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, constraints = constrs,classAttrs=clsAttrs,cache=cache,env=env, eventInfo = ev, extObjClasses = eoc),comp,_,_,_)
@@ -10049,13 +10043,13 @@ algorithm
         (discEqs,divtplLst) =  listMap1_2(discEqs,addDivExpErrorMsgtoSimEqSystem,inDlowMode);
       then
         (SimCode.SES_NONLINEAR(index,discEqs,crefs,indexNonLinear),divtplLst);
-    case (SimCode.SES_MIXED(index,cont,vars,discEqs,values,value_dims),_)
+    case (SimCode.SES_MIXED(index,cont,vars,discEqs),_)
       equation
         (cont1,divtplLst) = addDivExpErrorMsgtoSimEqSystem(cont,inDlowMode);
         (discEqs1,divtplLst1) = listMap1_2(discEqs,addDivExpErrorMsgtoSimEqSystem,inDlowMode);
         divtplLst2 = listAppend(divtplLst,divtplLst1);
       then
-        (SimCode.SES_MIXED(index,cont1,vars,discEqs1,values,value_dims),divtplLst2);
+        (SimCode.SES_MIXED(index,cont1,vars,discEqs1),divtplLst2);
         /*    case (SimCode.SES_WHEN(left = cr, right = e, conditions = conditions),inDlowMode)
          equation
          (e,divLst) = addDivExpErrorMsgtoExp(e,(source,inDlowMode));
@@ -12827,10 +12821,10 @@ algorithm
       equation
         /* TODO: Me */
       then (SimCode.SES_NONLINEAR(index,eqs,crefs,indexNonLinear),a);
-    case (SimCode.SES_MIXED(index,cont,discVars,discEqs,values,values_dims),_,a)
+    case (SimCode.SES_MIXED(index,cont,discVars,discEqs),_,a)
       equation
         /* TODO: Me */
-      then (SimCode.SES_MIXED(index,cont,discVars,discEqs,values,values_dims),a);
+      then (SimCode.SES_MIXED(index,cont,discVars,discEqs),a);
     case (SimCode.SES_WHEN(index,left,right,conditions,elseWhen,source),_,a)
         /* TODO: Me */
       then (SimCode.SES_WHEN(index,left,right,conditions,elseWhen,source),a);

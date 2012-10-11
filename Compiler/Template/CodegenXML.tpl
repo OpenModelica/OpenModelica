@@ -880,39 +880,9 @@ template equationMixedXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP
 ::=
 match eq
 case SES_MIXED(__) then
-  let contEqs = equation_Xml(cont, context, &varDecls /*BUFD*/, &tmp)
-  let numDiscVarsStr = listLength(discVars) 
-  let valuesLenStr = listLength(values)
-  let &preDisc = buffer "" /*BUFD*/
-  let discLoc2 = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
-      let expPart = daeExpXml(exp, context, &preDisc /*BUFC*/, &varDecls /*BUFD*/)
-      <<
-      <%crefXml(cref)%> = <%expPart%>;
-      discrete_loc2[<%i0%>] = <%crefXml(cref)%>;
-      >>
-    ;separator="\n")
-  <<
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
-  #endif
-  mixed_equation_system(<%numDiscVarsStr%>);
-  modelica_boolean values[<%valuesLenStr%>] = {<%values ;separator=", "%>};
-  int value_dims[<%numDiscVarsStr%>] = {<%value_dims ;separator=", "%>};
-  <%discVars |> SIMVAR(__) hasindex i0 => 'discrete_loc[<%i0%>] = <%crefXml(name)%>;' ;separator="\n"%>
-  {
-    <%contEqs%>
-  }
-  <%preDisc%>
-  <%discLoc2%>
-  {
-    modelica_boolean *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(modelica_boolean*)&<%crefXml(name)%>' ;separator=", "%>};
-    check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
-  }
-  mixed_equation_system_end(<%numDiscVarsStr%>);
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
-  #endif<%\n%>
-  >>
+	<<
+		Not supported.
+	>>
 end equationMixedXml;
 
 template equationNonlinearXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)

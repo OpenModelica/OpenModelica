@@ -1003,7 +1003,7 @@ case SES_MIXED(__) then
   let uid = System.tmpTick()
   let contEqs = equation_(cont, context, simCode)
   let numDiscVarsStr = listLength(discVars) 
-  let valuesLenStr = listLength(values)
+//  let valuesLenStr = listLength(values)
   let &preDisc = buffer "" /*BUFD*/
   let discLoc2 = 
     discEqs |> discEq as SES_SIMPLE_ASSIGN(__) hasindex i0 =>
@@ -1036,8 +1036,11 @@ case SES_MIXED(__) then
   <<
   // *** mixed_equation_system(<%numDiscVarsStr%>) ***
   { int found_solution = 0;
-    int cur_value_indx = -1;
-    var values = new double[]{<%values ;separator=", "%>};
+    <%/*
+      int cur_value_indx = -1;
+      var values = new double[]{<%values ;separator=", "%>};
+    */%>
+	var boolVar = new bool[<%numDiscVarsStr%>];
     do {
       <%
         discVars |> SIMVAR(__) hasindex i0 => 
@@ -1062,7 +1065,7 @@ case SES_MIXED(__) then
       <%preDisc%>
       <%discLoc2%>
       {
-        // check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
+        // check_discrete_values(...);
         if (found_solution == -1) { /*system of equations failed*/
             found_solution = 0;
         } else {
@@ -1090,17 +1093,15 @@ case SES_MIXED(__) then
             %>
         }
         if (found_solution == 0) { //!found_solution
-            cur_value_indx++;
-            if (cur_value_indx >= <%valuesLenStr%>/<%numDiscVarsStr%>) {
-                found_solution = -1; //?? failed ??
-                System.Diagnostics.Debug.WriteLine("Mixed system id=" + <%uid%> + "failed.");
-            } else {
-              var curValOffset = cur_value_indx*<%numDiscVarsStr%>;
+        	if (nextVar(boolVar))
+			{
               <% discVars |> SIMVAR(__) hasindex i0 =>
-                  '<%cref(name, simCode)%> = <%convertRealExpForCref('values[curValOffset+<%i0%>]', name, simCode)%>;'
+                  '<%cref(name, simCode)%> = <%preCref(name, simCode)%> != boolVar[<%i0%>];'
                  ;separator="\n"
               %>
             }
+            else
+            	failwithCS("Mixed system could not be solved.");
         }             
       }
     } while (found_solution == 0);

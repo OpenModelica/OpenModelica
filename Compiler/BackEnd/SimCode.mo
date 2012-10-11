@@ -423,8 +423,6 @@ uniontype SimEqSystem
     SimEqSystem cont;
     list<SimVar> discVars;
     list<SimEqSystem> discEqs;
-    list<Integer> values;
-    list<Integer> value_dims;
   end SES_MIXED;
   record SES_WHEN
     Integer index;
