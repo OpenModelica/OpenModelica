@@ -126,6 +126,7 @@ end ModelVariables;
 
 public uniontype FmiImport
   record FMIIMPORT
+    String platform;
     String fmuFileName;
     String fmuWorkingDirectory;
     Integer fmiLogLevel;

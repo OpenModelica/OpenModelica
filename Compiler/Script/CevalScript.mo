@@ -1441,8 +1441,9 @@ algorithm
         (b, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel);
         true = b; /* if something goes wrong while initializing */
         fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(filename, workdir, fmiLogLevel, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation,
-                                                                        fmiModelVariablesInstance, fmiModelVariablesList1));
+        s1 = System.tolower(System.platform());
+        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, fmiContext, fmiInstance, fmiInfo,
+                                                                        fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList1));
         pd = System.pathDelimiter();
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str2 = FMI.getFMIType(fmiInfo);
