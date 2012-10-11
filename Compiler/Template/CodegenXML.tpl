@@ -741,8 +741,7 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
 ::=
   match context case INLINE_CONTEXT() then old_equation_Xml(eq,context,&varDecls) else
   match eq
-  case e as SES_MIXED(__)
-    then equationMixedXml(e, context, &varDecls /*BUFD*/, &eqs) 
+  case e as SES_MIXED(__) then " "
   case e as SES_ALGORITHM(statements={}) then " "
   case e as SES_ALGORITHM(__) then " "
   case e as SES_WHEN(__)
@@ -757,10 +756,8 @@ template equation_Xml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, 
     then  equationSimpleAssignXml(e, context, &varD /*BUFD*/) 
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssignXml(e, context, &varD /*BUFD*/) 
-  case e as SES_LINEAR(__)
-    then equationLinearXml(e, context, &varD /*BUFD*/) 
-  case e as SES_NONLINEAR(__)
-    then equationNonlinearXml(e, context, &varD /*BUFD*/) 
+  case e as SES_LINEAR(__) then " "
+  case e as SES_NONLINEAR(__) then " "
   case e as SES_WHEN(__)
     then " "
   else
@@ -790,10 +787,8 @@ template old_equation_Xml(SimEqSystem eq, Context context, Text &varDecls)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssignXml(e, context, &varDecls)
   case e as SES_ALGORITHM(__) then " " 
-  case e as SES_LINEAR(__)
-    then equationLinearXml(e, context, &varDecls)
-  case e as SES_NONLINEAR(__)
-    then equationNonlinearXml(e, context, &varDecls)
+  case e as SES_LINEAR(__) then " "  
+  case e as SES_NONLINEAR(__) then " "  
   case e as SES_WHEN(__)
     then equationWhenXml(e, context, &varDecls)
   else
@@ -849,60 +844,6 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
 %>
 >>
 end equationArrayCallAssignXml;
-
-template equationLinearXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
- "Generates a linear equation system."
-::=
-match eq
-case SES_LINEAR(__) then
-  let uid = System.tmpTick()
-  let size = listLength(vars)
-  let aname = 'A<%uid%>'
-  let bname = 'b<%uid%>'
-  let mixedPostfix = if partOfMixed then "_mixed" //else ""
-  <<
-  <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
-     let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExpXml(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
- '<%preExp%>
-  <%expPart%>' ;separator="\n"%>
-  <%beqs |> exp hasindex i0 =>
-     let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  '<%preExp%> 
-   <%expPart%>' ;separator="\n"%>
-  >>
-end equationLinearXml;
-
-
-template equationMixedXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &tmp)
- "Generates a mixed equation system."
-::=
-match eq
-case SES_MIXED(__) then
-	<<
-		Not supported.
-	>>
-end equationMixedXml;
-
-template equationNonlinearXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
- "Generates a non linear equation system."
-::=
-match eq
-case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
-  <<
-    <%crefs |> name hasindex i0 =>
-    let namestr = crefXml(name)
-    <<
-    <%namestr%>
-    >>
-  ;separator="\n"%>
-  <%crefs |> name hasindex i0 => '<%crefXml(name)%>' ;separator="\n"%>
- 
-  <%\n%>
-  >>
-end equationNonlinearXml;
 
 template equationWhenXml(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a when equation XML."
@@ -2642,21 +2583,17 @@ case UNARY(__) then
   let e = daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   match operator
   case UMINUS(__)     then
-  let &preExp +=  
     <<
-    <exp:Neg>
-      <%e%>  
-    </exp:Neg>
+      <exp:Neg>
+        <%e%>  
+      </exp:Neg>
     >>
-    '<%e%>'
   case UMINUS_ARR(ty=T_ARRAY(ty=T_REAL(__))) then
-    let &preExp += 
     <<
-    <exp:Neg>
-    <%e%>
-    </exp:Neg> <%\n%>
+      <exp:Neg>
+        <%e%>  
+      </exp:Neg>
     >>
-    '<%e%>'
   case UMINUS_ARR(__) then error(sourceInfo(),"unary minus for non-real arrays not implemented")
   else error(sourceInfo(),"daeExpUnary:ERR")
 end daeExpUnaryXml;
