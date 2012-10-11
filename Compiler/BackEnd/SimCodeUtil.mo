@@ -1785,96 +1785,6 @@ algorithm
   end matchcontinue;
 end elaborateStatement;
 
-protected function addDummyStateIfNeeded
-"function addDummyStateIfNeeded
-  author: Frenkel TUD 2012-09
-  adds a dummy state if dae contains no states"
-  input BackendDAE.BackendDAE inBackendDAE;
-  output BackendDAE.BackendDAE outBackendDAE;
-protected
-  BackendDAE.EqSystems systs;
-  BackendDAE.Shared shared;
-  Boolean daeContainsNoStates;  
-algorithm
-  BackendDAE.DAE(eqs=systs,shared=shared) := inBackendDAE;
-  // check if the DAE has states
-  daeContainsNoStates := addDummyStateIfNeeded1(systs);
-  // adrpo: add the dummy derivative state ONLY IF the DAE contains no states
-  systs := Debug.bcallret1(daeContainsNoStates,addDummyState,systs,systs);
-  outBackendDAE := Util.if_(daeContainsNoStates,BackendDAE.DAE(systs,shared),inBackendDAE);
-end addDummyStateIfNeeded;
-
-protected function addDummyStateIfNeeded1
-  input BackendDAE.EqSystems iSysts;
-  output Boolean oContainsNoStates;
-algorithm
-  oContainsNoStates := match(iSysts)
-    local
-      BackendDAE.EqSystems systs;
-      BackendDAE.Variables vars;
-      Boolean containsNoStates;
-    case ({}) then true;
-    case (BackendDAE.EQSYSTEM(orderedVars = vars)::systs)
-      equation
-        containsNoStates = BackendVariable.traverseBackendDAEVarsWithStop(vars, traverserVaraddDummyStateIfNeeded, true);
-        containsNoStates = Debug.bcallret1(containsNoStates,addDummyStateIfNeeded1,systs,containsNoStates);
-      then
-        containsNoStates;
-  end match;
-end addDummyStateIfNeeded1;
-
-protected function traverserVaraddDummyStateIfNeeded
- input tuple<BackendDAE.Var, Boolean> inTpl;
- output tuple<BackendDAE.Var, Boolean, Boolean> outTpl;
-algorithm
-  outTpl:= match (inTpl)
-    local
-      BackendDAE.Var v;
-      Boolean b;
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE()),_))
-      then ((v,false,false));
-    case ((v,b)) then ((v,b,b));
-  end match;
-end traverserVaraddDummyStateIfNeeded;
-
-protected function addDummyState
-"function: addDummyState
-  In order for the solver to work correctly at least one state variable
-  must exist in the equation system. This function therefore adds a
-  dummy state variable and an equation for that variable."
-  input BackendDAE.EqSystems isysts;
-  output BackendDAE.EqSystems osysts;
-protected
-  DAE.ComponentRef cr;
-  BackendDAE.Var v;
-  BackendDAE.Variables vars;
-  DAE.Exp exp;
-  BackendDAE.Equation eqn;
-  BackendDAE.EquationArray eqns;
-  array<Integer> ass;
-  BackendDAE.EqSystem syst;
-algorithm
-  // generate dummy state
-  cr := ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
-  v := BackendDAE.VAR(cr, BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
-                            DAE.emptyElementSource,
-                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
-                            NONE(),DAE.NON_CONNECTOR());
-  // generate vars
-  vars := BackendDAEUtil.listVar({v});
-  /*
-   * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
-   */
-  exp := Expression.crefExp(cr);
-  eqn := BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),DAE.RCONST(0.0), DAE.emptyElementSource);
-  eqns := BackendDAEUtil.listEquation({eqn});
-  // generate equationsystem
-  ass := listArray({1});
-  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(ass,ass,{BackendDAE.SINGLEEQUATION(1,1)}));
-  // add system to list of systems
-  osysts := syst::isysts;
-end addDummyState;
-
 // Copied from SimCodegen.generateSimulationCode.
 protected function createSimCode
   input BackendDAE.BackendDAE inBackendDAE;
@@ -1949,7 +1859,7 @@ algorithm
         cname = Absyn.pathStringNoQual(class_);
        
         // check if the Sytems has states
-        dlow = addDummyStateIfNeeded(dlow);
+        dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
        
         (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
         BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
@@ -2330,23 +2240,23 @@ algorithm
       Boolean b;
     case (_,_)
       equation
-        true = Flags.isSet(Flags.JACOBIAN);
+        //true = Flags.isSet(Flags.JACOBIAN);
         System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
-        b = Flags.disableDebug(Flags.EXEC_STAT);
+        //b = Flags.disableDebug(Flags.EXEC_STAT);
         // The jacobian code requires single systems;
         // I did not rewrite it to take advantage of any parallelism in the code
         bDAE = BackendDAEOptimize.collapseIndependentBlocks(inBDAE);
         (bDAE as BackendDAE.DAE(shared=BackendDAE.SHARED(symjacs=symjacs))) = BackendDAEUtil.transformBackendDAE(bDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),SOME("dummyDerivative"));
-        (res,_) = createSymbolicJacobianssSimCode(symjacs,bDAE,uniqueEqIndex);
+        (res,_) = createSymbolicJacobianssSimCode(symjacs,bDAE,uniqueEqIndex,{"A","B","C","D"});
         // if optModule is not activated add dummy matrices
         res = addLinearizationMatrixes(res);
-        _ = Flags.set(Flags.EXEC_STAT, b);
+        //_ = Flags.set(Flags.EXEC_STAT, b);
         Debug.execStat("generated analytical Jacobians SimCode. : ",BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
         _ = System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
       then res;
     else
       equation
-        res = {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
+        res = {({},{},"A",({},({},{})),{},0),({},{},"B",({},({},{})),{},0),({},{},"C",({},({},{})),{},0),({},{},"D",({},({},{})),{},0)};
       then res;
   end matchcontinue;
 end createJacobianLinearCode;
@@ -2357,11 +2267,12 @@ protected function createSymbolicJacobianssSimCode
   input BackendDAE.SymbolicJacobians inSymJacobians;
   input BackendDAE.BackendDAE inBackendDAE;
   input Integer iuniqueEqIndex;
+  input list<String> inNames;
   output list<SimCode.JacobianMatrix> outJacobianMatrixes;
   output Integer ouniqueEqIndex;
 algorithm
   (outJacobianMatrixes,ouniqueEqIndex) :=
-  matchcontinue (inSymJacobians, inBackendDAE, iuniqueEqIndex)
+  matchcontinue (inSymJacobians, inBackendDAE, iuniqueEqIndex, inNames)
     local
       BackendDAE.StrongComponents comps;
       
@@ -2381,28 +2292,54 @@ algorithm
       list<SimCode.SimEqSystem> columnEquations;
       list<SimCode.SimVar> columnVars;
       list<SimCode.SimVar> columnVarsKn;
-      list<SimCode.SimVar> seedVars;
-      
+      list<SimCode.SimVar> seedVars, indexVars;
+     
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       BackendDAE.EqSystems systs;
       BackendDAE.Variables vars, origVars, knvars, empty;
       String s;
       
-      list<list<Integer>> sparsepattern;
-      list<Integer> colsColors, varsIndexes;
-      Integer maxColor, nonZeroElements, maxdegree;
+      list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern;
+			list<list<DAE.ComponentRef>> colsColors;
+      list<Integer> varsIndexes;
+      Integer maxColor; 
       
       DAE.ComponentRef x;
       String dummyVarName;
+      list<String> restnames;
       BackendDAE.Variables derivedVariables;
       Integer uniqueEqIndex;
       
-    case ({},_,_) then ({},iuniqueEqIndex);
-    case (((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
+    case ({},_,_,_) then ({},iuniqueEqIndex);
+    // if nothing is generated
+    case (((NONE(),({},({},{})),{}))::rest,_,_,name::restnames)
+      equation
+        (linearModelMatrices,uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inBackendDAE, iuniqueEqIndex, restnames);
+        linearModelMatrices = listAppend({(({},{},name,({},({},{})),{},0))},linearModelMatrices);
+     then
+        (linearModelMatrices,uniqueEqIndex);
+    // if only sparsity pattern is generated       
+    case (((NONE(),(sparsepattern,(diffVars,diffedVars)),colsColors))::rest,BackendDAE.DAE(eqs=systs),_,name::restnames)
+      equation
+        
+        ((seedVars,_)) = List.fold(diffVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+        seedVars = sortSimVars1(seedVars);
+
+        ((indexVars,_)) = List.fold(diffedVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+        indexVars = sortSimVars1(indexVars);
+
+        maxColor = listLength(colsColors);
+        s = intString(listLength(indexVars));
+
+        (linearModelMatrices,uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inBackendDAE, iuniqueEqIndex, restnames);
+        linearModelMatrices = listAppend({(({(({},{},s))},seedVars, name, (sparsepattern,(seedVars,indexVars)), colsColors, maxColor))},linearModelMatrices);
+     then
+        (linearModelMatrices,uniqueEqIndex);
+    case (((SOME((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
-                                    diffVars, diffedVars, alldiffedVars))::rest,
-                                    BackendDAE.DAE(eqs=systs),_)
+                                    _, _, alldiffedVars)),(sparsepattern,(diffVars,diffedVars)),colsColors))::rest,
+                                    BackendDAE.DAE(eqs=systs),_,_::restnames)
       equation
         
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
@@ -2415,32 +2352,16 @@ algorithm
         vars = BackendVariable.daeVars(syst);
         knvars = BackendVariable.daeKnVars(shared);
         empty = BackendDAEUtil.emptyVars();
-        // re-sort Variables
-        v = BackendDAEUtil.listVar1(alldiffedVars);
-        varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        sortdiffvars = List.threadTuple(alldiffedVars, varsIndexes);
-        sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
-        alldiffedVars = List.map(sortdiffvars,Util.tuple21);
 
-        v = BackendDAEUtil.listVar1(diffVars);
-        varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        varsIndexes = Util.if_(listLength(varsIndexes) == listLength(diffVars),varsIndexes, List.intRange2(1, listLength(diffVars)));
-        sortdiffvars = List.threadTuple(diffVars, varsIndexes);
-        sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
-        diffVars = List.map(sortdiffvars,Util.tuple21);
-
-        v = BackendDAEUtil.listVar1(diffedVars);      
-        varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        sortdiffvars = List.threadTuple(diffedVars, varsIndexes);
-        sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
-        diffedVars = List.map(sortdiffvars,Util.tuple21);
+        v = BackendDAEUtil.listVar1(diffedVars);
 
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+        
+        ((seedVars,_)) = List.fold(diffVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+        seedVars = sortSimVars1(seedVars);
+        ((indexVars,_)) = List.fold(diffedVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+        indexVars = sortSimVars1(indexVars);
         s =  intString(listLength(diffedVars));
-        comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
-        seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
-        //comref_seedVars = List.map(seedlst, BackendVariable.varCref);
-        ((seedVars,_)) = List.fold(seedlst,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
 
         dummyVarName = ("dummyVar" +& name);
         x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
@@ -2448,19 +2369,13 @@ algorithm
         ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
         columnVars = listAppend(columnVars,columnVarsKn);
         columnVars = listReverse(columnVars);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-        
-        // generate sparse pattern
-        (sparsepattern,colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
-        maxColor = List.fold(colsColors, intMax, 0);
-        nonZeroElements = List.lengthListElements(sparsepattern);
-        (_, maxdegree) = List.mapFold(sparsepattern, BackendDAEOptimize.findDegrees, 1);
-        Debug.execStat("analytical Jacobians -> generated sparse pattern. Number of nonZeroElements " 
-                       +& intString(nonZeroElements) +& " with max vertex degree: " +& intString(maxdegree) +& ".\n" +&
-                       "Graph colored with  " +& intString(maxColor) +& " color.", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
 
-        (linearModelMatrices,uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inBackendDAE, uniqueEqIndex);
-        linearModelMatrices = listAppend({(({((columnEquations,columnVars,s))},seedVars,name,sparsepattern,colsColors,maxColor))},linearModelMatrices);
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+
+        maxColor = listLength(colsColors);
+
+        (linearModelMatrices,uniqueEqIndex) = createSymbolicJacobianssSimCode(rest, inBackendDAE, uniqueEqIndex,restnames);
+        linearModelMatrices = listAppend({(({((columnEquations,columnVars,s))},seedVars,name,(sparsepattern,(seedVars,indexVars)),colsColors,maxColor))},linearModelMatrices);
      then
         (linearModelMatrices,uniqueEqIndex);
     else
@@ -2543,7 +2458,7 @@ algorithm
       SimCode.JacobianMatrix inSymJacs;
     case (inSymJacs::{})      
       equation
-        outjacobianMatrixes = {inSymJacs,({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
+        outjacobianMatrixes = {inSymJacs,({},{},"B",({},({},{})),{},0),({},{},"C",({},({},{})),{},0),({},{},"D",({},({},{})),{},0)};
       then
         outjacobianMatrixes;
     case _      
@@ -2551,7 +2466,7 @@ algorithm
         true = (4 == listLength(injacobianMatrixes));
       then
         injacobianMatrixes;
-    else then {({},{},"A",{},{},0),({},{},"B",{},{},0),({},{},"C",{},{},0),({},{},"D",{},{},0)};
+    else then {({},{},"A",({},({},{})),{},0),({},{},"B",({},({},{})),{},0),({},{},"C",({},({},{})),{},0),({},{},"D",({},({},{})),{},0)};
   end matchcontinue;
 end addLinearizationMatrixes;
 
@@ -6107,7 +6022,7 @@ algorithm
       list<SimCode.SimEqSystem> columnEquations;
       list<SimCode.SimVar> columnVars;
       list<SimCode.SimVar> columnVarsKn;
-      list<SimCode.SimVar> seedVars;
+      list<SimCode.SimVar> seedVars, indexVars;
       
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
@@ -6115,16 +6030,18 @@ algorithm
       BackendDAE.Variables vars, origVars, knvars, empty;
       String s;
       
-      list<list<Integer>> sparsepattern;
-      list<Integer> colsColors, varsIndexes;
-      Integer maxColor, nonZeroElements, maxdegree;
+      list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern;
+      BackendDAE.SparseColoring colsColors;
+      list<Integer> varsIndexes;
+      Integer maxColor;
       
       DAE.ComponentRef x;
       String dummyVarName;
       BackendDAE.Variables derivedVariables;
       Integer uniqueEqIndex;
       
-    case ((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared=shared), name, diffVars, diffedVars, alldiffedVars),
+    case ((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared=shared),
+          name, diffVars, diffedVars, alldiffedVars),
           BackendDAE.DAE(eqs=systs),
           uniqueEqIndex) equation
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
@@ -6139,33 +6056,19 @@ algorithm
         vars = BackendVariable.daeVars(syst);
         knvars = BackendVariable.daeKnVars(shared);
         empty = BackendDAEUtil.emptyVars();
-        // re-sort Variables
-        v = BackendDAEUtil.listVar1(alldiffedVars);
-        varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        sortdiffvars = List.threadTuple(alldiffedVars, varsIndexes);
-        sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
-        alldiffedVars = List.map(sortdiffvars, Util.tuple21);
-                
-        v = BackendDAEUtil.listVar1(diffVars);
-        varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        varsIndexes = Util.if_(listLength(varsIndexes) == listLength(diffVars),varsIndexes, List.intRange2(1, listLength(diffVars)));
-        sortdiffvars = List.threadTuple(diffVars, varsIndexes);
-        sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
-        diffVars = List.map(sortdiffvars,Util.tuple21);
         
         v = BackendDAEUtil.listVar1(diffedVars);
-        varsIndexes = BackendVariable.getVarIndexFromVar(v, origVars);
-        sortdiffvars = List.threadTuple(diffedVars, varsIndexes);
-        sortdiffvars = List.sort(sortdiffvars, Util.compareTuple2IntGt);
-        diffedVars = List.map(sortdiffvars,Util.tuple21);
-
 
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         s =  intString(listLength(diffedVars));
         comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
         seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
         //comref_seedVars = List.map(seedlst, BackendVariable.varCref);
-        ((seedVars,_)) = List.fold(seedlst,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+                
+        ((seedVars,_)) = List.fold(diffVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+        seedVars = sortSimVars1(seedVars);
+        ((indexVars,_)) = List.fold(diffedVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+        indexVars = sortSimVars1(indexVars);
 
         dummyVarName = ("dummyVar" +& name);
         x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
@@ -6176,15 +6079,11 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
         
         // generate sparse pattern
-        (sparsepattern,colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
-        maxColor = List.fold(colsColors, intMax, 0);
-        nonZeroElements = List.lengthListElements(sparsepattern);
-        (_, maxdegree) = List.mapFold(sparsepattern, BackendDAEOptimize.findDegrees, 1);
-        Debug.execStat("analytical Jacobians -> generated sparse pattern. Number of nonZeroElements " 
-                       +& intString(nonZeroElements) +& " with max vertex degree: " +& intString(maxdegree) +& ".\n" +&
-                       "Graph colored with  " +& intString(maxColor) +& " color.", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
-                       
-        jacobian = (({((columnEquations,columnVars,s))},seedVars,name,sparsepattern,colsColors,maxColor));
+        ((sparsepattern,(_,_)),colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
+        
+        maxColor = listLength(colsColors);
+                      
+        jacobian = (({((columnEquations,columnVars,s))},seedVars,name,(sparsepattern,(seedVars,columnVars)),colsColors,maxColor));
     then (jacobian, uniqueEqIndex);
        
     else equation
@@ -6216,7 +6115,7 @@ algorithm
     then (jacG, iniqueEqIndex);
       
     case(DAE, _) equation
-      jacG = ({}, {}, "G", {}, {}, 0);
+      jacG = ({}, {}, "G", ({},({},{})), {}, 0);
     then (jacG, inIniqueEqIndex);
         
     else equation
@@ -7314,7 +7213,7 @@ protected function sortSimVars1
 "function: sortSimVars1
   author: Frenkel TUD 2012-09"
   input list<SimCode.SimVar> unsorted;
-  output list<SimCode.SimVar> sorted;
+  output list<SimCode.SimVar> sorted; 
 protected
   list<SimCode.SimVar> vars;
   HashTableCrSimVars.HashTable ht;

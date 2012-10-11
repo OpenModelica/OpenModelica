@@ -122,7 +122,8 @@ algorithm
   constrarra := listArray(constrs);
   clsattrsarra := listArray(clsAttrs);
   einfo := BackendDAE.EVENT_INFO(whenclauses_1,{});
-  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,constrarra,clsattrsarra,inCache,inEnv,functionTree,einfo,extObjCls,BackendDAE.SIMULATION(),{}));
+  symjacs := {(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{})};
+  outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqnarr,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(knvars,extVars,aliasVars,ieqnarr,reqnarr,constrarra,clsattrsarra,inCache,inEnv,functionTree,einfo,extObjCls,BackendDAE.SIMULATION(),symjacs));
   BackendDAEUtil.checkBackendDAEWithErrorMsg(outBackendDAE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO,print,"No. of Equations: " +& intString(BackendDAEUtil.equationSize(eqnarr)) +& "\nNo. of Variables: " +& intString(BackendVariable.varsSize(vars_1)) +& "\n");
   Debug.execStat("generate Backend Data Structure",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);

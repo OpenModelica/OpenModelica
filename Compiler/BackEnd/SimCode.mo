@@ -67,8 +67,8 @@ type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>; // column 
 type JacobianMatrix = tuple<list<JacobianColumn>,   // column
                             list<SimVar>,           // seed vars
                             String,                 // matrix name
-                            list<list<Integer>>,    // sparse pattern
-                            list<Integer>,          // colored cols
+                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
+                            list<list<DAE.ComponentRef>>,          // colored cols
                             Integer>;               // max color used
 
   

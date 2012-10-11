@@ -586,6 +586,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
 //    "countOperations",
     "removeUnusedFunctions",
     "simplifyTimeIndepFuncCalls",
+//   "detectJacobianSparsePattern", 
     "optimizeInitialSystem"
   }),
   SOME(STRING_DESC_OPTION({
@@ -608,7 +609,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("removeUnusedFunctions", Util.gettext("removed all unused functions from functionTree")),
     ("simplifyTimeIndepFuncCalls", Util.gettext("simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false")),
     ("simplifysemiLinear", Util.gettext("simplifies calls to semiLinear")),
-    ("optimizeInitialSystem", Util.gettext("simplifies time initial system"))
+    ("optimizeInitialSystem", Util.gettext("simplifies time initial system")),
+    ("detectJacobianSparsePattern", Util.gettext("detects the sparse pattern for Jacobian A"))
     })),
   Util.gettext("Sets the post optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag SIMCODE_TARGET = CONFIG_FLAG(17, "simCodeTarget",

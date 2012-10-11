@@ -101,8 +101,8 @@ package SimCode
   type JacobianMatrix = tuple<list<JacobianColumn>, // column
                             list<SimVar>,           // seed vars
                             String,                 // matrix name
-                            list<list<Integer>>,    // sparse pattern
-                            list<Integer>,          // colored cols
+                            tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
+                            list<list<DAE.ComponentRef>>,    // colored cols
                             Integer>;               // max color used
   
   uniontype SimCode
@@ -2157,6 +2157,13 @@ package Util
     input list<Integer> lst;
     output Integer i;
   end intProduct;
+  
+  function splitTuple212List
+    replaceable type Type_b subtypeof Any; 
+    input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
+    output list<Type_b> outTypeALst;
+    replaceable type Type_a subtypeof Any;
+  end splitTuple212List;
 end Util;
 
 package List

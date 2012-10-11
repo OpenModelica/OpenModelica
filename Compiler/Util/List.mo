@@ -638,6 +638,37 @@ algorithm
   end match;
 end appendLastList;
 
+public function insert
+ "Inserts an element at a position
+  example: insert({2,1,4,2},2,3) => {2,3,1,4,2} " 
+  input list<ElementType> inList;
+  input Integer inN;
+  input ElementType inElement;
+  output list<ElementType> outList;
+protected
+  list<ElementType> lst1, lst2;
+algorithm
+  true := (inN > 0);
+  (lst1, lst2) := split(inList, inN-1);
+  outList := listAppend(listAppend(lst1,{inElement}),lst2);
+end insert;
+
+public function set
+ "set an element at a position
+  example: insert({2,1,4,2},2,3) => {2,3,4,2} " 
+  input list<ElementType> inList;
+  input Integer inN;
+  input ElementType inElement;
+  output list<ElementType> outList;
+protected
+  list<ElementType> lst1, lst2;
+algorithm
+  true := (inN > 0);
+  (lst1, lst2) := split(inList, inN-1);
+  lst2 := stripFirst(lst2);
+  outList := listAppend(listAppend(lst1,{inElement}),lst2);
+end set;
+
 public function first
   "Returns the first element of a list. Fails if the list is empty."
   input list<ElementType> inList;
@@ -705,6 +736,14 @@ algorithm
   _ :: outList := inList;
 end rest;
 
+public function getIndexFirst
+  input Integer index;
+  input list<ElementType> inList;
+  output ElementType element;
+algorithm
+ element := listGet(inList, index);
+end getIndexFirst;
+
 public function firstN
   "Returns the first N elements of a list, or fails if there are not enough
    elements in the list."
@@ -730,7 +769,7 @@ algorithm
       list<ElementType> rest;
       Integer n;
 
-      case (_, 0, inAccum) then inAccum;
+      case (_, 0, _) then inAccum;
 
       case (e :: rest, n, _)
         equation
@@ -4235,6 +4274,25 @@ public function mapList2_0
 algorithm
   map3_0(inListList, map2_0, inFunc, inArg1, inArg2);
 end mapList2_0;
+
+public function mapList1_1
+  "Takes a list of lists and a functions, and applying 
+  the function to all elements in  the list of lists.
+     Example: mapList1_0({{1, 2},{3},{4}}, costomPrint, inArg1)"
+     
+  input list<list<ElementInType>> inListList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  output list<list<ElementOutType>> outListList;  
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    output ElementOutType outElement;    
+  end MapFunc;
+algorithm
+  outListList := map2(inListList, map1, inFunc, inArg1);
+end mapList1_1;
 
 public function mapListReverse
   "Takes a list of lists and a functions, and creates a new list of lists by

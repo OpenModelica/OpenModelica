@@ -45,6 +45,7 @@
 
 package CodegenC
 
+
 import interface SimCodeTV;
 
 import CodegenUtil.*;
@@ -143,9 +144,9 @@ template simulationFile(SimCode simCode, String guid)
     int measure_time_flag = 0;
     #endif
 
-    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, appendLists(allEquations,appendAllequations(jacobianMatrixes)), delayedExps)%>
+    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, appendAllequations(jacobianMatrixes), delayedExps)%>
     
-    <%functionInitializeDataStruc2(modelInfo, appendLists(allEquations,appendAllequations(jacobianMatrixes)))%>
+    <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes))%>
     
     <%functionCallExternalObjectConstructors(extObjInfo)%>
     
@@ -231,7 +232,7 @@ template simulationFileHeader(SimCode simCode)
   end match
 end simulationFileHeader;
 
-template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, DelayedExpression delayed)
+template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, DelayedExpression delayed)
   "Generates information for data.modelInfo struct."
 ::=
   match modelInfo
@@ -277,14 +278,14 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   end match
 end populateModelInfo;
 
-template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, DelayedExpression delayed)
+template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, DelayedExpression delayed)
   "Generates function in simulation file."
 ::=
   <<
   void setupDataStruc(DATA *data)
   {  
     ASSERT(data,"Error while initialize Data");
-    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, delayed)%>
+    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacEquations, delayed)%>
   }
   >>
 end functionInitializeDataStruc;
@@ -325,7 +326,7 @@ template functionSimProfDef(SimEqSystem eq, Integer value)
   end match
 end functionSimProfDef;
 
-template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations)
+template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations)
   "Generates function in simulation file."
 ::=
   match modelInfo
@@ -339,7 +340,7 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
       <%equationInfo(allEquations)%>
      */
      let &eqnsDefines = buffer ""
-     let eqnInfo = equationInfo(allEquations,&eqnsDefines,varInfo.numEquations)
+     let eqnInfo = equationInfo(allEquations,&eqnsDefines,intAdd(varInfo.numEquations, listLength(symJacEquations)))
     <<
     /* Some empty lines, since emptyCount is not implemented in susan! */
     <%eqnsDefines%>
@@ -521,8 +522,13 @@ end globalDataAliasVarArray;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes) "template variableDefinitionsJacobians
   Generates defines for jacobian vars."
 ::=
-  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, _, _, _) hasindex index0 =>
-    variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
+  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _) hasindex index0 =>
+    let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
+    let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
+    <<
+    <%varsDef%>
+    <%sparseDef%>
+    >>
     ;separator="\n";empty)
   
   <<
@@ -535,12 +541,12 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
   Generates Matrixes for Linear Model."
 ::=
   let seedVarsResult = (seedVars |> var hasindex index0 =>
-    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0)
+    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0, name)
     ;separator="\n")
   let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
-    (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0);separator=";\n")
+    (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0, name);separator=";\n")
     ;separator="\n\n")
-  /* generate at least one print commant to have the same index and avoid the strange side effect */
+  /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
   /* <%name%> */
   <%seedVarsResult%>
@@ -548,7 +554,7 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
   >>
 end variableDefinitionsJacobians2;
 
-template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0) "template jacobianVarDefine
+template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0, String matrixName) "template jacobianVarDefine
   "
 ::=
   match array
@@ -572,14 +578,30 @@ template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Intege
     match simVar
     case SIMVAR(aliasvar=NOALIAS()) then
       let tmp = System.tmpTick()
-      
       <<
-      #define <%cref(name)%> data->simulationInfo.analyticJacobians[<%indexJac%>].seedVars[<%index0%>]
-      #define <%cref(name)%>__varInfo dummyVAR_INFO
+      #define <%cref(name)%>$pDER<%matrixName%><%cref(name)%> data->simulationInfo.analyticJacobians[<%indexJac%>].seedVars[<%index0%>]
+      #define <%cref(name)%>$pDER<%matrixName%><%cref(name)%>__varInfo dummyVAR_INFO
       >> 
     end match
   end match
 end jacobianVarDefine;
+
+template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, String matrixName) "template variableDefinitionsJacobians2
+  Generates Matrixes for Linear Model."
+::=
+  let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
+     '#define <%cref(name)%>$pDER<%matrixName%>$indexdiff <%index0%>'
+    ;separator="\n")
+  let diffedVarsResult = (diffedVars |> var as SIMVAR(name=name) hasindex index0 =>
+     '#define <%cref(name)%>$pDER<%matrixName%>$indexdiffed <%index0%>'
+    ;separator="\n")    
+  /* generate at least one print command to have the same index and avoid the strange side effect */
+  <<
+  /* <%matrixName%> sparse indexes */
+  <%diffVarsResult%>
+  <%diffedVarsResult%>
+  >>
+end defineSparseIndexes;
 
 template aliasVarNameType(AliasVariable var)
   "Generates type of alias."
@@ -1400,12 +1422,12 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let jacobianIndices = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, _) hasindex index0 =>
+  let jacobianIndices = (JacobianMatrixes |> (mat, vars, name, _, _, _) hasindex index0 =>
     <<const int INDEX_JAC_<%name%> = <%index0%>;>>; separator="\n")
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, _) =>
-    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList); separator="\n")
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor) =>
+    initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor); separator="\n")
   let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor) =>
-    generateMatrix(mat, vars, name, sparsepattern, colorList, maxColor) ;separator="\n")
+    generateMatrix(mat, vars, name) ;separator="\n")
   
   <<
   <%jacobianIndices%>
@@ -1416,44 +1438,45 @@ template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes) "templ
   >>
 end functionAnalyticJacobians;
 
-template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<list<Integer>> sparsepattern, list<Integer> colorList) "template initialAnalyticJacobians
+template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList, Integer maxColor) 
+"template initialAnalyticJacobians
   This template generates source code for functions that initialize the sparse-pattern for a single jacobian.
   This is a helper of template functionAnalyticJacobians"
 ::=
-  match seedVars
-  case {} then
-  <<
-  int initialAnalyticJacobian<%matrixname%>(DATA* data)
-  {
-    return 1;
-  }
-  >>
-
-  case _ then
-    match colorList
-    case {} then
+match seedVars
+case {} then
+<<
+int initialAnalyticJacobian<%matrixname%>(DATA* data)
+{
+  return 1;
+}
+>>
+case _ then
+  match sparsepattern 
+  case {(_,{})} then 
     <<
     int initialAnalyticJacobian<%matrixname%>(DATA* data)
     {
       return 1;
     }
     >>
-
-    case _ then
-      let sp_size_index =  lengthListElements(sparsepattern) 
-      let leadindex = (sparsepattern |> (indexes) hasindex index0 => 
-        if index0 then 
-        <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%intSub(index0,1)%>] + <%listLength(indexes)%>;>>
-        else
-        <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = <%listLength(indexes)%>;>>
-        ;separator="\n")
-      let indexElems = (flatten(sparsepattern) |> (indexes) hasindex index0 => 
-        <<data->simulationInfo.analyticJacobians[index].sparsePattern.index[<%index0%>] = <%indexes%>;>> 
+  case _ then 
+      let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern)) 
+      let sizeleadindex = listLength(sparsepattern)
+      let leadindex = (sparsepattern |> (cref,indexes) hasindex index0 =>
+      <<
+      data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%cref(cref)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
+      >>
+      ;separator="\n")
+      let indexElems = ( flatten(splitTuple212List(sparsepattern)) |> indexes hasindex index0 => 
+        <<data->simulationInfo.analyticJacobians[index].sparsePattern.index[<%index0%>] = <%cref(indexes)%>$pDER<%matrixname%>$indexdiffed;>> 
         ;separator="\n")
       let colorArray = (colorList |> (indexes) hasindex index0 => 
-        <<data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%index0%>] = <%indexes%>;>> 
-        ;separator="\n")  
-      let sp_size_index = lengthListElements(sparsepattern)
+        let colorCol = ( indexes |> i_index => 
+        'data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%cref(i_index)%>$pDER<%matrixname%>$indexdiff] = <%intAdd(index0,1)%>;' 
+        ;separator="\n")
+      '<%colorCol%>'
+      ;separator="\n") 
       let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
       let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
       let index_ = listLength(seedVars)
@@ -1462,19 +1485,25 @@ template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimV
       {
         int index = INDEX_JAC_<%matrixname%>;
         
+        int i;
+        
         data->simulationInfo.analyticJacobians[index].jacobianName = '<%matrixname%>';
         data->simulationInfo.analyticJacobians[index].sizeCols = <%index_%>;
         data->simulationInfo.analyticJacobians[index].sizeRows = <%indexColumn%>;
         data->simulationInfo.analyticJacobians[index].seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
         data->simulationInfo.analyticJacobians[index].resultVars = (modelica_real*) malloc(<%indexColumn%>*sizeof(modelica_real));
         data->simulationInfo.analyticJacobians[index].tmpVars = (modelica_real*) malloc(<%tmpvarsSize%>*sizeof(modelica_real));
-        data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex = (int*) malloc(<%index_%>*sizeof(int));
+        data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex = (int*) malloc(<%sizeleadindex%>*sizeof(int));
         data->simulationInfo.analyticJacobians[index].sparsePattern.index = (int*) malloc(<%sp_size_index%>*sizeof(int));
         data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols = (int*) malloc(<%index_%>*sizeof(int));
+        data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors = <%maxColor%>;
         data->simulationInfo.analyticJacobians[index].jacobian = NULL;
       
-        /* write leading index */
+        /* write column ptr of compressed sparse column*/
         <%leadindex%>
+        for(i=1;i<<%sizeleadindex%>;++i)
+            data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[i] += data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[i-1]; 
+        
         
         /* write index */
         <%indexElems%>
@@ -1485,154 +1514,43 @@ template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimV
         return 0;
       }
       >>
-    end match
-  end match
+   end match
+end match
 end initialAnalyticJacobians;
 
-template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<list<Integer>> sparsepattern, list<Integer> colorList, Integer maxColor)
+template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname)
   "This template generates source code for a single jacobian in dense format and sparse format.
   This is a helper of template functionAnalyticJacobians"
 ::=
-  match jacobianColumn
-  case {} then
+  let indxColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn)
+  match indxColumn
+  case "0" then
     <<
-    int functionJac<%matrixname%>_dense(DATA* data, double* jac)
-    {
-      return 0;
-    }
-    
-    int functionJac<%matrixname%>_sparse(DATA* data, double* jac)
+    int functionJac<%matrixname%>_column(DATA* data)
     {
       return 0;
     }
     >>
-
   case _ then
-    match colorList
-    case {} then
-      <<
-      int functionJac<%matrixname%>_dense(DATA* data, double* jac)
-      {
-        return 1;
-      }
-      
-      int functionJac<%matrixname%>_sparse(DATA* data, double* jac)
-      {
-        return 1;
-      }
-      >>
-  
-    case _ then
-      let jacMats = (jacobianColumn |> (eqs,vars,indxColumn) =>
-        functionJac(eqs, vars, indxColumn, matrixname)
-        ;separator="\n")
-      let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
-        indxColumn
-        ;separator="\n")     
-      let numSeedVars = listLength(seedVars)
-      <<
-      <%jacMats%>
-
-      int functionJac<%matrixname%>_dense(DATA* data, double* jac)
-      {
-        int index = INDEX_JAC_<%matrixname%>;
-        int i, j, l, k, ii;
-        
-        for(i=0; i < <%maxColor%>; i++)
+    match seedVars 
+     case {} then
+        <<
+        int functionJac<%matrixname%>_column(DATA* data)
         {
-          for(ii=0; ii<<%numSeedVars%>; ii++)
-            if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
-              data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
-          
-          if(DEBUG_FLAG(LOG_DEBUG))
-          {
-            DEBUG_INFO(LOG_DEBUG, "caluculate one col");
-            for(l=0; l<<%numSeedVars%>; l++)
-              DEBUG_INFO2(LOG_DEBUG, "| seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f", l, data->simulationInfo.analyticJacobians[index].seedVars[l]);
-          }
-
-          functionJac<%matrixname%>_column(data);
-          
-          for(j=0; j<<%numSeedVars%>; j++)
-          {
-            if(data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
-            {
-              if(j==0)
-                ii = 0;
-              else
-                ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-              while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
-              {
-                l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii]-1;
-                k = l + j*<%indexColumn%>;
-                jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-                DEBUG_INFO7(LOG_DEBUG, "write %d. in jac[%d]-[%d,%d]=%f from col[%d]=%f", ii, k, l, j, jac[k], l, data->simulationInfo.analyticJacobians[index].resultVars[l]);
-                ii++;
-              }
-            }
-          }
-          
-          if(DEBUG_FLAG(LOG_DEBUG))
-          {
-            INFO("Print jac:");
-            for(l=0; l<<%numSeedVars%>; l++)
-            {
-              for(k=0; k<<%indexColumn%>; k++)
-                printf("%10.5g ", jac[l+k*<%indexColumn%>]);
-              printf("\n");  
-            }
-          }
-          
-          for(ii=0; ii<<%numSeedVars%>; ii++)
-            if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
-              data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0;
-          
+          return 0;
         }
-        return 0;
-      }
-      
-      int functionJac<%matrixname%>_sparse(DATA* data, double* jac)
-      {
-        int color, seedVar, i, l, k=0;
-       
-        int index = INDEX_JAC_<%matrixname%>;       
-        const int maxColor = <%maxColor%>;
-        const int numSeedVars = <%numSeedVars%>;
-        
-        for(color=0; color<maxColor; color++)
-        {
-          for(i=0; i<numSeedVars; i++)
-            if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
-              data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
-
-          functionJac<%matrixname%>_column(data);
-          
-          for(seedVar=0; seedVar<numSeedVars; seedVar++)
-          {
-            if(data->simulationInfo.analyticJacobians[index].seedVars[seedVar] == 1)
-            {
-              if(seedVar == 0)
-                i = 0;
-              else
-                i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar-1];
-              
-              for(; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar]; i++)
-              {
-                l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[i]-1;
-                jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-              }
-            }
-          }
-          
-          for(i=0; i<numSeedVars; i++)
-            if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
-              data->simulationInfo.analyticJacobians[index].seedVars[i] = 0;
-          
-        }
-        return 0;
-      }
-      >>
-    end match
+        >>     
+      case _ then 
+        let jacMats = (jacobianColumn |> (eqs,vars,indxColumn) =>
+          functionJac(eqs, vars, indxColumn, matrixname)
+          ;separator="\n")
+        let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) =>
+          indxColumn
+          ;separator="\n")
+        <<
+        <%jacMats%>
+        >>
+     end match
   end match
 end generateMatrix;
 

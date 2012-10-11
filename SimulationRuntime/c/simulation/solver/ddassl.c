@@ -3744,7 +3744,7 @@ L100:
 /* L110: */
   wm[npdm1 + i__] = 0.;
     }
-    (*jac)(x, &y[1], &yprime[1], &wm[1], cj, &rpar[1], &ipar[1]);
+    (*jac)(x, &y[1], &yprime[1], &delta[1], &wm[1], cj, h__, &wt[1], &rpar[1], &ipar[1]);
 
 
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
@@ -3762,9 +3762,11 @@ L100:
         printf("at point in time : ");
         printf("%g \n", *x);
         for (i__ = 1; i__ <= i__1; ++i__) {
+                 wm[nrow+i__] += *cj;
                  for (l = 1; l <= i__2; ++l) {
                      printf("%g  ",wm[nrow + l]);
                  }
+                 wm[nrow+i__] -= *cj;
                  printf("\n");
                  nrow += *neq;
         }
@@ -3827,10 +3829,12 @@ L200:
             printf("at point in time : ");
             printf("%g \n",*x);
             for (i__ = 1; i__ <= i__1; ++i__) {
+                    wm[nrow+i__] += *cj;
                     for (l = 1; l <= i__1; ++l) {
                             printf("%g  ",wm[nrow + l]);
                     }
-                     printf("\n");
+                    wm[nrow+i__] -= *cj;
+                    printf("\n");
                     nrow += *neq;
             }
     }
@@ -3860,7 +3864,7 @@ L400:
 /* L410: */
   wm[npdm1 + i__] = 0.;
     }
-    (*jac)(x, &y[1], &yprime[1], &wm[1], cj, &rpar[1], &ipar[1]);
+    (*jac)(x, &y[1], &yprime[1], &delta[1], &wm[1], cj, h__, &wt[1], &rpar[1], &ipar[1]);
     meband = (iwm[1] << 1) + iwm[2] + 1;
     goto L550;
 

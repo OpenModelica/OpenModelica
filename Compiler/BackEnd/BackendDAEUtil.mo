@@ -718,11 +718,13 @@ public function addBackendDAESharedJacobian
 " function: addBackendDAESharedJacobian
   autor:  wbraun"
   input BackendDAE.SymbolicJacobian inSymJac;
+  input BackendDAE.SparsePattern inSparsePattern;
+  input BackendDAE.SparseColoring inSparseColoring;    
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 algorithm
   outShared:=
-  match (inSymJac, inShared)
+  match (inSymJac, inSparsePattern, inSparseColoring, inShared)
     local
       BackendDAE.Variables knvars,exobj,av;
       EquationArray remeqns,inieqns;
@@ -735,9 +737,9 @@ algorithm
       ExternalObjectClasses eoc;
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
-    case (_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs))
+    case (_,_,_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs))
       equation
-        symjacs = listAppend(symjacs,{inSymJac});
+        symjacs = {(SOME(inSymJac),inSparsePattern,inSparseColoring),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{})};
       then
         BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs);
   end match;
@@ -746,12 +748,12 @@ end addBackendDAESharedJacobian;
 public function addBackendDAESharedJacobians
 " function: addBackendDAESharedJacobians
   autor:  wbraun"
-  input BackendDAE.SymbolicJacobians inSymJac;
+  input BackendDAE.SymbolicJacobians inSymJac; 
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
 algorithm
   outShared:=
-  match (inSymJac,inShared)
+  match (inSymJac, inShared)
     local
       BackendDAE.Variables knvars,exobj,av;
       EquationArray remeqns,inieqns;
@@ -765,12 +767,43 @@ algorithm
       BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
     case (_,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs))
+      then
+        BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,inSymJac);
+  end match;
+end addBackendDAESharedJacobians;
+
+public function addBackendDAESharedJacobianSparsePattern
+" function: addBackendDAESharedJacobianSparsePattern
+  autor:  wbraun"
+  input BackendDAE.SparsePattern inSparsePattern;
+  input BackendDAE.SparseColoring inSparseColoring;
+  input Integer inIndex;
+  input BackendDAE.Shared inShared;
+  output BackendDAE.Shared outShared;
+algorithm
+  outShared:=
+  match (inSparsePattern, inSparseColoring, inIndex, inShared)
+    local
+      BackendDAE.Variables knvars,exobj,av;
+      EquationArray remeqns,inieqns;
+      array<DAE.Constraint> constrs;
+      array<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;      
+      DAE.FunctionTree funcTree; 
+      BackendDAE.EventInfo einfo;
+      ExternalObjectClasses eoc;
+      BackendDAEType btp;
+      BackendDAE.SymbolicJacobians symjacs;
+      Option<BackendDAE.SymbolicJacobian> symJac;
+    case (_, _, _, BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs))
       equation
-        symjacs = listAppend(symjacs,inSymJac);
+        ((symJac,_,_)) = listGet(symjacs, inIndex);
+        symjacs = List.set(symjacs, inIndex, ((symJac, inSparsePattern, inSparseColoring)));
       then
         BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,einfo,eoc,btp,symjacs);
   end match;
-end addBackendDAESharedJacobians;
+end addBackendDAESharedJacobianSparsePattern;
 
 public function addBackendDAEKnVars
 " function: addBackendDAEKnVars
@@ -865,6 +898,93 @@ algorithm
       then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching);
   end match;
 end addVarsToEqSystem;
+
+public function addDummyStateIfNeeded
+"function addDummyStateIfNeeded
+  author: Frenkel TUD 2012-09
+  adds a dummy state if dae contains no states"
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+  Boolean daeContainsNoStates;  
+algorithm
+  BackendDAE.DAE(eqs=systs,shared=shared) := inBackendDAE;
+  // check if the DAE has states
+  daeContainsNoStates := addDummyStateIfNeeded1(systs);
+  // adrpo: add the dummy derivative state ONLY IF the DAE contains no states
+  systs := Debug.bcallret1(daeContainsNoStates,addDummyState,systs,systs);
+  outBackendDAE := Util.if_(daeContainsNoStates,BackendDAE.DAE(systs,shared),inBackendDAE);
+end addDummyStateIfNeeded;
+
+protected function addDummyStateIfNeeded1
+  input BackendDAE.EqSystems iSysts;
+  output Boolean oContainsNoStates;
+algorithm
+  oContainsNoStates := match(iSysts)
+    local
+      BackendDAE.EqSystems systs;
+      BackendDAE.Variables vars;
+      Boolean containsNoStates;
+    case ({}) then true;
+    case (BackendDAE.EQSYSTEM(orderedVars = vars)::systs)
+      equation
+        containsNoStates = BackendVariable.traverseBackendDAEVarsWithStop(vars, traverserVaraddDummyStateIfNeeded, true);
+        containsNoStates = Debug.bcallret1(containsNoStates,addDummyStateIfNeeded1,systs,containsNoStates);
+      then
+        containsNoStates;
+  end match;
+end addDummyStateIfNeeded1;
+
+protected function traverserVaraddDummyStateIfNeeded
+ input tuple<BackendDAE.Var, Boolean> inTpl;
+ output tuple<BackendDAE.Var, Boolean, Boolean> outTpl;
+algorithm
+  outTpl:= match (inTpl)
+    local
+      BackendDAE.Var v;
+      Boolean b;
+    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE()),_))
+      then ((v,false,false));
+    case ((v,b)) then ((v,b,b));
+  end match;
+end traverserVaraddDummyStateIfNeeded;
+
+protected function addDummyState
+"function: addDummyState
+  In order for the solver to work correctly at least one state variable
+  must exist in the equation system. This function therefore adds a
+  dummy state variable and an equation for that variable."
+  input BackendDAE.EqSystems isysts;
+  output BackendDAE.EqSystems osysts;
+protected
+  DAE.ComponentRef cr;
+  BackendDAE.Var v;
+  BackendDAE.Variables vars;
+  DAE.Exp exp;
+  BackendDAE.Equation eqn;
+  BackendDAE.EquationArray eqns;
+  array<Integer> ass;
+  BackendDAE.EqSystem syst;
+algorithm
+  // generate dummy state
+  (v,cr) := BackendVariable.createDummyVar();
+
+  // generate vars
+  vars := listVar({v});
+  /*
+   * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
+   */
+  exp := Expression.crefExp(cr);
+  eqn := BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),DAE.RCONST(0.0), DAE.emptyElementSource);
+  eqns := listEquation({eqn});
+  // generate equationsystem
+  ass := listArray({1});
+  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(ass,ass,{BackendDAE.SINGLEEQUATION(1,1)}));
+  // add system to list of systems
+  osysts := syst::isysts;
+end addDummyState;
 
 public function calculateSizes "function: calculateSizes
   author: PA
@@ -8666,7 +8786,8 @@ algorithm
   (BackendDAEOptimize.removeUnusedFunctions,"removeUnusedFunctions",false),
   (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false),
   (BackendDAEOptimize.simplifysemiLinear,"simplifysemiLinear",false),
-  (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false)
+  (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
+  (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false)
   };
   strPastOptModules := getPastOptModulesString();
   strPastOptModules := Util.getOptionOrDefault(ostrPastOptModules,strPastOptModules);

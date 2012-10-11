@@ -3837,7 +3837,9 @@ algorithm
     DAE.FunctionTree funcs, usedfuncs, usedfuncs2;
     list<tuple<DAE.AvlKey, DAE.AvlValue>> treelst;
     case ({},(funcs,usedfuncs)) then ((funcs,usedfuncs));
-    case ((bdae,_,_,_,_)::rest,(funcs,usedfuncs))
+    case ((NONE(),_,_)::rest,(funcs,usedfuncs))
+      then removeUnusedFunctionsSymJacs(rest,(funcs,usedfuncs));      
+    case ((SOME((bdae,_,_,_,_)),_,_)::rest,(funcs,usedfuncs))
       equation
          bdae = BackendDAEUtil.addBackendDAEFunctionTree(funcs,bdae);
          BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=usedfuncs2)) = removeUnusedFunctions(bdae);
@@ -5964,8 +5966,213 @@ end solveEquations;
 
 
 /* 
- * Linearization section
+ * Generate sparse pattern
  */
+ 
+ public function detectSparsePatternODE
+  input BackendDAE.BackendDAE inBackendDAE;
+  output BackendDAE.BackendDAE outBackendDAE;
+protected
+  BackendDAE.BackendDAE DAE; 
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
+  BackendDAE.SparseColoring coloredCols;
+  BackendDAE.SparsePattern sparsePattern;
+  list<BackendDAE.Var> states;
+  BackendDAE.Var dummyVar;
+  BackendDAE.Variables v;
+algorithm
+  
+  BackendDAE.DAE(eqs = eqs) := inBackendDAE;
+  // prepare a DAE
+  DAE := BackendDAEUtil.copyBackendDAE(inBackendDAE);
+  DAE := BackendDAEUtil.addDummyStateIfNeeded(DAE);
+  DAE := collapseIndependentBlocks(DAE);
+  DAE := BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), SOME("dummyDerivative"));
+  
+  //get states for DAE
+  BackendDAE.DAE(eqs = {BackendDAE.EQSYSTEM(orderedVars = v)}, shared=shared) := DAE;
+  states := BackendVariable.getAllStateVarFromVariables(v);
+  // generate sparse pattern
+  (sparsePattern, coloredCols) := generateSparsePattern(DAE, states, states);
+
+  shared := BackendDAEUtil.addBackendDAESharedJacobianSparsePattern(sparsePattern, coloredCols, BackendDAE.SymbolicJacobianAIndex, shared);
+
+  outBackendDAE := BackendDAE.DAE(eqs,shared);
+end detectSparsePatternODE;
+ 
+public function generateSparsePattern
+  input BackendDAE.BackendDAE inBackendDAE;
+  input list<BackendDAE.Var> inDiffVars;
+  input list<BackendDAE.Var> inDiffedVars;
+  output BackendDAE.SparsePattern outSparsePattern;
+  output BackendDAE.SparseColoring outColoredCols;
+algorithm
+  (outSparsePattern,outColoredCols) := matchcontinue(inBackendDAE,inDiffVars,inDiffedVars)
+    local
+      BackendDAE.IncidenceMatrix adjMatrix,adjMatrixT;
+      BackendDAE.Matching bdaeMatching;
+      list<tuple<Integer, list<Integer>>>  sparseGraph, sparseGraphT;
+      array<tuple<Integer, list<Integer>>> arraysparseGraph;
+      Integer  njacs, nonZeroElements, nodesEqnsLength, sparseLength, maxdegree, maxColor;
+      list<Integer> nodesList,nodesEqnsIndex;
+      list<list<Integer>> sparsepattern,sparsepatternT, coloredlist;
+      list<BackendDAE.Var> JacDiffVars, origVarslst, indiffVars, indiffedVars;
+      BackendDAE.Variables diffedVars,varswithDiffs, v, origVars;
+      BackendDAE.EquationArray orderedEqns;
+      array<Option<list<Integer>>> forbiddenColor;
+      array<Integer> colored, colored1, ass1, ass2;
+      array<list<Integer>> coloredArray;
+      list<Integer> alldegrees, varsIndexes;
+      
+      list<DAE.ComponentRef> diffCompRefs, diffedCompRefs;
+      
+      BackendDAE.Shared shared;
+      BackendDAE.EqSystem syst,syst1;
+      
+      BackendDAE.StrongComponents comps;
+      array<list<Integer>> eqnSparse,sparseArray,sparseArrayT;
+      
+      BackendDAE.SparseColoring coloring;
+      list<list<DAE.ComponentRef>> translated;
+      list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsetuple;
+      
+    case (_,{},_) then (({},({},{})),{});
+    case (_,_,{}) then (({},({},{})),{});
+    case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1, ass2=ass2)))::{}, shared=shared),indiffVars,indiffedVars)
+      equation
+        //indiffVars = listReverse(indiffVars);
+        indiffedVars = listReverse(indiffedVars);
+        diffCompRefs = List.map(indiffVars, BackendVariable.varCref);
+        diffedCompRefs = List.map(indiffedVars, BackendVariable.varCref);
+        
+        origVarslst = BackendVariable.equationSystemsVarsLst({syst},{});
+        origVars = BackendDAEUtil.listVar1(origVarslst);
+        
+        // Generate Graph for determine sparse structure
+        Debug.fcall(Flags.JAC_DUMP,print," start getting sparsity pattern diff Vars : " +& intString(listLength(indiffedVars))  +& " diffed vars: " +& intString(listLength(indiffVars)) +&"\n");
+        JacDiffVars =  List.map(indiffVars,BackendVariable.createpDerVar);
+        njacs = listLength(JacDiffVars);
+        
+        
+        (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) = BackendDAEUtil.addVarsToEqSystem(syst,JacDiffVars);
+        (adjMatrix, adjMatrixT) = BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE());
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpVars,BackendDAEUtil.varList(varswithDiffs));
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpEqns,BackendDAEUtil.equationList(orderedEqns));
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrix,adjMatrix);
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrixT,adjMatrixT);
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpComponents, comps);
+        diffedVars = BackendDAEUtil.listVar1(indiffedVars);  
+        Debug.fcall(Flags.JAC_DUMP,print," diff Vars : " +& intString(njacs) +& " listLength comps: " +& intString(listLength(comps)) +&"\n");
+        nodesEqnsIndex = BackendVariable.getVarIndexFromVariables(diffedVars,varswithDiffs);
+        
+        nodesEqnsIndex = List.map1(nodesEqnsIndex, Util.arrayGetIndexFirst, ass1);
+        Debug.fcall(Flags.JAC_DUMP2, print, "nodesEqnsIndexs: ");
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, nodesEqnsIndex);
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n");
+        nodesEqnsLength = listLength(nodesEqnsIndex);
+        sparseLength = Util.if_(nodesEqnsLength > njacs, nodesEqnsLength, njacs);
+        
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse graph: " +& realString(clock()) +& "\n"); 
+        eqnSparse = arrayCreate(arrayLength(adjMatrix),{});
+        eqnSparse = prepareSparsePatternT(eqnSparse, arrayLength(adjMatrix)+1, arrayLength(adjMatrix)+njacs, adjMatrixT);
+        sparsepattern = arrayList(eqnSparse);
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
+        Debug.fcall(Flags.JAC_DUMP,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
+        eqnSparse = getSparsePattern(comps, eqnSparse, adjMatrix, adjMatrixT);
+        sparsepattern = arrayList(eqnSparse);
+        nonZeroElements = List.lengthListElements(sparsepattern);
+        (alldegrees, maxdegree) = List.mapFold(sparsepattern, findDegrees, 1);        
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);        
+        sparseArray = Util.arraySelect(eqnSparse, nodesEqnsIndex);
+        sparsepattern = arrayList(sparseArray);
+        sparsepattern = List.map1List(sparsepattern, intSub, arrayLength(adjMatrix));
+        sparseArray = listArray(sparsepattern);
+        
+        nonZeroElements = List.lengthListElements(sparsepattern);
+        
+        sparseArrayT = arrayCreate(sparseLength,{});
+        sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
+        sparsepatternT = arrayList(sparseArrayT);
+        sparsepatternT = List.firstN(sparsepatternT, listLength(diffCompRefs));
+        
+        (alldegrees, maxdegree) = List.mapFold(sparsepatternT, findDegrees, 1);
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepatternT);
+
+        translated = List.mapList1_1(sparsepatternT, List.getIndexFirst, diffedCompRefs);
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> translated to DAE.ComRefs\n");
+        sparsetuple = List.threadTuple(diffCompRefs, translated);
+        
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse  graph.");
+        // build up a graph of pattern
+        nodesList = List.intRange2(1,sparseLength);
+        sparseGraph = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
+        sparseGraphT = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArrayT);
+        Debug.fcall(Flags.JAC_DUMP2,print,"sparse graph: \n");
+        Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraph);
+        Debug.fcall(Flags.JAC_DUMP2,print,"transposed sparse graph: \n");
+        Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraphT);
+        
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.");
+        // color sparse bipartite graph
+        forbiddenColor = arrayCreate(sparseLength,NONE());
+        colored = arrayCreate(sparseLength,0);
+        arraysparseGraph = listArray(sparseGraph);        
+        colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
+        
+        // get max color used
+        maxColor = Util.arrayFold(colored1, intMax, 0);
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians[SPARSE] -> colored graph with " +& intString(maxColor) +& " colors. Time : " +& realString(clock()) +& "\n");
+
+        // map index of that array into colors
+        coloredArray = arrayCreate(maxColor, {});
+        coloredlist = arrayList(mapIndexColors(colored1, listLength(diffCompRefs), coloredArray));
+        
+        Debug.fcall(Flags.JAC_DUMP2, print, "Print Coloring Cols: \n");
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpSparsePattern, coloredlist);
+        
+        coloring = List.mapList1_1(coloredlist, List.getIndexFirst, diffCompRefs);
+        
+        //without coloring
+        coloring = List.transposeList({diffCompRefs});
+        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians[SPARSE] -> ready! " +& realString(clock()) +& "\n");
+      then ((sparsetuple, (indiffVars, indiffedVars)), coloring);
+        else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern failed"});
+      then fail();
+  end matchcontinue;
+end generateSparsePattern;
+
+protected function mapIndexColors
+  input array<Integer> inColors;
+  input Integer inMaxIndex;
+  input array<list<Integer>> inArray;
+  output array<list<Integer>> outColors;
+algorithm
+  outColors := matchcontinue(inColors, inMaxIndex, inArray)
+  local
+    Integer i, index;
+    list<Integer> lst;
+    case (_, 0, _) then inArray;
+    case (_, i, _)
+      equation
+        index = arrayGet(inColors, i);
+        lst = arrayGet(inArray, index);
+        lst = listAppend({i},lst);
+        _ = arrayUpdate(inArray, index, lst);
+    then mapIndexColors(inColors, i-1, inArray);
+      else
+      equation
+       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern: mapIndexColors failed"});
+      then fail();
+ end matchcontinue;
+end mapIndexColors;
+
 protected function createDirectedGraph
   input Integer inNode;
   input tuple<BackendDAE.IncidenceMatrix,BackendDAE.Matching> intupleArgs;
@@ -6041,7 +6248,6 @@ algorithm
   end match;
 end getSparsePatternGraph;
 
-
 protected function prepareSparsePatternT 
   input array<list<Integer>> inSparseT;
   input Integer inStartNode;
@@ -6072,63 +6278,144 @@ protected function getSparsePattern
 algorithm 
   outSparsePattern :=matchcontinue(inComponents,inResults,inMatrix,inMatrixT)
   local
-    list<Integer> vars, eqns, eqnlst, rowElements;
+    list<Integer> vars, vars1,eqns, eqns1, eqnlst, rowElements;
     Integer var, eqn;
     array<list<Integer>> result;
     BackendDAE.StrongComponents rest;
     list<list<Integer>>  rowElementsList, eqnlstList;
-    case ({},_,_,_) then inResults;
+    BackendDAE.StrongComponent condSystem;
+    list<tuple<Integer, list<Integer>>> otherEqnVarTpl;
+    list<list<Integer>> varsElements, dumpList;
+    case ({},result,_,_) then result;
     case(BackendDAE.SINGLEEQUATION(eqn=eqn,var=var)::rest,result,_,_)
       equation
+        //print("SINGLEEQUATION update: ");
         // get incedece row for curent equation set
         //print("find for dependecies for  eqn:" +& intString(eqn) +& " \n");
         rowElements = arrayGet(inMatrixT, var);
         eqnlst = arrayGet(result, eqn);
-        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);    
-        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
-      then result;        
-    case(BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars)::rest,result,_,_)
-      equation
-        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
-        rowElements = List.unionList(rowElementsList);
-        eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
-        eqnlst = List.unionList(eqnlstList);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
-    case(BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=eqns,disc_vars=vars)::rest,result,_,_)
+    case(BackendDAE.EQUATIONSYSTEM(eqns=eqns,vars=vars)::rest,result,_,_)
       equation
+        //print("EQUATIONSYSTEM update: ");
+        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
+        rowElements = List.unionList(rowElementsList);
+        
+        eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
+        eqnlst = List.unionList(eqnlstList);
+        List.map2_0(eqns, Util.arrayUpdateElementListUnion, eqnlst, result);
+        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */
+        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
+      then result;
+    case(BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=condSystem, disc_eqns=eqns,disc_vars=vars)::rest,result,_,_)
+      equation
+        //print("MIXEDEQUATIONSYSTEM update: ");
+        result = getSparsePattern({condSystem},result,inMatrix,inMatrixT);
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
         eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
         eqnlst = List.unionList(eqnlstList);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */        
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
     case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=vars)::rest,result,_,_)
       equation
+        //print("SINGLEARRAY update: ");
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
         eqnlst = arrayGet(result, eqn);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */        
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
     case(BackendDAE.SINGLEALGORITHM(eqn=eqn,vars=vars)::rest,result,_,_)
       equation
+        //print("SINGLEALGORITHM update: ");
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
         eqnlst = arrayGet(result, eqn);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */        
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
-      then result;          
+      then result;
     case(BackendDAE.SINGLECOMPLEXEQUATION(eqn=eqn,vars=vars)::rest,result,_,_)
       equation
+        //print("SINGLECOMPLEXEQUATION update: ");
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
         rowElements = List.unionList(rowElementsList);
         eqnlst = arrayGet(result, eqn);
         List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */        
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);  
-      then result;          
+      then result;
+    case(BackendDAE.TORNSYSTEM(residualequations=eqns,tearingvars=vars,otherEqnVarTpl=otherEqnVarTpl)::rest,result,_,_)
+      equation
+        //print("TORNSYSTEM tearing update: ");
+        //processed tearing eqns and vars
+        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
+        rowElements = List.unionList(rowElementsList);
+        eqnlstList = List.map1(eqns, Util.arrayGetIndexFirst, result);
+        eqnlst = List.unionList(eqnlstList);
+        /*
+        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */
+        //processed tornsystem
+        //print("TORNSYSTEM others update: ");
+        eqns1 = List.map(otherEqnVarTpl,Util.tuple21);
+        varsElements = List.map(otherEqnVarTpl,Util.tuple22);
+        vars1 = List.unionList(varsElements);
+        rowElementsList = List.map1(vars1, Util.arrayGetIndexFirst, inMatrixT);
+        rowElements = List.unionList(rowElementsList);
+        eqnlstList = List.map1(eqns1, Util.arrayGetIndexFirst, result);
+        eqnlst = List.unionList(eqnlstList);
+        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */
+        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
+      then result;
     else
        equation
        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.getSparsePatternNew failed"});
@@ -6136,128 +6423,12 @@ algorithm
   end matchcontinue;
 end getSparsePattern;
 
-public function generateSparsePattern
- input BackendDAE.BackendDAE inBackendDAE;
- input list<BackendDAE.Var> inDiffVars;
- input list<BackendDAE.Var> inDiffedVars;
- output list<list<Integer>> outSparsePattern;
- output list<Integer> outColoredCols;
- algorithm
-   (outSparsePattern,outColoredCols) := matchcontinue(inBackendDAE,inDiffVars,inDiffedVars)
-   local
-      BackendDAE.IncidenceMatrix adjMatrix,adjMatrixT;
-      BackendDAE.Matching bdaeMatching;
-      list<tuple<Integer, list<Integer>>>  sparseGraph, sparseGraphT;
-      array<tuple<Integer, list<Integer>>> arraysparseGraph;
-      Integer  njacs, nonZeroElements, nodesEqnsLength, sparseLength, maxdegree;
-      list<Integer> nodesList,nodesEqnsIndex;
-      list<list<Integer>> sparsepattern,sparsepatternT;
-      list<BackendDAE.Var> JacDiffVars;
-      BackendDAE.Variables diffedVars,varswithDiffs;
-      BackendDAE.EquationArray orderedEqns;
-      array<Option<list<Integer>>> forbiddenColor;
-      array<Integer> colored, colored1, ass1;
-      list<Integer> coloredlist, alldegrees;
-      
-      
-      BackendDAE.Shared shared;
-      BackendDAE.EqSystem syst,syst1;
-      
-      BackendDAE.StrongComponents comps;
-      array<list<Integer>> eqnSparse,sparseArray,sparseArrayT;
-      
-     case (_,{},_) then ({{}},{});
-     case (_,_,{}) then ({{}},{});
-     case(BackendDAE.DAE(eqs = (syst as BackendDAE.EQSYSTEM(matching=bdaeMatching as BackendDAE.MATCHING(comps=comps, ass1=ass1)))::{}, shared=shared),_,_)
-       equation
-        // Generate Graph for determine sparse structure
-        Debug.fcall(Flags.JAC_DUMP,print," start getting sparsity pattern diff Vars : " +& intString(listLength(inDiffedVars))  +& " diffed vars: " +& intString(listLength(inDiffVars)) +&"\n");
-        JacDiffVars =  List.map(inDiffVars,BackendVariable.createpDerVar);
-        njacs = listLength(JacDiffVars);
-        /*
-        states = BackendVariable.getAllStateVarFromVariables(orderedVars);
-        derstates =  List.map(states,BackendVariable.createDerVar);
-        state_comref = List.map(states,BackendVariable.varCref);
-        //state_comref = listReverse(state_comref);
-        orderedVars = BackendVariable.deleteCrefs(state_comref,orderedVars);
-        orderedVars = BackendVariable.addVars(derstates,orderedVars);
-        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqns,NONE(),NONE(),bdaeMatching);*/
-        
-        (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) = BackendDAEUtil.addVarsToEqSystem(syst,JacDiffVars);
-        (adjMatrix, adjMatrixT) = BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE());
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpVars,BackendDAEUtil.varList(varswithDiffs));
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpEqns,BackendDAEUtil.equationList(orderedEqns));
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrix,adjMatrix);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrixT,adjMatrixT);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpComponents, comps);
-        diffedVars = BackendDAEUtil.listVar1(inDiffedVars);  
-        Debug.fcall(Flags.JAC_DUMP,print," diff Vars : " +& intString(njacs) +& "listLength comps: " +& intString(listLength(comps)) +&"\n");
-        nodesEqnsIndex = BackendVariable.getVarIndexFromVariables(diffedVars,varswithDiffs);
-        
-        nodesEqnsIndex = List.map1(nodesEqnsIndex, Util.arrayGetIndexFirst, ass1);
-        nodesEqnsLength = listLength(nodesEqnsIndex);
-        sparseLength = Util.if_(nodesEqnsLength > njacs, nodesEqnsLength, njacs);
-        
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse graph: " +& realString(clock()) +& "\n"); 
-        eqnSparse = arrayCreate(arrayLength(adjMatrix),{});
-        eqnSparse = prepareSparsePatternT(eqnSparse, arrayLength(adjMatrix)+1, arrayLength(adjMatrix)+njacs, adjMatrixT);
-        sparsepattern = arrayList(eqnSparse);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
-        Debug.fcall(Flags.JAC_DUMP,print, "analytical Jacobians[SPARSE] -> prepared arrayList for transpose list: " +& realString(clock()) +& "\n");
-        eqnSparse = getSparsePattern(comps, eqnSparse, adjMatrix, adjMatrixT);
-        sparseArray = Util.arraySelect(eqnSparse, nodesEqnsIndex);
-        sparsepattern = arrayList(sparseArray);
-        sparsepattern = List.map1List(sparsepattern, intSub, arrayLength(adjMatrix));
-        sparseArray = listArray(sparsepattern);
-
-        nonZeroElements = List.lengthListElements(sparsepattern);
-        (alldegrees, maxdegree) = List.mapFold(sparsepattern, findDegrees, 1);
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> got sparse pattern nonZeroElements: "+& intString(nonZeroElements) +& " maxNodeDegree: " +& intString(maxdegree) +& " time : " +& realString(clock()) +& "\n");
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepattern);
-                
-        sparseArrayT = arrayCreate(sparseLength,{});
-        sparseArrayT = transposeSparsePattern(sparsepattern, sparseArrayT, 1);
-        sparsepatternT = arrayList(sparseArrayT);
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> transposedGraph: "+& intString(nonZeroElements));
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpSparsePattern,sparsepatternT);        
-        
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse  graph.");
-        // build up a graph of pattern
-        nodesList = List.intRange2(1,sparseLength);
-        sparseGraph = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
-        sparseGraphT = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArrayT);
-        Debug.fcall(Flags.JAC_DUMP2,print,"sparse graph: \n");
-        Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraph);
-        Debug.fcall(Flags.JAC_DUMP2,print,"transposed sparse graph: \n");
-        Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraphT);
-        
-        
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.");
-        // color sparse bipartite graph
-        forbiddenColor = arrayCreate(sparseLength,NONE());
-        colored = arrayCreate(sparseLength,0);
-        arraysparseGraph = listArray(sparseGraph);        
-        colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
-        coloredlist = arrayList(colored1);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians[SPARSE] -> colored graph time : " +& realString(clock()) +& "\n");
-        
-        Debug.fcall(Flags.JAC_DUMP2, print, "Print Coloring Cols: \n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpIncidenceRow, coloredlist);
-        
-      then (sparsepatternT,coloredlist);
-       else
-       equation
-       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern failed"});
-       then fail();
-    end matchcontinue;
-end generateSparsePattern;
-
 public function findDegrees
-  input list<Integer> inList;
+  input list<ElementType> inList;
   input Integer inValue;
   output Integer outDegree;
   output Integer outMaxDegree;
+replaceable type ElementType subtypeof Any;  
 algorithm
   outDegree := listLength(inList);
   outMaxDegree := intMax(inValue,outDegree);
@@ -6555,7 +6726,7 @@ algorithm
       parameters = List.select(knownVarList, BackendVariable.isParam);
       outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
       
-      jacobian = createJacobian(DAE,                                      // DAE
+      (jacobian,_,_) = createJacobian(DAE,                                      // DAE
                                 states,                                   // 
                                 BackendDAEUtil.listVar1(states),           // 
                                 BackendDAEUtil.listVar1(inputs),           // 
@@ -6589,11 +6760,13 @@ protected
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
   BackendDAE.SymbolicJacobian symJacA;
+  BackendDAE.SparsePattern sparsePattern;
+  BackendDAE.SparseColoring sparseColoring;    
 algorithm
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
   BackendDAE.DAE(eqs=eqs,shared=shared) := inBackendDAE;
-  symJacA := createSymbolicJacobianforStates(inBackendDAE);
-  shared := BackendDAEUtil.addBackendDAESharedJacobian(symJacA, shared);
+  (symJacA , sparsePattern, sparseColoring ):= createSymbolicJacobianforStates(inBackendDAE);
+  shared := BackendDAEUtil.addBackendDAESharedJacobian(symJacA, sparsePattern, sparseColoring, shared);
   outBackendDAE := BackendDAE.DAE(eqs,shared);
   _ := Flags.enableDebug(Flags.JACOBIAN);
   _ := System.realtimeTock(BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
@@ -6624,8 +6797,10 @@ protected function createSymbolicJacobianforStates
   author: wbraun"
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.SymbolicJacobian outJacobian;
+  output BackendDAE.SparsePattern outSparsePattern;
+  output BackendDAE.SparseColoring outSparseColoring;  
 algorithm
-  outJacobian :=
+  (outJacobian, outSparsePattern, outSparseColoring) :=
   matchcontinue (inBackendDAE)
     local
       BackendDAE.BackendDAE backendDAE, backendDAE2;
@@ -6668,10 +6843,10 @@ algorithm
         paramvars = List.select(knvarlst, BackendVariable.isParam);
 
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> prepared vars for symbolic matrix A time: " +& realString(clock()) +& "\n");
-        outJacobian = createJacobian(backendDAE2,states,BackendDAEUtil.listVar1(states),BackendDAEUtil.listVar1(inputvars),BackendDAEUtil.listVar1(paramvars),BackendDAEUtil.listVar1(states),varlst,(comref_vars,comref_knvars),"A");
+        (outJacobian, outSparsePattern, outSparseColoring)  = createJacobian(backendDAE2,states,BackendDAEUtil.listVar1(states),BackendDAEUtil.listVar1(inputvars),BackendDAEUtil.listVar1(paramvars),BackendDAEUtil.listVar1(states),varlst,(comref_vars,comref_knvars),"A");
         
       then
-        outJacobian;
+        (outJacobian, outSparsePattern, outSparseColoring);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Generation of symbolic Jacobian Matrix code failed. Function: BackendDAEOpimize.createSymcolicaJacobianforStates"});
@@ -6699,6 +6874,9 @@ algorithm
       
       BackendDAE.SymbolicJacobians linearModelMatrices;
       BackendDAE.SymbolicJacobian linearModelMatrix;
+      
+      BackendDAE.SparsePattern sparsePattern;
+      BackendDAE.SparseColoring sparseColoring;  
       
     case (backendDAE)
       equation
@@ -6728,26 +6906,26 @@ algorithm
         outputvarsarr = BackendDAEUtil.listVar1(outputvars);
         
         // Differentiate the System w.r.t states for matrices A
-        linearModelMatrix = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,(comref_vars,comref_knvars),"A");
-        linearModelMatrices = {linearModelMatrix};
+        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,(comref_vars,comref_knvars),"A");
+        linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
   
         
         // Differentiate the System w.r.t inputs for matrices B
-        linearModelMatrix = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,(comref_vars,comref_knvars),"B");
-        linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
+        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,(comref_vars,comref_knvars),"B");
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
 
 
         // Differentiate the System w.r.t states for matrices C
-        linearModelMatrix = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,(comref_vars,comref_knvars),"C");
-        linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
+        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,(comref_vars,comref_knvars),"C");
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
 
         
         // Differentiate the System w.r.t inputs for matrices D
-        linearModelMatrix = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,(comref_vars,comref_knvars),"D");
-        linearModelMatrices = listAppend(linearModelMatrices,{linearModelMatrix});
+        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,(comref_vars,comref_knvars),"D");
+        linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
 
       then
@@ -6773,8 +6951,10 @@ public function createJacobian "function createJacobian
   input tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> inOrigTuple;
   input String inName;
   output BackendDAE.SymbolicJacobian outJacobian;
+  output BackendDAE.SparsePattern outSparsePattern;
+  output BackendDAE.SparseColoring outSparseColoring;
 algorithm
-  outJacobian :=
+  (outJacobian, outSparsePattern, outSparseColoring) :=
   matchcontinue (inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,inOrigTuple,inName)
     local
       BackendDAE.BackendDAE backendDAE;
@@ -6786,6 +6966,8 @@ algorithm
       list<BackendDAE.Var> diffedVars, diffVarsTmp, seedlst, knvarsTmp;
       String s,s1;
       
+      BackendDAE.SparsePattern sparsepattern;
+      BackendDAE.SparseColoring colsColors;
       
     case (_,_,_,_,_,_,_,(inOrigVars,inOrigKnVars),_)
       equation
@@ -6821,8 +7003,11 @@ algorithm
         knvars = BackendDAEUtil.listVar1(knvarsTmp);
         backendDAE = BackendDAEUtil.addBackendDAEKnVars(knvars,backendDAE);
         Debug.execStat("analytical Jacobians -> generated optimized jacobians", BackendDAE.RT_CLOCK_EXECSTAT_JACOBIANS);
+        
+        // generate sparse pattern
+        (sparsepattern,colsColors) = generateSparsePattern(inBackendDAE, inDiffVars, diffedVars);
      then
-        ((backendDAE, inName, inDiffVars, diffedVars, inVars));
+        ((backendDAE, inName, inDiffVars, diffedVars, inVars), sparsepattern, colsColors);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.createJacobian failed"});
@@ -7396,7 +7581,7 @@ algorithm
       DAE.ComponentRef cref, x;
       String id,str;
       String matrixName;
-     /* replace the subscripts with strings because no all elements of the arrays may be derived, this avoid trouble when generate simulation code */
+     /* replace the subscripts with strings because not all elements of the arrays may be derived, this avoid trouble when generate simulation code */
      case(cref, x, (matrixName,true)) 
       equation
         cref = ComponentReference.joinCrefs(ComponentReference.makeCrefIdent(BackendDAE.partialDerivativeNamePrefix, ComponentReference.crefType(cref), {}),cref);
@@ -7407,7 +7592,7 @@ algorithm
         cref;
     case(cref, x, (matrixName,false))
       equation
-        id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& matrixName +& ComponentReference.printComponentRefStr(x);
+        id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& matrixName +& "$P" +& ComponentReference.printComponentRefStr(x);
         id = Util.stringReplaceChar(id, ",", "$K");
         id = Util.stringReplaceChar(id, ".", "$P");
         id = Util.stringReplaceChar(id, "[", "$lB");
@@ -9121,8 +9306,9 @@ algorithm
   lowlink := arrayCreate(size,0);        
   number := setIntArray(residual,number,size);
   (_,_,othercomps) := BackendDAETransform.strongConnectMain(m1, mt1, ass1, ass2, number, lowlink, size, 0, 1, {}, {});        
-  //  print("OtherEquationsOrder:\n"); 
-  //  BackendDump.dumpComponentsOLD(othercomps); print("\n");
+  Debug.fcall(Flags.TEARING_DUMP, print, "OtherEquationsOrder:\n"); 
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponentsOLD,othercomps); 
+  Debug.fcall(Flags.TEARING_DUMP, print, "\n");
   // handle system in case of liniear and other cases 
   //(osyst,oshared,outRunMatching) := tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
   (ocomp,outRunMatching) := tearingSystemNew4_1(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);

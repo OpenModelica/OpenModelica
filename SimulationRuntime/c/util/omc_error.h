@@ -205,7 +205,7 @@ extern const int ERROR_LINSYS;
 #define ASSERT10(exp, msg, a, b, c, d, e, f, g, h, i, j)
 #endif
 
-#define DEBUG_FLAG(flag) (flag & globalDebugFlags)
+#define DEBUG_FLAG(flag) ((flag) & globalDebugFlags)
 #define DEBUG_INFO(flag, msg)    do{if(DEBUG_FLAG(flag)) MSG("debug  ", stdout, msg);}while(0)
 #define DEBUG_INFO1(flag, msg, a)    do{if(DEBUG_FLAG(flag)) MSG1("debug  ", stdout, msg, a);}while(0)
 #define DEBUG_INFO2(flag, msg, a, b)    do{if(DEBUG_FLAG(flag)) MSG2("debug  ", stdout, msg, a, b);}while(0)

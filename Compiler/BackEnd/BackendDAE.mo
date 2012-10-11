@@ -45,12 +45,20 @@ public import Values;
 public import HashTable3;
 public import HashTableCG;
 
-public constant String partialDerivativeNamePrefix="$pDER";
 public constant Integer RT_PROFILER0=6;
 public constant Integer RT_PROFILER1=7;
 public constant Integer RT_PROFILER2=8;
 public constant Integer RT_CLOCK_EXECSTAT_BACKEND_MODULES=12;
 public constant Integer RT_CLOCK_EXECSTAT_JACOBIANS=16;
+
+
+public constant Integer SymbolicJacobianAIndex = 1;
+public constant Integer SymbolicJacobianBIndex = 2;
+public constant Integer SymbolicJacobianCIndex = 3;
+public constant Integer SymbolicJacobianDIndex = 4;
+public constant Integer SymbolicJacobianGIndex = 5;
+public constant String partialDerivativeNamePrefix="$pDER";
+
 
 public type Type = .DAE.Type 
 "Once we are in BackendDAE, the Type can be only basic types or enumeration. 
@@ -527,6 +535,8 @@ uniontype DivZeroExpReplace "- Should the division operator replaced by a operat
   record ONLY_VARIABLES  " for expressions with variable variables(no parameters)" end ONLY_VARIABLES;
 end DivZeroExpReplace;
 
+public
+type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
 
 public 
 type SymbolicJacobian = tuple< BackendDAE,              // symbolic equation system 
@@ -536,7 +546,13 @@ type SymbolicJacobian = tuple< BackendDAE,              // symbolic equation sys
                                 list<Var>              // all diffed equation
                                 >;
 
-public
-type SymbolicJacobians = list<SymbolicJacobian>;
+public 
+type SparsePattern = tuple<list<tuple< .DAE.ComponentRef,list< .DAE.ComponentRef>>>,  // column-wise sparse pattern
+                            tuple<list<Var>,  // diff vars
+                                   list<Var>>>; // diffed vars
+
+public 
+type SparseColoring = list<list< .DAE.ComponentRef>>;    // coloring
+
 
 end BackendDAE;

@@ -44,7 +44,8 @@ const char *dasslMethodStr[DASSL_MAX] = {"unknown",
                                          "dasslSymJac",
                                          "dasslNumJac",
                                          "dasslColorSymJac",
-                                         "dasslColorNumJac"
+                                         "dasslColorNumJac",
+                                         "dassltest",
                                         };
 
 const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown", 
@@ -53,15 +54,16 @@ const char *dasslMethodStrDescStr[DASSL_MAX] = {"unknown",
                                                 "dassl with symbolic jacobian",
                                                 "dassl with numerical jacobian",
                                                 "dassl with colored symbolic jacobian",
-                                                "dassl with colored numerical jacobian"
+                                                "dassl with colored numerical jacobian",
+                                                "dassl for debug propose"
                                                };
 
 
 
 /* provides a dummy Jacobian to be used with DASSL */
 int
-dummy_Jacobian(double *t, double *y, double *yprime, double *pd,
-               double *cj, double *rpar, fortran_integer* ipar) {
+dummy_Jacobian(double *t, double *y, double *yprime, double *deltaD,
+    double *delta, double *cj, double *h, double *wt, double *rpar, fortran_integer* ipar) {
   return 0;
 }
 int
@@ -74,6 +76,16 @@ int Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
     double *rpar, fortran_integer* ipar);
 int Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
     double *rpar, fortran_integer* ipar);
+
+int JacobianSymbolic(double *t, double *y, double *yprime,  double *deltaD, double *pd, double *cj, double *h, double *wt,
+    double *rpar, fortran_integer* ipar);
+int JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+    double *rpar, fortran_integer* ipar);
+int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+    double *rpar, fortran_integer* ipar);
+int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+    double *rpar, fortran_integer* ipar);
+
 
 
 void  DDASRT(
@@ -93,7 +105,7 @@ void  DDASRT(
     fortran_integer *liw,
     double *rpar,
     fortran_integer *ipar,
-    int (*jac) (double *t, double *y, double *yprime, double *delta, double *cj, double *rpar, fortran_integer* ipar),
+    int (*jac) (double *t, double *y, double *yprime, double *deltaD, double *delta, double *cj, double *h, double *wt, double *rpar, fortran_integer* ipar),
     int (*g) (fortran_integer *neqm, double *t, double *y, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar),
     fortran_integer *ng,
     fortran_integer *jroot
@@ -167,31 +179,24 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 
   if (dasslData->dasslMethod == DASSL_SYMJAC ||
       dasslData->dasslMethod == DASSL_COLOREDSYMJAC ||
-      dasslData->dasslMethod == DASSL_COLOREDNUMJAC){
+      dasslData->dasslMethod == DASSL_NUMJAC ||
+      dasslData->dasslMethod == DASSL_COLOREDNUMJAC ||
+      dasslData->dasslMethod == DASSL_TEST){
     if (initialAnalyticJacobianA(simData)){
-      INFO("Jacobian not generated or failed to initialize! Switch back to normal.");
+      DEBUG_INFO(LOG_SOLVER,"Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
       dasslData->dasslMethod = DASSL_RT;
     }else{
       dasslData->info[4] = 1; /* use sub-routine JAC */
     }
-  }else if (dasslData->dasslMethod ==  DASSL_NUMJAC){
-    dasslData->info[4] = 1; /* use sub-routine JAC */
   }
 
   /* Setup nominal values of the states
    * as relative tolerances */
-  if (dasslData->dasslMethod == DASSL_WORT){
-    dasslData->rtol[0] = simData->simulationInfo.tolerance;
-    dasslData->atol[0] = simData->simulationInfo.tolerance;
-  } else {
-    dasslData->info[1] = 1;
-    for(i=0;i<simData->modelData.nStates;++i){
-      dasslData->rtol[i] = simData->simulationInfo.tolerance;
-      dasslData->atol[i] = simData->simulationInfo.tolerance * simData->modelData.realVarsData[i].attribute.nominal;
-    }
+  dasslData->info[1] = 1;
+  for(i=0;i<simData->modelData.nStates;++i){
+    dasslData->rtol[i] = simData->simulationInfo.tolerance;
+    dasslData->atol[i] = simData->simulationInfo.tolerance * simData->modelData.realVarsData[i].attribute.nominal;
   }
-
-
 
   return 0;
 }
@@ -292,8 +297,44 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
-          dasslData->rpar, dasslData->ipar, Jacobian,  function_ZeroCrossingsDASSL,
+          dasslData->rpar, dasslData->ipar, JacobianSymbolic,  function_ZeroCrossingsDASSL,
           (fortran_integer*) &dasslData->ng, dasslData->jroot);
+    }
+    else if (dasslData->dasslMethod ==  DASSL_NUMJAC)
+    {
+      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+          &solverInfo->currentTime, sData->realVars, stateDer, &tout,
+          dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
+          dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
+          dasslData->rpar, dasslData->ipar, JacobianOwnNum,  function_ZeroCrossingsDASSL,
+          (fortran_integer*) &dasslData->ng, dasslData->jroot);
+    }
+    else if (dasslData->dasslMethod ==  DASSL_COLOREDSYMJAC)
+    {
+      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+          &solverInfo->currentTime, sData->realVars, stateDer, &tout,
+          dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
+          dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
+          dasslData->rpar, dasslData->ipar, JacobianSymbolicColored,  function_ZeroCrossingsDASSL,
+          (fortran_integer*) &dasslData->ng, dasslData->jroot);
+    }
+    else if (dasslData->dasslMethod ==  DASSL_COLOREDNUMJAC)
+    {
+      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+          &solverInfo->currentTime, sData->realVars, stateDer, &tout,
+          dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
+          dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
+          dasslData->rpar, dasslData->ipar, JacobianOwnNumColored,  function_ZeroCrossingsDASSL,
+          (fortran_integer*) &dasslData->ng, dasslData->jroot);
+    }
+    else if (dasslData->dasslMethod ==  DASSL_TEST)
+    {
+      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+          &solverInfo->currentTime, sData->realVars, stateDer, &tout,
+          dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
+          dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
+          dasslData->rpar, dasslData->ipar, JacobianOwnNumColored, dummy_zeroCrossing,
+          &dasslData->ngdummy, NULL);
     }
     else if (dasslData->dasslMethod ==  DASSL_WORT)
     {
@@ -519,12 +560,113 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
 }
 
 
+int functionJacAColored(DATA* data, double* jac){
+
+  const int index = INDEX_JAC_A;
+  int i,j,l,k,ii;
+  for(i=0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++)
+  {
+    for (ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
+      if (data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
+
+    if (DEBUG_FLAG((LOG_JAC | LOG_ENDJAC))){
+      printf("Caluculate one col:\n");
+      for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
+        DEBUG_INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[index].seedVars[l]);
+    }
+
+
+    functionJacA_column(data);
+
+    for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++)
+    {
+      if ( data->simulationInfo.analyticJacobians[index].seedVars[j] == 1)
+      {
+        if (j==0)
+          ii = 0;
+        else
+          ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
+        DEBUG_INFO2((LOG_JAC | LOG_ENDJAC)," take for %d -> %d\n",j,ii);
+        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
+        {
+          l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
+          k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
+          jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+          DEBUG_INFO7((LOG_JAC | LOG_ENDJAC),"write %d. in jac[%d]-[%d,%d]=%f from col[%d]=%f",ii,k,l,j,jac[k],l,data->simulationInfo.analyticJacobians[index].resultVars[l]);
+          ii++;
+        };
+      }
+    }
+    for (ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
+      if (data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i) data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0;
+
+
+    /*
+    if (DEBUG_FLAG((LOG_JAC | LOG_ENDJAC))){
+      INFO("Print jac:");
+      for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
+      {
+        for(k=0;  k < data->simulationInfo.analyticJacobians[index].sizeRows;k++)
+          printf("% .5e ",jac[l+k*data->simulationInfo.analyticJacobians[index].sizeRows]);
+        printf("\n");
+      }
+    }
+    */
+
+  }
+  return 0;
+}
+
+
+int functionJacASym(DATA* data, double* jac){
+
+  const int index = INDEX_JAC_A;
+  unsigned int i,j,k;
+  k = 0;
+  for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
+  {
+    data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
+
+    if (DEBUG_FLAG((LOG_JAC | LOG_ENDJAC)))
+    {
+      printf("Caluculate one col:\n");
+      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
+        DEBUG_INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+    }
+
+
+    functionJacA_column(data);
+
+    for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
+    {
+      jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
+      DEBUG_INFO6((LOG_JAC | LOG_ENDJAC),"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k,i,j,jac[k-1],j,data->simulationInfo.analyticJacobians[index].resultVars[j]);
+    }
+
+    data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
+  }
+  /*
+  if (DEBUG_FLAG(LOG_DEBUG))
+  {
+    INFO("Print jac:");
+    for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
+    {
+      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
+        printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
+      printf("\n");
+    }
+  }
+  */
+  return 0;
+}
+
 /*
  * provides a analytical Jacobian to be used with DASSL
  */
 
 int
-Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
+JacobianSymbolicColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
          double *rpar, fortran_integer* ipar) {
 
   DATA* data = (DATA*)(void*)rpar;
@@ -540,7 +682,7 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
   data->localData[0]->timeValue = *t;
   data->localData[0]->realVars = y;
   functionODE(data);
-  functionJacA_dense(data, pd);
+  functionJacAColored(data, pd);
 
   /* add cj to the diagonal elements of the matrix */
   j = 0;
@@ -556,48 +698,102 @@ Jacobian(double *t, double *y, double *yprime, double *pd, double *cj,
 }
 
 /*
+ * provides a analytical Jacobian to be used with DASSL
+ */
+
+int
+JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+         double *rpar, fortran_integer* ipar) {
+
+  DATA* data = (DATA*)(void*)rpar;
+  double* backupStates;
+  double timeBackup;
+  int i;
+  int j;
+
+  backupStates = data->localData[0]->realVars;
+  timeBackup = data->localData[0]->timeValue;
+
+
+  data->localData[0]->timeValue = *t;
+  data->localData[0]->realVars = y;
+  functionODE(data);
+  functionJacASym(data, pd);
+
+  /* add cj to the diagonal elements of the matrix */
+  j = 0;
+  for (i = 0; i < data->modelData.nStates; i++) {
+    pd[j] -= (double) *cj;
+    j += data->modelData.nStates + 1;
+  }
+  data->localData[0]->realVars = backupStates;
+  data->localData[0]->timeValue = timeBackup;
+
+  return 0;
+}
+
+
+/*
  *  function calculates a jacobian matrix by
  *  numerical method finite differences
  */
 int
-jacA_num(DATA* data, double *t, double *y, double *matrixA)
-{
-  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
-  double delta_h = 1.e-10;
-  double delta_hh;
-  double* yprime = (double*) malloc(data->modelData.nStates * sizeof(double));
+jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, fortran_integer *ipar) {
 
-  double* backupStates;
-  double backupTime;
-  int i,j,l;
-  backupStates = data->localData[0]->realVars;
-  backupTime = data->localData[0]->timeValue;
+  const int index = INDEX_JAC_A;
 
-  data->localData[0]->realVars = y;
-  data->localData[0]->timeValue = *t;
+  double delta_h = sqrt(DBL_EPSILON);
+  double delta_hh,delta_hhh, deltaInv;
+  double ysave, ypsave;
+  double* yprimeD = (double*) malloc(data->modelData.nStates  * sizeof(double));
+  double* e = (double*) malloc(data->modelData.nStates * sizeof(double));
+  int ires;
+  int i,j,l=0;
 
-  functionODE(data);
-  memcpy(yprime, sData->realVars + data->modelData.nStates,
-      data->modelData.nStates * sizeof(double));
+  memcpy(yprimeD, yprime, data->modelData.nStates * sizeof(double));
 
   /* matrix A, add cj to diagonal elements and store in pd */
   for (i = 0; i < data->modelData.nStates; i++) {
-    delta_hh = delta_h * (sData->realVars[i] > 0 ? sData->realVars[i]
-                                                                         : -sData->realVars[i]);
-    delta_hh = ((delta_h > delta_hh) ? delta_h : delta_hh);
-    sData->realVars[i] += delta_hh;
-    functionODE(data);
-    sData->realVars[i] -= delta_hh;
+    delta_hhh = *h * yprime[i];
+    delta_hh = delta_h * fmax(fmax(abs(y[i]),abs(delta_hhh)),abs(wt[i]));
+    delta_hh = (delta_hhh >= 0 ? delta_hh : -delta_hh);
+    delta_hh = y[i] + delta_hh - y[i];
+    ysave = y[i];
+    ypsave = yprime[i];
+    y[i] += delta_hh;
+    yprime[i] += *cj * delta_hh;
 
-    l = i * data->modelData.nStates;
+    functionODE_residual(t, y, yprime, e, &ires, rpar, ipar);
+
+    deltaInv = 1. / delta_hh;
+
+    DEBUG_INFO1((LOG_JAC | LOG_ENDJAC),"Caluculate one col: %d", i);
     for (j = 0; j < data->modelData.nStates; j++) {
-      matrixA[l+j] = ((sData->realVars + data->modelData.nStates)[j] - yprime[j]) / delta_hh;
+      matrixA[l++] = (e[j] - delta[j]) * deltaInv;
+      if (DEBUG_FLAG(LOG_JAC | LOG_ENDJAC)) {
+        printf("%e ",matrixA[l-1]);
+      }
+    }
+    DEBUG_INFO((LOG_JAC | LOG_ENDJAC)," ");
+    y[i] = ysave;
+    yprime[i] = ypsave;
+  }
+
+  if (DEBUG_FLAG(LOG_JAC | LOG_ENDJAC)) {
+    INFO("Print jac:");
+    for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
+    {
+      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
+        printf("% .5g ",matrixA[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
+      printf("\n");
     }
   }
 
-  data->localData[0]->realVars = backupStates;
-  data->localData[0]->timeValue = backupTime;
-  free(yprime);
+  memcpy(yprime, yprimeD, data->modelData.nStates * sizeof(double));
+
+
+  free(yprimeD);
+  free(e);
 
   return 0;
 }
@@ -605,12 +801,136 @@ jacA_num(DATA* data, double *t, double *y, double *matrixA)
 /*
  * provides a numerical Jacobian to be used with DASSL
  */
-int Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
+int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
    double *rpar, fortran_integer* ipar) {
 
   DATA* data = (DATA*)(void*)rpar;
   int i,j;
-  if (jacA_num(data, t, y, pd)) {
+  if (jacA_num(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar)) {
+    THROW("Error, can not get Matrix A ");
+    return 1;
+  }
+
+  return 0;
+}
+
+
+/*
+ *  function calculates a jacobian matrix by
+ *  numerical method finite differences
+ */
+int
+jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, fortran_integer *ipar) {
+
+  const int index = INDEX_JAC_A;
+  SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
+  double delta_h = sqrt(DBL_EPSILON);
+  double delta_hhh;
+  int ires;
+  double* delta_hh = (double*) malloc(data->modelData.nStates * sizeof(double));
+  double* deltaInv = (double*) malloc(data->modelData.nStates * sizeof(double));
+  double* ysave = (double*) malloc(data->modelData.nStates * sizeof(double));
+  double* ypsave = (double*) malloc(data->modelData.nStates * sizeof(double));
+  double* yprimeD = (double*) malloc(data->modelData.nStates * sizeof(double));
+  double* e = (double*) malloc(data->modelData.nStates * sizeof(double));
+
+
+  int i,j,l,k,kk,ii, hh;
+
+  memcpy(yprimeD, yprime, data->modelData.nStates * sizeof(double));
+
+  /* matrix A, add cj to diagonal elements and store in pd */
+  for (i = 0; i < data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors; i++) {
+
+    for (ii=0, kk = 0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++){
+      if (data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i){
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1.0;
+        delta_hhh = *h * yprime[ii];
+        delta_hh[kk] = delta_h * fmax(fmax(abs(y[ii]),abs(delta_hhh)),abs(wt[ii]));
+        delta_hh[kk] = (delta_hhh >= 0 ? delta_hh[kk] : -delta_hh[kk]);
+        delta_hh[kk] = y[ii] + delta_hh[kk] - y[ii];
+        deltaInv[kk] = 1. / delta_hh[kk];
+        kk++;
+        hh = ii;
+      }
+    }
+
+    DEBUG_INFO(LOG_JAC | LOG_ENDJAC,"Set Seed Vars:");
+    for (ii=0, kk = 0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++){
+      if (data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i){
+
+        ysave[ii] = y[ii];
+        ypsave[ii] = yprime[ii];
+        y[ii] += delta_hh[kk];
+        DEBUG_INFO3(LOG_JAC | LOG_ENDJAC,"seed:  sData->realVars[%d]= %e\t = %e",ii,y[ii],sData->realVars[ii]);
+        kk++;
+      }
+    }
+
+    functionODE_residual(t, y, yprime, e, &ires, rpar, ipar);
+
+    for (ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
+        DEBUG_INFO3(LOG_JAC | LOG_ENDJAC,"result:  yprime[%d]= %e\t = %e",ii,yprime[ii],(e[ii] - delta[ii]) * delta_h);
+
+
+    for(j = 0,kk=0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++){
+      if ( data->simulationInfo.analyticJacobians[index].seedVars[j] == 1.0) {
+        if (j==0)
+          ii = 0;
+        else
+          ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
+        DEBUG_INFO2((LOG_JAC | LOG_ENDJAC)," take for %d -> %d\n",j,ii);
+        while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j]){
+          l  =  data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
+          k  = l + j*data->simulationInfo.analyticJacobians[index].sizeRows;
+          matrixA[k] = (e[l] - delta[l]) * deltaInv[kk];
+          DEBUG_INFO5(LOG_JAC | LOG_ENDJAC,"write %d. in jac[%d]-[%d,%d]=%e",ii,k,j,l,matrixA[k]);
+          ii++;
+        };
+        kk++;
+      }
+    }
+
+    for (ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++){
+      if (data->simulationInfo.analyticJacobians[index].seedVars[ii] == 1.0){
+        data->simulationInfo.analyticJacobians[index].seedVars[ii] = 0.0;
+        y[ii] = ysave[ii];
+        yprime[ii] = ypsave[ii];
+      }
+    }
+  }
+
+  if (DEBUG_FLAG(LOG_JAC | LOG_ENDJAC)) {
+    INFO("Print jac:");
+    for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
+    {
+      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
+        printf("% .5g ",matrixA[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
+      printf("\n");
+    }
+  }
+
+  memcpy(yprime, yprimeD, data->modelData.nStates * sizeof(double));
+
+  free(yprimeD);
+  free(ypsave);
+  free(ysave);
+  free(e);
+  free(delta_hh);
+  free(deltaInv);
+
+  return 0;
+}
+
+/*
+ * provides a numerical Jacobian to be used with DASSL
+ */
+int JacobianOwnNumColored(double *t, double *y, double *yprime, double *deltaD, double *pd, double *cj, double *h, double *wt,
+   double *rpar, fortran_integer* ipar) {
+
+  DATA* data = (DATA*)(void*)rpar;
+  int i,j;
+  if (jacA_numColored(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar)) {
     THROW("Error, can not get Matrix A ");
     return 1;
   }
@@ -621,7 +941,7 @@ int Jacobian_num(double *t, double *y, double *yprime, double *pd, double *cj,
     pd[j] -= (double) *cj;
     j += data->modelData.nStates + 1;
   }
+
   return 0;
 }
-
 

@@ -101,6 +101,7 @@
       unsigned int* index;
       unsigned int sizeofIndex;
       unsigned int* colorCols;
+      unsigned int maxColors;
   }SPARSE_PATTERN;
 
   /* ANALYTIC_JACOBIAN

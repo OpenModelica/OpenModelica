@@ -465,6 +465,7 @@ int callSolver(DATA* simData, string method, string outputFormat,
     retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
   } else if (method == std::string("dassl") ||
              method == std::string("dasslwort")  ||
+             method == std::string("dassltest")  ||
              method == std::string("dasslSymJac") ||
              method == std::string("dasslNumJac") ||
              method == std::string("dasslColorSymJac") ||
@@ -586,8 +587,6 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   /* verbose flag is set : -v */
   globalDebugFlags = flagSet("v", argc, argv);
   sim_noemit = flagSet("noemit", argc, argv);
-  jac_flag = flagSet("jac", argc, argv);
-  num_jac_flag = flagSet("numjac", argc, argv);
 
 
   // ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio

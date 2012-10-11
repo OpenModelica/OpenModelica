@@ -1384,6 +1384,19 @@ algorithm
   outVar := setVarKind(outVar,BackendDAE.JAC_DIFF_VAR());
 end createpDerVar;
 
+public function createDummyVar "function createDummyVar
+  author: wbraun
+  Creates variable with $dummy."
+  output BackendDAE.Var outVar;
+  output DAE.ComponentRef outCr;
+algorithm
+  outCr := ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
+  outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
+                            DAE.emptyElementSource,
+                            SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
+                            NONE(),DAE.NON_CONNECTOR());
+end createDummyVar;
+
 public function copyVarNewName
 "function copyVarNewName
   author: Frenkel TUD 2012-5

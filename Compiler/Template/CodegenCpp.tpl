@@ -6734,7 +6734,7 @@ end setVariables;
 
 
 
-template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<list<Integer>> sparsepattern, list<Integer> colorList,SimCode simCode)
+template initialAnalyticJacobians(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>> colorList,SimCode simCode)
  "Generates function that initialize the sparse-pattern for a jacobain matrix"
 ::=
   match simCode
@@ -6759,7 +6759,8 @@ case "A" then
            }
            >>
          case _ then
-          let sp_size_index =  lengthListElements(sparsepattern) 
+          /* wbraun: not used anywhere
+          let sp_size_index =  lengthListElements(sparsepattern)
           let leadindex = ( sparsepattern |> (indexes) hasindex index0 => 
             if index0 then  
             <<data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%index0%>] = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%intSub(index0,1)%>] + <%listLength(indexes)%>;>>
@@ -6771,8 +6772,9 @@ case "A" then
             ;separator="\n")
           let colorArray = ( colorList |> (indexes) hasindex index0 => 
             <<data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%index0%>] = <%indexes%>; >> 
-            ;separator="\n")  
-          let sp_size_index =  lengthListElements(sparsepattern)
+            ;separator="\n")
+          */  
+          let sp_size_index =  lengthListElements(splitTuple212List(sparsepattern))
           let indexColumn = (jacobianColumn |> (eqs,vars,indxColumn) => indxColumn;separator="\n")
           let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
           let index_ = listLength(seedVars)
@@ -6794,10 +6796,10 @@ end initialAnalyticJacobians;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes, SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
-  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, _) hasindex index0 =>
+  let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, _) hasindex index0 =>
     initialAnalyticJacobians(index0, mat, vars, name, sparsepattern, colorList,simCode)
     ;separator="\n\n";empty)
- let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor) hasindex index0  =>
+ let jacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor) hasindex index0  =>
     generateMatrix(index0, mat, vars, name, sparsepattern, colorList, maxColor,simCode)
     ;separator="\n\n";empty)
 <<
@@ -6837,7 +6839,7 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
 end functionJac;
 
 
-template generateMatrix(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<list<Integer>> sparsepattern, list<Integer> colorList, Integer maxColor, SimCode simCode)
+template generateMatrix(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String matrixname, list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern, list<list<DAE.ComponentRef>>colorList, Integer maxColor, SimCode simCode)
  "Generates Matrixes for Linear Model."
 ::=
  match matrixname
@@ -6878,10 +6880,11 @@ case _ then
     ;separator="\n")     
   let index_ = listLength(seedVars)
   */
-    let jacvals = ( sparsepattern |> (indexes) hasindex index0 =>  
+    let jacvals = ( sparsepattern |> (_,indexes) hasindex index0 =>  
      
       let jaccol = ( indexes |> i_index =>   
-         ' _jacobian(<%index0%>,<%intSub(i_index,1)%>) = _jac_y(<%intSub(i_index,1)%>);'
+         //' _jacobian(<%index0%>,<%intSub(cref(i_index),1)%>) = _jac_y(<%intSub(cref(i_index),1)%>);'
+        ' _jacobian(<%index0%>,<%cref(i_index)%>) = _jac_y(<%cref(i_index)%>);'
          ;separator="\n" )
       ' _jac_x(<%index0%>)=1;
 calcJacobianColumn();

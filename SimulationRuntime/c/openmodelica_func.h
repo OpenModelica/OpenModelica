@@ -174,6 +174,15 @@ extern int initialAnalyticJacobianC(DATA* data);
 extern int initialAnalyticJacobianD(DATA* data);
 
 /*
+ * These functions calculate specific jacobian column.
+ */
+extern int functionJacG_column(DATA* data);
+extern int functionJacA_column(DATA* data);
+extern int functionJacB_column(DATA* data);
+extern int functionJacC_column(DATA* data);
+extern int functionJacD_column(DATA* data);
+
+/*
  * These functions calculate specific jacobians using sparsity pattern.
  * Output array jac contains each element of the matrix and must be filled with zeros before calling.
  */

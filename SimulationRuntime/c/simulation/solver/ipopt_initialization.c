@@ -134,6 +134,56 @@
     return TRUE;
   }
 
+
+  /*! \fn functionJacG_sparse
+   *
+   *  \param [ref]  [data]
+   *  \param [out] [jac]
+   *
+   *  \author lochel
+   */
+  int functionJacG_sparse(DATA* data, double* jac)
+  {
+    int color, seedVar, i, l, k=0;
+
+    int index = INDEX_JAC_G;
+    const int maxColor = data->simulationInfo.analyticJacobians[index].sparsePattern.maxColors;
+    const int numSeedVars = data->simulationInfo.analyticJacobians[index].sizeCols;
+
+    for(color=0; color<maxColor; color++)
+    {
+      for(i=0; i<numSeedVars; i++)
+        if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
+          data->simulationInfo.analyticJacobians[index].seedVars[i] = 1;
+
+      functionJacG_column(data);
+
+      for(seedVar=0; seedVar<numSeedVars; seedVar++)
+      {
+        if(data->simulationInfo.analyticJacobians[index].seedVars[seedVar] == 1)
+        {
+          if(seedVar == 0)
+            i = 0;
+          else
+            i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar-1];
+
+          for(; i < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[seedVar]; i++)
+          {
+            l = data->simulationInfo.analyticJacobians[index].sparsePattern.index[i]-1;
+            jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[l];
+          }
+        }
+      }
+
+      for(i=0; i<numSeedVars; i++)
+        if(data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[i]-1 == color)
+          data->simulationInfo.analyticJacobians[index].seedVars[i] = 0;
+
+    }
+    return 0;
+  }
+
+
   /*! \fn ipopt_jac_g
    *
    *  \param [in]  [n]

@@ -1194,6 +1194,53 @@ algorithm
   end match;
 end splitTuple2List;
 
+public function splitTuple211List 
+"function: splitTuple211List
+  Takes a list of two-tuples and outputs the first one."
+  input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
+  output list<Type_a> outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  (outTypeALst):=
+  match (inTplTypeATypeBLst)
+    local
+      list<Type_a> xs;
+      Type_a x;
+      list<tuple<Type_a, Type_b>> rest;
+    case ({}) then ({});
+    case (((x,_) :: rest))
+      equation
+        (xs) = splitTuple211List(rest);
+      then
+        ((x :: xs));
+  end match;
+end splitTuple211List;
+
+public function splitTuple212List
+ "function: splitTuple212List
+  Takes a list of two-tuples and outputs the second one."
+  input list<tuple<Type_a, Type_b>> inTplTypeATypeBLst;
+  output list<Type_b> outTypeBLst;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  (outTypeBLst):=
+  match (inTplTypeATypeBLst)
+    local
+      list<Type_b> xs;
+      Type_b x;
+      list<tuple<Type_a, Type_b>> rest;
+    case ({}) then ({});
+    case (((_,x) :: rest))
+      equation
+        (xs) = splitTuple212List(rest);
+      then
+        ((x :: xs));
+  end match;
+end splitTuple212List;
+
+
 public function filterList "
 Author BZ
 Taking a list of a generic type and a integer list which are the positions
