@@ -3311,6 +3311,9 @@ algorithm
         // split elements
         (cdefelts,extendsclasselts,extendselts,compelts) = splitElts(els);
         
+        // remove components from expandable connectors
+        compelts = Util.if_(valueEq(re, SCode.R_CONNECTOR(true)), {}, compelts);   
+        
         extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, SCodeUtil.getRedeclareAsElements(els));
         
         (env1,ih) = addClassdefsToEnv(env, ih, pre, cdefelts, impl, SOME(mods))
