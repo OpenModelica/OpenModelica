@@ -5136,7 +5136,7 @@ case CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__))) then
   <<
   <%preExp%>
   <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
-    '<%lhsStr%>$P<%var.name%> = <%rhsStr%>.<%var.name%>;'
+    '<%lhsStr%><%match context case FUNCTION_CONTEXT(__) then "." else "$P"%><%var.name%> = <%rhsStr%>.<%var.name%>;'
   ; separator="\n"    
   %>
   >>
