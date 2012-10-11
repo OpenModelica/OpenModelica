@@ -219,14 +219,14 @@ template variableCategoryXml(VarKind varKind)
  "Returns the variable category of ScalarVariable." 
 ::=
   match varKind 
-  case VARIABLE(__)    then "Algebraic" 
-  case STATE(__)       then "State"
-  case STATE_DER(__)   then "Derivative"
-  case DUMMY_DER(__)   then "Algebraic" 
-  case DUMMY_STATE(__) then "Algebraic" 
-  case DISCRETE(__)    then "Algebraic"
-  case PARAM(__)       then "Parameter" 
-  case CONST(__)       then "Constant"
+  case VARIABLE(__)    then "algebraic" 
+  case STATE(__)       then "state"
+  case STATE_DER(__)   then "derivative"
+  case DUMMY_DER(__)   then "algebraic" 
+  case DUMMY_STATE(__) then "algebraic" 
+  case DISCRETE(__)    then "algebraic"
+  case PARAM(__)       then "parameter" 
+  case CONST(__)       then "constant"
   else error(sourceInfo(), "Unexpected simVarTypeName varKind")
 end variableCategoryXml;
 
@@ -721,10 +721,10 @@ end initialEquationsXml;
       let &preExp = buffer "" /*BUFD*/
          <<
          <equ:Equation>
-           <equ:Sub>
+           <exp:Sub>
              <%identName%>
              <%daeExpXml(exp, contextOther, &preExp, &varDecls)%>
-           </equ:Sub>
+           </exp:Sub>
          </equ:Equation><%\n%>
          >>      
 end initialEquationXml;
