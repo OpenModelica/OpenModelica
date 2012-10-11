@@ -161,8 +161,15 @@ sustst:
 omlibrary: build/lib/omlibrary/stamp modelica3d
 build/lib/omlibrary/stamp: libraries/README
 	rm -rf build/lib/omlibrary
-	(cd libraries/ && find . -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
-	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;)
+	if [ `uname -o` = "Msys" ]; \
+	then \
+	cd libraries/; \
+	mkdir -p ../build/lib/omlibrary; \
+	cp -rp * ../build/lib/omlibrary/; \
+	else \
+	(cd libraries/ && find . -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;) && \
+	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;) \
+	fi
 	touch $@
 
 distclean: clean
