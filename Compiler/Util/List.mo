@@ -6929,7 +6929,7 @@ algorithm
       equation
         res = inFunc(e);
       then
-        select_tail(rest, inFunc, Util.if_(res, e :: inAccum, inAccum));
+        select_tail(rest, inFunc, consOnTrue(res, e , inAccum));
   end match;
 end select_tail;
     
@@ -7033,7 +7033,7 @@ algorithm
       equation
         res = inFunc(e, inArg1);
       then
-        select1_tail(rest, inFunc, inArg1, Util.if_(res, e :: inAccum, inAccum));
+        select1_tail(rest, inFunc, inArg1, consOnTrue(res, e ,inAccum));
   end match;
 end select1_tail;
       
@@ -7079,7 +7079,7 @@ algorithm
       equation
         res = inFunc(inArg1, e);
       then
-        select1r_tail(rest, inFunc, inArg1, Util.if_(res, e :: inAccum, inAccum));
+        select1r_tail(rest, inFunc, inArg1, consOnTrue(res, e, inAccum));
   end match;
 end select1r_tail;
   
@@ -7132,7 +7132,7 @@ algorithm
         res = inFunc(e, inArg1, inArg2);
       then
         select2_tail(rest, inFunc, inArg1, inArg2, 
-          Util.if_(res, e :: inAccum, inAccum));
+          consOnTrue(res, e, inAccum));
   end match;
 end select2_tail;
   
