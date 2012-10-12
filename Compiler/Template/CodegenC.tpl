@@ -2049,7 +2049,7 @@ case SES_MIXED(__) then
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
   #endif
-  modelica_boolean boolVar_<%index%>[<%numDiscVarsStr%>];
+  modelica_boolean boolVar_<%index%>[<%numDiscVarsStr%>] = { 0 };
   mixed_equation_system(<%numDiscVarsStr%>);
   <%discVars |> SIMVAR(__) hasindex i0 => 'discrete_loc[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
   {
