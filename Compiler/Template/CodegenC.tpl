@@ -1035,7 +1035,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
       let funName = '<%underscorePath(functionName)%>'
       <<
       <%preExp%>
-      <%funName%>(<%argStr%>); 
+      omc_<%funName%>(<%argStr%>); 
       >>    
   ;separator="\n")
   <<
