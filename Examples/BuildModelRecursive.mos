@@ -82,6 +82,9 @@ OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.T
 simRes  := if res[1] == \"\" then false else 0 == system(\"ulimit -t "+ulimitExe+" ; ./"+s+" > \"+simFile+\" 2>&1\");
 timeSim := OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 timeSim := if simRes then timeSim else -1.0;
+if simRes then
+  system(\"touch "+s+".simsuccess\");
+end if;
 
 loadString(\"
 function cell
@@ -108,7 +111,9 @@ getErrorString();
 
 echo(false);
 system("rm -f " + log);
-str:="<h1>Recursive BuildModel Test</h1><p>Results: " + String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded</p>
+str:="<h1>Recursive BuildModel Test</h1>
+<p>BuildModel Results: " + String(sum(if OpenModelica.Scripting.regularFileExists(s) then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded</p>
+<p>Simulation Results: " + String(sum(if OpenModelica.Scripting.regularFileExists(s + ".simsuccess") then 1 else 0 for s in a)) + "/" + String(size(a,1)) + " succeeded</p>
 <p>Total time taken: "+OpenModelica.Scripting.Internal.Time.readableTime(OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED))+"</p>
 <p>OpenModelica Version: "+getVersion()+"</p>
 <p>Test started: "+dateAndTime+"</p>
