@@ -391,15 +391,15 @@ type IncidenceMatrixT = IncidenceMatrix "IncidenceMatrixT : a list of equation i
 - Incidence Matrix T" ;
 
 public
-uniontype Solvability 
+uniontype Solvability
   record SOLVABILITY_SOLVED "Equation is already solved for the variable" end SOLVABILITY_SOLVED;
   record SOLVABILITY_CONSTONE "Coefficient is equal 1 or -1" end SOLVABILITY_CONSTONE;
   record SOLVABILITY_CONST "Coefficient is constant" end SOLVABILITY_CONST;
   record SOLVABILITY_PARAMETER "Coefficient contains parameters"
-    Boolean b "false if the partial derivative is zero";  
+    Boolean b "false if the partial derivative is zero";
   end SOLVABILITY_PARAMETER;
   record SOLVABILITY_TIMEVARYING "Coefficient contains variables, is time varying"
-    Boolean b "false if the partial derivative is zero";  
+    Boolean b "false if the partial derivative is zero";
   end SOLVABILITY_TIMEVARYING;
   record SOLVABILITY_NONLINEAR "The variable occurse nonlinear in the equation." end SOLVABILITY_NONLINEAR;
   record SOLVABILITY_UNSOLVABLE "The variable occurse in the equation, but it is not posible to solve 
@@ -475,7 +475,7 @@ type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
 
 
 public
-uniontype StateOrder 
+uniontype StateOrder
   record STATEORDER
     HashTableCG.HashTable hashTable "x -> dx";
     HashTable3.HashTable invHashTable "dx -> {x,y,z}";
@@ -485,7 +485,7 @@ end StateOrder;
 public
 uniontype StrongComponent
   record SINGLEEQUATION
-    Integer eqn;  
+    Integer eqn;
     Integer var;
   end SINGLEEQUATION;
    
@@ -494,13 +494,13 @@ uniontype StrongComponent
     list<Integer> vars "be carefule with states, this are solved for der(x)";
     Option<list<tuple<Integer, Integer, Equation>>> jac;
     JacobianType jacType;
-  end EQUATIONSYSTEM; 
+  end EQUATIONSYSTEM;
   
   record MIXEDEQUATIONSYSTEM
     StrongComponent condSystem;
     list<Integer> disc_eqns;
     list<Integer> disc_vars;
-  end MIXEDEQUATIONSYSTEM;   
+  end MIXEDEQUATIONSYSTEM;
   
   record SINGLEARRAY
     Integer eqn;
@@ -522,7 +522,7 @@ uniontype StrongComponent
     list<Integer> residualequations;
     list<tuple<Integer,list<Integer>>> otherEqnVarTpl "list of tuples of indexes for Equation and Variable solved in the equation, in the order they have to be solved";
     Boolean linear;
-  end TORNSYSTEM; 
+  end TORNSYSTEM;
 
 end StrongComponent;
 
