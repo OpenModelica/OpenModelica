@@ -1488,6 +1488,11 @@ algorithm
       then
         (inEquations,inREquations,BackendDAE.ALGORITHM(size, alg, source)::inIEquations);        
         
+    // skipp asserts with condition=true
+    case (DAE.ASSERT(condition=DAE.BCONST(true)),_,_,_,_)
+      then
+        (inEquations,inREquations,inIEquations); 
+        
     case (DAE.ASSERT(condition=cond,message=msg,level=level,source=source),_,_,_,_)
       equation
         (cond,source,_) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);

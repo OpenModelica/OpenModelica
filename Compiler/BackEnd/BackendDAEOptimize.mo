@@ -1602,10 +1602,22 @@ algorithm
         (remeqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,repl);
         (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl);
         systs1 = removeSimpleEquationsShared1(systs,{},repl);
+        // remove asserts with condition=true from removed equations
+        remeqns1 = BackendDAEUtil.listEquation(List.select(BackendDAEUtil.equationList(remeqns1),assertWithCondTrue));
       then 
         BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns1,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst),eoc,btp,symjacs));
   end match;
 end removeSimpleEquationsShared;
+
+protected function assertWithCondTrue
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match inEqn
+    case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=DAE.BCONST(true))})) then false;
+    else then true;
+  end match;
+end assertWithCondTrue;
 
 protected function removeSimpleEquationsShared1
   input BackendDAE.EqSystems inSysts;
