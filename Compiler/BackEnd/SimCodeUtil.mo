@@ -2301,7 +2301,7 @@ algorithm
       String s;
       
       list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>> sparsepattern;
-			list<list<DAE.ComponentRef>> colsColors;
+      list<list<DAE.ComponentRef>> colsColors;
       list<Integer> varsIndexes;
       Integer maxColor; 
       
