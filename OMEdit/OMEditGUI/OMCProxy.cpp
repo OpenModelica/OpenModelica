@@ -741,15 +741,17 @@ void OMCProxy::loadStandardLibrary()
   QStringList versionLst = StringHandler::unparseStrings(getResult());
   QString versionStr = versionLst.empty() ? "" : versionLst.at(0);
   Helper::OpenModelicaLibraryVersion = versionStr;
-  double version = versionStr.toDouble();
-
-  if (version >= 3.0 && version < 4.0) {
-    /* adrpo: DO NOT DELETE Modeilca.Fluid anymore! deleteClass("Modelica.Fluid"); */
-  } else if (!versionLst.empty()) {
-    if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
-    else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
-    QMessageBox::warning(mpParentMainWindow, Helper::applicationName + tr(" requires Modelica 3 annotations"),
-                         tr("Modelica Standard Library version ") + versionStr + tr(" is unsupported."), Helper::ok);
+  bool ok;
+  double version = versionStr.toDouble(&ok);
+  if (ok) {
+    if (version >= 3.0 && version < 4.0) {
+      /* adrpo: DO NOT DELETE Modeilca.Fluid anymore! deleteClass("Modelica.Fluid"); */
+    } else if (!versionLst.empty()) {
+      if (version < 2) sendCommand("setAnnotationVersion(\"1.x\")");
+      else if (version < 3) sendCommand("setAnnotationVersion(\"2.x\")");
+      QMessageBox::warning(mpParentMainWindow, Helper::applicationName + tr(" requires Modelica 3 annotations"),
+                           tr("Modelica Standard Library version ") + versionStr + tr(" is unsupported."), Helper::ok);
+    }
   }
 }
 
