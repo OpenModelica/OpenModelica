@@ -11537,7 +11537,7 @@ algorithm
     local
       BackendDAE.Variables vars,knvars;
       BackendDAE.EquationArray eqns;
-      list<BackendDAE.Equation> eqnslst;
+      list<BackendDAE.Equation> eqnslst,asserts;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
@@ -11546,9 +11546,10 @@ algorithm
         // traverse the equations
         eqnslst = BackendDAEUtil.equationList(eqns);
         // traverse equations in reverse order, than branch equations of if equaitions need no reverse
-        ((eqnslst,true)) = List.fold1(listReverse(eqnslst), simplifyIfEquationsFinder, knvars, ({},false));
+        ((eqnslst,asserts,true)) = List.fold1(listReverse(eqnslst), simplifyIfEquationsFinder, knvars, ({},{},false));
         eqns = BackendDAEUtil.listEquation(eqnslst);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        shared = BackendEquation.requationsAddDAE(asserts,shared);
       then (syst,shared);
     case (_,_)
       then (isyst,ishared);
@@ -11561,27 +11562,28 @@ protected function simplifyIfEquationsFinder
   helper for simplifyIfEquations"
   input BackendDAE.Equation inElem;
   input BackendDAE.Variables inConstArg;
-  input tuple<list<BackendDAE.Equation>,Boolean> inArg;
-  output tuple<list<BackendDAE.Equation>,Boolean> outArg;
+  input tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,Boolean> inArg;
+  output tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,Boolean> outArg;
 algorithm
   outArg := matchcontinue(inElem,inConstArg,inArg)
     local
       list<DAE.Exp> explst;
-      list<BackendDAE.Equation> eqnslst,acc;
+      list<BackendDAE.Equation> eqnslst,acc,asserts,asserts1;
       list<list<BackendDAE.Equation>> eqnslstlst;
       DAE.ElementSource source;
       BackendDAE.Variables knvars;
       Boolean b;
-    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source),knvars,(acc,_))
+    case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source),knvars,(acc,asserts,_))
       equation
         // check conditions
         ((explst,_)) = Expression.traverseExpList(explst, simplifyevaluatedParamter, knvars);
         explst = ExpressionSimplify.simplifyList(explst, {});
         // simplify if equation
-        acc = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc);
+        (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc);
+        asserts = listAppend(asserts,asserts1);
       then
-        ((acc,true));
-    case (_,_,(acc,b)) then ((inElem::acc,b));
+        ((acc,asserts,true));
+    case (_,_,(acc,asserts,b)) then ((inElem::acc,asserts,b));
   end matchcontinue;
 end simplifyIfEquationsFinder;
 
@@ -11619,48 +11621,68 @@ protected function simplifyIfEquation
   input BackendDAE.Variables knvars;  
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.Equation> outAsserts;
 algorithm
-  outEqns := match(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns)
+  (outEqns,outAsserts) := match(conditions,theneqns,elseenqs,conditions1,theneqns1,source,knvars,inEqns)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;     
       list<list<BackendDAE.Equation>> eqnslst;
-      list<BackendDAE.Equation> eqns,elseenqs1;
+      list<BackendDAE.Equation> eqns,elseenqs1,asserts;
       
     // no true case left with condition<>false
     case ({},{},_,{},{},_,_,_) 
       equation
         // simplify nested if equations
-        ((eqns,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},false));
+        ((eqns,asserts,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},{},false));
       then 
-        listAppend(eqns,inEqns);
+        (listAppend(eqns,inEqns),asserts);
     // true case left with condition<>false
     case ({},{},_,_,_,_,_,_)
       equation
         explst = listReverse(conditions1);
         eqnslst = listReverse(theneqns1);
         // simplify nested if equations
-        ((elseenqs1,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},false));
+        ((elseenqs1,asserts,_)) = List.fold1(listReverse(elseenqs), simplifyIfEquationsFinder, knvars, ({},{},false));
+        elseenqs1 = listAppend(elseenqs1,asserts);
+        (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
+        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns);
       then 
-        simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns);
-    // if true use it
-    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
+        (eqns,asserts);
+    // if true and first use it 
+    case(DAE.BCONST(true)::_,eqns::_,_,{},_,_,_,_)
       equation
         // simplify nested if equations
-        ((eqns,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},false));
+        ((eqns,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
       then 
-        listAppend(eqns,inEqns);
+        (listAppend(eqns,inEqns),asserts);
+    // if true and not first use it as new else
+    case(DAE.BCONST(true)::_,eqns::_,_,_,_,_,_,_)
+      equation
+        explst = listReverse(conditions1);
+        eqnslst = listReverse(theneqns1);
+        // simplify nested if equations
+        ((elseenqs1,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
+        elseenqs1 = listAppend(elseenqs1,asserts);
+        (eqnslst,elseenqs1,asserts) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs1,{},{},{});
+        eqns = simplifyIfEquation1(explst,eqnslst,elseenqs1,source,knvars,inEqns);
+      then 
+        (eqns,asserts);
     // if false skip it
     case(DAE.BCONST(false)::explst,_::eqnslst,_,_,_,_,_,_)
+      equation
+        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,knvars,inEqns);
       then
-        simplifyIfEquation(explst,eqnslst,elseenqs,conditions1,theneqns1,source,knvars,inEqns);
+        (eqns,asserts);
     // all other cases
     case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
       equation
         // simplify nested if equations
-        ((eqns,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},false));        
+        ((eqns,asserts,_)) = List.fold1(listReverse(eqns), simplifyIfEquationsFinder, knvars, ({},{},false));
+        eqns = listAppend(eqns,asserts);
+        (eqns,asserts) = simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns);
       then
-        simplifyIfEquation(explst,eqnslst,elseenqs,e::conditions1,eqns::theneqns1,source,knvars,inEqns);
+        (eqns,asserts);
   end match;
 end simplifyIfEquation;
 
@@ -11838,6 +11860,94 @@ algorithm
         simplifySolvedIfEqnsElse(rest,ht);
   end match;
 end simplifySolvedIfEqnsElse;
+
+protected function simplifyIfEquationAsserts
+"function: simplifyIfEquationAsserts
+  autor: Frenkel TUD 2012-07
+  helper for simplifyIfEquations"
+  input list<DAE.Exp> conditions;
+  input list<list<BackendDAE.Equation>> theneqns;
+  input list<BackendDAE.Equation> elseenqs;
+  input list<DAE.Exp> conditions1; 
+  input list<list<BackendDAE.Equation>> theneqns1;
+  input list<BackendDAE.Equation> inEqns;
+  output list<list<BackendDAE.Equation>> otheneqns;
+  output list<BackendDAE.Equation> oelseenqs;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  (otheneqns,oelseenqs,outEqns) := match(conditions,theneqns,elseenqs,conditions1,theneqns1,inEqns)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> explst;
+      list<BackendDAE.Equation> eqns,eqns1,beqns;
+      list<list<BackendDAE.Equation>> eqnslst,eqnslst1;
+
+    case (_,{},_,_,_,_)
+      equation
+        (beqns,eqns) = simplifyIfEquationAsserts1(elseenqs,NONE(),conditions1,{},inEqns);  
+      then
+        (listReverse(theneqns1),beqns,eqns);
+    case (e::explst,eqns::eqnslst,_,_,_,_)
+      equation
+        (beqns,eqns) = simplifyIfEquationAsserts1(eqns,SOME(e),conditions1,{},inEqns);
+        (eqnslst1,eqns1,eqns) = simplifyIfEquationAsserts(explst,eqnslst,elseenqs,e::conditions1,beqns::theneqns1,eqns);
+      then
+        (eqnslst1,eqns1,eqns);
+  end match;
+end simplifyIfEquationAsserts;
+
+protected function simplifyIfEquationAsserts1
+"function: simplifyIfEquationAsserts1
+  autor: Frenkel TUD 2012-07
+  helper for simplifyIfEquationAsserts"
+  input list<BackendDAE.Equation> brancheqns;
+  input Option<DAE.Exp> condition;
+  input list<DAE.Exp> conditions "reversed";
+  input list<BackendDAE.Equation> brancheqns1;
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> obrancheqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  (obrancheqns,outEqns) := match(brancheqns,condition,conditions,brancheqns1,inEqns)
+    local
+      DAE.Exp e,cond,msg,level;
+      list<DAE.Exp> explst;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqns,beqns;
+      list<list<BackendDAE.Equation>> eqnslst;
+      Integer size;
+      DAE.ElementSource source,source1;
+    case ({},_,_,_,_)
+      then
+        (listReverse(brancheqns1),inEqns);  
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source)::eqns,NONE(),_,_,_)
+      equation
+        e = List.fold(conditions,makeIfExp,cond);
+        (beqns,eqns) =  simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(e,msg,level,source1)}),source)::inEqns);
+      then
+        (beqns,eqns);
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond=cond,msg=msg,level=level,source=source1)}),source=source)::eqns,SOME(e),_,_,_)
+      equation
+        e = DAE.IFEXP(e,cond,DAE.BCONST(true));
+        e = List.fold(conditions,makeIfExp,e);
+        (beqns,eqns) = simplifyIfEquationAsserts1(eqns,condition,conditions,brancheqns1,BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(e,msg,level,source1)}),source)::inEqns);
+      then 
+        (beqns,eqns);
+    case (eqn::eqns,_,_,_,_)
+      equation
+        (beqns,eqns) = simplifyIfEquationAsserts1(eqns,condition,conditions,eqn::brancheqns1,inEqns);
+      then
+        (beqns,eqns);
+  end match;
+end simplifyIfEquationAsserts1;
+
+protected function makeIfExp
+  input DAE.Exp cond;
+  input DAE.Exp _else;
+  output DAE.Exp oExp;
+algorithm
+  oExp := DAE.IFEXP(cond,DAE.BCONST(true),_else);
+end makeIfExp;
 
 protected function countEquationsInBranches "
 Checks that the number of equations is the same in all branches

@@ -277,7 +277,7 @@ algorithm
     // effort variable equality equations, seperated to generate alias variables
     case (DAE.EQUEQUATION(cr1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        eqns = lowerEqn(inElement,functionTree,inEqnsLst);      
+        eqns = lowerEqn(inElement,functionTree,inEqnsLst);
       then
         (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,/*inElement::*/iAliaseqns);
     
@@ -973,8 +973,6 @@ algorithm
          
     case (DAE.IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source),_,_)
       equation
-        b1 = not Flags.getConfigBool(Flags.CHECK_MODEL);
-        s = Debug.bcallret1(b1, DAEDump.dumpElementsStr, {inElement}, "");
         (explst,source,_) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (explst1,blst) = ExpressionSimplify.simplifyList1(explst,{},{});
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);
@@ -983,8 +981,6 @@ algorithm
 
     case (DAE.INITIAL_IF_EQUATION(condition1=explst,equations2=eqnslstlst,equations3=eqnslst,source = source),_,_)
       equation
-        b1 = not Flags.getConfigBool(Flags.CHECK_MODEL);
-        s = Debug.bcallret1(b1, DAEDump.dumpElementsStr, {inElement}, "");
         (explst,source,_) = Inline.inlineExps(explst, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (explst1,blst) = ExpressionSimplify.simplifyList1(explst,{},{});
         source = DAEUtil.addSymbolicTransformationSimplifyLst(blst,source,explst,explst1);

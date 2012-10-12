@@ -52,6 +52,7 @@ protected import ClassInf;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import Env;
 protected import Error;
 protected import Expression;
 protected import ExpressionDump;
@@ -1373,6 +1374,37 @@ algorithm
       then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING());
   end match;
 end equationsAddDAE;
+
+public function requationsAddDAE
+"function: requationsAddDAE
+  author: Frenkel TUD 2012-10
+  Add a list of equations to removed equations of a BackendDAE.
+  If the variable already exists, the function updates the variable."
+  input list<BackendDAE.Equation> inEquations;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Shared oshared;
+algorithm
+  oshared := match (inEquations,shared)
+    local
+      BackendDAE.Var var;
+      BackendDAE.Variables knvars,exobj,aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns;
+      array<DAE.Constraint> constrs;
+      array<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;      
+      DAE.FunctionTree funcs;
+      BackendDAE.EventInfo einfo;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.BackendDAEType btp;
+    case ({},_) then shared;
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+      equation
+        remeqns = List.fold(inEquations,equationAdd,remeqns);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
+  end match;
+end requationsAddDAE;
 
 public function equationSetnthDAE
   "Note: Does not update the incidence matrix (just like equationSetnth).
