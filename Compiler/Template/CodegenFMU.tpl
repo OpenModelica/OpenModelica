@@ -1127,12 +1127,20 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     constant Integer fmiLogLevel = <%fmiLogLevel%>;
     <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
+  <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
+  <<
     constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
     Real fmi_x[numberOfContinuousStates] "States";
     Real fmi_x_new[numberOfContinuousStates] "New States";
+  >>
+  %>
+  <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
+  <<
     constant Integer numberOfEventIndicators = <%listLength(fmiInfo.fmiNumberOfEventIndicators)%>;
     Real fmi_z[numberOfEventIndicators] "Events Indicators";
     Boolean fmi_z_positive[numberOfEventIndicators];
+  >>
+  %>
     constant Boolean debugLogging = false;
     Integer fmi_status;
     fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
@@ -1145,12 +1153,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         function constructor
           input Integer fmiLogLevel;
           output fmiImportContext context;
-          external "C" context = fmiImportContext_OMC(fmiLogLevel) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" context = fmiImportContext_OMC(fmiLogLevel) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end constructor;
         
         function destructor
           input fmiImportContext context;
-          external "C" fmiImportFreeContext_OMC(context) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" fmiImportFreeContext_OMC(context) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end fmiImportContext;
     
@@ -1160,12 +1168,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           input fmiImportContext context;
           input String tempPath;
           output fmiImportInstance fmi;
-          external "C" fmi = fmiImportInstance_OMC(context, tempPath) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" fmi = fmiImportInstance_OMC(context, tempPath) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end constructor;
         
         function destructor
           input fmiImportInstance fmi;
-          external "C" fmiImportFreeInstance_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" fmiImportFreeInstance_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end fmiImportInstance;
     
@@ -1176,7 +1184,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         
         function destructor
           input fmiEventInfo eventInfo;
-          external "C" fmiFreeEventInfo_OMC(eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" fmiFreeEventInfo_OMC(eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end fmiEventInfo;
     
@@ -1184,62 +1192,62 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       function fmiInstantiateModel
         input fmiImportInstance fmi;
         input String instanceName;
-        external "C" fmiInstantiateModel_OMC(fmi, instanceName) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiInstantiateModel_OMC(fmi, instanceName) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiInstantiateModel;
       
       function fmiSetDebugLogging
         input fmiImportInstance fmi;
         input Boolean debugLogging;
         output Integer status;
-        external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetDebugLogging;
       
       function fmiSetTime
         input fmiImportInstance fmi;
         input Real in_time;
         output Integer status;
-        external "C" status = fmiSetTime_OMC(fmi, in_time) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetTime_OMC(fmi, in_time) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetTime;
       
       function fmiInitialize
         input fmiImportInstance fmi;
         output fmiEventInfo eventInfo;
-        external "C" eventInfo = fmiInitialize_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" eventInfo = fmiInitialize_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiInitialize;
       
       function fmiGetContinuousStates
         input fmiImportInstance fmi;
         input Integer numberOfContinuousStates;
         output Real fmi_x[numberOfContinuousStates];
-        external "C" fmiGetContinuousStates_OMC(fmi, numberOfContinuousStates, fmi_x) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetContinuousStates_OMC(fmi, numberOfContinuousStates, fmi_x) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetContinuousStates;
       
       function fmiSetContinuousStates
         input fmiImportInstance fmi;
         input Real fmi_x[:];
         output Integer status;
-        external "C" status = fmiSetContinuousStates_OMC(fmi, size(fmi_x, 1), fmi_x) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetContinuousStates_OMC(fmi, size(fmi_x, 1), fmi_x) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetContinuousStates;
       
       function fmiGetEventIndicators
         input fmiImportInstance fmi;
         input Integer numberOfEventIndicators;
         output Real fmi_z[numberOfEventIndicators];
-        external "C" fmiGetEventIndicators_OMC(fmi, numberOfEventIndicators, fmi_z) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetEventIndicators_OMC(fmi, numberOfEventIndicators, fmi_z) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetEventIndicators;
       
       function fmiGetDerivatives
         input fmiImportInstance fmi;
         input Integer numberOfContinuousStates;
         output Real fmi_x[numberOfContinuousStates];
-        external "C" fmiGetDerivatives_OMC(fmi, numberOfContinuousStates, fmi_x) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetDerivatives_OMC(fmi, numberOfContinuousStates, fmi_x) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetDerivatives;
       
       function fmiGetReal
         input fmiImportInstance fmi;
         input Integer realValuesReferences[:];
         output Real realValues[size(realValuesReferences, 1)];
-        external "C" fmiGetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetReal;
       
       function fmiSetReal
@@ -1247,14 +1255,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Integer realValuesReferences[:];
         input Real realValues[size(realValuesReferences, 1)];
         output Integer status;
-        external "C" status = fmiSetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetReal;
       
       function fmiGetInteger
         input fmiImportInstance fmi;
         input Integer integerValuesReferences[:];
         output Integer integerValues[size(integerValuesReferences, 1)];
-        external "C" fmiGetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetInteger;
       
       function fmiSetInteger
@@ -1262,14 +1270,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Integer integerValuesReferences[:];
         input Integer integerValues[size(integerValuesReferences, 1)];
         output Integer status;
-        external "C" status = fmiSetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetInteger;
       
       function fmiGetBoolean
         input fmiImportInstance fmi;
         input Integer booleanValuesReferences[:];
         output Boolean booleanValues[size(booleanValuesReferences, 1)];
-        external "C" fmiGetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetBoolean;
       
       function fmiSetBoolean
@@ -1277,14 +1285,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Integer booleanValuesReferences[:];
         input Boolean booleanValues[size(booleanValuesReferences, 1)];
         output Integer status;
-        external "C" status = fmiSetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetBoolean;
       
       function fmiGetString
         input fmiImportInstance fmi;
         input Integer stringValuesReferences[:];
         output String stringValues[size(stringValuesReferences, 1)];
-        external "C" fmiGetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetString;
       
       function fmiSetString
@@ -1292,7 +1300,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Integer stringValuesReferences[:];
         input String stringValues[size(stringValuesReferences, 1)];
         output Integer status;
-        external "C" status = fmiSetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetString;
       
       function fmiEventUpdate
@@ -1300,20 +1308,20 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Boolean intermediateResults;
         input fmiEventInfo in_eventInfo;
         output fmiEventInfo out_eventInfo;
-        external "C" out_eventInfo = fmiEventUpdate_OMC(fmi, intermediateResults, in_eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" out_eventInfo = fmiEventUpdate_OMC(fmi, intermediateResults, in_eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiEventUpdate;
       
       function fmiCompletedIntegratorStep
         input fmiImportInstance fmi;
         input Boolean in_callEventUpdate;
         output Boolean out_callEventUpdate;
-        external "C" out_callEventUpdate = fmiCompletedIntegratorStep_OMC(fmi, in_callEventUpdate) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" out_callEventUpdate = fmiCompletedIntegratorStep_OMC(fmi, in_callEventUpdate) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiCompletedIntegratorStep;
       
       function fmiTerminate
         input fmiImportInstance fmi;
         output Integer status;
-        external "C" status = fmiTerminate_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiTerminate_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiTerminate;
     end fmiFunctions;
     
@@ -1340,27 +1348,34 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetBoolean(fmi, {"+dumpStartBooleanVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartBooleanVariablesName(fmiModelVariablesList)+"});"%>
     <%if not stringEq(stringStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetString(fmi, {"+dumpStartStringVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartStringVariablesName(fmiModelVariablesList)+"});"*/%>
     eventInfo := fmiFunctions.fmiInitialize(fmi);
-    fmi_x := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates);
+    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then "fmi_x := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates);"%>
   equation
-    der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates);
-    //fmi_status = fmiFunctions.fmiSetTime(fmi, time);
-    fmiFunctions.fmiSetTime(fmi, time);
+    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then "der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates);"%>
+    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then "fmiFunctions.fmiSetTime(fmi, time);" else "fmi_status = fmiFunctions.fmiSetTime(fmi, time);"%>
     <%/*if not stringEq(realStartVariables, "0") then "fmi_status = fmiFunctions.fmiSetReal(fmi, {"+dumpStartRealVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartRealVariablesName(fmiModelVariablesList)+"});"%>
     <%if not stringEq(integerStartVariables, "0") then "fmi_status = fmiFunctions.fmiSetInteger(fmi, {"+dumpStartIntegerVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartIntegerVariablesName(fmiModelVariablesList)+"});"%>
     <%if not stringEq(booleanStartVariables, "0") then "fmi_status = fmiFunctions.fmiSetBoolean(fmi, {"+dumpStartBooleanVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartBooleanVariablesName(fmiModelVariablesList)+"});"%>
     <%if not stringEq(stringStartVariables, "0") then "fmi_status = fmiFunctions.fmiSetString(fmi, {"+dumpStartStringVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartStringVariablesName(fmiModelVariablesList)+"});"*/%>
-    fmi_status = fmiFunctions.fmiSetContinuousStates(fmi, fmi_x);
+    <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then "fmi_status = fmiFunctions.fmiSetContinuousStates(fmi, fmi_x);"%>
+  <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
+  <<
     fmi_z = fmiFunctions.fmiGetEventIndicators(fmi, numberOfEventIndicators);
     for i in 1:size(fmi_z,1) loop
       fmi_z_positive[i] = fmi_z[i] > 0;
     end for;
+  >>
+  %>
   algorithm
+  <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
+  <<
     when (<%fmiInfo.fmiNumberOfEventIndicators |> eventIndicator =>  "change(fmi_z_positive["+eventIndicator+"])" ;separator=" or "%>) and not initial() then
       //eventInfo := fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
       fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
       fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates);
       <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
     end when;
+  >>
+  %>
     when terminal() then
       fmiFunctions.fmiTerminate(fmi);
     end when;
@@ -1410,12 +1425,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         function constructor
           input Integer fmiLogLevel;
           output fmiImportContext context;
-          external "C" context = fmiImportContext_OMC(fmiLogLevel) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" context = fmiImportContext_OMC(fmiLogLevel) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end constructor;
         
         function destructor
           input fmiImportContext context;
-          external "C" fmiImportFreeContext_OMC(context) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" fmiImportFreeContext_OMC(context) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end fmiImportContext;
     
@@ -1425,12 +1440,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
           input fmiImportContext context;
           input String tempPath;
           output fmiImportInstance fmi;
-          external "C" fmi = fmiImportInstance_OMC(context, tempPath) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" fmi = fmiImportInstance_OMC(context, tempPath) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end constructor;
         
         function destructor
           input fmiImportInstance fmi;
-          external "C" fmiImportFreeInstance_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" fmiImportFreeInstance_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end fmiImportInstance;
     
@@ -1441,7 +1456,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         
         function destructor
           input fmiEventInfo eventInfo;
-          external "C" fmiFreeEventInfo_OMC(eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+          external "C" fmiFreeEventInfo_OMC(eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
         end destructor;
     end fmiEventInfo;
     
@@ -1454,14 +1469,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real timeout;
         input Boolean visible;
         input Boolean interactive;
-        external "C" fmiInstantiateSlave_OMC(fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiInstantiateSlave_OMC(fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiInstantiateSlave;
       
       function fmiSetDebugLogging
         input fmiImportInstance fmi;
         input Boolean debugLogging;
         output Integer status;
-        external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetDebugLogging;
       
       function fmiInitializeSlave
@@ -1469,7 +1484,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real tStart;
         input Boolean stopTimeDefined;
         input Real tStop;
-        external "C" fmiInitializeSlave_OMC(fmi, tStart, stopTimeDefined, tStop) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiInitializeSlave_OMC(fmi, tStart, stopTimeDefined, tStop) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiInitializeSlave;
       
       function fmiDoStep
@@ -1478,14 +1493,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real communicationStepSize;
         input Boolean newStep;
         output Integer status;
-        external "C" status = fmiDoStep_OMC(fmi, currentCommunicationPoint, communicationStepSize, newStep) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiDoStep_OMC(fmi, currentCommunicationPoint, communicationStepSize, newStep) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiDoStep;
       
       function fmiGetReal
         input fmiImportInstance fmi;
         input Integer realValuesReferences[:];
         output Real realValues[size(realValuesReferences, 1)];
-        external "C" fmiGetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetReal;
       
       function fmiSetReal
@@ -1493,14 +1508,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Integer realValuesReferences[:];
         input Real realValues[size(realValuesReferences, 1)];
         output Integer status;
-        external "C" status = fmiSetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetReal_OMC(fmi, size(realValuesReferences, 1), realValuesReferences, realValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetReal;
       
       function fmiGetInteger
         input fmiImportInstance fmi;
         input Integer integerValuesReferences[:];
         output Integer integerValues[size(integerValuesReferences, 1)];
-        external "C" fmiGetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetInteger;
       
       function fmiSetInteger
@@ -1508,14 +1523,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Integer integerValuesReferences[:];
         input Integer integerValues[size(integerValuesReferences, 1)];
         output Integer status;
-        external "C" status = fmiSetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetInteger_OMC(fmi, size(integerValuesReferences, 1), integerValuesReferences, integerValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetInteger;
       
       function fmiGetBoolean
         input fmiImportInstance fmi;
         input Integer booleanValuesReferences[:];
         output Boolean booleanValues[size(booleanValuesReferences, 1)];
-        external "C" fmiGetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetBoolean;
       
       function fmiSetBoolean
@@ -1523,14 +1538,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Integer booleanValuesReferences[:];
         input Boolean booleanValues[size(booleanValuesReferences, 1)];
         output Integer status;
-        external "C" status = fmiSetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetBoolean_OMC(fmi, size(booleanValuesReferences, 1), booleanValuesReferences, booleanValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetBoolean;
       
       function fmiGetString
         input fmiImportInstance fmi;
         input Integer stringValuesReferences[:];
         output String stringValues[size(stringValuesReferences, 1)];
-        external "C" fmiGetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" fmiGetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetString;
       
       function fmiSetString
@@ -1538,13 +1553,13 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Integer stringValuesReferences[:];
         input String stringValues[size(stringValuesReferences, 1)];
         output Integer status;
-        external "C" status = fmiSetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiSetString_OMC(fmi, size(stringValuesReferences, 1), stringValuesReferences, stringValues) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetString;
       
       function fmiTerminateSlave
         input fmiImportInstance fmi;
         output Integer status;
-        external "C" status = fmiTerminateSlave_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then " ,\"shlwapi\""%>});
+        external "C" status = fmiTerminateSlave_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiTerminateSlave;
     end fmiFunctions;
     
