@@ -43,7 +43,7 @@ getErrorString();
 // writeFile("x",sum(s + "\n" for s in a));
 
 print("Number of classes to build: " + String(size(a,1)));
-system("rm -f Modelica.* " + log);
+system("rm -f Modelica* " + log);
 
 /*** This is the stuff executed for each model ***/
 
