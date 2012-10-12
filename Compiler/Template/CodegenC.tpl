@@ -1037,10 +1037,10 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
       <%preExp%>
       <%funName%>(<%argStr%>); 
       >>    
-    ;separator="\n")
-    <<
-    <%body%>  
-    >>
+  ;separator="\n")
+  <<
+  <%body%>  
+  >>
 end functionWhenReinitStatementThen;
 
 //Pavol: this one is never used, is it obsolete ??
