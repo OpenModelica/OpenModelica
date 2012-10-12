@@ -276,10 +276,8 @@ algorithm
 
     // effort variable equality equations, seperated to generate alias variables
     case (DAE.EQUEQUATION(cr1 = _),_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        eqns = lowerEqn(inElement,functionTree,inEqnsLst);
       then
-        (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,/* inElement:: */iAliaseqns);
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,inElement::iAliaseqns);
     
     // a solved equation 
     case (DAE.DEFINE(componentRef = _),_,_,_,_,_,_,_,_,_,_,_,_)
