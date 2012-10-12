@@ -391,6 +391,7 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
   int i;
   void *data;
   struct record_description *desc;
+  int base_id;
   /* char buf[34] = {0}; */
 
   if (MMC_IS_IMMEDIATE(any)) {
@@ -417,9 +418,11 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
     return ix;
   }
   if (MMC_HDRISSTRING(hdr)) {
+    int unescapedLength;
+    char *str;
     MMC_CHECK_STRING(any);
-    int unescapedLength = strlen(MMC_STRINGDATA(any));
-    char *str = omc__escapedString(MMC_STRINGDATA(any), 1);
+    unescapedLength = strlen(MMC_STRINGDATA(any));
+    str = omc__escapedString(MMC_STRINGDATA(any), 1);
     checkAnyStringBufSize(ix,unescapedLength+800);
     ix += sprintf(anyStringBuf+ix, "#define omc_tmp%d_data \"%s\"\n", id, str ? str : MMC_STRINGDATA(any));
     ix += sprintf(anyStringBuf+ix, "static const size_t omc_tmp%d_strlen = %d;\n", id, unescapedLength);
@@ -467,7 +470,7 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
     return ix;
   }
 
-  int base_id = globalId;
+  base_id = globalId;
   globalId += numslots;
   for (i=1; i<=numslots; i++) {
     data = data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));

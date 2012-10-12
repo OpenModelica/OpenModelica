@@ -767,15 +767,16 @@ modelica_boolean nextVar(modelica_boolean *b, int n) {
   /*number of "1" */
   int n1 = 0;
   int i;
+  int last;
   for (i = 0; i < n; i++){
     if (b[i] == 1)
       n1++;
   }
   /*index of last element with "1"*/
-  int last = n - 1;
+  last = n - 1;
   while (last >= 0 && !b[last])
     last--;
-  if (n1 == n) //exit - all combination were already generated
+  if (n1 == n) /*exit - all combination were already generated*/
     return 0;
   else if (last == -1) { /* 0000 -> 1000 */
     b[0] = 1;
@@ -786,20 +787,20 @@ modelica_boolean nextVar(modelica_boolean *b, int n) {
     return 1;
   } else { /*at the end of the array is "1"*/
     /*detect position of last ocurenc of sequence 10 */
-    int ip = n - 2; //actual position in array
-    int nr1 = 1; //count of "1"
+    int ip = n - 2; /*actual position in array*/
+    int nr1 = 1; /*count of "1"*/
     while (ip >= 0) {
-      if (b[ip] && !b[ip + 1]) { //we found
+      if (b[ip] && !b[ip + 1]) { /*we found*/
         nr1++;
         break;
-      } else if (b[ip]) { //we didn't find, but 1 - increase nr1
+      } else if (b[ip]) { /*we didn't find, but 1 - increase nr1*/
         nr1++;
         ip--;
-      } else { //we didnt't find, 0
+      } else { /*we didnt't find, 0*/
         ip--;
       }
     }
-    if (ip >= 0) { //e.g. 1001 -> 0110
+    if (ip >= 0) { /*e.g. 1001 -> 0110*/
       int pn = ip + nr1;
       b[ip] = 0;
       for (i = ip + 1; i <= pn; i++)

@@ -240,7 +240,7 @@ modelica_metatype list_get(mmc_GC_free_list_type* free, size_t size)
   /* if size is small, add it to the small list! */
   if (size < MMC_GC_FREE_SIZES)
   {
-    //size_t i = size;
+    /*size_t i = size;*/
 
     mmc_GC_free_slots_fixed_type *slot = &free->szSmall[size];
     if (slot->current > 0)

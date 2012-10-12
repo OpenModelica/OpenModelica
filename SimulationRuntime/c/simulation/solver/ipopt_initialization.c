@@ -513,11 +513,11 @@
     DEBUG_INFO1(LOG_INIT, "ending with funcValue = %g", obj);
     DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
     for(i=0; i<initData->nz; i++)
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
+      DEBUG_INFO_AL4(LOG_INIT, "| | [%d] %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
     DEBUG_INFO_AL(LOG_INIT, "| residuals (> 0.001)");
     for(i=0; i<data->modelData.nInitResiduals; i++)
       if(fabs(initData->initialResiduals[i]) > 1e-3)
-        DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g [scaled: %g]", i+1, initData->initialResiduals[i], (initData->residualScalingCoefficients[i] != 0.0) ? initData->initialResiduals[i]/initData->residualScalingCoefficients[i] : 0.0);
+        DEBUG_INFO_AL3(LOG_INIT, "| | [%d] %g [scaled: %g]", i+1, initData->initialResiduals[i], (initData->residualScalingCoefficients[i] != 0.0) ? initData->initialResiduals[i]/initData->residualScalingCoefficients[i] : 0.0);
 
     if(status != Solve_Succeeded && status != Solved_To_Acceptable_Level)
       THROW("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");

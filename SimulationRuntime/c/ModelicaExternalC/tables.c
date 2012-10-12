@@ -595,15 +595,16 @@ char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size_t *row
 {
   char name[256];
   long pos=0;
+  char *returnTmp;
   while (!feof(f->fp))
   {
-    fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
+    returnTmp = fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
     if (ferror(f->fp))
     {
       fclose(f->fp);
       THROW1("Could not read from file `%s'.",f->filename);
     }
-    fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
+    returnTmp = fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
     if (strncmp(tableName,name,strlen(tableName)) == 0)
     {
       if (f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
@@ -702,11 +703,12 @@ void Mat_readTable(MAT_FILE *f, double *buf, size_t rows, size_t cols)
   long P = (f->hdr.type%1000)/100;
   char isBigEndian = (f->hdr.type/1000) == 1;
   size_t elemSize = Mat_getTypeSize(f,f->hdr.type);
+  char *returnTmp;
 
   for(i=0; i < rows; ++i)
     for(j=0; j < cols; ++j)
   {
-    fgets(readbuf.p,elemSize,f->fp);
+    returnTmp = fgets(readbuf.p,elemSize,f->fp);
     if (ferror(f->fp))
     {
       fclose(f->fp);

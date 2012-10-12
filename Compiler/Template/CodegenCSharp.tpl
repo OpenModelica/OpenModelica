@@ -1040,7 +1040,7 @@ case SES_MIXED(__) then
       int cur_value_indx = -1;
       var values = new double[]{<%values ;separator=", "%>};
     */%>
-	var boolVar = new bool[<%numDiscVarsStr%>];
+      var boolVar = new bool[<%numDiscVarsStr%>];
     do {
       <%
         discVars |> SIMVAR(__) hasindex i0 => 
@@ -1093,15 +1093,14 @@ case SES_MIXED(__) then
             %>
         }
         if (found_solution == 0) { //!found_solution
-        	if (nextVar(boolVar))
-			{
-              <% discVars |> SIMVAR(__) hasindex i0 =>
+             if (nextVar(boolVar)){
+               <% discVars |> SIMVAR(__) hasindex i0 =>
                   '<%cref(name, simCode)%> = <%preCref(name, simCode)%> != boolVar[<%i0%>];'
                  ;separator="\n"
-              %>
-            }
-            else
-            	failwithCS("Mixed system could not be solved.");
+               %>
+             }
+             else
+               failwithCS("Mixed system could not be solved.");
         }             
       }
     } while (found_solution == 0);

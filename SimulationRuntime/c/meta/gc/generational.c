@@ -465,8 +465,8 @@ static void **mmc_collect(void **scan, char *region_low, mmc_uint_t region_nbyte
   while (scan < next) {
     mmc_uint_t hdr   = *(mmc_uint_t*)scan;
     mmc_uint_t slots = MMC_HDRSLOTS(hdr);
-    //mmc_uint_t ctor = MMC_HDRCTOR(hdr);
-    //mmc_uint_t start = 0;
+    /*mmc_uint_t ctor = MMC_HDRCTOR(hdr);*/
+    /*mmc_uint_t start = 0;*/
     
     /* we should NOT have forward here! */
     assert(!MMC_HDR_IS_FORWARD(hdr));

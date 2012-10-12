@@ -805,7 +805,6 @@ int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double 
    double *rpar, fortran_integer* ipar) {
 
   DATA* data = (DATA*)(void*)rpar;
-  int i,j;
   if (jacA_num(data, t, y, yprime, deltaD, pd, cj, h, wt, rpar, ipar)) {
     THROW("Error, can not get Matrix A ");
     return 1;

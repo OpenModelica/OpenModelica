@@ -254,9 +254,10 @@ static inline double mmc_prim_get_real(void *p)
 static inline void mmc_prim_set_real(struct mmc_real *p, double d)
 {
   union mmc_double_as_words u;
+  mmc_uint_t *data;
   u.d = d;
 
-  mmc_uint_t *data = &(p->data[0]);
+  data = &(p->data[0]);
   *data = u.data[0];
   *(data + 1) = u.data[1];
 }

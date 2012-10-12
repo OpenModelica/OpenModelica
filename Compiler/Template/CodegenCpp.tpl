@@ -3810,7 +3810,7 @@ case SES_MIXED(__) then
       >>
     ;separator="\n")
   << 
-  	<% /*
+    <% /*
       bool values<%num%>[<%valuesLenStr%>] = {<%values ;separator=", "%>};
       bool pre_disc_vars<%num%>[<%numDiscVarsStr%>];
       bool new_disc_vars<%num%>[<%numDiscVarsStr%>];
