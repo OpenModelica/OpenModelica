@@ -11955,10 +11955,10 @@ end simplifyIfEquationAsserts1;
 
 protected function makeIfExp
   input DAE.Exp cond;
-  input DAE.Exp _else;
+  input DAE.Exp else_;
   output DAE.Exp oExp;
 algorithm
-  oExp := DAE.IFEXP(cond,DAE.BCONST(true),_else);
+  oExp := DAE.IFEXP(cond,DAE.BCONST(true),else_);
 end makeIfExp;
 
 protected function countEquationsInBranches "
