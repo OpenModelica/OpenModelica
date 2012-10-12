@@ -2610,10 +2610,10 @@ algorithm
         crlst = List.map(varlst,BackendVariable.varCref);
         explst = List.map(crlst,Expression.crefExp);
         e1 = listGet(explst,1);
-        e1 = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_REAL_DEFAULT,false,explst),e1);
+        e1 = Debug.bcallret2(intGt(rang,1), Expression.makeScalarArray, explst, DAE.T_REAL_DEFAULT, e1);
         e2 = listGet(explst,1);
         explst = List.map(explst,makeder);
-        e2 = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_REAL_DEFAULT,false,explst),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal));
+        e2 = Debug.bcallret2(intGt(rang,1), Expression.makeScalarArray, explst, DAE.T_REAL_DEFAULT, DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal));
         con = DAE.RELATION(contexp,DAE.EQUAL(DAE.T_INTEGER_DEFAULT),DAE.ICONST(index),-1,NONE());
         wc = BackendDAE.WHEN_CLAUSE(con,{BackendDAE.REINIT(crset,e1,DAE.emptyElementSource)},NONE());
         startvalues = List.map(varlst,BackendVariable.varStartValue);
