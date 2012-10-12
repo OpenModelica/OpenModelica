@@ -202,7 +202,7 @@ uniontype WhenOperator "- Reinit Statement"
     Typically sideeffect call of external function but also
     Connections.* i.e. Connections.root(...) functions."
     Absyn.Path functionName;
-    list<.DAE.Exp> functionArgs;
+    list< .DAE.Exp> functionArgs;
     .DAE.ElementSource source "the origin of the component/equation/algorithm";
   end NORETCALL;
   
