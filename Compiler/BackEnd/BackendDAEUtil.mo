@@ -7307,16 +7307,18 @@ algorithm
     local
       BackendDAE.Variables vars2;
       EquationArray reqns,ieqns;
-      Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5;
+      Type_a ext_arg_1,ext_arg_2,ext_arg_4,ext_arg_5,ext_arg_6;
       list<BackendDAE.EqSystem> systs;
-    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns)),_,_)
+      list<BackendDAE.WhenClause> wc;
+    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(knownVars = vars2,initialEqs = ieqns,removedEqs = reqns,eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))),_,_)
       equation
         ext_arg_1 = List.fold1(systs,traverseBackendDAEExpsEqSystemWithUpdate,func,inTypeA);
         ext_arg_2 = traverseBackendDAEExpsVarsWithUpdate(vars2,func,ext_arg_1);
         ext_arg_4 = traverseBackendDAEExpsEqnsWithUpdate(reqns,func,ext_arg_2);
         ext_arg_5 = traverseBackendDAEExpsEqnsWithUpdate(ieqns,func,ext_arg_4);
+        (_,ext_arg_6) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(wc,func,ext_arg_5);
       then
-        ext_arg_5;
+        ext_arg_6;
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.traverseBackendDAEExpsNoCopyWithUpdate failed"});

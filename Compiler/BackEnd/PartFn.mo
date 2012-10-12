@@ -351,7 +351,7 @@ algorithm
 
     case(DAE.NORETCALL(p,elst,source),dae)
       equation
-        (elst_1,dae) = elabExpList(elst,dae);
+        ((DAE.CALL(path=p,expLst=elst_1),dae)) = Expression.traverseExp(DAE.CALL(p,elst,DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),elabExp,dae);
       then
         (DAE.NORETCALL(p,elst_1,source),dae);
 

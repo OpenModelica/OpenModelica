@@ -3325,7 +3325,7 @@ algorithm
     case (BackendDAE.NORETCALL(functionName=functionName,functionArgs=functionArgs,source=source)::res,_,_)
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
-        ((functionArgs,ext_arg_2)) = Expression.traverseExpList(functionArgs,func,ext_arg_1);
+        ((DAE.CALL(path=functionName,expLst=functionArgs),ext_arg_2)) = Expression.traverseExp(DAE.CALL(functionName,functionArgs,DAE.CALL_ATTR(DAE.T_NORETCALL_DEFAULT, false, false, DAE.NORM_INLINE(), DAE.NO_TAIL())),func,ext_arg_1);
       then
         (BackendDAE.NORETCALL(functionName,functionArgs,source)::res1,ext_arg_2);
 
