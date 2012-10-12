@@ -3303,6 +3303,8 @@ algorithm
       DAE.ComponentRef cr;
       DAE.ElementSource source;
       Type_a ext_arg_1,ext_arg_2;
+      Absyn.Path functionName;
+      list<DAE.Exp> functionArgs,functionArgs1;
 
     case ({},_,_) then ({},inTypeA);
 
@@ -3319,6 +3321,13 @@ algorithm
         ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
       then
         (BackendDAE.ASSERT(cond1,msg,level,source)::res1,ext_arg_2);
+
+    case (BackendDAE.NORETCALL(functionName=functionName,functionArgs=functionArgs,source=source)::res,_,_)
+      equation
+        (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
+        ((functionArgs,ext_arg_2)) = Expression.traverseExpList(functionArgs,func,ext_arg_1);
+      then
+        (BackendDAE.NORETCALL(functionName,functionArgs,source)::res1,ext_arg_2);
 
     case (wop::res,_,_)
       equation

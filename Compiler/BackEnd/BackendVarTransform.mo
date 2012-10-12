@@ -1487,6 +1487,9 @@ algorithm
       DAE.ComponentRef cr,cr1;
       DAE.ElementSource source;
       Boolean b,b1,b2;
+      Absyn.Path functionName;
+      list<DAE.Exp> functionArgs,functionArgs1;
+      list<Boolean> blst;
 
     case ({},_,_,_,_) then (listReverse(iAcc),replacementPerformed);
 
@@ -1518,6 +1521,15 @@ algorithm
         (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed,wop::iAcc);
       then
         (res1,b);
+    case ((wop as BackendDAE.NORETCALL(functionName=functionName,functionArgs=functionArgs,source=source))::res,_,_,_,_)
+      equation
+        (functionArgs1,blst) = replaceExpList1(functionArgs, repl, inFuncTypeExpExpToBooleanOption, {}, {});
+        b = Util.boolOrList(blst);
+        source = DAEUtil.addSymbolicTransformationSubstitutionLst(blst,source,functionArgs,functionArgs1);
+        wop1 = Util.if_(b,BackendDAE.NORETCALL(functionName,functionArgs1,source),wop);
+        (res1,b) =  replaceWhenOperator(res,repl,inFuncTypeExpExpToBooleanOption,replacementPerformed or b,wop1::iAcc);
+      then
+        (res1,b);        
   end match;
 end replaceWhenOperator;
 

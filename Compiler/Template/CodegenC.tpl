@@ -1027,8 +1027,16 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
       FILE_INFO info = {<%infoArgs(getElementSourceFileInfo(source))%>};
       omc_terminate(<%msgVar%>, info);
       >>
-  case ASSERT(source=SOURCE(info=info)) then 
-    assertCommon(condition, message, level, contextSimulationDiscrete, &varDecls, info)
+    case ASSERT(source=SOURCE(info=info)) then 
+      assertCommon(condition, message, level, contextSimulationDiscrete, &varDecls, info)
+    case NORETCALL(__) then 
+      let &preExp = buffer "" /*BUFD*/
+      let argStr = (functionArgs |> exp => '<%daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator=", ")
+      let funName = '<%underscorePath(functionName)%>'
+      <<
+      <%preExp%>
+      <%funName%>(<%argStr%>); 
+      >>    
     ;separator="\n")
     <<
     <%body%>  

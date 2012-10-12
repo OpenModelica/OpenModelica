@@ -537,6 +537,8 @@ algorithm
       String scr,se,se1,str;
       DAE.ComponentRef cr;
       DAE.Exp e,e1;
+      Absyn.Path functionName;
+      list<DAE.Exp> functionArgs;
     case BackendDAE.REINIT(stateVar=cr,value=e)
      equation
       scr = ComponentReference.printComponentRefStr(cr);       
@@ -550,13 +552,20 @@ algorithm
       se1 = ExpressionDump.printExpStr(e1);
       str = stringAppendList({"assert(",se,",",se1,")"});
      then
-      str;      
+      str;
     case BackendDAE.TERMINATE(message=e)
      equation
       se = ExpressionDump.printExpStr(e);
       str = stringAppendList({"terminate(",se,")"});
      then
-      str;      
+      str;
+    case BackendDAE.NORETCALL(functionName=functionName,functionArgs=functionArgs)
+     equation
+      se = Absyn.pathString(functionName);
+      se1 = stringDelimitList(List.map(functionArgs,ExpressionDump.printExpStr),", ");
+      str = stringAppendList({se,"(",se1,")"});
+     then
+      str;
   end match;
 end dumpWhenOperatorStr;
 

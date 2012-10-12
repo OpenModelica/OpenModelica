@@ -1332,6 +1332,7 @@ algorithm
       list<list<DAE.Element>> eqnslst;   
       Boolean b;
       String s;
+      Absyn.Path functionName;
 
     case ({},_,_,_,_) then (iEquationLst,iReinitStatementLst);
     case (DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),scalar = e, source = source) :: xs,_,_,_,_)
@@ -1390,6 +1391,13 @@ algorithm
         (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, iEquationLst, BackendDAE.TERMINATE(e,source) :: iReinitStatementLst);
       then
         (eqnl,reinit);
+        
+    case (DAE.NORETCALL(functionName = functionName,functionArgs=expl,source=source) :: xs,_,_,_,_)
+      equation
+        (expl,source,_) = Inline.inlineExps(expl,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
+        (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, iEquationLst, BackendDAE.NORETCALL(functionName,expl,source) :: iReinitStatementLst);
+      then
+        (eqnl,reinit);       
         
     // failure  
     case (el::_,_,_,_,_)
