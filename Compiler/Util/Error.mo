@@ -616,6 +616,9 @@ public constant Message INST_NON_LOADED = MESSAGE(525, TRANSLATION(), WARNING(),
   Util.gettext("Library %s was not loaded but is marked as used by model %s."));
 public constant Message RECURSION_DEPTH_REACHED = MESSAGE(526, TRANSLATION(), ERROR(),
   Util.gettext("The maximum recursion depth was reached, probably due to mutual recursion. The current scope: %s."));
+public constant Message DERIVATIVE_INPUT = MESSAGE(527, TRANSLATION(), ERROR(),
+  Util.gettext("The model requires derivatives of some inputs as listed below:\n%s"));
+
 
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
@@ -697,7 +700,7 @@ public constant Message OPTIMICA_ERROR = MESSAGE(7006, TRANSLATION(), ERROR(),
   Util.notrans("Optimica: %s."));
 public constant Message FILE_NOT_FOUND_ERROR = MESSAGE(7007, SCRIPTING(), ERROR(),
   Util.gettext("File not Found: %s."));
-
+  
 protected import ErrorExt;
 
 public function updateCurrentComponent "Function: updateCurrentComponent
