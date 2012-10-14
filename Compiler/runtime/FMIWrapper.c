@@ -157,9 +157,10 @@ void fmiInstantiateModel_OMC(void* fmi, char* instanceName)
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
-int fmiSetTime_OMC(void* fmi, double time)
+double fmiSetTime_OMC(void* fmi, double time, double dummy)
 {
-  return fmi1_import_set_time((fmi1_import_t*)fmi, time);
+  fmi1_import_set_time((fmi1_import_t*)fmi, time);
+  return dummy;
 }
 
 /*
@@ -196,7 +197,7 @@ int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
  * Wrapper for the FMI function fmiGetContinuousStates.
  * Returns states.
  */
-void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states)
+void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double dummy)
 {
   fmi1_status_t fmistatus = fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
   switch (fmistatus) {
@@ -213,16 +214,17 @@ void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double*
  * Wrapper for the FMI function fmiSetContinuousStates.
  * Returns status.
  */
-int fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states)
+double fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double dummy)
 {
-  return fmi1_import_set_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  fmi1_import_set_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  return dummy;
 }
 
 /*
  * Wrapper for the FMI function fmiGetEventIndicators.
  * Returns events.
  */
-void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* events)
+void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* events, double dummy)
 {
   fmi1_status_t fmistatus = fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
   switch (fmistatus) {
@@ -239,7 +241,7 @@ void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* e
  * Wrapper for the FMI function fmiGetDerivatives.
  * Returns states.
  */
-void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* states)
+void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* states, double dummy)
 {
   fmi1_status_t fmistatus = fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
   switch (fmistatus) {
@@ -256,7 +258,7 @@ void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* stat
  * Wrapper for the FMI function fmiGetReal.
  * Returns realValues.
  */
-void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesReferences, double* realValues)
+void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesReferences, double* realValues, double dummy)
 {
   fmi1_status_t fmistatus = fmi1_import_get_real((fmi1_import_t*)fmi, (fmi1_value_reference_t*)realValuesReferences, numberOfValueReferences, (fmi1_real_t*)realValues);
   switch (fmistatus) {
@@ -282,7 +284,7 @@ int fmiSetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesRefere
  * Wrapper for the FMI function fmiGetInteger.
  * Returns integerValues.
  */
-void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValuesReferences, int* integerValues)
+void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValuesReferences, int* integerValues, double dummy)
 {
   fmi1_status_t fmistatus = fmi1_import_get_integer((fmi1_import_t*)fmi, (fmi1_value_reference_t*)integerValuesReferences, numberOfValueReferences, (fmi1_integer_t*)integerValues);
   switch (fmistatus) {
@@ -299,7 +301,7 @@ void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValue
  * Wrapper for the FMI function fmiSetInteger.
  * Returns status.
  */
-int fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValuesReferences, int* integerValues)
+int fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValuesReferences, int* integerValues, double dummy)
 {
   return fmi1_import_set_integer((fmi1_import_t*)fmi, (fmi1_value_reference_t*)integerValuesReferences, numberOfValueReferences, (fmi1_integer_t*)integerValues);
 }
@@ -325,7 +327,7 @@ void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValue
  * Wrapper for the FMI function fmiSetBoolean.
  * Returns status.
  */
-int fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValuesReferences, int* booleanValues)
+int fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValuesReferences, int* booleanValues, double dummy)
 {
   return fmi1_import_set_boolean((fmi1_import_t*)fmi, (fmi1_value_reference_t*)booleanValuesReferences, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
 }
@@ -351,7 +353,7 @@ void fmiGetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesR
  * Wrapper for the FMI function fmiSetString.
  * Returns status.
  */
-int fmiSetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesReferences, char** stringValues)
+int fmiSetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesReferences, char** stringValues, double dummy)
 {
   return fmi1_import_set_string((fmi1_import_t*)fmi, (fmi1_value_reference_t*)stringValuesReferences, numberOfValueReferences, (fmi1_string_t*)stringValues);
 }
@@ -370,11 +372,11 @@ void* fmiEventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo)
 /*
  * Wrapper for the FMI function fmiCompletedIntegratorStep.
  */
-int fmiCompletedIntegratorStep_OMC(void* fmi, int in_callEventUpdate)
+double fmiCompletedIntegratorStep_OMC(void* fmi, int in_callEventUpdate, double dummy)
 {
   fmi1_status_t fmistatus = fmi1_import_completed_integrator_step((fmi1_import_t*)fmi, (fmi1_boolean_t*)&in_callEventUpdate);
   //fprintf(stderr, "fmiCompletedIntegratorStep_OMC in_callEventUpdate = %d\n", in_callEventUpdate);fflush(NULL);
-  return in_callEventUpdate;
+  return dummy;
 }
 
 /*
