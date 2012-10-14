@@ -9086,25 +9086,27 @@ algorithm
       DAE.Type tp;
       DAE.Exp e,zero;
       DAE.ComponentRef cr;
+      BackendDAE.Var var;
     case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
       equation
-        (_,_) = BackendVariable.getVar(cr, vars);
+        (var::{},_) = BackendVariable.getVar(cr, vars);
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then 
         ((zero,(vars,true)));
     case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
       equation
-        (_,_) = BackendVariable.getVar(cr, vars);
+        (_::{},_) = BackendVariable.getVar(cr, vars);
       then
         ((e,(vars,true)));
     case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
       equation
-        (_,_) = BackendVariable.getVar(cr, vars);
+        (_::{},_) = BackendVariable.getVar(cr, vars);
       then 
         ((DAE.BCONST(false),(vars,true)));
     case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
       equation
-        (_,_) = BackendVariable.getVar(cr, vars);
+        (_::{},_) = BackendVariable.getVar(cr, vars);
       then
         ((DAE.BCONST(false),(vars,true)));
     case _ then tpl;
@@ -12652,6 +12654,89 @@ algorithm
   end matchcontinue;
 end simplifysemiLinearFinder;
 
+/*
+ * check for derivatives of inputs
+ *
+ */
+public function inputDerivativesUsed "function inputDerivativesUsed
+  checks if der(input) is used and report a warning/error.
+  author: Frenkel TUD 2012-10"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,inputDerivativesUsedWork,false);
+end inputDerivativesUsed;
+
+protected function inputDerivativesUsedWork "function inputDerivativesUsedWork
+  author: Frenkel TUD 2012-10"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+algorithm
+  (osyst,osharedChanged) := 
+    matchcontinue(isyst,sharedChanged)
+    local
+      BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
+      BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+      BackendDAE.Shared shared;
+      list<DAE.Exp> explst;
+      String s;
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared, _))
+      equation
+        ((_,explst as _::_)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traverserinputDerivativesUsed,(BackendVariable.daeKnVars(shared),{}));
+        s = stringDelimitList(List.map(explst,ExpressionDump.printExpStr),"\n");
+        Error.addMessage(Error.DERIVATIVE_INPUT,{s});
+      then
+        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,true));
+    else
+      (isyst,sharedChanged);
+  end matchcontinue;
+end inputDerivativesUsedWork;
+
+protected function traverserinputDerivativesUsed "function traverserinputDerivativesUsed
+  author: Frenkel TUD 2012-10"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,list<DAE.Exp>>> itpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,list<DAE.Exp>>> outTpl;
+protected
+  DAE.Exp e;
+  tuple<BackendDAE.Variables,list<DAE.Exp>> tpl;
+algorithm
+  (e,tpl) := itpl;
+  outTpl := Expression.traverseExpTopDown(e,traverserExpinputDerivativesUsed,tpl);
+end traverserinputDerivativesUsed;
+
+protected function traverserExpinputDerivativesUsed "function traverserExpinputDerivativesUsed
+  author: Frenkel TUD 2012-10"
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,list<DAE.Exp>>> tpl;
+  output tuple<DAE.Exp,Boolean,tuple<BackendDAE.Variables,list<DAE.Exp>>> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      BackendDAE.Variables vars;
+      DAE.Type tp;
+      DAE.Exp e,zero;
+      DAE.ComponentRef cr;
+      BackendDAE.Var var;
+      list<DAE.Exp> explst;
+    case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)})}),(vars,explst)))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, vars);
+        true = BackendVariable.isVarOnTopLevelAndInput(var);
+      then
+        ((e,false,(vars,e::explst)));
+    case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(vars,explst)))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, vars);
+        true = BackendVariable.isVarOnTopLevelAndInput(var);
+      then
+        ((e,false,(vars,e::explst)));
+    case ((e,(vars,explst))) then ((e,true,(vars,explst)));
+  end matchcontinue;
+end traverserExpinputDerivativesUsed;
 
 
 

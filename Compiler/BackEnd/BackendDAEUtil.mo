@@ -8787,6 +8787,7 @@ algorithm
   (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
   (BackendDAEOptimize.removeUnusedFunctions,"removeUnusedFunctions",false),
   (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false),
+  (BackendDAEOptimize.inputDerivativesUsed,"inputDerivativesUsed",false),
   (BackendDAEOptimize.simplifysemiLinear,"simplifysemiLinear",false),
   (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
   (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false)

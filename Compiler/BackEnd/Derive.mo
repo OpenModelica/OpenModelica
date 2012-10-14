@@ -334,6 +334,7 @@ algorithm
       DAE.CallAttributes attr;
       BackendDAE.VarKind kind;
       Real r;
+      BackendDAE.Var var;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -355,10 +356,11 @@ algorithm
       then
         differentiateExpTime(e1,inVariables);
 
-    // Constants, known variables, parameters and discrete variables have a 0-derivative 
+    // Constants, known variables, parameters and discrete variables have a 0-derivative, not the inputs 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(_,BackendDAE.SHARED(knownVars=knvars))) 
       equation
-        (_::{},_) = BackendVariable.getVar(cr, knvars);
+        (var::{},_) = BackendVariable.getVar(cr, knvars);
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then zero;
 
