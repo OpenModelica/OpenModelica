@@ -6308,16 +6308,16 @@ case rel as RELATION(__) then
         let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
         match rel.operator
         case LESS(__) then
-          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>} else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>}<%\n%>'
           res
         case LESSEQ(__) then
-          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>} else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>}<%\n%>'
           res
         case GREATER(__) then
-          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>} else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>}<%\n%>'
           res
         case GREATEREQ(__) then
-          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%> } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>} else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>}<%\n%>'
           res
         end match
     case SOME((exp,i,j)) then
@@ -6331,16 +6331,16 @@ case rel as RELATION(__) then
         //let e3 = daeExp(createArray(i), context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
         match rel.operator
         case LESS(__) then
-          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>  } else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>}<%\n%>'
           res
         case LESSEQ(__) then
-          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>  } else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>}<%\n%>'
           res
         case GREATER(__) then
-          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>  } else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>}<%\n%>'
           res
         case GREATEREQ(__) then
-          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>,<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>  } else { <%\n%> RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>  }<%\n%>'
+          let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>,<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>  } else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>}<%\n%>'
           res
         end match
       end match
