@@ -179,7 +179,8 @@ void* fmiInitialize_OMC(void* fmi)
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiInitialize_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
   return eventInfo;
 }
@@ -206,7 +207,8 @@ void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double*
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetContinuousStates_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
@@ -233,7 +235,8 @@ void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* e
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetEventIndicators_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
@@ -250,7 +253,8 @@ void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* stat
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetDerivatives_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
@@ -267,7 +271,8 @@ void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesRefer
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetReal_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
@@ -293,7 +298,8 @@ void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValue
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetInteger_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
@@ -319,7 +325,8 @@ void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValue
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetBoolean_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
@@ -345,7 +352,8 @@ void fmiGetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesR
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetString_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
@@ -394,7 +402,8 @@ int fmiTerminate_OMC(void* fmi)
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiTerminate_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
   return fmistatus;
 }
@@ -422,16 +431,27 @@ void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, doubl
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiInitializeSlave_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
 }
 
 /*
  * Wrapper for the FMI function fmiDoStep.
  */
-int fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communicationStepSize, int newStep)
+double fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communicationStepSize, int newStep)
 {
-  return fmi1_import_do_step((fmi1_import_t*)fmi, currentCommunicationPoint, communicationStepSize, newStep);
+  fmi1_status_t fmistatus = fmi1_import_do_step((fmi1_import_t*)fmi, currentCommunicationPoint, communicationStepSize, newStep);
+  switch (fmistatus) {
+    case fmi1_status_warning:
+    case fmi1_status_error:
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Error: Error in fmiDoStep_OMC.\n");fflush(NULL);
+      break;
+    default:
+      break;
+  }
+  return 0.0;
 }
 
 /*
@@ -449,7 +469,8 @@ int fmiTerminateSlave_OMC(void* fmi)
     case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiTerminateSlave_OMC.\n");fflush(NULL);
       break;
-    default: break;
+    default:
+      break;
   }
   return fmistatus;
 }
