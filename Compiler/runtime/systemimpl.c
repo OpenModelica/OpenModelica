@@ -1774,6 +1774,30 @@ extern int SystemImpl__reopenStandardStream(int id,const char *filename)
   return 1;
 }
 
+static char* SystemImpl__iconv__ascii(const char * str)
+{
+  static char *buf = 0;
+  static int buflen = 0;
+  char *in_str,*res;
+  size_t sz,out_sz;
+  iconv_t ic;
+  int i;
+  sz = strlen(str);
+  if (buflen < sz) {
+    if (buf) free(buf);
+    buf = (char*)malloc(sz);
+    if (!buf) {
+      buflen = 0;
+      return (char*) "";
+    }
+    buflen = sz;
+  }
+  *buf = 0;
+  for (i=0; i<sz; i++)
+    buf[i] = str[i] & 0x80 ? '?' : str[i];
+  return buf;
+}
+
 extern char* SystemImpl__iconv(const char * str, const char *from, const char *to, int printError)
 {
   static char *buf = 0;
@@ -1796,7 +1820,8 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   /* fprintf(stderr,"iconv(%s,to=%s,%s) of size %d, buflen %d\n",str,to,from,sz,buflen); */
   ic = iconv_open(to, from);
   if (ic == (iconv_t) -1) {
-    const char *tokens[4] = {strerror(errno),from,to,str};
+    char *ignore = SystemImpl__iconv__ascii(str);
+    const char *tokens[4] = {strerror(errno),from,to,ignore};
     if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
     return (char*) "";
   }
@@ -1806,7 +1831,8 @@ extern char* SystemImpl__iconv(const char * str, const char *from, const char *t
   count = iconv(ic,&in_str,&sz,&res,&out_sz);
   iconv_close(ic);
   if (count == -1) {
-    const char *tokens[4] = {strerror(errno),from,to,str};
+    char *ignore = SystemImpl__iconv__ascii(str);
+    const char *tokens[4] = {strerror(errno),from,to,ignore};
     if (printError) c_add_message(-1,ErrorType_scripting,ErrorLevel_error,gettext("iconv(\"%s\",to=\"%s\",from=\"%s\") failed: %s"),tokens,4);
     return (char*) "";
   }
