@@ -157,17 +157,15 @@ const char* getModelVariableBaseType(fmi1_import_variable_t* variable)
  */
 char* getModelVariableName(fmi1_import_variable_t* variable)
 {
-  const char* res = fmi1_import_get_variable_name(variable);
+  char* res = fmi1_import_get_variable_name(variable);
   int length = strlen(res);
-  char* model_variable_name = malloc(length+1);
-  strcpy(model_variable_name, res);
-  charReplace(model_variable_name, length, '.', '_');
-  charReplace(model_variable_name, length, '[', '_');
-  charReplace(model_variable_name, length, ']', '_');
-  charReplace(model_variable_name, length, ',', '_');
-  charReplace(model_variable_name, length, '(', '_');
-  charReplace(model_variable_name, length, ')', '_');
-  return model_variable_name;
+  charReplace(res, length, '.', '_');
+  charReplace(res, length, '[', '_');
+  charReplace(res, length, ']', '_');
+  charReplace(res, length, ',', '_');
+  charReplace(res, length, '(', '_');
+  charReplace(res, length, ')', '_');
+  return res;
 }
 
 /*
