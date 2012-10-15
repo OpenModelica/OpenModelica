@@ -847,10 +847,13 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, 
  "Generates an equation."
 ::=
   match eq
-  case e as SES_ALGORITHM(__)
-  then equation_(e, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
+  case e as SES_RESIDUAL(__)
+  then ""
   case e as SES_SIMPLE_ASSIGN(__)
   then old_equation_(e, contextSimulationDiscrete, &varDecls /*BUFD*/)
+  else
+  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
+  end match
 end functionExtraResidualsPreBody;
 
 template functionExtraResiduals(list<SimEqSystem> allEquations)
@@ -1755,8 +1758,12 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
     then equationNonlinear(e, context, &varD /*BUFD*/)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varD /*BUFD*/)
+  case e as SES_RESIDUAL(__)
+    then "NOT IMPLEMENTED EQUATION SES_RESIDUAL"
+  case e as SES_MIXED(__)
+    then "NOT IMPLEMENTED EQUATION SES_MIXED"
   else
-    "NOT IMPLEMENTED EQUATION"
+    "NOT IMPLEMENTED EQUATION equation_"
   let &eqs +=
   <<
   
@@ -1819,7 +1826,7 @@ template old_equation_(SimEqSystem eq, Context context, Text &varDecls)
   case e as SES_WHEN(__)
     then equationWhen(e, context, &varDecls)
   else
-    "NOT IMPLEMENTED EQUATION"
+    "NOT IMPLEMENTED EQUATION old_equation_"
 end old_equation_;
 
 template myequation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
@@ -1879,7 +1886,7 @@ template myequation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
     printf("OK\n");
     >>
   else
-    "NOT IMPLEMENTED EQUATION"
+    "NOT IMPLEMENTED EQUATION myequation_"
 end myequation_;
 
 template inlineArray(Context context, String arr, ComponentRef c)
