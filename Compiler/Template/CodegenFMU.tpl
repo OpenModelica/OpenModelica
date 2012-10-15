@@ -1151,7 +1151,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Real flowControlEvent;
     Real flowControlStatesInputs;
     Boolean initializationDone(start=false);
-    Boolean deinitializationDone(start=false);
   protected
     <%dumpFMICommonObjects(platform)%>
     
@@ -1276,7 +1275,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   <<
     fmi_z = fmiFunctions.fmiGetEventIndicators(fmi, numberOfEventIndicators, flowControlEvent);
     for i in 1:size(fmi_z,1) loop
-      fmi_z_positive[i] = fmi_z[i] > 0;
+      fmi_z_positive[i] = if not terminal() then fmi_z[i] > 0 else pre(fmi_z_positive[i]);
     end for;
   >>
   %>
@@ -1292,11 +1291,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   >>
   %>
     when terminal() then
-      // ensure that all deinitialization functions are called only once!
-      if not deinitializationDone then
         fmi_status := fmiFunctions.fmiTerminate(fmi);
-        deinitializationDone := true;
-      end if;
     end when;
   equation
     flowControlEvent = fmiFunctions.fmiCompletedIntegratorStep(fmi, callEventUpdate, flowControlStatesInputs);
