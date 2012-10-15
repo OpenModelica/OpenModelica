@@ -45,6 +45,7 @@ public import Values;
 
 protected import Absyn;
 protected import BackendDAEUtil;
+protected import BaseHashSet;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -54,6 +55,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import HashTable2;
+protected import HashSet;
 protected import List;
 protected import SCode;
 protected import Util;
@@ -3422,7 +3424,7 @@ algorithm
   // start
   sv := varStartValueOption(inVar);
   sva := varStartValueOption(inAVar);
-  (v1) := mergeStartFixed(inVar,fixed,sv,inAVar,fixeda,sva,negate,knVars);
+  v1 := mergeStartFixed(inVar,fixed,sv,inAVar,fixeda,sva,negate,knVars);
   // nominal
   v2 := mergeNominalAttribute(inAVar,v1,negate);
   // minmax
@@ -3588,9 +3590,9 @@ algorithm
   end matchcontinue;
 end mergeStartFixed1;
 
-public function replaceCrefWithBindExp
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> inTuple;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> outTuple;
+protected function replaceCrefWithBindExp
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,HashSet.HashSet>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,HashSet.HashSet>> outTuple;
 algorithm
   outTuple := matchcontinue(inTuple)
     local
@@ -3598,17 +3600,21 @@ algorithm
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
       Boolean b;
+      HashSet.HashSet hs;
     // true if crefs replaced in expression
-    case ((DAE.CREF(componentRef=cr), (vars,_)))
+    case ((DAE.CREF(componentRef=cr), (vars,_,hs)))
       equation
-         ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
-         ((e, _)) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars,false));
+        // check for cyclic bindings in start value
+        false = BaseHashSet.has(cr, hs);
+        ({BackendDAE.VAR(bindExp = SOME(e))}, _) = getVar(cr, vars);
+        hs = BaseHashSet.add(cr,hs);
+        ((e, (_,_,hs))) = Expression.traverseExp(e, replaceCrefWithBindExp, (vars,false,hs));
       then
-        ((e, (vars,true)));
+        ((e, (vars,true,hs)));
     // true if crefs in expression
-    case ((e as DAE.CREF(componentRef=cr), (vars,_)))
+    case ((e as DAE.CREF(componentRef=cr), (vars,_,hs)))
       then
-        ((e, (vars,true)));        
+        ((e, (vars,true,hs)));        
     else then inTuple;
   end matchcontinue;
 end replaceCrefWithBindExp;
@@ -3640,8 +3646,8 @@ algorithm
     case (_,_,_)
       equation
         // simple evaluation, by replace crefs with bind expressions recursivly
-        ((exp1_1, (_,b))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false));
-        ((exp2_1, _)) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false));
+        ((exp1_1, (_,b,_))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        ((exp2_1, _)) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
         true = Expression.expEqual(exp1_1, exp2_1);
         exp1_1 = Util.if_(b,exp1,exp2);
       then 
