@@ -363,7 +363,7 @@ void OMCProxy::sendCommand(const QString expression)
   {
     setExpression(expression);
     if (expression.startsWith("OMEdit_simulate_result:=simulate") or expression.startsWith("buildModel")
-        or expression.startsWith("translateModelFMU") or expression.startsWith("importFMU"))
+        or expression.startsWith("translateModelFMU") or expression.startsWith("importFMUOld"))
     {
       QFuture<void> future = QtConcurrent::run(this, &OMCProxy::sendCommand);
       while (future.isRunning())
@@ -1883,10 +1883,10 @@ bool OMCProxy::translateModelFMU(QString modelName)
 bool OMCProxy::importFMU(QString fmuName, QString outputDirectory)
 {
   if (outputDirectory.isEmpty())
-    sendCommand("importFMU(\"" + fmuName + "\")");
+    sendCommand("importFMUOld(\"" + fmuName + "\")");
   else
   {
-    sendCommand("importFMU(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\")");
+    sendCommand("importFMUOld(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\")");
   }
   if (StringHandler::unparseBool(getResult()))
     return true;
