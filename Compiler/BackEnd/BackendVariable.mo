@@ -3582,7 +3582,7 @@ algorithm
         s3 = ComponentReference.printComponentRefStr(cra);
         s5 = ExpressionDump.printExpStr(sv);
         s6 = ExpressionDump.printExpStr(sva);
-        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s2,s7,".\n"});
+        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,s7,".\n"});
         Error.addMessage(Error.COMPILER_WARNING,{s});
         v = setVarStartValue(inVar,sva);
       then 

@@ -292,7 +292,7 @@ extern void* System_strtok(const char *str0, const char *delimit)
   if (s == NULL)
   {
     free(str);
-    MMC_THROW();
+    return res;
   }
   res = mmc_mk_cons(mmc_mk_scon(s),res);
   while ((s=strtok(NULL,delimit)))
