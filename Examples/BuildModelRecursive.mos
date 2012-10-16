@@ -4,6 +4,7 @@ setCommandLineOptions({"+g=Modelica","+d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
 MSLVersion:="3.1";
+runModelicaTest:=false;
 ulimitOmc:="300"; // 5 minutes to generate the C-code
 ulimitExe:="45";  // 40 seconds to initialize and run the simulation
 loadModel(Modelica,{MSLVersion});
@@ -13,10 +14,8 @@ system("date +'%Y-%m-%d %H:%M:%S' > tmp.date");
 dateAndTime:=readFile("tmp.date");
 system("rm -f tmp.date");
 
-if MSLVersion == "3.2" then
+if runModelicaTest then
   loadModel(ModelicaTest,{"1.1"});
-  // Loading ObsoleteModelica3 causes many errors even while flattening models that do not depend on it
-  // loadModel(ObsoleteModelica3,{"3.2.1"});
   loadModelicaTest:="\nloadModel(ModelicaTest,{\"1.1\"});\n";
 else
   loadModelicaTest:="";
@@ -37,7 +36,7 @@ system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 
-a:={typeNameString(x) for x guard isExperiment(x) in getClassNames(recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in if runModelicaTest then getClassNames(ModelicaTest,recursive=true,sort=true) else getClassNames(recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
