@@ -175,9 +175,13 @@ void* fmiInitialize_OMC(void* fmi)
   fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiInitialize_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiInitialize_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiInitialize_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -203,9 +207,13 @@ void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double*
   fmi1_status_t fmistatus = fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiGetContinuousStates_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetContinuousStates_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetContinuousStates_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -231,9 +239,13 @@ void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* e
   fmi1_status_t fmistatus = fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiGetEventIndicators_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetEventIndicators_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetEventIndicators_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -249,9 +261,13 @@ void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* stat
   fmi1_status_t fmistatus = fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiGetDerivatives_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetDerivatives_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetDerivatives_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -267,9 +283,13 @@ void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesRefer
   fmi1_status_t fmistatus = fmi1_import_get_real((fmi1_import_t*)fmi, (fmi1_value_reference_t*)realValuesReferences, numberOfValueReferences, (fmi1_real_t*)realValues);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiGetReal_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetReal_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetReal_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -294,9 +314,13 @@ void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValue
   fmi1_status_t fmistatus = fmi1_import_get_integer((fmi1_import_t*)fmi, (fmi1_value_reference_t*)integerValuesReferences, numberOfValueReferences, (fmi1_integer_t*)integerValues);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiGetInteger_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetInteger_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetInteger_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -321,9 +345,13 @@ void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValue
   fmi1_status_t fmistatus = fmi1_import_get_boolean((fmi1_import_t*)fmi, (fmi1_value_reference_t*)booleanValuesReferences, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiGetBoolean_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetBoolean_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetBoolean_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -348,9 +376,13 @@ void fmiGetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesR
   fmi1_status_t fmistatus = fmi1_import_get_string((fmi1_import_t*)fmi, (fmi1_value_reference_t*)stringValuesReferences, numberOfValueReferences, (fmi1_string_t*)stringValues);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiGetString_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiGetString_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetString_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -398,9 +430,13 @@ int fmiTerminate_OMC(void* fmi)
       fmi1_import_free_model_instance((fmi1_import_t*)fmi);
       break;
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiTerminate_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiTerminate_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiTerminate_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -427,9 +463,13 @@ void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, doubl
   fmi1_status_t fmistatus = fmi1_import_initialize_slave((fmi1_import_t*)fmi, tStart, stopTimeDefined, tStop);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiInitializeSlave_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiInitializeSlave_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiInitializeSlave_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -444,9 +484,13 @@ double fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communi
   fmi1_status_t fmistatus = fmi1_import_do_step((fmi1_import_t*)fmi, currentCommunicationPoint, communicationStepSize, newStep);
   switch (fmistatus) {
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiDoStep_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiDoStep_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiDoStep_OMC.\n");fflush(NULL);
       break;
     default:
       break;
@@ -465,9 +509,13 @@ int fmiTerminateSlave_OMC(void* fmi)
       fmi1_import_free_slave_instance((fmi1_import_t*)fmi);
       break;
     case fmi1_status_warning:
+      fprintf(stderr, "FMI Import Warning: Warning in fmiTerminateSlave_OMC.\n");fflush(NULL);
+      break;
     case fmi1_status_error:
-    case fmi1_status_fatal:
       fprintf(stderr, "FMI Import Error: Error in fmiTerminateSlave_OMC.\n");fflush(NULL);
+      break;
+    case fmi1_status_fatal:
+      fprintf(stderr, "FMI Import Fatal: Fatal in fmiTerminateSlave_OMC.\n");fflush(NULL);
       break;
     default:
       break;
