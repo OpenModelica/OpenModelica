@@ -597,6 +597,16 @@ algorithm
   end match;
 end linkItemUsage;
 
+public function isClassExtendsItem
+  input Item inItem;
+  output Boolean outIsClassExtends;
+algorithm
+  outIsClassExtends := match(inItem)
+    case CLASS(classType = CLASS_EXTENDS()) then true;
+    else false;
+  end match;
+end isClassExtendsItem;
+
 protected function extendEnvWithClassDef
   "Extends the environment with a class definition."
   input SCode.Element inClassDefElement;
@@ -1620,6 +1630,26 @@ algorithm
   end matchcontinue;
 end mergePathWithEnvPath;
 
+public function prefixIdentWithEnv
+  input String inIdent;
+  input Env inEnv;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inIdent, inEnv)
+    local
+      Absyn.Path path;
+
+    case (_, {FRAME(name = NONE())}) then Absyn.IDENT(inIdent);
+    else
+      equation
+        path = getEnvPath(inEnv);
+        path = Absyn.suffixPath(path, inIdent);
+      then
+        path;
+
+  end match;
+end prefixIdentWithEnv;
+
 public function joinPaths
   "Joins two paths. This functions is similar to Absyn.joinPaths, but with
   different semantics for fully qualified paths."
@@ -1687,43 +1717,6 @@ algorithm
         
   end match;
 end getRedeclarationNameInfo;
-
-public function resolveAlias
-  "Resolved an alias by looking up the aliased item recursively in the
-   environment until a non-alias item is found."
-  input Item inItem;
-  input Env inEnv;
-  output Item outItem;
-  output Env outEnv;
-algorithm
-  (outItem, outEnv) := match(inItem, inEnv)
-    local
-      String name;
-      Item item;
-      Absyn.Path path;
-      Env env;
-      AvlTree tree;
-
-    case (ALIAS(name = name, path = NONE()), FRAME(clsAndVars = tree) :: _)
-      equation
-        item = avlTreeGet(tree, name);
-        (item, env) = resolveAlias(item, inEnv);
-      then
-        (item, env);
-
-    case (ALIAS(name = name, path = SOME(path)), _)
-      equation
-        env = getEnvTopScope(inEnv);
-        env = enterScopePath(env, path);
-        FRAME(clsAndVars = tree) :: _ = env;
-        item = avlTreeGet(tree, name);
-        (item, env) = resolveAlias(item, env);
-      then
-        (item, env);
-
-    else (inItem, inEnv);
-  end match;
-end resolveAlias;
 
 public function buildInitialEnv
   "Build a new environment that contains some things that can't be represented

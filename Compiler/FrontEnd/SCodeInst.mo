@@ -238,7 +238,7 @@ algorithm
       Absyn.Path path;
       Class cls;
       list<Element> elems;
-      Boolean cse;
+      Boolean cse, ice;
       SCode.Element scls;
       SCode.ClassDef cdef;
       Integer dim_count;
@@ -270,7 +270,9 @@ algorithm
         // Apply modifications to the elements and instantiate them.
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = SCodeEnv.getEnvExtendsFromTable(env);
-        (elems, cse, functions) = instElementList(mel, inPrefixes, exts, env, inPrefix, ip, functions);
+        ice = SCodeEnv.isClassExtendsItem(inItem);
+        (elems, cse, functions) = instElementList(mel, inPrefixes, exts, env,
+          inPrefix, ice, ip, functions);
 
         // Instantiate all equation and algorithm sections.
         (eq, ieq, alg, ialg, functions) = instSections(cdef, env, inPrefix, ip, functions);
@@ -352,17 +354,18 @@ algorithm
       inInstPolicy, inFunctions)
     local
       SCode.ClassDef cdef;
-      Absyn.Path bc_path;
-      SCode.Element ext;
       SCode.Mod mod;
-      SCode.Element scls;
-      Class cls;
-      DAE.Type ty;
-      Item item;
-      String name;
+      SCode.Element scls, ext;
+      Absyn.Path bc_path;
       Absyn.Info info;
+      String name;
+      Item item;
+      Env base_env, ext_env;
       InstPolicy ip;
       FunctionHashTable functions;
+      Class base_cls, ext_cls, comp_cls;
+      DAE.Type base_ty, ext_ty, comp_ty;
+
 
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod, 
         composition = cdef)), _, _, _, _, _, ip, functions)
@@ -371,10 +374,10 @@ algorithm
         ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
         cdef = SCode.addElementToCompositeClassDef(ext, cdef);
         scls = SCode.setElementClassDefinition(cdef, inClassExtends);
-        item = SCodeEnv.CLASS(scls, inClassEnv, SCodeEnv.USERDEFINED());
-        (cls, ty, _, functions) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix, ip, functions);
+        item = SCodeEnv.CLASS(scls, inClassEnv, SCodeEnv.CLASS_EXTENDS());
+        (comp_cls, comp_ty, _, functions) = instClassItem(item, inMod, inPrefixes, inEnv, inPrefix, ip, functions);
       then
-        (cls, ty, functions);
+        (comp_cls, comp_ty, functions);
 
     else
       equation
@@ -545,6 +548,7 @@ protected function instElementList
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
+  input Boolean inIsClassExtends;
   input InstPolicy inInstPolicy;
   input FunctionHashTable inFunctions;
   output list<Element> outElements;
@@ -552,7 +556,8 @@ protected function instElementList
   output FunctionHashTable outFunctions;
 algorithm
   (outElements, outContainsSpecialExtends, outFunctions) := instElementList2(inElements, 
-    inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false, inFunctions);
+    inPrefixes, inExtends, inEnv, inPrefix, inIsClassExtends, inInstPolicy, {},
+    false, inFunctions);
 end instElementList;
 
 protected function instElementList2
@@ -561,6 +566,7 @@ protected function instElementList2
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
+  input Boolean inIsClassExtends;
   input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
@@ -570,8 +576,8 @@ protected function instElementList2
   output FunctionHashTable outFunctions;
 algorithm
   (outElements, outContainsSpecialExtends, outFunctions) :=
-  match(inElements, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
-      inAccumEl, inContainsSpecialExtends, inFunctions)
+  match(inElements, inPrefixes, inExtends, inEnv, inPrefix, inIsClassExtends,
+      inInstPolicy, inAccumEl, inContainsSpecialExtends, inFunctions)
     local
       tuple<SCode.Element, Modifier> elem;
       list<tuple<SCode.Element, Modifier>> rest_el;
@@ -580,18 +586,18 @@ algorithm
       list<SCodeEnv.Extends> exts;
       FunctionHashTable functions;
 
-    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, functions)
+    case (elem :: rest_el, _, exts, _, _, _, _, accum_el, cse, functions)
       equation
         (accum_el, exts, cse, functions) = instElementList_dispatch(elem, inPrefixes, exts,
-          inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
+          inEnv, inPrefix, inIsClassExtends, inInstPolicy, accum_el, cse, functions);
         (accum_el, cse, functions) = instElementList2(rest_el, inPrefixes, exts,
-          inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
+          inEnv, inPrefix, false, inInstPolicy, accum_el, cse, functions);
       then
         (accum_el, cse, functions);
 
-    case ({}, _, {}, _, _, _, _, cse, functions) then (inAccumEl, cse, functions);
+    case ({}, _, {}, _, _, _, _, _, cse, functions) then (inAccumEl, cse, functions);
 
-    case ({}, _, _ :: _, _, _, _, _, _, _)
+    case ({}, _, _ :: _, _, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"SCodeInst.instElementList2 has extends left!."});
@@ -607,6 +613,7 @@ protected function instElementList_dispatch
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
+  input Boolean inIsClassExtends;
   input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
@@ -617,8 +624,8 @@ protected function instElementList_dispatch
   output FunctionHashTable outFunctions;
 algorithm
   (outElements, outExtends, outContainsSpecialExtends, outFunctions) :=
-  match(inElement, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
-      inAccumEl, inContainsSpecialExtends, inFunctions)
+  match(inElement, inPrefixes, inExtends, inEnv, inPrefix, inIsClassExtends,
+      inInstPolicy, inAccumEl, inContainsSpecialExtends, inFunctions)
     local
       SCode.Element elem;
       Modifier mod;
@@ -632,36 +639,37 @@ algorithm
       InstPolicy ip;
       FunctionHashTable functions;
 
-    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, INST_ALL(), _, cse, functions)
+    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, INST_ALL(), _, cse, functions)
       equation
         (res,functions) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, functions);
       then
         (res :: inAccumEl, inExtends, cse, functions);
 
     case ((elem as SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), mod), _, _, _, _, INST_ONLY_CONST(), _, cse, functions)
+        SCode.CONST())), mod), _, _, _, _, _, INST_ONLY_CONST(), _, cse, functions)
       equation
         (res,functions) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, functions);
       then
         (res :: inAccumEl, inExtends, cse, functions);
 
     case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
-        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, ip, _, _, functions)
+        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, ip, _, _, functions)
       equation
-        (res, cse, functions) = instExtends(elem, mod, inPrefixes, redecls, inEnv, inPrefix, ip, functions);
+        (res, cse, functions) = instExtends(elem, mod, inPrefixes, redecls,
+          inEnv, inPrefix, inIsClassExtends, ip, functions);
         cse = inContainsSpecialExtends or cse;
       then
         (res :: inAccumEl, rest_exts, cse, functions);
 
     case ((elem as SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
-        mod), _, _, _, _, ip, _, cse, functions)
+        mod), _, _, _, _, _, ip, _, cse, functions)
       equation
         (ores,functions) = instPackageConstants(elem, mod, inEnv, inPrefix, functions);
         accum_el = List.consOption(ores, inAccumEl);
       then
         (accum_el, inExtends, cse, functions);
 
-    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _, _)
+    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"SCodeInst.instElementList_dispatch ran out of extends!."});
@@ -797,6 +805,7 @@ protected function instExtends
   input list<SCodeEnv.Redeclaration> inRedeclares;
   input Env inEnv;
   input Prefix inPrefix;
+  input Boolean inIsClassExtends;
   input InstPolicy inInstPolicy;
   input FunctionHashTable inFunctions;
   output Element outElement;
@@ -804,7 +813,8 @@ protected function instExtends
   output FunctionHashTable outFunctions;
 algorithm
   (outElement, outContainsSpecialExtends, outFunctions) :=
-  match(inExtends, inClassMod, inPrefixes, inRedeclares, inEnv, inPrefix, inInstPolicy, inFunctions)
+  match(inExtends, inClassMod, inPrefixes, inRedeclares, inEnv, inPrefix,
+      inIsClassExtends, inInstPolicy, inFunctions)
     local
       Absyn.Path path;
       SCode.Mod smod;
@@ -818,13 +828,13 @@ algorithm
       InstPolicy ip;
       Prefixes prefs;
       FunctionHashTable functions;
+      String name;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        _, _, _, _, _, ip, functions)
+        _, _, _, _, _, _, ip, functions)
       equation
         // Look up the extended class.
-        (item, path, env) = SCodeLookup.lookupClassName(path, inEnv, info);
-        path = SCodeEnv.mergePathWithEnvPath(path, env);
+        (item, path, env) = lookupExtends(path, inEnv, info, inIsClassExtends);
         checkRecursiveExtends(path, inEnv, info);
 
         // Apply the redeclarations.
@@ -849,6 +859,42 @@ algorithm
 
   end match;
 end instExtends;
+
+protected function lookupExtends
+  input Absyn.Path inBaseClass;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  input Boolean inIsClassExtends;
+  output Item outItem;
+  output Absyn.Path outPath;
+  output Env outEnv;
+algorithm
+  (outItem, outPath, outEnv) :=
+  match(inBaseClass, inEnv, inInfo, inIsClassExtends)
+    local
+      Item item;
+      Env env;
+      Absyn.Path path;
+      String name;
+
+    case (_, _, _, false)
+      equation
+        (item, path, env) = SCodeLookup.lookupClassName(inBaseClass, inEnv, inInfo);
+        path = SCodeEnv.mergePathWithEnvPath(path, env);
+        checkRecursiveExtends(path, inEnv, inInfo);
+      then
+        (item, path, env);
+
+    case (_, _ :: env, _, true)
+      equation
+        name = Absyn.pathLastIdent(inBaseClass);
+        (item, _, env) = SCodeLookup.lookupInheritedName(name, env);
+        path = SCodeEnv.prefixIdentWithEnv(name, env);
+      then
+        (item, path, env);
+
+  end match;
+end lookupExtends;
 
 protected function checkRecursiveExtends
   input Absyn.Path inExtendedClass;

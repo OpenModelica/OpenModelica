@@ -537,8 +537,46 @@ protected
 algorithm
   SCodeEnv.FRAME(clsAndVars = tree) :: _ := inEnv;
   outItem := SCodeEnv.avlTreeGet(tree, inName);
-  (outItem, outEnv) := SCodeEnv.resolveAlias(outItem, inEnv);
+  (outItem, outEnv) := resolveAlias(outItem, inEnv);
 end lookupInClass;
+
+public function resolveAlias
+  "Resolved an alias by looking up the aliased item recursively in the
+   environment until a non-alias item is found."
+  input Item inItem;
+  input Env inEnv;
+  output Item outItem;
+  output Env outEnv;
+algorithm
+  (outItem, outEnv) := match(inItem, inEnv)
+    local
+      String name;
+      Item item;
+      Absyn.Path path;
+      Env env;
+      AvlTree tree;
+
+    case (SCodeEnv.ALIAS(name = name, path = NONE()),
+          SCodeEnv.FRAME(clsAndVars = tree) :: _)
+      equation
+        item = SCodeEnv.avlTreeGet(tree, name);
+        (item, env) = resolveAlias(item, inEnv);
+      then
+        (item, env);
+
+    case (SCodeEnv.ALIAS(name = name, path = SOME(path)), _)
+      equation
+        env = SCodeEnv.getEnvTopScope(inEnv);
+        env = SCodeEnv.enterScopePath(env, path);
+        SCodeEnv.FRAME(clsAndVars = tree) :: _ = env;
+        item = SCodeEnv.avlTreeGet(tree, name);
+        (item, env) = resolveAlias(item, env);
+      then
+        (item, env);
+
+    else (inItem, inEnv);
+  end match;
+end resolveAlias;
 
 public function lookupInBaseClasses
   "Looks up an identifier by following the extends clauses in a scope."
@@ -972,10 +1010,24 @@ public function lookupBaseClass
   input Absyn.Info inInfo;
   output Absyn.Path outBaseClass;
   output Item outItem;
+  output Env outEnv;
 algorithm
-  (SOME(outItem), _, outBaseClass, _) := lookupInBaseClasses(inClass, inEnv,
-    INSERT_REDECLARES(), {});
+  (SOME(outItem), _, outBaseClass, SOME(outEnv)) := lookupInBaseClasses(inClass,
+    inEnv, INSERT_REDECLARES(), {});
 end lookupBaseClass;
+
+public function lookupInheritedName
+  "Looks up an inherited name by searching the extends in the local scope.
+   Silently fails if the name could not be found."
+  input SCode.Ident inName "The name of the element.";
+  input Env inEnv "The environment to search in.";
+  output Item outItem "The found environment item.";
+  output Absyn.Path outBaseClass "The immediate baseclass the name was found in.";
+  output Env outEnv "The environment the item was found in.";
+algorithm
+  (SOME(outItem), SOME(outBaseClass), _, SOME(outEnv)) :=
+    lookupInBaseClasses(inName, inEnv, INSERT_REDECLARES(), {});
+end lookupInheritedName;
 
 public function lookupRedeclaredClassByItem
   input Item inItem;
@@ -1239,8 +1291,30 @@ public function lookupBaseClassName
   output Absyn.Path outName;
   output Env outEnv;
 algorithm
-  (outItem, outName, outEnv, _) := lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
-    SOME(Error.LOOKUP_BASECLASS_ERROR));
+  (outItem, outName, outEnv) := match(inName, inEnv, inInfo)
+    local
+      Absyn.Ident id;
+      Env env;
+      Item item;
+      Absyn.Path path;
+
+    // Special case for the baseclass of a class extends. Should be looked up
+    // among the inherited elements of the enclosing class.
+    case (Absyn.QUALIFIED(name = "$ce", path = Absyn.IDENT(name = id)), _ :: env, _)
+      equation
+        (item, path, env) = lookupInheritedName(id, env);
+      then
+        (item, path, env);
+
+    // Normal baseclass.
+    else
+      equation
+        (item, path, env, _) = lookupName(inName, inEnv, LOOKUP_ANY(), inInfo,
+          SOME(Error.LOOKUP_BASECLASS_ERROR));
+      then
+        (item, path, env);
+
+  end match;
 end lookupBaseClassName;
 
 public function lookupVariableName

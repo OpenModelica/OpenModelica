@@ -81,7 +81,7 @@ encapsulated package SCodeFlattenRedeclare
   from. It's somewhat difficult to only add aliases for classes that are used by
   class extends though, so an alias is added for all replaceable classes in
   SCodeEnv.extendEnvWithClassDef for simplicity's sake. The function
-  SCodeEnv.resolveAlias is then used to resolve any alias items to the real
+  SCodeLookup.resolveAlias is then used to resolve any alias items to the real
   items whenever an item is looked up in the environment.
   
   Class extends on the form 'redeclare class extends X' are thus
@@ -277,7 +277,6 @@ algorithm
       equation
         (path, item) = lookupClassExtendsBaseClass(inName, env, inInfo);
         SCodeCheck.checkClassExtendsReplaceability(item, Absyn.dummyInfo);
-        path = Absyn.pathReplaceIdent(path, inName +& SCodeEnv.BASE_CLASS_SUFFIX);
         ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
         {cls_frame} = SCodeEnv.extendEnvWithExtends(ext, {cls_frame});
         cls = SCode.addElementToClass(ext, inClass);
@@ -304,13 +303,16 @@ algorithm
       Absyn.Path path;
       Item item;
       String basename;
+      Env env;
 
     // Add the base class suffix to the name and try to look it up.
     case (_, _, _)
       equation
         basename = inName +& SCodeEnv.BASE_CLASS_SUFFIX;
-        (path, item) = SCodeLookup.lookupBaseClass(basename, inEnv, inInfo);
-        path = Absyn.joinPaths(path, Absyn.IDENT(basename));
+        (item, _, env) = SCodeLookup.lookupInheritedName(basename, inEnv);
+        // Use a special $ce qualified so that we can find the correct class
+        // with SCodeLookup.lookupBaseClassName.
+        path = Absyn.QUALIFIED("$ce", Absyn.IDENT(basename));
       then
         (path, item);
 
@@ -320,8 +322,7 @@ algorithm
     // instead and return that result if found.
     case (_, _, _)
       equation
-        (path, item) = SCodeLookup.lookupBaseClass(inName, inEnv, inInfo);
-        path = Absyn.joinPaths(path, Absyn.IDENT(inName));
+        (item, path, env) = SCodeLookup.lookupInheritedName(inName, inEnv);
       then
         (path, item);
         
@@ -393,7 +394,7 @@ algorithm
 
     case (_, _, _)
       equation
-        (path, item) = SCodeLookup.lookupBaseClass(inName, inEnv, inInfo);
+        (path, item, _) = SCodeLookup.lookupBaseClass(inName, inEnv, inInfo);
       then
         (path, item);
 
@@ -830,7 +831,7 @@ algorithm
       equation
         name = SCodeEnv.getItemName(item);
         info = SCodeEnv.getItemInfo(item);
-        (path, _) = SCodeLookup.lookupBaseClass(name, inEnv, info);
+        (path, _, _) = SCodeLookup.lookupBaseClass(name, inEnv, info);
       then
         pushRedeclareIntoExtends(item, path, inEnv);
         

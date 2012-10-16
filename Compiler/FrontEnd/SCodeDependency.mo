@@ -868,7 +868,7 @@ algorithm
     case (_, _, _, _)
       equation
         id = Absyn.pathFirstIdent(inBaseClass);
-        (bc, _) = SCodeLookup.lookupBaseClass(id, inEnv, inInfo);
+        (bc, _, _) = SCodeLookup.lookupBaseClass(id, inEnv, inInfo);
         bc_name = Absyn.pathString(bc);
         Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
           {bc_name, id}, inInfo);
@@ -1648,7 +1648,7 @@ algorithm
           info = info), SCodeEnv.CLASS_EXTENDS(), _)
       equation
         // Look up the base class of the class extends, and check if it's used.
-        (item, _, _) = SCodeLookup.lookupClassName(bc, inEnv, info);
+        (item, _, _) = SCodeLookup.lookupBaseClassName(bc, inEnv, info);
         true = SCodeEnv.isItemUsed(item);
         // Ok, the base is used, analyse the class extends to mark it and it's
         // dependencies as used.
@@ -1786,7 +1786,7 @@ algorithm
         /*********************************************************************/
         // Check if the class is used.
         item = SCodeEnv.avlTreeGet(inClsAndVars, name);
-        (resolved_item, _) = SCodeEnv.resolveAlias(item, inEnv);
+        (resolved_item, _) = SCodeLookup.resolveAlias(item, inEnv);
         true = checkClassUsed(resolved_item, cdef);
         // The class is used, recursively collect its contents.
         {class_frame} = SCodeEnv.getItemEnv(resolved_item);

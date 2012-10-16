@@ -736,6 +736,22 @@ algorithm
   _ :: outList := inList;
 end rest;
 
+public function restOrEmpty
+  "Returns all elements except for the first in a list, or the empty list of the
+   list is empty."
+  input list<ElementType> inList;
+  output list<ElementType> outList;
+algorithm
+  outList := match(inList)
+    local
+      list<ElementType> r;
+
+    case {} then {};
+    case _ :: r then r;
+
+  end match;
+end restOrEmpty;
+
 public function getIndexFirst
   input Integer index;
   input list<ElementType> inList;
