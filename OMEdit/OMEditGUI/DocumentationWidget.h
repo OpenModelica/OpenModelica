@@ -46,21 +46,31 @@
 class DocumentationViewer;
 class DocumentationEditor;
 
+class UrlSrc
+{
+public:
+    QString url;
+    bool    isCustomModel;
+
+    UrlSrc(QString u, bool i){url = u; isCustomModel = i;}
+};
+
 class DocumentationWidget : public QWidget
 {
   Q_OBJECT
 private:
-  bool mIsCustomModel;
+  QList<UrlSrc> * mpUrlHistory;
+  int mUrlHistoryPos;
 public slots:
   void editDocumentation();
   void saveChanges();
+  void back();
+  void forward();
 public:
   DocumentationWidget(MainWindow *pParent);
   ~DocumentationWidget();
-  void show(QString className);
+  void show(QString className, bool isCustomModel);
   void showDocumentationEditView(QString className);
-  void setIsCustomModel(bool isCustomModel);
-  bool isCustomModel();
 
   MainWindow *mpParentMainWindow;
   DocumentationViewer *mpDocumentationViewer;
@@ -69,6 +79,8 @@ public:
   QLabel *mpPixmapLabel;
   QPushButton *mpEditButton;
   QPushButton *mpSaveButton;
+  QPushButton *mpForwardButton;
+  QPushButton *mpBackButton;
   QDialogButtonBox *mpButtonBox;
   QFile mDocumentationFile;
   QString mClassName;

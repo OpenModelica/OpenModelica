@@ -887,7 +887,7 @@ void GraphicsView::createTextShape(QPointF point)
 }
 
 void GraphicsView::createBitmapShape(QPointF point)
-{       
+{
   if (mpParentProjectTab->isReadOnly())
     return;
 
@@ -1743,8 +1743,7 @@ void ProjectTab::showModelicaTextView(bool checked)
 void ProjectTab::showDocumentationView()
 {
   mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationDockWidget->show();
-  mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationWidget->setIsCustomModel(true);
-  mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationWidget->show(mModelNameStructure);
+  mpParentProjectTabWidget->mpParentMainWindow->mpDocumentationWidget->show(mModelNameStructure,true);
 }
 
 bool ProjectTab::loadModelFromText(QString modelName)

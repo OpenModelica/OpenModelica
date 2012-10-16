@@ -49,7 +49,8 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
   mpParentMainWindow = pParent;
   mpDocumentationViewer = new DocumentationViewer(this);
   mpDocumentationEditor = new DocumentationEditor(this);
-  setIsCustomModel(false);
+  mpUrlHistory = new QList<UrlSrc>();
+  mUrlHistoryPos = -1;
   mpHeadingLabel = new QPlainTextEdit;
   mpHeadingLabel->setObjectName("DocumentationLabel");
   mpHeadingLabel->setReadOnly(true);
@@ -63,24 +64,47 @@ DocumentationWidget::DocumentationWidget(MainWindow *pParent)
   mpEditButton = new QPushButton(Helper::edit);
   mpEditButton->setAutoDefault(true);
   mpEditButton->setMaximumSize(QSize(120,20));
+  mpEditButton->setVisible(false);
   connect(mpEditButton, SIGNAL(clicked()), SLOT(editDocumentation()));
   mpSaveButton = new QPushButton(Helper::save);
   mpSaveButton->setAutoDefault(false);
   mpSaveButton->setMaximumSize(QSize(100,20));
+  mpSaveButton->setVisible(false);
   connect(mpSaveButton, SIGNAL(clicked()), SLOT(saveChanges()));
+  mpBackButton = new QPushButton(Helper::backwardBrush);
+  mpBackButton->setAutoDefault(false);
+  mpBackButton->setMaximumSize(QSize(120,20));
+  mpBackButton->setVisible(false);
+  connect(mpBackButton, SIGNAL(clicked()), SLOT(back()));
+  mpForwardButton = new QPushButton(Helper::forwardBrush);
+  mpForwardButton->setAutoDefault(false);
+  mpForwardButton->setMaximumSize(QSize(120,20));
+  mpForwardButton->setVisible(false);
+  connect(mpForwardButton, SIGNAL(clicked()), SLOT(forward()));
   QHBoxLayout *horizontalLayout = new QHBoxLayout;
   horizontalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   horizontalLayout->addWidget(mpPixmapLabel);
   horizontalLayout->addWidget(mpHeadingLabel);
-  horizontalLayout->addWidget(mpSaveButton);
-  horizontalLayout->addWidget(mpEditButton);
+  QHBoxLayout *horizontalLayout2 = new QHBoxLayout;
+  horizontalLayout2->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  horizontalLayout2->addWidget(mpBackButton);
+  horizontalLayout2->addWidget(mpForwardButton);
+  QHBoxLayout *horizontalLayout3 = new QHBoxLayout;
+  horizontalLayout3->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  horizontalLayout3->addWidget(mpSaveButton);
+  horizontalLayout3->addWidget(mpEditButton);
   // set layout
   QVBoxLayout *verticalLayout = new QVBoxLayout;
   verticalLayout->setAlignment(Qt::AlignTop | Qt::AlignLeft);
   verticalLayout->addLayout(horizontalLayout);
-  verticalLayout->addWidget(mpDocumentationViewer);
-  verticalLayout->addWidget(mpDocumentationEditor);
+  verticalLayout->addLayout(horizontalLayout2);
+  verticalLayout->addLayout(horizontalLayout3);
+  verticalLayout->addWidget(mpDocumentationViewer,1);
+  verticalLayout->addWidget(mpDocumentationEditor,1);
   setLayout(verticalLayout);
+  mpDocumentationViewer->setVisible(false);
+  mpDocumentationEditor->setVisible(false);
+  mpPixmapLabel->setVisible(false);
 }
 
 //! Destructor
@@ -93,7 +117,7 @@ DocumentationWidget::~DocumentationWidget()
 
 //! Shows the documentation of a model
 //! @param className the model name
-void DocumentationWidget::show(QString className)
+void DocumentationWidget::show(QString className, bool isCustomModel)
 {
   mClassName = className;
   mpHeadingLabel->setPlainText(className);
@@ -109,10 +133,11 @@ void DocumentationWidget::show(QString className)
     mpPixmapLabel->setVisible(false);
   }
   // show edit and save buttons if show is called for a custom model
-  if (isCustomModel())
+  if (isCustomModel)
   {
     mpEditButton->setVisible(true);
-    mpEditButton->setDisabled(false);
+    //mpEditButton->setDisabled(false);
+    mpEditButton->setText(Helper::edit);
     mpSaveButton->setVisible(true);
     mpSaveButton->setDisabled(true);
   }
@@ -134,9 +159,45 @@ void DocumentationWidget::show(QString className)
   out << documentation;
   mDocumentationFile.close();
 
+  if ((mUrlHistoryPos >= 0) && (className == mpUrlHistory->at(mUrlHistoryPos).url))
+  {
+    /* reload url */
+  }
+  else
+  {
+    /* new url */
+    /* remove all following urls */
+    while (mpUrlHistory->count() > (mUrlHistoryPos+1))
+    {
+      mpUrlHistory->removeLast();
+    }
+    /* append new url */
+    mpUrlHistory->append(UrlSrc(className, isCustomModel));
+    mUrlHistoryPos++;
+  }
+  if (mUrlHistoryPos > 0)
+  {
+      mpBackButton->setDisabled(false);
+  }
+  else
+  {
+      mpBackButton->setDisabled(true);
+  }
+  if (mpUrlHistory->count() == (mUrlHistoryPos+1))
+  {
+      mpForwardButton->setDisabled(true);
+  }
+  else
+  {
+      mpForwardButton->setDisabled(false);
+  }
+
   mpDocumentationViewer->setUrl(mDocumentationFile.fileName());
   mpDocumentationViewer->setVisible(true);
-  mpDocumentationEditor->setVisible(false);
+  mpBackButton->setVisible(true);
+  mpForwardButton->setVisible(true);
+
+  mpDocumentationEditor->hide();
 }
 
 //! Shows the documenation editing view.
@@ -145,27 +206,13 @@ void DocumentationWidget::showDocumentationEditView(QString className)
 {
   mpDocumentationViewer->hide();
   // get the already existing documentation text of the model
-  mpDocumentationEditor->toPlainText();
-  if (!mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className).isEmpty())
-    mpDocumentationEditor->setPlainText(mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className));
+  QString doc = mpParentMainWindow->mpOMCProxy->getDocumentationAnnotation(className);
+  if (!doc.isEmpty())
+    mpDocumentationEditor->setPlainText(doc);
   else
     mpDocumentationEditor->setPlainText("<html>\n\n</html>");
   mpDocumentationEditor->setFocus();
   mpDocumentationEditor->show();
-}
-
-//! Sets the model as custom model.
-//! @param isCustomModel
-void DocumentationWidget::setIsCustomModel(bool isCustomModel)
-{
-  mIsCustomModel = isCustomModel;
-}
-
-//! Returns true if the model is a custom model.
-//! @return bool true if model is a custom model
-bool DocumentationWidget::isCustomModel()
-{
-  return mIsCustomModel;
 }
 
 //! Reimplementation of paintevent. Draws a rectangle around QWidget
@@ -182,9 +229,19 @@ void DocumentationWidget::paintEvent(QPaintEvent *event)
 
 void DocumentationWidget::editDocumentation()
 {
-  showDocumentationEditView(mClassName);
-  mpEditButton->setDisabled(true);
-  mpSaveButton->setDisabled(false);
+  if (mpSaveButton->isEnabled() == false)
+  {
+    showDocumentationEditView(mClassName);
+    //mpEditButton->setDisabled(true);
+    mpEditButton->setText(Helper::cancel);
+    mpSaveButton->setDisabled(false);
+    mpBackButton->setDisabled(true);
+    mpForwardButton->setDisabled(true);
+  }
+  else
+  {
+    show(mClassName,true);
+  }
 }
 
 //! Save the changes made to the documentation of the model.
@@ -194,13 +251,33 @@ void DocumentationWidget::saveChanges()
   if(doc.startsWith("<html>", Qt::CaseInsensitive) && doc.endsWith("</html>", Qt::CaseInsensitive))
   {
     mpParentMainWindow->mpOMCProxy->addClassAnnotation(mClassName,"annotate=Documentation(info = \""+StringHandler::escape(doc)+"\")");
-    show(mClassName);
+    show(mClassName,true);
   }
   else
   {
     QString message = QString(GUIMessages::getMessage(GUIMessages::INCORRECT_HTML_TAGS));
     mpParentMainWindow->mpMessageWidget->addGUIProblem(new ProblemItem("", false, 0, 0, 0, 0, message, Helper::scriptingKind,
                                                                        Helper::errorLevel, 0, mpParentMainWindow->mpMessageWidget->mpProblem));
+  }
+}
+
+//! Go to previous document
+void DocumentationWidget::back()
+{
+  if (mUrlHistoryPos > 0)
+  {
+      mUrlHistoryPos--;
+      show(mpUrlHistory->at(mUrlHistoryPos).url,mpUrlHistory->at(mUrlHistoryPos).isCustomModel);
+  }
+}
+
+//! Go to next document
+void DocumentationWidget::forward()
+{
+  if ((mUrlHistoryPos+1) < mpUrlHistory->count())
+  {
+      mUrlHistoryPos++;
+      show(mpUrlHistory->at(mUrlHistoryPos).url,mpUrlHistory->at(mUrlHistoryPos).isCustomModel);
   }
 }
 
@@ -265,7 +342,7 @@ void DocumentationViewer::processLinkClick(QUrl url)
     QString className;
     className = url.toString().mid(10, url.toString().length() - 1);
     // send the new className to DocumentationWidget
-    mpParentDocumentationWidget->show(className);
+    mpParentDocumentationWidget->show(className, false);
   }
   // if it is normal http request then check if its not redirected to https
   else
@@ -324,12 +401,12 @@ void DocumentationViewer::mousePressEvent(QMouseEvent *event)
 QWebView *DocumentationViewer::createWindow(QWebPage::WebWindowType type)
 {
     Q_UNUSED(type);
- 
+
     QWebView *webView = new QWebView;
     QWebPage *newWeb = new QWebPage(webView);
     webView->setAttribute(Qt::WA_DeleteOnClose, true);
     webView->setPage(newWeb);
     webView->show();
- 
+
     return webView;
 }

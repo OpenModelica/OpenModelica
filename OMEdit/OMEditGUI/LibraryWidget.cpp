@@ -874,8 +874,7 @@ void LibraryTree::viewDocumentation()
   MainWindow *pMainWindow = mpParentLibraryWidget->mpParentMainWindow;
   pMainWindow->mpDocumentationDockWidget->show();
   LibraryTreeNode *pItem = dynamic_cast<LibraryTreeNode*>(mpParentLibraryWidget->mSelectedLibraryNode);
-  pMainWindow->mpDocumentationWidget->setIsCustomModel(false);
-  pMainWindow->mpDocumentationWidget->show(pItem->mNameStructure);
+  pMainWindow->mpDocumentationWidget->show(pItem->mNameStructure,false);
 }
 
 void LibraryTree::flatModel()
