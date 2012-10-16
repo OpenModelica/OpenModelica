@@ -157,8 +157,10 @@ const char* getModelVariableBaseType(fmi1_import_variable_t* variable)
  */
 char* getModelVariableName(fmi1_import_variable_t* variable)
 {
-  char* res = fmi1_import_get_variable_name(variable);
-  int length = strlen(res);
+  const char* name = fmi1_import_get_variable_name(variable);
+  int length = strlen(name);
+  char* res = strndup(name, length);
+
   charReplace(res, length, '.', '_');
   charReplace(res, length, '[', '_');
   charReplace(res, length, ']', '_');
@@ -316,7 +318,9 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   for (; i < model_variables_list_size ; i++) {
     fmi1_import_variable_t* model_variable = fmi1_import_get_variable(model_variables_list, i);
     void* variable_instance = mk_icon((intptr_t)model_variable);
-    void* variable_name = mk_scon(getModelVariableName(model_variable));
+    char *name = getModelVariableName(model_variable);
+    void* variable_name = mk_scon(name);
+    free(name);
     const char* description = fmi1_import_get_variable_description(model_variable);
     void* variable_description = description ? mk_scon(description) : mk_scon("");
     void* variable_base_type = mk_scon(getModelVariableBaseType(model_variable));
