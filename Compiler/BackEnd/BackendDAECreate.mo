@@ -1323,7 +1323,7 @@ algorithm
       list<BackendDAE.Equation> eqnl;
       list<BackendDAE.WhenOperator> reinit;
       DAE.Exp cre,e,cond,level;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cr2;
       list<DAE.Element> xs,eqns;
       DAE.Element el;
       DAE.ElementSource source;
@@ -1335,6 +1335,20 @@ algorithm
       Absyn.Path functionName;
 
     case ({},_,_,_,_) then (iEquationLst,iReinitStatementLst);
+    case (DAE.EQUEQUATION(cr1 = cr,cr2 = cr2, source = source) :: xs,_,_,_,_)
+      equation
+        e = Expression.crefExp(cr2);
+        (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, BackendDAE.WHEN_EQUATION(1,BackendDAE.WHEN_EQ(inCond,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+      then
+        (eqnl,reinit);
+
+    case (DAE.DEFINE(componentRef = cr,exp = e, source = source) :: xs,_,_,_,_)
+      equation
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, BackendDAE.WHEN_EQUATION(1,BackendDAE.WHEN_EQ(inCond,cr,e,NONE()),source) :: iEquationLst, iReinitStatementLst);
+      then
+        (eqnl,reinit);
+
     case (DAE.EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),scalar = e, source = source) :: xs,_,_,_,_)
       equation
         (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);

@@ -2014,6 +2014,8 @@ algorithm
     case (DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr))) then (true,cr);
     // alias -a
     case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr))) then (true,cr);
+    // alias not a
+    case (DAE.LUNARY(DAE.NOT(_),DAE.CREF(componentRef = cr))) then (true,cr);
   end match;
 end aliasExp;
 
