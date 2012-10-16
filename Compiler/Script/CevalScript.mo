@@ -835,7 +835,9 @@ algorithm
       FMI.ExperimentAnnotation fmiExperimentAnnotation;
       FMI.Info fmiInfo;
       list<String> vars_1,args,strings,strs,strs1,strs2,visvars;
-      Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r;
+      list<String> postOptModStrings,postOptModStringsOrg;
+      String strlinearizeTime;
+      Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r, linearizeTime;
       Interactive.Statements istmts; 
       Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
       Env.Cache cache;
@@ -1383,6 +1385,49 @@ algorithm
           simOptionsAsString(vals));
       then
         (cache,simValue,st);
+        
+    case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
+      equation
+
+        System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
+        // ensure that generateSymbolicLinearization has been activated.
+        //we need to ensure that linearization is done before
+        //we remove all unsued equations. 
+        postOptModStringsOrg = Flags.getConfigStringList(Flags.POST_OPT_MODULES);
+        postOptModStrings = List.deleteMember(postOptModStringsOrg, "removeUnusedFunctions");
+        postOptModStrings = Util.if_(List.notMember("generateSymbolicLinearization",postOptModStrings),
+                                     listAppend(postOptModStrings,{"generateSymbolicLinearization", "removeUnusedFunctions"}),
+                                     postOptModStrings);
+        Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStrings);                                     
+        
+        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        Values.REAL(linearizeTime) = getListNthShowError(vals,"try to get stop time",0,2);
+        cit = winCitation();
+        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
+        executable1=Util.if_(ifcpp,"Simulation",executable);
+        executableSuffixedExe = stringAppend(executable1, System.getExeExt());
+        strlinearizeTime = realString(linearizeTime);
+        // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
+        sim_call = stringAppendList({cit,compileDir,executableSuffixedExe,cit," ","-l ",strlinearizeTime," ",simflags," > output.log 2>&1"});
+        System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
+        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+        0 = System.systemCall(sim_call);
+        
+        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+        timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
+        simValue = createSimulationResult(
+           result_file, 
+           simOptionsAsString(vals), 
+           System.readFile("output.log"),
+           ("timeTotal", Values.REAL(timeTotal)) :: 
+           ("timeSimulation", Values.REAL(timeSimulation)) ::
+          resultValues);
+        newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, st);
+        //Reset PostOptModules flags
+        Flags.setConfigStringList(Flags.POST_OPT_MODULES, postOptModStringsOrg);
+      then
+        (cache,simValue,newst);
         
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st,_)
       equation
@@ -3055,6 +3100,39 @@ algorithm
         fail();
   end match; 
 end getListFirstShowError;
+
+protected function getListNthShowError
+"@author: adrpo
+ return the N-th element in the list and the rest of values.
+ if the list is empty display the errorMessage!"
+  input list<Values.Value> inValues;
+  input String errorMessage;
+  input Integer currentElement;
+  input Integer nthElement;
+  output Values.Value outValue;
+algorithm
+  outValue := matchcontinue(inValues, errorMessage, currentElement, nthElement)
+    local
+      Values.Value v;
+      list<Values.Value> lst,rest;
+      Integer i,n;
+
+    // everything is fine and dandy
+    case (lst, _, i, n)
+      equation
+        true = i < n;
+        (_,rest) = getListFirstShowError(lst,errorMessage);
+        v = getListNthShowError(rest,errorMessage, i+1, n);
+      then v;
+
+    // everything is fine and dandy
+    case (lst, _, i, n)
+      equation
+      (v, _) = getListFirstShowError(lst,errorMessage);
+    then v;
+
+  end matchcontinue;
+end getListNthShowError;
 
 protected function buildModel "function buildModel
  author: x02lucpo

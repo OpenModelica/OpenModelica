@@ -3398,7 +3398,8 @@ public function incidenceMatrix
 "function: incidenceMatrix
   author: PA, adrpo
   Calculates the incidence matrix, i.e. which variables are present in each equation.
-  You can ask for absolute indexes or normal (negative for der) via the IndexType"
+  You can ask for absolute indexes or normal (negative for der) via the IndexType.
+    wbraun: beware dim(IncidenceMatrix) != dim(IncidenceMatrixT) due to array equations. "
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndexType;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
@@ -8190,6 +8191,7 @@ algorithm
   Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dump, outSODE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE);
+  checkBackendDAEWithErrorMsg(outSODE);
 end getSolvedSystem;
 
 public function preOptimiseBackendDAE

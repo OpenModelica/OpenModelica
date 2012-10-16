@@ -337,7 +337,6 @@ package SimCode
       Integer numStringAlgVars;
       Integer numStringParamVars;
       Integer numStringAliasVars;
-      Integer numJacobianVars;
       Integer numEquations;
       Integer numNonLinearResFunctions;   
       Option <Integer> dimODE1stOrder;
@@ -364,7 +363,6 @@ package SimCode
       list<SimVar> stringParamVars;
       list<SimVar> stringAliasVars;
       list<SimVar> extObjVars;
-      list<SimVar> jacobianVars; //all vars for the matrices A,B,C,D
       list<SimVar> constVars;
       list<SimVar> intConstVars;
       list<SimVar> boolConstVars;

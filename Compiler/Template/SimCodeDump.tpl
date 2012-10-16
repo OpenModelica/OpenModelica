@@ -26,7 +26,6 @@ template dumpSimCode(SimCode code)
   <%dumpVars(vars.stringParamVars)%>
   <%dumpVars(vars.stringAliasVars)%>
   <%dumpVars(vars.extObjVars)%>
-  <%dumpVars(vars.jacobianVars)%>
   <%dumpVars(vars.constVars)%>
   <%dumpEqs(sc.allEquations)%>
   >>

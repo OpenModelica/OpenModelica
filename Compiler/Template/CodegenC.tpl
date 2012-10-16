@@ -1479,9 +1479,15 @@ case _ then
       data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%cref(cref)%>$pDER<%matrixname%>$indexdiff] = <%listLength(indexes)%>;
       >>
       ;separator="\n")
-      let indexElems = ( flatten(splitTuple212List(sparsepattern)) |> indexes hasindex index0 => 
-        <<data->simulationInfo.analyticJacobians[index].sparsePattern.index[<%index0%>] = <%cref(indexes)%>$pDER<%matrixname%>$indexdiffed;>> 
+      let indexElems = ( sparsepattern |> (cref,indexes) =>
+        let indexrows = ( indexes |> indexrow hasindex index0 => 
+        <<
+        i = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[<%cref(cref)%>$pDER<%matrixname%>$indexdiff] - <%listLength(indexes)%>;
+        data->simulationInfo.analyticJacobians[index].sparsePattern.index[i+<%index0%>] = <%cref(indexrow)%>$pDER<%matrixname%>$indexdiffed;
+        >> 
         ;separator="\n")
+      '<%indexrows%>'
+      ;separator="\n")         
       let colorArray = (colorList |> (indexes) hasindex index0 => 
         let colorCol = ( indexes |> i_index => 
         'data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[<%cref(i_index)%>$pDER<%matrixname%>$indexdiff] = <%intAdd(index0,1)%>;' 
@@ -2422,7 +2428,6 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
     numberOfResidualsForInitialization  = "<%vi.numInitialResiduals%>"  cmt_numberOfResidualsForInitialization  = "NR:       number of residuals for initialialization function, OMC"
     numberOfExternalObjects             = "<%vi.numExternalObjects%>"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
     numberOfFunctions                   = "<%listLength(functions)%>"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"
-    numberOfJacobianVariables           = "<%vi.numJacobianVars%>"  cmt_numberOfJacobianVariables           = "NJACVARS: number of jacobian variables,                       OMC"    
  
     numberOfContinuousStates            = "<%vi.numStateVars%>"  cmt_numberOfContinuousStates            = "NX:       number of states,                                   FMI"     
     numberOfRealAlgebraicVariables      = "<%vi.numAlgVars%>"  cmt_numberOfRealAlgebraicVariables      = "NY:       number of real variables,                           OMC"
