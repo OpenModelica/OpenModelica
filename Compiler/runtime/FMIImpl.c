@@ -153,13 +153,14 @@ const char* getModelVariableBaseType(fmi1_import_variable_t* variable)
 }
 
 /*
- * Reads the model variable base type.
+ * Reads the model variable name. Returns a malloc'd string that should be
+ * free'd.
  */
 char* getModelVariableName(fmi1_import_variable_t* variable)
 {
   const char* name = fmi1_import_get_variable_name(variable);
-  int length = strlen(name);
-  char* res = strndup(name, length);
+  char* res = strdup(name);
+  int length = strlen(res);
 
   charReplace(res, length, '.', '_');
   charReplace(res, length, '[', '_');
