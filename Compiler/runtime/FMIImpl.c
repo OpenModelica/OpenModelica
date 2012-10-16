@@ -174,28 +174,33 @@ char* getModelVariableName(fmi1_import_variable_t* variable)
 /*
  * Reads the model variable start value.
  */
-void* getModelVariableStartValue(fmi1_import_variable_t* variable)
+void* getModelVariableStartValue(fmi1_import_variable_t* variable, int hasStartValue)
 {
   fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(variable);
   fmi1_import_real_variable_t* fmiRealModelVariable;
   fmi1_import_integer_variable_t* fmiIntegerModelVariable;
   fmi1_import_bool_variable_t* fmiBooleanModelVariable;
   fmi1_import_string_variable_t* fmiStringModelVariable;
-  fmi1_import_enum_variable_t * fmiEnumerationModelVariable;
+  fmi1_import_enum_variable_t* fmiEnumerationModelVariable;
   switch (type) {
     case fmi1_base_type_real:
+      if (!hasStartValue) return mk_rcon(0);
       fmiRealModelVariable = fmi1_import_get_variable_as_real(variable);
       return fmiRealModelVariable ? mk_rcon(fmi1_import_get_real_variable_start(fmiRealModelVariable)) : mk_rcon(0);
     case fmi1_base_type_int:
+      if (!hasStartValue) return mk_icon(0);
       fmiIntegerModelVariable = fmi1_import_get_variable_as_integer(variable);
       return fmiIntegerModelVariable ? mk_icon(fmi1_import_get_integer_variable_start(fmiIntegerModelVariable)) : mk_icon(0);
     case fmi1_base_type_bool:
+      if (!hasStartValue) return mk_bcon(0);
       fmiBooleanModelVariable = fmi1_import_get_variable_as_boolean(variable);
       return fmiBooleanModelVariable ? mk_bcon(fmi1_import_get_boolean_variable_start(fmiBooleanModelVariable)) : mk_bcon(0);
     case fmi1_base_type_str:
+      if (!hasStartValue) return mk_scon("");
       fmiStringModelVariable = fmi1_import_get_variable_as_string(variable);
       return fmiStringModelVariable ? mk_scon(fmi1_import_get_string_variable_start(fmiStringModelVariable)) : mk_scon(0);
     case fmi1_base_type_enum:
+      if (!hasStartValue) return mk_icon(0);
       fmiEnumerationModelVariable = fmi1_import_get_variable_as_enum(variable);
       return fmiEnumerationModelVariable ? mk_icon(fmi1_import_get_enum_variable_start(fmiEnumerationModelVariable)) : mk_icon(0);
     default:
@@ -241,9 +246,10 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   // extract the fmu file and read the version
   fmi_version_enu_t version;
   version = fmi_import_get_fmi_version(context, file_name, working_directory);
-  if (version != fmi_version_1_enu) {
+  if (version > fmi_version_1_enu) {
     fmi_import_free_context(context);
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Only version 1.0 is supported so far."), NULL, 0);
+    const char* tokens[1] = {fmi_version_to_string(version)};
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("The FMU version is %s. Only version 1.0 is supported so far."), tokens, 1);
     return 0;
   }
   // parse the xml file
@@ -327,11 +333,11 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     void* variable_base_type = mk_scon(getModelVariableBaseType(model_variable));
     void* variable_variability = mk_scon(getModelVariableVariability(model_variable));
     void* variable_causality = mk_scon(getModelVariableCausality(model_variable));
-    void* variable_has_start_value = mk_bcon(fmi1_import_get_variable_has_start(model_variable));
-    void* variable_start_value = getModelVariableStartValue(model_variable);
+    int hasStartValue = fmi1_import_get_variable_has_start(model_variable);
+    void* variable_has_start_value = mk_bcon(hasStartValue);
+    void* variable_start_value = getModelVariableStartValue(model_variable, hasStartValue);
     void* variable_is_fixed = mk_bcon(fmi1_import_get_variable_is_fixed(model_variable));
     void* variable_value_reference = mk_icon(model_variables_value_reference_list[i]);
-    //fprintf(stderr, "%s Variable name = %s, valueReference = %d\n", getModelVariableBaseType(model_variable), getModelVariableName(model_variable), model_variables_value_reference_list[i]);fflush(NULL);
     void* variable;
     fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(model_variable);
     switch (type) {
