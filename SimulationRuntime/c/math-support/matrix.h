@@ -148,7 +148,7 @@ do { \
     } else  {\
       /* while the initialization it's ok to every time a solution */ \
       if (!data->simulationInfo.initial){ \
-        WARNING1("Error solving hybrid equation system with index", index); \
+        WARNING2("Error solving hybrid equation system with index %d at time %e", index, data->localData[0]->timeValue); \
       } \
       data->simulationInfo.needToIterate = 1; \
       data->simulationInfo.found_solution = -1; \
