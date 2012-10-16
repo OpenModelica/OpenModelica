@@ -1460,7 +1460,7 @@ algorithm
       then
         (cache,Values.BOOL(b),st);
     
-    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir)},st,_)
+    case (cache,env,"importFMUOld",{Values.STRING(filename),Values.STRING(workdir)},st,_)
       equation
         // get OPENMODELICAHOME
         omhome = Settings.getInstallationDirectoryPath();
@@ -1473,11 +1473,11 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
-    case (cache,env,"importFMU",_,st,_)
+    case (cache,env,"importFMUOld",_,st,_)
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1)},st,_)
       equation
         Error.clearMessages() "Clear messages";
         true = System.regularFileExists(filename);
@@ -1492,14 +1492,15 @@ algorithm
         pd = System.pathDelimiter();
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str2 = FMI.getFMIType(fmiInfo);
-        filename_1 = stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"});
-        System.writeFile(filename_1, str);
+        outputFile = stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"});
+        filename_1 = Util.if_(b1,stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}),stringAppendList({str1,"_",str2,"_FMU.mo"}));
+        System.writeFile(outputFile, str);
         /* Release FMI objects */
         FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext);
       then
         (cache,Values.STRING(filename_1),st);
         
-    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1)},st,_)
       equation
         false = System.regularFileExists(filename);
         Error.clearMessages() "Clear messages";
@@ -1507,7 +1508,7 @@ algorithm
       then
         (cache,Values.STRING(""),st);
     
-    case (cache,env,"importFMUNew",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1)},st,_)
       then
         (cache,Values.STRING(""),st);
         

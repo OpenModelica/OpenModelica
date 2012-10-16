@@ -1872,7 +1872,7 @@ external "builtin";
 annotation(preferredView="text");
 end reopenStandardStream;
 
-function importFMU "Imports the Functional Mockup Unit
+function importFMUOld "Imports the Functional Mockup Unit
   Example command:
   importFMU(\"A.fmu\");"
   input String filename "the fmu file name";
@@ -1880,19 +1880,20 @@ function importFMU "Imports the Functional Mockup Unit
   output Boolean success "Returns true on success";
 external "builtin";
 annotation(preferredView="text");
-end importFMU;
+end importFMUOld;
 
 /* Under Development */
-function importFMUNew "Imports the Functional Mockup Unit
+function importFMU "Imports the Functional Mockup Unit
   Example command:
   importFMU(\"A.fmu\");"
   input String filename "the fmu file name";
   input String workdir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
   input Integer loglevel := 2 "loglevel_nothing=0;loglevel_fatal=1;loglevel_error=2;loglevel_warning=3;loglevel_info=4;loglevel_verbose=5;loglevel_debug=6";
+  input Boolean fullPath := false "When true the full output path is returned otherwise only the file name.";
   output String generatedFileName "Returns the full path of the generated file.";
 external "builtin";
 annotation(preferredView="text");
-end importFMUNew;
+end importFMU;
 /* Under Development */
 
 function getSourceFile "Returns the filename of the class."
