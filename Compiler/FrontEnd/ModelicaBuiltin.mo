@@ -1896,6 +1896,63 @@ annotation(preferredView="text");
 end importFMU;
 /* Under Development */
 
+
+function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
+ The only required argument is the className, while all others have some efault values. 
+ simulate(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], 
+           [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+ Example command:
+  simulate(A);
+"
+  input TypeName className "the class that should simulated";
+  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
+  input Real stepSize := 0.002 "step size that is used for the result file. <default> = 0.002";
+  input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method := "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
+  input Boolean storeInTemp := "<default>" "storeInTemp. <default> = false";
+  input Boolean noClean := "<default>" "noClean. <default> = false";
+  input String options := "<default>" "options. <default> = \"\"";
+  input String outputFormat := "<default>" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter := "<default>" "Filter for variables that should store in result file. <default> = \".*\"";
+  input Boolean measureTime := "<default>" "creates a html file with proffiling data for model simulation. <default> = false";
+  input String cflags := "<default>" "cflags. <default> = \"\"";
+  input String simflags := "<default>" "simflags. <default> = \"\"";
+external "builtin";
+annotation(preferredView="text");
+end simulate;
+
+function linearize "creates a model with the symbolic linearization matrixes.
+At stopTime the linearization matrixes are evaluated and a modelica model is created.
+ The only required argument is the className, while all others have some efault values. 
+ linerize(className, [startTime], [stopTime], [numberOfIntervals], [stepSize], [tolerance], [method], [fileNamePrefix], 
+           [storeInTemp], [noClean], [options], [outputFormat], [variableFilter], [measureTime], [cflags], [simflags])
+ Example command:
+  linearize(A, stopTime=0.0);
+  => create the file \"linear_A.mo\" that contain the linearized matrixes at stopTime.
+"
+  input TypeName className "the class that should simulated";
+  input Real startTime := "<default>" "the start time of the simulation. <default> = 0.0";
+  input Real stopTime := 1.0 "the stop time of the simulation. <default> = 1.0";
+  input Real numberOfIntervals := 500 "number of intervals in the result file. <default> = 500";
+  input Real stepSize := 0.002 "step size that is used for the result file. <default> = 0.002";
+  input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
+  input String method := "<default>" "integration method used for simulation. <default> = dassl";
+  input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
+  input Boolean storeInTemp := "<default>" "storeInTemp. <default> = false";
+  input Boolean noClean := "<default>" "noClean. <default> = false";
+  input String options := "<default>" "options. <default> = \"\"";
+  input String outputFormat := "<default>" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter := "<default>" "Filter for variables that should store in result file. <default> = \".*\"";
+  input Boolean measureTime := "<default>" "creates a html file with proffiling data for model simulation. <default> = false";
+  input String cflags := "<default>" "cflags. <default> = \"\"";
+  input String simflags := "<default>" "simflags. <default> = \"\"";
+external "builtin";
+annotation(preferredView="text");
+end linearize;
+
 function getSourceFile "Returns the filename of the class."
   input TypeName class_;
   output String filename "empty on failure";
