@@ -1289,9 +1289,13 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
     end when;
   >>
+  else if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
+  <<
+    fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowControlEvent);
+  >>
   %>
     when terminal() then
-        fmi_status := fmiFunctions.fmiTerminate(fmi);
+      fmi_status := fmiFunctions.fmiTerminate(fmi);
     end when;
   equation
     flowControlEvent = fmiFunctions.fmiCompletedIntegratorStep(fmi, callEventUpdate, flowControlStatesInputs);
