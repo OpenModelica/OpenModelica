@@ -2495,14 +2495,23 @@ protected function unparseParam "function: unparseParam
 algorithm
   outString := match (inFuncArg)
     local
-      Ident tstr,res,id,cstr;
+      Ident tstr,res,id,cstr,estr;
       Type ty;
       DAE.Const c;
-    case ((id,ty,c,_))
+      DAE.Exp exp;
+    case ((id,ty,c,NONE()))
       equation
         tstr = unparseType(ty);
         cstr = DAEUtil.constStrFriendly(c);
-        res = stringAppendList({cstr,id,":",tstr});
+        res = stringAppendList({tstr," ",cstr,id});
+      then
+        res;
+    case ((id,ty,c,SOME(exp)))
+      equation
+        tstr = unparseType(ty);
+        cstr = DAEUtil.constStrFriendly(c);
+        estr = ExpressionDump.printExpStr(exp);
+        res = stringAppendList({tstr," ",cstr,id," := ",estr});
       then
         res;
   end match;
