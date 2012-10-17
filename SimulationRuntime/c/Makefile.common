@@ -56,8 +56,8 @@ RUNTIME_HEADERS = ./f2c.h \
 ./util/varinfo.h
 
 RUNTIME_HEADERS_FMU = \
-./simulation/solver/initialization.h \
-./simulation/solver/initialization_data.h \
+./simulation/solver/initialization/initialization.h \
+./simulation/solver/initialization/initialization_data.h \
 ./simulation/solver/events.h \
 ./simulation/solver/solver_main.h \
 ./util/list.h \
@@ -94,13 +94,16 @@ $(UTILOBJSPATH):%.o: %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
 $(MATHOBJSPATH):%.o: %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(MATHPATH) -I$(UTILPATH)
 
-$(SOLVEROBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
+$(SOLVEROBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
+
+$(INITIALIZATIONOBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
 
 $(RESULTSOBJSPATH):%.o: $(RESULTSFILESPATH) $(COMMON_HEADERS)
 
 $(SIMOBJSPATH):%.o: %.cpp linearization/linearize.cpp $(SIMHFILESPATH) $(COMMON_HEADERS)
-	$(CXX) -c $(CXXFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -Ilinearization/
+	$(CXX) -c $(CXXFLAGS) -o $@ $< -I$(SIMPATH) -I$(UTILPATH) -I$(MATHPATH) -I$(RESULTSPATH) -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -Ilinearization/
 
 ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
 	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE)

@@ -31,7 +31,7 @@
 /*! \file newuoa_initialization.c
  */
 
-#include "newuoa_initialization.h"
+#include "method_newuoa.h"
 #include "simulation_data.h"
 #include "omc_error.h"
 #include "openmodelica.h"

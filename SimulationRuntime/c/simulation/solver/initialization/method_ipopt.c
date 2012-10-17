@@ -32,7 +32,7 @@
  */
 
 #include "../../../../Compiler/runtime/config.h"
-#include "ipopt_initialization.h"
+#include "method_ipopt.h"
 #include "simulation_data.h"
 #include "omc_error.h"
 
@@ -73,6 +73,7 @@
     IPOPT_DATA *ipopt_data = (IPOPT_DATA*)user_data;
 
     setZ(ipopt_data->initData, x);
+    updateZScaled(ipopt_data->initData);
     *obj_value = leastSquareWithLambda(ipopt_data->data, ipopt_data->initData, 1.0);
 
     return TRUE;
@@ -501,6 +502,7 @@
         &ipopt_data);   /* Pointer to user data */
 
     setZ(initData, x);
+    updateZScaled(initData);
 
     /* free allocated memory */
     FreeIpoptProblem(nlp);

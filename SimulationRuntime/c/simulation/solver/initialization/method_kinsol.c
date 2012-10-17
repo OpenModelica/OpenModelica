@@ -32,7 +32,7 @@
  */
 
 #include "../../../../Compiler/runtime/config.h"
-#include "kinsol_initialization.h"
+#include "method_kinsol.h"
 #include "simulation_data.h"
 #include "omc_error.h"
 
@@ -58,7 +58,6 @@
   {
     INIT_DATA* initData;
     DATA* data;
-    int useScaling;
   }KINSOL_DATA;
 
   /*! \fn kinsol_residuals
@@ -80,19 +79,11 @@
 
     double* lb = initData->min;
     double* ub = initData->max;
-    double* nominal = initData->nominal;
     long i;
 
-    if(kdata->useScaling==0)
-      setZ(initData, zdata);/*memcpy(initData->z, zdata, initData->nz*sizeof(double));*/
-    else
-      setZScaled(initData, zdata);
-
-    if(kdata->useScaling==0)
-      initData->nominal = NULL;
+    setZScaled(initData, zdata);
+    updateZ(initData);  /* can be removed later */
     leastSquareWithLambda(data, initData, 1.0);
-    if(kdata->useScaling==0)
-      initData->nominal = nominal;
 
     for(i=0; i<initData->nz; ++i)
     {
@@ -121,14 +112,14 @@
    *
    *  \author lochel
    */
-  int kinsol_initialization(DATA* data, INIT_DATA* initData, int useScaling)
+  int kinsol_initialization(DATA* data, INIT_DATA* initData)
   {
-    long i, indz;
+    long i;
     KINSOL_DATA* kdata = NULL;
     double fnormtol  = 1.e-9;     /* function tolerance */
     double scsteptol = 1.e-9;     /* step tolerance */
 
-    long int nni, nfe, nje, nfeD;
+    long int nni = 0, nfe = 0, nje = 0, nfeD = 0;
 
     N_Vector z = NULL;
     N_Vector sVars = NULL;
@@ -183,25 +174,15 @@
         NV_Ith_S(z, initData->nInitResiduals+2*i+1) = NV_Ith_S(z, i) - initData->max[i];
       }
 
-      kdata->useScaling=useScaling;
-      if(useScaling)
+      for(i=0; i<initData->nz; ++i)
       {
-        computeInitialResidualScalingCoefficients(data, initData);
-        for(i=0; i<initData->nz; ++i)
-        {
-          NV_Ith_S(sVars, i) = 1.0 / (initData->nominal[i] == 0.0 ? 1.0 : initData->nominal[i]);
-          NV_Ith_S(sVars, initData->nInitResiduals+2*i+0) = NV_Ith_S(sVars, i);
-          NV_Ith_S(sVars, initData->nInitResiduals+2*i+1) = NV_Ith_S(sVars, i);
+        NV_Ith_S(sVars, i) = 1.0 / (initData->nominal[i] == 0.0 ? 1.0 : initData->nominal[i]);
+        NV_Ith_S(sVars, initData->nInitResiduals+2*i+0) = NV_Ith_S(sVars, i);
+        NV_Ith_S(sVars, initData->nInitResiduals+2*i+1) = NV_Ith_S(sVars, i);
 
-          NV_Ith_S(sEqns, i) = 1.0 / (initData->residualScalingCoefficients[i] == 0.0 ? 1.0 : initData->residualScalingCoefficients[i]);
-          NV_Ith_S(sEqns, initData->nInitResiduals+2*i+0) = NV_Ith_S(sEqns, i);
-          NV_Ith_S(sEqns, initData->nInitResiduals+2*i+1) = NV_Ith_S(sEqns, i);
-        }
-      }
-      else
-      {
-        N_VConst_Serial(1.0, sVars);        /* no scaling */
-        N_VConst_Serial(1.0, sEqns);        /* no scaling */
+        NV_Ith_S(sEqns, i) = 1.0 / (initData->residualScalingCoefficients[i] == 0.0 ? 1.0 : initData->residualScalingCoefficients[i]);
+        NV_Ith_S(sEqns, initData->nInitResiduals+2*i+0) = NV_Ith_S(sEqns, i);
+        NV_Ith_S(sEqns, initData->nInitResiduals+2*i+1) = NV_Ith_S(sEqns, i);
       }
 
       for(i=0; i<initData->nz; ++i)
@@ -230,10 +211,10 @@
       globalInitialResiduals = initData->initialResiduals;
 
       error_code = KINSol(kmem,           /* KINSol memory block */
-             z,              /* initial guess on input; solution vector */
-             glstr,          /* global stragegy choice */
-             sVars,          /* scaling vector, for the variable cc */
-             sEqns);         /* scaling vector for function values fval */
+                          z,              /* initial guess on input; solution vector */
+                          glstr,          /* global stragegy choice */
+                          sVars,          /* scaling vector, for the variable cc */
+                          sEqns);         /* scaling vector for function values fval */
 
       globalInitialResiduals = NULL;
 
@@ -241,6 +222,11 @@
       KINGetNumFuncEvals(kmem, &nfe);
       KINDlsGetNumJacEvals(kmem, &nje);
       KINDlsGetNumFuncEvals(kmem, &nfeD);
+
+      /* solution */
+      for(i=0; i<initData->nz; ++i)
+        initData->z[i] = NV_Ith_S(z, i);
+      updateZScaled(initData);
 
       DEBUG_INFO(LOG_INIT, "final kinsol statistics");
       DEBUG_INFO_AL1(LOG_INIT, "| KINGetNumNonlinSolvIters = %5ld", nni);
@@ -260,24 +246,13 @@
         glstr++;  /* try next globalization strategy */
     }while(error_code < 0 && glstr <= KIN_LINESEARCH);
 
-    /* debug output */
-    indz = 0;
-    DEBUG_INFO(LOG_INIT, "solution");
-    for(i=0; i<data->modelData.nStates; ++i)
-      if(data->modelData.realVarsData[i].attribute.fixed==0)
-        DEBUG_INFO_AL2(LOG_INIT, "| %s = %g", initData->name[indz++], data->localData[0]->realVars[i]);
-
-    for(i=0; i<data->modelData.nParametersReal; ++i)
-      if(data->modelData.realParameterData[i].attribute.fixed == 0)
-        DEBUG_INFO_AL2(LOG_INIT, "| %s = %g", initData->name[indz++], data->simulationInfo.realParameter[i]);
-
     if(error_code < 0)
       THROW("kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
 
     return 0;
   }
 #else
-  int kinsol_initialization(DATA* data, INIT_DATA* initData, int useScaling)
+  int kinsol_initialization(DATA* data, INIT_DATA* initData)
   {
     THROW("no sundials/kinsol support activated");
   }

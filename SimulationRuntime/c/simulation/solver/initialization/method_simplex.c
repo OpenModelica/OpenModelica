@@ -31,7 +31,7 @@
 /*! \file simplex_initialization.c
  */
 
-#include "initialization.h"
+#include "method_newuoa.h"
 #include "simulation_data.h"
 #include "omc_error.h"
 #include "openmodelica.h"

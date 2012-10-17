@@ -43,7 +43,7 @@
  */
 INIT_DATA *initializeInitData(DATA *data)
 {
-  long i, j;
+  long i;
   long iz;
   INIT_DATA* initData = NULL;
 
@@ -195,15 +195,16 @@ INIT_DATA *initializeInitData(DATA *data)
   for(i=0; i<initData->nStartValueResiduals; ++i)
     initData->startValueResidualScalingCoefficients[i] = 1.0;
 
-  /* for real variables */
+  /* for real variables *
   j=0;
   for(i=0; i<data->modelData.nVariablesReal; ++i)
     if(data->modelData.realVarsData[i].attribute.useStart)
       DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] Real %s(start=%g)", ++j, data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start);
-  /* for real parameters */
+  /* for real parameters *
   for(i=0; i<data->modelData.nParametersReal; ++i)
     if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
       DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] parameter Real %s(start=%g)", ++j, data->modelData.realParameterData[i].info.name, data->modelData.realParameterData[i].attribute.start);
+  */
 
   return initData;
 }
@@ -341,10 +342,11 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
   DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
   for(i=0; i<initData->nInitResiduals; ++i)
     DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g %s", i+1, initData->residualScalingCoefficients[i], initData->residualScalingCoefficients[i] == 0.0 ? "[ineffective]" : "");
-
+/*
   DEBUG_INFO_AL(LOG_INIT, "| start value residuals");
     for(i=0; i<initData->nStartValueResiduals; ++i)
       DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g %s", i+1, initData->startValueResidualScalingCoefficients[i], initData->startValueResidualScalingCoefficients[i] == 0.0 ? "[ineffective]" : "");
+*/
 }
 
 void updateZ(INIT_DATA *data)

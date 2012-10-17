@@ -31,7 +31,7 @@
 /*! \file nelderMeadEx_initialization.c
  */
 
-#include "nelderMeadEx_initialization.h"
+#include "method_nelderMeadEx.h"
 #include "simulation_data.h"
 #include "omc_error.h"
 #include "openmodelica.h"
@@ -122,6 +122,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
   }
 
   setZScaled(initData, simplex);
+  updateZ(initData);
   computeInitialResidualScalingCoefficients(data, initData);
 
   do
@@ -137,6 +138,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     for(x=0; x<N+1; x++)
     {
       setZScaled(initData, &simplex[x*N]);
+      updateZ(initData);
       fvalues[x] = leastSquare(data, initData, lambda);
     }
 
@@ -214,6 +216,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
       xr[i] = xbar[i] + alpha*(xbar[i] - simplex[xs*N + i]);
 
     setZScaled(initData, xr);
+    updateZ(initData);
     fxr = leastSquare(data, initData, lambda);
 
     if(fvalues[xb] <= fxr && fxr <= fvalues[xz])
@@ -228,6 +231,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
         xe[i] = xbar[i] + beta*(xr[i] - xbar[i]);
 
       setZScaled(initData, xe);
+      updateZ(initData);
       fxe = leastSquare(data, initData, lambda);
 
       if(fxe < fxr)    /* if(fxe < fvalues[xb]) */
@@ -251,6 +255,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
           xk[i] = xbar[i] + gamma*(simplex[xs*N+i] - xbar[i]);
 
         setZScaled(initData, xk);
+        updateZ(initData);
         fxk = leastSquare(data, initData, lambda);
       }
       else
@@ -259,6 +264,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
           xk[i] = xbar[i] + gamma*(xr[i] - xbar[i]);
 
         setZScaled(initData, xk);
+        updateZ(initData);
         fxk = leastSquare(data, initData, lambda);
       }
 
@@ -292,6 +298,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
   /* copying solution */
   setZScaled(initData, &simplex[xb*N]);
+  updateZ(initData);
 
   if(pLambda)
     *pLambda = lambda;

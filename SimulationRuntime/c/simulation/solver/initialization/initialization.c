@@ -33,11 +33,11 @@
 
 #include "initialization.h"
 
-#include "simplex_initialization.h"
-#include "newuoa_initialization.h"
-#include "nelderMeadEx_initialization.h"
-#include "kinsol_initialization.h"
-#include "ipopt_initialization.h"
+#include "method_simplex.h"
+#include "method_newuoa.h"
+#include "method_nelderMeadEx.h"
+#include "method_kinsol.h"
+#include "method_ipopt.h"
 
 #include "simulation_data.h"
 #include "omc_error.h"
@@ -245,15 +245,17 @@ static int initialize(DATA *data, int optiMethod)
   double *z_f = NULL;
   double* nominal;
 
+  /* set up initData struct */
   INIT_DATA *initData = initializeInitData(data);
 
-  /* no initial values to calculate. */
+  /* no initial values to calculate */
   if(initData == NULL)
   {
     DEBUG_INFO(LOG_INIT, "no variables to initialize");
     return 0;
   }
 
+  /* no initial equations given */
   if(data->modelData.nInitResiduals == 0)
   {
     DEBUG_INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
@@ -262,7 +264,7 @@ static int initialize(DATA *data, int optiMethod)
 
   if(initData->nInitResiduals < initData->nz)
   {
-    DEBUG_INFO_AL(LOG_INIT, "| [under-determined]");
+    DEBUG_INFO_AL(LOG_INIT, "under-determined");
 
     z_f = (double*)malloc(initData->nz * sizeof(double));
     nominal = initData->nominal;
@@ -289,7 +291,7 @@ static int initialize(DATA *data, int optiMethod)
     }
 
     k = 0;
-    DEBUG_INFO(LOG_INIT, "setting fixed=true for:");
+    DEBUG_INFO(LOG_INIT, "| setting fixed=true for:");
     for(i=0; i<data->modelData.nStates; ++i)
     {
       if(data->modelData.realVarsData[i].attribute.fixed == 0)
@@ -297,7 +299,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realVarsData[i].attribute.fixed = 1;
-          DEBUG_INFO2(LOG_INIT, "| %s(fixed=true) = %g", initData->name[k], initData->z[k]);
+          DEBUG_INFO2(LOG_INIT, "| | %s(fixed=true) = %g", initData->name[k], initData->z[k]);
         }
         k++;
       }
@@ -309,7 +311,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realParameterData[i].attribute.fixed = 1;
-          DEBUG_INFO2(LOG_INIT, "| %s(fixed=true) = %g", initData->name[k], initData->z[k]);
+          DEBUG_INFO2(LOG_INIT, "| | %s(fixed=true) = %g", initData->name[k], initData->z[k]);
         }
         k++;
       }
@@ -328,7 +330,7 @@ static int initialize(DATA *data, int optiMethod)
   }
   else if(data->modelData.nInitResiduals > initData->nz)
   {
-    DEBUG_INFO_AL(LOG_INIT, "| [over-determined]");
+    DEBUG_INFO_AL(LOG_INIT, "over-determined");
 
     /*
     INFO("initial problem is [over-determined]");
@@ -341,6 +343,41 @@ static int initialize(DATA *data, int optiMethod)
     */
   }
 
+  /* with scaling */
+  if(optiMethod == IOM_KINSOL_SCALED ||
+     optiMethod == IOM_NELDER_MEAD_EX ||
+     optiMethod == IOM_NELDER_MEAD_EX2)
+  {
+    computeInitialResidualScalingCoefficients(data, initData);
+
+    if(optiMethod == IOM_KINSOL_SCALED)
+      retVal = kinsol_initialization(data, initData);
+    else if(optiMethod == IOM_NELDER_MEAD_EX)
+      retVal = nelderMeadEx_initialization(data, initData, 0.0);
+    else if(optiMethod == IOM_NELDER_MEAD_EX2)
+      retVal = nelderMeadEx_initialization(data, initData, 1.0);
+
+    /* dump interim solution */
+    DEBUG_INFO(LOG_INIT, "interim initial solution");
+    DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
+    for(i=0; i<initData->nStates; ++i)
+      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] Real %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
+    for(; i<initData->nz; ++i)
+      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] parameter Real %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
+
+    DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
+    for(i=0; i<initData->nInitResiduals; ++i)
+      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initData->residualScalingCoefficients[i]);
+  }
+
+  /* w/o scaling */
+  for(i=0; i<initData->nz; ++i)
+    initData->nominal[i] = 1.0;
+  for(i=0; i<initData->nInitResiduals; ++i)
+    initData->residualScalingCoefficients[i] = 1.0;
+  for(i=0; i<initData->nStartValueResiduals; ++i)
+    initData->startValueResidualScalingCoefficients[i] = 1.0;
+
   if(optiMethod == IOM_SIMPLEX)
     retVal = simplex_initialization(data, initData);
   else if(optiMethod == IOM_NEWUOA)
@@ -350,13 +387,25 @@ static int initialize(DATA *data, int optiMethod)
   else if(optiMethod == IOM_NELDER_MEAD_EX2)
     retVal = nelderMeadEx_initialization(data, initData, 1.0);
   else if(optiMethod == IOM_KINSOL)
-    retVal = kinsol_initialization(data, initData, 0);
+    retVal = kinsol_initialization(data, initData);
   else if(optiMethod == IOM_KINSOL_SCALED)
-    retVal = kinsol_initialization(data, initData, 1);
+    retVal = kinsol_initialization(data, initData);
   else if(optiMethod == IOM_IPOPT)
     retVal = ipopt_initialization(data, initData, 0);
   else
     THROW("unsupported option -iom");
+
+  /* dump final solution */
+  DEBUG_INFO(LOG_INIT, "final initial solution");
+  DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
+  for(i=0; i<initData->nStates; ++i)
+    DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] Real %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
+  for(; i<initData->nz; ++i)
+    DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] parameter Real %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
+
+  DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
+  for(i=0; i<initData->nInitResiduals; ++i)
+    DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initData->residualScalingCoefficients[i]);
 
   freeInitData(initData);
   return retVal;
