@@ -567,13 +567,13 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("HKDWExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
     ("ABMPExt", Util.gettext("Combined BFS and DFS algorithm external c implementation")),
     ("PRExt", Util.gettext("matching algorithm using push relabel mechanism external c implementation"))})),
-    Util.gettext("Sets the matching algorithm to use."));  
+    Util.gettext("Sets the matching algorithm to use. See +help=optmodules for more info."));  
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
   NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
   SOME(STRING_DESC_OPTION({
     ("dummyDerivative", Util.gettext("simple index reduction method, select dummy states based on heuristics")),
     ("dynamicStateSelection", Util.gettext("simple index reduction method, select (dynamic) dummy states based on analysis of the system"))})),
-    Util.gettext("Sets the index reduction method to use."));
+    Util.gettext("Sets the index reduction method to use. See +help=optmodules for more info."));
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
   NONE(), EXTERNAL(), STRING_LIST_FLAG({
 //    "relaxSystem",
