@@ -146,7 +146,7 @@ algorithm
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), Config.splitArrays(), pre, info); // Vectorize only if arrays are expanded
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
-        (cache,e_val) = elabModValue(cache, env, e_1, prop, info);
+        (cache,e_val) = elabModValue(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
         "Bug: will cause elaboration of parameters without value to fail,
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
@@ -352,24 +352,25 @@ protected function elabModValue
   input Env.Env inEnv;
   input DAE.Exp inExp;
   input DAE.Properties inProp;
+  input Boolean impl;
   input Absyn.Info inInfo;
   output Env.Cache outCache;
   output Option<Values.Value> outValuesValueOption;
 algorithm
   (outCache,outValuesValueOption) := 
-  matchcontinue (inCache,inEnv,inExp,inProp, inInfo)
+  matchcontinue (inCache,inEnv,inExp,inProp,impl,inInfo)
     local
       Values.Value v;
       Ceval.Msg msg;
       Env.Cache cache;
       DAE.Const c;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation
         c = Types.propAllConst(inProp);
         // Don't ceval variables.
         false = Types.constIsVariable(c);
         // Show error messages from ceval only if the expression is a constant.
-        msg = Util.if_(Types.constIsConst(c), Ceval.MSG(inInfo), Ceval.NO_MSG());
+        msg = Util.if_(Types.constIsConst(c) and not impl, Ceval.MSG(inInfo), Ceval.NO_MSG());
         (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false,NONE(), msg);
       then
         (inCache /*Yeah; this makes sense :)*/,SOME(v));
@@ -555,7 +556,7 @@ algorithm
         (cache,subs_1) = updateSubmods(cache, env, ih, pre, subs, impl, info);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
-        (cache,e_val) = elabModValue(cache,env,e_1,prop,info);
+        (cache,e_val) = elabModValue(cache,env,e_1,prop,impl,info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         Debug.fprint(Flags.UPDMOD, "Updated mod: ");
         Debug.fprintln(Flags.UPDMOD, Debug.fcallret1(Flags.UPDMOD, printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE(),prop,SOME(e),info))),""));
