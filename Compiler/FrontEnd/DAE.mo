@@ -369,58 +369,63 @@ end derivativeCond;
 public
 uniontype VariableAttributes
   record VAR_ATTR_REAL
-    Option<Exp> quantity "quantity" ;
-    Option<Exp> unit "unit" ;
-    Option<Exp> displayUnit "displayUnit" ;
-    tuple<Option<Exp>, Option<Exp>> min "min , max" ;
-    Option<Exp> initial_ "Initial value" ;
-    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
-    Option<Exp> nominal "nominal" ;
+    Option<Exp> quantity "quantity";
+    Option<Exp> unit "unit";
+    Option<Exp> displayUnit "displayUnit";
+    tuple<Option<Exp>, Option<Exp>> min "min, max";
+    Option<Exp> initial_ "Initial value";
+    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
+    Option<Exp> nominal "nominal";
     Option<StateSelect> stateSelectOption;
     Option<Uncertainty> uncertainOption;
     Option<Distribution> distributionOption;
     Option<Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
+    Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
   end VAR_ATTR_REAL;
 
   record VAR_ATTR_INT
-    Option<Exp> quantity "quantity" ;
-    tuple<Option<Exp>, Option<Exp>> min "min , max" ;
-    Option<Exp> initial_ "Initial value" ;
-    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Exp> quantity "quantity";
+    tuple<Option<Exp>, Option<Exp>> min "min, max";
+    Option<Exp> initial_ "Initial value";
+    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
     Option<Uncertainty> uncertainOption;
     Option<Distribution> distributionOption;
     Option<Exp> equationBound;
     Option<Boolean> isProtected; // ,eb,ip
     Option<Boolean> finalPrefix;
+    Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
   end VAR_ATTR_INT;
 
   record VAR_ATTR_BOOL
-    Option<Exp> quantity "quantity" ;
-    Option<Exp> initial_ "Initial value" ;
-    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Exp> quantity "quantity";
+    Option<Exp> initial_ "Initial value";
+    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
     Option<Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
+    Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
   end VAR_ATTR_BOOL;
 
   record VAR_ATTR_STRING
-    Option<Exp> quantity "quantity" ;
-    Option<Exp> initial_ "Initial value" ;
+    Option<Exp> quantity "quantity";
+    Option<Exp> initial_ "Initial value";
     Option<Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
+    Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
   end VAR_ATTR_STRING;
 
   record VAR_ATTR_ENUMERATION
-    Option<Exp> quantity "quantity" ;
-    tuple<Option<Exp>, Option<Exp>> min "min , max" ;
-    Option<Exp> start "start" ;
-    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables" ;
+    Option<Exp> quantity "quantity";
+    tuple<Option<Exp>, Option<Exp>> min "min, max";
+    Option<Exp> start "start";
+    Option<Exp> fixed "fixed - true: default for parameter/constant, false - default for other variables";
     Option<Exp> equationBound;
     Option<Boolean> isProtected;
     Option<Boolean> finalPrefix;
+    Option<Exp> startOrigin "where did start=X came from? NONE()|SOME(DAE.SCONST binding|type|undefined)";
   end VAR_ATTR_ENUMERATION;
 
 end VariableAttributes;

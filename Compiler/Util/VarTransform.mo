@@ -434,14 +434,15 @@ protected function applyReplacementsVarAttr "Help function to applyReplacementsD
   end FuncTypeExp_ExpToBoolean;
 algorithm
   outAttr := matchcontinue(attr,repl,condExpFunc)
-    local Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal;
+    local 
+      Option<DAE.Exp> quantity,unit,displayUnit,min,max,initial_,fixed,nominal,startOrigin;
       Option<DAE.StateSelect> stateSelect;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> dist;
       Option<DAE.Exp> eb;
       Option<Boolean> ip,fn;
 
-    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn)),repl,condExpFunc)
+    case(SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin)),repl,condExpFunc)
       equation
         (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
         (unit) = replaceExpOpt(unit,repl,condExpFunc);
@@ -452,36 +453,35 @@ algorithm
         (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
         (nominal) = replaceExpOpt(nominal,repl,condExpFunc); 
         //TODO: replace expressions also in uncertainty attributes (unc and dist)       
-      then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn));
+      then SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,(min,max),initial_,fixed,nominal,stateSelect,unc,dist,eb,ip,fn,startOrigin));
 
-    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn)),repl,condExpFunc)
+    case(SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn,startOrigin)),repl,condExpFunc)
       equation
         (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
         (min) = replaceExpOpt(min,repl,condExpFunc);
         (max) = replaceExpOpt(max,repl,condExpFunc);
         (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
         (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-      then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn));
+      then SOME(DAE.VAR_ATTR_INT(quantity,(min,max),initial_,fixed,unc,dist,eb,ip,fn,startOrigin));
 
-      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn)),repl,condExpFunc)
+      case(SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,startOrigin)),repl,condExpFunc)
         equation
           (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
           (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
           (fixed) = replaceExpOpt(fixed,repl,condExpFunc);
-        then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn));
+        then SOME(DAE.VAR_ATTR_BOOL(quantity,initial_,fixed,eb,ip,fn,startOrigin));
 
-      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn)),repl,condExpFunc)
+      case(SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,startOrigin)),repl,condExpFunc)
         equation
           (quantity) = replaceExpOpt(quantity,repl,condExpFunc);
           (initial_) = replaceExpOpt(initial_,repl,condExpFunc);
-        then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn));
+        then SOME(DAE.VAR_ATTR_STRING(quantity,initial_,eb,ip,fn,startOrigin));
 
       case (NONE(),repl,_) then NONE();
   end matchcontinue;
 end  applyReplacementsVarAttr;
 
 public function applyReplacements "function: applyReplacements
-
   This function takes a VariableReplacements and two component references.
   It applies the replacements to each component reference.
 "

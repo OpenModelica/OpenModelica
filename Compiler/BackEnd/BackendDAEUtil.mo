@@ -7688,13 +7688,13 @@ author: Peter Aronsson (paronsson@wolfram.com)
 algorithm
  (outAttr,outExtraArg) := match(attr,func,extraArg)
    local
-     Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound;
+     Option<DAE.Exp> q,u,du,min,max,i,f,n,eqbound,startOrigin;
      Option<DAE.StateSelect> ss;
      Option<DAE.Uncertainty> unc;
      Option<DAE.Distribution> dist;
      Option<Boolean> p,fin;
    case(NONE(),_,_) then (NONE(),extraArg);
-   case(SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin)),_,_) equation
+   case(SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin,startOrigin)),_,_) equation
      ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
      ((u,outExtraArg)) = Expression.traverseExpOpt(u,func,outExtraArg);
      ((du,outExtraArg)) = Expression.traverseExpOpt(du,func,outExtraArg);
@@ -7705,9 +7705,9 @@ algorithm
      ((n,outExtraArg)) = Expression.traverseExpOpt(n,func,outExtraArg);
      ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
      (dist,outExtraArg) = traverseBackendDAEAttrDistribution(dist,func,outExtraArg);
-   then (SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin)),outExtraArg);
+   then (SOME(DAE.VAR_ATTR_REAL(q,u,du,(min,max),i,f,n,ss,unc,dist,eqbound,p,fin,startOrigin)),outExtraArg);
           
-   case(SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),_,_) equation
+   case(SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin,startOrigin)),_,_) equation
      ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
      ((min,outExtraArg)) = Expression.traverseExpOpt(min,func,outExtraArg);
      ((max,outExtraArg)) = Expression.traverseExpOpt(max,func,outExtraArg);
@@ -7715,29 +7715,29 @@ algorithm
      ((f,outExtraArg)) = Expression.traverseExpOpt(f,func,outExtraArg);
      ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
       (dist,outExtraArg) = traverseBackendDAEAttrDistribution(dist,func,outExtraArg);
-   then (SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin)),outExtraArg);
+   then (SOME(DAE.VAR_ATTR_INT(q,(min,max),i,f,unc,dist,eqbound,p,fin,startOrigin)),outExtraArg);
           
-   case(SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),_,_) equation
+   case(SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin,startOrigin)),_,_) equation
      ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
      ((i,outExtraArg)) = Expression.traverseExpOpt(i,func,outExtraArg);
      ((f,outExtraArg)) = Expression.traverseExpOpt(f,func,outExtraArg);
      ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-   then (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin)),outExtraArg);
+   then (SOME(DAE.VAR_ATTR_BOOL(q,i,f,eqbound,p,fin,startOrigin)),outExtraArg);
      
-   case(SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),_,_) equation
+   case(SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin,startOrigin)),_,_) equation
      ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
      ((i,outExtraArg)) = Expression.traverseExpOpt(i,func,outExtraArg);
      ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-   then (SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin)),outExtraArg);
+   then (SOME(DAE.VAR_ATTR_STRING(q,i,eqbound,p,fin,startOrigin)),outExtraArg);
      
-   case(SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),_,_) equation
+   case(SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin,startOrigin)),_,_) equation
       ((q,outExtraArg)) = Expression.traverseExpOpt(q,func,extraArg);
      ((min,outExtraArg)) = Expression.traverseExpOpt(min,func,outExtraArg);
      ((max,outExtraArg)) = Expression.traverseExpOpt(max,func,outExtraArg);
      ((i,outExtraArg)) = Expression.traverseExpOpt(i,func,outExtraArg);
      ((f,outExtraArg)) = Expression.traverseExpOpt(f,func,outExtraArg);
      ((eqbound,outExtraArg)) = Expression.traverseExpOpt(eqbound,func,outExtraArg);
-    then (SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin)),outExtraArg);
+    then (SOME(DAE.VAR_ATTR_ENUMERATION(q,(min,max),i,f,eqbound,p,fin,startOrigin)),outExtraArg);
            
  end match;
 end traverseBackendDAEVarAttr;

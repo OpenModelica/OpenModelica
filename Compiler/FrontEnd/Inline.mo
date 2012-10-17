@@ -527,7 +527,7 @@ algorithm
     local
       DAE.ElementSource source;
       DAE.Exp r;
-      Option<DAE.Exp> quantity,unit,displayUnit,initial_,fixed,nominal;
+      Option<DAE.Exp> quantity,unit,displayUnit,initial_,fixed,nominal,so;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
       Option<DAE.StateSelect> stateSelectOption;
       Option<DAE.Uncertainty> uncertainOption;
@@ -537,33 +537,34 @@ algorithm
     case (NONE(),_,_) then (NONE(),isource,false);
     case (SOME(DAE.VAR_ATTR_REAL(quantity=quantity,unit=unit,displayUnit=displayUnit,min=min,initial_ = SOME(r),
           fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,uncertainOption=uncertainOption,
-          distributionOption=distributionOption,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+          distributionOption=distributionOption,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,
+          startOrigin=so)),_,_)
       equation
         (r,source,true) = inlineExp(r,fns,isource);        
       then (SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,SOME(r),fixed,nominal,
-          stateSelectOption,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix)),source,true);
+          stateSelectOption,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_INT(quantity=quantity,min=min,initial_ = SOME(r),
           fixed=fixed,uncertainOption=uncertainOption,distributionOption=distributionOption,equationBound=equationBound,
-          isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+          isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
         (r,source,true) = inlineExp(r,fns,isource);        
-      then (SOME(DAE.VAR_ATTR_INT(quantity,min,SOME(r),fixed,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix)),source,true);
+      then (SOME(DAE.VAR_ATTR_INT(quantity,min,SOME(r),fixed,uncertainOption,distributionOption,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_BOOL(quantity=quantity,initial_ = SOME(r),
-          fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+          fixed=fixed,equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
         (r,source,true) = inlineExp(r,fns,isource);        
-      then (SOME(DAE.VAR_ATTR_BOOL(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix)),source,true);
+      then (SOME(DAE.VAR_ATTR_BOOL(quantity,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_STRING(quantity=quantity,initial_ = SOME(r),
-          equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+          equationBound=equationBound,isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
         (r,source,true) = inlineExp(r,fns,isource);        
-      then (SOME(DAE.VAR_ATTR_STRING(quantity,SOME(r),equationBound,isProtected,finalPrefix)),source,true);
+      then (SOME(DAE.VAR_ATTR_STRING(quantity,SOME(r),equationBound,isProtected,finalPrefix,so)),source,true);
     case (SOME(DAE.VAR_ATTR_ENUMERATION(quantity=quantity,min=min,start = SOME(r),
           fixed=fixed,equationBound=equationBound,
-          isProtected=isProtected,finalPrefix=finalPrefix)),_,_)
+          isProtected=isProtected,finalPrefix=finalPrefix,startOrigin=so)),_,_)
       equation
-        (r,source,true) = inlineExp(r,fns,isource);        
-      then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,SOME(r),fixed,equationBound,isProtected,finalPrefix)),source,true);
+        (r,source,true) = inlineExp(r,fns,isource);
+      then (SOME(DAE.VAR_ATTR_ENUMERATION(quantity,min,SOME(r),fixed,equationBound,isProtected,finalPrefix,so)),source,true);
     case (_,_,_) then (inVariableAttributesOption,isource,false);
   end matchcontinue;
 end inlineStartAttribute;

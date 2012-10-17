@@ -773,23 +773,20 @@ algorithm
 end dumpVariableAttributes;
 
 public function dumpVariableAttributesStr "function: dumpVariableAttributesStr
-
-  Dump VariableAttributes option to a string.
-"
+  Dump VariableAttributes option to a string."
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inVariableAttributesOption)
+  outString := matchcontinue (inVariableAttributesOption)
     local
-      String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,dist_str,res_1,res1,res;
+      String quantity,unit_str,displayUnit_str,stateSel_str,min_str,max_str,nominal_str,initial_str,fixed_str,uncertainty_str,dist_str,res_1,res1,res,startOriginStr;
       Boolean is_empty;
-      Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed;
+      Option<DAE.Exp> quant,unit,displayUnit,min,max,initialExp,nominal,fixed,startOrigin;
       Option<DAE.StateSelect> stateSel;
       Option<DAE.Uncertainty> uncertainty;
       Option<DAE.Distribution> dist;
       
-    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_)))
+    case (SOME(DAE.VAR_ATTR_REAL(quant,unit,displayUnit,(min,max),initialExp,fixed,nominal,stateSel,uncertainty,dist,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         unit_str = Dump.getOptionWithConcatStr(unit, ExpressionDump.printExpStr, "unit = ");
@@ -802,17 +799,19 @@ algorithm
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
         uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
         dist_str = Dump.getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
-    
+        
+        startOriginStr = getStartOrigin(startOrigin);
+        
         res_1 = Util.stringDelimitListNonEmptyElts(
           {quantity,unit_str,displayUnit_str,min_str,max_str,
-          initial_str,fixed_str,nominal_str,stateSel_str,uncertainty_str,dist_str}, ", ");
+          initial_str,fixed_str,nominal_str,stateSel_str,uncertainty_str,dist_str,startOriginStr}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
     
-    case (SOME(DAE.VAR_ATTR_INT(quant,(min,max),initialExp,fixed,uncertainty,dist,_,_,_)))
+    case (SOME(DAE.VAR_ATTR_INT(quant,(min,max),initialExp,fixed,uncertainty,dist,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
@@ -821,44 +820,56 @@ algorithm
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
         uncertainty_str = Dump.getOptionWithConcatStr(uncertainty, dumpUncertaintyStr, "uncertainty = ");
         dist_str = Dump.getOptionWithConcatStr(dist, dumpDistributionStr , "distribution = ");
-        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,uncertainty_str,dist_str}, ", ");
+
+        startOriginStr = getStartOrigin(startOrigin);
+
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,uncertainty_str,dist_str,startOriginStr}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
     
-    case (SOME(DAE.VAR_ATTR_BOOL(quant,initialExp,fixed,_,_,_)))
+    case (SOME(DAE.VAR_ATTR_BOOL(quant,initialExp,fixed,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
-        res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,fixed_str}, ", ");
+        
+        startOriginStr = getStartOrigin(startOrigin);
+                
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,fixed_str,startOriginStr}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
     
-    case (SOME(DAE.VAR_ATTR_STRING(quant,initialExp,_,_,_)))
+    case (SOME(DAE.VAR_ATTR_STRING(quant,initialExp,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
-        res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str}, ", ");
+        
+        startOriginStr = getStartOrigin(startOrigin);        
+        
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,initial_str,startOriginStr}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
       then
         res;
     
-    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,(min,max),initialExp,fixed,_,_,_)))
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quant,(min,max),initialExp,fixed,_,_,_,startOrigin)))
       equation
         quantity = Dump.getOptionWithConcatStr(quant, ExpressionDump.printExpStr, "quantity = ");
         min_str = Dump.getOptionWithConcatStr(min, ExpressionDump.printExpStr, "min = ");
         max_str = Dump.getOptionWithConcatStr(max, ExpressionDump.printExpStr, "max = ");
         initial_str = Dump.getOptionWithConcatStr(initialExp, ExpressionDump.printExpStr, "start = ");
         fixed_str = Dump.getOptionWithConcatStr(fixed, ExpressionDump.printExpStr, "fixed = ");
-        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str}, ", ");
+         
+        startOriginStr = getStartOrigin(startOrigin);
+            
+        res_1 = Util.stringDelimitListNonEmptyElts({quantity,min_str,max_str,initial_str,fixed_str,startOriginStr}, ", ");
         res1 = stringAppendList({"(",res_1,")"});
         is_empty = Util.isEmptyString(res_1);
         res = Util.if_(is_empty, "", res1);
@@ -870,6 +881,28 @@ algorithm
     case (_) then "unknown VariableAttributes";
   end matchcontinue;
 end dumpVariableAttributesStr;
+
+protected function getStartOrigin
+  input Option<DAE.Exp> inStartOrigin;
+  output String outStartOrigin;
+algorithm
+  outStartOrigin := matchcontinue(inStartOrigin)
+    local
+      String str;
+    case (NONE()) then "";
+    case (_)
+      equation
+        true = Flags.isSet(Flags.SHOW_START_ORIGIN);
+        str = Dump.getOptionWithConcatStr(inStartOrigin, ExpressionDump.printExpStr , "startOrigin = ");
+      then
+        str;
+    case (_)
+      equation
+        false = Flags.isSet(Flags.SHOW_START_ORIGIN);
+      then
+        "";
+  end matchcontinue;
+end getStartOrigin;
 
 protected function dumpVar "
   Dump Var."

@@ -363,6 +363,8 @@ constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(99, "uncertainties",
   Util.gettext("Enables dumping of status when calling modelEquationsUC"));
 constant DebugFlag DUMP_DAE= DEBUG_FLAG(100, "daeunparser",
   Util.gettext("Enables dumping of the DAE"));
+constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(101, "showStartOrigin",
+  Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables"));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -469,7 +471,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMPOPTINIT,
   SEMILINEAR,
   UNCERTAINTIES,
-  DUMP_DAE
+  DUMP_DAE,
+  SHOW_START_ORIGIN
 };
 
 // CONFIGURATION FLAGS

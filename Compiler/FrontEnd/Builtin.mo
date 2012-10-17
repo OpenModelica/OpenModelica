@@ -178,6 +178,10 @@ protected constant SCode.Element max = SCode.COMPONENT("max",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(1e+099),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
 
+protected constant SCode.Element startOrigin = SCode.COMPONENT("startOrigin",commonPrefixes,
+          attrParam,Absyn.TPATH(Absyn.IDENT("StringType"),NONE()),
+          SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.STRING("undefined"),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
+
 protected constant SCode.Element realStart = SCode.COMPONENT("start",commonPrefixes,
           attrParam,Absyn.TPATH(Absyn.IDENT("RealType"),NONE()),
           SCode.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{},SOME((Absyn.REAL(0.0),false)), Absyn.dummyInfo),NONE(),NONE(),Absyn.dummyInfo);
@@ -250,16 +254,16 @@ public constant SCode.Element ExternalObjectType = SCode.CLASS("ExternalObject",
 
 public constant SCode.Element realType = SCode.CLASS("Real",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
-          stateSelect,uncertainty,distribution},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
+          stateSelect,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Real\' type" ;
 
 protected constant SCode.Element integerType = SCode.CLASS("Integer",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_INTEGER(),
-          SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty,distribution},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
+          SCode.PARTS({quantity,min,max,integerStart,fixed,uncertainty,distribution,startOrigin},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Integer\' type" ;
 
 protected constant SCode.Element stringType = SCode.CLASS("String",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_STRING(),
-          SCode.PARTS({quantity,stringStart},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `String\' type" ;
+          SCode.PARTS({quantity,stringStart,startOrigin},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `String\' type" ;
 
 protected constant SCode.Element booleanType = SCode.CLASS("Boolean",commonPrefixes,SCode.NOT_ENCAPSULATED(),SCode.NOT_PARTIAL(),SCode.R_PREDEFINED_BOOLEAN(),
-          SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Boolean\' type" ;
+          SCode.PARTS({quantity,booleanStart,fixed,startOrigin},{},{},{},{},{},{},NONE(),{},NONE()),Absyn.dummyInfo) "- The `Boolean\' type" ;
 
 /* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var timeVar = DAE.TYPES_VAR("time",

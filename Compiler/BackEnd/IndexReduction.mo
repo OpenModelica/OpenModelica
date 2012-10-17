@@ -2869,7 +2869,7 @@ algorithm
           crlst1 = List.map1r(range, ComponentReference.subscriptCrefWithInt, set);
           vars = List.map3(crlst1,generateVar,BackendDAE.STATE(),DAE.T_REAL_DEFAULT,NONE());
           vars = List.map1(vars,BackendVariable.setVarFixed,false);
-          vcont = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
+          vcont = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
         then
           (crlst1,set,cont,vcont::vars);
       case(cr::crlst,_)
@@ -2883,9 +2883,9 @@ algorithm
           crlst1 = Debug.bcallret3(intGt(setsize,1),List.map1r,range,ComponentReference.subscriptCrefWithInt,set,{set});
           vars = List.map3(crlst1,generateVar,BackendDAE.STATE(),DAE.T_REAL_DEFAULT,NONE());
           vars = List.map1(vars,BackendVariable.setVarFixed,false);
-          vcont = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
+          vcont = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
         then
-          (crlst1,set,cont,vcont::vars);          
+          (crlst1,set,cont,vcont::vars);
     end matchcontinue;
 end getStateSetNames;
 
@@ -3709,7 +3709,7 @@ algorithm
       list<DAE.Subscript> lstSubs;
       Integer i,eindx;
       list<Integer> ilst;
-      Option<DAE.Exp> quantity,unit,displayUnit;
+      Option<DAE.Exp> quantity,unit,displayUnit,startOrigin;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> min;
       Option<DAE.Exp> initial_,fixed,nominal,equationBound;
       Option<Boolean> isProtected;
@@ -3742,35 +3742,35 @@ algorithm
         //dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
         (eqns_1,so1) = addDummyStateEqn(vars,eqns,cr,dummyder,so,i,eindx,mapIncRowEqn,mt);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, prl, b, NONE(), NONE(), {}, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE())), comment, ct), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, prl, b, NONE(), NONE(), {}, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())), comment, ct), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars_1,eqns_1,so1,i::ilst,eindx,mapIncRowEqn,mt)));
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
-        ((BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,distribution,equationBound,isProtected,finalPrefix)),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,distribution,equationBound,isProtected,finalPrefix)),comment,ct), vars);
+        ((BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,distribution,equationBound,isProtected,finalPrefix,startOrigin)),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,distribution,equationBound,isProtected,finalPrefix,startOrigin)),comment,ct), vars);
       then
         ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt)));
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         ((BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,source,NONE(),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE())),comment,ct), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),comment,ct), vars);
       then
         ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt)));        
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
-        ((BackendDAE.VAR(cr,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,distribution,equationBound,isProtected,finalPrefix)),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,distribution,equationBound,isProtected,finalPrefix)),comment,ct), vars);
+        ((BackendDAE.VAR(cr,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,distribution,equationBound,isProtected,finalPrefix,startOrigin)),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,distribution,equationBound,isProtected,finalPrefix,startOrigin)),comment,ct), vars);
       then
         ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt)));
 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         ((BackendDAE.VAR(cr,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,source,NONE(),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE())),comment,ct), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),comment,ct), vars);
       then
         ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt)));
 

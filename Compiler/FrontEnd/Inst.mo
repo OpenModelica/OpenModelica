@@ -13860,6 +13860,48 @@ algorithm
   end match;
 end instStartBindingExp;
 
+protected function instStartOrigin
+"function: instStartOrigin
+  This function investigates if the start value comes from the modification or the type"
+  input DAE.Mod inMod;
+  input list<DAE.Var> inVarLst;
+  input String inString;
+  output Option<DAE.Exp> outExpExpOption;
+algorithm
+  outExpExpOption := matchcontinue (inMod,inVarLst,inString)
+    local
+      DAE.Mod mod2,mod;
+      DAE.Exp e,e_1;
+      DAE.Type ty2,ty_1,expected_type,etype;
+      String bind_name;
+      Option<DAE.Exp> result;
+      list<Integer> index_list;
+      DAE.Binding binding;
+      Ident name;
+      Option<Values.Value> optVal;
+      list<DAE.Var> varLst;
+    
+    case (mod,varLst,bind_name)
+      equation
+        mod2 = Mod.lookupCompModification(mod, bind_name);
+        SOME(_) = Mod.modEquation(mod2);
+      then
+        SOME(DAE.SCONST("binding"));
+                   
+    case (mod,DAE.TYPES_VAR(name,binding=binding)::_,bind_name) 
+      equation
+        true = stringEq(name, bind_name);
+      then 
+        SOME(DAE.SCONST("type"));
+    
+    case (mod,_::varLst,bind_name)
+      then instStartOrigin(mod,varLst,bind_name);
+    
+    case (mod,{},bind_name)
+      then NONE();
+  end matchcontinue;
+end instStartOrigin;
+
 protected function instDaeVariableAttributes
 "function: instDaeVariableAttributes
   this function extracts the attributes from the modification
@@ -13876,7 +13918,7 @@ algorithm
   (outCache,outDAEVariableAttributesOption) :=
   matchcontinue (inCache,inEnv,inMod,inType,inIntegerLst)
     local
-      Option<DAE.Exp> quantity_str,unit_str,displayunit_str,nominal_val,fixed_val,exp_bind_select,exp_bind_uncertainty,exp_bind_min,exp_bind_max,exp_bind_start,min_val,max_val,start_val;
+      Option<DAE.Exp> quantity_str,unit_str,displayunit_str,nominal_val,fixed_val,exp_bind_select,exp_bind_uncertainty,exp_bind_min,exp_bind_max,exp_bind_start,min_val,max_val,start_val,startOrigin;
       Option<DAE.StateSelect> stateSelect_value;
       Option<DAE.Uncertainty> uncertainty_value;
       Option<DAE.Distribution> distribution_value;
@@ -13907,13 +13949,13 @@ algorithm
         (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);        
         (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
         distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
-    
+        startOrigin = instStartOrigin(mod, varLst, "start");
         
         //TODO: check for protected attribute (here and below matches)
       then
         (cache,SOME(
           DAE.VAR_ATTR_REAL(quantity_str,unit_str,displayunit_str,(min_val,max_val),
-          start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,distribution_value,NONE(),NONE(),NONE())));
+          start_val,fixed_val,nominal_val,stateSelect_value,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
     
     // Integer
     case (cache,env,mod,tp as DAE.T_INTEGER(varLst = varLst, source = ts),index_list)
@@ -13927,8 +13969,9 @@ algorithm
         (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
         distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
         
+        startOrigin = instStartOrigin(mod, varLst, "start");        
       then
-        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE())));
+        (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,uncertainty_value,distribution_value,NONE(),NONE(),NONE(),startOrigin)));
     
     // Boolean
     case (cache,env,mod,tp as DAE.T_BOOL(varLst = varLst, source = ts),index_list)
@@ -13936,16 +13979,18 @@ algorithm
         (quantity_str) = instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
         (fixed_val) = instBinding(mod, varLst, tp, index_list, "fixed",false);
+        startOrigin = instStartOrigin(mod, varLst, "start");
       then
-        (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE())));
+        (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
     
     // String
     case (cache,env,mod,tp as DAE.T_STRING(varLst = varLst, source = ts),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, tp, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
+        startOrigin = instStartOrigin(mod, varLst, "start");
       then
-        (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,NONE(),NONE(),NONE())));
+        (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,NONE(),NONE(),NONE(),startOrigin)));
     
     // Enumeration
     case (cache,env,mod,enumtype as DAE.T_ENUMERATION(attributeLst = varLst, source = ts),index_list)
@@ -13955,8 +14000,9 @@ algorithm
         (exp_bind_max) = instBinding(mod, varLst, enumtype, index_list, "max",false);
         (exp_bind_start) = instBinding(mod, varLst, enumtype, index_list, "start",false);
         (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",false);
+        startOrigin = instStartOrigin(mod, varLst, "start");
       then
-        (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val,NONE(),NONE(),NONE())));
+        (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
     
     // not a basic type?
     case (cache,env,mod,_,_)
