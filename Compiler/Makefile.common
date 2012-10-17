@@ -67,10 +67,8 @@ Graphviz.mo \
 Inline.mo \
 InnerOuter.mo \
 Inst.mo \
-Instance.mo \
 InstDump.mo \
 InstExtends.mo \
-InstInfo.mo \
 InstSection.mo \
 InstSymbolTable.mo \
 InstTypes.mo \
@@ -85,7 +83,6 @@ Parser.mo \
 Patternm.mo \
 Prefix.mo \
 PrefixUtil.mo \
-Reference.mo \
 SCode.mo \
 SCodeCheck.mo \
 SCodeDependency.mo \
@@ -95,15 +92,14 @@ SCodeExpand.mo \
 SCodeHashTable.mo \
 SCodeLookup.mo \
 SCodeFlattenImports.mo \
-SCodeFlattenExtends.mo \
 SCodeFlattenRedeclare.mo \
 SCodeInst.mo \
 SCodeSimplify.mo \
+SCodeStatic.mo \
 SCodeFlatten.mo \
 SCodeMod.mo \
-SCodeFlat.mo \
-SCodeFlatDump.mo \
 SCodeUtil.mo \
+SCodeTransform.mo \
 Static.mo \
 TypeCheck.mo \
 Types.mo \
@@ -112,12 +108,7 @@ UnitAbsyn.mo \
 UnitAbsynBuilder.mo \
 UnitChecker.mo \
 Values.mo \
-ValuesUtil.mo \
-Visited.mo \
-Element.mo \
-Node.mo \
-Edge.mo \
-SCodeGraph.mo \
+ValuesUtil.mo 
 
 BACKEND = \
 BackendDAE.mo \
@@ -200,15 +191,10 @@ HashTableExpToIndex.mo \
 IOStream.mo \
 List.mo \
 Util.mo \
-Pool.mo \
 PriorityQueue.mo \
-Name.mo \
-Scope.mo \
-Relation.mo \
 VarTransform.mo \
 # Not used by OpenModelica!
 # HashTable6.mo \
-
 
 SCRIPT = \
 CevalScript.mo \

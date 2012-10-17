@@ -1736,6 +1736,7 @@ algorithm
   tree := addDummyClassToTree("time", tree);
   tree := addDummyClassToTree("String", tree);
   tree := addDummyClassToTree("Integer", tree);
+  tree := addDummyClassToTree("Real", tree);
   tree := addDummyClassToTree("spliceFunction", tree);
 
   outInitialEnv := {FRAME(NONE(), NORMAL_SCOPE(), tree, exts, imps, SOME(is_used))};

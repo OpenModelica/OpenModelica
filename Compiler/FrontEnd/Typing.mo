@@ -122,14 +122,15 @@ algorithm
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
       SymbolTable st;
+      Absyn.Path name;
 
-    case (InstTypes.BASIC_TYPE(), _, _, st) then (inClass, st);
+    case (InstTypes.BASIC_TYPE(name), _, _, st) then (inClass, st);
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), _, _, st)
+    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), _, _, st)
       equation
         (comps, st) = List.map2Fold(comps, typeElement, inParent, inContext, st);
       then
-        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st);
+        (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st);
 
   end match;
 end typeClass2;
@@ -1137,10 +1138,11 @@ algorithm
       list<list<Statement>> al, ial;
       SymbolTable st;
       Connections conn;
+      Absyn.Path name;
 
-    case (InstTypes.BASIC_TYPE(), _, _) then (inClass, inConnections);
+    case (InstTypes.BASIC_TYPE(name), _, _) then (inClass, inConnections);
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st, conn)
+    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, conn)
       equation
         (comps, conn) = typeSectionsInElements(comps, st, conn);
         (eq, conn) = typeEquations(eq, st, conn);
@@ -1151,7 +1153,7 @@ algorithm
         al = typeAlgorithms(al, st);
         ial = typeAlgorithms(ial, st);
       then
-        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), conn);
+        (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), conn);
 
   end match;
 end typeSections2;

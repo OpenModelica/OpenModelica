@@ -278,6 +278,12 @@ algorithm
     then 
       Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, aiters));
 
+    case(_) 
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);        
+        print("Expression.unelabExp failed on: " +& ExpressionDump.printExpStr(inExp) +& "\n");
+      then 
+        fail();
   end matchcontinue;
 end unelabExp;
 

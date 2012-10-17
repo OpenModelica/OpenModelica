@@ -76,6 +76,7 @@ public type Statement = InstTypes.Statement;
 public type SymbolTable = InstSymbolTable.SymbolTable;
 
 public function makeClass
+  input Absyn.Path inName;
   input list<Element> inElements;
   input list<Equation> inEquations;
   input list<Equation> inInitialEquations;
@@ -86,7 +87,7 @@ public function makeClass
   output Class outClass;
   output DAE.Type outClassType;
 algorithm
-  (outClass, outClassType) := match(inElements, inEquations, inInitialEquations,
+  (outClass, outClassType) := match(inName, inElements, inEquations, inInitialEquations,
       inAlgorithms, inInitialAlgorithms, inState, inContainsSpecialExtends)
     local
       list<Element> elems;
@@ -96,14 +97,14 @@ algorithm
       DAE.Type ty;
       list<DAE.Var> vars;
 
-    case (elems, eq, ieq, al, ial, _, false)
+    case (_, elems, eq, ieq, al, ial, _, false)
       equation
         vars = List.accumulateMap(elems, makeDaeVarsFromElement);
         ty = DAE.T_COMPLEX(inState, vars, NONE(), DAE.emptyTypeSource);
       then
-        (InstTypes.COMPLEX_CLASS(elems, eq, ieq, al, ial), ty);
+        (InstTypes.COMPLEX_CLASS(inName, elems, eq, ieq, al, ial), ty);
 
-    case (_, {}, {}, {}, {}, _, true)
+    case (_, _, {}, {}, {}, {}, _, true)
       equation
         (InstTypes.EXTENDED_ELEMENTS(cls = cls, ty = ty), elems) =
           getSpecialExtends(inElements);
@@ -152,7 +153,7 @@ algorithm
     local
       list<Element> elems;
 
-    case (InstTypes.BASIC_TYPE(), _) then inAccumVars;
+    case (InstTypes.BASIC_TYPE(_), _) then inAccumVars;
     case (InstTypes.COMPLEX_CLASS(components = elems), _)
       then List.accumulateMapAccum(elems, makeDaeVarsFromElement, inAccumVars);
 
@@ -338,14 +339,15 @@ algorithm
       list<Element> el;
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
+      Absyn.Path name;
 
-    case (_, InstTypes.COMPLEX_CLASS(el, eq, ieq, al, ial))
+    case (_, InstTypes.COMPLEX_CLASS(name, el, eq, ieq, al, ial))
       equation
         el = listAppend(inElements, el);
       then
-        InstTypes.COMPLEX_CLASS(el, eq, ieq, al, ial);
+        InstTypes.COMPLEX_CLASS(name, el, eq, ieq, al, ial);
 
-    case (_, InstTypes.BASIC_TYPE())
+    case (_, InstTypes.BASIC_TYPE(name))
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"SCodeInst.addElementsToClass: Can't add elements to basic type.\n"});
@@ -353,7 +355,7 @@ algorithm
         fail();
 
   end match;
-end addElementsToClass;   
+end addElementsToClass;
 
 public function getComponentName
   input Component inComponent;
@@ -1094,6 +1096,9 @@ algorithm
       Absyn.Info info1, info2;
       String dir_str1, dir_str2, el_name;
 
+    // if they are the same, doesn't matter
+    case ((Absyn.INPUT(),_), (Absyn.INPUT(), _), _, _) then inOuterDirection;
+    case ((Absyn.OUTPUT(),_), (Absyn.OUTPUT(), _), _, _) then inOuterDirection;
     // If either prefix is unset, return the other.
     case (_, (Absyn.BIDIR(), _), _, _) then inOuterDirection;
     case ((Absyn.BIDIR(), _), _, _, _) then inInnerDirection;
@@ -1337,12 +1342,13 @@ algorithm
       list<Element> comps;
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
+      Absyn.Path name;
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), _)
+    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), _)
       equation
         comps = List.map1(comps, prefixElement, inPrefix);
       then
-        InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial);
+        InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial);
 
     else inClass;
 
@@ -1358,7 +1364,7 @@ algorithm
       list<Element> comps;
       Integer count;
 
-    case InstTypes.BASIC_TYPE() then 0;
+    case InstTypes.BASIC_TYPE(_) then 0;
 
     case InstTypes.COMPLEX_CLASS(components = comps)
       equation
@@ -1555,12 +1561,13 @@ algorithm
       list<Element> comps;
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
+      Absyn.Path name;
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), arg, _)
+    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), arg, _)
       equation
         (comps, arg) = traverseClassComponents2(comps, arg, inFunc, {});
       then
-        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), arg);
+        (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), arg);
 
     else (inClass, inArg);
 
@@ -1951,5 +1958,48 @@ algorithm
     case _ then DAE.C_VAR();
   end matchcontinue;
 end toConst;
+
+public function setClassName
+  input Class inClass;
+  input Absyn.Path inClassName;
+  output Class outClass;
+algorithm
+  outClass := match(inClass, inClassName)
+    local
+      list<Element> el;
+      list<Equation> eq, ieq;
+      list<list<Statement>> al, ial;
+      Absyn.Path name;
+
+    case (InstTypes.COMPLEX_CLASS(_, el, eq, ieq, al, ial), _)
+      then
+        InstTypes.COMPLEX_CLASS(inClassName, el, eq, ieq, al, ial);
+
+    case (InstTypes.BASIC_TYPE(_), _)
+      then
+        InstTypes.BASIC_TYPE(inClassName);
+
+  end match;
+end setClassName;
+
+public function getClassName
+  input Class inClass;
+  output Absyn.Path outClassName;
+algorithm
+  outClassName := match(inClass)
+    local
+      Absyn.Path name;
+
+    case (InstTypes.COMPLEX_CLASS(name = name))
+      then
+        name;
+
+    case (InstTypes.BASIC_TYPE(name))
+      then
+        name;
+
+  end match;
+end getClassName;
+
 
 end InstUtil;

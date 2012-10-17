@@ -45,7 +45,6 @@ public import SCode;
 public import SCodeDependency;
 public import SCodeEnv;
 public import SCodeFlattenImports;
-public import SCodeFlattenExtends;
 
 protected import Debug;
 protected import Flags;

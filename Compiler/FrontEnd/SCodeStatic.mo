@@ -29,24 +29,15 @@
  *
  */
 
-encapsulated package Global
-" file:        Global.mo
-  package:     Global
-  description: Global contains structures that are available globally.
+encapsulated package SCodeStatic
+" file:        SCodeStatic.mo
+  package:     SCodeStatic
+  description: Static analysis of expressions
 
-  RCS: $Id: Global.mo 8980 2011-05-13 09:12:21Z adrpo $
+  RCS: $Id: SCodeStatic.mo 13039 2012-09-25 09:53:50Z sjoelund.se $
 
-  The Global package contains structures that are available globally."
-
-
-
-constant Integer instHashIndex = 0;
-constant Integer typesIndex = 1;
-constant Integer crefIndex = 2;
-constant Integer builtinIndex = 3;
-constant Integer profilerTime1Index = 5;
-constant Integer profilerTime2Index = 6;
-constant Integer flagsIndex = 7;
+  This module does static analysis on expressions."
 
 
-end Global;
+
+end SCodeStatic;

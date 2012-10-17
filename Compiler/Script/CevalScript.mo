@@ -99,6 +99,7 @@ protected import SCodeDump;
 protected import SCodeEnv;
 protected import SCodeFlatten;
 protected import SCodeInst;
+protected import SCodeSimplify;
 protected import SimCodeUtil;
 protected import System;
 protected import Static;
@@ -2793,6 +2794,8 @@ algorithm
       equation
         true = Flags.isSet(Flags.SCODE_INST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
+        // remove extends Modelica.Icons.*
+        scodeP = SCodeSimplify.simplifyProgram(scodeP);
         (_, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
         (dae, funcs) = SCodeInst.instClass(className, senv, consts);
 

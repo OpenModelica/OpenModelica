@@ -175,7 +175,7 @@ algorithm
       list<Equation> eq;
       list<list<Statement>> al;
 
-    case (InstTypes.BASIC_TYPE(), _, _) then inAccumEl;
+    case (InstTypes.BASIC_TYPE(_), _, _) then inAccumEl;
     
     case (InstTypes.COMPLEX_CLASS(components = comps, equations = eq, algorithms = al), _, _)
       equation
@@ -205,7 +205,7 @@ algorithm
       DAE.Type ty;
       DAE.Dimensions dims;
 
-    case (InstTypes.ELEMENT(component = comp, cls = InstTypes.BASIC_TYPE()), _, _, _)
+    case (InstTypes.ELEMENT(component = comp, cls = InstTypes.BASIC_TYPE(_)), _, _, _)
       equation
         el = expandComponent(comp, inKind, inSubscripts, inAccumEl);
       then

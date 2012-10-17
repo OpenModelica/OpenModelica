@@ -174,6 +174,11 @@ modelica_boolean valueEq(modelica_metatype lhs, modelica_metatype rhs)
     return MMC_NILTEST(lhs) == MMC_NILTEST(rhs);
   }
 
+  if (numslots==0 && ctor == MMC_ARRAY_TAG) /* zero size array??!! */ {
+    return 1;
+  }
+
+
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
   EXIT(1);
 }
@@ -457,7 +462,7 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
     globalId += numslots-1;
     desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
     for (i=2; i<=numslots; i++) {
-      data = data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
+      data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
       ix = anyStringWorkCode(data,ix,base_id+i-1);
     }
     checkAnyStringBufSize(ix,numslots*100+400);   
@@ -473,7 +478,7 @@ inline static int anyStringWorkCode(void* any, int ix, int id)
   base_id = globalId;
   globalId += numslots;
   for (i=1; i<=numslots; i++) {
-    data = data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
+    data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
     ix = anyStringWorkCode(data,ix,base_id+i);
   }
   checkAnyStringBufSize(ix,numslots*100+400);   
@@ -549,6 +554,12 @@ void printTypeOfAny(void* any) /* for debugging */
     fprintf(stderr, ">");
     return;
   }
+  /* empty array??!! */
+  if (numslots == 0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
+    fprintf(stderr, "meta_array<>");
+    return;
+  }
+
   if (numslots>0 && ctor > 1) { /* RECORD */
     desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
     fprintf(stderr, "%s(", desc->name);

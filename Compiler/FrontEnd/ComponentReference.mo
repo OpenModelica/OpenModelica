@@ -294,7 +294,7 @@ public function unelabCref
   input ComponentRef inComponentRef;
   output Absyn.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := match (inComponentRef)
+  outComponentRef := matchcontinue (inComponentRef)
     local
       list<Absyn.Subscript> subs_1;
       DAE.Ident id;
@@ -302,21 +302,36 @@ algorithm
       Absyn.ComponentRef cr_1;
       ComponentRef cr;
     
-    // identifiers
-    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs))
+    // iterators
+    case (DAE.CREF_ITER(ident = id, subscriptLst = subs))
       equation
         subs_1 = unelabSubscripts(subs);
       then
-        Absyn.CREF_IDENT(id,subs_1);
+        Absyn.CREF_IDENT(id ,subs_1);    
+    
+    // identifiers
+    case (DAE.CREF_IDENT(ident = id, subscriptLst = subs))
+      equation
+        subs_1 = unelabSubscripts(subs);
+      then
+        Absyn.CREF_IDENT(id, subs_1);
     
     // qualified
-    case (DAE.CREF_QUAL(ident = id,subscriptLst = subs,componentRef = cr))
+    case (DAE.CREF_QUAL(ident = id, subscriptLst = subs, componentRef = cr))
       equation
         cr_1 = unelabCref(cr);
         subs_1 = unelabSubscripts(subs);
       then
-        Absyn.CREF_QUAL(id,subs_1,cr_1);
-  end match;
+        Absyn.CREF_QUAL(id, subs_1, cr_1);
+        
+    case _
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);        
+        print("ComponentReference.unelabCref failed on: " +& printComponentRefStr(inComponentRef) +& "\n");
+      then
+        fail();
+        
+  end matchcontinue;
 end unelabCref;
 
 protected function unelabSubscripts

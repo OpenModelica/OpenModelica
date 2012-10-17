@@ -4096,6 +4096,11 @@ algorithm
         true = Types.basicType(t1);
         true = Types.basicType(t2);
 
+        // TODO: FIXME!
+		// adrpo 2012-10-14: should we not prefix here??!!
+        //(cache,c1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        //(cache,c2) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
+
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1,c2)), NONE());
 

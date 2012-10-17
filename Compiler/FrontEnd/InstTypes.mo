@@ -67,6 +67,7 @@ end Element;
 
 public uniontype Class
   record COMPLEX_CLASS
+    Absyn.Path name;
     list<Element> components;
     list<Equation> equations;
     list<Equation> initialEquations;
@@ -74,7 +75,9 @@ public uniontype Class
     list<list<Statement>> initialAlgorithms;
   end COMPLEX_CLASS;
 
-  record BASIC_TYPE end BASIC_TYPE;
+  record BASIC_TYPE
+    Absyn.Path name;
+  end BASIC_TYPE;
 end Class;
 
 public uniontype Function

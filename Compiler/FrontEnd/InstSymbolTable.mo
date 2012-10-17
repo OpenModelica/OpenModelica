@@ -262,16 +262,17 @@ algorithm
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
       SymbolTable st;
+      Absyn.Path name;
 
     // A basic type doesn't have any elements, nothing to add.
-    case (InstTypes.BASIC_TYPE(), st) then (inClass, st);
+    case (InstTypes.BASIC_TYPE(name), st) then (inClass, st);
 
     // A complex class, add it's elements to the symboltable.
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st)
+    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st)
       equation
         (comps, st) = addElements(comps, st);
       then
-        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st);
+        (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st);
 
   end match;
 end addClass;

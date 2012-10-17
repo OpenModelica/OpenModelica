@@ -104,14 +104,15 @@ algorithm
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
       SymbolTable st;
+      Absyn.Path name;
 
-    case (InstTypes.BASIC_TYPE(), _, _, st) then (inClass, st);
+    case (InstTypes.BASIC_TYPE(_), _, _, st) then (inClass, st);
 
-    case (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), _, _, st)
+    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), _, _, st)
       equation
         (comps, st) = List.map2Fold(comps, checkElement, inParent, inContext, st);
       then
-        (InstTypes.COMPLEX_CLASS(comps, eq, ieq, al, ial), st);
+        (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st);
 
   end match;
 end checkClass;

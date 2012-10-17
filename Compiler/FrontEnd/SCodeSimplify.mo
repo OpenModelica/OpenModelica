@@ -32,285 +32,79 @@
 encapsulated package SCodeSimplify
 " file:        SCodeSimplify.mo
   package:     SCodeSimplify
-  description: SCodeSimplify is a flattened form of SCode
+  description: SCodeSimplify is used to further simplify SCode
 
   RCS: $Id: SCodeSimplify.mo 8980 2011-05-13 09:12:21Z perost $
-
-  The SCodeSimplify representation is used to simplify the models even further.
   
-Flattening:
------------
-
-Idea: *everything in Modelica can be reduced to components*
-- components: Type c[AD](mods);
-  + encoded as Type[AD](mods) c;
-- classes:    class Type ... end Type;
-  + encoded as Type Type;
-- extends:    class A extends B(mods); end A;
-  + encoded as A.B(mods) A.$e(B);
-- derived:    class A = B[AD](mods);
-  + encoded as A.B[AD](mods) A.$e(B);
-- equations:  equation  eq1; eq2; eq3;
-  + encoded as Type.$eq Type.$eq{eq1,eq2,eq3};
-- algorithms: algorithm al1; al2; al3;
-  + encoded as Type.$al Type.$al{al1,al2,al3}; "
+  For now SCodeSimplify has the following simplifications:
+  - removes extends *Icons*
+  - *add more things here if needed*
+"
 
 public import Absyn;
 public import SCode;
-public import SCodeEnv;
 
-constant String extendsName    = "$ex";
-constant String derivedName    = "$de";
-constant String classExName    = "$ce";
-constant String componentName  = "$co";
-constant String algorithmsName = "$al";
-constant String equationsName  = "$eq";
-constant String externalName   = "$ed";
-constant String defineunitName = "$ut";
-
-public
-uniontype Kind
-  record CLASS      end CLASS;  
-  record EXTENDS    end EXTENDS;
-  record DERIVED    end DERIVED;
-  record COMPONENT  end COMPONENT;  
-  record ALGORITHMS end ALGORITHMS;
-  record EQUATIONS  end EQUATIONS;
-  record EXTERNAL   end EXTERNAL;
-end Kind;
-
-type Joined = list<SCode.Element>;
-
-uniontype Type "the type of a component or class"
-  record T "the type of a component or class"
-    SCode.Ident   name         "the type name, for derived/extends we use the predefined constants above: extendsName and derivedName";
-    SCode.Element origin       "the element from which the construct originates (for extends is the element itself, for derived is the class containing the derived";
-    Joined        joined       "the scopes that were joined since the top; a scope is joined at component declaration, extends and derived";
-    SCode.Mod     mod          "the modification of this type";
-    Kind          kind         "what kind of type it is";
-    TypePath      prefix       "the full prefix (path until now)";
-    TypePath      suffix       "the full suffix (path from now to leafs)";     
-  end T;
-end Type;
-
-type TypePath = list<Type> 
-  "a type path is used to represent the type of a component or type component
-   Example: 
-     package N = P (redeclare package R = P_R);
-     will be represented as (the left hand side is a type path), the right hand side is a component reference:
-     RP.N                                                       RP.N;
-     RP.N.$d(P(redeclare R = P_R))                              RP.N.$d(P);";
-
-uniontype Component "a component"
-  record C "a component"
-    SCode.Ident   name         "the type name, for derived/extends we use the predefined constants above: extendsName and derivedName";
-    SCode.Element origin       "the element from which the component originates";
-    Kind          kind         "what kind of component it is";
-    TypePath      ty           "the full type path for this component";
-    CompPath      prefix       "the full prefix (path until now)";
-    CompPath      suffix       "the full suffix (path from now to leafs)";
-  end C;
-end Component;
-
-type CompPath = list<Component> "a qualifed component is a list of components";
-
-type FlatProgram = list<CompPath> "a flat program is a list of qualified components";
-  
-uniontype Extra "extra information that is passed along for the ride to all the functions, updated and returned back, like a hitchhiker" 
-  record EXTRA "the extra info"
-    SCodeEnv.Env        env "the environment";
-    TypePath            ctp "the current type scope (accumulated prefix)";
-    CompPath            ccp "the current component scope (accumulated prefix)";
-    Joined              cjo "the current joined scopes until now (accumulated join)";
-    FlatProgram         cfp "the current flat program";
-    Absyn.Info          nfo "the absyn info";  
-  end EXTRA;
-end Extra;
-
-protected import SCodeLookup;
-protected import SCodeDump;
-//protected import Util;
-
-public function flattenProgram
-  "transforms scode to scode flat"  
+public function simplifyProgram
+ "transforms scode to scode simplified"  
   input SCode.Program inSCodeProgram;
-  input Extra inExtra;
-  output FlatProgram outFlatProgram;
-  output Extra outExtra;
+  output SCode.Program outSCodeProgram;
 algorithm
-  (outFlatProgram, outExtra) := matchcontinue(inSCodeProgram, inExtra)
+  outSCodeProgram := match(inSCodeProgram)
     local
-      SCodeEnv.Env env;
-      SCode.Program rest;
-      SCode.Element el;
-      Absyn.Info info;
-      TypePath ctp;
-      CompPath ccp; 
-      Joined cjo;
-      FlatProgram cfp;
-      Extra iExtra, oExtra;
-
+      SCode.Element c, el;
+      SCode.Program rest, acc;
+    
     // handle empty
-    case ({}, iExtra as EXTRA(cfp = cfp)) then (listReverse(cfp), iExtra);
+    case ({}) then {};
 
     // handle something
-    case (el::rest, iExtra as EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, nfo = info))
+    case (el::rest)
       equation
-        // ignore the extra here and ...
-        (cfp, _) = flattenClass(el, iExtra);
-        // send the old one with the updated flat program
-        (cfp, oExtra) = flattenProgram(rest, EXTRA(env, ctp, ccp, cjo, cfp, info));
+        c = simplifyClass(el);
+        acc = simplifyProgram(rest);
       then
-        (cfp, oExtra);
+        c::acc;
 
-  end matchcontinue;
-end flattenProgram;
+  end match;
+end simplifyProgram;
 
-protected function flattenClass
-  "simplifies a class."
+protected function simplifyClass
+"simplifies a class."
   input SCode.Element inClass;
-  input Extra inExtra;
-  output FlatProgram outFlatProgram;
-  output Extra outExtra;
+  output SCode.Element outClass;
 algorithm
-  (outFlatProgram, outExtra) := matchcontinue(inClass, inExtra)
+  outClass := match(inClass)
     local
-      SCodeEnv.Env env;
-      SCode.Element c;
-      SCode.ClassDef cDef;
+      SCode.ClassDef cDef, ncDef;
       Absyn.Info info;
       SCode.Ident n;
-      TypePath ctp;
-      CompPath ccp; 
-      Joined cjo;
-      FlatProgram cfp;
-      Extra oExtra;
+      SCode.Prefixes pref;
+      SCode.Encapsulated ecpf;
+      SCode.Partial ppf;
+      SCode.Restriction res;      
       
-    case (c as SCode.CLASS(name = n, classDef = cDef, info = info), EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp))
+    case (SCode.CLASS(n, pref, ecpf, ppf, res, cDef, info))
       equation
-        _ = SCodeLookup.lookupBuiltinType(n);
+        ncDef = simplifyClassDef(cDef);
       then
-        (cfp, inExtra);
+        SCode.CLASS(n, pref, ecpf, ppf, res, ncDef, info);
       
-    case (c as SCode.CLASS(name = n, classDef = cDef, info = info), EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp))
-      equation
-        failure(_ = SCodeLookup.lookupBuiltinType(n));
-        //print("Flattening: " +& SCodeDump.printElementStr(c) +& "\n");
-        
-        // add class to the type path and component path
-        ctp = T(n, c, cjo, SCode.NOMOD(), CLASS(), ctp, {})::ctp; // the suffix will be added at the end.
-        ccp = C(n, c, COMPONENT(), ctp, ccp, {})::ccp;       // the suffix will be added at the end.
-        // add comp to the flatten program
-        cfp = ccp::cfp;
-        // dive in
-        env = SCodeEnv.enterScope(env, n);
-        (cfp, oExtra) = flattenClassDef(cDef, EXTRA(env, ctp, ccp, cjo, cfp, info));
-      then 
-        (cfp, oExtra);
-  end matchcontinue; 
-end flattenClass;
+  end match; 
+end simplifyClass;
 
-protected function diveIntoIfNotBasicType
-"dive into the cdef if is not basic type!"
-  input SCodeEnv.Env inEnv;
-  input SCode.Ident  inName;
+protected function simplifyClassDef
+"simplifies a classdef."  
   input SCode.ClassDef inClassDef;
-  input Extra inExtra;
-  output FlatProgram outFlatProgram;
-  output Extra outExtra;
+  output SCode.ClassDef outClassDef;
 algorithm
-  (outFlatProgram, outExtra) := matchcontinue(inEnv, inName, inClassDef, inExtra)
+  outClassDef := match(inClassDef)
     local
-      SCodeEnv.Env env;
-      Absyn.Info info;
-      TypePath ctp;
-      CompPath ccp; 
-      Joined cjo;
-      FlatProgram cfp;
-      Extra iExtra, oExtra;
-      
-    // do not dive into a basic type
-    case (inEnv, inName, inClassDef, inExtra as EXTRA(cfp = cfp))
-      equation
-        _ = SCodeLookup.lookupBuiltinType(inName);
-      then
-        (cfp, inExtra);
-      
-    // dive into if is not a basic type
-    case (inEnv, inName, inClassDef, inExtra as EXTRA(env = _, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
-      equation
-        failure(_ = SCodeLookup.lookupBuiltinType(inName));
-        env = SCodeEnv.enterScope(inEnv, inName);
-        (cfp, oExtra) = flattenClassDef(inClassDef, EXTRA(env, ctp, ccp, cjo, cfp, info));
-      then
-        (cfp, oExtra);
-  end matchcontinue;
-end diveIntoIfNotBasicType;
-
-protected function getRedeclaresAndClassExtends
-  input list<SCode.Element> inElements;
-  input list<SCode.Element> inAcc;
-  output list<SCode.Element> outElements;
-algorithm
-  outElements := matchcontinue(inElements, inAcc)
-    local
-      SCode.Element el;
-      list<SCode.Element> rest, acc;
-    
-    // handle empty
-    case ({}, acc) then listReverse(acc);
-    
-    // handle class extends
-    case ((el as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _)))::rest, acc)
-      equation
-        acc = el::acc;
-        acc = getRedeclaresAndClassExtends(rest, acc); 
-      then
-        acc;
-    
-    // handle redeclare-as-element classes
-    case ((el as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))::rest, acc)
-      equation
-        acc = el::acc;        
-        acc = getRedeclaresAndClassExtends(rest, acc); 
-      then
-        acc;
-    
-    // handle redeclare-as-element components
-    case ((el as SCode.COMPONENT(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.REDECLARE())))::rest, acc)
-      equation
-        acc = el::acc;
-        acc = getRedeclaresAndClassExtends(rest, acc); 
-      then
-        acc;
-    
-    // handle others
-    case (_::rest, acc)
-      equation
-        acc = getRedeclaresAndClassExtends(rest, acc); 
-      then
-        acc;
-  end matchcontinue;
-end getRedeclaresAndClassExtends;
-
-protected function flattenClassDef
-  "Flattens a classdef."  
-  input SCode.ClassDef inClassDef;
-  input Extra inExtra;
-  output FlatProgram outFlatProgram;
-  output Extra outExtra;
-algorithm
-  (outFlatProgram, outExtra) := matchcontinue(inClassDef, inExtra)
-    local
-      SCodeEnv.Env env;
       SCode.Element cl, newCls, parentElement;
-      SCodeEnv.ClassType cls_ty;
       SCode.Program rest;
       SCode.Element el;
       SCode.Ident className, baseClassName, name;
       Absyn.ComponentRef fullCref;
       Absyn.Path path;
-      SCodeEnv.ClassType classType;
       list<SCode.Element> els, modifiers;
       list<SCode.Equation> ne "the list of equations";
       list<SCode.Equation> ie "the list of initial equations";
@@ -327,215 +121,91 @@ algorithm
       SCode.Mod mod;
       SCode.Attributes attr;
       Option<SCode.Comment> cmt;
-      TypePath ctp;
-      CompPath ccp; 
-      Joined cjo;
-      FlatProgram cfp;
-      Extra iExtra, oExtra;
-      SCode.Mod redeclareAsElementMods;
+      Absyn.TypeSpec typeSpec;
     
     // handle parts
-    case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed, al, c), iExtra)
+    case (SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed, al, c))
       equation
-        // collect the modifiers!
-        modifiers = getRedeclaresAndClassExtends(els, {});
-        // redeclares are send down to extends
-        //redeclareAsElementMods = Util.if_(valueEq({}, modifiers), SCode.NOMOD(), SCode.REDECL(SCode.NOT_FINAL(), SCode.NOT_EACH(), modifiers)); 
-        redeclareAsElementMods = SCode.NOMOD();
-        (cfp, oExtra) = flattenElements(els, redeclareAsElementMods, iExtra);
-        //(cfp, oExtra) = flattenEqs(ne, oExtra, false); // non initial
-        //(cfp, oExtra) = flattenEqs(ie, oExtra, true);  // initial
-        //(cfp, oExtra) = flattenAlg(ne, oExtra, false); // non initial
-        //(cfp, oExtra) = flattenAlg(ne, oExtra, true);  // initial
-        //(cfp, oExtra) = flattenExt(ed, oExtra);
+        els = simplifyElements(els);
       then 
-        (cfp, oExtra);
+        SCode.PARTS(els, ne, ie, na, ia, nc, clats, ed, al, c);
     
     // handle class extends
-    case (SCode.CLASS_EXTENDS(baseClassName, mod, cDef), iExtra as EXTRA(env = env, ctp = ctp as T(origin=el)::_, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
+    case (SCode.CLASS_EXTENDS(baseClassName, mod, cDef))
       equation
-        // add class to the type path and component path
-        ctp = T(classExName, el, cjo, SCode.NOMOD(), CLASS(), ctp, {})::ctp; // the suffix will be added at the end.
-        ccp = C(baseClassName, el, COMPONENT(), ctp, ccp, {})::ccp;          // the suffix will be added at the end.
-        // add comp to the flatten program
-        cfp = ccp::cfp;
-        // dive into
-        oExtra = EXTRA(env, ctp, ccp, cjo, cfp, info); // (cfp, oExtra) = flattenClassDef(cDef, EXTRA(env, ctp, ccp, cjo, cfp, info));
+        cDef = simplifyClassDef(cDef);
       then 
-        (cfp, oExtra);
+        SCode.CLASS_EXTENDS(baseClassName, mod, cDef);
     
     // handle derived!
-    case (SCode.DERIVED(Absyn.TPATH(path, _), mod, attr, cmt), iExtra as EXTRA(env = env, ctp = ctp as T(origin = el)::_, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
-      equation
-        // Remove the extends from the local scope before flattening the derived
-        // type, because the type should not be looked up via itself.
-        env = SCodeEnv.removeExtendsFromLocalScope(env);        
-        (SCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
-          SCodeLookup.lookupBaseClassName(path, env, info);        
-        
-        // add class to the type path and component path
-        ctp = T(derivedName, el, cl::cjo, SCode.NOMOD(), DERIVED(), ctp, {})::ctp; // the suffix will be added at the end.
-        ccp = C(derivedName, el, COMPONENT(), ctp, ccp, {})::ccp;                  // the suffix will be added at the end.
-        // add comp to the flatten program
-        cfp = ccp::cfp;
-        
-        //(cfp, oExtra) = flattenClass(cl, EXTRA(env, ctp, ccp, cjo, cfp, info));
-        oExtra = EXTRA(env, ctp, ccp, cjo, cfp, info);
+    case (SCode.DERIVED(typeSpec, mod, attr, cmt))
       then 
-        (cfp, oExtra);
+        inClassDef;
     
     // handle enumeration, just return the same
-    case (SCode.ENUMERATION(enumLst = _), iExtra as EXTRA(cfp = cfp))
+    case (SCode.ENUMERATION(enumLst = _))
       then 
-        (cfp, iExtra);
+        inClassDef;
     
     // handle overload
-    case (SCode.OVERLOAD(pathLst = _), iExtra as EXTRA(cfp = cfp))
+    case (SCode.OVERLOAD(pathLst = _))
       then 
-        (cfp, iExtra);
+        inClassDef;
     
     // handle pder
-    case (SCode.PDER(functionPath = _), iExtra as EXTRA(cfp = cfp))
+    case (SCode.PDER(functionPath = _))
       then 
-        (cfp, iExtra);
-  end matchcontinue; 
-end flattenClassDef;
+        inClassDef;
+        
+  end match; 
+end simplifyClassDef;
 
-protected function flattenElements
-  "flatten elements"
+protected function simplifyElements
+"simplify elements"
   input list<SCode.Element> inElements;
-  input SCode.Mod inRedeclareAsElementMod;
-  input Extra inExtra;
-  output FlatProgram outFlatProgram;
-  output Extra outExtra;  
+  output list<SCode.Element> outElements;  
 algorithm
-  (outFlatProgram, outExtra) := matchcontinue(inElements, inRedeclareAsElementMod, inExtra)
+  outElements := matchcontinue(inElements)
     local
-      SCodeEnv.Env env;
       SCode.Element el;
-      list<SCode.Element> rest;
+      list<SCode.Element> rest, els;
       Absyn.Info info;
-      TypePath ctp;
-      CompPath ccp; 
-      Joined cjo;
-      FlatProgram cfp;
-      Extra iExtra, oExtra;
+      Absyn.Path bcp;
     
     // handle classes without elements!  
-    case ({}, _, iExtra as EXTRA(cfp = cfp)) then (cfp, iExtra);
+    case ({}) then {};
+    
+    // handle extends Modelica.Icons.*
+    case (SCode.EXTENDS(baseClassPath = bcp)::rest)
+      equation
+        true = Absyn.pathContains(bcp, Absyn.IDENT("Icons"));
+        els = simplifyElements(rest);
+      then 
+        els;
+        
+    // remove Modelica.Icons -> not working yet because of Modelica.Mechanics.MultiBody.Types uses it !/ 
+    //case (SCode.CLASS(name = "Icons", restriction = SCode.R_PACKAGE())::rest)
+    //  equation
+    //    els = simplifyElements(rest);
+    //  then 
+    //    els;
+    
+    // handle classes
+    case ((el as SCode.CLASS(name = _))::rest)
+      equation
+        el = simplifyClass(el);
+        els = simplifyElements(rest);
+      then 
+        el::els;
     
     // handle rest
-    case (el::rest, inRedeclareAsElementMod, iExtra as EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
+    case (el::rest)
       equation
-        // collect only the flat program not the other info!
-        (cfp, _) = flattenElement(el, inRedeclareAsElementMod, iExtra);
-        // send in the input extra with the flat program changed
-        (cfp, oExtra) = flattenElements(rest, inRedeclareAsElementMod, EXTRA(env, ctp, ccp, cjo, cfp, info));
+        els = simplifyElements(rest);
       then 
-        (cfp, oExtra);
+        el::els;
   end matchcontinue; 
-end flattenElements;
-
-protected function flattenElement
-  "flatten an element"  
-  input SCode.Element inElement;
-  input SCode.Mod inRedeclareAsElementMod;
-  input Extra inExtra;
-  output FlatProgram outFlatProgram;
-  output Extra outExtra;  
-algorithm
-  (outFlatProgram, outExtra) := matchcontinue(inElement, inRedeclareAsElementMod, inExtra)
-    local
-      SCodeEnv.Env env;
-      SCodeEnv.ClassType cls_ty;      
-      Absyn.ComponentRef fullCref;
-      SCode.Ident name, clsName;
-      Absyn.Path path;
-      SCode.Element el, cl, parentElement;
-      Absyn.Import imp;
-      Absyn.Info info;
-      SCodeEnv.Item item;
-      SCode.Visibility vis;
-      SCode.ClassDef cDef;
-      Option<SCode.Annotation> ann;
-      SCode.Mod mod;
-      TypePath ctp;
-      CompPath ccp; 
-      Joined cjo;
-      FlatProgram cfp;
-      Extra iExtra, oExtra;
-    
-    // handle extends
-    case (el as SCode.EXTENDS(path, vis, mod, ann, info), inRedeclareAsElementMod, iExtra as EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp))
-      equation 
-        // Remove the extends from the local scope before flattening the extends
-        // type, because the type should not be looked up via itself.
-        env = SCodeEnv.removeExtendsFromLocalScope(env);
-        (SCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
-          SCodeLookup.lookupBaseClassName(path, env, info);
-        
-        // add class to the type path and component path
-        ctp = T(extendsName, el, cl::cjo, inRedeclareAsElementMod, EXTENDS(), ctp, {})::ctp; // the suffix will be added at the end.
-        ccp = C(extendsName, el, COMPONENT(), ctp, ccp, {})::ccp;         // the suffix will be added at the end.
-        // add comp to the flatten program
-        cfp = ccp::cfp;
-        
-        oExtra = EXTRA(env, ctp, ccp, cjo, cfp, info); //(cfp, oExtra) = flattenClass(cl, EXTRA(env, ctp, ccp, cjo, cfp, info));
-      then 
-        (cfp, oExtra);
-
-    // handle classdef
-    case (el as SCode.CLASS(info = info), inRedeclareAsElementMod, iExtra)
-      equation
-        (cfp, oExtra) = flattenClass(el, iExtra);
-      then 
-        (cfp, oExtra);
-    
-    // handle import, WE SHOULD NOT HAVE ANY!
-    case (el as SCode.IMPORT(imp = imp), inRedeclareAsElementMod, iExtra as EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
-      equation
-        print("Import found! We should not have any!");
-      then 
-        (cfp, iExtra);
-
-    // handle user defined component
-    case (el as SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path = path)), inRedeclareAsElementMod, iExtra as EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
-      equation
-        (SCodeEnv.CLASS(cls = cl as SCode.CLASS(name = clsName, classDef = cDef, info = info), classType = cls_ty), path, env) = 
-          SCodeLookup.lookupClassName(path, env, info);
-        
-        // add class to the type path and component path
-        ctp = T(componentName, el, cl::cjo, SCode.NOMOD(), CLASS(), ctp, {})::ctp; // the suffix will be added at the end.
-        ccp = C(name, el, COMPONENT(), ctp, ccp, {})::ccp;                         // the suffix will be added at the end.
-        // add comp to the flatten program
-        cfp = ccp::cfp;
-          
-        // dive into the component type if is not basic
-        //(cfp, oExtra) = flattenClass(cl, EXTRA(env, ctp, ccp, cjo, cfp, info));
-        oExtra = EXTRA(env, ctp, ccp, cjo, cfp, info);
-      then 
-        (cfp, oExtra);
-    
-    // handle defineunit
-    case (el as SCode.DEFINEUNIT(name = name), inRedeclareAsElementMod, iExtra as EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
-      equation
-        // add class to the type path and component path
-        ctp = T(defineunitName, el, cjo, SCode.NOMOD(), CLASS(), ctp, {})::ctp; // the suffix will be added at the end.
-        ccp = C(defineunitName, el, COMPONENT(), ctp, ccp, {})::ccp;       // the suffix will be added at the end.
-        // add comp to the flatten program
-        cfp = ccp::cfp;
-                
-        oExtra = EXTRA(env, ctp, ccp, cjo, cfp, info);
-      then 
-        (cfp, oExtra);
-        
-     case (el, inRedeclareAsElementMod, iExtra as EXTRA(env = env, ctp = ctp, ccp = ccp, cjo = cjo, cfp = cfp, nfo = info))
-       equation
-         print("- SCodeSimplify.flattenElement failed on element: " +& SCodeDump.shortElementStr(el) +& "\n");
-       then
-         fail();
-  end matchcontinue; 
-end flattenElement;
+end simplifyElements;
 
 end SCodeSimplify;
 
