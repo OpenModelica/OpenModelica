@@ -723,13 +723,6 @@ algorithm
       then
         s;
     
-    case (DAE.CAST(ty = DAE.T_REAL(varLst = _),exp = e), _, _, _)
-      equation
-        s = printExp2Str(e, stringDelimiter, opcreffunc, opcallfunc);
-        s_2 = stringAppendList({"Real(",s,")"});
-      then
-        s_2;
-    
     case (DAE.CAST(ty = tp,exp = e), _, _, _)
       equation
         str = Types.unparseType(tp);

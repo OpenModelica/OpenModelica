@@ -1096,9 +1096,6 @@ algorithm
       Absyn.Info info1, info2;
       String dir_str1, dir_str2, el_name;
 
-    // if they are the same, doesn't matter
-    case ((Absyn.INPUT(),_), (Absyn.INPUT(), _), _, _) then inOuterDirection;
-    case ((Absyn.OUTPUT(),_), (Absyn.OUTPUT(), _), _, _) then inOuterDirection;
     // If either prefix is unset, return the other.
     case (_, (Absyn.BIDIR(), _), _, _) then inOuterDirection;
     case ((Absyn.BIDIR(), _), _, _, _) then inInnerDirection;

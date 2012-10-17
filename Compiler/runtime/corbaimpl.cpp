@@ -82,6 +82,28 @@ void CorbaImpl__setSessionName(const char *name)
   }
 }
 
+char** construct_dummy_args(int argc, const char* argv[])
+{
+  char** args = new char*[argc];
+  
+  for(int i = 0; i < argc; ++i) {
+    int len = strlen(argv[i]);
+    args[i] = new char[len];
+    args[i] = strdup(argv[i]);
+  }
+
+  return args;
+}
+
+void free_dummy_args(int argc, char** argv)
+{
+  for(int i = 0; i < argc; ++i) {
+    delete [] argv[i];
+  }
+  delete [] argv;
+}
+
+
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
@@ -146,22 +168,25 @@ int CorbaImpl__initialize()
 {
 #ifndef NOMICO
 #if defined(USE_OMNIORB)
-  int argc=6;
-  char *dummyArgv[] =
-         { (char*)"omc",
-            (char*)"-NoResolve",
-            (char*)"-IIOPAddr",
-            (char*)"inet:127.0.0.1:0",
-            (char*)"-ORBgiopMaxMsgSize",
-            (char*)"2147483647" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  int argc = 6;
+  const char *args[] = {
+    "omc",
+    "-NoResolve",
+    "-IIOPAddr",
+    "inet:127.0.0.1:0",
+    "-ORBgiopMaxMsgSize",
+    "2147483647" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */
+  };
 #else
   int argc=4;
-  char *dummyArgv[] =
-      { (char*)"omc",
-        (char*)"-ORBNoResolve",
-        (char*)"-ORBIIOPAddr",
-        (char*)"inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
+  const char *args[] = {
+    "omc",
+    "ORBNoResolve",
+    "-ORBIIOPAddr",
+    "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ 
+  }
 #endif
+
   string omc_client_request_event_name   = "omc_client_request_event";
   string omc_return_value_ready_name     = "omc_return_value_ready";
   DWORD lastError = 0;
@@ -193,11 +218,14 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   InitializeCriticalSection(&lock);
   InitializeCriticalSection(&clientlock);
   
+  char **argv = construct_dummy_args(argc, dummyArgv);
 #if defined(USE_OMNIORB)
-  orb = CORBA::ORB_init(argc, dummyArgv, "omniORB4");
+  orb = CORBA::ORB_init(argc, argv, "omniORB4");
 #else
-  orb = CORBA::ORB_init(argc, dummyArgv, "mico-local-orb");
+  orb = CORBA::ORB_init(argc, argv, "mico-local-orb");
 #endif
+  free_dummy_args(argc, argv);
+
   poaobj = orb->resolve_initial_references("RootPOA");
   poa = PortableServer::POA::_narrow(poaobj);
   mgr = poa->the_POAManager();
@@ -313,11 +341,23 @@ int CorbaImpl__initialize()
 {
 #ifndef NOMICO
 #if defined(USE_OMNIORB)
-  char *dummyArgv[] = { "omc", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBgiopMaxMsgSize", "2147483647" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
-  int argc=6;
+  int argc = 6;
+  const char *dummyArgv[] = {
+    "omc",
+    "-NoResolve",
+    "-IIOPAddr",
+    "inet:127.0.0.1:0",
+    "-ORBgiopMaxMsgSize",
+    "2147483647" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */
+  };
 #else
-  char *dummyArgv[] = { "omc", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ };
   int argc=4;
+  const char *dummyArgv[] = {
+    "omc",
+    "ORBNoResolve",
+    "-ORBIIOPAddr",
+    "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ 
+  }
 #endif
   
   pthread_cond_init(&omc_waitformsg,NULL);
@@ -326,11 +366,13 @@ int CorbaImpl__initialize()
   pthread_mutex_init(&omc_waitlock,NULL);
   pthread_mutex_init(&clientlock, NULL);
 
+  char **argv = construct_dummy_args(argc, dummyArgv);
 #if defined(USE_OMNIORB)  
-  orb = CORBA::ORB_init(argc, dummyArgv, "omniORB4");
+  orb = CORBA::ORB_init(argc, argv, "omniORB4");
 #else
-  orb = CORBA::ORB_init(argc, dummyArgv, "mico-local-orb");
+  orb = CORBA::ORB_init(argc, argv, "mico-local-orb");
 #endif
+  free_dummy_args(argc, argv);
   poaobj = orb->resolve_initial_references("RootPOA");
   poa = PortableServer::POA::_narrow(poaobj);
   mgr = poa->the_POAManager();
@@ -338,8 +380,9 @@ int CorbaImpl__initialize()
   /* get temp dir */
   const char* tmpDir = SettingsImpl__getTempDirectoryPath();
   /* get the user name */
-  char *user = getenv("USER");
-  if (user==NULL) { user="nobody"; }
+  char *tmp_user = getenv("USER");
+  string user = tmp_user ? tmp_user : "nobody";
+
   /* start omc differently if we have a corba session name */
   if (corbaSessionName != NULL) /* yehaa, we have a session name */
   {

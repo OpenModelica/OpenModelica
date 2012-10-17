@@ -65,9 +65,6 @@ match exp
   case TUPLE(__) then 
     let tuple_str = dumpExpList(PR, stringDelimiter, ", ")
     '(<%tuple_str%>)'
-  case CAST(ty = DAE.T_REAL(__)) then
-    let exp_str = dumpExp(exp, stringDelimiter)
-    'Real(<%exp_str%>)'
   case CAST(__) then
     let exp_str = dumpExp(exp, stringDelimiter)
     let ty_str = dumpType(ty)
