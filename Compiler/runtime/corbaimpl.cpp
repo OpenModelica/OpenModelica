@@ -179,7 +179,7 @@ int CorbaImpl__initialize()
   int argc=4;
   const char *dummyArgv[] = {
     "omc",
-    "ORBNoResolve",
+    "-ORBNoResolve",
     "-ORBIIOPAddr",
     "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ 
   };
