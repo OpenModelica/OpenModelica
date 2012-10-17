@@ -2126,7 +2126,7 @@ algorithm
         SCode.PREFIXES(vis, redecl, f as SCode.FINAL(), io, repl),
         SCode.ATTR(d,ct,prl,var,dir),tp,mod,comment,cond,info)),cmod) :: rest),_,_)
       equation
-        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
+        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
@@ -2153,7 +2153,7 @@ algorithm
         SCode.PREFIXES(vis, redecl, f, io, repl),
         SCode.ATTR(d,ct,prl,var as SCode.CONST(),dir),tp,mod,comment,cond,info)),cmod) :: rest),_,_)
       equation
-        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false, info);
+        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, true, info);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
