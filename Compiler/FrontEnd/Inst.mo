@@ -7483,15 +7483,16 @@ algorithm
                             finalPrefix = finalPrefix,
                             replaceablePrefix = repl,
                             visibility = vis,
-                            redeclarePrefix = redeclp,
-                            innerOuter = io), 
+                            redeclarePrefix = redeclp), 
                             typeSpec = t,modifications = mod,comment = comment,
                             attributes = at,condition = cond, info = info
                             )),rmod) :: rest))),
+          // adrpo: always take the inner outer from the component, not the redeclaration!!!!
           SCode.COMPONENT(name = n2,
                           prefixes = SCode.PREFIXES(
                             finalPrefix = SCode.NOT_FINAL(),
                             replaceablePrefix = repl2 as SCode.REPLACEABLE((cc as SOME(_))),
+                            innerOuter = io,
                             visibility = vis2),
                           typeSpec = t2,
                           modifications = old_mod),
