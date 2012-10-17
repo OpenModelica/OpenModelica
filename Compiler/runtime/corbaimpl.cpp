@@ -184,7 +184,7 @@ int CorbaImpl__initialize()
     "ORBNoResolve",
     "-ORBIIOPAddr",
     "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ 
-  }
+  };
 #endif
 
   string omc_client_request_event_name   = "omc_client_request_event";
@@ -218,7 +218,7 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   InitializeCriticalSection(&lock);
   InitializeCriticalSection(&clientlock);
   
-  char **argv = construct_dummy_args(argc, dummyArgv);
+  char **argv = construct_dummy_args(argc, args);
 #if defined(USE_OMNIORB)
   orb = CORBA::ORB_init(argc, argv, "omniORB4");
 #else
