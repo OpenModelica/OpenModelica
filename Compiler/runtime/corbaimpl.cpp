@@ -87,8 +87,6 @@ char** construct_dummy_args(int argc, const char* argv[])
   char** args = new char*[argc];
   
   for(int i = 0; i < argc; ++i) {
-    int len = strlen(argv[i]);
-    args[i] = new char[len];
     args[i] = strdup(argv[i]);
   }
 
@@ -98,7 +96,7 @@ char** construct_dummy_args(int argc, const char* argv[])
 void free_dummy_args(int argc, char** argv)
 {
   for(int i = 0; i < argc; ++i) {
-    delete [] argv[i];
+    free(argv[i]);
   }
   delete [] argv;
 }
@@ -169,7 +167,7 @@ int CorbaImpl__initialize()
 #ifndef NOMICO
 #if defined(USE_OMNIORB)
   int argc = 6;
-  const char *args[] = {
+  const char *dummyArgv[] = {
     "omc",
     "-NoResolve",
     "-IIOPAddr",
@@ -179,7 +177,7 @@ int CorbaImpl__initialize()
   };
 #else
   int argc=4;
-  const char *args[] = {
+  const char *dummyArgv[] = {
     "omc",
     "ORBNoResolve",
     "-ORBIIOPAddr",
@@ -218,7 +216,7 @@ Please stop or kill the other OMC process first!\nOpenModelica OMC will now exit
   InitializeCriticalSection(&lock);
   InitializeCriticalSection(&clientlock);
   
-  char **argv = construct_dummy_args(argc, args);
+  char **argv = construct_dummy_args(argc, dummyArgv);
 #if defined(USE_OMNIORB)
   orb = CORBA::ORB_init(argc, argv, "omniORB4");
 #else
