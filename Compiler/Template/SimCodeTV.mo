@@ -2227,6 +2227,11 @@ end List;
 
 package ComponentReference
 
+  function makeUntypedCrefIdent
+    input DAE.Ident ident;
+    output DAE.ComponentRef outCrefIdent;
+  end makeUntypedCrefIdent;
+
   function crefStripLastSubs
     input DAE.ComponentRef inComponentRef;
     output DAE.ComponentRef outComponentRef;

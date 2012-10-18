@@ -181,6 +181,14 @@ algorithm
   outCrefIdent := DAE.CREF_IDENT(ident, identType, subscriptLst); // shareCref(DAE.CREF_IDENT(ident, identType, subscriptLst));
 end makeCrefIdent;
 
+public function makeUntypedCrefIdent
+  input DAE.Ident ident;
+  output ComponentRef outCrefIdent;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  outCrefIdent := DAE.CREF_IDENT(ident, DAE.T_UNKNOWN_DEFAULT, {});
+end makeUntypedCrefIdent;
+
 public function makeCrefQual
 "@author: adrpo
   This function creates a DAE.CREF_QUAL(ident, identType, subscriptLst, componentRef)"

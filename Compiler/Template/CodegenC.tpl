@@ -7019,7 +7019,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let foundFirst = if not ri.defaultValue then tempDecl("int",&tmpVarDecls)
   let rangeExp = daeExp(iter.exp,context,&rangeExpPre,&tmpVarDecls)
   let resType = expTypeArrayIf(typeof(exp))
-  let res = "_$reductionFoldTmpB"
+  let res = contextCref(makeUntypedCrefIdent("$reductionFoldTmpB"), context)
   let &tmpVarDecls += '<%resType%> <%res%>;<%\n%>'
   let resTmp = tempDecl(resType,&varDecls)
   let &preDefault = buffer ""
@@ -7030,7 +7030,7 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let guardCond = match iter.guardExp case SOME(grd) then daeExp(grd, context, &guardExpPre, &tmpVarDecls) else "1"
   let empty = match identType case "modelica_metatype" then 'listEmpty(<%loopVar%>)' else '0 == size_of_dimension_base_array(<%loopVar%>, 1)'
   let length = match identType case "modelica_metatype" then 'listLength(<%loopVar%>)' else 'size_of_dimension_base_array(<%loopVar%>, 1)'
-  let reductionBodyExpr = "_$reductionFoldTmpA"
+  let reductionBodyExpr = contextCref(makeUntypedCrefIdent("$reductionFoldTmpA"), context)
   let bodyExprType = expTypeArrayIf(typeof(r.expr))
   let reductionBodyExprWork = daeExp(r.expr, context, &bodyExpPre, &tmpVarDecls)
   let &tmpVarDecls += '<%bodyExprType%> <%reductionBodyExpr%>;<%\n%>'
