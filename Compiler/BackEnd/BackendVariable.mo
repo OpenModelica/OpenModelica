@@ -283,6 +283,66 @@ algorithm
   end match;
 end setVarStartValue;
 
+public function setVarStartOrigin
+"function: setVarStartOrigin
+  author: Frenkel TUD
+  Sets the startOrigin attribute of a variable."
+  input BackendDAE.Var inVar;
+  input Option<DAE.Exp> startOrigin;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,startOrigin)
+    local
+      DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      DAE.VarParallelism prl;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr1;
+      Option<SCode.Comment> s;
+      DAE.ConnectorType ct;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
+      equation
+        oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
+      equation
+        attr = getVariableAttributefromType(d);
+        oattr1 = DAEUtil.setStartOrigin(SOME(attr),startOrigin);
+    then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr1,s,ct);
+      
+  end match;
+end setVarStartOrigin;
+
 public function setVarAttributes 
 "sets the variable attributes of a variable.
 author: Peter Aronsson (paronsson@wolfram.com)
@@ -364,6 +424,19 @@ algorithm
     else NONE();
    end matchcontinue;
 end varStartValueOption;
+
+public function varStartOrigin
+"function varStartOrigin
+  author: Frenkel TUD
+  Returns the StartOrigin of a variable."
+  input BackendDAE.Var v;
+  output Option<DAE.Exp> so;
+protected
+   Option<DAE.VariableAttributes> attr;
+algorithm
+  BackendDAE.VAR(values = attr) := v;
+  so := DAEUtil.getStartOrigin(attr);
+end varStartOrigin;
 
 public function varBindExp
 "function varBindExp
@@ -3414,7 +3487,7 @@ public function mergeAliasVars
 protected
   BackendDAE.Var v,va,v1,v2;
   Boolean fixed,fixeda,f;
-  Option<DAE.Exp> sv,sva;
+  Option<DAE.Exp> sv,sva,so,soa;
   DAE.Exp start;
 algorithm
   // get attributes
@@ -3424,7 +3497,9 @@ algorithm
   // start
   sv := varStartValueOption(inVar);
   sva := varStartValueOption(inAVar);
-  v1 := mergeStartFixed(inVar,fixed,sv,inAVar,fixeda,sva,negate,knVars);
+  so := varStartOrigin(inVar);
+  soa := varStartOrigin(inAVar);
+  v1 := mergeStartFixed(inVar,fixed,sv,so,inAVar,fixeda,sva,soa,negate,knVars);
   // nominal
   v2 := mergeNominalAttribute(inAVar,v1,negate);
   // minmax
@@ -3436,27 +3511,30 @@ protected function mergeStartFixed
   input BackendDAE.Var inVar;
   input Boolean fixed;
   input Option<DAE.Exp> sv;
+  input Option<DAE.Exp> so;
   input BackendDAE.Var inAVar;
   input Boolean fixeda;
   input Option<DAE.Exp> sva;
+  input Option<DAE.Exp> soa;
   input Boolean negate;
   input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
   output BackendDAE.Var outVar;
 algorithm
   outVar :=
-  matchcontinue (inVar,fixed,sv,inAVar,fixeda,sva,negate,knVars)
+  matchcontinue (inVar,fixed,sv,so,inAVar,fixeda,sva,soa,negate,knVars)
     local
       BackendDAE.Var v,va,v1,v2;
       DAE.ComponentRef cr,cra;
       DAE.Exp sa,sb,e;
       Integer i,ia;
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_)
+      Option<DAE.Exp> origin;
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),_,va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        e = getNonZeroStart(sa,e,knVars);
+        (e,_) = getNonZeroStart(sa,NONE(),e,NONE(),knVars);
         v1 = setVarStartValue(v,e);
       then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_)
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),_,va as BackendDAE.VAR(varName=cra),true,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         // according to MSL
@@ -3465,54 +3543,55 @@ algorithm
         i = ComponentReference.crefDepth(cr);
         ia = ComponentReference.crefDepth(cra);
       then
-        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,negate," both fixed and have start values ","");
-    case (v,true,SOME(sa),va,true,NONE(),_,_)
+        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," both fixed and have start values ","");
+    case (v,true,SOME(sa),_,va,true,NONE(),_,_,_)
       then v;
-    case (v,true,SOME(sa),va,false,SOME(sb),_,_)
+    case (v,true,SOME(sa),_,va,false,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        e = getNonZeroStart(sa,e,knVars);
+        (e,_) = getNonZeroStart(sa,NONE(),e,NONE(),knVars);
         v1 = setVarStartValue(v,e);
       then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
+    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),_,va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
       then 
-         mergeStartFixed1(false,v,cr,sa,cra,e,negate," have start values "," because this is fixed");
-    case (v,true,SOME(sa),va,false,NONE(),_,_)
+         mergeStartFixed1(false,v,cr,sa,cra,e,soa,negate," have start values "," because this is fixed");
+    case (v,true,SOME(sa),_,va,false,NONE(),_,_,_)
       then v;
-    case (v,true,NONE(),va,true,SOME(sb),_,_)
+    case (v,true,NONE(),_,va,true,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        v1 = setVarStartValue(v,e); 
+        v1 = setVarStartValue(v,e);
       then v1;
-    case (v,true,NONE(),va,true,NONE(),_,_)
+    case (v,true,NONE(),_,va,true,NONE(),_,_,_)
       then v;
-    case (v,true,NONE(),va,false,SOME(sb),_,_)
+    case (v,true,NONE(),_,va,false,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        v1 = setVarStartValue(v,e); 
+        v1 = setVarStartValue(v,e);
       then v1;
-    case (v,true,NONE(),va,false,NONE(),_,_)
+    case (v,true,NONE(),_,va,false,NONE(),_,_,_)
       then v;   
-    case (v,false,SOME(sa),va,true,SOME(sb),_,_)
+    case (v,false,SOME(sa),_,va,true,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        e = getNonZeroStart(sa,e,knVars);
+        (e,_) = getNonZeroStart(sa,NONE(),e,NONE(),knVars);
         v1 = setVarStartValue(v,e);
         v2 = setVarFixed(v1,true);
       then v2;
-    case (v,false,SOME(sa),va,true,NONE(),_,_)
+    case (v,false,SOME(sa),_,va,true,NONE(),_,_,_)
       equation
         v1 = setVarFixed(v,true);
       then v1;
-    case (v,false,SOME(sa),va,false,SOME(sb),_,_)
+    case (v,false,SOME(sa),_,va,false,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
-        e = getNonZeroStart(sa,e,knVars);
+        (e,origin) = getNonZeroStart(sa,so,e,soa,knVars);
         v1 = setVarStartValue(v,e);
+        v1 = setVarStartOrigin(v,origin);
       then v1;     
-    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_)
+    case (v as BackendDAE.VAR(varName=cr),false,SOME(sa),_,va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         // according to MSL
@@ -3521,25 +3600,26 @@ algorithm
         i = ComponentReference.crefDepth(cr);
         ia = ComponentReference.crefDepth(cra);
       then
-        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,negate," have start values ","");
-    case (v,false,SOME(sa),va,false,NONE(),_,_)
+        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," have start values ","");
+    case (v,false,SOME(sa),_,va,false,NONE(),_,_,_)
       then v;
-    case (v,false,NONE(),va,true,SOME(sb),_,_)
+    case (v,false,NONE(),_,va,true,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         v1 = setVarStartValue(v,e);
         v2 = setVarFixed(v1,true);
       then v2;
-    case (v,false,NONE(),va,true,NONE(),_,_)
+    case (v,false,NONE(),_,va,true,NONE(),_,_,_)
       equation
         v1 = setVarFixed(v,true);
       then v1;
-    case (v,false,NONE(),va,false,SOME(sb),_,_)
+    case (v,false,NONE(),_,va,false,SOME(sb),_,_,_)
       equation
         e = Debug.bcallret1(negate,Expression.negate,sb,sb);
         v1 = setVarStartValue(v,e);
+        v1 = setVarStartOrigin(v,soa);
       then v1;
-    case (v,false,NONE(),va,false,NONE(),_,_)
+    case (v,false,NONE(),_,va,false,NONE(),_,_,_)
       then v; 
   end matchcontinue;
 end mergeStartFixed;
@@ -3552,19 +3632,20 @@ protected function mergeStartFixed1
   input DAE.Exp sv;
   input DAE.ComponentRef cra;
   input DAE.Exp sva;
+  input Option<DAE.Exp> soa;
   input Boolean negate;
   input String s4;
   input String s7;
   output BackendDAE.Var outVar;
 algorithm
   outVar :=
-  matchcontinue (b,inVar,cr,sv,cra,sva,negate,s4,s7)
+  matchcontinue (b,inVar,cr,sv,cra,sva,soa,negate,s4,s7)
     local
       String s,s1,s2,s3,s5,s6;
       DAE.Exp sv1,sva1;
       BackendDAE.Var v;
     // alias var has more dots in the name
-    case (false,_,_,_,_,_,_,_,_)
+    case (false,_,_,_,_,_,_,_,_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Util.if_(negate," = -"," = ");
@@ -3575,7 +3656,7 @@ algorithm
         Error.addMessage(Error.COMPILER_WARNING,{s});
       then 
         inVar;     
-    case (true,_,_,_,_,_,_,_,_)
+    case (true,_,_,_,_,_,_,_,_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Util.if_(negate," = -"," = ");
@@ -3585,6 +3666,7 @@ algorithm
         s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,s7,".\n"});
         Error.addMessage(Error.COMPILER_WARNING,{s});
         v = setVarStartValue(inVar,sva);
+        v = setVarStartOrigin(v,soa);
       then 
         v;
   end matchcontinue;
@@ -3622,38 +3704,72 @@ end replaceCrefWithBindExp;
 protected function getNonZeroStart
 "autor: Frenkel TUD 2011-04"
   input DAE.Exp exp1;
+  input Option<DAE.Exp> so "StartOrigin";
   input DAE.Exp exp2;
+  input Option<DAE.Exp> sao "StartOrigin";
   input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
   output DAE.Exp outExp;
+  output Option<DAE.Exp> outStartOrigin;
 algorithm
-  outExp :=
-  matchcontinue (exp1,exp2,knVars)
+  (outExp,outStartOrigin) :=
+  matchcontinue (exp1,so,exp2,sao,knVars)
     local
       DAE.Exp exp2_1,exp1_1;
+      Integer i,ia;
       Boolean b;
-    case (_,_,_)
+      Option<DAE.Exp> origin;
+    case (_,_,_,_,_)
       equation
         true = Expression.isZero(exp2);
-      then exp1;
-    case (_,_,_)
+      then (exp1,so);
+    case (_,_,_,_,_)
       equation
         true = Expression.isZero(exp1);
-      then exp2;
-    case (_,_,_)
+      then (exp2,sao);
+    case (_,_,_,_,_)
       equation
         true = Expression.expEqual(exp1,exp2);
-      then exp1;
-    case (_,_,_)
+        // use highest origin
+        i = startOriginToValue(so);
+        ia = startOriginToValue(sao);
+        origin = Util.if_(intGt(ia,i),sao,so);        
+      then (exp1,origin);
+    case (_,_,_,_,_)
+      equation
+        // if one is bound and the other not use the bound one
+        i = startOriginToValue(so);
+        ia = startOriginToValue(sao);
+        false = intEq(i,ia);
+        ((exp1_1,origin)) = Util.if_(intGt(ia,i),(exp2,sao),(exp1,so));
+      then 
+        (exp1_1,origin);
+    case (_,_,_,_,_)
       equation
         // simple evaluation, by replace crefs with bind expressions recursivly
         ((exp1_1, (_,b,_))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
         ((exp2_1, _)) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
         true = Expression.expEqual(exp1_1, exp2_1);
         exp1_1 = Util.if_(b,exp1,exp2);
+        // use highest origin
+        i = startOriginToValue(so);
+        ia = startOriginToValue(sao);
+        origin = Util.if_(intGt(ia,i),sao,so);
       then 
-        exp1_1;         
+        (exp1_1,origin);
   end matchcontinue;
 end getNonZeroStart;
+
+protected function startOriginToValue
+  input Option<DAE.Exp> startOrigin;
+  output Integer i;
+algorithm
+  i := match(startOrigin)
+    case NONE() then 0;
+    case SOME(DAE.SCONST("undefined")) then 1;
+    case SOME(DAE.SCONST("type")) then 2;
+    case SOME(DAE.SCONST("binding")) then 3;
+  end match;
+end startOriginToValue;
 
 protected function mergeNominalAttribute
   input BackendDAE.Var inAVar;

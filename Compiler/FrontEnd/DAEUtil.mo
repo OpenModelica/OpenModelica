@@ -793,6 +793,22 @@ algorithm
   end matchcontinue;
 end getStartAttr;
 
+public function getStartOrigin  "
+  Return the startOrigin attribute"
+  input Option<DAE.VariableAttributes> inVariableAttributesOption;
+  output Option<DAE.Exp> startOrigin;
+algorithm startOrigin:= match (inVariableAttributesOption)
+    local
+      Option<DAE.Exp> so;
+    case (SOME(DAE.VAR_ATTR_REAL(startOrigin = so))) then so;
+    case (SOME(DAE.VAR_ATTR_INT(startOrigin = so))) then so;
+    case (SOME(DAE.VAR_ATTR_BOOL(startOrigin = so))) then so;
+    case (SOME(DAE.VAR_ATTR_STRING(startOrigin = so))) then so;
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(startOrigin = so))) then so;
+    case (NONE()) then NONE();
+  end match;
+end getStartOrigin;
+
 public function getStartAttrFail "
   Return the start attribute. or fails"
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
@@ -869,6 +885,38 @@ algorithm
       then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),SOME(start),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
   end match;
 end setStartAttr;
+
+public function setStartOrigin "
+  sets the startOrigin attribute. If NONE(), assumes Real attributes."
+  input Option<DAE.VariableAttributes> attr;
+  input Option<DAE.Exp> startOrigin;
+  output Option<DAE.VariableAttributes> outAttr;
+algorithm
+  outAttr:=
+  match (attr,startOrigin)
+    local
+      Option<DAE.Exp> q,u,du,f,n,s;
+      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
+      Option<DAE.Distribution> distOpt;
+      Option<DAE.Exp> eb;
+      Option<Boolean> ip,fn;
+      
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn,_)),_)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,s,f,n,ss,unc,distOpt,eb,ip,fn,startOrigin));
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,s,f,unc,distOpt,eb,ip,fn,_)),_)
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,s,f,unc,distOpt,eb,ip,fn,startOrigin));
+    case (SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,_)),_)
+    then SOME(DAE.VAR_ATTR_BOOL(q,s,f,eb,ip,fn,startOrigin));
+    case (SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,_)),_)
+    then SOME(DAE.VAR_ATTR_STRING(q,s,eb,ip,fn,startOrigin));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,s,du,eb,ip,fn,_)),_)
+    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,s,du,eb,ip,fn,startOrigin));
+    case (NONE(),_)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),startOrigin));
+  end match;
+end setStartOrigin;
 
 public function getNominalAttr "
   returns the nominal attribute. If NONE(), assumes Real attributes."
