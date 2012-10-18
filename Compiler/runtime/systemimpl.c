@@ -1462,8 +1462,9 @@ void splitVersion(const char *version, long *versionNum, char **versionExtra)
   if (*buf == ' ') buf++;
   *versionExtra = strdup(buf);
   len = strlen(*versionExtra);
-  if (len > 3 && 0==strcmp(".mo", *versionExtra+len-3)) {
-    (*versionExtra)[len-3] = '\0';
+  /* fprintf(stderr, "have len %ld versionExtra %s\n", len, *versionExtra); */
+  if (len >= 2 && 0==strcmp("mo", *versionExtra+len-2)) {
+    (*versionExtra)[len-2] = '\0';
   }
 }
 
