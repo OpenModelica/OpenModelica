@@ -691,6 +691,22 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1),DAE.ADD_ARR(tp),
           DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2));
+
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_SCALAR_PRODUCT(ty = tp),exp2 = e2),_) /* f\'g + fg\' */
+      equation
+        e1_1 = differentiateExpTime(e1, inVariables);
+        e2_1 = differentiateExpTime(e2, inVariables);
+      then
+        DAE.BINARY(DAE.BINARY(e1,DAE.MUL_SCALAR_PRODUCT(tp),e2_1),DAE.ADD_ARR(tp),
+          DAE.BINARY(e1_1,DAE.MUL_SCALAR_PRODUCT(tp),e2)); 
+    
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_MATRIX_PRODUCT(ty = tp),exp2 = e2),_) /* f\'g + fg\' */
+      equation
+        e1_1 = differentiateExpTime(e1, inVariables);
+        e2_1 = differentiateExpTime(e2, inVariables);
+      then
+        DAE.BINARY(DAE.BINARY(e1,DAE.MUL_MATRIX_PRODUCT(tp),e2_1),DAE.ADD_ARR(tp),
+          DAE.BINARY(e1_1,DAE.MUL_MATRIX_PRODUCT(tp),e2));    
     
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARRAY_SCALAR(ty = tp),exp2 = e2),_)
       equation
@@ -746,16 +762,14 @@ algorithm
       then
         DAE.REDUCTION(reductionInfo,e1_1,iters);
 
-    /* We need to expect failures for example for shared array-equations
+    /* We need to expect failures for example for shared array-equations 
     case (e,_)
       equation
-        str = ExpressionDump.printExpStr(e);
         print("- Derive.differentiateExpTime on ");
-        print(str);
-        print(" failed\n");
+        ExpressionDump.dumpExp(e);
+        print("\n failed\n");
       then
-        fail();
-    */
+        fail(); */
   end matchcontinue;
 end differentiateExpTime;
 
