@@ -2522,11 +2522,34 @@ algorithm
         ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
         Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl2);
+        systs = List.map1(systs,evaluateFinalParametersVariables,repl2);
+        (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceFinalVarTraverser,(repl,0));
       then
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
   end match;
 end evaluateFinalParameters;
 
+protected function evaluateFinalParametersVariables
+"function: evaluateFinalParametersVariables
+  autor Frenkel TUD"
+  input BackendDAE.EqSystem isyst;
+  input BackendVarTransform.VariableReplacements repl;
+  output BackendDAE.EqSystem osyst;
+algorithm
+  osyst := match (isyst,repl)
+    local
+      BackendDAE.Variables vars;
+      BackendDAE.EquationArray eqns;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching),_)
+      equation
+        (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceFinalVarTraverser,(repl,0));
+      then
+        BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching);
+  end match;
+end evaluateFinalParametersVariables;
 
 /*  
  * remove final paramters stuff
