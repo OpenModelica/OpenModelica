@@ -1943,7 +1943,7 @@ case SES_SIMPLE_ASSIGN(__) then
   <<
   <%modelicaLine(eqInfo(eq))%>
   <%preExp%>
-  <%cref(cref)%> = <%expPart%>; <%inlineCref(context,cref)%>
+  <%cref(cref)%> = <%expPart%>;<%inlineCref(context,cref)%>
   <%endModelicaLine()%>
   >>
 end equationSimpleAssign;
