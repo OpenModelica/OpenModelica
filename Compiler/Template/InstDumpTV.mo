@@ -79,6 +79,13 @@ package Expression
   end typeof;
 end Expression;
 
+package InstDump
+  function dumpUntypedComponentDims
+    input InstTypes.Component inComponent;
+    output String outString;
+  end dumpUntypedComponentDims;
+end InstDump;
+
 package InstTypes
   type Prefix = list<tuple<String, DAE.Dimensions>>;
 

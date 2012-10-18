@@ -44,6 +44,7 @@ public import Connect2;
 public import InstTypes;
 
 protected import InstDumpTpl;
+protected import List;
 protected import Tpl;
 
 public function modelStr
@@ -95,5 +96,33 @@ public function connectionsStr
 algorithm
   outString := Tpl.tplString(InstDumpTpl.dumpConnections, inConnections);
 end connectionsStr;
+
+public function dimensionStr
+  input InstTypes.Dimension inDimension;
+  output String outString;
+algorithm
+  outString := Tpl.tplString(InstDumpTpl.dumpDimension, inDimension);
+end dimensionStr;
+
+public function dumpUntypedComponentDims
+  input InstTypes.Component inComponent;
+  output String outString;
+algorithm
+  outString := match(inComponent)
+    local
+      array<InstTypes.Dimension> adims;
+      list<InstTypes.Dimension> ldims;
+      list<String> dims_strl;
+      String dims_str;
+
+    case InstTypes.UNTYPED_COMPONENT(dimensions = adims)
+      equation
+        ldims = arrayList(adims);
+        dims_str = List.toString(ldims, dimensionStr, "", "[", ", ", "]", false);
+      then
+        dims_str;
+
+  end match;
+end dumpUntypedComponentDims;
 
 end InstDump;

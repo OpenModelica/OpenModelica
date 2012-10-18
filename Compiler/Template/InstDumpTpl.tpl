@@ -19,7 +19,9 @@ match component
   case UNTYPED_COMPONENT(__) then
     let name_str = AbsynDumpTpl.dumpPath(name)
     let bind_str = dumpBinding(binding)
-    '<%name_str%><%bind_str%>;'
+    let ty_str = ExpressionDumpTpl.dumpType(baseType)
+    let dims_str = InstDump.dumpUntypedComponentDims(component)
+    '{<%ty_str%><%dims_str%>} <%name_str%><%bind_str%>;'
   case TYPED_COMPONENT(__) then
     let name_str = AbsynDumpTpl.dumpPath(name)
     let bind_str = dumpBinding(binding)
@@ -193,6 +195,13 @@ match face
   case OUTSIDE() then 'outside'
   case NO_FACE() then 'no_face'
 end dumpFace;
+
+template dumpDimension(InstTypes.Dimension dim)
+::=
+match dim
+  case UNTYPED_DIMENSION(__) then ExpressionDumpTpl.dumpDimension(dimension)
+  case TYPED_DIMENSION(__) then ExpressionDumpTpl.dumpDimension(dimension)
+end dumpDimension;
 
 template errorMsg(String errMessage)
 ::=
