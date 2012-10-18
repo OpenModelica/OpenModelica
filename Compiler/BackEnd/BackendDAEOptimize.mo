@@ -2523,7 +2523,7 @@ algorithm
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
         Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl2);
         systs = List.map1(systs,evaluateFinalParametersVariables,repl2);
-        (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceFinalVarTraverser,(repl,0));
+        (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceFinalVarTraverser,(repl2,0));
       then
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
   end match;
@@ -2975,6 +2975,9 @@ algorithm
         // evaluate vars with bind expression consists of evaluated vars
         (knvars,repl,cache) = traverseVariablesSorted(comps,knvars,BackendVarTransform.emptyReplacements(),BackendVarTransform.emptyReplacements(),cache,env);
         Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repl);
+        systs = List.map1(systs,evaluateFinalParametersVariables,repl);
+        (knvars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceFinalVarTraverser,(repl,0));
+        (av,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,replaceFinalVarTraverser,(repl,0));
       then
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
   end match;
@@ -9258,8 +9261,9 @@ algorithm
         (acc,b1);
     case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_)
       equation
+        //(_,_) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
         //(eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        //(comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
+        //(_,_) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
         //(acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);
         (comp1::_,true) = tearingSystemNew1(isyst,ishared,{comp1},false,{});
         (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc);
@@ -9272,7 +9276,7 @@ algorithm
         (acc,b);
   end matchcontinue;  
 end tearingSystemNew1;
-
+ 
 protected function tearingSystemNew1_1 "function tearingSystemNew1
   author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
