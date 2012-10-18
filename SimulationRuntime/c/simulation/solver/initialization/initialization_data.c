@@ -200,7 +200,7 @@ INIT_DATA *initializeInitData(DATA *data)
   for(i=0; i<data->modelData.nVariablesReal; ++i)
     if(data->modelData.realVarsData[i].attribute.useStart)
       DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] Real %s(start=%g)", ++j, data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start);
-  /* for real parameters *
+  * for real parameters *
   for(i=0; i<data->modelData.nParametersReal; ++i)
     if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
       DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] parameter Real %s(start=%g)", ++j, data->modelData.realParameterData[i].info.name, data->modelData.realParameterData[i].attribute.start);

@@ -267,7 +267,7 @@ JNIEnv* getJavaEnv()
   #else
   const char* classpathFormatString = "-Djava.class.path=%s/share/omc/java/modelica_java.jar:%s/share/omc/java/antlr-3.1.3.jar:%s";
   #endif
-  char* openmodelicahome;
+  const char* openmodelicahome;
   char* classpathEnv;
   JavaVMInitArgs vm_args;
   JavaVMOption options[3];
@@ -309,7 +309,6 @@ JNIEnv* getJavaEnv()
 
   classPathIx = sprintf(classPath, classpathFormatString, openmodelicahome, openmodelicahome, classpathEnv);
   classPath[classPathIx] = '\0';
-  free_modelica_string(&openmodelicahome);
 
   #if 1
   options[0].optionString = classPath;
