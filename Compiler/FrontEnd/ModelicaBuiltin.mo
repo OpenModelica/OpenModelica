@@ -2974,8 +2974,8 @@ package '1.9.0' "Version 1.9.0 (2012-08-31)"
 <meta name=\"generator\" content=
 \"HTML Tidy for Linux (vers 25 March 2009), see www.w3.org\" />
 <title>ReleaseNotes/1.9.0 – OpenModelica</title>
-<meta content=\"text/html; charset=utf-8\" http-equiv=
-\"Content-Type\" /><!--[if lt IE 7]>
+<meta http-equiv=\"Content-Type\" content=
+\"text/html; charset=utf-8\" /><!--[if lt IE 7]>
     <script type=\"text/javascript\" src=\"/OpenModelica/chrome/common/js/ie_pre7_hacks.js\"></script>
     <![endif]-->
 
@@ -3610,26 +3610,26 @@ div.system-message p.system-message-title { font-weight: bold; }
 </head>
 <body>
 <div id=\"main\">
-<div class=\"wiki\" id=\"content\">
+<div id=\"content\" class=\"wiki\">
 <div class=\"wikipage searchable\">
 <div id=\"wikipage\">
 <div class=\"wikipage\" style=\"float: right; margin: 0 1em\">
 <blockquote>
 <p>← <a href=
 \"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.8.1\"
-class=\"wiki\">1.8.1</a> | <a href=
+class=\"wiki\">1.8.1</a> | <a rel=\"nofollow\" href=
 \"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/Future\"
-class=\"missing wiki\" rel=\"nofollow\">Future?</a> →</p>
+class=\"missing wiki\">Future?</a> →</p>
 </blockquote>
 </div>
 <div class=\"wikipage\" style=
 \"margin-top: .5em; padding: 0 1em; background-color: #ffd; border:1px outset #ddc; text-align: center; clear: right\">
 <p>This is not the final release version</p>
 </div>
-<h1 id=\"ReleaseNotesforOpenModelica1.9.0Beta1Release\">Release Notes
+<h1 id=\"ReleaseNotesforOpenModelica1.9.0Beta2Release\">Release Notes
 for OpenModelica <a href=
 \"https://trac.openmodelica.org/OpenModelica/milestone/1.9.0\" class=
-\"milestone\">1.9.0</a> Beta1 Release</h1>
+\"milestone\">1.9.0</a> Beta2 Release</h1>
 <div class=\"wiki-toc\">
 <ol>
 <li><a href=\"#OpenModelicaCompilerOMC\">OpenModelica Compiler
@@ -3729,7 +3729,7 @@ CodeBeamer to Trac.</li>
 <h2 id=\"DetailedChanges\">Detailed Changes</h2>
 <div xmlns=\"http://www.w3.org/1999/xhtml\">
 <h2 class=\"report-result\">Component: Backend <span class=
-\"numrows\">(8 matches)</span></h2>
+\"numrows\">(27 matches)</span></h2>
 <table class=\"listing tickets\">
 <thead>
 <tr class=\"trac-columns\">
@@ -3757,10 +3757,50 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 </tr>
 </thead>
 <tbody>
-<tr class=\"even prio4\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1708\" title=
-\"View ticket\">#1708</a></td>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1670\" class=
+\"closed\" title=\"View ticket\">#1670</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1670\" title=
+\"View ticket\">Update help()</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1676\" class=
+\"closed\" title=\"View ticket\">#1676</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1676\" title=
+\"View ticket\">Simulation Executable Crashes</a></td>
+<td class=\"owner\">adeas31</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1692\" class=
+\"closed\" title=\"View ticket\">#1692</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1692\" title=
+\"View ticket\">Non-linear system causes stack protection
+issues</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio4\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1708\" class=
+\"closed\" title=\"View ticket\">#1708</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1708\" title=
 \"View ticket\">Strip unused functions from generated code</a></td>
@@ -3770,10 +3810,10 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio1\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1721\" title=
-\"View ticket\">#1721</a></td>
+<tr class=\"even prio1\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1721\" class=
+\"closed\" title=\"View ticket\">#1721</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1721\" title=
 \"View ticket\">error division by zero</a></td>
@@ -3783,10 +3823,10 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio2\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1735\" title=
-\"View ticket\">#1735</a></td>
+<tr class=\"odd prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1735\" class=
+\"closed\" title=\"View ticket\">#1735</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1735\" title=
 \"View ticket\">Driveline model takes a long time to generate
@@ -3797,10 +3837,10 @@ code</a></td>
 <td class=\"version\">trunk</td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1740\" title=
-\"View ticket\">#1740</a></td>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1740\" class=
+\"closed\" title=\"View ticket\">#1740</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1740\" title=
 \"View ticket\">typo in XMLDump.mo</a></td>
@@ -3810,10 +3850,10 @@ code</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1743\" title=
-\"View ticket\">#1743</a></td>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1743\" class=
+\"closed\" title=\"View ticket\">#1743</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1743\" title=
 \"View ticket\">XMLDump incorrectly wraps matrix, vector, and array
@@ -3824,10 +3864,10 @@ elements in an apply block</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio4\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1773\" title=
-\"View ticket\">#1773</a></td>
+<tr class=\"even prio4\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1773\" class=
+\"closed\" title=\"View ticket\">#1773</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1773\" title=
 \"View ticket\">Array&lt;Integer&gt; arr := {1,2,3} causes a segfault
@@ -3838,10 +3878,10 @@ when arr is passed to a function</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1775\" title=
-\"View ticket\">#1775</a></td>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1775\" class=
+\"closed\" title=\"View ticket\">#1775</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1775\" title=
 \"View ticket\">Concatenating a string with an unbound string
@@ -3852,10 +3892,51 @@ variable segfaults</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1780\" class=
+\"closed\" title=\"View ticket\">#1780</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1780\" title=
+\"View ticket\">Linearization returns zero for systems with
+independent variables</a></td>
+<td class=\"owner\">wbraun</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
 <tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1787\" title=
-\"View ticket\">#1787</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1781\" class=
+\"closed\" title=\"View ticket\">#1781</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1781\" title=
+\"View ticket\">Modelica.Mechanics.Rotational.Examples.LossyGearDemo2</a></td>
+<td class=\"owner\">wbraun</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1785\" class=
+\"closed\" title=\"View ticket\">#1785</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1785\" title=
+\"View ticket\">Integration has trouble with
+Modelica.Mechanics.Translational.Examples.PreLoad.mos</a></td>
+<td class=\"owner\">wbraun</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1787\" class=
+\"closed\" title=\"View ticket\">#1787</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1787\" title=
 \"View ticket\">Backend adds = 0.0 bindings for no good
@@ -3866,12 +3947,189 @@ reason</a></td>
 <td class=\"version\">trunk</td>
 <td class=\"resolution\">fixed</td>
 </tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1802\" class=
+\"closed\" title=\"View ticket\">#1802</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1802\" title=
+\"View ticket\">Nonliniear Solver converge to wrong solution</a></td>
+<td class=\"owner\">wbraun</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1818\" class=
+\"closed\" title=\"View ticket\">#1818</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1818\" title=
+\"View ticket\">Pendulum does not simulate</a></td>
+<td class=\"owner\">jfrenkel</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">critical</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">invalid</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1826\" class=
+\"closed\" title=\"View ticket\">#1826</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1826\" title=
+\"View ticket\">Passing built in functions as funargs generates
+invalid C code</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1827\" class=
+\"closed\" title=\"View ticket\">#1827</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1827\" title=
+\"View ticket\">BackendDAE cannot represent NORETCALL
+equations</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1828\" class=
+\"closed\" title=\"View ticket\">#1828</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1828\" title=
+\"View ticket\">Generated code for RobotR3.oneAxis contains division
+by zero.</a></td>
+<td class=\"owner\">jfrenkel</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1830\" class=
+\"closed\" title=\"View ticket\">#1830</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1830\" title=
+\"View ticket\">when in algorithm only triggered once</a></td>
+<td class=\"owner\">wbraun</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1846\" class=
+\"closed\" title=\"View ticket\">#1846</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1846\" title=
+\"View ticket\">Ceval doesn't compile: unbound variable info</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1850\" class=
+\"closed\" title=\"View ticket\">#1850</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1850\" title=
+\"View ticket\">Discrete variables are counted for
+over/underconstrained system</a></td>
+<td class=\"owner\">wbraun</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">invalid</td>
+</tr>
+<tr class=\"even prio4\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1852\" class=
+\"closed\" title=\"View ticket\">#1852</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1852\" title=
+\"View ticket\">Error: Internal error SimCodeUtil.calculateIndex
+failed</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">minor</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">duplicate</td>
+</tr>
+<tr class=\"odd prio4\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1868\" class=
+\"closed\" title=\"View ticket\">#1868</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1868\" title=
+\"View ticket\">A couple of syntax errors in
+Compiler/Template/CodegenXML.tpl</a></td>
+<td class=\"owner\">janssen</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">minor</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1872\" class=
+\"closed\" title=\"View ticket\">#1872</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1872\" title=
+\"View ticket\">Array-expression and when-statements do not
+work</a></td>
+<td class=\"owner\">wbraun</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1873\" class=
+\"closed\" title=\"View ticket\">#1873</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1873\" title=
+\"View ticket\">Stack overflow introduced in backend</a></td>
+<td class=\"owner\">jfrenkel</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1876\" class=
+\"closed\" title=\"View ticket\">#1876</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1876\" title=
+\"View ticket\">Expandable connectors: wrong equations generation in
+Multibody</a></td>
+<td class=\"owner\">adrpo</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
 </tbody>
 <tbody>
 <tr class=\"trac-group\">
 <th colspan=\"7\">
 <h2 class=\"report-result\">Component: Build Environment <span class=
-\"numrows\">(3 matches)</span></h2>
+\"numrows\">(5 matches)</span></h2>
 </th>
 </tr>
 <tr class=\"trac-columns\">
@@ -3900,9 +4158,9 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 </tbody>
 <tbody>
 <tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1724\" title=
-\"View ticket\">#1724</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1724\" class=
+\"closed\" title=\"View ticket\">#1724</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1724\" title=
 \"View ticket\">Can't compile through macports</a></td>
@@ -3913,9 +4171,9 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 <td class=\"resolution\">wontfix</td>
 </tr>
 <tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1742\" title=
-\"View ticket\">#1742</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1742\" class=
+\"closed\" title=\"View ticket\">#1742</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1742\" title=
 \"View ticket\">11890 won't compile to the end</a></td>
@@ -3926,9 +4184,9 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 <td class=\"resolution\">fixed</td>
 </tr>
 <tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1771\" title=
-\"View ticket\">#1771</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1771\" class=
+\"closed\" title=\"View ticket\">#1771</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1771\" title=
 \"View ticket\">libintl.h missing when compiling on OS X</a></td>
@@ -3938,12 +4196,39 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1793\" class=
+\"closed\" title=\"View ticket\">#1793</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1793\" title=
+\"View ticket\">Update omc 3.2 library to MSL 3.2.1 (dev
+version)</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">task</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1800\" class=
+\"closed\" title=\"View ticket\">#1800</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1800\" title=
+\"View ticket\">Integrate Modelica3D into OpenModelica</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">task</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
 </tbody>
 <tbody>
 <tr class=\"trac-group\">
 <th colspan=\"7\">
 <h2 class=\"report-result\">Component: Code Generation <span class=
-\"numrows\">(2 matches)</span></h2>
+\"numrows\">(10 matches)</span></h2>
 </th>
 </tr>
 <tr class=\"trac-columns\">
@@ -3972,9 +4257,9 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 </tbody>
 <tbody>
 <tr class=\"even prio1\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1720\" title=
-\"View ticket\">#1720</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1720\" class=
+\"closed\" title=\"View ticket\">#1720</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1720\" title=
 \"View ticket\">error FMU</a></td>
@@ -3985,9 +4270,9 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 <td class=\"resolution\">fixed</td>
 </tr>
 <tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1746\" title=
-\"View ticket\">#1746</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1746\" class=
+\"closed\" title=\"View ticket\">#1746</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1746\" title=
 \"View ticket\">Inconsistent array access using indices</a></td>
@@ -3995,6 +4280,116 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 <td class=\"type\">defect</td>
 <td class=\"priority\">major</td>
 <td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1799\" class=
+\"closed\" title=\"View ticket\">#1799</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1799\" title=
+\"View ticket\">Fix codegen for tuple equations</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1812\" class=
+\"closed\" title=\"View ticket\">#1812</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1812\" title=
+\"View ticket\">Code generation error with simple Fluid
+model</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1848\" class=
+\"closed\" title=\"View ticket\">#1848</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1848\" title=
+\"View ticket\">Tuple assignments containing records in which a
+component has been aliased are not generated correctly in
+CodegenC.tpl</a></td>
+<td class=\"owner\">adrpo</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio1\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1854\" class=
+\"closed\" title=\"View ticket\">#1854</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1854\" title=
+\"View ticket\">Returning array as an output from function</a></td>
+<td class=\"owner\">adrpo</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">blocker</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1855\" class=
+\"closed\" title=\"View ticket\">#1855</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1855\" title=
+\"View ticket\">assert failure in combination with encapsulated
+packages</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1870\" class=
+\"closed\" title=\"View ticket\">#1870</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1870\" title=
+\"View ticket\">Using fail() outside a match/matchcontinue causes a
+crash</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1877\" class=
+\"closed\" title=\"View ticket\">#1877</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1877\" title=
+\"View ticket\">Support size(cr)</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1878\" class=
+\"closed\" title=\"View ticket\">#1878</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1878\" title=
+\"View ticket\">function copy_double_data_mem is missing in cpp
+runtine</a></td>
+<td class=\"owner\">Niklas Worschech</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
 <td class=\"resolution\">fixed</td>
 </tr>
 </tbody>
@@ -4031,9 +4426,9 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 </tbody>
 <tbody>
 <tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1695\" title=
-\"View ticket\">#1695</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1695\" class=
+\"closed\" title=\"View ticket\">#1695</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1695\" title=
 \"View ticket\">SCodeFlatten causes scripting API to stop
@@ -4045,9 +4440,9 @@ working</a></td>
 <td class=\"resolution\">fixed</td>
 </tr>
 <tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1744\" title=
-\"View ticket\">#1744</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1744\" class=
+\"closed\" title=\"View ticket\">#1744</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1744\" title=
 \"View ticket\">Add OMDEV info to checkSettings()</a></td>
@@ -4058,9 +4453,9 @@ working</a></td>
 <td class=\"resolution\">fixed</td>
 </tr>
 <tr class=\"even prio5\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1753\" title=
-\"View ticket\">#1753</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1753\" class=
+\"closed\" title=\"View ticket\">#1753</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1753\" title=
 \"View ticket\">typo in OMShell \"does not exits\" --&gt; \"does not
@@ -4076,7 +4471,7 @@ exist\"</a></td>
 <tr class=\"trac-group\">
 <th colspan=\"7\">
 <h2 class=\"report-result\">Component: Frontend <span class=
-\"numrows\">(15 matches)</span></h2>
+\"numrows\">(32 matches)</span></h2>
 </th>
 </tr>
 <tr class=\"trac-columns\">
@@ -4105,9 +4500,9 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 </tbody>
 <tbody>
 <tr class=\"even prio2\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/130\" title=
-\"View ticket\">#130</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/130\" class=
+\"closed\" title=\"View ticket\">#130</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/130\" title=
 \"View ticket\">Modifiers are not propagated correctly inside
@@ -4119,9 +4514,9 @@ redeclared model</a></td>
 <td class=\"resolution\">fixed</td>
 </tr>
 <tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1106\" title=
-\"View ticket\">#1106</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1106\" class=
+\"closed\" title=\"View ticket\">#1106</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1106\" title=
 \"View ticket\">Array modifications in class inheritance are not
@@ -4133,9 +4528,9 @@ instantiated</a></td>
 <td class=\"resolution\">invalid</td>
 </tr>
 <tr class=\"even prio5\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1336\" title=
-\"View ticket\">#1336</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1336\" class=
+\"closed\" title=\"View ticket\">#1336</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1336\" title=
 \"View ticket\">Implement a preprocessing phase from SCode to SCode
@@ -4146,10 +4541,23 @@ that simplifies instantiation</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1723\" title=
-\"View ticket\">#1723</a></td>
+<tr class=\"odd prio1\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1707\" class=
+\"closed\" title=\"View ticket\">#1707</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1707\" title=
+\"View ticket\">type mismatch</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">blocker</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1723\" class=
+\"closed\" title=\"View ticket\">#1723</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1723\" title=
 \"View ticket\">Check uses-annotations before inst</a></td>
@@ -4159,10 +4567,10 @@ that simplifies instantiation</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1731\" title=
-\"View ticket\">#1731</a></td>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1731\" class=
+\"closed\" title=\"View ticket\">#1731</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1731\" title=
 \"View ticket\">Connecting ranges generates wrong equations</a></td>
@@ -4172,10 +4580,10 @@ that simplifies instantiation</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio2\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1733\" title=
-\"View ticket\">#1733</a></td>
+<tr class=\"even prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1733\" class=
+\"closed\" title=\"View ticket\">#1733</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1733\" title=
 \"View ticket\">range in connect equation fails</a></td>
@@ -4185,10 +4593,10 @@ that simplifies instantiation</a></td>
 <td class=\"version\">trunk</td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1734\" title=
-\"View ticket\">#1734</a></td>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1734\" class=
+\"closed\" title=\"View ticket\">#1734</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1734\" title=
 \"View ticket\">Compiler generates bad flattened version of function
@@ -4199,10 +4607,10 @@ from MSL</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio2\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1738\" title=
-\"View ticket\">#1738</a></td>
+<tr class=\"even prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1738\" class=
+\"closed\" title=\"View ticket\">#1738</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1738\" title=
 \"View ticket\">reinit on parameter gives no error and check Model
@@ -4213,10 +4621,10 @@ returns nothing</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio2\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1750\" title=
-\"View ticket\">#1750</a></td>
+<tr class=\"odd prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1750\" class=
+\"closed\" title=\"View ticket\">#1750</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1750\" title=
 \"View ticket\">inheritance in protected section not propagated to
@@ -4227,10 +4635,10 @@ components</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio4\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1767\" title=
-\"View ticket\">#1767</a></td>
+<tr class=\"even prio4\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1767\" class=
+\"closed\" title=\"View ticket\">#1767</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1767\" title=
 \"View ticket\">Translations of the omc kernel</a></td>
@@ -4240,10 +4648,10 @@ components</a></td>
 <td class=\"version\">trunk</td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1772\" title=
-\"View ticket\">#1772</a></td>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1772\" class=
+\"closed\" title=\"View ticket\">#1772</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1772\" title=
 \"View ticket\">Functions that return MetaModelica arrays produce
@@ -4254,10 +4662,10 @@ errors</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1774\" title=
-\"View ticket\">#1774</a></td>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1774\" class=
+\"closed\" title=\"View ticket\">#1774</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1774\" title=
 \"View ticket\">Instantiation fails for
@@ -4268,10 +4676,10 @@ Modelica.StateGraph.Examples.ControlledTanks</a></td>
 <td class=\"version\">trunk</td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1776\" title=
-\"View ticket\">#1776</a></td>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1776\" class=
+\"closed\" title=\"View ticket\">#1776</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1776\" title=
 \"View ticket\">Add detection of usage of unbound variables</a></td>
@@ -4281,10 +4689,10 @@ Modelica.StateGraph.Examples.ControlledTanks</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1777\" title=
-\"View ticket\">#1777</a></td>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1777\" class=
+\"closed\" title=\"View ticket\">#1777</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1777\" title=
 \"View ticket\">function handlin failed for
@@ -4295,10 +4703,38 @@ Modelica.Media.Examples.Tests.MediaTestModels.LinearFluid.LinearWater_pT</a></td
 <td class=\"version\">trunk</td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"even prio4\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1786\" title=
-\"View ticket\">#1786</a></td>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1782\" class=
+\"closed\" title=\"View ticket\">#1782</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1782\" title=
+\"View ticket\">`or` is not strict in both operands, should it
+be?</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">invalid</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1784\" class=
+\"closed\" title=\"View ticket\">#1784</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1784\" title=
+\"View ticket\">Imported function not called from script when
+noevalfunc is not specified</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">worksforme</td>
+</tr>
+<tr class=\"odd prio4\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1786\" class=
+\"closed\" title=\"View ticket\">#1786</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1786\" title=
 \"View ticket\">Empty list pattern incorrectly used causes an endless
@@ -4309,12 +4745,203 @@ loop</a></td>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
+<tr class=\"even prio1\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1796\" class=
+\"closed\" title=\"View ticket\">#1796</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1796\" title=
+\"View ticket\">Subscripts of last type of cref with stripped subs
+are reversed</a></td>
+<td class=\"owner\">perost</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">blocker</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio1\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1797\" class=
+\"closed\" title=\"View ticket\">#1797</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1797\" title=
+\"View ticket\">Subscripts of last type of cref with stripped subs
+are reversed</a></td>
+<td class=\"owner\">perost</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">blocker</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">duplicate</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1801\" class=
+\"closed\" title=\"View ticket\">#1801</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1801\" title=
+\"View ticket\">Fixed simplification of matrix-vector
+multiplication</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1819\" class=
+\"closed\" title=\"View ticket\">#1819</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1819\" title=
+\"View ticket\">RealInput Failure</a></td>
+<td class=\"owner\">perost</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1823\" class=
+\"closed\" title=\"View ticket\">#1823</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1823\" title=
+\"View ticket\">Error when using constant in connector</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1825\" class=
+\"closed\" title=\"View ticket\">#1825</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1825\" title=
+\"View ticket\">Error filling array with A:B:C notation</a></td>
+<td class=\"owner\">perost</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1829\" class=
+\"closed\" title=\"View ticket\">#1829</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1829\" title=
+\"View ticket\">Cannot find aliased package functions</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">discussion</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1833\" class=
+\"closed\" title=\"View ticket\">#1833</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1833\" title=
+\"View ticket\">Local name shadowing and assignment to
+inputs</a></td>
+<td class=\"owner\">openmodelicadevelopers@…</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1834\" class=
+\"closed\" title=\"View ticket\">#1834</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1834\" title=
+\"View ticket\">Name shadowing in match statements cause unintuitive
+type errors</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">invalid</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1835\" class=
+\"closed\" title=\"View ticket\">#1835</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1835\" title=
+\"View ticket\">\"pre(time)\" not working</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">invalid</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1844\" class=
+\"closed\" title=\"View ticket\">#1844</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1844\" title=
+\"View ticket\">Incorrect Type Unboxing (?) when calling funargs in
+if expressions</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1847\" class=
+\"closed\" title=\"View ticket\">#1847</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1847\" title=
+\"View ticket\">Duplicates in the package.order file are reported in
+the wrong place</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1851\" class=
+\"closed\" title=\"View ticket\">#1851</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1851\" title=
+\"View ticket\">Warn on unassigned output variables (Using unbound
+output variables causes segfault)</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">enhancement</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1875\" class=
+\"closed\" title=\"View ticket\">#1875</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1875\" title=
+\"View ticket\">Error printed although record instantiation
+succeeds</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
 </tbody>
 <tbody>
 <tr class=\"trac-group\">
 <th colspan=\"7\">
 <h2 class=\"report-result\">Component: Instantiation <span class=
-\"numrows\">(2 matches)</span></h2>
+\"numrows\">(3 matches)</span></h2>
 </th>
 </tr>
 <tr class=\"trac-columns\">
@@ -4343,9 +4970,23 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 </tbody>
 <tbody>
 <tr class=\"even prio2\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1749\" title=
-\"View ticket\">#1749</a></td>
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/139\" class=
+\"closed\" title=\"View ticket\">#139</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/139\" title=
+\"View ticket\">Input-input and output-output connection does not
+return any error and equation are not reported.</a></td>
+<td class=\"owner\">donida</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">critical</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1749\" class=
+\"closed\" title=\"View ticket\">#1749</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1749\" title=
 \"View ticket\">Improve tuple assignment error messages</a></td>
@@ -4355,10 +4996,10 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 <td class=\"version\"></td>
 <td class=\"resolution\">fixed</td>
 </tr>
-<tr class=\"odd prio2\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1766\" title=
-\"View ticket\">#1766</a></td>
+<tr class=\"even prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1766\" class=
+\"closed\" title=\"View ticket\">#1766</a></td>
 <td class=\"summary\"><a href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1766\" title=
 \"View ticket\">Locale changes cause real to string conversion to
@@ -4374,6 +5015,370 @@ fail</a></td>
 <tr class=\"trac-group\">
 <th colspan=\"7\">
 <h2 class=\"report-result\">Component: Interactive Environment
+<span class=\"numrows\">(2 matches)</span></h2>
+</th>
+</tr>
+<tr class=\"trac-columns\">
+<th class=\"id asc\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;desc=1&amp;order=id\"
+title=\"Sort by Ticket (descending)\">Ticket</a></th>
+<th class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=summary\"
+title=\"Sort by Summary (ascending)\">Summary</a></th>
+<th class=\"owner\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=owner\"
+title=\"Sort by Owner (ascending)\">Owner</a></th>
+<th class=\"type\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=type\"
+title=\"Sort by Type (ascending)\">Type</a></th>
+<th class=\"priority\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=priority\"
+title=\"Sort by Priority (ascending)\">Priority</a></th>
+<th class=\"version\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=version\"
+title=\"Sort by Version (ascending)\">Version</a></th>
+<th class=\"resolution\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=resolution\"
+title=\"Sort by Resolution (ascending)\">Resolution</a></th>
+</tr>
+</tbody>
+<tbody>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1421\" class=
+\"closed\" title=\"View ticket\">#1421</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1421\" title=
+\"View ticket\">AddClassAnnotation adds the duplicate annotations to
+the model.</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1864\" class=
+\"closed\" title=\"View ticket\">#1864</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1864\" title=
+\"View ticket\">Load libraries in the user's home directory by
+default</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">task</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+</tbody>
+<tbody>
+<tr class=\"trac-group\">
+<th colspan=\"7\">
+<h2 class=\"report-result\">Component: OMEdit <span class=
+\"numrows\">(5 matches)</span></h2>
+</th>
+</tr>
+<tr class=\"trac-columns\">
+<th class=\"id asc\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;desc=1&amp;order=id\"
+title=\"Sort by Ticket (descending)\">Ticket</a></th>
+<th class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=summary\"
+title=\"Sort by Summary (ascending)\">Summary</a></th>
+<th class=\"owner\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=owner\"
+title=\"Sort by Owner (ascending)\">Owner</a></th>
+<th class=\"type\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=type\"
+title=\"Sort by Type (ascending)\">Type</a></th>
+<th class=\"priority\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=priority\"
+title=\"Sort by Priority (ascending)\">Priority</a></th>
+<th class=\"version\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=version\"
+title=\"Sort by Version (ascending)\">Version</a></th>
+<th class=\"resolution\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=resolution\"
+title=\"Sort by Resolution (ascending)\">Resolution</a></th>
+</tr>
+</tbody>
+<tbody>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1719\" class=
+\"closed\" title=\"View ticket\">#1719</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1719\" title=
+\"View ticket\">OMEdit does not display quoted classes</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio1\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1809\" class=
+\"closed\" title=\"View ticket\">#1809</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1809\" title=
+\"View ticket\">Allow JavaScript in OMEdit html viewer</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">task</td>
+<td class=\"priority\">blocker</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1820\" class=
+\"closed\" title=\"View ticket\">#1820</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1820\" title=
+\"View ticket\">Add GUI boxes for dynamic state selection and index
+reduction</a></td>
+<td class=\"owner\">adeas31</td>
+<td class=\"type\">task</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1836\" class=
+\"closed\" title=\"View ticket\">#1836</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1836\" title=
+\"View ticket\">OMEdit: navigation buttons in documentation
+viewer</a></td>
+<td class=\"owner\">hkiel</td>
+<td class=\"type\">enhancement</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1845\" class=
+\"closed\" title=\"View ticket\">#1845</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1845\" title=
+\"View ticket\">Simulation messages not shown in OMEdit</a></td>
+<td class=\"owner\">adeas31</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+</tbody>
+<tbody>
+<tr class=\"trac-group\">
+<th colspan=\"7\">
+<h2 class=\"report-result\">Component: Parser <span class=
+\"numrows\">(4 matches)</span></h2>
+</th>
+</tr>
+<tr class=\"trac-columns\">
+<th class=\"id asc\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;desc=1&amp;order=id\"
+title=\"Sort by Ticket (descending)\">Ticket</a></th>
+<th class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=summary\"
+title=\"Sort by Summary (ascending)\">Summary</a></th>
+<th class=\"owner\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=owner\"
+title=\"Sort by Owner (ascending)\">Owner</a></th>
+<th class=\"type\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=type\"
+title=\"Sort by Type (ascending)\">Type</a></th>
+<th class=\"priority\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=priority\"
+title=\"Sort by Priority (ascending)\">Priority</a></th>
+<th class=\"version\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=version\"
+title=\"Sort by Version (ascending)\">Version</a></th>
+<th class=\"resolution\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=resolution\"
+title=\"Sort by Resolution (ascending)\">Resolution</a></th>
+</tr>
+</tbody>
+<tbody>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1727\" class=
+\"closed\" title=\"View ticket\">#1727</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1727\" title=
+\"View ticket\">Loading structured package</a></td>
+<td class=\"owner\">hubert.thieriot</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">invalid</td>
+</tr>
+<tr class=\"odd prio4\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1757\" class=
+\"closed\" title=\"View ticket\">#1757</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1757\" title=
+\"View ticket\">loadFile of package.mo with encoding=\"Windows-1252\"
+only applies to package.mo file.</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">minor</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1764\" class=
+\"closed\" title=\"View ticket\">#1764</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1764\" title=
+\"View ticket\">getClassNames and list should care of
+package.order</a></td>
+<td class=\"owner\">adeas31</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1808\" class=
+\"closed\" title=\"View ticket\">#1808</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1808\" title=
+\"View ticket\">Reject multiple elements in class</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">critical</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+</tbody>
+<tbody>
+<tr class=\"trac-group\">
+<th colspan=\"7\">
+<h2 class=\"report-result\">Component: Run-time <span class=
+\"numrows\">(6 matches)</span></h2>
+</th>
+</tr>
+<tr class=\"trac-columns\">
+<th class=\"id asc\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;desc=1&amp;order=id\"
+title=\"Sort by Ticket (descending)\">Ticket</a></th>
+<th class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=summary\"
+title=\"Sort by Summary (ascending)\">Summary</a></th>
+<th class=\"owner\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=owner\"
+title=\"Sort by Owner (ascending)\">Owner</a></th>
+<th class=\"type\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=type\"
+title=\"Sort by Type (ascending)\">Type</a></th>
+<th class=\"priority\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=priority\"
+title=\"Sort by Priority (ascending)\">Priority</a></th>
+<th class=\"version\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=version\"
+title=\"Sort by Version (ascending)\">Version</a></th>
+<th class=\"resolution\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=resolution\"
+title=\"Sort by Resolution (ascending)\">Resolution</a></th>
+</tr>
+</tbody>
+<tbody>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1751\" class=
+\"closed\" title=\"View ticket\">#1751</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1751\" title=
+\"View ticket\">Wrong code generation for
+getEnvironmentVariable</a></td>
+<td class=\"owner\">mburisch</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1778\" class=
+\"closed\" title=\"View ticket\">#1778</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1778\" title=
+\"View ticket\">Make TwoMass.mos work again</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1789\" class=
+\"closed\" title=\"View ticket\">#1789</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1789\" title=
+\"View ticket\">CombiTable2D does not work with simple double(8,6)
+table</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1798\" class=
+\"closed\" title=\"View ticket\">#1798</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1798\" title=
+\"View ticket\">Support for ModelicaError in
+ModelicaUtilities.h</a></td>
+<td class=\"owner\">sjoelund.se</td>
+<td class=\"type\">task</td>
+<td class=\"priority\">major</td>
+<td class=\"version\"></td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"even prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1860\" class=
+\"closed\" title=\"View ticket\">#1860</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1860\" title=
+\"View ticket\">Multibody MSL models that use quaternions as states
+fail simulation</a></td>
+<td class=\"owner\">somebody</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">1.9.0Beta</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+<tr class=\"odd prio3\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1871\" class=
+\"closed\" title=\"View ticket\">#1871</a></td>
+<td class=\"summary\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1871\" title=
+\"View ticket\">The FMI implementation contains int&lt;-&gt;pointer
+casts</a></td>
+<td class=\"owner\">adeas31</td>
+<td class=\"type\">defect</td>
+<td class=\"priority\">major</td>
+<td class=\"version\">trunk</td>
+<td class=\"resolution\">fixed</td>
+</tr>
+</tbody>
+<tbody>
+<tr class=\"trac-group\">
+<th colspan=\"7\">
+<h2 class=\"report-result\">Component: Simulation Code Generation
 <span class=\"numrows\">(1 match)</span></h2>
 </th>
 </tr>
@@ -4402,185 +5407,16 @@ title=\"Sort by Resolution (ascending)\">Resolution</a></th>
 </tr>
 </tbody>
 <tbody>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1421\" title=
-\"View ticket\">#1421</a></td>
+<tr class=\"even prio2\">
+<td class=\"id\"><a href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1769\" class=
+\"closed\" title=\"View ticket\">#1769</a></td>
 <td class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1421\" title=
-\"View ticket\">AddClassAnnotation adds the duplicate annotations to
-the model.</a></td>
-<td class=\"owner\">sjoelund.se</td>
+\"https://trac.openmodelica.org/OpenModelica/ticket/1769\" title=
+\"View ticket\">.so file of FMI for model exchange problem</a></td>
+<td class=\"owner\">wbraun</td>
 <td class=\"type\">defect</td>
-<td class=\"priority\">major</td>
-<td class=\"version\"></td>
-<td class=\"resolution\">fixed</td>
-</tr>
-</tbody>
-<tbody>
-<tr class=\"trac-group\">
-<th colspan=\"7\">
-<h2 class=\"report-result\">Component: OMEdit <span class=
-\"numrows\">(1 match)</span></h2>
-</th>
-</tr>
-<tr class=\"trac-columns\">
-<th class=\"id asc\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;desc=1&amp;order=id\"
-title=\"Sort by Ticket (descending)\">Ticket</a></th>
-<th class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=summary\"
-title=\"Sort by Summary (ascending)\">Summary</a></th>
-<th class=\"owner\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=owner\"
-title=\"Sort by Owner (ascending)\">Owner</a></th>
-<th class=\"type\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=type\"
-title=\"Sort by Type (ascending)\">Type</a></th>
-<th class=\"priority\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=priority\"
-title=\"Sort by Priority (ascending)\">Priority</a></th>
-<th class=\"version\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=version\"
-title=\"Sort by Version (ascending)\">Version</a></th>
-<th class=\"resolution\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=resolution\"
-title=\"Sort by Resolution (ascending)\">Resolution</a></th>
-</tr>
-</tbody>
-<tbody>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1719\" title=
-\"View ticket\">#1719</a></td>
-<td class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1719\" title=
-\"View ticket\">OMEdit does not display quoted classes</a></td>
-<td class=\"owner\">sjoelund.se</td>
-<td class=\"type\">defect</td>
-<td class=\"priority\">major</td>
-<td class=\"version\"></td>
-<td class=\"resolution\">fixed</td>
-</tr>
-</tbody>
-<tbody>
-<tr class=\"trac-group\">
-<th colspan=\"7\">
-<h2 class=\"report-result\">Component: Parser <span class=
-\"numrows\">(2 matches)</span></h2>
-</th>
-</tr>
-<tr class=\"trac-columns\">
-<th class=\"id asc\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;desc=1&amp;order=id\"
-title=\"Sort by Ticket (descending)\">Ticket</a></th>
-<th class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=summary\"
-title=\"Sort by Summary (ascending)\">Summary</a></th>
-<th class=\"owner\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=owner\"
-title=\"Sort by Owner (ascending)\">Owner</a></th>
-<th class=\"type\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=type\"
-title=\"Sort by Type (ascending)\">Type</a></th>
-<th class=\"priority\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=priority\"
-title=\"Sort by Priority (ascending)\">Priority</a></th>
-<th class=\"version\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=version\"
-title=\"Sort by Version (ascending)\">Version</a></th>
-<th class=\"resolution\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=resolution\"
-title=\"Sort by Resolution (ascending)\">Resolution</a></th>
-</tr>
-</tbody>
-<tbody>
-<tr class=\"even prio4\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1757\" title=
-\"View ticket\">#1757</a></td>
-<td class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1757\" title=
-\"View ticket\">loadFile of package.mo with encoding=\"Windows-1252\"
-only applies to package.mo file.</a></td>
-<td class=\"owner\">somebody</td>
-<td class=\"type\">defect</td>
-<td class=\"priority\">minor</td>
-<td class=\"version\"></td>
-<td class=\"resolution\">fixed</td>
-</tr>
-<tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1764\" title=
-\"View ticket\">#1764</a></td>
-<td class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1764\" title=
-\"View ticket\">getClassNames and list should care of
-package.order</a></td>
-<td class=\"owner\">adeas31</td>
-<td class=\"type\">defect</td>
-<td class=\"priority\">major</td>
-<td class=\"version\"></td>
-<td class=\"resolution\">fixed</td>
-</tr>
-</tbody>
-<tbody>
-<tr class=\"trac-group\">
-<th colspan=\"7\">
-<h2 class=\"report-result\">Component: Run-time <span class=
-\"numrows\">(2 matches)</span></h2>
-</th>
-</tr>
-<tr class=\"trac-columns\">
-<th class=\"id asc\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;desc=1&amp;order=id\"
-title=\"Sort by Ticket (descending)\">Ticket</a></th>
-<th class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=summary\"
-title=\"Sort by Summary (ascending)\">Summary</a></th>
-<th class=\"owner\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=owner\"
-title=\"Sort by Owner (ascending)\">Owner</a></th>
-<th class=\"type\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=type\"
-title=\"Sort by Type (ascending)\">Type</a></th>
-<th class=\"priority\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=priority\"
-title=\"Sort by Priority (ascending)\">Priority</a></th>
-<th class=\"version\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=version\"
-title=\"Sort by Version (ascending)\">Version</a></th>
-<th class=\"resolution\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/query?status=closed&amp;severity=!trivial&amp;severity=!-&amp;milestone=1.9.0&amp;group=component&amp;max=0&amp;order=resolution\"
-title=\"Sort by Resolution (ascending)\">Resolution</a></th>
-</tr>
-</tbody>
-<tbody>
-<tr class=\"even prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1751\" title=
-\"View ticket\">#1751</a></td>
-<td class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1751\" title=
-\"View ticket\">Wrong code generation for
-getEnvironmentVariable</a></td>
-<td class=\"owner\">mburisch</td>
-<td class=\"type\">defect</td>
-<td class=\"priority\">major</td>
-<td class=\"version\"></td>
-<td class=\"resolution\">fixed</td>
-</tr>
-<tr class=\"odd prio3\">
-<td class=\"id\"><a class=\"closed\" href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1789\" title=
-\"View ticket\">#1789</a></td>
-<td class=\"summary\"><a href=
-\"https://trac.openmodelica.org/OpenModelica/ticket/1789\" title=
-\"View ticket\">CombiTable2D does not work with simple double(8,6)
-table</a></td>
-<td class=\"owner\">sjoelund.se</td>
-<td class=\"type\">defect</td>
-<td class=\"priority\">major</td>
+<td class=\"priority\">critical</td>
 <td class=\"version\">trunk</td>
 <td class=\"resolution\">fixed</td>
 </tr>
