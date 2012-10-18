@@ -849,12 +849,21 @@ template functionExtraResidualsPreBody(SimEqSystem eq, Text &varDecls /*BUFP*/, 
   match eq
   case e as SES_RESIDUAL(__)
   then ""
-  case e as SES_SIMPLE_ASSIGN(__)
-  then old_equation_(e, contextSimulationDiscrete, &varDecls /*BUFD*/)
   else
   equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
   end match
 end functionExtraResidualsPreBody;
+
+template equationNamesExtraResidualsPreBody(SimEqSystem eq)
+ "Generates an equation."
+::=
+  match eq
+  case e as SES_RESIDUAL(__)
+  then ""
+  else
+  equationNames_(eq, contextSimulationDiscrete)
+  end match
+end equationNamesExtraResidualsPreBody;
 
 template functionExtraResiduals(list<SimEqSystem> allEquations)
   "Generates functions in simulation file."
@@ -2097,6 +2106,7 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
 match eq
 case SES_NONLINEAR(__) then
   let size = listLength(crefs)
+  let eqncalls = (eqs |> eq2 => equationNamesExtraResidualsPreBody(eq2) ;separator="\n")  
   let nonlinindx = indexNonLinear
   <<
   #ifdef _OMC_MEASURE_TIME
@@ -2116,6 +2126,7 @@ case SES_NONLINEAR(__) then
   /* write solution */ 
   <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>];' ;separator="\n"%>
   <%inlineCrefs(context,crefs)%>
+  <%eqncalls%>
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
   #endif<%\n%>
