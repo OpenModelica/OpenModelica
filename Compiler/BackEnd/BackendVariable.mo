@@ -3543,7 +3543,7 @@ algorithm
         i = ComponentReference.crefDepth(cr);
         ia = ComponentReference.crefDepth(cra);
       then
-        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," both fixed and have start values ","");
+        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," both fixed and have start values ");
     case (v,true,SOME(sa),_,va,true,NONE(),_,_,_)
       then v;
     case (v,true,SOME(sa),_,va,false,SOME(sb),_,_,_)
@@ -3552,11 +3552,9 @@ algorithm
         (e,_) = getNonZeroStart(sa,NONE(),e,NONE(),knVars);
         v1 = setVarStartValue(v,e);
       then v1;     
-    case (v as BackendDAE.VAR(varName=cr),true,SOME(sa),_,va as BackendDAE.VAR(varName=cra),false,SOME(sb),_,_,_)
-      equation
-        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+    case (v,true,SOME(sa),_,va,false,SOME(sb),_,_,_)
       then 
-         mergeStartFixed1(false,v,cr,sa,cra,e,soa,negate," have start values "," because this is fixed");
+         v;
     case (v,true,SOME(sa),_,va,false,NONE(),_,_,_)
       then v;
     case (v,true,NONE(),_,va,true,SOME(sb),_,_,_)
@@ -3600,7 +3598,7 @@ algorithm
         i = ComponentReference.crefDepth(cr);
         ia = ComponentReference.crefDepth(cra);
       then
-        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," have start values ","");
+        mergeStartFixed1(intLt(ia,i),v,cr,sa,cra,e,soa,negate," have start values ");
     case (v,false,SOME(sa),_,va,false,NONE(),_,_,_)
       then v;
     case (v,false,NONE(),_,va,true,SOME(sb),_,_,_)
@@ -3635,35 +3633,34 @@ protected function mergeStartFixed1
   input Option<DAE.Exp> soa;
   input Boolean negate;
   input String s4;
-  input String s7;
   output BackendDAE.Var outVar;
 algorithm
   outVar :=
-  matchcontinue (b,inVar,cr,sv,cra,sva,soa,negate,s4,s7)
+  matchcontinue (b,inVar,cr,sv,cra,sva,soa,negate,s4)
     local
       String s,s1,s2,s3,s5,s6;
       DAE.Exp sv1,sva1;
       BackendDAE.Var v;
     // alias var has more dots in the name
-    case (false,_,_,_,_,_,_,_,_,_)
+    case (false,_,_,_,_,_,_,_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Util.if_(negate," = -"," = ");
         s3 = ComponentReference.printComponentRefStr(cra);
         s5 = ExpressionDump.printExpStr(sv);
         s6 = ExpressionDump.printExpStr(sva);
-        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,s7,".\n"});
+        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s1,"."});
         Error.addMessage(Error.COMPILER_WARNING,{s});
       then 
         inVar;     
-    case (true,_,_,_,_,_,_,_,_,_)
+    case (true,_,_,_,_,_,_,_,_)
       equation
         s1 = ComponentReference.printComponentRefStr(cr);
         s2 = Util.if_(negate," = -"," = ");
         s3 = ComponentReference.printComponentRefStr(cra);
         s5 = ExpressionDump.printExpStr(sv);
         s6 = ExpressionDump.printExpStr(sva);
-        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,s7,".\n"});
+        s = stringAppendList({"Alias variables ",s1,s2,s3,s4,s5," != ",s6,". Use value from ",s3,"."});
         Error.addMessage(Error.COMPILER_WARNING,{s});
         v = setVarStartValue(inVar,sva);
         v = setVarStartOrigin(v,soa);
