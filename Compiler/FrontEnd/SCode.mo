@@ -1504,6 +1504,12 @@ algorithm
         true = Absyn.crefEqual(cr1,cr2);
       then 
         true;
+        
+    case (EQ_NORETCALL(exp = e1), EQ_NORETCALL(exp = e2))
+      equation
+        true = Absyn.expEqual(e1,e2);
+      then 
+        true;
     
     // otherwise false
     case(_,_) then false;
