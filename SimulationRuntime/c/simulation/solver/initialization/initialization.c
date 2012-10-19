@@ -348,6 +348,7 @@ static int initialize(DATA *data, int optiMethod)
      optiMethod == IOM_NELDER_MEAD_EX ||
      optiMethod == IOM_NELDER_MEAD_EX2)
   {
+    DEBUG_INFO(LOG_INIT, "start with scaling");
     computeInitialResidualScalingCoefficients(data, initData);
 
     if(optiMethod == IOM_KINSOL_SCALED)
@@ -368,9 +369,13 @@ static int initialize(DATA *data, int optiMethod)
     DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
     for(i=0; i<initData->nInitResiduals; ++i)
       DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initData->residualScalingCoefficients[i]);
+
+    for(i=0; i<initData->nz; ++i)
+      initData->start[i] = initData->z[i];
   }
 
   /* w/o scaling */
+  DEBUG_INFO(LOG_INIT, "start w/o scaling");
   for(i=0; i<initData->nz; ++i)
     initData->nominal[i] = 1.0;
   for(i=0; i<initData->nInitResiduals; ++i)
