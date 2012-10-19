@@ -4050,6 +4050,7 @@ algorithm
     case DAE.CREF_QUAL(ident = "$ZERO") then true;
     case DAE.CREF_QUAL(ident = "$_DER") then true;
     case DAE.CREF_QUAL(ident = "$pDER") then true;
+    case DAE.CREF_QUAL(ident = "$DER") then true;
     else then false;
   end match;
 end selfGeneratedVar;
