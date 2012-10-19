@@ -1,7 +1,16 @@
 # Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2011-10-11
 # CMakefile for compilation of OMC 
 
+# CMAKE
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
+# PROJECT
+PROJECT(SimulationRuntimeC)
+
+# Global Variables
+IF(NOT OMCTRUNCHOME)
+  SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR}/../../)
+ENDIF (NOT OMCTRUNCHOME)
 
 # OMDEV PATH
 IF(NOT OMDEV)
@@ -12,31 +21,53 @@ INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
 link_directories(${OMDEV}/lib/expat-win32-msvc)
 
 # SUNDIALS Header
-FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h /usr/include /usr/local/include $ENV{INCLUDE})
+FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h /usr/include /usr/local/include $ENV{INCLUDE} ${OMDEV}/lib/3rdParty/Sundials/include)
 
 # SUNDIALS Libraires
-FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES sundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB})
-FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES sundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB})
-FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES sundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB})
-FIND_LIBRARY(SUNDIALS_KINSOL       NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB})
+FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES sundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
+FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES sundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES sundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
+FIND_LIBRARY(SUNDIALS_KINSOL       NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
 
-IF(SUNDIALS_INCLUDE_DIR AND
-   SUNDIALS_LIBRARY_CVODE AND
+FIND_LIBRARY(SUNDIALS_LIBRARY_CVODED      NAMES sundials_cvoded      PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/debug/vc100)
+FIND_LIBRARY(SUNDIALS_LIBRARY_IDAD        NAMES sundials_idad        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/debug/vc100)
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVECD       NAMES sundials_nvecseriald        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/debug/vc100)
+FIND_LIBRARY(SUNDIALS_KINSOLD       NAMES sundials_kinsold        PATHS /usr/lib /usr/local/lib $ENV{LIB} ${OMDEV}/lib/3rdParty/Sundials/lib/debug/vc100)
+
+IF(SUNDIALS_INCLUDE_DIR)
+
+  INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
+
+  if (SUNDIALS_LIBRARY_CVODE AND
    SUNDIALS_LIBRARY_IDA AND
    SUNDIALS_LIBRARY_NVEC AND
    SUNDIALS_KINSOL)
 
-  INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
   SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
 
-ENDIF(SUNDIALS_INCLUDE_DIR AND
-      SUNDIALS_LIBRARY_CVODE AND
+ENDIF(SUNDIALS_LIBRARY_CVODE AND
       SUNDIALS_LIBRARY_IDA AND
    SUNDIALS_LIBRARY_NVEC AND 
    SUNDIALS_KINSOL)
+   
+  if (SUNDIALS_LIBRARY_CVODED AND
+   SUNDIALS_LIBRARY_IDAD AND
+   SUNDIALS_LIBRARY_NVECD AND
+   SUNDIALS_KINSOLD)
 
-# OMC Compiler
-MESSAGE(" omc is " ${OMC_DEBUG})
+  SET(SUNDIALS_DEBUG_LIBRARIES ${SUNDIALS_LIBRARY_CVODED} ${SUNDIALS_LIBRARY_IDAD} ${SUNDIALS_LIBRARY_NVECD} ${SUNDIALS_KINSOLD}) 
+
+ENDIF(SUNDIALS_LIBRARY_CVODED AND
+      SUNDIALS_LIBRARY_IDAD AND
+   SUNDIALS_LIBRARY_NVECD AND 
+   SUNDIALS_KINSOLD)   
+   
+ENDIF(SUNDIALS_INCLUDE_DIR)
+
+# Defines for Visual Studio
+if(MSVC)
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS -DNOMINMAX -D_COMPLEX_DEFINED)
+endif(MSVC)	
 
 # includes
 INCLUDE_DIRECTORIES(${OMCTRUNCHOME})

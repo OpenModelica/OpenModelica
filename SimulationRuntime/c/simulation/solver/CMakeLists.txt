@@ -27,7 +27,7 @@ ADD_LIBRARY(solver ${solver_sources} ${solver_headers})
 
 # Install
 INSTALL(TARGETS solver
-		ARCHIVE DESTINATION lib)
+		ARCHIVE DESTINATION lib/omc)
 		
-INSTALL(FILES ${solver_headers} DESTINATION include)
+#INSTALL(FILES ${solver_headers} DESTINATION include)
 

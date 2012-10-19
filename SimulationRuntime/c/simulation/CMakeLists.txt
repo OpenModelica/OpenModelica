@@ -23,6 +23,6 @@ ADD_LIBRARY(simulation ${simulation_sources} ${simulation_headers})
 
 # Install
 INSTALL(TARGETS simulation
-		ARCHIVE DESTINATION lib)
+		ARCHIVE DESTINATION lib/omc)
 		
-INSTALL(FILES ${simulation_headers} DESTINATION include)
+#INSTALL(FILES ${simulation_headers} DESTINATION include)

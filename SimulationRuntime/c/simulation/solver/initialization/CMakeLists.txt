@@ -24,7 +24,7 @@ ADD_LIBRARY(initialization ${initialization_sources} ${initialization_headers})
 
 # Install
 INSTALL(TARGETS initialization
-		ARCHIVE DESTINATION lib)
+		ARCHIVE DESTINATION lib/omc)
 		
-INSTALL(FILES ${initialization_headers} DESTINATION include)
+#INSTALL(FILES ${initialization_headers} DESTINATION include)
 

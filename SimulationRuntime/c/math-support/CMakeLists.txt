@@ -16,7 +16,7 @@ ADD_LIBRARY(math-support ${math_support_sources} ${math_support_headers})
 
 # Install
 INSTALL(TARGETS math-support
-		ARCHIVE DESTINATION lib)
+		ARCHIVE DESTINATION lib/omc)
 		
-INSTALL(FILES ${math_support_headers} DESTINATION include)
+#INSTALL(FILES ${math_support_headers} DESTINATION include)
 

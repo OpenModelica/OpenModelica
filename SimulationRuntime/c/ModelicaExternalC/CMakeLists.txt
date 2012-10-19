@@ -15,6 +15,6 @@ add_library(ModelicaExternalC  ${ModelicaExternalC_sources} ${ModelicaExternalC_
 
 # Install
 INSTALL(TARGETS ModelicaExternalC
-		ARCHIVE DESTINATION lib)
-INSTALL(FILES ${ModelicaExternalC_headers} DESTINATION include)
+		ARCHIVE DESTINATION lib/omc)
+#INSTALL(FILES ${ModelicaExternalC_headers} DESTINATION include)
 		

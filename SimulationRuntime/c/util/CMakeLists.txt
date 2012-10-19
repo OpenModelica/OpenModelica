@@ -15,6 +15,6 @@ ADD_LIBRARY(util ${util_sources} ${util_headers})
 
 # Install
 INSTALL(TARGETS util
-		ARCHIVE DESTINATION lib)
+		ARCHIVE DESTINATION lib/omc)
 		
-INSTALL(FILES ${util_headers} DESTINATION include)
+#INSTALL(FILES ${util_headers} DESTINATION include)
