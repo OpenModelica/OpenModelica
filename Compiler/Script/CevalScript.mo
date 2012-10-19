@@ -1323,6 +1323,15 @@ algorithm
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
     
+    case (_,_,"residualCMP",_,_,_)
+      equation
+        str = Config.simCodeTarget();
+        Config.setsimCodeTarget("ResidualCMP");
+        (cache,simValue,newst) = cevalInteractiveFunctions2(inCache,inEnv,"simulate",inVals,inSt,msg);
+        Config.setsimCodeTarget(str);
+      then
+        (cache,simValue,newst);    
+    
     // Remove output.log before simulate in case it already exists. 
     // This is so we can check for the presence of output.log later.
     case (cache,env,"simulate",vals,st,_)
@@ -3457,7 +3466,7 @@ public function compileModel "function: compileModel
 algorithm
   _ := matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean,solverMethod)
     local
-      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,filename,str,fileDLL, fileEXE, fileLOG, make;
+      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,win_call,make_call,s_call,fileprefix,file_dir,filename,str,fileDLL, fileEXE, fileLOG, make,target;
       list<String> libs;
       Boolean isWindows;
 
@@ -3480,8 +3489,9 @@ algorithm
         //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
         //        to the environment variable! Don't ask me why, ask Microsoft.
         isWindows = System.os() ==& "Windows_NT";
+        target = Config.simulationCodeTarget();
         omhome = Util.if_(isWindows, "set OPENMODELICAHOME=\"" +& System.stringReplace(omhome_1, "/", "\\") +& "\"&& ", "");
-        win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",noClean});
+        win_call = stringAppendList({omhome,"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""," ",fileprefix," ",target," ",noClean});
         make = System.getMakeCommand();
         make_call = stringAppendList({make," -f ",fileprefix,".makefile >",fileprefix,".log 2>&1"});
         s_call = Util.if_(isWindows, win_call, make_call);

@@ -17,8 +17,31 @@ set PATH=%CD%;%CD%\..\libexec\gcc\mingw32\4.4.0\; >>%CURRENT_DIR%\%1.log 2>&1
 cd /D "%CURRENT_DIR%" >>%CURRENT_DIR%\%1.log 2>&1
 REM echo PATH = %PATH% >>%1.log 2>&1
 REM echo CD = %CD% >>%1.log 2>&1
+if /I "%2"=="msvc"  (goto :MSVC) else (goto :MINGW)
+
+:MSVC
+REM echo "MSVC"
+REM check if msvc is there
+if not defined VS100COMNTOOLS (goto :MINGW)
+set MSVCHOME=%VS100COMNTOOLS%..\..\VC
+REM echo %MSVCHOME%\vcvarsall.bat
+if not exist "%MSVCHOME%\vcvarsall.bat" (goto :MINGW)
+set PATHTMP=%PATH%
+set PATH=%OLD_PATH%
+call "%MSVCHOME%\vcvarsall.bat"
+rem set PATH=%PATHTMP%
+nmake /f %1.makefile >>%1.log 2>&1
+goto :Final
+
+
+:MINGW
+REM echo "MINGW"
 %MinGW%\bin\mingw32-make -f %1.makefile >>%1.log 2>&1
+goto :Final
+
+
+:Final
 set RESULT=%ERRORLEVEL%
 set PATH=%OLD_PATH%
 set OLD_PATH=
-exit %RESULT%
+REM exit %RESULT%

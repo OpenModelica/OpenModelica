@@ -345,6 +345,12 @@ algorithm
   target := Flags.getConfigString(Flags.SIMCODE_TARGET);
 end simCodeTarget;
 
+public function setsimCodeTarget
+  input String inString;
+algorithm
+  Flags.setConfigString(Flags.SIMCODE_TARGET, inString);
+end setsimCodeTarget;
+
 public function getLanguageStandard
   output LanguageStandard outStandard;
 algorithm
