@@ -2778,7 +2778,7 @@ This OpenModelica 1.5 release has major improvements in the OpenModelica compile
 This release includes major improvements of the flattening frontend part of the OpenModelica Compiler (OMC) and some improvements of the backend, including, but not restricted to:
 <ul>
 <li>Improved flattening speed of at least a factor of 10 or more compared to the 1.4.5 release, primarily for larger models with inner-outer, but also speedup for other models, e.g. the robot model flattens in approximately 2 seconds.</li>
-<li>Flattening of all MultiBody models, including all elementary models, breaking connection graphs, world object, etc. Moreover, simulation is now possible for at least five MultiBody models: Pendulum, DoublePendulum, InitSpringConstant, World, PointGravityÔøΩWithPointMasses.</li> 
+<li>Flattening of all MultiBody models, including all elementary models, breaking connection graphs, world object, etc. Moreover, simulation is now possible for at least five MultiBody models: Pendulum, DoublePendulum, InitSpringConstant, World, PointGravityWithPointMasses.</li> 
 <li>Progress in supporting the Media library, but simulation is not yet possible.</li>
 <li>Support for enumerations, both in the frontend and the backend.</li>
 <li>Support for expandable connectors.</li>
@@ -2828,7 +2828,7 @@ This release includes bug fix and performance improvemetns of the flattening fro
 <li>Flattening of the whole Modelica Standard Library 3.1 (MSL 3.1), except Media and Fluid.</li>
 <li>Improved flattening speed of a factor of 5-20 compared to OpenModelica 1.5 for a number of models, especially in the MultiBody library.</li>
 <li>Reduced memory consumption by the OpenModelica compiler frontend, for certain large models a reduction of a factor 50.</li>
-<li>Reorganized, more modular OpenModelica compiler backend, can now handle approximately 30ÔøΩ000 equations, compared to previously approximately 10ÔøΩ000 equations.</li>
+<li>Reorganized, more modular OpenModelica compiler backend, can now handle approximately 30000 equations, compared to previously approximately 10000 equations.</li>
 <li>Better error messages from the compiler, especially regarding functions.</li>
 <li>Improved simulation coverage of MSL 3.1. Many models that did not simulate before are now simulating. However, there are still many models in certain sublibraries that do not simulate.</li>
 <li>Progress in supporting the Media library, but simulation is not yet possible.</li>
@@ -2973,7 +2973,7 @@ package '1.9.0' "Version 1.9.0 (2012-08-31)"
 <head>
 <meta name=\"generator\" content=
 \"HTML Tidy for Linux (vers 25 March 2009), see www.w3.org\" />
-<title>ReleaseNotes/1.9.0 ‚.. OpenModelica</title>
+<title>ReleaseNotes/1.9.0 OpenModelica</title>
 <meta http-equiv=\"Content-Type\" content=
 \"text/html; charset=utf-8\" /><!--[if lt IE 7]>
     <script type=\"text/javascript\" src=\"/OpenModelica/chrome/common/js/ie_pre7_hacks.js\"></script>
@@ -3615,11 +3615,11 @@ div.system-message p.system-message-title { font-weight: bold; }
 <div id=\"wikipage\">
 <div style=\"float: right; margin: 0 1em\" class=\"wikipage\">
 <blockquote>
-<p>‚.ê <a class=\"wiki\" href=
+<p><a class=\"wiki\" href=
 \"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/1.8.1\">
 1.8.1</a> | <a class=\"missing wiki\" href=
 \"https://trac.openmodelica.org/OpenModelica/wiki/ReleaseNotes/Future\"
-rel=\"nofollow\">Future?</a> ‚..</p>
+rel=\"nofollow\">Future?</a></p>
 </blockquote>
 </div>
 <div style=
@@ -4769,7 +4769,7 @@ find aliased package functions</a></td>
 <td class=\"summary\"><a title=\"View ticket\" href=
 \"https://trac.openmodelica.org/OpenModelica/ticket/1833\">Local name
 shadowing and assignment to inputs</a></td>
-<td class=\"owner\">openmodelicadevelopers@‚.¶</td>
+<td class=\"owner\">openmodelicadevelopers@...¬¶</td>
 <td class=\"type\">defect</td>
 <td class=\"priority\">major</td>
 <td class=\"version\">trunk</td>
