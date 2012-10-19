@@ -178,19 +178,20 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__removeFirstAndLastChar)
 {
   char *str = RML_STRINGDATA(rmlA0);
-  char *res = "";
+  char *res = NULL;
   int length=strlen(str);
-  if(length > 1) {
-    res=malloc(length-1);
-    strncpy(res,str + 1,length-2);
-
-    res[length-1] = '\0';
-  }
-
-  rmlA0 = (void*) mk_scon(res);
-  /* adrpo added 2004-10-29 */
-  free(res);
-
+  int i;
+  if(length > 1)
+    {
+      res=(char*)malloc((length-1)*sizeof(char));
+      strncpy(res,str + 1,length-2);
+      res[length-1] = '\0';
+      rmlA0 = (void*) mk_scon(res);
+      /* adrpo added 2004-10-29 */
+      free(res);
+    }
+  else
+      rmlA0 = (void*) mk_scon(str);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
