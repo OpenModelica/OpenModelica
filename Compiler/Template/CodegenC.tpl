@@ -2408,6 +2408,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   $(FILEPREFIX)$(EXEEXT): $(MAINOBJ) $(FILEPREFIX)_records.c $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
     $(CXX) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(FILEPREFIX)_records.c $(CFLAGS) $(LDFLAGS)  
   >>
+  end match
 else      
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
