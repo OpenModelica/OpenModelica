@@ -46,6 +46,13 @@
 #define omc_dummyEquationInfo {-1,"",-1,NULL}
 #define omc_dummyFunctionInfo {-1,"",omc_dummyFileInfo}
 
+#if defined(_MSC_VER)
+#define set_struct(TYPE, x, info) { const TYPE tmp = info; x = tmp; }
+#else
+#define set_struct(TYPE, x, info) x = (TYPE)info
+#endif
+
+
   /* Model info structures */
   typedef struct VAR_INFO
   {

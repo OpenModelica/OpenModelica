@@ -16,5 +16,5 @@ add_library(ModelicaExternalC  ${ModelicaExternalC_sources} ${ModelicaExternalC_
 # Install
 INSTALL(TARGETS ModelicaExternalC
 		ARCHIVE DESTINATION lib)
-INSTALL(FILES f2c.h DESTINATION include)
+INSTALL(FILES ${ModelicaExternalC_headers} DESTINATION include)
 		

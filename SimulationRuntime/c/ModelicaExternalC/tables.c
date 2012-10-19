@@ -1150,7 +1150,7 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
   InterpolationTable2D *tpl = 0;
   tpl = (InterpolationTable2D*)calloc(1,sizeof(InterpolationTable2D));
   ASSERT1(tpl,"Not enough memory for Table: %s",tableName);
-  ASSERT3(0 < ipoType  & ipoType < 3,"Unknown interpolation Type %d for Table %s from file %s!",ipoType,tableName,fileName);
+  ASSERT3((0 < ipoType) & (ipoType < 3),"Unknown interpolation Type %d for Table %s from file %s!",ipoType,tableName,fileName);
 
   tpl->rows = tableDim1;
   tpl->cols = tableDim2;

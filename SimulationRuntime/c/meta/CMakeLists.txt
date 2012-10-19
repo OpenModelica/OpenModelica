@@ -30,6 +30,6 @@ add_library(meta  ${META_SRC} ${META_HFILES})
 
 # Install
 INSTALL(TARGETS meta
-		ARCHIVE DESTINATION meta)
+		ARCHIVE DESTINATION lib)
 INSTALL(FILES ${META_HFILES} DESTINATION include/meta)
 		

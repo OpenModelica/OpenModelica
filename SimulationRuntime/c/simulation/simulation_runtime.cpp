@@ -750,7 +750,7 @@ static void omc_throw_simulation()
 {
   terminationAssert = 1;
   setTermMsg("Assertion triggered by external C function");
-  TermInfo = (FILE_INFO){"",-1,-1,-1,-1,1};
+  set_struct(FILE_INFO,TermInfo,omc_dummyFileInfo);
 }
 
 void (*omc_assert)(const char *msg, FILE_INFO info) = omc_assert_simulation;
