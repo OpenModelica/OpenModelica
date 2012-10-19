@@ -60,7 +60,6 @@ ADD_SUBDIRECTORY(ModelicaExternalC)
 ADD_SUBDIRECTORY(simulation)
 ADD_SUBDIRECTORY(util)
 
-
 # -------------------------------------------------------------
 # MACRO definitions
 # -------------------------------------------------------------

@@ -14,7 +14,7 @@ SET(simulation_sources  options.cpp simulation_input_xml.cpp simulation_runtime.
 					    ../linearization/linearize.cpp)
 
 SET(simulation_headers options.h simulation_input_xml.h simulation_runtime.h
-					../linearization/linearize.h ../simulation_data.h)				 
+					../linearization/linearize.h ../simulation_data.h ../omc_inline.h ../omc_msvc.h ../openmodelica.h ../openmodelica_func.h)				 
 						 
 # Library util
 ADD_DEFINITIONS(/DNO_INTERACTIVE_DEPENDENCY)

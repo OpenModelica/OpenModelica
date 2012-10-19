@@ -352,9 +352,19 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
       <%eqnInfo%>
       memcpy(data->modelData.equationInfo, &equationInfo, data->modelData.nEquations*sizeof(EQUATION_INFO));
       
-      data->modelData.nProfileBlocks = n_omc_equationInfo_reverse_prof_index;
+      data->modelData.nProfileBlocks = 0 <% allEquations |> eq => match eq
+        case SES_MIXED(__)
+        case SES_LINEAR(__)
+        case SES_NONLINEAR(__) then '+1'
+      %>;
       data->modelData.equationInfo_reverse_prof_index = (int*) malloc(data->modelData.nProfileBlocks*sizeof(int));
-      memcpy(data->modelData.equationInfo_reverse_prof_index, omc_equationInfo_reverse_prof_index, data->modelData.nProfileBlocks*sizeof(int));
+      <%System.tmpTickReset(0)%>
+      <% allEquations |> eq hasindex i0 => match eq
+        case SES_MIXED(__)
+        case SES_LINEAR(__)
+        case SES_NONLINEAR(__) then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
+      ; empty
+      %>
     }
     >>
   end match
@@ -425,7 +435,7 @@ template globalDataVarInfoArray(String _name, list<SimVar> items, Integer offset
   match items
   case {} then
     <<
-    const struct VAR_INFO <%_name%>[1] = {{-1,"","",omc_dummyFileInfo}};
+    const struct VAR_INFO <%_name%>[1] = {omc_dummyVarInfo};
     >>
   case items then
     <<
@@ -8152,19 +8162,6 @@ template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines, Integer numEqns)
     <<
     <%preBuf%>
     <%res%>
-    const int n_omc_equationInfo_reverse_prof_index = 0<% eqs |> eq => match eq
-        case SES_MIXED(__)
-        case SES_LINEAR(__)
-        case SES_NONLINEAR(__) then '+1'
-      %>;
-    const int omc_equationInfo_reverse_prof_index[] = {
-      <% eqs |> eq hasindex i0 => match eq
-        case SES_MIXED(__)
-        case SES_LINEAR(__)
-        case SES_NONLINEAR(__) then '<%i0%>,<%\n%>'
-      ; empty
-      %>
-    };
     >>
 end equationInfo;
 
