@@ -7328,7 +7328,7 @@ algorithm
       array<Option<SimCode.SimVar>> vararray;
       DAE.ComponentRef cr;
       DAE.Type tp;
-      Integer size;
+      Integer size,listsize;
       DAE.Dimensions dims;
       list<Integer> dimsint;
       
@@ -7340,6 +7340,9 @@ algorithm
         tp = ComponentReference.crefLastType(cr);
         // get size of last type
         size = Expression.sizeOf(tp);
+        listsize = listLength(varlst);
+        // only sort if all vars there
+        true = intEq(size,listsize);
         // alloc the array 
         vararray = arrayCreate(size,NONE());
         // insert vars in array
@@ -7355,7 +7358,8 @@ algorithm
       SimCode.SIMVAR(name=cr)::_ = varlst;
       crstr = ComponentReference.printComponentRefStr(cr);
       Debug.fprintln(Flags.FAILTRACE, "SimCodeUtil.sortArrayVars failed on " +& crstr +& "\n");
-      sortedVars = List.sort(varlst,comparingArrayVarsIndexes);
+      //sortedVars = List.sort(varlst,comparingArrayVarsIndexes);
+      sortedVars = varlst;
       sortedVars = listAppend(sortedVars,iVars);
     then
       sortedVars; 

@@ -2117,6 +2117,11 @@ algorithm
         array<Integer> select;          
         list<tuple<DAE.Exp,list<Integer>>> determinants;
         Integer hack;
+        
+        BackendDAE.EqSystem subsyst;
+        BackendDAE.IncidenceMatrix m;
+        BackendDAE.IncidenceMatrix mt;         
+        
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(listLength(dstates),eqnsSize);
@@ -2193,10 +2198,15 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));     
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));  
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
+
+        //subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        //(subsyst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL());
+        //  dumpSystemGraphML(subsyst,ishared,NONE(),"System" +& intString(unassignedEqnsSize) +& ".graphml");
+          
         // get jacobian for all variables
         SOME(jac) = BackendDAEUtil.calculateJacobianEnhanced(vars, eqns, me, true, ishared);
-       //print("Jac: " +& BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
+        //print("Jac: " +& BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
         // get for each state the determinant of the jacobian [state,dummystates]
         digraph = arrayCreate(eqnsSize,{});    
         select = arrayCreate(varSize,-1);
@@ -3742,7 +3752,7 @@ algorithm
         //dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
         (eqns_1,so1) = addDummyStateEqn(vars,eqns,cr,dummyder,so,i,eindx,mapIncRowEqn,mt);
-        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, prl, b, NONE(), NONE(), {}, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())), comment, ct), vars);
+        vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, prl, b, NONE(), NONE(), lstSubs, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())), comment, ct), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
         ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars_1,eqns_1,so1,i::ilst,eindx,mapIncRowEqn,mt)));
@@ -3934,6 +3944,8 @@ algorithm
       GraphML.Graph g;
       DAE.ComponentRef cr;
       Integer id;
+      Boolean b;
+      String color;
     case ((v as BackendDAE.VAR(varName=cr),(id,g)))
       equation
         true = BackendVariable.isStateVar(v);
@@ -3943,9 +3955,11 @@ algorithm
       then ((v,(id+1,g)));      
     case ((v as BackendDAE.VAR(varName=cr),(id,g)))
       equation
+        b = BackendVariable.isVarDiscrete(v);
+        color = Util.if_(b,GraphML.COLOR_PURPLE,GraphML.COLOR_RED);
         //g = GraphML.addNode("v" +& intString(id),ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
         //g = GraphML.addNode("v" +& intString(id),intString(id),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
-        g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +&ComponentReference.printComponentRefStr(cr),GraphML.COLOR_RED,GraphML.ELLIPSE(),g);
+        g = GraphML.addNode("v" +& intString(id),intString(id) +& ": " +&ComponentReference.printComponentRefStr(cr),color,GraphML.ELLIPSE(),g);
       then ((v,(id+1,g)));
     case _ then inTpl;
   end matchcontinue;
