@@ -2335,12 +2335,12 @@ package Config
     output Integer defdevid;
   end getDefaultOpenCLDevice;
   
-	function simulationCodeTarget
-	"@author: adrpo
-	 returns: 'gcc' or 'msvc'
-	 usage: omc [+target=gcc|msvc], default to 'gcc'."
-	  output String outCodeTarget;
-	end simulationCodeTarget;
+  function simulationCodeTarget
+  "@author: adrpo
+   returns: 'gcc' or 'msvc'
+   usage: omc [+target=gcc|msvc], default to 'gcc'."
+    output String outCodeTarget;
+  end simulationCodeTarget;
     
 end Config;
 
