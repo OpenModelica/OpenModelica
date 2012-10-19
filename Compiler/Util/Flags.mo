@@ -490,7 +490,7 @@ constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
   SOME("+v"), EXTERNAL(), BOOL_FLAG(false), NONE(),
   Util.gettext("Print the version and exit."));
 constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
-  STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc, msvc"})),
+  STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc", "msvc"})),
   Util.gettext("Sets the target compiler to use."));
 constant ConfigFlag GRAMMAR = CONFIG_FLAG(6, "grammar", SOME("g"), EXTERNAL(),
   ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA)}), 
