@@ -1912,14 +1912,15 @@ function simulate "simulates a modelica model by generating c code, build it and
   input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
   input String method := "<default>" "integration method used for simulation. <default> = dassl";
   input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp := "<default>" "storeInTemp. <default> = false";
-  input Boolean noClean := "<default>" "noClean. <default> = false";
+  input Boolean storeInTemp := false "storeInTemp. <default> = false";
+  input Boolean noClean := false "noClean. <default> = false";
   input String options := "<default>" "options. <default> = \"\"";
-  input String outputFormat := "<default>" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter := "<default>" "Filter for variables that should store in result file. <default> = \".*\"";
-  input Boolean measureTime := "<default>" "creates a html file with proffiling data for model simulation. <default> = false";
+  input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input Boolean measureTime := false "creates a html file with proffiling data for model simulation. <default> = false";
   input String cflags := "<default>" "cflags. <default> = \"\"";
   input String simflags := "<default>" "simflags. <default> = \"\"";
+  output String simulationResults;
 external "builtin";
 annotation(preferredView="text");
 end simulate;
@@ -1941,14 +1942,15 @@ At stopTime the linearization matrixes are evaluated and a modelica model is cre
   input Real tolerance := 1e-6 "tolerance used by the integration method. <default> = 1e-6";
   input String method := "<default>" "integration method used for simulation. <default> = dassl";
   input String fileNamePrefix := "<default>" "fileNamePrefix. <default> = \"\"";
-  input Boolean storeInTemp := "<default>" "storeInTemp. <default> = false";
-  input Boolean noClean := "<default>" "noClean. <default> = false";
+  input Boolean storeInTemp := false "storeInTemp. <default> = false";
+  input Boolean noClean := false "noClean. <default> = false";
   input String options := "<default>" "options. <default> = \"\"";
-  input String outputFormat := "<default>" "Format for the result file. <default> = \"mat\"";
-  input String variableFilter := "<default>" "Filter for variables that should store in result file. <default> = \".*\"";
-  input Boolean measureTime := "<default>" "creates a html file with proffiling data for model simulation. <default> = false";
+  input String outputFormat := "mat" "Format for the result file. <default> = \"mat\"";
+  input String variableFilter := ".*" "Filter for variables that should store in result file. <default> = \".*\"";
+  input Boolean measureTime := false "creates a html file with proffiling data for model simulation. <default> = false";
   input String cflags := "<default>" "cflags. <default> = \"\"";
   input String simflags := "<default>" "simflags. <default> = \"\"";
+  output String linearizationResult;
 external "builtin";
 annotation(preferredView="text");
 end linearize;
@@ -3639,6 +3641,8 @@ Beta2 Release</h1>
 Plug-in (MDT)</a></li>
 <li><a href=\"#OpenModelicaDevelopmentEnvironmentOMDev\">OpenModelica
 Development Environment (OMDev)</a></li>
+<li><a href=\"#OpenModelicaGraphicalEditorOMEdit\">OpenModelica
+Graphical Editor (OMEdit)</a></li>
 <li><a href=\"#DetailedChanges\">Detailed Changes</a></li>
 </ol>
 </div>
@@ -3736,6 +3740,22 @@ Development Environment (OMDev)</h2>
 <ul>
 <li>Migration of version handling and configuration management from
 CodeBeamer to Trac.</li>
+</ul>
+<h2 id=\"OpenModelicaGraphicalEditorOMEdit\">OpenModelica Graphical
+Editor (OMEdit)</h2>
+<ul>
+<li>Options to set matching algorithm and index reduction method
+for simulation (<a class=\"closed ticket\" href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1820\" title=
+\"task: Add GUI boxes for dynamic state selection and index reduction (closed: fixed)\">#1820</a>).</li>
+<li>Backward and Forward navigation support in Documentation view
+(<a class=\"closed ticket\" href=
+\"https://trac.openmodelica.org/OpenModelica/ticket/1836\" title=
+\"enhancement: OMEdit: navigation buttons in documentation viewer (closed: fixed)\">#1836</a>).</li>
+<li>Output window for simulations.</li>
+<li>Preserving user customizations.</li>
+<li>Show dummy red box for models with no graphical
+annotations.</li>
 </ul>
 <h2 id=\"DetailedChanges\">Detailed Changes</h2>
 <div xmlns=\"http://www.w3.org/1999/xhtml\">
