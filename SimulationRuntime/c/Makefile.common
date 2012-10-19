@@ -36,6 +36,7 @@ RUNTIME_HEADERS = ./f2c.h \
 ./simulation/solver/delay.h \
 ./simulation/solver/model_help.h \
 ./simulation/solver/simulation_inline_solver.h \
+./simulation/results/simulation_result.h \
 ./util/base_array.h \
 ./util/boolean_array.h \
 ./util/division.h \
@@ -53,7 +54,8 @@ RUNTIME_HEADERS = ./f2c.h \
 ./util/rtclock.h \
 ./util/string_array.h \
 ./util/utility.h \
-./util/varinfo.h
+./util/varinfo.h \
+./linearization/linearize.h 
 
 RUNTIME_HEADERS_FMU = \
 ./simulation/solver/initialization/initialization.h \
