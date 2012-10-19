@@ -1,18 +1,25 @@
 # Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2011-10-11
 # CMakefile for compilation of OMC 
 
-# Quellen und Header
-SET(solver_sources  daux.c ddasrt.c 
-                    ddassl.c 
-					dlamch.c 
-					dlinpk.c 
-					solver_main.c
-					dassl.c 
-					events.c)
-#					dopri45.c  )
+ADD_SUBDIRECTORY(initialization)
 
-SET(solver_headers  simulation_inline_solver.h solver_main.h dassl.h events.h) 
-                    #dopri45.h)				 
+# Quellen und Header
+SET(solver_sources  daux.c
+                    ddasrt.c
+					ddassl.c
+					dassl.c
+					delay.c
+					dlamch.c
+					dlinpk.c
+					events.c
+					model_help.c
+					solver_main.c)
+
+SET(solver_headers  dassl.h
+                    delay.h 
+					events.h 
+					model_help.h 
+					solver_main.h)				 
 						 
 # Library util
 ADD_LIBRARY(solver ${solver_sources} ${solver_headers})

@@ -11,11 +11,35 @@ ENDIF(NOT OMDEV)
 INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
 link_directories(${OMDEV}/lib/expat-win32-msvc)
 
+# SUNDIALS Header
+FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h /usr/include /usr/local/include $ENV{INCLUDE})
+
+# SUNDIALS Libraires
+FIND_LIBRARY(SUNDIALS_LIBRARY_CVODE      NAMES sundials_cvode      PATHS /usr/lib /usr/local/lib $ENV{LIB})
+FIND_LIBRARY(SUNDIALS_LIBRARY_IDA        NAMES sundials_ida        PATHS /usr/lib /usr/local/lib $ENV{LIB})
+FIND_LIBRARY(SUNDIALS_LIBRARY_NVEC       NAMES sundials_nvecserial        PATHS /usr/lib /usr/local/lib $ENV{LIB})
+FIND_LIBRARY(SUNDIALS_KINSOL       NAMES sundials_kinsol        PATHS /usr/lib /usr/local/lib $ENV{LIB})
+
+IF(SUNDIALS_INCLUDE_DIR AND
+   SUNDIALS_LIBRARY_CVODE AND
+   SUNDIALS_LIBRARY_IDA AND
+   SUNDIALS_LIBRARY_NVEC AND
+   SUNDIALS_KINSOL)
+
+  INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
+
+ENDIF(SUNDIALS_INCLUDE_DIR AND
+      SUNDIALS_LIBRARY_CVODE AND
+      SUNDIALS_LIBRARY_IDA AND
+   SUNDIALS_LIBRARY_NVEC AND 
+   SUNDIALS_KINSOL)
 
 # OMC Compiler
 MESSAGE(" omc is " ${OMC_DEBUG})
 
 # includes
+INCLUDE_DIRECTORIES(${OMCTRUNCHOME})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/linearization)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/math-support)
@@ -26,6 +50,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/libf2c)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/results)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/util)
 
 # Subdirectorys
@@ -76,6 +101,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
   
   # OMDEV PATH
@@ -105,7 +131,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -126,6 +152,21 @@ else(WIN32)
   SET(COPY cp)
 endif(WIN32)
 
+IF(SUNDIALS_INCLUDE_DIR AND
+   SUNDIALS_LIBRARY_CVODE AND
+   SUNDIALS_LIBRARY_IDA AND
+   SUNDIALS_LIBRARY_NVEC AND
+   SUNDIALS_KINSOL)
+
+  INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
+
+ENDIF(SUNDIALS_INCLUDE_DIR AND
+      SUNDIALS_LIBRARY_CVODE AND
+      SUNDIALS_LIBRARY_IDA AND
+   SUNDIALS_LIBRARY_NVEC AND 
+   SUNDIALS_KINSOL)
+
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
@@ -137,6 +178,7 @@ endif(WIN32)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)   
 
   INCLUDE_DIRECTORIES(${dir})    
@@ -151,11 +193,13 @@ endif(WIN32)
   
   # custom command to copy xml file
   SET(expat_CODE   ${OMDEV}/lib/expat-win32-msvc/libexpat.dll)
+  STRING(REGEX REPLACE "/" "\\\\" expat_CODE_NEU ${expat_CODE})
   SET(expat_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/libexpat.dll)
+  STRING(REGEX REPLACE "/" "\\\\" expat_OUTPUT_NEU ${expat_OUTPUT})
   ADD_CUSTOM_COMMAND(OUTPUT ${expat_OUTPUT}
-                     COMMAND ${COPY} ${expat_CODE} ${expat_OUTPUT}
+                     COMMAND ${COPY} ${expat_CODE_NEU} ${expat_OUTPUT_NEU}
                      WORKING_DIRECTORY ${dir}
-                     COMMENT "copy file ${expat_CODE} to ${expat_OUTPUT}")
+                     COMMENT "copy file ${expat_CODE_NEU} to ${expat_OUTPUT_NEU}")
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(expat${model} ALL DEPENDS ${expat_OUTPUT})  
   
@@ -183,15 +227,17 @@ endif(WIN32)
   ADD_DEFINITIONS(/TP)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta f2c ModelicaExternalC libexpat initialization ${SUNDIALS_LIBRARIES})
 
   # custom command to copy xml file
   SET(XML_CODE   ${dir}/${model}_init.xml)
+  STRING(REGEX REPLACE "/" "\\\\" XML_CODE_NEU ${XML_CODE})
   SET(XML_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/${model}_init.xml)
+  STRING(REGEX REPLACE "/" "\\\\" XML_OUTPUT_NEU ${XML_OUTPUT})
   ADD_CUSTOM_COMMAND(OUTPUT ${XML_OUTPUT}
-                     COMMAND ${COPY} ${XML_CODE} ${XML_OUTPUT}
+                     COMMAND ${COPY} ${XML_CODE_NEU} ${XML_OUTPUT_NEU}
                      WORKING_DIRECTORY ${dir}
-                     COMMENT "copy file ${XML_CODE} to ${XML_OUTPUT}")
+                     COMMENT "copy file ${XML_CODE_NEU} to ${XML_OUTPUT_NEU}")
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}cp_xml ALL DEPENDS ${XML_OUTPUT})
 
@@ -216,6 +262,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export) 
   
@@ -255,7 +302,7 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
 				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
   
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -281,6 +328,7 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export) 
 
@@ -318,7 +366,7 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   
   ADD_DEFINITIONS(/TP ${model}.c)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
