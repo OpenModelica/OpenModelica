@@ -133,8 +133,8 @@ template simulationFile(SimCode simCode, String guid)
     #include "_<%fileNamePrefix%>.h"
     #include "<%fileNamePrefix%>_functions.c"
     /* dummy VARINFO and FILEINFO */
-    const FILE_INFO dummyFILE_INFO = {"",-1,-1,-1,-1,1};
-    const VAR_INFO dummyVAR_INFO = {-1,"","",(FILE_INFO){"",-1,-1,-1,-1,1}};
+    const FILE_INFO dummyFILE_INFO = omc_dummyFileInfo;
+    const VAR_INFO dummyVAR_INFO = omc_dummyVarInfo;
     #ifdef __cplusplus
     extern "C" {
     #endif
