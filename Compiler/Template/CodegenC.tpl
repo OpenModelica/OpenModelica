@@ -2406,10 +2406,10 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   GENERATEDFILES=$(MAINFILE) $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h $(FILEPREFIX)_records.c $(FILEPREFIX).makefile
   
   $(FILEPREFIX)$(EXEEXT): $(MAINOBJ) $(FILEPREFIX)_records.c $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
-    $(CXX) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(FILEPREFIX)_records.c $(CFLAGS) $(LDFLAGS)  
+  <%\t%>$(CXX) /Fe$(FILEPREFIX)$(EXEEXT) $(MAINFILE) $(FILEPREFIX)_records.c $(CFLAGS) $(LDFLAGS)  
   >>
-  end match
-else      
+end match
+case "gcc" then      
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
@@ -2450,7 +2450,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   .PHONY: $(FILEPREFIX)_records.c
   
   omc_main_target: $(MAINOBJ) $(FILEPREFIX)_records.o $(FILEPREFIX)_functions.c $(FILEPREFIX)_functions.h
-  <%\t%> $(CXX) -I. -o $(FILEPREFIX)$(EXEEXT) $(MAINOBJ) $(FILEPREFIX)_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%>
+  <%\t%>$(CXX) -I. -o $(FILEPREFIX)$(EXEEXT) $(MAINOBJ) $(FILEPREFIX)_records.o $(CPPFLAGS) <%dirExtra%> <%libsPos1%> <%libsPos2%> $(CFLAGS) $(LDFLAGS) <%match System.os() case "OSX" then "-lf2c" else "-Wl,-Bstatic -lf2c -Wl,-Bdynamic"%>
   <%fileNamePrefix%>.conv.c: $(FILEPREFIX).c
   <%\t%>$(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
   <%\t%>@mv $@.tmp $@
@@ -2463,6 +2463,9 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   bundle:
   <%\t%>@tar -cvf $(FILEPREFIX)_Files.tar $(GENERATEDFILES)
   >>
+end match
+else 
+  error(sourceInfo(), 'target <%target%> is not handled!') 
 end simulationMakefile;
 
 template xsdateTime(DateTime dt)
