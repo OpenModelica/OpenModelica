@@ -60,7 +60,9 @@ void initializeDataStruc(DATA *data);
 
 void DeinitializeDataStruc(DATA *data);
 
-void update_DAEsystem(DATA *data);
+void updateDiscreteSystem(DATA *data);
+
+void updateContinuousSystem(DATA *data);
 
 void SaveZeroCrossings(DATA *data);
 

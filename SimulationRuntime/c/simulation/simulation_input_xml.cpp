@@ -206,11 +206,7 @@ static void XMLCALL endElement(void *userData, const char *name)
  */
 void read_input_xml(int argc, char **argv,
     MODEL_DATA* modelData,
-    SIMULATION_INFO* simulationInfo,
-    double *start, double *stop,
-    double *stepSize, long *outputSteps,
-    double *tolerance, string* method,
-    string* outputFormat, string* variableFilter)
+    SIMULATION_INFO* simulationInfo)
 {
   omc_ModelInput mi;
   char buf[BUFSIZ] = {0};
@@ -280,12 +276,6 @@ void read_input_xml(int argc, char **argv,
     THROW("see last warning");
   }
 
-  std::string* methodc = (string*)getFlagValue("m", argc, argv);
-  if (!methodc)
-  {
-    methodc = (string*)getFlagValue("s", argc, argv);
-  }
-
   // deal with override
   std::string* override = (string*)getFlagValue("override", argc, argv);
   std::string* overrideFile = (string*)getFlagValue("overrideFile", argc, argv);
@@ -293,40 +283,27 @@ void read_input_xml(int argc, char **argv,
 
   /* read all the DefaultExperiment values */
   DEBUG_INFO(LOG_SOLVER, "read all the DefaultExperiment values:");
-  read_value(mi.de["startTime"],start);
-  simulationInfo->startTime = *start;
-  DEBUG_INFO_AL1(LOG_SOLVER, "| startTime = %g", *start);
-  read_value(mi.de["stopTime"],stop);
-  simulationInfo->stopTime = *stop;
-  DEBUG_INFO_AL1(LOG_SOLVER, "| stopTime = %g", *stop);
-  read_value(mi.de["stepSize"],stepSize);
-  simulationInfo->stepSize = *stepSize;
-  DEBUG_INFO_AL1(LOG_SOLVER, "| stepSize = %g", *stepSize);
-  read_value(mi.de["tolerance"],tolerance);
-  simulationInfo->tolerance = *tolerance;
-  DEBUG_INFO_AL1(LOG_SOLVER, "| tolerance = %g", *tolerance);
 
-  if(methodc == NULL)
-  {
-    read_value(mi.de["solver"], method);
-    simulationInfo->solverMethod = method->c_str();
-    DEBUG_INFO_AL1(LOG_SOLVER, "| solver method: %s", method->c_str());
-  }
-  else
-  {
-    string tmp;
-    read_value(mi.de["solver"],&tmp);
-    simulationInfo->solverMethod = methodc->c_str();
-    DEBUG_INFO_AL1(LOG_SOLVER, "| solver method: %s [from command line]", methodc->c_str());
-  }
+  read_value(mi.de["startTime"], &(simulationInfo->startTime));
+  DEBUG_INFO_AL1(LOG_SOLVER, "| startTime = %g", simulationInfo->startTime);
 
-  read_value(mi.de["outputFormat"],outputFormat);
-  simulationInfo->outputFormat = outputFormat->c_str();
-  DEBUG_INFO_AL1(LOG_SOLVER, "| output format: %s", outputFormat->c_str());
+  read_value(mi.de["stopTime"], &(simulationInfo->stopTime));
+  DEBUG_INFO_AL1(LOG_SOLVER, "| stopTime = %g", simulationInfo->stopTime);
 
-  read_value(mi.de["variableFilter"], variableFilter);
-  simulationInfo->variableFilter = variableFilter->c_str();
-  DEBUG_INFO_AL1(LOG_SOLVER, "| variable filter: %s", variableFilter->c_str());
+  read_value(mi.de["stepSize"], &(simulationInfo->stepSize));
+  DEBUG_INFO_AL1(LOG_SOLVER, "| stepSize = %g", simulationInfo->stepSize);
+
+  read_value(mi.de["tolerance"], &(simulationInfo->tolerance));
+  DEBUG_INFO_AL1(LOG_SOLVER, "| tolerance = %g", simulationInfo->tolerance);
+
+  read_value(mi.de["solver"], &simulationInfo->solverMethod);
+  DEBUG_INFO_AL1(LOG_SOLVER, "| solver method: %s", simulationInfo->solverMethod);
+
+  read_value(mi.de["outputFormat"], &(simulationInfo->outputFormat));
+  DEBUG_INFO_AL1(LOG_SOLVER, "| output format: %s", simulationInfo->outputFormat);
+
+  read_value(mi.de["variableFilter"], &(simulationInfo->variableFilter));
+  DEBUG_INFO_AL1(LOG_SOLVER, "| variable filter: %s", simulationInfo->variableFilter);
 
   modelica_integer nxchk, nychk, npchk;
   modelica_integer nyintchk, npintchk;

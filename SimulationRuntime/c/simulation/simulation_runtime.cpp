@@ -98,8 +98,6 @@ FILE_INFO TermInfo; /* message for termination. */
 char* TermMsg; /* message for termination. */
 
 int sim_noemit = 0; // Flag for not emitting data
-int jac_flag = 0; // Flag usage of jacobian
-int num_jac_flag = 0; // Flag usage of numerical jacobian
 
 const std::string *init_method = NULL; // method for  initialization.
 
@@ -108,8 +106,8 @@ const std::string *init_method = NULL; // method for  initialization.
 simulation_result *sim_result = NULL;
 
 
-/* function with template for linear model */
-int callSolver(DATA*, string, string, string, double, double, double, long, double, string, string, string, double, string);
+/* function for start simulation */
+int callSolver(DATA*, string, string, string, string, double, string);
 
 int isInteractiveSimulation();
 
@@ -314,17 +312,13 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     return 1;
   }
 
-  double start = 0.0;
-  double stop = 5.0;
-  double stepSize = 0.05;
-  long outputSteps = 500;
-  double tolerance = 1e-4;
-  string method, outputFormat, variableFilter;
   function_initMemoryState();
-  read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo), &start, &stop, &stepSize, &outputSteps,
-      &tolerance, &method, &outputFormat, &variableFilter);
+  read_input_xml(argc, argv, &(data->modelData), &(data->simulationInfo));
   initializeOutputFilter(&(data->modelData),data->simulationInfo.variableFilter);
   setupDataStruc2(data);
+
+  /* calc numStep */
+  data->simulationInfo.numSteps = (data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize;
 
   if(measure_time_flag)
   {
@@ -350,15 +344,17 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   if(methodflag)
   {
     string* method = (string*) getFlagValue("s", argc, argv);
-    if(!(method == NULL))
+    if(!(method == NULL)){
       data->simulationInfo.solverMethod = method->c_str();
+      DEBUG_INFO_AL1(LOG_SOLVER, "| overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
+    }
   }
 
   // Create a result file
   string *result_file = (string*) getFlagValue("r", argc, argv);
   string result_file_cstr;
   if(!result_file)
-    result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + outputFormat; /* TODO: Fix result file name based on mode */
+    result_file_cstr = string(data->modelData.modelFilePrefix) + string("_res.") + data->simulationInfo.outputFormat; /* TODO: Fix result file name based on mode */
   else
     result_file_cstr = *result_file;
 
@@ -386,8 +382,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     outputVariablesAtEnd = *getFlagValue("output", argc, argv);
   }
 
-  retVal = callSolver(data, method, outputFormat, result_file_cstr, start, stop,
-      stepSize, outputSteps, tolerance, init_initMethod, init_optiMethod,
+  retVal = callSolver(data, result_file_cstr, init_initMethod, init_optiMethod,
       init_file, init_time, outputVariablesAtEnd);
 
   if(retVal == 0 && create_linearmodel)
@@ -404,7 +399,8 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
     rt_accumulate(SIM_TIMER_TOTAL);
     string* plotFormat = (string*) getFlagValue("measureTimePlotFormat", argc, argv);
-    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg", method.c_str(), outputFormat.c_str(), result_file_cstr.c_str()) && retVal;
+    retVal = printModelInfo(data, modelInfo.c_str(), plotFile.c_str(), plotFormat ? plotFormat->c_str() : "svg",
+        data->simulationInfo.solverMethod, data->simulationInfo.outputFormat, result_file_cstr.c_str()) && retVal;
   }
 
   return retVal;
@@ -420,26 +416,23 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
  * "dassl" & "dassl2" calls the same DASSL Solver with synchronous event handling
  * "dopri5" calls an embedded DOPRI5(4)-solver with stepsize control
  */
-int callSolver(DATA* simData, string method, string outputFormat,
-    string result_file_cstr, double start, double stop, double stepSize,
-    long outputSteps, double tolerance, string init_initMethod,
-    string init_optiMethod, string init_file, double init_time,
-    string outputVariablesAtEnd)
+int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
+    string init_optiMethod, string init_file, double init_time, string outputVariablesAtEnd)
 {
   int retVal = -1;
   const char* outVars = (outputVariablesAtEnd[0] == '\0') ? NULL : outputVariablesAtEnd.c_str();
 
-  long maxSteps = 4 * outputSteps;
-  if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", outputFormat.c_str())) {
+  long maxSteps = 4 * simData->simulationInfo.numSteps;
+  if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
     sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
-  } else if (0 == strcmp("csv", outputFormat.c_str())) {
-    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps,&(simData->modelData));
-  } else if (0 == strcmp("mat", outputFormat.c_str())) {
+  } else if (0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, &(simData->modelData));
+  } else if (0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
     sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, &(simData->modelData));
-  } else if (0 == strcmp("plt", outputFormat.c_str())) {
-    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps,&(simData->modelData));
+  } else if (0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, &(simData->modelData));
   } else {
-    cerr << "Unknown output format: " << outputFormat << endl;
+    cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
     return 1;
   }
   if (DEBUG_FLAG(LOG_SOLVER)) {
@@ -448,66 +441,68 @@ int callSolver(DATA* simData, string method, string outputFormat,
         << "'" << endl; fflush(NULL);
   }
 
-  if (method == std::string("")) {
+  if (simData->simulationInfo.solverMethod == std::string("")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
       cout << "No solver is set, using dassl." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
-  } else if (method == std::string("euler")) {
+    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
+  } else if (simData->simulationInfo.solverMethod == std::string("euler")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
+      cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 1, outVars);
-  } else if (method == std::string("rungekutta")) {
+    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 1, outVars);
+  } else if (simData->simulationInfo.solverMethod == std::string("rungekutta")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
+      cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
-  } else if (method == std::string("dassl") ||
-             method == std::string("dasslwort")  ||
-             method == std::string("dassltest")  ||
-             method == std::string("dasslSymJac") ||
-             method == std::string("dasslNumJac") ||
-             method == std::string("dasslColorSymJac") ||
-             method == std::string("dasslColorNumJac")) {
+    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
+  } else if (simData->simulationInfo.solverMethod == std::string("dassl") ||
+              simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
+              simData->simulationInfo.solverMethod == std::string("dassltest")  ||
+              simData->simulationInfo.solverMethod == std::string("dasslSymJac") ||
+              simData->simulationInfo.solverMethod == std::string("dasslNumJac") ||
+              simData->simulationInfo.solverMethod == std::string("dasslColorSymJac") ||
+              simData->simulationInfo.solverMethod == std::string("dasslColorNumJac")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
+      cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
     }
-    retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
-  } else if (method == std::string("inline-euler")) {
+    retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
+  } else if (simData->simulationInfo.solverMethod == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
-      cout << "Recognized solver: " << method
+      cout << "Recognized solver: " << simData->simulationInfo.solverMethod
           << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER."
           << endl; fflush(NULL);
       retVal = 1;
     } else {
       if (DEBUG_FLAG(LOG_SOLVER)) {
-        cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
+        cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
       }
-      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
+      retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
-  } else if (method == std::string("inline-rungekutta")) {
+  } else if (simData->simulationInfo.solverMethod == std::string("inline-rungekutta")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
-      cout << "Recognized solver: " << method
+      cout << "Recognized solver: " << simData->simulationInfo.solverMethod
           << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK."
           << endl; fflush(NULL);
       retVal = 1;
     } else {
       if (DEBUG_FLAG(LOG_SOLVER)) {
-        cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
+        cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
       }
-      retVal = solver_main(simData, start, stop, stepSize, outputSteps, tolerance, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
+      retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
 #ifdef _OMC_QSS_LIB
-  } else if (method == std::string("qss")) {
+  } else if (simData->simulationInfo.solverMethod == std::string("qss")) {
     if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << method << "." << endl; fflush(NULL);
+      cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
     }
-    retVal = qss_main(argc, argv, start, stop, stepSize, outputSteps, tolerance, 3);
+    retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
+                      simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
+                      simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
 #endif
   } else {
-    cout << "Unrecognized solver: " << method
-        << "; valid solvers are dassl,euler,rungekutta,inline-euler,inline-rungekutta,qss, dasslwort, dasslSymJac."
+    cout << "Unrecognized solver: " << simData->simulationInfo.solverMethod
+        << "; valid solvers are dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslColorNumJac, qss."
         << endl; fflush(NULL);
     retVal = 1;
   }

@@ -389,7 +389,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
   /* at the of one step evaluate the system again */
   sData->timeValue = solverInfo->currentTime;
-  functionODE(simData);
 
 
 

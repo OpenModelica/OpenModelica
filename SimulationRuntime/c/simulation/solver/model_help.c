@@ -43,14 +43,14 @@
 static const int IterationMax = 200;
 const size_t SIZERINGBUFFER = 3;
 
-/*! \fn update_DAEsystem
+/*! \fn updateDiscreteSystem
  *
  *  Function to update the whole system with EventIteration.
  *  Evaluate the functionDAE()
  *
  *  \param [ref] [data]
  */
-void update_DAEsystem(DATA *data)
+void updateDiscreteSystem(DATA *data)
 {
   int IterationNum = 0;
   data->simulationInfo.needToIterate = 0;
@@ -71,6 +71,23 @@ void update_DAEsystem(DATA *data)
     if(IterationNum > IterationMax)
       THROW("ERROR: Too many event iterations. System is inconsistent!");
   }
+}
+
+
+/*! \fn updateContinuousSystem
+ *
+ *  Function to update the whole system with EventIteration.
+ *  Evaluate the functionDAE()
+ *
+ *  \param [ref] [data]
+ */
+void updateContinuousSystem(DATA *data)
+{
+  functionODE(data);
+  functionAlgebraics(data);
+  output_function(data);
+  function_storeDelayed(data);
+  storePreValues(data);
 }
 
 /*! \fn SaveZeroCrossings
@@ -379,7 +396,7 @@ void storeInitialValuesParam(DATA *data)
 
 /*! \fn storeOldValues
  *
- *  This function copys all the values into their old-values for event handling.
+ *  This function copys states and time into their old-values for event handling.
  *
  *  \param [ref] [data]
  *
@@ -392,10 +409,7 @@ void storeOldValues(DATA *data)
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
   sInfo->timeValueOld = sData->timeValue;
-  memcpy(sInfo->realVarsOld, sData->realVars, sizeof(modelica_real)*mData->nVariablesReal);
-  memcpy(sInfo->integerVarsOld, sData->integerVars, sizeof(modelica_integer)*mData->nVariablesInteger);
-  memcpy(sInfo->booleanVarsOld, sData->booleanVars, sizeof(modelica_boolean)*mData->nVariablesBoolean);
-  memcpy(sInfo->stringVarsOld, sData->stringVars, sizeof(modelica_string)*mData->nVariablesString);
+  memcpy(sInfo->realVarsOld, sData->realVars, sizeof(modelica_real)*mData->nStates);
 }
 
 /*! \fn storePreValues
@@ -560,11 +574,8 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.helpVars = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
   data->simulationInfo.helpVarsPre = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
 
-  /* buffer for all variable pre values */
-  data->simulationInfo.realVarsOld = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
-  data->simulationInfo.integerVarsOld = (modelica_integer*)calloc(data->modelData.nVariablesInteger, sizeof(modelica_integer));
-  data->simulationInfo.booleanVarsOld = (modelica_boolean*)calloc(data->modelData.nVariablesBoolean, sizeof(modelica_boolean));
-  data->simulationInfo.stringVarsOld = (modelica_string*)calloc(data->modelData.nVariablesString, sizeof(modelica_string));
+  /* buffer for old state variables */
+  data->simulationInfo.realVarsOld = (modelica_real*)calloc(data->modelData.nStates, sizeof(modelica_real));
 
   /* buffer for all variable pre values */
   data->simulationInfo.realVarsPre = (modelica_real*)calloc(data->modelData.nVariablesReal, sizeof(modelica_real));
@@ -690,11 +701,8 @@ void DeinitializeDataStruc(DATA *data)
   free(data->simulationInfo.backupRelations);
   free(data->simulationInfo.zeroCrossingEnabled);
 
-  /* free buffer for all variable old values */
+  /* free buffer for old state variables */
   free(data->simulationInfo.realVarsOld);
-  free(data->simulationInfo.integerVarsOld);
-  free(data->simulationInfo.booleanVarsOld);
-  free(data->simulationInfo.stringVarsOld);
 
   /* free buffer for all variable pre values */
   free(data->simulationInfo.realVarsPre);

@@ -43,8 +43,5 @@
 
 void read_input_xml(int argc, char **argv,
                     MODEL_DATA* modelData,
-                    SIMULATION_INFO* simulationData,
-                    double *start, double *stop,
-                    double *stepSize, long *outputSteps,
-                    double *tolerance, string* method, string* outputFormat, string* variableFilter);
+                    SIMULATION_INFO* simulationData);
 #endif

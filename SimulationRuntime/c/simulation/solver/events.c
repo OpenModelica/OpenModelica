@@ -433,7 +433,7 @@ int EventHandle(DATA* simData, int flag, LIST *eventList) {
     DEBUG_INFO_NELA(LOG_EVENTS, "\n");
 
     /* update the whole system */
-    update_DAEsystem(simData);
+    updateDiscreteSystem(simData);
 
   }
   /* sample event handling */
@@ -443,7 +443,7 @@ int EventHandle(DATA* simData, int flag, LIST *eventList) {
     sim_result_emit(simData);
     /*evaluate and emit results before sample events are activated */
     /* update the whole system */
-    update_DAEsystem(simData);
+    updateDiscreteSystem(simData);
 
     storePreValues(simData);
     sim_result_emit(simData);
@@ -452,7 +452,7 @@ int EventHandle(DATA* simData, int flag, LIST *eventList) {
     activateSampleEvents(simData);
 
     /* update the whole system */
-    update_DAEsystem(simData);
+    updateDiscreteSystem(simData);
 
     deactivateSampleEventsandEquations(simData);
     DEBUG_INFO1(LOG_EVENTS, "Event Handling for Sample : %f done!",
@@ -556,10 +556,7 @@ void FindRoot(DATA* simData, double *EventTime, LIST *eventList)
     simData->localData[0]->realVars[i] = states_left[i];
   }
   /*determined continuous system */
-  functionODE(simData);
-  functionAlgebraics(simData);
-  function_storeDelayed(simData);
-  storePreValues(simData);
+  updateContinuousSystem(simData);
   sim_result_emit(simData);
 
   /*determined system at t_e + epsilon */

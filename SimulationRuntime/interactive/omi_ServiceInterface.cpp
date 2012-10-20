@@ -462,12 +462,11 @@ void getSimulationStartData(double *stepSize, long *outputSteps,
 
   gdMutex.Lock();
 
-  _X_DATA simData;
+  DATA simData;
   MODEL_DATA modelData;
   SIMULATION_INFO simInfo;
 
-  read_input_xml(argcTEMP, argvTEMP, globalData, &modelData, &simInfo, &start, &stop, stepSize,
-      outputSteps, tolerance, method, outputFormat, &variableFilter);
+  read_input_xml(argcTEMP, argvTEMP, &modelData, &simInfo);
   callExternalObjectConstructors(&simData);
 
   gdMutex.Unlock();
@@ -483,9 +482,9 @@ int callSolverFromOM(string method, string outputFormat, double start, double st
   int retVal = -1;
   gdMutex.Lock();
 
-  _X_DATA simData;
+  DATA simData;
 
-  retVal = callSolver(&simData, method, outputFormat, "", start, stop, stepSize, outputSteps, tolerance);
+  retVal = callSolver(&simData, "", "", "", "", 0, "");
 
   gdMutex.Unlock();
   return retVal;

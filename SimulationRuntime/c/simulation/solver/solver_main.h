@@ -69,10 +69,9 @@ typedef struct SOLVER_INFO
 extern "C" {
 #endif
 
-extern int solver_main(DATA* simData, double start, double stop, double step,
-    long outputSteps, double tolerance, const char* init_initMethod,
+extern int solver_main(DATA* simData, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
-    int flag,const char* outputVariablesAtEnd);
+    int flag, const char* outputVariablesAtEnd);
 
 #ifdef __cplusplus
 }

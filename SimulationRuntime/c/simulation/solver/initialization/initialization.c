@@ -442,7 +442,7 @@ static int none_initialization(DATA *data, int updateStartValues)
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);
   overwriteOldSimulationData(data);
-  update_DAEsystem(data);
+  updateDiscreteSystem(data);
 
   /* and restore start values and helpvars */
   restoreExtrapolationDataOld(data);
@@ -458,7 +458,7 @@ static int none_initialization(DATA *data, int updateStartValues)
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
-  update_DAEsystem(data);           /* evaluate discrete variables */
+  updateDiscreteSystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
   SaveZeroCrossings(data);
@@ -499,7 +499,7 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   /* initialize all relations that are ZeroCrossings */
   storePreValues(data);
   overwriteOldSimulationData(data);
-  update_DAEsystem(data);
+  updateDiscreteSystem(data);
 
   /* and restore start values and helpvars */
   restoreExtrapolationDataOld(data);
@@ -522,7 +522,7 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
-  update_DAEsystem(data);           /* evaluate discrete variables */
+  updateDiscreteSystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
   SaveZeroCrossings(data);
