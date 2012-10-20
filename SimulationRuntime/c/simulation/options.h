@@ -33,7 +33,6 @@
 #define _MYOPTIONS
 
 #include <string>
-#include <algorithm>
 
 /* -f */
 int flagSet(const char*, int, char**);
