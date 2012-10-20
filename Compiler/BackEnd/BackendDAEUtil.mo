@@ -1688,7 +1688,7 @@ algorithm
         ((e,false,(vars,knvars,SOME(res))));
     // builtin variable time is not discrete
     case (((e as DAE.CREF(componentRef = DAE.CREF_IDENT("time",_,_)),(vars,knvars,blst)))) then ((e,false,(vars,knvars,SOME(false))));
-    // Known variables that are input are continous
+    // Known variables that are input are continuous
     case (((e as DAE.CREF(componentRef = cr),(vars,knvars,blst))))
       equation
         (backendVar::_,_) = BackendVariable.getVar(cr,knvars);
@@ -1709,7 +1709,7 @@ algorithm
       equation
        b1 = isDiscreteExp(e1,vars,knvars);
        b2 = isDiscreteExp(e2,vars,knvars);
-       b = Util.boolOrList({b1,b2});
+       b = Util.boolAndList({b1,b2});
       then ((e,false,(vars,knvars,SOME(b))));
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,knvars,blst)))) 
       equation
