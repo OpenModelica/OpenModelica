@@ -461,7 +461,7 @@ static int none_initialization(DATA *data, int updateStartValues)
   updateDiscreteSystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
-  SaveZeroCrossings(data);
+  saveZeroCrossings(data);
   storeInitialValues(data);
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
@@ -525,7 +525,7 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   updateDiscreteSystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
-  SaveZeroCrossings(data);
+  saveZeroCrossings(data);
   storeInitialValues(data);
   storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */

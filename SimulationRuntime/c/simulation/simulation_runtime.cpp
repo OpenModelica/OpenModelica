@@ -693,7 +693,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
     retVal = startNonInteractiveSimulation(argc, argv, data);
 
     callExternalObjectDestructors(data);
-    DeinitializeDataStruc(data);
+    deInitializeDataStruc(data);
     fflush(NULL);
   }
   else

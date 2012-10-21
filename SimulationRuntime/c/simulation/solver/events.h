@@ -39,43 +39,18 @@
 #include "solver_main.h"
 #include "list.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+modelica_boolean sample(DATA *data, double start, double interval, int hindex);
+void initSample(DATA *data, double start, double stop);
+modelica_boolean activateSampleEvents(DATA *data);
+void deactivateSampleEvents(DATA *data);
+void deactivateSampleEventsandEquations(DATA *data);
 
-  double BiSection(DATA* data, double*, double*, double*, double*, LIST*, LIST*);
+modelica_boolean checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
+modelica_boolean checkForNewEvent(DATA* data, LIST *eventList);
 
-  int CheckZeroCrossings(DATA *data, LIST *list, LIST*);
+int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime);
+int handleSampleEvent(DATA* data);
 
-
-  double Sample(double t, double start, double interval);
-  modelica_boolean sample(DATA *data, double start, double interval, int hindex);
-  void initSample(DATA *data, double start, double stop);
-
-  int checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
-
-  double getNextSampleTimeFMU(DATA *data);
-
-  int CheckForNewEvent(DATA *data, modelica_boolean *sampleactived, double* currentTime);
-  int EventHandle(DATA *data, int, LIST *eventList);
-  void FindRoot(DATA *data, double*, LIST *eventList);
-
-  void SaveZeroCrossingsAfterEvent(DATA *data);
-  void initializeZeroCrossings(DATA *data);
-  void correctDirectionZeroCrossings(DATA *data);
-  int activateSampleEvents(DATA *data);
-
-
-#define INTERVAL 1
-#define NOINTERVAL 0
-
-  extern double TOL;
-
-  void deactivateSampleEvents(DATA *data);
-  void deactivateSampleEventsandEquations(DATA *data);
-
-#ifdef __cplusplus
-}
-#endif
+void findRoot(DATA *data, LIST *eventList, double*);
 
 #endif

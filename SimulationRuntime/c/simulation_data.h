@@ -338,6 +338,7 @@
     modelica_boolean discreteCall;   /* =1 for a discrete step, otherwise 0 */
     modelica_boolean needToIterate;  /* =1 if reinit has been activated, iteration about the system is needed */
     modelica_boolean simulationSuccess; /*=0 the simulation run successful, otherwise an error code is set */
+    modelica_boolean sampleActivated;    /* =1 a sample expresion if going to be actived, 0 otherwise */
 
     void** extObjs; /* External objects */
 
@@ -353,6 +354,7 @@
     modelica_boolean* backupRelations;
     modelica_boolean* backupRelationsPre;
     modelica_boolean* zeroCrossingEnabled;
+    long* zeroCrossingIndex;
 
     /* helpVars are the result when relations and samples */
     modelica_boolean* helpVars;

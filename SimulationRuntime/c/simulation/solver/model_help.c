@@ -90,13 +90,13 @@ void updateContinuousSystem(DATA *data)
   storePreValues(data);
 }
 
-/*! \fn SaveZeroCrossings
+/*! \fn saveZeroCrossings
  *
  * Function saves all ZeroCrossing Values
  *
  *  \param [ref] [data]
  */
-void SaveZeroCrossings(DATA* data)
+void saveZeroCrossings(DATA* data)
 {
   long i = 0;
 
@@ -514,6 +514,13 @@ double getNextSampleTimeFMU(DATA *data)
   }
 }
 
+/*! \fn initializeDataStruc
+ *
+ *  function initialize DATA structure
+ *
+ *  \param [ref]  [data]
+ *
+ */
 void initializeDataStruc(DATA *data)
 {
   SIMULATION_DATA tmpSimData;
@@ -570,6 +577,10 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.backupRelations = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
   data->simulationInfo.backupRelationsPre = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingEnabled = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
+  data->simulationInfo.zeroCrossingIndex = (long*) malloc(data->modelData.nZeroCrossings*sizeof(long));
+  /* initialize zeroCrossingsIndex with corresponding index is used by events lists */
+  for(i=0; i<data->modelData.nZeroCrossings; i++)
+    data->simulationInfo.zeroCrossingIndex[i] = (long)i;
 
   data->simulationInfo.helpVars = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
   data->simulationInfo.helpVarsPre = (modelica_boolean*) calloc(data->modelData.nHelpVars, sizeof(modelica_boolean));
@@ -625,13 +636,19 @@ void initializeDataStruc(DATA *data)
 
 }
 
-void DeinitializeDataStruc(DATA *data)
+/*! \fn deInitializeDataStruc
+ *
+ *  function de-initialize DATA structure
+ *
+ *  \param [ref]  [data]
+ *
+ */
+void deInitializeDataStruc(DATA *data)
 {
   size_t i = 0;
 
   /* prepair RingBuffer */
-  for(i=0; i<SIZERINGBUFFER; i++)
-  {
+  for(i=0; i<SIZERINGBUFFER; i++){
     SIMULATION_DATA* tmpSimData = (SIMULATION_DATA*) data->localData[i];
     /* free buffer for all variable values */
     free(tmpSimData->realVars);
@@ -700,6 +717,7 @@ void DeinitializeDataStruc(DATA *data)
   free(data->simulationInfo.zeroCrossingsPre);
   free(data->simulationInfo.backupRelations);
   free(data->simulationInfo.zeroCrossingEnabled);
+  free(data->simulationInfo.zeroCrossingIndex);
 
   /* free buffer for old state variables */
   free(data->simulationInfo.realVarsOld);
@@ -747,7 +765,10 @@ void DeinitializeDataStruc(DATA *data)
   pop_memory_states(NULL);
 }
 
-/* relation functions used in zero crossing detection */
+/* relation functions used in zero crossing detection
+ * TODO: Obsolete if zero-crossings functions are replaced by conditions.
+ *        Remove all of them.
+ */
 double Less(double a, double b)
 {
   return a - b - DBL_EPSILON;
@@ -769,8 +790,19 @@ double GreaterEq(double a, double b)
 }
 
 
-/*used in generated code in mixed equatin system to generate next combination of bools*/
-/*e.g. for n = 3 generates sequence: 000, 100, 010, 001, 110, 101, 011, 111  */
+/*! \fn deInitializeDataStruc
+ *
+ *  function is used in generated code for mixed equation systems
+ *  to generate next combination of boolean variables.
+ *  Example: for n = 3
+ *           generates sequence: 000, 100, 010, 001, 110, 101, 011, 111
+ *
+ *  \param [ref]  [data]
+ *
+ * \author Jan Silar
+ *
+ * \brief
+ */
 modelica_boolean nextVar(modelica_boolean *b, int n) {
   /*number of "1" */
   int n1 = 0;

@@ -42,6 +42,7 @@
 
 #include "openmodelica.h"
 #include "simulation_data.h"
+#include "list.h"
 
 
 typedef struct SOLVER_INFO
@@ -51,8 +52,12 @@ typedef struct SOLVER_INFO
   double laststep;
   double offset;
 
+  /* set by solver if an internal root finding method is activated  */
+  modelica_boolean solverRootFinding;
+
+  LIST* eventLst;
+
   modelica_boolean didEventStep;
-  modelica_boolean sampleEventActivated;
 
   /* stats */
   unsigned int stateEvents;
@@ -69,7 +74,7 @@ typedef struct SOLVER_INFO
 extern "C" {
 #endif
 
-extern int solver_main(DATA* simData, const char* init_initMethod,
+extern int solver_main(DATA* data, const char* init_initMethod,
     const char* init_optiMethod, const char* init_file, double init_time,
     int flag, const char* outputVariablesAtEnd);
 

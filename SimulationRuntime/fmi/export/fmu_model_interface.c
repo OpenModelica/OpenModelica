@@ -641,7 +641,7 @@ fmiStatus fmiTerminate(fmiComponent c){
 
   /* deinitDelay(comp->fmuData); */
   callExternalObjectDestructors(comp->fmuData);
-  DeinitializeDataStruc(comp->fmuData);
+  deInitializeDataStruc(comp->fmuData);
   free(comp->fmuData);
 
   comp->state = modelTerminated;

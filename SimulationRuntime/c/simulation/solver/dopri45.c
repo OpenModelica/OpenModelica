@@ -421,7 +421,7 @@ interpolation_control(const int dideventstep, double interpolationStep,
         /* update all dependent variables */
         functionODE(NULL);
         functionAlgebraics(NULL);
-        SaveZeroCrossings();
+        saveZeroCrossings();
 
         /* Emit interpolated data at the current time step */
         sim_result_emit();

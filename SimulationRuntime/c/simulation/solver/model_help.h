@@ -58,13 +58,13 @@ extern "C" {
 
 void initializeDataStruc(DATA *data);
 
-void DeinitializeDataStruc(DATA *data);
+void deInitializeDataStruc(DATA *data);
 
 void updateDiscreteSystem(DATA *data);
 
 void updateContinuousSystem(DATA *data);
 
-void SaveZeroCrossings(DATA *data);
+void saveZeroCrossings(DATA *data);
 
 void copyStartValuestoInitValues(DATA *data);
 

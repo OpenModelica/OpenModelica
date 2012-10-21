@@ -365,7 +365,7 @@ int nelderMeadEx_initialization(DATA *data, INIT_DATA* initData, double lambdaSt
     updateDiscreteSystem(data);                     /* evaluate discrete variables */
 
     /* valid system for the first time! */
-    SaveZeroCrossings(data);
+    saveZeroCrossings(data);
     storePreValues(data);
     overwriteOldSimulationData(data);
 
