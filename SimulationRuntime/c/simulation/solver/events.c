@@ -593,25 +593,16 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   }
   DEBUG_INFO_NELA(LOG_EVENTS, "\n");
 
- DEBUG_INFO1(LOG_EVENTS, "at time: %.10e", *eventTime);
- DEBUG_INFO1(LOG_EVENTS, "Time at Point left: %.10e", time_left);
- DEBUG_INFO1(LOG_EVENTS, "Time at Point right: %.10e", time_right);
+  *eventTime = time_right;
+  DEBUG_INFO1(LOG_EVENTS, "at time: %.10e", eventTime);
 
-  /*determined system at t_e - epsilon */
-  data->localData[0]->timeValue = time_left;
-  for (i = 0; i < data->modelData.nStates; i++){
-    data->localData[0]->realVars[i] = states_left[i];
-  }
-  /*determined continuous system */
-  updateContinuousSystem(data);
-  sim_result_emit(data);
-
-  /*determined system at t_e + epsilon */
-  data->localData[0]->timeValue = time_right;
+  data->localData[0]->timeValue = *eventTime;
   for (i = 0; i < data->modelData.nStates; i++){
     data->localData[0]->realVars[i] = states_right[i];
   }
-  *eventTime = time_right;
+  /*determined continuous system */
+  updateContinuousSystem(data);
+
   free(states_left);
   free(states_right);
 }
@@ -723,17 +714,18 @@ modelica_boolean checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventL
         data->simulationInfo.zeroCrossingEnabled[*((long*) listNodeData(it))]);
 
     /*Found event in left section*/
-    if ((data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] <= 0
-        && data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] > 0)
+    if ((data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == -1
+        && data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == 1)
 
-        || (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] >= 0
-        && data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] < 0)
-
+        || (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == 1
+        && data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == -1))
+/*
         || (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] > 0
         && data->simulationInfo.zeroCrossingEnabled[*((long*) listNodeData(it))] <= -1)
 
         || (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] < 0
         && data->simulationInfo.zeroCrossingEnabled[*((long*) listNodeData(it))] >= 1))
+*/
     {
       listPushFront(tmpEventList, listNodeData(it));
     }

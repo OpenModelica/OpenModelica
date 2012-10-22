@@ -580,14 +580,17 @@ algorithm
     local
       Functiontuple fns;
       list<BackendDAE.WhenClause> wclst,wclst_1;
-      list<BackendDAE.ZeroCrossing> zclst,zclst_1;
+      list<BackendDAE.ZeroCrossing> zclst,zclst_1,relations,samples;
+      Integer numberOfRelations;
       BackendDAE.EventInfo ev;
-      Boolean b1,b2;
-    case(BackendDAE.EVENT_INFO(wclst,zclst),fns)
+      Boolean b1,b2,b3,b4;
+    case(BackendDAE.EVENT_INFO(wclst,zclst,samples,relations,numberOfRelations),fns)
       equation
         (wclst_1,b1) = inlineWhenClauses(wclst,fns,{},false);
         (zclst_1,b2) = inlineZeroCrossings(zclst,fns,{},false);
-        ev = Util.if_(b1 or b2,BackendDAE.EVENT_INFO(wclst_1,zclst_1),inEventInfo);
+        (relations,b3) = inlineZeroCrossings(relations,fns,{},false);
+        (samples,b4) = inlineZeroCrossings(samples,fns,{},false);
+        ev = Util.if_(b1 or b2,BackendDAE.EVENT_INFO(wclst_1,zclst_1,samples,relations,numberOfRelations),inEventInfo);
       then
         ev;
     case(_,_)

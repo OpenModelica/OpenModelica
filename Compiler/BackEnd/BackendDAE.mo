@@ -237,7 +237,11 @@ public
 uniontype EventInfo "- EventInfo"
   record EVENT_INFO
     list<WhenClause> whenClauseLst     "List of when clauses. The WhenEquation datatype refer to this list by position" ;
-    list<ZeroCrossing> zeroCrossingLst "zeroCrossingLst" ;
+    list<ZeroCrossing> zeroCrossingLst "List of zero crossing coditions";
+    list<ZeroCrossing> sampleLst "List of sample as before, used by cpp runtime";
+    // TODO: relationsLst could be removed if cpp runtime is prepared to handle zero-crossing conditions 
+    list<ZeroCrossing> relationsLst "List of zero crossing function as before, used by cpp runtime";
+    Integer relationsNumber "stores the number of relation in all zero-crossings";
   end EVENT_INFO;
 
 end EventInfo;

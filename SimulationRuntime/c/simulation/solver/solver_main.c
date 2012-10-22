@@ -202,7 +202,13 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
   }
   storePreValues(data);
-  updateDiscreteSystem(data);
+
+  /*determined discrete system */
+  if(checkForNewEvent(data, solverInfo.eventLst)){
+    handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
+  }else{
+	updateDiscreteSystem(data);
+  }
   saveZeroCrossings(data);
   storePreValues(data);
   storeOldValues(data);
@@ -291,10 +297,14 @@ int solver_main(DATA* data, const char* init_initMethod,
     /* Check for Events */
     if (checkForNewEvent(data, solverInfo.eventLst)) {
       DEBUG_INFO(LOG_SOLVER,"###### STATE EVENT DONE ########");
-      if (solverInfo.solverRootFinding == 0){
+      if (!solverInfo.solverRootFinding){
         findRoot(data, solverInfo.eventLst, &(solverInfo.currentTime));
       }
+      sim_result_emit(data);
+
+      /*determined discrete system */
       handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
+
       solverInfo.stateEvents++;
       solverInfo.didEventStep = 1;
       /* due to an event overwrite old values */

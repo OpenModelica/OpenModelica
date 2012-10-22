@@ -264,6 +264,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     
     data->modelData.nZeroCrossings = <%varInfo.numZeroCrossings%>;
     data->modelData.nSamples = <%varInfo.numTimeEvents%>;
+    data->modelData.nRelations = <%varInfo.numRelations%>;    
     data->modelData.nInitEquations = <%varInfo.numInitialEquations%>;
     data->modelData.nInitAlgorithms = <%varInfo.numInitialAlgorithms%>;
     data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;
@@ -738,6 +739,38 @@ template functionInitSample(list<SampleCondition> sampleConditions)
   }
   >>
 end functionInitSample;
+
+template timeEventsTpl(list<SampleCondition> sampleConditions, Text &varDecls /*BUFP*/)
+ "Generates code for zero crossings."
+::=
+  (sampleConditions |> (relation_,index)  =>
+    timeEventTpl(index, relation_, &varDecls /*BUFD*/)
+  ;separator="\n")
+end timeEventsTpl;
+
+template timeEventTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
+ "Generates code for a zero crossing."
+::=
+  match relation
+  case RELATION(__) then
+    <<
+    /* <%index1%> Not a time event */
+    >>
+  case CALL(path=IDENT(name="sample"), expLst={start, interval,_}) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    data->simulationInfo.rawSampleExps[i].start = <%e1%>;
+    data->simulationInfo.rawSampleExps[i].interval = <%e2%>;
+    data->simulationInfo.rawSampleExps[i++].zc_index = <%index1%>;
+    >>
+  else
+    <<
+    /* UNKNOWN ZERO CROSSING for <%index1%> */
+    >>
+end timeEventTpl;
 
 template functionSampleEquations(list<SimEqSystem> sampleEqns)
   "Generates function for sample equations."
@@ -1262,10 +1295,10 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings) "template functi
   This is a helper of template simulationFile."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let zeroCrossingsCode = zeroCrossingsTpl2(zeroCrossings, &varDecls /*BUFD*/)
+  let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFD*/)
   
   <<
-  int function_ZeroCrossings(DATA *data, double *gout,double *t)
+  int function_ZeroCrossings(DATA *data, double *gout, double *t)
   {
     state mem_state;
     <%varDecls%>
@@ -1278,6 +1311,48 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings) "template functi
   }
   >>
 end functionZeroCrossing;
+
+template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
+ "Generates code for zero crossings."
+::=
+  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
+    zeroCrossingTpl(i0, relation_, &varDecls /*BUFD*/)
+  ;separator="\n";empty)
+end zeroCrossingsTpl;
+
+
+template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
+ "Generates code for a zero crossing."
+::=
+  match relation
+  case exp as RELATION(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    ZEROCROSSING(<%index1%>, (<%e1%>)?1:-1);
+    >>
+  case (exp1 as LBINARY(__)) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    ZEROCROSSING(<%index1%>, (<%e1%>)?1:-1);
+    >>
+case (exp1 as LUNARY(__)) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    ZEROCROSSING(<%index1%>, <%e1%>?1:-1);
+    >>
+  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
+    << >>
+  else
+    <<
+    // UNKNOWN ZERO CROSSING for <%index1%>
+    >>
+end zeroCrossingTpl;
 
 template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "template functionCheckForDiscreteChanges
   Generates function in simulation file.
@@ -1628,114 +1703,6 @@ template intArr(list<Integer> values)
   <%values ;separator=", "%>
   >>
 end intArr;
-
-template zeroCrossingsTpl2(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
- "Generates code for zero crossings."
-::=
-  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    zeroCrossingTpl2(i0, relation_, &varDecls /*BUFD*/)
-  ;separator="\n";empty)
-end zeroCrossingsTpl2;
-
-
-template zeroCrossingTpl2(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
- "Generates code for a zero crossing."
-::=
-  match relation
-  case RELATION(__) then
-    let &preExp = buffer "" /*BUFD*/
-    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let op = zeroCrossingOpFunc(operator)
-    let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-    <%preExp%>
-    ZEROCROSSING(<%index1%>, <%op%>(<%e1%>, <%e2%>));
-    >>
-  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
-    << >>
-  else
-    <<
-    // UNKNOWN ZERO CROSSING for <%index1%>
-    >>
-end zeroCrossingTpl2;
-
-template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
- "Generates code for zero crossings."
-::=
-
-  (zeroCrossings |> ZERO_CROSSING(__) hasindex i0 =>
-    zeroCrossingTpl(i0, relation_, &varDecls /*BUFD*/)
-  ;separator="\n";empty)
-end zeroCrossingsTpl;
-
-template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
- "Generates code for a zero crossing."
-::=
-  match relation
-  case RELATION(__) then
-    let &preExp = buffer "" /*BUFD*/
-    let e1 = daeExp(exp1, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let op = zeroCrossingOpFunc(operator)
-    let e2 = daeExp(exp2, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-    <%preExp%>
-    ZEROCROSSING(<%index1%>, <%op%>(<%e1%>, <%e2%>));
-    >>
-  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
-    let &preExp = buffer "" /*BUFD*/
-    let e1 = daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-    <%preExp%>
-    ZEROCROSSING(<%index1%>,Sample(*t,<%e1%>,<%e2%>));
-    >>
-  else
-    <<
-    ZERO CROSSING ERROR
-    >>
-end zeroCrossingTpl;
-
-template timeEventsTpl(list<SampleCondition> sampleConditions, Text &varDecls /*BUFP*/)
- "Generates code for zero crossings."
-::=
-  (sampleConditions |> (relation_,index)  =>
-    timeEventTpl(index, relation_, &varDecls /*BUFD*/)
-  ;separator="\n")
-end timeEventsTpl;
-
-template timeEventTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
- "Generates code for a zero crossing."
-::=
-  match relation
-  case RELATION(__) then
-    <<
-    /* <%index1%> Not a time event */
-    >>
-  case CALL(path=IDENT(name="sample"), expLst={start, interval,_}) then
-    let &preExp = buffer "" /*BUFD*/
-    let e1 = daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    <<
-    <%preExp%>
-    data->simulationInfo.rawSampleExps[i].start = <%e1%>;
-    data->simulationInfo.rawSampleExps[i].interval = <%e2%>;
-    data->simulationInfo.rawSampleExps[i++].zc_index = <%index1%>;
-    >>
-  else
-    <<
-    /* UNKNOWN ZERO CROSSING for <%index1%> */
-    >>
-end timeEventTpl;
-
-template zeroCrossingOpFunc(Operator op)
- "Generates zero crossing function name for operator."
-::=
-  match op
-  case LESS(__)      then "Less"
-  case GREATER(__)   then "Greater"
-  case LESSEQ(__)    then "LessEq"
-  case GREATEREQ(__) then "GreaterEq"
-end zeroCrossingOpFunc;
 
 template equationIndex(SimEqSystem eq)
  "Generates an equation."

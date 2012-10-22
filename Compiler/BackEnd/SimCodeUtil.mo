@@ -512,7 +512,6 @@ public function createSimulationSettings
 protected
   Real stepSize;
   Integer numberOfIntervals;
-  Boolean activateJacobian;
 algorithm
   numberOfIntervals := Util.if_(inumberOfIntervals <= 0, 1, inumberOfIntervals);
   stepSize := (stopTime -. startTime) /. intReal(numberOfIntervals);
@@ -1825,7 +1824,7 @@ algorithm
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
       //list<DAE.Statement> algorithmAndEquationAsserts;
       list<DAE.Constraint> constraints;
-      list<BackendDAE.ZeroCrossing> zeroCrossings;
+      list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC;
       list<SimCode.SimWhenClause> whenClauses;
       list<SimCode.SampleCondition> sampleConditions;
       list<BackendDAE.Equation> sampleEqns;
@@ -1870,8 +1869,11 @@ algorithm
         extObjInfo = createExtObjInfo(shared);
         
         whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
-        zeroCrossings = createZeroCrossings(dlow2);
-        (sampleConditions,helpVarInfo) = createSampleConditions(zeroCrossings,helpVarInfo,{});
+        zeroCrossings = getZeroCrossings(dlow2, ifcpp);
+        sampleZC = getSamples(dlow2);
+        zeroCrossings = Util.if_(ifcpp,listAppend(zeroCrossings,sampleZC),zeroCrossings);
+        (sampleConditions, helpVarInfo) = prepareSampleConditions(sampleZC,helpVarInfo,{});
+        zeroCrossings = updateSamplesConditionsinZC(zeroCrossings,helpVarInfo,sampleConditions,{});
         (uniqueEqIndex,sampleEquations) = createSampleEquations(sampleEqns,1,{});
         n_h = listLength(helpVarInfo);
         
@@ -1996,15 +1998,17 @@ algorithm
       list<SimCode.SimVar> stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars;
       list<SimCode.Function> functions;
       list<String> labels;
-      Integer numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams;
-      Integer numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
+      Integer numHelpVars,numZeroCrossings,numTimeEvents,numRelations;
+      Integer numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
+      Integer numParams,numIntParams,numBoolParams,numOutVars,numInVars;
+      Integer numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
       Integer numStringParamVars,numStringAliasVars;
       Option<Integer> dimODE1stOrder,dimODE2ndOrder;
       Integer numNonLinearResFunctions, numEqns;
     case({},_) then modelInfo;
     case(_,SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels))
       equation
-        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
            numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder) = varInfo;
         SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
@@ -2018,7 +2022,7 @@ algorithm
         boolAlgVars = listReverse(boolAlgVars);
         stringAlgVars = listReverse(stringAlgVars);
 
-        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
            numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder);
         vars = SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
@@ -2121,16 +2125,18 @@ algorithm
       SimCode.SimVars vars;
       list<SimCode.Function> functions;
       list<String> labels;
-      Integer numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams;
-      Integer numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
+      Integer numHelpVars,numZeroCrossings,numTimeEvents,numRelations;
+      Integer numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
+      Integer numParams,numIntParams,numBoolParams,numOutVars,numInVars;
+      Integer numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
       Integer numStringParamVars,numStringAliasVars;
       Option<Integer> dimODE1stOrder,dimODE2ndOrder;
     case(SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels),_,_)
       equation
-        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,  
           numStringParamVars,numStringAliasVars,_,_,dimODE1stOrder,dimODE2ndOrder) = varInfo;
-        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,  
           numStringParamVars,numStringAliasVars,numEqns,numNonLinearSys,dimODE1stOrder,dimODE2ndOrder);
         then SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels);
@@ -4997,7 +5003,7 @@ algorithm
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         cache = Env.emptyCache();
-        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,constrs,clsAttrs,cache,{},inFuncs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM(),{}));
+        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,constrs,clsAttrs,cache,{},inFuncs,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.ALGEQSYSTEM(),{}));
         (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         (subsystem_dae_2,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
         true = listLength(r) > 0;
@@ -5803,7 +5809,7 @@ algorithm
         funcs = DAEUtil.avlTreeNew();
         vars1 = BackendDAEUtil.listVar1(vars);
         syst = BackendDAE.EQSYSTEM(vars1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ARRAYSYSTEM(),{});
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.ARRAYSYSTEM(),{});
         subsystem_dae = BackendDAE.DAE({syst},shared);
         (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
         (equations_,noDiscequations,uniqueEqIndex,tempvars) = createEquations(false, false, genDiscrete, false, false, syst, shared, comps, helpVarInfo, iuniqueEqIndex,itempvars);
@@ -5830,7 +5836,7 @@ algorithm
         funcs = DAEUtil.avlTreeNew();
         vars1 = BackendDAEUtil.listVar1(vars);
         syst = BackendDAE.EQSYSTEM(vars1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ARRAYSYSTEM(),{});
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.ARRAYSYSTEM(),{});
         subsystem_dae = BackendDAE.DAE({syst},shared);
         (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
         (equations_,noDiscequations,uniqueEqIndex,tempvars) = createEquations(false, false, genDiscrete, false, false, syst, shared, comps, helpVarInfo, iuniqueEqIndex,itempvars);
@@ -6350,7 +6356,7 @@ algorithm
         kn = BackendDAEUtil.listVar(lkn);
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(v,pe,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{}),extObjClasses,BackendDAE.PARAMETERSYSTEM(),{});
+        shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{},{},{},0),extObjClasses,BackendDAE.PARAMETERSYSTEM(),{});
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
         paramdlow = BackendDAE.DAE({syst},shared);
         //mT = BackendDAEUtil.transposeMatrix(m);
@@ -6553,43 +6559,74 @@ algorithm
   end matchcontinue;
 end createVarMinMaxAssert;
 
+protected function prepareSampleConditions
+" function filter sample events 
+  and add the corresponding helpVar index to the sample"
+  input list<BackendDAE.ZeroCrossing> inSamples;
+  input list<SimCode.HelpVarInfo> inHelpVarInfo;
+  input list<SimCode.SampleCondition> iSample;
+  output list<SimCode.SampleCondition> outSample;
+  output list<SimCode.HelpVarInfo> outHelpVarInfo; 
+algorithm
+  (outSample, outHelpVarInfo) := matchcontinue (inSamples,inHelpVarInfo,iSample)
+    local
+      list<BackendDAE.ZeroCrossing> rest, accumLst;
+      BackendDAE.ZeroCrossing zc;
+      DAE.Exp e,e_1;
+      SimCode.SampleCondition res;
+      Integer indexh;
+      list<SimCode.HelpVarInfo> newHelpVars, helpVarInfo;
+      
+    case ({}, _, _) then (listReverse(iSample),inHelpVarInfo) ;
+    case ((zc as BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT("sample"))))::rest, _, _)
+      equation
+        (res,newHelpVars) = addHForConditionSample(e,inHelpVarInfo,listLength(inHelpVarInfo));
+        helpVarInfo = listAppend(inHelpVarInfo,newHelpVars);
+        (outSample, helpVarInfo) = prepareSampleConditions(rest,helpVarInfo,res::iSample);
+      then
+        (outSample, helpVarInfo);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"prepareSampleConditions failed"});
+      then
+        fail();
+  end matchcontinue;
+end prepareSampleConditions;
 
-protected function createSampleConditions
+protected function updateSamplesConditionsinZC
 " function filter sample events 
   and add the corresponding helpVar index to the sample"
   input list<BackendDAE.ZeroCrossing> inZeroCrossings;
   input list<SimCode.HelpVarInfo> inHelpVarInfo;
   input list<SimCode.SampleCondition> iSample;
-  output list<SimCode.SampleCondition> outSample;
-  output list<SimCode.HelpVarInfo> outHelpVarInfo;
+  input list<BackendDAE.ZeroCrossing> inZeroAccumCrossings;  
+  output list<BackendDAE.ZeroCrossing> outZeroCrossings;  
 algorithm
-  (outSample, outHelpVarInfo) := matchcontinue (inZeroCrossings,inHelpVarInfo,iSample)
+  (outZeroCrossings) := matchcontinue (inZeroCrossings,inHelpVarInfo,iSample,inZeroAccumCrossings)
     local
-      list<BackendDAE.ZeroCrossing> rest;
-      DAE.Exp e;
+      list<BackendDAE.ZeroCrossing> rest, accumLst;
+      BackendDAE.ZeroCrossing zc;
+      DAE.Exp e,e_1;
       SimCode.SampleCondition res;
+      Integer indexh;
       list<SimCode.HelpVarInfo> newHelpVars, helpVarInfo;
+      list<Integer> occurEquLst, occurWhenLst;
       
-    case ({}, _,_) then (listReverse(iSample),inHelpVarInfo) ;
-    case (BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT("sample")))::rest, _,_)
+    case ({}, _, _, _) then (inZeroAccumCrossings) ;
+    case ((BackendDAE.ZERO_CROSSING(relation_ = e, occurEquLst=occurEquLst , occurWhenLst=occurWhenLst))::rest, _, _, accumLst)
       equation
-        (res,newHelpVars) = addHForConditionSample(e,inHelpVarInfo,listLength(inHelpVarInfo));
-        helpVarInfo = listAppend(inHelpVarInfo,newHelpVars);
-        (outSample, helpVarInfo) = createSampleConditions(rest,helpVarInfo,res::iSample);
+        ((e_1,_)) = Expression.traverseExpTopDown(e, traverseSampleAndReplacewithH, inHelpVarInfo);
+        accumLst = listAppend(accumLst, {BackendDAE.ZERO_CROSSING(e_1,occurEquLst,occurWhenLst)});        
+        (accumLst) = updateSamplesConditionsinZC(rest,inHelpVarInfo,iSample,accumLst);
       then
-        (outSample,helpVarInfo);
-    case (_::rest, _,_)
-      equation
-        (outSample,helpVarInfo) = createSampleConditions(rest,inHelpVarInfo,iSample);
-      then
-        (outSample,helpVarInfo);
+        (accumLst);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createSampleConditions failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"updateSamplesConditionsinZC failed"});
       then
         fail();
   end matchcontinue;
-end createSampleConditions;
+end updateSamplesConditionsinZC;
 
 protected function addHForConditionSample
   input DAE.Exp icondition;
@@ -6631,23 +6668,68 @@ algorithm
   end matchcontinue;
 end addHForConditionSample;
 
-protected function createZeroCrossings
+protected function traverseSampleAndReplacewithH
+"
+  take a sample call and add an index to that.
+  author: wbraun
+"
+  input tuple<DAE.Exp, list<SimCode.HelpVarInfo>> inTpl;
+  output tuple<DAE.Exp,  Boolean, list<SimCode.HelpVarInfo>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local
+    DAE.Exp e, e1;
+    list<SimCode.HelpVarInfo> helpVarInfo;
+    Absyn.Path name;
+
+    case (((e as DAE.CALL(path = name as Absyn.IDENT("sample"))),helpVarInfo))
+      equation
+        ((e1,_),{}) = addHForConditionSample(e, helpVarInfo, listLength(helpVarInfo));
+      then ((e1, true, helpVarInfo)); 
+        
+    case ((e,helpVarInfo)) then ((e, true, helpVarInfo));
+  end matchcontinue;
+end traverseSampleAndReplacewithH;
+
+protected function getZeroCrossings
+  input BackendDAE.BackendDAE dlow;
+  input Boolean inifcpp;
+  output list<BackendDAE.ZeroCrossing> zc;
+algorithm
+  zc := matchcontinue (dlow, inifcpp)
+    
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zc))),false)
+    then
+      zc;
+
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(relationsLst=zc))),true)
+    then
+      zc;
+  
+    case (_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"getZeroCrossings failed"});
+      then
+        fail();
+  end matchcontinue;
+end getZeroCrossings;
+
+protected function getSamples
   input BackendDAE.BackendDAE dlow;
   output list<BackendDAE.ZeroCrossing> zc;
 algorithm
   zc := matchcontinue (dlow)
     
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zc))))
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(sampleLst=zc))))
     then
       zc;
-  
     case (_)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createZeroCrossings failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"getSamples failed"});
       then
         fail();
   end matchcontinue;
-end createZeroCrossings;
+end getSamples;
 
 protected function createZeroCrossingsNeedSave
   input list<BackendDAE.ZeroCrossing> zeroCrossings;
@@ -6894,20 +6976,21 @@ algorithm
   matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2)
     local
-      Integer ng, ng_sam, ng_sam_1, ng_1, numInitialResiduals;
+      Integer ng, ng_sam, ng_rel, numInitialResiduals;
     case (_, _, _, _, _, _, _, _, _, _, _,
                  _, _, _, _, _, _, _, _, _,_,_)
       equation
-        (ng, ng_sam) = BackendDAEUtil.numberOfZeroCrossings(dlow);
-        ng_1 = filterNg(ng);
-        ng_sam_1 = filterNg(ng_sam);
+        (ng, ng_sam, ng_rel) = BackendDAEUtil.numberOfZeroCrossings(dlow);
+        ng = filterNg(ng);
+        ng_sam = filterNg(ng_sam);
+        ng_rel = filterNg(ng_rel);        
         numInitialResiduals = numInitialEquations+numInitialAlgorithms;
       then
-        SimCode.VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+        SimCode.VARINFO(numHelpVars, ng, ng_sam, ng_rel, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
           numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, SOME(dim_1),SOME(dim_2));
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfoCPP failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfo failed"});
       then
         fail();
   end matchcontinue;

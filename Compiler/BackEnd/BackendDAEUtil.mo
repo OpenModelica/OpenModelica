@@ -126,7 +126,7 @@ algorithm
         ();
     case (BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(numberOfVars = i1),orderedEqs = BackendDAE.EQUATION_ARRAY(size = i2))::{}))
       equation
-        true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
+        //true = Flags.isSet(Flags.CHECK_BACKEND_DAE);
         //Check for correct size
         samesize = i1 == i2;
         Debug.fcall(Flags.CHECK_BACKEND_DAE,print,"No. of Equations: " +& intString(i1) +& " No. of BackendDAE.Variables: " +& intString(i2) +& " Samesize: " +& boolString(samesize) +& "\n");
@@ -431,9 +431,6 @@ public function expandAlgorithmsbyInitStmts
   - A discrete variable v is initialized with pre(v)."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-protected
-  list<BackendDAE.EqSystem> systs;
-  BackendDAE.Shared shared;
 algorithm
   outDAE := mapEqSystem(inDAE,expandAlgorithmsbyInitStmts1);
 end expandAlgorithmsbyInitStmts;
@@ -592,7 +589,7 @@ algorithm
                               cache, 
                               {},
                               funcTree,
-                              BackendDAE.EVENT_INFO({},{}),
+                              BackendDAE.EVENT_INFO({},{},{},{},0),
                               {},
                               inBDAEType,
                               {}
@@ -1021,10 +1018,11 @@ algorithm
       BackendDAE.Variables vars,knvars,extvars;
       list<WhenClause> wc;
       list<ZeroCrossing> zc;
+      Integer numberOfRelations;
     
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars)::{},shared=BackendDAE.SHARED(knownVars = knvars, externalObjects = extvars,
                  eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wc,
-                                        zeroCrossingLst = zc))))
+                                        zeroCrossingLst = zc,relationsNumber=numberOfRelations ))))
       equation
         // input variables are put in the known var list, but they should be counted by the ny counter
         next = BackendVariable.varsSize(extvars);
@@ -1033,7 +1031,7 @@ algorithm
         ((nx,ny,ny_string,ny_int, ny_bool)) = BackendVariable.traverseBackendDAEVars(vars,calculateVarSizes,(0, 0, 0, 0, 0));
         ((nx_1,ny_1,ny_1_string,ny_1_int, ny_1_bool)) = BackendVariable.traverseBackendDAEVars(knvars,calculateVarSizes,(nx, ny, ny_string, ny_int, ny_bool));
       then
-        (nx_1,ny_1,np,ng,nsam,next,ny_1_string, np_string, ny_1_int, np_int, ny_1_bool, np_bool);
+        (nx_1,ny_1,np,numberOfRelations,nsam,next,ny_1_string, np_string, ny_1_int, np_int, ny_1_bool, np_bool);
   end match;
 end calculateSizes;
 
@@ -1042,17 +1040,19 @@ public function numberOfZeroCrossings "function: numberOfZeroCrossings
   input BackendDAE.BackendDAE inBackendDAE;
   output Integer outng        "number of zerocrossings";
   output Integer outng_sample "number of zerocrossings that are samples";
+  output Integer outng_rel    "number of relation in zerocrossings";  
 algorithm
-  (outng,outng_sample):=
+  (outng,outng_sample,outng_rel):=
   match (inBackendDAE)
     local
-      Integer ng,nsam;
-      list<ZeroCrossing> zc;
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc))))
+      Integer ng,nsam, ngrel;
+      list<ZeroCrossing> zc, samples;
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc, sampleLst =samples, relationsNumber=ngrel))))
       equation
-        (ng,nsam) = calculateNumberZeroCrossings(zc, 0, 0);
+        ng = listLength(zc);
+        nsam = listLength(samples);
       then
-        (ng,nsam);
+        (ng,nsam,ngrel);
   end match;
 end numberOfZeroCrossings;
 
@@ -1082,6 +1082,19 @@ algorithm
         zc_index = zc_index + 1;
         (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
       then (zc,sample);
+
+    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.LBINARY(operator = _), occurEquLst = _) :: xs,zc_index,sample_index)
+      equation
+        zc_index = zc_index + 1;
+        (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
+      then (zc,sample);
+
+    case (BackendDAE.ZERO_CROSSING(relation_ = DAE.LUNARY(operator = _), occurEquLst = _) :: xs,zc_index,sample_index)
+      equation
+        zc_index = zc_index + 1;
+        (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
+      then (zc,sample);
+
 
     case (_,_,_)
       equation
@@ -2789,14 +2802,15 @@ algorithm
       Env.Env env;      
       DAE.FunctionTree funcs;
       list<WhenClause> wclst,wclst1;
-      list<ZeroCrossing> zc;
+      list<ZeroCrossing> zc, rellst, smplLst;
+      Integer numberOfRelations;
       ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAEType btp;
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zc),eoc,btp,symjacs))
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zc,smplLst,rellst,numberOfRelations),eoc,btp,symjacs))
       equation
         wclst1 = listAppend(wclst,inWcLst);  
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst1,zc),eoc,btp,symjacs);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst1,zc,smplLst,rellst,numberOfRelations),eoc,btp,symjacs);
   end match;
 end whenClauseAddDAE;
 

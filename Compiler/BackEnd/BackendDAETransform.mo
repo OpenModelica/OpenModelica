@@ -1125,7 +1125,7 @@ algorithm
         eeqns = BackendDAEUtil.listEquation({});
         evars = BackendDAEUtil.listVar1({});
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{}),{},BackendDAE.ALGEQSYSTEM(),{});
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.ALGEQSYSTEM(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, true,shared);
@@ -2977,8 +2977,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;      
       DAE.FunctionTree funcs;
-      list<BackendDAE.WhenClause> wclst;
-      list<BackendDAE.ZeroCrossing> zeroCrossingLst;
       list<Integer> rest;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
@@ -2987,15 +2985,16 @@ algorithm
       BackendDAE.Matching matching;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      BackendDAE.EventInfo einfo;
       
       list<DAE.ComponentRef> crlst;
       
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp,symjacs),{})
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs),{})
       equation
         (av,(_, _)) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp));
         (ie1,(_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
-       then (BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zeroCrossingLst),eoc,btp,symjacs));
+       then (BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
 
     case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),shared,(e :: rest))
       equation

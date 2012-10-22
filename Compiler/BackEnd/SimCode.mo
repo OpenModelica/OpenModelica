@@ -165,6 +165,7 @@ uniontype VarInfo
     Integer numHelpVars;
     Integer numZeroCrossings;
     Integer numTimeEvents;
+    Integer numRelations;
     Integer numStateVars;
     Integer numAlgVars;
     Integer numIntAlgVars;

@@ -574,8 +574,8 @@ void initializeDataStruc(DATA *data)
 
   data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
-  data->simulationInfo.backupRelations = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
-  data->simulationInfo.backupRelationsPre = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
+  data->simulationInfo.backupRelations = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
+  data->simulationInfo.backupRelationsPre = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingEnabled = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingIndex = (long*) malloc(data->modelData.nZeroCrossings*sizeof(long));
   /* initialize zeroCrossingsIndex with corresponding index is used by events lists */

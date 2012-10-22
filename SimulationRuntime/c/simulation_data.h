@@ -304,6 +304,7 @@
 
     long nZeroCrossings;
     long nSamples;
+    long nRelations;
     long nDelayExpressions;
     long nInitEquations;      /* number of initial equations */
     long nInitAlgorithms;     /* number of initial algorithms */

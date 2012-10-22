@@ -470,27 +470,56 @@ public function dumpZcStr
 algorithm
   outString:=
   match (inZeroCrossing)
-  local
-  list<String> eq_s_list,wc_s_list;
-  String eq_s,wc_s,str,str2,str_index;
-  DAE.Exp e;
-  Integer index_;
-  list<Integer> eq,wc;
-  case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq,occurWhenLst = wc)
-  equation
-  eq_s_list = List.map(eq, intString);
-  eq_s = stringDelimitList(eq_s_list, ",");
-  wc_s_list = List.map(wc, intString);
-  wc_s = stringDelimitList(wc_s_list, ",");
-  str = ExpressionDump.printExpStr(e);
-  str_index=intString(index_);
-  str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
-  then
-  str2;
-  else then "";
+    local
+      list<String> eq_s_list,wc_s_list;
+      String eq_s,wc_s,str,str2,str_index;
+      DAE.Exp e;
+      Integer index_;
+      list<Integer> eq,wc;
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq,occurWhenLst = wc)
+      equation
+        eq_s_list = List.map(eq, intString);
+        eq_s = stringDelimitList(eq_s_list, ",");
+        wc_s_list = List.map(wc, intString);
+        wc_s = stringDelimitList(wc_s_list, ",");
+        str = ExpressionDump.printExpStr(e);
+        str_index=intString(index_);
+        str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+      then
+        str2;
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(operator=_),occurEquLst = eq,occurWhenLst = wc)
+      equation
+        eq_s_list = List.map(eq, intString);
+        eq_s = stringDelimitList(eq_s_list, ",");
+        wc_s_list = List.map(wc, intString);
+        wc_s = stringDelimitList(wc_s_list, ",");        
+        str = ExpressionDump.printExpStr(e);
+        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+      then
+        str2;
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(operator=_),occurEquLst = eq,occurWhenLst = wc)
+      equation
+        eq_s_list = List.map(eq, intString);
+        eq_s = stringDelimitList(eq_s_list, ",");
+        wc_s_list = List.map(wc, intString);
+        wc_s = stringDelimitList(wc_s_list, ",");        
+        str = ExpressionDump.printExpStr(e);
+        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+      then
+        str2;
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT(name = "sample")),occurEquLst = eq,occurWhenLst = wc)
+      equation
+        eq_s_list = List.map(eq, intString);
+        eq_s = stringDelimitList(eq_s_list, ",");
+        wc_s_list = List.map(wc, intString);
+        wc_s = stringDelimitList(wc_s_list, ",");        
+        str = ExpressionDump.printExpStr(e);
+        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+      then
+        str2;        
+        else then "";
   end match;
 end dumpZcStr;
-
 
 public function dumpWcStr
 "function: dumpWcStr
@@ -694,14 +723,15 @@ algorithm
       BackendDAE.Variables vars2,vars3,av;
       BackendDAE.EquationArray reqns,ieqns;
       array<DAE.Constraint> constrs;
-      list<BackendDAE.ZeroCrossing> zc;
+      list<BackendDAE.ZeroCrossing> zc, samples;
       list<BackendDAE.WhenClause> wc;
+      Integer numberOfRelations;
       BackendDAE.ExternalObjectClasses extObjCls;
       BackendDAE.BackendDAEType btp;
       BackendDAE.SymbolicJacobians symjacs;
       DAE.FunctionTree funcs;
     case (BackendDAE.SHARED(knownVars=vars2,externalObjects=vars3,aliasVars=av,initialEqs=ieqns,removedEqs=reqns,constraints=constrs,
-          functionTree=funcs,eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zc,whenClauseLst=wc),extObjClasses=extObjCls,backendDAEType=btp,symjacs=symjacs))
+          functionTree=funcs,eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zc,sampleLst=samples,whenClauseLst=wc,relationsNumber=numberOfRelations),extObjClasses=extObjCls,backendDAEType=btp,symjacs=symjacs))
       equation
         print("BackendDAEType: ");
         dumpBackendDAEType(btp);
@@ -750,10 +780,14 @@ algorithm
         print(")\n");
         print("=========\n");
         dumpEqns(ieqnsl);
-        print("Zero Crossings :\n");
+        print("Zero Crossings (numberOfRelations = " +& intString(numberOfRelations) +&") : \n");
         print("===============\n");
         s = dumpZcStr1(zc);
         print(s);
+        print("Samples : \n");
+        print("===============\n");
+        s = dumpZcStr1(samples);
+        print(s);        
         print("\n");
         print("When Clauses :\n");
         print("===============\n");

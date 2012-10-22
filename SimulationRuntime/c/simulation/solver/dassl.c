@@ -190,6 +190,9 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
     }
   }
 
+  if (dasslData->dasslMethod != DASSL_WORT)
+    solverInfo->solverRootFinding = 1;
+
   /* Setup nominal values of the states
    * as relative tolerances */
   dasslData->info[1] = 1;
@@ -242,6 +245,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     DEBUG_INFO(LOG_EVENTS, "Event-management forced reset of DDASRT");
     /* obtain reset */
     dasslData->info[0] = 0;
+    dasslData->idid = 0;
   }
 
   /* Calculate time steps until TOUT is reached
@@ -284,12 +288,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
     /* read input vars */
     input_function(simData);
-
-    if (DEBUG_FLAG(LOG_DEBUG)){
-      for (i=0; i<3;i++){
-        printAllVars(simData,i);
-      }
-    }
 
     if (dasslData->dasslMethod ==  DASSL_SYMJAC)
     {
@@ -377,15 +375,6 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   } while (dasslData->idid == 1 || (dasslData->idid == -1
       && solverInfo->currentTime <= simData->simulationInfo.stopTime));
 
-  if (dasslData->idid == 4){
-    /* go a small step with Euler to get a bit after the event */
-    /* TODO: change that euler step against a more stable method */
-    double newTime = 1e-9;
-    solverInfo->currentTime += newTime;
-    for (i = 0; i < simData->modelData.nStates; i++){
-      sData->realVars[i] = sData->realVars[i]+ stateDer[i] * newTime;
-    }
-  }
 
   /* at the of one step evaluate the system again */
   sData->timeValue = solverInfo->currentTime;
@@ -507,8 +496,6 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
 {
   DATA* data = (DATA*)(void*)rpar;
 
-
-
   double timeBackup;
 
   fortran_integer i;
@@ -532,6 +519,7 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
      * of ZeroCrossings by dassl.
      *
      */
+    /*
     if (!(data->simulationInfo.zeroCrossingEnabled[i]==0)){
       if (gout[i] == 0.0 && data->simulationInfo.zeroCrossingEnabled[i] >=1){
         gout[i] = DBL_EPSILON;
@@ -552,6 +540,7 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
           gout[i] = 1;
       }
     }
+    */
   }
   data->localData[0]->timeValue = timeBackup;
 
