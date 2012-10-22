@@ -8840,7 +8840,7 @@ algorithm
         Error.assertionOrAddSourceMessage(i1 == i2,
           Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM), 
           {s1,s2}, Absyn.dummyInfo);
-        
+
         partitionEquations(BackendDAEUtil.equationArraySize(arr),arr,ixs,ea);
         partitionVars(i2,arr,vars,ixs,mT,va);
         el = arrayList(ea);

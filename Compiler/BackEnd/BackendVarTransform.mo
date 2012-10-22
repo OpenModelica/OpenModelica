@@ -1281,7 +1281,7 @@ algorithm
     // if true use it if it is the first one
     case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_)
       then 
-        eqns; 
+        listAppend(eqns,inEqns); 
     // if true use it as new else if it is not the first one
     case(DAE.BCONST(true)::_,eqns::_,_,{},{},_,_)
       equation
