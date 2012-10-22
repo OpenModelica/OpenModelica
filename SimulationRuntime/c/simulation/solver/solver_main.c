@@ -207,7 +207,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   if(checkForNewEvent(data, solverInfo.eventLst)){
     handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
   }else{
-	updateDiscreteSystem(data);
+    updateDiscreteSystem(data);
   }
   saveZeroCrossings(data);
   storePreValues(data);
