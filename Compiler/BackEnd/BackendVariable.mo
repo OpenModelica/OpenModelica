@@ -3704,7 +3704,7 @@ protected function getNonZeroStart
   input Option<DAE.Exp> so "StartOrigin";
   input DAE.Exp exp2;
   input Option<DAE.Exp> sao "StartOrigin";
-  input BackendDAE.Variables knVars "the KnownVars, needd to report Warnings";
+  input BackendDAE.Variables knVars "the KnownVars, need to report Warnings";
   output DAE.Exp outExp;
   output Option<DAE.Exp> outStartOrigin;
 algorithm
@@ -3715,7 +3715,7 @@ algorithm
       Integer i,ia;
       Boolean b;
       Option<DAE.Exp> origin;
-    case (_,_,_,_,_)
+/*    case (_,_,_,_,_)
       equation
         true = Expression.isZero(exp2);
       then (exp1,so);
@@ -3723,7 +3723,7 @@ algorithm
       equation
         true = Expression.isZero(exp1);
       then (exp2,sao);
-    case (_,_,_,_,_)
+*/    case (_,_,_,_,_)
       equation
         true = Expression.expEqual(exp1,exp2);
         // use highest origin
@@ -4055,5 +4055,33 @@ algorithm
     else then false;
   end match;
 end selfGeneratedVar;
+
+
+public function varStateSelectPrioAlias
+"function varStateSelectPrioAlias
+  Helper function to calculateVarPriorities.
+  Calculates a priority contribution bases on the stateSelect attribute."
+  input BackendDAE.Var v;
+  output Integer prio;
+  protected
+  DAE.StateSelect ss;
+algorithm
+  ss := varStateSelect(v);
+  prio := varStateSelectPrioAlias2(ss);
+end varStateSelectPrioAlias;
+
+protected function varStateSelectPrioAlias2
+"helper function to varStateSelectPrioAlias"
+  input DAE.StateSelect ss;
+  output Integer prio;
+algorithm
+  prio := match(ss)
+    case (DAE.NEVER()) then -1;
+    case (DAE.AVOID()) then 0;
+    case (DAE.DEFAULT()) then 1;
+    case (DAE.PREFER()) then 2;
+    case (DAE.ALWAYS()) then 3;
+  end match;
+end varStateSelectPrioAlias2;
 
 end BackendVariable;

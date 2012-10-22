@@ -2041,11 +2041,16 @@ protected
   BackendDAE.Variables vars;
   BackendDAE.Var var1,var2;
   Integer ipos1,ipos2;
+  Boolean b1,b2,s1,s2;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
   ((var1::_),(ipos1::_)) := BackendVariable.getVar(cr1,vars);
   ((var2::_),(ipos2::_)) := BackendVariable.getVar(cr2,vars);
-  (cr,exp,k,osyst,oshared) := selectAlias1(cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,negate,source);
+  s1 := BackendVariable.isStateVar(var1);
+  s2 := BackendVariable.isStateVar(var2);
+  b1 := replaceableAlias(var1);
+  b2 := replaceableAlias(var2);
+  (cr,exp,k,osyst,oshared) := selectAlias1(s1,s2,b1,b2,cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,syst,shared,negate,source);
 end selectAlias;
 
 protected function replaceableAlias
@@ -2053,8 +2058,9 @@ protected function replaceableAlias
   autor Frenkel TUD 2011-08
   check if the variable is a replaceable alias."
   input BackendDAE.Var var;
+  output Boolean res;
 algorithm
-  _ := match (var)
+  res := matchcontinue (var)
     local
       BackendDAE.VarKind kind;
     case _
@@ -2067,14 +2073,21 @@ algorithm
         false = BackendVariable.isVarOnTopLevelAndInput(var);
         false = BackendVariable.varHasUncertainValueRefine(var);
       then
-        ();
-  end match;
+        true;        
+    else
+      then
+        false;
+  end matchcontinue;
 end replaceableAlias;
 
 protected function selectAlias1
 "function selectAlias1
   autor Frenkel TUD 2011-04
   helper for selectAlias."
+  input Boolean isState1;
+  input Boolean isState2;
+  input Boolean replaceable1;
+  input Boolean replaceable2;
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   input BackendDAE.Var var1;
@@ -2094,40 +2107,51 @@ protected function selectAlias1
   output BackendDAE.Shared oshared;
 algorithm
   (cr,exp,k,osyst,oshared) := 
-  matchcontinue (cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,isyst,ishared,negate,source)
+  match (isState1,isState2,replaceable1,replaceable2,cr1,cr2,var1,var2,ipos1,ipos2,e1,e2,isyst,ishared,negate,source)
     local
       DAE.ComponentRef acr;
       BackendDAE.Var avar,var;
       DAE.Exp ae,e;
-      Integer aipos,i1,i2;
+      Integer aipos,i1,i2,is1,is2;
       Boolean b;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      
-    case (_,_,_,_,_,_,_,_,syst,shared,_,_)
+/* it is not so trivial to replace state alias variables, this is because there could be more than one equation
+    phi = phi1, w = der(phi), w1 = der=(phi), in this case index reduction run in trouble because now equal equations are there.      
+    case (true,true,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        replaceableAlias(var1);
-        replaceableAlias(var2);
+        is1 = BackendVariable.varStateSelectPrioAlias(var1);
+        is2 = BackendVariable.varStateSelectPrioAlias(var2);
+        i1 = BackendVariable.calcAliasKey(cr1,var1);
+        i2 = BackendVariable.calcAliasKey(cr2,var2);
+        b = intGt(is1,is2) "always=3...never=-1";
+        b = Util.if_(intEq(is1,is2),intGt(i2,i1),b);
+        ((acr,avar,aipos,ae,cr,var,e)) = Util.if_(b,(cr2,var2,ipos2,e2,cr1,var1,e1),(cr1,var1,ipos1,e1,cr2,var2,e2));
+        avar = BackendVariable.setVarKind(avar,BackendDAE.DUMMY_STATE());
+        (syst,shared) = selectAlias2(acr,cr,avar,var,ae,e,isyst,ishared,negate,source);
+      then
+        (acr,e,aipos,syst,shared);
+*/        
+    case (_,_,true,true,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
         i1 = BackendVariable.calcAliasKey(cr1,var1);
         i2 = BackendVariable.calcAliasKey(cr2,var2);
         b = intGt(i2,i1);
         ((acr,avar,aipos,ae,cr,var,e)) = Util.if_(b,(cr2,var2,ipos2,e2,cr1,var1,e1),(cr1,var1,ipos1,e1,cr2,var2,e2));
-        (syst,shared) = selectAlias2(acr,cr,avar,var,ae,e,syst,shared,negate,source);
+        (syst,shared) = selectAlias2(acr,cr,avar,var,ae,e,isyst,ishared,negate,source);
       then
         (acr,e,aipos,syst,shared);
-    case (_,_,_,_,_,_,_,_,syst,shared,_,_)
+    case (_,_,true,false,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        replaceableAlias(var1);
-        (syst,shared) = selectAlias2(cr1,cr2,var1,var2,e1,e2,syst,shared,negate,source);
+        (syst,shared) = selectAlias2(cr1,cr2,var1,var2,e1,e2,isyst,ishared,negate,source);
       then
         (cr1,e2,ipos1,syst,shared);
-    case (_,_,_,_,_,_,_,_,syst,shared,_,_)
+    case (_,_,false,true,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        replaceableAlias(var2);
-        (syst,shared) = selectAlias2(cr2,cr1,var2,var1,e2,e1,syst,shared,negate,source);
+        (syst,shared) = selectAlias2(cr2,cr1,var2,var1,e2,e1,isyst,ishared,negate,source);
       then
         (cr2,e1,ipos2,syst,shared);        
-  end matchcontinue;
+  end match;
 end selectAlias1;
 
 

@@ -138,7 +138,7 @@ extern void BackendDAEEXT_setIncidenceMatrix(modelica_integer nvars, modelica_in
     col_ptrs[i] = j;
     while(MMC_GETHDR(ie) == MMC_CONSHDR) {
       i1 = MMC_UNTAGFIXNUM(MMC_CAR(ie));
-      if (i1>=0) {
+      if (i1>0) {
         col_ids[j++] = i1-1;
       }
       ie = MMC_CDR(ie);

@@ -281,7 +281,7 @@ RML_BEGIN_LABEL(BackendDAEEXT__setIncidenceMatrix)
     col_ptrs[i] = j;
     while(RML_GETHDR(ie) == RML_CONSHDR) {
       i1 = RML_UNTAGFIXNUM(RML_CAR(ie));
-      if (i1>=0) {
+      if (i1>0) {
         col_ids[j++] = i1-1;
       }
       ie = RML_CDR(ie);
