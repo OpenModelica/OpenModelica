@@ -6820,7 +6820,23 @@ algorithm
     case (_,_,_,false) then false;
     case (_,_,true,_) then true;
     case (DAE.ICONST(integer = i1),DAE.ICONST(integer = i2),_,_) then (i1 == i2);
+    case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.ICONST(integer = i1)),DAE.ICONST(integer = i2),_,_)
+      equation
+        i1 = - i1;
+      then (i1 == i2);
+    case (DAE.ICONST(integer = i1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.ICONST(integer = i2)),_,_)
+      equation
+        i2 = - i2;
+      then (i1 == i2);
     case (DAE.RCONST(real = r1),DAE.RCONST(real = r2),_,_) then (r1 ==. r2);
+    case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r1)),DAE.RCONST(real = r2),_,_)
+      equation
+        r1 = -. r1;
+      then (r1 ==. r2);
+    case (DAE.RCONST(real = r1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r2)),_,_)
+      equation
+        r2 = -. r2;
+      then (r1 ==. r2);
     case (DAE.SCONST(string = s1),DAE.SCONST(string = s2),_,_) then stringEq(s1, s2);
     case (DAE.BCONST(bool = b1),DAE.BCONST(bool = b2),_,_) then boolEq(b1, b2);
     case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2),_,_) then Absyn.pathEqual(enum1, enum2);
