@@ -196,6 +196,8 @@ public:
   QString getIndexReductionMethod();
   void getAvailableIndexReductionMethods(QStringList *choices, QStringList *comments);
   bool setIndexReductionMethod(QString method);
+signals:
+  void commandFinished();
 public slots:
   void sendCommand();
   void openOMCLogger();
