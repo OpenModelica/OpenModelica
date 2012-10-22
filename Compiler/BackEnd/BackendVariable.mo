@@ -3713,7 +3713,7 @@ algorithm
     local
       DAE.Exp exp2_1,exp1_1;
       Integer i,ia;
-      Boolean b;
+      Boolean b1,b2;
       Option<DAE.Exp> origin;
 /*    case (_,_,_,_,_)
       equation
@@ -3743,10 +3743,12 @@ algorithm
     case (_,_,_,_,_)
       equation
         // simple evaluation, by replace crefs with bind expressions recursivly
-        ((exp1_1, (_,b,_))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
-        ((exp2_1, _)) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        ((exp1_1, (_,b1,_))) = Expression.traverseExp(exp1, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        ((exp2_1, (_,b2,_))) = Expression.traverseExp(exp2, replaceCrefWithBindExp, (knVars,false,HashSet.emptyHashSet()));
+        (exp1_1,_) = ExpressionSimplify.condsimplify(b1,exp1_1);
+        (exp2_1,_) = ExpressionSimplify.condsimplify(b2,exp2_1);
         true = Expression.expEqual(exp1_1, exp2_1);
-        exp1_1 = Util.if_(b,exp1,exp2);
+        exp1_1 = Util.if_(b1,exp1,exp2);
         // use highest origin
         i = startOriginToValue(so);
         ia = startOriginToValue(sao);
