@@ -366,8 +366,16 @@ void OMCProxy::sendCommand(const QString expression)
         or expression.startsWith("translateModelFMU") or expression.startsWith("importFMUOld"))
     {
       QFuture<void> future = QtConcurrent::run(this, &OMCProxy::sendCommand);
+      QEventLoop loop;
+      QTimer tmr;
+      tmr.start(10);
+      connect(&tmr,SIGNAL(timeout()),&loop,SLOT(quit()));
       while (future.isRunning())
+      {
+        loop.exec();
         qApp->processEvents(QEventLoop::ExcludeUserInputEvents);
+      }
+      tmr.stop();
       future.waitForFinished();
       writeCommandResponseLog(&commandTime);
       logOMCMessages(expression);

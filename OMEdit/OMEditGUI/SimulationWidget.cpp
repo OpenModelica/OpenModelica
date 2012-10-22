@@ -559,14 +559,18 @@ void SimulationWidget::simulateModel(QString simulationParameters, QStringList s
       if (!sock && server.hasPendingConnections()) {
         sock = server.nextPendingConnection();
       } else if (!sock) {
-        server.waitForNewConnection(100,0);
+        QEventLoop loop;
+        connect(&server, SIGNAL(newConnection()), &loop, SLOT(quit()));
+        loop.exec();
+        //server.waitForNewConnection(100,0);
       } else {
+        sock->waitForReadyRead(100);
         while (sock->readLine(buf,SOCKMAXLEN) > 0) {
           char *msg = 0;
           double d = strtod(buf, &msg);
           if (msg == buf || *msg != ' ') {
             // do we really need to take care of this communication error?????
-            //fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", sg);
+            //fprintf(stderr, "TODO: OMEdit GUI: COMM ERROR '%s'", buf);
           } else {
             mpProgressDialog->getProgressBar()->setValue(d/100.0);
             //fprintf(stderr, "TODO: OMEdit GUI: Display progress (%g%%) and message: %s", d/100.0, msg+1);
