@@ -109,7 +109,7 @@ test:
 	(time $(MAKE) -C testsuite -f Makefile)
 
 testlog:
-	(time $(MAKE) -C testsuite -f Makefile > testsuite/testsuite-trace.txt 2>&1)
+	(time $(MAKE) -C testsuite -f Makefile > testsuite/testsuite-trace.txt 2>&1) || true
 	echo "log is in testsuite/testsuite-trace.txt"
 	cat testsuite/testsuite-trace.txt
 	echo "Failed models: "
