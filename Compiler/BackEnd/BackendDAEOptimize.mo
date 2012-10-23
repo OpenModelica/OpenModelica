@@ -9288,12 +9288,12 @@ algorithm
         // only mixed part
         //(_,_) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
         // only continues part
-        (comp1::{},true) = tearingSystemNew1(isyst,ishared,{comp1},false,{});
-        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc);
+        //(comp1::{},true) = tearingSystemNew1(isyst,ishared,{comp1},false,{});
+        //(acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc);
         // mixed and continues part
-        //(eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
-        //(comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
-        //(acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);
+        (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+        (comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
+        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);
       then
         (acc,b1);
     case (_,_,comp::comps,_,_)
