@@ -333,8 +333,8 @@ language_specification returns [void* ast] :
   ;
 
 element_list returns [void* ast] @init {
-  e.ast = 0;
   int first,last;
+  e.ast = 0;
   $ast = 0;
   first = omc_first_comment;
   last = LT(1)->getTokenIndex(LT(1));
@@ -759,8 +759,9 @@ equality_or_noretcall_equation returns [void* ast] :
       }
     | {LA(1) != EQUALS && LA(1) != ASSIGN}? /* It has to be a CALL */
        {
+         struct rml_struct *p;
          modelicaParserAssert(RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2),"A singleton expression in an equation section is required to be a function call", equality_or_noretcall_equation, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
-         struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
+         p = (struct rml_struct*)RML_UNTAGPTR(e1);
          $ast = Absyn__EQ_5fNORETCALL(p->data[0+UNBOX_OFFSET],p->data[1+UNBOX_OFFSET]);
        }
     )
