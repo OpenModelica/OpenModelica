@@ -851,6 +851,23 @@ algorithm
   end match;
 end varDistribution;
 
+public function varTryGetDistribution
+"
+  author: Peter Aronsson, 2012-05
+  
+  Returns Distribution record of a variable.
+"
+  input BackendDAE.Var var;
+  output Option<DAE.Distribution> dout;
+  protected DAE.Distribution d;
+algorithm 
+  dout := match (var)
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(distributionOption = SOME(d))))) then SOME(d);
+    case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(distributionOption  = SOME(d))))) then SOME(d);
+    case (_) then NONE();
+  end match;
+end varTryGetDistribution;
+
 public function varUncertainty
 "
   author: Peter Aronsson, 2012-05

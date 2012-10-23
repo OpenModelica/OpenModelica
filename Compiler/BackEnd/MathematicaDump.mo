@@ -124,7 +124,7 @@ end printMmaEqnStr;
 
 /* Printing of equations and variables on Mathematica format*/
 
-protected function printExpMmaStr "Prints an expression on format suitable for Mathematica to a string"
+public function printExpMmaStr "Prints an expression on format suitable for Mathematica to a string"
   input DAE.Exp e;
   input BackendDAE.Variables vars "Required since variables should be translated from a to a[t]";
   input BackendDAE.Variables knvars "inputs and outputs should also have [t] suffixed";

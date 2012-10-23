@@ -6464,7 +6464,7 @@ algorithm
   end matchcontinue;
 end hasBuiltInHandler;
 
-protected function elabVariablenames "function: elabVariablenames
+public function elabVariablenames "function: elabVariablenames
   This function elaborates variablenames to DAE.Expression. A variablename can
   be used in e.g. plot(model,{v1{3},v2.t}) It should only be used in interactive
   functions that uses variablenames as componentreferences.

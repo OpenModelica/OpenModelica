@@ -93,6 +93,7 @@ algorithm
       array<Integer> mapIncRowEqn;
       
       String outString;
+      list<Option<DAE.Distribution>> distributions;
 
     case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),outputFile)
       equation
@@ -103,12 +104,14 @@ algorithm
         dlow = BackendDAECreate.lower(dae,cache,env);
         //(dlow_1,funcs1) = BackendDAEUtil.getSolvedSystem(dlow, funcs,SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),NONE());
         (dlow_1) = BackendDAEUtil.getSolvedSystem(dlow, SOME({"removeSimpleEquations","removeFinalParameters", "removeEqualFunctionCalls", "expandDerOperator"}), NONE(), NONE(),SOME({}));
-        Debug.fprintln(Flags.UNCERTAINTIES,"* Lowered Ok \n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "* Lowered Ok \n");
 
         //BackendDump.dump(dlow_1);
 
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
         BackendDAE.EQSYSTEM(allVars,allEqs,_,_,_) = currentSystem;
+        BackendDAE.SHARED(knownVars=sharedVars) = shared;         
+        
         (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL());
 
         //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),_)::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
@@ -119,17 +122,19 @@ algorithm
         //dumpExtIncidenceMatrix(mExt);
 
         variables = List.intRange(BackendVariable.varsSize(allVars));       
-        knowns = getUncertainRefineVariableIndexes(allVars,variables);
+        (knowns,_) = getUncertainRefineVariableIndexes(allVars,variables);
         directlyLinked = getRelatedVariables(mExt,knowns);
         indirectlyLinked = List.setDifference(getRelatedVariables(mExt,directlyLinked),knowns);
         unknowns = listAppend(directlyLinked,indirectlyLinked);
 
-        Debug.fprintln(Flags.UNCERTAINTIES,"Before Elimination:\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"Number of variables = "+&intString(listLength(variables))+&"\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"Number of equations = "+&intString(BackendDAEUtil.equationSize(allEqs))+&"\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Before Elimination:\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Number of variables = "+&intString(listLength(variables))+&"\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Number of equations = "+&intString(BackendDAEUtil.equationSize(allEqs))+&"\n");
 
         //dumpExtIncidenceMatrix(mExt);
-
+        Debug.fprintln(Flags.UNCERTAINTIES, "Equations before elimination\n");
+        Debug.fprintln(Flags.UNCERTAINTIES,getMathematicaEqStr(BackendDAEUtil.equationList(allEqs),allVars,sharedVars));
+        Debug.fprintln(Flags.UNCERTAINTIES, "\n");  
         // First try to eliminate all the unknown variables
         dlow_1 = eliminateVariablesDAE(unknowns,dlow_1);
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
@@ -137,9 +142,9 @@ algorithm
         BackendDAE.SHARED(knownVars=sharedVars) = shared;         
         
         (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL());
-        Debug.fprintln(Flags.UNCERTAINTIES,"Incidence row to equation ");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Incidence row to equation ");
         printIntList(arrayList(mapIncRowEqn));
-        Debug.fprintln(Flags.UNCERTAINTIES,";\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, ";\n");
 
         mExt=getExtIncidenceMatrix(m);
 
@@ -147,29 +152,33 @@ algorithm
         mExt=removeEquations(mExt,approximatedEquations);
         // get the variable indices after the elimination
         variables = List.intRange(BackendVariable.varsSize(allVars));       
-        knowns = getUncertainRefineVariableIndexes(allVars,variables); 
+        (knowns,distributions) = getUncertainRefineVariableIndexes(allVars,variables); 
         directlyLinked = getRelatedVariables(mExt,knowns);
         indirectlyLinked = List.setDifference(getRelatedVariables(mExt,directlyLinked),knowns);
         unknowns = listAppend(directlyLinked,indirectlyLinked); 
 
-        Debug.fprintln(Flags.UNCERTAINTIES,"After Elimination:\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"Number of variables = "+&intString(listLength(variables))+&"\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"Number of equations = "+&intString(BackendDAEUtil.equationSize(allEqs))+&"\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"\tKnowns = "+&(stringDelimitList(List.map(knowns,intString),","))+&"\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"\tUnknowns = "+&(stringDelimitList(List.map(unknowns,intString),","))+&"\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "After Elimination:\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Number of variables = "+&intString(listLength(variables))+&"\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Number of equations = "+&intString(BackendDAEUtil.equationSize(allEqs))+&"\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "\tKnowns = "+&(stringDelimitList(List.map(knowns,intString),","))+&"\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "\tUnknowns = "+&(stringDelimitList(List.map(unknowns,intString),","))+&"\n");
+
+        Debug.fprintln(Flags.UNCERTAINTIES, "Equations after elimination\n");
+        Debug.fprintln(Flags.UNCERTAINTIES,getMathematicaEqStr(BackendDAEUtil.equationList(allEqs),allVars,sharedVars));
+        Debug.fprintln(Flags.UNCERTAINTIES, "\n");
 
         dumpExtIncidenceMatrix(mExt);
 
         setS=getEquationsForUnknownsSystem(mExt,knowns,unknowns);
-        Debug.fprintln(Flags.UNCERTAINTIES,"Set S of equations = ");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Set S of equations = ");
         printIntList(setS);
-        Debug.fprintln(Flags.UNCERTAINTIES,";\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, ";\n");
 
         setC=getEquationsForKnownsSystem(mExt,knowns,unknowns,setS);
         
-        Debug.fprintln(Flags.UNCERTAINTIES,"Set C of equations = ");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Set C of equations = ");
         printIntList(setC);
-        Debug.fprintln(Flags.UNCERTAINTIES,";\n");   
+        Debug.fprintln(Flags.UNCERTAINTIES, ";\n");   
 
         setC=List.map1r(setC,listGet,arrayList(mapIncRowEqn));
         setC=List.unique(List.map1(setC,intAdd,-1));       
@@ -183,13 +192,15 @@ algorithm
         knownVariables = BackendDAEUtil.listVar(List.map1r(knowns,BackendVariable.getVarAt,allVars));
         unknownVariables = BackendDAEUtil.listVar(List.map1r(unknowns,BackendVariable.getVarAt,allVars));
 
-        //print("* Uncertainty equations extracted: \n");
+        //Debug.fprintln(Flags.UNCERTAINTIES, "* Uncertainty equations extracted: \n");
         //BackendDump.dumpEqns(setC_eq);
 
-        //print("* Auxiliary set of equations: \n");
+        //Debug.fprintln(Flags.UNCERTAINTIES, "* Auxiliary set of equations: \n");
         //BackendDump.dumpEqns(setS_eq);
 
-        outString = "{{"+&getMathematicaVarStr(knownVariables)+&","+&getMathematicaEqStr(setC_eq,allVars,sharedVars)+&"},{"+&getMathematicaVarStr(unknownVariables)+&","+&getMathematicaEqStr(setS_eq,allVars,sharedVars)+&"}}";
+        outString = "{{"+&getMathematicaVarStr(knownVariables)+&","+&getMathematicaEqStr(setC_eq,allVars,sharedVars)+&"},{"
+                        +&getMathematicaVarStr(unknownVariables)+&","+&getMathematicaEqStr(setS_eq,allVars,sharedVars)+&"},"
+                        +&dumpVarsDistributionInfo(distributions)+&"}";
         
         resstr=writeFileIfNonEmpty(outputFile,outString);
         //resstr="Done...";
@@ -215,22 +226,49 @@ out:=matchcontinue(filename,content)
     local String directory;
     case("",_)
       equation
-        //print("Mathematica Expression =\n"+&content);
+        //Debug.fprintln(Flags.UNCERTAINTIES, "Mathematica Expression =\n"+&content);
       then content;
     case(_,_)
       equation
         directory=System.dirname(filename);
         true=System.directoryExists(directory);
-        //print("Writing file "+&filename);
+        //Debug.fprintln(Flags.UNCERTAINTIES, "Writing file "+&filename);
         System.writeFile(filename,content);
       then "Done...";
     case(_,_)
         equation
-          //print("Mathematica Expression =\n"+&content); 
+          //Debug.fprintln(Flags.UNCERTAINTIES, "Mathematica Expression =\n"+&content); 
         then content;  
   end matchcontinue;
 end writeFileIfNonEmpty;
 
+protected function dumpVarDistributionInfo
+  input Option<DAE.Distribution> d;
+  output String out;
+algorithm
+out:=match(d)
+local 
+  DAE.Exp name,params,paramNames;
+  String e1,e2,e3,s,s1;
+case(SOME(DAE.DISTRIBUTION(name,params,paramNames)))
+  equation
+    e1=MathematicaDump.printExpMmaStr(name,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
+    e2=MathematicaDump.printExpMmaStr(params,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
+    e3=MathematicaDump.printExpMmaStr(paramNames,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
+    s1=stringDelimitList({e1,e2,e3},",");
+    s=stringAppendList({"{",s1,"}"});
+  then s;
+  case(NONE())
+    then "\"None\"";
+end match;   
+end dumpVarDistributionInfo;
+
+protected function dumpVarsDistributionInfo
+  input list<Option<DAE.Distribution>> d;
+  output String s;
+algorithm
+  s:="{"+&stringDelimitList(List.map(d,dumpVarDistributionInfo),",")+&"}";
+end dumpVarsDistributionInfo;
 
 protected function getEquationsWithApproximatedAnnotation
    input BackendDAE.BackendDAE dae;
@@ -411,7 +449,7 @@ eqnsOut:=matchcontinue(m,knowns,unknowns)
   case(_,_,_)
     equation
         unknownsSystem=getSystemForUnknowns(m,knowns,unknowns);
-        Debug.fprintln(Flags.UNCERTAINTIES,"System of unknowns\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "System of unknowns\n");
         dumpExtIncidenceMatrix(unknownsSystem);
 
         (yEqMap,yVarMap,my)=prepareForMatching(unknownsSystem);
@@ -419,9 +457,9 @@ eqnsOut:=matchcontinue(m,knowns,unknowns)
 
         Matching.matchingExternalsetIncidenceMatrix(listLength(yVarMap),listLength(yEqMap),my);
 
-        Debug.fprintln(Flags.UNCERTAINTIES,"Number of variables = "+&intString(listLength(yVarMap))+&"\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"Number of equations = "+&intString(listLength(yEqMap))+&"\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"Performing matching of unknown's system...");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Number of variables = "+&intString(listLength(yVarMap))+&"\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Number of equations = "+&intString(listLength(yEqMap))+&"\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Performing matching of unknown's system...");
 
         ass1=listArray(List.fill(0,listLength(yEqMap))); 
         ass2=listArray(List.fill(0,listLength(yVarMap)));
@@ -429,15 +467,15 @@ eqnsOut:=matchcontinue(m,knowns,unknowns)
         BackendDAEEXT.matching(listLength(yVarMap),listLength(yEqMap),1,-1,1.0,0);
 
         BackendDAEEXT.getAssignment(ass1,ass2);
-        Debug.fprintln(Flags.UNCERTAINTIES,"Ok\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Ok\n");
 
-        Debug.fprintln(Flags.UNCERTAINTIES,"Assignations (non-fixed) = ");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Assignations (non-fixed) = ");
         printIntList(arrayList(ass2));
-        Debug.fprintln(Flags.UNCERTAINTIES,";\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, ";\n");
 
-        Debug.fprintln(Flags.UNCERTAINTIES,"Equation map = ");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Equation map = ");
         printIntList(yEqMap);
-        Debug.fprintln(Flags.UNCERTAINTIES,";\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, ";\n");
 
         setS = restoreIndicesEquivalence(List.filter1OnTrue(arrayList(ass2),intGt,0),yEqMap);
     then setS;
@@ -465,11 +503,11 @@ setCOut:=matchcontinue(m,knowns,unknowns,setS)
   case(_,_,_,_)
       equation
         
-        Debug.fprintln(Flags.UNCERTAINTIES,"Knowns = ");printIntList(knowns);Debug.fprintln(Flags.UNCERTAINTIES,";\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"Cleaning up system of knowns..");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Knowns = ");printIntList(knowns);Debug.fprintln(Flags.UNCERTAINTIES, ";\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Cleaning up system of knowns..");
         knownsSystem = removeEquations(m,setS);
         knownsSystem = removeUnrelatedEquations(knownsSystem,knowns);
-        Debug.fprintln(Flags.UNCERTAINTIES,"Ok\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Ok\n");
 
         knownsSystemComp=sortEquations(knownsSystem,knowns);
         knownsSystemComp=removeVarsNotInSet(knownsSystemComp,knowns,{});
@@ -477,7 +515,7 @@ setCOut:=matchcontinue(m,knowns,unknowns,setS)
         dumpExtIncidenceMatrix(knownsSystemComp);
         (xEqMap,xVarMap,mx)=prepareForMatching(knownsSystemComp);
         Debug.fcall(Flags.UNCERTAINTIES,BackendDump.dumpIncidenceMatrix,mx);
-        Debug.fprintln(Flags.UNCERTAINTIES,"Performing matching of known's system...");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Performing matching of known's system...");
         Matching.matchingExternalsetIncidenceMatrix(listLength(xVarMap),listLength(xEqMap),mx);
         
 
@@ -488,20 +526,20 @@ setCOut:=matchcontinue(m,knowns,unknowns,setS)
         BackendDAEEXT.matching(listLength(xVarMap),listLength(xEqMap),1,-1,1.0,0);
 
         BackendDAEEXT.getAssignment(ass1,ass2);
-        Debug.fprintln(Flags.UNCERTAINTIES,"Ok\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Ok\n");
 
         mt = BackendDAEUtil.transposeMatrix(mx);
 
-        Debug.fprintln(Flags.UNCERTAINTIES,"Assignations (non-fixed) = ");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Assignations (non-fixed) = ");
         printIntList(arrayList(ass1));
-        Debug.fprintln(Flags.UNCERTAINTIES,";\n");
-        Debug.fprintln(Flags.UNCERTAINTIES,"Assignations (non-fixed) = ");
+        Debug.fprintln(Flags.UNCERTAINTIES, ";\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Assignations (non-fixed) = ");
         printIntList(arrayList(ass2));
-        Debug.fprintln(Flags.UNCERTAINTIES,";\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, ";\n");
 
-        Debug.fprintln(Flags.UNCERTAINTIES,"Calculating components...");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Calculating components...");
         comps = getComponentsWrapper(mx,mt,ass1,ass2);
-        Debug.fprintln(Flags.UNCERTAINTIES,"Ok\n");
+        Debug.fprintln(Flags.UNCERTAINTIES, "Ok\n");
 
         comps_fixed =List.map1(comps,restoreIndicesEquivalence,xEqMap);
         //BackendDump.dumpComponentsOLD(comps_fixed);
@@ -556,7 +594,7 @@ compsOut:=matchcontinue(m,mt,ass1,ass2)
     equation
        failure(_=BackendDAETransform.tarjanAlgorithm(m,mt,ass1,ass2));
        
-       Debug.fprintln(Flags.UNCERTAINTIES,"TarjanAlgorithm failed\n");
+       Debug.fprintln(Flags.UNCERTAINTIES, "TarjanAlgorithm failed\n");
        Error.clearMessages();
        comp = List.intRange(arrayLength(m));
        comps = {comp};
@@ -978,7 +1016,7 @@ algorithm
         then ();  
     case((eq,vars)::t)
         equation
-          Debug.fprintln(Flags.UNCERTAINTIES,intString(eq)+&":"+&stringDelimitList(List.map(vars,intString),",")+&"\n");
+          Debug.fprintln(Flags.UNCERTAINTIES, intString(eq)+&":"+&stringDelimitList(List.map(vars,intString),",")+&"\n");
           dumpExtIncidenceMatrix(t);
         then ();  
   end matchcontinue;
@@ -1004,30 +1042,34 @@ public function getUncertainRefineVariableIndexes
 "
   input BackendDAE.Variables allVariables;
   input list<Integer> variableIndexList;
-  output list<Integer> out;
+  output list<Integer> indices;
+  output list<Option<DAE.Distribution>> distributions; 
 algorithm 
-  out := matchcontinue (allVariables, variableIndexList)
+  (indices,distributions) := matchcontinue (allVariables, variableIndexList)
     local
       list<Integer> variableIndexListRest, refineVariableIndexList;
       Integer index;
       BackendDAE.Var var;
+      Option<DAE.Distribution> dist;
+      list<Option<DAE.Distribution>> distInner;
     case (_, {}) then
-      {};
+      ({},{});
     // Variable has its uncertain attribute set to Uncertainty.Refine?
     case (_, index :: variableIndexListRest) equation
       var = BackendVariable.getVarAt(allVariables, index);
       true = BackendVariable.varHasUncertainValueRefine(var);
-      refineVariableIndexList = getUncertainRefineVariableIndexes(allVariables, variableIndexListRest);
+      dist = BackendVariable.varTryGetDistribution(var);
+      (refineVariableIndexList,distInner) = getUncertainRefineVariableIndexes(allVariables, variableIndexListRest);
     then
-      index :: refineVariableIndexList;
+      (index :: refineVariableIndexList,dist::distInner);
     // Variable is missing the uncertain attribute or it is not set to Uncertainty.Refine?
     case (_, index :: variableIndexListRest) equation
       var = BackendVariable.getVarAt(allVariables, index);
       false = BackendVariable.varHasUncertainValueRefine(var);
-      refineVariableIndexList = getUncertainRefineVariableIndexes(allVariables, variableIndexListRest);
+      (refineVariableIndexList,distInner) = getUncertainRefineVariableIndexes(allVariables, variableIndexListRest);
     then
-      refineVariableIndexList;
-    case (_,_) equation Debug.fprintln(Flags.UNCERTAINTIES,"getUncertainRefineVariableIndexes failed!\n"); then fail();
+      (refineVariableIndexList,distInner);
+    case (_,_) equation Debug.fprintln(Flags.UNCERTAINTIES, "getUncertainRefineVariableIndexes failed!\n"); then fail();
   end matchcontinue;
 end getUncertainRefineVariableIndexes;
 
@@ -1059,7 +1101,7 @@ algorithm
       ieqnLst = BackendDAEUtil.equationList(ieqns);
       eqnLst = BackendDAEUtil.equationList(eqns);
       crefDouble = findArraysPartiallyIndexed(eqnLst);      
-      //print("partially indexed crs:"+&Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+&"\n");
+      //Debug.fprintln(Flags.UNCERTAINTIES, "partially indexed crs:"+&Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+&"\n");
       repl = BackendVarTransform.emptyReplacements();
 
       (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL()); 
@@ -1219,7 +1261,7 @@ protected function findArraysPartiallyIndexedRecords "finds vector variables ins
   output HashTable.HashTable outHt;
 algorithm
  (_,outHt) := BackendEquation.traverseBackendDAEExpsEqnList(inEqs,findArraysPartiallyIndexedRecordsExpVisitor,ht);
- //print("partially indexed crs from reccrs:"+&Util.stringDelimitList(Util.listMap(outRef,Exp.printComponentRefStr),",\n")+&"\n");
+ //Debug.fprintln(Flags.UNCERTAINTIES, "partially indexed crs from reccrs:"+&Util.stringDelimitList(Util.listMap(outRef,Exp.printComponentRefStr),",\n")+&"\n");
 end findArraysPartiallyIndexedRecords; 
 
 protected function findArraysPartiallyIndexedRecordsExpVisitor "visitor function for expressions in findArraysPartiallyIndexedRecords"
@@ -1330,7 +1372,7 @@ algorithm
       SOME(elimVar) = varOptArr[elimVarIndex];
       BackendDAE.VAR(varName = cr1) = elimVar;
       (e2, source) = solveEqn2(e, cr1);
-//      print("Eliminated variable #" +& intString(elimVarIndex) +& " in equation #" +& intString(eqnIndex) +& "\n");
+//      Debug.fprintln(Flags.UNCERTAINTIES, "Eliminated variable #" +& intString(elimVarIndex) +& " in equation #" +& intString(eqnIndex) +& "\n");
 
       //false = BackendVariable.isStateVar(elimVar);
       //BackendVariable.isVariable(cr1,vars,knvars) "cr1 not constant";
@@ -1368,9 +1410,7 @@ algorithm
       then (exp,source);
     case(_,_)
       equation
-        /*print("failed solving ");print(Exp.printComponentRefStr(cr));print(" from equation :");
-        print(equationStr(eqn));print("\n");*/
-      then fail();
+        then fail();
   end match;
 end solveEqn2;
 
