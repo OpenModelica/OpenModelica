@@ -376,17 +376,16 @@
     return TRUE;
   }
 
-  /*! \fn ipopt_initialization
+  /*! \fn int ipopt_initialization(INIT_DATA *initData, int useScaling)
    *
    *  This function is used if ipopt is choosen for initialization.
    *
-   *  \param [ref] [data]
    *  \param [ref] [initData]
    *  \param [in]  [useScaling]
    *
    *  \author lochel
    */
-  int ipopt_initialization(DATA *data, INIT_DATA *initData, int useScaling)
+  int ipopt_initialization(INIT_DATA *initData, int useScaling)
   {
     int n = initData->nz;                /* number of variables */
     int m = (initData->nInitResiduals > initData->nz) ? 0 : initData->nInitResiduals;    /* number of constraints */
@@ -524,21 +523,21 @@
     if(status != Solve_Succeeded && status != Solved_To_Acceptable_Level)
       THROW("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
 
-    return (int)status;
+    /* return (int)status; */
+    return reportResidualValue(initData);
   }
 #else
-  /*! \fn ipopt_initialization
+  /*! \fn int ipopt_initialization(INIT_DATA *initData, int useScaling)
    *
    *  This function is used if no ipopt support is avaible but ipopt is choosen
    *  for initialization.
    *
-   *  \param [ref] [data]
    *  \param [ref] [initData]
    *  \param [in]  [useScaling]
    *
    *  \author lochel
    */
-  int ipopt_initialization(DATA *data, INIT_DATA *initData, int useScaling)
+  int ipopt_initialization(INIT_DATA *initData, int useScaling)
   {
     THROW("no ipopt support activated");
     return 0;

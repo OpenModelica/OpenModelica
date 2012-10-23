@@ -44,8 +44,7 @@ extern "C"
 {
 #endif
 
-extern int nelderMeadEx_initialization(DATA *data, INIT_DATA* initData,
-    double lambdaStart);
+  extern int nelderMeadEx_initialization(INIT_DATA *initData, double *lambdaStart);
 
 #ifdef __cplusplus
 }

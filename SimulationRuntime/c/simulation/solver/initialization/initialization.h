@@ -44,15 +44,9 @@ extern "C"
 {
 #endif
 
-extern int initialization(DATA *data, const char* pInitMethod,
-    const char* pOptiMethod, const char* pInitFile, double initTime);
-
-extern double leastSquareWithLambda(DATA* data, INIT_DATA* initData,
-    double lambda);
-extern void leastSquare(long *nz, double *z, double *funcValue);
-
-extern DATA *globalData;
-extern double* globalInitialResiduals;
+  extern int reportResidualValue(INIT_DATA *initData);
+  extern double leastSquareWithLambda(INIT_DATA *initData, double lambda);
+  extern int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime);
 
 #ifdef __cplusplus
 }

@@ -44,7 +44,7 @@ extern "C"
 {
 #endif
 
-extern int newuoa_initialization(DATA* data, INIT_DATA* initData);
+  extern int newuoa_initialization(INIT_DATA *initData);
 
 #ifdef __cplusplus
 }

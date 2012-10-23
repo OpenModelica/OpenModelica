@@ -54,12 +54,6 @@
   #include <sundials/sundials_types.h>
   #include <sundials/sundials_math.h>
 
-  typedef struct KINSOL_DATA
-  {
-    INIT_DATA* initData;
-    DATA* data;
-  }KINSOL_DATA;
-
   /*! \fn kinsol_residuals
    *
    *  \param [in]  [z]
@@ -73,23 +67,20 @@
     double* zdata = NV_DATA_S(z);
     double* fdata = NV_DATA_S(f);
 
-    KINSOL_DATA* kdata = (KINSOL_DATA*) user_data;
-    DATA* data = kdata->data;
-    INIT_DATA* initData = kdata->initData;
+    INIT_DATA *initData = (INIT_DATA*) user_data;
 
     double* lb = initData->min;
     double* ub = initData->max;
     long i;
 
     setZScaled(initData, zdata);
-    updateZ(initData);  /* can be removed later */
-    leastSquareWithLambda(data, initData, 1.0);
+    leastSquareWithLambda(initData, 1.0);
 
-    for(i=0; i<initData->nz; ++i)
+    for(i=0; i<initData->nVars; ++i)
     {
-      fdata[i] = globalInitialResiduals[i];
-      fdata[initData->nz+2*i+0] = zdata[initData->nz+2*i+0] - zdata[i] + lb[i];
-      fdata[initData->nz+2*i+1] = zdata[initData->nz+2*i+1] - zdata[i] + ub[i];
+      fdata[i] = initData->initialResiduals[i];
+      fdata[initData->nVars+2*i+0] = zdata[initData->nVars+2*i+0] - zdata[i] + lb[i];
+      fdata[initData->nVars+2*i+1] = zdata[initData->nVars+2*i+1] - zdata[i] + ub[i];
     }
 
     return 0;
@@ -104,18 +95,15 @@
     }
   }
 
-  /*! \fn kinsol_initialization
+  /*! \fn int kinsol_initialization(INIT_DATA *initData)
    *
-   *  \param [ref] [data]
-   *  \param [in]  [initData]
-   *  \param [ref] [initialResiduals]
+   *  \param [ref] [initData]
    *
    *  \author lochel
    */
-  int kinsol_initialization(DATA* data, INIT_DATA* initData)
+  int kinsol_initialization(INIT_DATA *initData)
   {
     long i;
-    KINSOL_DATA* kdata = NULL;
     double fnormtol  = 1.e-9;     /* function tolerance */
     double scsteptol = 1.e-9;     /* step tolerance */
 
@@ -131,7 +119,7 @@
     void *kmem = NULL;
     int error_code = -1;
 
-    ASSERT(data->modelData.nInitResiduals == initData->nz, "The number of initial equations are not consistent with the number of unfixed variables. Select a different initialization.");
+    ASSERT(initData->simData->modelData.nInitResiduals == initData->nVars, "The number of initial equations are not consistent with the number of unfixed variables. Select a different initialization.");
 
     do /* Try it first with KIN_NONE. If that fails, try it with KIN_LINESEARCH. */
     {
@@ -148,44 +136,38 @@
       DEBUG_INFO_AL1(LOG_INIT, "| function tolerance = %10.6g", fnormtol);
       DEBUG_INFO_AL1(LOG_INIT, "| step tolerance     = %10.6g", scsteptol);
 
-      kdata = (KINSOL_DATA*)malloc(sizeof(KINSOL_DATA));
-      ASSERT(kdata, "out of memory");
-
-      kdata->initData = initData;
-      kdata->data = data;
-
-      z = N_VNew_Serial(3*initData->nz);
+      z = N_VNew_Serial(3*initData->nVars);
       ASSERT(z, "out of memory");
 
-      sVars = N_VNew_Serial(3*initData->nz);
+      sVars = N_VNew_Serial(3*initData->nVars);
       ASSERT(sVars, "out of memory");
 
-      sEqns = N_VNew_Serial(3*initData->nz);
+      sEqns = N_VNew_Serial(3*initData->nVars);
       ASSERT(sEqns, "out of memory");
 
-      c = N_VNew_Serial(3*initData->nz);
+      c = N_VNew_Serial(3*initData->nVars);
       ASSERT(c, "out of memory");
 
       /* initial guess */
-      for(i=0; i<initData->nz; ++i)
+      for(i=0; i<initData->nVars; ++i)
       {
         NV_Ith_S(z, i) = initData->start[i];
         NV_Ith_S(z, initData->nInitResiduals+2*i+0) = NV_Ith_S(z, i) - initData->min[i];
         NV_Ith_S(z, initData->nInitResiduals+2*i+1) = NV_Ith_S(z, i) - initData->max[i];
       }
 
-      for(i=0; i<initData->nz; ++i)
+      for(i=0; i<initData->nVars; ++i)
       {
-        NV_Ith_S(sVars, i) = 1.0 / (initData->nominal[i] == 0.0 ? 1.0 : initData->nominal[i]);
+        NV_Ith_S(sVars, i) = initData->nominal ? 1.0 / initData->nominal[i] : 1.0;
         NV_Ith_S(sVars, initData->nInitResiduals+2*i+0) = NV_Ith_S(sVars, i);
         NV_Ith_S(sVars, initData->nInitResiduals+2*i+1) = NV_Ith_S(sVars, i);
 
-        NV_Ith_S(sEqns, i) = 1.0 / (initData->residualScalingCoefficients[i] == 0.0 ? 1.0 : initData->residualScalingCoefficients[i]);
+        NV_Ith_S(sEqns, i) = initData->residualScalingCoefficients ? 1.0 / initData->residualScalingCoefficients[i] : 1.0;
         NV_Ith_S(sEqns, initData->nInitResiduals+2*i+0) = NV_Ith_S(sEqns, i);
         NV_Ith_S(sEqns, initData->nInitResiduals+2*i+1) = NV_Ith_S(sEqns, i);
       }
 
-      for(i=0; i<initData->nz; ++i)
+      for(i=0; i<initData->nVars; ++i)
       {
         NV_Ith_S(c, i) =  0.0;        /* no constraint on z[i] */
         NV_Ith_S(c, initData->nInitResiduals+2*i+0) = 1.0;
@@ -196,19 +178,17 @@
       ASSERT(kmem, "out of memory");
 
       KINSetErrHandlerFn(kmem, kinsol_errorHandler, NULL);
-      KINSetUserData(kmem, kdata);
+      KINSetUserData(kmem, initData);
       KINSetConstraints(kmem, c);
       KINSetFuncNormTol(kmem, fnormtol);
       KINSetScaledStepTol(kmem, scsteptol);
       KINInit(kmem, kinsol_residuals, z);
 
       /* Call KINDense to specify the linear solver */
-      KINDense(kmem, 3*initData->nz);
+      KINDense(kmem, 3*initData->nVars);
 
       KINSetMaxSetupCalls(kmem, mset);
       /*KINSetNumMaxIters(kmem, 2000);*/
-
-      globalInitialResiduals = initData->initialResiduals;
 
       error_code = KINSol(kmem,           /* KINSol memory block */
                           z,              /* initial guess on input; solution vector */
@@ -216,17 +196,14 @@
                           sVars,          /* scaling vector, for the variable cc */
                           sEqns);         /* scaling vector for function values fval */
 
-      globalInitialResiduals = NULL;
-
       KINGetNumNonlinSolvIters(kmem, &nni);
       KINGetNumFuncEvals(kmem, &nfe);
       KINDlsGetNumJacEvals(kmem, &nje);
       KINDlsGetNumFuncEvals(kmem, &nfeD);
 
       /* solution */
-      for(i=0; i<initData->nz; ++i)
-        initData->z[i] = NV_Ith_S(z, i);
-      updateZScaled(initData);
+      for(i=0; i<initData->nVars; ++i)
+        initData->vars[i] = NV_Ith_S(z, i);
 
       DEBUG_INFO(LOG_INIT, "final kinsol statistics");
       DEBUG_INFO_AL1(LOG_INIT, "| KINGetNumNonlinSolvIters = %5ld", nni);
@@ -240,19 +217,21 @@
       N_VDestroy_Serial(sEqns);
       N_VDestroy_Serial(c);
       KINFree(&kmem);
-      free(kdata);
 
       if(error_code < 0)
         glstr++;  /* try next globalization strategy */
     }while(error_code < 0 && glstr <= KIN_LINESEARCH);
 
     if(error_code < 0)
-      THROW("kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
+    {
+      DEBUG_INFO(LOG_INIT, "kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
+      return error_code;
+    }
 
-    return 0;
+    return reportResidualValue(initData);
   }
 #else
-  int kinsol_initialization(DATA* data, INIT_DATA* initData)
+  int kinsol_initialization(INIT_DATA *initData)
   {
     THROW("no sundials/kinsol support activated");
   }

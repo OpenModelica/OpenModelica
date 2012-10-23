@@ -273,9 +273,9 @@ int mmc_GC_unwind_roots_state(mmc_GC_local_state_type local_GC_state)
   mmc_GC_state->roots.rootsStackIndex = roots_index.rootsStackIndex;
 
   /* decrease the roots size if we can */
-  //mmc_GC_state->roots = roots_decrease(mmc_GC_state->roots, mmc_GC_state->settings.roots_size);
+  /* mmc_GC_state->roots = roots_decrease(mmc_GC_state->roots, mmc_GC_state->settings.roots_size); */
   /* decrease the stack size if we can */
-  //mmc_GC_state->roots.marks = stack_decrease(mmc_GC_state->roots.marks, mmc_GC_state->settings.roots_marks_size);
+  /* mmc_GC_state->roots.marks = stack_decrease(mmc_GC_state->roots.marks, mmc_GC_state->settings.roots_marks_size); */
 
   return 0;
 
@@ -355,9 +355,9 @@ int mmc_GC_undo_roots_state(mmc_GC_local_state_type local_GC_state)
   mmc_GC_state->roots.rootsStackIndex = roots_index.rootsStackIndex;
 
   /* decrease the roots size if we can */
-  //mmc_GC_state->roots = roots_decrease(mmc_GC_state->roots, mmc_GC_state->settings.roots_size);
+  /* mmc_GC_state->roots = roots_decrease(mmc_GC_state->roots, mmc_GC_state->settings.roots_size); */
   /* decrease the stack size if we can */
-  //mmc_GC_state->roots.marks = stack_decrease(mmc_GC_state->roots.marks, mmc_GC_state->settings.roots_marks_size);
+  /* mmc_GC_state->roots.marks = stack_decrease(mmc_GC_state->roots.marks, mmc_GC_state->settings.roots_marks_size); */
 
   return 0;
 }

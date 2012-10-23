@@ -32,153 +32,161 @@
  */
 
 #include "initialization_data.h"
-#include "initialization.h" /* adrpo: for leastSquareWithLambda */
+#include "initialization.h"
 #include <math.h>
 
 /*! \fn initializeInitData
  *
- *  \param [in]  [data]
+ *  This function initialize the init-data struct.
+ *
+ *  \param [in]  [simData]
+ *
+ *  return NULL: no vars to initialize
+ *         else: initialized init-data struct
  *
  *  \author lochel
  */
-INIT_DATA *initializeInitData(DATA *data)
+INIT_DATA *initializeInitData(DATA *simData)
 {
-  long i;
-  long iz;
-  INIT_DATA* initData = NULL;
+  long i, j;
+  INIT_DATA *initData = NULL;
 
   initData = (INIT_DATA*)malloc(sizeof(INIT_DATA));
   ASSERT(initData, "out of memory");
 
-  initData->nz = 0;
+  initData->nVars = 0;
   initData->nStates = 0;
   initData->nParameters = 0;
-  initData->z = NULL;
-  initData->zScaled = NULL;
+  initData->nInitResiduals = 0;
+  initData->nStartValueResiduals = 0;
+
+  initData->vars = NULL;
   initData->start = NULL;
   initData->min = NULL;
   initData->max = NULL;
   initData->nominal = NULL;
   initData->name = NULL;
 
-  initData->nInitResiduals = 0;
-  initData->nStartValueResiduals = 0;
+  initData->initialResiduals = NULL;
   initData->residualScalingCoefficients = NULL;
   initData->startValueResidualScalingCoefficients = NULL;
 
+  initData->simData = simData;
+
   /* count unfixed states */
-  for(i=0; i<data->modelData.nStates; ++i)
-    if(data->modelData.realVarsData[i].attribute.fixed == 0)
-      ++initData->nz;
-  initData->nStates = initData->nz;
+  for(i=0; i<simData->modelData.nStates; ++i)
+    if(simData->modelData.realVarsData[i].attribute.fixed == 0)
+      ++initData->nVars;
+  initData->nStates = initData->nVars;
 
   /* plus unfixed real-parameters */
-  for(i=0; i<data->modelData.nParametersReal; ++i)
-    if(data->modelData.realParameterData[i].attribute.fixed == 0)
-      ++initData->nz;
-  initData->nParameters = initData->nz - initData->nStates;
+  for(i=0; i<simData->modelData.nParametersReal; ++i)
+    if(simData->modelData.realParameterData[i].attribute.fixed == 0)
+      ++initData->nVars;
+  initData->nParameters = initData->nVars - initData->nStates;
 
-  if(initData->nz == 0)
+  if(initData->nVars == 0)
+  {
+    free(initData);
     return NULL;
+  }
 
-  initData->z = (double*)calloc(initData->nz, sizeof(double));
-  ASSERT(initData->z, "out of memory");
+  initData->vars = (double*)calloc(initData->nVars, sizeof(double));
+  ASSERT(initData->vars, "out of memory");
 
-  initData->zScaled = (double*)calloc(initData->nz, sizeof(double));
-  ASSERT(initData->zScaled, "out of memory");
-
-  initData->start = (double*)calloc(initData->nz, sizeof(double));
+  initData->start = (double*)calloc(initData->nVars, sizeof(double));
   ASSERT(initData->start, "out of memory");
 
-  initData->min = (double*)calloc(initData->nz, sizeof(double));
+  initData->min = (double*)calloc(initData->nVars, sizeof(double));
   ASSERT(initData->min, "out of memory");
 
-  initData->max = (double*)calloc(initData->nz, sizeof(double));
+  initData->max = (double*)calloc(initData->nVars, sizeof(double));
   ASSERT(initData->max, "out of memory");
 
-  initData->nominal = (double*)calloc(initData->nz, sizeof(double));
+  initData->nominal = (double*)calloc(initData->nVars, sizeof(double));
   ASSERT(initData->nominal, "out of memory");
 
-  initData->name = (char**)calloc(initData->nz, sizeof(char*));
+  initData->name = (char**)calloc(initData->nVars, sizeof(char*));
   ASSERT(initData->name, "out of memory");
 
   /* setup initData */
   DEBUG_INFO(LOG_INIT, "initial problem:");
-  DEBUG_INFO_AL3(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters)", initData->nz, initData->nStates, initData->nParameters);
-  for(i=0, iz=0; i<data->modelData.nStates; ++i)
+  DEBUG_INFO_AL3(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters)", initData->nVars, initData->nStates, initData->nParameters);
+  
+  /* i: all states; j: all unfixed vars */
+  for(i=0, j=0; i<simData->modelData.nStates; ++i)
   {
-    if(data->modelData.realVarsData[i].attribute.fixed == 0)
+    if(simData->modelData.realVarsData[i].attribute.fixed == 0)
     {
-      initData->name[iz] = (char*)data->modelData.realVarsData[i].info.name;
-      initData->nominal[iz] = data->modelData.realVarsData[i].attribute.useNominal ? fabs(data->modelData.realVarsData[i].attribute.nominal) : 1.0;
-      if(initData->nominal[iz] == 0.0)
+      initData->name[j] = (char*)simData->modelData.realVarsData[i].info.name;
+      initData->nominal[j] = simData->modelData.realVarsData[i].attribute.useNominal ? fabs(simData->modelData.realVarsData[i].attribute.nominal) : 1.0;
+      if(initData->nominal[j] == 0.0)
       {
         /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
          *                  because this breaks the FMI tests with these kind of messages:
          *                  warning | (null)(nominal=0)
          *                          | nominal value is set to 1.0
          * put it back when everything works fine.
-        WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
-        WARNING_AL("nominal value is set to 1.0");
-        */
-        initData->nominal[iz] = 1.0;
+         * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+         * WARNING_AL("nominal value is set to 1.0");
+         */
+        initData->nominal[j] = 1.0;
       }
 
-      initData->z[iz] = data->modelData.realVarsData[i].attribute.start;
-      initData->start[iz] = data->modelData.realVarsData[i].attribute.start;
-      initData->min[iz] = data->modelData.realVarsData[i].attribute.min;
-      initData->max[iz] = data->modelData.realVarsData[i].attribute.max;
+      initData->vars[j] = simData->modelData.realVarsData[i].attribute.start;
+      initData->start[j] = simData->modelData.realVarsData[i].attribute.start;
+      initData->min[j] = simData->modelData.realVarsData[i].attribute.min;
+      initData->max[j] = simData->modelData.realVarsData[i].attribute.max;
 
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] Real %s(start=%g, nominal=%g)", iz+1, initData->name[iz], initData->start[iz], initData->nominal[iz]);
-      iz++;
+      DEBUG_INFO_AL5(LOG_INIT, "| | [%ld] Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      j++;
     }
   }
 
-  for(i=0; i<data->modelData.nParametersReal; ++i)
+  /* i: all parameters; j: all unfixed vars */
+  for(i=0; i<simData->modelData.nParametersReal; ++i)
   {
-    if(data->modelData.realParameterData[i].attribute.fixed == 0)
+    if(simData->modelData.realParameterData[i].attribute.fixed == 0)
     {
-      initData->name[iz] = (char*)data->modelData.realParameterData[i].info.name;
-      initData->nominal[iz] = fabs(data->modelData.realParameterData[i].attribute.nominal);
-      if(initData->nominal[iz] == 0.0)
+      initData->name[j] = (char*)simData->modelData.realParameterData[i].info.name;
+      initData->nominal[j] = fabs(simData->modelData.realParameterData[i].attribute.nominal);
+      if(initData->nominal[j] == 0.0)
       {
         /* adrpo 2012-05-08 disable the warning for now until the whole infrastructure is in place
          *                  because this breaks the FMI tests with these kind of messages:
          *                  warning | (null)(nominal=0)
          *                          | nominal value is set to 1.0
          * put it back when everything works fine.
-        WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
-        WARNING_AL("nominal value is set to 1.0");
-        */
-        initData->nominal[iz] = 1.0;
+         * WARNING2("%s(nominal=%g)", initData->name[iz], initData->nominal[iz]);
+         * WARNING_AL("nominal value is set to 1.0");
+         */
+        initData->nominal[j] = 1.0;
       }
 
-      initData->z[iz] = data->modelData.realParameterData[i].attribute.start;
-      initData->start[iz] = data->modelData.realParameterData[i].attribute.start;
-      initData->min[iz] = data->modelData.realParameterData[i].attribute.min;
-      initData->max[iz] = data->modelData.realParameterData[i].attribute.max;
+      initData->vars[j] = simData->modelData.realParameterData[i].attribute.start;
+      initData->start[j] = simData->modelData.realParameterData[i].attribute.start;
+      initData->min[j] = simData->modelData.realParameterData[i].attribute.min;
+      initData->max[j] = simData->modelData.realParameterData[i].attribute.max;
 
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] parameter Real %s(start=%g, nominal=%g)", iz+1, initData->name[iz], initData->start[iz], initData->nominal[iz]);
-      iz++;
+      DEBUG_INFO_AL5(LOG_INIT, "| | [%ld] parameter Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      j++;
     }
   }
-
-  updateZScaled(initData);
 
   /* equations */
-  initData->nInitResiduals = data->modelData.nInitResiduals;
+  initData->nInitResiduals = simData->modelData.nInitResiduals;
   initData->nStartValueResiduals = 0;
 
   /* for real variables */
-  for(i=0; i<data->modelData.nVariablesReal; ++i)
-    if(data->modelData.realVarsData[i].attribute.useStart)
+  for(i=0; i<simData->modelData.nVariablesReal; ++i)
+    if(simData->modelData.realVarsData[i].attribute.useStart)
       initData->nStartValueResiduals++;
   /* for real parameters */
-  for(i=0; i<data->modelData.nParametersReal; ++i)
-    if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
+  for(i=0; i<simData->modelData.nParametersReal; ++i)
+    if(simData->modelData.realParameterData[i].attribute.useStart && !simData->modelData.realParameterData[i].attribute.fixed)
       initData->nStartValueResiduals++;
 
-  DEBUG_INFO_AL3(LOG_INIT, "| number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, data->modelData.nInitEquations, data->modelData.nInitAlgorithms);
+  DEBUG_INFO_AL3(LOG_INIT, "| number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, simData->modelData.nInitEquations, simData->modelData.nInitAlgorithms);
   DEBUG_INFO_AL1(LOG_INIT, "| number of start value residuals: %ld", initData->nStartValueResiduals);
 
   initData->initialResiduals = (double*)calloc(initData->nInitResiduals, sizeof(double));
@@ -195,16 +203,18 @@ INIT_DATA *initializeInitData(DATA *data)
   for(i=0; i<initData->nStartValueResiduals; ++i)
     initData->startValueResidualScalingCoefficients[i] = 1.0;
 
-  /* for real variables *
-  j=0;
-  for(i=0; i<data->modelData.nVariablesReal; ++i)
-    if(data->modelData.realVarsData[i].attribute.useStart)
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] Real %s(start=%g)", ++j, data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start);
-  * for real parameters *
-  for(i=0; i<data->modelData.nParametersReal; ++i)
-    if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] parameter Real %s(start=%g)", ++j, data->modelData.realParameterData[i].info.name, data->modelData.realParameterData[i].attribute.start);
-  */
+  /* TODO invent new log-system
+   * * for real variables *
+   * j=0;
+   * for(i=0; i<data->modelData.nVariablesReal; ++i)
+   *   if(data->modelData.realVarsData[i].attribute.useStart)
+   *     DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] Real %s(start=%g)", ++j, data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start);
+   *  
+   * * for real parameters *
+   * for(i=0; i<data->modelData.nParametersReal; ++i)
+   *   if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
+   *     DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] parameter Real %s(start=%g)", ++j, data->modelData.realParameterData[i].info.name, data->modelData.realParameterData[i].attribute.start);
+   */
 
   return initData;
 }
@@ -217,35 +227,38 @@ INIT_DATA *initializeInitData(DATA *data)
  */
 void freeInitData(INIT_DATA *initData)
 {
-  free(initData->z);
-  free(initData->zScaled);
-  free(initData->start);
-  free(initData->min);
-  free(initData->max);
-  free(initData->nominal);
-  free(initData->name);
+  if(initData->vars)
+    free(initData->vars);
+  if(initData->start)
+    free(initData->start);
+  if(initData->min)
+    free(initData->min);
+  if(initData->max)
+    free(initData->max);
+  if(initData->nominal)
+    free(initData->nominal);
+  if(initData->name)
+    free(initData->name);
 
-  free(initData->initialResiduals);
-  free(initData->residualScalingCoefficients);
-  free(initData->startValueResidualScalingCoefficients);
+  if(initData->initialResiduals)
+    free(initData->initialResiduals);
+  if(initData->residualScalingCoefficients)
+    free(initData->residualScalingCoefficients);
+  if(initData->startValueResidualScalingCoefficients)
+    free(initData->startValueResidualScalingCoefficients);
 
   free(initData);
 }
 
 /*! \fn computeInitialResidualScalingCoefficients
  *
- *  This function calculates coefficients for every initial_residual.
- *  They describe the order of magnitude.
+ *  This function calculates scaling coefficients for every initial_residual.
  *
- *  \param [ref] [data]
- *  \param [in]  [nz] number of unfixed states and unfixed parameters
- *  \param [in]  [z] vector of unfixed states and unfixed parameters
- *  \param [in]  [zNominal] vector of nominal-values for z or NULL
- *  \param [out] [initialResidualScalingCoefficients] vector of scaling-coefficients for initial_residuals
+ *  \param [ref] [initData]
  *
  *  \author lochel
  */
-void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
+void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
 {
   long i, j, ix;
 
@@ -258,13 +271,18 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
 
   const double h = 1e-6;
 
+  DATA *data = initData->simData;
+
+  if(!(initData->nominal && initData->residualScalingCoefficients && initData->startValueResidualScalingCoefficients))
+    return;
+
   for(i=0; i<initData->nInitResiduals; ++i)
     initData->residualScalingCoefficients[i] = 1.0;
   for(i=0; i<initData->nStartValueResiduals; ++i)
     initData->startValueResidualScalingCoefficients[i] = 1.0;
 
   /* lambda = 1.0 */
-  leastSquareWithLambda(data, initData, 1.0);
+  leastSquareWithLambda(initData, 1.0);
   for(i=0; i<initData->nInitResiduals; ++i)
     tmpResidual1[i] = initData->initialResiduals[i];
 
@@ -278,12 +296,11 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
     if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
       tmpStartResidual1[ix++] = data->modelData.realParameterData[i].attribute.start - data->localData[0]->realVars[i];
 
-  for(i=0; i<initData->nz; ++i)
+  for(i=0; i<initData->nVars; ++i)
   {
-    initData->z[i] += h;
-    updateZScaled(initData);
+    initData->vars[i] += h;
 
-    leastSquareWithLambda(data, initData, 1.0);
+    leastSquareWithLambda(initData, 1.0);
     for(j=0; j<initData->nInitResiduals; ++j)
       tmpResidual2[j] = initData->initialResiduals[j];
 
@@ -299,25 +316,27 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
 
     for(j=0; j<initData->nInitResiduals; ++j)
     {
-      double f = fabs(initData->nominal[i] * (tmpResidual2[j] - tmpResidual1[j]) / h /* / tmpResidual2[j] */ );
+      double f = fabs(initData->nominal[i] * (tmpResidual2[j] - tmpResidual1[j]) / h);
       if(f > residualScalingCoefficients[j])
         residualScalingCoefficients[j] = f;
     }
 
     for(j=0; j<initData->nStartValueResiduals; ++j)
     {
-      double f = fabs(initData->nominal[i] * (tmpStartResidual2[j] - tmpStartResidual1[j]) / h /* / tmpResidual2[j] */ );
+      double f = fabs(initData->nominal[i] * (tmpStartResidual2[j] - tmpStartResidual1[j]) / h);
       if(f > startValueResidualScalingCoefficients[j])
         startValueResidualScalingCoefficients[j] = f;
     }
-    initData->z[i] -= h;
-    updateZScaled(initData);
+    initData->vars[i] -= h;
   }
 
   for(i=0; i<initData->nInitResiduals; ++i)
   {
     if(residualScalingCoefficients[i] < 1e-42)
-      initData->residualScalingCoefficients[i] = 0.0;
+    {
+      initData->residualScalingCoefficients[i] = 1.0;
+      DEBUG_INFO_AL1(LOG_INIT, "| | [%ld] residual is ineffective (scaling coefficient is set to 1.0)", i+1);
+    }
     else
       initData->residualScalingCoefficients[i] = residualScalingCoefficients[i];
   }
@@ -325,7 +344,12 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
   for(i=0; i<initData->nStartValueResiduals; ++i)
   {
     if(startValueResidualScalingCoefficients[i] < 1e-42)
-      initData->startValueResidualScalingCoefficients[i] = 0.0;
+    {
+      initData->startValueResidualScalingCoefficients[i] = 1.0;
+      /* TODO invent new log-system
+       * DEBUG_INFO_AL1(LOG_INIT, "| | [%ld] start-value residual is ineffective (scaling coefficient is set to 1.0)", i+1);
+       */
+    }
     else
       initData->startValueResidualScalingCoefficients[i] = startValueResidualScalingCoefficients[i];
   }
@@ -337,57 +361,71 @@ void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData)
   free(residualScalingCoefficients);
   free(startValueResidualScalingCoefficients);
 
-  /* dump */
-  DEBUG_INFO(LOG_INIT, "scaling coefficients:");
-  DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
-  for(i=0; i<initData->nInitResiduals; ++i)
-    DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g %s", i+1, initData->residualScalingCoefficients[i], initData->residualScalingCoefficients[i] == 0.0 ? "[ineffective]" : "");
-/*
-  DEBUG_INFO_AL(LOG_INIT, "| start value residuals");
-    for(i=0; i<initData->nStartValueResiduals; ++i)
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g %s", i+1, initData->startValueResidualScalingCoefficients[i], initData->startValueResidualScalingCoefficients[i] == 0.0 ? "[ineffective]" : "");
-*/
+  /* TODO invent new log-system
+   * DEBUG_INFO(LOG_INIT, "scaling coefficients:");
+   * DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
+   * for(i=0; i<initData->nInitResiduals; ++i)
+   *   DEBUG_INFO_AL2(LOG_INIT, "| | [%ld] %g", i+1, initData->residualScalingCoefficients[i]);
+   *
+   * DEBUG_INFO_AL(LOG_INIT, "| start value residuals");
+   * for(i=0; i<initData->nStartValueResiduals; ++i)
+   *   DEBUG_INFO_AL2(LOG_INIT, "| | [%ld] %g", i+1, initData->startValueResidualScalingCoefficients[i]);
+   */
 }
 
-void updateZ(INIT_DATA *data)
+/*! \fn setZ
+ *
+ *  This function copies the given vars vector into the init-data struct.
+ *
+ *  \param [ref] [initData]
+ *  \param [in]  [vars]
+ *
+ *  \author lochel
+ */
+void setZ(INIT_DATA *data, double *vars)
 {
   long i;
 
-  if(data->nominal)
-    for(i=0; i<data->nz; ++i)
-      data->z[i] = data->zScaled[i] * data->nominal[i];
-  else
-    THROW("updateZ failed");
+  for(i=0; i<data->nVars; ++i)
+    data->vars[i] = vars[i];
 }
 
-void updateZScaled(INIT_DATA *data)
+/*! \fn setZScaled
+ *
+ *  This function copies the given scaledVars vector into the init-data struct.
+ *
+ *  \param [ref] [initData]
+ *  \param [in]  [scaledVars]
+ *
+ *  \author lochel
+ */
+void setZScaled(INIT_DATA *data,  double *scaledVars)
 {
   long i;
 
-  if(data->nominal)
-    for(i=0; i<data->nz; ++i)
-      data->zScaled[i] = data->z[i] / data->nominal[i];
-  else
-    THROW("updateZScaled failed");
+  for(i=0; i<data->nVars; ++i)
+    data->vars[i] = data->nominal ? scaledVars[i] * data->nominal[i] : scaledVars[i];
 }
 
-void setZ(INIT_DATA *data, double *z)
+/*! \fn updateSimData
+ *
+ *  This function copies the vars vector into the simulation data struct.
+ *
+ *  \param [ref] [initData]
+ *
+ *  \author lochel
+ */
+void updateSimData(INIT_DATA *initData)
 {
-  long i;
+  long i, j;
 
-  for(i=0; i<data->nz; ++i)
-    data->z[i] = z[i];
+  /* for states */
+  for(i=0, j=0; i<initData->simData->modelData.nStates; ++i)
+    if(initData->simData->modelData.realVarsData[i].attribute.fixed==0)
+      initData->simData->localData[0]->realVars[i] = initData->vars[j++];
 
-  updateZScaled(data);
+  /* for real parameters */
+  for(i=0; i<initData->simData->modelData.nParametersReal; ++i)
+    if(initData->simData->modelData.realParameterData[i].attribute.fixed == 0)
+      initData->simData->simulationInfo.realParameter[i] = initData->vars[j++];
 }
-
-void setZScaled(INIT_DATA *data,  double *zScaled)
-{
-  long i;
-
-  for(i=0; i<data->nz; ++i)
-    data->zScaled[i] = zScaled[i];
-
-  updateZ(data);
-}
-

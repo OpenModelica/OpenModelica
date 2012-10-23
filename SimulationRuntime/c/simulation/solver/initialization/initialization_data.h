@@ -36,29 +36,31 @@
 #define _INITIALIZATION_DATA_H_
 
 #include "simulation_data.h"
-
 #include "omc_error.h"
 
 typedef struct INIT_DATA
 {
-  /* vars */
-  long nz;
+  /* counts */
+  long nVars;                                     /* nStates + nParameters */
   long nStates;
   long nParameters;
-  double* z;            /* unscaled */
-  double* zScaled;      /* scaled */
-  double* start;
-  double* min;
-  double* max;
-  double* nominal;
-  char** name;
-
-  /* equations */
   long nInitResiduals;
   long nStartValueResiduals;
+
+  /* vars */
+  double *vars;                                   /* array of all unfixed variables, states first */
+  double *start;
+  double *min;
+  double *max;
+  double *nominal;                                /* can be zero; nominal[i] not */
+  char **name;
+
+  /* equations */
   double *initialResiduals;
-  double *residualScalingCoefficients;
-  double *startValueResidualScalingCoefficients;
+  double *residualScalingCoefficients;            /* can be zero; residualScalingCoefficients[i] not */
+  double *startValueResidualScalingCoefficients;  /* can be zero; startValueResidualScalingCoefficients[i] not */
+
+  DATA *simData;                                  /* corresponding simulation-data struct */
 }INIT_DATA;
 
 #ifdef __cplusplus
@@ -67,16 +69,15 @@ extern "C"
 {
 #endif
 
-extern INIT_DATA *initializeInitData(DATA *data);
-extern void freeInitData(INIT_DATA *initData);
+  extern INIT_DATA *initializeInitData(DATA *simData);
+  extern void freeInitData(INIT_DATA *initData);
 
-extern void computeInitialResidualScalingCoefficients(DATA *data, INIT_DATA *initData);
+  extern void computeInitialResidualScalingCoefficients(INIT_DATA *initData);
 
-extern void updateZ(INIT_DATA *data);
-extern void updateZScaled(INIT_DATA *data);
+  extern void setZ(INIT_DATA *initData, double *vars);
+  extern void setZScaled(INIT_DATA *initData,  double *scaledVars);
 
-extern void setZ(INIT_DATA *data, double *z);
-extern void setZScaled(INIT_DATA *data,  double *zScaled);
+  extern void updateSimData(INIT_DATA *initData);
 
 #ifdef __cplusplus
 }

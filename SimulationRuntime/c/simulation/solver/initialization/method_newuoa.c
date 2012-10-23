@@ -58,63 +58,71 @@ void NEWUOA(long *nz,
   double *W,
   void (*leastSquare) (long *nz, double *z, double *funcValue));
 
-/*! \fn reportResidualValue
- *
- *  Returns 1 if residual is non-zero and prints appropriate error message.
- *
- *  \param [ref] [data]
- *  \param [in]  [funcValue] leastSquare-Value
- *  \param [in]  [initialResiduals]
- */
-static int reportResidualValue(DATA* data, INIT_DATA* initData, double funcValue)
-{
-  long i = 0;
-  if(funcValue > 1e-5)
-  {
-    WARNING("reportResidualValue | error in initialization. System of initial equations are not consistent");
-    WARNING1("reportResidualValue | (Least Square function value is %g)", funcValue);
+static DATA *globalData = NULL;
+static double* globalInitialResiduals = NULL;
 
-    for(i=0; i<initData->nInitResiduals; i++)
-      if(fabs(initData->initialResiduals[i]) > 1e-6)
-        INFO2("reportResidualValue | residual[%d] = %g", (int) i, initData->initialResiduals[i]);
-    return 1;
-  }
-  return 0;
+/*! \fn void leastSquare(long *nz, double *z, double *funcValue)
+*
+*  This function calculates the residual value
+*  as the sum of squared residual equations.
+*
+*  \param nz [in] number of variables
+*  \param z [in] vector of variables
+*  \param funcValue [out] result
+*/
+static void leastSquare(long *nz, double *z, double *funcValue)
+{
+  INIT_DATA initData;
+
+  initData.nVars = *nz;
+  initData.nStates = -1;
+  initData.nParameters = -1;
+  initData.nInitResiduals = 0;
+  initData.nStartValueResiduals = 0;
+
+  initData.vars = z;
+  initData.start = NULL;
+  initData.min = NULL;
+  initData.max = NULL;
+  initData.nominal = NULL;
+  initData.name = NULL;
+
+  initData.initialResiduals = globalInitialResiduals;
+  initData.residualScalingCoefficients = NULL;
+  initData.startValueResidualScalingCoefficients = NULL;
+
+  initData.simData = globalData;
+
+  *funcValue = leastSquareWithLambda(&initData, 1.0);
 }
 
-/*! \fn int newuoa_initialization(long nz, double *z)
+/*! \fn int newuoa_initialization(INIT_DATA *initData)
  *
  *  This function performs initialization using the newuoa function, which is
  *  a trust region method that forms quadratic models by interpolation.
  */
-int newuoa_initialization(DATA* data, INIT_DATA* initData)
+int newuoa_initialization(INIT_DATA *initData)
 {
   long IPRINT = DEBUG_FLAG(LOG_INIT) ? 1000 : 0;
-  long MAXFUN = 50000;
+  long MAXFUN = 5000 * initData->nVars;
   double RHOEND = 1.0e-6;
   double RHOBEG = 10;     /* This should be about one tenth of the greatest
                              expected value of a variable. Perhaps the nominal
                              value can be used for this. */
-  long NPT = 2*initData->nz+1;
-  double funcValue = 0;
-  double* nominal;
+  long NPT = 2*initData->nVars+1;
 
-  double *W = (double*)calloc((NPT+13)*(NPT+initData->nz)+3*initData->nz*(initData->nz+3)/2, sizeof(double));
+  double *W = (double*)calloc((NPT+13)*(NPT+initData->nVars)+3*initData->nVars*(initData->nVars+3)/2, sizeof(double));
+  ASSERT(W, "out of memory");
 
-  globalData = data;
+  globalData = initData->simData;
   globalInitialResiduals = initData->initialResiduals;
 
-  ASSERT(W, "out of memory");
-  NEWUOA(&initData->nz, &NPT, initData->z, &RHOBEG, &RHOEND, &IPRINT, &MAXFUN, W, leastSquare);
+  NEWUOA(&initData->nVars, &NPT, initData->vars, &RHOBEG, &RHOEND, &IPRINT, &MAXFUN, W, leastSquare);
   free(W);
 
   globalData = NULL;
   globalInitialResiduals = NULL;
 
   /* Calculate the residual to verify that equations are consistent. */
-  nominal = initData->nominal;
-  initData->nominal = NULL;
-  funcValue = leastSquareWithLambda(data, initData, 1.0);
-  initData->nominal = nominal;
-  return reportResidualValue(data, initData, funcValue);
+  return reportResidualValue(initData);
 }

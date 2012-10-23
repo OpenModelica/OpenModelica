@@ -62,58 +62,72 @@ void NELMEAD(double *z,
   void (*leastSquare) (long *nz, double *z, double *funcValue),
   long *IFAULT);
 
-/*! \fn reportResidualValue
- *
- *  Returns 1 if residual is non-zero and prints appropriate error message.
- *
- *  \param [ref] [data]
- *  \param [in]  [funcValue] leastSquare-Value
- *  \param [in]  [initialResiduals]
- */
-static int reportResidualValue(DATA* data, INIT_DATA* initData, double funcValue)
-{
-  long i = 0;
-  if(funcValue > 1e-5)
-  {
-    WARNING("reportResidualValue | error in initialization. System of initial equations are not consistent");
-    WARNING1("reportResidualValue | (Least Square function value is %g)", funcValue);
+static DATA *globalData = NULL;
+static double* globalInitialResiduals = NULL;
 
-    for(i=0; i<initData->nInitResiduals; i++)
-      if(fabs(initData->initialResiduals[i]) > 1e-6)
-        INFO2("reportResidualValue | residual[%d] = %g", (int) i, initData->initialResiduals[i]);
-    return 1;
-  }
-  return 0;
+/*! \fn void leastSquare(long *nz, double *z, double *funcValue)
+*
+*  This function calculates the residual value
+*  as the sum of squared residual equations.
+*
+*  \param [in]  [nz] number of variables
+*  \param [in]  [z] vector of variables
+*  \param [out] [funcValue] result
+*/
+static void leastSquare(long *nz, double *z, double *funcValue)
+{
+  INIT_DATA initData;
+
+  initData.nVars = *nz;
+  initData.nStates = -1;
+  initData.nParameters = -1;
+  initData.nInitResiduals = 0;
+  initData.nStartValueResiduals = 0;
+
+  initData.vars = z;
+  initData.start = NULL;
+  initData.min = NULL;
+  initData.max = NULL;
+  initData.nominal = NULL;
+  initData.name = NULL;
+
+  initData.initialResiduals = globalInitialResiduals;
+  initData.residualScalingCoefficients = NULL;
+  initData.startValueResidualScalingCoefficients = NULL;
+
+  initData.simData = globalData;
+
+  *funcValue = leastSquareWithLambda(&initData, 1.0);
 }
 
-/*! \fn int simplex_initialization(long nz,double *z)
+/*! \fn int simplex_initialization(DATA* data, INIT_DATA* initData)
  *
  *  This function performs initialization by using the simplex algorithm.
  *  This does not require a jacobian for the residuals.
  */
-int simplex_initialization(DATA* data, INIT_DATA* initData)
+int simplex_initialization(INIT_DATA* initData)
 {
   int ind = 0;
   double funcValue = 0;
-  double *STEP = (double*)malloc(initData->nz * sizeof(double));
-  double *VAR = (double*)malloc(initData->nz * sizeof(double));
   double STOPCR = 0, SIMP = 0;
   long IPRINT = 0, NLOOP = 0, IQUAD = 0, IFAULT = 0, MAXF = 0;
-  double* nominal;
+
+  double *STEP = (double*)malloc(initData->nVars * sizeof(double));
+  double *VAR = (double*)malloc(initData->nVars * sizeof(double));
   ASSERT(STEP, "out of memory");
   ASSERT(VAR, "out of memory");
 
   /* Start with stepping .5 in each direction. */
-  for(ind = 0; ind<initData->nz; ind++)
+  for(ind = 0; ind<initData->nVars; ind++)
   {
     /* some kind of scaling */
-    STEP[ind] = (initData->z[ind] !=0.0 ? fabs(initData->z[ind])/1000.0 : 1);    /* 1.0 */
+    STEP[ind] = (initData->vars[ind] !=0.0 ? fabs(initData->vars[ind])/1000.0 : 1);    /* 1.0 */
     VAR[ind]  = 0.0;
   }
 
   /* Set max. no. of function evaluations = 5000, print every 100. */
 
-  MAXF = 5000 * initData->nz;
+  MAXF = 5000 * initData->nVars;
   IPRINT = DEBUG_FLAG(LOG_INIT) ? 1000 : -1;
 
   /* Set value for stopping criterion.   Stopping occurs when the
@@ -121,7 +135,7 @@ int simplex_initialization(DATA* data, INIT_DATA* initData)
   * the points of the current simplex < stopcr. */
 
   STOPCR = 1.e-12;
-  NLOOP = initData->nz;
+  NLOOP = initData->nVars;
 
   /* Fit a quadratic surface to be sure a minimum has been found. */
 
@@ -134,17 +148,14 @@ int simplex_initialization(DATA* data, INIT_DATA* initData)
   SIMP = 1.e-12;
 
   /* Now call NELMEAD to do the work. */
-  nominal = initData->nominal;
-  initData->nominal = NULL;
-  funcValue = leastSquareWithLambda(data, initData, 1.0);
-  initData->nominal = nominal;
+  funcValue = leastSquareWithLambda(initData, 1.0);
 
   if(fabs(funcValue) != 0)
   {
-    globalData = data;
+    globalData = initData->simData;
     globalInitialResiduals = initData->initialResiduals;
 
-    NELMEAD(initData->z,STEP, &initData->nz, &funcValue, &MAXF, &IPRINT, &STOPCR, &NLOOP, &IQUAD, &SIMP, VAR, leastSquare, &IFAULT);
+    NELMEAD(initData->vars, STEP, &initData->nVars, &funcValue, &MAXF, &IPRINT, &STOPCR, &NLOOP, &IQUAD, &SIMP, VAR, leastSquare, &IFAULT);
 
     globalData = NULL;
     globalInitialResiduals = NULL;
@@ -154,16 +165,12 @@ int simplex_initialization(DATA* data, INIT_DATA* initData)
     DEBUG_INFO1(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
 
-  nominal = initData->nominal;
-  initData->nominal = NULL;
-  funcValue = leastSquareWithLambda(data, initData, 1.0);
-  initData->nominal = nominal;
-
+  funcValue = leastSquareWithLambda(initData, 1.0);
   DEBUG_INFO1(LOG_INIT, "leastSquare=%g", funcValue);
 
   if(IFAULT == 1)
   {
-    if(funcValue > SIMP)
+    if(SIMP < funcValue)
     {
       WARNING1("Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
       return -1;
@@ -172,17 +179,17 @@ int simplex_initialization(DATA* data, INIT_DATA* initData)
   else if(IFAULT == 2)
   {
     WARNING("Error in initialization. Inconsistent initial conditions.");
-    return -1;
+    return -2;
   }
   else if(IFAULT == 3)
   {
     WARNING("Error in initialization. Number of initial values to calculate < 1");
-    return -1;
+    return -3;
   }
   else if(IFAULT == 4)
   {
     WARNING("Error in initialization. Internal error, NLOOP < 1.");
-    return -1;
+    return -4;
   }
-  return reportResidualValue(data, initData, funcValue);
+  return reportResidualValue(initData);
 }
