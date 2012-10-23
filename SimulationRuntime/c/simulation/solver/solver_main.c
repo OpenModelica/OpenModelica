@@ -261,14 +261,14 @@ int solver_main(DATA* data, const char* init_initMethod,
       solverInfo.offset = solverInfo.currentTime - solverInfo.laststep;
       if (solverInfo.offset + DBL_EPSILON > simInfo->stepSize)
         solverInfo.offset = 0;
-      DEBUG_INFO1(LOG_SOLVER, "Offset value for the next step: %g", solverInfo.offset);
+      DEBUG_INFO1(LOG_SOLVER, "Offset value for the next step: %.10f", solverInfo.offset);
     } else {
       solverInfo.offset = 0;
     }
     solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
     if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime) {
       solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
-      DEBUG_INFO1(LOG_SOLVER, "Correct currentStepSize : %g", solverInfo.currentStepSize);
+      DEBUG_INFO1(LOG_SOLVER, "Correct currentStepSize : %.10f", solverInfo.currentStepSize);
     }
     /******** End calculation next step size ********/
 
@@ -277,7 +277,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
     }
 
-    DEBUG_INFO2(LOG_SOLVER, "Call Solver from %f to %f", solverInfo.currentTime,
+    DEBUG_INFO2(LOG_SOLVER, "Call Solver from %.10f to %.10f", solverInfo.currentTime,
         solverInfo.currentTime + solverInfo.currentStepSize);
 
     /*

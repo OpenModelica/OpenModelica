@@ -270,14 +270,12 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     return retVal;
   }
 
-  DEBUG_INFO2(LOG_SOLVER, "**Calling DDASRT from %g to %g",
+  DEBUG_INFO2(LOG_SOLVER, "**Calling DDASRT from %.10f to %.10f",
       solverInfo->currentTime, tout);
   do
   {
-    DEBUG_INFO2(LOG_DEBUG, "**Start step %g to %g", solverInfo->currentTime, tout);
+    DEBUG_INFO2(LOG_SOLVER, "**Start step %.10f to %.10f", solverInfo->currentTime, tout);
     if (dasslData->idid == 1){
-      DEBUG_INFO(LOG_DEBUG, "Rotate Ringbuffer!");
-
       /* rotate RingBuffer before step is calculated */
       rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
       sData = (SIMULATION_DATA*) simData->localData[0];

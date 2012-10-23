@@ -398,6 +398,7 @@ modelica_boolean checkForNewEvent(DATA* data, LIST *eventList)
       DEBUG_INFO4(LOG_ZEROCROSSINGS, "ZeroCrossing ID: %ld \t old = %g \t current = %g \t Direction = %d",
                   i, data->simulationInfo.zeroCrossingsPre[i], data->simulationInfo.zeroCrossings[i], data->simulationInfo.zeroCrossingEnabled[i]);
 
+      /*
       if (data->simulationInfo.zeroCrossingsPre[i] == 0)
         {
           if (data->simulationInfo.zeroCrossings[i] > 0 && data->simulationInfo.zeroCrossingEnabled[i] <= -1)
@@ -413,8 +414,9 @@ modelica_boolean checkForNewEvent(DATA* data, LIST *eventList)
               listPushFront(eventList, &(data->simulationInfo.zeroCrossingIndex[i]));
             }
         }
-      if ((data->simulationInfo.zeroCrossings[i] <= 0 && data->simulationInfo.zeroCrossingsPre[i] > 0) ||
-          (data->simulationInfo.zeroCrossings[i] >= 0 && data->simulationInfo.zeroCrossingsPre[i] < 0))
+      */
+      if ((data->simulationInfo.zeroCrossings[i] == 1 && data->simulationInfo.zeroCrossingsPre[i] == -1) ||
+          (data->simulationInfo.zeroCrossings[i] == -1 && data->simulationInfo.zeroCrossingsPre[i] == 1))
         {
           DEBUG_INFO2(LOG_EVENTS, "adding event %ld at time: %f", i, data->localData[0]->timeValue);
 
@@ -446,7 +448,7 @@ int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime){
   long event_id = 0;
   LIST_NODE* it;
 
-  DEBUG_INFO1(LOG_EVENTS, "Event Handling : %f!", *eventTime);
+  DEBUG_INFO1(LOG_EVENTS, "Event Handling : %.10f", *eventTime);
 
   data->localData[0]->timeValue = *eventTime;
 
@@ -454,7 +456,7 @@ int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime){
   for (it = listFirstNode(eventLst); it; it = listNextNode(it)) {
     event_id = *((long*) listNodeData(it));
     DEBUG_INFO_NELA1(LOG_EVENTS, "%ld", event_id);
-    if (listLen(eventLst) > 0) {
+    if (listNextNode(it) != NULL) {
       DEBUG_INFO_NELA(LOG_EVENTS, ", ");
     }
 
@@ -697,7 +699,7 @@ double biSection(DATA* data, double* a, double* b, double* states_a,
  * \param [list] [eventList]
  * \return boolean value
  *
- * Function checks for an eventlst on events
+ * Function checks for an event list on events
  */
 modelica_boolean checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventList) {
   modelica_boolean retVal;

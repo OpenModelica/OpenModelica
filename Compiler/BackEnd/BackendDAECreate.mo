@@ -3097,7 +3097,7 @@ algorithm
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));        
       then
-        ((e,true,((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))));
+        ((e,false,((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))));
     case (((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))))
       equation
         Debug.fcall(Flags.RELIDX,print, "continues LBINARY: " +& intString(numRelations) +& "\n");
@@ -3110,7 +3110,7 @@ algorithm
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
       then
-        ((e_1,true,((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))));
+        ((e_1,false,((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))));
     // function with discrete expressions generate no zerocrossing                  
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars)))) 
       equation
@@ -3128,7 +3128,7 @@ algorithm
          ((eres,relations,numRelations)) = zerocrossingindex(e_1, numRelations, relations, zc);
          {zc} = makeZeroCrossings({eres}, {eq_count}, {wc_count});
          ((eres1 as DAE.RELATION(index=itmp),zeroCrossings,_)) = zerocrossingindex(eres, numRelations, zeroCrossings, zc);         
-         Debug.fcall(Flags.RELIDX,print, "collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& " index: " +& intString(numRelations) +& "\n");
+         Debug.fcall(Flags.RELIDX,print, "collectZC result zc : "  +& ExpressionDump.printExpStr(eres) +& " index: " +& intString(itmp) +& "\n");
       then ((eres,true,((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))));  
     case ((e,((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars)))) then ((e,true,((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))));
   end matchcontinue;
@@ -3190,7 +3190,7 @@ algorithm
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));        
       then
-        ((e,true,(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));
+        ((e,false,(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));
     case (((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))))
       equation
         Debug.fcall(Flags.RELIDX,print, "continues LBINARY: " +& intString(numRelations) +& "\n");
@@ -3203,7 +3203,7 @@ algorithm
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
       then
-        ((e_1,true,(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));        
+        ((e_1,false,(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));        
     // function with discrete expressions generate no zerocrossing
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)))) 
       equation
@@ -3288,7 +3288,7 @@ algorithm
         zeroCrossings = Util.if_(itmp>0,zc_lst,zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));        
       then
-        ((e_1,true,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));          
+        ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));          
     // coditions that are zerocrossings.    
     case (((e as DAE.LUNARY(exp = e1,operator = op)),(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))))
       equation
@@ -3300,7 +3300,7 @@ algorithm
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e_1, "\n"));        
       then
-        ((e_1,true,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)))); 
+        ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)))); 
     case (((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))))
       equation
         Debug.fcall(Flags.RELIDX,print, "continues LBINARY: " +& intString(numRelations) +& "\n");
@@ -3319,7 +3319,7 @@ algorithm
         zeroCrossings = Util.if_(itmp>0,zc_lst,zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
       then
-        ((e_1,true,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));
+        ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));
     case (((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))))
       equation
         Debug.fcall(Flags.RELIDX,print, "continues LBINARY: " +& intString(numRelations) +& "\n");
@@ -3332,7 +3332,7 @@ algorithm
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
       then
-        ((e_1,true,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));          
+        ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));          
     // function with discrete expressions generate no zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)))) 
       equation
