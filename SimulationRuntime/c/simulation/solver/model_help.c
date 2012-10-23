@@ -623,6 +623,7 @@ void initializeDataStruc(DATA *data)
   /* initial build calls terminal, initial */
   data->simulationInfo.terminal = 0;
   data->simulationInfo.initial = 0;
+  data->simulationInfo.sampleActivated = 0;
 
   /* initialize model error code */
   data->simulationInfo.simulationSuccess = 0;
