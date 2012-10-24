@@ -6977,6 +6977,8 @@ template daeExpCallPre(Exp exp, Context context, Text &preExp, Text &varDecls)
   match exp
   case cr as CREF(__) then
     '$P$PRE<%cref(cr.componentRef)%>'
+  case LUNARY(operator=NOT,exp=cr as CREF(__)) then
+    '(!$P$PRE<%cref(cr.componentRef)%>)'
   case ASUB(exp = cr as CREF(__), sub = subs) then
     let cref = cref(cr.componentRef)
     '*(&$P$PRE<%cref%><%daeExpCallPreAsub(getDimensionSizes(cr.ty),subs,context,&preExp,&varDecls)%>)'
