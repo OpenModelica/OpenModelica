@@ -3989,11 +3989,7 @@ algorithm
       Integer istart,istep,istop;
       list<DAE.ComponentRef> crlst;
       
-    case ((e as DAE.LUNARY(operator = _),(vars,pa)))
-      then ((e,false,(vars,pa)));
     case ((e as DAE.LBINARY(exp1 = _),(vars,pa)))
-      then ((e,false,(vars,pa)));        
-    case ((e as DAE.RELATION(exp1 = _),(vars,pa)))
       then ((e,false,(vars,pa)));        
     case ((e as DAE.RELATION(exp1 = _),(vars,pa)))
       then ((e,false,(vars,pa)));        
