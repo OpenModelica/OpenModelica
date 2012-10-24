@@ -153,7 +153,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   }else if (flag == 3){
     /* Initial DASSL solver */
     DASSL_DATA dasslData = {0};
-    DEBUG_INFO(LOG_SOLVER, "*** Initializing DASSL");
+    DEBUG_INFO(LOG_SOLVER, "| solver | Initializing DASSL");
     dasrt_initial(data, &solverInfo, &dasslData);
     solverInfo.solverData = &dasslData;
   } else if (flag == 4){
@@ -172,13 +172,15 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time))
   {
-    WARNING("Error in initialization. Storing results and exiting.");
+    WARNING("| solver | Error in initialization. Storing results and exiting.");
     simInfo->stopTime = simInfo->startTime;
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result_writeParameterData(&(data->modelData));
-  DEBUG_INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
+  DEBUG_INFO(LOG_SOLVER, "| solver | Wrote parameters to the file after initialization (for output formats that support this)");
+  if (DEBUG_FLAG(LOG_DEBUG))
+    printParameters(data);
 
   /* initial sample and delay again, due to maybe change
    * parameters during Initialization */
@@ -192,7 +194,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes) {
     simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
     if (simInfo->sampleActivated){
-      DEBUG_INFO(LOG_SOLVER,"Sample event at start!");
+      DEBUG_INFO(LOG_SOLVER,"| solver | Sample event at beginning of the simulation");
       /*Activate sample and evaluate again */
       activateSampleEvents(data);
       /* update the whole system */
@@ -220,12 +222,12 @@ int solver_main(DATA* data, const char* init_initMethod,
     rt_accumulate( SIM_TIMER_INIT);
 
   if (data->localData[0]->timeValue >= simInfo->stopTime) {
-    DEBUG_INFO(LOG_SOLVER,"Simulation done!");
+    DEBUG_INFO(LOG_SOLVER,"| solver | Simulation done!");
     solverInfo.currentTime = simInfo->stopTime;
   }
 
-  DEBUG_INFO(LOG_SOLVER, "Performed initial value calculation.");
-  DEBUG_INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
+  DEBUG_INFO(LOG_SOLVER, "| solver | Performed initial value calculation.");
+  DEBUG_INFO2(LOG_SOLVER, "| solver | Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
 
   if (measure_time_flag) {
     char* filename = (char*) calloc(((size_t)strlen(data->modelData.modelFilePrefix)+1+11),sizeof(char));
@@ -239,6 +241,9 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
     free(filename);
   }
+
+  if (DEBUG_FLAG(LOG_DEBUG))
+    printAllVars(data, 0);
 
   /*
    * Start main simulation loop
@@ -261,14 +266,14 @@ int solver_main(DATA* data, const char* init_initMethod,
       solverInfo.offset = solverInfo.currentTime - solverInfo.laststep;
       if (solverInfo.offset + DBL_EPSILON > simInfo->stepSize)
         solverInfo.offset = 0;
-      DEBUG_INFO1(LOG_SOLVER, "Offset value for the next step: %.10f", solverInfo.offset);
+      DEBUG_INFO1(LOG_SOLVER, "| solver | Offset value for the next step: %.10f", solverInfo.offset);
     } else {
       solverInfo.offset = 0;
     }
     solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
     if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime) {
       solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
-      DEBUG_INFO1(LOG_SOLVER, "Correct currentStepSize : %.10f", solverInfo.currentStepSize);
+      DEBUG_INFO1(LOG_SOLVER, "| solver | Correct currentStepSize : %.10f", solverInfo.currentStepSize);
     }
     /******** End calculation next step size ********/
 
@@ -277,7 +282,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
     }
 
-    DEBUG_INFO2(LOG_SOLVER, "Call Solver from %.10f to %.10f", solverInfo.currentTime,
+    DEBUG_INFO2(LOG_SOLVER, "| solver | Call Solver from %.10f to %.10f", solverInfo.currentTime,
         solverInfo.currentTime + solverInfo.currentStepSize);
 
     /*
@@ -296,7 +301,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       rt_tick(SIM_TIMER_EVENT);
     /* Check for Events */
     if (checkForNewEvent(data, solverInfo.eventLst)) {
-      DEBUG_INFO(LOG_SOLVER,"###### STATE EVENT DONE ########");
+
       if (!solverInfo.solverRootFinding){
         findRoot(data, solverInfo.eventLst, &(solverInfo.currentTime));
       }
@@ -305,13 +310,16 @@ int solver_main(DATA* data, const char* init_initMethod,
       /*determined discrete system */
       handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
 
+      if (checkForNewEvent(data, solverInfo.eventLst))
+        WARNING("| solver | some unhandeled events, event iteration need!");
+
       solverInfo.stateEvents++;
       solverInfo.didEventStep = 1;
       /* due to an event overwrite old values */
       overwriteOldSimulationData(data);
     /* check for sample events */
     } else if (simInfo->sampleActivated) {
-      DEBUG_INFO(LOG_SOLVER,"###### TIME EVENT DONE ########");
+      DEBUG_INFO(LOG_SOLVER,"| solver | sample event occurs at time: ");
       handleSampleEvent(data);
       solverInfo.sampleEvents++;
       solverInfo.didEventStep = 1;
@@ -361,6 +369,9 @@ int solver_main(DATA* data, const char* init_initMethod,
       }
     }
     sim_result_emit(data);
+
+    if (DEBUG_FLAG(LOG_DEBUG))
+      printAllVars(data, 0);
 
     /********* end of Emit this time step *********/
 

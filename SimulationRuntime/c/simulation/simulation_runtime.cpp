@@ -346,7 +346,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     string* method = (string*) getFlagValue("s", argc, argv);
     if(!(method == NULL)){
       data->simulationInfo.solverMethod = method->c_str();
-      DEBUG_INFO_AL1(LOG_SOLVER, "| overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
+      DEBUG_INFO_AL1(LOG_SOLVER, " | overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
     }
   }
 
@@ -435,26 +435,16 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
     return 1;
   }
-  if (DEBUG_FLAG(LOG_SOLVER)) {
-    cout << "Allocated simulation result data storage for method '"
-        << sim_result->result_type() << "' and file='" << result_file_cstr
-        << "'" << endl; fflush(NULL);
-  }
+  DEBUG_INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", sim_result->result_type(), result_file_cstr.c_str());
 
   if (simData->simulationInfo.solverMethod == std::string("")) {
-    if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "No solver is set, using dassl." << endl; fflush(NULL);
-    }
+    DEBUG_INFO(LOG_SOLVER, " | No solver is set, using dassl.");
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (simData->simulationInfo.solverMethod == std::string("euler")) {
-    if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
-    }
+    DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 1, outVars);
   } else if (simData->simulationInfo.solverMethod == std::string("rungekutta")) {
-    if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
-    }
+    DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
   } else if (simData->simulationInfo.solverMethod == std::string("dassl") ||
               simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
@@ -463,47 +453,35 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
               simData->simulationInfo.solverMethod == std::string("dasslNumJac") ||
               simData->simulationInfo.solverMethod == std::string("dasslColorSymJac") ||
               simData->simulationInfo.solverMethod == std::string("dasslColorNumJac")) {
-    if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
-    }
+
+    DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (simData->simulationInfo.solverMethod == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
-      cout << "Recognized solver: " << simData->simulationInfo.solverMethod
-          << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER."
-          << endl; fflush(NULL);
+      DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.", simData->simulationInfo.solverMethod);
       retVal = 1;
     } else {
-      if (DEBUG_FLAG(LOG_SOLVER)) {
-        cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
-      }
+      DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
       retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
   } else if (simData->simulationInfo.solverMethod == std::string("inline-rungekutta")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
-      cout << "Recognized solver: " << simData->simulationInfo.solverMethod
-          << ", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK."
-          << endl; fflush(NULL);
+      DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.", simData->simulationInfo.solverMethod);
       retVal = 1;
     } else {
-      if (DEBUG_FLAG(LOG_SOLVER)) {
-        cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
-      }
+      DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
       retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
 #ifdef _OMC_QSS_LIB
   } else if (simData->simulationInfo.solverMethod == std::string("qss")) {
-    if (DEBUG_FLAG(LOG_SOLVER)) {
-      cout << "Recognized solver: " << simData->simulationInfo.solverMethod << "." << endl; fflush(NULL);
-    }
+    DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
                       simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
                       simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
 #endif
   } else {
-    cout << "Unrecognized solver: " << simData->simulationInfo.solverMethod
-        << "; valid solvers are dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslColorNumJac, qss."
-        << endl; fflush(NULL);
+    DEBUG_INFO1(LOG_SOLVER, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
+    DEBUG_INFO(LOG_SOLVER, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslColorNumJac, qss.");
     retVal = 1;
   }
 

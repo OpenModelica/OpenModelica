@@ -69,6 +69,8 @@ void saveZeroCrossings(DATA *data);
 void copyStartValuestoInitValues(DATA *data);
 
 void printAllVars(DATA *data, int ringSegment);
+void printParameters(DATA *data);
+void printRelations(DATA *data);
 
 void overwriteOldSimulationData(DATA *data);
 

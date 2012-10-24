@@ -138,7 +138,7 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
       WARNING_AL2("  %-15s [%s]", dasslMethodStr[i], dasslMethodStrDescStr[i]);
     THROW("see last warning");
   }else{
-    DEBUG_INFO2(LOG_SOLVER,"Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
+    DEBUG_INFO2(LOG_SOLVER,"| solver | Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
   }
 
 
@@ -183,7 +183,7 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
       dasslData->dasslMethod == DASSL_COLOREDNUMJAC ||
       dasslData->dasslMethod == DASSL_TEST){
     if (initialAnalyticJacobianA(simData)){
-      DEBUG_INFO(LOG_SOLVER,"Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
+      DEBUG_INFO(LOG_SOLVER,"| solver | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
       dasslData->dasslMethod = DASSL_RT;
     }else{
       dasslData->info[4] = 1; /* use sub-routine JAC */
@@ -237,12 +237,12 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   DASSL_DATA *dasslData = (DASSL_DATA*) solverInfo->solverData;
   modelica_real* stateDer = sDataOld->realVars + simData->modelData.nStates;
   dasslData->rpar = (double*) (void*) simData;
-  ASSERT(dasslData->rpar, "simDat could not passed to DASSL");
+  ASSERT(dasslData->rpar, "| DDASRT | could not passed to DDASRT");
 
   /* If an event is triggered and processed restart dassl. */
   if (solverInfo->didEventStep)
   {
-    DEBUG_INFO(LOG_EVENTS, "Event-management forced reset of DDASRT");
+    DEBUG_INFO(LOG_EVENTS, "| events | Event-management forced reset of DDASRT");
     /* obtain reset */
     dasslData->info[0] = 0;
     dasslData->idid = 0;
@@ -255,8 +255,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
    * else will dassl get in trouble. If that is the case we skip the current step. */
   if (solverInfo->currentTime - tout >= -1e-13)
   {
-    DEBUG_INFO(LOG_SOLVER, "**Desired step to small try next one");
-    DEBUG_INFO(LOG_SOLVER, "**Interpolate linear");
+    DEBUG_INFO(LOG_SOLVER, "| DDASRT | Desired step to small try next one");
+    DEBUG_INFO(LOG_SOLVER, "| DDASRT | Interpolate linear");
 
     for (i = 0; i < simData->modelData.nStates; i++)
     {
@@ -270,11 +270,11 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     return retVal;
   }
 
-  DEBUG_INFO2(LOG_SOLVER, "**Calling DDASRT from %.10f to %.10f",
+  DEBUG_INFO2(LOG_SOLVER, "| DDASRT | Calling DDASRT from %.10f to %.10f",
       solverInfo->currentTime, tout);
   do
   {
-    DEBUG_INFO2(LOG_SOLVER, "**Start step %.10f to %.10f", solverInfo->currentTime, tout);
+    DEBUG_INFO2(LOG_SOLVER, "|        | Start step %.10f to %.10f", solverInfo->currentTime, tout);
     if (dasslData->idid == 1){
       /* rotate RingBuffer before step is calculated */
       rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
@@ -355,7 +355,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     {
       fflush(stderr);
       fflush(stdout);
-      DEBUG_INFO(LOG_SOLVER, "DDASRT will try again...");
+      WARNING("| DDASRT | A large amount of work has been expended.(About 500 steps). Trying to continue ...");
+      DEBUG_INFO(LOG_SOLVER, "| DDASRT | DASSL will try again...");
       dasslData->info[0] = 1; /* try again */
     }
     else if (dasslData->idid < 0)
@@ -366,7 +367,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       solverInfo->currentTime = solverInfo->currentTime + solverInfo->currentStepSize;
       sData->timeValue = solverInfo->currentTime;
       functionODE(simData);
-      INFO1("DASRT can't continue. time = %f", sData->timeValue);
+      WARNING1("| DDASRT |  can't continue. time = %f", sData->timeValue);
       return retVal;
     }
 
@@ -381,16 +382,17 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
   if (DEBUG_FLAG(LOG_SOLVER))
   {
-    INFO1("DASSL call | value of idid: %d", dasslData->idid);
-    INFO1("DASSL call | current time value: %0.4g", solverInfo->currentTime);
-    INFO1("DASSL call | current integration time value: %0.4g", dasslData->rwork[3]);
-    INFO1("DASSL call | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
-    INFO1("DASSL call | step size used on last successful step: %0.4g", dasslData->rwork[6]);
-    INFO1("DASSL call | number of steps taken so far: %d", dasslData->iwork[10]);
-    INFO1("DASSL call | number of calls of functionODE() : %d", dasslData->iwork[11]);
-    INFO1("DASSL call | number of calculation of jacobian : %d", dasslData->iwork[12]);
-    INFO1("DASSL call | total number of convergence test failures: %d", dasslData->iwork[13]);
-    INFO1("DASSL call | total number of error test failures: %d", dasslData->iwork[14]);
+    INFO("| DDASRT | dassl call staistics: ");
+    INFO_AL1("          | value of idid: %d", dasslData->idid);
+    INFO_AL1("          | current time value: %0.4g", solverInfo->currentTime);
+    INFO_AL1("          | current integration time value: %0.4g", dasslData->rwork[3]);
+    INFO_AL1("          | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
+    INFO_AL1("          | step size used on last successful step: %0.4g", dasslData->rwork[6]);
+    INFO_AL1("          | number of steps taken so far: %d", dasslData->iwork[10]);
+    INFO_AL1("          | number of calls of functionODE() : %d", dasslData->iwork[11]);
+    INFO_AL1("          | number of calculation of jacobian : %d", dasslData->iwork[12]);
+    INFO_AL1("          | total number of convergence test failures: %d", dasslData->iwork[13]);
+    INFO_AL1("          | total number of error test failures: %d", dasslData->iwork[14]);
   }
   /* save dassl stats */
   for (ui = 0; ui < numStatistics; ui++)
@@ -400,7 +402,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   }
 
 
-  DEBUG_INFO(LOG_SOLVER, "*** Finished DDASRT step! ***");
+  DEBUG_INFO(LOG_SOLVER, "| DDASRT | Finished DDASRT step.");
 
   return retVal;
 }
@@ -506,39 +508,14 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
 
   function_ZeroCrossings(data, gout, t);
 
-  DEBUG_INFO1(LOG_ZEROCROSSINGS, "Check ZeroCrossing at time: %g", *t);
-  for (i=0; i < *ng; i++) {
-    DEBUG_INFO_NELA1(LOG_ZEROCROSSINGS, "ZeroCrossing %d : ", i);
-    DEBUG_INFO_NELA1(LOG_ZEROCROSSINGS, " %d ", data->simulationInfo.zeroCrossingEnabled[i]);
-
-    DEBUG_INFO_NELA1(LOG_ZEROCROSSINGS, " %g \n", gout[i]);
-
-    /* For the first evaluation  gout[i] != 0 has to be
-     * of ZeroCrossings by dassl.
-     *
-     */
-    /*
-    if (!(data->simulationInfo.zeroCrossingEnabled[i]==0)){
-      if (gout[i] == 0.0 && data->simulationInfo.zeroCrossingEnabled[i] >=1){
-        gout[i] = DBL_EPSILON;
-      } else if (gout[i] == 0.0 && data->simulationInfo.zeroCrossingEnabled[i] <= -1){
-        gout[i] = -DBL_EPSILON;
-      }
-    }else{
-      if (data->simulationInfo.zeroCrossingEnabled[i]==1)
-        gout[i] = 0.1;
-      else if (data->simulationInfo.zeroCrossingEnabled[i]==-1)
-        gout[i] = -0.1;
-      else{
-        if (data->simulationInfo.zeroCrossingsPre[i]>=0)
-          gout[i] = 1;
-        else if (data->simulationInfo.zeroCrossingsPre[i]<0)
-            gout[i] = -1;
-        else
-          gout[i] = 1;
+  if (DEBUG_FLAG(LOG_ZEROCROSSINGS)){
+    INFO1("| DDASRT | events | check zero crossing at time: %.10f", *t);
+    for (i=0; i < *ng; i++) {
+      if (data->simulationInfo.zeroCrossings[i] != gout[i]){
+        INFO_AL1("|                 | %s", zeroCrossingDescription[i]);
+        INFO_AL2("|                 | changed :  %s <> %s", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE", (gout[i]>0)?"TRUE ":"FALSE");
       }
     }
-    */
   }
   data->localData[0]->timeValue = timeBackup;
 

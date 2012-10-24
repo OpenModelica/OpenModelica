@@ -1082,9 +1082,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
          else
            '<%cref(stateVar)%> = <%val%>;'
       <<
-      if (DEBUG_FLAG(LOG_EVENTS)) {
-        INFO1("reinit <%cref(stateVar)%>  = %f", <%val%>);
-      }
+      DEBUG_INFO_AL1(LOG_EVENTS,"|        | reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
       <%lhs%>
       data->simulationInfo.needToIterate = 1;
@@ -1312,7 +1310,15 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings) "template functi
   let &varDecls = buffer "" /*BUFD*/
   let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFD*/)
   
+  let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>", ' 
+    ;separator="\n") 
+  
   <<
+  const char *zeroCrossingDescription[] =  
+  { 
+    <%resDesc%> 
+  }; 
+  
   int function_ZeroCrossings(DATA *data, double *gout, double *t)
   {
     state mem_state;
@@ -1377,7 +1383,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "
     match var
     case CREF_QUAL(__)
     case CREF_IDENT(__) then
-      'if(<%cref(var)%> != $P$PRE<%cref(var)%>) { DEBUG_INFO2(LOG_EVENTS, "Discrete Var <%crefStr(var)%> : <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>); needToIterate=1; }'
+      'if(<%cref(var)%> != $P$PRE<%cref(var)%>) { DEBUG_INFO_AL2(LOG_EVENTS, "| events | | Discrete Var <%crefStr(var)%> changed:  <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>); needToIterate=1; }'
       ;separator="\n")
 
   <<

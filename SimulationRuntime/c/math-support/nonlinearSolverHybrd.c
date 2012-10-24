@@ -183,7 +183,7 @@ int solveHybrd(DATA *data, int sysNumber) {
     if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
       for (i = 0; i < solverData->n; i++) {
         INFO_AL1("\t%d:", i);
-        INFO_AL2("\tx-scale = %e\tx = %e",
+        INFO_AL2("\tx-scale = %e\tx = %.15e",
             systemData->nlsxScaling[i], systemData->nlsx[i]);
         INFO_AL2("\tnlsxOld = %e\tExtrapolation = %e",
             systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
@@ -265,13 +265,13 @@ int solveHybrd(DATA *data, int sysNumber) {
         INFO_AL("### System solved! ###");
         INFO_AL2("\tSolution after:\t%d retries\t%d restarts", retries,
             retries2+retries3);
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        INFO_AL3("\tnfunc = %d\terror = %.15e\terror_scaled = %.15e", nfunc_evals, xerror, xerror_scaled );
         if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
           for (i = 0; i < solverData->n; i++) {
             INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO_AL2("\tdiag = %e\tx = %.15e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO_AL2("\tresidual Scale = %e\tresidual = %.15e",
                 solverData->resScaling[i], solverData->fvec[i]);
         }
       }

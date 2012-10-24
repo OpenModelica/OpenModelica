@@ -57,19 +57,21 @@ void updateDiscreteSystem(DATA *data)
 
   functionDAE(data);
 
+  DEBUG_INFO(LOG_EVENTS, "| events | updated discrete System.");
   while(checkForDiscreteChanges(data) || data->simulationInfo.needToIterate)
   {
-    if(data->simulationInfo.needToIterate)
-      DEBUG_INFO(LOG_EVENTS, "reinit() call. Iteration needed!");
-    else
-      DEBUG_INFO(LOG_EVENTS, "discrete Variable changed. Iteration needed!");
-
+    if (DEBUG_FLAG(LOG_EVENTS)){
+      if(data->simulationInfo.needToIterate)
+        INFO_AL("| events | | reinit() call. Iteration needed!");
+      else
+        INFO_AL("| events | | discrete Variable changed. Iteration needed.");
+    }
     storePreValues(data);
     functionDAE(data);
 
     IterationNum++;
     if(IterationNum > IterationMax)
-      THROW("ERROR: Too many event iterations. System is inconsistent!");
+      THROW("ERROR: Too many event iterations. System is inconsistent.");
   }
 }
 
@@ -100,7 +102,7 @@ void saveZeroCrossings(DATA* data)
 {
   long i = 0;
 
-  DEBUG_INFO(LOG_ZEROCROSSINGS, "Save ZeroCrossings!");
+  DEBUG_INFO(LOG_ZEROCROSSINGS, "| events | Save ZeroCrossings!");
 
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
@@ -126,8 +128,7 @@ void copyStartValuestoInitValues(DATA *data)
 
 /*! \fn printAllVars
  *
- *  prints all values as arguments it need data
- *  and which part of the ring should printed.
+ *  prints all variable values
  *
  *  \param [in]  [data]
  *  \param [in]  [ringSegment]
@@ -139,47 +140,72 @@ void printAllVars(DATA *data, int ringSegment)
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
-  INFO1("Print values for buffer segment = %d", ringSegment);
-  INFO1("all real variables regarding point in time: %e", data->localData[ringSegment]->timeValue);
-  for(i=0; i<mData->nVariablesReal; ++i){
-    INFO3("localData->realVars[%ld] = %s = %g", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+  DEBUG_INFO2(1, " Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
+  DEBUG_INFO (1, " | states variables");
+  for(i=0; i<mData->nStates; ++i){
+    DEBUG_INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  INFO("all integer variables");
+  DEBUG_INFO(1," | derivatives variables");
+  for(i=mData->nStates; i<2*mData->nStates; ++i){
+    DEBUG_INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+  }
+  DEBUG_INFO(1," | other real values");
+  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i){
+    DEBUG_INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+  }
+  DEBUG_INFO(1," | integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i){
-    INFO3("localData->integerVars[%ld] = %s = %ld", i, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
+    DEBUG_INFO3(1," | | %ld: %s = %ld", i, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
   }
-  INFO("all boolean variables");
+  DEBUG_INFO(1," | boolean variables");
   for(i=0; i<mData->nVariablesBoolean; ++i){
-    INFO3("localData->booleanVars[%ld] = %s = %s", i, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
+    DEBUG_INFO3(1," | | %ld: %s = %s", i, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
   }
-  INFO("all string variables");
+  DEBUG_INFO(1," | string variables");
   for(i=0; i<mData->nVariablesString; ++i){
-    INFO3("localData->stringVars[%ld] = %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
-  }
-  INFO("all real parameters");
-  for(i=0; i<mData->nParametersReal; ++i){
-    INFO3("mData->realParameterData[%ld] = %s = %g", i, mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.initial);
-  }
-  INFO("all integer parameters");
-  for(i=0; i<mData->nParametersInteger; ++i){
-    INFO3("mData->integerParameterData[%ld] = %s = %ld", i, mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.initial);
-  }
-  INFO("all boolean parameters");
-  for(i=0; i<mData->nParametersBoolean; ++i){
-    INFO3("mData->booleanParameterData[%ld] = %s = %s", i, mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.initial ? "true" : "false");
-  }
-  INFO("all string parameters");
-  for(i=0; i<mData->nParametersString; ++i){
-    INFO3("mData->stringParameterData[%ld] = %s = %s", i, mData->stringParameterData[i].info.name, mData->stringParameterData[i].attribute.initial);
+    DEBUG_INFO3(1," | | %ld: %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
   }
 }
 
+
+/*! \fn printParameters
+ *
+ *  prints all parameter values
+ *
+ *  \param [in]  [data]
+ *  \param [in]  [ringSegment]
+ *
+ *  \author wbraun
+ */
+void printParameters(DATA *data)
+{
+  long i;
+  MODEL_DATA *mData = &(data->modelData);
+
+  DEBUG_INFO(1," Print parameter values: ");
+  DEBUG_INFO(1," | real parameters");
+  for(i=0; i<mData->nParametersReal; ++i){
+    DEBUG_INFO3(1," | | %ld: %s = %g", i, mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.initial);
+  }
+  DEBUG_INFO(1," | integer parameters");
+  for(i=0; i<mData->nParametersInteger; ++i){
+    DEBUG_INFO3(1," | | %ld: %s = %ld", i, mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.initial);
+  }
+  DEBUG_INFO(1," | boolean parameters");
+  for(i=0; i<mData->nParametersBoolean; ++i){
+    DEBUG_INFO3(1," | | %ld: %s = %s", i, mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.initial ? "true" : "false");
+  }
+  DEBUG_INFO(1," | string parameters");
+  for(i=0; i<mData->nParametersString; ++i){
+    DEBUG_INFO3(1," | | %ld: %s = %s", i, mData->stringParameterData[i].info.name, mData->stringParameterData[i].attribute.initial);
+  }
+}
 
 /*! \fn printAllHelpVars
  *
  *  print all helpVars and corresponding pre values
  *
- *  \param [out] [data]
+ *  \param [ref] [data]
  *
  *  \author wbraun
  */
@@ -188,8 +214,27 @@ void printAllHelpVars(DATA *data)
   int i;
   for(i=0; i<data->modelData.nHelpVars; i++)
   {
-    INFO2("simulationInfo.helpVars[%d]= %c", i, data->simulationInfo.helpVars[i]?'T':'F');
-    INFO2("simulationInfo.helpVarsPre[%d]= %c", i, data->simulationInfo.helpVarsPre[i]?'T':'F');
+    DEBUG_INFO2(1," | helpVars[%d]= %c", i, data->simulationInfo.helpVars[i]?'T':'F');
+    DEBUG_INFO2(1," | - helpVarsPre[%d]= %c", i, data->simulationInfo.helpVarsPre[i]?'T':'F');
+  }
+}
+
+
+/*! \fn printRelations
+ *
+ *  print all relations
+ *
+ *  \param [ref] [data]
+ *
+ *  \author wbraun
+ */
+void printRelations(DATA *data)
+{
+  long i;
+  DEBUG_INFO(1," Saved relations state:");
+  for(i=0; i<data->modelData.nRelations; i++)
+  {
+    DEBUG_INFO2(1," | relation[%ld] = %c", i, data->simulationInfo.backupRelations[i]?'T':'F');
   }
 }
 

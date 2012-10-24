@@ -156,6 +156,12 @@ extern int function_ZeroCrossings(DATA *data, double* gout, double* t);
 extern int function_updateSample(DATA *data);
 extern int checkForDiscreteChanges(DATA *data);
 
+/*! \var zeroCrossingDescription
+ *
+ * This variable contains a description string for zero crossing condition
+ */
+extern const char *zeroCrossingDescription[];
+
 /* function for initializing time instants when sample() is activated */
 extern void function_sampleInit(DATA *data);
 extern void function_initMemoryState(void);
