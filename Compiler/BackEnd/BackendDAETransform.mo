@@ -1444,7 +1444,7 @@ algorithm
   end matchcontinue;
 end getEquationAndSolvedVarIndxes;
 
-public function splitMixedEquations "function: splitMixedEquations
+protected function splitMixedEquations "function: splitMixedEquations
   author: PA
 
   Splits the equation of a mixed equation system into its continuous and
@@ -1476,9 +1476,10 @@ public function splitMixedEquations "function: splitMixedEquations
   output list<Integer> indxdiscVarLst;
 algorithm
   (contEqnLst,contVarLst,discEqnLst,discVarLst,indxcontEqnLst,indxcontVarLst,indxdiscEqnLst,indxdiscVarLst):=
-  match (eqnLst, indxEqnLst, varLst, indxVarLst)
+  matchcontinue (eqnLst, indxEqnLst, varLst, indxVarLst)
     local list<tuple<BackendDAE.Equation,Integer>> eqnindxlst;
-    case (_,_,_,_) equation
+    case (_,_,_,_) 
+      equation
       (discVarLst,contVarLst,indxdiscVarLst,indxcontVarLst) = splitVars(varLst,indxVarLst,BackendDAEUtil.isVarDiscrete,{},{},{},{});
       eqnindxlst = List.map1(discVarLst,findDiscreteEquation,(eqnLst,indxEqnLst));
       discEqnLst = List.map(eqnindxlst,Util.tuple21);
@@ -1486,10 +1487,15 @@ algorithm
       contEqnLst = List.setDifferenceOnTrue(eqnLst,discEqnLst,BackendEquation.equationEqual);
       indxcontEqnLst = List.setDifferenceOnTrue(indxEqnLst,indxdiscEqnLst,intEq);
     then (contEqnLst,contVarLst,discEqnLst,discVarLst,indxcontEqnLst,indxcontVarLst,indxdiscEqnLst,indxdiscVarLst);
-  end match;
+    case (_,_,_,_) 
+      equation
+        BackendDump.dumpVars(varLst);        
+        BackendDump.dumpEqns(eqnLst);      
+    then fail();
+  end matchcontinue;  
 end splitMixedEquations;
 
-public function splitVars
+protected function splitVars
   "Helper function to splitMixedEquations."
   input list<Type_a> inList;
   input list<Type_b> inListb;
@@ -1532,7 +1538,7 @@ algorithm
   end match;
 end splitVars;
 
-public function splitVars1
+protected function splitVars1
   "Helper function to splitVars."
   input Type_a inHead;
   input list<Type_a> inRest;
@@ -2287,14 +2293,14 @@ protected
   BackendDAE.StateOrder so;
 algorithm
   (e,so) := inTpl;
-  outTpl := Expression.traverseExp(e,replaceStateOrderExpFinder,so);
+  outTpl := Expression.traverseExpTopDown(e,replaceStateOrderExpFinder,so);
 end replaceStateOrderExp;
 
 protected function replaceStateOrderExpFinder
 "function: replaceStateOrderExpFinder
   author: Frenkel TUD 2011-05 "
   input tuple<DAE.Exp,BackendDAE.StateOrder> inExp;
-  output tuple<DAE.Exp,BackendDAE.StateOrder> outExp;
+  output tuple<DAE.Exp, Boolean, BackendDAE.StateOrder> outExp;
 algorithm
   (outExp) := matchcontinue (inExp)
     local
@@ -2302,22 +2308,21 @@ algorithm
       BackendDAE.StateOrder so;
       DAE.ComponentRef dcr,cr;
       String ident;
+      DAE.CallAttributes attr;
      case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),so))
       equation
         dcr = getStateOrder(cr,so);
         e = Expression.crefExp(dcr);
       then
-        ((e,so));
-        
-     case ((DAE.CREF(componentRef = DAE.CREF_QUAL(ident=ident,subscriptLst={},componentRef=cr)),so))
+        ((e,false,so));
+
+     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})},attr=attr),so))
       equation
-        true = stringEq(ident,DAE.derivativeNamePrefix);
         dcr = getStateOrder(cr,so);
         e = Expression.crefExp(dcr);
       then
-        ((e,so));        
-        
-     else then (inExp);
+        ((DAE.CALL(Absyn.IDENT("der"),{e},attr),false,so));
+     case ((e,so)) then ((e,true,so));
   end matchcontinue;
 end replaceStateOrderExpFinder;
 
