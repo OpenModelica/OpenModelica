@@ -123,6 +123,12 @@ extern int functionODE_inline(DATA *data, double stepsize);
  */
 extern int updateBoundStartValues(DATA *data);
 
+/*! \var initialResidualDescription
+ *
+ * This variable contains a description string for each initial residual.
+ */
+extern const char *initialResidualDescription[];
+
 /*! \fn initial_residual
  *
  * function for calculate residual values for the initial equations and initial algorithms

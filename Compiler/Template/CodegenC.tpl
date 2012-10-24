@@ -829,6 +829,14 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let resDesc = (residualEquations |> SES_RESIDUAL(__) =>
+      match exp 
+      case DAE.SCONST(__) then
+        '"0", '
+      else
+        '"<%ExpressionDump.printExpStr(exp)%>", '
+        ;separator="\n")
+      
   let body = (residualEquations |> SES_RESIDUAL(__) =>
       match exp 
       case DAE.SCONST(__) then
@@ -836,11 +844,18 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
       else
         let &preExp = buffer "" /*BUFD*/
         let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-        '<%preExp%>initialResiduals[i++] = <%expPart%>;
-        DEBUG_INFO_AL2(LOG_RES_INIT, "   residual[%d] : <%ExpressionDump.printExpStr(exp)%> = %f", i, initialResiduals[i-1]);'
+        <<
+        <%preExp%>initialResiduals[i++] = <%expPart%>;
+          DEBUG_INFO_AL3(LOG_RES_INIT, "| [%d]: %s = %g", i, initialResidualDescription[i-1], initialResiduals[i-1]);
+        >>
         ;separator="\n")
       
   <<
+  const char *initialResidualDescription[] = 
+  {
+    <%resDesc%>
+  };
+  
   int initial_residual(DATA *data, double* initialResiduals)
   {
     int i = 0;
@@ -848,7 +863,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
     <%varDecls%>
   
     mem_state = get_memory_state();
-    DEBUG_INFO(LOG_RES_INIT, "updating initial_residuals:");
+    DEBUG_INFO(LOG_RES_INIT, "updating initial residuals:");
     <%body%>
     restore_memory_state(mem_state);
   

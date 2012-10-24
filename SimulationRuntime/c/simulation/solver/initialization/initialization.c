@@ -197,6 +197,47 @@ double leastSquareWithLambda(INIT_DATA *initData, double lambda)
   return funcValue;
 }
 
+/*! \fn void dumpInitialization(INIT_DATA *initData)
+ *
+ *  \param [in]  [initData]
+ *
+ *  \author lochel
+ */
+void dumpInitialization(INIT_DATA *initData)
+{
+  long i;
+  double fValueScaled = leastSquareWithLambda(initData, 1.0);
+  double fValue = 0.0;
+
+  for(i=0; i<initData->nInitResiduals; ++i)
+    fValue += initData->initialResiduals[i] * initData->initialResiduals[i];
+
+  DEBUG_INFO(LOG_INIT, "initialization status");
+  if(initData->residualScalingCoefficients)
+    DEBUG_INFO_AL2(LOG_INIT, "| least square value: %g [scaled: %g]", fValue, fValueScaled);
+  else
+    DEBUG_INFO_AL1(LOG_INIT, "| least square value: %g", fValue);
+
+  DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
+  for(i=0; i<initData->nStates; ++i)
+    if(initData->nominal)
+      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %15g = %s [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+    else
+      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %15g = %s", i+1, initData->vars[i], initData->name[i]);
+  for(; i<initData->nVars; ++i)
+    if(initData->nominal)
+      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %15g = %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+    else
+      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %15g = %s (parameter)", i+1, initData->vars[i], initData->name[i]);
+
+  DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
+  for(i=0; i<initData->nInitResiduals; ++i)
+    if(initData->residualScalingCoefficients)
+      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %15g = %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initialResidualDescription[i], initData->residualScalingCoefficients[i]);
+    else
+      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %15g = %s", i+1, initData->initialResiduals[i], initialResidualDescription[i]);
+}
+
 /*! \fn static int initialize(DATA *data, int optiMethod)
  *
  *  This is a helper function for initialize.
@@ -259,27 +300,22 @@ static int initialize2(INIT_DATA *initData, int optiMethod)
 
     funcValue = leastSquareWithLambda(initData, 1.0);
 
-    DEBUG_INFO1(LOG_INIT, "ending with funcValue = %g", funcValue);
-    DEBUG_INFO_AL1(LOG_INIT, "| lambda: %g", lambda);
-    DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
-    for(i=0; i<initData->nVars; i++)
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %s = %g [scaled: %g]", i+1, initData->name[i], initData->vars[i], initData->nominal ? initData->vars[i]/initData->nominal[i] : initData->vars[i]);
-    DEBUG_INFO_AL(LOG_INIT, "| residuals (> 0.001)");
-    for(i=0; i<data->modelData.nInitResiduals; i++)
-      if(fabs(initData->initialResiduals[i]) > 1e-3)
-        DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g [scaled: %g]", i+1, initData->initialResiduals[i], initData->residualScalingCoefficients ? initData->initialResiduals[i]/initData->residualScalingCoefficients[i] : initData->initialResiduals[i]);
-
     if(retVal >= 0 && funcValue < bestFuncValue)
     {
       bestFuncValue = funcValue;
       for(i=0; i<initData->nVars; i++)
         bestZ[i] = initData->vars[i];
+      DEBUG_INFO(LOG_INIT, "updating bestZ");
+      dumpInitialization(initData);
     }
     else if(retVal >= 0 && funcValue == bestFuncValue)
     {
       /*WARNING("local minimum");*/
+      DEBUG_INFO(LOG_INIT, "not updating bestZ");
       break;
     }
+    else
+      DEBUG_INFO(LOG_INIT, "not updating bestZ");
   }
 
   setZ(initData, bestZ);
@@ -417,17 +453,7 @@ static int initialize(DATA *data, int optiMethod)
     computeInitialResidualScalingCoefficients(initData);
     initialize2(initData, optiMethod);
 
-    /* dump interim solution */
-    DEBUG_INFO(LOG_INIT, "interim initial solution");
-    DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
-    for(i=0; i<initData->nStates; ++i)
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] Real %s = %g [scaled: %g]", i+1, initData->name[i], initData->vars[i], initData->vars[i]/initData->nominal[i]);
-    for(; i<initData->nVars; ++i)
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] parameter Real %s = %g [scaled: %g]", i+1, initData->name[i], initData->vars[i], initData->vars[i]/initData->nominal[i]);
-
-    DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
-    for(i=0; i<initData->nInitResiduals; ++i)
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %g [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initData->residualScalingCoefficients[i]);
+    dumpInitialization(initData);
 
     for(i=0; i<initData->nVars; ++i)
       initData->start[i] = initData->vars[i];
@@ -458,16 +484,7 @@ static int initialize(DATA *data, int optiMethod)
     initialize2(initData, optiMethod);
 
     /* dump final solution */
-    DEBUG_INFO(LOG_INIT, "final initial solution");
-    DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
-    for(i=0; i<initData->nStates; ++i)
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] Real %s = %g", i+1, initData->name[i], initData->vars[i]);
-    for(; i<initData->nVars; ++i)
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] parameter Real %s = %g", i+1, initData->name[i], initData->vars[i]);
-
-    DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
-    for(i=0; i<initData->nInitResiduals; ++i)
-      DEBUG_INFO_AL2(LOG_INIT, "| | [%ld] %g", i+1, initData->initialResiduals[i]);
+    dumpInitialization(initData);
 
     funcValue = leastSquareWithLambda(initData, 1.0);
   }

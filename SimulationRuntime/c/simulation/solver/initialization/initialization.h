@@ -44,6 +44,7 @@ extern "C"
 {
 #endif
 
+  extern void dumpInitialization(INIT_DATA *initData);
   extern int reportResidualValue(INIT_DATA *initData);
   extern double leastSquareWithLambda(INIT_DATA *initData, double lambda);
   extern int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime);
