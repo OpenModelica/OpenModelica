@@ -234,11 +234,12 @@ algorithm
       then
         ((e,(b,options)));
     
-    case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
+    case ((e1 as DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
       equation
-        true = Expression.isConst(exp);
+        b2 = Expression.isConst(exp);
+        e1 = Util.if_(b2,e,e1);
       then
-        ((e,(true,options)));
+        ((e1,(b or b2,options)));
 
     // move pre inside
     case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e}), (b, options)))
