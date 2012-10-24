@@ -1609,6 +1609,32 @@ algorithm
   end match;
 end crefPrefixStringList;
 
+public function prefixWithPath
+  input ComponentRef inCref;
+  input Absyn.Path inPath;
+  output ComponentRef outCref;
+algorithm
+  outCref := match(inCref, inPath)
+    local
+      Absyn.Ident name;
+      Absyn.Path rest_path;
+      ComponentRef cref;
+
+    case (_, Absyn.IDENT(name = name))
+      then DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+
+    case (_, Absyn.QUALIFIED(name = name, path = rest_path))
+      equation
+        cref = prefixWithPath(inCref, rest_path);
+      then
+        DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, cref);
+
+    case (_, Absyn.FULLYQUALIFIED(path = rest_path))
+      then prefixWithPath(inCref, rest_path);
+
+  end match;
+end prefixWithPath;
+
 public function prependStringCref
 "function: prependStringCref
   Prepend a string to a component reference.

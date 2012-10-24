@@ -1956,7 +1956,8 @@ algorithm
   // Create a new class environment that preserves the imports and extends.
   (empty_class_env, cls_and_vars) :=
     SCodeEnv.removeClsAndVarsFromFrame(inClassEnv);
-  // Collect all constants in the top class, makes it easier to write test cases.
+  // Collect all constants in the top class, even if they're not used.
+  // This makes it easier to write test cases.
   collect_constants := Absyn.pathEqual(inClassName, inAccumPath);
   //collect_constants := false;
   (outUsedElements, outNewEnv, outGlobalConstants) := 
@@ -2059,8 +2060,9 @@ algorithm
         true = inCollectConstants or SCodeEnv.isItemUsed(item);
         env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
         const_path = Absyn.suffixPath(inAccumPath, name);
+        consts = List.consOnTrue(not inCollectConstants, const_path, inAccumConsts);
       then
-        (inElement, env, const_path :: inAccumConsts);
+        (inElement, env, consts);
         
     // Class components are always collected, regardless of whether they are
     // used or not.

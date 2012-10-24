@@ -597,6 +597,26 @@ algorithm
   end match;
 end linkItemUsage;
 
+public function isClassItem
+  input Item inItem;
+  output Boolean outIsClass;
+algorithm
+  outIsClass := match(inItem)
+    case CLASS(cls = _) then true;
+    else false;
+  end match;
+end isClassItem;
+
+public function isVarItem
+  input Item inItem;
+  output Boolean outIsVar;
+algorithm
+  outIsVar := match(inItem)
+    case VAR(var = _) then true;
+    else false;
+  end match;
+end isVarItem;
+
 public function isClassExtendsItem
   input Item inItem;
   output Boolean outIsClassExtends;
@@ -1649,36 +1669,6 @@ algorithm
 
   end match;
 end prefixIdentWithEnv;
-
-public function joinPaths
-  "Joins two paths. This functions is similar to Absyn.joinPaths, but with
-  different semantics for fully qualified paths."
-  input Absyn.Path inPath1;
-  input Absyn.Path inPath2;
-  output Absyn.Path outPath;
-algorithm
-  outPath := match(inPath1, inPath2)
-    local
-      Absyn.Ident id;
-      Absyn.Path path;
-
-    // The second path is fully qualified, return only that path.
-    case (_, Absyn.FULLYQUALIFIED(path = _)) then inPath2;
-    case (Absyn.IDENT(name = id), _) then Absyn.QUALIFIED(id, inPath2);
-    case (Absyn.QUALIFIED(name = id, path = path), _)
-      equation
-        path = joinPaths(path, inPath2);
-      then
-        Absyn.QUALIFIED(id, path);
-
-    // The first path is fully qualified, merge it with the second path.
-    case (Absyn.FULLYQUALIFIED(path = path), _)
-      equation
-        path = joinPaths(path, inPath2);
-      then
-        Absyn.FULLYQUALIFIED(path);
-  end match;
-end joinPaths;
 
 public function getRedeclarationElement
   input Redeclaration inRedeclare;

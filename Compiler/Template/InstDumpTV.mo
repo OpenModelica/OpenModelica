@@ -87,7 +87,17 @@ package InstDump
 end InstDump;
 
 package InstTypes
-  type Prefix = list<tuple<String, DAE.Dimensions>>;
+  uniontype Prefix
+    record EMPTY_PREFIX
+      Option<Absyn.Path> classPath;
+    end EMPTY_PREFIX;
+
+    record PREFIX
+      String name;
+      DAE.Dimensions dims;
+      Prefix restPrefix;
+    end PREFIX;
+  end Prefix;
 
   uniontype Element
     record ELEMENT

@@ -139,26 +139,27 @@ algorithm
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
         // Instantiate that class.
-        (cls, _, _, functions) = instClassItem(path, item, InstTypes.NOMOD(), 
-          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize));
+        functions = HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize);
+        (cls, _, _, functions) = instClassItem(path, item, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), env, InstTypes.EMPTY_PREFIX(SOME(path)), INST_ALL(), functions);
         // Instantiate global constants (package constants).
-        (const_el,functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
-        // Add the constants to the instantiated class.
-        cls = InstUtil.addElementsToClass(const_el, cls);
+        (const_el, functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
 
         //sc = SCodeTransform.instClassToSCodeElement(cls, inClassPath, functions);
         //print(SCodeDump.unparseElementStr(sc));
         
-        ///*
-        // print(InstDump.modelStr(name, cls));
+        //print(InstDump.modelStr(name, cls)); print("\n");
 
         // ------------------- Typing -------------------
         // Build the symboltable to use for typing.
         (cls, symtab) = InstSymbolTable.build(cls);
+        (_, symtab) = InstSymbolTable.addElements(const_el, symtab);
+
         // Mark structural parameters.
         (cls, symtab) = assignParamTypes(cls, symtab);
         // Type all instantiated functions.
-        ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions), Typing.typeFunction, (functions, symtab));
+        ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions),
+          Typing.typeFunction, (functions, symtab));
         // Type the instantiated class.
         (cls, symtab) = Typing.typeClass(cls, Typing.CONTEXT_MODEL(), symtab);
 
@@ -259,6 +260,7 @@ algorithm
       SCode.Attributes attr;
       Prefixes prefs;
       FunctionHashTable functions;
+      Prefix prefix;
 
     case (_, SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _, functions) 
@@ -280,9 +282,8 @@ algorithm
         // Apply modifications to the elements and instantiate them.
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = SCodeEnv.getEnvExtendsFromTable(env);
-        ice = SCodeEnv.isClassExtendsItem(inItem);
         (elems, cse, functions) = instElementList(mel, inPrefixes, exts, env,
-          inPrefix, ice, ip, functions);
+          inPrefix, ip, functions);
 
         // Instantiate all equation and algorithm sections.
         (eq, ieq, alg, ialg, functions) = instSections(cdef, env, inPrefix, ip, functions);
@@ -548,17 +549,22 @@ algorithm
 
     // Only components need to be looked up. Extends are not allowed to be
     // redeclared, while classes are not instantiated by instElement.
+
+    /*************************************************************************/
+    // TODO: Actually, the comment above is not quite correct. Constants in
+    // packages are instantiated, so we should look up packages here too.
+    /*************************************************************************/
     else inElement;
   end match;
 end lookupElement;
         
 protected function instElementList
+  "Instantiates a list of elements."
   input list<tuple<SCode.Element, Modifier>> inElements;
   input Prefixes inPrefixes;
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
-  input Boolean inIsClassExtends;
   input InstPolicy inInstPolicy;
   input FunctionHashTable inFunctions;
   output list<Element> outElements;
@@ -566,17 +572,16 @@ protected function instElementList
   output FunctionHashTable outFunctions;
 algorithm
   (outElements, outContainsSpecialExtends, outFunctions) := instElementList2(inElements, 
-    inPrefixes, inExtends, inEnv, inPrefix, inIsClassExtends, inInstPolicy, {},
-    false, inFunctions);
+    inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false, inFunctions);
 end instElementList;
 
 protected function instElementList2
+  "Helper function to instElementList."
   input list<tuple<SCode.Element, Modifier>> inElements;
   input Prefixes inPrefixes;
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
-  input Boolean inIsClassExtends;
   input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
@@ -586,7 +591,7 @@ protected function instElementList2
   output FunctionHashTable outFunctions;
 algorithm
   (outElements, outContainsSpecialExtends, outFunctions) :=
-  match(inElements, inPrefixes, inExtends, inEnv, inPrefix, inIsClassExtends,
+  match(inElements, inPrefixes, inExtends, inEnv, inPrefix,
       inInstPolicy, inAccumEl, inContainsSpecialExtends, inFunctions)
     local
       tuple<SCode.Element, Modifier> elem;
@@ -596,18 +601,22 @@ algorithm
       list<SCodeEnv.Extends> exts;
       FunctionHashTable functions;
 
-    case (elem :: rest_el, _, exts, _, _, _, _, accum_el, cse, functions)
+    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, functions)
       equation
         (accum_el, exts, cse, functions) = instElementList_dispatch(elem, inPrefixes, exts,
-          inEnv, inPrefix, inIsClassExtends, inInstPolicy, accum_el, cse, functions);
+          inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
         (accum_el, cse, functions) = instElementList2(rest_el, inPrefixes, exts,
-          inEnv, inPrefix, false, inInstPolicy, accum_el, cse, functions);
+          inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
       then
         (accum_el, cse, functions);
 
-    case ({}, _, {}, _, _, _, _, _, cse, functions) then (inAccumEl, cse, functions);
+    case ({}, _, {}, _, _, _, _, cse, functions) then (inAccumEl, cse, functions);
 
-    case ({}, _, _ :: _, _, _, _, _, _, _, _)
+    // instElementList takes a list of Extends, which contains the extends
+    // information from the environment. We should have one Extends element for
+    // each extends clause, so if we have any left when we've run out of
+    // elements something has gone very wrong.
+    case ({}, _, _ :: _, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"SCodeInst.instElementList2 has extends left!."});
@@ -618,12 +627,13 @@ algorithm
 end instElementList2;
 
 protected function instElementList_dispatch
+  "Helper function to instElementList2. Dispatches the given element to the
+   correct function for instantiation."
   input tuple<SCode.Element, Modifier> inElement;
   input Prefixes inPrefixes;
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
-  input Boolean inIsClassExtends;
   input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
@@ -634,8 +644,8 @@ protected function instElementList_dispatch
   output FunctionHashTable outFunctions;
 algorithm
   (outElements, outExtends, outContainsSpecialExtends, outFunctions) :=
-  match(inElement, inPrefixes, inExtends, inEnv, inPrefix, inIsClassExtends,
-      inInstPolicy, inAccumEl, inContainsSpecialExtends, inFunctions)
+  match(inElement, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
+      inAccumEl, inContainsSpecialExtends, inFunctions)
     local
       SCode.Element elem;
       Modifier mod;
@@ -653,24 +663,28 @@ algorithm
       Class cls;
       Item item;
 
-    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, INST_ALL(), _, cse, functions)
+    // A component when we're in 'instantiate everything'-mode.
+    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, INST_ALL(), _, cse, functions)
       equation
         (res,functions) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, functions);
       then
         (res :: inAccumEl, inExtends, cse, functions);
 
+    // A constant when we're on 'instantiate only constants'-mode.
     case ((elem as SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), mod), _, _, _, _, _, INST_ONLY_CONST(), _, cse, functions)
+        SCode.CONST())), mod), _, _, _, _, INST_ONLY_CONST(), _, cse, functions)
       equation
         (res,functions) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, functions);
       then
         (res :: inAccumEl, inExtends, cse, functions);
 
+    // An extends clause. Instantiate it together with the next Extends element
+    // from the environment.
     case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
-        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, ip, _, _, functions)
+        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, ip, _, _, functions)
       equation
         (res, cse, functions) = instExtends(elem, mod, inPrefixes, redecls,
-          inEnv, inPrefix, inIsClassExtends, ip, functions);
+          inEnv, inPrefix, ip, functions);
         cse = inContainsSpecialExtends or cse;
       then
         (res :: inAccumEl, rest_exts, cse, functions);
@@ -689,21 +703,26 @@ algorithm
         (res :: inAccumEl, inExtends, cse, functions);
     */
     
+    // A package, instantiate only the constants.
     case ((elem as SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
-        mod), _, _, _, _, _, ip, _, cse, functions)
+        mod), _, _, _, _, ip, _, cse, functions)
       equation
         (ores,functions) = instPackageConstants(elem, mod, inEnv, inPrefix, functions);
         accum_el = List.consOption(ores, inAccumEl);
       then
         (accum_el, inExtends, cse, functions);
 
-    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _, _, _)
+    // We should have one Extends element for each extends clause in the class.
+    // If we get an extends clause but don't have any Extends elements left,
+    // something has gone very wrong.
+    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"SCodeInst.instElementList_dispatch ran out of extends!."});
       then
         fail();
 
+    // Ignore any other kind of elements (class definitions, etc.).
     else (inAccumEl, inExtends, inContainsSpecialExtends, inFunctions);
 
   end match;
@@ -835,7 +854,6 @@ protected function instExtends
   input list<SCodeEnv.Redeclaration> inRedeclares;
   input Env inEnv;
   input Prefix inPrefix;
-  input Boolean inIsClassExtends;
   input InstPolicy inInstPolicy;
   input FunctionHashTable inFunctions;
   output Element outElement;
@@ -844,7 +862,7 @@ protected function instExtends
 algorithm
   (outElement, outContainsSpecialExtends, outFunctions) :=
   match(inExtends, inClassMod, inPrefixes, inRedeclares, inEnv, inPrefix,
-      inIsClassExtends, inInstPolicy, inFunctions)
+      inInstPolicy, inFunctions)
     local
       Absyn.Path path;
       SCode.Mod smod;
@@ -861,10 +879,11 @@ algorithm
       String name;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        _, _, _, _, _, _, ip, functions)
+        _, _, _, _, _, ip, functions)
       equation
-        // Look up the extended class.
-        (item, path, env) = lookupExtends(path, inEnv, info, inIsClassExtends);
+        // Look up the base class in the environment.
+        (item, path, env) = SCodeLookup.lookupBaseClassName(path, inEnv, info);
+        path = SCodeEnv.mergePathWithEnvPath(path, env);
         checkRecursiveExtends(path, inEnv, info);
 
         // Apply the redeclarations.
@@ -875,7 +894,8 @@ algorithm
         prefs = InstUtil.mergePrefixesFromExtends(inExtends, inPrefixes);
         mod = SCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
-        (cls, ty, _, functions) = instClassItem(path, item, mod, prefs, env, inPrefix, ip, functions);
+        (cls, ty, _, functions) = 
+          instClassItem(path, item, mod, prefs, env, inPrefix, ip, functions);
         cse = InstUtil.isSpecialExtends(ty);
       then
         (InstTypes.EXTENDED_ELEMENTS(path, cls, ty), cse, functions);
@@ -889,42 +909,6 @@ algorithm
 
   end match;
 end instExtends;
-
-protected function lookupExtends
-  input Absyn.Path inBaseClass;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  input Boolean inIsClassExtends;
-  output Item outItem;
-  output Absyn.Path outPath;
-  output Env outEnv;
-algorithm
-  (outItem, outPath, outEnv) :=
-  match(inBaseClass, inEnv, inInfo, inIsClassExtends)
-    local
-      Item item;
-      Env env;
-      Absyn.Path path;
-      String name;
-
-    case (_, _, _, false)
-      equation
-        (item, path, env) = SCodeLookup.lookupClassName(inBaseClass, inEnv, inInfo);
-        path = SCodeEnv.mergePathWithEnvPath(path, env);
-        checkRecursiveExtends(path, inEnv, inInfo);
-      then
-        (item, path, env);
-
-    case (_, _ :: env, _, true)
-      equation
-        name = Absyn.pathLastIdent(inBaseClass);
-        (item, _, env) = SCodeLookup.lookupInheritedName(name, env);
-        path = SCodeEnv.prefixIdentWithEnv(name, env);
-      then
-        (item, path, env);
-
-  end match;
-end lookupExtends;
 
 protected function checkRecursiveExtends
   input Absyn.Path inExtendedClass;
@@ -1965,29 +1949,10 @@ algorithm
       String name_str, env_str;
       Item item;
 
-    // If the name can be found in the local scope, call instLocalCref.
     case (_, _, _, _, _)
       equation
-        (_, _, env, origin) = SCodeLookup.lookupNameInPackage(inCrefPath, inEnv);
-        is_global = SCodeLookup.originIsGlobal(origin);
-        cref = prefixLocalCref(inCref, inPrefix, inEnv, env, is_global);
-      then
-        cref;
-
-    // Otherwise, look it up in the scopes above, and call instGlobalCref.
-    case (_, Absyn.QUALIFIED(name = _), _, _ :: env, _)
-      equation
-        path = Absyn.stripLast(inCrefPath);
-        (item, _, env, _) = SCodeLookup.lookupNameSilent(path, env, inInfo);
-        env = SCodeEnv.mergeItemEnv(item, env);
-        cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
-      then
-        cref;
-
-    case (_, Absyn.IDENT(name = _), _, _ :: env, _)
-      equation
-        (_, _, env, _) = SCodeLookup.lookupNameSilent(inCrefPath, env, inInfo);
-        cref = prefixGlobalCref(inCref, inPrefix, inEnv, env);
+        (is_global, env) = SCodeLookup.lookupCrefUnique(inCref, inEnv);
+        cref = prefixCref2(inCref, inPrefix, inEnv, env, is_global);
       then
         cref;
 
@@ -2005,37 +1970,47 @@ algorithm
   end matchcontinue;
 end prefixCref;
 
+protected function prefixCref2
+  "Helper function to prefixCref."
+  input DAE.ComponentRef inCref;
+  input Prefix inPrefix;
+  input Env inOriginEnv;
+  input Env inFoundEnv;
+  input Boolean inIsGlobal;
+  output DAE.ComponentRef outCref;
+algorithm
+  outCref := match(inCref, inPrefix, inOriginEnv, inFoundEnv, inIsGlobal)
+
+    // Dispatch to the correct function based on whether the cref was found
+    // in a local or global scope.
+    case (_, _, _, _, false) then prefixLocalCref(inCref, inPrefix, inFoundEnv);
+    else prefixGlobalCref(inCref, inPrefix, inOriginEnv, inFoundEnv);
+
+  end match;
+end prefixCref2;
+
 protected function prefixLocalCref
   "Prefixes a local cref, i.e. a cref that was found in the local scope."
   input DAE.ComponentRef inCref;
   input Prefix inPrefix;
-  input Env inOriginEnv "The environment where we looked for the cref.";
-  input Env inFoundEnv "The environment where we found the cref.";
-  input Boolean inOriginGlobal;
+  input Env inEnv "The environment where we found the cref.";
   output DAE.ComponentRef outCref;
 algorithm
-  outCref := match(inCref, inPrefix, inOriginEnv, inFoundEnv, inOriginGlobal)
+  outCref := match(inCref, inPrefix, inEnv)
     local
       String id;
       Integer iterIndex;
       DAE.Type ty;
       list<DAE.Subscript> subs;
+      Absyn.Path path;
       
     // Don't prefix iterators.
-    case (DAE.CREF_IDENT(id, ty, subs), _, _, SCodeEnv.FRAME(frameType =
-        SCodeEnv.IMPLICIT_SCOPE(iterIndex= iterIndex)) :: _, false)
+    case (DAE.CREF_IDENT(id, ty, subs), _, SCodeEnv.FRAME(frameType =
+        SCodeEnv.IMPLICIT_SCOPE(iterIndex= iterIndex)) :: _)
       then DAE.CREF_ITER(id, iterIndex, ty, subs);
 
-    // This case is for a non-global local cref, i.e. the first identifier in the
-    // cref is pointing at a local instance and not a local class. In this case
-    // we just prefix the cref with the given prefix.
-    case (_, _, _, _, false)
-      then InstUtil.prefixCref(inCref, inPrefix);
-
-    // Otherwise it's a global local cref, i.e. the first identifier in the cref
-    // is pointing at a local class and not a local instance. In this case we
-    // prefix the cref with the environment where it was found.
-    else prefixCrefWithEnv(inCref, inFoundEnv);
+    // In any other case, apply the given prefix.
+    else InstUtil.prefixCref(inCref, inPrefix);
 
   end match;
 end prefixLocalCref;
@@ -2059,7 +2034,8 @@ algorithm
     // this case we remove the equal prefixes, i.e. removing A.B and leaving C.
     // We then apply as much of the given prefix as the number of scopes we have
     // left. So if we have a cref a.b with a prefix c.d and one scope left, we
-    // get c.a.b.
+    // get c.a.b. This is used to get the correct prefix when a package is
+    // accessed through a component.
     case (_, _, _, _)
       equation
         oenv = SCodeEnv.envScopeNames(inOriginEnv);
@@ -2072,7 +2048,12 @@ algorithm
     // If the previous case failed it means that the cref wasn't found in any of
     // the scopes above where the cref was used, i.e. the instance hierarchy. In
     // this case we prefix the cref with the environment where it was found.
-    else prefixCrefWithEnv(inCref, inFoundEnv);
+    else
+      equation
+        fenv = SCodeEnv.envScopeNames(inFoundEnv);
+        cref = ComponentReference.crefPrefixStringList(fenv, inCref);
+      then
+        cref;
         
   end matchcontinue;
 end prefixGlobalCref;
@@ -2093,7 +2074,7 @@ algorithm
 
     // This is the second phase, when inFoundEnv is empty, where we remove the
     // first part of the prefix until inOriginEnv is empty.
-    case (_ :: rest_prefix, _ :: rest_oenv, {})
+    case (InstTypes.PREFIX(restPrefix = rest_prefix), _ :: rest_oenv, {})
       then reducePrefix(rest_prefix, rest_oenv, {});
 
     // This is the first phase, where we remove the most global scopes of both
@@ -2106,124 +2087,10 @@ algorithm
 
     // Finally, return the remaining prefix if both environment are empty and
     // the prefix is not empty.
-    case (_ :: _, {}, {}) then inPrefix;
+    case (InstTypes.PREFIX(name = _), {}, {}) then inPrefix;
 
   end match;
 end reducePrefix;
-
-protected function prefixCrefWithEnv
-  "Prefixes a cref with an environment."
-  input DAE.ComponentRef inCref;
-  input Env inEnv;
-  output DAE.ComponentRef outCref;
-algorithm
-  outCref := matchcontinue(inCref, inEnv)
-    local
-      String id;
-      Env env;
-      list<String> env_strl;
-      DAE.ComponentRef cref;
-
-    // This case is when the cref already contains parts of the environment.
-    // E.g. the cref A.B.c is found in P.A.B, and result should be P.A.B.c.
-    case (_, _)
-      equation
-        // First we remove the most local scopes until the remaining most local
-        // scope has the same name as the first identifier of the cref.
-        id = ComponentReference.crefFirstIdent(inCref);
-        env = removeNeqEnvTail(id, inEnv);
-        // Then we remove the most global scopes until the remaining environment
-        // is a prefix of the cref.
-        env_strl = removeEnvCrefPrefix(inCref, env);
-        // Finally we prefix the cref with the remaining environment.
-        cref = ComponentReference.crefPrefixStringList(env_strl, inCref);
-      then
-        cref;
-
-    // If the previous case failed, i.e. if no scope in the environment has the
-    // same name as the first identifier of the cref, then we prefix the cref
-    // with the whole environment.
-    else
-      equation
-        env_strl = SCodeEnv.envScopeNames(inEnv);
-        cref = ComponentReference.crefPrefixStringList(env_strl, inCref);
-      then
-        cref;
-  
-  end matchcontinue;
-        
-end prefixCrefWithEnv;
-
-protected function removeNeqEnvTail
-  "This function removes the most local scopes from the environment until the
-   remaining most local scope has the same name as the given identifier. E.g.
-   for an environment A.B.C.D and a given identifier B we remove D and C, which
-   gives the result A.B"
-  input String inId;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inId, inEnv)
-    local
-      String name;
-      Env rest_env;
-
-    // Check if the frame name matches the given identifier. Return the
-    // remaining environment in that case.
-    case (_, SCodeEnv.FRAME(name = SOME(name)) :: _)
-      equation
-        true = stringEq(name, inId);
-      then
-        inEnv;
-
-    // Otherwise, discard the most local scope and try again.
-    case (_, _ :: rest_env) then removeNeqEnvTail(inId, rest_env);
-
-  end matchcontinue;
-end removeNeqEnvTail;
-
-protected function removeEnvCrefPrefix
-  "This function removes the most global scopes of the environment until the
-   remaining environment is a prefix of the cref, and returns a list of the
-   remaining environment's scope names."
-  input DAE.ComponentRef inCref;
-  input Env inEnv;
-  output list<String> outScopeNames;
-protected
-  list<String> env_strl, cref_strl;
-algorithm
-  env_strl := SCodeEnv.envScopeNames(inEnv);
-  cref_strl := ComponentReference.toStringList(inCref);
-  outScopeNames := removeEnvCrefPrefix2(cref_strl, env_strl, {});
-end removeEnvCrefPrefix;
-
-protected function removeEnvCrefPrefix2
-  "Helper function to removeEnvCrefPrefix, does the real work."
-  input list<String> inCref;
-  input list<String> inEnv;
-  input list<String> inAccumPrefix;
-  output list<String> outPrefix;
-algorithm
-  outPrefix := matchcontinue(inCref, inEnv, inAccumPrefix)
-    local
-      String env_head;
-      list<String> rest_env;
-
-    // If the environment is a prefix of the cref, return the accumulated
-    // prefix.
-    case (_, _, _)
-      equation
-        true = List.isPrefixOnTrue(inEnv, inCref, stringEq);
-      then
-        listReverse(inAccumPrefix);
-
-    // Otherwise, remove the most global scope, add it to the accumulated prefix
-    // and try again. 
-    case (_, env_head :: rest_env, _)
-      then removeEnvCrefPrefix2(inCref, rest_env, env_head :: inAccumPrefix);
-
-  end matchcontinue;
-end removeEnvCrefPrefix2;
 
 protected function instFunctionCall
   input Absyn.ComponentRef inName;
@@ -2298,7 +2165,7 @@ algorithm
         true = SCode.isRecord(scls); 
         path = instFunctionName(item, path, origin, env, inPrefix);
         (cls as InstTypes.COMPLEX_CLASS(components = inputs, algorithms=algorithms), _, _, functions) = instClassItem(path, item, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), functions);
+          InstTypes.NO_PREFIXES(), env, InstTypes.functionPrefix, INST_ALL(), functions);
         initBindings = {};
         inputs = listReverse(inputs);
         (inputs,initBindings) = List.mapFold(inputs,dimensionDeps,initBindings);
@@ -2320,7 +2187,7 @@ algorithm
         false = SCode.isRecord(scls);
         path = instFunctionName(item, path, origin, env, inPrefix);
         (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _, functions) = instClassItem(path, item, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), functions);
+          InstTypes.NO_PREFIXES(), env, InstTypes.functionPrefix, INST_ALL(), functions);
         (inputs,outputs,locals) = getFunctionParameters(cls);
         initBindings = {};
         (outputs,initBindings) = List.mapFold(outputs,stripInitBinding,initBindings);

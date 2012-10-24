@@ -341,6 +341,8 @@ algorithm
       list<list<Statement>> al, ial;
       Absyn.Path name;
 
+    case ({}, _) then inClass;
+
     case (_, InstTypes.COMPLEX_CLASS(name, el, eq, ieq, al, ial))
       equation
         el = listAppend(inElements, el);
@@ -1167,7 +1169,7 @@ public function addPrefix
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix := (inName, inDimensions) :: inPrefix;
+  outPrefix := InstTypes.PREFIX(inName, inDimensions, inPrefix);
 end addPrefix;
 
 public function prefixCref
@@ -1181,9 +1183,13 @@ algorithm
       Prefix rest_prefix;
       DAE.ComponentRef cref;
 
-    case (_, {}) then inCref;
-    case (_, {(name, _)}) then DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
-    case (_, (name, _) :: rest_prefix)
+    case (_, InstTypes.EMPTY_PREFIX(classPath = _)) then inCref;
+
+    case (_, InstTypes.PREFIX(name = name, 
+        restPrefix = InstTypes.EMPTY_PREFIX(classPath = _)))
+      then DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
+
+    case (_, InstTypes.PREFIX(name = name, restPrefix = rest_prefix))
       equation
         cref = DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
       then
@@ -1202,8 +1208,12 @@ algorithm
       Prefix rest_prefix;
       DAE.ComponentRef cref;
 
-    case ({(name, _)}) then DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
-    case ((name, _) :: rest_prefix)
+    case (InstTypes.PREFIX(name = name,
+        restPrefix = InstTypes.EMPTY_PREFIX(classPath = _)))
+      then
+        DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
+
+    case (InstTypes.PREFIX(name = name, restPrefix = rest_prefix))
       equation
         cref = DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, {});
       then
@@ -1223,9 +1233,13 @@ algorithm
       Prefix rest_prefix;
       Absyn.Path path;
 
-    case (_, {}) then inPath;
-    case (_, {(name, _)}) then Absyn.QUALIFIED(name, inPath);
-    case (_, (name, _) :: rest_prefix)
+    case (_, InstTypes.EMPTY_PREFIX(classPath = _)) then inPath;
+    case (_, InstTypes.PREFIX(name = name,
+        restPrefix = InstTypes.EMPTY_PREFIX(classPath = _)))
+      then
+        Absyn.QUALIFIED(name, inPath);
+
+    case (_, InstTypes.PREFIX(name = name, restPrefix = rest_prefix))
       equation
         path = Absyn.QUALIFIED(name, inPath);
       then
@@ -1244,8 +1258,11 @@ algorithm
       Prefix rest_prefix;
       Absyn.Path path;
 
-    case ({(name, _)}) then Absyn.IDENT(name);
-    case ((name, _) :: rest_prefix)
+    case InstTypes.PREFIX(name = name,
+        restPrefix = InstTypes.EMPTY_PREFIX(classPath = _))
+      then Absyn.IDENT(name);
+
+    case InstTypes.PREFIX(name = name, restPrefix = rest_prefix)
       equation
         path = Absyn.IDENT(name);
       then
@@ -1258,7 +1275,7 @@ public function pathPrefix
   input Absyn.Path inPath;
   output Prefix outPrefix;
 algorithm
-  outPrefix := pathPrefix2(inPath, {});
+  outPrefix := pathPrefix2(inPath, InstTypes.emptyPrefix);
 end pathPrefix;
 
 protected function pathPrefix2
@@ -1272,10 +1289,10 @@ algorithm
       String name;
 
     case (Absyn.QUALIFIED(name, path), _)
-      then pathPrefix2(path, (name, {}) :: inPrefix);
+      then pathPrefix2(path, InstTypes.PREFIX(name, {}, inPrefix));
 
     case (Absyn.IDENT(name), _)
-      then (name, {}) :: inPrefix;
+      then InstTypes.PREFIX(name, {}, inPrefix);
 
     case (Absyn.FULLYQUALIFIED(path), _)
       then pathPrefix2(path, inPrefix);

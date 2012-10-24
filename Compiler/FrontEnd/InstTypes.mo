@@ -45,8 +45,20 @@ public import DAE;
 public import SCode;
 public import SCodeEnv;
 
-public type Prefix = list<tuple<String, DAE.Dimensions>>;
-public constant Prefix emptyPrefix = {};
+public uniontype Prefix
+  record EMPTY_PREFIX
+    Option<Absyn.Path> classPath "The path of the class the prefix originates from.";
+  end EMPTY_PREFIX;
+
+  record PREFIX
+    String name;
+    DAE.Dimensions dims;
+    Prefix restPrefix;
+  end PREFIX;
+end Prefix;
+
+public constant Prefix emptyPrefix = EMPTY_PREFIX(NONE());
+public constant Prefix functionPrefix = EMPTY_PREFIX(NONE());
 
 public uniontype Element
   record ELEMENT
@@ -179,6 +191,10 @@ public uniontype Component
     Absyn.Path name;
     Option<Component> parent; //NO_COMPONENT?
   end PACKAGE;
+
+  record COMPONENT_ALIAS
+    Absyn.Path componentName;
+  end COMPONENT_ALIAS;
 end Component;
 
 public uniontype Condition

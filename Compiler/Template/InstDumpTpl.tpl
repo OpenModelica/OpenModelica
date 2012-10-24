@@ -151,16 +151,14 @@ match binding
 end dumpBinding;
 
 template dumpPrefix(Prefix prefix)
-::= (prefix |> part => dumpPrefixPart(part) ;separator=".")
-end dumpPrefix;
-
-template dumpPrefixPart(tuple<String, DAE.Dimensions> part)
 ::=
-match part
-  case ((name, dims)) then
+match prefix
+  case PREFIX(__) then
     let dims_str = if dims then '[<%ExpressionDumpTpl.dumpDimensions(dims)%>]'
-    '<%name%><%dims_str%>'
-end dumpPrefixPart;
+    let rest_str = dumpPrefix(restPrefix)
+    let pre_str = if rest_str then '<%rest_str%>.'
+    '<%pre_str%><%name%><%dims_str%>'
+end dumpPrefix;
 
 template dumpConnections(Connections conn)
 ::=

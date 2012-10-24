@@ -173,6 +173,7 @@ algorithm
         bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3)) + 1;
         symtab = createSized(bucket_size);
         (cls, symtab) = addClass(inClass, symtab);
+        symtab = addAliases(inClass, symtab);
         // Add the special variable time to the symboltable.
         (symtab, _) = addOptionalComponent(Absyn.IDENT("time"),
           BUILTIN_TIME_COMP, NONE(), symtab);
@@ -404,7 +405,7 @@ algorithm
       Boolean added;
       HashTable scope;
 
-    // PACKAGE isn't really a component, so we don't add it. But it's class
+    // PACKAGE isn't really a component, so we don't add it. But its class
     // should be added, so return true anyway.
     case (InstTypes.PACKAGE(name = _), st)
       then (st, true);
@@ -496,6 +497,108 @@ algorithm
 
   end matchcontinue;
 end addIterator;
+
+protected function addAliases
+  "This function adds aliases for all top-level components in a class. For each
+   component we add an alias from the fully qualified name to the component's
+   actual name. This is done because components in the top-level class doesn't
+   get a prefix, so their names are simple identifiers. But if any other class
+   tries to access something in the top-level class it will do so with the
+   fully qualified name. E.g. if we instantiate this package:
+
+     package P
+       model M
+         Real x[n]; // n will be instantiated as P.n.
+       end M;
+
+       constant Integer n = 3; // n will be instantiated as n.
+       constant M m;
+     end P;
+
+   A solution would be to fully qualify all top-level components, but that makes
+   a lot of things such as inner/outer handling a lot more complicated. Another
+   solution would be to simply add the top-level components twice with the two
+   different names they are referred by, but that will cause unnecessary
+   instantiation and possible introduce subtle bugs in the typing. Instead
+   we add aliases to the symboltable, so that whenever a top-level component is
+   referred to by its fully qualified name we find an alias that points to its
+   non-qualified name, and look up that component instead.
+   
+   TODO: Check what kind of restrictions actually apply in this case. We might
+         only need to introduce aliases if the class is a package, but the
+         specification is a bit vague on what can be accessed from where."
+  input Class inClass;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := matchcontinue(inClass, inSymbolTable)
+    local
+      Absyn.Path class_path;
+      list<Element> el;
+      SymbolTable st;
+
+    case (InstTypes.COMPLEX_CLASS(name = class_path, components = el), st)
+      equation
+        st = List.fold1(el, addAlias, class_path, st);
+      then
+        st;
+
+    case (InstTypes.BASIC_TYPE(name = _), _) then inSymbolTable;
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- InstSymbolTable.addAlises failed.\n");
+      then
+        fail();
+
+  end matchcontinue;
+end addAliases;
+
+protected function addAlias
+  input Element inElement;
+  input Absyn.Path inClassPath;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inElement, inClassPath, inSymbolTable)
+    local
+      Component comp;
+      Absyn.Path comp_name, qualified_name;
+      SymbolTable st;
+      list<Element> el;
+
+    case (InstTypes.ELEMENT(component = comp), _, st)
+      then addAlias2(comp, inClassPath, st);
+
+    case (InstTypes.CONDITIONAL_ELEMENT(component = comp), _, st)
+      then addAlias2(comp, inClassPath, st);
+
+    case (InstTypes.EXTENDED_ELEMENTS(cls = InstTypes.COMPLEX_CLASS(components = el)), _, st)
+      equation
+        st = List.fold1(el, addAlias, inClassPath, st);
+      then
+        st;
+
+    else inSymbolTable;
+
+  end match;
+end addAlias;
+
+protected function addAlias2
+  input Component inComponent;
+  input Absyn.Path inClassPath;
+  input SymbolTable inSymbolTable;
+  output SymbolTable outSymbolTable;
+protected
+  Absyn.Path comp_name, qualified_name;
+  Component comp;
+algorithm
+  comp_name := InstUtil.getComponentName(inComponent);
+  qualified_name := Absyn.joinPaths(inClassPath, comp_name);
+  comp := InstTypes.COMPONENT_ALIAS(comp_name);
+  outSymbolTable := addNoUpdCheck(qualified_name, comp, inSymbolTable);
+end addAlias2;
 
 public function addFunctionScope
   input SymbolTable inSymbolTable;
@@ -625,10 +728,30 @@ public function lookupCref
   output Component outComponent;
 protected
   Absyn.Path path;
+  Component comp;
 algorithm
   path := ComponentReference.crefToPathIgnoreSubs(inCref);
-  outComponent := get(path, inSymbolTable);
+  comp := get(path, inSymbolTable);
+  outComponent := resolveAlias(comp, inSymbolTable);
 end lookupCref;
+
+protected function resolveAlias
+  "Resolves a component alias in the symboltable. Returns the aliased component
+   if the given component is an alias, otherwise just the given component."
+  input Component inComponent;
+  input SymbolTable inSymbolTable;
+  output Component outComponent;
+algorithm
+  outComponent := match(inComponent, inSymbolTable)
+    local
+      Absyn.Path name;
+
+    case (InstTypes.COMPONENT_ALIAS(componentName = name), _)
+      then get(name, inSymbolTable);
+
+    else inComponent;
+  end match;
+end resolveAlias;
 
 public function lookupCrefResolveOuter
   "Looks up a component reference in the symboltable and returns the referenced

@@ -636,7 +636,7 @@ algorithm
       then
         Absyn.CREF_FULLYQUALIFIED(cref);
 
-    case (_, _, _ :: _)
+    case (_, _, InstTypes.PREFIX(name = _))
       equation
         cref = prefixCref2(inCref, inPrefix);
       then
@@ -658,11 +658,13 @@ algorithm
       Prefix rest_prefix;
       Absyn.ComponentRef cref;
 
-    case (_, {}) then inCref;
-    case (_, {(name, _)})
+    case (_, InstTypes.EMPTY_PREFIX(classPath = _)) then inCref;
+
+    case (_, InstTypes.PREFIX(name = name,
+        restPrefix = InstTypes.EMPTY_PREFIX(classPath = _)))
       then Absyn.CREF_QUAL(name, {}, inCref);
 
-    case (_, (name, _) :: rest_prefix)
+    case (_, InstTypes.PREFIX(name = name, restPrefix = rest_prefix))
       equation
         cref = Absyn.CREF_QUAL(name, {}, inCref);
       then

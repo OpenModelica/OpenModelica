@@ -41,10 +41,18 @@ encapsulated package SCodeLookup
 "
 
 public import Absyn;
+public import DAE;
 public import Error;
 public import InstTypes;
 public import SCode;
 public import SCodeEnv;
+
+protected import ComponentReference;
+protected import Debug;
+protected import Flags;
+protected import InstUtil;
+protected import SCodeFlattenImports;
+protected import SCodeFlattenRedeclare;
 
 public type Env = SCodeEnv.Env;
 public type Item = SCodeEnv.Item;
@@ -367,12 +375,6 @@ public constant Item BUILTIN_EXTERNALOBJECT = SCodeEnv.CLASS(
       SCode.NOT_ENCAPSULATED(), SCode.PARTIAL(), SCode.R_CLASS(),
       SCode.PARTS({}, {}, {}, {}, {}, {}, {}, NONE(), {}, NONE()),
       Absyn.dummyInfo), SCodeEnv.emptyEnv, SCodeEnv.BASIC_TYPE());
-
-protected import Debug;
-protected import Flags;
-protected import SCodeFlattenImports;
-protected import SCodeFlattenRedeclare;
-//protected import Dump;
 
 public function lookupSimpleName
   "Looks up a simple identifier in the environment and returns the environment
@@ -791,7 +793,7 @@ algorithm
         // Look up the name among the public member of the found package.
         (item, path2, env) = lookupNameInItem(Absyn.IDENT(inName), item, env);
         // Combine the paths for the name and the package it was found in.
-        path = SCodeEnv.joinPaths(path, path2);
+        path = joinPaths(path, path2);
       then
         (item, path, env);
 
@@ -859,7 +861,7 @@ algorithm
         env = SCodeEnv.setImportTableHidden(env, false);
         // Look for the rest of the path in the found item.
         (item, path, env) = lookupNameInItem(path, item, env);
-        path = SCodeEnv.joinPaths(new_path, path);
+        path = joinPaths(new_path, path);
       then
         (item, path, env, origin);
 
@@ -1175,7 +1177,7 @@ algorithm
     // i.e. StateSelect.always.
     case Absyn.QUALIFIED(name = "StateSelect", path = Absyn.IDENT(id))
       equation
-        (SOME(item), _, _) = lookupInLocalScope(id, BUILTIN_STATESELECT_ENV, {});
+        (item, _) = lookupInClass(id, BUILTIN_STATESELECT_ENV);
       then
         (item, BUILTIN_STATESELECT_ENV);
 
@@ -1234,7 +1236,7 @@ algorithm
         // Look up the rest of the name in the environment of the first
         // identifier.
         (item, path, env) = lookupNameInItem(path, item, env);
-        path = SCodeEnv.joinPaths(new_path, path);
+        path = joinPaths(new_path, path);
       then
         (item, path, env, origin);
              
@@ -1254,6 +1256,43 @@ algorithm
         
   end matchcontinue;
 end lookupName;
+ 
+protected function joinPaths
+  "Joins two paths, like Absyn.joinPaths but not with quite the same behaviour.
+   If the second path is fully qualified it just returns the cref, because then
+   it has been looked up through an import and already points directly at the
+   class. If the first path is fully qualified it joins the paths, and return a
+   fully qualified path. Otherwise it has the same behaviour as Absyn.joinPaths,
+   i.e. it simply joins the paths."
+  input Absyn.Path inPath1;
+  input Absyn.Path inPath2;
+  output Absyn.Path outPath;
+algorithm
+  outPath := match(inPath1, inPath2)
+    local
+      Absyn.Ident id;
+      Absyn.Path path;
+
+    // The second path is fully qualified, return only that path.
+    case (_, Absyn.FULLYQUALIFIED(path = _)) then inPath2;
+
+    // Neither of the paths are fully qualified, just join them.
+    case (Absyn.IDENT(name = id), _) then Absyn.QUALIFIED(id, inPath2);
+    case (Absyn.QUALIFIED(name = id, path = path), _)
+      equation
+        path = joinPaths(path, inPath2);
+      then
+        Absyn.QUALIFIED(id, path);
+
+    // The first path is fully qualified, merge it with the second path and
+    // return the result as a fully qualified path.
+    case (Absyn.FULLYQUALIFIED(path = path), _)
+      equation
+        path = joinPaths(path, inPath2);
+      then
+        Absyn.FULLYQUALIFIED(path);
+  end match;
+end joinPaths;
 
 public function lookupNameSilent
   "Looks up a name, but doesn't print an error message if it fails."
@@ -1510,165 +1549,6 @@ algorithm
   end match;
 end lookupComponentRef2;
 
-
-public function lookupComponentRefForceQualified
-  "Look up a component reference in the environment and returns it fully
-  qualified."
-  input Absyn.ComponentRef inCref;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  output Absyn.ComponentRef outCref;
-algorithm
-  outCref := matchcontinue(inCref, inEnv, inInfo)
-    local
-      Absyn.ComponentRef cref;
-      String cref_str, env_str;
-      Env env;
-
-    // Special case for StateSelect, do nothing.
-    case (Absyn.CREF_QUAL(name = "StateSelect", subscripts = {}, 
-        componentRef = Absyn.CREF_IDENT(name = _)), _, _)
-      then inCref;
-
-    // Wildcard.
-    case (Absyn.WILD(), _, _) then inCref;
-
-    // All other component references.
-    case (_, _, _)
-      equation
-        // First look up all subscripts, because all subscripts should be found
-        // in the enclosing scope of the component reference.
-        cref = SCodeFlattenImports.flattenComponentRefSubs(inCref, inEnv, inInfo);
-        // Then look up the component reference itself.
-        (cref, env) = lookupComponentRef2ForceQualified(cref, inEnv);
-        //print(SCodeEnv.getEnvName(env) +& "//" +& SCodeEnv.getEnvName(inEnv) +& "/Cref qual?: " +& Dump.printComponentRefStr(cref) +& "\n");
-        cref = crefStripEnvPrefix(cref, inEnv);
-        //print(SCodeEnv.getEnvName(env) +& "//" +& SCodeEnv.getEnvName(inEnv) +& "/Cref strip?: " +& Dump.printComponentRefStr(cref) +& "\n");
-      then
-        cref;
-
-    // Otherwise, mark the cref as invalid, which is ok as long as it's not
-    // actually used anywhere.
-    //else then Absyn.CREF_INVALID(inCref);
-    else inCref;
-
-  end matchcontinue;
-end lookupComponentRefForceQualified;
-
-protected function lookupComponentRef2ForceQualified
-  "Helper function to lookupComponentRef. Does the actual look up of the
-  component reference."
-  input Absyn.ComponentRef inCref;
-  input Env inEnv;
-  output Absyn.ComponentRef outCref;
-  output Env outEnv;
-algorithm
-  (outCref, outEnv) := match(inCref, inEnv)
-    local
-      Absyn.ComponentRef cref, rest_cref;
-      Absyn.Ident name;
-      list<Absyn.Subscript> subs;
-      Absyn.Path path, new_path;
-      Env env;
-      Item item;
-
-    // A simple name.
-    case (Absyn.CREF_IDENT(name, subs), _)
-      equation
-        (_, path, env) = lookupSimpleName(name, inEnv);
-        path = checkJoinPaths(inEnv, env, path);
-        cref = Absyn.pathToCrefWithSubs(path, subs);
-      then
-        (cref, env);
-
-    // A qualified name.
-    case (Absyn.CREF_QUAL(name, subs, rest_cref), _)
-      equation
-        // Lookup the first identifier.
-        (item, new_path, env) = lookupSimpleName(name, inEnv);
-        new_path = checkJoinPaths(inEnv, env, new_path);
-        cref = Absyn.pathToCrefWithSubs(new_path, subs);
-
-        // Lookup the rest of the cref in the enclosing scope of the first
-        // identifier.
-        (item, rest_cref) = lookupCrefInItem(rest_cref, item, env);
-        cref = joinCrefs(cref, rest_cref);
-      then
-        (cref, env);
-
-    // A fully qualified name.
-    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cref), _)
-      equation
-        cref = lookupCrefFullyQualified(cref, inEnv);
-        env = SCodeEnv.getEnvTopScope(inEnv);
-      then
-        (cref, env);
-
-  end match;
-end lookupComponentRef2ForceQualified;
-
-protected function checkJoinPaths
-  input Env inCurrentEnv "our current env where we do lookup";
-  input Env inCrefEnv "the env in which we found the cref";
-  input Absyn.Path inPath "the cref path";
-  output Absyn.Path outPath "the path joined with the cref env if all OK";
-algorithm
-  outPath := matchcontinue(inCurrentEnv, inCrefEnv, inPath)
-    local
-      Absyn.Path pCUR, pCREF, p;
-      SCode.Element c;
-      Env rest_env; 
-      SCodeEnv.FrameType frame_type;
-      String name;
-    
-    /*
-    // check if we find it in the local env, do not join
-    case (inCurrentEnv, inCrefEnv, inPath)
-      equation
-        name = Absyn.pathFirstIdent(inPath);
-        // if is local, do not join!
-        (SOME(_), _, _) = lookupInLocalScope(name, inCurrentEnv);
-      then
-        inPath;
-    
-    // check if we find it in the local env of enclosing scope, do not join
-    case (SCodeEnv.FRAME(frameType = frame_type) :: rest_env, inCrefEnv, inPath)
-      equation
-        frameNotEncapsulated(frame_type);
-        name = Absyn.pathFirstIdent(inPath);
-        (SOME(_), _, _) = lookupSimpleName2(name, rest_env);
-      then
-        inPath;
-    */
-    
-    // check the paths
-    case (inCurrentEnv, inCrefEnv, inPath)
-      equation
-        pCUR = SCodeEnv.getEnvPath(inCurrentEnv);
-        pCREF = SCodeEnv.getEnvPath(inCrefEnv);
-        // if cref path is prefix of current cref, DO NOT JOIN!
-        true = boolOr(Absyn.pathPrefixOf(pCREF, pCUR), Absyn.pathPrefixOf(pCREF, inPath));
-      then
-        inPath;
-        
-    // check the paths
-    case (inCurrentEnv, inCrefEnv, inPath)
-      equation
-        pCUR = SCodeEnv.getEnvPath(inCurrentEnv);
-        pCREF = SCodeEnv.getEnvPath(inCrefEnv);
-        // if cref path is NOT prefix of current cref, DO JOIN!
-        false = Absyn.pathPrefixOf(pCREF, pCUR);
-        p = Absyn.joinPaths(pCREF, inPath);
-      then
-        p;
-    
-    // if we failed above it means top scope, just return the path
-    case (_, _, inPath) then inPath;
-        
-  end matchcontinue;
-end checkJoinPaths;
-  
-
 public function lookupCrefFullyQualified
   input Absyn.ComponentRef inCref;
   input Env inEnv;
@@ -1684,7 +1564,7 @@ end lookupCrefFullyQualified;
 public function joinCrefs
   "Joins two component references. If the second cref is fully qualified it just
   returns the cref, because then it has been looked up through an import and
-  already points directly at the class. Otherwise is just calls Absyn.joinCrefs."
+  already points directly at the class. Otherwise it just calls Absyn.joinCrefs."
   input Absyn.ComponentRef inCref1;
   input Absyn.ComponentRef inCref2;
   output Absyn.ComponentRef outCref;
@@ -1805,5 +1685,131 @@ algorithm
     else false;
   end match;
 end originIsGlobal;
-    
+
+public function lookupCrefUnique
+  "This function tries to look up a cref and returns whether it's a global name
+   or not, i.e. found in the class or the instance hierarchy, and the
+   environment it was found in. The environment is the environment the name is
+   defined in after flattening extends, e.g. if class A extends B, and x is
+   defined in B, then A will be returned if we're looking for x in A. This is
+   contrary to e.g. lookupName, which would return B.
+   
+   The Unique part of the function name comes from the fact that this function
+   is used by SCodeInst.prefixCref to find a unique name for all crefs."
+  input DAE.ComponentRef inCref;
+  input Env inEnv;
+  output Boolean outIsGlobal;
+  output Env outEnv;
+algorithm
+  (outIsGlobal, outEnv) := match(inCref, inEnv)
+    local
+      String id;
+      Boolean is_global;
+      Env env;
+
+    // A simple identifier.
+    case (DAE.CREF_IDENT(ident = id), _)
+      equation
+        (is_global, env) = lookupCrefUnique2(id, inEnv);
+      then
+        (is_global, env);
+
+    // A qualified identifier.
+    case (DAE.CREF_QUAL(ident = id), _)
+      equation
+        // We only need to know were the first identifier is defined, the cref
+        // itself already contains the rest of the path.
+        (is_global, env) = lookupCrefUnique2(id, inEnv);
+      then
+        (is_global, env);
+
+    // We shouldn't get any other types of crefs here.
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- SCodeLookup.lookupCrefUnique failed on unknown cref!\n");
+      then
+        fail();
+
+  end match;
+end lookupCrefUnique;
+
+protected function lookupCrefUnique2
+  "Helper function to lookupCrefUnique, does the actual work."
+  input String inIdentifier;
+  input Env inEnv;
+  output Boolean outIsGlobal;
+  output Env outEnv;
+algorithm
+  (outIsGlobal, outEnv) := matchcontinue(inIdentifier, inEnv)
+    local
+      DAE.ComponentRef cref;
+      Env env;
+      Item item;
+      Boolean is_global;
+
+    case (_, _)
+      equation
+        _ = lookupBuiltinType(inIdentifier);
+      then
+        (true, SCodeEnv.emptyEnv);
+
+    // Try to find the identifier in the local scope.
+    case (_, _)
+      equation
+        (SOME(item), _, _) = lookupInLocalScope(inIdentifier, inEnv, {});
+        // If the name was found in a local class, say that's it's a global
+        // name. Otherwise it's a local name.
+        is_global = SCodeEnv.isClassItem(item);
+      then
+        (is_global, inEnv);
+
+    // Otherwise, try to find the identifier in one of the scopes above.
+    case (_, _)
+      equation
+        SOME(env) = lookupCrefUnique3(inIdentifier, inEnv);
+      then
+        (true, env);
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- SCodeLookup.lookupCrefUnique2 failed on " +&
+          inIdentifier +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end lookupCrefUnique2;
+
+protected function lookupCrefUnique3
+  "Helper function to lookupCrefUnique2. Tries to find an identifier in one of
+   the given scopes, and if successful returns the identifiers enclosing scopes.
+   Returns NONE if the search was aborted due to an encapsulated scope, or fails
+   if the identifier couldn't be found."
+  input String inIdentifier;
+  input Env inEnv;
+  output Option<Env> outEnv;
+algorithm
+  outEnv := matchcontinue(inIdentifier, inEnv)
+    local
+      Env env;
+
+    // Stop looking if we encounter an encapsulated scope.
+    case (_, SCodeEnv.FRAME(frameType = SCodeEnv.ENCAPSULATED_SCOPE()) :: _)
+      then NONE();
+
+    // Look the identifier up in the scope above.
+    case (_, _ :: env)
+      equation
+        (SOME(_), _, _) = lookupInLocalScope(inIdentifier, env, {});
+      then
+        SOME(env);
+
+    // If previous case failed, look in the scope above.
+    case (_, _ :: env) then lookupCrefUnique3(inIdentifier, env);
+
+  end matchcontinue;
+end lookupCrefUnique3;
+
 end SCodeLookup;
