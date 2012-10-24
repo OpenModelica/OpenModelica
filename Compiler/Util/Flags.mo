@@ -364,8 +364,10 @@ constant DebugFlag UNCERTAINTIES = DEBUG_FLAG(99, "uncertainties",
 constant DebugFlag DUMP_DAE= DEBUG_FLAG(100, "daeunparser",
   Util.gettext("Enables dumping of the DAE"));
 constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(101, "showStartOrigin",
-  Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables"));
-
+  Util.gettext("Enables dumping of the DAE startOrigin attribute of the variables"));   
+// The flags mixedTearing are only needed as long tearing of mixed system in not default.
+constant DebugFlag NO_MIXED_TEARING = DEBUG_FLAG(102, "noMixedTearing",
+  Util.gettext("Disables tearing of mixed system."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -472,7 +474,8 @@ constant list<DebugFlag> allDebugFlags = {
   SEMILINEAR,
   UNCERTAINTIES,
   DUMP_DAE,
-  SHOW_START_ORIGIN
+  SHOW_START_ORIGIN,
+  NO_MIXED_TEARING
 };
 
 // CONFIGURATION FLAGS
@@ -591,7 +594,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeUnusedFunctions",
     "simplifyTimeIndepFuncCalls",
     "inputDerivativesUsed",
-//   "detectJacobianSparsePattern", 
+//    "detectJacobianSparsePattern", 
     "optimizeInitialSystem"
   }),
   SOME(STRING_DESC_OPTION({
@@ -699,6 +702,11 @@ constant ConfigFlag LOCALE_FLAG = CONFIG_FLAG(41, "locale",
 constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
   SOME("o"), EXTERNAL(), INT_FLAG(0), NONE(),
   Util.gettext("Sets the default OpenCL device to be used for parallel execution."));
+// The flag noTearing is just for easy activation and deactivation
+// of the tearing optimazation module.  
+constant ConfigFlag NO_TEARING = CONFIG_FLAG(43, "noTearing",
+  NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
+  Util.gettext("Disables tearing at all.")); 
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -745,7 +753,8 @@ constant list<ConfigFlag> allConfigFlags = {
   REDUCTION_METHOD,
   PLOT_SILENT,
   LOCALE_FLAG,
-  DEFAULT_OPENCL_DEVICE
+  DEFAULT_OPENCL_DEVICE,
+  NO_TEARING
 };
 
 public function new

@@ -9226,6 +9226,7 @@ public function tearingSystemNew "function tearingSystem
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
+  false := Flags.getConfigBool(Flags.NO_TEARING);
   (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemNew0,false);
 end tearingSystemNew;
 
@@ -9285,11 +9286,15 @@ algorithm
         (acc,b1);
     case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_)
       equation
-        // only mixed part
-        //(_,_) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
+        true = Flags.isSet(Flags.NO_MIXED_TEARING);
         // only continues part
-        //(comp1::{},true) = tearingSystemNew1(isyst,ishared,{comp1},false,{});
-        //(acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc);
+        (comp1::{},true) = tearingSystemNew1(isyst,ishared,{comp1},false,{});
+        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc);
+      then
+        (acc,b1);        
+    case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_)
+      equation
+        false = Flags.isSet(Flags.NO_MIXED_TEARING);
         // mixed and continues part
         (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         (comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
