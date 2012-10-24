@@ -1806,11 +1806,11 @@ algorithm
       list<DAE.Subscript> subs;
       DAE.Ident id;
     
-    case(DAE.CREF_IDENT(id,_,subs),newType)
+    case(DAE.CREF_IDENT(id,_,subs),_)
       then
         makeCrefIdent(id,newType,subs);
     
-    case(DAE.CREF_QUAL(id,ty,subs,child),newType)
+    case(DAE.CREF_QUAL(id,ty,subs,child),_)
       equation
         child = crefSetLastType(child,newType);
       then
