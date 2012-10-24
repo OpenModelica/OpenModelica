@@ -766,4 +766,158 @@ algorithm
   end match;
 end printSubMod;
 
+public function removeModFromModContainingCref
+"@author: adrpo
+ removes the named modifier bound to an expression that contains the given id"
+  input SCode.Mod inMod;
+  input Absyn.ComponentRef id;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match(inMod, id)
+    local
+      Option<String> n;
+      list<SCode.SubMod> sl;
+      SCode.Final fp;
+      SCode.Each ep;
+      Option<tuple<Absyn.Exp, Boolean>> b;
+      Absyn.Info i;
+      
+    case (SCode.MOD(fp, ep, sl, b, i),_)
+      equation
+        sl = removeModFromSubModContainingCref(sl, id);
+      then
+        SCode.MOD(fp, ep, sl, b, i);
+    
+    else inMod;
+    
+  end match;
+end removeModFromModContainingCref;
+
+protected function removeModFromSubModContainingCref
+"@author: adrpo
+ removes the named modifier bound to an expression that contains the given id"
+  input list<SCode.SubMod> inSl;
+  input Absyn.ComponentRef id;
+  output list<SCode.SubMod> outSl;
+algorithm
+  outSl := matchcontinue(inSl, id)
+    local
+      String n;
+      list<SCode.SubMod> sl,rest;
+      Absyn.Exp e;
+      list<Absyn.ComponentRef> cl;
+      SCode.SubMod sm;
+    
+    case ({}, _) then {};
+    
+    case (SCode.NAMEMOD(ident = n, A = SCode.MOD(binding = SOME((e, _))))::rest, _)
+      equation
+        cl = Absyn.getCrefFromExp(e,true);
+        true = List.fold(List.map1(cl, Absyn.crefFirstEqual, id), boolOr, false);  
+      then
+        rest;
+    
+    case (sm::rest, _) 
+      equation
+        sl = removeModFromSubModContainingCref(rest, id);
+      then 
+        sm::sl;
+  end matchcontinue;
+end removeModFromSubModContainingCref;
+
+public function removeCrefPrefixFromModExp
+"@author: adrpo
+ removes the cref prefix from a modifier bound to an expression that contains the given id.
+ i.e. Type c(z = c.xi) -> Type c(z = xi)"
+  input SCode.Mod inMod;
+  input Absyn.ComponentRef id;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match(inMod, id)
+    local
+      Option<String> n;
+      list<SCode.SubMod> sl;
+      SCode.Final fp;
+      SCode.Each ep;
+      Absyn.Info i;
+      Absyn.Exp e;
+      Boolean b;
+      
+    case (SCode.MOD(fp, ep, sl, SOME((e, b)), i),_)
+      equation
+        sl = removeCrefPrefixFromSubModExp(sl, id);
+        ((e, _)) = Absyn.traverseExp(e, removeCrefPrefix, id); 
+      then
+        SCode.MOD(fp, ep, sl, SOME((e, b)), i);
+        
+    case (SCode.MOD(fp, ep, sl, NONE(), i),_)
+      equation
+        sl = removeCrefPrefixFromSubModExp(sl, id);
+      then
+        SCode.MOD(fp, ep, sl, NONE(), i);
+    
+    else inMod;
+    
+  end match;
+end removeCrefPrefixFromModExp;
+
+protected function removeCrefPrefixFromSubModExp
+"@author: adrpo
+ removes the cref prefix from a modifier bound to an expression that contains the given id.
+ i.e. Type c(z = c.xi) -> Type c(z = xi)"
+  input list<SCode.SubMod> inSl;
+  input Absyn.ComponentRef id;
+  output list<SCode.SubMod> outSl;
+algorithm
+  outSl := matchcontinue(inSl, id)
+    local
+      String n;
+      list<SCode.SubMod> sl,rest;
+      SCode.SubMod sm;
+      SCode.Mod m;
+      list<SCode.Subscript> ssl;
+    
+    case ({}, _) then {};
+    
+    case (SCode.NAMEMOD(n, m)::rest, _)
+      equation
+        m = removeCrefPrefixFromModExp(m, id);
+        sl = removeCrefPrefixFromSubModExp(rest, id); 
+      then
+        SCode.NAMEMOD(n, m)::sl;
+        
+    case (SCode.IDXMOD(ssl, m)::rest, _)
+      equation
+        m = removeCrefPrefixFromModExp(m, id); 
+        sl = removeCrefPrefixFromSubModExp(rest, id);
+      then
+        SCode.IDXMOD(ssl, m)::sl;
+    
+    case (sm::rest, _) 
+      equation
+        sl = removeCrefPrefixFromSubModExp(rest, id);
+      then 
+        sm::sl;
+  end matchcontinue;
+end removeCrefPrefixFromSubModExp;
+
+protected function removeCrefPrefix
+  input tuple<Absyn.Exp, Absyn.ComponentRef> inCrefExp_inPrefix;
+  output tuple<Absyn.Exp, Absyn.ComponentRef> outCrefExp_outPrefix;
+algorithm
+  outCrefExp_outPrefix := matchcontinue(inCrefExp_inPrefix)
+    local
+      Absyn.ComponentRef cr, pre;
+      
+    case ((Absyn.CREF(cr), pre))
+      equation
+        true = Absyn.crefFirstEqual(cr, pre);
+        cr = Absyn.crefStripFirst(cr);  
+      then
+        ((Absyn.CREF(cr), pre));
+    
+    else inCrefExp_inPrefix;
+  end matchcontinue;
+end removeCrefPrefix;
+
 end SCodeMod;
