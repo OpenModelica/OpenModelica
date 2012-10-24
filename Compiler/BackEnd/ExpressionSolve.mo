@@ -264,7 +264,7 @@ algorithm
   (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3,linearExps)
     local
       DAE.Exp lhs,lhsder,lhsder_1,lhszero,lhszero_1,rhs,rhs_1,e1,e2,crexp,e,a,z;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cr1;
       DAE.Exp invCr;
       list<DAE.Exp> factors;
       Boolean linExp;
@@ -336,6 +336,67 @@ algorithm
         estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
       then
         (rhs_1,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::asserts);
+
+    // cr = exp    
+    case (DAE.CREF(componentRef = cr1),e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = ComponentReference.crefEqual(cr1,cr);
+        // cr not in e2
+        false = Expression.expHasCref(e2,cr);
+      then
+        (e2,{});
+        
+    // exp = cr    
+    case (e1,DAE.CREF(componentRef = cr1),(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = ComponentReference.crefEqual(cr1,cr);
+        // cr not in e2
+        false = Expression.expHasCref(e1,cr);
+      then
+        (e1,{});
+       
+    // -cr = exp    
+    case (DAE.UNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = ComponentReference.crefEqual(cr1,cr);
+        // cr not in e2
+        false = Expression.expHasCref(e2,cr);
+      then
+        (Expression.negate(e2),{});
+    case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = ComponentReference.crefEqual(cr1,cr);
+        // cr not in e2
+        false = Expression.expHasCref(e2,cr);
+      then
+        (Expression.negate(e2),{});        
+
+    // exp = -cr    
+    case (e1,DAE.LUNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = ComponentReference.crefEqual(cr1,cr);
+        // cr not in e2
+        false = Expression.expHasCref(e1,cr);
+      then
+        (Expression.negate(e1),{});     
+        
+    // !cr = exp    
+    case (DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = ComponentReference.crefEqual(cr1,cr);
+        // cr not in e2
+        false = Expression.expHasCref(e2,cr);
+      then
+        (Expression.negate(e2),{});
+        
+    // exp = !cr    
+    case (e1,DAE.LUNARY(operator = DAE.NOT(ty=_), exp = DAE.CREF(componentRef = cr1)),(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = ComponentReference.crefEqual(cr1,cr);
+        // cr not in e2
+        false = Expression.expHasCref(e1,cr);
+      then
+        (Expression.negate(e1),{});   
 
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)), linExp)
       equation

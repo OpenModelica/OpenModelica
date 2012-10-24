@@ -2698,6 +2698,7 @@ algorithm
     case (_,_)
       equation
         tp = typeof(e1);
+        true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
         b = DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
         op = Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
       then
@@ -2762,6 +2763,7 @@ algorithm
     case (_,_)
       equation
         tp = typeof(e1);
+        true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
       then
@@ -2963,8 +2965,10 @@ algorithm
     case (_,_)
       equation
         tp = typeof(e1);
+        true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
         b1 = DAEUtil.expTypeArray(tp);
         tp = typeof(e2);
+        true = Types.isIntegerOrRealOrSubTypeOfEither(tp);
         b2 = DAEUtil.expTypeArray(tp);
         /* swap e1 and e2 if we have scalar mul array */
         (e1_1,e2_1) = Util.swap((not b1) and b2, e1, e2);
@@ -3136,6 +3140,7 @@ protected
   Operator op;
 algorithm
   tp := typeof(e1);
+  true := Types.isIntegerOrRealOrSubTypeOfEither(tp);
   b := DAEUtil.expTypeArray(tp);
   op := Util.if_(b,DAE.DIV_ARR(tp),DAE.DIV(tp));
   outExp := DAE.BINARY(e1,op,e2);

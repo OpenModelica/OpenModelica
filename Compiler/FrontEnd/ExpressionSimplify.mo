@@ -229,10 +229,21 @@ algorithm
         // TODO: Do this better?
       then 
         ((e3,(b,options)));
+
+    case ((e as DAE.CALL(path=Absyn.IDENT("pre"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
+      then
+        ((e,(b,options)));
     
     case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
       equation
         true = Expression.isConst(exp);
+      then
+        ((e,(true,options)));
+
+    // move pre inside
+    case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e}), (b, options)))
+      equation
+        ((e,_)) = Expression.traverseExp(e,preCref,false);
       then
         ((e,(true,options)));
         
@@ -384,6 +395,20 @@ algorithm
     else inTpl;
   end matchcontinue;
 end simplifyWork;
+
+protected function preCref
+  input tuple<DAE.Exp,Boolean> iExp;
+  output tuple<DAE.Exp,Boolean> oExp;
+algorithm
+  oExp := match(iExp)
+    local
+      DAE.Exp e;
+      Boolean b;
+      DAE.Type ty;
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("pre"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),true));
+    else then iExp;
+  end match;
+end preCref;
 
 public function simplify1
 "function: simplify1
