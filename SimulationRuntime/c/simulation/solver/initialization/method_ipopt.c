@@ -52,7 +52,6 @@
 
   typedef struct IPOPT_DATA
   {
-    DATA *data;
     INIT_DATA *initData;
     int useScaling;
     int useSymbolic;
@@ -73,8 +72,7 @@
     IPOPT_DATA *ipopt_data = (IPOPT_DATA*)user_data;
 
     setZ(ipopt_data->initData, x);
-    updateZScaled(ipopt_data->initData);
-    *obj_value = leastSquareWithLambda(ipopt_data->data, ipopt_data->initData, 1.0);
+    *obj_value = leastSquareWithLambda(ipopt_data->initData, 1.0);
 
     return TRUE;
   }
@@ -222,9 +220,9 @@
           for(i=0; i<n; ++i)
           {
             printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
             {
-              if(j+1 == ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
+              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
               {
                 idx++;
                 printf("*");
@@ -242,9 +240,9 @@
         idx = 0;
         for(i=0; i<n; ++i)
         {
-          for(j=0; idx<ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+          for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
           {
-            if(j+1 == ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
+            if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
             {
               jCol[idx] = i;
               iRow[idx] = j;
@@ -281,7 +279,7 @@
 
       if(ipopt_data->useSymbolic == 1)
       {
-        functionJacG_sparse(ipopt_data->data, values);
+        functionJacG_sparse(ipopt_data->initData->simData, values);
 
         if(DEBUG_FLAG(LOG_DEBUG))
         {
@@ -290,9 +288,9 @@
           for(i=0; i<n; ++i)
           {
             printf("        | | column %3d: [ ", i+1);
-            for(j=0; idx<ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
+            for(j=0; idx<ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[i]; ++j)
             {
-              if(j+1 == ipopt_data->data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
+              if(j+1 == ipopt_data->initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.index[idx])
               {
                 printf("%10.5g ", values[idx]);
                 idx++;
@@ -387,8 +385,8 @@
    */
   int ipopt_initialization(INIT_DATA *initData, int useScaling)
   {
-    int n = initData->nz;                /* number of variables */
-    int m = (initData->nInitResiduals > initData->nz) ? 0 : initData->nInitResiduals;    /* number of constraints */
+    int n = initData->nVars;             /* number of variables */
+    int m = (initData->nInitResiduals > initData->nVars) ? 0 : initData->nInitResiduals;    /* number of constraints */
     double* x_L = NULL;                  /* lower bounds on x */
     double* x_U = NULL;                  /* upper bounds on x */
     double* g_L = NULL;                  /* lower bounds on g */
@@ -409,15 +407,14 @@
 
     IPOPT_DATA ipopt_data;
 
-    ipopt_data.data = data;
     ipopt_data.initData = initData;
     ipopt_data.useScaling = useScaling;
-    ipopt_data.useSymbolic = (initialAnalyticJacobianG(data) == 0 ? 1 : 0);
+    ipopt_data.useSymbolic = (initialAnalyticJacobianG(initData->simData) == 0 ? 1 : 0);
 
     if(ipopt_data.useSymbolic == 1)
     {
       /* sparse */
-      nele_jac = data->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[n-1];
+      nele_jac = initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[n-1];
       DEBUG_INFO1(LOG_INIT, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
       DEBUG_INFO1(LOG_INIT, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
     }
@@ -501,7 +498,6 @@
         &ipopt_data);   /* Pointer to user data */
 
     setZ(initData, x);
-    updateZScaled(initData);
 
     /* free allocated memory */
     FreeIpoptProblem(nlp);
@@ -511,15 +507,8 @@
     free(mult_x_U);
 
     /* debug output */
-    DEBUG_INFO1(LOG_INIT, "ending with funcValue = %g", obj);
-    DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
-    for(i=0; i<initData->nz; i++)
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%d] %s = %g [scaled: %g]", i+1, initData->name[i], initData->z[i], initData->zScaled[i]);
-    DEBUG_INFO_AL(LOG_INIT, "| residuals (> 0.001)");
-    for(i=0; i<data->modelData.nInitResiduals; i++)
-      if(fabs(initData->initialResiduals[i]) > 1e-3)
-        DEBUG_INFO_AL3(LOG_INIT, "| | [%d] %g [scaled: %g]", i+1, initData->initialResiduals[i], (initData->residualScalingCoefficients[i] != 0.0) ? initData->initialResiduals[i]/initData->residualScalingCoefficients[i] : 0.0);
-
+    dumpInitialization(initData);
+    
     if(status != Solve_Succeeded && status != Solved_To_Acceptable_Level)
       THROW("ipopt failed. see last warning. use [-lv LOG_INIT] for more output.");
 
