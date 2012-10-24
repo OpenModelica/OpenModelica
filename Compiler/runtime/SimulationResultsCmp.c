@@ -644,7 +644,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   /* check if reftime is larger or equal time */
   res = mk_nil();
   if (time.data[time.n] > timeref.data[timeref.n]) {
-	char buf[250];
+    char buf[250];
 #ifdef DEBUGOUTPUT
     fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n],timeref.data[timeref.n]);
 #endif
