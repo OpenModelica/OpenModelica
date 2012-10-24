@@ -477,10 +477,7 @@ uniontype DAEHandlerJop
 end DAEHandlerJop;
 
 public
-type DAEHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>>;
-
-public
-type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>> "StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns";
+type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>,Integer> "StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns,NrOfEqnsbeforeIndexReduction";
 
 
 public

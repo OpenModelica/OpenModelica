@@ -1600,7 +1600,7 @@ algorithm
         (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceVarTraverser,repl);
         (inieqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,repl);
         (remeqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,repl);
-        (whenClauseLst1,_) = BackendDAETransform.traverseBackendDAEExpsWhenClauseLst(whenClauseLst,replaceWhenClauseTraverser,repl);
+        (whenClauseLst1,_) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, NONE());
         systs1 = removeSimpleEquationsShared1(systs,{},repl);
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendDAEUtil.listEquation(List.select(BackendDAEUtil.equationList(remeqns1),assertWithCondTrue));

@@ -644,10 +644,15 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   /* check if reftime is larger or equal time */
   res = mk_nil();
   if (time.data[time.n] > timeref.data[timeref.n]) {
+	char buf[250];
 #ifdef DEBUGOUTPUT
     fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n],timeref.data[timeref.n]);
 #endif
     res = mk_cons(mk_scon("Reference file has not enough time points!\n"),res);
+    snprintf(buf,250,"Reffile[%d]=%f\n",timeref.n,timeref.data[timeref.n]);
+    res = mk_cons(mk_scon(buf),res);
+    snprintf(buf,250,"File[%d]=%f\n",time.n,time.data[time.n]);
+    res = mk_cons(mk_scon(buf),res);
   }
   var1=NULL;
   var2=NULL;

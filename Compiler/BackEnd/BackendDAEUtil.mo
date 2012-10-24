@@ -4044,8 +4044,9 @@ algorithm
         res = incidenceRowExp1(varslst,p,pa,false);
       then
         ((e,false,(vars,res)));
+        
     /* pre(v) is considered a known variable */
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa)))) then ((e,false,(vars,pa)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,pa)))) then ((e,false,(vars,pa)));
     
     /* delay(e) can be used to break algebraic loops given some solver options */
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),(vars,pa))))
@@ -8145,7 +8146,7 @@ end matchingAlgorithmFunc;
 
 partial function stateDeselectionFunc
   input BackendDAE.BackendDAE inDAE;
-  input list<Option<BackendDAE.DAEHandlerArg>> inArgs;
+  input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> inArgs;
   output BackendDAE.BackendDAE outDAE;
 end stateDeselectionFunc;
 
@@ -8286,7 +8287,7 @@ protected function reduceIndexDAE
 protected
   list<BackendDAE.EqSystem> systs;
   BackendDAE.Shared shared;
-  list<Option<BackendDAE.DAEHandlerArg>> args;
+  list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
   String methodstr;
   stateDeselectionFunc sDfunc;  
 algorithm
@@ -8315,18 +8316,18 @@ protected function mapReduceIndexDAE
   input tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
   input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
   input list<BackendDAE.EqSystem> acc;
-  input list<Option<BackendDAE.DAEHandlerArg>> acc1;
+  input list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> acc1;
   output list<BackendDAE.EqSystem> osysts;
   output BackendDAE.Shared oshared;
-  output list<Option<BackendDAE.DAEHandlerArg>> oargs;
+  output list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> oargs;
 algorithm
   (osysts,oshared,oargs) := match (isysts,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection,acc,acc1)
     local 
       BackendDAE.EqSystem syst;
       list<BackendDAE.EqSystem> systs;
       BackendDAE.Shared shared;
-      Option<BackendDAE.DAEHandlerArg> arg;
-      list<Option<BackendDAE.DAEHandlerArg>> args;
+      Option<BackendDAE.StructurallySingularSystemHandlerArg> arg;
+      list<Option<BackendDAE.StructurallySingularSystemHandlerArg>> args;
     case ({},_,_,_,_,_,_) then (listReverse(acc),ishared,listReverse(acc1));
     case (syst::systs,_,_,_,_,_,_)
       equation
@@ -8348,7 +8349,7 @@ protected function reduceIndexDAEWork
   input tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> stateDeselection;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
-  output Option<BackendDAE.DAEHandlerArg> oArg;
+  output Option<BackendDAE.StructurallySingularSystemHandlerArg> oArg;
 algorithm
   (osyst,oshared,oArg) := matchcontinue (isyst,ishared,inMatchingOptions,matchingAlgorithm,stateDeselection)
     local 

@@ -1978,14 +1978,14 @@ protected function emptyDAEHandlerArg
   returns an empty DAEHandlerArg"
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
-  output BackendDAE.DAEHandlerArg arg;
+  output BackendDAE.StructurallySingularSystemHandlerArg arg;
 protected
   HashTableCG.HashTable ht;
   HashTable3.HashTable dht; 
 algorithm
   ht := HashTableCG.emptyHashTable();
   dht := HashTable3.emptyHashTable();
-  arg := (BackendDAE.STATEORDER(ht,dht),{},mapEqnIncRow,mapIncRowEqn);
+  arg := (BackendDAE.STATEORDER(ht,dht),{},mapEqnIncRow,mapIncRowEqn,0);
 end emptyDAEHandlerArg;
 
 public function addStateOrder
@@ -2679,7 +2679,7 @@ algorithm
       list<Integer> eqns1,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<DAE.ComponentRef> states;
       array<list<Integer>> mt;
-      Integer stateno;
+      Integer stateno,noofeqns;
       DAE.ComponentRef state,dummy_der;
       list<String> es;
       String es_1;
@@ -2692,7 +2692,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
 
-    case (_,_,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,ass1,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn))
+    case (_,_,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,ass1,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns))
       equation
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
@@ -2733,9 +2733,9 @@ algorithm
         // BackendDump.dumpIncidenceMatrix(m);
         // BackendDump.dumpStateVariables(BackendVariable.daeVars(syst));
       then
-        (changedeqns,actualEqn,syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn));
+        (changedeqns,actualEqn,syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,noofeqns));
 
-    case (_,_,syst,shared,_,_,(_,_,_,mapIncRowEqn))
+    case (_,_,syst,shared,_,_,(_,_,_,mapIncRowEqn,_))
       equation
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
@@ -3303,8 +3303,8 @@ algorithm
     local
       list<BackendDAE.WhenOperator> res,res1;
       BackendDAE.WhenOperator wop;
-      DAE.Exp cond,cond1,msg,level;
-      DAE.ComponentRef cr;
+      DAE.Exp cond,cond1,msg,level,cre;
+      DAE.ComponentRef cr,cr1;
       DAE.ElementSource source;
       Type_a ext_arg_1,ext_arg_2;
       Absyn.Path functionName;
@@ -3316,8 +3316,10 @@ algorithm
       equation
         (res1,ext_arg_1) =  traverseBackendDAEExpsWhenOperator(res,func,inTypeA);
         ((cond1,ext_arg_2)) = func((cond,ext_arg_1));
+        cre = Expression.crefExp(cr);
+        ((DAE.CREF(componentRef=cr1),ext_arg_2)) = func((cre,ext_arg_2));
       then
-        (BackendDAE.REINIT(cr,cond1,source)::res1,ext_arg_2);
+        (BackendDAE.REINIT(cr1,cond1,source)::res1,ext_arg_2);
 
     case (BackendDAE.ASSERT(condition=cond,message=msg,level=level,source=source)::res,_,_)
       equation
