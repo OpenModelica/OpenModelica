@@ -4223,6 +4223,48 @@ algorithm
   end match;
 end applyAndFold;
 
+public function applyAndFold1
+  "fold(map(inList, inApplyFunc(inExtraArg)), inFoldFunc, inFoldArg), but is more
+   memory-efficient."
+  input list<ElementInType> inList;
+  input FoldFunc inFoldFunc;
+  input ApplyFunc inApplyFunc;
+  input ElementInType inExtraArg;
+  input FoldType inFoldArg;
+  output FoldType outResult;
+
+  partial function ApplyFunc
+    input ElementInType inElement1;
+    input ElementInType inElement2;
+    output ElementOutType1 outElement;
+  end ApplyFunc;
+
+  partial function FoldFunc
+    input ElementOutType1 inElement;
+    input FoldType inAccumulator;
+    output FoldType outResult;
+  end FoldFunc;
+algorithm
+  outResult := match(inList, inFoldFunc, inApplyFunc, inExtraArg, inFoldArg)
+    local
+      list<ElementInType> rest;
+      ElementInType head;
+      ElementOutType1 res;
+      FoldType fold_res;
+
+    case ({}, _, _, _, _) then inFoldArg;
+
+    case (head :: rest, _, _, _, _)
+      equation
+        res = inApplyFunc(head, inExtraArg);
+        fold_res = inFoldFunc(res, inFoldArg);
+        fold_res = applyAndFold1(rest, inFoldFunc, inApplyFunc, inExtraArg, fold_res);
+      then
+        fold_res;
+
+  end match;
+end applyAndFold1;
+
 public function mapList
   "Takes a list of lists and a functions, and creates a new list of lists by
    applying the function to all elements in  the list of lists.
