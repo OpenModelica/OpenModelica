@@ -712,5 +712,36 @@ algorithm
   end match;
 end isTypeOrRecord;
 
+public function stateToSCodeRestriction
+"@author: adrpo
+ ClassInf.State -> SCode.Restriction"
+  input State inState;
+  output SCode.Restriction outRestriction;
+  output Absyn.Path outPath;
+algorithm
+  (outRestriction, outPath) := match (inState)
+    local Absyn.Path p; Boolean isExpandable;
+    
+    case UNKNOWN(p) then (SCode.R_CLASS(),p);
+    case OPTIMIZATION(p) then (SCode.R_OPTIMIZATION(),p);
+    case MODEL(p) then (SCode.R_MODEL(),p);
+    case RECORD(p) then (SCode.R_RECORD(),p);
+    case BLOCK(p) then (SCode.R_BLOCK(),p) ;
+    case CONNECTOR(p,isExpandable) then (SCode.R_CONNECTOR(isExpandable),p);
+    case TYPE(p) then (SCode.R_TYPE(),p);
+    case PACKAGE(p) then (SCode.R_PACKAGE(),p) ;
+    case FUNCTION(p) then (SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()),p);
+    case ENUMERATION(p) then (SCode.R_ENUMERATION(),p);
+    case TYPE_INTEGER(p) then (SCode.R_PREDEFINED_INTEGER(),p);
+    case TYPE_REAL(p) then (SCode.R_PREDEFINED_REAL(),p);
+    case TYPE_STRING(p) then (SCode.R_PREDEFINED_STRING(),p);
+    case TYPE_BOOL(p) then (SCode.R_PREDEFINED_BOOLEAN(),p);
+    case TYPE_ENUM(p) then (SCode.R_PREDEFINED_ENUMERATION(),p);
+     /* Meta Modelica extensions */
+    case META_UNIONTYPE(p) then (SCode.R_UNIONTYPE(),p);
+    case  META_RECORD(p) then (SCode.R_METARECORD(p, 0, false),p);
+  end match;
+end stateToSCodeRestriction;
+
 end ClassInf;
 

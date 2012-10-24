@@ -160,6 +160,7 @@ protected import ValuesUtil;
 protected import System;
 protected import SCodeFlatten;
 protected import SCodeDump;
+protected import SCodeMod;
 //protected import Database;
 
 public function newIdent
@@ -6800,12 +6801,12 @@ algorithm
         crefs1 = getCrefFromMod(m);
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
-        crefs = List.flatten({crefs1, crefs2, crefs3});
+        crefs = List.unionList({crefs1, crefs2, crefs3});
 
         // can call instVar
         (cache, env, ih, store, crefs) = removeSelfReferenceAndUpdate(cache, 
           env, ih, store, crefs, own_cref, t, ci_state, attr, prefixes,
-          impl, inst_dims, pre, mods, info);
+          impl, inst_dims, pre, mods, m, info);
 
         // can call instVar
         (cache, env2, ih) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs, ci_state, impl);
@@ -9192,7 +9193,7 @@ algorithm
       equation
         l1 = getCrefFromSubmods(submods);
         l2 = Absyn.getCrefFromExp(e,true);
-        res = listAppend(l2, l1);
+        res = List.union(l2, l1);
       then
         res;
     case (SCode.MOD(subModLst = submods,binding = NONE()))
@@ -9227,7 +9228,7 @@ algorithm
       equation
         l1 = getCrefFromDim(rest);
         l2 = Absyn.getCrefFromExp(exp,true);
-        res = listAppend(l1, l2);
+        res = List.union(l1, l2);
       then
         res;
     case ((Absyn.NOSUB() :: rest))
@@ -16125,6 +16126,7 @@ protected function removeSelfReferenceAndUpdate
   input InstDims inst_dims;
   input Prefix.Prefix pre;
   input DAE.Mod mods;
+  input SCode.Mod scodeMod;
   input Absyn.Info info;
   output Env.Cache outCache;
   output Env.Env outEnv;
@@ -16133,7 +16135,7 @@ protected function removeSelfReferenceAndUpdate
   output list<Absyn.ComponentRef> o1;
 algorithm
   (outCache,outEnv,outIH,outStore,o1) :=
-  matchcontinue(inCache,inEnv,inIH,inStore,inRefs,inRef,inPath,inState,iattr,inPrefixes,impl,inst_dims,pre,mods,info)
+  matchcontinue(inCache,inEnv,inIH,inStore,inRefs,inRef,inPath,inState,iattr,inPrefixes,impl,inst_dims,pre,mods,scodeMod,info)
     local
       Absyn.Path sty;
       Absyn.ComponentRef c1;
@@ -16157,8 +16159,11 @@ algorithm
       InstanceHierarchy ih;
       Absyn.InnerOuter io;
       UnitAbsyn.InstStore store;
+      DAE.Mod dM;
+      SCode.Mod sM;
+      String mname;
 
-    case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_)
+    case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_,_)
       equation
         cl2 = removeCrefFromCrefs(cl1, c1);
         i1 = listLength(cl2);
@@ -16167,17 +16172,17 @@ algorithm
       then
         (cache,env,ih,store,cl2);
 
-    case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,state,
+    case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n),sty,state,
          (attr as SCode.ATTR(arrayDims = ad, connectorType = ct,
                              parallelism= prl1, variability = var1, direction = dir)),
-         _,_,_,_,_,_)
+         _,_,_,_,_,_,_)
          // we have reference to ourself, try to instantiate type.
       equation
         ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
-        
+                
         (cache,compenv,ih,store,_,_,ty,_) = 
           instVar(cache, cenv, ih, store, state, DAE.NOMOD(), pre, n, c, attr,
             inPrefixes, dims, {}, inst_dims, true, NONE(), info, ConnectionGraph.EMPTY, Connect.emptySet, env);
@@ -16192,13 +16197,51 @@ algorithm
       then
         (cache,env,ih,store,cl2);
         
-    case(_, _, _, _, _, Absyn.CREF_IDENT(name = n), _, _, _, _, _, _, _, _, _)
+    case(_, _, _, _, _, Absyn.CREF_IDENT(name = n), _, _, _, _, _, _, _, _, _, _)
       equation
         ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
       then
         fail();
+    
+    /*
+    // adrpo, try to remove the modifier containing the self expression and use that to instantiate the type!
+    case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n), sty, state,
+         (attr as SCode.ATTR(arrayDims = ad, connectorType = ct,
+                             parallelism= prl1, variability = var1, direction = dir)),
+         _,_,_,_,_,_,_)
+      equation
+        ErrorExt.setCheckpoint("Inst.removeSelfReferenceAndUpdate");
+        cl2 = removeCrefFromCrefs(cl1, c1);
+        (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
+        (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
+         
+        sM = SCodeMod.removeCrefPrefixFromModExp(scodeMod, inRef);
+         
+        //(cache, dM) = elabMod(cache, env, ih, pre, sM, impl, info);
+        dM = Mod.elabUntypedMod(sM, env, pre);          
+        
+        (cache,compenv,ih,store,_,_,ty,_) = 
+          instVar(cache, cenv, ih, store, state, dM, pre, n, c, attr,
+            inPrefixes, dims, {}, inst_dims, true, NONE(), info, ConnectionGraph.EMPTY, Connect.emptySet, env);
 
-    case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_)
+        // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
+
+        io = SCode.prefixesInnerOuter(inPrefixes);
+        vis = SCode.prefixesVisibility(inPrefixes);
+        new_var = DAE.TYPES_VAR(n,DAE.ATTR(ct,prl1,var1,dir,io,vis),ty,DAE.UNBOUND(),NONE());
+        env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv);
+        ErrorExt.delCheckpoint("Inst.removeSelfReferenceAndUpdate");
+      then
+        (cache,env,ih,store,cl2);
+
+    case(_, _, _, _, _, Absyn.CREF_IDENT(name = n), _, _, _, _, _, _, _, _, _, _)
+      equation
+        ErrorExt.rollBack("Inst.removeSelfReferenceAndUpdate");
+      then
+        fail();
+    */
+    
+    case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_,_)
       equation
         cl2 = removeCrefFromCrefs(cl1, c1);
       then

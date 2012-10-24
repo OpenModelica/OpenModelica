@@ -4300,6 +4300,17 @@ algorithm
   end matchcontinue;
 end crefEqual;
 
+public function crefFirstEqual 
+"@author: adrpo
+ a.b, a -> true
+ b.c, a -> false"
+  input ComponentRef iCr1;
+  input ComponentRef iCr2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := stringEq(crefFirstIdent(iCr1),crefFirstIdent(iCr2));
+end crefFirstEqual;
+
 public function subscriptsEqual "
 Checks if two subscript lists are equal.
 See also crefEqual."

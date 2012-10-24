@@ -169,6 +169,11 @@ algorithm
     case (DAE.RCONST(real = r)) then Absyn.REAL(r);
     case (DAE.SCONST(string = s)) then Absyn.STRING(s);
     case (DAE.BCONST(bool = b)) then Absyn.BOOL(b);
+    case (DAE.ENUM_LITERAL(name = path))
+      equation
+        cr_1 = Absyn.pathToCref(path);
+      then Absyn.CREF(cr_1);
+    
     case (DAE.CREF(componentRef = cr))
       equation
         cr_1 = ComponentReference.unelabCref(cr);
