@@ -886,6 +886,39 @@ algorithm
   end match;
 end setStartAttr;
 
+public function setStartAttrOption "
+  sets the start attribute. If NONE(), assumes Real attributes."
+  input Option<DAE.VariableAttributes> attr;
+  input Option<DAE.Exp> start;
+  output Option<DAE.VariableAttributes> outAttr;
+algorithm
+  outAttr:=
+  match (attr,start)
+    local
+      Option<DAE.Exp> q,u,du,f,n,so;
+      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.StateSelect> ss;
+      Option<DAE.Uncertainty> unc;
+      Option<DAE.Distribution> distOpt;
+      Option<DAE.Exp> eb;
+      Option<Boolean> ip,fn;
+      
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,_,f,n,ss,unc,distOpt,eb,ip,fn,so)),_)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,start,f,n,ss,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_INT(q,minMax,_,f,unc,distOpt,eb,ip,fn,so)),_)
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,start,f,unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_BOOL(q,_,f,eb,ip,fn,so)),_)
+    then SOME(DAE.VAR_ATTR_BOOL(q,start,f,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_STRING(q,_,eb,ip,fn,so)),_)
+    then SOME(DAE.VAR_ATTR_STRING(q,start,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,du,eb,ip,fn,so)),_)
+    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,start,du,eb,ip,fn,so));
+    case (NONE(),NONE()) then NONE();
+    case (NONE(),_)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),start,NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+  end match;
+end setStartAttrOption;
+
 public function setStartOrigin "
   sets the startOrigin attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;

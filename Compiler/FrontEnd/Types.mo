@@ -613,6 +613,25 @@ algorithm
   end matchcontinue;
 end isBooleanOrSubTypeBoolean;
 
+public function isStringOrSubTypeString
+"@author: adrpo
+ This function verifies if it is some kind of a String type we are working with."
+  input Type inType;
+  output Boolean b;
+algorithm 
+  b := matchcontinue(inType)
+    local Type ty; Boolean lb1,lb2,lb3;
+    case(ty)
+      equation
+        lb1 = isString(ty);
+        lb2 = subtype(ty, DAE.T_STRING_DEFAULT);
+        lb3 = subtype(DAE.T_STRING_DEFAULT, ty);
+        lb1 = boolOr(lb1,boolAnd(lb2,lb3));
+      then lb1;
+    case(_) then false;
+  end matchcontinue;
+end isStringOrSubTypeString;
+
 public function isIntegerOrRealOrSubTypeOfEither
   "Checks if a type is either some Integer or Real type."
   input Type t;
