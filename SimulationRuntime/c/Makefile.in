@@ -10,9 +10,9 @@ builddir_lib=$(top_builddir)/build/lib/omc
 builddir_inc=$(top_builddir)/build/include/omc
 
 AR = sh ar.sh
-CC := @CC@
-CXX := @CXX@
-CFLAGS := @CFLAGS@ @IPOPT_CFLAGS@
+CC = @CC@
+CXX = @CXX@
+CONFIG_CFLAGS = @CFLAGS@ @IPOPT_CFLAGS@
 
 LIBMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"

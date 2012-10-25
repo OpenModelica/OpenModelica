@@ -50,6 +50,7 @@ AC_SUBST(PYTHON_INTERFACE)
 AC_SUBST(WITH_SUNDIALS)
 AC_SUBST(WITH_IPOPT)
 AC_SUBST(OMNOTEBOOK)
+AC_SUBST(FPMATHFORTRAN)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -64,6 +65,13 @@ else
 fi
 AC_PREFIX_DEFAULT($PREFIX)
 prefix=$PREFIX
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_CPP
+AC_PROG_MAKE_SET
+AC_PROG_LEX
 
 dnl Disables the default CFLAGS="-g -O2"
 if test -z "$CFLAGS"; then
@@ -90,26 +98,14 @@ fi
 fi
 
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
-dnl Or if -ffloat-store  is set
-dnl With the new solver interface, this seems to work even with -mpfpath=387
-#AC_MSG_CHECKING([for floating point bugs])
-#if echo $CFLAGS | grep -q -- -ffloat-store; then
-#  AC_MSG_RESULT([have -ffloat-store])
-#elif echo $CFLAGS | grep -q -- -msse2 && echo $CFLAGS | grep -q -- -mfpmath=sse; then
-#  AC_MSG_RESULT([have SSE2])
-#else
-#  CFLAGS+=" -msse2 -mfpmath=sse"
-#  AC_MSG_RESULT([adding -msse2 -mfpmath=sse])
-#fi
+
+CFLAGS_BEFORE=$CFLAGS
+CFLAGS="-mfpmath=sse -Werror"
+AC_MSG_CHECKING([for floating point bugs])
+AC_TRY_LINK([int abc() {}], [abc();], [AC_MSG_RESULT([force SSE2]); FPMATHFORTRAN="-msse -mfpmath=sse"], [AC_MSG_RESULT([no]); FPMATHFORTRAN=-ffloat-store])
+CFLAGS=$CFLAGS_BEFORE
 
 fi # End x86-specific CFLAGS
-
-dnl Checks for programs.
-AC_PROG_CC
-AC_PROG_CXX
-AC_PROG_CPP
-AC_PROG_MAKE_SET
-AC_PROG_LEX
 
 dnl check for environment variables
 

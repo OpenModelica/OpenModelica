@@ -6,10 +6,9 @@
 
 include Makefile.objs
 
-ANSI=# -ansi
-CXXFLAGS := $(CFLAGS) -mfpmath=sse -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I$(UTILPATH)
-CPPFLAGS := $(CFLAGS) -mfpmath=sse -Wall $(ANSI) $(EXTRA_CFLAGS) -I. -I$(UTILPATH)
-CFLAGS := $(CFLAGS) -mfpmath=sse -Wall $(ANSI) -pedantic -I. -I$(METAPATH) -I$(METAPATH)gc $(EXTRA_CFLAGS)
+CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc
+CFLAGS = $(CPPFLAGS) $(CONFIG_CFLAGS) -Wall -pedantic $(EXTRA_CFLAGS)
+CXXFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions
 # P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
 
