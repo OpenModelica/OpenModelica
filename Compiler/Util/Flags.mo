@@ -552,7 +552,7 @@ constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgo
     ("3", Util.gettext("Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."))})),
     Util.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));    
 constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
-  NONE(), EXTERNAL(), STRING_FLAG("PFPlusExt"),
+  NONE(), EXTERNAL(), STRING_FLAG("omc"),
   SOME(STRING_DESC_OPTION({
     ("omc", Util.gettext("Depth First Search based Algorithm with simple Look Ahead Feature")),
     ("BFSB", Util.gettext("Breath First Search based Algorithm")),
@@ -575,7 +575,7 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("PRExt", Util.gettext("matching algorithm using push relabel mechanism external c implementation"))})),
     Util.gettext("Sets the matching algorithm to use. See +help=optmodules for more info."));  
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
-  NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
+  NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
   SOME(STRING_DESC_OPTION({
     ("dummyDerivative", Util.gettext("simple index reduction method, select dummy states based on heuristics")),
     ("dynamicStateSelection", Util.gettext("simple index reduction method, select (dynamic) dummy states based on analysis of the system"))})),
@@ -585,7 +585,6 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
 //    "relaxSystem",
     "removeFinalParameters",
     "removeevaluateParameters",
-    "removeSimpleEquations",
     "inlineArrayEqn",
     "constantLinearSystem",
     "simplifysemiLinear",
