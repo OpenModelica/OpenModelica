@@ -222,13 +222,15 @@ algorithm
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
         eqns1 = List.unique(eqns1);                
+        // do not differentiate self generated equations $_DER.x = der(x) 
+        eqns1 = List.select1(eqns1,intLe,noofeqns);
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\nmarked equations: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns1,intString," ","\n"));
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
         // diff Alias does not yet work proper
         //(syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedeqns,eqns1) = differentiateAliasEqns(isyst,ishared,eqns1,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,{},{});
         //(syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,changedeqns) = differentiateEqns(syst,shared,eqns1,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedeqns);
-        (syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,barray) = differentiateEqns(isyst,ishared,eqns1,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,ibarray,noofeqns);
+        (syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,barray) = differentiateEqns(isyst,ishared,eqns1,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,ibarray);
       then
        (barray,syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,noofeqns));
 
@@ -516,7 +518,6 @@ protected function differentiateEqns
   input array<list<Integer>> imapEqnIncRow;
   input array<Integer> imapIncRowEqn;
   input array<Boolean> ibarray;
-  input Integer noofeqns;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAss1;
@@ -528,7 +529,7 @@ protected function differentiateEqns
   output array<Boolean> obarray;
 algorithm
   (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn,obarray):=
-  matchcontinue (isyst,ishared,inEqns,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,ibarray,noofeqns)
+  matchcontinue (isyst,ishared,inEqns,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,ibarray)
     local
       Integer e_1,e,eqnss,eqnss1;
       BackendDAE.Equation eqn,eqn_1;
@@ -545,8 +546,8 @@ algorithm
       array<Integer> ass1,ass2,mapIncRowEqn;
       array<list<Integer>> mapEqnIncRow;
       array<Boolean> barray;
-    case (_,_,{},_,_,_,_,_,_,_,_) then (isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,ibarray);
-    case (syst as BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),_,_,_,_,_,_,_,_)
+    case (_,_,{},_,_,_,_,_,_,_) then (isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,ibarray);
+    case (syst as BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -554,7 +555,7 @@ algorithm
         eqn_1 = Derive.differentiateEquationTime(eqn, v, shared);
         (eqn_1,so) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1, BackendDAETransform.replaceStateOrderExp,inStateOrd); 
         eqnss = BackendDAEUtil.equationArraySize(eqns);
-        (eqn_1,(v1,eqns,so,ilst,_,_,_,_)) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1,changeDerVariablestoStates,(v,eqns,inStateOrd,{},e,imapIncRowEqn,mt,noofeqns));
+        (eqn_1,(v1,eqns,so,ilst,_,_,_)) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn_1,changeDerVariablestoStates,(v,eqns,inStateOrd,{},e,imapIncRowEqn,mt));
         eqnss1 = BackendDAEUtil.equationArraySize(eqns);
         eqnslst = Debug.bcallret2(intGt(eqnss1,eqnss),List.intRange2,eqnss+1,eqnss1,{});
         Debug.fcall(Flags.BLT_DUMP, debugdifferentiateEqns,(eqn,eqn_1)); 
@@ -576,10 +577,10 @@ algorithm
         orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst,e,eqn);
         // collect changed equations     
         barray = List.fold(ilst1,setBArrayCheckSize,ibarray);
-        (syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,barray) = differentiateEqns(syst,shared,es,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,barray,noofeqns);
+        (syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,barray) = differentiateEqns(syst,shared,es,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,barray);
       then
         (syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,barray);
-    case (syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),_,(e :: _),_,_,_,_,_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),_,(e :: _),_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -3684,11 +3685,11 @@ protected function changeDerVariablestoStates
 "function: changeDerVariablestoStates
   author: Frenkel TUD 2011-05
   change the kind of all variables in a der to state"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT,Integer>> inTpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT,Integer>> outTpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> inTpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> outTpl;
 protected
   DAE.Exp e;
-  tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT,Integer> vars;
+  tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT> vars;
 algorithm
   (e,vars) := inTpl;
   outTpl := Expression.traverseExp(e,changeDerVariablestoStatesFinder,vars);
@@ -3698,8 +3699,8 @@ protected function changeDerVariablestoStatesFinder
 "function: changeDerVariablestoStatesFinder
   author: Frenkel TUD 2011-05
   helper for changeDerVariablestoStates"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT,Integer/*NoOfEquationsbeforeIndexReduction*/>> inExp;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT,Integer>> outExp;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrix>> inExp;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.StateOrder,list<Integer>,Integer,array<Integer>,BackendDAE.IncidenceMatrixT>> outExp;
 algorithm
   (outExp) := matchcontinue (inExp)
     local
@@ -3710,7 +3711,7 @@ algorithm
       BackendDAE.Type b;
       Option<DAE.Exp> c;
       Option<Values.Value> d;
-      Integer g,noofeqns;
+      Integer g;
       DAE.ComponentRef dummyder,cr;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -3733,7 +3734,7 @@ algorithm
       array<Integer> mapIncRowEqn;
       BackendDAE.IncidenceMatrixT mt;
 
-     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)))
+     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         dummyder = BackendDAETransform.getStateOrder(cr,so);
         (v::_,i::_) = BackendVariable.getVar(dummyder,vars);
@@ -3743,60 +3744,60 @@ algorithm
         e = Expression.crefExp(dummyder);
         ilst = List.consOnTrue(nostate, i, ilst);
       then
-        ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)));
+        ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
 
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)))
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         ((BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         // do not use the normal derivative prefix for the name
         //dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
-        (eqns_1,so1) = addDummyStateEqn(intGe(noofeqns,eindx),vars,eqns,cr,dummyder,so,i,eindx,mapIncRowEqn,mt);
+        (eqns_1,so1) = addDummyStateEqn(vars,eqns,cr,dummyder,so,i,eindx,mapIncRowEqn,mt);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.STATE(), a, prl, b, NONE(), NONE(), lstSubs, source, SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())), comment, ct), vars);
         e = Expression.makeCrefExp(dummyder,DAE.T_REAL_DEFAULT);
       then
-        ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars_1,eqns_1,so1,i::ilst,eindx,mapIncRowEqn,mt,noofeqns)));
+        ((DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal), (vars_1,eqns_1,so1,i::ilst,eindx,mapIncRowEqn,mt)));
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)))
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         ((BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,distribution,equationBound,isProtected,finalPrefix,startOrigin)),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,distribution,equationBound,isProtected,finalPrefix,startOrigin)),comment,ct), vars);
       then
-        ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt,noofeqns)));
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)))
+        ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt)));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         ((BackendDAE.VAR(cr,BackendDAE.DUMMY_DER(),a,prl,b,c,d,lstSubs,source,NONE(),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),comment,ct), vars);
       then
-        ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt,noofeqns)));        
+        ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt)));        
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)))
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         ((BackendDAE.VAR(cr,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,_,unc,distribution,equationBound,isProtected,finalPrefix,startOrigin)),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(quantity,unit,displayUnit,min,initial_,fixed,nominal,SOME(DAE.NEVER()),unc,distribution,equationBound,isProtected,finalPrefix,startOrigin)),comment,ct), vars);
       then
-        ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt,noofeqns)));
+        ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt)));
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)))
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         ((BackendDAE.VAR(cr,BackendDAE.VARIABLE(),a,prl,b,c,d,lstSubs,source,NONE(),comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(DAE.NEVER()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),comment,ct), vars);
       then
-        ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt,noofeqns)));
+        ((e, (vars_1,eqns,so,i::ilst,eindx,mapIncRowEqn,mt)));
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)))
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         ((BackendDAE.VAR(varKind=BackendDAE.STATE()) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
       then
-        ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)));
+        ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)))
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         (v::_,i::_) = BackendVariable.getVar(cr, vars) "der(v) v is alg var => der_v" ;
         print("wrong Variable in der: \n");
         BackendDump.debugExpStr((e,"\n"));
       then
-        ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt,noofeqns)));
+        ((e, (vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)));
 
     case _ then inExp;
 
@@ -3807,7 +3808,6 @@ protected function addDummyStateEqn
 "function: addDummyStateEqn
   author: Frenkel TUD 2011-05
   helper for changeDerVariablestoStatesFinder"
-  input Boolean addEqn;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
   input DAE.ComponentRef inCr;
@@ -3820,21 +3820,18 @@ protected function addDummyStateEqn
   output BackendDAE.EquationArray outEqns;
   output BackendDAE.StateOrder outSo;
 algorithm
-  (outEqns,outSo) := matchcontinue (addEqn,inVars,inEqns,inCr,inDCr,inSo,i,eindx,mapIncRowEqn,mt)
+  (outEqns,outSo) := matchcontinue (inVars,inEqns,inCr,inDCr,inSo,i,eindx,mapIncRowEqn,mt)
     local
       BackendDAE.EquationArray eqns1;
       DAE.Exp ecr,edcr,c;
       BackendDAE.StateOrder so;
-      list<Integer> eqnindxs;
-    case (false,_,_,_,_,_,_,_,_,_)
-      then 
-        (inEqns,inSo);        
-    case (_,_,_,_,_,_,_,_,_,_)
+      list<Integer> eqnindxs;       
+    case (_,_,_,_,_,_,_,_,_)
       equation
         (_::_,_::_) = BackendVariable.getVar(inDCr, inVars);
       then 
         (inEqns,inSo);
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_)
       equation
         ecr = Expression.makeCrefExp(inCr,DAE.T_REAL_DEFAULT);
         edcr = Expression.makeCrefExp(inDCr,DAE.T_REAL_DEFAULT);
