@@ -6621,7 +6621,7 @@ algorithm
     case({}) then {};
       
     case(var::vars) equation
-      SOME(startExp) = BackendVariable.varStartValueOption(var);
+      //SOME(startExp) = BackendVariable.varStartValueOption(var);
       true = BackendVariable.varFixed(var);
       false = BackendVariable.isStateVar(var);
       false = BackendVariable.isParam(var);

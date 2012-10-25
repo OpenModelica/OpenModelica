@@ -7030,7 +7030,7 @@ algorithm
         varsOut = fixIndex(varsOut);
         /* fix the initial thing */
         initCrefs = BackendEquation.getAllCrefFromEquations(ie);
-        varsOut = fixInitialThing(varsOut, initCrefs);
+        //varsOut = fixInitialThing(varsOut, initCrefs);
       then
         varsOut;
      
