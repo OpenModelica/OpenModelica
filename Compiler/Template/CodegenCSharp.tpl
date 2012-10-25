@@ -289,6 +289,7 @@ case MODELINFO(varInfo = VARINFO(__), vars = SIMVARS(__)) then
 const int 
   NHELP = <%varInfo.numHelpVars%>, 
   NG = <%varInfo.numZeroCrossings%>,
+  NREL = <%varInfo.numRelations%>,  
   NG_SAM = <%varInfo.numTimeEvents%>,
   NX = <%varInfo.numStateVars%>, 
   NY = <%varInfo.numAlgVars%>, 
@@ -312,6 +313,7 @@ const int
 public override string ModelName        { get { return "<%dotPath(name)%>"; }}
 public override int HelpVarsCount       { get { return NHELP; } }
 public override int ZeroCrossingsCount  { get { return NG; } }
+public override int RelationsCount      { get { return NREL; } }
 public override int SampleTypesCount    { get { return NG_SAM; } }
 public override int StatesCount         { get { return NX; } }
 public override int AlgebraicsCount     { get { return NY; } }
@@ -713,15 +715,15 @@ public override void FunOnlyZeroCrossings(double time, double[] gout) //TODO:??t
 >>
 end functionOnlyZeroCrossing;
 
-template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
-  match it
+template zeroCrossing(Exp zcExp, Integer zcIndex, SimCode simCode) ::=
+  match zcExp
   case RELATION(__) then
     let &preExp = buffer ""
     let e1 = daeExp(exp1, contextOther, &preExp, simCode)
     let e2 = daeExp(exp2, contextOther, &preExp, simCode)
     <<
     <%preExp%>
-    gout[<%index%>] = <%
+    gout[<%zcIndex%>] = <%
                     match operator
                     case GREATER(__)
                     case LESSEQ(__)    then '<%e1%> - <%e2%>' //space is mandatory here ... (X--1) must be (X - -1)
@@ -733,7 +735,7 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
                    %>;      
     >>
     /* to be deleted
-     {var _zen = zeroCrossingEnabled[<%index%>]; //ZEROCROSSING(<%index%>, <%zeroCrossingOpFunc(operator)%>(<%e1%>, <%e2%>));
+     {var _zen = zeroCrossingEnabled[<%zcIndex%>]; //ZEROCROSSING(<%zcIndex%>, <%zeroCrossingOpFunc(operator)%>(<%e1%>, <%e2%>));
 
      if (eulerInUse || _zen!=0.0){
           <%preExp%>
@@ -747,16 +749,16 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
                     case NEQUAL(__) then '<%e2%> != <%e1%>'             
                     else "!!!unsupported ZC operator!!!"
                    %>);         
-          gout[<%index%>] = eulerInUse ? exp : _zen*exp;
+          gout[<%zcIndex%>] = eulerInUse ? exp : _zen*exp;
         }
      else
-        gout[<%index%>] = 1.0;
+        gout[<%zcIndex%>] = 1.0;
     }*/
     
     /*  to be deleted  
     <<
-    {<%preExp%>var _zen = zeroCrossingEnabled[<%index%>]; //ZEROCROSSING(<%index%>, <%zeroCrossingOpFunc(operator)%>(<%e1%>, <%e2%>));
-    gout[<%index%>] = (_zen != 0) ? _zen * (<%match operator
+    {<%preExp%>var _zen = zeroCrossingEnabled[<%zcIndex%>]; //ZEROCROSSING(<%zcIndex%>, <%zeroCrossingOpFunc(operator)%>(<%e1%>, <%e2%>));
+    gout[<%zcIndex%>] = (_zen != 0) ? _zen * (<%match operator
                                            case LESS(__)
                                            case LESSEQ(__)    then '<%e1%> - <%e2%>' //space is mandatory here ... (X--1) must be (X - -1)
                                            case GREATER(__)
@@ -767,17 +769,25 @@ template zeroCrossing(Exp it, Integer index, SimCode simCode) ::=
                                           %>) : 1.0; }
     >>
     */
+  case (exp1 as LBINARY(__))
+  case (exp1 as LUNARY(__)) then
+    let &preExp = buffer ""
+    let e1 = daeExp(exp1, contextOther, &preExp, simCode)
+    <<
+    <%preExp%>
+    gout[<%zcIndex%>] = (<%e1%>)?1:-1;    
+    >>  
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
     let &preExp = buffer "" //is ignored
     let eStart = daeExp(start, contextOther, &preExp, simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, simCode)
     <<
-    //ZEROCROSSING(<%index%>, Sample(*t, <%eStart%>, <%eInterval%>));
+    //ZEROCROSSING(<%zcIndex%>, Sample(*t, <%eStart%>, <%eInterval%>));
     >>
     //the old sample, to be deleted in the next iteration
     //<<
-    //{<%preExp%>var _zen = zeroCrossingEnabled[<%index%>]; //ZEROCROSSING(<%index%>, Sample(*t, <%eStart%>, <%eInterval%>));
-    //gout[<%index%>] = (_zen != 0) ? _zen * Sample(time, <%eStart%>, <%eInterval%>) : 1.0; }
+    //{<%preExp%>var _zen = zeroCrossingEnabled[<%zcIndex%>]; //ZEROCROSSING(<%zcIndex%>, Sample(*t, <%eStart%>, <%eInterval%>));
+    //gout[<%zcIndex%>] = (_zen != 0) ? _zen * Sample(time, <%eStart%>, <%eInterval%>) : 1.0; }
     //>> 
   case _ then
     <<
@@ -810,7 +820,7 @@ end functionStoreDelayed;
     
 template functionODE(list<list<SimEqSystem>> stateContEquations, SimCode simCode) ::=
 let()= System.tmpTickReset(1)
-<<
+<<    
 public override void FunODE()
 {
   <% localRepresentationArrayDefines %>
@@ -1093,14 +1103,14 @@ case SES_MIXED(__) then
             %>
         }
         if (found_solution == 0) { //!found_solution
-             if (nextVar(boolVar)){
+             if (NextMixedBoolCombination(boolVar)){
                <% discVars |> SIMVAR(__) hasindex i0 =>
                   '<%cref(name, simCode)%> = <%preCref(name, simCode)%> != boolVar[<%i0%>];'
                  ;separator="\n"
                %>
              }
              else
-               failwithCS("Mixed system could not be solved.");
+               throw new Exception("Mixed system could not be solved.");
         }             
       }
     } while (found_solution == 0);
@@ -1653,6 +1663,13 @@ template daeExp(Exp inExp, Context context, Text &preExp, SimCode simCode) ::=
   //case VALUEBLOCK(__) then "VALUEBLOCK_NOT_IMPLEMENTED"
   case LIST(__)       then "LIST_NOT_IMPLEMENTED"
   case CONS(__)       then "CONS_NOT_IMPLEMENTED"
+  case sl as SHARED_LITERAL(__) then
+    match simCode
+    case SIMCODE(__) then
+      match listNth(literals, sl.index)
+      case DAE.SCONST(__) then string
+      else "TemplErr:SHARED_LITERAL() expected to be a string"
+    end match
   // META_TUPLE
   // META_OPTION
   // METARECORDCALL
@@ -2025,23 +2042,33 @@ template daeExpCall(Exp it, Context context, Text &preExp, SimCode simCode) ::=
   match it
   // special builtins
   case CALL(path=IDENT(name="DIVISION"),
-            expLst={e1, e2, e3 as SHARED_LITERAL(__)}) then
+            expLst={e1, e2, e3}) then
+    
     let var1 = daeExp(e1, context, &preExp, simCode)
-    let string = //TODO: a local hack here to retrieve the shared litral ... make more like it was designed to
+    let var2 = daeExp(e2, context, &preExp, simCode)
+    /*
+    let string = 
+       //TODO: a local hack here to retrieve the shared litral ... make more like it was designed to
        match simCode
        case SIMCODE(__) then
               match listNth(literals, e3.index)
               case DAE.SCONST(__) then string
-              else "TemplErr:division msg string not recognized"        
+              else "TemplErr:division msg string not recognized"
+               
     let msg = Util.escapeModelicaStringToCString(string)
+    */
     match e2 
     case RCONST(__) then 
          //match rr case 0.0 then 'DivBy0(<%var1%>,0.0,"<%msg%>")'
          //else 
-         '<%var1%> / <%daeExp(e2, context, &preExp, simCode)%>'
+         '<%var1%> / <%var2%>'
     case _ then
-         let var2 = daeExp(e2, context, &preExp, simCode)
-        '(<%var2%>!=0.0 ? <%var1%> / <%var2%> : DivBy0(<%var1%>,<%var2%>,"<%msg%>"))' 
+         let string = daeExp(e3, context, &preExp, simCode)
+         let msg = Util.escapeModelicaStringToCString(string)
+         let &tmpVar2 = buffer "" 
+         let &preExp += 
+            '<%tempDecl("var", &tmpVar2)%> = <%var2%>; if (<%tmpVar2%> == 0.0) throw new DivideByZeroException("<%msg%>");<%\n%>'         
+         '<%var1%> / <%tmpVar2%>' 
     end match 
     
   
