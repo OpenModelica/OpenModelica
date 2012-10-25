@@ -244,6 +244,7 @@ template dumpUnaryOp(DAE.Operator op)
 match op
   case UMINUS(__) then '-'
   case UMINUS_ARR(__) then '-'
+  case ADD(__) then '+'
   else errorMsg("ExpressionDumpTpl.dumpUnaryOp: Unknown operator.")
 end dumpUnaryOp;
 

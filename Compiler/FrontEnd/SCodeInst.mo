@@ -2029,25 +2029,46 @@ algorithm
       Prefix prefix;
       DAE.ComponentRef cref;
 
-    // This case is for a global cref that was found in one of the scopes above
-    // where it was used, e.g. it was used in A.B.C but was found in A.B. In
-    // this case we remove the equal prefixes, i.e. removing A.B and leaving C.
-    // We then apply as much of the given prefix as the number of scopes we have
-    // left. So if we have a cref a.b with a prefix c.d and one scope left, we
-    // get c.a.b. This is used to get the correct prefix when a package is
-    // accessed through a component.
-    case (_, _, _, _)
+    // This case tries to figure out the prefix to use when a cref is found in
+    // one of the scopes above where it's used, but should still be prefixed
+    // with parts of the given prefix. This happens when we have model such as
+    // this:
+    // 
+    //   model A
+    //     constant Integer j;
+    //     package P
+    //       constant Integer i = j;
+    //     end P;
+    //   end A;
+    //
+    //   model B
+    //     A a(j = 2);
+    //   end B;
+    //
+    // In this case we instantiate 'a', which contains a package with constants.
+    // We might therefore instantiate 'i' with the prefix 'a.P', resulting in
+    // 'a.P.i'.  But 'i' has the binding 'j' that we also want to instantiate,
+    // and 'j' is found in the scope above. To get the correct name for 'j',
+    // i.e.  'a.j' and not 'A.j', we need to apply only part of the prefix 'a.P'.
+    case (_, _, _, _ :: _)
       equation
+        // Convert both environments to string lists.
         oenv = SCodeEnv.envScopeNames(inOriginEnv);
         fenv = SCodeEnv.envScopeNames(inFoundEnv);
-        prefix = reducePrefix(inPrefix, oenv, fenv);
+        // Reduce the environment by 'subtracting' inFoundEnv from inOriginEnv.
+        oenv = reduceEnv(oenv, fenv);
+        // Reverse the remaining env so that is has the same order as the prefix.
+        oenv = listReverse(oenv);
+        // Reduce the prefix by 'subtracting' the remaining scopes from the it.
+        prefix = reducePrefix(oenv, inPrefix);
+        // Apply the remaining prefix.
         cref = InstUtil.prefixCref(inCref, prefix);
       then
         cref;
 
-    // If the previous case failed it means that the cref wasn't found in any of
-    // the scopes above where the cref was used, i.e. the instance hierarchy. In
-    // this case we prefix the cref with the environment where it was found.
+    // If the previous case failed it means that a suitable prefix could not be
+    // found, in which case the cref should be fully qualified instead. In that
+    // case we prefix the cref with the environment where it was found.
     else
       equation
         fenv = SCodeEnv.envScopeNames(inFoundEnv);
@@ -2058,36 +2079,59 @@ algorithm
   end matchcontinue;
 end prefixGlobalCref;
 
-protected function reducePrefix
-  "This function reduces a prefix given the environment where we first looked
-   for a cref and the environment where it was actually found."
-  input Prefix inPrefix;
+protected function reduceEnv
+  "This function takes two environments represented as string lists, and
+   'subtracts' inFoundEnv from inOriginEnv. I.e. if we have inOriginEnv = A.B.C
+   and inFoundEnv = A.B, then outRemainingEnv = C. Fails if inFoundEnv is not a
+   prefix of inOriginEnv."
   input list<String> inOriginEnv;
   input list<String> inFoundEnv;
-  output Prefix outPrefix;
+  output list<String> outRemainingEnv;
 algorithm
-  outPrefix := match(inPrefix, inOriginEnv, inFoundEnv)
+  outRemainingEnv := match(inOriginEnv, inFoundEnv)
     local
-      Prefix rest_prefix;
-      list<String> rest_oenv, rest_fenv;
       String oname, fname;
+      list<String> rest_oenv, rest_fenv;
 
-    // This is the second phase, when inFoundEnv is empty, where we remove the
-    // first part of the prefix until inOriginEnv is empty.
-    case (InstTypes.PREFIX(restPrefix = rest_prefix), _ :: rest_oenv, {})
-      then reducePrefix(rest_prefix, rest_oenv, {});
-
-    // This is the first phase, where we remove the most global scopes of both
-    // environments as long as those scopes are equal.
-    case (_, oname :: rest_oenv, fname :: rest_fenv)
+    // Continue if the heads of both strings are the same.
+    case (oname :: rest_oenv, fname :: rest_fenv)
       equation
         true = stringEq(oname, fname);
       then
-        reducePrefix(inPrefix, rest_oenv, rest_fenv);
+        reduceEnv(rest_oenv, rest_fenv);
 
-    // Finally, return the remaining prefix if both environment are empty and
-    // the prefix is not empty.
-    case (InstTypes.PREFIX(name = _), {}, {}) then inPrefix;
+    // If we run out of inFoundEnv but still have parts of inOriginEnv left,
+    // return the remaining environment.
+    case (_ :: _, {}) then inOriginEnv;
+  end match;
+end reduceEnv;
+
+protected function reducePrefix
+  "This function removes the given environment, represented by a string list,
+   from the given prefix. I.e. if we have a prefix a.b.P.R and an environment P.R
+   we get the result a.b. The environment should be ordered in reverse order,
+   top-most scope last, since that's how the prefix is ordered."
+  input list<String> inRemainingEnv;
+  input Prefix inPrefix;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := match(inRemainingEnv, inPrefix)
+    local
+      String ename, pname;
+      list<String> rest_env;
+      Prefix rest_prefix;
+
+    // Continue if the heads of the environment and the prefix are the same.
+    case (ename :: rest_env, 
+          InstTypes.PREFIX(name = pname, restPrefix = rest_prefix))
+      equation
+        true = stringEq(ename, pname);
+      then
+        reducePrefix(rest_env, rest_prefix);
+  
+    // If we managed to remove the whole environment from the prefix, return the
+    // remaining prefix.
+    case ({}, _) then inPrefix;
 
   end match;
 end reducePrefix;
