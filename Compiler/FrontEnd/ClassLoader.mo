@@ -377,7 +377,7 @@ algorithm
         Error.assertionOrAddSourceMessage(stringEqual(cname,pack), Error.LIBRARY_UNEXPECTED_NAME, {pack,cname}, info);
         s1 = Absyn.withinString(w1);
         s2 = Absyn.withinString(w2);
-        Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_1_X()), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
+        Error.assertionOrAddSourceMessage(Absyn.withinEqual(w1,w2) or Config.languageStandardAtMost(Config.MODELICA_2_X()), Error.LIBRARY_UNEXPECTED_WITHIN, {s1,s2}, info);
         Error.assertionOrAddSourceMessage((not expectPackage) or Absyn.isParts(body), Error.LIBRARY_EXPECTED_PARTS, {pack}, info);
       then cl;
 
