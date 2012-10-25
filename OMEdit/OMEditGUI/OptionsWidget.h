@@ -136,6 +136,8 @@ public:
   void setWorkingDirectory(QString value);
   bool getPreserveUserCustomizations();
   void setPreserveUserCustomizations(bool value);
+  void setCompiler(QString name);
+  QString getCompiler();
 
   OptionsWidget *mpParentOptionsWidget;
 private:
@@ -146,6 +148,8 @@ private:
   QLabel *mpWorkingDirectoryLabel;
   QLineEdit *mpWorkingDirectoryTextBox;
   QPushButton *mpWorkingDirectoryBrowseButton;
+  QLabel *mpCCLabel;
+  QLineEdit *mpCCTextBox;
   QCheckBox *mpPreserveUserCustomizations;
   QRadioButton *mpTabbedViewRadioButton;
   QRadioButton *mpSubWindowViewRadioButton;

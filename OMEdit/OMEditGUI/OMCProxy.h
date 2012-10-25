@@ -115,6 +115,8 @@ public:
   QString getAnnotationVersion();
   bool setEnvironmentVar(QString name, QString value);
   QString getEnvironmentVar(QString name);
+  QString getCompiler();
+  bool setCompiler(QString name);
   void loadStandardLibrary();
   QStringList getClassNames(QString className = QString(), QString recursive = QString("false"), QString qualified = QString("false"));
   QStringList getClassInformation(QString modelName);

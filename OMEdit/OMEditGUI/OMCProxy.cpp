@@ -721,6 +721,23 @@ QString OMCProxy::getEnvironmentVar(QString name)
   return getResult();
 }
 
+//! OMC setCompiler command.
+//! @param name the variable name
+//! @return true on success
+bool OMCProxy::setCompiler(QString name)
+{
+  sendCommand("setCompiler(\"" + StringHandler::escape(name) + "\")");
+  return StringHandler::unparseBool(getResult());
+}
+
+//! OMC getCompiler command.
+//! @return QString the variable value.
+QString OMCProxy::getCompiler()
+{
+  sendCommand("getCompiler()");
+  return StringHandler::unparse(getResult());
+}
+
 //! Loads the OpenModelica Standard Library.
 //! Reads the omedit.ini file to get the libraries to load.
 //! Deletes the Fluid library as is not supported fully by OpenModelica.

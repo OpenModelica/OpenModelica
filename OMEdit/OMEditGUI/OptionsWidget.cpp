@@ -243,6 +243,11 @@ void OptionsWidget::readGeneralSettings()
   // read the user customizations
   if (mSettings.contains("userCustomizations"))
     mpGeneralSettingsPage->setPreserveUserCustomizations(mSettings.value("userCustomizations").toBool());
+  if (mSettings.contains("CC")) {
+    QString name = mSettings.value("CC").toString();
+    mpParentMainWindow->mpOMCProxy->setCompiler(name);
+    mpGeneralSettingsPage->setCompiler(name);
+  }
 }
 
 //! Reads the ModelicaText settings from omedit.ini
@@ -367,6 +372,11 @@ void OptionsWidget::saveGeneralSettings()
   mSettings.setValue("workingDirectory", mpParentMainWindow->mpOMCProxy->changeDirectory());
   // save user customizations
   mSettings.setValue("userCustomizations", mpGeneralSettingsPage->getPreserveUserCustomizations());
+  if (mpParentMainWindow->mpOMCProxy->setCompiler(mpGeneralSettingsPage->getCompiler())) {
+    mSettings.setValue("CC", mpParentMainWindow->mpOMCProxy->getCompiler());
+  } else {
+    mSettings.remove("CC");
+  }
 }
 
 //! Saves the ModelicaText settings to omedit.ini
@@ -591,6 +601,10 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
   mpWorkingDirectoryTextBox = new QLineEdit(mpParentOptionsWidget->mpParentMainWindow->mpOMCProxy->changeDirectory());
   mpWorkingDirectoryBrowseButton = new QPushButton(Helper::browse);
   connect(mpWorkingDirectoryBrowseButton, SIGNAL(clicked()), SLOT(selectWorkingDirectory()));
+  // CC
+  mpCCLabel = new QLabel(tr("Compiler:"));
+  mpCCTextBox = new QLineEdit(mpParentOptionsWidget->mpParentMainWindow->mpOMCProxy->getCompiler());
+  mpCCTextBox->setToolTip(tr("The C-compiler OpenModelica will use to compile models.\nRecommended: gcc-4.4 or earlier; or clang."));
   // Store Customizations Option
   mpPreserveUserCustomizations = new QCheckBox(tr("Preserve User's GUI Customizations."));
   // set the layout of plotting group
@@ -603,7 +617,9 @@ GeneralSettingsPage::GeneralSettingsPage(OptionsWidget *pParent)
   mainLayout->addWidget(mpWorkingDirectoryLabel, 2, 0);
   mainLayout->addWidget(mpWorkingDirectoryTextBox, 2, 1);
   mainLayout->addWidget(mpWorkingDirectoryBrowseButton, 2, 2);
-  mainLayout->addWidget(mpPreserveUserCustomizations, 3, 0, 1, 3);
+  mainLayout->addWidget(mpCCLabel, 3, 0);
+  mainLayout->addWidget(mpCCTextBox, 3, 1);
+  mainLayout->addWidget(mpPreserveUserCustomizations, 4, 0, 1, 3);
   mpGeneralGroup->setLayout(mainLayout);
   // set the layout
   QVBoxLayout *layout = new QVBoxLayout;
@@ -658,6 +674,16 @@ void GeneralSettingsPage::setWorkingDirectory(QString value)
 bool GeneralSettingsPage::getPreserveUserCustomizations()
 {
   return mpPreserveUserCustomizations->isChecked();
+}
+
+void GeneralSettingsPage::setCompiler(QString name)
+{
+  mpCCTextBox->setText(name);
+}
+
+QString GeneralSettingsPage::getCompiler()
+{
+  return mpCCTextBox->text();
 }
 
 void GeneralSettingsPage::setPreserveUserCustomizations(bool value)
