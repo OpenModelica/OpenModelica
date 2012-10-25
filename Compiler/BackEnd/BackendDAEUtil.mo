@@ -5803,9 +5803,9 @@ end adjacencyRowEnhanced1;
 protected function expCrefLstHasCref
   input list<DAE.Exp> iExpLst;
   input DAE.ComponentRef inCr;
-  output Boolean b;
+  output Boolean outB;
 algorithm
-  b := matchcontinue(iExpLst,inCr)
+  outB := matchcontinue(iExpLst,inCr)
     local
       DAE.ComponentRef cr;
       list<DAE.Exp> rest;
