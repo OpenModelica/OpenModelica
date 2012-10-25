@@ -136,7 +136,7 @@ void simulation_result_mat::writeParameterData(MODEL_DATA *modelData)
     free(doubleMatrix);
     throw;
   }
-};
+}
 
 
 
