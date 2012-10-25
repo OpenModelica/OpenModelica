@@ -1033,6 +1033,12 @@ external "builtin";
 annotation(preferredView="text");
 end generateSeparateCode;
 
+function getLinker
+  output String linker;
+external "builtin";
+annotation(preferredView="text");
+end getLinker;
+
 function setLinker
   input String linker;
   output Boolean success;
@@ -1047,14 +1053,26 @@ external "builtin";
 annotation(preferredView="text");
 end setLinkerFlags;
 
-function setCompiler
+function getCompiler "CC"
+  output String compiler;
+external "builtin";
+annotation(preferredView="text");
+end getCompiler;
+
+function setCompiler "CC"
   input String compiler;
   output Boolean success;
 external "builtin";
 annotation(preferredView="text");
 end setCompiler;
 
-function setCXXCompiler
+function getCXXCompiler "CXX"
+  output String compiler;
+external "builtin";
+annotation(preferredView="text");
+end getCXXCompiler;
+
+function setCXXCompiler "CXX"
   input String compiler;
   output Boolean success;
 external "builtin";

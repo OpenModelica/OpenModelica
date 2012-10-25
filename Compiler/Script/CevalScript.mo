@@ -1528,12 +1528,24 @@ algorithm
       then
         (cache,Values.STRING(str),st);
         
+    case (cache,env,"getCompiler",{},st,_)
+      equation
+        str = System.getCCompiler();
+      then
+        (cache,Values.STRING(str),st);
+
     case (cache,env,"setCompiler",{Values.STRING(str)},st,_)
       equation
         System.setCCompiler(str);
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,"getCXXCompiler",{},st,_)
+      equation
+        str = System.getCXXCompiler();
+      then
+        (cache,Values.STRING(str),st);
+
     case (cache,env,"setCXXCompiler",{Values.STRING(str)},st,_)
       equation
         System.setCXXCompiler(str);
@@ -1546,6 +1558,12 @@ algorithm
       then
         (cache,Values.BOOL(true),st);
         
+    case (cache,env,"getLinker",{},st,_)
+      equation
+        str = System.getLinker();
+      then
+        (cache,Values.STRING(str),st);
+
     case (cache,env,"setLinker",{Values.STRING(str)},st,_)
       equation
         System.setLinker(str);
