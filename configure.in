@@ -97,6 +97,9 @@ fi
 
 fi
 
+fi
+
+if test "`uname -m | sed s/i./ix/`" = "ix86"; then
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
 
 CFLAGS_BEFORE=$CFLAGS
