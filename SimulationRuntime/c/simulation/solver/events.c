@@ -398,7 +398,7 @@ modelica_boolean checkForNewEvent(DATA* data, LIST *eventList)
         {
           if (DEBUG_FLAG(LOG_EVENTS | LOG_ZEROCROSSINGS)){
             INFO_AL1("|        | %s", zeroCrossingDescription[i]);
-            INFO_AL2("|        | changed: %s -> %s", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE", (data->simulationInfo.zeroCrossingsPre[i]>0)?"TRUE ":"FALSE");
+            INFO_AL2("|        | changed: %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0)?"TRUE ":"FALSE", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE");
           }
           listPushFront(eventList, &(data->simulationInfo.zeroCrossingIndex[i]));
         }

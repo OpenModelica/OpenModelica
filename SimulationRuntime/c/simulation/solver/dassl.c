@@ -513,7 +513,7 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
     for (i=0; i < *ng; i++) {
       if (data->simulationInfo.zeroCrossings[i] != gout[i]){
         INFO_AL1("|                 | %s", zeroCrossingDescription[i]);
-        INFO_AL2("|                 | changed :  %s <> %s", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE", (gout[i]>0)?"TRUE ":"FALSE");
+        INFO_AL2("|                 | changed :  %s -> %s", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE", (gout[i]>0)?"TRUE ":"FALSE");
       }
     }
   }
