@@ -5653,6 +5653,8 @@ algorithm
       DAE.ComponentRef cr,cr1;
       BackendDAE.Solvability solvab;
       list<DAE.ComponentRef> crlst;
+      Absyn.Path path,path1;
+      list<DAE.Exp> explst;
     case({},_,_,_,_,_,_,_) then inRow;
     case(r::rest,_,_,_,_,_,_,_)
       equation
@@ -5690,6 +5692,16 @@ algorithm
         false = expHasCrefNoPreorDer(e2,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
+    case(r::rest,DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_,_,_)
+      equation
+        // if not negatet rowmark then  
+        false = intEq(rowmark[r],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, r);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        false = expHasCrefNoPreorDer(e2,cr);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
     case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_,_,_)
       equation
         // if not negatet rowmark then  
@@ -5700,6 +5712,58 @@ algorithm
         false = expHasCrefNoPreorDer(e1,cr);
       then
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
+    case(r::rest,_,DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=cr)),_,_,_,_,_)
+      equation
+        // if not negatet rowmark then  
+        false = intEq(rowmark[r],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, r);
+        true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
+        false = expHasCrefNoPreorDer(e1,cr);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
+    case(r::rest,DAE.CREF(componentRef=cr),_,_,_,_,_,_)
+      equation
+        // if not negatet rowmark then  
+        false = intEq(rowmark[r],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, r);
+        true = ComponentReference.crefPrefixOf(cr, cr1);
+        false = expHasCrefNoPreorDer(e2,cr);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);        
+    case(r::rest,_,DAE.CREF(componentRef=cr),_,_,_,_,_)
+      equation
+        // if not negatet rowmark then  
+        false = intEq(rowmark[r],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, r);
+        true = ComponentReference.crefPrefixOf(cr, cr1);
+        false = expHasCrefNoPreorDer(e1,cr);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);
+    case(r::rest,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_,_,_,_,_,_)
+      equation
+        true = Absyn.pathEqual(path,path1);
+        // if not negatet rowmark then  
+        false = intEq(rowmark[r],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, r);
+        true = expCrefLstHasCref(explst,cr1);
+        false = expHasCrefNoPreorDer(e2,cr1);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);        
+    case(r::rest,_,DAE.CALL(path=path,expLst=explst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(path1)))),_,_,_,_,_)
+      equation
+        true = Absyn.pathEqual(path,path1);
+        // if not negatet rowmark then  
+        false = intEq(rowmark[r],-mark);
+        // solved?
+        BackendDAE.VAR(varName=cr1) = BackendVariable.getVarAt(vars, r);
+        true = expCrefLstHasCref(explst,cr1);
+        false = expHasCrefNoPreorDer(e1,cr1);
+      then
+        adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_SOLVED())::inRow);        
     case(r::rest,_,_,_,_,_,_,_)
       equation
         // if not negatet rowmark then linear or nonlinear 
@@ -5735,6 +5799,29 @@ algorithm
         adjacencyRowEnhanced1(rest,e1,e2,vars,kvars,mark,rowmark,(r,BackendDAE.SOLVABILITY_UNSOLVABLE())::inRow);
   end matchcontinue;
 end adjacencyRowEnhanced1;
+
+protected function expCrefLstHasCref
+  input list<DAE.Exp> iExpLst;
+  input DAE.ComponentRef inCr;
+  output Boolean b;
+algorithm
+  b := matchcontinue(iExpLst,inCr)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.Exp> rest;
+      Boolean b;
+    case ({},_) then false;
+    case (DAE.CREF(componentRef=cr)::rest,_)
+      equation
+        b = ComponentReference.crefEqualNoStringCompare(cr,inCr);
+        b = Debug.bcallret2(not b, expCrefLstHasCref, rest, inCr, b);
+      then
+        b;
+    else
+      then
+        false;        
+  end matchcontinue;
+end expCrefLstHasCref;
 
 protected function expHasCrefNoPreorDer "
 @author: Frenkel TUD 2011-04
@@ -5783,6 +5870,12 @@ algorithm
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
       then
         ((e,not b,(cr,b)));
+    
+    case ((e as DAE.CREF(componentRef = cr1), (cr,false)))
+      equation
+        b = ComponentReference.crefPrefixOf(cr1,cr);
+      then
+        ((e,not b,(cr,b)));    
     
     case (((e,(cr,b)))) then ((e,not b,(cr,b)));
     

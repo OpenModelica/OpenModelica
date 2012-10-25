@@ -372,6 +372,13 @@ algorithm
         (Expression.negate(e2),{});        
 
     // exp = -cr    
+    case (e1,DAE.LUNARY(operator = DAE.UMINUS(ty=_), exp = DAE.CREF(componentRef = cr1)),(crexp as DAE.CREF(componentRef = cr)),linExp)
+      equation
+        true = ComponentReference.crefEqual(cr1,cr);
+        // cr not in e2
+        false = Expression.expHasCref(e1,cr);
+      then
+        (Expression.negate(e1),{});     
     case (e1,DAE.LUNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),(crexp as DAE.CREF(componentRef = cr)),linExp)
       equation
         true = ComponentReference.crefEqual(cr1,cr);
