@@ -3628,7 +3628,14 @@ algorithm
       then v1;
     // legal case both fixed=false           
     case (v,false,NONE(),_,va,false,NONE(),_,_,_)
-      then v;  
+      then v;
+    case (v,false,SOME(sa),_,va,false,NONE(),_,_,_)
+      then v;
+    case (v,false,NONE(),_,va,false,SOME(sb),_,_,_)
+      equation
+        e = Debug.bcallret1(negate,Expression.negate,sb,sb);
+        v1 = setVarStartValue(v,e);
+      then v1;
     case (v as BackendDAE.VAR(varName=cr,varType=ty,values = attr),false,_,_,va as BackendDAE.VAR(varName=cra,varType=tya,values = attra),false,_,_,_,_)
       equation
         sa = startValueType(sv,ty);
