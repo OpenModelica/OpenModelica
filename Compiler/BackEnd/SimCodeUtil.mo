@@ -7024,7 +7024,7 @@ algorithm
         /* Extract from external object list */
         ((varsOut,_,_)) = BackendVariable.traverseBackendDAEVars(extvars,extractVarsFromList,(varsOut,aliasVars,knvars));
         /* sort variables on index */
-        varsOut = sortSimvars(varsOut);
+        varsOut = sortSimvars(stringEqual(Config.simCodeTarget(),"Cpp"),varsOut);
         /* Index of algebraic and parameters need 
          to fix due to separation of int Vars*/
         varsOut = fixIndex(varsOut);
@@ -7051,7 +7051,7 @@ algorithm
         vars = extractVarFromVar(var,aliasVars,v,vars);
       then
         ((var,(vars,aliasVars,v)));
-    case _ then inTpl;
+    else then inTpl;
   end matchcontinue;
 end extractVarsFromList;
 
@@ -7227,11 +7227,12 @@ algorithm
 end isAliasVar;
 
 protected function sortSimvars
+  input Boolean isCpp;
   input SimCode.SimVars unsortedSimvars;
   output SimCode.SimVars sortedSimvars;
 algorithm
   sortedSimvars :=
-  match (unsortedSimvars)
+  match (isCpp,unsortedSimvars)
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
@@ -7254,7 +7255,63 @@ algorithm
       list<SimCode.SimVar> intConstVars;
       list<SimCode.SimVar> boolConstVars;
       list<SimCode.SimVar> stringConstVars;
-    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      HashSet.HashSet set;
+    // runtime CPP, there it is not necesarry to sort the arrays because different memory management
+    case (true,SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars))
+      equation 
+        // but for runtime CPP also the incomplete arrays need one special element to generate the array 
+        // search all arrays with array information
+        set = HashSet.emptyHashSet();
+        set = List.fold(stateVars,collectArrayFirstVars,set);
+        set = List.fold(derivativeVars,collectArrayFirstVars,set);
+        set = List.fold(algVars,collectArrayFirstVars,set);
+        set = List.fold(intAlgVars,collectArrayFirstVars,set);
+        set = List.fold(boolAlgVars,collectArrayFirstVars,set);
+        set = List.fold(inputVars,collectArrayFirstVars,set);
+        set = List.fold(outputVars,collectArrayFirstVars,set);
+        set = List.fold(aliasVars,collectArrayFirstVars,set);
+        set = List.fold(intAliasVars,collectArrayFirstVars,set);
+        set = List.fold(boolAliasVars,collectArrayFirstVars,set);
+        set = List.fold(paramVars,collectArrayFirstVars,set);
+        set = List.fold(intParamVars,collectArrayFirstVars,set);
+        set = List.fold(boolParamVars,collectArrayFirstVars,set);
+        set = List.fold(stringAlgVars,collectArrayFirstVars,set);
+        set = List.fold(stringParamVars,collectArrayFirstVars,set);
+        set = List.fold(stringAliasVars,collectArrayFirstVars,set);
+        set = List.fold(extObjVars,collectArrayFirstVars,set);
+        set = List.fold(constVars,collectArrayFirstVars,set);
+        set = List.fold(intConstVars,collectArrayFirstVars,set);
+        set = List.fold(boolConstVars,collectArrayFirstVars,set);
+        set = List.fold(stringConstVars,collectArrayFirstVars,set);
+        // add array information to incomplete arrays
+        (stateVars,set) = List.mapFold(stateVars,setArrayElementnoFirst, set);
+        (derivativeVars,set) = List.mapFold(derivativeVars,setArrayElementnoFirst, set);
+        (algVars,set) = List.mapFold(algVars,setArrayElementnoFirst, set);
+        (intAlgVars,set) = List.mapFold(intAlgVars,setArrayElementnoFirst, set);
+        (boolAlgVars,set) = List.mapFold(boolAlgVars,setArrayElementnoFirst, set);
+        (inputVars,set) = List.mapFold(inputVars,setArrayElementnoFirst, set);
+        (outputVars,set) = List.mapFold(outputVars,setArrayElementnoFirst, set);
+        (aliasVars,set) = List.mapFold(aliasVars,setArrayElementnoFirst, set);
+        (intAliasVars,set) = List.mapFold(intAliasVars,setArrayElementnoFirst, set);
+        (boolAliasVars,set) = List.mapFold(boolAliasVars,setArrayElementnoFirst, set);
+        (paramVars,set) = List.mapFold(paramVars,setArrayElementnoFirst, set);
+        (intParamVars,set) = List.mapFold(intParamVars,setArrayElementnoFirst, set);
+        (boolParamVars,set) = List.mapFold(boolParamVars,setArrayElementnoFirst, set);
+        (stringAlgVars,set) = List.mapFold(stringAlgVars,setArrayElementnoFirst, set);
+        (stringParamVars,set) = List.mapFold(stringParamVars,setArrayElementnoFirst, set);
+        (stringAliasVars,set) = List.mapFold(stringAliasVars,setArrayElementnoFirst, set);
+        (extObjVars,set) = List.mapFold(extObjVars,setArrayElementnoFirst, set);
+        (constVars,set) = List.mapFold(constVars,setArrayElementnoFirst, set);
+        (intConstVars,set) = List.mapFold(intConstVars,setArrayElementnoFirst, set);
+        (boolConstVars,set) = List.mapFold(boolConstVars,setArrayElementnoFirst, set);
+        (stringConstVars,set) = List.mapFold(stringConstVars,setArrayElementnoFirst, set);        
+      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+        outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
+        stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars);
+    // other runtimes
+    case (_,SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars))
       equation
@@ -7285,6 +7342,89 @@ algorithm
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars);
   end match;
 end sortSimvars;
+
+protected function setArrayElementnoFirst
+"function: setArrayElementnoFirst
+  author: Frenkel TUD 2012-10"
+  input SimCode.SimVar iVar;
+  input HashSet.HashSet iSet;
+  output SimCode.SimVar oVar;
+  output HashSet.HashSet oSet;
+algorithm
+  (oVar,oSet) := matchcontinue(iVar,iSet)
+    local
+      DAE.ComponentRef cr;
+      SimCode.SimVar var;
+      HashSet.HashSet set;
+    case (SimCode.SIMVAR(name=cr,arrayCref=SOME(_)),_)
+      then
+       (iVar,iSet);
+    case (SimCode.SIMVAR(name=cr,numArrayElement=_::_,arrayCref=NONE()),_)
+      equation
+        _::_ = ComponentReference.crefLastSubs(cr);
+        cr = ComponentReference.crefStripLastSubs(cr);
+        false = BaseHashSet.has(cr,iSet);
+        var = addSimVarArrayCref(iVar,cr);
+        set = BaseHashSet.add(cr, iSet);
+      then
+       (var,set);
+    else then (iVar,iSet);
+  end matchcontinue;
+end setArrayElementnoFirst;
+
+protected function addSimVarArrayCref
+"function: addSimVarArrayCref
+  author: Frenkel TUD 2012-10"
+  input SimCode.SimVar iVar;
+  input DAE.ComponentRef arrayCref;
+  output SimCode.SimVar oVar;
+algorithm
+  oVar := match(iVar,arrayCref)
+    local
+      DAE.ComponentRef cr;
+      DAE.ComponentRef name;
+      BackendDAE.VarKind varKind;
+      String comment,unit,displayUnit;
+      Integer index;
+      Option<DAE.Exp> minValue,maxValue,initialValue,nominalValue;
+      Boolean isFixed;
+      DAE.Type type_;
+      Boolean isDiscrete;
+      SimCode.AliasVariable aliasvar;
+      DAE.ElementSource source;
+      SimCode.Causality causality;
+      Option<Integer> variable_index;
+      list<String> numArrayElement;      
+    case (SimCode.SIMVAR(name=cr,varKind=varKind,comment=comment,unit=unit,displayUnit=displayUnit,index=index,
+                         minValue=minValue,maxValue=maxValue,initialValue=initialValue,nominalValue=nominalValue,
+                         isFixed=isFixed,type_=type_,isDiscrete=isDiscrete,aliasvar=aliasvar,source=source,
+                         causality=causality,variable_index=variable_index,numArrayElement=numArrayElement),_)
+      then
+        SimCode.SIMVAR(cr,varKind,comment,unit,displayUnit,index,
+                         minValue,maxValue,initialValue,nominalValue,
+                         isFixed,type_,isDiscrete,SOME(arrayCref),aliasvar,source,
+                         causality,variable_index,numArrayElement);
+  end match;
+end addSimVarArrayCref;
+
+protected function collectArrayFirstVars
+"function: collectArrayFirstVars
+  author: Frenkel TUD 2012-10"
+  input SimCode.SimVar var;
+  input HashSet.HashSet iSet;
+  output HashSet.HashSet oSet;
+algorithm
+  oSet := match(var,iSet)
+    local
+      DAE.ComponentRef cr;
+    case (SimCode.SIMVAR(name=cr,arrayCref=SOME(_)),_)
+      equation
+        cr = ComponentReference.crefStripLastSubs(cr);
+      then
+        BaseHashSet.add(cr, iSet);
+    else then iSet;
+  end match;
+end collectArrayFirstVars;
 
 protected function sortSimVars1
 "function: sortSimVars1
