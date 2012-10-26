@@ -5,6 +5,11 @@
 #include <assert.h>
 #include "read_matlab4.h"
 
+// Make Visual Studio not complain about deprecated items
+#ifdef _MSC_VER
+#define strdup _strdup
+#endif
+
 const char *binTrans_char = "binTrans";
 const char *binNormal_char = "binNormal";
 
@@ -55,12 +60,13 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
 
 void remSpaces(char *ch){
     char *ch2 = ch;
-    int i,j=0;
+    unsigned int ui = 0;
+	unsigned int uj = 0;
 
-    for(i=0;i<=strlen(ch);i++){
-        if(ch[i]!=' '){
-            ch2[j] = ch[i];
-            j++;
+    for(ui=0;ui<=strlen(ch);ui++){
+        if(ch[ui]!=' '){
+            ch2[uj] = ch[ui];
+            uj++;
         }
     }
 }
