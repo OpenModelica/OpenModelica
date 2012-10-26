@@ -57,6 +57,8 @@ private:
   QPushButton *mpBrowseFileButton;
   QLabel *mpOutputDirectoryLabel;
   QLineEdit *mpOutputDirectoryTextBox;
+  QLabel *mpLogLevelLabel;
+  QComboBox *mpLogLevelComboBox;
   QPushButton *mpBrowseDirectoryButton;
   QLabel *mpOutputDirectoryNoteLabel;
   QPushButton *mpImportButton;

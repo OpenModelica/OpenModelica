@@ -1907,21 +1907,16 @@ bool OMCProxy::translateModelFMU(QString modelName)
 //! @param fmuName the FMU location
 //! @param outputDirectory the output location
 //! @return bool true on success
-bool OMCProxy::importFMU(QString fmuName, QString outputDirectory)
+QString OMCProxy::importFMU(QString fmuName, QString outputDirectory, int logLevel)
 {
   if (outputDirectory.isEmpty())
-    sendCommand("importFMUOld(\"" + fmuName + "\")");
+    sendCommand("importFMU(\"" + fmuName + "\", loglevel=" + QString::number(logLevel) + ", fullPath=true)");
   else
-  {
-    sendCommand("importFMUOld(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\")");
-  }
-  if (StringHandler::unparseBool(getResult()))
-    return true;
-  else
-  {
+    sendCommand("importFMU(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\", loglevel=" + QString::number(logLevel) + ", fullPath=true)");
+  QString fmuFileName = StringHandler::unparse(getResult());
+  if (fmuFileName.isEmpty())
     printMessagesStringInternal();
-    return false;
-  }
+  return fmuFileName;
 }
 
 //! Reads the matching algorithm used during the simulation.

@@ -67,6 +67,17 @@ ImportFMIWidget::ImportFMIWidget(MainWindow *pParent)
   mpOutputDirectoryTextBox = new QLineEdit;
   mpBrowseDirectoryButton = new QPushButton(Helper::browse);
   connect(mpBrowseDirectoryButton, SIGNAL(clicked()), SLOT(setSelectedDirectory()));
+  // create Log Level Drop Down
+  mpLogLevelLabel = new QLabel(tr("Log Level:"));
+  mpLogLevelComboBox = new QComboBox;
+  mpLogLevelComboBox->addItem(tr("Nothing"), QVariant(0));
+  mpLogLevelComboBox->addItem(tr("Fatal"), QVariant(1));
+  mpLogLevelComboBox->addItem(tr("Error"), QVariant(2));
+  mpLogLevelComboBox->addItem(tr("Warning"), QVariant(3));
+  mpLogLevelComboBox->addItem(tr("Information"), QVariant(4));
+  mpLogLevelComboBox->addItem(tr("Verbose"), QVariant(5));
+  mpLogLevelComboBox->addItem(tr("Debug"), QVariant(6));
+  mpLogLevelComboBox->setCurrentIndex(3);
   // import FMI note
   mpOutputDirectoryNoteLabel = new QLabel(tr("* If no Output Directory specified then the FMU files are generated in the current working directory."));
   // create OK button
@@ -85,8 +96,10 @@ ImportFMIWidget::ImportFMIWidget(MainWindow *pParent)
   mainLayout->addWidget(mpOutputDirectoryTextBox, 3, 1);
   mainLayout->addWidget(mpBrowseDirectoryButton, 3, 2);
   mainLayout->addWidget(mpOutputDirectoryNoteLabel, 4, 0, 1, 3, Qt::AlignLeft);
-  mainLayout->addWidget(mpImportButton, 5, 0, 1, 3, Qt::AlignRight);
+  mainLayout->addWidget(mpLogLevelLabel, 5, 0);
+  mainLayout->addWidget(mpLogLevelComboBox, 5, 1, 1, 2);
   mainLayout->addWidget(pNoteLabel, 6, 0, 1, 3, Qt::AlignLeft);
+  mainLayout->addWidget(mpImportButton, 7, 0, 1, 3, Qt::AlignRight);
   setLayout(mainLayout);
 }
 
@@ -115,56 +128,9 @@ void ImportFMIWidget::importFMU()
                           GUIMessages::getMessage(GUIMessages::ENTER_NAME).arg(tr("FMU File")), Helper::ok);
     return;
   }
-
-  if (mpParentMainWindow->mpOMCProxy->importFMU(mpFmuFileTextBox->text(), mpOutputDirectoryTextBox->text()))
-  {
-    QFile fmuImportLogfile;
-    fmuImportLogfile.setFileName(mpParentMainWindow->mpOMCProxy->changeDirectory().append(QDir::separator()).append("fmuImport.log"));
-    // Open the FMU Import log file
-    if (!fmuImportLogfile.open(QIODevice::ReadOnly))
-    {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(tr("Could not open file "))
-                            .append(fmuImportLogfile.fileName()), Helper::ok);
-      return;
-    }
-    // Read the FMU Import log file
-    QTextStream inStream(&fmuImportLogfile);
-    QString importedFileName;
-    while (!inStream.atEnd())
-    {
-      QString line = inStream.readLine();
-      // Check for the path
-      if (line.contains("FMU decompression path:"))
-      {
-        importedFileName.append(line.mid(line.indexOf("FMU decompression path:")+24));
-      }
-      // Check for the model name
-      if (line.contains("Modelica model name:"))
-      {
-        importedFileName.append(QDir::separator()).append(line.mid(line.indexOf("Modelica model name:")+21));
-      }
-    }
-    mpParentMainWindow->mpProjectTabs->openFile(importedFileName);
-    accept();
-  }
-  else
-  {
-    QFile fmuImportErrorLogfile;
-    fmuImportErrorLogfile.setFileName(mpParentMainWindow->mpOMCProxy->changeDirectory().append(QDir::separator()).append("fmuImportError.log"));
-    // Open the FMU Import Error log file
-    if (fmuImportErrorLogfile.open(QIODevice::ReadOnly))
-    {
-      QTextStream inStream(&fmuImportErrorLogfile);
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(inStream.readAll()).append("\n")
-                            .append(tr("while importing ")).append(mpFmuFileTextBox->text()), Helper::ok);
-    }
-    else
-    {
-      QMessageBox::critical(this, QString(Helper::applicationName).append(" - ").append(Helper::error),
-                            GUIMessages::getMessage(GUIMessages::ERROR_OCCURRED).arg(tr("unknown error ")).append("\n")
-                            .append(tr("while importing ")).append(mpFmuFileTextBox->text()), Helper::ok);
-    }
-  }
+  QString fmuFileName = mpParentMainWindow->mpOMCProxy->importFMU(mpFmuFileTextBox->text(), mpOutputDirectoryTextBox->text(),
+                                                                  mpLogLevelComboBox->itemData(mpLogLevelComboBox->currentIndex()).toInt());
+  if (!fmuFileName.isEmpty())
+    mpParentMainWindow->mpProjectTabs->openFile(fmuFileName);
+  accept();
 }

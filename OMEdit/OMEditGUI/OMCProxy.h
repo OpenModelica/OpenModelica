@@ -191,7 +191,7 @@ public:
   QString checkModel(QString modelName);
   QString getSimulationOptions(QString modelName);
   bool translateModelFMU(QString modelName);
-  bool importFMU(QString fmuName, QString outputDirectory);
+  QString importFMU(QString fmuName, QString outputDirectory, int logLevel);
   QString getMatchingAlgorithm();
   void getAvailableMatchingAlgorithms(QStringList *choices, QStringList *comments);
   bool setMatchingAlgorithm(QString matchingAlgorithm);
