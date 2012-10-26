@@ -812,6 +812,7 @@ algorithm
     case (BackendDAE.ALGEQSYSTEM()) equation print("algebraic loop"); then ();
     case (BackendDAE.ARRAYSYSTEM()) equation print("multidim equation arrays"); then ();
     case (BackendDAE.PARAMETERSYSTEM()) equation print("parameter system"); then ();
+    case (BackendDAE.INITIALSYSTEM()) equation print("initial system"); then ();
   end match;
 end dumpBackendDAEType;
 

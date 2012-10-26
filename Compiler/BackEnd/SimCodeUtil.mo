@@ -1857,8 +1857,12 @@ algorithm
          //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
        
+        // generate initalsystem
+        //(_,_) = BackendDAEUtil.solveInitialSystem(dlow);
+       
         // check if the Sytems has states
         dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
+        
        
         (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
         BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 

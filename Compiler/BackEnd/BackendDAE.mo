@@ -78,7 +78,9 @@ uniontype BackendDAEType
   record ARRAYSYSTEM "Type for multidim equation arrays BackendDAE.DAE" 
   end ARRAYSYSTEM;
   record PARAMETERSYSTEM "Type for parameter system BackendDAE.DAE" 
-  end PARAMETERSYSTEM;    
+  end PARAMETERSYSTEM;
+  record INITIALSYSTEM "Type for initial system BackendDAE.DAE" 
+  end INITIALSYSTEM;
 end BackendDAEType;
 
 public
