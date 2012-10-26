@@ -146,15 +146,16 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, appendAllequations(jacobianMatrixes), delayedExps)%>
     
-    <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes))%>
+    <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes), parameterEquations)%>
     
     <%functionCallExternalObjectConstructors(extObjInfo)%>
     
     <%functionCallExternalObjectDestructors(extObjInfo)%>
     
+    <%functionExtraResiduals(parameterEquations)%>
     <%functionExtraResiduals(allEquations)%>
     
-    <%functionInitialNonLinearSystems(allEquations)%>
+    <%functionInitialNonLinearSystems(parameterEquations,allEquations)%>
     
     <%functionInput(modelInfo)%>
     
@@ -327,7 +328,7 @@ template functionSimProfDef(SimEqSystem eq, Integer value)
   end match
 end functionSimProfDef;
 
-template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations)
+template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, list<SimEqSystem> parameterEquations)
   "Generates function in simulation file."
 ::=
   match modelInfo
@@ -337,11 +338,12 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
      */
      let &eqnsDefines = buffer ""
      /*
-     let eqnsDefines = (allEquations |> eq hasindex i0 => functionSimProfDef(eq,i0); separator="";empty)
+     let allEqsPlusParamEqns = listAppend(parameterEquations,allEquations) 
+     let eqnsDefines = (allEqsPlusParamEqns |> eq hasindex i0 => functionSimProfDef(eq,i0); separator="";empty)
       <%equationInfo(allEquations)%>
      */
      let &eqnsDefines = buffer ""
-     let eqnInfo = equationInfo(allEquations,&eqnsDefines,intAdd(varInfo.numEquations, listLength(symJacEquations)))
+     let eqnInfo = equationInfo(listAppend(parameterEquations,allEquations),&eqnsDefines,intAdd(varInfo.numEquations, listLength(symJacEquations)))
     <<
     /* Some empty lines, since emptyCount is not implemented in susan! */
     <%eqnsDefines%>
@@ -474,11 +476,13 @@ template globalDataParDefine(SimVar simVar, String arrayName)
     #define <%cref(c)%> data->simulationInfo.<%arrayName%>[<%index%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
+    #define _<%cref(name)%>(i) <%cref(name)%>   
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
     <<
     #define <%cref(name)%> data->simulationInfo.<%arrayName%>[<%index%>]
+    #define _<%cref(name)%>(i) <%cref(name)%> 
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%index%>].attribute
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%index%>].info
     >>
@@ -876,14 +880,16 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   >>
 end functionInitialResidual;
 
-template functionInitialNonLinearSystems(list<SimEqSystem> allEquations)
+template functionInitialNonLinearSystems(list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations)
   "Generates functions in simulation file."
 ::=
+  let parambody = functionInitialNonLinearSystemsTemp(parameterEquations)
   let body = functionInitialNonLinearSystemsTemp(allEquations)
   <<
   /* funtion initialize non-linear systems */
   void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
   {
+    <%parambody%>
     <%body%>
   }
   >> 

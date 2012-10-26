@@ -1913,7 +1913,8 @@ algorithm
         allEquations = listAppend(allEquations,removedEquations);
         
         // update indexNonLinear in SES_NONLINEAR and count
-        (allEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(allEquations, 0, 0);
+        (parameterEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(parameterEquations, 0, 0);
+        (allEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys);
         modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
                 
         // replace div operator with div operator with check of Division by zero
@@ -4180,6 +4181,43 @@ algorithm
   end match;
 end greateTempVars;
 
+protected function moveDivToMul
+  input list<DAE.Exp> iExpLst;
+  input list<DAE.Exp> iExpLstAcc;
+  input list<DAE.Exp> iExpMuls;
+  output list<DAE.Exp> oExpLst;
+  output list<DAE.Exp> oExpMuls;
+algorithm
+  (oExpLst,oExpMuls) := match(iExpLst,iExpLstAcc,iExpMuls)
+    local 
+      DAE.Exp e,e1,e2,res;
+      list<DAE.Exp> rest,acc,elst,elst1;
+    case ({},_,_) then (iExpLstAcc,iExpMuls);
+    // a/b 
+    case (DAE.BINARY(exp1=e1,operator=DAE.DIV(ty=_),exp2=e2)::rest,_,_)
+      equation
+         acc = List.map1(iExpLstAcc,Expression.expMul,e2);
+         rest = List.map1(rest,Expression.expMul,e2);
+         rest = ExpressionSimplify.simplifyList(rest,{});
+        (elst,elst1) = moveDivToMul(rest,e1::acc,e2::iExpMuls);
+      then
+        (elst,elst1);
+    case (DAE.BINARY(exp1=e1,operator=DAE.DIV_ARRAY_SCALAR(ty=_),exp2=e2)::rest,_,_)
+      equation
+         acc = List.map1(iExpLstAcc,Expression.expMul,e2);
+         rest = List.map1(rest,Expression.expMul,e2);
+         rest = ExpressionSimplify.simplifyList(rest,{});
+        (elst,elst1) = moveDivToMul(rest,e1::acc,e2::iExpMuls);
+      then
+        (elst,elst1);
+    case (e::rest,_,_)
+      equation
+        (elst,elst1) = moveDivToMul(rest,e::iExpLstAcc,iExpMuls);
+      then
+        (elst,elst1);
+  end match;
+end moveDivToMul;
+
 protected function createNonlinearResidualExp
 "function createNonlinearResidualExp
   autor Frenkel TUD 2012-10
@@ -4192,36 +4230,55 @@ algorithm
   resExp := matchcontinue(iExp1,iExp2)
     local
       DAE.Exp e,e1,e2,res;
-    // a/b = c -> a-b*c
-    case (DAE.BINARY(exp1=e1,operator=DAE.DIV(ty=_),exp2=e2),_)
+      list<DAE.Exp> explst,explst1,mexplst;
+      DAE.Type ty;
+    case(_,_)
       equation
-        res = Expression.expMul(e2,iExp2);
-        res = Expression.expSub(e1,res);
+        true = Expression.isZero(iExp1);
+      then
+        iExp2;
+    case(_,_)
+      equation
+        true = Expression.isZero(iExp2);
+      then
+        iExp1;
+    case(_,_)
+      equation
+        ty = Expression.typeof(iExp1);
+        true = Types.isIntegerOrRealOrSubTypeOfEither(ty);
+        // get terms        
+        explst = Expression.terms(iExp1);
+        explst1 = Expression.terms(iExp2);
+        // get all divisors and multiply them to the other terms
+        (explst,mexplst) = moveDivToMul(explst,{},{});
+        e = Expression.makeProductLst(mexplst);
+        (e,_) = ExpressionSimplify.simplify(e);
+        explst1 = List.map1(explst1,Expression.expMul,e);
+        explst1 = ExpressionSimplify.simplifyList(explst1,{});
+        (explst1,mexplst) = moveDivToMul(explst1,{},{});
+        e = Expression.makeProductLst(mexplst);
+        (e,_) = ExpressionSimplify.simplify(e);
+        explst = List.map1(explst,Expression.expMul,e);
+        explst1 = List.map(explst1,Expression.negate);
+        explst = listAppend(explst,explst1);
+        res = Expression.makeSum(explst);
         (res,_) = ExpressionSimplify.simplify(res);
+      then 
+        res;
+    case(_,_)
+      equation
+        ty = Expression.typeof(iExp1);
+        true = Types.isBooleanOrSubTypeBoolean(ty);
+        res = DAE.LUNARY(DAE.NOT(ty),DAE.LBINARY(iExp1,DAE.EQUAL(ty),iExp2));
       then
         res;
-    case (DAE.BINARY(exp1=e1,operator=DAE.DIV_ARRAY_SCALAR(ty=_),exp2=e2),_)
+    case(_,_)
       equation
-        res = Expression.expMul(e2,iExp2);
-        res = Expression.expSub(e1,res);
-        (res,_) = ExpressionSimplify.simplify(res);
+        ty = Expression.typeof(iExp1);
+        true = Types.isStringOrSubTypeString(ty);
+        res = DAE.LUNARY(DAE.NOT(ty),DAE.LBINARY(iExp1,DAE.EQUAL(ty),iExp2));
       then
         res;
-    // a = b/c -> a*c-b
-    case (_,DAE.BINARY(exp1=e1,operator=DAE.DIV(ty=_),exp2=e2))
-      equation
-        res = Expression.expMul(iExp1,e2);
-        res = Expression.expSub(res,e1);
-        (res,_) = ExpressionSimplify.simplify(res);
-      then
-        res;
-    case (_,DAE.BINARY(exp1=e1,operator=DAE.DIV_ARRAY_SCALAR(ty=_),exp2=e2))
-      equation
-        res = Expression.expMul(iExp1,e2);
-        res = Expression.expSub(res,e1);
-        (res,_) = ExpressionSimplify.simplify(res);
-      then
-        res;                
     else
       equation
         res = Expression.expSub(iExp1,iExp2);

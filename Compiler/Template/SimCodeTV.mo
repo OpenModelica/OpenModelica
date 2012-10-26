@@ -92,6 +92,13 @@ package builtin
     output Boolean b;
   end stringEq;
  
+  function listAppend
+    replaceable type TypeVar subtypeof Any;    
+    input list<TypeVar> lst;
+    input list<TypeVar> lst1;
+    output list<TypeVar> result;
+  end listAppend; 
+ 
 end builtin;
 
 
