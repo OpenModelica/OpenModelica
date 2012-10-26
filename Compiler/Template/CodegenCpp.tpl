@@ -4597,7 +4597,11 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
      '_conditions1[<%eIndex%>]'
   case CALL(path=IDENT(name="initial") ) then
-      'initial()'
+     match context
+    case ALGLOOP_CONTEXT(__) 
+        then  '_system->initial()'
+    else
+          'initial()'
    
    case CALL(path=IDENT(name="DIVISION"),
             expLst={e1, e2}) then
