@@ -10173,6 +10173,50 @@ algorithm
   end match; 
 end tearingSystemNew3;
 
+protected function hasnonlinearVars1
+  input BackendDAE.AdjacencyMatrixElementEnhanced row;
+  output Boolean hasnonlinear;
+algorithm
+  hasnonlinear := match(row)
+    local
+      BackendDAE.AdjacencyMatrixElementEnhanced rest;
+    case ( {}) then false;
+    case ((_,BackendDAE.SOLVABILITY_NONLINEAR())::_)
+      then
+        true;
+    case (_::rest)
+      then
+        hasnonlinearVars1(rest);
+  end match;
+end hasnonlinearVars1;
+
+protected function hasnonlinearVars
+  input BackendDAE.AdjacencyMatrixElementEnhancedEntry entry;
+  input BackendDAE.AdjacencyMatrixEnhanced m;
+  output Boolean hasnonlinear;
+protected
+  Integer r;
+  BackendDAE.AdjacencyMatrixElementEnhanced row;
+algorithm
+  (r,_) := entry;
+  row := m[r];
+  hasnonlinear := hasnonlinearVars1(row);
+end hasnonlinearVars;
+
+protected function sortEqnsSolvabel
+"function sortEqnsSolvabel
+  author: Frenkel TUD 2012-10
+  moves equations with nonlinear or unsolvable parts on the end"
+  input BackendDAE.AdjacencyMatrixElementEnhanced queue;
+  input BackendDAE.AdjacencyMatrixEnhanced m;
+  output BackendDAE.AdjacencyMatrixElementEnhanced nextQeue;
+protected
+  BackendDAE.AdjacencyMatrixElementEnhanced qnon,qsolv;
+algorithm
+  (qnon,qsolv) := List.split1OnTrue(queue,hasnonlinearVars,m);
+  nextQeue := listAppend(qsolv,qnon);
+end sortEqnsSolvabel;
+
 protected function tearingBFS "function tearingBFS
   author: Frenkel TUD 2012-05"
   input BackendDAE.AdjacencyMatrixElementEnhanced queue;
@@ -10194,8 +10238,10 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,{}) then ();
     case ({},_,_,_,_,_,_,_,_,_,_)
       equation
-        //  print("NextQeue\n");
-        tearingBFS(nextQeue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
+        newqueue = List.removeOnTrue(ass2, isAssignedSaveEnhanced, nextQeue);
+        newqueue = sortEqnsSolvabel(newqueue,m);
+        //  print("NextQeue:\n" +& stringDelimitList(List.map(List.map(newqueue,Util.tuple21),intString),", ") +& "\n");
+        tearingBFS(newqueue,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,{});
       then 
         ();
     case((c,_)::rest,_,_,_,_,_,_,_,_,_,_)
@@ -10206,8 +10252,7 @@ algorithm
         cnonscalar = mapIncRowEqn[c];
         eqnsize = listLength(mapEqnIncRow[cnonscalar]);
         //  print("Eqn Size " +& intString(eqnsize) +& "\n");
-        //  rlst = List.map(rows,Util.tuple21);
-        //  print("Rows: " +& stringDelimitList(List.map(rlst,intString),", ") +& "\n");
+        //  print("Rows: " +& stringDelimitList(List.map(List.map(rows,Util.tuple21),intString),", ") +& "\n");
         newqueue = tearingBFS1(rows,eqnsize,mapEqnIncRow[cnonscalar],mt,ass1,ass2,columark,mark,nextQeue);
         tearingBFS(rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,ass1,ass2,columark,mark,newqueue);
       then 
