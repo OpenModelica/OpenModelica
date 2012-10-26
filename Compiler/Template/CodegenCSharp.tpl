@@ -890,6 +890,7 @@ template functionExtraResidual(SimEqSystem equ, SimCode simCode) ::=
     int ResidualFun<%index%>(int n, double[] xloc, double[] res, int iflag)
     {
        <% localRepresentationArrayDefines %>
+       <%crefs |> cr hasindex i0 => '<%cref(cr,simCode)%> = xloc[<%i0%>];' ;separator="\n"%>
        <%eqs |> saeq as SES_SIMPLE_ASSIGN(__) =>
          equation_(saeq, contextOther, simCode)
          ;separator="\n"
