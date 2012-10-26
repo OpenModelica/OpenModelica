@@ -274,13 +274,24 @@ void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* stat
   }
 }
 
+fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences, double* valuesReferences)
+{
+  fmi1_value_reference_t* valuesReferences_int = malloc(sizeof(fmi1_value_reference_t)*numberOfValueReferences);
+  int i;
+  for (i = 0 ; i < numberOfValueReferences ; i++)
+    valuesReferences_int[i] = (int)valuesReferences[i];
+  return valuesReferences_int;
+}
+
 /*
  * Wrapper for the FMI function fmiGetReal.
  * Returns realValues.
  */
-void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesReferences, double* realValues, double dummy)
+void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double* realValues, double dummy)
 {
-  fmi1_status_t fmistatus = fmi1_import_get_real((fmi1_import_t*)fmi, (fmi1_value_reference_t*)realValuesReferences, numberOfValueReferences, (fmi1_real_t*)realValues);
+  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
+  fmi1_status_t fmistatus = fmi1_import_get_real((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+  free(valuesReferences_int);
   switch (fmistatus) {
     case fmi1_status_warning:
       fprintf(stderr, "FMI Import Warning: Warning in fmiGetReal_OMC.\n");fflush(NULL);
@@ -300,18 +311,22 @@ void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesRefer
  * Wrapper for the FMI function fmiSetReal.
  * Returns status.
  */
-int fmiSetReal_OMC(void* fmi, int numberOfValueReferences, int* realValuesReferences, double* realValues)
+int fmiSetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double* realValues)
 {
-  return fmi1_import_set_real((fmi1_import_t*)fmi, (fmi1_value_reference_t*)realValuesReferences, numberOfValueReferences, (fmi1_real_t*)realValues);
+  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
+  fmi1_status_t fmistatus = fmi1_import_set_real((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+  return fmistatus;
 }
 
 /*
  * Wrapper for the FMI function fmiGetInteger.
  * Returns integerValues.
  */
-void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValuesReferences, int* integerValues, double dummy)
+void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double dummy)
 {
-  fmi1_status_t fmistatus = fmi1_import_get_integer((fmi1_import_t*)fmi, (fmi1_value_reference_t*)integerValuesReferences, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
+  fmi1_status_t fmistatus = fmi1_import_get_integer((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  free(valuesReferences_int);
   switch (fmistatus) {
     case fmi1_status_warning:
       fprintf(stderr, "FMI Import Warning: Warning in fmiGetInteger_OMC.\n");fflush(NULL);
@@ -331,18 +346,22 @@ void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValue
  * Wrapper for the FMI function fmiSetInteger.
  * Returns status.
  */
-int fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, int* integerValuesReferences, int* integerValues, double dummy)
+int fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double dummy)
 {
-  return fmi1_import_set_integer((fmi1_import_t*)fmi, (fmi1_value_reference_t*)integerValuesReferences, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
+  fmi1_status_t fmistatus = fmi1_import_set_integer((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  return fmistatus;
 }
 
 /*
  * Wrapper for the FMI function fmiGetBoolean.
  * Returns booleanValues.
  */
-void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValuesReferences, int* booleanValues)
+void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
 {
-  fmi1_status_t fmistatus = fmi1_import_get_boolean((fmi1_import_t*)fmi, (fmi1_value_reference_t*)booleanValuesReferences, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
+  fmi1_status_t fmistatus = fmi1_import_get_boolean((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  free(valuesReferences_int);
   switch (fmistatus) {
     case fmi1_status_warning:
       fprintf(stderr, "FMI Import Warning: Warning in fmiGetBoolean_OMC.\n");fflush(NULL);
@@ -362,18 +381,22 @@ void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValue
  * Wrapper for the FMI function fmiSetBoolean.
  * Returns status.
  */
-int fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, int* booleanValuesReferences, int* booleanValues, double dummy)
+int fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, double dummy)
 {
-  return fmi1_import_set_boolean((fmi1_import_t*)fmi, (fmi1_value_reference_t*)booleanValuesReferences, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
+  fmi1_status_t fmistatus = fmi1_import_set_boolean((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  return fmistatus;
 }
 
 /*
  * Wrapper for the FMI function fmiGetString.
  * Returns stringValues.
  */
-void fmiGetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesReferences, char** stringValues)
+void fmiGetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
 {
-  fmi1_status_t fmistatus = fmi1_import_get_string((fmi1_import_t*)fmi, (fmi1_value_reference_t*)stringValuesReferences, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
+  fmi1_status_t fmistatus = fmi1_import_get_string((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  free(valuesReferences_int);
   switch (fmistatus) {
     case fmi1_status_warning:
       fprintf(stderr, "FMI Import Warning: Warning in fmiGetString_OMC.\n");fflush(NULL);
@@ -393,9 +416,11 @@ void fmiGetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesR
  * Wrapper for the FMI function fmiSetString.
  * Returns status.
  */
-int fmiSetString_OMC(void* fmi, int numberOfValueReferences, int* stringValuesReferences, char** stringValues, double dummy)
+int fmiSetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, double dummy)
 {
-  return fmi1_import_set_string((fmi1_import_t*)fmi, (fmi1_value_reference_t*)stringValuesReferences, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
+  fmi1_status_t fmistatus = fmi1_import_set_string((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  return fmistatus;
 }
 
 /*

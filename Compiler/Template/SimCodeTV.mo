@@ -75,6 +75,11 @@ package builtin
     output Boolean b;
   end intGt;
   
+  function realInt
+    input Real r;
+    output Integer i;
+  end realInt;
+  
   function arrayList 
     replaceable type TypeVar subtypeof Any;    
     input TypeVar[:] arr;
@@ -85,7 +90,7 @@ package builtin
     input String s1;
     input String s2;
     output Boolean b;
-  end stringEq;  
+  end stringEq;
  
 end builtin;
 
@@ -2620,7 +2625,7 @@ package FMI
       Boolean hasStartValue;
       Real startValue;
       Boolean isFixed;
-      Integer valueReference;
+      Real valueReference;
     end REALVARIABLE;
   
     record INTEGERVARIABLE
@@ -2633,7 +2638,7 @@ package FMI
       Boolean hasStartValue;
       Integer startValue;
       Boolean isFixed;
-      Integer valueReference;
+      Real valueReference;
     end INTEGERVARIABLE;
   
     record BOOLEANVARIABLE
@@ -2646,7 +2651,7 @@ package FMI
       Boolean hasStartValue;
       Boolean startValue;
       Boolean isFixed;
-      Integer valueReference;
+      Real valueReference;
     end BOOLEANVARIABLE;
   
     record STRINGVARIABLE
@@ -2659,7 +2664,7 @@ package FMI
       Boolean hasStartValue;
       String startValue;
       Boolean isFixed;
-      Integer valueReference;
+      Real valueReference;
     end STRINGVARIABLE;
   
     record ENUMERATIONVARIABLE
@@ -2672,7 +2677,7 @@ package FMI
       Boolean hasStartValue;
       Integer startValue;
       Boolean isFixed;
-      Integer valueReference;
+      Real valueReference;
     end ENUMERATIONVARIABLE;
   end ModelVariables;
 

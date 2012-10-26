@@ -1892,7 +1892,7 @@ end reopenStandardStream;
 
 function importFMUOld "Imports the Functional Mockup Unit
   Example command:
-  importFMU(\"A.fmu\");"
+  importFMUOld(\"A.fmu\");"
   input String filename "the fmu file name";
   input String workdir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
   output Boolean success "Returns true on success";
@@ -1906,14 +1906,13 @@ function importFMU "Imports the Functional Mockup Unit
   importFMU(\"A.fmu\");"
   input String filename "the fmu file name";
   input String workdir := "<default>" "The output directory for imported FMU files. <default> will put the files to current working directory.";
-  input Integer loglevel := 2 "loglevel_nothing=0;loglevel_fatal=1;loglevel_error=2;loglevel_warning=3;loglevel_info=4;loglevel_verbose=5;loglevel_debug=6";
+  input Integer loglevel := 3 "loglevel_nothing=0;loglevel_fatal=1;loglevel_error=2;loglevel_warning=3;loglevel_info=4;loglevel_verbose=5;loglevel_debug=6";
   input Boolean fullPath := false "When true the full output path is returned otherwise only the file name.";
   output String generatedFileName "Returns the full path of the generated file.";
 external "builtin";
 annotation(preferredView="text");
 end importFMU;
 /* Under Development */
-
 
 function simulate "simulates a modelica model by generating c code, build it and run the simulation executable.
  The only required argument is the className, while all others have some efault values. 

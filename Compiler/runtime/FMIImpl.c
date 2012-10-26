@@ -337,7 +337,8 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     void* variable_has_start_value = mk_bcon(hasStartValue);
     void* variable_start_value = getModelVariableStartValue(model_variable, hasStartValue);
     void* variable_is_fixed = mk_bcon(fmi1_import_get_variable_is_fixed(model_variable));
-    void* variable_value_reference = mk_icon(model_variables_value_reference_list[i]);
+    void* variable_value_reference = mk_rcon((double)model_variables_value_reference_list[i]);
+    //fprintf(stderr, "%s Variable name = %s, valueReference = %d\n", getModelVariableBaseType(model_variable), getModelVariableName(model_variable), model_variables_value_reference_list[i]);fflush(NULL);
     void* variable;
     fmi1_base_type_enu_t type = fmi1_import_get_variable_base_type(model_variable);
     switch (type) {
