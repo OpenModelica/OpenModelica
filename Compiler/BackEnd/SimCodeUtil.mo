@@ -4180,6 +4180,57 @@ algorithm
   end match;
 end greateTempVars;
 
+protected function createNonlinearResidualExp
+"function createNonlinearResidualExp
+  autor Frenkel TUD 2012-10
+  do some numerical helpfull thinks like
+  a = b/c - > a*c-b"
+  input DAE.Exp iExp1;
+  input DAE.Exp iExp2;
+  output DAE.Exp resExp;
+algorithm
+  resExp := matchcontinue(iExp1,iExp2)
+    local
+      DAE.Exp e,e1,e2,res;
+    // a/b = c -> a-b*c
+    case (DAE.BINARY(exp1=e1,operator=DAE.DIV(ty=_),exp2=e2),_)
+      equation
+        res = Expression.expMul(e2,iExp2);
+        res = Expression.expSub(e1,res);
+        (res,_) = ExpressionSimplify.simplify(res);
+      then
+        res;
+    case (DAE.BINARY(exp1=e1,operator=DAE.DIV_ARRAY_SCALAR(ty=_),exp2=e2),_)
+      equation
+        res = Expression.expMul(e2,iExp2);
+        res = Expression.expSub(e1,res);
+        (res,_) = ExpressionSimplify.simplify(res);
+      then
+        res;
+    // a = b/c -> a*c-b
+    case (_,DAE.BINARY(exp1=e1,operator=DAE.DIV(ty=_),exp2=e2))
+      equation
+        res = Expression.expMul(iExp1,e2);
+        res = Expression.expSub(res,e1);
+        (res,_) = ExpressionSimplify.simplify(res);
+      then
+        res;
+    case (_,DAE.BINARY(exp1=e1,operator=DAE.DIV_ARRAY_SCALAR(ty=_),exp2=e2))
+      equation
+        res = Expression.expMul(iExp1,e2);
+        res = Expression.expSub(res,e1);
+        (res,_) = ExpressionSimplify.simplify(res);
+      then
+        res;                
+    else
+      equation
+        res = Expression.expSub(iExp1,iExp2);
+       (res,_) = ExpressionSimplify.simplify(res);
+      then 
+        res;
+  end matchcontinue;
+end createNonlinearResidualExp;
+
 protected function createNonlinearResidualEquations
   input list<BackendDAE.Equation> eqs;
   input Integer iuniqueEqIndex;
@@ -4211,8 +4262,7 @@ algorithm
       
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source) :: rest,_,_)
       equation
-        res_exp = Expression.expSub(e1,e2);
-        (res_exp,_) = ExpressionSimplify.simplify(res_exp);
+        res_exp = createNonlinearResidualExp(e1,e2);
         res_exp = replaceDerOpInExp(res_exp);
         (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
       then
@@ -4229,8 +4279,7 @@ algorithm
         // An array equation
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2, source=source) :: rest,_,_)
       equation
-        res_exp = Expression.expSub(e1,e2);
-        (res_exp,_) = ExpressionSimplify.simplify(res_exp);
+        res_exp = createNonlinearResidualExp(e1,e2);
         res_exp = replaceDerOpInExp(res_exp);
         ad = List.map(ds,Util.makeOption);
         subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
