@@ -121,12 +121,13 @@ int reportResidualValue(INIT_DATA *initData)
 
   if(1e-5 < funcValue)
   {
-    DEBUG_INFO(LOG_INIT, "error in initialization. System of initial equations are not consistent");
-    DEBUG_INFO_AL1(LOG_INIT, "(least square function value is %g)", funcValue);
+    INFO1(LOG_INIT, "error in initialization. System of initial equations are not consistent\n(least square function value is %g)", funcValue);
 
+    INDENT(LOG_INIT);
     for(i=0; i<initData->nInitResiduals; i++)
       if(1e-5 < fabs(initData->initialResiduals[i]))
-        DEBUG_INFO_AL2(LOG_INIT, "| residual[%ld] = %g", i+1, initData->initialResiduals[i]);
+        INFO2(LOG_INIT, "residual[%ld] = %g", i+1, initData->initialResiduals[i]);
+    RELEASE(LOG_INIT);
     return 1;
   }
   return 0;
@@ -212,30 +213,35 @@ void dumpInitialization(INIT_DATA *initData)
   for(i=0; i<initData->nInitResiduals; ++i)
     fValue += initData->initialResiduals[i] * initData->initialResiduals[i];
 
-  DEBUG_INFO(LOG_INIT, "initialization status");
+  INFO(LOG_INIT, "initialization status");
+  INDENT(LOG_INIT);
   if(initData->residualScalingCoefficients)
-    DEBUG_INFO_AL2(LOG_INIT, "| least square value: %g [scaled: %g]", fValue, fValueScaled);
+    INFO2(LOG_INIT, "least square value: %g [scaled: %g]", fValue, fValueScaled);
   else
-    DEBUG_INFO_AL1(LOG_INIT, "| least square value: %g", fValue);
+    INFO1(LOG_INIT, "least square value: %g", fValue);
 
-  DEBUG_INFO_AL(LOG_INIT, "| unfixed variables");
+  INFO(LOG_INIT, "unfixed variables");
+  INDENT(LOG_INIT);
   for(i=0; i<initData->nStates; ++i)
     if(initData->nominal)
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %15g = %s [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+      INFO4(LOG_INIT, "[%ld] %15g = %s [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %15g = %s", i+1, initData->vars[i], initData->name[i]);
+      INFO3(LOG_INIT, "[%ld] %15g = %s", i+1, initData->vars[i], initData->name[i]);
   for(; i<initData->nVars; ++i)
     if(initData->nominal)
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %15g = %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+      INFO4(LOG_INIT, "[%ld] %15g = %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %15g = %s (parameter)", i+1, initData->vars[i], initData->name[i]);
+      INFO3(LOG_INIT, "[%ld] %15g = %s (parameter)", i+1, initData->vars[i], initData->name[i]);
+  RELEASE(LOG_INIT);
 
-  DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
+  INFO(LOG_INIT, "initial residuals");
+  INDENT(LOG_INIT);
   for(i=0; i<initData->nInitResiduals; ++i)
     if(initData->residualScalingCoefficients)
-      DEBUG_INFO_AL4(LOG_INIT, "| | [%ld] %15g = %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initialResidualDescription[i], initData->residualScalingCoefficients[i]);
+      INFO4(LOG_INIT, "[%ld] %15g = %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initialResidualDescription[i], initData->residualScalingCoefficients[i]);
     else
-      DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] %15g = %s", i+1, initData->initialResiduals[i], initialResidualDescription[i]);
+      INFO3(LOG_INIT, "[%ld] %15g = %s", i+1, initData->initialResiduals[i], initialResidualDescription[i]);
+  RELEASE(LOG_INIT); RELEASE(LOG_INIT);
 }
 
 /*! \fn static int initialize(DATA *data, int optiMethod)
@@ -270,7 +276,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod)
 
   for(j=1; j<=200 && STOPCR < funcValue; j++)
   {
-    DEBUG_INFO1(LOG_INIT, "initialization-nr. %ld", j);
+    INFO1(LOG_INIT, "initialization-nr. %ld", j);
 
     if(optiMethod == IOM_SIMPLEX)
       retVal = simplex_initialization(initData);
@@ -305,23 +311,23 @@ static int initialize2(INIT_DATA *initData, int optiMethod)
       bestFuncValue = funcValue;
       for(i=0; i<initData->nVars; i++)
         bestZ[i] = initData->vars[i];
-      DEBUG_INFO(LOG_INIT, "updating bestZ");
+      INFO(LOG_INIT, "updating bestZ");
       dumpInitialization(initData);
     }
     else if(retVal >= 0 && funcValue == bestFuncValue)
     {
       /*WARNING("local minimum");*/
-      DEBUG_INFO(LOG_INIT, "not updating bestZ");
+      INFO(LOG_INIT, "not updating bestZ");
       break;
     }
     else
-      DEBUG_INFO(LOG_INIT, "not updating bestZ");
+      INFO(LOG_INIT, "not updating bestZ");
   }
 
   setZ(initData, bestZ);
   free(bestZ);
 
-  DEBUG_INFO1(LOG_INIT, "optimization-calls: %ld", j-1);
+  INFO1(LOG_INIT, "optimization-calls: %ld", j-1);
 
   return retVal;
 }
@@ -350,20 +356,20 @@ static int initialize(DATA *data, int optiMethod)
   /* no initial values to calculate */
   if(initData == NULL)
   {
-    DEBUG_INFO(LOG_INIT, "no variables to initialize");
+    INFO(LOG_INIT, "no variables to initialize");
     return 0;
   }
 
   /* no initial equations given */
   if(data->modelData.nInitResiduals == 0)
   {
-    DEBUG_INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
+    INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
     return 0;
   }
 
   if(initData->nInitResiduals < initData->nVars)
   {
-    DEBUG_INFO_AL(LOG_INIT, "under-determined");
+    INFO(LOG_INIT, "under-determined");
 
     z_f = (double*)malloc(initData->nVars * sizeof(double));
     nominal = initData->nominal;
@@ -390,7 +396,7 @@ static int initialize(DATA *data, int optiMethod)
     }
 
     k = 0;
-    DEBUG_INFO(LOG_INIT, "| setting fixed=true for:");
+    INFO(LOG_INIT, "| setting fixed=true for:");
     for(i=0; i<data->modelData.nStates; ++i)
     {
       if(data->modelData.realVarsData[i].attribute.fixed == 0)
@@ -398,7 +404,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realVarsData[i].attribute.fixed = 1;
-          DEBUG_INFO2(LOG_INIT, "| | %s(fixed=true) = %g", initData->name[k], initData->vars[k]);
+          INFO2(LOG_INIT, "| | %s(fixed=true) = %g", initData->name[k], initData->vars[k]);
         }
         k++;
       }
@@ -410,7 +416,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realParameterData[i].attribute.fixed = 1;
-          DEBUG_INFO2(LOG_INIT, "| | %s(fixed=true) = %g", initData->name[k], initData->vars[k]);
+          INFO2(LOG_INIT, "| | %s(fixed=true) = %g", initData->name[k], initData->vars[k]);
         }
         k++;
       }
@@ -424,13 +430,13 @@ static int initialize(DATA *data, int optiMethod)
     /* no initial values to calculate. (not possible to be here) */
     if(initData == NULL)
     {
-      DEBUG_INFO(LOG_INIT, "no initial values to calculate");
+      INFO(LOG_INIT, "no initial values to calculate");
       return 0;
     }
   }
   else if(data->modelData.nInitResiduals > initData->nVars)
   {
-    DEBUG_INFO_AL(LOG_INIT, "over-determined");
+    INFO(LOG_INIT, "over-determined");
 
     /*
      * INFO("initial problem is [over-determined]");
@@ -438,7 +444,7 @@ static int initialize(DATA *data, int optiMethod)
      * {
      *   optiMethod = IOM_NELDER_MEAD_EX;
      *   INFO("kinsol-method is unable to solve over-determined problems.");
-     *   INFO_AL2("| using %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
+     *   INFO2("| using %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
      * }
     */
   }
@@ -448,7 +454,7 @@ static int initialize(DATA *data, int optiMethod)
     optiMethod == IOM_NELDER_MEAD_EX ||
     optiMethod == IOM_NELDER_MEAD_EX2)
   {
-    DEBUG_INFO(LOG_INIT, "start with scaling");
+    INFO(LOG_INIT, "start with scaling");
 
     computeInitialResidualScalingCoefficients(initData);
     initialize2(initData, optiMethod);
@@ -489,7 +495,7 @@ static int initialize(DATA *data, int optiMethod)
     funcValue = leastSquareWithLambda(initData, 1.0);
   }
   else
-    DEBUG_INFO(LOG_INIT, "skip w/o scaling");
+    INFO(LOG_INIT, "skip w/o scaling");
 
   retVal = reportResidualValue(initData);
   freeInitData(initData);
@@ -589,14 +595,14 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   storePreValues(data);
 
   /* debug print */
-  if(DEBUG_FLAG(LOG_DEBUG))
+  if(DEBUG_STREAM(LOG_DEBUG))
     for(i=0; i<3;i++)
       printAllVars(data, i);
 
   retVal = initialize(data, optiMethod);
 
   /* debug print */
-  if(DEBUG_FLAG(LOG_DEBUG))
+  if(DEBUG_STREAM(LOG_DEBUG))
     for(i=0; i<3;i++)
       printAllVars(data, i);
 
@@ -698,19 +704,19 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
   MODEL_DATA *mData = &(data->modelData);
   long i;
 
-  DEBUG_INFO    (LOG_INIT, "import start values");
-  DEBUG_INFO_AL1(LOG_INIT, "| file: %s", pInitFile);
-  DEBUG_INFO_AL1(LOG_INIT, "| time: %g", initTime);
+  INFO    (LOG_INIT, "import start values");
+  INFO1(LOG_INIT, "| file: %s", pInitFile);
+  INFO1(LOG_INIT, "| time: %g", initTime);
 
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
   {
-    THROW2("unable to read input-file <%s> [%s]", pInitFile, pError);
+    ASSERT2(0, "unable to read input-file <%s> [%s]", pInitFile, pError);
     return 1;
   }
   else
   {
-    DEBUG_INFO(LOG_INIT, "import real variables");
+    INFO(LOG_INIT, "import real variables");
     for(i=0; i<mData->nVariablesReal; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->realVarsData[i].info.name);
@@ -725,17 +731,17 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
       if(pVar)
       {
         omc_matlab4_val(&(mData->realVarsData[i].attribute.start), &reader, pVar, initTime);
-        DEBUG_INFO_AL2(LOG_INIT, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
+        INFO2(LOG_INIT, "| %s(start=%g)", mData->realVarsData[i].info.name, mData->realVarsData[i].attribute.start);
       }
       else
       {
         /* skipp warnings about self generated variables */
-        if (((strncmp (mData->realVarsData[i].info.name,"$ZERO.",6) != 0) && (strncmp (mData->realVarsData[i].info.name,"$pDER.",6) != 0)) || DEBUG_FLAG(LOG_INIT))
-          WARNING1("unable to import real variable %s from given file", mData->realVarsData[i].info.name);
+        if (((strncmp (mData->realVarsData[i].info.name,"$ZERO.",6) != 0) && (strncmp (mData->realVarsData[i].info.name,"$pDER.",6) != 0)) || DEBUG_STREAM(LOG_INIT))
+          WARNING1(LOG_INIT, "unable to import real variable %s from given file", mData->realVarsData[i].info.name);
       }
     }
 
-    DEBUG_INFO(LOG_INIT, "import real parameters");
+    INFO(LOG_INIT, "import real parameters");
     for(i=0; i<mData->nParametersReal; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->realParameterData[i].info.name);
@@ -750,13 +756,13 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
       if(pVar)
       {
         omc_matlab4_val(&(mData->realParameterData[i].attribute.start), &reader, pVar, initTime);
-        DEBUG_INFO_AL2(LOG_INIT, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
+        INFO2(LOG_INIT, "| %s(start=%g)", mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.start);
       }
       else
-        WARNING1("unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
+        WARNING1(LOG_INIT, "unable to import real parameter %s from given file", mData->realParameterData[i].info.name);
     }
 
-    DEBUG_INFO(LOG_INIT, "import integer parameters");
+    INFO(LOG_INIT, "import integer parameters");
     for(i=0; i<mData->nParametersInteger; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->integerParameterData[i].info.name);
@@ -772,13 +778,13 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
       {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->integerParameterData[i].attribute.start = (modelica_integer)value;
-        DEBUG_INFO_AL2(LOG_INIT, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
+        INFO2(LOG_INIT, "| %s(start=%ld)", mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.start);
       }
       else
-        WARNING1("unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
+        WARNING1(LOG_INIT, "unable to import integer parameter %s from given file", mData->integerParameterData[i].info.name);
     }
 
-    DEBUG_INFO(LOG_INIT, "import boolean parameters");
+    INFO(LOG_INIT, "import boolean parameters");
     for(i=0; i<mData->nParametersBoolean; ++i)
     {
       pVar = omc_matlab4_find_var(&reader, mData->booleanParameterData[i].info.name);
@@ -794,10 +800,10 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
       {
         omc_matlab4_val(&value, &reader, pVar, initTime);
         mData->booleanParameterData[i].attribute.start = (modelica_boolean)value;
-        DEBUG_INFO_AL2(LOG_INIT, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
+        INFO2(LOG_INIT, "| %s(start=%s)", mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.start ? "true" : "false");
       }
       else
-        WARNING1("unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
+        WARNING1(LOG_INIT, "unable to import boolean parameter %s from given file", mData->booleanParameterData[i].info.name);
     }
     omc_free_matlab4_reader(&reader);
   }
@@ -823,7 +829,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   int updateStartValues = 1;
   int i;
 
-  DEBUG_INFO(LOG_INIT, "### START INITIALIZATION ###");
+  INFO(LOG_INIT, "### START INITIALIZATION ###");
 
   /* import start values from extern mat-file */
   if(pInitFile && strcmp(pInitFile, ""))
@@ -845,10 +851,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
     if(initMethod == IIM_UNKNOWN)
     {
-      WARNING1("unrecognized option -iim %s", pInitMethod);
-      WARNING_AL("current options are:");
+      WARNING1(LOG_INIT, "unrecognized option -iim %s", pInitMethod);
+      WARNING(LOG_INIT, "current options are:");
       for(i=1; i<IIM_MAX; ++i)
-        WARNING_AL2("| %-15s [%s]", initMethodStr[i], initMethodDescStr[i]);
+        WARNING2(LOG_INIT, "| %-15s [%s]", initMethodStr[i], initMethodDescStr[i]);
       THROW("see last warning");
     }
   }
@@ -865,17 +871,17 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
     if(optiMethod == IOM_UNKNOWN)
     {
-      WARNING1("unrecognized option -iom %s", pOptiMethod);
-      WARNING_AL("current options are:");
+      WARNING1(LOG_INIT, "unrecognized option -iom %s", pOptiMethod);
+      WARNING(LOG_INIT, "current options are:");
       for(i=1; i<IOM_MAX; ++i)
-        WARNING_AL2("| %-15s [%s]", optiMethodStr[i], optiMethodDescStr[i]);
+        WARNING2(LOG_INIT, "| %-15s [%s]", optiMethodStr[i], optiMethodDescStr[i]);
       THROW("see last warning");
     }
   }
 
-  DEBUG_INFO2(LOG_INIT,    "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
-  DEBUG_INFO_AL2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
-  DEBUG_INFO_AL1(LOG_INIT, "update start values:   %s", updateStartValues ? "true" : "false");
+  INFO2(LOG_INIT,    "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
+  INFO2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
+  INFO1(LOG_INIT, "update start values:   %s", updateStartValues ? "true" : "false");
 
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
@@ -890,6 +896,6 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   data->simulationInfo.initial = 0;
 
-  DEBUG_INFO(LOG_INIT, "### END INITIALIZATION ###");
+  INFO(LOG_INIT, "### END INITIALIZATION ###");
   return retVal;
 }

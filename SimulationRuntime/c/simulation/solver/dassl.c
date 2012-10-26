@@ -132,13 +132,15 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
 
   if(dasslData->dasslMethod == DASSL_UNKNOWN)
   {
-    WARNING1("unrecognized solver method %s", simInfo->solverMethod);
-    WARNING_AL("current options are:");
+    WARNING1(LOG_SOLVER, "unrecognized solver method %s", simInfo->solverMethod);
+    WARNING(LOG_SOLVER, "current options are:");
     for(i=1; i < DASSL_MAX; ++i)
-      WARNING_AL2("  %-15s [%s]", dasslMethodStr[i], dasslMethodStrDescStr[i]);
+      WARNING2(LOG_SOLVER, "  %-15s [%s]", dasslMethodStr[i], dasslMethodStrDescStr[i]);
     THROW("see last warning");
-  }else{
-    DEBUG_INFO2(LOG_SOLVER,"| solver | Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
+  }
+  else
+  {
+    INFO2(LOG_SOLVER, "| solver | Use solver method: %s\t%s",dasslMethodStr[dasslData->dasslMethod],dasslMethodStrDescStr[dasslData->dasslMethod]);
   }
 
 
@@ -157,8 +159,8 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   ASSERT(dasslData->ipar,"out of memory");
   dasslData->atol = (double*) malloc(simData->modelData.nStates*sizeof(double));
   dasslData->rtol = (double*) malloc(simData->modelData.nStates*sizeof(double));
-  dasslData->ipar[0] = DEBUG_FLAG(LOG_JAC);
-  dasslData->ipar[1] = DEBUG_FLAG(LOG_ENDJAC);
+  dasslData->ipar[0] = DEBUG_STREAM(LOG_JAC);
+  dasslData->ipar[1] = DEBUG_STREAM(LOG_ENDJAC);
   dasslData->info = (fortran_integer*) calloc(infoLength, sizeof(fortran_integer));
   ASSERT(dasslData->info,"out of memory");
   dasslData->dasslStatistics = (unsigned int*) calloc(numStatistics, sizeof(unsigned int));
@@ -183,7 +185,7 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
       dasslData->dasslMethod == DASSL_COLOREDNUMJAC ||
       dasslData->dasslMethod == DASSL_TEST){
     if (initialAnalyticJacobianA(simData)){
-      DEBUG_INFO(LOG_SOLVER,"| solver | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
+      INFO(LOG_SOLVER,"| solver | Jacobian or SparsePattern is not generated or failed to initialize! Switch back to normal.");
       dasslData->dasslMethod = DASSL_RT;
     }else{
       dasslData->info[4] = 1; /* use sub-routine JAC */
@@ -242,7 +244,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   /* If an event is triggered and processed restart dassl. */
   if (solverInfo->didEventStep)
   {
-    DEBUG_INFO(LOG_EVENTS, "| events | Event-management forced reset of DDASRT");
+    INFO(LOG_EVENTS, "| events | Event-management forced reset of DDASRT");
     /* obtain reset */
     dasslData->info[0] = 0;
     dasslData->idid = 0;
@@ -255,8 +257,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
    * else will dassl get in trouble. If that is the case we skip the current step. */
   if (solverInfo->currentTime - tout >= -1e-13)
   {
-    DEBUG_INFO(LOG_SOLVER, "| DDASRT | Desired step to small try next one");
-    DEBUG_INFO(LOG_SOLVER, "| DDASRT | Interpolate linear");
+    INFO(LOG_SOLVER, "| DDASRT | Desired step to small try next one");
+    INFO(LOG_SOLVER, "| DDASRT | Interpolate linear");
 
     for (i = 0; i < simData->modelData.nStates; i++)
     {
@@ -270,11 +272,11 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     return retVal;
   }
 
-  DEBUG_INFO2(LOG_SOLVER, "| DDASRT | Calling DDASRT from %.10f to %.10f",
+  INFO2(LOG_SOLVER, "| DDASRT | Calling DDASRT from %.10f to %.10f",
       solverInfo->currentTime, tout);
   do
   {
-    DEBUG_INFO2(LOG_SOLVER, "|        | Start step %.10f to %.10f", solverInfo->currentTime, tout);
+    INFO2(LOG_SOLVER, "|        | Start step %.10f to %.10f", solverInfo->currentTime, tout);
     if (dasslData->idid == 1){
       /* rotate RingBuffer before step is calculated */
       rotateRingBuffer(simData->simulationData, 1, (void**) simData->localData);
@@ -355,8 +357,8 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     {
       fflush(stderr);
       fflush(stdout);
-      WARNING("| DDASRT | A large amount of work has been expended.(About 500 steps). Trying to continue ...");
-      DEBUG_INFO(LOG_SOLVER, "| DDASRT | DASSL will try again...");
+      WARNING(LOG_SOLVER, "| DDASRT | A large amount of work has been expended.(About 500 steps). Trying to continue ...");
+      INFO(LOG_SOLVER, "| DDASRT | DASSL will try again...");
       dasslData->info[0] = 1; /* try again */
     }
     else if (dasslData->idid < 0)
@@ -367,7 +369,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
       solverInfo->currentTime = solverInfo->currentTime + solverInfo->currentStepSize;
       sData->timeValue = solverInfo->currentTime;
       functionODE(simData);
-      WARNING1("| DDASRT |  can't continue. time = %f", sData->timeValue);
+      WARNING1(LOG_SOLVER, "| DDASRT |  can't continue. time = %f", sData->timeValue);
       return retVal;
     }
 
@@ -380,19 +382,19 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
 
 
-  if (DEBUG_FLAG(LOG_SOLVER))
+  if(DEBUG_STREAM(LOG_SOLVER))
   {
-    INFO("| DDASRT | dassl call staistics: ");
-    INFO_AL1("          | value of idid: %d", dasslData->idid);
-    INFO_AL1("          | current time value: %0.4g", solverInfo->currentTime);
-    INFO_AL1("          | current integration time value: %0.4g", dasslData->rwork[3]);
-    INFO_AL1("          | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
-    INFO_AL1("          | step size used on last successful step: %0.4g", dasslData->rwork[6]);
-    INFO_AL1("          | number of steps taken so far: %d", dasslData->iwork[10]);
-    INFO_AL1("          | number of calls of functionODE() : %d", dasslData->iwork[11]);
-    INFO_AL1("          | number of calculation of jacobian : %d", dasslData->iwork[12]);
-    INFO_AL1("          | total number of convergence test failures: %d", dasslData->iwork[13]);
-    INFO_AL1("          | total number of error test failures: %d", dasslData->iwork[14]);
+    INFO(LOG_SOLVER, "| DDASRT | dassl call staistics: ");
+    INFO1(LOG_SOLVER, "          | value of idid: %d", dasslData->idid);
+    INFO1(LOG_SOLVER, "          | current time value: %0.4g", solverInfo->currentTime);
+    INFO1(LOG_SOLVER, "          | current integration time value: %0.4g", dasslData->rwork[3]);
+    INFO1(LOG_SOLVER, "          | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
+    INFO1(LOG_SOLVER, "          | step size used on last successful step: %0.4g", dasslData->rwork[6]);
+    INFO1(LOG_SOLVER, "          | number of steps taken so far: %d", dasslData->iwork[10]);
+    INFO1(LOG_SOLVER, "          | number of calls of functionODE() : %d", dasslData->iwork[11]);
+    INFO1(LOG_SOLVER, "          | number of calculation of jacobian : %d", dasslData->iwork[12]);
+    INFO1(LOG_SOLVER, "          | total number of convergence test failures: %d", dasslData->iwork[13]);
+    INFO1(LOG_SOLVER, "          | total number of error test failures: %d", dasslData->iwork[14]);
   }
   /* save dassl stats */
   for (ui = 0; ui < numStatistics; ui++)
@@ -402,7 +404,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   }
 
 
-  DEBUG_INFO(LOG_SOLVER, "| DDASRT | Finished DDASRT step.");
+  INFO(LOG_SOLVER, "| DDASRT | Finished DDASRT step.");
 
   return retVal;
 }
@@ -418,11 +420,11 @@ continue_DASRT(fortran_integer* idid, double* atol) {
     /* 1-4 means success */
     break;
   case -1:
-    WARNING("DDASRT: A large amount of work has been expended.(About 500 steps). Trying to continue ...");
+    WARNING(LOG_SOLVER, "DDASRT: A large amount of work has been expended.(About 500 steps). Trying to continue ...");
     retValue = 1; /* adrpo: try to continue */
     break;
   case -2:
-    WARNING("DDASRT: The error tolerances are too stringent");
+    WARNING(LOG_SOLVER, "DDASRT: The error tolerances are too stringent");
     retValue = -2;
     break;
   case -3:
@@ -431,35 +433,35 @@ continue_DASRT(fortran_integer* idid, double* atol) {
     retValue = -3;
     break;
   case -6:
-    WARNING("DDASRT: DDASSL had repeated error test failures on the last attempted step.");
+    WARNING(LOG_SOLVER, "DDASRT: DDASSL had repeated error test failures on the last attempted step.");
     retValue = -6;
     break;
   case -7:
-    WARNING("DDASRT: The corrector could not converge.");
+    WARNING(LOG_SOLVER, "DDASRT: The corrector could not converge.");
     retValue = -7;
     break;
   case -8:
-    WARNING("DDASRT: The matrix of partial derivatives is singular.");
+    WARNING(LOG_SOLVER, "DDASRT: The matrix of partial derivatives is singular.");
     retValue = -8;
     break;
   case -9:
-    WARNING("DDASRT: The corrector could not converge. There were repeated error test failures in this step.");
+    WARNING(LOG_SOLVER, "DDASRT: The corrector could not converge. There were repeated error test failures in this step.");
     retValue = -9;
     break;
   case -10:
-    INFO("DDASRT: The corrector could not converge because IRES was equal to minus one.");
+    INFO(LOG_SOLVER, "DDASRT: The corrector could not converge because IRES was equal to minus one.");
     retValue = -10;
     break;
   case -11:
-    WARNING("DDASRT: IRES equal to -2 was encountered and control is being returned to the calling program.");
+    WARNING(LOG_SOLVER, "DDASRT: IRES equal to -2 was encountered and control is being returned to the calling program.");
     retValue = -11;
     break;
   case -12:
-    WARNING("DDASRT: DDASSL failed to compute the initial YPRIME.");
+    WARNING(LOG_SOLVER, "DDASRT: DDASSL failed to compute the initial YPRIME.");
     retValue = -12;
     break;
   case -33:
-    WARNING("DDASRT: The code has encountered trouble from which it cannot recover.");
+    WARNING(LOG_SOLVER, "DDASRT: The code has encountered trouble from which it cannot recover.");
     retValue = -33;
     break;
   }
@@ -508,12 +510,12 @@ int function_ZeroCrossingsDASSL(fortran_integer *neqm, double *t, double *y,
 
   function_ZeroCrossings(data, gout, t);
 
-  if (DEBUG_FLAG(LOG_ZEROCROSSINGS)){
-    INFO1("| DDASRT | events | check zero crossing at time: %.10f", *t);
+  if (DEBUG_STREAM(LOG_ZEROCROSSINGS)){
+    INFO1(LOG_SOLVER, "| DDASRT | events | check zero crossing at time: %.10f", *t);
     for (i=0; i < *ng; i++) {
       if (data->simulationInfo.zeroCrossings[i] != gout[i]){
-        INFO_AL1("|                 | %s", zeroCrossingDescription[i]);
-        INFO_AL2("|                 | changed :  %s -> %s", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE", (gout[i]>0)?"TRUE ":"FALSE");
+        INFO1(LOG_SOLVER, "|                 | %s", zeroCrossingDescription[i]);
+        INFO2(LOG_SOLVER, "|                 | changed :  %s -> %s", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE", (gout[i]>0)?"TRUE ":"FALSE");
       }
     }
   }
@@ -533,10 +535,10 @@ int functionJacAColored(DATA* data, double* jac){
       if (data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[index].seedVars[ii] = 1;
 
-    if (DEBUG_FLAG((LOG_JAC | LOG_ENDJAC))){
+    if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC))){
       printf("Caluculate one col:\n");
       for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
-        DEBUG_INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[index].seedVars[l]);
+        INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[index].seedVars[l]);
     }
 
 
@@ -550,13 +552,13 @@ int functionJacAColored(DATA* data, double* jac){
           ii = 0;
         else
           ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-        DEBUG_INFO2((LOG_JAC | LOG_ENDJAC)," take for %d -> %d\n",j,ii);
+        INFO2((LOG_JAC | LOG_ENDJAC)," take for %d -> %d\n",j,ii);
         while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j])
         {
           l  = data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
           k  = j*data->simulationInfo.analyticJacobians[index].sizeRows + l;
           jac[k] = data->simulationInfo.analyticJacobians[index].resultVars[l];
-          DEBUG_INFO7((LOG_JAC | LOG_ENDJAC),"write %d. in jac[%d]-[%d,%d]=%f from col[%d]=%f",ii,k,l,j,jac[k],l,data->simulationInfo.analyticJacobians[index].resultVars[l]);
+          INFO7((LOG_JAC | LOG_ENDJAC),"write %d. in jac[%d]-[%d,%d]=%f from col[%d]=%f",ii,k,l,j,jac[k],l,data->simulationInfo.analyticJacobians[index].resultVars[l]);
           ii++;
         };
       }
@@ -566,7 +568,7 @@ int functionJacAColored(DATA* data, double* jac){
 
 
     /*
-    if (DEBUG_FLAG((LOG_JAC | LOG_ENDJAC))){
+    if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC))){
       INFO("Print jac:");
       for(l=0;  l < data->simulationInfo.analyticJacobians[index].sizeCols;l++)
       {
@@ -591,11 +593,11 @@ int functionJacASym(DATA* data, double* jac){
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
 
-    if (DEBUG_FLAG((LOG_JAC | LOG_ENDJAC)))
+    if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
-        DEBUG_INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
+        INFO2((LOG_JAC | LOG_ENDJAC),"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",j,data->simulationInfo.analyticJacobians[index].seedVars[j]);
     }
 
 
@@ -604,13 +606,13 @@ int functionJacASym(DATA* data, double* jac){
     for(j = 0; j < data->simulationInfo.analyticJacobians[index].sizeRows; j++)
     {
       jac[k++] = data->simulationInfo.analyticJacobians[index].resultVars[j];
-      DEBUG_INFO6((LOG_JAC | LOG_ENDJAC),"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k,i,j,jac[k-1],j,data->simulationInfo.analyticJacobians[index].resultVars[j]);
+      INFO6((LOG_JAC | LOG_ENDJAC),"write in jac[%d]-[%d,%d]=%g from row[%d]=%g",k,i,j,jac[k-1],j,data->simulationInfo.analyticJacobians[index].resultVars[j]);
     }
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
   /*
-  if (DEBUG_FLAG(LOG_DEBUG))
+  if (DEBUG_STREAM(LOG_DEBUG))
   {
     INFO("Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -730,20 +732,20 @@ jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double
 
     deltaInv = 1. / delta_hh;
 
-    DEBUG_INFO1((LOG_JAC | LOG_ENDJAC),"Caluculate one col: %d", i);
+    INFO1((LOG_JAC | LOG_ENDJAC),"Caluculate one col: %d", i);
     for (j = 0; j < data->modelData.nStates; j++) {
       matrixA[l++] = (e[j] - delta[j]) * deltaInv;
-      if (DEBUG_FLAG(LOG_JAC | LOG_ENDJAC)) {
+      if (DEBUG_STREAM(LOG_JAC) || DEBUG_STREAM(LOG_ENDJAC)) {
         printf("%e ",matrixA[l-1]);
       }
     }
-    DEBUG_INFO((LOG_JAC | LOG_ENDJAC)," ");
+    INFO((LOG_JAC | LOG_ENDJAC)," ");
     y[i] = ysave;
     yprime[i] = ypsave;
   }
 
-  if (DEBUG_FLAG(LOG_JAC | LOG_ENDJAC)) {
-    INFO("Print jac:");
+  if(DEBUG_STREAM(LOG_JAC) || DEBUG_STREAM(LOG_ENDJAC)) {
+    INFO(LOG_SOLVER, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -817,14 +819,14 @@ jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta,
       }
     }
 
-    DEBUG_INFO(LOG_JAC | LOG_ENDJAC,"Set Seed Vars:");
+    INFO(LOG_JAC | LOG_ENDJAC,"Set Seed Vars:");
     for (ii=0, kk = 0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++){
       if (data->simulationInfo.analyticJacobians[index].sparsePattern.colorCols[ii]-1 == i){
 
         ysave[ii] = y[ii];
         ypsave[ii] = yprime[ii];
         y[ii] += delta_hh[kk];
-        DEBUG_INFO3(LOG_JAC | LOG_ENDJAC,"seed:  sData->realVars[%d]= %e\t = %e",ii,y[ii],sData->realVars[ii]);
+        INFO3(LOG_JAC | LOG_ENDJAC,"seed:  sData->realVars[%d]= %e\t = %e",ii,y[ii],sData->realVars[ii]);
         kk++;
       }
     }
@@ -832,7 +834,7 @@ jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta,
     functionODE_residual(t, y, yprime, e, &ires, rpar, ipar);
 
     for (ii=0; ii < data->simulationInfo.analyticJacobians[index].sizeCols; ii++)
-        DEBUG_INFO3(LOG_JAC | LOG_ENDJAC,"result:  yprime[%d]= %e\t = %e",ii,yprime[ii],(e[ii] - delta[ii]) * delta_h);
+        INFO3(LOG_JAC | LOG_ENDJAC,"result:  yprime[%d]= %e\t = %e",ii,yprime[ii],(e[ii] - delta[ii]) * delta_h);
 
 
     for(j = 0,kk=0; j < data->simulationInfo.analyticJacobians[index].sizeCols; j++){
@@ -841,12 +843,12 @@ jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta,
           ii = 0;
         else
           ii = data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j-1];
-        DEBUG_INFO2((LOG_JAC | LOG_ENDJAC)," take for %d -> %d\n",j,ii);
+        INFO2((LOG_JAC | LOG_ENDJAC)," take for %d -> %d\n",j,ii);
         while(ii < data->simulationInfo.analyticJacobians[index].sparsePattern.leadindex[j]){
           l  =  data->simulationInfo.analyticJacobians[index].sparsePattern.index[ii];
           k  = l + j*data->simulationInfo.analyticJacobians[index].sizeRows;
           matrixA[k] = (e[l] - delta[l]) * deltaInv[kk];
-          DEBUG_INFO5(LOG_JAC | LOG_ENDJAC,"write %d. in jac[%d]-[%d,%d]=%e",ii,k,j,l,matrixA[k]);
+          INFO5(LOG_JAC | LOG_ENDJAC,"write %d. in jac[%d]-[%d,%d]=%e",ii,k,j,l,matrixA[k]);
           ii++;
         };
         kk++;
@@ -862,8 +864,9 @@ jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta,
     }
   }
 
-  if (DEBUG_FLAG(LOG_JAC | LOG_ENDJAC)) {
-    INFO("Print jac:");
+  if(DEBUG_STREAM(LOG_JAC) || DEBUG_STREAM(LOG_ENDJAC))
+  {
+    INFO(LOG_SOLVER, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)

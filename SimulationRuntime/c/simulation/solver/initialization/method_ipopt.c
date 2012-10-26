@@ -213,10 +213,10 @@
          * SPARSE
          *
          */
-        DEBUG_INFO(LOG_INIT, "ipopt using symbolic sparse jacobian G");
-        if(DEBUG_FLAG(LOG_INIT))
+        INFO(LOG_INIT, "ipopt using symbolic sparse jacobian G");
+        if(DEBUG_STREAM(LOG_INIT))
         {
-          DEBUG_INFO(LOG_INIT, "sparsity pattern");
+          INFO(LOG_INIT, "sparsity pattern");
           for(i=0; i<n; ++i)
           {
             printf("        | | column %3d: [ ", i+1);
@@ -257,7 +257,7 @@
          * DENSE
          *
          */
-        DEBUG_INFO(LOG_INIT, "ipopt using numeric dense jacobian G");
+        INFO(LOG_INIT, "ipopt using numeric dense jacobian G");
         idx = 0;
         for(i=0; i<n; ++i)
         {
@@ -275,13 +275,13 @@
     else
     {
       /* return the values of the jacobian of the constraints */
-      DEBUG_INFO(LOG_DEBUG, "ipopt jacobian G");
+      INFO(LOG_DEBUG, "ipopt jacobian G");
 
       if(ipopt_data->useSymbolic == 1)
       {
         functionJacG_sparse(ipopt_data->initData->simData, values);
 
-        if(DEBUG_FLAG(LOG_DEBUG))
+        if(DEBUG_STREAM(LOG_DEBUG))
         {
           int i, j;
           int idx = 0;
@@ -334,7 +334,7 @@
         free(gp);
         free(gn);
 
-        if(DEBUG_FLAG(LOG_DEBUG))
+        if(DEBUG_STREAM(LOG_DEBUG))
         {
           int i, j;
           for(i=0; i<n; ++i)
@@ -415,8 +415,8 @@
     {
       /* sparse */
       nele_jac = initData->simData->simulationInfo.analyticJacobians[INDEX_JAC_G].sparsePattern.leadindex[n-1];
-      DEBUG_INFO1(LOG_INIT, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
-      DEBUG_INFO1(LOG_INIT, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
+      INFO1(LOG_INIT, "number of zeros in the Jacobian of the constraints (jac_g):    %d", n*m-nele_jac);
+      INFO1(LOG_INIT, "number of nonzeros in the Jacobian of the constraints (jac_g): %d", nele_jac);
     }
 
     /* allocate space for the variable bounds */
@@ -475,7 +475,7 @@
        they might not be suitable for your problem. */
     AddIpoptNumOption(nlp, "tol", 1e-7);
 
-    AddIpoptIntOption(nlp, "print_level", DEBUG_FLAG(LOG_INIT) ? 5 : 0);
+    AddIpoptIntOption(nlp, "print_level", DEBUG_STREAM(LOG_INIT) ? 5 : 0);
     AddIpoptIntOption(nlp, "max_iter", 5000);
 
     AddIpoptStrOption(nlp, "mu_strategy", "adaptive");

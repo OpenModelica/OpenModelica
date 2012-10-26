@@ -99,7 +99,7 @@ simulation_result_csv::simulation_result_csv(const char* filename, long numpoint
   fout = fopen(filename, "w");
   if (!fout)
   {
-    THROW2("Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
+    ASSERT2(0, "Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
   }
 
   fprintf(fout, format, "time");

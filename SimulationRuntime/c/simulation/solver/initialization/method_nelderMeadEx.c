@@ -171,7 +171,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
     /* dump every dump-th step */
     if(dump && !(iteration % dump))
-      INFO4("NelderMeadOptimization | lambda=%g / step=%d / f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
+      INFO4(LOG_INIT, "lambda=%g / step=%d / f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
 
     if(sigma < g)
     {
@@ -181,7 +181,7 @@ static void NelderMeadOptimization(INIT_DATA* initData,
         if(lambda >= 1.0)
           break;
 
-        DEBUG_INFO3(LOG_INIT, "NelderMeadOptimization | increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, fvalues[xb]);
+        INFO3(LOG_INIT, "increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, fvalues[xb]);
         continue;
       }
     }
@@ -276,8 +276,8 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     else
     {
       /* not possible to be here */
-      WARNING1("fxr = %g", fxr);
-      WARNING1("fxk = %g", fxk);
+      WARNING1(LOG_INIT, "fxr = %g", fxr);
+      WARNING1(LOG_INIT, "fxk = %g", fxk);
 
       THROW("undefined error in NelderMeadOptimization");
     }
@@ -318,8 +318,11 @@ int nelderMeadEx_initialization(INIT_DATA *initData, double *lambda)
   long NLOOP = 1000 * initData->nVars;
   long iteration = 0;
 
-  NelderMeadOptimization(initData, lambda_step, STOPCR, NLOOP, DEBUG_FLAG(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
-  DEBUG_INFO_AL1(LOG_INIT, "| iterations: %ld", iteration);
+  INFO(LOG_INIT, "NelderMeadOptimization");
+  INDENT(LOG_INIT);
+  NelderMeadOptimization(initData, lambda_step, STOPCR, NLOOP, DEBUG_STREAM(LOG_INIT) ? NLOOP/10 : 0, lambda, &iteration, leastSquareWithLambda);
+  INFO1(LOG_INIT, "iterations: %ld", iteration);
+  RELEASE(LOG_INIT);
 
   if(*lambda < 1.0)
     return -1;

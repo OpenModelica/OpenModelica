@@ -162,7 +162,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     /* open file */
     fp.open(filename, std::ofstream::binary|std::ofstream::trunc);
     if (!fp)
-      THROW1("Cannot open File %s for writing",filename);
+      ASSERT1(0, "Cannot open File %s for writing",filename);
 
     /* write `AClass' matrix */
     writeMatVer4Matrix("Aclass", 4, 11, Aclass, sizeof(int8_t));
@@ -210,7 +210,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     free(doubleMatrix);
     free(intMatrix);
     rt_accumulate(SIM_TIMER_OUTPUT);
-    THROW1("Error while writing mat file %s",filename);
+    ASSERT1(0, "Error while writing mat file %s",filename);
   }
   free(names); names=NULL;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -263,7 +263,7 @@ void simulation_result_mat::emit(DATA *data)
       }
     }
   if (!fp)
-    THROW1("Error while writing file %s",filename);
+    ASSERT1(0, "Error while writing file %s",filename);
   ++ntimepoints;
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -352,10 +352,10 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
   /* write header to file */
   fp.write((char*)&hdr, sizeof(MHeader_t));
   if (!fp)
-    THROW1("Cannot write to file %s",filename);
+    ASSERT1(0, "Cannot write to file %s",filename);
   fp.write(name, sizeof(char)*hdr.namelen);
   if (!fp)
-    THROW1("Cannot write to file %s",filename);
+    ASSERT1(0, "Cannot write to file %s",filename);
 }
 
 void simulation_result_mat::writeMatVer4Matrix(const char *name,
@@ -367,7 +367,7 @@ void simulation_result_mat::writeMatVer4Matrix(const char *name,
   /* write data */
   fp.write((const char*)data, (size)*rows*cols);
   if (!fp)
-    THROW1("Cannot write to file %s",filename);
+    ASSERT1(0, "Cannot write to file %s",filename);
 }
 
 

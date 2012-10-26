@@ -110,8 +110,8 @@ INIT_DATA *initializeInitData(DATA *simData)
   ASSERT(initData->name, "out of memory");
 
   /* setup initData */
-  DEBUG_INFO(LOG_INIT, "initial problem:");
-  DEBUG_INFO_AL3(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters)", initData->nVars, initData->nStates, initData->nParameters);
+  INFO(LOG_INIT, "initial problem:");
+  INFO3(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters)", initData->nVars, initData->nStates, initData->nParameters);
   
   /* i: all states; j: all unfixed vars */
   for(i=0, j=0; i<simData->modelData.nStates; ++i)
@@ -138,7 +138,7 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->min[j] = simData->modelData.realVarsData[i].attribute.min;
       initData->max[j] = simData->modelData.realVarsData[i].attribute.max;
 
-      DEBUG_INFO_AL5(LOG_INIT, "| | [%ld] Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      INFO5(LOG_INIT, "| | [%ld] Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
       j++;
     }
   }
@@ -168,7 +168,7 @@ INIT_DATA *initializeInitData(DATA *simData)
       initData->min[j] = simData->modelData.realParameterData[i].attribute.min;
       initData->max[j] = simData->modelData.realParameterData[i].attribute.max;
 
-      DEBUG_INFO_AL5(LOG_INIT, "| | [%ld] parameter Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
+      INFO5(LOG_INIT, "| | [%ld] parameter Real %s(start=%g, nominal=%g) = %g", j+1, initData->name[j], initData->start[j], initData->nominal[j], initData->vars[j]);
       j++;
     }
   }
@@ -186,8 +186,8 @@ INIT_DATA *initializeInitData(DATA *simData)
     if(simData->modelData.realParameterData[i].attribute.useStart && !simData->modelData.realParameterData[i].attribute.fixed)
       initData->nStartValueResiduals++;
 
-  DEBUG_INFO_AL3(LOG_INIT, "| number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, simData->modelData.nInitEquations, simData->modelData.nInitAlgorithms);
-  DEBUG_INFO_AL1(LOG_INIT, "| number of start value residuals: %ld", initData->nStartValueResiduals);
+  INFO3(LOG_INIT, "| number of initial residuals:  %ld (%ld equations + %ld algorithms)", initData->nInitResiduals, simData->modelData.nInitEquations, simData->modelData.nInitAlgorithms);
+  INFO1(LOG_INIT, "| number of start value residuals: %ld", initData->nStartValueResiduals);
 
   initData->initialResiduals = (double*)calloc(initData->nInitResiduals, sizeof(double));
   ASSERT(initData->initialResiduals, "out of memory");
@@ -208,12 +208,12 @@ INIT_DATA *initializeInitData(DATA *simData)
    * j=0;
    * for(i=0; i<data->modelData.nVariablesReal; ++i)
    *   if(data->modelData.realVarsData[i].attribute.useStart)
-   *     DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] Real %s(start=%g)", ++j, data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start);
+   *     INFO3(LOG_INIT, "| | [%ld] Real %s(start=%g)", ++j, data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start);
    *  
    * * for real parameters *
    * for(i=0; i<data->modelData.nParametersReal; ++i)
    *   if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)
-   *     DEBUG_INFO_AL3(LOG_INIT, "| | [%ld] parameter Real %s(start=%g)", ++j, data->modelData.realParameterData[i].info.name, data->modelData.realParameterData[i].attribute.start);
+   *     INFO3(LOG_INIT, "| | [%ld] parameter Real %s(start=%g)", ++j, data->modelData.realParameterData[i].info.name, data->modelData.realParameterData[i].attribute.start);
    */
 
   return initData;
@@ -335,7 +335,7 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
     if(residualScalingCoefficients[i] < 1e-42)
     {
       initData->residualScalingCoefficients[i] = 1.0;
-      DEBUG_INFO_AL1(LOG_INIT, "| | [%ld] residual is ineffective (scaling coefficient is set to 1.0)", i+1);
+      INFO1(LOG_INIT, "| | [%ld] residual is ineffective (scaling coefficient is set to 1.0)", i+1);
     }
     else
       initData->residualScalingCoefficients[i] = residualScalingCoefficients[i];
@@ -347,7 +347,7 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
     {
       initData->startValueResidualScalingCoefficients[i] = 1.0;
       /* TODO invent new log-system
-       * DEBUG_INFO_AL1(LOG_INIT, "| | [%ld] start-value residual is ineffective (scaling coefficient is set to 1.0)", i+1);
+       * INFO1(LOG_INIT, "| | [%ld] start-value residual is ineffective (scaling coefficient is set to 1.0)", i+1);
        */
     }
     else
@@ -362,14 +362,14 @@ void computeInitialResidualScalingCoefficients(INIT_DATA *initData)
   free(startValueResidualScalingCoefficients);
 
   /* TODO invent new log-system
-   * DEBUG_INFO(LOG_INIT, "scaling coefficients:");
-   * DEBUG_INFO_AL(LOG_INIT, "| initial residuals");
+   * INFO(LOG_INIT, "scaling coefficients:");
+   * INFO(LOG_INIT, "| initial residuals");
    * for(i=0; i<initData->nInitResiduals; ++i)
-   *   DEBUG_INFO_AL2(LOG_INIT, "| | [%ld] %g", i+1, initData->residualScalingCoefficients[i]);
+   *   INFO2(LOG_INIT, "| | [%ld] %g", i+1, initData->residualScalingCoefficients[i]);
    *
-   * DEBUG_INFO_AL(LOG_INIT, "| start value residuals");
+   * INFO(LOG_INIT, "| start value residuals");
    * for(i=0; i<initData->nStartValueResiduals; ++i)
-   *   DEBUG_INFO_AL2(LOG_INIT, "| | [%ld] %g", i+1, initData->startValueResidualScalingCoefficients[i]);
+   *   INFO2(LOG_INIT, "| | [%ld] %g", i+1, initData->startValueResidualScalingCoefficients[i]);
    */
 }
 

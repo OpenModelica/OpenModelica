@@ -38,49 +38,118 @@
 /* Global JumpBuffer */
 jmp_buf globalJmpbuf;
 
-const unsigned int LOG_NONE          = 0;
-const unsigned int LOG_STATS         = (1<<0);
-const unsigned int LOG_INIT          = (1<<1);
-const unsigned int LOG_RES_INIT      = (1<<2);
-const unsigned int LOG_SOLVER        = (1<<3);
-const unsigned int LOG_JAC           = (1<<4);
-const unsigned int LOG_ENDJAC        = (1<<5);
-const unsigned int LOG_NONLIN_SYS    = (1<<6);
-const unsigned int LOG_NONLIN_SYS_V  = (1<<7);  /* verbose */
-const unsigned int LOG_EVENTS        = (1<<8);
-const unsigned int LOG_ZEROCROSSINGS = (1<<9);
-const unsigned int LOG_DEBUG         = (1<<10);
+const char *LOG_STREAM_NAME[LOG_MAX] = {
+  "LOG_UNKNOWN",
+  "LOG_STDOUT",
+  "LOG_UTIL",
+  "LOG_SIMULATION",
+  "LOG_STATS",
+  "LOG_INIT",
+  "LOG_RES_INIT",
+  "LOG_SOLVER",
+  "LOG_JAC",
+  "LOG_ENDJAC",
+  "LOG_NONLIN_SYS",
+  "LOG_NONLIN_SYS_V",
+  "LOG_EVENTS",
+  "LOG_ZEROCROSSINGS",
+  "LOG_DEBUG",
+  "LOG_ASSERT",
+};
 
-/* Flags for modelErrorCodes */
-const int ERROR_NONLINSYS = -1;
-const int ERROR_LINSYS = -2;
+const char *LOG_STREAM_DESC[LOG_MAX] = {
+  "unknown",
+  "stdout",
+  "util",
+  "simulation",
+  "stats",
+  "init",
+  "res_init",
+  "solver",
+  "jac",
+  "endjac",
+  "nonlin_sys",
+  "nonlin_sys_v",
+  "events",
+  "zerocrossings",
+  "debug",
+  ""
+};
 
-unsigned int globalDebugFlags = 0;
+static const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
+  "unknown",
+  "info",
+  "warning",
+  "error",
+  "assert",
+  "debug"
+};
 
-void printInfo(FILE *stream, FILE_INFO info) {
+int useStream[LOG_MAX];
+int level[LOG_MAX];
+int lastType[LOG_MAX];
+int lastStream = LOG_UNKNOWN;
+char logBuffer[2048];
+
+void printInfo(FILE *stream, FILE_INFO info)
+{
   fprintf(stream, "[%s:%d:%d-%d:%d:%s]", info.filename, info.lineStart, info.colStart, info.lineEnd, info.colEnd, info.readonly ? "readonly" : "writable");
 }
 
-void omc_assert_function(const char *msg, FILE_INFO info) {
+void omc_assert_function(const char *msg, FILE_INFO info)
+{
   printInfo(stderr, info);
   fprintf(stderr,"Modelica Assert: %s!\n", msg);
   fflush(NULL);
   MMC_THROW();
 }
 
-void omc_assert_warning_function(const char *msg, FILE_INFO info) {
+void omc_assert_warning_function(const char *msg, FILE_INFO info)
+{
   printInfo(stderr, info);
   fprintf(stderr,"Warning, assertion triggered: %s!\n", msg);
   fflush(NULL);
 }
 
-void omc_throw_function() {
+void omc_throw_function()
+{
   MMC_THROW();
 }
 
-void omc_terminate_function(const char *msg, FILE_INFO info) {
+void omc_terminate_function(const char *msg, FILE_INFO info)
+{
   printInfo(stderr, info);
   fprintf(stderr,"Modelica Terminate: %s!\n", msg);
   fflush(NULL);
   MMC_THROW();
+}
+
+void Message(int type, int stream, char *msg, int subline)
+{
+  int i;
+
+  if(!useStream[stream])
+    return;
+
+  printf("%-13s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_DESC[stream]);
+  printf("%-7s | ", (subline || (lastStream == stream && lastType[stream] == type && level[stream] > 0)) ? "|" : LOG_TYPE_DESC[type]);
+  lastType[stream] = type;
+  lastStream = stream;
+
+  for(i=0; i<level[stream]; ++i)
+      printf("| ");
+  
+  for(i=0; msg[i]; i++)
+  {
+    if(msg[i] == '\n')
+    {
+      msg[i] = '\0';
+      printf("%s\n", msg);
+      Message(type, stream, &msg[i+1], 1);
+      return;
+    }
+  }
+
+  printf("%s\n", msg, 0);
+  fflush(NULL);
 }

@@ -57,14 +57,14 @@ void updateDiscreteSystem(DATA *data)
 
   functionDAE(data);
 
-  DEBUG_INFO(LOG_EVENTS, "| events | updated discrete System.");
+  INFO(LOG_EVENTS, "| events | updated discrete System.");
   while(checkForDiscreteChanges(data) || data->simulationInfo.needToIterate)
   {
-    if (DEBUG_FLAG(LOG_EVENTS)){
+    if (DEBUG_STREAM(LOG_EVENTS)){
       if(data->simulationInfo.needToIterate)
-        INFO_AL("| events | | reinit() call. Iteration needed!");
+        INFO(LOG_EVENTS, "| events | | reinit() call. Iteration needed!");
       else
-        INFO_AL("| events | | discrete Variable changed. Iteration needed.");
+        INFO(LOG_EVENTS, "| events | | discrete Variable changed. Iteration needed.");
     }
     storePreValues(data);
     functionDAE(data);
@@ -102,7 +102,7 @@ void saveZeroCrossings(DATA* data)
 {
   long i = 0;
 
-  DEBUG_INFO(LOG_ZEROCROSSINGS, "| events | Save ZeroCrossings!");
+  INFO(LOG_ZEROCROSSINGS, "| events | Save ZeroCrossings!");
 
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
@@ -140,30 +140,30 @@ void printAllVars(DATA *data, int ringSegment)
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
-  DEBUG_INFO2(1, " Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
-  DEBUG_INFO (1, " | states variables");
+  INFO2(1, " Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
+  INFO (1, " | states variables");
   for(i=0; i<mData->nStates; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  DEBUG_INFO(1," | derivatives variables");
+  INFO(1," | derivatives variables");
   for(i=mData->nStates; i<2*mData->nStates; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  DEBUG_INFO(1," | other real values");
+  INFO(1," | other real values");
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  DEBUG_INFO(1," | integer variables");
+  INFO(1," | integer variables");
   for(i=0; i<mData->nVariablesInteger; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %ld", i, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
+    INFO3(1," | | %ld: %s = %ld", i, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
   }
-  DEBUG_INFO(1," | boolean variables");
+  INFO(1," | boolean variables");
   for(i=0; i<mData->nVariablesBoolean; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %s", i, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
+    INFO3(1," | | %ld: %s = %s", i, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
   }
-  DEBUG_INFO(1," | string variables");
+  INFO(1," | string variables");
   for(i=0; i<mData->nVariablesString; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
+    INFO3(1," | | %ld: %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
   }
 }
 
@@ -182,22 +182,22 @@ void printParameters(DATA *data)
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
-  DEBUG_INFO(1," Print parameter values: ");
-  DEBUG_INFO(1," | real parameters");
+  INFO(1," Print parameter values: ");
+  INFO(1," | real parameters");
   for(i=0; i<mData->nParametersReal; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %g", i, mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.initial);
+    INFO3(1," | | %ld: %s = %g", i, mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.initial);
   }
-  DEBUG_INFO(1," | integer parameters");
+  INFO(1," | integer parameters");
   for(i=0; i<mData->nParametersInteger; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %ld", i, mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.initial);
+    INFO3(1," | | %ld: %s = %ld", i, mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.initial);
   }
-  DEBUG_INFO(1," | boolean parameters");
+  INFO(1," | boolean parameters");
   for(i=0; i<mData->nParametersBoolean; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %s", i, mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.initial ? "true" : "false");
+    INFO3(1," | | %ld: %s = %s", i, mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.initial ? "true" : "false");
   }
-  DEBUG_INFO(1," | string parameters");
+  INFO(1," | string parameters");
   for(i=0; i<mData->nParametersString; ++i){
-    DEBUG_INFO3(1," | | %ld: %s = %s", i, mData->stringParameterData[i].info.name, mData->stringParameterData[i].attribute.initial);
+    INFO3(1," | | %ld: %s = %s", i, mData->stringParameterData[i].info.name, mData->stringParameterData[i].attribute.initial);
   }
 }
 
@@ -214,8 +214,8 @@ void printAllHelpVars(DATA *data)
   int i;
   for(i=0; i<data->modelData.nHelpVars; i++)
   {
-    DEBUG_INFO2(1," | helpVars[%d]= %c", i, data->simulationInfo.helpVars[i]?'T':'F');
-    DEBUG_INFO2(1," | - helpVarsPre[%d]= %c", i, data->simulationInfo.helpVarsPre[i]?'T':'F');
+    INFO2(1," | helpVars[%d]= %c", i, data->simulationInfo.helpVars[i]?'T':'F');
+    INFO2(1," | - helpVarsPre[%d]= %c", i, data->simulationInfo.helpVarsPre[i]?'T':'F');
   }
 }
 
@@ -231,10 +231,10 @@ void printAllHelpVars(DATA *data)
 void printRelations(DATA *data)
 {
   long i;
-  DEBUG_INFO(1," Saved relations state:");
+  INFO(1," Saved relations state:");
   for(i=0; i<data->modelData.nRelations; i++)
   {
-    DEBUG_INFO2(1," | relation[%ld] = %c", i, data->simulationInfo.backupRelations[i]?'T':'F');
+    INFO2(1," | relation[%ld] = %c", i, data->simulationInfo.backupRelations[i]?'T':'F');
   }
 }
 
@@ -307,22 +307,22 @@ void setAllVarsToStart(DATA *data)
   for(i=0; i<mData->nVariablesReal; ++i)
   {
     sData->realVars[i] = mData->realVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
+    INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     sData->integerVars[i] = mData->integerVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
     sData->booleanVars[i] = mData->booleanVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+    INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
   for(i=0; i<mData->nVariablesString; ++i)
   {
     sData->stringVars[i] = mData->stringVarsData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
 }
 
@@ -344,25 +344,25 @@ void setAllParamsToStart(DATA *data)
   {
     mData->realParameterData[i].attribute.initial = mData->realParameterData[i].attribute.start;
     sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
+    INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i)
   {
     mData->integerParameterData[i].attribute.initial = mData->integerParameterData[i].attribute.start;
     sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
     mData->booleanParameterData[i].attribute.initial = mData->booleanParameterData[i].attribute.start;
     sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
+    INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
   for(i=0; i<mData->nParametersString; ++i)
   {
     mData->stringParameterData[i].attribute.initial = mData->stringParameterData[i].attribute.start;
     sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
-    DEBUG_INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
+    INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
 }
 
@@ -383,22 +383,22 @@ void storeInitialValues(DATA *data)
   for(i=0; i<mData->nVariablesReal; ++i)
   {
     mData->realVarsData[i].attribute.initial = sData->realVars[i];
-    DEBUG_INFO2(LOG_DEBUG, "Set Real Parameter var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
+    INFO2(LOG_DEBUG, "Set Real Parameter var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
   }
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
     mData->integerVarsData[i].attribute.initial = sData->integerVars[i];
-    DEBUG_INFO2(LOG_DEBUG, "Set Integer Parameter var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
+    INFO2(LOG_DEBUG, "Set Integer Parameter var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
   }
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
     mData->booleanVarsData[i].attribute.initial = sData->booleanVars[i];
-    DEBUG_INFO2(LOG_DEBUG, "Set Boolean Parameter var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
+    INFO2(LOG_DEBUG, "Set Boolean Parameter var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
   }
   for(i=0; i<mData->nVariablesString; ++i)
   {
     mData->stringVarsData[i].attribute.initial = sData->stringVars[i];
-    DEBUG_INFO2(LOG_DEBUG, "Set String initial Parameter var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
+    INFO2(LOG_DEBUG, "Set String initial Parameter var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
   }
 }
 
@@ -420,22 +420,22 @@ void storeInitialValuesParam(DATA *data)
   for(i=0; i<mData->nParametersReal; ++i)
   {
     mData->realParameterData[i].attribute.initial = sInfo->realParameter[i];
-    DEBUG_INFO2(LOG_DEBUG, "Set Real Parameter var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
+    INFO2(LOG_DEBUG, "Set Real Parameter var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i)
   {
     mData->integerParameterData[i].attribute.initial = sInfo->integerParameter[i];
-    DEBUG_INFO2(LOG_DEBUG, "Set Integer Parameter var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
+    INFO2(LOG_DEBUG, "Set Integer Parameter var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
     mData->booleanParameterData[i].attribute.initial = sInfo->booleanParameter[i];
-    DEBUG_INFO2(LOG_DEBUG, "Set Boolean Parameter var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
+    INFO2(LOG_DEBUG, "Set Boolean Parameter var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
   for(i=0; i<mData->nParametersString; ++i)
   {
     mData->stringParameterData[i].attribute.initial = sInfo->stringParameter[i];
-    DEBUG_INFO2(LOG_DEBUG, "Set String initial Parameter var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
+    INFO2(LOG_DEBUG, "Set String initial Parameter var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
 }
 

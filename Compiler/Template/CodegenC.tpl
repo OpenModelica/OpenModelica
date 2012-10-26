@@ -285,7 +285,7 @@ template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix,
   <<
   void setupDataStruc(DATA *data)
   {  
-    ASSERT(data,"Error while initialize Data");
+    ASSERT(data, "Error while initialize Data");
     <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacEquations, delayed)%>
   }
   >>
@@ -814,11 +814,13 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
   
     <%eqPart%>
   
-    DEBUG_INFO(LOG_INIT, "updating start-values:");
+    INFO(LOG_INIT, "updating start-values");
+    INDENT(LOG_INIT);
     <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
-    'DEBUG_INFO_AL2(LOG_INIT, "   %s(start=%f)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
+    'INFO2(LOG_INIT, "%s(start=%g)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
     $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;'
     ;separator="\n"%>
+    RELEASE(LOG_INIT);
   
     return 0;
   }
@@ -846,7 +848,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
         let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         <<
         <%preExp%>initialResiduals[i++] = <%expPart%>;
-          DEBUG_INFO_AL3(LOG_RES_INIT, "| [%d]: %s = %g", i, initialResidualDescription[i-1], initialResiduals[i-1]);
+          INFO3(LOG_RES_INIT, "[%d]: %s = %g", i, initialResidualDescription[i-1], initialResiduals[i-1]);
         >>
         ;separator="\n")
       
@@ -863,8 +865,10 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
     <%varDecls%>
   
     mem_state = get_memory_state();
-    DEBUG_INFO(LOG_RES_INIT, "updating initial residuals:");
+    INFO(LOG_RES_INIT, "updating initial residuals");
+    INDENT(LOG_RES_INIT);
     <%body%>
+    RELEASE(LOG_RES_INIT);
     restore_memory_state(mem_state);
   
     return 0;
@@ -1082,7 +1086,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
          else
            '<%cref(stateVar)%> = <%val%>;'
       <<
-      DEBUG_INFO_AL1(LOG_EVENTS,"|        | reinit <%cref(stateVar)%>  = %f", <%val%>);
+      INFO1(LOG_EVENTS, "|        | reinit <%cref(stateVar)%>  = %f", <%val%>);
       <%preExp%>
       <%lhs%>
       data->simulationInfo.needToIterate = 1;
@@ -1383,7 +1387,7 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "
     match var
     case CREF_QUAL(__)
     case CREF_IDENT(__) then
-      'if(<%cref(var)%> != $P$PRE<%cref(var)%>) { DEBUG_INFO_AL2(LOG_EVENTS, "| events | | Discrete Var <%crefStr(var)%> changed:  <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>); needToIterate=1; }'
+      'if(<%cref(var)%> != $P$PRE<%cref(var)%>) {INFO2(LOG_EVENTS, "| events | | Discrete Var <%crefStr(var)%> changed:  <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>); needToIterate=1;}'
       ;separator="\n")
 
   <<
@@ -1706,10 +1710,10 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
     <%eqns_%>
     
     int i;
-    if(DEBUG_FLAG(LOG_DEBUG))
+    if(DEBUG_STREAM(LOG_DEBUG))
     {
       for(i=0; i<<%columnLength%>; i++)
-        DEBUG_INFO2(LOG_DEBUG, "col: col[%d] = %f", i, data->simulationInfo.analyticJacobians[index].resultVars[i]);
+        INFO2(LOG_DEBUG, "col: col[%d] = %f", i, data->simulationInfo.analyticJacobians[index].resultVars[i]);
     }
     
     restore_memory_state(mem_state);
@@ -5665,8 +5669,8 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let expPart1 = daeExp(var, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
-    if (DEBUG_FLAG(LOG_EVENTS)) {
-      INFO1("reinit <%expPart1%> = %f", <%expPart1%>);
+    if (DEBUG_STREAM(LOG_EVENTS)) {
+      INFO1(LOG_INIT, "reinit <%expPart1%> = %f", <%expPart1%>);
     }
     $P$PRE<%expPart1%> = <%expPart1%>;
     <%preExp%>

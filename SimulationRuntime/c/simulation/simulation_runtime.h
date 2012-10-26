@@ -91,8 +91,6 @@ extern FILE_INFO TermInfo; /* message for termination. */
 
 extern char* TermMsg; /* message for termination. */
 
-int useVerboseOutput(int level);
-
 void setTermMsg(const char *msg);
 
 /* defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors. */

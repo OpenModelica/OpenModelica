@@ -43,15 +43,11 @@
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHybrd.h"
 
-
-
-
-
 /*! \fn allocate memory for nonlinear system solver hybrd
  *
  */
-int allocateHybrdData(int* size, void** voiddata){
-
+int allocateHybrdData(int* size, void** voiddata)
+{
   DATA_HYBRD* data = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
 
   *voiddata = (void*)data;
@@ -176,19 +172,20 @@ int solveHybrd(DATA *data, int sysNumber) {
   memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
 
 
-  if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-    INFO2("Start solving Non-Linear System %s at time %f",
-        data->modelData.equationInfo[systemData->simProfEqNr].name,
-        data->localData[0]->timeValue);
-    if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-      for (i = 0; i < solverData->n; i++) {
-        INFO_AL1("\t%d:", i);
-        INFO_AL2("\tx-scale = %e\tx = %.15e",
-            systemData->nlsxScaling[i], systemData->nlsx[i]);
-        INFO_AL2("\tnlsxOld = %e\tExtrapolation = %e",
-            systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
-      }
+  if(DEBUG_STREAM(LOG_NONLIN_SYS))
+  {
+    INFO2(LOG_NONLIN_SYS, "Start solving Non-Linear System %s at time %f",
+      data->modelData.equationInfo[systemData->simProfEqNr].name,
+      data->localData[0]->timeValue);
+
+    INDENT(LOG_NONLIN_SYS);
+    for(i = 0; i < solverData->n; i++)
+    {
+      INFO1(LOG_NONLIN_SYS, "%d:", i);
+      INFO2(LOG_NONLIN_SYS, "x-scale = %e\tx = %.15e", systemData->nlsxScaling[i], systemData->nlsx[i]);
+      INFO2(LOG_NONLIN_SYS, "nlsxOld = %e\tExtrapolation = %e", systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
     }
+    RELEASE(LOG_NONLIN_SYS);
   }
 
   /* check if system is already solved then do nothing */
@@ -234,7 +231,7 @@ int solveHybrd(DATA *data, int sysNumber) {
       data->simulationInfo.found_solution = -1;
     }
 
-    if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+    if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
       int i,j,l=0;
       printf("Jacobi-Matrix\n");
       for(i=0;i<solverData->n;i++){
@@ -270,17 +267,17 @@ int solveHybrd(DATA *data, int sysNumber) {
     if (solverData->info == 1 || xerror <= local_tol || xerror_scaled <= local_tol) {
       success = 1;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL("### System solved! ###");
-        INFO_AL2("\tSolution after:\t%d retries\t%d restarts", retries,
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, "### System solved! ###");
+        INFO2(LOG_NONLIN_SYS, "\tSolution after:\t%d retries\t%d restarts", retries,
             retries2+retries3);
-        INFO_AL3("\tnfunc = %d\terror = %.15e\terror_scaled = %.15e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %.15e\terror_scaled = %.15e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %.15e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %.15e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %.15e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %.15e",
                 solverData->resScaling[i], solverData->fvec[i]);
         }
       }
@@ -291,16 +288,16 @@ int solveHybrd(DATA *data, int sysNumber) {
         giveUp = 0;
         nfunc_evals += solverData->nfev;
         solverData->factor = solverData->factor / 10.0;
-        if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-          INFO_AL1(" - iteration making no progress:\tdecrease factor to %f",
+        if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+          INFO1(LOG_NONLIN_SYS, " - iteration making no progress:\tdecrease factor to %f",
               solverData->factor);
-          INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-          if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+          INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+          if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
             for (i = 0; i < solverData->n; i++) {
-              INFO_AL1("\t%d:", i);
-              INFO_AL2("\tdiag = %e\tx = %e",
+              INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+              INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                   solverData->diag[i], solverData->x[i]);
-              INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+              INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                   solverData->resScaling[i], solverData->fvec[i]);
           }
           }
@@ -313,16 +310,16 @@ int solveHybrd(DATA *data, int sysNumber) {
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-          INFO_AL(
+        if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+          INFO(LOG_NONLIN_SYS, 
               " - iteration making no progress:\tvary solution point by +1%%");
-          INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-          if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+          INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+          if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
             for (i = 0; i < solverData->n; i++) {
-              INFO_AL1("%d:", i);
-              INFO_AL2("x-scale = %e\tx = %e",
+              INFO1(LOG_NONLIN_SYS, "%d:", i);
+              INFO2(LOG_NONLIN_SYS, "x-scale = %e\tx = %e",
                   systemData->nlsxScaling[i], solverData->x[i]);
-              INFO_AL2("residual Scale = %e\tresidual = %e",
+              INFO2(LOG_NONLIN_SYS, "residual Scale = %e\tresidual = %e",
                   solverData->diag[i], solverData->fvec[i]);
             }
           }
@@ -333,16 +330,16 @@ int solveHybrd(DATA *data, int sysNumber) {
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-          INFO_AL(
+        if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+          INFO(LOG_NONLIN_SYS, 
               " - iteration making no progress:\tdeactivaed Xscaling +1%%");
-          INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-          if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+          INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+          if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
             for (i = 0; i < solverData->n; i++) {
-              INFO_AL1("%d:", i);
-              INFO_AL2("x-scale = %e\tx = %e",
+              INFO1(LOG_NONLIN_SYS, "%d:", i);
+              INFO2(LOG_NONLIN_SYS, "x-scale = %e\tx = %e",
                   systemData->nlsxScaling[i], solverData->x[i]);
-              INFO_AL2("residual Scale = %e\tresidual = %e",
+              INFO2(LOG_NONLIN_SYS, "residual Scale = %e\tresidual = %e",
                   solverData->diag[i], solverData->fvec[i]);
             }
           }
@@ -357,16 +354,16 @@ int solveHybrd(DATA *data, int sysNumber) {
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, 
             " - iteration making no progress:\t*restart* vary initial point by adding 1%%");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -381,15 +378,15 @@ int solveHybrd(DATA *data, int sysNumber) {
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(" - iteration making no progress:\t*restart* vary initial point by -1%%");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t*restart* vary initial point by -1%%");
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -405,15 +402,15 @@ int solveHybrd(DATA *data, int sysNumber) {
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(" - iteration making no progress:\t*restart*use old values instead extrapolated");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t*restart*use old values instead extrapolated");
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -433,15 +430,15 @@ int solveHybrd(DATA *data, int sysNumber) {
       retries3++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(" - iteration making no progress:\tchanged to own scaling factors");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tchanged to own scaling factors");
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -459,15 +456,15 @@ int solveHybrd(DATA *data, int sysNumber) {
       retries3++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(" - iteration making no progress:\tchange scaling factors");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tchange scaling factors");
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -485,15 +482,15 @@ int solveHybrd(DATA *data, int sysNumber) {
       retries3++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(" - iteration making no progress:\tchange scaling factors");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tchange scaling factors");
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -510,15 +507,15 @@ int solveHybrd(DATA *data, int sysNumber) {
       retries3++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(" - iteration making no progress:\tchange scaling factors");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tchange scaling factors");
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -536,15 +533,15 @@ int solveHybrd(DATA *data, int sysNumber) {
       solverData->mode = 2;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(" - iteration making no progress:\tremove scaling factor at all!");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tremove scaling factor at all!");
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -560,15 +557,15 @@ int solveHybrd(DATA *data, int sysNumber) {
       solverData->mode = 2;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL(" - iteration making no progress:\tremove scaling factor at all!");
-        INFO_AL3("\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
-        if (DEBUG_FLAG(LOG_NONLIN_SYS_V)) {
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tremove scaling factor at all!");
+        INFO3(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e\terror_scaled = %e", nfunc_evals, xerror, xerror_scaled );
+        if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tdiag = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tdiag = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }
@@ -580,16 +577,16 @@ int solveHybrd(DATA *data, int sysNumber) {
       if (!data->simulationInfo.initial){
         printErrorEqSyst(ERROR_AT_TIME, data->modelData.equationInfo[systemData->simProfEqNr], data->localData[0]->timeValue);
       }
-      if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
-        INFO_AL2("\tNo Solution after:\t%d retries\t%d restarts", retries,
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO2(LOG_NONLIN_SYS, "\tNo Solution after:\t%d retries\t%d restarts", retries,
             retries2+retries3);
-        INFO_AL2("\tnfunc = %d\terror = %e", nfunc_evals, xerror);
-        if (DEBUG_FLAG(LOG_NONLIN_SYS)) {
+        INFO2(LOG_NONLIN_SYS, "\tnfunc = %d\terror = %e", nfunc_evals, xerror);
+        if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
           for (i = 0; i < solverData->n; i++) {
-            INFO_AL1("\t%d:", i);
-            INFO_AL2("\tx-scale = %e\tx = %e",
+            INFO1(LOG_NONLIN_SYS, "\t%d:", i);
+            INFO2(LOG_NONLIN_SYS, "\tx-scale = %e\tx = %e",
                 solverData->diag[i], solverData->x[i]);
-            INFO_AL2("\tresidual Scale = %e\tresidual = %e",
+            INFO2(LOG_NONLIN_SYS, "\tresidual Scale = %e\tresidual = %e",
                 solverData->resScaling[i], solverData->fvec[i]);
           }
         }

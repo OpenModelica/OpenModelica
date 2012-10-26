@@ -128,7 +128,7 @@ int simplex_initialization(INIT_DATA* initData)
   /* Set max. no. of function evaluations = 5000, print every 100. */
 
   MAXF = 5000 * initData->nVars;
-  IPRINT = DEBUG_FLAG(LOG_INIT) ? 1000 : -1;
+  IPRINT = DEBUG_STREAM(LOG_INIT) ? 1000 : -1;
 
   /* Set value for stopping criterion.   Stopping occurs when the
   * standard deviation of the values of the objective function at
@@ -162,33 +162,33 @@ int simplex_initialization(INIT_DATA* initData)
   }
   else
   {
-    DEBUG_INFO1(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
+    INFO1(LOG_INIT, "simplex_initialization | Result of leastSquare method = %g. The initial guess fits to the system", funcValue);
   }
 
   funcValue = leastSquareWithLambda(initData, 1.0);
-  DEBUG_INFO1(LOG_INIT, "leastSquare=%g", funcValue);
+  INFO1(LOG_INIT, "leastSquare=%g", funcValue);
 
   if(IFAULT == 1)
   {
     if(SIMP < funcValue)
     {
-      WARNING1("Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
+      WARNING1(LOG_INIT, "Error in initialization. Solver iterated %d times without finding a solution", (int)MAXF);
       return -1;
     }
   }
   else if(IFAULT == 2)
   {
-    WARNING("Error in initialization. Inconsistent initial conditions.");
+    WARNING(LOG_INIT, "Error in initialization. Inconsistent initial conditions.");
     return -2;
   }
   else if(IFAULT == 3)
   {
-    WARNING("Error in initialization. Number of initial values to calculate < 1");
+    WARNING(LOG_INIT, "Error in initialization. Number of initial values to calculate < 1");
     return -3;
   }
   else if(IFAULT == 4)
   {
-    WARNING("Error in initialization. Internal error, NLOOP < 1.");
+    WARNING(LOG_INIT, "Error in initialization. Internal error, NLOOP < 1.");
     return -4;
   }
   return reportResidualValue(initData);

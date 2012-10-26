@@ -103,7 +103,7 @@ static void leastSquare(long *nz, double *z, double *funcValue)
  */
 int newuoa_initialization(INIT_DATA *initData)
 {
-  long IPRINT = DEBUG_FLAG(LOG_INIT) ? 1000 : 0;
+  long IPRINT = DEBUG_STREAM(LOG_INIT) ? 1000 : 0;
   long MAXFUN = 5000 * initData->nVars;
   double RHOEND = 1.0e-6;
   double RHOBEG = 10;     /* This should be about one tenth of the greatest

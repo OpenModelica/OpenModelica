@@ -86,12 +86,12 @@ modelica_boolean sample(DATA *data, double start, double interval, int hindex)
    * sjoelund - do not sample before the start value !
    */
   if(data->localData[0]->timeValue >= start - eps && tmp >= -eps && tmp < eps){
-    DEBUG_INFO2(LOG_EVENTS,"| events | Calling sample(%f, %f)", start, interval);
-    DEBUG_INFO2(LOG_EVENTS,"| events | generating an event at time: %f \t tmp: %f", data->localData[0]->timeValue, tmp);
+    INFO2(LOG_EVENTS,"| events | Calling sample(%f, %f)", start, interval);
+    INFO2(LOG_EVENTS,"| events | generating an event at time: %f \t tmp: %f", data->localData[0]->timeValue, tmp);
     retVal = 1;
   } else {
-    DEBUG_INFO2(LOG_EVENTS,"| events | Calling sample(%f, %f)", start, interval);
-    DEBUG_INFO2(LOG_EVENTS,"| events | NO event at time: %f \t tmp: %f", data->localData[0]->timeValue, tmp);
+    INFO2(LOG_EVENTS,"| events | Calling sample(%f, %f)", start, interval);
+    INFO2(LOG_EVENTS,"| events | NO event at time: %f \t tmp: %f", data->localData[0]->timeValue, tmp);
     retVal = 0;
   }
   return retVal;
@@ -236,13 +236,13 @@ void initSample(DATA* data, double start, double stop)
   }
 
   for(i = 0; i < num_samples; i++){
-    DEBUG_INFO2(LOG_EVENTS, "| events | | Generate times for sample(%f, %f)", data->simulationInfo.rawSampleExps[i].start, data->simulationInfo.rawSampleExps[i].interval);
+    INFO2(LOG_EVENTS, "| events | | Generate times for sample(%f, %f)", data->simulationInfo.rawSampleExps[i].start, data->simulationInfo.rawSampleExps[i].interval);
 
     for(d = data->simulationInfo.rawSampleExps[i].start; ix < max_events && d <= stop; d += data->simulationInfo.rawSampleExps[i].interval){
       (Samples[ix]).events = d;
       (Samples[ix++]).zc_index = (data->simulationInfo.rawSampleExps[i]).zc_index;
 
-      DEBUG_INFO3(LOG_EVENTS, "| events | | Generate sample(%f, %f, %d)", d, data->simulationInfo.rawSampleExps[i].interval, (data->simulationInfo.rawSampleExps[i]).zc_index);
+      INFO3(LOG_EVENTS, "| events | | Generate sample(%f, %f, %d)", d, data->simulationInfo.rawSampleExps[i].interval, (data->simulationInfo.rawSampleExps[i]).zc_index);
     }
   }
 
@@ -250,9 +250,9 @@ void initSample(DATA* data, double start, double stop)
   qsort(Samples, max_events, sizeof(SAMPLE_TIME), compSample);
   nuniq = unique(Samples, max_events, sizeof(SAMPLE_TIME), compSampleZC);
 
-  DEBUG_INFO1(LOG_EVENTS, "| events | Number of sorted, unique sample events: %d", nuniq);
+  INFO1(LOG_EVENTS, "| events | Number of sorted, unique sample events: %d", nuniq);
   for(i = 0; i < nuniq; i++)
-    DEBUG_INFO_AL3(LOG_EVENTS, "| events | | %f\t HelpVar[%d]=activated(%d)", (Samples[i]).events, (Samples[i]).zc_index,(Samples[i]).activated);
+    INFO3(LOG_EVENTS, "| events | | %f\t HelpVar[%d]=activated(%d)", (Samples[i]).events, (Samples[i]).zc_index,(Samples[i]).activated);
 
   data->simulationInfo.sampleTimes = Samples;
   data->simulationInfo.curSampleTimeIx = 0;
@@ -278,22 +278,22 @@ modelica_boolean checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo) {
   int b = 0;
   int tmpindex = 0;
 
-  DEBUG_INFO1(LOG_EVENTS, "| events | Check for Sample Events. Current Index: %li",
+  INFO1(LOG_EVENTS, "| events | Check for Sample Events. Current Index: %li",
       data->simulationInfo.curSampleTimeIx);
 
-  DEBUG_INFO1(LOG_EVENTS, "| events | | Next step : %f", a);
-  DEBUG_INFO1(LOG_EVENTS, "| events | | Next sample Time : %f",
+  INFO1(LOG_EVENTS, "| events | | Next step : %f", a);
+  INFO1(LOG_EVENTS, "| events | | Next sample Time : %f",
       ((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).events));
 
   tmpindex = data->simulationInfo.curSampleTimeIx;
   b = compdbl(&a, &((data->simulationInfo.sampleTimes[tmpindex]).events));
   if (b >= 0) {
-    DEBUG_INFO(LOG_EVENTS, "| events | | Sample Event ");
+    INFO(LOG_EVENTS, "| events | | Sample Event ");
 
     if (!(b == 0)) {
       if ((data->simulationInfo.sampleTimes[tmpindex]).events - solverInfo->currentTime >= 0) {
         solverInfo->currentStepSize = (data->simulationInfo.sampleTimes[tmpindex]).events - solverInfo->currentTime;
-        DEBUG_INFO1(LOG_EVENTS, "| events | | Change Stepsize : %f", solverInfo->currentStepSize);
+        INFO1(LOG_EVENTS, "| events | | Change Stepsize : %f", solverInfo->currentStepSize);
       } else {
         solverInfo->currentStepSize = 0;
       }
@@ -318,15 +318,15 @@ modelica_boolean activateSampleEvents(DATA *data) {
     double a = data->localData[0]->timeValue;
     int b = 0;
     long int tmpindex = data->simulationInfo.curSampleTimeIx;
-    DEBUG_INFO(LOG_EVENTS, "| events | Activate Sample Events.");
-    DEBUG_INFO1(LOG_EVENTS, "| events | | Current Index: %li",
+    INFO(LOG_EVENTS, "| events | Activate Sample Events.");
+    INFO1(LOG_EVENTS, "| events | | Current Index: %li",
         data->simulationInfo.curSampleTimeIx);
 
     b = compdbl(&a, &((data->simulationInfo.sampleTimes[tmpindex]).events));
     while (b >= 0) {
       retVal = 1;
       (data->simulationInfo.sampleTimes[tmpindex]).activated = 1;
-      DEBUG_INFO1(LOG_EVENTS, "| events | | Activate Sample Events index: %li", tmpindex);
+      INFO1(LOG_EVENTS, "| events | | Activate Sample Events index: %li", tmpindex);
       tmpindex++;
       if (tmpindex >= data->simulationInfo.nSampleTimes)
         break;
@@ -365,7 +365,7 @@ void deactivateSampleEventsandEquations(DATA *data)
 {
   while ((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).activated == 1)
     {
-      DEBUG_INFO1(LOG_EVENTS, "| events | Deactivate Sample Events index: %li", data->simulationInfo.curSampleTimeIx);
+      INFO1(LOG_EVENTS, "| events | Deactivate Sample Events index: %li", data->simulationInfo.curSampleTimeIx);
 
       (data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).activated = 0;
       data->simulationInfo.helpVars[((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).zc_index)]
@@ -391,20 +391,20 @@ modelica_boolean checkForNewEvent(DATA* data, LIST *eventList)
   long i = 0;
   modelica_boolean retVal = 0;
 
-  DEBUG_INFO1(LOG_EVENTS, "| events | check zero crossing at time: %g",  data->localData[0]->timeValue);
+  INFO1(LOG_EVENTS, "| events | check zero crossing at time: %g",  data->localData[0]->timeValue);
   for (i = 0; i < data->modelData.nZeroCrossings; i++){
       if ((data->simulationInfo.zeroCrossings[i] == 1 && data->simulationInfo.zeroCrossingsPre[i] == -1) ||
           (data->simulationInfo.zeroCrossings[i] == -1 && data->simulationInfo.zeroCrossingsPre[i] == 1))
         {
-          if (DEBUG_FLAG(LOG_EVENTS | LOG_ZEROCROSSINGS)){
-            INFO_AL1("|        | %s", zeroCrossingDescription[i]);
-            INFO_AL2("|        | changed: %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0)?"TRUE ":"FALSE", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE");
+          if (DEBUG_STREAM(LOG_EVENTS | LOG_ZEROCROSSINGS)){
+            INFO1(LOG_EVENTS, "|        | %s", zeroCrossingDescription[i]);
+            INFO2(LOG_EVENTS, "|        | changed: %s -> %s", (data->simulationInfo.zeroCrossingsPre[i]>0)?"TRUE ":"FALSE", (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE");
           }
           listPushFront(eventList, &(data->simulationInfo.zeroCrossingIndex[i]));
         }
       else{
-        if (DEBUG_FLAG(LOG_ZEROCROSSINGS)){
-          INFO_AL2("|        | %s == %s", zeroCrossingDescription[i], (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE");
+        if (DEBUG_STREAM(LOG_ZEROCROSSINGS)){
+          INFO2(LOG_EVENTS, "|        | %s == %s", zeroCrossingDescription[i], (data->simulationInfo.zeroCrossings[i]>0)?"TRUE ":"FALSE");
         }
       }
 
@@ -435,16 +435,16 @@ int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime){
   long event_id = 0;
   LIST_NODE* it;
 
-  DEBUG_INFO1(LOG_EVENTS, "| events | Event Handling : %.10f", *eventTime);
+  INFO1(LOG_EVENTS, "| events | Event Handling : %.10f", *eventTime);
 
   data->localData[0]->timeValue = *eventTime;
 
-  DEBUG_INFO_NEL(LOG_EVENTS, "| events | Handle Event caused by ZeroCrossings: ");
+  INFO(LOG_EVENTS, "| events | Handle Event caused by ZeroCrossings: ");
   for (it = listFirstNode(eventLst); it; it = listNextNode(it)) {
     event_id = *((long*) listNodeData(it));
-    DEBUG_INFO_NELA1(LOG_EVENTS, "%ld", event_id);
+    INFO1(LOG_EVENTS, "%ld", event_id);
     if (listNextNode(it) != NULL) {
-      DEBUG_INFO_NELA(LOG_EVENTS, ", ");
+      INFO(LOG_EVENTS, ", ");
     }
 
     /* switch the direction of ZeroCrossing */
@@ -455,7 +455,7 @@ int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime){
     }
   }
   listClear(eventLst);
-  DEBUG_INFO_NELA(LOG_EVENTS, "\n");
+  INFO(LOG_EVENTS, "\n");
 
   /* update the whole system */
   updateDiscreteSystem(data);
@@ -474,7 +474,7 @@ int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime){
  */
 int handleSampleEvent(DATA* data) {
 
-  DEBUG_INFO1(LOG_EVENTS, "| events | Event Handling for Sample : %f!",
+  INFO1(LOG_EVENTS, "| events | Event Handling for Sample : %f!",
       data->localData[0]->timeValue);
   sim_result_emit(data);
   /*evaluate and emit results before sample events are activated */
@@ -491,7 +491,7 @@ int handleSampleEvent(DATA* data) {
   updateDiscreteSystem(data);
 
   deactivateSampleEventsandEquations(data);
-  DEBUG_INFO1(LOG_EVENTS, "| events | Event Handling for Sample : %f done!",
+  INFO1(LOG_EVENTS, "| events | Event Handling for Sample : %f done!",
       data->localData[0]->timeValue);
 
   saveZeroCrossingsAfterEvent(data);
@@ -528,7 +528,7 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   assert(states_left);
 
   for(it=listFirstNode(eventList); it; it=listNextNode(it)){
-    DEBUG_INFO1(LOG_ZEROCROSSINGS, "| events | | Search for current event. Events in list: %ld", *((long*)listNodeData(it)));
+    INFO1(LOG_ZEROCROSSINGS, "| events | | Search for current event. Events in list: %ld", *((long*)listNodeData(it)));
   }
 
   /*write states to work arrays*/
@@ -549,39 +549,39 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
         value = fvalue;
       }
     }
-    DEBUG_INFO1(LOG_ZEROCROSSINGS, "| events | | Minimum value: %e", value);
+    INFO1(LOG_ZEROCROSSINGS, "| events | | Minimum value: %e", value);
     for (it = listFirstNode(eventList); it; it = listNextNode(it)) {
       if (value == fabs(data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))])) {
         listPushBack(tmpEventList, listNodeData(it));
-        DEBUG_INFO1(LOG_ZEROCROSSINGS, "| events | | added tmp event : %ld", *((long*) listNodeData(it)));
+        INFO1(LOG_ZEROCROSSINGS, "| events | | added tmp event : %ld", *((long*) listNodeData(it)));
       }
     }
   }
 
   listClear(eventList);
 
-  if (DEBUG_FLAG(LOG_EVENTS)){
+  if (DEBUG_STREAM(LOG_EVENTS)){
     if (listLen(tmpEventList) > 0){
-      DEBUG_INFO_NEL(LOG_EVENTS, "| events | Found events: ");
+      INFO(LOG_EVENTS, "| events | Found events: ");
     }else{
-      DEBUG_INFO_NEL(LOG_EVENTS, "| events | Found event: ");
+      INFO(LOG_EVENTS, "| events | Found event: ");
     }
   }
   while (listLen(tmpEventList) > 0){
       event_id = *((long*)listFirstData(tmpEventList));
       listPopFront(tmpEventList);
-      if (DEBUG_FLAG(LOG_EVENTS)){
-        DEBUG_INFO_NELA1(LOG_EVENTS, "%ld ", event_id);
+      if (DEBUG_STREAM(LOG_EVENTS)){
+        INFO1(LOG_EVENTS, "%ld ", event_id);
       }
       if (listLen(tmpEventList) > 0){
-        DEBUG_INFO_NELA(LOG_EVENTS, ", ");
+        INFO(LOG_EVENTS, ", ");
       }
       listPushFront(eventList, &event_id);
   }
-  DEBUG_INFO_NELA(LOG_EVENTS, "\n");
+  INFO(LOG_EVENTS, "\n");
 
   *eventTime = time_right;
-  DEBUG_INFO_NELA1(LOG_EVENTS, "| events | time: %.10e", *eventTime);
+  INFO1(LOG_EVENTS, "| events | time: %.10e", *eventTime);
 
   data->localData[0]->timeValue = *eventTime;
   for (i = 0; i < data->modelData.nStates; i++){
@@ -624,8 +624,8 @@ double bisection(DATA* data, double* a, double* b, double* states_a,
     backup_gout[i] = data->simulationInfo.zeroCrossings[i];
   }
 
-  DEBUG_INFO2(LOG_ZEROCROSSINGS, "| events | | bisection method starts in interval [%e, %e]", *a, *b);
-  DEBUG_INFO1(LOG_ZEROCROSSINGS, "| events | | TTOL is set to: %e", TTOL);
+  INFO2(LOG_ZEROCROSSINGS, "| events | | bisection method starts in interval [%e, %e]", *a, *b);
+  INFO1(LOG_ZEROCROSSINGS, "| events | | TTOL is set to: %e", TTOL);
 
   while (fabs(*b - *a) > TTOL) {
 
@@ -691,7 +691,7 @@ modelica_boolean checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventL
   LIST_NODE *it;
 
   listClear(tmpEventList);
-  DEBUG_INFO(LOG_ZEROCROSSINGS,"| events | | bisection checks for condition changes");
+  INFO(LOG_ZEROCROSSINGS,"| events | | bisection checks for condition changes");
   for (it = listFirstNode(eventList); it; it = listNextNode(it)) {
 
     /*Found event in left section*/
@@ -701,7 +701,7 @@ modelica_boolean checkZeroCrossings(DATA *data, LIST *tmpEventList, LIST *eventL
         || (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))] == 1
         && data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))] == -1))
     {
-      DEBUG_INFO3(LOG_ZEROCROSSINGS,"| events | | %ld changed from %s to current %s",
+      INFO3(LOG_ZEROCROSSINGS,"| events | | %ld changed from %s to current %s",
             *((long*) listNodeData(it)),
             (data->simulationInfo.zeroCrossingsPre[*((long*) listNodeData(it))]>0)?"TRUE":"FALSE",
             (data->simulationInfo.zeroCrossings[*((long*) listNodeData(it))]>0)?"TRUE":"FALSE");
@@ -730,7 +730,7 @@ void saveZeroCrossingsAfterEvent(DATA* data)
 {
   long i = 0;
 
-  DEBUG_INFO(LOG_ZEROCROSSINGS, "| events | | Save ZeroCrossings after an Event!");
+  INFO(LOG_ZEROCROSSINGS, "| events | | Save ZeroCrossings after an Event!");
 
   function_ZeroCrossings(data, data->simulationInfo.zeroCrossings, &(data->localData[0]->timeValue));
   for(i=0;i<data->modelData.nZeroCrossings;i++){

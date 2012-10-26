@@ -139,9 +139,11 @@ void rotateRingBuffer(RINGBUFFER *rb, int n, void **lookup)
 
 void infoRingBuffer(RINGBUFFER *rb)
 {
-  INFO("RingBuffer-Info");
-  INFO_AL1("itemSize: %d [size of one item in bytes]", rb->itemSize);
-  INFO_AL1("firstElement: %d [position of first element in buffer]", rb->firstElement);
-  INFO_AL1("nElements: %d [number of elements in buffer]", rb->nElements);
-  INFO_AL1("bufferSize: %d [number of elements which could be stored in buffer]", rb->bufferSize);
+  INFO(LOG_UTIL, "RingBuffer-Info");
+  INDENT(LOG_UTIL);
+  INFO1(LOG_UTIL, "itemSize: %d [size of one item in bytes]", rb->itemSize);
+  INFO1(LOG_UTIL, "firstElement: %d [position of first element in buffer]", rb->firstElement);
+  INFO1(LOG_UTIL, "nElements: %d [number of elements in buffer]", rb->nElements);
+  INFO1(LOG_UTIL, "bufferSize: %d [number of elements which could be stored in buffer]", rb->bufferSize);
+  RELEASE(LOG_UTIL);
 }

@@ -110,7 +110,7 @@ void simulation_result_plt::emit(DATA *data)
     /* cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl; */
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
     if (!simulationResultData)
-      THROW1("Error allocating simulation result data of size %ld",maxPoints * dataSize);
+      ASSERT1(0, "Error allocating simulation result data of size %ld",maxPoints * dataSize);
     add_result(simulationResultData,&actualPoints,data);
   }
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -263,7 +263,7 @@ simulation_result(filename,numpoints), modelData(modeldata)
   dataSize = calcDataSize(modelData);
   simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));
   if (!simulationResultData) {
-    THROW1("Error allocating simulation result data of size %ld failed",numpoints * dataSize);
+    ASSERT1(0, "Error allocating simulation result data of size %ld failed",numpoints * dataSize);
   }
   currentPos = 0;
 #ifdef CONFIG_WITH_SENDDATA
@@ -319,7 +319,7 @@ simulation_result_plt::~simulation_result_plt()
   if (!f)
   {
     deallocResult();
-    THROW2("Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
+    ASSERT2(0, "Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
   }
 
   /* Rather ugly numbers than unneccessary rounding.
@@ -408,7 +408,7 @@ simulation_result_plt::~simulation_result_plt()
   deallocResult();
   if (fclose(f))
   {
-    THROW1("Error, couldn't write to output file %s\n", filename);
+    ASSERT1(0, "Error, couldn't write to output file %s\n", filename);
   }
   rt_accumulate(SIM_TIMER_OUTPUT);
 }

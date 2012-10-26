@@ -153,7 +153,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   }else if (flag == 3){
     /* Initial DASSL solver */
     DASSL_DATA dasslData = {0};
-    DEBUG_INFO(LOG_SOLVER, "| solver | Initializing DASSL");
+    INFO(LOG_SOLVER, "| solver | Initializing DASSL");
     dasrt_initial(data, &solverInfo, &dasslData);
     solverInfo.solverData = &dasslData;
   } else if (flag == 4){
@@ -172,14 +172,14 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time))
   {
-    WARNING("| solver | Error in initialization. Storing results and exiting.");
+    WARNING(LOG_SOLVER, "| solver | Error in initialization. Storing results and exiting.");
     simInfo->stopTime = simInfo->startTime;
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result_writeParameterData(&(data->modelData));
-  DEBUG_INFO(LOG_SOLVER, "| solver | Wrote parameters to the file after initialization (for output formats that support this)");
-  if (DEBUG_FLAG(LOG_DEBUG))
+  INFO(LOG_SOLVER, "| solver | Wrote parameters to the file after initialization (for output formats that support this)");
+  if (DEBUG_STREAM(LOG_DEBUG))
     printParameters(data);
 
   /* initial sample and delay again, due to maybe change
@@ -194,7 +194,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes) {
     simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
     if (simInfo->sampleActivated){
-      DEBUG_INFO(LOG_SOLVER,"| solver | Sample event at beginning of the simulation");
+      INFO(LOG_SOLVER,"| solver | Sample event at beginning of the simulation");
       /*Activate sample and evaluate again */
       activateSampleEvents(data);
       /* update the whole system */
@@ -222,12 +222,12 @@ int solver_main(DATA* data, const char* init_initMethod,
     rt_accumulate( SIM_TIMER_INIT);
 
   if (data->localData[0]->timeValue >= simInfo->stopTime) {
-    DEBUG_INFO(LOG_SOLVER,"| solver | Simulation done!");
+    INFO(LOG_SOLVER,"| solver | Simulation done!");
     solverInfo.currentTime = simInfo->stopTime;
   }
 
-  DEBUG_INFO(LOG_SOLVER, "| solver | Performed initial value calculation.");
-  DEBUG_INFO2(LOG_SOLVER, "| solver | Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
+  INFO(LOG_SOLVER, "| solver | Performed initial value calculation.");
+  INFO2(LOG_SOLVER, "| solver | Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
 
   if (measure_time_flag) {
     char* filename = (char*) calloc(((size_t)strlen(data->modelData.modelFilePrefix)+1+11),sizeof(char));
@@ -235,14 +235,14 @@ int solver_main(DATA* data, const char* init_initMethod,
     filename = strncat(filename,"_prof.data",10);
     fmt = fopen(filename, "wb");
     if (!fmt) {
-      WARNING2("Warning: Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+      WARNING2(LOG_SOLVER, "Warning: Time measurements output file %s could not be opened: %s", filename, strerror(errno));
       fclose(fmt);
       fmt = NULL;
     }
     free(filename);
   }
 
-  if (DEBUG_FLAG(LOG_DEBUG))
+  if (DEBUG_STREAM(LOG_DEBUG))
     printAllVars(data, 0);
 
   /*
@@ -266,14 +266,14 @@ int solver_main(DATA* data, const char* init_initMethod,
       solverInfo.offset = solverInfo.currentTime - solverInfo.laststep;
       if (solverInfo.offset + DBL_EPSILON > simInfo->stepSize)
         solverInfo.offset = 0;
-      DEBUG_INFO1(LOG_SOLVER, "| solver | Offset value for the next step: %.10f", solverInfo.offset);
+      INFO1(LOG_SOLVER, "| solver | Offset value for the next step: %.10f", solverInfo.offset);
     } else {
       solverInfo.offset = 0;
     }
     solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
     if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime) {
       solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
-      DEBUG_INFO1(LOG_SOLVER, "| solver | Correct currentStepSize : %.10f", solverInfo.currentStepSize);
+      INFO1(LOG_SOLVER, "| solver | Correct currentStepSize : %.10f", solverInfo.currentStepSize);
     }
     /******** End calculation next step size ********/
 
@@ -282,7 +282,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
     }
 
-    DEBUG_INFO2(LOG_SOLVER, "| solver | Call Solver from %.10f to %.10f", solverInfo.currentTime,
+    INFO2(LOG_SOLVER, "| solver | Call Solver from %.10f to %.10f", solverInfo.currentTime,
         solverInfo.currentTime + solverInfo.currentStepSize);
 
     /*
@@ -311,7 +311,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
 
       if (checkForNewEvent(data, solverInfo.eventLst))
-        WARNING("| solver | some unhandeled events, event iteration need!");
+        WARNING(LOG_SOLVER, "| solver | some unhandeled events, event iteration need!");
 
       solverInfo.stateEvents++;
       solverInfo.didEventStep = 1;
@@ -319,7 +319,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       overwriteOldSimulationData(data);
     /* check for sample events */
     } else if (simInfo->sampleActivated) {
-      DEBUG_INFO(LOG_SOLVER,"| solver | sample event occurs at time: ");
+      INFO(LOG_SOLVER,"| solver | sample event occurs at time: ");
       handleSampleEvent(data);
       solverInfo.sampleEvents++;
       solverInfo.didEventStep = 1;
@@ -363,14 +363,14 @@ int solver_main(DATA* data, const char* init_initMethod,
       }
       rt_accumulate(SIM_TIMER_OVERHEAD);
       if (!flag) {
-        WARNING1("Disabled time measurements because the output file could not be generated: %s", strerror(errno));
+        WARNING1(LOG_SOLVER, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
         fclose(fmt);
         fmt = NULL;
       }
     }
     sim_result_emit(data);
 
-    if (DEBUG_FLAG(LOG_DEBUG))
+    if (DEBUG_STREAM(LOG_DEBUG))
       printAllVars(data, 0);
 
     /********* end of Emit this time step *********/
@@ -395,20 +395,26 @@ int solver_main(DATA* data, const char* init_initMethod,
      * - non-linear system failed to solve
      * - assert was called
      */
-    if (data->simulationInfo.simulationSuccess != 0 || retValIntegrator != 0 || check_nonlinear_solutions(data)) {
+    if(data->simulationInfo.simulationSuccess != 0 || retValIntegrator != 0 || check_nonlinear_solutions(data))
+    {
       data->simulationInfo.terminal = 1;
       updateDiscreteSystem(data);
       data->simulationInfo.terminal = 0;
 
-      if (data->simulationInfo.simulationSuccess){
+      if(data->simulationInfo.simulationSuccess)
+      {
         retVal = -1;
-        INFO1("model terminate | Simulation terminated at time %g",solverInfo.currentTime);
-      } else if (retValIntegrator){
+        INFO1(LOG_STDOUT, "model terminate | Simulation terminated at time %g", solverInfo.currentTime);
+      }
+      else if(retValIntegrator)
+      {
         retVal = -1 + retValIntegrator;
-        INFO1("model terminate | Integrator failed. | Simulation terminated at time %g",solverInfo.currentTime);
-      } else if (check_nonlinear_solutions(data)){
+        INFO1(LOG_STDOUT, "model terminate | Integrator failed. | Simulation terminated at time %g", solverInfo.currentTime);
+      }
+      else if(check_nonlinear_solutions(data))
+      {
         retVal = -2;
-        INFO1("model terminate | non-linear system solver failed. | Simulation terminated at time %g",solverInfo.currentTime);
+        INFO1(LOG_STDOUT, "model terminate | non-linear system solver failed. | Simulation terminated at time %g", solverInfo.currentTime);
       }
       break;
     }
@@ -432,26 +438,26 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   /* save dassl stats before print */
 
-  if (DEBUG_FLAG(LOG_STATS)) {
+  if (DEBUG_STREAM(LOG_STATS)) {
     if (flag == 3){
       for (ui = 0; ui < numStatistics; ui++)
         ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[ui];
     }
     rt_accumulate(SIM_TIMER_TOTAL);
 
-    INFO("##### Statistics #####");
-    INFO_AL1("simulation time: %g", rt_accumulated(SIM_TIMER_TOTAL));
-    INFO_AL1("Events: %d", solverInfo.stateEvents + solverInfo.sampleEvents);
-    INFO_AL1("State Events: %d", solverInfo.stateEvents);
-    INFO_AL1("Sample Events: %d", solverInfo.sampleEvents);
+    INFO(LOG_SOLVER, "##### Statistics #####");
+    INFO1(LOG_SOLVER, "simulation time: %g", rt_accumulated(SIM_TIMER_TOTAL));
+    INFO1(LOG_SOLVER, "Events: %d", solverInfo.stateEvents + solverInfo.sampleEvents);
+    INFO1(LOG_SOLVER, "State Events: %d", solverInfo.stateEvents);
+    INFO1(LOG_SOLVER, "Sample Events: %d", solverInfo.sampleEvents);
     if (flag == 3)
     {
-      INFO_AL("##### Solver Statistics #####");
-      INFO_AL1("The number of steps taken: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
-      INFO_AL1("The number of calls to functionODE: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[1]);
-      INFO_AL1("The evaluations of Jacobian: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[2]);
-      INFO_AL1("The number of error test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
-      INFO_AL1("The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
+      INFO(LOG_SOLVER, "##### Solver Statistics #####");
+      INFO1(LOG_SOLVER, "The number of steps taken: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
+      INFO1(LOG_SOLVER, "The number of calls to functionODE: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[1]);
+      INFO1(LOG_SOLVER, "The evaluations of Jacobian: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[2]);
+      INFO1(LOG_SOLVER, "The number of error test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
+      INFO1(LOG_SOLVER, "The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
     }
 
   }else{
@@ -548,13 +554,13 @@ rungekutta_step(DATA* data, SOLVER_INFO* solverInfo) {
  *
  *  function checks if the model should really terminated.
  */
-void checkTermination(DATA* data)
+void checkTermination(DATA *data)
 {
   if(terminationAssert || terminationTerminate)
   {
     data->simulationInfo.simulationSuccess = -1;
     printInfo(stdout, TermInfo);
-    fputc(' ', stdout);
+    fputc('\n', stdout);
   }
 
   if(terminationAssert)
@@ -562,21 +568,20 @@ void checkTermination(DATA* data)
     if(warningLevelAssert)
     {
       /* terminated from assert, etc. */
-      WARNING2("Simulation call assert() at time %f\nLevel : warning\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+      WARNING2(LOG_STDOUT, "Simulation call assert() at time %f\nLevel : warning\nMessage : %s", data->localData[0]->timeValue, TermMsg);
     }
     else
     {
-      WARNING2("Simulation call assert() at time %f\nLevel : error\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+      WARNING2(LOG_STDOUT, "Simulation call assert() at time %f\nLevel : error\nMessage : %s", data->localData[0]->timeValue, TermMsg);
       /* THROW1("timeValue = %f", data->localData[0]->timeValue); */
     }
   }
 
   if(terminationTerminate)
   {
-    WARNING2("Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+    WARNING2(LOG_STDOUT, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
     /* THROW1("timeValue = %f", data->localData[0]->timeValue); */
   }
-  fflush(NULL);
 }
 
 void writeOutputVars(char* names, DATA* data)

@@ -88,10 +88,10 @@
 
   void kinsol_errorHandler(int error_code, const char* module, const char* function, char* msg, void* user_data)
   {
-    if(DEBUG_FLAG(LOG_INIT))
+    if(DEBUG_STREAM(LOG_INIT))
     {
-      WARNING3("[module] %s | [function] %s | [error_code] %d", module, function, error_code);
-      WARNING_AL1("%s", msg);
+      WARNING3(LOG_INIT, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
+      WARNING1(LOG_INIT, "%s", msg);
     }
   }
 
@@ -124,17 +124,17 @@
     do /* Try it first with KIN_NONE. If that fails, try it with KIN_LINESEARCH. */
     {
       if(mset == 1 && glstr == KIN_NONE)
-        DEBUG_INFO(LOG_INIT, "using exact Newton");
+        INFO(LOG_INIT, "using exact Newton");
       else if(mset == 1)
-        DEBUG_INFO(LOG_INIT, "using exact Newton with line search");
+        INFO(LOG_INIT, "using exact Newton with line search");
       else if(glstr == KIN_NONE)
-        DEBUG_INFO(LOG_INIT, "using modified Newton");
+        INFO(LOG_INIT, "using modified Newton");
       else
-        DEBUG_INFO(LOG_INIT, "using modified Newton with line search");
+        INFO(LOG_INIT, "using modified Newton with line search");
 
-      DEBUG_INFO_AL1(LOG_INIT, "| mset               = %10ld", mset);
-      DEBUG_INFO_AL1(LOG_INIT, "| function tolerance = %10.6g", fnormtol);
-      DEBUG_INFO_AL1(LOG_INIT, "| step tolerance     = %10.6g", scsteptol);
+      INFO1(LOG_INIT, "| mset               = %10ld", mset);
+      INFO1(LOG_INIT, "| function tolerance = %10.6g", fnormtol);
+      INFO1(LOG_INIT, "| step tolerance     = %10.6g", scsteptol);
 
       z = N_VNew_Serial(3*initData->nVars);
       ASSERT(z, "out of memory");
@@ -205,11 +205,11 @@
       for(i=0; i<initData->nVars; ++i)
         initData->vars[i] = NV_Ith_S(z, i);
 
-      DEBUG_INFO(LOG_INIT, "final kinsol statistics");
-      DEBUG_INFO_AL1(LOG_INIT, "| KINGetNumNonlinSolvIters = %5ld", nni);
-      DEBUG_INFO_AL1(LOG_INIT, "| KINGetNumFuncEvals       = %5ld", nfe);
-      DEBUG_INFO_AL1(LOG_INIT, "| KINDlsGetNumJacEvals     = %5ld", nje);
-      DEBUG_INFO_AL1(LOG_INIT, "| KINDlsGetNumFuncEvals    = %5ld", nfeD);
+      INFO(LOG_INIT, "final kinsol statistics");
+      INFO1(LOG_INIT, "| KINGetNumNonlinSolvIters = %5ld", nni);
+      INFO1(LOG_INIT, "| KINGetNumFuncEvals       = %5ld", nfe);
+      INFO1(LOG_INIT, "| KINDlsGetNumJacEvals     = %5ld", nje);
+      INFO1(LOG_INIT, "| KINDlsGetNumFuncEvals    = %5ld", nfeD);
 
       /* Free memory */
       N_VDestroy_Serial(z);
@@ -224,7 +224,7 @@
 
     if(error_code < 0)
     {
-      DEBUG_INFO(LOG_INIT, "kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
+      INFO(LOG_INIT, "kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
       return error_code;
     }
 

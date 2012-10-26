@@ -43,7 +43,7 @@
 #endif
 
 /* Definition to get some Debug information if interface is called */
-/* #define DEBUG_INFOS */
+/* #define INFOS */
 
 /* Definition to make a copy of the arrays */
 #define COPY_ARRAYS
@@ -136,20 +136,20 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 {
   size_t i = 0;
   InterpolationTable** tmp = NULL;
-#ifdef DEBUG_INFOS
+#ifdef INFOS
   INFO10("Init Table \n timeIn %f \n startTime %f \n ipoType %d \n expoType %d \n tableName %s \n fileName %s \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", timeIn, startTime, ipoType, expoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
 #endif
   /* if table is already initialized, find it */
   for(i = 0; i < ninterpolationTables; ++i)
     if (InterpolationTable_compare(interpolationTables[i],fileName,tableName,table))
     {
-#ifdef DEBUG_INFOS
-      INFO_AL1("Table id = %d",i);
+#ifdef INFOS
+      INFO1("Table id = %d",i);
 #endif
       return i;
     }
-#ifdef DEBUG_INFOS
-  INFO_AL1("Table id = %d",ninterpolationTables);
+#ifdef INFOS
+  INFO1("Table id = %d",ninterpolationTables);
 #endif
   /* increase array */
   tmp = (InterpolationTable**)malloc((ninterpolationTables+1)*sizeof(InterpolationTable*));
@@ -173,7 +173,7 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 
 void omcTableTimeIpoClose(int tableID)
 {
-#ifdef DEBUG_INFOS
+#ifdef INFOS
   INFO1("Close Table[%d]",tableID);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables)
@@ -189,7 +189,7 @@ void omcTableTimeIpoClose(int tableID)
 
 double omcTableTimeIpo(int tableID, int icol, double timeIn)
 {
-#ifdef DEBUG_INFOS
+#ifdef INFOS
   INFO3("Interpolate Table[%d][%d] add Time %f",tableID,icol,timeIn);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables)
@@ -203,7 +203,7 @@ double omcTableTimeIpo(int tableID, int icol, double timeIn)
 
 double omcTableTimeTmax(int tableID)
 {
-#ifdef DEBUG_INFOS
+#ifdef INFOS
   INFO1("Time max from Table[%d]",tableID);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables)
@@ -215,7 +215,7 @@ double omcTableTimeTmax(int tableID)
 
 double omcTableTimeTmin(int tableID)
 {
-#ifdef DEBUG_INFOS
+#ifdef INFOS
   INFO1("Time min from Table[%d]",tableID);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables)
@@ -230,20 +230,20 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
 {
   size_t i=0;
   InterpolationTable2D** tmp = NULL;
-#ifdef DEBUG_INFOS
+#ifdef INFOS
   INFO7("Init Table \n ipoType %f \n tableName %f \n fileName %d \n table %p \n tableDim1 %d \n tableDim2 %d \n colWise %d", ipoType, tableName, fileName, table, tableDim1, tableDim2, colWise);
 #endif
   /* if table is already initialized, find it */
   for(i = 0; i < ninterpolationTables2D; ++i)
     if (InterpolationTable2D_compare(interpolationTables2D[i],fileName,tableName,table))
     {
-#ifdef DEBUG_INFOS
-      INFO_AL1("Table id = %d",i);
+#ifdef INFOS
+      INFO1("Table id = %d",i);
 #endif
       return i;
     }
-#ifdef DEBUG_INFOS
-  INFO_AL1("Table id = %d",ninterpolationTables2D);
+#ifdef INFOS
+  INFO1("Table id = %d",ninterpolationTables2D);
 #endif
   /* increase array */
   tmp = (InterpolationTable2D**)malloc((ninterpolationTables2D+1)*sizeof(InterpolationTable2D*));
@@ -264,7 +264,7 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
 
 void omcTable2DIpoClose(int tableID)
 {
-#ifdef DEBUG_INFOS
+#ifdef INFOS
   INFO1("Close Table[%d]",tableID);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables2D)
@@ -280,7 +280,7 @@ void omcTable2DIpoClose(int tableID)
 
 double omcTable2DIpo(int tableID,double u1_, double u2_)
 {
-#ifdef DEBUG_INFOS
+#ifdef INFOS
   INFO3("Interpolate Table[%d][%d] add Time %f",tableID,u1_,u2_);
 #endif
   if (tableID >= 0 && tableID < (int)ninterpolationTables2D)
@@ -1474,11 +1474,11 @@ char InterpolationTable2D_compare(InterpolationTable2D *tpl, const char* fname, 
   return 0;
 }
 
-double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2,
-              double f_1, double f_2)
+double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2, double f_1, double f_2)
 {
   return ((x_2 - x)*f_1 + (x - x_1)*f_2) / (x_2-x_1);
 }
+
 const double InterpolationTable2D_getElt(InterpolationTable2D *tpl, size_t row, size_t col)
 {
   ASSERT6(row < tpl->rows && col < tpl->cols, "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] aut of range!", tpl->tablename, tpl->filename, (unsigned long)tpl->rows, (unsigned long)tpl->cols, (unsigned long)row, (unsigned long)col);
@@ -1489,18 +1489,18 @@ void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl)
 {
   size_t i = 0;
   /* check if table has values */
-  ASSERT2((tpl->rows > 1) && (tpl->cols > 1),"Table %s from file %s has no data!",tpl->tablename,tpl->filename);
+  ASSERT2((tpl->rows > 1) && (tpl->cols > 1), "Table %s from file %s has no data!", tpl->tablename, tpl->filename);
   /* check that first row and column are strictly monotonous */
-  for(i=2; i < tpl->rows; ++i) {
+  for(i=2; i < tpl->rows; ++i)
+  {
     if (InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
       THROW3("Table: %s independent variable u1 not strictly \
-            monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,i-1,0), InterpolationTable2D_getElt(tpl,i,0));
+             monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,i-1,0), InterpolationTable2D_getElt(tpl,i,0));
   }
-  for(i=2; i < tpl->cols; ++i) {
+  for(i=2; i < tpl->cols; ++i)
+  {
     if (InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
       THROW3("Table: %s independent variable u2 not strictly \
-            monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,0,i-1), InterpolationTable2D_getElt(tpl,0,i));
+             monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,0,i-1), InterpolationTable2D_getElt(tpl,0,i));
   }
 }
-
-

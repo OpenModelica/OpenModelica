@@ -145,69 +145,35 @@ void setTermMsg(const char *msg)
  * Flags are or'ed to a returnvalue.
  * Valid flags: LOG_EVENTS, LOG_NONLIN_SYS
  */
-int verboseLevel(int argc, char**argv) {
-  int res = 0;
+void setGlobalVerboseLevel(int argc, char**argv)
+{
   const string * flags = getFlagValue("lv", argc, argv);
+  int i;
 
-  if (!flags)
-    return res; // no lv flag given.
+  if(!flags)
+  {
+    useStream[LOG_STDOUT] = 1;
+    return; // no lv flag given.
+  }
 
-  if (flags->find("LOG_STATS", 0) != string::npos) {
-    res |= LOG_STATS;
-    globalDebugFlags |= LOG_STATS;
+  if(flags->find("LOG_ALL", 0) != string::npos)
+  {
+    for(i=0; i<LOG_MAX; ++i)
+      useStream[i] = 1;
   }
-  if (flags->find("LOG_JAC", 0) != string::npos) {
-    res |= LOG_JAC;
-    globalDebugFlags |= LOG_JAC;
+  else
+  {
+    for(i=0; i<LOG_MAX; ++i)
+    {
+      if(flags->find(LOG_STREAM_NAME[i], 0) != string::npos)
+        useStream[i] = 1;
+      else
+        useStream[i] = 0;
+    }
   }
-  if (flags->find("LOG_ENDJAC", 0) != string::npos) {
-    res |= LOG_ENDJAC;
-    globalDebugFlags |= LOG_ENDJAC;
-  }
-  if (flags->find("LOG_INIT", 0) != string::npos) {
-    res |= LOG_INIT;
-    globalDebugFlags |= LOG_INIT;
-  }
-  if (flags->find("LOG_RES_INIT", 0) != string::npos) {
-    res |= LOG_RES_INIT;
-    globalDebugFlags |= LOG_RES_INIT;
-  }
-  if (flags->find("LOG_SOLVER", 0) != string::npos) {
-    res |= LOG_SOLVER;
-    globalDebugFlags |= LOG_SOLVER;
-  }
-  if (flags->find("LOG_EVENTS", 0) != string::npos) {
-    res |= LOG_EVENTS;
-    globalDebugFlags |= LOG_EVENTS;
-  }
-  if (flags->find("LOG_NONLIN_SYS", 0) != string::npos) {
-    res |= LOG_NONLIN_SYS;
-    globalDebugFlags |= LOG_NONLIN_SYS;
-  }
-  if (flags->find("LOG_NONLIN_SYS_V", 0) != string::npos) {
-    res |= LOG_NONLIN_SYS_V;
-    globalDebugFlags |= LOG_NONLIN_SYS_V;
-  }
-  if (flags->find("LOG_ZEROCROSSINGS", 0) != string::npos) {
-    res |= LOG_ZEROCROSSINGS;
-    globalDebugFlags |= LOG_ZEROCROSSINGS;
-  }
-  if (flags->find("LOG_DEBUG", 0) != string::npos) {
-    res |= LOG_DEBUG;
-    globalDebugFlags |= LOG_DEBUG;
-  }
-  if (flags->find("LOG_ALL", 0) != string::npos) {
-    res = INT_MAX;
-    globalDebugFlags = UINT_MAX;
-  }
+  useStream[LOG_STDOUT] = 1;
 
   delete flags;
-  return res;
-}
-
-int useVerboseOutput(int level)
-{
-  return (globalDebugFlags >= (unsigned int) level);
 }
 
 /**
@@ -346,7 +312,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     string* method = (string*) getFlagValue("s", argc, argv);
     if(!(method == NULL)){
       data->simulationInfo.solverMethod = method->c_str();
-      DEBUG_INFO_AL1(LOG_SOLVER, " | overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
+      INFO1(LOG_SOLVER, " | overwrite solver method: %s [from command line]", data->simulationInfo.solverMethod);
     }
   }
 
@@ -393,7 +359,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     cout << "Linear model is created!" << endl;
   }
 
-  if(retVal == 0 && measure_time_flag && ! globalDebugFlags)
+  if(retVal == 0 && measure_time_flag)
   {
     const string modelInfo = string(data->modelData.modelFilePrefix) + "_prof.xml";
     const string plotFile = string(data->modelData.modelFilePrefix) + "_prof.plt";
@@ -435,16 +401,16 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
     return 1;
   }
-  DEBUG_INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", sim_result->result_type(), result_file_cstr.c_str());
+  INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", sim_result->result_type(), result_file_cstr.c_str());
 
   if (simData->simulationInfo.solverMethod == std::string("")) {
-    DEBUG_INFO(LOG_SOLVER, " | No solver is set, using dassl.");
+    INFO(LOG_SOLVER, " | No solver is set, using dassl.");
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (simData->simulationInfo.solverMethod == std::string("euler")) {
-    DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
+    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 1, outVars);
   } else if (simData->simulationInfo.solverMethod == std::string("rungekutta")) {
-    DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
+    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
   } else if (simData->simulationInfo.solverMethod == std::string("dassl") ||
               simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
@@ -454,34 +420,34 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
               simData->simulationInfo.solverMethod == std::string("dasslColorSymJac") ||
               simData->simulationInfo.solverMethod == std::string("dasslColorNumJac")) {
 
-    DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
+    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
   } else if (simData->simulationInfo.solverMethod == std::string("inline-euler")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
-      DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.", simData->simulationInfo.solverMethod);
+      INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.", simData->simulationInfo.solverMethod);
       retVal = 1;
     } else {
-      DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
+      INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
       retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
   } else if (simData->simulationInfo.solverMethod == std::string("inline-rungekutta")) {
     if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
-      DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.", simData->simulationInfo.solverMethod);
+      INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.", simData->simulationInfo.solverMethod);
       retVal = 1;
     } else {
-      DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
+      INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
       retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
 #ifdef _OMC_QSS_LIB
   } else if (simData->simulationInfo.solverMethod == std::string("qss")) {
-    DEBUG_INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
+    INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
                       simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
                       simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
 #endif
   } else {
-    DEBUG_INFO1(LOG_SOLVER, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
-    DEBUG_INFO(LOG_SOLVER, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslColorNumJac, qss.");
+    INFO1(LOG_SOLVER, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
+    INFO(LOG_SOLVER, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslColorNumJac, qss.");
     retVal = 1;
   }
 
@@ -558,7 +524,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   }
 
   /* verbose flag is set : -v */
-  globalDebugFlags = flagSet("v", argc, argv);
+  if(flagSet("v", argc, argv))
+    useStream[LOG_STATS] = 1;
   sim_noemit = flagSet("noemit", argc, argv);
 
 
@@ -589,13 +556,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   }
 #endif
 
-  int verbose_flags = verboseLevel(argc, argv);
-  globalDebugFlags = verbose_flags ? verbose_flags : globalDebugFlags;
-  if(globalDebugFlags)
-  {
-    globalDebugFlags |= LOG_STATS;
-    measure_time_flag = 1;
-  }
+  setGlobalVerboseLevel(argc, argv);
 
   return 0;
 }
