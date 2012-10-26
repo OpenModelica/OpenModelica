@@ -1840,7 +1840,7 @@ algorithm
       
       list<SimCode.JacobianMatrix> LinearMatrices;
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
-      Boolean ifcpp;
+      Boolean ifcpp,hasDivStmts;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.EquationArray removedEqs;
@@ -1915,7 +1915,6 @@ algorithm
         // update indexNonLinear in SES_NONLINEAR and count
         (parameterEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(parameterEquations, 0, 0);
         (allEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys);
-        modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
                 
         // replace div operator with div operator with check of Division by zero
         orderedVars = List.map(systs,BackendVariable.daeVars);
@@ -1933,8 +1932,11 @@ algorithm
         (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,BackendDAE.ONLY_VARIABLES()));
         // add equations with only parameters as division expression
         allDivStmts = List.map(divLst,generateParameterDivisionbyZeroTestEqn);
-        parameterEquations = listAppend(parameterEquations,{SimCode.SES_ALGORITHM(uniqueEqIndex,allDivStmts)});
-        uniqueEqIndex = uniqueEqIndex+1;
+        hasDivStmts = listLength(allDivStmts)>0;
+        parameterEquations = Debug.bcallret2(hasDivStmts, listAppend, parameterEquations,{SimCode.SES_ALGORITHM(uniqueEqIndex,allDivStmts)},parameterEquations);
+        uniqueEqIndex = Util.if_(hasDivStmts, uniqueEqIndex+1,uniqueEqIndex);
+        numberofEqns = Util.if_(hasDivStmts, numberofEqns+1,numberofEqns);
+        modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
         
         // generate jacobian or linear model matrices
         LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
