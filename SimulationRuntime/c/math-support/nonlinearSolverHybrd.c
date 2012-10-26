@@ -189,8 +189,10 @@ int solveHybrd(DATA *data, int sysNumber) {
   }
 
   /* check if system is already solved then do nothing */
+  solverData->useXScaling = 0;
   wrapper_fvec_hybrd(&solverData->n, systemData->nlsx,  solverData->fvec, &solverData->info,  data);
   xerror = enorm_(&solverData->n, solverData->fvec);
+  solverData->useXScaling = 1;
   /* solution found */
   if (xerror <= local_tol) {
       success = 1;
