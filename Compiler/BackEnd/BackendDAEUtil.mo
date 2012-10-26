@@ -9340,6 +9340,7 @@ algorithm
       equation
         true = intLt(nEqns,nVars);
         print("underconstrained Intial System\n");
+        BackendDump.dump(inDAE);
 
       then
         {};
@@ -9393,6 +9394,7 @@ algorithm
     case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM()),(vars,fixvars)))
       equation
         b = BackendVariable.varFixed(var);
+        var = BackendVariable.setVarKind(var,BackendDAE.VARIABLE());
         vars = Debug.bcallret2(not b,BackendVariable.addVar,var,vars,vars);
       then
         ((var,(vars,fixvars)));

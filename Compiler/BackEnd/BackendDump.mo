@@ -698,6 +698,10 @@ algorithm
         eqnlen = listLength(eqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
+        eqnssize = BackendDAEUtil.equationSize(eqns);
+        print(", ");
+        print(intString(eqnssize));
+        print(")\n");        
         print(")\n");
         print("=========\n");
         dumpEqns(eqnsl);
@@ -716,7 +720,7 @@ algorithm
   match (inShared)
     local
       list<BackendDAE.Var> knvars,extvars;
-      Integer varlen,eqnlen;
+      Integer varlen,eqnlen,eqnssize;
       String varlen_str,eqnlen_str,s;
       list<BackendDAE.Equation> reqnsl,ieqnsl;
       list<String> ss;
@@ -769,6 +773,10 @@ algorithm
         eqnlen = listLength(reqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
+        eqnssize = BackendDAEUtil.equationSize(reqns);
+        print(", ");
+        print(intString(eqnssize));
+        print(")\n");        
         print(")\n");
         print("=========\n");
         dumpEqns(reqnsl);
@@ -777,6 +785,10 @@ algorithm
         eqnlen = listLength(ieqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
+        eqnssize = BackendDAEUtil.equationSize(ieqns);
+        print(", ");
+        print(intString(eqnssize));
+        print(")\n");        
         print(")\n");
         print("=========\n");
         dumpEqns(ieqnsl);

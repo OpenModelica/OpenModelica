@@ -260,6 +260,18 @@ algorithm
       then
         (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
         
+      /* Only succeds for initial tuple equations, i.e. (a,b,c) = foo(x,y,z) or foo(x,y,z) = (a,b,c) */
+    case(DAE.INITIALEQUATION(DAE.TUPLE(explst),e2 as DAE.CALL(path =_),source),_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+       (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
+      then
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+    case(DAE.INITIALEQUATION(e2 as DAE.CALL(path =_),DAE.TUPLE(explst),source),_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
+      then
+        (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+             
     // scalar equations
     case (DAE.EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -902,6 +914,9 @@ algorithm
     // tuple-tuple assignments are split into one equation for each tuple
     // element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6;
     case (DAE.EQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source = source),_,_)
+      then
+        lowerTupleAssignment(explst,explst1,source,functionTree,inEqns);
+    case (DAE.INITIALEQUATION(DAE.TUPLE(explst), DAE.TUPLE(explst1), source = source),_,_)
       then
         lowerTupleAssignment(explst,explst1,source,functionTree,inEqns);
       
