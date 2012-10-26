@@ -4639,7 +4639,7 @@ algorithm
     // v := expr;
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_) 
       equation     
-        (cache,SOME((DAE.CREF(ce,t),cprop,attr))) = Static.elabCref(cache, env, cr, impl, false, pre, info);
+        (cache,SOME((DAE.CREF(ce,t),cprop,attr))) = Static.elabCrefNoEval(cache, env, cr, impl, false, pre, info);
         Static.checkAssignmentToInput(var, attr, env, Static.bDisallowTopLevelInputs, info);
         (cache, ce_1) = Static.canonCref(cache, env, ce, impl);
         (cache, ce_1) = PrefixUtil.prefixCref(cache, env, ih, pre, ce_1);
@@ -4653,7 +4653,7 @@ algorithm
     // der(x) := ...
     case (cache,env,ih,pre,e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) ),e_1,eprop,_,source,_,impl,_,_)
       equation 
-        (cache,SOME((_,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,SOME((_,cprop,attr))) = Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info);
         (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl,NONE(),true,pre,info);
         (cache,e2_2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_2, pre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
@@ -4666,7 +4666,7 @@ algorithm
     // v[i] := expr (in e.g. for loops)
     case (cache,env,ih,pre,Absyn.CREF(cr),e_1,eprop,_,source,_,impl,_,_)
       equation 
-        (cache,SOME((cre,cprop,attr))) = Static.elabCref(cache,env, cr, impl,false,pre,info);
+        (cache,SOME((cre,cprop,attr))) = Static.elabCrefNoEval(cache,env, cr, impl,false,pre,info);
         Static.checkAssignmentToInput(var, attr, env, Static.bDisallowTopLevelInputs, info);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
