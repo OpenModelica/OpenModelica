@@ -972,12 +972,9 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
   let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
-  let body = (parameterEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
-    ;separator="\n")
-  let divbody = (parameterEquations |> eq as SES_ALGORITHM(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
-    ;separator="\n")    
+  let body = (parameterEquations |> eq  =>
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+    ;separator="\n")  
   <<
   <%&tmp%>
   int updateBoundParameters(DATA *data)
@@ -987,7 +984,6 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
   
     mem_state = get_memory_state();
     <%body%>
-    <%divbody%>
     restore_memory_state(mem_state);
   
     return 0;
@@ -5180,6 +5176,9 @@ case UNARY(exp = e as CREF(__)) then
   <<
   <%lhsStr%> = -<%rhsStr%>;
   >>
+case ARRAY(array = {}) then
+  <<
+  >>  
 else
   error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
 end writeLhsCref;
@@ -6816,6 +6815,13 @@ template daeExpArray(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for an array expression."
 ::=
 match exp
+case ARRAY(array={}) then
+  let arrayTypeStr = expTypeArray(ty)
+  let arrayVar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)
+  let scalarPrefix = if scalar then "scalar_" else ""
+  let scalarRef = if scalar then "&" else ""
+  let &preExp += 'array_alloc_<%scalarPrefix%><%arrayTypeStr%>(&<%arrayVar%>, <%listLength(array)%>,0);<%\n%>'
+  arrayVar
 case ARRAY(__) then
   let arrayTypeStr = expTypeArray(ty)
   let arrayVar = tempDecl(arrayTypeStr, &varDecls /*BUFD*/)

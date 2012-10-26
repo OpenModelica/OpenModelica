@@ -61,7 +61,7 @@ void omc_free_matlab4_reader(ModelicaMatReader *reader)
 void remSpaces(char *ch){
     char *ch2 = ch;
     unsigned int ui = 0;
-	unsigned int uj = 0;
+    unsigned int uj = 0;
 
     for(ui=0;ui<=strlen(ch);ui++){
         if(ch[ui]!=' '){
