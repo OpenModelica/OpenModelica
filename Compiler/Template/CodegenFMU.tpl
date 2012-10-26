@@ -1244,7 +1244,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       constant Integer fmiPending=5;
     end fmiStatus;
   initial algorithm
-    // ensure that all initialization functions are called only once!
     if not initializationDone then
       fmiFunctions.fmiInstantiateModel(fmi, "<%fmiInfo.fmiModelIdentifier%>");
       fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
@@ -1277,7 +1276,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     when not initial() then
   >>
   %>
-      //eventInfo := fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
       fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
       fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowControlEvent);
       <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
@@ -1376,7 +1374,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       constant Integer fmiPending=5;
     end fmiStatus;
   initial algorithm
-    // ensure that all initialization functions are called only once!
     if not initializationDone then
       fmiFunctions.fmiInstantiateSlave(fmi, "<%fmiInfo.fmiModelIdentifier%>", fmuFile, mimeType, timeout, visible, interactive);
       fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
