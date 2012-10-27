@@ -4270,14 +4270,14 @@ algorithm
       equation
         ty = Expression.typeof(iExp1);
         true = Types.isBooleanOrSubTypeBoolean(ty);
-        res = DAE.LUNARY(DAE.NOT(ty),DAE.LBINARY(iExp1,DAE.EQUAL(ty),iExp2));
+        res = DAE.LUNARY(DAE.NOT(ty),DAE.RELATION(iExp1,DAE.EQUAL(ty),iExp2,-1,NONE()));
       then
         res;
     case(_,_)
       equation
         ty = Expression.typeof(iExp1);
         true = Types.isStringOrSubTypeString(ty);
-        res = DAE.LUNARY(DAE.NOT(ty),DAE.LBINARY(iExp1,DAE.EQUAL(ty),iExp2));
+        res = DAE.LUNARY(DAE.NOT(ty),DAE.RELATION(iExp1,DAE.EQUAL(ty),iExp2,-1,NONE()));
       then
         res;
     else
@@ -4474,7 +4474,7 @@ protected
   DAE.Exp e1,e2,e;
 algorithm
   (e1,e2) := inTpl;
-  e := Expression.expSub(e1,e2);
+  e := createNonlinearResidualExp(e1,e2);
   outSimEqn := SimCode.SES_RESIDUAL(uniqueEqIndex,e,source);
   ouniqueEqIndex := uniqueEqIndex +1;
 end makeSES_RESIDUAL1;

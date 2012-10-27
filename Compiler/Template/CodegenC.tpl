@@ -6331,7 +6331,7 @@ case LBINARY(__) then
   match operator
   case AND(__) then '(<%e1%> && <%e2%>)'
   case OR(__)  then '(<%e1%> || <%e2%>)'
-  else "daeExpLbinary:ERR"
+  else error(sourceInfo(),"daeExpLbinary:ERR")
 end daeExpLbinary;
 
 
