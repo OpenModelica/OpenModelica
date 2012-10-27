@@ -4385,7 +4385,7 @@ algorithm
     case ((BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements),source=source) :: rest),_,_)
       equation
         crefs = CheckModel.algorithmOutputs(DAE.ALGORITHM_STMTS(algStatements));
-        //  BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ",", "\n"));
+        //BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ",", "\n"));
         (crefstmp,repl) = createTmpCrefs(crefs, iuniqueEqIndex, {}, BackendVarTransform.emptyReplacements());
         //BackendDump.debugStrCrefLstStr(("Crefs : ", crefstmp, ",", "\n"));
         explst = List.map(crefs,Expression.crefExp);
@@ -4439,7 +4439,7 @@ algorithm
     case({},_,_,_) then (listReverse(inCrefsAcc),iRepl);
     case(cref::rest,_,_,_) 
       equation
-        ident = ComponentReference.crefStr(cref);
+        ident = ComponentReference.printComponentRefStr(cref);
         ident = System.stringReplace(ident,".","$P");
         ident = System.stringReplace(ident,"[","$rB");
         ident = System.stringReplace(ident,"]","$lB");
