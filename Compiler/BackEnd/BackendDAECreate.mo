@@ -1558,6 +1558,9 @@ algorithm
       DAE.Element e;
       list<BackendDAE.Equation> eqns;
     case ({}, {}, _, _,_) then iEqns;
+    // case for complex
+    // case for arrays
+    // case for equations
     case (target :: rest_targets, source :: rest_sources, _, _, _)
       equation
         e = DAE.EQUATION(target, source, eq_source);

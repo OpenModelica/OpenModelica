@@ -831,10 +831,32 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
   >>
 end functionUpdateBoundStartValues;
 
+template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
+ "Generates an equation."
+::=
+  match eq
+  case e as SES_RESIDUAL(__) then
+    match exp 
+    case DAE.SCONST(__) then
+      'initialResiduals[i++] = 0;'
+    else
+      let &preExp = buffer "" /*BUFD*/
+      let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      <<
+      <%preExp%>initialResiduals[i++] = <%expPart%>;
+      INFO3(LOG_RES_INIT, "[%d]: %s = %g", i, initialResidualDescription[i-1], initialResiduals[i-1]);
+      >>
+    end match
+  else
+  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
+  end match
+end functionInitialResidualBody;
+
 template functionInitialResidual(list<SimEqSystem> residualEquations)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
   let resDesc = (residualEquations |> SES_RESIDUAL(__) =>
       match exp 
       case DAE.SCONST(__) then
@@ -843,25 +865,17 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
         '"<%ExpressionDump.printExpStr(exp)%>", '
         ;separator="\n")
       
-  let body = (residualEquations |> SES_RESIDUAL(__) =>
-      match exp 
-      case DAE.SCONST(__) then
-        'initialResiduals[i++] = 0;'
-      else
-        let &preExp = buffer "" /*BUFD*/
-        let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-        <<
-        <%preExp%>initialResiduals[i++] = <%expPart%>;
-          INFO3(LOG_RES_INIT, "[%d]: %s = %g", i, initialResidualDescription[i-1], initialResiduals[i-1]);
-        >>
-        ;separator="\n")
+  let body = (residualEquations |> eq2 =>
+       functionInitialResidualBody(eq2, &varDecls /*BUFD*/, &tmp)
+     ;separator="\n")
       
   <<
   const char *initialResidualDescription[] = 
   {
     <%resDesc%>
   };
-  
+
+  <%tmp%>  
   int initial_residual(DATA *data, double* initialResiduals)
   {
     int i = 0;
@@ -5185,6 +5199,15 @@ case UNARY(exp = e as CREF(__)) then
 case ARRAY(array = {}) then
   <<
   >>  
+case ARRAY(array={e1 as CREF(__)}) then
+  let lhsStr = scalarLhsCref(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  <<
+  <%lhsStr%> = <%rhsStr%>;
+  >>
+case ARRAY(__) then
+  let typeShort = expTypeFromExpShort(exp)
+  //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
+  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
 else
   error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
 end writeLhsCref;

@@ -1804,8 +1804,7 @@ algorithm
   matchcontinue (inBackendDAE,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
     local
       String cname,   fileDir;
-      Integer n_h,maxDelayedExpIndex, uniqueEqIndex, numberofNonLinearSys, numberofEqns;
-      Integer numberOfInitialEquations, numberOfInitialAlgorithms;
+      Integer n_h,maxDelayedExpIndex, uniqueEqIndex, numberofNonLinearSys, numberofEqns, numberOfInitialEquations;
       list<SimCode.HelpVarInfo> helpVarInfo;
       BackendDAE.BackendDAE dlow,dlow2;
       DAE.FunctionTree functionTree;
@@ -1882,14 +1881,14 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // initialization stuff
-        (residuals, numberOfInitialEquations, numberOfInitialAlgorithms) = createInitialResiduals(dlow2);
+        (residuals, numberOfInitialEquations, uniqueEqIndex,tempvars) = createInitialResiduals(dlow2,uniqueEqIndex,{});
         (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
  
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir,ifcpp);
+        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, 0, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
-        (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},{});
+        (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},tempvars);
         
         modelInfo = addTempVars(tempvars,modelInfo);
         
@@ -4317,6 +4316,7 @@ algorithm
       list<DAE.ComponentRef> crefs, crefstmp;
       list<list<DAE.Subscript>> subslst;
       list<SimCode.SimVar> tempvars;
+      BackendVarTransform.VariableReplacements repl;
     case ({},_,_) then ({},iuniqueEqIndex,itempvars);
       
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source) :: rest,_,_)
@@ -4385,14 +4385,14 @@ algorithm
     case ((BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements),source=source) :: rest),_,_)
       equation
         crefs = CheckModel.algorithmOutputs(DAE.ALGORITHM_STMTS(algStatements));
-        //BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ",", "\n"));
-        crefstmp = createTmpCrefs(crefs, iuniqueEqIndex);
+        //  BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ",", "\n"));
+        (crefstmp,repl) = createTmpCrefs(crefs, iuniqueEqIndex, {}, BackendVarTransform.emptyReplacements());
         //BackendDump.debugStrCrefLstStr(("Crefs : ", crefstmp, ",", "\n"));
         explst = List.map(crefs,Expression.crefExp);
         explst = List.map(explst,replaceDerOpInExp);
         
         //BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)},0);
-        (DAE.ALGORITHM_STMTS(algStatements), _) = BackendDAEUtil.traverseAlgorithmExpsWithUpdate(DAE.ALGORITHM_STMTS(algStatements), replaceOutputsbyTmp, (crefs, crefstmp));
+        (algStatements,_) = BackendVarTransform.replaceStatementLst(algStatements, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
         //BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)},0);
         
         explst1 = List.map(crefstmp,Expression.crefExp);
@@ -4424,64 +4424,33 @@ end createNonlinearResidualEquations;
 protected function createTmpCrefs
   input list<DAE.ComponentRef> inCrefs;
   input Integer iuniqueEqIndex;
+  input list<DAE.ComponentRef> inCrefsAcc;
+  input BackendVarTransform.VariableReplacements iRepl;
   output list<DAE.ComponentRef> outCrefs;
+  output BackendVarTransform.VariableReplacements oRepl;
 algorithm
-  outCrefs := match(inCrefs, iuniqueEqIndex)
+  (outCrefs,oRepl) := match(inCrefs, iuniqueEqIndex, inCrefsAcc, iRepl)
     local
       DAE.ComponentRef cref, crtmp;
       list<DAE.ComponentRef> rest, result;
       DAE.Type tp;
       String ident;
-    case({},_) then {};
-    case(cref::rest,_) equation
-      ident = ComponentReference.crefStr(cref);
-      ident = System.stringReplace(ident,".","$P");
-      ident = System.stringReplace(ident,"[","$rB");
-      ident = System.stringReplace(ident,"]","$lB");
-      tp = ComponentReference.crefLastType(cref);
-      crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& "_" +& intString(iuniqueEqIndex), tp, {});
-      result = createTmpCrefs(rest, iuniqueEqIndex);
-    then crtmp::result;
+      BackendVarTransform.VariableReplacements repl;
+    case({},_,_,_) then (listReverse(inCrefsAcc),iRepl);
+    case(cref::rest,_,_,_) 
+      equation
+        ident = ComponentReference.crefStr(cref);
+        ident = System.stringReplace(ident,".","$P");
+        ident = System.stringReplace(ident,"[","$rB");
+        ident = System.stringReplace(ident,"]","$lB");
+        tp = ComponentReference.crefLastType(cref);
+        crtmp = ComponentReference.makeCrefIdent("$TMP_" +& ident +& "_" +& intString(iuniqueEqIndex), tp, {});
+        repl = BackendVarTransform.addReplacement(iRepl, cref, DAE.CREF(crtmp,tp), SOME(BackendVarTransform.skipPreOperator));
+        (result,repl) = createTmpCrefs(rest, iuniqueEqIndex,crtmp::inCrefsAcc,repl);
+      then 
+        (result,repl);
   end match;
 end createTmpCrefs;
-
-protected function replaceOutputsbyTmp
-  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> inTpl;
-  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> outTpl;
-protected 
-  DAE.Exp exp;
-  list<DAE.ComponentRef> crefsLst, crefsTmpLst;
-algorithm
-  (exp,(crefsLst, crefsTmpLst)) := inTpl;
-  outTpl := Expression.traverseExp(exp, replaceCrefbyTmp, (crefsLst, crefsTmpLst));
-end replaceOutputsbyTmp;
-
-protected function replaceCrefbyTmp
-  input tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> inTuple;
-  output tuple<DAE.Exp, tuple<list<DAE.ComponentRef>, list<DAE.ComponentRef>>> outTuple;
-algorithm
-  outTuple := matchcontinue(inTuple)
-    local
-      DAE.Exp e, e1;
-      list<DAE.ComponentRef> crefs, crefstmp;
-      DAE.ComponentRef cr, crtmp;
-      Integer pos;
-      DAE.Type tp;
-    case ((e as DAE.CREF(cr, tp as DAE.T_COMPLEX(varLst=_)), (crefs, crefstmp)))
-      equation
-        ((e1,(_,_))) = BackendDAEUtil.extendArrExp((e,(NONE(),false)));
-        ((e1,_)) = replaceOutputsbyTmp((e1,(crefs,crefstmp)));
-      then
-        ((e1, (crefs, crefstmp)));
-    case ((DAE.CREF(cr, tp), (crefs, crefstmp)))
-      equation
-        pos = List.positionOnTrue(cr, crefs, ComponentReference.crefEqualNoStringCompare);
-        crtmp = listGet(crefstmp, pos+1);
-      then
-        ((DAE.CREF(crtmp,tp),  (crefs, crefstmp)));
-    case (_) then inTuple;
-  end matchcontinue;
-end replaceCrefbyTmp;
 
 protected function makeSES_RESIDUAL
   input DAE.Exp inExp;
@@ -6243,22 +6212,40 @@ protected function createInitialResiduals "function: createInitialResiduals
   author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
   output list<SimCode.SimEqSystem> outResiduals;
   output Integer outNumberOfInitialEquations;
-  output Integer outNumberOfInitialAlgorithms;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;  
 algorithm
-  (outResiduals, outNumberOfInitialEquations, outNumberOfInitialAlgorithms) := matchcontinue(inDAE)
+  (outResiduals, outNumberOfInitialEquations, ouniqueEqIndex, otempvars) := matchcontinue(inDAE,iuniqueEqIndex,itempvars)
     local
-      BackendDAE.BackendDAE DAE;
+      BackendDAE.EqSystems eqs;
+      BackendDAE.EquationArray initialEqs;
+      list<SimCode.SimVar> tempvars;
+      Integer uniqueEqIndex;
       
       list<BackendDAE.Equation> initialEqs_lst;
       Integer numberOfInitialEquations, numberOfInitialAlgorithms;
-      list<SimCode.SimEqSystem> residual_equations;
+      list<SimCode.SimEqSystem> residual_equations,residual_equations1;
       
-    case(DAE) equation
-      (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialResiduals(DAE);
-      (residual_equations, _) = List.mapFold(initialEqs_lst, dlowEqToSimEqSystem, 0);
-    then(residual_equations, numberOfInitialEquations, numberOfInitialAlgorithms);
+    case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs)),_,_) 
+      equation
+        // initial_equation
+        numberOfInitialEquations = BackendDAEUtil.equationSize(initialEqs);
+        initialEqs_lst = BackendDAEUtil.equationList(initialEqs);
+        (residual_equations,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars); 
+        
+        // [orderedVars] with start-values and fixed=true
+        // v - start(v); fixed(v) = true
+        initialEqs_lst = BackendDAEOptimize.generateFixedStartValueResiduals(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
+        numberOfInitialEquations = listLength(initialEqs_lst) + numberOfInitialEquations;        
+        
+        (residual_equations1, uniqueEqIndex) = List.mapFold(initialEqs_lst, dlowEqToSimEqSystem, uniqueEqIndex);
+        residual_equations = listAppend(residual_equations,residual_equations1);
+    then
+      (residual_equations,numberOfInitialEquations,uniqueEqIndex,tempvars);
         
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: createInitialResiduals failed"});
