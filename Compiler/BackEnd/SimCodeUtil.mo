@@ -4362,7 +4362,7 @@ algorithm
       then
         (SimCode.SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
    
-        // An array equation
+    // An array equation
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2, source=source) :: rest,_,_)
       equation
         ty = Expression.typeof(e1);

@@ -771,9 +771,7 @@ template timeEventTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     data->simulationInfo.rawSampleExps[i++].zc_index = <%index1%>;
     >>
   else
-    <<
-    /* UNKNOWN ZERO CROSSING for <%index1%> */
-    >>
+    error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
 end timeEventTpl;
 
 template functionSampleEquations(list<SimEqSystem> sampleEqns)
@@ -1390,9 +1388,7 @@ case (exp1 as LUNARY(__)) then
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
     << >>
   else
-    <<
-    // UNKNOWN ZERO CROSSING for <%index1%>
-    >>
+    error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
 end zeroCrossingTpl;
 
 template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "template functionCheckForDiscreteChanges
@@ -3973,7 +3969,7 @@ case RECORD_CONSTRUCTOR(__) then
      match var
      case VARIABLE(__) then contextCref(name,contextFunction)
      case FUNCTION_PTR(__) then name
-     else error(sourceInfo(),"Unknown variable")
+     else error(sourceInfo(),"boxRecordConstructor:Unknown variable")
   ;separator=", ")
   let funArgCount = incrementInt(listLength(funArgs), 1)
   <<
@@ -4229,7 +4225,9 @@ case var as VARIABLE(parallelism = PARGLOBAL(__)) then
 case var as VARIABLE(parallelism = PARLOCAL(__)) then 
   let &varDecls += '#PARLOCAL variable type should not be allowed here. FIXME!!<%\n%>' ""
   
-else let &varDecls += '#error Unknown parallel variable type<%\n%>' ""
+else 
+  let &varDecls += '#error Unknown parallel variable type<%\n%>'
+  error(sourceInfo(), 'parVarInit:error Unknown parallel variable type')
 end parVarInit;
 
 template varInitParallel(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/, Text &varFrees /*BUFP*/)
@@ -4260,7 +4258,9 @@ case var as FUNCTION_PTR(__) then
   let &ignore = buffer ""
   let &varDecls += functionArg(var,&ignore)
   ""
-else let &varDecls += '#error Unknown local variable type<%\n%>' ""
+else 
+  let &varDecls += '#error Unknown local variable type<%\n%>'
+  error(sourceInfo(), 'varInitParallel:error Unknown local variable type')
 end varInitParallel;
 
 
@@ -4802,7 +4802,7 @@ template tempSizeVarName(ComponentRef c, DAE.Exp indices)
 ::=
   match indices
   case ICONST(__) then '<%contextCref(c,contextFunction)%>_size_<%integer%>'
-  else "tempSizeVarName:UNHANDLED_EXPRESSION"
+  else error(sourceInfo(), 'tempSizeVarName:UNHANDLED_EXPRESSION')
 end tempSizeVarName;
 
 template funStatement(Statement stmt, Text &varDecls /*BUFP*/)
@@ -4814,7 +4814,7 @@ template funStatement(Statement stmt, Text &varDecls /*BUFP*/)
       algStatement(stmt, contextFunction, &varDecls /*BUFD*/)
     ;separator="\n") 
   else
-    "NOT IMPLEMENTED FUN STATEMENT"
+    error(sourceInfo(), 'funStatement:NOT IMPLEMENTED FUN STATEMENT')
 end funStatement;
 
 template parModelicafunStatement(Statement stmt, Text &varDecls)
@@ -4827,7 +4827,7 @@ template parModelicafunStatement(Statement stmt, Text &varDecls)
       algStatement(stmt, contextParallelFunction, &varDecls)
     ;separator="\n") 
   else
-    "NOT IMPLEMENTED FUN STATEMENT"
+    error(sourceInfo(), 'parModelicafunStatement:NOT IMPLEMENTED FUN STATEMENT')
 end parModelicafunStatement;
 
 template extractParFors(Statement stmt, Text &varDecls)
@@ -4841,7 +4841,7 @@ template extractParFors(Statement stmt, Text &varDecls)
       extractParFors_impl(stmt, contextParallelFunction, &varDecls)
     ;separator="\n") 
   else
-    "NOT IMPLEMENTED FUN STATEMENT"
+    error(sourceInfo(), 'extractParFors:NOT IMPLEMENTED FUN STATEMENT')
 end extractParFors;
 
 
@@ -5767,7 +5767,7 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls)
   case ecr as CREF(componentRef=WILD(__)) then
     ''
   else
-    "ONLY_IDENT_OR_QUAL_CREF_SUPPORTED_SLHS"
+    error(sourceInfo(), 'scalarLhsCref:ONLY_IDENT_OR_QUAL_CREF_SUPPORTED_SLHS')
 end scalarLhsCref;
 
 template rhsCref(ComponentRef cr, Type ty)
@@ -5776,7 +5776,7 @@ template rhsCref(ComponentRef cr, Type ty)
   match cr
   case CREF_IDENT(__) then '<%rhsCrefType(ty)%><%ident%>'
   case CREF_QUAL(__)  then '<%rhsCrefType(ty)%><%ident%>.<%rhsCref(componentRef,ty)%>'
-  else "rhsCref:ERROR"
+  else error(sourceInfo(), 'rhsCref:ERROR')
 end rhsCref;
 
 
@@ -6301,7 +6301,7 @@ case BINARY(__) then
   case POW_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for POW_SCALAR_ARRAY'
   case POW_ARR(__) then 'daeExpBinary:ERR for POW_ARR'
   case POW_ARR2(__) then 'daeExpBinary:ERR for POW_ARR2'
-  else "daeExpBinary:ERR"
+  else error(sourceInfo(), 'daeExpBinary:ERR')
 end daeExpBinary;
 
 
@@ -6399,8 +6399,7 @@ case rel as RELATION(__) then
     case NEQUAL(ty = T_REAL(__))           then '(<%e1%> != <%e2%>)'
     case NEQUAL(ty = T_ENUMERATION(__))    then '(<%e1%> != <%e2%>)'
     
-    else "daeExpRelation:ERR"
-
+    else error(sourceInfo(), 'daeExpRelation:ERR')
 end daeExpRelation;
 
 
@@ -7740,7 +7739,7 @@ template mmcTypeShort(DAE.Type type)
   case T_ARRAY(__)                   then "array"
   case T_METATYPE(__) case T_METABOXED(__)                then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
-  else "mmcTypeShort:ERROR"
+  else error(sourceInfo(), 'mmcTypeShort:ERROR')
 end mmcTypeShort;
 
 
@@ -7904,7 +7903,7 @@ template expTypeFromOpFlag(Operator op, Integer flag)
   case o as OR(__)
   case o as NOT(__) then
     match flag case 1 then "boolean" else "modelica_boolean"
-  else "expTypeFromOpFlag:ERROR"
+  else error(sourceInfo(), 'expTypeFromOpFlag:ERROR')
 end expTypeFromOpFlag;
 
 template dimension(Dimension d)
@@ -7913,7 +7912,7 @@ template dimension(Dimension d)
   case DAE.DIM_INTEGER(__) then integer
   case DAE.DIM_ENUM(__) then size
   case DAE.DIM_UNKNOWN(__) then error(sourceInfo(),"Unknown dimensions may not be part of generated code. This is most likely an error on the part of OpenModelica. Please submit a detailed bug-report.")
-  else "INVALID_DIMENSION"
+  else error(sourceInfo(), 'dimension: INVALID_DIMENSION')
 end dimension;
 
 template algStmtAssignPattern(DAE.Statement stmt, Context context, Text &varDecls)
@@ -7951,7 +7950,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
         case c as BCONST(__) then 'if (<%if c.bool then 1 else 0%> != <%urhs%>) <%onPatternFail%>;<%\n%>'
         case c as LIST(valList = {}) then 'if (!listEmpty(<%urhs%>)) <%onPatternFail%>;<%\n%>'
         case c as META_OPTION(exp = NONE()) then 'if (!optionNone(<%urhs%>)) <%onPatternFail%>;<%\n%>'
-        else 'UNKNOWN_CONSTANT_PATTERN'
+        else error(sourceInfo(), 'UNKNOWN_CONSTANT_PATTERN')
       %>>>
   case p as PAT_SOME(__) then
     let tvar = tempDecl("modelica_metatype", &varDecls)
@@ -8011,7 +8010,7 @@ template patternMatch(Pattern pat, Text rhs, Text onPatternFail, Text &varDecls,
     <<<%&unboxBuf%>
     <%patternMatch(p.pat,rhs,onPatternFail,&varDecls,&assignments)%>
     >>
-  else 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>'
+  else error(sourceInfo(), 'UNKNOWN_PATTERN /* rhs: <%rhs%> */<%\n%>')
 end patternMatch;
 
 template infoArgs(Info info)
@@ -8366,7 +8365,7 @@ template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> min
     case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    else 'UNKOWN_TYPE'
+    else error(sourceInfo(), 'ScalarVariableType: UNKOWN_TYPE')
 end ScalarVariableType;
 
 template ScalarVariableTypeStartAttribute(Option<DAE.Exp> initialValue, DAE.Type type_)
@@ -8381,7 +8380,7 @@ match initialValue
       case T_REAL(__) then 'useStart="false" start="0.0"'
       case T_BOOL(__) then 'useStart="false" start="false"'
       case T_STRING(__) then 'useStart="false" start=""'
-      else 'UNKOWN_TYPE'
+      else error(sourceInfo(), 'ScalarVariableTypeStartAttribute: UNKOWN_TYPE')
 end ScalarVariableTypeStartAttribute;
 
 template ScalarVariableTypeFixedAttribute(Boolean isFixed)
