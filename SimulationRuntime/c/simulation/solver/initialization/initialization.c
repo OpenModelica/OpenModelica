@@ -62,12 +62,12 @@ enum INIT_INIT_METHOD
   IIM_MAX
 };
 
-const char *initMethodStr[IIM_MAX] = {
+static const char *initMethodStr[IIM_MAX] = {
   "unknown",
   "none",
   "state"
 };
-const char *initMethodDescStr[IIM_MAX] = {
+static const char *initMethodDescStr[IIM_MAX] = {
   "unknown",
   "no initialization method",
   "default initialization method"
@@ -86,7 +86,7 @@ enum INIT_OPTI_METHOD
   IOM_MAX
 };
 
-const char *optiMethodStr[IOM_MAX] = {
+static const char *optiMethodStr[IOM_MAX] = {
   "unknown",
   "simplex",
   "newuoa",
@@ -96,7 +96,7 @@ const char *optiMethodStr[IOM_MAX] = {
   "kinsol_scaled",
   "ipopt"
 };
-const char *optiMethodDescStr[IOM_MAX] = {
+static const char *optiMethodDescStr[IOM_MAX] = {
   "unknown",
   "Nelder-Mead method",
   "Brent's method",
@@ -109,7 +109,7 @@ const char *optiMethodDescStr[IOM_MAX] = {
 
 /*! \fn int reportResidualValue(INIT_DATA *initData)
  *
- *  return 1: if funcValue >  1e-5 and prints appropriate error message
+ *  return 1: if funcValue >  1e-5
  *         0: if funcValue <= 1e-5
  *
  *  \param [in]  [initData]
@@ -122,12 +122,13 @@ int reportResidualValue(INIT_DATA *initData)
   if(1e-5 < funcValue)
   {
     INFO1(LOG_INIT, "error in initialization. System of initial equations are not consistent\n(least square function value is %g)", funcValue);
-
+    
     INDENT(LOG_INIT);
     for(i=0; i<initData->nInitResiduals; i++)
       if(1e-5 < fabs(initData->initialResiduals[i]))
         INFO2(LOG_INIT, "residual[%ld] = %g", i+1, initData->initialResiduals[i]);
     RELEASE(LOG_INIT);
+
     return 1;
   }
   return 0;
@@ -224,23 +225,24 @@ void dumpInitialization(INIT_DATA *initData)
   INDENT(LOG_INIT);
   for(i=0; i<initData->nStates; ++i)
     if(initData->nominal)
-      INFO4(LOG_INIT, "[%ld] %15g = %s [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+      INFO4(LOG_INIT, "[%ld] [%15g] := %s [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
-      INFO3(LOG_INIT, "[%ld] %15g = %s", i+1, initData->vars[i], initData->name[i]);
+      INFO3(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->vars[i], initData->name[i]);
+
   for(; i<initData->nVars; ++i)
     if(initData->nominal)
-      INFO4(LOG_INIT, "[%ld] %15g = %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
+      INFO4(LOG_INIT, "[%ld] [%15g] := %s (parameter) [scaling coefficient: %g]", i+1, initData->vars[i], initData->name[i], initData->nominal[i]);
     else
-      INFO3(LOG_INIT, "[%ld] %15g = %s (parameter)", i+1, initData->vars[i], initData->name[i]);
+      INFO3(LOG_INIT, "[%ld] [%15g] := %s (parameter)", i+1, initData->vars[i], initData->name[i]);
   RELEASE(LOG_INIT);
 
   INFO(LOG_INIT, "initial residuals");
   INDENT(LOG_INIT);
   for(i=0; i<initData->nInitResiduals; ++i)
     if(initData->residualScalingCoefficients)
-      INFO4(LOG_INIT, "[%ld] %15g = %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initialResidualDescription[i], initData->residualScalingCoefficients[i]);
+      INFO4(LOG_INIT, "[%ld] [%15g] := %s [scaling coefficient: %g]", i+1, initData->initialResiduals[i], initialResidualDescription[i], initData->residualScalingCoefficients[i]);
     else
-      INFO3(LOG_INIT, "[%ld] %15g = %s", i+1, initData->initialResiduals[i], initialResidualDescription[i]);
+      INFO3(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->initialResiduals[i], initialResidualDescription[i]);
   RELEASE(LOG_INIT); RELEASE(LOG_INIT);
 }
 
@@ -253,7 +255,7 @@ void dumpInitialization(INIT_DATA *initData)
  *
  *  \author lochel
  */
-static int initialize2(INIT_DATA *initData, int optiMethod)
+static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
 {
   DATA *data = initData->simData;
 
@@ -263,7 +265,7 @@ static int initialize2(INIT_DATA *initData, int optiMethod)
 
   long i, j;
 
-  int retVal;
+  int retVal = 0;
 
   double *bestZ = (double*)malloc(initData->nVars * sizeof(double));
   double bestFuncValue;
@@ -277,6 +279,9 @@ static int initialize2(INIT_DATA *initData, int optiMethod)
   for(j=1; j<=200 && STOPCR < funcValue; j++)
   {
     INFO1(LOG_INIT, "initialization-nr. %ld", j);
+
+    if(useScaling)
+      computeInitialResidualScalingCoefficients(initData);
 
     if(optiMethod == IOM_SIMPLEX)
       retVal = simplex_initialization(initData);
@@ -370,6 +375,7 @@ static int initialize(DATA *data, int optiMethod)
   if(initData->nInitResiduals < initData->nVars)
   {
     INFO(LOG_INIT, "under-determined");
+    INDENT(LOG_INIT);
 
     z_f = (double*)malloc(initData->nVars * sizeof(double));
     nominal = initData->nominal;
@@ -396,7 +402,8 @@ static int initialize(DATA *data, int optiMethod)
     }
 
     k = 0;
-    INFO(LOG_INIT, "| setting fixed=true for:");
+    INFO(LOG_INIT, "setting fixed=true for:");
+    INDENT(LOG_INIT);
     for(i=0; i<data->modelData.nStates; ++i)
     {
       if(data->modelData.realVarsData[i].attribute.fixed == 0)
@@ -404,7 +411,7 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realVarsData[i].attribute.fixed = 1;
-          INFO2(LOG_INIT, "| | %s(fixed=true) = %g", initData->name[k], initData->vars[k]);
+          INFO2(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
         }
         k++;
       }
@@ -416,11 +423,12 @@ static int initialize(DATA *data, int optiMethod)
         if(z_f[k] >= 0.0)
         {
           data->modelData.realParameterData[i].attribute.fixed = 1;
-          INFO2(LOG_INIT, "| | %s(fixed=true) = %g", initData->name[k], initData->vars[k]);
+          INFO2(LOG_INIT, "%s(fixed=true) = %g", initData->name[k], initData->vars[k]);
         }
         k++;
       }
     }
+    RELEASE(LOG_INIT); RELEASE(LOG_INIT);
 
     free(z_f);
 
@@ -456,8 +464,7 @@ static int initialize(DATA *data, int optiMethod)
   {
     INFO(LOG_INIT, "start with scaling");
 
-    computeInitialResidualScalingCoefficients(initData);
-    initialize2(initData, optiMethod);
+    initialize2(initData, optiMethod, 1);
 
     dumpInitialization(initData);
 
@@ -487,7 +494,7 @@ static int initialize(DATA *data, int optiMethod)
       initData->startValueResidualScalingCoefficients = NULL;
     }
 
-    initialize2(initData, optiMethod);
+    initialize2(initData, optiMethod, 0);
 
     /* dump final solution */
     dumpInitialization(initData);
@@ -497,7 +504,11 @@ static int initialize(DATA *data, int optiMethod)
   else
     INFO(LOG_INIT, "skip w/o scaling");
 
+  INFO(LOG_INIT, "### FINAL INITIALIZATION RESULTS ###");
+  INDENT(LOG_INIT);
+  dumpInitialization(initData);
   retVal = reportResidualValue(initData);
+  RELEASE(LOG_INIT);
   freeInitData(initData);
 
   return retVal;
@@ -594,17 +605,7 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   resetAllHelpVars(data);
   storePreValues(data);
 
-  /* debug print */
-  if(DEBUG_STREAM(LOG_DEBUG))
-    for(i=0; i<3;i++)
-      printAllVars(data, i);
-
   retVal = initialize(data, optiMethod);
-
-  /* debug print */
-  if(DEBUG_STREAM(LOG_DEBUG))
-    for(i=0; i<3;i++)
-      printAllVars(data, i);
 
   storeInitialValues(data);
   storeInitialValuesParam(data);
@@ -704,9 +705,7 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
   MODEL_DATA *mData = &(data->modelData);
   long i;
 
-  INFO    (LOG_INIT, "import start values");
-  INFO1(LOG_INIT, "| file: %s", pInitFile);
-  INFO1(LOG_INIT, "| time: %g", initTime);
+  INFO2(LOG_INIT, "import start values\nfile: %s\ntime: %g", pInitFile, initTime);
 
   pError = omc_new_matlab4_reader(pInitFile, &reader);
   if(pError)
@@ -879,7 +878,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     }
   }
 
-  INFO2(LOG_INIT,    "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
+  INFO2(LOG_INIT, "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
   INFO2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
   INFO1(LOG_INIT, "update start values:   %s", updateStartValues ? "true" : "false");
 

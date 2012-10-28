@@ -89,6 +89,8 @@ static void NelderMeadOptimization(INIT_DATA* initData,
   long x = 0;
   long i = 0;
 
+  double resMax;
+
   double lambda = *pLambda;
   long iteration = 0;
 
@@ -114,9 +116,6 @@ static void NelderMeadOptimization(INIT_DATA* initData,
     simplex[i*N + i] += 1.0;    /* canonical simplex */
   }
 
-  setZScaled(initData, simplex);
-  computeInitialResidualScalingCoefficients(initData);
-
   do
   {
     /* lambda-control */
@@ -141,7 +140,16 @@ static void NelderMeadOptimization(INIT_DATA* initData,
         xb = x;
     }
 
-    if(lambda >= 1.0 && fvalues[xb] < acc)
+    /* calc residuals for xb */
+    setZScaled(initData, &simplex[xb*N]);
+    leastSquare(initData, lambda);
+    /* finx max */
+    resMax = 0.0;
+    for(x=0; x<initData->nInitResiduals; x++)
+      if(fabs(initData->initialResiduals[x]) > resMax)
+        resMax = fabs(initData->initialResiduals[x]);
+
+    if(lambda >= 1.0 && resMax < acc)
       break;
 
     if(maxIt < iteration)
@@ -171,17 +179,17 @@ static void NelderMeadOptimization(INIT_DATA* initData,
 
     /* dump every dump-th step */
     if(dump && !(iteration % dump))
-      INFO4(LOG_INIT, "lambda=%g / step=%d / f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
+      INFO4(LOG_INIT, "lambda is %-3g in step=%6d at f=%g [%g]", lambda, (int)iteration, fvalues[xb], fvalues[xs]);
 
     if(sigma < g)
     {
       if(lambda < 1.0)
       {
         lambda += lambda_step;
-        if(lambda >= 1.0)
-          break;
+        if(lambda > 1.0)
+          lambda = 1.0;
 
-        INFO3(LOG_INIT, "increasing lambda to %g in step %d at f=%g", lambda, (int)iteration, fvalues[xb]);
+        INFO3(LOG_INIT, "increasing lambda to %-3g in step %6d at f=%g", lambda, (int)iteration, fvalues[xb]);
         continue;
       }
     }

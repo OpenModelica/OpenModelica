@@ -876,7 +876,7 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   };
 
   <%tmp%>  
-  int initial_residual(DATA *data, double* initialResiduals)
+  int initial_residual(DATA *data, double *initialResiduals)
   {
     int i = 0;
     state mem_state;
