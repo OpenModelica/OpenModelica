@@ -6307,8 +6307,11 @@ algorithm
     case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs)),_,_) 
       equation
         // initial_equation
-        numberOfInitialEquations = BackendDAEUtil.equationSize(initialEqs);
+        //numberOfInitialEquations = BackendDAEUtil.equationSize(initialEqs);
         initialEqs_lst = BackendDAEUtil.equationList(initialEqs);
+        // remove algorithms, I have no clue what the reason is but is was done before also
+        initialEqs_lst = List.select(initialEqs_lst,BackendEquation.isNotAlgorithm);
+        numberOfInitialEquations = BackendEquation.equationLstSize(initialEqs_lst);
         (residual_equations,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars); 
         
         // [orderedVars] with start-values and fixed=true

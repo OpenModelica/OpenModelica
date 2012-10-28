@@ -2208,4 +2208,14 @@ algorithm
   end match;
 end isArrayEquation;
 
+public function isNotAlgorithm
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match(inEqn)
+    case BackendDAE.ALGORITHM(source=_) then false;
+    else then true;
+  end match;
+end isNotAlgorithm;
+
 end BackendEquation;
