@@ -4129,6 +4129,33 @@ algorithm
   end matchcontinue;
 end createNonlinearResidualEquationsComplex;
 
+protected function greateArrayTempVar
+  input DAE.ComponentRef name;
+  input list<Integer> dims;
+  input list<DAE.Exp> inTmpCrefsLst;
+  input list<SimCode.SimVar> itempvars;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+  otempvars := match(name,dims,inTmpCrefsLst,itempvars)
+    local
+      list<DAE.Exp> rest;
+      list<SimCode.SimVar> tempvars;
+      DAE.Type ty;
+      DAE.ComponentRef cr;
+      SimCode.SimVar var;
+      list<String> slst;
+    case(_,_,{},_) then itempvars;
+
+    case(_,_,DAE.CREF(cr, ty)::rest,_)
+      equation
+        slst = List.map(dims,intString);
+        var = SimCode.SIMVAR(cr,BackendDAE.VARIABLE(),"","","",0,NONE(),NONE(),NONE(),NONE(),false,ty,false,SOME(name),SimCode.NOALIAS(),DAE.emptyElementSource,SimCode.NONECAUS(),NONE(),slst);
+        tempvars = greateTempVarsforCrefs(rest,{var}); 
+      then
+        listAppend(listReverse(tempvars),itempvars);
+  end match;
+end greateArrayTempVar;
+
 protected function greateTempVarsforCrefs
   input list<DAE.Exp> inTmpCrefsLst;
   input list<SimCode.SimVar> itempvars;
@@ -4138,7 +4165,6 @@ algorithm
     local
       list<DAE.Exp> rest;
       list<SimCode.SimVar> tempvars;
-      DAE.Ident name;
       DAE.Type ty;
       DAE.ComponentRef cr;
       SimCode.SimVar var;
@@ -4317,6 +4343,7 @@ algorithm
       list<list<DAE.Subscript>> subslst;
       list<SimCode.SimVar> tempvars;
       BackendVarTransform.VariableReplacements repl;
+      DAE.Type ty;
     case ({},_,_) then ({},iuniqueEqIndex,itempvars);
       
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source) :: rest,_,_)
@@ -4338,14 +4365,16 @@ algorithm
         // An array equation
     case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2, source=source) :: rest,_,_)
       equation
+        ty = Expression.typeof(e1);
+        left = ComponentReference.makeCrefIdent("$TMP_" +& intString(iuniqueEqIndex), ty, {});
         res_exp = createNonlinearResidualExp(e1,e2);
         res_exp = replaceDerOpInExp(res_exp);
-        ad = List.map(ds,Util.makeOption);
-        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
-        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
-        explst = List.map1r(subslst,Expression.applyExpSubscripts,res_exp);
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(listReverse(explst),makeSES_RESIDUAL,source,uniqueEqIndex);
+        crefstmp = ComponentReference.expandCref(left,false);
+        explst1 = List.map(crefstmp,Expression.crefExp);
+        (eqSystlst,uniqueEqIndex) = List.map1Fold(explst1,makeSES_RESIDUAL,source,iuniqueEqIndex);
+        eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex,left,res_exp,source)::eqSystlst;
+        tempvars = greateArrayTempVar(left,ds,explst1,itempvars);
+        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex+1,tempvars);
         eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);                
       then 
         (eqSystemsRest,uniqueEqIndex+1,tempvars);     
@@ -4420,6 +4449,51 @@ algorithm
         fail();
   end matchcontinue;
 end createNonlinearResidualEquations;
+
+public function dimsToAllIndexes
+  input DAE.Dimensions inDims;
+  output list<list<Integer>> outIndexes;
+protected
+  list<Integer> ilst;
+  list<list<Integer>> lstlst;
+algorithm
+  ilst := Expression.dimensionsSizes(inDims);
+  lstlst := List.map(ilst,List.intRange);
+  outIndexes := dimsToAllIndexes1(lstlst);
+end dimsToAllIndexes;
+
+protected function dimsToAllIndexes1
+  input list<list<Integer>> inDims;
+  output list<list<Integer>> oAllIndex;
+algorithm
+  oAllIndex := match(inDims)
+    local
+      list<Integer> dims;
+      list<list<Integer>> rest,indxes;
+    case (dims::{})
+      equation
+        indxes = List.map(dims,List.create);
+      then
+        indxes;
+    case (dims::rest)
+      equation
+        indxes = dimsToAllIndexes1(rest);
+        // cons for each element in dims
+        indxes = List.fold1(dims,dimsToAllIndexes2,indxes,{});
+      then
+        indxes;
+  end match;
+end dimsToAllIndexes1;
+
+protected function dimsToAllIndexes2
+  input Integer i;
+  input list<list<Integer>> iIndex;
+  input list<list<Integer>> iAllIndex;
+  output list<list<Integer>> oAllIndex;
+algorithm
+  oAllIndex := List.map1(iIndex,List.consr,i);
+  oAllIndex := listAppend(iAllIndex,oAllIndex);
+end dimsToAllIndexes2;
 
 protected function createTmpCrefs
   input list<DAE.ComponentRef> inCrefs;

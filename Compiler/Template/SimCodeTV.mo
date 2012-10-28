@@ -646,6 +646,11 @@ package SimCodeUtil
     input SimCode.SimVar var;
     output DAE.ComponentRef cr;
   end varName;
+  
+  function dimsToAllIndexes
+    input DAE.Dimensions inDims;
+    output list<list<Integer>> outIndexes;
+  end dimsToAllIndexes;
 
 end SimCodeUtil;
 

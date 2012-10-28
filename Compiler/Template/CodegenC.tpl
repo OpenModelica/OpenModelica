@@ -5199,15 +5199,17 @@ case UNARY(exp = e as CREF(__)) then
 case ARRAY(array = {}) then
   <<
   >>  
-case ARRAY(array={e1 as CREF(__)}) then
-  let lhsStr = scalarLhsCref(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  <<
-  <%lhsStr%> = <%rhsStr%>;
-  >>
-case ARRAY(__) then
+case ARRAY(ty=T_ARRAY(ty=ty,dims=dims),array=expl) then
   let typeShort = expTypeFromExpShort(exp)
-  //'<%typeShort%>_get<%match listLength(indexes) case 1 then "" case i then '_<%i%>D'%>(&<%exp%>, <%expIndexes%>)'
-  error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
+  let fcallsuf = match listLength(dims) case 1 then "" case i then '_<%i%>D'
+  let body = (threadTuple(expl,dimsToAllIndexes(dims)) |>  (lhs,indxs) => 
+                 let lhsstr = scalarLhsCref(lhs, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+                 let indxstr = (indxs |> i => '<%i%>' ;separator=",")
+                 '<%lhsstr%> = <%typeShort%>_get<%fcallsuf%>(&<%rhsStr%>, <%indxstr%>);'
+              ;separator="\n")
+  <<
+  <%body%>
+  >>  
 else
   error(sourceInfo(), 'writeLhsCref UNHANDLED: <%ExpressionDump.printExpStr(exp)%> = <%rhsStr%>')
 end writeLhsCref;
