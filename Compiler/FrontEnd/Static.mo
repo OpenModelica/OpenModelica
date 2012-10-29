@@ -2632,12 +2632,10 @@ algorithm
         nmax_2 = nmax - t1_dim1;
         (el_2,(prop as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop, nmax_2);
         (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
-        array = Types.isArray(Types.unliftArray(Types.unliftArray(t1_1)), {});
-        scalar = boolNot(array);
         at = Types.simplifyType(t1_1);
         at = Expression.liftArrayLeft(at, DAE.DIM_INTEGER(1));
       then
-        (cache,DAE.ARRAY(at,scalar,{el_2}),prop,t1_dim1_1,t1_dim2_1);
+        (cache,DAE.ARRAY(at,false,{el_2}),prop,t1_dim1_1,t1_dim2_1);
     case (cache,env,(el_1 :: els),(prop1 as DAE.PROP(t1,_))::props,impl,st,havereal,nmax,doVect,pre,_)
       equation
         t1_ndims = Types.numberOfDimensions(t1);
@@ -2882,7 +2880,7 @@ algorithm
         a = Expression.liftArrayLeft(a, DAE.DIM_INTEGER(1));
         expl_1 = List.map1(expl, promoteExp2, (n_1,tp_1));
       then
-        DAE.ARRAY(a,sc,expl_1);
+        DAE.ARRAY(a,false,expl_1);
     
     // scalars can be promoted from s to {s} 
     case (e,(_,tp)) 
