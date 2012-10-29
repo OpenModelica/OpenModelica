@@ -122,7 +122,7 @@ int reportResidualValue(INIT_DATA *initData)
   if(1e-5 < funcValue)
   {
     INFO1(LOG_INIT, "error in initialization. System of initial equations are not consistent\n(least square function value is %g)", funcValue);
-    
+
     INDENT(LOG_INIT);
     for(i=0; i<initData->nInitResiduals; i++)
       if(1e-5 < fabs(initData->initialResiduals[i]))
@@ -369,6 +369,7 @@ static int initialize(DATA *data, int optiMethod)
   if(data->modelData.nInitResiduals == 0)
   {
     INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
+    functionInitialEquations(data);
     return 0;
   }
 

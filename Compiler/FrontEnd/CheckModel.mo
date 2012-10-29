@@ -512,7 +512,11 @@ algorithm
     // Scip time
     case((e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time",subscriptLst={})),ht))
       then
-        ((e,false,ht));    
+        ((e,false,ht));
+    // Skip external Objects
+    case((e as DAE.CREF(ty=DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path=_))),ht))
+      then
+        ((e,false,ht));
     case((e as DAE.CREF(componentRef=cr),ht))
       equation
         crlst = ComponentReference.expandCref(cr,true);

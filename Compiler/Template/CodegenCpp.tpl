@@ -2634,52 +2634,69 @@ template InitAlgloopParams(ModelInfo modelInfo,Text& arrayInit)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
  
- << <%vars.algVars |> var =>
+ <<
+   /* vars.algVars */ 
+   <%vars.algVars |> var =>
     InitAlgloopParam(var, "algebraics",arrayInit)
   ;separator=","%> <%if vars.algVars then "," else ""%>
+   /* vars.paramVars */ 
   <%vars.paramVars |> var =>
     InitAlgloopParam(var, "parameters",arrayInit)
   ;separator=","%><%if vars.paramVars then "," else ""%>
+   /* vars.aliasVars */ 
    <%vars.aliasVars |> var =>
     InitAlgloopParam(var, "aliasVars",arrayInit)
   ;separator=","%><%if vars.aliasVars then "," else ""%>
+   /* vars.intAlgVars */ 
   <%vars.intAlgVars |> var =>
     InitAlgloopParam( var, "intVariables.algebraics",arrayInit)
   ;separator=","%> <%if vars.intAlgVars then "," else ""%>
+   /* vars.intParamVars */ 
   <%vars.intParamVars |> var =>
     InitAlgloopParam( var, "intVariables.parameters",arrayInit)
   ;separator=","%><%if vars.intParamVars then "," else ""%>
+   /* vars.intAliasVars */ 
   <%vars.intAliasVars |> var =>
     InitAlgloopParam( var, "intVariables.AliasVars",arrayInit)
   ;separator=","%><%if vars.intAliasVars then "," else ""%>
+   /* vars.boolAlgVars */ 
   <%vars.boolAlgVars |> var =>
     InitAlgloopParam(var, "boolVariables.algebraics",arrayInit)
   ;separator=","%><%if vars.boolAlgVars then "," else ""%>
+   /* vars.boolParamVars */ 
   <%vars.boolParamVars |> var =>
     InitAlgloopParam(var, "boolVariables.parameters",arrayInit)
   ;separator=","%> <%if vars.boolParamVars then "," else ""%>
+   /* vars.boolAliasVars */ 
   <%vars.boolAliasVars |> var =>
     InitAlgloopParam(var, "boolVariables.AliasVars",arrayInit)
   ;separator=","%><%if vars.boolAliasVars then "," else ""%>
+   /* vars.stringAlgVars */ 
    <%if vars.stringAlgVars then "," else ""%>
   <%vars.stringAlgVars |> var =>
     InitAlgloopParam(var, "stringVariables.algebraics",arrayInit)
   ;separator=","%><%if vars.stringAlgVars then "," else "" %>
+   /* vars.stringParamVars */ 
    <%vars.stringParamVars |> var =>
     InitAlgloopParam(var, "stringVariables.parameters",arrayInit)
   ;separator=","%><%if vars.stringParamVars then "," else "" %>
+   /* vars.stringAliasVars */ 
   <%vars.stringAliasVars |> var =>
     InitAlgloopParam(var, "stringVariables.AliasVars",arrayInit)
   ;separator=","%><%if vars.stringAliasVars then "," else "" %>
+   /* vars.constVars */ 
   <%vars.constVars |> var =>
     InitAlgloopParam(var, "constvariables",arrayInit)
   ;separator=","%><%if vars.constVars then "," else ""%>
+   /* vars.intConstVars */ 
   <%vars.intConstVars |> var =>
     InitAlgloopParam( var, "intConstvariables",arrayInit)
   ;separator=","%> <%if vars.intConstVars then "," else ""%>
+   /* vars.boolConstVars */ 
   <%vars.boolConstVars |> var =>
     InitAlgloopParam( var, "boolConstvariables",arrayInit)
   ;separator=","%><%if vars.boolConstVars then "," else ""%>
+   /* vars.stringConstVars */ 
    <%vars.stringConstVars |> var =>
     InitAlgloopParam(var, "stringConstvariables",arrayInit)
   ;separator=","%><%if vars.stringConstVars then "," else ""%> >>
@@ -2763,7 +2780,10 @@ match simVar
       let& dims = buffer "" /*BUFD*/
       let varName = arraycref2(name,dims)
       let varType = variableType(type_)
-      match dims case "0" then  '<%varType%> <%varName%>;' 
+      match dims 
+        case "0" then  '<%varType%> <%varName%>;'
+        else '/* <%varType%> <%varName%>; */'
+      end match 
   
    
 end MemberVariableDefine2;

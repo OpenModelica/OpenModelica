@@ -8468,6 +8468,12 @@ algorithm
         (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, sssHandler, arg);
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,SOME(arg));
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
+      equation
+        str = "Transformation Module " +& mAmethodstr +& " index Reduction Method " +& str1 +& " failed!";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();
     else
       equation
         str = "Transformation Module failed!";
@@ -9258,13 +9264,13 @@ public function solveInitialSystem
   autor Frenkel TUD 2012-10"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output list<BackendDAE.Equation> outInitEqns;
+  output BackendDAE.BackendDAE outInitDAE;
 algorithm
-  (outDAE,outInitEqns) := match (inDAE)
+  (outDAE,outInitDAE) := match (inDAE)
     local
       BackendDAE.EqSystems systs;
-      BackendDAE.Variables knvars,vars,fixvars,evars;
-      BackendDAE.EquationArray inieqns,eqns,emptyeqns;
+      BackendDAE.Variables knvars,vars,fixvars,evars,eavars;
+      BackendDAE.EquationArray inieqns,eqns,emptyeqns,emptyreeqns;
       BackendDAE.EqSystem initsyst;
       BackendDAE.BackendDAE initdae;
       Integer nvars,neqns;
@@ -9286,15 +9292,18 @@ algorithm
         // generate initial system
         initsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         evars = emptyVars();
+        eavars = emptyVars();
         emptyeqns = listEquation({});
+        emptyreeqns = listEquation({});
         initdae = BackendDAE.DAE({initsyst},
-          BackendDAE.SHARED(fixvars,evars,evars,emptyeqns,emptyeqns,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.INITIALSYSTEM(),{}));
-        //  BackendDump.dumpEqSystem(initsyst);
+            BackendDAE.SHARED(fixvars,evars,eavars,emptyeqns,emptyreeqns,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.INITIALSYSTEM(),{}));
+        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Initial System:\n");
+        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, initdae);
         nvars = BackendVariable.varsSize(vars);
         neqns = equationSize(eqns);
-        eqnslst =  solveInitialSystem1(nvars,neqns,initdae);
+        initdae =  solveInitialSystem1(nvars,neqns,initdae);
       then
-        (inDAE,{});
+        (inDAE,initdae);
   end match;
 end solveInitialSystem;
 
@@ -9304,9 +9313,9 @@ protected function solveInitialSystem1
   input Integer nVars;
   input Integer nEqns;
   input BackendDAE.BackendDAE inDAE;
-  output list<BackendDAE.Equation> outInitEqns;
+  output BackendDAE.BackendDAE outDAE;
 algorithm
-  outInitEqns := matchcontinue (nVars,nEqns,inDAE)
+  outDAE := matchcontinue (nVars,nEqns,inDAE)
     local
       BackendDAE.BackendDAE isyst;
       list<tuple<pastoptimiseDAEModule,String,Boolean>> pastOptModules;
@@ -9316,14 +9325,13 @@ algorithm
     case (_,_,_)
       equation
         true = intGt(nEqns,nVars);
-        print("OverConstrained Intial System\n");
+        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "OverConstrained Initial System\n");
       then
-        {};
+        fail();
     // equal  
     case (_,_,_)
       equation
         true = intEq(nEqns,nVars);
-        print("Intial System\n");
         pastOptModules = getPastOptModules(SOME({"constantLinearSystem","removeSimpleEquations","tearingSystem"}));
         matchingAlgorithm = getMatchingAlgorithm(NONE());
         daeHandler = getIndexReductionMethod(NONE());      
@@ -9331,19 +9339,19 @@ algorithm
         isyst = transformBackendDAE(inDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
         // simplify system
         (isyst,Util.SUCCESS()) = pastoptimiseDAE(isyst,pastOptModules,matchingAlgorithm,daeHandler);
-        BackendDump.dump(isyst);
-        BackendDump.dumpEqnsSolved(isyst);       
+        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Solved Initial System");
+        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, isyst);
       then
-        {};
+        isyst;
     // underconstrained System  
     case (_,_,_)
       equation
         true = intLt(nEqns,nVars);
-        print("underconstrained Intial System\n");
-        BackendDump.dump(inDAE);
+        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "underconstrained Initial System\n");
+        //BackendDump.dump(inDAE);
 
       then
-        {};
+        fail();
   end matchcontinue;
 end solveInitialSystem1;
 

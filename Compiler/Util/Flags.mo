@@ -368,6 +368,8 @@ constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(101, "showStartOrigin",
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
 constant DebugFlag NO_MIXED_TEARING = DEBUG_FLAG(102, "noMixedTearing",
   Util.gettext("Disables tearing of mixed system."));
+constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(103, "dumpinitialsystem",
+  Util.gettext("Dumps the initial equation system."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -475,7 +477,8 @@ constant list<DebugFlag> allDebugFlags = {
   UNCERTAINTIES,
   DUMP_DAE,
   SHOW_START_ORIGIN,
-  NO_MIXED_TEARING
+  NO_MIXED_TEARING,
+  DUMP_INITIAL_SYSTEM
 };
 
 // CONFIGURATION FLAGS
@@ -552,7 +555,7 @@ constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgo
     ("3", Util.gettext("Random Karp-Sipser: R. M. Karp and M. Sipser. Maximum matching in sparse random graphs."))})),
     Util.gettext("Sets the cheap matching algorithm to use. A cheap matching algorithm gives a jump start matching by heuristics."));    
 constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
-  NONE(), EXTERNAL(), STRING_FLAG("omc"),
+  NONE(), EXTERNAL(), STRING_FLAG("PFPlusExt"),
   SOME(STRING_DESC_OPTION({
     ("omc", Util.gettext("Depth First Search based Algorithm with simple Look Ahead Feature")),
     ("BFSB", Util.gettext("Breath First Search based Algorithm")),
@@ -575,7 +578,7 @@ constant ConfigFlag MATCHING_ALGORITHM = CONFIG_FLAG(14, "matchingAlgorithm",
     ("PRExt", Util.gettext("matching algorithm using push relabel mechanism external c implementation"))})),
     Util.gettext("Sets the matching algorithm to use. See +help=optmodules for more info."));  
 constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMethod",
-  NONE(), EXTERNAL(), STRING_FLAG("dummyDerivative"),
+  NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
   SOME(STRING_DESC_OPTION({
     ("dummyDerivative", Util.gettext("simple index reduction method, select dummy states based on heuristics")),
     ("dynamicStateSelection", Util.gettext("simple index reduction method, select (dynamic) dummy states based on analysis of the system"))})),

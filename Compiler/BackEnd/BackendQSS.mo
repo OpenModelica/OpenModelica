@@ -1014,6 +1014,7 @@ algorithm
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
+      list<SimCode.SimEqSystem> initialEquations;
       list<DAE.Constraint> constraints;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<SimCode.SampleCondition> sampleConditions;
@@ -1029,14 +1030,14 @@ algorithm
       list<SimCode.JacobianMatrix> jacobianMatrixes;
       list<SimCode.SimEqSystem> eqs;
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
-          algebraicEquations,residualEquations,startValueEquations, 
+          algebraicEquations,residualEquations,initialEquations,startValueEquations, 
           parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,
           sampleConditions,sampleEquations,helpVarInfo,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),_)
     equation
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
-    then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, {eqs}, algebraicEquations, residualEquations, startValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, constraints, zeroCrossings, sampleConditions, sampleEquations, helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
+    then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, allEquations, {eqs}, algebraicEquations, residualEquations, initialEquations, startValueEquations, parameterEquations, removedEquations, algorithmAndEquationAsserts, constraints, zeroCrossings, sampleConditions, sampleEquations, helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
 
   end match;
 end replaceDiscontsInOde;

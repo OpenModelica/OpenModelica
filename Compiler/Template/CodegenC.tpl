@@ -146,12 +146,13 @@ template simulationFile(SimCode simCode, String guid)
 
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, appendAllequations(jacobianMatrixes), delayedExps)%>
     
-    <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes), parameterEquations)%>
+    <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes), parameterEquations, initialEquations)%>
     
     <%functionCallExternalObjectConstructors(extObjInfo)%>
     
     <%functionCallExternalObjectDestructors(extObjInfo)%>
     
+    <%functionExtraResiduals(initialEquations)%>
     <%functionExtraResiduals(parameterEquations)%>
     <%functionExtraResiduals(allEquations)%>
     
@@ -170,6 +171,8 @@ template simulationFile(SimCode simCode, String guid)
     <%functionUpdateBoundStartValues(startValueEquations)%>
     
     <%functionInitialResidual(residualEquations)%>
+    
+    <%functionInitialEquations(initialEquations)%>
     
     <%functionUpdateBoundParameters(parameterEquations)%>
 
@@ -328,7 +331,7 @@ template functionSimProfDef(SimEqSystem eq, Integer value)
   end match
 end functionSimProfDef;
 
-template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, list<SimEqSystem> parameterEquations)
+template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> initialEquations)
   "Generates function in simulation file."
 ::=
   match modelInfo
@@ -338,12 +341,12 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
      */
      let &eqnsDefines = buffer ""
      /*
-     let allEqsPlusParamEqns = listAppend(parameterEquations,allEquations) 
+     let allEqsPlusParamEqns = listAppend(listAppend(initialEquations,parameterEquations),allEquations) 
      let eqnsDefines = (allEqsPlusParamEqns |> eq hasindex i0 => functionSimProfDef(eq,i0); separator="";empty)
       <%equationInfo(allEquations)%>
      */
      let &eqnsDefines = buffer ""
-     let eqnInfo = equationInfo(listAppend(parameterEquations,allEquations),&eqnsDefines,intAdd(varInfo.numEquations, listLength(symJacEquations)))
+     let eqnInfo = equationInfo(listAppend(listAppend(initialEquations,parameterEquations),allEquations),&eqnsDefines,intAdd(varInfo.numEquations, listLength(symJacEquations)))
     <<
     /* Some empty lines, since emptyCount is not implemented in susan! */
     <%eqnsDefines%>
@@ -983,6 +986,31 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
    )
    ;separator="\n\n")
 end functionExtraResiduals;
+
+template functionInitialEquations(list<SimEqSystem> initalEquations)
+  "Generates function in simulation file."
+::=
+  let () = System.tmpTickReset(0)
+  let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
+  let body = (initalEquations |> eq  =>
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+    ;separator="\n")  
+  <<
+  <%&tmp%>
+  int functionInitialEquations(DATA *data)
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%body%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionInitialEquations;
 
 template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
   "Generates function in simulation file."
