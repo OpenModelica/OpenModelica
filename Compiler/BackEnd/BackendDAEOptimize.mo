@@ -11659,7 +11659,7 @@ end countOperator;
 public function simplifyIfEquations
 "function: simplifyIfEquations
   autor: Frenkel TUD 2012-07
-  This function traveres all if equations and tries to simplify it by using the 
+  This function traveres all if equations and if expressions and tries to simplify it by using the 
   information from evaluation of parameters"
   input BackendDAE.BackendDAE dae;
   output BackendDAE.BackendDAE odae;
@@ -11717,23 +11717,48 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.Variables knvars;
       Boolean b;
+      BackendDAE.Equation eqn;
     case (BackendDAE.IF_EQUATION(conditions=explst, eqnstrue=eqnslstlst, eqnsfalse=eqnslst, source=source),knvars,(acc,asserts,_))
       equation
         // check conditions
-        ((explst,_)) = Expression.traverseExpList(explst, simplifyevaluatedParamter, knvars);
+        ((explst,_)) = Expression.traverseExpList(explst, simplifyevaluatedParamter, (knvars,false));
         explst = ExpressionSimplify.simplifyList(explst, {});
         // simplify if equation
         (acc,asserts1) = simplifyIfEquation(explst,eqnslstlst,eqnslst,{},{},source,knvars,acc);
         asserts = listAppend(asserts,asserts1);
       then
         ((acc,asserts,true));
-    case (_,_,(acc,asserts,b)) then ((inElem::acc,asserts,b));
+    case (eqn,knvars,(acc,asserts,b))
+      equation
+        (eqn,(_,b)) = BackendEquation.traverseBackendDAEExpsEqn(eqn, simplifyIfExpevaluatedParamter, (knvars,b));
+      then 
+        ((eqn::acc,asserts,b));
   end matchcontinue;
 end simplifyIfEquationsFinder;
 
+protected function simplifyIfExpevaluatedParamter
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl1;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl2;
+algorithm
+  tpl2 := matchcontinue(tpl1)
+    local
+      BackendDAE.Variables knvars;
+      DAE.Exp e,cond,expThen,expElse;
+      Boolean b,b1;
+    case ((e as DAE.IFEXP(expCond=cond, expThen=expThen, expElse=expElse),(knvars,b)))
+      equation
+        ((cond,(_,b1))) = Expression.traverseExp(cond, simplifyevaluatedParamter, (knvars,false));
+        e = Util.if_(b1,DAE.IFEXP(cond,expThen,expElse),e);
+        (e,_) = ExpressionSimplify.condsimplify(b1,e);
+      then
+        ((e,(knvars,b or b1)));
+    case _ then tpl1;   
+  end matchcontinue;
+end simplifyIfExpevaluatedParamter;
+
 protected function simplifyevaluatedParamter
-  input tuple<DAE.Exp, BackendDAE.Variables> tpl1;
-  output tuple<DAE.Exp, BackendDAE.Variables> tpl2;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl1;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean>> tpl2;
 algorithm
   tpl2 := matchcontinue(tpl1)
     local
@@ -11741,13 +11766,14 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var v;
       DAE.Exp e;
-    case ((DAE.CREF(componentRef = cr),knvars))
+      Boolean b;
+    case ((DAE.CREF(componentRef = cr),(knvars,_)))
       equation
         (v::{},_::{}) = BackendVariable.getVar(cr,knvars);
         true = BackendVariable.isFinalVar(v);
         e = BackendVariable.varBindExpStartValue(v);    
       then
-        ((e,knvars));
+        ((e,(knvars,true)));
     case _ then tpl1;   
   end matchcontinue;
 end simplifyevaluatedParamter;
