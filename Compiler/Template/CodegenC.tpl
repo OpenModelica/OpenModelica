@@ -7741,23 +7741,8 @@ template mmcTypeShort(DAE.Type type)
   case T_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
   
 
-  case T_NORETCALL(__)               then error(sourceInfo(), 'mmcTypeShort:ERROR T_NORETCALL')
-  case T_UNKNOWN(__)                 then error(sourceInfo(), 'mmcTypeShort:ERROR T_UNKNOWN')
   case T_COMPLEX(__)                 then 'mmcTypeShort:ERROR T_COMPLEX'
-  case T_SUBTYPE_BASIC(__)           then error(sourceInfo(), 'mmcTypeShort:ERROR T_SUBTYPE_BASIC')
-  case T_FUNCTION(__)                then error(sourceInfo(), 'mmcTypeShort:ERROR T_FUNCTION')
-  case T_FUNCTION_REFERENCE_FUNC(__) then error(sourceInfo(), 'mmcTypeShort:ERROR T_FUNCTION_REFERENCE_FUNC')
-  case T_TUPLE(__)                   then error(sourceInfo(), 'mmcTypeShort:ERROR T_TUPLE')
-  case T_CODE(__)                    then error(sourceInfo(), 'mmcTypeShort:ERROR T_CODE')
-  case T_ANYTYPE(__)                 then error(sourceInfo(), 'mmcTypeShort:ERROR T_ANYTYPE')
-  case T_METALIST(__)                then error(sourceInfo(), 'mmcTypeShort:ERROR T_METALIST')
-  case T_METATUPLE(__)               then error(sourceInfo(), 'mmcTypeShort:ERROR T_METATUPLE')
-  case T_METAOPTION(__)              then error(sourceInfo(), 'mmcTypeShort:ERROR T_METAOPTION')
-  case T_METAUNIONTYPE(__)           then error(sourceInfo(), 'mmcTypeShort:ERROR T_METAUNIONTYPE')
-  case T_METARECORD(__)              then error(sourceInfo(), 'mmcTypeShort:ERROR T_METARECORD')
-  case T_METAARRAY(__)               then error(sourceInfo(), 'mmcTypeShort:ERROR T_METAARRAY')
-  case T_METAPOLYMORPHIC(__)         then error(sourceInfo(), 'mmcTypeShort:ERROR T_METAPOLYMORPHIC')
-  else error(sourceInfo(), 'mmcTypeShort:ERROR')
+  else error(sourceInfo(), 'mmcTypeShort:ERROR <%unparseType(type)%>')
 end mmcTypeShort;
 
 
