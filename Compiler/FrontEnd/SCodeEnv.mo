@@ -1413,6 +1413,22 @@ algorithm
   end match;
 end getEnvPath;
 
+public function getScopeName
+  "Returns the name of the innermost that has a name."
+  input Env inEnv;
+  output String outString;
+algorithm
+  outString := match(inEnv)
+    local
+      String name;
+      Env rest;
+
+    case FRAME(name = SOME(name)) :: _ then name;
+    case _ :: rest then getScopeName(rest);
+
+  end match;
+end getScopeName;
+
 public function envPrefixOf
   input Env inPrefixEnv;
   input Env inEnv;

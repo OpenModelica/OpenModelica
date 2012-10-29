@@ -646,7 +646,7 @@ protected function replaceRedeclaredElementInEnv
 algorithm
   outEnv := matchcontinue(inRedeclare, inEnv)
     local
-      SCode.Ident name;
+      SCode.Ident name, scope_name;
       Item item;
       Absyn.Info info;
       Absyn.Path path;
@@ -671,14 +671,17 @@ algorithm
       then
         pushRedeclareIntoExtends(item, path, inEnv);
         
-    else
+    // The redeclared element could not be found, show an error.
+    case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- SCodeEnv.replaceRedeclaredElementInEnv failed on " +&
-          SCode.elementName(SCodeEnv.getRedeclarationElement(inRedeclare)) +& 
-          " in " +& SCodeEnv.getEnvName(inEnv));
+        scope_name = SCodeEnv.getScopeName(inEnv);
+        name = SCodeEnv.getItemName(item);
+        info = SCodeEnv.getItemInfo(item);
+        Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
+          {name, scope_name}, info);
       then
-        fail();
+        fail(); 
+
   end matchcontinue;
 end replaceRedeclaredElementInEnv;
 

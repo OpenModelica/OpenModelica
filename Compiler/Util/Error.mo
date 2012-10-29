@@ -492,8 +492,6 @@ public constant Message UNKNOWN_DEBUG_FLAG = MESSAGE(206, SCRIPTING(), ERROR(),
   Util.gettext("Unknown debug flag %s."));
 public constant Message INVALID_FLAG_TYPE = MESSAGE(207, SCRIPTING(), ERROR(),
   Util.gettext("Invalid type of flag %s, expected %s but got %s"));
-public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
-  Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value"));
 public constant Message CHANGED_STD_VERSION = MESSAGE(208, SCRIPTING(), NOTIFICATION(),
   Util.gettext("Modelica language version set to %s due to loading of MSL %s."));
 public constant Message SIMPLIFY_FIXPOINT_MAXIMUM = MESSAGE(209, TRANSLATION(), WARNING(),
@@ -507,7 +505,7 @@ public constant Message TRANS_VIOLATION = MESSAGE(212, TRANSLATION(), ERROR(),
 public constant Message INSERT_CLASS = MESSAGE(213, SCRIPTING(), ERROR(),
   Util.gettext("Failed to insert class %s %s the available classes were:%s"));
 public constant Message MISSING_MODIFIED_ELEMENT = MESSAGE(214, TRANSLATION(), ERROR(),
-  Util.gettext("Modified element %s not found in class %s\n"));
+  Util.gettext("Modified element %s not found in class %s."));
 public constant Message INVALID_REDECLARE_IN_BASIC_TYPE = MESSAGE(215, TRANSLATION(), ERROR(),
   Util.gettext("Invalid redeclaration, attributes of basic types can not be redeclared."));
 public constant Message INVALID_STREAM_CONNECTOR = MESSAGE(216, TRANSLATION(), ERROR(),
@@ -574,6 +572,8 @@ public constant Message EXP_TYPE_MISMATCH = MESSAGE(245, TRANSLATION(), ERROR(),
   Util.gettext("Expression %1 has type %3, expected type %2."));
 public constant Message PACKAGE_ORDER_DUPLICATES = MESSAGE(246, TRANSLATION(), ERROR(),
   Util.gettext("Found duplicate names in package.order file: %s."));
+public constant Message UNBOUND_PARAMETER_WITH_START_VALUE_WARNING = MESSAGE(499, TRANSLATION(), WARNING(),
+  Util.gettext("Parameter %s has no value, and is fixed during initialization (fixed=true), using available start value (start=%s) as default value"));
 public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), WARNING(),
   Util.gettext("Parameter %s has neither value nor start value, and is fixed during initialization (fixed=true)"));
 public constant Message BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER = MESSAGE(502, TRANSLATION(), WARNING(),
