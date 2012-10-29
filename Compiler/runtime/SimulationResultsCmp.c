@@ -129,12 +129,23 @@ char ** getVars(void *vars, unsigned int* nvars)
   unsigned int ncmpvars = 0;
   char **newvars=NULL;
   *nvars=0;
-
-  /* fprintf(stderr, "getVars\n"); */
+#ifdef DEBUGOUTPUT
+   fprintf(stderr, "getVars\n");
+#endif
   while (RML_NILHDR != RML_GETHDR(vars)) {
     var = RML_STRINGDATA(RML_CAR(vars));
 
-    /* fprintf(stderr, "Var: %s\n", var); */
+    // if var is empty, continue
+    if (strcmp(var, "\"\"") == 0) {
+#ifdef DEBUGOUTPUT
+        fprintf(stderr, "skip Var: %s\n", var);
+#endif
+       vars = RML_CDR(vars);
+       continue;
+    }
+#ifdef DEBUGOUTPUT
+     fprintf(stderr, "Var: %s\n", var);
+#endif
     newvars = (char**)malloc(sizeof(char*)*(ncmpvars+1));
 
     for (i=0;i<ncmpvars;i++)
@@ -143,11 +154,15 @@ char ** getVars(void *vars, unsigned int* nvars)
     ncmpvars += 1;
     if(cmpvars) free(cmpvars);
     cmpvars = newvars;
-    /* fprintf(stderr, "NVar: %d\n", ncmpvars); */
-
+#ifdef DEBUGOUTPUT
+     fprintf(stderr, "NVar: %d\n", ncmpvars);
+#endif
     vars = RML_CDR(vars);
   }
   *nvars = ncmpvars;
+#ifdef DEBUGOUTPUT
+    fprintf(stderr, "found %d Vars\n", ncmpvars);
+#endif
   return cmpvars;
 }
 
@@ -611,15 +626,16 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   cmpvars = getVars(vars,&ncmpvars);
   /* if no var compare all vars */
   if (ncmpvars==0){
-    allvars = SimulationResultsImpl__readVars(filename,&simresglob_c);
-    cmpvars = getVars(vars,&ncmpvars);
+    allvars = SimulationResultsImpl__readVars(reffilename,&simresglob_ref);
+    cmpvars = getVars(allvars,&ncmpvars);
     if (ncmpvars==0) return mk_cons(mk_scon("Error Get Vars!"),mk_nil());
   }
   cmpdiffvars = (char**)malloc(sizeof(char*)*(ncmpvars));
-  /* fprintf(stderr, "Compare Vars:\n"); */
-  /* for(i=0;i<ncmpvars;i++)
-  fprintf(stderr, "Var: %s\n", cmpvars[i]); */
-
+#ifdef DEBUGOUTPUT
+  fprintf(stderr, "Compare Vars:\n");
+  for(i=0;i<ncmpvars;i++)
+    fprintf(stderr, "Var: %s\n", cmpvars[i]);
+#endif
   /*  get time */
   /* fprintf(stderr, "get time\n"); */
   time = getData("time",filename,size,&simresglob_c);
