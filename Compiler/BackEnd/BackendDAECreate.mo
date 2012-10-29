@@ -234,7 +234,7 @@ algorithm
       list<DAE.Exp> explst;
       DAE.Exp e2;
       Boolean b;
-
+      
     // class for external object
     case (DAE.EXTOBJECTCLASS(path,source),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -274,9 +274,10 @@ algorithm
         (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
     // equalityConstraint equations, moved to removed equations
-    case (DAE.ARRAY_EQUATION(exp = DAE.ARRAY(ty=_),array=DAE.CALL(path=path)),_,_,_,_,_,_,_,_,_,_,_,_)
+    case (DAE.ARRAY_EQUATION(exp = DAE.ARRAY(array={}),array=DAE.CALL(path=path)),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         b = stringEq(Absyn.pathLastIdent(path),"equalityConstraint");
+        print(boolString(b) +& "\n" +& DAEDump.dumpEquationStr(inElement));
         eqns = Util.if_(b,inREqnsLst,inEqnsLst);
         eqns = lowerEqn(inElement,functionTree,eqns);
         ((eqns,reqns)) = Util.if_(b,(inEqnsLst,eqns),(eqns,inREqnsLst));
