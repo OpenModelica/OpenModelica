@@ -8368,7 +8368,7 @@ template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> min
     case T_BOOL(__) then '<Boolean <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_STRING(__) then '<String <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
     case T_ENUMERATION(__) then '<Integer <%ScalarVariableTypeStartAttribute(initialValue, type_)%> <%ScalarVariableTypeFixedAttribute(isFixed)%> <%ScalarVariableTypeUnitAttribute(unit)%> <%ScalarVariableTypeDisplayUnitAttribute(displayUnit)%> />'
-    else error(sourceInfo(), 'ScalarVariableType: UNKOWN_TYPE')
+    else error(sourceInfo(), 'ScalarVariableType: <%unparseType(type_)%>')
 end ScalarVariableType;
 
 template ScalarVariableTypeStartAttribute(Option<DAE.Exp> initialValue, DAE.Type type_)
@@ -8383,7 +8383,7 @@ match initialValue
       case T_REAL(__) then 'useStart="false" start="0.0"'
       case T_BOOL(__) then 'useStart="false" start="false"'
       case T_STRING(__) then 'useStart="false" start=""'
-      else error(sourceInfo(), 'ScalarVariableTypeStartAttribute: UNKOWN_TYPE')
+      else error(sourceInfo(), 'ScalarVariableTypeStartAttribute: <%unparseType(type_)%>')
 end ScalarVariableTypeStartAttribute;
 
 template ScalarVariableTypeFixedAttribute(Boolean isFixed)

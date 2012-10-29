@@ -271,6 +271,14 @@ algorithm
         (eqns,reqns,ieqns) = lowerAlgorithm(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(DAE.T_UNKNOWN_DEFAULT,explst,e2,source)}),source),functionTree,inEqnsLst,inREqnsLst,inIEqnsLst);
       then
         (inVars,inKnVars,inExVars,eqns,reqns,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+
+    // equalityConstraint equations, moved to removed equations
+    case (DAE.ARRAY_EQUATION(exp = DAE.ARRAY(ty=_),array=DAE.CALL(path=path)),_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        true = stringEq(Absyn.pathLastIdent(path),"equalityConstraint");
+        eqns = lowerEqn(inElement,functionTree,inREqnsLst);
+      then
+        (inVars,inKnVars,inExVars,inEqnsLst,eqns,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
              
     // scalar equations
     case (DAE.EQUATION(exp = _),_,_,_,_,_,_,_,_,_,_,_,_)
@@ -719,11 +727,8 @@ protected function lowerVarkind
   output BackendDAE.VarKind outVarKind;
 algorithm
   (outVarKind) := matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inConnectorType,daeAttr)
-    // Or states have StateSelect.always
+    // variable -> state if have stateSelect=StateSelect.always
     case (DAE.VARIABLE(),_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
-    then (BackendDAE.STATE());
-    // Or states have StateSelect.prefer
-    case (DAE.VARIABLE(),_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
     then (BackendDAE.STATE());
 
     case (DAE.VARIABLE(),DAE.T_BOOL(varLst = _),_,_,_,_)
