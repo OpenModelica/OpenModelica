@@ -277,7 +277,6 @@ algorithm
     case (DAE.ARRAY_EQUATION(exp = DAE.ARRAY(array={}),array=DAE.CALL(path=path)),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         b = stringEq(Absyn.pathLastIdent(path),"equalityConstraint");
-        print(boolString(b) +& "\n" +& DAEDump.dumpEquationStr(inElement));
         eqns = Util.if_(b,inREqnsLst,inEqnsLst);
         eqns = lowerEqn(inElement,functionTree,eqns);
         ((eqns,reqns)) = Util.if_(b,(inEqnsLst,eqns),(eqns,inREqnsLst));
@@ -733,6 +732,9 @@ algorithm
   (outVarKind) := matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inConnectorType,daeAttr)
     // variable -> state if have stateSelect=StateSelect.always
     case (DAE.VARIABLE(),_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
+    then (BackendDAE.STATE());
+    // variable -> state if have stateSelect=StateSelect.prefer
+    case (DAE.VARIABLE(),_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
     then (BackendDAE.STATE());
 
     case (DAE.VARIABLE(),DAE.T_BOOL(varLst = _),_,_,_,_)
