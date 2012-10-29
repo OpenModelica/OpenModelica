@@ -88,13 +88,13 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
     int nr = fread(&hdr,sizeof(MHeader_t),1,reader->file);
     int matrix_length,element_length;
     char *name;
-    reader->doublepresision = 1;
+    reader->doublePrecision = 1;
     if (nr != 1) return "Corrupt header (1)";
     /* fprintf(stderr, "Found matrix type=%04d mrows=%d ncols=%d imagf=%d namelen=%d\n", hdr.type, hdr.mrows, hdr.ncols, hdr.imagf, hdr.namelen); */
     if (hdr.type != matrixTypes[i])
     {
       if ((i > 3) && (hdr.type == 10))
-        reader->doublepresision = 0;
+        reader->doublePrecision = 0;
       else
         return "Matrix type mismatch";
     }
@@ -240,7 +240,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
         if (hdr.mrows == 0) return "data_1 matrix does not contain at least 1 variable";
         if (hdr.ncols != 2) return "data_1 matrix does not have 2 rows";
         reader->nparam = hdr.mrows;
-        if (reader->doublepresision==1)
+        if (reader->doublePrecision==1)
         {
           reader->params = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
           if (1 != fread(reader->params,matrix_length,1,reader->file)) return "Corrupt header: data_1 matrix";
@@ -268,7 +268,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
         if (hdr.ncols == 0) return "data_1 matrix does not contain at least 1 variable";
         if (hdr.mrows != 2) return "data_1 matrix does not have 2 rows";
         reader->nparam = hdr.ncols;
-        if (reader->doublepresision==1)
+        if (reader->doublePrecision==1)
         {
           double *tmp=NULL;
           tmp = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
@@ -316,7 +316,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
         if (reader->nrows < 2) return "Too few rows in data_2 matrix";
         reader->var_offset = ftell(reader->file);
         reader->vars = (double**) calloc(reader->nvar*2,sizeof(double*));
-        if (reader->doublepresision==1)
+        if (reader->doublePrecision==1)
         {
           double *tmp=NULL;
           tmp = (double*) malloc(hdr.mrows*hdr.ncols*sizeof(double));
@@ -382,7 +382,7 @@ double* omc_matlab4_read_vals(ModelicaMatReader *reader, int varIndex)
   if (!reader->vars[ix]) {
     unsigned int i;
     double *tmp = (double*) malloc(reader->nrows*sizeof(double));
-    if (reader->doublepresision==1)
+    if (reader->doublePrecision==1)
     {
       for (i=0; i<reader->nrows; i++) {
         fseek(reader->file,reader->var_offset + sizeof(double)*(i*reader->nvar + absVarIndex-1), SEEK_SET);
@@ -438,7 +438,7 @@ double omc_matlab4_read_single_val(double *res, ModelicaMatReader *reader, int v
     *res = reader->vars[ix][timeIndex];
     return 0;
   }
-  if (reader->doublepresision==1)
+  if (reader->doublePrecision==1)
   {
     fseek(reader->file,reader->var_offset + sizeof(double)*(timeIndex*reader->nvar + absVarIndex-1), SEEK_SET);
     if (1 != fread(res, sizeof(double), 1, reader->file))
