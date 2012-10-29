@@ -385,9 +385,12 @@ int solver_main(DATA* data, const char* init_initMethod,
     checkForAsserts(data);
     if (terminationAssert || terminationTerminate) {
       terminationAssert = 0;
-      terminationTerminate = 0;
       checkForAsserts(data);
       checkTermination(data);
+      if(!terminationAssert && terminationTerminate){
+        INFO2(LOG_STDOUT, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+        simInfo->stopTime = solverInfo.currentTime;
+      }
     }
 
     /* terminate for some cases:
@@ -556,8 +559,7 @@ rungekutta_step(DATA* data, SOLVER_INFO* solverInfo) {
  */
 void checkTermination(DATA *data)
 {
-  if(terminationAssert || terminationTerminate)
-  {
+  if(terminationAssert){
     data->simulationInfo.simulationSuccess = -1;
     printInfo(stdout, TermInfo);
     fputc('\n', stdout);
@@ -568,19 +570,13 @@ void checkTermination(DATA *data)
     if(warningLevelAssert)
     {
       /* terminated from assert, etc. */
-      WARNING2(LOG_STDOUT, "Simulation call assert() at time %f\nLevel : warning\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+      INFO2(LOG_STDOUT, "Simulation call assert() at time %f\nLevel : warning\nMessage : %s", data->localData[0]->timeValue, TermMsg);
     }
     else
     {
-      WARNING2(LOG_STDOUT, "Simulation call assert() at time %f\nLevel : error\nMessage : %s", data->localData[0]->timeValue, TermMsg);
+      INFO2(LOG_STDOUT, "Simulation call assert() at time %f\nLevel : error\nMessage : %s", data->localData[0]->timeValue, TermMsg);
       /* THROW1("timeValue = %f", data->localData[0]->timeValue); */
     }
-  }
-
-  if(terminationTerminate)
-  {
-    WARNING2(LOG_STDOUT, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
-    /* THROW1("timeValue = %f", data->localData[0]->timeValue); */
   }
 }
 
