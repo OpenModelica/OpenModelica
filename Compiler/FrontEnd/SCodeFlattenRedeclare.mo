@@ -362,7 +362,7 @@ algorithm
       equation
         name = SCode.elementName(inRedeclare);
         info = SCode.elementInfo(inRedeclare);
-        (ext_path, _) = lookupElementRedeclaration(name, inEnv, info);
+        ext_path = lookupElementRedeclaration(name, inEnv, info);
         env_path = SCodeEnv.getEnvPath(inEnv);
         item = SCodeEnv.ALIAS(name, SOME(env_path), info);
         env = addRedeclareToEnvExtendsTable(item, ext_path, inEnv, info);
@@ -385,18 +385,16 @@ protected function lookupElementRedeclaration
   input Env inEnv;
   input Absyn.Info inInfo;
   output Absyn.Path outPath;
-  output Item outItem;
 algorithm
-  (outPath, outItem) := matchcontinue(inName, inEnv, inInfo)
+  outPath := matchcontinue(inName, inEnv, inInfo)
     local
       Absyn.Path path;
-      Item item;
 
     case (_, _, _)
       equation
-        (path, item, _) = SCodeLookup.lookupBaseClass(inName, inEnv, inInfo);
+        path = SCodeLookup.lookupBaseClass(inName, inEnv);
       then
-        (path, item);
+        path;
 
     else
       equation
@@ -457,12 +455,8 @@ algorithm
   end matchcontinue;
 end addRedeclareToEnvExtendsTable2;
 
-public function qualifyRedeclare
-  "Since a modifier might redeclare an element in a variable with a type that
-  is not reachable from the component type we need to fully qualify the element. 
-    Ex:
-      A a(redeclare package P = P1)
-  where P1 is not reachable from A."
+public function processRedeclare
+  "Processes a raw redeclare modifier into a processed form."
   input SCodeEnv.Redeclaration inRedeclare;
   input Env inEnv;
   input InstTypes.Prefix inPrefix;
@@ -484,194 +478,37 @@ algorithm
       Option<Absyn.Exp> cond;
       Option<Absyn.ArrayDim> array_dim;
 
-    case (SCodeEnv.RAW_MODIFIER(SCode.CLASS(
-          name = name,
-          prefixes = prefixes,
-          encapsulatedPrefix = ep, 
-          partialPrefix = pp,
-          restriction = res,
-          classDef = SCode.DERIVED(
-              typeSpec = Absyn.TPATH(path, ad),
-              modifications = mods, 
-              attributes = attr, 
-              comment = cmt),
-            info = info
-          )), _, _)
+      Item el_item, redecl_item;
+      SCode.Element el;
+      Env cls_env;
+   
+   case (SCodeEnv.RAW_MODIFIER(modifier = el as SCode.CLASS(name = _)), _, _)
       equation
-        path = SCodeLookup.qualifyPath(path, inEnv, info, SOME(Error.LOOKUP_ERROR));
-        prefixes = SCode.prefixesSetRedeclare(prefixes, SCode.NOT_REDECLARE());
-        mods = prefixMod(mods, inEnv, inPrefix);
+        cls_env = SCodeEnv.makeClassEnvironment(el, true);
+        el_item = SCodeEnv.newClassItem(el, cls_env, SCodeEnv.USERDEFINED());
+        redecl_item = SCodeEnv.REDECLARED_ITEM(el_item, inEnv);
       then
-        SCodeEnv.RAW_MODIFIER(SCode.CLASS(name, prefixes, ep, pp, res,
-            SCode.DERIVED(Absyn.TPATH(path, ad), mods, attr, cmt),
-            info));
+        SCodeEnv.PROCESSED_MODIFIER(redecl_item);
 
-    case (SCodeEnv.RAW_MODIFIER(SCode.CLASS(name = _)), _, _) then inRedeclare;
-
-    case (SCodeEnv.RAW_MODIFIER(SCode.COMPONENT(name, prefixes, attr, 
-        Absyn.TPATH(path, array_dim), mods, cmt, cond, info)), _, _)
+    case (SCodeEnv.RAW_MODIFIER(modifier = el as SCode.COMPONENT(name = _)), _, _)
       equation
-        path = SCodeLookup.qualifyPath(path, inEnv, info, SOME(Error.LOOKUP_ERROR));
-        mods = prefixMod(mods, inEnv, inPrefix);
+        el_item = SCodeEnv.newVarItem(el, true);
+        redecl_item = SCodeEnv.REDECLARED_ITEM(el_item, inEnv);
       then
-        SCodeEnv.RAW_MODIFIER(SCode.COMPONENT(name, prefixes, attr, 
-          Absyn.TPATH(path, array_dim), mods, cmt, cond, info));
-    
+        SCodeEnv.PROCESSED_MODIFIER(redecl_item);
+
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = _), _, _) then inRedeclare;
 
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- SCodeFlattenRedeclare.qualifyRedeclare failed on " +&
+        Debug.traceln("- SCodeFlattenRedeclare.processRedeclare failed on " +&
           SCodeDump.printElementStr(SCodeEnv.getRedeclarationElement(inRedeclare)) +& 
           " in " +& Absyn.pathString(SCodeEnv.getEnvPath(inEnv)));
       then
         fail();
   end match;
-end qualifyRedeclare;
-
-protected function prefixMod
-  input SCode.Mod inMod;
-  input Env inEnv;
-  input InstTypes.Prefix inPrefix;
-  output SCode.Mod outMod;
-algorithm
-  outMod := match(inMod, inEnv, inPrefix)
-    local
-      SCode.Final fp;
-      SCode.Each ep;
-      list<SCode.SubMod> submods;
-      Option<tuple<Absyn.Exp, Boolean>> binding;
-      Absyn.Info info;
-
-    case (SCode.MOD(fp, ep, submods, binding, info), _, _)
-      equation
-        submods = List.map2(submods, prefixSubMod, inEnv, inPrefix);
-        binding = prefixBinding(binding, inEnv, inPrefix);
-      then
-        SCode.MOD(fp, ep, submods, binding, info);
-
-    else inMod;
-  end match;
-end prefixMod;
-
-protected function prefixSubMod
-  input SCode.SubMod inSubMod;
-  input Env inEnv;
-  input InstTypes.Prefix inPrefix;
-  output SCode.SubMod outSubMod;
-protected
-  SCode.Ident ident;
-  SCode.Mod mod;
-algorithm
-  SCode.NAMEMOD(ident, mod) := inSubMod;
-  mod := prefixMod(mod, inEnv, inPrefix);
-  outSubMod := SCode.NAMEMOD(ident, mod);
-end prefixSubMod;
-
-protected function prefixBinding
-  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
-  input Env inEnv;
-  input InstTypes.Prefix inPrefix;
-  output Option<tuple<Absyn.Exp, Boolean>> outBinding;
-algorithm
-  outBinding := match(inBinding, inEnv, inPrefix)
-    local
-      Absyn.Exp exp;
-      Boolean b;
-
-    case (SOME((exp, b)), _, _)
-      equation
-        ((exp, _)) = Absyn.traverseExp(exp, prefixCrefTraverser, (inEnv, inPrefix));
-      then
-        SOME((exp, b));
-
-    else inBinding;
-
-  end match;
-end prefixBinding;
-
-protected function prefixCrefTraverser
-  input tuple<Absyn.Exp, tuple<Env, InstTypes.Prefix>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, InstTypes.Prefix>> outTuple;
-algorithm
-  outTuple := match(inTuple)
-    local
-      Absyn.ComponentRef cref;
-      Env env;
-      InstTypes.Prefix prefix;
-
-    case ((Absyn.CREF(cref), (env, prefix)))
-      equation
-        cref = prefixCref(cref, env, prefix);
-      then
-        ((Absyn.CREF(cref), (env, prefix)));
-
-    else inTuple;
-
-  end match;
-end prefixCrefTraverser;
-
-protected function prefixCref
-  input Absyn.ComponentRef inCref;
-  input Env inEnv;
-  input InstTypes.Prefix inPrefix;
-  output Absyn.ComponentRef outCref;
-algorithm
-  outCref := matchcontinue(inCref, inEnv, inPrefix)
-    local
-      Absyn.Path path;
-      String name;
-      Absyn.ComponentRef cref;
-      Env env;
-
-    case (Absyn.CREF_QUAL(name = _), _, _)
-      equation
-        path = Absyn.crefToPath(inCref);
-        (SCodeEnv.VAR(var = SCode.COMPONENT(name = name, attributes = SCode.ATTR(
-            variability = SCode.CONST()))), path, env, SCodeLookup.CLASS_ORIGIN()) = 
-          SCodeLookup.lookupNameSilent(path, inEnv, Absyn.dummyInfo);
-        path = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), env);
-        cref = Absyn.pathToCref(path);
-      then
-        Absyn.CREF_FULLYQUALIFIED(cref);
-
-    case (_, _, InstTypes.PREFIX(name = _))
-      equation
-        cref = prefixCref2(inCref, inPrefix);
-      then
-        Absyn.CREF_FULLYQUALIFIED(cref);
- 
-    else inCref;
-
-  end matchcontinue;
-end prefixCref;
-
-protected function prefixCref2
-  input Absyn.ComponentRef inCref;
-  input Prefix inPrefix;
-  output Absyn.ComponentRef outCref;
-algorithm
-  outCref := match(inCref, inPrefix)
-    local
-      String name;
-      Prefix rest_prefix;
-      Absyn.ComponentRef cref;
-
-    case (_, InstTypes.EMPTY_PREFIX(classPath = _)) then inCref;
-
-    case (_, InstTypes.PREFIX(name = name,
-        restPrefix = InstTypes.EMPTY_PREFIX(classPath = _)))
-      then Absyn.CREF_QUAL(name, {}, inCref);
-
-    case (_, InstTypes.PREFIX(name = name, restPrefix = rest_prefix))
-      equation
-        cref = Absyn.CREF_QUAL(name, {}, inCref);
-      then
-        prefixCref2(cref, rest_prefix);
-
-  end match;
-end prefixCref2;
+end processRedeclare;
 
 public function replaceRedeclares
   "Replaces redeclares in the environment. This function takes a list of
@@ -734,15 +571,12 @@ algorithm
     // no redeclares!
     case ({}, _, _, _, _) then (inItem, inTypeEnv);
 
-    case (_, SCodeEnv.VAR(var = _), _, _, _) then (inItem, inTypeEnv);
-
     case (_, SCodeEnv.CLASS(cls = cls, env = {item_env}, classType = cls_ty), _, _, _)
       equation
         // Merge the types environment with it's enclosing scopes to get the
         // enclosing scopes of the classes we need to replace.
         env = SCodeEnv.enterFrame(item_env, inTypeEnv);
-        // Fully qualify the redeclares to make sure they can be found.
-        redecls = List.map2(inRedeclares, qualifyRedeclare, inElementEnv, inPrefix);
+        redecls = List.map2(inRedeclares, processRedeclare, inElementEnv, inPrefix);
         env = List.fold(redecls, replaceRedeclaredElementInEnv, env);
         item_env :: env = env;
       then
@@ -800,7 +634,7 @@ algorithm
         redecl :: inRedeclares;
 
     // Skip modifiers that are not redeclarations.
-    else then inRedeclares;
+    else inRedeclares;
   end match;
 end extractRedeclareFromSubMod;
 
@@ -833,17 +667,10 @@ algorithm
       equation
         name = SCodeEnv.getItemName(item);
         info = SCodeEnv.getItemInfo(item);
-        (path, _, _) = SCodeLookup.lookupBaseClass(name, inEnv, info);
+        path = SCodeLookup.lookupBaseClass(name, inEnv);
       then
         pushRedeclareIntoExtends(item, path, inEnv);
         
-    // A raw modifier, process it first.
-    case (SCodeEnv.RAW_MODIFIER(modifier = _), _)
-      equation
-        redecl = processRedeclaration(inRedeclare);
-      then
-        replaceRedeclaredElementInEnv(redecl, inEnv);
-
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -940,7 +767,7 @@ algorithm
         name = SCodeEnv.getItemName(item);
         true = stringEqual(name, inName);
       then
-        SCodeEnv.PROCESSED_MODIFIER(item) :: rest_redecls;
+        SCodeEnv.PROCESSED_MODIFIER(inRedeclare) :: rest_redecls;
 
     case (_, _, redecl :: rest_redecls)
       equation
@@ -968,6 +795,9 @@ algorithm
     case (_, _, SCodeEnv.FRAME(clsAndVars = tree) :: _)
       equation
         old_item = SCodeEnv.avlTreeGet(tree, inElementName);
+        /*********************************************************************/
+        // TODO: Check if this is actually needed
+        /*********************************************************************/
         new_item = propagateItemPrefixes(old_item, inElement);
         new_item = SCodeEnv.linkItemUsage(old_item, new_item);
         tree = SCodeEnv.avlTreeReplace(tree, inElementName, new_item);
@@ -988,6 +818,7 @@ algorithm
       Option<Util.StatefulBoolean> iu1, iu2;
       Env env1, env2;
       SCodeEnv.ClassType ty1, ty2;
+      Item item;
 
     case (SCodeEnv.VAR(var = el1, isUsed = iu1), 
           SCodeEnv.VAR(var = el2, isUsed = iu2))
@@ -1011,6 +842,15 @@ algorithm
     /*************************************************************************/
     case (SCodeEnv.ALIAS(path = _), _) then inNewItem;
     case (_, SCodeEnv.ALIAS(path = _)) then inNewItem;
+
+    case (SCodeEnv.REDECLARED_ITEM(item = item), _)
+      then propagateItemPrefixes(item, inNewItem);
+
+    case (_, SCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env1))
+      equation
+        item = propagateItemPrefixes(inOriginalItem, item);
+      then
+      SCodeEnv.REDECLARED_ITEM(item, env1);
 
     else
       equation
@@ -1164,32 +1004,5 @@ algorithm
     else inNewDirection;
   end match;
 end propagateDirection;
-
-protected function processRedeclaration
-  input SCodeEnv.Redeclaration inRedeclare;
-  output SCodeEnv.Redeclaration outRedeclare;
-algorithm
-  outRedeclare := match(inRedeclare)
-    local
-      Env class_env;
-      Item item;
-      SCode.Element e;
-
-    case SCodeEnv.RAW_MODIFIER(modifier = e as SCode.CLASS(name = _))
-      equation
-        class_env = SCodeEnv.makeClassEnvironment(e, true);
-        item = SCodeEnv.newClassItem(e, class_env, SCodeEnv.USERDEFINED());
-      then
-        SCodeEnv.PROCESSED_MODIFIER(item);
-
-    case SCodeEnv.RAW_MODIFIER(modifier = e as SCode.COMPONENT(name = _))
-      equation
-        item = SCodeEnv.newVarItem(e, false);
-      then
-        SCodeEnv.PROCESSED_MODIFIER(item);
-
-    else inRedeclare;
-  end match;
-end processRedeclaration;
 
 end SCodeFlattenRedeclare;

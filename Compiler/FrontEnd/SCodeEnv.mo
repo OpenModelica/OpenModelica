@@ -76,12 +76,8 @@ public uniontype Redeclaration
   element redeclare). The RAW_MODIFIER stores a 'raw' modifier, i.e. the raw
   element stored in the SCode representation. These are processed when they are
   used, i.e. when replacements are done, and converted into PROCESSED_MODIFIERs
-  which are environment items ready to be replaced in the environment.
-  
-  This processing happens in two places. Element redeclares are processed
-  immediately when they are converted to redeclare modifiers and inserted into
-  the environment in addElementRedeclarationsToEnv. Element modifiers are
-  processed just before they are replaced, in replaceRedeclaredElementInEnv."
+  which are environment items ready to be replaced in the environment."
+
   record RAW_MODIFIER
     SCode.Element modifier;
   end RAW_MODIFIER;
@@ -149,6 +145,11 @@ public uniontype Item
     Option<Absyn.Path> path;
     Absyn.Info info;
   end ALIAS;
+
+  record REDECLARED_ITEM
+    Item item;
+    Env declaredEnv;
+  end REDECLARED_ITEM;
 end Item;
 
 public type Env = list<Frame>;
@@ -554,6 +555,7 @@ algorithm
   isUsed := match(inItem)
     local
       Util.StatefulBoolean is_used;
+      Item item;
 
     case CLASS(env = {FRAME(isUsed = SOME(is_used))})
       then Util.getStatefulBoolean(is_used);
@@ -562,6 +564,8 @@ algorithm
       then Util.getStatefulBoolean(is_used);
 
     case ALIAS(name = _) then true;
+
+    case REDECLARED_ITEM(item = item) then isItemUsed(item);
 
     else false;
   end match;
@@ -584,6 +588,8 @@ algorithm
       AvlTree cv;
       ExtendsTable exts;
       ImportTable imps;
+      Item item;
+      Env env;
 
     case (VAR(isUsed = is_used), VAR(var = elem))
       then VAR(elem, is_used);
@@ -592,6 +598,12 @@ algorithm
         CLASS(cls = elem, classType = cls_ty, env = 
           {FRAME(name, ft, cv, exts, imps, _)}))
       then CLASS(elem, {FRAME(name, ft, cv, exts, imps, is_used)}, cls_ty);
+
+    case (_, REDECLARED_ITEM(item, env))
+      equation
+        item = linkItemUsage(inSrcItem, item);
+      then
+        REDECLARED_ITEM(item, env);
 
     else inDestItem;
   end match;
@@ -602,7 +614,11 @@ public function isClassItem
   output Boolean outIsClass;
 algorithm
   outIsClass := match(inItem)
+    local
+      Item item;
+
     case CLASS(cls = _) then true;
+    case REDECLARED_ITEM(item = item) then isClassItem(item);
     else false;
   end match;
 end isClassItem;
@@ -612,7 +628,11 @@ public function isVarItem
   output Boolean outIsVar;
 algorithm
   outIsVar := match(inItem)
+    local
+      Item item;
+
     case VAR(var = _) then true;
+    case REDECLARED_ITEM(item = item) then isVarItem(item);
     else false;
   end match;
 end isVarItem;
@@ -622,7 +642,11 @@ public function isClassExtendsItem
   output Boolean outIsClassExtends;
 algorithm
   outIsClassExtends := match(inItem)
+    local
+      Item item;
+
     case CLASS(classType = CLASS_EXTENDS()) then true;
+    case REDECLARED_ITEM(item = item) then isClassExtendsItem(item);
     else false;
   end match;
 end isClassExtendsItem;
@@ -964,7 +988,6 @@ algorithm
       equation
         SCodeCheck.checkExtendsReplaceability(item, obc, inEnv, info);
         bc = Absyn.makeFullyQualified(bc);
-        rl = List.map2(rl, SCodeFlattenRedeclare.qualifyRedeclare, inEnv, InstTypes.emptyPrefix);
         List.map2_0(rl, SCodeCheck.checkRedeclareModifier, bc, inEnv);
       then
         EXTENDS(bc, rl, info);
@@ -1500,10 +1523,12 @@ algorithm
   outInfo := match(inItem)
     local
       Absyn.Info info;
+      Item item;
 
     case VAR(var = SCode.COMPONENT(info = info)) then info;
     case CLASS(cls = SCode.CLASS(info = info)) then info;
     case ALIAS(info = info) then info;
+    case REDECLARED_ITEM(item = item) then getItemInfo(item);
   end match;
 end getItemInfo;
 
@@ -1514,13 +1539,28 @@ public function itemStr
 algorithm
   outName := match(inItem)
     local 
-      String name;
+      String name, alias_str;
       SCode.Element el;
+      Absyn.Path path;
+      Item item;
 
     case VAR(var = el) 
       then SCodeDump.printElementStr(el);
     case CLASS(cls = el) 
       then SCodeDump.printElementStr(el);
+    case ALIAS(name = name, path = SOME(path))
+      equation
+        alias_str = Absyn.pathString(path);
+      then
+        "alias " +& name +& " -> " +& alias_str;
+    case ALIAS(name = name, path = NONE())
+      then "alias " +& name +& " ->";
+    case REDECLARED_ITEM(item = item)
+      equation
+        name = itemStr(item);
+      then
+        "redeclared " +& name;
+
   end match;
 end itemStr;
 
@@ -1530,11 +1570,14 @@ public function getItemName
   output String outName;
 algorithm
   outName := match(inItem)
-    local String name;
+    local
+      String name;
+      Item item;
 
     case VAR(var = SCode.COMPONENT(name = name)) then name;
     case CLASS(cls = SCode.CLASS(name = name)) then name;
     case ALIAS(name = name) then name;
+    case REDECLARED_ITEM(item = item) then getItemName(item);
   end match;
 end getItemName;
 
@@ -1546,8 +1589,10 @@ algorithm
   outEnv := match(inItem)
     local
       Env env;
+      Item item;
 
-    case (CLASS(env = env)) then env;
+    case CLASS(env = env) then env;
+    case REDECLARED_ITEM(item = item) then getItemEnv(item);
   end match;
 end getItemEnv;
 
@@ -1560,9 +1605,11 @@ algorithm
   outEnv := match(inItem, inEnv)
     local
       Frame cls_env;
+      Item item;
 
     case (CLASS(env = {cls_env}), _) then enterFrame(cls_env, inEnv);
-    else then inEnv;
+    case (REDECLARED_ITEM(item = item), _) then mergeItemEnv(item, inEnv);
+    else inEnv;
   end match;
 end mergeItemEnv;
 
@@ -1573,11 +1620,29 @@ algorithm
   outPrefixes := match(inItem)
     local
       SCode.Prefixes pf;
+      Item item;
 
     case CLASS(cls = SCode.CLASS(prefixes = pf)) then pf;
     case VAR(var = SCode.COMPONENT(prefixes = pf)) then pf;
+    case REDECLARED_ITEM(item = item) then getItemPrefixes(item);
   end match;
 end getItemPrefixes;
+
+public function resolveRedeclaredItem
+  input Item inItem;
+  input Env inEnv;
+  output Item outItem;
+  output Env outEnv;
+algorithm
+  (outItem, outEnv) := match(inItem, inEnv)
+    local
+      Item item;
+      Env env;
+
+    case (REDECLARED_ITEM(item = item, declaredEnv = env), _) then (item, env);
+    else (inItem, inEnv);
+  end match;
+end resolveRedeclaredItem;
 
 public function getEnvExtendsTable
   input Env inEnv;
@@ -1677,10 +1742,13 @@ algorithm
   outElement := match(inRedeclare)
     local
       SCode.Element e;
+      Item item;
 
     case RAW_MODIFIER(modifier = e) then e;
     case PROCESSED_MODIFIER(modifier = CLASS(cls = e)) then e;
     case PROCESSED_MODIFIER(modifier = VAR(var = e)) then e;
+    case PROCESSED_MODIFIER(modifier = REDECLARED_ITEM(item = item))
+      then getRedeclarationElement(PROCESSED_MODIFIER(item));
   end match;
 end getRedeclarationElement;
 

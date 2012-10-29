@@ -602,7 +602,7 @@ algorithm
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
   env := SCodeEnv.setImportTableHidden(env, false);
   (outItem, outPath, outBaseClass, outEnv) := 
-    lookupInBaseClasses2(inName, bcl, env, inReplaceRedeclares, inVisitedScopes);
+    lookupInBaseClasses2(inName, bcl, env, inEnv, inReplaceRedeclares, inVisitedScopes);
 end lookupInBaseClasses;
 
 public function lookupInBaseClasses2
@@ -611,6 +611,7 @@ public function lookupInBaseClasses2
   input Absyn.Ident inName;
   input list<Extends> inBaseClasses;
   input Env inEnv;
+  input Env inEnvWithExtends;
   input RedeclareReplaceStrategy inReplaceRedeclares;
   input list<String> inVisitedScopes;
   output Option<Item> outItem;
@@ -619,7 +620,8 @@ public function lookupInBaseClasses2
   output Option<Env> outEnv;
 algorithm
   (outItem, outPath, outBaseClass, outEnv) := 
-  matchcontinue(inName, inBaseClasses, inEnv, inReplaceRedeclares, inVisitedScopes)
+  matchcontinue(inName, inBaseClasses, inEnv, inEnvWithExtends,
+      inReplaceRedeclares, inVisitedScopes)
     local
       Absyn.Path bc, path;
       list<Extends> rest_bc;
@@ -633,7 +635,7 @@ algorithm
 
     // Look in the first base class.
     case (_, SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, 
-        info = info) :: _, _, _, _)
+        info = info) :: _, _, _, _, _)
       equation
         // Find the base class.
         (item, path, env) = lookupBaseClassName(bc, inEnv, info);
@@ -643,17 +645,17 @@ algorithm
         item = SCodeEnv.setImportsInItemHidden(item, true);
         // Look in the base class.
         (opt_item, opt_env) = SCodeFlattenRedeclare.replaceRedeclares(redecls, 
-          item, env, inEnv, inReplaceRedeclares); 
+          item, env, inEnvWithExtends, inReplaceRedeclares); 
         (opt_item, opt_path, opt_env) = 
           lookupInBaseClasses3(Absyn.IDENT(inName), opt_item, opt_env);
       then
         (opt_item, opt_path, bc, opt_env);
 
     // No match, check the rest of the base classes.
-    case (_, _ :: rest_bc, _, _, _)
+    case (_, _ :: rest_bc, _, _, _, _)
       equation
         (opt_item, opt_path, bc, opt_env) = 
-        lookupInBaseClasses2(inName, rest_bc, inEnv, inReplaceRedeclares, inVisitedScopes);
+        lookupInBaseClasses2(inName, rest_bc, inEnv, inEnvWithExtends, inReplaceRedeclares, inVisitedScopes);
       then
         (opt_item, opt_path, bc, opt_env);
 
@@ -955,6 +957,12 @@ algorithm
       then
         (item, path, env);
 
+    case (_, SCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env), _)
+      equation
+        (item, path, env) = lookupNameInItem(inName, item, env);
+      then
+        (item, path, env);
+
   end match;
 end lookupNameInItem;
 
@@ -1001,21 +1009,24 @@ algorithm
       then
         (item, cref);
 
+    case (_, SCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env), _)
+      equation
+        (item, cref) = lookupCrefInItem(inCref, item, env);
+      then
+        (item, cref);
+
   end match;
 end lookupCrefInItem;
 
 public function lookupBaseClass
   "Looks up from which base class a certain class is inherited from by searching
-  the extends in the local scope."
+   the extends in the local scope."
   input SCode.Ident inClass;
   input Env inEnv;
-  input Absyn.Info inInfo;
   output Absyn.Path outBaseClass;
-  output Item outItem;
-  output Env outEnv;
 algorithm
-  (SOME(outItem), _, outBaseClass, SOME(outEnv)) := lookupInBaseClasses(inClass,
-    inEnv, INSERT_REDECLARES(), {});
+  (_, _, outBaseClass, _) :=
+    lookupInBaseClasses(inClass, inEnv, IGNORE_REDECLARES(), {});
 end lookupBaseClass;
 
 public function lookupInheritedName
@@ -1063,7 +1074,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);  
-        Debug.traceln("- SCodeLookup.lookupRedeclaredClass2 failed on " +&
+        Debug.traceln("- SCodeLookup.lookupRedeclaredClassByItem failed on " +&
             SCodeEnv.getItemName(inItem) +& " in " +&
             SCodeEnv.getEnvName(inEnv));
       then
@@ -1669,9 +1680,13 @@ protected function itemOrigin
   output Origin outOrigin;
 algorithm
   outOrigin := match(inItem)
+    local
+      Item item;
+
     case SCodeEnv.VAR(var = _) then INSTANCE_ORIGIN();
     case SCodeEnv.CLASS(classType = SCodeEnv.BUILTIN()) then BUILTIN_ORIGIN();
     case SCodeEnv.CLASS(cls = _) then CLASS_ORIGIN();
+    case SCodeEnv.REDECLARED_ITEM(item = item) then itemOrigin(item);
   end match;
 end itemOrigin;
 

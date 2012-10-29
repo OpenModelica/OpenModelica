@@ -519,7 +519,7 @@ protected function addAliases
    a lot of things such as inner/outer handling a lot more complicated. Another
    solution would be to simply add the top-level components twice with the two
    different names they are referred by, but that will cause unnecessary
-   instantiation and possible introduce subtle bugs in the typing. Instead
+   instantiation and possibly introduce subtle bugs in the typing. Instead
    we add aliases to the symboltable, so that whenever a top-level component is
    referred to by its fully qualified name we find an alias that points to its
    non-qualified name, and look up that component instead.

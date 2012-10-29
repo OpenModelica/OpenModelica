@@ -277,7 +277,6 @@ algorithm
       equation
         // Enter the class scope and look up all class elements.
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
-        el = List.map1(el, lookupElement, cls_and_vars);
 
         // Apply modifications to the elements and instantiate them.
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
@@ -336,6 +335,14 @@ algorithm
         ty = InstUtil.makeEnumType(enums, path);
       then
         (InstTypes.BASIC_TYPE(inTypePath), ty, InstTypes.NO_PREFIXES(), functions);
+
+    case (_, SCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env), _, _, _,
+        _, _, _)
+      equation
+        (cls, ty, prefs, functions) = instClassItem(inTypePath, item, inMod,
+            inPrefixes, env, inPrefix, inInstPolicy, inFunctions);
+      then
+        (cls, ty, prefs, functions);
 
     else
       equation
@@ -526,38 +533,6 @@ algorithm
   end match;
 end instBasicTypeAttributeType;
 
-protected function lookupElement
-  "This functions might seem a little odd, why look up elements in the
-   environment when we already have them? This is because they might have been
-   redeclared, and redeclares are only applied to the environment and not the
-   SCode itself. So we need to look them up in the environment to make sure we
-   have the right elements."
-  input SCode.Element inElement;
-  input SCodeEnv.AvlTree inEnv;
-  output SCode.Element outElement;
-algorithm
-  outElement := match(inElement, inEnv)
-    local
-      String name;
-      SCode.Element el;
-
-    case (SCode.COMPONENT(name = name), _)
-      equation
-        SCodeEnv.VAR(var = el) = SCodeEnv.avlTreeGet(inEnv, name);
-      then
-        el;
-
-    // Only components need to be looked up. Extends are not allowed to be
-    // redeclared, while classes are not instantiated by instElement.
-
-    /*************************************************************************/
-    // TODO: Actually, the comment above is not quite correct. Constants in
-    // packages are instantiated, so we should look up packages here too.
-    /*************************************************************************/
-    else inElement;
-  end match;
-end lookupElement;
-        
 protected function instElementList
   "Instantiates a list of elements."
   input list<tuple<SCode.Element, Modifier>> inElements;
@@ -600,11 +575,13 @@ algorithm
       list<Element> accum_el;
       list<SCodeEnv.Extends> exts;
       FunctionHashTable functions;
+      Env env;
 
     case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, functions)
       equation
-        (accum_el, exts, cse, functions) = instElementList_dispatch(elem, inPrefixes, exts,
-          inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
+        (elem, env) = resolveRedeclaredElement(elem, inEnv);
+        (accum_el, exts, cse, functions) = instElement_dispatch(elem, inPrefixes, exts,
+          env, inPrefix, inInstPolicy, accum_el, cse, functions);
         (accum_el, cse, functions) = instElementList2(rest_el, inPrefixes, exts,
           inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
       then
@@ -626,7 +603,63 @@ algorithm
   end match;
 end instElementList2;
 
-protected function instElementList_dispatch
+protected function resolveRedeclaredElement
+  "This function makes sure that an element is up-to-date in case it has been
+   redeclared. This is achieved by looking the element up in the environment. In
+   the case that the element has been redeclared, the environment where it should
+   be instantiated is returned, otherwise the old environment."
+  input tuple<SCode.Element, Modifier> inElement;
+  input Env inEnv;
+  output tuple<SCode.Element, Modifier> outElement;
+  output Env outEnv;
+algorithm
+  (outElement, outEnv) := match(inElement, inEnv)
+    local
+      Modifier mod;
+      String name;
+      Item item;
+      SCode.Element el;
+      Env env;
+      
+    // Only components which are actually replaceable needs to be looked up,
+    // since non-replaceable components can't have been replaced.
+    case ((SCode.COMPONENT(name = name, prefixes =
+        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _)
+      equation
+        (item, _) = SCodeLookup.lookupInClass(name, inEnv);
+        (SCodeEnv.VAR(var = el), env) = SCodeEnv.resolveRedeclaredItem(item, inEnv);
+      then
+        ((el, mod), env);
+
+    // Other elements doesn't need to be looked up. Extends may not be
+    // replaceable, and classes are looked up in the environment anyway. The
+    // exception is packages with constants, but those are handled in
+    // instPackageConstants.
+    else (inElement, inEnv);
+
+  end match;
+end resolveRedeclaredElement;
+
+protected function resolveRedeclaredComponent
+  input Item inItem;
+  input Env inEnv;
+  output SCode.Element outComponent;
+  output Env outEnv;
+algorithm
+  (outComponent, outEnv) := match(inItem, inEnv)
+    local
+      SCode.Element comp;
+      Env env;
+
+    case (SCodeEnv.VAR(var = comp), _) then (comp, inEnv);
+
+    case (SCodeEnv.REDECLARED_ITEM(item = SCodeEnv.VAR(var = comp),
+        declaredEnv = env), _) then (comp, env);
+
+  end match;
+end resolveRedeclaredComponent;
+        
+protected function instElement_dispatch
   "Helper function to instElementList2. Dispatches the given element to the
    correct function for instantiation."
   input tuple<SCode.Element, Modifier> inElement;
@@ -718,7 +751,7 @@ algorithm
     case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
-          {"SCodeInst.instElementList_dispatch ran out of extends!."});
+          {"SCodeInst.instElement_dispatch ran out of extends!."});
       then
         fail();
 
@@ -726,7 +759,7 @@ algorithm
     else (inAccumEl, inExtends, inContainsSpecialExtends, inFunctions);
 
   end match;
-end instElementList_dispatch;
+end instElement_dispatch;
 
 protected function instElement
   input SCode.Element inElement;
@@ -784,6 +817,7 @@ algorithm
       equation
         // Look up the class of the component.
         (item, _, env) = SCodeLookup.lookupClassName(tpath, inEnv, info);
+        (item, env) = SCodeEnv.resolveRedeclaredItem(item, env);
         SCodeCheck.checkPartialInstance(item, info);
 
         // Instantiate array dimensions and add them to the prefix.
@@ -806,6 +840,7 @@ algorithm
 
         // Apply redeclarations to the class definition and instantiate it.
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
+        
         (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
         (cls, ty, cls_prefs, functions) = instClassItem(tpath, item, mod, prefs, env, prefix, ip, functions);
@@ -962,6 +997,7 @@ algorithm
     case (SCode.CLASS(name = name), _, _, _, functions)
       equation
         (item, env) = SCodeLookup.lookupInClass(name, inEnv);
+        (item, env) = SCodeEnv.resolveRedeclaredItem(item, env);
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
         (cls, _, _, functions) = instClassItem(Absyn.IDENT(name), item, inMod, InstTypes.NO_PREFIXES(), env,
           prefix, INST_ONLY_CONST(), functions);

@@ -44,8 +44,10 @@ public import SCode;
 public import SCodeEnv;
 
 protected import Config;
+protected import Debug;
 protected import Dump;
 protected import Error;
+protected import Flags;
 protected import InstDump;
 protected import List;
 protected import SCodeDump;
@@ -645,6 +647,13 @@ algorithm
         pre_str = InstDump.prefixStr(inPrefix);
         Error.addSourceMessage(Error.INVALID_CLASS_RESTRICTION,
           {res_str, pre_str}, inInfo);
+      then
+        fail();
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- SCodeCheck.checkInstanceRestriction failed on unknown item.");
       then
         fail();
 
