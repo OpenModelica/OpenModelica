@@ -9327,14 +9327,14 @@ algorithm
     case (_,_,_)
       equation
         true = intEq(nEqns,nVars);
-        pastOptModules = getPastOptModules(SOME({"constantLinearSystem","removeSimpleEquations","tearingSystem"}));
+        pastOptModules = getPastOptModules(SOME({"constantLinearSystem",/* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem"}));
         matchingAlgorithm = getMatchingAlgorithm(NONE());
-        daeHandler = getIndexReductionMethod(NONE());      
+        daeHandler = getIndexReductionMethod(NONE());
         // solve system
         isyst = transformBackendDAE(inDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
         // simplify system
         (isyst,Util.SUCCESS()) = pastoptimiseDAE(isyst,pastOptModules,matchingAlgorithm,daeHandler);
-        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Solved Initial System");
+        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Solved Initial System:\n");
         Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, isyst);
       then
         isyst;

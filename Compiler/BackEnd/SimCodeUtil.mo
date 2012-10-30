@@ -1840,7 +1840,7 @@ algorithm
       
       list<SimCode.JacobianMatrix> LinearMatrices;
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
-      Boolean ifcpp,hasDivStmts;
+      Boolean ifcpp,hasDivStmts,initialSystemSolved;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.EquationArray removedEqs;
@@ -1879,7 +1879,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // initialization stuff
-        (residuals, initialEquations, numberOfInitialEquations, uniqueEqIndex,tempvars) = createInitialResiduals(dlow2,uniqueEqIndex,{},helpVarInfo);
+        (residuals, initialEquations, numberOfInitialEquations, uniqueEqIndex,tempvars,initialSystemSolved) = createInitialResiduals(dlow2,uniqueEqIndex,{},helpVarInfo);
         (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
  
         // Add model info
@@ -1896,7 +1896,7 @@ algorithm
         // create parameter equations
         ((uniqueEqIndex,startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow2,createStartValueEquations,(uniqueEqIndex,{}));
         ((uniqueEqIndex,parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,(uniqueEqIndex,{}));
-        (uniqueEqIndex,parameterEquations) = createParameterEquations(shared,uniqueEqIndex,parameterEquations);        
+        (uniqueEqIndex,parameterEquations) = createParameterEquations(shared,uniqueEqIndex,parameterEquations,initialSystemSolved);        
         ((uniqueEqIndex,removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(uniqueEqIndex,{}));
         
         ((uniqueEqIndex,algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,(uniqueEqIndex,{}));
@@ -6293,9 +6293,10 @@ protected function createInitialResiduals "function: createInitialResiduals
   output list<SimCode.SimEqSystem> outInitialEqns;
   output Integer outNumberOfInitialEquations;
   output Integer ouniqueEqIndex;
-  output list<SimCode.SimVar> otempvars;  
+  output list<SimCode.SimVar> otempvars;
+  output Boolean initialSystemSolved;
 algorithm
-  (outResiduals, outInitialEqns, outNumberOfInitialEquations, ouniqueEqIndex, otempvars) := matchcontinue(inDAE,iuniqueEqIndex,itempvars,helpVarInfo)
+  (outResiduals, outInitialEqns, outNumberOfInitialEquations, ouniqueEqIndex, otempvars, initialSystemSolved) := matchcontinue(inDAE,iuniqueEqIndex,itempvars,helpVarInfo)
     local
       BackendDAE.EqSystems eqs;
       BackendDAE.EquationArray initialEqs,removedEqs;
@@ -6326,15 +6327,16 @@ algorithm
         ((uniqueEqIndex,aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseAliasVarsToSimEqSystem,(uniqueEqIndex,{}));
         allEquations = listAppend(allEquations,aliasEquations);
       then
-        ({},allEquations,0,uniqueEqIndex,tempvars);
+        ({},allEquations,0,uniqueEqIndex,tempvars,true);
     case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs)),_,_,_) 
       equation
         // initial_equation
-        //numberOfInitialEquations = BackendDAEUtil.equationSize(initialEqs);
+        numberOfInitialEquations = BackendDAEUtil.equationSize(initialEqs);
         initialEqs_lst = BackendDAEUtil.equationList(initialEqs);
         // remove algorithms, I have no clue what the reason is but is was done before also
-        initialEqs_lst = List.select(initialEqs_lst,BackendEquation.isNotAlgorithm);
-        numberOfInitialEquations = BackendEquation.equationLstSize(initialEqs_lst);
+        // do not remove the inital algorithms if the system is solved symbolically
+        initialEqs_lst = Debug.bcallret2(not Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM),List.select,initialEqs_lst,BackendEquation.isNotAlgorithm,initialEqs_lst);
+        numberOfInitialEquations = Debug.bcallret1(not Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM),BackendEquation.equationLstSize,initialEqs_lst,numberOfInitialEquations);
         (residual_equations,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars); 
         
         // [orderedVars] with start-values and fixed=true
@@ -6345,7 +6347,7 @@ algorithm
         (residual_equations1, uniqueEqIndex) = List.mapFold(initialEqs_lst, dlowEqToSimEqSystem, uniqueEqIndex);
         residual_equations = listAppend(residual_equations,residual_equations1);
     then
-      (residual_equations,{},numberOfInitialEquations,uniqueEqIndex,tempvars);
+      (residual_equations,{},numberOfInitialEquations,uniqueEqIndex,tempvars,Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM));
         
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: createInitialResiduals failed"});
@@ -6549,10 +6551,11 @@ protected function createParameterEquations
   input BackendDAE.Shared inShared;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimEqSystem> acc;
+  input Boolean initialSystemSolved;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimEqSystem> parameterEquations;
 algorithm
-  (ouniqueEqIndex,parameterEquations) := matchcontinue (inShared,iuniqueEqIndex,acc)
+  (ouniqueEqIndex,parameterEquations) := matchcontinue (inShared,iuniqueEqIndex,acc,initialSystemSolved)
     local
       list<BackendDAE.Equation> parameterEquationsTmp;
       BackendDAE.Variables knvars,extobj,v,kn;
@@ -6584,7 +6587,7 @@ algorithm
       
     case (BackendDAE.SHARED(knownVars=knvars,externalObjects=extobj,aliasVars=aliasVars,
                             initialEqs=ie,removedEqs=remeqns,constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,
-                            extObjClasses=extObjClasses,functionTree=funcs,eventInfo=einfo,backendDAEType=btp,symjacs=symjacs),_,_)
+                            extObjClasses=extObjClasses,functionTree=funcs,eventInfo=einfo,backendDAEType=btp,symjacs=symjacs),_,_,_)
       equation
         // kvars params
         ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
@@ -6623,7 +6626,8 @@ algorithm
         varasserts = BackendVariable.traverseBackendDAEVars(knvars,createVarAsserts,{});
         (simvarasserts,uniqueEqIndex) = List.mapFold(varasserts,dlowAlgToSimEqSystem,uniqueEqIndex);
         
-        parameterEquations = listAppend(parameterEquations, inalgs);
+        // do not append the inital algorithms to the parameter equation if the system is solved symbolically
+        parameterEquations = Debug.bcallret2(not initialSystemSolved,listAppend,parameterEquations, inalgs, parameterEquations);
         parameterEquations = listAppend(parameterEquations, simvarasserts);
         parameterEquations = listAppend(parameterEquations, acc);
       then
