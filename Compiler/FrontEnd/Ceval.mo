@@ -198,6 +198,13 @@ algorithm
       then
         (cache,Values.ARRAY(es_1,dims),stOpt);
 
+    case (cache,env,DAE.ARRAY(array = es, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg)
+      equation
+        failure(_ = List.map(arrayDims, Expression.dimensionSize));
+        (cache,es_1,stOpt) = cevalList(cache,env, es, impl, stOpt, msg);
+      then
+        (cache,ValuesUtil.makeArray(es_1),stOpt);
+
     case (cache,env,DAE.MATRIX(matrix = expll, ty = DAE.T_ARRAY(dims = arrayDims)),impl,stOpt,msg)
       equation
         dims = List.map(arrayDims, Expression.dimensionSize);
@@ -713,7 +720,7 @@ algorithm
     // cast integer array to real array
     case (cache,env,DAE.CAST(ty = DAE.T_ARRAY(ty = DAE.T_REAL(varLst = _)),exp = e),impl,stOpt,msg)
       equation
-        (cache,Values.ARRAY(ivals,dims),stOpt) = ceval(cache,env, e, impl, stOpt, msg);
+        (cache,v as Values.ARRAY(ivals,dims),stOpt) = ceval(cache,env, e, impl, stOpt, msg);
         rvals = ValuesUtil.typeConvert(DAE.T_INTEGER_DEFAULT, DAE.T_REAL_DEFAULT, ivals);
       then
         (cache,Values.ARRAY(rvals,dims),stOpt);
