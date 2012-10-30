@@ -1643,3 +1643,23 @@ void identity_alloc_real_array(int n,real_array_t* dest)
     identity_real_array(n,dest);
 }
 
+/* Creates a real array from a range with a start, stop and step value.
+ * Ex: 1.0:2.0:6.0 => {1.0,3.0,5.0} */
+void create_real_array_from_range(real_array_t *dest, modelica_real start, modelica_real step, modelica_real stop)
+{
+    size_t elements;
+    size_t i;
+    modelica_real (*comp_func)(modelica_real, modelica_real);
+
+    assert(step != 0);
+
+    comp_func = (step > 0) ? &real_le : &real_ge;
+    elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
+    fprintf(stderr, "start %g step %g stop %g elements %d\n", start, step, stop, elements);
+
+    simple_alloc_1d_real_array(dest, elements);
+
+    for(i = 0; comp_func(start, stop); start += step, ++i) {
+        real_set(dest, i, start);
+    }
+}

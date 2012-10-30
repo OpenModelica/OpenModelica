@@ -78,6 +78,8 @@ extern void copy_real_array_data_mem(const real_array_t * source, modelica_real*
 /* Copy real array*/
 extern void copy_real_array(const real_array_t * source, real_array_t* dest);
 
+extern void create_real_array_from_range(real_array_t *dest, modelica_real start, modelica_real step, modelica_real stop);
+
 void fill_real_array_from_range(real_array_t *dest, modelica_real start, modelica_real step, 
                                 modelica_real stop/*, size_t dim*/);
 
