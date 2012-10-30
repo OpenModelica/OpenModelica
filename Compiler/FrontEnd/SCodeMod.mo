@@ -920,4 +920,65 @@ algorithm
   end matchcontinue;
 end removeCrefPrefix;
 
+public function removeRedeclaresFromMod
+"@author: adrpo
+ removes redeclares from the mod."
+  input SCode.Mod inMod;
+  output SCode.Mod outMod;
+algorithm
+  outMod := match(inMod)
+    local
+      Option<String> n;
+      list<SCode.SubMod> sl;
+      SCode.Final fp;
+      SCode.Each ep;
+      Absyn.Info i;
+      Option<tuple<Absyn.Exp, Boolean>> binding;
+      
+    case (SCode.MOD(fp, ep, sl, binding, i))
+      equation
+        sl = removeRedeclaresFromSubMod(sl); 
+      then
+        SCode.MOD(fp, ep, sl, binding, i);
+    
+    case (SCode.REDECL(element = _)) then SCode.NOMOD();
+    
+    else inMod;
+    
+  end match;
+end removeRedeclaresFromMod;
+
+protected function removeRedeclaresFromSubMod
+"@author: adrpo
+ removes the redeclares from a submod"
+  input list<SCode.SubMod> inSl;
+  output list<SCode.SubMod> outSl;
+algorithm
+  outSl := matchcontinue(inSl)
+    local
+      String n;
+      list<SCode.SubMod> sl,rest;
+      SCode.SubMod sm;
+      SCode.Mod m;
+      list<SCode.Subscript> ssl;
+    
+    case ({}) then {};
+    
+    case (SCode.NAMEMOD(n, m)::rest)
+      equation
+        m = removeRedeclaresFromMod(m);
+        sl = removeRedeclaresFromSubMod(rest);
+      then
+        SCode.NAMEMOD(n, m)::sl;
+        
+    case (SCode.IDXMOD(ssl, m)::rest)
+      equation
+        m = removeRedeclaresFromMod(m); 
+        sl = removeRedeclaresFromSubMod(rest);
+      then
+        SCode.IDXMOD(ssl, m)::sl;
+        
+  end matchcontinue;
+end removeRedeclaresFromSubMod;
+
 end SCodeMod;

@@ -1101,6 +1101,10 @@ algorithm
     // If either prefix is unset, return the other.
     case (_, (Absyn.BIDIR(), _), _, _) then inOuterDirection;
     case ((Absyn.BIDIR(), _), _, _, _) then inInnerDirection;
+    
+    // we need this for now, see i.e. Modelica.Blocks.Math.Add3
+    case ((Absyn.INPUT(), _), (Absyn.INPUT(), _),  _, _) then inInnerDirection;
+    case ((Absyn.OUTPUT(), _), (Absyn.OUTPUT(), _),  _, _) then inInnerDirection;
 
     // Otherwise we have an error, since it's not allowed to overwrite
     // input/output prefixes.

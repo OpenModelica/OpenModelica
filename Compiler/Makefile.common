@@ -94,12 +94,12 @@ SCodeLookup.mo \
 SCodeFlattenImports.mo \
 SCodeFlattenRedeclare.mo \
 SCodeInst.mo \
+SCodeInstShortcut.mo \
 SCodeSimplify.mo \
 SCodeStatic.mo \
 SCodeFlatten.mo \
 SCodeMod.mo \
 SCodeUtil.mo \
-SCodeTransform.mo \
 Static.mo \
 TypeCheck.mo \
 Types.mo \

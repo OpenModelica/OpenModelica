@@ -77,7 +77,6 @@ protected import Types;
 protected import Typing;
 protected import TypeCheck;
 protected import Util;
-protected import SCodeTransform;
 
 public type Binding = InstTypes.Binding;
 public type Class = InstTypes.Class;
@@ -144,9 +143,6 @@ algorithm
           InstTypes.NO_PREFIXES(), env, InstTypes.EMPTY_PREFIX(SOME(path)), INST_ALL(), functions);
         // Instantiate global constants (package constants).
         (const_el, functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
-
-        //sc = SCodeTransform.instClassToSCodeElement(cls, inClassPath, functions);
-        //print(SCodeDump.unparseElementStr(sc));
         
         //print(InstDump.modelStr(name, cls)); print("\n");
 
@@ -196,9 +192,6 @@ algorithm
 
         //print("\nEXPANDED FORM:\n\n");
         //print(DAEDump.dumpStr(dae, func_tree) +& "\n");
-        //*/
-        //dae = DAE.DAE({});
-        //func_tree = DAE.AVLTREENODE(NONE(), 0, NONE(), NONE());
       then
         (dae, func_tree);
 

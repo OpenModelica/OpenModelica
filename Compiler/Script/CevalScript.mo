@@ -99,6 +99,7 @@ protected import SCodeDump;
 protected import SCodeEnv;
 protected import SCodeFlatten;
 protected import SCodeInst;
+protected import SCodeInstShortcut;
 protected import SCodeSimplify;
 protected import SimCodeUtil;
 protected import System;
@@ -2804,9 +2805,9 @@ algorithm
     local
       Absyn.Restriction restriction;
       Absyn.Class absynClass;
-      String str,re;
+      String str,re,classNameStr;
       Option<SCode.Program> fp;
-      SCode.Program scodeP;
+      SCode.Program scodeP, scodePNew;
       list<Interactive.InstantiatedClass> ic,ic_1;
       Absyn.Program p,ptot;
       list<Interactive.Variable> iv;
@@ -2816,9 +2817,28 @@ algorithm
       SCodeEnv.Env senv;
       list<Absyn.Path> consts;
       DAE.FunctionTree funcs;
+      Absyn.Path newClassName;
+      
+    case (cache, _, _, Interactive.SYMBOLTABLE(p, aDep, fp, ic, iv, cf, lf), _, _)
+      equation
+        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
+        scodeP = SCodeUtil.translateAbsyn2SCode(p);
+        // remove extends Modelica.Icons.*
+        scodeP = SCodeSimplify.simplifyProgram(scodeP);
+        (_, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
+        scodePNew = SCodeInstShortcut.translate(className, senv);
+        scodeP = listAppend(scodeP, scodePNew);
+        // use just last ident as translate just generates that!
+        classNameStr = Absyn.pathLastIdent(className);
+        newClassName = Absyn.IDENT(classNameStr);
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,newClassName);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+      then 
+        (cache,env,dae,Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
       
     case (_, _, _, Interactive.SYMBOLTABLE(p, aDep, fp, ic, iv, cf, lf), _, _)
       equation
+        false = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
         true = Flags.isSet(Flags.SCODE_INST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
@@ -2837,6 +2857,7 @@ algorithm
 
     case (cache,env,_,Interactive.SYMBOLTABLE(p,aDep,fp,ic,iv,cf,lf),_,_)
       equation
+        false = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
         false = Flags.isSet(Flags.SCODE_INST);
         str = Absyn.pathString(className);
         (absynClass as Absyn.CLASS(restriction = restriction)) = Interactive.getPathedClassInProgram(className, p);
