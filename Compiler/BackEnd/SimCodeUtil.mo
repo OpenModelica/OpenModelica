@@ -6309,7 +6309,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.Variables knvars,aliasVars;
     // try to solve the inital system symbolical.
-    case(_,_,_,_) 
+/*    case(_,_,_,_) 
       equation
         // generate initalsystem
         (_,BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knownVars=knvars,aliasVars=aliasVars,removedEqs=removedEqs))) = BackendDAEUtil.solveInitialSystem(inDAE);
@@ -6326,7 +6326,7 @@ algorithm
         allEquations = listAppend(allEquations,aliasEquations);
       then
         ({},allEquations,0,uniqueEqIndex,tempvars);
-    case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs)),_,_,_) 
+*/    case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs)),_,_,_) 
       equation
         // initial_equation
         //numberOfInitialEquations = BackendDAEUtil.equationSize(initialEqs);

@@ -2935,7 +2935,7 @@ end notVarStateSelectAlways;
 protected function varStateSelectAlways
 "function: varStateSelectAlways
   author: Frenkel TUD 2012-06
-  fails if var is StateSelect.always"
+  return true if var is StateSelect.always else false"
   input BackendDAE.Var v;
   output Boolean b;
 algorithm
