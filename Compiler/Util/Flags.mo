@@ -370,9 +370,11 @@ constant DebugFlag NO_MIXED_TEARING = DEBUG_FLAG(102, "noMixedTearing",
   Util.gettext("Disables tearing of mixed system."));
 constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(103, "dumpinitialsystem",
   Util.gettext("Dumps the initial equation system."));
-constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(104, "scodeInstShortcut",
+constant DebugFlag SOLVE_INITIAL_SYSTEM = DEBUG_FLAG(104, "solveinitialsystem",
+  Util.gettext("solve the initial equation system symbolical."));
+constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(105, "scodeInstShortcut",
   Util.gettext("Enables experimental SCode instantiation shortcut phase."));
-constant DebugFlag SHOW_SCODE = DEBUG_FLAG(105, "showSCode",
+constant DebugFlag SHOW_SCODE = DEBUG_FLAG(106, "showSCode",
   Util.gettext("Shows the SCode result of +d=scodeInstShortcut."));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -483,6 +485,7 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_START_ORIGIN,
   NO_MIXED_TEARING,
   DUMP_INITIAL_SYSTEM,
+  SOLVE_INITIAL_SYSTEM,
   SCODE_INST_SHORTCUT,
   SHOW_SCODE
 };
