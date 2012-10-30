@@ -814,6 +814,7 @@ algorithm
       SCode.Visibility visibility;
       Option<SCode.Annotation> ann;
       InstInfo ii;
+      Boolean isBasic;
 
     case (SCode.EXTENDS(path, visibility, smod, ann, info),
         _, _, _, _, _, _)
@@ -838,14 +839,18 @@ algorithm
         smod = SCodeMod.removeRedeclaresFromMod(smod);
         
         name = Absyn.pathStringReplaceDot(path, "$");
-        name = "'" +& name +& "$ext_" +& SCodeEnv.getEnvName(inEnv) +& "'";
+        isBasic = isBasicType(name);
+        name = Util.if_(
+                isBasic, 
+                name, 
+                "'" +& name +& "$ext_" +& SCodeEnv.getEnvName(inEnv) +& "'");
         
         cls::classes = classes;
         cls = SCode.setClassName(name, cls);
         classes = cls::classes; 
         
         cls = SCode.EXTENDS(Absyn.IDENT(name), visibility, smod, ann, info);
-        classes = listAppend(classes, {cls});
+        classes = Util.if_(isBasic, {cls}, listAppend(classes, {cls}));
       then
         (classes, ii);
         
