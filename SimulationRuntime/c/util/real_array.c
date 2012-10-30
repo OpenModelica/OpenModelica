@@ -1655,7 +1655,7 @@ void create_real_array_from_range(real_array_t *dest, modelica_real start, model
 
     comp_func = (step > 0) ? &real_le : &real_ge;
     elements = comp_func(start, stop) ? (((stop - start) / step) + 1) : 0;
-    // fprintf(stderr, "start %g step %g stop %g elements %d\n", start, step, stop, elements);
+    /* fprintf(stderr, "start %g step %g stop %g elements %d\n", start, step, stop, elements); */
 
     simple_alloc_1d_real_array(dest, elements);
 

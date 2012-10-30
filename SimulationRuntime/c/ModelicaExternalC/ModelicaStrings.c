@@ -306,7 +306,7 @@ void ModelicaStrings_scanReal(const char* string, int startIndex, int unsignedNu
     /* Scan exponent part of mantissa. */
 
     if (string[token_start + total_length-1] == 'e' || string[token_start + total_length-1] == 'E') {
-        // total_length += 1;
+        /* total_length += 1; */
         int exp_len = 1;
 
         if (string[token_start + total_length] == '+' || string[token_start + total_length] == '-') {

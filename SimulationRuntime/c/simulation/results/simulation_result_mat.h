@@ -68,11 +68,11 @@ public:
 
 private:
   std::ofstream fp;
-  std::ofstream::pos_type data1HdrPos; // position of data_1 matrix's header in a file
+  std::ofstream::pos_type data1HdrPos; /* position of data_1 matrix's header in a file */
   std::ofstream::pos_type data2HdrPos; /* position of data_2 matrix's header in a file */
   unsigned long ntimepoints; /* count of how many time emits() was called */
-  double startTime; // the start time
-  double stopTime;  // the stop time
+  double startTime; /* the start time */
+  double stopTime;  /* the stop time */
 
   typedef std::map<int,int> INTMAP;
 

@@ -5,7 +5,7 @@
 #include <assert.h>
 #include "read_matlab4.h"
 
-// Make Visual Studio not complain about deprecated items
+/* Make Visual Studio not complain about deprecated items */
 #ifdef _MSC_VER
 #define strdup _strdup
 #endif
