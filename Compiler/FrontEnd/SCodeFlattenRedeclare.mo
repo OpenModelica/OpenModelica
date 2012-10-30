@@ -649,8 +649,8 @@ algorithm
       SCode.Ident name, scope_name;
       Item item;
       Absyn.Info info;
-      Absyn.Path path;
-      SCodeEnv.Redeclaration redecl;
+      list<Absyn.Path> bcl;
+      list<String> bcl_str;
 
     // Try to redeclare this element in the current scope.
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
@@ -666,10 +666,9 @@ algorithm
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
       equation
         name = SCodeEnv.getItemName(item);
-        info = SCodeEnv.getItemInfo(item);
-        path = SCodeLookup.lookupBaseClass(name, inEnv);
+        bcl = SCodeLookup.lookupBaseClasses(name, inEnv);
       then
-        pushRedeclareIntoExtends(item, path, inEnv);
+        pushRedeclareIntoExtends(name, item, bcl, inEnv);
         
     // The redeclared element could not be found, show an error.
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
@@ -687,8 +686,9 @@ end replaceRedeclaredElementInEnv;
 
 protected function pushRedeclareIntoExtends
   "Pushes a redeclare into the given extends in the environment."
+  input SCode.Ident inName;
   input Item inRedeclare;
-  input Absyn.Path inBaseClass;
+  input list<Absyn.Path> inBaseClasses;
   input Env inEnv;
   output Env outEnv;
 protected
@@ -699,49 +699,62 @@ protected
   String name;
 algorithm
   SCodeEnv.FRAME(extendsTable = SCodeEnv.EXTENDS_TABLE(exts, re, cei)) :: _ := inEnv;
-  name := SCodeEnv.getItemName(inRedeclare);
-  exts := pushRedeclareIntoExtends2(inRedeclare, name, inBaseClass, exts);
+  exts := pushRedeclareIntoExtends2(inName, inRedeclare, inBaseClasses, exts);
   et := SCodeEnv.EXTENDS_TABLE(exts, re, cei);
   outEnv := SCodeEnv.setEnvExtendsTable(et, inEnv);
 end pushRedeclareIntoExtends;
 
 protected function pushRedeclareIntoExtends2
-  "Given the name of a base class, find that extends in the given list of
-   extends, and add the given redeclare to it's list of redeclares."
-  input Item inRedeclare;
+  "This function takes a redeclare item and a list of base class paths that the
+   redeclare item should be added to. It goes through the given list of
+   extends and pushes the redeclare into each one that's in the list of the
+   base class paths. It assumes that the list of base class paths and extends
+   are sorted in the same order."
   input String inName;
-  input Absyn.Path inBaseClass;
+  input Item inRedeclare;
+  input list<Absyn.Path> inBaseClasses;
   input list<SCodeEnv.Extends> inExtends;
   output list<SCodeEnv.Extends> outExtends;
 algorithm
-  outExtends := matchcontinue(inRedeclare, inName, inBaseClass, inExtends)
+  outExtends := matchcontinue(inName, inRedeclare, inBaseClasses, inExtends)
     local
-      Absyn.Path bc;
+      Absyn.Path bc1, bc2;
+      list<Absyn.Path> rest_bc;
+      SCodeEnv.Extends ext;
+      list<SCodeEnv.Extends> rest_exts;
       list<SCodeEnv.Redeclaration> redecls;
       Absyn.Info info;
-      list<SCodeEnv.Extends> rest_exts;
-      SCodeEnv.Extends ext;
-      String bc_str, err_msg;
+      list<String> bc_strl;
+      String bcl_str, err_msg;
 
-    case (_, _, _, SCodeEnv.EXTENDS(bc, redecls, info) :: rest_exts)
+    // See if the first base class path matches the first extends. Push the
+    // redeclare into that extends if so.
+    case (_, _, bc1 :: rest_bc, SCodeEnv.EXTENDS(bc2, redecls, info) :: rest_exts)
       equation
-        true = Absyn.pathEqual(bc, inBaseClass);
+        true = Absyn.pathEqual(bc1, bc2);
         redecls = pushRedeclareIntoExtends3(inRedeclare, inName, redecls);
+        rest_exts = pushRedeclareIntoExtends2(inName, inRedeclare, rest_bc, rest_exts);
       then
-        SCodeEnv.EXTENDS(bc, redecls, info) :: rest_exts;
+        SCodeEnv.EXTENDS(bc2, redecls, info) :: rest_exts;
 
-    case (_, _, _, ext :: rest_exts)
+    // The extends didn't match, continue with the rest of them.
+    case (_, _, rest_bc, ext :: rest_exts)
       equation
-        rest_exts = pushRedeclareIntoExtends2(inRedeclare, inName, inBaseClass,
-          rest_exts);
+        rest_exts = pushRedeclareIntoExtends2(inName, inRedeclare, rest_bc, rest_exts);
       then
         ext :: rest_exts;
 
+    // No more base class paths to match means we're done.
+    case (_, _, {}, _) then inExtends;
+
+    // No more extends means that we couldn't find all the base classes. This
+    // shouldn't happen.
     case (_, _, _, {})
       equation
-        bc_str = Absyn.pathString(inBaseClass);
-        err_msg = "SCodeFlattenRedeclare.pushRedeclareIntoExtends2 couldn't find the base class " +& 
-           bc_str +& " for " +& inName +& "\n";
+        bc_strl = List.map(inBaseClasses, Absyn.pathString);
+        bcl_str = stringDelimitList(bc_strl, ", ");
+        err_msg = "SCodeFlattenRedeclare.pushRedeclareIntoExtends2 couldn't find the base classes {"
+          +& bcl_str +& "} for " +& inName;
         Error.addMessage(Error.INTERNAL_ERROR, {err_msg});
       then
         fail();

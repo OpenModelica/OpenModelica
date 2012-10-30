@@ -185,11 +185,12 @@ algorithm
         ((name, NONE(), mod));
 
     // Check which extends the element comes from.
+    /*************************************************************************/
     // TODO: The element might come from multiple extends!
+    /*************************************************************************/
     case ((name, mod), _, _)
       equation
-        (_, _, path, _) = SCodeLookup.lookupInBaseClasses(name, inEnv,
-          SCodeLookup.IGNORE_REDECLARES(), {});
+        path = SCodeLookup.lookupBaseClass(name, inEnv);
       then
         ((name, SOME(path), mod));
 
