@@ -8468,17 +8468,12 @@ algorithm
         (syst,shared,arg) = matchingAlgorithmfunc(syst,ishared, match_opts, sssHandler, arg);
         Debug.execStat("transformDAE -> matchingAlgorithm " +& mAmethodstr +& " index Reduction Method " +& str1,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,shared,SOME(arg));
-    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
+    case (_,_,_,(_,mAmethodstr),(_,str1,_,_))
       equation
         str = "Transformation Module " +& mAmethodstr +& " index Reduction Method " +& str1 +& " failed!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
-    else
-      equation
-        str = "Transformation Module failed!";
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();
   end matchcontinue;
 end reduceIndexDAEWork;
 
