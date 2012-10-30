@@ -8141,9 +8141,9 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
       >>
   case lit as MATRIX(ty=ty as T_ARRAY(__))
   case lit as ARRAY(ty=ty as T_ARRAY(__)) then
-    let ndim = listLength(ty.dims)
+    let ndim = listLength(getDimensionSizes(ty))
     let sty = expTypeShort(ty)
-    let dims = (ty.dims |> dim => dimension(dim) ;separator=", ")
+    let dims = (getDimensionSizes(ty) |> dim => dim ;separator=", ")
     let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
     <<
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
