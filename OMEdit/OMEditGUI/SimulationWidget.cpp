@@ -194,6 +194,7 @@ void SimulationWidget::setUpForm()
   }
   mpIndexReductionComboBox->setCurrentIndex(mpIndexReductionComboBox->findText(mpParentMainWindow->mpOMCProxy->getIndexReductionMethod()));
   // Logging
+  mpMeasureTimeCheckBox = new QCheckBox(tr("Measure simulation time (~5-25% overhead)"));
   mpLogStatsCheckBox = new QCheckBox(tr("Stats"));
   mpLogInitializationCheckBox = new QCheckBox(tr("Initialization"));
   mpLogResultInitializationCheckBox = new QCheckBox(tr("Initialization Result"));
@@ -234,6 +235,7 @@ void SimulationWidget::setUpForm()
   pSimulationFlagsTabLayout->addWidget(mpIndexReductionLabel, 6, 0);
   pSimulationFlagsTabLayout->addWidget(mpIndexReductionComboBox, 6, 1, 1, 2);
   pSimulationFlagsTabLayout->addWidget(mpLoggingGroup, 7, 0, 1, 3);
+  pSimulationFlagsTabLayout->addWidget(mpMeasureTimeCheckBox, 8, 0);
   mpSimulationFlagsTab->setLayout(pSimulationFlagsTabLayout);
   // add Output Tab to Simulation TabWidget
   mpSimulationTabWidget->addTab(mpSimulationFlagsTab, tr("Simulation Flags"));
@@ -356,6 +358,7 @@ void SimulationWidget::simulate()
   {
     QString simulationParameters;
     QStringList simulationFlags;
+    bool show_profile = false;
     // if user is performing a simple simulation then take start and stop times
     if (!mIsInteractive)
     {
@@ -382,6 +385,11 @@ void SimulationWidget::simulate()
       simulationParameters.append(", variableFilter=").append("\"").append(mpVariableFilterTextBox->text()).append("\"");
     if (!mpCflagsTextBox->text().isEmpty())
       simulationParameters.append(", cflags=").append("\"").append(mpCflagsTextBox->text()).append("\"");
+    if (mpMeasureTimeCheckBox->isChecked())
+    {
+      show_profile = true;
+      simulationParameters.append(", measureTime=true");
+    }
 
     ProjectTab *projectTab = mpParentMainWindow->mpProjectTabs->getCurrentTab();
     if (!projectTab)
@@ -466,6 +474,8 @@ void SimulationWidget::simulate()
     // hide the progress bar
     mpParentMainWindow->mpStatusBar->clearMessage();
     mpProgressDialog->hide();
+    if (show_profile)
+      QDesktopServices::openUrl(QUrl(QDir::tempPath() + "/OpenModelica/OMEdit/" + projectTab->mModelNameStructure + "_prof.html"));
     accept();
   }
 }

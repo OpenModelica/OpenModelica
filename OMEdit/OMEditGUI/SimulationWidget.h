@@ -105,6 +105,7 @@ private:
   QComboBox *mpMatchingAlgorithmComboBox;
   QLabel *mpIndexReductionLabel;
   QComboBox *mpIndexReductionComboBox;
+  QCheckBox *mpMeasureTimeCheckBox;
   QGroupBox *mpLoggingGroup;
   QCheckBox *mpLogStatsCheckBox;
   QCheckBox *mpLogInitializationCheckBox;
