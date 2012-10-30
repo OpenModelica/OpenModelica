@@ -1910,7 +1910,7 @@ algorithm
         allEquations = listAppend(allEquations,removedEquations);
         
         // update indexNonLinear in SES_NONLINEAR and count
-        (parameterEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(initialEquations, 0, 0);
+        (initialEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(initialEquations, 0, 0);
         (parameterEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(parameterEquations, numberofEqns, numberofNonLinearSys);
         (allEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys);
                 

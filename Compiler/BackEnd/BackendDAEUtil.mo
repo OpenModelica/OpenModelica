@@ -9286,6 +9286,7 @@ algorithm
         ((vars,fixvars,eqns)) = List.fold(systs,collectInitialVarsEqnsSystem,((vars,fixvars,eqns)));
         // generate initial system
         initsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        (initsyst,_,_) = getIncidenceMatrix(initsyst, BackendDAE.NORMAL());
         evars = emptyVars();
         eavars = emptyVars();
         emptyeqns = listEquation({});
@@ -9364,11 +9365,11 @@ algorithm
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),(ivars,fixvars,ieqns))
       equation
         // collect vars for initial system
-        ((vars,fixvars)) = BackendVariable.traverseBackendDAEVars(vars,collectInitialVars,(ivars,fixvars));
+        ((ivars,fixvars)) = BackendVariable.traverseBackendDAEVars(vars,collectInitialVars,(ivars,fixvars));
         // collect eqns for initial system
-        eqns = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, ieqns);
+        ieqns = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, ieqns);
       then
-        ((vars,fixvars,eqns));
+        ((ivars,fixvars,ieqns));
   end match;
 end collectInitialVarsEqnsSystem;
 
@@ -9430,7 +9431,21 @@ algorithm
 end collectInitialEqns;
 
 protected function replaceDerCref
-"function: changeDerVariablestoStatesFinder
+"function: replaceDerCref
+  author: Frenkel TUD 2011-05
+  helper for changeDerVariablestoStates"
+  input tuple<DAE.Exp,Integer> inExp;
+  output tuple<DAE.Exp,Integer> outExp;
+protected
+   DAE.Exp e;
+   Integer i;  
+algorithm
+  (e,i) := inExp;
+  outExp := Expression.traverseExp(e,replaceDerCrefExp,i);
+end replaceDerCref;
+
+protected function replaceDerCrefExp
+"function: replaceDerCrefExp
   author: Frenkel TUD 2011-05
   helper for changeDerVariablestoStates"
   input tuple<DAE.Exp,Integer> inExp;
@@ -9449,6 +9464,6 @@ algorithm
         ((DAE.CREF(dummyder,ty),i+1));
     else then inExp;
   end matchcontinue;
-end replaceDerCref;
+end replaceDerCrefExp;
 
 end BackendDAEUtil;
