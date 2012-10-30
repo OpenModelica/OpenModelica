@@ -1315,7 +1315,7 @@ algorithm
   end matchcontinue;
 end replaceExpOpt;
 
-protected function avoidDoubleHashLookup "
+public function avoidDoubleHashLookup "
 Author BZ 200X-XX modified 2008-06
 When adding replacement rules, we might not have the correct type availible at the moment.
 Then DAE.T_UNKNOWN_DEFAULT is used, so when replacing exp and finding DAE.T_UNKNOWN(_), we use the
