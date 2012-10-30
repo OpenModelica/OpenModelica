@@ -671,6 +671,7 @@ algorithm
       DAE.Exp e1,e2,cond,e1_1,e2_1,e;
       list<list<DAE.Exp>> mexps,mexps_1;
       Option<DAE.Exp> eo;
+      DAE.Dimensions dims;
     
     // Real -> Real
     case(DAE.RCONST(r),DAE.T_REAL(varLst = _)) then DAE.RCONST(r);
@@ -733,6 +734,14 @@ algorithm
         tp_1 = List.fold(exps,Expression.unliftArrayIgnoreFirst,tp);
         e = DAE.CAST(tp_1,e);
         e = Expression.makeBuiltinCall("fill",e::exps,tp);
+      then e;
+
+    // cat(e, ...) can be simplified
+    case(DAE.CALL(path=Absyn.IDENT("cat"),expLst=(e as DAE.ICONST(n))::exps),DAE.T_ARRAY(dims=dims)) 
+      equation
+        DAE.DIM_UNKNOWN() = listGet(dims,n);
+        exps = List.map1(exps,addCast,tp);
+        e = Expression.makeBuiltinCall("cat",e::exps,tp);
       then e;
 
     // expression already has a specified cast type.
