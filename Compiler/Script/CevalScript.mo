@@ -6615,6 +6615,7 @@ algorithm
         true = isCompleteFunction(cache, env, funcpath);
         false = Types.hasMetaArray(ty);
         
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: is complete function: " +& Absyn.pathString(funcpath));
         (cache, newval, st) = cevalCallFunctionEvaluateOrGenerate(inCache,inEnv,inExp,inValuesValueLst,impl,inSymTab,inMsg);
         
         Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation success: " +& Absyn.pathString(funcpath));
@@ -6625,11 +6626,9 @@ algorithm
     case (cache,env, DAE.CALL(path = funcpath, attr = DAE.CALL_ATTR(ty = ty, builtin = false)), vallst, _, st, msg)
       equation
         failure(cevalIsExternalObjectConstructor(cache, funcpath, env, msg));
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: try to evaluate or generate function: " +& Absyn.pathString(funcpath));
-        
         false = isCompleteFunction(cache, env, funcpath);
         
-        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation failed: " +& Absyn.pathString(funcpath));
+        Debug.fprintln(Flags.DYN_LOAD, "CALL: constant evaluation failed (not complete function): " +& Absyn.pathString(funcpath));
       then
         fail();
 
@@ -6673,15 +6672,6 @@ algorithm
    case (cache, env, fpath)
      equation
        (_, SCode.CLASS(partialPrefix = SCode.PARTIAL()), _) = Lookup.lookupClass(cache, env, fpath, false); 
-     then 
-       false;
-   // replaceable functions are not fine if they don't have an algorithm section!
-   case (cache, env, fpath)
-     equation
-       (_, 
-        c as SCode.CLASS(prefixes = SCode.PREFIXES(redeclarePrefix = SCode.NOT_REDECLARE(), replaceablePrefix = SCode.REPLACEABLE(_))), 
-       _) = 
-       Lookup.lookupClass(cache, env, fpath, false);
      then 
        false;
    
