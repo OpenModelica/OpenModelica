@@ -13,8 +13,11 @@ runtimeCpp:
 	cmake -D  CMAKE_INSTALL_PREFIX:PATH="$(builddir_build)"  ../Source; \
 	make
 
+
+
 install: runtimeCpp
 	(cd Build; make install)
+
 
 clean:
 	rm -R -f Build

@@ -10,7 +10,8 @@ target_link_libraries (${ModelicaName}  ${SystemName} ${ModelicaExternalCName}  
 GET_TARGET_PROPERTY(libModelicaSystem ${ModelicaName} LOCATION)
 GET_FILENAME_COMPONENT(libModelicaSystemName ${libModelicaSystem} NAME)
 #set (BOOST_LIBS ${Boost})
-set (BOOS_INCLUDE ${Boost_INCLUDE_DIRS})
+set (BOOST_INCLUDE ${Boost_INCLUDE_DIRS})
+set (BOOST_LIBS ${Boost_LIB_DIRS})
 set (MODELICA_SYSTEM_LIB ${libModelicaSystemName})
  configure_file (
   "${PROJECT_SOURCE_DIR}/ModelicaConfic.inc.in"

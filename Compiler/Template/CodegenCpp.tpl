@@ -160,7 +160,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /I - Include Directories
   # /DNOMINMAX - Define NOMINMAX (does what it says)
   # /TP - Use C++ Compiler
-  CFLAGS=/Od /EHa /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp" -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
+  CFLAGS=/Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp" -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
 
   # /ZI enable Edit and Continue debug info 
   CDFLAGS = /ZI
