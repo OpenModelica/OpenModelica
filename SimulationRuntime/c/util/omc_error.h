@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -137,7 +137,7 @@ void Message(int type, int stream, char *msg, int subline);
 #define  WARNING9(stream, msg, a, b, c, d, e, f, g, h, i)    do{sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i);    Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
 #define WARNING10(stream, msg, a, b, c, d, e, f, g, h, i, j) do{sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i, j); Message(LOG_TYPE_WARNING, stream, logBuffer, 0);}while(0)
 
-#define   ERROR(stream, msg)                               do{sprintf(logBuffer, msg);                               Message(LOG_TYPE_ERROR, stream, logBuffer, 0);}while(0)
+#define  ERROR0(stream, msg)                               do{sprintf(logBuffer, msg);                               Message(LOG_TYPE_ERROR, stream, logBuffer, 0);}while(0)
 #define  ERROR1(stream, msg, a)                            do{sprintf(logBuffer, msg, a);                            Message(LOG_TYPE_ERROR, stream, logBuffer, 0);}while(0)
 #define  ERROR2(stream, msg, a, b)                         do{sprintf(logBuffer, msg, a, b);                         Message(LOG_TYPE_ERROR, stream, logBuffer, 0);}while(0)
 #define  ERROR3(stream, msg, a, b, c)                      do{sprintf(logBuffer, msg, a, b, c);                      Message(LOG_TYPE_ERROR, stream, logBuffer, 0);}while(0)
@@ -162,17 +162,17 @@ void Message(int type, int stream, char *msg, int subline);
   #define  ASSERT9(exp, msg, a, b, c, d, e, f, g, h, i)    do{if(!(exp)){sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i);    Message(LOG_TYPE_ASSERT, LOG_ASSERT, logBuffer, 0); longjmp(globalJmpbuf, 1);}}while(0)
   #define ASSERT10(exp, msg, a, b, c, d, e, f, g, h, i, j) do{if(!(exp)){sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i, j); Message(LOG_TYPE_ASSERT, LOG_ASSERT, logBuffer, 0); longjmp(globalJmpbuf, 1);}}while(0)
 #else
-  #define   ASSERT(exp, msg)                               
-  #define  ASSERT1(exp, msg, a)                            
-  #define  ASSERT2(exp, msg, a, b)                            
-  #define  ASSERT3(exp, msg, a, b, c)                      
-  #define  ASSERT4(exp, msg, a, b, c, d)                   
-  #define  ASSERT5(exp, msg, a, b, c, d, e)                
-  #define  ASSERT6(exp, msg, a, b, c, d, e, f)             
-  #define  ASSERT7(exp, msg, a, b, c, d, e, f, g)          
-  #define  ASSERT8(exp, msg, a, b, c, d, e, f, g, h)       
-  #define  ASSERT9(exp, msg, a, b, c, d, e, f, g, h, i)    
-  #define ASSERT10(exp, msg, a, b, c, d, e, f, g, h, i, j) 
+  #define   ASSERT(exp, msg)
+  #define  ASSERT1(exp, msg, a)
+  #define  ASSERT2(exp, msg, a, b)
+  #define  ASSERT3(exp, msg, a, b, c)
+  #define  ASSERT4(exp, msg, a, b, c, d)
+  #define  ASSERT5(exp, msg, a, b, c, d, e)
+  #define  ASSERT6(exp, msg, a, b, c, d, e, f)
+  #define  ASSERT7(exp, msg, a, b, c, d, e, f, g)
+  #define  ASSERT8(exp, msg, a, b, c, d, e, f, g, h)
+  #define  ASSERT9(exp, msg, a, b, c, d, e, f, g, h, i)
+  #define ASSERT10(exp, msg, a, b, c, d, e, f, g, h, i, j)
 #endif
 
 #define   THROW(msg)                               do{sprintf(logBuffer, msg);                               Message(LOG_TYPE_ASSERT, LOG_ASSERT, logBuffer, 0); longjmp(globalJmpbuf, 1);}while(0)
@@ -200,17 +200,17 @@ void Message(int type, int stream, char *msg, int subline);
   #define  DEBUG9(stream, msg, a, b, c, d, e, f, g, h, i)    do{sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i);    Message(LOG_TYPE_DEBUG, stream, logBuffer, 0);}while(0)
   #define DEBUG10(stream, msg, a, b, c, d, e, f, g, h, i, j) do{sprintf(logBuffer, msg, a, b, c, d, e, f, g, h, i, j); Message(LOG_TYPE_DEBUG, stream, logBuffer, 0);}while(0)
 #else
-  #define   DEBUG(stream, msg)                               
-  #define  DEBUG1(stream, msg, a)                            
-  #define  DEBUG2(stream, msg, a, b)                            
-  #define  DEBUG3(stream, msg, a, b, c)                      
-  #define  DEBUG4(stream, msg, a, b, c, d)                   
-  #define  DEBUG5(stream, msg, a, b, c, d, e)                
-  #define  DEBUG6(stream, msg, a, b, c, d, e, f)             
-  #define  DEBUG7(stream, msg, a, b, c, d, e, f, g)          
-  #define  DEBUG8(stream, msg, a, b, c, d, e, f, g, h)       
-  #define  DEBUG9(stream, msg, a, b, c, d, e, f, g, h, i)    
-  #define DEBUG10(stream, msg, a, b, c, d, e, f, g, h, i, j) 
+  #define   DEBUG(stream, msg)
+  #define  DEBUG1(stream, msg, a)
+  #define  DEBUG2(stream, msg, a, b)
+  #define  DEBUG3(stream, msg, a, b, c)
+  #define  DEBUG4(stream, msg, a, b, c, d)
+  #define  DEBUG5(stream, msg, a, b, c, d, e)
+  #define  DEBUG6(stream, msg, a, b, c, d, e, f)
+  #define  DEBUG7(stream, msg, a, b, c, d, e, f, g)
+  #define  DEBUG8(stream, msg, a, b, c, d, e, f, g, h)
+  #define  DEBUG9(stream, msg, a, b, c, d, e, f, g, h, i)
+  #define DEBUG10(stream, msg, a, b, c, d, e, f, g, h, i, j)
 #endif
 
 #ifdef __cplusplus

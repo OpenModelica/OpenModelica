@@ -8896,6 +8896,7 @@ algorithm
   (BackendDAEOptimize.simplifyTimeIndepFuncCalls,"simplifyTimeIndepFuncCalls",false),
   (BackendDAEOptimize.inputDerivativesUsed,"inputDerivativesUsed",false),
   (BackendDAEOptimize.simplifysemiLinear,"simplifysemiLinear",false),
+  (BackendDAEOptimize.removeConstants,"removeConstants",false),
   (BackendDAEOptimize.optimizeInitialSystem,"optimizeInitialSystem",false),
   (BackendDAEOptimize.detectSparsePatternODE,"detectJacobianSparsePattern",false)
   };

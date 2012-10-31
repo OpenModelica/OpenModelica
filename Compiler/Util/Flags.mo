@@ -376,6 +376,9 @@ constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(105, "scodeInstShortcut",
   Util.gettext("Enables experimental SCode instantiation shortcut phase."));
 constant DebugFlag SHOW_SCODE = DEBUG_FLAG(106, "showSCode",
   Util.gettext("Shows the SCode result of +d=scodeInstShortcut."));
+constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(107, "dumpConstrepl",
+  Util.gettext("dump the found replacements for constants"));
+
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -487,7 +490,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_INITIAL_SYSTEM,
   SOLVE_INITIAL_SYSTEM,
   SCODE_INST_SHORTCUT,
-  SHOW_SCODE
+  SHOW_SCODE,
+  DUMP_CONST_REPL
 };
 
 // CONFIGURATION FLAGS
@@ -535,7 +539,7 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "evaluateParameters",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
-    "partitionIndependentBlocks",
+//    "partitionIndependentBlocks",
     "expandDerOperator",
     "inlineArrayEqn",
     "removeSimpleEquations"
@@ -606,7 +610,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "removeUnusedFunctions",
     "simplifyTimeIndepFuncCalls",
     "inputDerivativesUsed",
-//    "detectJacobianSparsePattern", 
+//    "detectJacobianSparsePattern",
+    "removeConstants", 
     "optimizeInitialSystem"
   }),
   SOME(STRING_DESC_OPTION({
@@ -630,6 +635,7 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     ("simplifyTimeIndepFuncCalls", Util.gettext("simplifies time independent built in function calls like pre(param) -> param, der(param) -> 0.0, change(param) -> false, edge(param) -> false")),
     ("inputDerivativesUsed", Util.gettext("checks if derivatives of inputs are need to calculate the model.")),
     ("simplifysemiLinear", Util.gettext("simplifies calls to semiLinear")),
+    ("removeConstants", Util.gettext("remove all constants in the system")),
     ("optimizeInitialSystem", Util.gettext("simplifies time initial system")),
     ("detectJacobianSparsePattern", Util.gettext("detects the sparse pattern for Jacobian A"))
     })),
