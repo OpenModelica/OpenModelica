@@ -22,7 +22,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall
+.PHONY : interactive omc release qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall 
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -167,7 +167,7 @@ omlibrary: build/lib/omlibrary/stamp modelica3d
 build/lib/omlibrary/stamp: libraries/README
 	rm -rf build/lib/omlibrary
 	install -m755 -d "build/lib/omlibrary/Modelica 3.2.1" "build/lib/omlibrary/ModelicaServices 3.2.1" "build/lib/omlibrary/ModelicaReference 3.2.1" "build/lib/omlibrary/ModelicaTest 1.1"
-	$(MAKE) omlibrary-internal omlibrary-32 omlibrary-services omlibrary-reference omlibrary-test
+	$(MAKE) -f $(defaultMakefileTarget) omlibrary-internal omlibrary-32 omlibrary-services omlibrary-reference omlibrary-test
 	touch $@
 omlibrary-internal:
 	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
