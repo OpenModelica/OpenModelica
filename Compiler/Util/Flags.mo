@@ -539,7 +539,7 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "evaluateParameters",
     "simplifyIfEquations",
     "removeEqualFunctionCalls",
-//    "partitionIndependentBlocks",
+    "partitionIndependentBlocks",
     "expandDerOperator",
     "inlineArrayEqn",
     "removeSimpleEquations"
