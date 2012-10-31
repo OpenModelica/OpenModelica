@@ -161,18 +161,30 @@ susan: all sustst
 sustst:
 	(cd Compiler/susan_codegen && $(MAKE) -f Makefile test)
 
+OMLIBRARY_INTERNAL_DIRS=BioChem?1.0 Modelica?1.6 Modelica?2.2.1 ModelicaAdditions Modelica?3.1 Modelica_LinearSystems2?2.0 SimpleFluid
+
 omlibrary: build/lib/omlibrary/stamp modelica3d
 build/lib/omlibrary/stamp: libraries/README
 	rm -rf build/lib/omlibrary
-	(cd libraries/ && find . -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
-	(cd libraries/ && find . -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;)
-	rm -f build/lib/omlibrary/*.txt build/lib/omlibrary/*.patch build/lib/omlibrary/README
-	patch -d "build/lib/omlibrary/" -p1 < "libraries/Modelica 3.2.1.patch"
+	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
+	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;)
+	install -m755 -d "build/lib/omlibrary/Modelica 3.2.1" "build/lib/omlibrary/ModelicaServices 3.2.1" "build/lib/omlibrary/ModelicaReference 3.2.1" "build/lib/omlibrary/ModelicaTest 1.1"
+	(cd "libraries/Modelica 3.2.1/Modelica" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/Modelica 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/Modelica" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../../build/lib/omlibrary/Modelica 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaServices-Variants/Default/ModelicaServices" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaServices-Variants/Default/ModelicaServices" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaReference" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaReference 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaReference" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../../build/lib/omlibrary/ModelicaReference 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaTest" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaTest 1.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaTest" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../../build/lib/omlibrary/ModelicaTest 1.1/{}" \;)
+	install -m644 "libraries/Modelica 3.2.1/Complex.mo" "build/lib/omlibrary/Complex 1.1.mo"
+	install -m644 "libraries/Modelica 3.2.1/ObsoleteModelica3.mo" "build/lib/omlibrary/ObsoleteModelica3 3.2.1.mo"
+	patch -d build/lib/omlibrary -p3 < "libraries/Modelica 3.2.1.patch"
 	touch $@
 
 # Run this command to update the omlibrary patch. Add more libraries as needed
 omlibrary-diff:
-	diff -u -x .svn -r "libraries/Modelica 3.2.1" "build/lib/omlibrary/Modelica 3.2.1" > "libraries/Modelica 3.2.1.patch" || echo "*** Modelica 3.2.1 has patch"
+	diff -u -x .svn -r "libraries/Modelica 3.2.1/Modelica" "build/lib/omlibrary/Modelica 3.2.1" > "libraries/Modelica 3.2.1.patch" || echo "*** Modelica 3.2.1 has patch"
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
