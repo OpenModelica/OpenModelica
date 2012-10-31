@@ -70,6 +70,7 @@ uniontype VariableReplacements
     HashTable2.HashTable hashTable "src -> dst, used for replacing. src is variable, dst is expression.";
     HashTable3.HashTable invHashTable "dst -> list of sources. dst is a variable, sources are variables.";
     HashTable2.HashTable extendhashTable "src -> noting, used for extend arrays and records.";
+    list<DAE.Ident> iterationVars "this are the implicit declerate iteration variables for for and range expressions";
   end REPLACEMENTS;
 
 end VariableReplacements;
@@ -90,7 +91,7 @@ algorithm
         eht = HashTable2.emptyHashTable();
         invHt = HashTable3.emptyHashTable();
       then
-        REPLACEMENTS(ht,invHt,eht);
+        REPLACEMENTS(ht,invHt,eht,{});
   end match;
 end emptyReplacements;
 
@@ -108,7 +109,7 @@ algorithm
         invHt = HashTable3.emptyHashTableSized(size);
         eht = HashTable2.emptyHashTableSized(size);
       then
-        REPLACEMENTS(ht,invHt,eht);
+        REPLACEMENTS(ht,invHt,eht,{});
   end match;
 end emptyReplacementsSized;
 
@@ -136,6 +137,7 @@ algorithm
       DAE.Exp dst,dst_1;
       HashTable2.HashTable ht,ht_1,eht,eht_1;
       HashTable3.HashTable invHt,invHt_1;
+      list<DAE.Ident> iv;
       String s;
     // PA: Commented out this, since it will only slow things down without adding any functionality.
     // Once match is available as a complement to matchcontinue, this case could be useful again.
@@ -145,9 +147,9 @@ algorithm
      // then
      //   fail();
      
-    case ((REPLACEMENTS(ht,invHt,eht)),src,dst,_)
+    case (_,src,dst,_)
       equation        
-        (REPLACEMENTS(ht,invHt,eht),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
+        (REPLACEMENTS(ht,invHt,eht,iv),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
         /*s1 = ComponentReference.printComponentRefStr(src);
         s2 = ExpressionDump.printExpStr(dst);
         s3 = ComponentReference.printComponentRefStr(src_1);
@@ -161,7 +163,7 @@ algorithm
         invHt_1 = addReplacementInv(invHt, src_1, dst_1);
         eht_1 = addExtendReplacement(eht,src_1,NONE());
       then
-        REPLACEMENTS(ht_1,invHt_1,eht_1);
+        REPLACEMENTS(ht_1,invHt_1,eht_1,iv);
     case (_,_,_,_)
       equation
         s = ComponentReference.printComponentRefStr(inSrc);
@@ -186,18 +188,19 @@ algorithm
       DAE.Exp dst,olddst;
       HashTable2.HashTable ht,ht_1,eht,eht_1;
       HashTable3.HashTable invHt,invHt_1;
-    case ((REPLACEMENTS(ht,invHt,eht)),src,dst) /* source dest */
+      list<DAE.Ident> iv;
+    case ((REPLACEMENTS(hashTable=ht)),src,dst) /* source dest */
       equation
         olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
         fail();
-    case ((REPLACEMENTS(ht,invHt,eht)),src,dst)
+    case ((REPLACEMENTS(ht,invHt,eht,iv)),src,dst)
       equation
         ht_1 = BaseHashTable.add((src, dst),ht);
         invHt_1 = addReplacementInv(invHt, src, dst);
         eht_1 = addExtendReplacement(eht,src,NONE());
       then
-        REPLACEMENTS(ht_1,invHt_1,eht_1);
+        REPLACEMENTS(ht_1,invHt_1,eht_1,iv);
     case (_,_,_)
       equation
         print("-add_replacement failed\n");
@@ -328,11 +331,10 @@ algorithm
     local
       list<DAE.ComponentRef> lst;
       VariableReplacements repl_1,singleRepl;
-      HashTable2.HashTable ht,eht;
       HashTable3.HashTable invHt;
       // old rule a->expr(b1,..,bn) must be updated to a->expr(c_exp,...,bn) when new rule b1->c_exp
       // is introduced
-    case ((REPLACEMENTS(ht,invHt,eht)),_,_,_)
+    case ((REPLACEMENTS(invHashTable=invHt)),_,_,_)
       equation
         lst = BaseHashTable.get(src, invHt);
         singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
@@ -520,6 +522,94 @@ algorithm
   end matchcontinue;
 end addExtendReplacement;
 
+protected function addIterationVar 
+"function addRiterationVar
+  add a var to the iterationVars"
+  input VariableReplacements repl;
+  input DAE.Ident inVar;
+  output VariableReplacements outRepl;
+algorithm
+  outRepl:=
+  match (repl,inVar)
+    local
+      HashTable2.HashTable ht,eht;
+      HashTable3.HashTable invHt;
+      list<DAE.Ident> iv;
+    case (REPLACEMENTS(ht,invHt,eht,iv),_)
+      then
+        REPLACEMENTS(ht,invHt,eht,inVar::iv);
+  end match;
+end addIterationVar;
+
+protected function removeIterationVar 
+"function removeiterationVar
+  remove the first equal var from the iterationVars"
+  input VariableReplacements repl;
+  input DAE.Ident inVar;
+  output VariableReplacements outRepl;
+algorithm
+  outRepl:=
+  match (repl,inVar)
+    local
+      HashTable2.HashTable ht,eht;
+      HashTable3.HashTable invHt;
+      list<DAE.Ident> iv;
+    case (REPLACEMENTS(ht,invHt,eht,iv),_)
+      equation
+        iv = removeFirstOnTrue(iv,stringEq,inVar,{});
+      then
+        REPLACEMENTS(ht,invHt,eht,iv);
+  end match;
+end removeIterationVar;
+
+protected function isIterationVar 
+"function isIterationVar
+  remove true if it is an iteration var"
+  input VariableReplacements repl;
+  input DAE.Ident inVar;
+  output Boolean is;
+algorithm
+  is:=
+  match (repl,inVar)
+    local
+      list<DAE.Ident> iv;
+    case (REPLACEMENTS(iterationVars=iv),_)
+      then
+        listMember(inVar, iv);
+  end match;
+end isIterationVar;
+
+protected function removeFirstOnTrue
+  input list<ArgType1> iLst;
+  input CompFunc func;
+  input ArgType2 value;
+  input list<ArgType1> iAcc;
+  output list<ArgType1> oAcc;
+  partial function CompFunc
+    input ArgType1 inElement;
+    input ArgType2 value;
+    output Boolean outIsEqual;
+  end CompFunc;  
+  replaceable type ArgType1 subtypeof Any;
+  replaceable type ArgType2 subtypeof Any;
+algorithm
+  oAcc := matchcontinue(iLst,func,value,iAcc)
+    local
+      ArgType1 arg;
+      list<ArgType1> arglst;
+      
+    case ({},_,_,_) then listReverse(iAcc);
+    case (arg::arglst,_,_,_)
+      equation
+        true = func(arg,value);
+      then
+        listAppend(listReverse(iAcc),arglst);
+    case (arg::arglst,_,_,_)
+      then
+        removeFirstOnTrue(arglst,func,value,arg::iAcc);        
+  end matchcontinue;
+end removeFirstOnTrue;
+
 
 public function getReplacement "function: getReplacement
 
@@ -658,9 +748,15 @@ algorithm
       DAE.ReductionInfo reductionInfo;
       DAE.ReductionIterators iters;
       DAE.CallAttributes attr;
+      DAE.Ident ident;
       
       // Note: Most of these functions check if a subexpression did a replacement.
-      // If it did not, we do not create a new copy of the expression (to save some memory). 
+      // If it did not, we do not create a new copy of the expression (to save some memory).
+    case (e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident=ident)),repl,cond)
+      equation
+        true = isIterationVar(repl, ident);
+      then
+        (e,false);
     case ((e as DAE.CREF(componentRef = cr,ty = t)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
@@ -1628,12 +1724,14 @@ algorithm
     
     case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,iter=ident,index=index,range=e1,statementLst=statementLst,source=source)::es),repl,_,_,_)
       equation
+        repl = addIterationVar(repl,ident);
         (statementLst_1,b1) = replaceStatementLst(statementLst, repl,inFuncTypeExpExpToBooleanOption,{},false);
         (e1_1,b2) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         true = b1 or b2;
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e1,e1_1);
         (e1_2,b1) = ExpressionSimplify.condsimplify(b2,e1_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
+        repl = removeIterationVar(repl,ident);
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_FOR(type_,iterIsArray,ident,index,e1_2,statementLst_1,source)::inAcc,true);
       then
         ( es_1,b);
