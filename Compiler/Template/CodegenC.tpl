@@ -5730,12 +5730,11 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     let expPart1 = daeExp(var, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let expPart2 = daeExp(value, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
-    if (DEBUG_STREAM(LOG_EVENTS)) {
-      INFO1(LOG_INIT, "reinit <%expPart1%> = %f", <%expPart1%>);
-    }
-    $P$PRE<%expPart1%> = <%expPart1%>;
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
+    if (DEBUG_STREAM(LOG_EVENTS)) {
+      INFO1(LOG_EVENTS, "reinit <%expPart1%> = %f", <%expPart1%>);
+    }
     data->simulationInfo.needToIterate = 1;
     >>
 end algStmtReinit;
