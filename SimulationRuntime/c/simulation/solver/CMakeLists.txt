@@ -4,22 +4,21 @@
 ADD_SUBDIRECTORY(initialization)
 
 # Quellen und Header
-SET(solver_sources  daux.c
-                    ddasrt.c
-					ddassl.c
-					dassl.c
-					delay.c
-					dlamch.c
-					dlinpk.c
-					events.c
-					model_help.c
-					solver_main.c)
+SET(solver_sources  dassl.c
+                    delay.c
+                    events.c
+                    model_help.c
+                    nonlinearSystem.c
+                    nonlinearSolverHybrd.c
+                    solver_main.c)
 
 SET(solver_headers  dassl.h
                     delay.h 
-					events.h 
-					model_help.h 
-					solver_main.h)				 
+                    events.h
+                    model_help.h 
+                    nonlinearSolverHybrd.h
+                    nonlinearSystem.h
+                    solver_main.h)				 
 						 
 # Library util
 ADD_LIBRARY(solver ${solver_sources} ${solver_headers})

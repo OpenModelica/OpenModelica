@@ -16,7 +16,6 @@ RUNTIME_HEADERS = ./f2c.h \
 ./omc_inline.h \
 ./math-support/blaswrap.h \
 ./math-support/matrix.h \
-./math-support/nonlinearSystem.h \
 ./meta/gc/common.h \
 ./meta/gc/gc.h \
 ./meta/gc/generational.h \
@@ -34,6 +33,7 @@ RUNTIME_HEADERS = ./f2c.h \
 ./simulation/simulation_runtime.h \
 ./simulation/solver/delay.h \
 ./simulation/solver/model_help.h \
+./simulation/solver/nonlinearSystem.h \
 ./simulation/solver/simulation_inline_solver.h \
 ./simulation/results/simulation_result.h \
 ./util/base_array.h \
@@ -93,10 +93,10 @@ $(UTILOBJSPATH):%.o: %.c $(UTILHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(UTILPATH) -I$(METAPATH)
 
 $(MATHOBJSPATH):%.o: %.c $(MATHHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) -o $@ $< -I$(MATHPATH) -I$(UTILPATH)
+	$(CC) -c $(CFLAGS) $(FPMATHFORTRAN) -o $@ $< -I$(MATHPATH) -I$(UTILPATH)
 
 $(SOLVEROBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
-	$(CC) -c $(CFLAGS) $(FPMATHFORTRAN) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
+	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
 
 $(INITIALIZATIONOBJSPATH):%.o: %.c $(SOLVERHFILESPATH) $(INITIALIZATIONHFILESPATH) $(COMMON_HEADERS)
 	$(CC) -c $(CFLAGS) -o $@ $< -I$(SOLVERPATH) -I$(INITIALIZATIONPATH) -I$(SIMPATH) -I$(MATHPATH) -I$(UTILPATH)
