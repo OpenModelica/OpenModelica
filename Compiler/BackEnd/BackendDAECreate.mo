@@ -1042,17 +1042,18 @@ protected function lowerIfEquation
   input list<DAE.Element> elseenqs;
   input list<DAE.Exp> conditions1;
   input list<list<DAE.Element>> theneqns1;
-  input DAE.ElementSource source;
+  input DAE.ElementSource inSource;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Equation> inEqns;
   output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,source,functionTree,inEqns)
+  outEqns := matchcontinue(conditions,theneqns,elseenqs,conditions1,theneqns1,inSource,functionTree,inEqns)
     local
       DAE.Exp e;
       list<DAE.Exp> explst;
       list<list<DAE.Element>> eqnslst;
       list<DAE.Element> eqns; 
+      DAE.ElementSource source;
 
       list<list<BackendDAE.Equation>> beqnslst;
       list<BackendDAE.Equation> beqns; 
@@ -1071,11 +1072,11 @@ algorithm
         beqnslst = List.map2(eqnslst,lowerEqns,functionTree,{});
         beqns = List.fold1(elseenqs,lowerEqn,functionTree,{});        
       then 
-        BackendDAE.IF_EQUATION(explst, beqnslst, beqns,source)::inEqns;
+        BackendDAE.IF_EQUATION(explst, beqnslst, beqns,inSource)::inEqns;
     // all other cases
     case(e::explst,eqns::eqnslst,_,_,_,_,_,_)
       equation
-        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);    
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), inSource);    
         (e,_) = ExpressionSimplify.simplify(e);
       then
         lowerIfEquation1(e,explst,eqns,eqnslst,elseenqs,conditions1,theneqns1,source,functionTree,inEqns);
@@ -1703,23 +1704,24 @@ protected function lowerTupleAssignment
   tuple-element"
   input list<DAE.Exp> target_expl;
   input list<DAE.Exp> source_expl;
-  input DAE.ElementSource eq_source;
+  input DAE.ElementSource inEq_source;
   input DAE.FunctionTree funcs;
   input list<BackendDAE.Equation> iEqns;
   output list<BackendDAE.Equation> oEqns;
 algorithm
-  oEqns := match(target_expl,source_expl,eq_source,funcs,iEqns)
+  oEqns := match(target_expl,source_expl,inEq_source,funcs,iEqns)
     local
       DAE.Exp target, source;
       list<DAE.Exp> rest_targets, rest_sources;
       list<BackendDAE.Equation> eqns;
       DAE.Type ty;
       Integer size;
+      DAE.ElementSource eq_source;
     case ({}, {}, _, _,_) then iEqns;
     // case for complex equations, array equations and equations
     case (target :: rest_targets, source :: rest_sources, _, _, _)
       equation
-        (target,eq_source,_) = Inline.inlineExp(target, (SOME(funcs),{DAE.NORM_INLINE()}), eq_source);
+        (target,eq_source,_) = Inline.inlineExp(target, (SOME(funcs),{DAE.NORM_INLINE()}), inEq_source);
         (source,eq_source,_) = Inline.inlineExp(source, (SOME(funcs),{DAE.NORM_INLINE()}), eq_source);
         eqns = lowerextendedRecordEqn(target,source,eq_source,funcs,iEqns);
       then
