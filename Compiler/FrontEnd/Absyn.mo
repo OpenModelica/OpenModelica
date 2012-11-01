@@ -2874,37 +2874,32 @@ algorithm
 end stringListPathReversed2;
 
 public function pathTwoLastIdents "Returns the two last idents of a path"
-  input Path p;
-  output Path twoLast;
-  protected
-  Ident id2,id1;
+  input Path inPath;
+  output Path outTwoLast;
 algorithm
-  id2 := pathLastIdent(p);
-  id1 := pathLastIdent(stripLast(p));
-  twoLast := QUALIFIED(id1,IDENT(id2));
+  outTwoLast := match(inPath)
+    local
+      Path p;
+
+    case QUALIFIED(path = IDENT(name = _)) then inPath;
+    case QUALIFIED(path = p) then pathTwoLastIdents(p);
+    case FULLYQUALIFIED(path = p) then pathTwoLastIdents(p);
+  end match; 
 end pathTwoLastIdents;
 
-public function pathLastIdent "function: pathLastIdent
-  Returns the last ident (After last dot) in a path"
+public function pathLastIdent
+  "Returns the last ident (after last dot) in a path"
   input Path inPath;
   output Ident outIdent;
 algorithm
-  outIdent:=
-  match (inPath)
+  outIdent := match(inPath)
     local
-      Ident res,n;
+      Ident id;
       Path p;
-     case (FULLYQUALIFIED(path = p))
-      equation
-        res = pathLastIdent(p);
-      then
-        res;
-    case (QUALIFIED(path = p))
-      equation
-        res = pathLastIdent(p);
-      then
-        res;
-    case (IDENT(name = n)) then n;
+
+    case QUALIFIED(path = p) then pathLastIdent(p);
+    case IDENT(name = id) then id;
+    case FULLYQUALIFIED(path = p) then pathLastIdent(p);
   end match;
 end pathLastIdent;
 
@@ -2913,11 +2908,11 @@ public function pathFirstIdent "function: pathFirstIdent
   input Path inPath;
   output Ident outIdent;
 algorithm
-  outIdent:=
-  match (inPath)
+  outIdent := match (inPath)
     local
       Ident n;
       Path p;
+
     case (FULLYQUALIFIED(path = p)) then pathFirstIdent(p);
     case (QUALIFIED(name = n,path = p)) then n;
     case (IDENT(name = n)) then n;
@@ -2933,6 +2928,7 @@ algorithm
     local
       Path p;
       Ident n;
+
     case (FULLYQUALIFIED(path = p)) then pathPrefix(p);
     case (QUALIFIED(name = n, path = IDENT(name = _))) then IDENT(n);
     case (QUALIFIED(name = n, path = p))

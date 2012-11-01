@@ -691,7 +691,7 @@ algorithm
       equation
         Error.addSourceMessage(Error.INST_PARTIAL_CLASS, {name}, inInfo);
       then
-        (); // fail();
+        fail();
 
     else ();
   end match;

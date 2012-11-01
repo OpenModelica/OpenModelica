@@ -198,7 +198,7 @@ algorithm
   outSymbolTable := ht :: rest_st;
 end add;
 
-protected function addUnique
+public function addUniqueComponent
   "Adds a component to the symboltable. Fails if the component is already
    present in the symboltable."
   input Absyn.Path inName;
@@ -212,7 +212,7 @@ algorithm
   ht :: rest_st := inSymbolTable;
   ht := BaseHashTable.addUnique((inName, inComponent), ht);
   outSymbolTable := ht :: rest_st;
-end addUnique;
+end addUniqueComponent;
 
 protected function addNoUpdCheck
   "Adds a component to the symboltable, without checking if it already exists.
@@ -483,7 +483,7 @@ algorithm
     // scopes as long as we don't get any conflicting iterator names, to avoid
     // having a lot of unnecessary scopes.
     case (_, _, _ :: _ :: _)
-      then addUnique(inName, inComponent, inSymbolTable);
+      then addUniqueComponent(inName, inComponent, inSymbolTable);
 
     // If the previous case failed, add a new scope and add the component to it.
     else

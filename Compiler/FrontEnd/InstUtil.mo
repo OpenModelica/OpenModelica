@@ -126,6 +126,9 @@ algorithm
       list<DAE.Var> vars;
       DAE.Var var;
 
+    case (InstTypes.ELEMENT(component = InstTypes.PACKAGE(name = _)), vars)
+      then vars;
+
     case (InstTypes.ELEMENT(component = comp, cls = cls), vars)
       equation
         var = componentToDaeVar(comp);
@@ -187,10 +190,37 @@ algorithm
       then
         DAE.TYPES_VAR(name, attr, ty, DAE.UNBOUND(), NONE());
 
-    // TODO: Handle stuff like conditional components here.
-    else DAE.TYPES_VAR("dummy", DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
-        DAE.UNBOUND(), NONE());
+    case InstTypes.CONDITIONAL_COMPONENT(name = path)
+      equation
+        name = Absyn.pathLastIdent(path);
+      then
+        DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
+          DAE.UNBOUND(), NONE());
 
+    case InstTypes.OUTER_COMPONENT(name = path)
+      equation
+        name = Absyn.pathLastIdent(path);
+      then
+        DAE.TYPES_VAR(name, DAE.dummyAttrVar, DAE.T_UNKNOWN_DEFAULT,
+          DAE.UNBOUND(), NONE());
+
+    case InstTypes.COMPONENT_ALIAS(componentName = _)
+      equation
+        print("Got component alias in componentToDaeVar\n");
+      then
+        fail();
+
+    case InstTypes.DELETED_COMPONENT(name = _)
+      equation
+        print("Got deleted component\n");
+      then
+        fail();
+
+    case InstTypes.PACKAGE(name = _)
+      equation
+        print("PACKAGE\n");
+      then
+        fail();
   end match;
 end componentToDaeVar;
 
@@ -358,6 +388,20 @@ algorithm
 
   end match;
 end addElementsToClass;
+
+public function getElementComponent
+  input Element inElement;
+  output Component outComponent;
+algorithm
+  outComponent := match(inElement)
+    local
+      Component comp;
+
+    case InstTypes.ELEMENT(component = comp) then comp;
+    case InstTypes.CONDITIONAL_ELEMENT(component = comp) then comp;
+
+  end match;
+end getElementComponent;
 
 public function getComponentName
   input Component inComponent;

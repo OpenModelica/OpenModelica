@@ -69,6 +69,7 @@ InnerOuter.mo \
 Inst.mo \
 InstDump.mo \
 InstExtends.mo \
+InstFlatten.mo \
 InstSection.mo \
 InstSymbolTable.mo \
 InstTypes.mo \

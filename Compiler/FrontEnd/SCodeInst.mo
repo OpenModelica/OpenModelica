@@ -62,6 +62,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import InstDump;
+protected import InstFlatten;
 protected import Graph;
 protected import InstSymbolTable;
 protected import InstUtil;
@@ -275,7 +276,7 @@ algorithm
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = SCodeEnv.getEnvExtendsFromTable(env);
         (elems, cse, functions) = instElementList(mel, inPrefixes, exts, env,
-          inPrefix, ip, functions);
+          inTypePath, inPrefix, ip, functions);
 
         // Instantiate all equation and algorithm sections.
         (eq, ieq, alg, ialg, functions) = instSections(cdef, env, inPrefix, ip, functions);
@@ -532,6 +533,7 @@ protected function instElementList
   input Prefixes inPrefixes;
   input list<SCodeEnv.Extends> inExtends;
   input Env inEnv;
+  input Absyn.Path inTypePath;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
   input FunctionHashTable inFunctions;
@@ -541,6 +543,8 @@ protected function instElementList
 algorithm
   (outElements, outContainsSpecialExtends, outFunctions) := instElementList2(inElements, 
     inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false, inFunctions);
+  //outElements := InstFlatten.flattenElements(outElements, inTypePath,
+  //  List.isNotEmpty(inExtends));
 end instElementList;
 
 protected function instElementList2
@@ -1348,6 +1352,7 @@ algorithm
             "assert",
             "array",
             "cat",
+            "rem",
             "actualStream",
             "inStream",
             "String",
@@ -1541,6 +1546,42 @@ algorithm
       then
         (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
     
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "sum"),
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
+        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+    
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "min"),
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
+        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+    
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "max"),
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
+        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+    
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "product"),
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
+        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+    
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "cat"),
         functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
       equation
@@ -1549,6 +1590,14 @@ algorithm
       then
         (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
     
+    case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "rem"),
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+      equation
+        call_path = Absyn.crefToPath(acref);
+        (pos_args, functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+      then
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "actualStream"),
         functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
       equation
@@ -1650,13 +1699,14 @@ algorithm
         fail();
 
     // handle normal calls - put here for debugging so if it fails above you still can debug after.
-    case (Absyn.CALL(function_ = funcName, 
-        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, functions)
-      equation
-        false = isBuiltinFunctionName(funcName);
-        (dexp1,functions) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, functions);
-      then
-        (dexp1,functions);
+    // Let's keep this commented out when not used, otherwise we'll get duplicate error messages.
+    //case (Absyn.CALL(function_ = funcName, 
+    //    functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, functions)
+    //  equation
+    //    false = isBuiltinFunctionName(funcName);
+    //    (dexp1,functions) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, functions);
+    //  then
+    //    (dexp1,functions);
 
  end matchcontinue;
 end instFunctionCallDispatch;
@@ -2221,7 +2271,9 @@ algorithm
       list<Statement> stmts;
       FunctionHashTable functions;
       list<Statement> initBindings;
-
+      Function func;
+      Boolean is_record;
+      DAE.Type ty;
     /*
     case (_, _, _, _, functions)
       equation
@@ -2230,61 +2282,80 @@ algorithm
       then (path, outFunction, functions);
     */
 
-    // records, treat them the same as functions add bindings as algorithm statements
     case (_, _, _, _, functions)
       equation
         path = Absyn.crefToPath(inName);
-        (item as SCodeEnv.CLASS(cls = scls), _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
-        true = SCode.isRecord(scls); 
+        (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
         path = instFunctionName(item, path, origin, env, inPrefix);
-        (cls as InstTypes.COMPLEX_CLASS(components = inputs, algorithms=algorithms), _, _, functions) = instClassItem(path, item, InstTypes.NOMOD(),
+        (cls, ty, _, functions) = instClassItem(path, item, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), env, InstTypes.functionPrefix, INST_ALL(), functions);
-        initBindings = {};
-        inputs = listReverse(inputs);
-        (inputs,initBindings) = List.mapFold(inputs,dimensionDeps,initBindings);
-        (initBindings,{}) = Graph.topologicalSort(
-          Graph.buildGraph(initBindings,getStatementDependencies,(initBindings,List.map(initBindings,getInitStatementName))),
-          statementLhsEqual);
-        algorithms = initBindings::algorithms;
-        stmts = List.flatten(algorithms);
-        outFunction = InstTypes.RECORD(path,inputs,stmts);
-        functions = BaseHashTable.add((path,outFunction),functions);
+        is_record = Types.isRecord(ty);
+        func = instFunction2(path, cls, is_record);
+        functions = BaseHashTable.add((path, func), functions);
       then
-        (path, outFunction, functions);
-
-    // functions
-    case (_, _, _, _, functions)
-      equation
-        path = Absyn.crefToPath(inName);
-        (item as SCodeEnv.CLASS(cls = scls), _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
-        false = SCode.isRecord(scls);
-        path = instFunctionName(item, path, origin, env, inPrefix);
-        (cls as InstTypes.COMPLEX_CLASS(algorithms=algorithms), _, _, functions) = instClassItem(path, item, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), env, InstTypes.functionPrefix, INST_ALL(), functions);
-        (inputs,outputs,locals) = getFunctionParameters(cls);
-        initBindings = {};
-        (outputs,initBindings) = List.mapFold(outputs,stripInitBinding,initBindings);
-        (locals,initBindings) = List.mapFold(locals,stripInitBinding,initBindings);
-        (outputs,initBindings) = List.mapFold(outputs,dimensionDeps,initBindings);
-        (locals,initBindings) = List.mapFold(locals,dimensionDeps,initBindings);
-        (initBindings,{}) = Graph.topologicalSort(
-          Graph.buildGraph(initBindings,getStatementDependencies,(initBindings,List.map(initBindings,getInitStatementName))),
-          statementLhsEqual);
-        algorithms = initBindings::algorithms;
-        
-        stmts = List.flatten(algorithms);
-        outFunction = InstTypes.FUNCTION(path,inputs,outputs,locals,stmts);
-        functions = BaseHashTable.add((path,outFunction),functions);
-      then
-        (path, outFunction, functions);
+        (path, func, functions);
 
     else
       equation
         print("SCodeInst.instFunction failed: " +& Absyn.printComponentRefStr(inName) +&
         " at position: " +& Error.infoStr(inInfo) +& "\n");
+        //(_, _, _) = instFunction(inName, inEnv, inPrefix, inInfo, inFunctions);
       then fail();
   end matchcontinue;
 end instFunction;
+
+protected function instFunction2
+  input Absyn.Path inName;
+  input Class inFunction;
+  input Boolean inIsRecord;
+  output Function outFunction;
+algorithm
+  outFunction := match(inName, inFunction, inIsRecord)
+    local
+      list<Element> inputs, outputs, locals;
+      list<list<Statement>> algorithms;
+      list<Statement> stmts;
+      list<Statement> initBindings;
+      Function func;
+
+    // Records, treat them the same as functions and add bindings as algorithm
+    // statements.
+    case (_, InstTypes.COMPLEX_CLASS(components = inputs,
+        algorithms = algorithms), true)
+      equation
+        initBindings = {};
+        inputs = listReverse(inputs);
+        inputs = InstFlatten.flattenElements(inputs, inName, true);
+        (inputs, initBindings) = List.mapFold(inputs, dimensionDeps, initBindings);
+        (initBindings, {}) = Graph.topologicalSort(
+          Graph.buildGraph(initBindings, getStatementDependencies,
+            (initBindings, List.map(initBindings, getInitStatementName))),
+          statementLhsEqual);
+        algorithms = initBindings :: algorithms;
+        stmts = List.flatten(algorithms);
+      then
+        InstTypes.RECORD(inName, inputs, stmts);
+
+    // Normal functions.
+    case (_, InstTypes.COMPLEX_CLASS(algorithms = algorithms), false)
+      equation
+        (inputs, outputs, locals) = getFunctionParameters(inFunction);
+        initBindings = {};
+        (outputs, initBindings) = List.mapFold(outputs, stripInitBinding, initBindings);
+        (locals, initBindings) = List.mapFold(locals, stripInitBinding, initBindings);
+        (outputs, initBindings) = List.mapFold(outputs, dimensionDeps, initBindings);
+        (locals, initBindings) = List.mapFold(locals, dimensionDeps, initBindings);
+        (initBindings, {}) = Graph.topologicalSort(
+          Graph.buildGraph(initBindings, getStatementDependencies,
+            (initBindings, List.map(initBindings, getInitStatementName))),
+          statementLhsEqual);
+        algorithms = initBindings :: algorithms;
+        stmts = List.flatten(algorithms);
+      then
+        InstTypes.FUNCTION(inName, inputs, outputs, locals, stmts);
+
+  end match;
+end instFunction2;
 
 protected function statementLhsEqual
   input Statement left;
@@ -3334,6 +3405,7 @@ algorithm
       String for_index;
       Integer index;
       FunctionHashTable functions;
+
     case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _, functions)
       equation
         (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
@@ -3386,6 +3458,12 @@ algorithm
       equation
         (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
       then (InstTypes.NORETCALL_STMT(dexp1, info),functions);
+
+    case (SCode.ALG_RETURN(info = info), _, _, functions)
+      then (InstTypes.RETURN_STMT(info), functions);
+
+    case (SCode.ALG_BREAK(info = info), _, _, functions)
+      then (InstTypes.BREAK_STMT(info), functions);
 
     else
       equation
