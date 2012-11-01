@@ -3096,10 +3096,10 @@ algorithm
       DAE.Algorithm addAssert;
       list<DAE.Algorithm> inasserts;
     
-    // special case for time, it is never part of the equation system  
+    // sqrt 
     case (((e as DAE.CALL(path=Absyn.IDENT(name="sqrt"), expLst={e1})),inasserts))
       equation
-        estr = "Model error: Argument of sqrt should be >= 0";
+        estr = "Model error: Argument of sqrt(" +& ExpressionDump.printExpStr(e1) +& ") should be >= 0";
         addAssert = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(DAE.RELATION(e1,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)});
       then ((e, addAssert::inasserts));
     

@@ -6625,7 +6625,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
        'sqrt(<%argStr%>)'
      else
        let ass = '(<%argStr%> >= 0.0)'
-       let retPre = assertCommonVar(ass,createDAEString("Model error: Argument of sqrt should be >= 0"), context, &varDecls, dummyInfo)
+       let retPre = assertCommonVar(ass,createDAEString('Model error: Argument of sqrt(<%printExpStr(e1)%>) should be >= 0'), context, &varDecls, dummyInfo)
        let &preExp += '<%retPre%>'
        'sqrt(<%argStr%>)')
   

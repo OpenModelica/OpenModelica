@@ -1714,8 +1714,6 @@ algorithm
       DAE.Exp target, source;
       list<DAE.Exp> rest_targets, rest_sources;
       list<BackendDAE.Equation> eqns;
-      DAE.Type ty;
-      Integer size;
       DAE.ElementSource eq_source;
     case ({}, {}, _, _,_) then iEqns;
     // case for complex equations, array equations and equations
@@ -1725,7 +1723,7 @@ algorithm
         (source,eq_source,_) = Inline.inlineExp(source, (SOME(funcs),{DAE.NORM_INLINE()}), eq_source);
         eqns = lowerextendedRecordEqn(target,source,eq_source,funcs,iEqns);
       then
-        lowerTupleAssignment(rest_targets, rest_sources, eq_source, funcs,eqns);        
+        lowerTupleAssignment(rest_targets, rest_sources, inEq_source, funcs,eqns);        
   end match;
 end lowerTupleAssignment;
 
