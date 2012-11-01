@@ -1993,6 +1993,15 @@ algorithm
     case (cache,env,"isExperiment",_,st as Interactive.SYMBOLTABLE(ast=p),_)
       then
         (cache,Values.BOOL(false),st);
+    
+    case (cache,env,"searchClassNames",{Values.STRING(str), Values.BOOL(b)},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        (_,paths) = Interactive.getClassNamesRecursive(NONE(),p,false,{});
+        paths = listReverse(paths);
+        vals = List.map(paths,ValuesUtil.makeCodeTypeName);
+        vals = searchClassNames(vals, str, b, p);
+      then
+        (cache,ValuesUtil.makeArray(vals),st);
 
     case (cache,env,"getAstAsCorbaString",{Values.STRING("<interactive>")},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
@@ -6929,5 +6938,51 @@ algorithm
          (DAE.CALL(p, el, DAE.CALL_ATTR(cevalType, t, b, i, tc)), DAE.PROP(ty, DAE.C_PARAM()));
   end match;
 end cevalWholedimRetCall;
+
+protected function searchClassNames
+  input list<Values.Value> inVals;
+  input String inSearchText;
+  input Boolean inFindInText;
+  input Absyn.Program inProgram;
+  output list<Values.Value> outVals;
+algorithm
+  outVals := matchcontinue (inVals, inSearchText, inFindInText, inProgram)
+    local
+      list<Values.Value> valsList;
+      String str, str1;
+      Boolean b;
+      Absyn.Program p, p1;
+      Absyn.Class absynClass;
+      Integer position;
+      list<Values.Value> xs;
+      Values.Value val;
+    case ((val as Values.CODE(_)) :: xs, str1, true, p)
+      equation
+        absynClass = Interactive.getPathedClassInProgram(ValuesUtil.getPath(val), p);
+        p1 = Absyn.PROGRAM({absynClass},Absyn.TOP(),Absyn.TIMESTAMP(0.0,0.0));
+        /* Don't consider packages for FindInText search */
+        false = Interactive.isPackage(ValuesUtil.getPath(val), inProgram);
+        str = Dump.unparseStr(p1, false);
+        position = System.stringFind(System.tolower(str), System.tolower(str1));
+        true = (position > -1);
+        valsList = searchClassNames(xs, str1, true, p);
+      then
+        val::valsList;
+    case ((val as Values.CODE(_)) :: xs, str1, b, p)
+      equation
+        str = ValuesUtil.valString(val);
+        position = System.stringFind(System.tolower(str), System.tolower(str1));
+        true = (position > -1);
+        valsList = searchClassNames(xs, str1, b, p);
+      then
+        val::valsList;
+    case ((_ :: xs), str1, b, p)
+      equation
+        valsList = searchClassNames(xs, str1, b, p);
+      then
+        valsList;
+    case ({}, str1, b, p) then {};
+  end matchcontinue;
+end searchClassNames;
 
 end CevalScript;

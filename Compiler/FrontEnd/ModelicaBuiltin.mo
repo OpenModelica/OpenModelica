@@ -2568,6 +2568,21 @@ algorithm
  </html>"));
 end loadModelica3D;
 
+function searchClassNames "Searches for the class name in the all the loaded classes.
+  Example command:
+  searchClassNames(\"ground\");
+  searchClassNames(\"ground\", true);"
+  input String searchText;
+  input Boolean findInText := false;
+  output TypeName classNames[:];
+external "builtin";
+annotation(
+  Documentation(info="<html>
+  Look for searchText in All Loaded Classes and their code. Returns the list of searched classes.
+</html>"),
+  preferredView="text");
+end searchClassNames;
+
 annotation(preferredView="text");
 end Scripting;
 

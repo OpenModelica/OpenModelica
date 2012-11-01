@@ -2485,6 +2485,16 @@ algorithm
   Values.CODE(code) := val;
 end getCode;
 
+public function getPath
+  input Values.Value val;
+  output Absyn.Path path;
+protected
+  Absyn.CodeNode code;
+algorithm
+  Values.CODE(code) := val;
+  Absyn.C_TYPENAME(path) := code;
+end getPath;
+
 public function readDataset
   input String filename;
   input list<String> vars;
