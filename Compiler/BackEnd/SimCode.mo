@@ -502,6 +502,8 @@ uniontype Context
   end INLINE_CONTEXT;
   record PARALLEL_FUNCTION_CONTEXT
   end PARALLEL_FUNCTION_CONTEXT;
+  record ZEROCROSSINGS_CONTEXT 
+  end ZEROCROSSINGS_CONTEXT;
 end Context;
 
 
@@ -512,6 +514,7 @@ public constant Context contextFunction               = FUNCTION_CONTEXT();
 public constant Context contextAlgloop                = ALGLOOP_CONTEXT();
 public constant Context contextOther                  = OTHER();
 public constant Context contextParallelFunction       = PARALLEL_FUNCTION_CONTEXT();
+public constant Context contextZeroCross              = ZEROCROSSINGS_CONTEXT();
 
 
 /****** HashTable ComponentRef -> SimCode.SimVar ******/

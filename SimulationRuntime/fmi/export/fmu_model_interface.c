@@ -560,6 +560,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
       "fmiEventUpdate: Start Event Update! Next Sample Event %g",eventInfo->nextEventTime);
 
   storePreValues(comp->fmuData);
+  storeRelations(comp->fmuData);
   functionDAE(comp->fmuData);
 
   /*
@@ -582,7 +583,7 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
     functionDAE(comp->fmuData);
     deactivateSampleEventsandEquations(comp->fmuData);
   }
-  if(checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate){
+  if(checkForDiscreteChanges(comp->fmuData) || comp->fmuData->simulationInfo.needToIterate || checkRelations(comp->fmuData)){
     intermediateResults = fmiTrue;
     if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
         "fmiEventUpdate: Need to iterate(discrete changes)!");
@@ -600,6 +601,12 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
 
   /* due to an event overwrite old values */
   overwriteOldSimulationData(comp->fmuData);
+
+  /* TODO: check the event iteration for relation
+   * in fmi import and export. This is an workaround,
+   * since the iteration seem not starting.
+   */
+  storeRelations(comp->fmuData);
 
   if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
       "fmiEventUpdate: intermediateResults = %d", intermediateResults);

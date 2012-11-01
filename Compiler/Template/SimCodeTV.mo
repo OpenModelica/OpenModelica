@@ -217,6 +217,8 @@ package SimCode
     end INLINE_CONTEXT;
     record PARALLEL_FUNCTION_CONTEXT
     end PARALLEL_FUNCTION_CONTEXT;
+    record ZEROCROSSINGS_CONTEXT 
+    end ZEROCROSSINGS_CONTEXT;  
   end Context;
   
   uniontype Variable
@@ -513,6 +515,7 @@ package SimCode
   constant Context contextOther;
   constant Context contextAlgloop;             
   constant Context contextParallelFunction;
+  constant Context contextZeroCross;
   constant list<DAE.Exp> listExpLength1;
 
 end SimCode;

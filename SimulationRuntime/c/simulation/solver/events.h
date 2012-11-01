@@ -47,6 +47,7 @@ void deactivateSampleEventsandEquations(DATA *data);
 
 modelica_boolean checkForSampleEvent(DATA *data, SOLVER_INFO* solverInfo);
 modelica_boolean checkForNewEvent(DATA* data, LIST *eventList);
+modelica_boolean checkStateorSampleEvent(DATA* data, LIST* eventLst, double *eventTime);
 
 int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime);
 int handleSampleEvent(DATA* data);

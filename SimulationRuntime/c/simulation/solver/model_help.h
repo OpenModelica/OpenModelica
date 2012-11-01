@@ -42,17 +42,18 @@ extern "C" {
 
 #define RELATIONTOZC(res,exp1,exp2,index,op_w,op) { \
   if (index == -1){ \
-  res = ((exp1) op (exp2)); \
+    res = (op_w((exp1),(exp2)));\
   }else{ \
-  res = data->simulationInfo.backupRelations[index];} \
+    res = data->simulationInfo.backupRelationsPre[index]; \
+  } \
 }
 
 #define SAVEZEROCROSS(res,exp1,exp2,index,op_w,op) { \
   if (index == -1){ \
-  res = ((exp1) op (exp2)); \
+    res = (op_w((exp1),(exp2)));\
   } else{ \
-  res = ((exp1) op (exp2)); \
-  data->simulationInfo.backupRelations[index] = ((exp1) op (exp2)); \
+    res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.backupRelationsPre[index]));\
+    data->simulationInfo.backupRelations[index]  = res; \
   }\
 }
 
@@ -84,9 +85,9 @@ void storeInitialValuesParam(DATA *data);
 
 void storePreValues(DATA *data);
 
-void storeReleations(DATA *data);
+void storeRelations(DATA *data);
 
-modelica_boolean checkReleations(DATA *data);
+modelica_boolean checkRelations(DATA *data);
 
 void resetAllHelpVars(DATA* data);
 
@@ -94,11 +95,21 @@ double getNextSampleTimeFMU(DATA *data);
 
 void storeOldValues(DATA *data);
 
-/* functions used in function_ZeroCrossings */
-double Less(double a, double b);
-double LessEq(double a, double b);
-double Greater(double a, double b);
-double GreaterEq(double a, double b);
+/* functions used for relation which
+ * are not used as zero-crossings
+ */
+modelica_boolean Less(double a, double b);
+modelica_boolean LessEq(double a, double b);
+modelica_boolean Greater(double a, double b);
+modelica_boolean GreaterEq(double a, double b);
+
+/* functions used to evaluate relation in
+ * zero-crossing with hysteresis effect
+ */
+modelica_boolean LessZC(double a, double b, modelica_boolean);
+modelica_boolean LessEqZC(double a, double b, modelica_boolean);
+modelica_boolean GreaterZC(double a, double b, modelica_boolean);
+modelica_boolean GreaterEqZC(double a, double b, modelica_boolean);
 
 modelica_boolean nextVar(modelica_boolean *b, int n);
 

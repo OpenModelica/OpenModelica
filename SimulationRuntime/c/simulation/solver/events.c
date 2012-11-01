@@ -97,7 +97,7 @@ modelica_boolean sample(DATA *data, double start, double interval, int hindex)
   return retVal;
 }
 
-/*! \fn unique
+/*! \fn compdbl
  *
  *  \param [in]   [a]
  *  \param [in]   [b]
@@ -117,7 +117,7 @@ static int compdbl(const void* a, const void* b)
   return (*v1 > *v2) ? 1 : -1;
 }
 
-/*! \fn unique
+/*! \fn compSample
  *
  *  \param [in]   [a]
  *  \param [in]   [b]
@@ -137,7 +137,7 @@ static int compSample(const void* a, const void* b)
   return (v1->events > v2->events) ? 1 : -1;
 }
 
-/*! \fn unique
+/*! \fn compSampleZC
  *
  *  \param [in]   [a]
  *  \param [in]   [b]
@@ -412,11 +412,34 @@ modelica_boolean checkForNewEvent(DATA* data, LIST *eventList)
   }
 
   if (listLen(eventList) > 0){
-    /* if an event is pushed to the list sample needs to be activated next time */
-    if (data->simulationInfo.sampleActivated == 1){
+    retVal = 1;
+  }
+  return retVal;
+}
+
+/* !\fn checkStateorTimeEvent
+ *
+ *  \param [ref]  [data]
+ *  \param [ref]  [eventList]
+ *  \param [in]   [eventTime]
+ *
+ *  This function check if a sample event or a state event should
+ *  processed. If sample and state event have the same event-time
+ *  then sample events are prioritize, since they handle also
+ *  state event. It returns 1 if state event is before sample event
+ *  then it de-activate the sample events.
+ */
+modelica_boolean checkStateorSampleEvent(DATA* data, LIST* eventLst, double *eventTime){
+  modelica_boolean retVal = 0;
+  if (data->simulationInfo.sampleActivated == 1){
+    int b;
+    b = compdbl(eventTime, &((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).events));
+    if (b<0){
       data->simulationInfo.sampleActivated = 0;
       deactivateSampleEvents(data);
+      retVal = 1;
     }
+  }else if (listLen(eventLst)>0){
     retVal = 1;
   }
   return retVal;

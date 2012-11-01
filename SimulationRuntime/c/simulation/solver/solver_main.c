@@ -306,21 +306,22 @@ int solver_main(DATA* data, const char* init_initMethod,
         findRoot(data, solverInfo.eventLst, &(solverInfo.currentTime));
       }
       sim_result_emit(data);
+    }
+
+    if (checkStateorSampleEvent(data, solverInfo.eventLst, &(solverInfo.currentTime))){
 
       /*determined discrete system */
       handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
 
-      if (checkForNewEvent(data, solverInfo.eventLst))
-        WARNING(LOG_SOLVER, "| solver | some unhandeled events, event iteration need!");
-
+      INFO1(LOG_SOLVER," ### State event occurs at time: %.5f", solverInfo.currentTime);
       solverInfo.stateEvents++;
       solverInfo.didEventStep = 1;
       /* due to an event overwrite old values */
       overwriteOldSimulationData(data);
     /* check for sample events */
     } else if (simInfo->sampleActivated) {
-      INFO(LOG_SOLVER,"| solver | sample event occurs at time: ");
       handleSampleEvent(data);
+      INFO1(LOG_SOLVER,"| solver | sample event occurs at time: %.5f", solverInfo.currentTime);
       solverInfo.sampleEvents++;
       solverInfo.didEventStep = 1;
       simInfo->sampleActivated = 0;
@@ -448,19 +449,19 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
     rt_accumulate(SIM_TIMER_TOTAL);
 
-    INFO(LOG_SOLVER, "##### Statistics #####");
-    INFO1(LOG_SOLVER, "simulation time: %g", rt_accumulated(SIM_TIMER_TOTAL));
-    INFO1(LOG_SOLVER, "Events: %d", solverInfo.stateEvents + solverInfo.sampleEvents);
-    INFO1(LOG_SOLVER, "State Events: %d", solverInfo.stateEvents);
-    INFO1(LOG_SOLVER, "Sample Events: %d", solverInfo.sampleEvents);
+    INFO(LOG_STATS, "##### Statistics #####");
+    INFO1(LOG_STATS, "simulation time: %g", rt_accumulated(SIM_TIMER_TOTAL));
+    INFO1(LOG_STATS, "Events: %d", solverInfo.stateEvents + solverInfo.sampleEvents);
+    INFO1(LOG_STATS, "State Events: %d", solverInfo.stateEvents);
+    INFO1(LOG_STATS, "Sample Events: %d", solverInfo.sampleEvents);
     if (flag == 3)
     {
-      INFO(LOG_SOLVER, "##### Solver Statistics #####");
-      INFO1(LOG_SOLVER, "The number of steps taken: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
-      INFO1(LOG_SOLVER, "The number of calls to functionODE: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[1]);
-      INFO1(LOG_SOLVER, "The evaluations of Jacobian: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[2]);
-      INFO1(LOG_SOLVER, "The number of error test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
-      INFO1(LOG_SOLVER, "The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
+      INFO(LOG_STATS, "##### Solver Statistics #####");
+      INFO1(LOG_STATS, "The number of steps taken: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
+      INFO1(LOG_STATS, "The number of calls to functionODE: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[1]);
+      INFO1(LOG_STATS, "The evaluations of Jacobian: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[2]);
+      INFO1(LOG_STATS, "The number of error test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[3]);
+      INFO1(LOG_STATS, "The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
     }
 
   }else{

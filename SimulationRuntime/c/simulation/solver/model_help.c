@@ -53,25 +53,40 @@ const size_t SIZERINGBUFFER = 3;
 void updateDiscreteSystem(DATA *data)
 {
   int IterationNum = 0;
+  int discreteChanged = 0;
+  modelica_boolean relationChanged = 0;
   data->simulationInfo.needToIterate = 0;
 
-  functionDAE(data);
+  if (DEBUG_STREAM(LOG_EVENTS))
+    printRelations(data);
 
+  functionDAE(data);
   INFO(LOG_EVENTS, "| events | updated discrete System.");
-  while(checkForDiscreteChanges(data) || data->simulationInfo.needToIterate)
+
+  if (DEBUG_STREAM(LOG_EVENTS))
+    printRelations(data);
+
+  relationChanged = checkRelations(data);
+  discreteChanged = checkForDiscreteChanges(data);
+  while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
     if (DEBUG_STREAM(LOG_EVENTS)){
-      if(data->simulationInfo.needToIterate)
-        INFO(LOG_EVENTS, "| events | | reinit() call. Iteration needed!");
-      else
-        INFO(LOG_EVENTS, "| events | | discrete Variable changed. Iteration needed.");
+      if (data->simulationInfo.needToIterate)
+        INFO(LOG_EVENTS, "| reinit() call. Iteration needed!");
+      if (discreteChanged)
+        INFO(LOG_EVENTS, "| discrete Variable changed. Iteration needed.");
+      if (relationChanged)
+          INFO(LOG_EVENTS,"| relations changed. Iteration needed.");
     }
     storePreValues(data);
+    storeRelations(data);
     functionDAE(data);
 
     IterationNum++;
     if(IterationNum > IterationMax)
       THROW("ERROR: Too many event iterations. System is inconsistent.");
+    relationChanged = checkRelations(data);
+    discreteChanged = checkForDiscreteChanges(data);
   }
 }
 
@@ -487,12 +502,12 @@ void storePreValues(DATA *data)
  *
  *  \author wbraun
  */
-void storeReleations(DATA *data){
+void storeRelations(DATA *data){
 
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
-  memcpy(sInfo->backupRelationsPre, sInfo->backupRelations, sizeof(modelica_boolean)*mData->nZeroCrossings);
+  memcpy(sInfo->backupRelationsPre, sInfo->backupRelations, sizeof(modelica_boolean)*mData->nRelations);
 }
 
 /*! \fn checkRelations
@@ -503,7 +518,7 @@ void storeReleations(DATA *data){
  *
  *  \author wbraun
  */
-modelica_boolean checkReleations(DATA *data){
+modelica_boolean checkRelations(DATA *data){
 
   int i;
   modelica_boolean check=0;
@@ -511,7 +526,7 @@ modelica_boolean checkReleations(DATA *data){
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
-  for(i=0;i<mData->nZeroCrossings;++i){
+  for(i=0;i<mData->nRelations;++i){
     if (sInfo->backupRelationsPre[i] != sInfo->backupRelations[i]){
       check = 1;
       break;
@@ -812,29 +827,53 @@ void deInitializeDataStruc(DATA *data)
 }
 
 /* relation functions used in zero crossing detection
- * TODO: Obsolete if zero-crossings functions are replaced by conditions.
- *        Remove all of them.
+ * Less is for case LESS and GREATEREQ
+ * Greater is for case LESSEQ and GREATER
  */
-double Less(double a, double b)
+modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
-  return a - b - DBL_EPSILON;
+
+  modelica_boolean retVal;
+  retVal = direction? (a < b + DBL_EPSILON):(a + DBL_EPSILON < b);
+  return retVal;
 }
 
-double LessEq(double a, double b)
+modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 {
-  return a - b;
+  return (!GreaterZC(a, b, !direction));
 }
 
-double Greater(double a, double b)
+modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
-  return b - a + DBL_EPSILON;
+  modelica_boolean retVal;
+  retVal = direction? (a + DBL_EPSILON > b ):(a  > b + DBL_EPSILON);
+  return retVal;
 }
 
-double GreaterEq(double a, double b)
+modelica_boolean GreaterEqZC(double a, double b, modelica_boolean direction)
 {
-  return b - a;
+  return (!LessZC(a, b, !direction));
 }
 
+modelica_boolean Less(double a, double b)
+{
+  return a < b;
+}
+
+modelica_boolean LessEq(double a, double b)
+{
+  return a <= b;
+}
+
+modelica_boolean Greater(double a, double b)
+{
+  return a > b;
+}
+
+modelica_boolean GreaterEq(double a, double b)
+{
+  return a >= b;
+}
 
 /*! \fn deInitializeDataStruc
  *
