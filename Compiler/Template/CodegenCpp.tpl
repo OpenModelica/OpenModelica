@@ -14,8 +14,7 @@ template translateModel(SimCode simCode) ::=
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'Functions.cpp')
   let()= textFile(simulationMakefile(target,simCode), '<%fileNamePrefix%>.makefile')
 //  algloopfiles(odeEquations,algebraicEquations,whenClauses,parameterEquations,simCode)  
-  algloopfiles(allEquations,simCode) 
-   
+  algloopfiles(allEquations,simCode)   
     // empty result of the top-level template .., only side effects
 end translateModel;
 

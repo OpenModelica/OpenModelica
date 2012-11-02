@@ -2,7 +2,7 @@
 
 OMC = OPENMODELICAHOME=`pwd`/../../build/ ../../build/bin/omc +d=failtrace
 
-all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo DAEDumpTpl.mo ExpressionDumpTpl.mo InstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenXML.mo CodegenJava.mo
+all : AbsynDumpTpl.mo CodegenUtil.mo CodegenC.mo CodegenFMU.mo CodegenCSharp.mo CodegenQSS.mo CodegenCpp.mo CodegenFMUCpp.mo DAEDumpTpl.mo ExpressionDumpTpl.mo InstDumpTpl.mo SimCodeDump.mo Unparsing.mo SCodeDumpTpl.mo CodegenAdevs.mo CodegenXML.mo CodegenJava.mo
 
 AbsynDumpTpl.mo : AbsynDumpTpl.tpl AbsynDumpTV.mo
 	@echo " ** AbsynDumpTpl template compilation ** "
@@ -33,7 +33,7 @@ CodegenFMU.mo : CodegenFMU.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl
 	@echo " ** CodegenFMU template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "
-		
+
 DAEDumpTpl.mo : DAEDumpTpl.tpl DAEDumpTV.mo
 	@echo " ** DAEDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)
@@ -64,6 +64,11 @@ CodegenCpp.mo : CodegenCpp.tpl SimCodeTV.mo
 	$(OMC) $< > $@.log || (cat $@.log && false)
 	@echo " "	
 
+CodegenFMUCpp.mo : CodegenFMUCpp.tpl SimCodeTV.mo CodegenC.tpl CodegenUtil.tpl CodegenCpp.tpl CodegenFMU.tpl
+	@echo " ** CodegenFMUCpp template compilation ** "
+	$(OMC) $< > $@.log || (cat $@.log && false)
+	@echo " "
+	
 ExpressionDumpTpl.mo : ExpressionDumpTpl.tpl ExpressionDumpTV.mo DAEDumpTpl.tpl
 	@echo " ** ExpressionDumpTpl template compilation ** "
 	$(OMC) $< > $@.log || (cat $@.log && false)

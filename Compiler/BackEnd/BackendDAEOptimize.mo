@@ -2664,6 +2664,14 @@ algorithm
         exp = ValuesUtil.valueExp(bindValue);
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
       then ((v,(repl_1,vars)));
+    case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=NONE(),values=values),(repl,vars)))
+      equation
+        true = BackendVariable.isFinalVar(v);
+        exp = DAEUtil.getStartAttrFail(values);
+        ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
+        repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1,NONE());
+      then ((v,(repl_1,vars)));
+
     case _ then inTpl;
   end matchcontinue;
 end removeFinalParametersFinder;

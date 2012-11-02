@@ -87,6 +87,7 @@ protected import CheckModel;
 protected import ClassInf;
 protected import CodegenC;
 protected import CodegenFMU;
+protected import CodegenFMUCpp;
 protected import CodegenQSS;
 protected import CodegenAdevs;
 protected import CodegenCSharp;
@@ -758,6 +759,10 @@ algorithm
       equation
         Tpl.tplNoret(CodegenFMU.translateModel, simCode);
       then ();        
+    case (_,"Cpp")
+      equation
+        Tpl.tplNoret(CodegenFMUCpp.translateModel, simCode);
+      then (); 
     case (_,"Dump")
       equation
         // Yes, do this better later on...

@@ -147,18 +147,19 @@ Global.mo
 
 TEMPLATE = \
 AbsynDumpTpl.mo \
-CodegenUtil.mo \
-CodegenC.mo \
-CodegenFMU.mo \
 CodegenAdevs.mo \
-CodegenQSS.mo \
+CodegenC.mo \
 CodegenCpp.mo \
 CodegenCSharp.mo \
-CodegenXML.mo \
+CodegenFMU.mo \
+CodegenFMUCpp.mo \
 CodegenJava.mo \
+CodegenQSS.mo \
+CodegenUtil.mo \
+CodegenXML.mo \
 DAEDumpTpl.mo \
-InstDumpTpl.mo \
 ExpressionDumpTpl.mo \
+InstDumpTpl.mo \
 SCodeDumpTpl.mo \
 SimCodeDump.mo \
 Tpl.mo \
