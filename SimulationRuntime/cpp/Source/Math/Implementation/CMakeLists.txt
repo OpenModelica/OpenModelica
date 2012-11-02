@@ -5,7 +5,7 @@ project(${MathName})
 add_library(${MathName} SHARED ArrayOperations.cpp Functions.cpp )
 
 
-install (TARGETS ${MathName} DESTINATION lib/omc)
+install (TARGETS ${MathName} DESTINATION lib/omc/${LIBINSTALLEXT})
 install (FILES Functions.h
          ArrayOperations.h
          Utility.h

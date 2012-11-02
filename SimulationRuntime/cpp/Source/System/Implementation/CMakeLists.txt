@@ -5,7 +5,7 @@ project(${SystemName})
 add_library(${SystemName} SHARED AlgLoopDefaultImplementation AlgLoopSolverFactory.cpp EventHandling.cpp SystemDefaultImplementation.cpp )
 target_link_libraries (${SystemName} ${Boost_LIBRARIES} ${LAPACK_LIBRARIES} )
 
-install (TARGETS ${SystemName} DESTINATION lib/omc)
+install (TARGETS ${SystemName} DESTINATION lib/omc/${LIBINSTALLEXT})
 install (FILES SystemDefaultImplementation.h AlgLoopDefaultImplementation.h EventHandling.h DESTINATION include/omc/cpp/System/Implementation)
 install (FILES ../Interfaces/IAlgLoop.h 
         ../Interfaces/IAlgLoopSolver.h 

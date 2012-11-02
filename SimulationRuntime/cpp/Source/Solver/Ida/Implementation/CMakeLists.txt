@@ -6,7 +6,7 @@ include_directories(${SUNDIALS_INCLUDE_DIR}/ida ${SUNDIALS_INCLUDE_DIR}/nvector 
 add_library(${IdaName} SHARED Ida.cpp IdaSettings.cpp  )
 target_link_libraries (${IdaName}  ${SolverName} ${Boost_LIBRARIES}  ${SUNDIALS_LIBS} )
 
-install (TARGETS ${IdaName} DESTINATION lib/omc)
+install (TARGETS ${IdaName} DESTINATION lib/omc/${LIBINSTALLEXT})
 
 
   

@@ -1360,7 +1360,7 @@ algorithm
         cit = winCitation();
         ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
         exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);        
-        libDir= Settings.getInstallationDirectoryPath() +& "/lib/omc" ;
+        libDir= Settings.getInstallationDirectoryPath() +& "/lib/omc/cpp" ;
         configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
         result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
         simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir}), simflags);           

@@ -13,7 +13,7 @@ target_link_libraries (${CVodeName}  ${SolverName} ${Boost_LIBRARIES}  ${SUNDIAL
 
 
 
-install (TARGETS ${CVodeName} DESTINATION lib/omc)
+install (TARGETS ${CVodeName} DESTINATION lib/omc/${LIBINSTALLEXT})
 #install (FILES "../Interfaces/EulerSettings.xml" 
  # DESTINATION bin/config)
 

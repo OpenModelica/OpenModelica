@@ -10,7 +10,7 @@ target_link_libraries (${EulerName} ${SolverName} ${Boost_LIBRARIES} ${LAPACK_LI
 
 
 
-install (TARGETS ${EulerName} DESTINATION lib/omc)
+install (TARGETS ${EulerName} DESTINATION lib/omc/${LIBINSTALLEXT})
 install (FILES "../Interfaces/EulerSettings.xml" 
   DESTINATION share/omc/runtime/cpp/config)
 
