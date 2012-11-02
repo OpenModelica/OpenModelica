@@ -172,13 +172,13 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   if(initialization(data, init_initMethod, init_optiMethod, init_file, init_time))
   {
-    WARNING(LOG_SOLVER, "| solver | Error in initialization. Storing results and exiting.");
+    WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv LOG_INIT for more information.");
     simInfo->stopTime = simInfo->startTime;
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result_writeParameterData(&(data->modelData));
-  INFO(LOG_SOLVER, "| solver | Wrote parameters to the file after initialization (for output formats that support this)");
+  INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
   if (DEBUG_STREAM(LOG_DEBUG))
     printParameters(data);
 

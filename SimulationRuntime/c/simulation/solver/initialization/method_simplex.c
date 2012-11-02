@@ -127,8 +127,8 @@ int simplex_initialization(INIT_DATA* initData)
 
   /* Set max. no. of function evaluations = 5000, print every 100. */
 
-  MAXF = 5000 * initData->nVars;
-  IPRINT = DEBUG_STREAM(LOG_INIT) ? 1000 : -1;
+  MAXF = 1000 * initData->nVars;
+  IPRINT = DEBUG_STREAM(LOG_INIT) ? MAXF/10 : -1;
 
   /* Set value for stopping criterion.   Stopping occurs when the
   * standard deviation of the values of the objective function at

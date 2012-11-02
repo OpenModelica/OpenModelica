@@ -104,8 +104,8 @@ static void leastSquare(long *nz, double *z, double *funcValue)
 int newuoa_initialization(INIT_DATA *initData)
 {
   long IPRINT = DEBUG_STREAM(LOG_INIT) ? 1000 : 0;
-  long MAXFUN = 5000 * initData->nVars;
-  double RHOEND = 1.0e-6;
+  long MAXFUN = 1000 * initData->nVars;
+  double RHOEND = 1.0e-12;
   double RHOBEG = 10;     /* This should be about one tenth of the greatest
                              expected value of a variable. Perhaps the nominal
                              value can be used for this. */

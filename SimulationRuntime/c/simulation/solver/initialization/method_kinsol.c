@@ -104,8 +104,8 @@
   int kinsol_initialization(INIT_DATA *initData)
   {
     long i;
-    double fnormtol  = 1.e-9;     /* function tolerance */
-    double scsteptol = 1.e-9;     /* step tolerance */
+    double fnormtol  = 1.e-12;     /* function tolerance */
+    double scsteptol = 1.e-12;     /* step tolerance */
 
     long int nni = 0, nfe = 0, nje = 0, nfeD = 0;
 
