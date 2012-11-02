@@ -544,12 +544,17 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
 
   if (!fileName.isEmpty())
   {
-    // Qt is not reallllyyyy platform independent :(
-    // Kind of Qt bug QfileDialog::getsavefilename return extension on windows but not on linux. So need to hard code it here
-#ifdef Q_OS_LINUX
-    fileName.append(".").append(defaultSuffix);
-#endif
+    /* Qt is not reallllyyyy platform independent :(
+     * In older versions of Qt QFileDialog::getSaveFileName doesn't return file extension on Linux.
+     * But it works fine in Qt 4.8.
+     */
     QFileInfo fileInfo(fileName);
+#ifdef Q_OS_LINUX
+    if (fileInfo.suffix().compare("mo", Qt::CaseInsensitive) != 0)
+      fileName.append(".").append(defaultSuffix);
+#else
+    Q_UNUSED(defaultSuffix);
+#endif
     mLastOpenDir = fileInfo.absolutePath();
     return fileName;
   }
