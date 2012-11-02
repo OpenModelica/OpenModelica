@@ -6331,7 +6331,7 @@ algorithm
     then ({}, allEquations, 0, 0, uniqueEqIndex, tempvars, true);
     
     case(_, _, _, _) equation
-      (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialResiduals(inDAE);
+      (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars); 
     then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM));
 

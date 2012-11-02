@@ -6557,13 +6557,16 @@ end transposeSparsePattern2;
 
 
 
-/*
+/* 
  * initialization stuff
  *
  */
-public function collectInitialResiduals "function collectInitialResiduals
+public function collectInitialEquations "function collectInitialEquations
   author: lochel
-  This function collects all initial equations and convert it into residuals."
+  This function collects all initial equations in the following order:
+    - initial equations
+    - implicit initial equations
+    - initial algorithms"
   input BackendDAE.BackendDAE inDAE;
   output list<BackendDAE.Equation> outEquations;
   output Integer outNumberOfInitialEquations;
@@ -6580,13 +6583,12 @@ algorithm
     case (BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs))) equation
       // [initial equations]
       // initial_equation
-      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(initialEqs, BackendDAEUtil.traverseEquationToScalarResidualForm, {});
-      initialEqs_lst = listReverse(initialEqs_lst);
+      initialEqs_lst = BackendDAEUtil.equationList(initialEqs);
       initialEqs_lst1 = List.select(initialEqs_lst, BackendEquation.isNotAlgorithm);
       
-      // [orderedVars] with start-values and fixed=true
-      // v - start(v); fixed(v) = true
-      initialEqs_lst2 = generateFixedStartValueResiduals(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
+      // [orderedVars] with fixed=true
+      // 0 = v - start(v); fixed(v) = true
+      initialEqs_lst2 = generateImplicitInitialEquations(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
       
       // [initial algorithms]
       // remove algorithms, I have no clue what the reason is but is was done before also
@@ -6595,21 +6597,21 @@ algorithm
       
       // append and count
       initialEqs_lst = listAppend(initialEqs_lst1, initialEqs_lst2);
-      numberOfInitialEquations = BackendDAEUtil.equationSize(BackendDAEUtil.listEquation(initialEqs_lst));
+      numberOfInitialEquations = BackendEquation.equationLstSize(initialEqs_lst);
       initialEqs_lst = listAppend(initialEqs_lst, initialEqs_lst3);
-      numberOfInitialAlgorithms = BackendDAEUtil.equationSize(BackendDAEUtil.listEquation(initialEqs_lst3));
+      numberOfInitialAlgorithms = BackendEquation.equationLstSize(initialEqs_lst3);
     then (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms);
     
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function collectInitialResiduals failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function collectInitialEquations failed"});
     then fail();
   end matchcontinue;
-end collectInitialResiduals;
+end collectInitialEquations;
 
-public function generateFixedStartValueResiduals "function generateFixedStartValueResiduals
+public function generateImplicitInitialEquations "function generateImplicitInitialEquations
   author: lochel
-  Helper for collectInitialResiduals.
-  This function generates initial residuals for fixed variables."
+  Helper for collectInitialEquations.
+  This function generates implicit initial equations for fixed variables."
   input list<BackendDAE.Var> inVars;
   output list<BackendDAE.Equation> outEqns;
 algorithm
@@ -6622,6 +6624,7 @@ algorithm
     DAE.Exp e, e1,   crefExp, startExp;
     DAE.ComponentRef cref;
     DAE.Type tp;
+    
     case({}) then {};
       
     case(var::vars) equation
@@ -6639,28 +6642,28 @@ algorithm
       e1 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), startExp);
       
       eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource);
-      eqns = generateFixedStartValueResiduals(vars);
+      eqns = generateImplicitInitialEquations(vars);
     then eqn::eqns;
       
     case(var::vars) equation
-      eqns = generateFixedStartValueResiduals(vars);
+      eqns = generateImplicitInitialEquations(vars);
     then eqns;
       
     case(_) equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function generateFixedStartValueResiduals failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function generateImplicitInitialEquations failed"});
     then fail();
   end matchcontinue;
-end generateFixedStartValueResiduals;
+end generateImplicitInitialEquations;
 
 protected function convertInitialResidualsIntoInitialEquations "function convertInitialResidualsIntoInitialEquations
   author: lochel
-  This function converts initial residuals into initial equations.
-  e.g.: 0 = a+b -> $res1 = a+b"
+  This function converts initial residuals into initial equations of the following form:
+    e.g.: 0 = a+b -> $res1 = a+b"
   input list<BackendDAE.Equation> inResidualList;
   output list<BackendDAE.Equation> outEquationList;
   output list<BackendDAE.Var> outVariableList;
 algorithm
-  (outEquationList, outVariableList) := convertInitialResidualsIntoInitialEquations2(inResidualList, 1,{},{});
+  (outEquationList, outVariableList) := convertInitialResidualsIntoInitialEquations2(inResidualList, 1, {}, {});
 end convertInitialResidualsIntoInitialEquations;
 
 protected function convertInitialResidualsIntoInitialEquations2 "function generateInitialResidualEquations2
@@ -6693,7 +6696,6 @@ algorithm
     then (listReverse(iEquationList), listReverse(iVariableList));
     
     case((BackendDAE.RESIDUAL_EQUATION(exp, source))::restEquationList, index,_,_) equation
-      
       varName = "$res" +& intString(index);
       componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
       expVarName = DAE.CREF(componentRef, DAE.T_REAL_DEFAULT);
@@ -6710,7 +6712,7 @@ algorithm
   end matchcontinue;
 end convertInitialResidualsIntoInitialEquations2;
 
-protected function redirectOutputToBidir "function redirectOutputToBidir
+protected function redirectOutputToBiDir "function redirectOutputToBiDir
   author: lochel
   This is a helper function of generateInitialMatrices."
   input list<BackendDAE.Var> inVariableList;
@@ -6731,18 +6733,18 @@ algorithm
       true = BackendVariable.isOutputVar(variable);
       //true = BackendVariable.isVarOnTopLevelAndOutput(variable);
       resVariable = BackendVariable.setVarDirection(variable, DAE.BIDIR());
-      resVariableList = redirectOutputToBidir(variableList);
+      resVariableList = redirectOutputToBiDir(variableList);
     then (resVariable::resVariableList);
       
     case (variable::variableList) equation
-      resVariableList = redirectOutputToBidir(variableList);
+      resVariableList = redirectOutputToBiDir(variableList);
     then (variable::resVariableList);
     
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function redirectOutputToBidir failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function redirectOutputToBiDir failed"});
     then fail();
   end matchcontinue;
-end redirectOutputToBidir;
+end redirectOutputToBiDir;
 
 public function generateInitialMatrices "function generateInitialMatrices
   author: lochel
@@ -6771,7 +6773,9 @@ algorithm
       BackendDAE.Shared shared;
     
     case(DAE) equation
-      (initialEqs_lst, _, _) = collectInitialResiduals(DAE);
+      (initialEqs_lst, _, _) = collectInitialEquations(DAE);
+      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
+      
       //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals", false);
       (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
       initialEqs = BackendDAEUtil.listEquation(initialEquationList);
@@ -6787,7 +6791,7 @@ algorithm
       BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)}, shared=shared) = DAE;
       orderedVarList = BackendDAEUtil.varList(orderedVars);
       //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 1");
-      orderedVarList = redirectOutputToBidir(orderedVarList);
+      orderedVarList = redirectOutputToBiDir(orderedVarList);
       //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 2");
       orderedVars = BackendDAEUtil.listVar1(orderedVarList);
       DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, shared);
@@ -6809,18 +6813,15 @@ algorithm
       parameters = List.select(knownVarList, BackendVariable.isParam);
       outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
       
-      (jacobian,_,_) = createJacobian(DAE,                                      // DAE
-                                states,                                   // 
-                                BackendDAEUtil.listVar1(states),           // 
-                                BackendDAEUtil.listVar1(inputs),           // 
-                                BackendDAEUtil.listVar1(parameters),       // 
-                                BackendDAEUtil.listVar1(outputs),          // 
-                                orderedVarList,                           // 
-                                (orderedVarCrefList, knownVarCrefList),   // 
-                                "G");                                     // name
-      
-      //(DAE2, _, _, _, _) = jacobian;
-      //BackendDump.bltdump(("bltdump: jacobian G", DAE2));
+      (jacobian,_,_) = createJacobian(DAE,                                 // DAE
+                                  states,                                  // 
+                                  BackendDAEUtil.listVar1(states),         // 
+                                  BackendDAEUtil.listVar1(inputs),         // 
+                                  BackendDAEUtil.listVar1(parameters),     // 
+                                  BackendDAEUtil.listVar1(outputs),        // 
+                                  orderedVarList,                          // 
+                                  (orderedVarCrefList, knownVarCrefList),  // 
+                                  "G");                                    // name
     then (jacobian, DAE);
 
     else equation
