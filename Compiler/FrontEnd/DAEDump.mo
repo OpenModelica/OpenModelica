@@ -261,6 +261,8 @@ algorithm
       Option<SCode.Comment> comment;
       list<DAE.Element> xs,elts;
       DAE.Dimensions dl;
+      Absyn.Path path;
+      list<DAE.Exp> explst;
       
     case DAE.DAE((DAE.VAR(componentRef = cr,
                                binding = SOME(e),
@@ -396,7 +398,7 @@ algorithm
 
     case (DAE.DAE((DAE.ASSERT(condition=e1,message=e2) :: xs)))
       equation
-        Print.printBuf("ASSERT(\n");
+        Print.printBuf("ASSERT(");
         ExpressionDump.printExp(e1);
         Print.printBuf(",");
         ExpressionDump.printExp(e2);
@@ -435,6 +437,89 @@ algorithm
       then
         ();
     case (DAE.DAE(elementLst = {})) then ();
+    
+    case DAE.DAE((DAE.REINIT(componentRef = cr,exp = e2) :: xs))
+      equation
+        Print.printBuf("REINIT(");
+        ComponentReference.printComponentRef(cr);
+        Print.printBuf(" = ");
+        ExpressionDump.printExp(e2);
+        Print.printBuf(")\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
+        
+    case (DAE.DAE((DAE.TERMINATE(message=e1) :: xs)))
+      equation
+        Print.printBuf("TERMINATE(");
+        ExpressionDump.printExp(e1);
+        Print.printBuf(")\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
+        
+    case (DAE.DAE((DAE.NORETCALL(functionName=path,functionArgs=explst) :: xs)))
+      equation
+        Print.printBuf("NORETCALL(");
+        Print.printBuf(Absyn.pathString(path));
+        Print.printBuf("(");
+        Print.printBuf(ExpressionDump.printExpListStr(explst));
+        Print.printBuf("))\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
+    
+    case (DAE.DAE((DAE.EXTOBJECTCLASS(path=path) :: xs)))
+      equation
+        Print.printBuf("EXTOBJECTCLASS(");
+        Print.printBuf(Absyn.pathString(path));
+        Print.printBuf(")\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
+
+    case (DAE.DAE((DAE.WHEN_EQUATION(condition=e1) :: xs)))
+      equation
+        Print.printBuf("WHEN_EQUATION(");
+        ExpressionDump.printExp(e1);
+        Print.printBuf(",...)\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
+        
+    case (DAE.DAE((DAE.IF_EQUATION(condition1=e1::_) :: xs)))
+      equation
+        Print.printBuf("IF_EQUATION(");
+        ExpressionDump.printExp(e1);
+        Print.printBuf(",...)\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
+    
+    case (DAE.DAE((DAE.INITIAL_IF_EQUATION(condition1=e1::_) :: xs)))
+      equation
+        Print.printBuf("IF_EQUATION(");
+        ExpressionDump.printExp(e1);
+        Print.printBuf(",...)\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
+    
+    case (DAE.DAE((DAE.CONSTRAINT(constraints=_) :: xs)))
+      equation
+        Print.printBuf("CONSTRAINT(");
+        Print.printBuf("...)\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
+    
+    case (DAE.DAE((DAE.CLASS_ATTRIBUTES(classAttrs=_) :: xs)))
+      equation
+        Print.printBuf("CLASS_ATTRIBUTES(");
+        Print.printBuf("...)\n");
+        dump2(DAE.DAE(xs));
+      then
+        ();
     
     //BZ Could be nice to know when this failes (when new elements are introduced) 
     case(DAE.DAE((_ :: xs)))
