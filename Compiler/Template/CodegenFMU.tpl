@@ -1142,7 +1142,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean callEventUpdate = false;
     Real flowControlTime;
     Real flowControlStatesInputs;
-    Boolean initializationDone(start=false);
   protected
     <%dumpFMICommonObjects(platform)%>
     
@@ -1158,11 +1157,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     end fmiEventInfo;
     
     package fmiFunctions
-      function fmiInstantiateModel
+      function fmiInitialize
         input fmiImportInstance fmi;
         input String instanceName;
-        external "C" fmiInstantiateModel_OMC(fmi, instanceName) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiInstantiateModel;
+        input Boolean debugLogging;
+        input Real in_time;
+        output fmiEventInfo eventInfo;
+        external "C" eventInfo = fmiInitialize_OMC(fmi, instanceName, debugLogging, in_time) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiInitialize;
       
       function fmiSetTime
         input fmiImportInstance fmi;
@@ -1171,12 +1173,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         output Real status;
         external "C" status = fmiSetTime_OMC(fmi, in_time, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiSetTime;
-      
-      function fmiInitialize
-        input fmiImportInstance fmi;
-        output fmiEventInfo eventInfo;
-        external "C" eventInfo = fmiInitialize_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiInitialize;
       
       function fmiGetContinuousStates
         input fmiImportInstance fmi;
@@ -1244,24 +1240,12 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       constant Integer fmiPending=5;
     end fmiStatus;
   initial algorithm
-    if not initializationDone then
-      fmiFunctions.fmiInstantiateModel(fmi, "<%fmiInfo.fmiModelIdentifier%>");
-      fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
-      flowControlTime := fmiFunctions.fmiSetTime(fmi, time, 1);
-      <%/*if not stringEq(realStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetReal(fmi, {"+dumpStartRealVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartRealVariablesName(fmiModelVariablesList)+"});"%>
-      <%if not stringEq(integerStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetInteger(fmi, {"+dumpStartIntegerVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartIntegerVariablesName(fmiModelVariablesList)+"});"%>
-      <%if not stringEq(booleanStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetBoolean(fmi, {"+dumpStartBooleanVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartBooleanVariablesName(fmiModelVariablesList)+"});"%>
-      <%if not stringEq(stringStartVariables, "0") then "fmi_status := fmiFunctions.fmiSetString(fmi, {"+dumpStartStringVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartStringVariablesName(fmiModelVariablesList)+"});"*/%>
-      eventInfo := fmiFunctions.fmiInitialize(fmi);
-      initializationDone := true;
-    end if;
+    eventInfo := fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
     fmi_x := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, 1);
   >>
   %>
-  algorithm
-    initializationDone := true;
   equation
     der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates, flowControlStatesInputs);
     flowControlTime = fmiFunctions.fmiSetTime(fmi, time, 1);

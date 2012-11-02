@@ -143,17 +143,6 @@ void fmiFreeEventInfo_OMC(void* eventInfo)
 }
 
 /*
- * Wrapper for the FMI function fmiInstantiateModel.
- */
-void fmiInstantiateModel_OMC(void* fmi, char* instanceName)
-{
-  jm_status_enu_t status = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
-  if (status == jm_status_error) {
-    fprintf(stderr, "FMI Import Error: Error in fmiInstantiateModel_OMC.\n");fflush(NULL);
-  }
-}
-
-/*
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
@@ -164,38 +153,49 @@ double fmiSetTime_OMC(void* fmi, double time, double dummy)
 }
 
 /*
- * Wrapper for the FMI function fmiInitialize.
- * Returns FMI Event Info i.e fmi1_event_info_t.
- */
-void* fmiInitialize_OMC(void* fmi)
-{
-  fmi1_boolean_t toleranceControlled = fmi1_true;
-  fmi1_real_t relativeTolerance = 0.001;
-  fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
-  fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiInitialize_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiInitialize_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiInitialize_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
-  return eventInfo;
-}
-
-/*
  * Wrapper for the FMI function fmiSetDebugLogging.
  * Returns status.
  */
 int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
 {
   return fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
+}
+
+/*
+ * Calls the FMI initialize functions e.g fmiInstantiateModel, fmiSetDebugLogging, fmiSetTime and fmiInitialize.
+ * Returns FMI Event Info i.e fmi1_event_info_t.
+ */
+void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double time)
+{
+  static int init = 0;
+  if (!init) {
+    jm_status_enu_t status = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
+    if (status == jm_status_error) {
+      fprintf(stderr, "FMI Import Error: Error in fmiInstantiateModel_OMC.\n");fflush(NULL);
+      return 0;
+    }
+    fmiSetDebugLogging_OMC(fmi, debugLogging);
+    fmiSetTime_OMC(fmi, time, 1);
+    fmi1_boolean_t toleranceControlled = fmi1_true;
+    fmi1_real_t relativeTolerance = 0.001;
+    fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
+    fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
+    switch (fmistatus) {
+      case fmi1_status_warning:
+        fprintf(stderr, "FMI Import Warning: Warning in fmiInitialize_OMC.\n");fflush(NULL);
+        break;
+      case fmi1_status_error:
+        fprintf(stderr, "FMI Import Error: Error in fmiInitialize_OMC.\n");fflush(NULL);
+        break;
+      case fmi1_status_fatal:
+        fprintf(stderr, "FMI Import Fatal: Fatal in fmiInitialize_OMC.\n");fflush(NULL);
+        break;
+      default:
+        break;
+    }
+    init = 1;
+    return eventInfo;
+  }
 }
 
 /*
