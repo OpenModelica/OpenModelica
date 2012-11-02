@@ -1175,7 +1175,7 @@ algorithm
       SCode.Annotation res;
       list<SCode.Annotation> anns,anns_1;
     case({}) then {};
-    case(Absyn.EQUATIONITEMANN(ann) :: cdr)
+    case (Absyn.EQUATIONITEMANN(ann) :: cdr)
       equation
         res = translateAnnotation(ann);
         anns = translateAnnotationsEq(cdr);
@@ -1645,7 +1645,7 @@ algorithm
       then
         (SCode.EQUATION(e_1) :: es_1);
 
-    case ((Absyn.EQUATIONITEMANN(annotation_ = _) :: es), _)
+    case ((_ :: es), _)
       equation
         es_1 = translateEquations(es, inIsInitial);
       then

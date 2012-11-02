@@ -5151,7 +5151,7 @@ algorithm
       list<Absyn.EquationItem> eqs;
   case (Absyn.EQUATIONS(contents = eqs))
       equation
-        str = Dump.unparseEquationitemStrLst(0, eqs, ";\n");
+        str = Dump.unparseEquationitemStrLst(0, eqs, "\n");
       then
         str;
   end match; 
@@ -5232,7 +5232,7 @@ algorithm
       list<Absyn.EquationItem> eqs;
   case (Absyn.INITIALEQUATIONS(contents = eqs))
       equation
-        str = Dump.unparseEquationitemStrLst(0, eqs, ";\n");
+        str = Dump.unparseEquationitemStrLst(0, eqs, "\n");
       then
         str;
   end match; 

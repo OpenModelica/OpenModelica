@@ -459,6 +459,10 @@ uniontype EquationItem "Several component declarations can be grouped together i
   record EQUATIONITEMANN
     Annotation annotation_ "annotation" ;
   end EQUATIONITEMANN;
+  
+  record EQUATIONITEMCOMMENT
+    String comment;
+  end EQUATIONITEMCOMMENT;
 
 end EquationItem;
 

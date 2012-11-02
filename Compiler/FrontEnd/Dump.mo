@@ -1259,7 +1259,7 @@ algorithm
 
     case (i,Absyn.CONSTRAINTS(contents = exps),_)
       equation
-        // s1 = unparseEquationitemStrLst(i, eqs, ";\n");
+        // s1 = unparseEquationitemStrLst(i, eqs, "\n");
         s1 = stringDelimitList(List.map(exps,printExpStr),"; ");
         i_1 = i - 1;
         is = indentStr(i_1);
@@ -1269,7 +1269,7 @@ algorithm
 
     case (i,Absyn.EQUATIONS(contents = eqs),_)
       equation
-        s1 = unparseEquationitemStrLst(i, eqs, ";\n");
+        s1 = unparseEquationitemStrLst(i, eqs, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
         str = stringAppendList({is,"equation\n",s1});
@@ -1278,7 +1278,7 @@ algorithm
     
     case (i,Absyn.INITIALEQUATIONS(contents = eqs),_)
       equation
-        s1 = unparseEquationitemStrLst(i, eqs, ";\n");
+        s1 = unparseEquationitemStrLst(i, eqs, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
         str = stringAppendList({is,"initial equation\n",s1});
@@ -2767,7 +2767,7 @@ algorithm
       equation
         s1 = printExpStr(e);
         i_1 = i + 1;
-        s2 = unparseEquationitemStrLst(i_1, tb, ";\n");
+        s2 = unparseEquationitemStrLst(i_1, tb, "\n");
         is = indentStr(i);
         str = stringAppendList({is,"if ",s1," then\n",s2,is,"end if"});
       then
@@ -2777,9 +2777,9 @@ algorithm
       equation
         s1 = printExpStr(e);
         i_1 = i + 1;
-        s2 = unparseEquationitemStrLst(i_1, tb, ";\n");
+        s2 = unparseEquationitemStrLst(i_1, tb, "\n");
         s3 = unparseEqElseifStrLst(i_1, eb, "\n");
-        s4 = unparseEquationitemStrLst(i_1, fb, ";\n");
+        s4 = unparseEquationitemStrLst(i_1, fb, "\n");
         is = indentStr(i);
         str = stringAppendList(
           {is,"if ",s1," then\n",s2,s3,is,"else\n",s4,is, "end if"});
@@ -2807,7 +2807,7 @@ algorithm
     case (i,Absyn.EQ_FOR(iterators = iterators,forEquations = el))
       equation
         s1 = printIteratorsStr(iterators);
-        s2 = unparseEquationitemStrLst(i, el, ";\n");
+        s2 = unparseEquationitemStrLst(i, el, "\n");
         is = indentStr(i);
         str = stringAppendList({is,"for ",s1," loop\n",s2,"\n",is,"end for"});
       then
@@ -2826,7 +2826,7 @@ algorithm
       equation
         s1 = printExpStr(exp);
         i_1 = i + 1;
-        s2 = unparseEquationitemStrLst(i_1, eql, ";\n");
+        s2 = unparseEquationitemStrLst(i_1, eql, "\n");
         is = indentStr(i);
         s4 = unparseEqElsewhenStrLst(i_1, eqlelse);
         str = stringAppendList({is,"when ",s1," then\n",is,s2,is,s4,"\n",is,"end when"});
@@ -2895,13 +2895,17 @@ algorithm
         s2 = unparseCommentOption(optcmt);
         str = stringAppend(s1, s2);
       then
-        str;
+        str +& ";";
     
     case (i,Absyn.EQUATIONITEMANN(annotation_ = ann))
       equation
         str = unparseAnnotationOption(i, SOME(ann));
       then
-        str;
+        str +& ";";
+
+    case (i,Absyn.EQUATIONITEMCOMMENT(str))
+      then indentStr(i) +& System.trimWhitespace(str);
+
   end match;
 end unparseEquationitemStr;
 
@@ -2981,7 +2985,7 @@ algorithm
     case (i,(e,el))
       equation
         s1 = printExpStr(e);
-        s2 = unparseEquationitemStrLst(i, el, ";\n");
+        s2 = unparseEquationitemStrLst(i, el, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
         res = stringAppendList({is,"elseif ",s1," then\n",s2});
@@ -3483,7 +3487,7 @@ algorithm
     case (i,(exp,eql))
       equation
         is = indentStr(i);
-        s1 = unparseEquationitemStrLst(i, eql, ";\n");
+        s1 = unparseEquationitemStrLst(i, eql, "\n");
         s2 = printExpStr(exp);
         res = stringAppendList({"elsewhen ",s2," then\n",s1});
       then
@@ -4655,7 +4659,7 @@ algorithm
     case (i, {}) then "\n";
     case (i, eq)
       equation
-        s = unparseEquationitemStrLst(i, eq, ";\n");
+        s = unparseEquationitemStrLst(i, eq, "\n");
         s = "\t  equation\n" +& s;
       then s;
   end matchcontinue;
@@ -4749,7 +4753,7 @@ algorithm
     case (Absyn.C_EQUATIONSECTION(boolean = b,equationItemLst = eqitems))
       equation
         s1 = selectString(b, "initial ", "");
-        s2 = unparseEquationitemStrLst(1, eqitems, ";\n");
+        s2 = unparseEquationitemStrLst(1, eqitems, "\n");
         res = stringAppendList({s1,"equation ",s2});
       then
         res;
