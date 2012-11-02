@@ -61,21 +61,20 @@ protected import ClassInf;
 
 public function printComponentRefStrDIVISION
   input DAE.ComponentRef inCref;
-  input BackendDAE.Variables inVars;
+  input Integer dummy;
   output String outString;
 algorithm 
-  outString := matchcontinue(inCref,inVars)
+  outString := matchcontinue(inCref,dummy)
     local 
-      DAE.ComponentRef c,co;
-      BackendDAE.Variables variables;
+      DAE.ComponentRef c;
       String sc;
-    case(c,variables)
+    case(DAE.CREF_QUAL(ident="$DER",componentRef=c),_)
       equation
-        ((BackendDAE.VAR(varName=co):: _),_) = BackendVariable.getVar(c,variables);
-        sc = ComponentReference.printComponentRefStr(co);
+        sc = ComponentReference.printComponentRefStr(c);
+        sc = "der(" +& sc +& ")";
       then
         sc;
-    case(c,variables)
+    case(c,_)
       equation
         sc = ComponentReference.printComponentRefStr(c);
       then

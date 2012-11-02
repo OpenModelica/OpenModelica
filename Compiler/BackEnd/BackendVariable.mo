@@ -68,40 +68,6 @@ protected import Types;
  * =======================================================
  */
 
-public function isVarKnown "function: isVarKnown
-  author: PA
-  Returns true if the the variable is present in the variable list.
-  This is done by traversing the list, searching for a matching variable
-  name."
-  input list<BackendDAE.Var> inVarLst;
-  input DAE.ComponentRef inComponentRef;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue (inVarLst,inComponentRef)
-    local
-      DAE.ComponentRef var_name,cr;
-      BackendDAE.Var variable;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      list<BackendDAE.Var> rest;
-      Boolean res;
-    case ({},var_name) then false;
-    case (((variable as BackendDAE.VAR(varName = cr,values = dae_var_attr,comment = comment)) :: rest),var_name)
-      equation
-        true = ComponentReference.crefEqualNoStringCompare(cr, var_name);
-      then
-        true;
-    case (((variable as BackendDAE.VAR(varName = cr,values = dae_var_attr,comment = comment)) :: rest),var_name)
-      equation
-        res = isVarKnown(rest, var_name);
-      then
-        res;
-  end matchcontinue;
-end isVarKnown;
-
-
-
-
 public function varEqual
 "function: varEqual
   author: PA

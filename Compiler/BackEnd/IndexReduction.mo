@@ -1337,7 +1337,7 @@ protected function compareOrgEqn
   input tuple<Integer, list<BackendDAE.Equation>, Integer> inB;
   output Boolean lt;
 algorithm
-  lt := intLt(Util.tuple33(inA),Util.tuple33(inB));  
+  lt := intGt(Util.tuple33(inA),Util.tuple33(inB));  
 end compareOrgEqn;
 
 protected function getOrgEqns
@@ -1668,7 +1668,7 @@ algorithm
         // sort vars with heuristic
         vars1 = sortStateCandidatesVars(vars,BackendVariable.daeVars(isyst),so);
 
-        varlst = List.map1(BackendDAEUtil.varList(vars1),BackendVariable.setVarKind,BackendDAE.VARIABLE());   
+        varlst = List.map1(BackendDAEUtil.varList(vars1),BackendVariable.setVarKind,BackendDAE.VARIABLE());
         vars1 = BackendDAEUtil.listVar1(varlst);
         syst = BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         
@@ -2738,6 +2738,7 @@ algorithm
         e1 = inExps[1];
         e2 = inExps[p];        
         expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
+        //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
         expThen = generateCondition1(p,p+1,size,inExps);
         expElse = generateCondition(p,size,inExps);
       then
@@ -2748,6 +2749,7 @@ algorithm
        e1 = inExps[1];
        e2 = inExps[p];       
        expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
+       //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
      then
        DAE.IFEXP(expCond, DAE.ICONST(p), DAE.ICONST(1));
                 
@@ -2772,6 +2774,7 @@ algorithm
         e1 = inExps[p1];
         e2 = inExps[p2];
         expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
+        //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
         expThen = generateCondition2(p2,p2+1,size,inExps);
         expElse = generateCondition1(p1,p2+1,size,inExps);
       then
@@ -2782,6 +2785,7 @@ algorithm
         e1 = inExps[p1];
         e2 = inExps[p2];
         expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
+        //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
       then
         DAE.IFEXP(expCond, DAE.ICONST(p2), DAE.ICONST(p1));        
   end matchcontinue;
@@ -2805,6 +2809,7 @@ algorithm
         e1 = inExps[p1];
         e2 = inExps[p2];
         expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
+        //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
         expThen = generateCondition2(p2,p2+1,size,inExps);
       then
         DAE.IFEXP(expCond, expThen, DAE.ICONST(0));
@@ -2814,6 +2819,7 @@ algorithm
         e1 = inExps[p1];
         e2 = inExps[p2];
         expCond = DAE.RELATION(DAE.CALL(Absyn.IDENT("abs"),{e1},DAE.callAttrBuiltinReal),DAE.LESS(DAE.T_REAL_DEFAULT),DAE.CALL(Absyn.IDENT("abs"),{e2},DAE.callAttrBuiltinReal),0,NONE());
+        //expCond = DAE.CALL(Absyn.IDENT("noEvent"),{expCond},DAE.callAttrBuiltinBool);
       then
         DAE.IFEXP(expCond, DAE.ICONST(p2), DAE.ICONST(p1));        
   end matchcontinue;

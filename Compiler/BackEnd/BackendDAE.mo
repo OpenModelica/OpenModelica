@@ -542,12 +542,6 @@ public
 type StrongComponents = list<StrongComponent> "- Order of the equations the have to be solved" ;
 
 public
-uniontype DivZeroExpReplace "- Should the division operator replaced by a operator with check of the denominator"
-  record ALL  " check all expressions" end ALL;
-  record ONLY_VARIABLES  " for expressions with variable variables(no parameters)" end ONLY_VARIABLES;
-end DivZeroExpReplace;
-
-public
 type SymbolicJacobians = list<tuple<Option<SymbolicJacobian>, SparsePattern, SparseColoring>>;
 
 public 

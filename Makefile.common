@@ -120,7 +120,8 @@ testlog:
 	cat testsuite/testsuite-trace.txt | grep "==== Log" ; echo DONE!
 
 testmos:
-	(time $(MAKE) -C testsuite/mosfiles -f Makefile)
+	(time $(MAKE) -C testsuite -f Makefile omc-diff)
+	(time $(MAKE) -C testsuite/simulation/modelica/others -f Makefile)
 
 testsimulation:
 	(time $(MAKE) -C testsuite -f Makefile simulation)

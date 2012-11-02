@@ -869,12 +869,20 @@ template functionInitialResidual(list<SimEqSystem> residualEquations)
   let body = (residualEquations |> eq2 =>
        functionInitialResidualBody(eq2, &varDecls /*BUFD*/, &tmp)
      ;separator="\n")
-      
+  let desc = match residualEquations
+             case {} then
+               <<
+               const char *initialResidualDescription[1] = {"empty"};
+               >> 
+             else
+               <<
+               const char *initialResidualDescription[] = 
+               {
+                 <%resDesc%>
+               };
+               >>      
   <<
-  const char *initialResidualDescription[] = 
-  {
-    <%resDesc%>
-  };
+  <%desc%>
 
   <%tmp%>  
   int initial_residual(DATA *data, double *initialResiduals)
@@ -1362,11 +1370,21 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings)
   let resDesc = (zeroCrossings |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>", ' 
     ;separator="\n") 
   
+  let desc = match zeroCrossings
+             case {} then
+               <<
+               const char *zeroCrossingDescription[1] = {"empty"};
+               >> 
+             else
+               <<
+               const char *zeroCrossingDescription[] = 
+               {
+                 <%resDesc%>
+               };
+               >>    
+  
   <<
-  const char *zeroCrossingDescription[] =  
-  { 
-    <%resDesc%> 
-  }; 
+  <%desc%> 
   
   int function_ZeroCrossings(DATA *data, double *gout, double *t)
   {
