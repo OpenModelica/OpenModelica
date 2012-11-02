@@ -550,7 +550,7 @@ QString StringHandler::getSaveFileName(QWidget* parent, const QString &caption, 
      */
     QFileInfo fileInfo(fileName);
 #ifdef Q_OS_LINUX
-    if (fileInfo.suffix().compare("mo", Qt::CaseInsensitive) != 0)
+    if (fileInfo.suffix().compare(defaultSuffix, Qt::CaseInsensitive) != 0)
       fileName.append(".").append(defaultSuffix);
 #else
     Q_UNUSED(defaultSuffix);
