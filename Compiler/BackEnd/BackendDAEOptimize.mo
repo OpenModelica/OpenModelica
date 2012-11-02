@@ -6576,26 +6576,30 @@ algorithm
       
       Integer numberOfInitialEquations, numberOfInitialAlgorithms;
       list<BackendDAE.Equation> initialEqs_lst, initialEqs_lst1, initialEqs_lst2, initialEqs_lst3;
-      
-    case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs))) equation
+    
+    case (BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs))) equation
       // [initial equations]
       // initial_equation
-      initialEqs_lst1 = BackendEquation.traverseBackendDAEEqns(initialEqs, BackendDAEUtil.traverseequationToScalarResidualForm, {});
-      initialEqs_lst1 = listReverse(initialEqs_lst1);
-
+      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(initialEqs, BackendDAEUtil.traverseEquationToScalarResidualForm, {});
+      initialEqs_lst = listReverse(initialEqs_lst);
+      initialEqs_lst1 = List.select(initialEqs_lst, BackendEquation.isNotAlgorithm);
+      
       // [orderedVars] with start-values and fixed=true
       // v - start(v); fixed(v) = true
       initialEqs_lst2 = generateFixedStartValueResiduals(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
-      initialEqs_lst = listAppend(initialEqs_lst1, initialEqs_lst2);
-      numberOfInitialEquations = listLength(initialEqs_lst);
-
+      
       // [initial algorithms]
-      // is still missing but algorithms from initial equations are generate in parameter eqns.
-      initialEqs_lst3 = {};
+      // remove algorithms, I have no clue what the reason is but is was done before also
+      initialEqs_lst3 = List.select(initialEqs_lst, BackendEquation.isAlgorithm);
+      //initialEqs_lst3 = {};
+      
+      // append and count
+      initialEqs_lst = listAppend(initialEqs_lst1, initialEqs_lst2);
+      numberOfInitialEquations = BackendDAEUtil.equationSize(BackendDAEUtil.listEquation(initialEqs_lst));
       initialEqs_lst = listAppend(initialEqs_lst, initialEqs_lst3);
-      numberOfInitialAlgorithms = listLength(initialEqs_lst3);
-    then(initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms);
-        
+      numberOfInitialAlgorithms = BackendDAEUtil.equationSize(BackendDAEUtil.listEquation(initialEqs_lst3));
+    then (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms);
+    
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function collectInitialResiduals failed"});
     then fail();
@@ -6621,7 +6625,6 @@ algorithm
     case({}) then {};
       
     case(var::vars) equation
-      //SOME(startExp) = BackendVariable.varStartValueOption(var);
       true = BackendVariable.varFixed(var);
       false = BackendVariable.isStateVar(var);
       false = BackendVariable.isParam(var);

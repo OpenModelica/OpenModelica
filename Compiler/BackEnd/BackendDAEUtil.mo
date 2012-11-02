@@ -6486,7 +6486,7 @@ algorithm
   end matchcontinue;
 end traverseequationToResidualForm;
 
-public function traverseequationToScalarResidualForm "function: traverseequationToScalarResidualForm
+public function traverseEquationToScalarResidualForm "function traverseEquationToScalarResidualForm
   author: Frenkel TUD 2010-11
   helper for calculateJacobian"
   input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
@@ -6496,15 +6496,15 @@ algorithm
     local
       list<BackendDAE.Equation> eqns,reqn;
       BackendDAE.Equation eqn;
-    case ((eqn,eqns))
-      equation
-        reqn = BackendEquation.equationToScalarResidualForm(eqn);
-        eqns = listAppend(reqn,eqns);
-      then
-        ((eqn,eqns));
-    case _ then inTpl;
+    case ((eqn,eqns)) equation
+      reqn = BackendEquation.equationToScalarResidualForm(eqn);
+      eqns = listAppend(reqn,eqns);
+    then ((eqn,eqns));
+    
+    case _
+    then inTpl;
   end matchcontinue;
-end traverseequationToScalarResidualForm;
+end traverseEquationToScalarResidualForm;
 
 protected function calculateJacobianRows "function: calculateJacobianRows
   author: PA

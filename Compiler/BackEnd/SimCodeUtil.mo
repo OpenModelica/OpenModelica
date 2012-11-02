@@ -1804,7 +1804,7 @@ algorithm
   matchcontinue (inBackendDAE,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
     local
       String cname,   fileDir;
-      Integer n_h,maxDelayedExpIndex, uniqueEqIndex, numberofNonLinearSys, numberofEqns, numberOfInitialEquations;
+      Integer n_h,maxDelayedExpIndex, uniqueEqIndex, numberofNonLinearSys, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms;
       list<SimCode.HelpVarInfo> helpVarInfo;
       BackendDAE.BackendDAE dlow,dlow2;
       DAE.FunctionTree functionTree;
@@ -1860,7 +1860,6 @@ algorithm
         // check if the Sytems has states
         dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
         
-       
         (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
         BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
                                                           constraints = constrsarr,
@@ -1879,11 +1878,11 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // initialization stuff
-        (residuals, initialEquations, numberOfInitialEquations, uniqueEqIndex,tempvars,initialSystemSolved) = createInitialResiduals(dlow2,uniqueEqIndex,{},helpVarInfo);
+        (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, initialSystemSolved) = createInitialResiduals(dlow2, uniqueEqIndex, {}, helpVarInfo);
         (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
  
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, 0, fileDir,ifcpp);
+        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir,ifcpp);
         
         // equation generation for euler, dassl2, rungekutta
         (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},tempvars);
@@ -6283,7 +6282,7 @@ algorithm
   end matchcontinue;
 end createInitialMatrices;
 
-protected function createInitialResiduals "function: createInitialResiduals
+protected function createInitialResiduals "function createInitialResiduals
   author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;
@@ -6293,11 +6292,12 @@ protected function createInitialResiduals "function: createInitialResiduals
   output list<SimCode.SimEqSystem> outResiduals;
   output list<SimCode.SimEqSystem> outInitialEqns;
   output Integer outNumberOfInitialEquations;
+  output Integer outNumberOfInitialAlgorithms;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
   output Boolean initialSystemSolved;
 algorithm
-  (outResiduals, outInitialEqns, outNumberOfInitialEquations, ouniqueEqIndex, otempvars, initialSystemSolved) := matchcontinue(inDAE,iuniqueEqIndex,itempvars,helpVarInfo)
+  (outResiduals, outInitialEqns, outNumberOfInitialEquations, outNumberOfInitialAlgorithms, ouniqueEqIndex, otempvars, initialSystemSolved) := matchcontinue(inDAE, iuniqueEqIndex, itempvars, helpVarInfo)
     local
       BackendDAE.EqSystems eqs;
       BackendDAE.EquationArray initialEqs,removedEqs;
@@ -6306,52 +6306,37 @@ algorithm
       
       list<BackendDAE.Equation> initialEqs_lst;
       Integer numberOfInitialEquations, numberOfInitialAlgorithms;
+      
       list<SimCode.SimEqSystem> residual_equations,residual_equations1,allEquations,removedEquations,knvarseqns,aliasEquations;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.Variables knvars,aliasVars;
+      
     // try to solve the inital system symbolical.
-    case(_,_,_,_) 
-      equation
-        true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
-        // generate initalsystem
-        (_,BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knownVars=knvars,aliasVars=aliasVars,removedEqs=removedEqs))) = BackendDAEUtil.solveInitialSystem(inDAE);
-        // generate equations from the solved systems
-        (uniqueEqIndex,_,_,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,iuniqueEqIndex,{},{},{},itempvars);
-        // generate equations from the removed equations
-        ((uniqueEqIndex,removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(uniqueEqIndex,{}));
-        allEquations = listAppend(allEquations,removedEquations);
-        // generate equations from the knvown unfixed variables
-        ((uniqueEqIndex,knvarseqns)) = BackendVariable.traverseBackendDAEVars(knvars,traverseKnVarsToSimEqSystem,(uniqueEqIndex,{}));
-        allEquations = listAppend(allEquations,knvarseqns);
-        // generate equations from the alias variables
-        ((uniqueEqIndex,aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseAliasVarsToSimEqSystem,(uniqueEqIndex,{}));
-        allEquations = listAppend(allEquations,aliasEquations);
-      then
-        ({},allEquations,0,uniqueEqIndex,tempvars,true);
-    case(BackendDAE.DAE(eqs=eqs, shared=BackendDAE.SHARED(initialEqs=initialEqs)),_,_,_) 
-      equation
-        // initial_equation
-        numberOfInitialEquations = BackendDAEUtil.equationSize(initialEqs);
-        initialEqs_lst = BackendDAEUtil.equationList(initialEqs);
-        // remove algorithms, I have no clue what the reason is but is was done before also
-        // do not remove the inital algorithms if the system is solved symbolically
-        initialEqs_lst = Debug.bcallret2(not Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM),List.select,initialEqs_lst,BackendEquation.isNotAlgorithm,initialEqs_lst);
-        numberOfInitialEquations = Debug.bcallret1(not Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM),BackendEquation.equationLstSize,initialEqs_lst,numberOfInitialEquations);
-        (residual_equations,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars); 
-        
-        // [orderedVars] with start-values and fixed=true
-        // v - start(v); fixed(v) = true
-        initialEqs_lst = BackendDAEOptimize.generateFixedStartValueResiduals(List.flatten(List.mapMap(eqs, BackendVariable.daeVars, BackendDAEUtil.varList)));
-        numberOfInitialEquations = listLength(initialEqs_lst) + numberOfInitialEquations;        
-        
-        (residual_equations1, uniqueEqIndex) = List.mapFold(initialEqs_lst, dlowEqToSimEqSystem, uniqueEqIndex);
-        residual_equations = listAppend(residual_equations,residual_equations1);
-    then
-      (residual_equations,{},numberOfInitialEquations,uniqueEqIndex,tempvars,Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM));
-        
+    case(_, _, _, _)  equation
+      true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
+      // generate initalsystem
+      (_,BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knownVars=knvars,aliasVars=aliasVars,removedEqs=removedEqs))) = BackendDAEUtil.solveInitialSystem(inDAE);
+      // generate equations from the solved systems
+      (uniqueEqIndex,_,_,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,iuniqueEqIndex,{},{},{},itempvars);
+      // generate equations from the removed equations
+      ((uniqueEqIndex,removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(uniqueEqIndex,{}));
+      allEquations = listAppend(allEquations,removedEquations);
+      // generate equations from the knvown unfixed variables
+      ((uniqueEqIndex,knvarseqns)) = BackendVariable.traverseBackendDAEVars(knvars,traverseKnVarsToSimEqSystem,(uniqueEqIndex,{}));
+      allEquations = listAppend(allEquations,knvarseqns);
+      // generate equations from the alias variables
+      ((uniqueEqIndex,aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseAliasVarsToSimEqSystem,(uniqueEqIndex,{}));
+      allEquations = listAppend(allEquations,aliasEquations);
+    then ({}, allEquations, 0, 0, uniqueEqIndex, tempvars, true);
+    
+    case(_, _, _, _) equation
+      (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialResiduals(inDAE);
+      (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars); 
+    then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM));
+
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: createInitialResiduals failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: createInitialResiduals failed"});
     then fail();
   end matchcontinue;
 end createInitialResiduals;

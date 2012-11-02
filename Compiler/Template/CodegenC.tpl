@@ -271,7 +271,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nRelations = <%varInfo.numRelations%>;    
     data->modelData.nInitEquations = <%varInfo.numInitialEquations%>;
     data->modelData.nInitAlgorithms = <%varInfo.numInitialAlgorithms%>;
-    data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;
+    data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;    /* data->modelData.nInitEquations + data->modelData.nInitAlgorithms */
     data->modelData.nExtObjs = <%varInfo.numExternalObjects%>;
     data->modelData.nFunctions = <%listLength(functions)%>;
     data->modelData.nEquations = <%varInfo.numEquations%>;
@@ -2540,7 +2540,7 @@ case SIMCODE(modelInfo = MODELINFO(functions = functions, varInfo = vi as VARINF
                 
     numberOfInputVariables              = "<%vi.numInVars%>"  cmt_numberOfInputVariables              = "NI:       number of inputvar on topmodel,                     OMC"
     numberOfOutputVariables             = "<%vi.numOutVars%>"  cmt_numberOfOutputVariables             = "NO:       number of outputvar on topmodel,                    OMC"
- 
+
     numberOfResidualsForInitialization  = "<%vi.numInitialResiduals%>"  cmt_numberOfResidualsForInitialization  = "NR:       number of residuals for initialialization function, OMC"
     numberOfExternalObjects             = "<%vi.numExternalObjects%>"  cmt_numberOfExternalObjects             = "NEXT:     number of external objects,                         OMC"
     numberOfFunctions                   = "<%listLength(functions)%>"  cmt_numberOfFunctions                   = "NFUNC:    number of functions used by the simulation,         OMC"

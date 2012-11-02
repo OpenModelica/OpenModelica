@@ -181,7 +181,7 @@ uniontype VarInfo
     Integer numInVars;
     Integer numInitialEquations;
     Integer numInitialAlgorithms;
-    Integer numInitialResiduals;
+    Integer numInitialResiduals; // numInitialEquations+numInitialAlgorithms
     Integer numExternalObjects;
     Integer numStringAlgVars;
     Integer numStringParamVars;
