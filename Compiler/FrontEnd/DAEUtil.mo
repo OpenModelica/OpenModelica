@@ -6540,5 +6540,12 @@ algorithm
   DAE.TYPES_VAR(ty = ty) := inVar;
   outIsComplex := Types.isComplexType(ty);
 end isComplexVar;
+
+public function getElements
+  input DAE.DAElist inDAE;
+  output list<DAE.Element> outElements;
+algorithm
+  DAE.DAE(outElements) := inDAE;
+end getElements;
   
 end DAEUtil;

@@ -55,6 +55,7 @@ public import DAE;
 public import Env;
 public import InnerOuter;
 public import Prefix;
+public import ConnectionGraph;
 
 // protected imports
 protected import ComponentReference;
@@ -1719,27 +1720,38 @@ public function equations
   input Boolean inTopScope;
   input Sets inSets;
   input DAE.DAElist inDae;
+  input ConnectionGraph.ConnectionGraph inConnectionGraph;
+  input String inModelNameQualified;
   output DAE.DAElist outDae;
 protected
   list<Set> sets;
   array<Set> set_array;
 algorithm
-  outDae := match(inTopScope, inSets, inDae)
+  outDae := match(inTopScope, inSets, inDae, inConnectionGraph, inModelNameQualified)
     local
       DAE.DAElist dae;
       Boolean has_stream;
+      ConnectionGraph.DaeEdges broken, connected;
 
-    case (true, _, _)
+    case (true, _, _, _, _)
       equation
         //print(printSetsStr(inSets) +& "\n");
         set_array = generateSetArray(inSets);
         sets = arrayList(set_array);
         //print("Sets:\n");
         //print(stringDelimitList(List.map(sets, printSetStr), "\n") +& "\n");
-        dae = List.fold(sets, equationsDispatch, DAEUtil.emptyDae);
-        dae = DAEUtil.joinDaes(inDae, dae);
+        
+        // send in the connection graph and build the connected/broken connects
+        // we do this here so we do it once and not for every EQU set.
+        (dae, connected, broken) = ConnectionGraph.handleOverconstrainedConnections(inConnectionGraph, inModelNameQualified, inDae);
+        
+        // adrpo: FIXME: maybe we should just remove them from the sets then send the updates sets further
+        dae = List.fold2(sets, equationsDispatch, connected, broken, dae);
         has_stream = System.getHasStreamConnectors();
         dae = evaluateStreamOperators(has_stream, inSets, set_array, dae);
+        
+        // add the equality constraint equations to the dae.
+        dae = ConnectionGraph.addBrokenEqualityConstraintEquations(dae, broken);
       then
         dae;
 
@@ -2159,36 +2171,40 @@ protected function equationsDispatch
   "Dispatches to the correct equation generating function based on the type of
   the given set."
   input Set inSet;
-  input DAE.DAElist inDae;
+  input ConnectionGraph.DaeEdges inConnected;
+  input ConnectionGraph.DaeEdges inBroken;
+  input DAE.DAElist inDae;  
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(inSet, inDae)
+  outDae := matchcontinue(inSet, inConnected, inBroken, inDae)
     local
       list<ConnectorElement> eql;
-      DAE.DAElist dae;
+      DAE.DAElist dae1, dae2, dae;
 
     // A set pointer left from generateSetList, ignore it.
-    case (Connect.SET_POINTER(index = _), _) then inDae;
+    case (Connect.SET_POINTER(index = _), _, _, _) then inDae;
 
-    case (Connect.SET(ty = Connect.EQU(), elements = eql), _)
+    case (Connect.SET(ty = Connect.EQU(), elements = eql), _, _, _)
       equation
+        // here we do some overcosntrained connection breaking
+        eql = ConnectionGraph.removeBrokenConnects(eql, inConnected, inBroken);
         dae = generateEquEquations(eql);
       then
         DAEUtil.joinDaes(inDae, dae);
 
-    case (Connect.SET(ty = Connect.FLOW(), elements = eql), _)
+    case (Connect.SET(ty = Connect.FLOW(), elements = eql), _, _, _)
       equation
         dae = generateFlowEquations(eql);
       then
         DAEUtil.joinDaes(inDae, dae);
 
-    case (Connect.SET(ty = Connect.STREAM(_), elements = eql), _)
+    case (Connect.SET(ty = Connect.STREAM(_), elements = eql), _, _, _)
       equation
         dae = generateStreamEquations(eql);
       then
         DAEUtil.joinDaes(inDae, dae);
 
-    case (Connect.SET(ty = Connect.NO_TYPE()), _)
+    case (Connect.SET(ty = Connect.NO_TYPE()), _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, 
           {"ConnectUtil.equationsDispatch failed on connection set with no type."});
@@ -2224,6 +2240,8 @@ algorithm
       list<DAE.Element> eq;
       String str;
 
+    case {} then DAEUtil.emptyDae;
+    
     case {_} then DAEUtil.emptyDae;
 
     case ((e1 as Connect.CONNECTOR_ELEMENT(name = x, source = x_src)) ::
@@ -3140,6 +3158,69 @@ algorithm
     else true;
   end matchcontinue;
 end checkShortConnectorDef;
+
+public function isReferenceInConnects
+  input list<ConnectorElement> inConnects;
+  input DAE.ComponentRef inCref;
+  output Boolean isThere;
+algorithm
+  isThere := matchcontinue(inConnects, inCref)
+    local 
+      list<ConnectorElement> rest;
+      DAE.ComponentRef name;
+      Boolean b;
+    
+    case ({}, _) then false;
+    
+    case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _)
+      equation
+        true = ComponentReference.crefPrefixOf(inCref, name);
+      then
+        true;
+    
+    case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _)
+      equation
+        false = ComponentReference.crefPrefixOf(inCref, name);
+        b = isReferenceInConnects(rest, inCref);
+      then
+        b;
+  end matchcontinue;
+end isReferenceInConnects;
+
+public function removeReferenceFromConnects
+  input list<ConnectorElement> inConnects;
+  input DAE.ComponentRef inCref;
+  input list<ConnectorElement> inPrefix;
+  output list<ConnectorElement> outConnects;
+  output Boolean wasRemoved;
+algorithm
+  (outConnects, wasRemoved) := matchcontinue(inConnects, inCref, inPrefix)
+    local 
+      list<ConnectorElement> rest, prefix, all;
+      ConnectorElement e;
+      DAE.ComponentRef name;
+      Boolean b;
+    
+    // not there
+    case ({}, _, _) then (listReverse(inPrefix), false);
+    
+    // there
+    case (Connect.CONNECTOR_ELEMENT(name = name)::rest, _, _)
+      equation
+        true = ComponentReference.crefPrefixOf(inCref, name);
+        all = listAppend(listReverse(inPrefix), rest);
+      then
+        (all, true);
+    
+    // middleground
+    case ((e as Connect.CONNECTOR_ELEMENT(name = name))::rest, _, _)
+      equation
+        false = ComponentReference.crefPrefixOf(inCref, name);
+        (all, b) = removeReferenceFromConnects(rest, inCref, e::inPrefix);
+      then
+        (all, b);
+  end matchcontinue;
+end removeReferenceFromConnects;
 
 public function printSetsStr
   "Prints a Sets to a String."

@@ -7867,4 +7867,14 @@ algorithm
   end match;
 end accumulateMapAccum1;
 
+public function first2FromTuple3
+  input tuple<ElementInType, ElementInType, ElementType> inTuple;
+  output list<ElementInType> outList;
+protected
+  ElementInType a, b;
+algorithm
+  (a, b, _) := inTuple;
+  outList := {a,b};
+end first2FromTuple3;
+
 end List;

@@ -266,14 +266,7 @@ algorithm
           {}, false, TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl";
         //System.stopTimer();
         //print("\nInstClass: " +& realString(System.getTimerIntervalTime()));
-        
-        //System.startTimer();
-        //print("\nOverConstrained");
-        // deal with Overconstrained connections
-        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae, Absyn.pathString(path));
-        //System.stopTimer();
-        //print("\nOverconstrained: " +& realString(System.getTimerIntervalTime()));
-        
+                
         //System.startTimer();
         //print("\nReEvaluateIf");
         //print(" ********************** backpatch 1 **********************\n");
@@ -709,9 +702,6 @@ algorithm
         (cache,env_1,ih,_,dae,_,_,_,_,graph) = instClass(cache,env, ih,
           UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(),
           c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY, Connect.emptySet) "impl" ;
-        // deal with Overconstrained connections
-        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae, name);
-
         //print(" ********************** backpatch 2 **********************\n");
         dae = reEvaluateInitialIfEqns(cache,env_1,dae,true);
         
@@ -1037,8 +1027,13 @@ algorithm
         
         reportUnitConsistency(callscope_1,store);
         (csets,_) = InnerOuter.retrieveOuterConnections(cache,env_3,ih,pre,csets,callscope_1);
-                
-        dae = ConnectUtil.equations(callscope_1, csets, dae1_1);
+        
+        //System.startTimer();
+        //print("\nConnect equations and the OverConstrained graph in one step");        
+        dae = ConnectUtil.equations(callscope_1, csets, dae1_1, graph, Absyn.pathString(Absyn.makeNotFullyQualified(fq_class)));
+        //System.stopTimer();
+        //print("\nConnect and Overconstrained: " +& realString(System.getTimerIntervalTime()));
+        
 
         ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c);
         dae = updateDeducedUnits(callscope_1,store,dae);
