@@ -9266,7 +9266,7 @@ algorithm
     local
       BackendDAE.EqSystems systs;
       BackendDAE.Variables knvars,vars,fixvars,evars,eavars;
-      BackendDAE.EquationArray inieqns,eqns,emptyeqns,emptyreeqns;
+      BackendDAE.EquationArray inieqns,eqns,emptyeqns,reeqns;
       BackendDAE.EqSystem initsyst;
       BackendDAE.BackendDAE initdae;
       Integer nvars,neqns;
@@ -9283,17 +9283,16 @@ algorithm
         fixvars = emptyVars();
         ((vars,fixvars)) = BackendVariable.traverseBackendDAEVars(knvars,collectInitialVars,(vars,fixvars));
         // collect eqns for initial system
-        eqns = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, listEquation({}));
-        ((vars,fixvars,eqns)) = List.fold(systs,collectInitialVarsEqnsSystem,((vars,fixvars,eqns)));
+        ((eqns,reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (listEquation({}),listEquation({})));
+        ((vars,fixvars,eqns,reeqns)) = List.fold(systs,collectInitialVarsEqnsSystem,((vars,fixvars,eqns,reeqns)));
         // generate initial system
         initsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         (initsyst,_,_) = getIncidenceMatrix(initsyst, BackendDAE.NORMAL());
         evars = emptyVars();
         eavars = emptyVars();
         emptyeqns = listEquation({});
-        emptyreeqns = listEquation({});
         initdae = BackendDAE.DAE({initsyst},
-            BackendDAE.SHARED(fixvars,evars,eavars,emptyeqns,emptyreeqns,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.INITIALSYSTEM(),{}));
+            BackendDAE.SHARED(fixvars,evars,eavars,emptyeqns,reeqns,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.INITIALSYSTEM(),{}));
         Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Initial System:\n");
         Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, initdae);
         nvars = BackendVariable.varsSize(vars);
@@ -9356,21 +9355,21 @@ protected function collectInitialVarsEqnsSystem
 "function: collectInitialVarsEqnsSystem
   autor Frenkel TUD 2012-10"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.EquationArray> iTpl;
-  output tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.EquationArray> oTpl;
+  input tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.EquationArray> iTpl;
+  output tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.EquationArray> oTpl;
 algorithm
   oTpl := match (isyst,iTpl)
     local
       BackendDAE.Variables vars,ivars,fixvars;
-      BackendDAE.EquationArray eqns,ieqns;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),(ivars,fixvars,ieqns))
+      BackendDAE.EquationArray eqns,ieqns,reqns;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),(ivars,fixvars,ieqns,reqns))
       equation
         // collect vars for initial system
         ((ivars,fixvars)) = BackendVariable.traverseBackendDAEVars(vars,collectInitialVars,(ivars,fixvars));
         // collect eqns for initial system
-        ieqns = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, ieqns);
+        ((ieqns,reqns)) = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, (ieqns,reqns));
       then
-        ((ivars,fixvars,ieqns));
+        ((ivars,fixvars,ieqns,reqns));
   end match;
 end collectInitialVarsEqnsSystem;
 
@@ -9417,18 +9416,23 @@ algorithm
 end collectInitialVars;
 
 protected function collectInitialEqns
-  input tuple<BackendDAE.Equation, BackendDAE.EquationArray> inTpl;
-  output tuple<BackendDAE.Equation, BackendDAE.EquationArray> outTpl;
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> outTpl;
 protected
   BackendDAE.Equation eqn,eqn1;
-  BackendDAE.EquationArray eqns;
+  BackendDAE.EquationArray eqns,reeqns;
+  Integer size;
+  Boolean b;
 algorithm
- (eqn,eqns) := inTpl;
+ (eqn,(eqns,reeqns)) := inTpl;
  // replace der(x) with $DER.x
  (eqn1,_) := BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCref,0);
- // add it
- eqns := BackendEquation.equationAdd(eqn1,eqns);
- outTpl := (eqn,eqns);
+ // add it, if size is zero (terminate,assert,noretcall) move to removed equations
+ size := BackendEquation.equationSize(eqn1);
+ b := intGt(size,0);
+ eqns := Debug.bcallret2(b,BackendEquation.equationAdd,eqn1,eqns,eqns);
+ reeqns := Debug.bcallret2(not b,BackendEquation.equationAdd,eqn1,reeqns,reeqns);
+ outTpl := (eqn,(eqns,reeqns));
 end collectInitialEqns;
 
 protected function replaceDerCref
