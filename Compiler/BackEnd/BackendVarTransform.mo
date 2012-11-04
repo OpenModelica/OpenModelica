@@ -113,6 +113,33 @@ algorithm
   end match;
 end emptyReplacementsSized;
 
+public function addReplacements
+  input VariableReplacements iRepl;
+  input list<DAE.ComponentRef> inSrcs;
+  input list<DAE.Exp> inDsts;
+  input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+  output VariableReplacements outRepl;
+  partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+   outRepl := match(iRepl,inSrcs,inDsts,inFuncTypeExpExpToBooleanOption)
+     local
+       DAE.ComponentRef cr;
+       list<DAE.ComponentRef> crlst;
+       DAE.Exp exp;
+       VariableReplacements repl;
+       list<DAE.Exp> explst;
+     case (_,{},{},_) then iRepl;
+     case (_,cr::crlst,exp::explst,_)
+       equation
+         repl = addReplacement(iRepl,cr,exp,inFuncTypeExpExpToBooleanOption);
+       then
+         addReplacements(repl,crlst,explst,inFuncTypeExpExpToBooleanOption);
+   end match;
+end addReplacements;
+
 public function addReplacement "function: addReplacement
 
   Adds a replacement rule to the set of replacement rules given as argument.

@@ -7064,6 +7064,300 @@ algorithm
   end match;
 end expEqualWorkList;
 
+public function expStructuralEqual
+"function: expStructuralEqual
+  Returns true if the two expressions are structural equal. This means
+  only the componentreference can be different"
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := match (inExp1,inExp2)
+    local
+      Integer i1,i2;
+      String s1,s2;
+      Boolean b,b1,b2,res;
+      DAE.Exp e11,e12,e21,e22,e1,e2,e13,e23;
+      Operator op1,op2;
+      Absyn.Path path1,path2;
+      list<DAE.Exp> expl1,expl2;
+      list<list<Exp>> explstlst1,explstlst2;
+      Type tp1,tp2;
+      Real r1,r2;
+      Absyn.Path enum1, enum2;
+      ComponentRef cr1,cr2;
+      list<DAE.Exp> ae1,ae2;
+    case (DAE.ICONST(integer = i1),DAE.ICONST(integer = i2)) then (i1 == i2);
+    case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.ICONST(integer = i1)),DAE.ICONST(integer = i2))
+      equation
+        i1 = - i1;
+      then (i1 == i2);
+    case (DAE.ICONST(integer = i1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.ICONST(integer = i2)))
+      equation
+        i2 = - i2;
+      then (i1 == i2);
+    case (DAE.RCONST(real = r1),DAE.RCONST(real = r2)) then (r1 ==. r2);
+    case (DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r1)),DAE.RCONST(real = r2))
+      equation
+        r1 = -. r1;
+      then (r1 ==. r2);
+    case (DAE.RCONST(real = r1),DAE.UNARY(DAE.UMINUS(_),exp=DAE.RCONST(real = r2)))
+      equation
+        r2 = -. r2;
+      then (r1 ==. r2);
+    case (DAE.SCONST(string = s1),DAE.SCONST(string = s2)) then stringEq(s1, s2);
+    case (DAE.BCONST(bool = b1),DAE.BCONST(bool = b2)) then boolEq(b1, b2);
+    case (DAE.ENUM_LITERAL(name = enum1), DAE.ENUM_LITERAL(name = enum2)) then Absyn.pathEqual(enum1, enum2);
+    case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2)) then true;
+    
+    // binary ops
+    case (DAE.BINARY(exp1 = e11,operator = op1,exp2 = e12),DAE.BINARY(exp1 = e21,operator = op2,exp2 = e22))
+      equation
+        b = operatorEqual(op1, op2);
+        b = Debug.bcallret2(b, expStructuralEqual, e11, e21, b);
+        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+      then
+        b;
+    
+    // logical binary ops
+    case (DAE.LBINARY(exp1 = e11,operator = op1,exp2 = e12),
+          DAE.LBINARY(exp1 = e21,operator = op2,exp2 = e22))
+      equation
+        b = operatorEqual(op1, op2);
+        b = Debug.bcallret2(b, expStructuralEqual, e11, e21, b);
+        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+      then
+        b;
+    
+    // unary ops
+    case (DAE.UNARY(operator = op1,exp = e1),DAE.UNARY(operator = op2,exp = e2))
+      equation
+        b = operatorEqual(op1, op2);
+        b = Debug.bcallret2(b, expStructuralEqual, e1, e2, b);
+      then
+        b;
+    
+    // logical unary ops
+    case (DAE.LUNARY(operator = op1,exp = e1),DAE.LUNARY(operator = op2,exp = e2))
+      equation
+        b = operatorEqual(op1, op2);
+        b = Debug.bcallret2(b, expStructuralEqual, e1, e2, b);
+      then
+        b;
+    
+    // relational ops
+    case (DAE.RELATION(exp1 = e11,operator = op1,exp2 = e12),DAE.RELATION(exp1 = e21,operator = op2,exp2 = e22))
+      equation
+        b = operatorEqual(op1, op2);
+        b = Debug.bcallret2(b, expStructuralEqual, e11, e21, b);
+        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+      then
+        b;
+    
+    // if expressions
+    case (DAE.IFEXP(expCond = e11,expThen = e12,expElse = e13),DAE.IFEXP(expCond = e21,expThen = e22,expElse = e23))
+      equation
+        b = expStructuralEqual(e11, e21);
+        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+        b = Debug.bcallret2(b, expStructuralEqual, e13, e23, b);
+      then
+        b;
+    
+    // function calls
+    case (DAE.CALL(path = path1,expLst = expl1),DAE.CALL(path = path2,expLst = expl2))
+      equation
+        b = Absyn.pathEqual(path1, path2);
+        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+      then
+        b;
+    // partially evaluated functions
+    case (DAE.PARTEVALFUNCTION(path = path1,expList = expl1),DAE.PARTEVALFUNCTION(path = path2,expList = expl2))
+      equation
+        b = Absyn.pathEqual(path1, path2);
+        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+      then
+        b;
+    
+    // arrays
+    case (DAE.ARRAY(ty = tp1,array = expl1),DAE.ARRAY(ty = tp2,array = expl2))
+      equation
+        b = valueEq(tp1, tp2);
+        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+      then
+        b;
+    
+    // matrix
+    case (e1 as DAE.MATRIX(matrix = explstlst1), e2 as DAE.MATRIX(matrix = explstlst2))
+      then
+        expStructuralEqualListLst(explstlst1,explstlst2);
+    
+    // ranges [start:stop]
+    case (DAE.RANGE(ty = tp1,start = e11,step = NONE(),stop = e13),
+          DAE.RANGE(ty = tp2,start = e21,step = NONE(),stop = e23))
+      equation
+        b = expStructuralEqual(e11, e21);
+        b = Debug.bcallret2(b, expStructuralEqual, e13, e23, b);
+      then
+        b;
+    
+    // ranges [start:step:stop]
+    case (DAE.RANGE(ty = tp1,start = e11,step = SOME(e12),stop = e13),
+          DAE.RANGE(ty = tp2,start = e21,step = SOME(e22),stop = e23))
+      equation
+        b = expStructuralEqual(e11, e21);
+        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+        b = Debug.bcallret2(b, expStructuralEqual, e13, e23, b);
+      then
+        b;
+    
+    // tuples
+    case (DAE.TUPLE(PR = expl1),DAE.TUPLE(PR = expl2))
+      then expStructuralEqualList(expl1, expl2);
+    
+    // casting
+    case (DAE.CAST(ty = tp1,exp = e1),DAE.CAST(ty = tp2,exp = e2))
+      equation
+        b = valueEq(tp1, tp2);
+        b = Debug.bcallret2(b, expStructuralEqual, e1, e2, b);
+      then
+        b;
+    
+    // array subscripts
+    case (DAE.ASUB(exp = e1,sub = ae1),DAE.ASUB(exp = e2,sub = ae2))
+      equation
+        b = expStructuralEqual(e1, e1);
+        b = Debug.bcallret2(b, expStructuralEqualList, ae1, ae2, b);
+      then
+        b;        
+    
+    // size(a)
+    case (DAE.SIZE(exp = e1,sz = NONE()),DAE.SIZE(exp = e2,sz = NONE()))
+      then expStructuralEqual(e1, e2);
+    
+    // size(a, dim)
+    case (DAE.SIZE(exp = e1,sz = SOME(e11)),DAE.SIZE(exp = e2,sz = SOME(e22)))
+      equation
+        b = expStructuralEqual(e1, e2);
+        b = Debug.bcallret2(b, expStructuralEqual, e11, e22, b);
+      then
+        b;
+    
+    // metamodeling code
+    case (DAE.CODE(code = _),DAE.CODE(code = _))
+      equation
+        Debug.fprint(Flags.FAILTRACE,"exp_equal on CODE not impl.\n");
+      then
+        false;
+    
+    case (DAE.REDUCTION(expr =_),DAE.REDUCTION(expr = _))
+      equation
+        // Reductions contain too much information to compare equality in a sane manner
+        res = valueEq(inExp1,inExp2);
+      then
+        res;
+    
+    // end id
+    /*// everything else failed, try structural equality
+    case (e1,e2)
+      equation
+        equality(e1 = e2);
+      then true;
+    case (e1,e2)
+      equation
+        failure(equality(e1 = e2));
+      then false;
+    */
+    // not equal        
+    case (DAE.LIST(valList = expl1),DAE.LIST(valList = expl2))
+      then expStructuralEqualList(expl1, expl2);
+
+    case (DAE.CONS(car = e11,cdr = e12),
+          DAE.CONS(car = e21,cdr = e22))
+      equation
+        b = expStructuralEqual(e11, e21);
+        b = Debug.bcallret2(b, expStructuralEqual, e12, e22, b);
+      then
+        b;
+
+    case (DAE.META_TUPLE(listExp = expl1),DAE.META_TUPLE(listExp = expl2))
+      then expStructuralEqualList(expl1, expl2);
+
+    case (DAE.META_OPTION(exp = NONE()),
+          DAE.META_OPTION(exp = NONE()))
+      then true;
+
+    case (DAE.META_OPTION(exp = SOME(e1)),
+          DAE.META_OPTION(exp = SOME(e2)))
+      then expStructuralEqual(e1, e2);
+
+    case (DAE.METARECORDCALL(path = path1,args = expl1),DAE.METARECORDCALL(path = path2,args = expl2))
+      equation
+        b = Absyn.pathEqual(path1, path2);
+        b = Debug.bcallret2(b, expStructuralEqualList, expl1, expl2, b);
+      then
+        b;
+
+    case (e1 as DAE.MATCHEXPRESSION(matchType = _),
+          e2 as DAE.MATCHEXPRESSION(matchType = _))
+      then valueEq(e1,e2);
+
+    case (DAE.BOX(e1),DAE.BOX(e2))
+      then expStructuralEqual(e1, e2);
+
+    case (DAE.UNBOX(exp=e1),DAE.UNBOX(exp=e2))
+      then expStructuralEqual(e1, e2);
+
+    case (DAE.SHARED_LITERAL(index=i1),DAE.SHARED_LITERAL(index=i2)) then intEq(i1,i2);
+
+    else false;
+  end match;
+end expStructuralEqual;
+
+public function expStructuralEqualList
+"Returns true if the two lists of expressions are structural equal."
+  input list<DAE.Exp> inExp1;
+  input list<DAE.Exp> inExp2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inExp1,inExp2)
+    local
+      DAE.Exp e1,e2;
+      list<DAE.Exp> es1,es2;
+      Boolean b;
+    case ({},{}) then true;
+    case (e1::es1,e2::es2)
+      equation
+        true = expStructuralEqual(e1,e2);
+      then
+        expStructuralEqualList(es1, es2);
+    else
+      then
+        false;        
+  end matchcontinue;
+end expStructuralEqualList;
+
+protected function expStructuralEqualListLst
+"Returns true if the two lists of lists of expressions are structural equal."
+  input list<list<DAE.Exp>> inExp1;
+  input list<list<DAE.Exp>> inExp2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inExp1,inExp2)
+    local
+      list<DAE.Exp> e1,e2;
+      list<list<DAE.Exp>> es1,es2;
+      Boolean b;
+    case ({},{}) then true;
+    case (e1::es1,e2::es2)
+      equation
+        true = expStructuralEqualList(e1,e2);
+      then
+        expStructuralEqualListLst(es1, es2);
+    else
+      then
+        false;        
+  end matchcontinue;
+end expStructuralEqualListLst;
 
 public function expContains
 "function: expContains
