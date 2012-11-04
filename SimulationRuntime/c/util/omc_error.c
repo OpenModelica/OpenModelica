@@ -150,6 +150,6 @@ void Message(int type, int stream, char *msg, int subline)
     }
   }
 
-  printf("%s\n", msg, 0);
+  printf("%s\n", msg);
   fflush(NULL);
 }

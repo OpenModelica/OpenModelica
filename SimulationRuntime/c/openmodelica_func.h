@@ -59,19 +59,6 @@ extern "C" {
 #include "delay.h"
 #include "nonlinearSystem.h"
 
-/*
- * this is used for initialize the DATA structure that is used in
- * all the generated functions.
- * The parameter controls what vectors should be initilized in
- * in the structure. Usually you can use the "ALL" flag which
- * initilizes all the vectors. This is needed for example in those ocasions
- * when another process have allocated the needed vectors.
- * Make sure that you call this function first because it sets the non-initialize
- * pointer to 0.
- *
- * This flag should be the same for second argument in callExternalObjectDestructors
- * to avoid memory leak.
- */
 /* DATA* initializeDataStruc(); */ /*create in model code */
 extern void setupDataStruc2(DATA *data);
 
@@ -159,19 +146,68 @@ extern int updateBoundParameters(DATA *data);
 /* function for checking for asserts and terminate */
 extern int checkForAsserts(DATA *data);
 
-/* functions for event handling */
+/*! \fn function_ZeroCrossings
+ *
+ *  This function evaluates if a sign change occurs at the cuurect state
+ *
+ *  \param [ref] [data]
+ *  \param [ref] [gout]
+ *  \param [ref] [t]
+ */
 extern int function_ZeroCrossings(DATA *data, double* gout, double* t);
+
+/*! \fn function_updateRelations
+ *
+ *  This function evaluates current continuous relations.
+ *
+ *  \param [ref] [data]
+ *  \param [in] [evalZeroCross] flag for evaluating Relation with hysteresis
+ *                              function or without
+ */
+extern int function_updateRelations(DATA *data, int evalZeroCross);
+
+/*! \fn function_updateSample
+ *
+ *  This function updates sample help variables.
+ *
+ *  \param [ref] [data]
+ */
 extern int function_updateSample(DATA *data);
+
+/*! \fn checkForDiscreteChanges
+ *
+ *  This function checks if any discrete variable changed
+ *
+ *  \param [ref] [data]
+ */
 extern int checkForDiscreteChanges(DATA *data);
 
 /*! \var zeroCrossingDescription
  *
- * This variable contains a description string for zero crossing condition
+ * This variable contains a description string for zero crossing condition.
  */
 extern const char *zeroCrossingDescription[];
 
-/* function for initializing time instants when sample() is activated */
+/*! \var relationDescription
+ *
+ * This variable contains a description string for continuous relations.
+ */
+extern const char *relationDescription[];
+
+/*! \fn function_sampleInit
+ *
+ *  This function initialize the sample events.
+ *
+ *  \param [ref] [data]
+ */
 extern void function_sampleInit(DATA *data);
+
+/*! \fn function_initMemoryState
+ *
+ *  This function initialize interval memory buffer.
+ *
+ *  \param [ref] [data]
+ */
 extern void function_initMemoryState(void);
 
 /* function for calculation Jacobian */

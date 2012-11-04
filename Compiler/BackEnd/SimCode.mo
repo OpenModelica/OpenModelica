@@ -94,6 +94,7 @@ uniontype SimCode
     //list<DAE.Statement> algorithmAndEquationAsserts;
     list<DAE.Constraint> constraints;
     list<BackendDAE.ZeroCrossing> zeroCrossings;
+    list<BackendDAE.ZeroCrossing> relations;
     list<SampleCondition> sampleConditions;
     list<SimEqSystem> sampleEquations;
     list<HelpVarInfo> helpVarInfo;

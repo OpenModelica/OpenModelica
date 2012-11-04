@@ -340,6 +340,7 @@
     modelica_boolean needToIterate;  /* =1 if reinit has been activated, iteration about the system is needed */
     modelica_boolean simulationSuccess; /*=0 the simulation run successful, otherwise an error code is set */
     modelica_boolean sampleActivated;    /* =1 a sample expresion if going to be actived, 0 otherwise */
+    modelica_boolean solveContinuous;        /* =1 for the first step to initialize all relation,  0 otherwise. */
 
     void** extObjs; /* External objects */
 

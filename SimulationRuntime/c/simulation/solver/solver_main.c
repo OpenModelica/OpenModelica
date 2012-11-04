@@ -194,7 +194,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes) {
     simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
     if (simInfo->sampleActivated){
-      INFO(LOG_SOLVER,"| solver | Sample event at beginning of the simulation");
+      INFO(LOG_SOLVER,"Sample event at beginning of the simulation");
       /*Activate sample and evaluate again */
       activateSampleEvents(data);
       /* update the whole system */
@@ -222,12 +222,12 @@ int solver_main(DATA* data, const char* init_initMethod,
     rt_accumulate( SIM_TIMER_INIT);
 
   if (data->localData[0]->timeValue >= simInfo->stopTime) {
-    INFO(LOG_SOLVER,"| solver | Simulation done!");
+    INFO(LOG_SOLVER,"Simulation done!");
     solverInfo.currentTime = simInfo->stopTime;
   }
 
-  INFO(LOG_SOLVER, "| solver | Performed initial value calculation.");
-  INFO2(LOG_SOLVER, "| solver | Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
+  INFO(LOG_SOLVER, "Performed initial value calculation.");
+  INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
 
   if (measure_time_flag) {
     char* filename = (char*) calloc(((size_t)strlen(data->modelData.modelFilePrefix)+1+11),sizeof(char));
@@ -250,7 +250,7 @@ int solver_main(DATA* data, const char* init_initMethod,
    */
   while (solverInfo.currentTime < simInfo->stopTime) {
 
-
+    INDENT(LOG_SOLVER);
     if (measure_time_flag) {
       for (i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++)
         rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
@@ -266,14 +266,14 @@ int solver_main(DATA* data, const char* init_initMethod,
       solverInfo.offset = solverInfo.currentTime - solverInfo.laststep;
       if (solverInfo.offset + DBL_EPSILON > simInfo->stepSize)
         solverInfo.offset = 0;
-      INFO1(LOG_SOLVER, "| solver | Offset value for the next step: %.10f", solverInfo.offset);
+      INFO1(LOG_SOLVER, "Offset value for the next step: %.10f", solverInfo.offset);
     } else {
       solverInfo.offset = 0;
     }
     solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
     if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime) {
       solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
-      INFO1(LOG_SOLVER, "| solver | Correct currentStepSize : %.10f", solverInfo.currentStepSize);
+      INFO1(LOG_SOLVER, "Correct currentStepSize : %.10f", solverInfo.currentStepSize);
     }
     /******** End calculation next step size ********/
 
@@ -282,7 +282,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
     }
 
-    INFO2(LOG_SOLVER, "| solver | Call Solver from %.10f to %.10f", solverInfo.currentTime,
+    INFO2(LOG_SOLVER, "Call Solver from %.10f to %.10f", solverInfo.currentTime,
         solverInfo.currentTime + solverInfo.currentStepSize);
 
     /*
@@ -290,13 +290,16 @@ int solver_main(DATA* data, const char* init_initMethod,
      * determine all states by a integration method
      * update continuous system
      */
+    INDENT(LOG_SOLVER);
     communicateStatus("Running", (solverInfo.currentTime-simInfo->startTime)/(simInfo->stopTime-simInfo->startTime));
     retValIntegrator = solver_main_step(flag, data, &solverInfo);
     updateContinuousSystem(data);
     saveZeroCrossings(data);
+    RELEASE(LOG_SOLVER);
 
 
     /******** Event handling ********/
+    INDENT(LOG_EVENTS);
     if (measure_time_flag)
       rt_tick(SIM_TIMER_EVENT);
     /* Check for Events */
@@ -304,24 +307,27 @@ int solver_main(DATA* data, const char* init_initMethod,
 
       if (!solverInfo.solverRootFinding){
         findRoot(data, solverInfo.eventLst, &(solverInfo.currentTime));
+      }else{
+        sim_result_emit(data);
       }
-      sim_result_emit(data);
     }
 
     if (checkStateorSampleEvent(data, solverInfo.eventLst, &(solverInfo.currentTime))){
 
-      /*determined discrete system */
       handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
 
       INFO1(LOG_SOLVER," ### State event occurs at time: %.5f", solverInfo.currentTime);
+
       solverInfo.stateEvents++;
       solverInfo.didEventStep = 1;
       /* due to an event overwrite old values */
       overwriteOldSimulationData(data);
     /* check for sample events */
     } else if (simInfo->sampleActivated) {
+
       handleSampleEvent(data);
-      INFO1(LOG_SOLVER,"| solver | sample event occurs at time: %.5f", solverInfo.currentTime);
+      INFO1(LOG_SOLVER," ### Sample event occurs at time: %.5f", solverInfo.currentTime);
+
       solverInfo.sampleEvents++;
       solverInfo.didEventStep = 1;
       simInfo->sampleActivated = 0;
@@ -334,6 +340,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
     if (measure_time_flag)
       rt_accumulate(SIM_TIMER_EVENT);
+    RELEASE(LOG_EVENTS);
     /******** End event handling ********/
 
     /******** Emit this time step ********/
@@ -422,6 +429,7 @@ int solver_main(DATA* data, const char* init_initMethod,
       }
       break;
     }
+    RELEASE(LOG_SOLVER);
   } /* end while solver */
 
 

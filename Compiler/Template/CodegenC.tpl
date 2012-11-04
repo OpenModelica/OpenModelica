@@ -184,6 +184,8 @@ template simulationFile(SimCode simCode, String guid)
       
     <%functionZeroCrossing(zeroCrossings)%>
     
+    <%functionRelations(relations)%>
+    
     <%functionCheckForDiscreteChanges(discreteModelVars)%>
     
     <%functionAssertsforCheck(algorithmAndEquationAsserts)%>
@@ -504,7 +506,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define _<%cref(name)%>(i) data->localData[i]-><%arrayName%>[<%intAdd(offset,index)%>]
     #define <%cref(name)%> _<%cref(name)%>(0)
     #define $P$PRE<%cref(c)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
-    #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
+    #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]   
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>
@@ -1033,7 +1035,7 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
    *      currently it only possible to call it with discontinuities
    */ 
   let body = (parameterEquations |> eq  =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")  
   <<
   <%&tmp%>
@@ -1442,6 +1444,67 @@ case (exp1 as LUNARY(__)) then
   else
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
 end zeroCrossingTpl;
+
+template functionRelations(list<ZeroCrossing> relations) "template functionRelations
+  Generates function in simulation file.
+  This is a helper of template simulationFile."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let relationsCode = relationsTpl(relations, contextZeroCross, &varDecls /*BUFD*/)
+  let relationsCodeElse = relationsTpl(relations, contextOther, &varDecls /*BUFD*/)
+  
+  let resDesc = (relations |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>", ' 
+    ;separator="\n") 
+  
+  <<
+  const char *relationDescription[] =  
+  { 
+    <%resDesc%> 
+  }; 
+  
+  int function_updateRelations(DATA *data, int evalforZeroCross)
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    if (evalforZeroCross){
+      <%relationsCode%>
+    } else {
+      <%relationsCodeElse%>
+    }
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionRelations;
+
+template relationsTpl(list<ZeroCrossing> relations, Context context, Text &varDecls /*BUFP*/)
+ "Generates code for zero crossings."
+::=
+  (relations |> ZERO_CROSSING(__) hasindex i0 =>
+    relationTpl(i0, relation_, context, &varDecls /*BUFD*/)
+  ;separator="\n";empty)
+end relationsTpl;
+
+
+template relationTpl(Integer index1, Exp relation, Context context, Text &varDecls /*BUFP*/)
+ "Generates code for a zero crossing."
+::=
+  match relation
+  case exp as RELATION(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let res = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    data->simulationInfo.backupRelations[<%index1%>] = <%res%>;
+    >>
+  else
+    <<
+    // UNKNOWN Relation for <%index1%>
+    >>
+end relationTpl;
 
 template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "template functionCheckForDiscreteChanges
   Generates function in simulation file.
@@ -2183,8 +2246,9 @@ case SES_NONLINEAR(__) then
   <%crefs |> name hasindex i0 =>
     let namestr = cref(name)
     <<
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>] = <%namestr%>;
     data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxScaling[<%i0%>] = $P$ATTRIBUTE<%namestr%>.nominal;
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxExtrapolation[<%i0%>] = data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
     data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
     >>
   ;separator="\n"%>

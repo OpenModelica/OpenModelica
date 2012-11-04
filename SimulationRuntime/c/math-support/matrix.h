@@ -106,36 +106,53 @@ free(ipiv); \
 
 #define mixed_equation_system(size) do { \
     int stepCount = 0; \
+    int hybridIterations = 0; \
     data->simulationInfo.found_solution = 0; \
     do { \
-        double discrete_loc[size] = {0}; \
-        double discrete_loc2[size] = {0};
+        modelica_boolean discrete_loc[size] = {0}; \
+        modelica_boolean discrete_loc2[size] = {0};
 
 #define mixed_equation_system_end(size) \
     stepCount++; \
+    hybridIterations++; \
     INFO1(LOG_NONLIN_SYS," ####  hybrid equation system solver step %d.", stepCount); \
+    INFO1(LOG_NONLIN_SYS," #### SOLUTION = %d",data->simulationInfo.found_solution); \
  } while (!data->simulationInfo.found_solution); \
  } while(0)
 
 #define check_discrete_values(boolVar, size, index) \
 do { \
   int i = 0; \
+  /* restart if any relation has changed */ \
+  if (checkRelations(data)){ \
+    storeRelations(data);\
+    if (hybridIterations++ > 200){ \
+      data->simulationInfo.found_solution = -1; \
+    } \
+  }\
   INFO1(LOG_NONLIN_SYS," ####  Check VAR (system %d)", index); \
   if (data->simulationInfo.found_solution == -1) { \
-      /*system of equations failed */ \
-      data->simulationInfo.found_solution = 0; \
-      INFO(LOG_NONLIN_SYS," ####  NO SOLUTION "); \
+    /*system of equations failed */ \
+    data->simulationInfo.found_solution = 0; \
+    INFO(LOG_NONLIN_SYS," ####  NO SOLUTION "); \
   } else { \
-      data->simulationInfo.found_solution = 1; \
-      for (i = 0; i < size; i++) { \
-          if (fabs((discrete_loc[i] - discrete_loc2[i])) > 1e-12) {\
-          data->simulationInfo.found_solution=0;\
-              break;\
-          }\
+    data->simulationInfo.found_solution = 1; \
+    for (i = 0; i < size; i++) { \
+      if (discrete_loc[i] != discrete_loc2[i]) {\
+        data->simulationInfo.found_solution=0;\
+        break;\
       }\
-      INFO1(LOG_NONLIN_SYS," #### SOLUTION = %c",data->simulationInfo.found_solution?'T':'F'); \
+    }\
+    INFO1(LOG_NONLIN_SYS," #### SOLUTION = %c",data->simulationInfo.found_solution?'T':'F'); \
   }\
   if (!data->simulationInfo.found_solution ) { \
+    /* try next set of values*/ \
+    INFO(LOG_NONLIN_SYS," #### old STATE "); \
+    for (i = 0; i < size; i++) { \
+      int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
+      const char *__name = data->modelData.booleanVarsData[ix].info.name; \
+      INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, *loc_prePtrs[i]); \
+    } \
     if (nextVar(boolVar,size)) { \
       /* try next set of values*/ \
       INFO(LOG_NONLIN_SYS," #### next STATE "); \
@@ -146,7 +163,7 @@ do { \
         INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, *loc_prePtrs[i]); \
       } \
     } else  {\
-      /* while the initialization it's ok to every time a solution */ \
+      /* while the initialization it's okay not a solution */ \
       if (!data->simulationInfo.initial){ \
         WARNING2(LOG_STDOUT, "Error solving hybrid equation system with index %d at time %e", index, data->localData[0]->timeValue); \
       } \
@@ -156,13 +173,13 @@ do { \
     } \
   } \
   /* we found a solution*/ \
-  if (data->simulationInfo.found_solution && DEBUG_STREAM(LOG_NONLIN_SYS)){ \
+  if (data->simulationInfo.found_solution == 1 && DEBUG_STREAM(LOG_NONLIN_SYS)){ \
     int i = 0; \
     INFO1(LOG_NONLIN_SYS," #### SOLUTION FOUND! (system %d)", index); \
     for (i = 0; i < size; i++) { \
-        int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
-        const char *__name = data->modelData.booleanVarsData[ix].info.name; \
-        INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, data->simulationInfo.booleanVarsPre[ix]); \
+      int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
+      const char *__name = data->modelData.booleanVarsData[ix].info.name; \
+      INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, data->simulationInfo.booleanVarsPre[ix]); \
     } \
   } \
 } while(0)

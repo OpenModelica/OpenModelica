@@ -606,12 +606,19 @@ void findRoot(DATA* data, LIST *eventList, double *eventTime)
   *eventTime = time_right;
   INFO1(LOG_EVENTS, "| events | time: %.10e", *eventTime);
 
+  data->localData[0]->timeValue = time_left;
+  for (i = 0; i < data->modelData.nStates; i++){
+    data->localData[0]->realVars[i] = states_left[i];
+  }
+  /*determined continuous system */
+  updateContinuousSystem(data);
+  storeRelations(data);
+  sim_result_emit(data);
+
   data->localData[0]->timeValue = *eventTime;
   for (i = 0; i < data->modelData.nStates; i++){
     data->localData[0]->realVars[i] = states_right[i];
   }
-  /*determined continuous system */
-  updateContinuousSystem(data);
 
   free(states_left);
   free(states_right);

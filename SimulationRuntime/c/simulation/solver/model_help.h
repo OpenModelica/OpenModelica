@@ -52,8 +52,13 @@ extern "C" {
   if (index == -1){ \
     res = (op_w((exp1),(exp2)));\
   } else{ \
-    res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.backupRelationsPre[index]));\
-    data->simulationInfo.backupRelations[index]  = res; \
+    if (data->simulationInfo.solveContinuous){ \
+      res = data->simulationInfo.backupRelationsPre[index]; \
+      data->simulationInfo.backupRelations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.backupRelationsPre[index])); \
+    } else { \
+      res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.backupRelationsPre[index])); \
+      data->simulationInfo.backupRelations[index] = res; \
+    }\
   }\
 }
 

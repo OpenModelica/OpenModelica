@@ -153,6 +153,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
   if(!flags)
   {
     useStream[LOG_STDOUT] = 1;
+    useStream[LOG_ASSERT] = 1;
     return; // no lv flag given.
   }
 
@@ -172,6 +173,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
     }
   }
   useStream[LOG_STDOUT] = 1;
+  useStream[LOG_ASSERT] = 1;
 
   delete flags;
 }

@@ -52,6 +52,7 @@ const size_t SIZERINGBUFFER = 3;
  */
 void updateDiscreteSystem(DATA *data)
 {
+
   int IterationNum = 0;
   int discreteChanged = 0;
   modelica_boolean relationChanged = 0;
@@ -70,25 +71,31 @@ void updateDiscreteSystem(DATA *data)
   discreteChanged = checkForDiscreteChanges(data);
   while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
-    if (DEBUG_STREAM(LOG_EVENTS)){
-      if (data->simulationInfo.needToIterate)
-        INFO(LOG_EVENTS, "| reinit() call. Iteration needed!");
-      if (discreteChanged)
-        INFO(LOG_EVENTS, "| discrete Variable changed. Iteration needed.");
-      if (relationChanged)
-          INFO(LOG_EVENTS,"| relations changed. Iteration needed.");
-    }
+
+    if (data->simulationInfo.needToIterate)
+      INFO(LOG_EVENTS, "| reinit() call. Iteration needed!");
+    if (relationChanged)
+      INFO(LOG_EVENTS,"| relations changed. Iteration needed.");
+    if (discreteChanged)
+      INFO(LOG_EVENTS, "| discrete Variable changed. Iteration needed.");
+
+
     storePreValues(data);
     storeRelations(data);
+    if (DEBUG_STREAM(LOG_EVENTS))
+      printRelations(data);
+
     functionDAE(data);
 
     IterationNum++;
     if(IterationNum > IterationMax)
-      THROW("ERROR: Too many event iterations. System is inconsistent.");
+      THROW("ERROR: Too many event iterations. System is inconsistent. Simulation terminate.");
+
     relationChanged = checkRelations(data);
     discreteChanged = checkForDiscreteChanges(data);
   }
 }
+
 
 
 /*! \fn updateContinuousSystem
@@ -246,11 +253,20 @@ void printAllHelpVars(DATA *data)
 void printRelations(DATA *data)
 {
   long i;
-  INFO(1," Saved relations state:");
+  INDENT(LOG_STDOUT);
+  INFO(LOG_STDOUT," Status of relations:");
+  INDENT(LOG_STDOUT);
   for(i=0; i<data->modelData.nRelations; i++)
   {
-    INFO2(1," | relation[%ld] = %c", i, data->simulationInfo.backupRelations[i]?'T':'F');
+    INDENT(LOG_STDOUT);
+    INFO3(LOG_STDOUT," [%ld] %s = %c", i, relationDescription[i], data->simulationInfo.backupRelations[i]?'T':'F');
+    INDENT(LOG_STDOUT);
+    INFO3(LOG_STDOUT," [%ld] pre(%s) = %c", i, relationDescription[i], data->simulationInfo.backupRelationsPre[i]?'T':'F');
+    RELEASE(LOG_STDOUT);
+    RELEASE(LOG_STDOUT);
   }
+  RELEASE(LOG_STDOUT);
+  RELEASE(LOG_STDOUT);
 }
 
 /*! \fn overwriteOldSimulationData
@@ -493,7 +509,6 @@ void storePreValues(DATA *data)
   memcpy(sInfo->helpVarsPre, sInfo->helpVars, sizeof(modelica_boolean)*mData->nHelpVars);
 }
 
-
 /*! \fn storeRelations
  *
  *  This function copys all the relations results  into their pre-values.
@@ -684,6 +699,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.terminal = 0;
   data->simulationInfo.initial = 0;
   data->simulationInfo.sampleActivated = 0;
+  data->simulationInfo.solveContinuous = 0;
 
   /* initialize model error code */
   data->simulationInfo.simulationSuccess = 0;
@@ -830,11 +846,14 @@ void deInitializeDataStruc(DATA *data)
  * Less is for case LESS and GREATEREQ
  * Greater is for case LESSEQ and GREATER
  */
+static const double tolZC = DBL_EPSILON;
 modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
-
   modelica_boolean retVal;
-  retVal = direction? (a < b + DBL_EPSILON):(a + DBL_EPSILON < b);
+  double eps = (direction)? tolZC * fabs(b): tolZC * fabs(a);
+  /*INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)",a, b, (a < b)?'t':'f' , direction?'t':'f');*/
+  retVal = (direction)? (a < b + eps):(a + eps < b);
+  /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');*/
   return retVal;
 }
 
@@ -846,7 +865,10 @@ modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
-  retVal = direction? (a + DBL_EPSILON > b ):(a  > b + DBL_EPSILON);
+  double eps = (direction)? tolZC * fabs(a): tolZC * fabs(b);
+  /* INFO4(LOG_EVENTS, "Relation GREATER:  %.20e > %.20e = %c (%c)",a, b, (a > b)?'t':'f' , direction?'t':'f'); */
+  retVal = (direction)? (a + eps > b ):(a  > b + eps);
+  /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f'); */
   return retVal;
 }
 

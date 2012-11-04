@@ -301,12 +301,14 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
       THROW("unsupported option -iom");
 
     storePreValues(data);                       /* save pre-values */
+    storeRelations(data);
     overwriteOldSimulationData(data);           /* if there are non-linear equations */
     updateDiscreteSystem(data);                 /* evaluate discrete variables */
 
     /* valid system for the first time! */
     saveZeroCrossings(data);
     storePreValues(data);
+    storeRelations(data);
     overwriteOldSimulationData(data);
 
     funcValue = leastSquareWithLambda(initData, 1.0);
