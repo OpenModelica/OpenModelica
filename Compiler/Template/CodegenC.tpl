@@ -1028,8 +1028,12 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
   let () = System.tmpTickReset(0)
   let &varDecls = buffer "" /*BUFD*/
   let &tmp = buffer ""
+  /*TODO: make possible to call updateBoundParameters 
+   *      discrete and continuous for current initialization.
+   *      currently it only possible to call it with discontinuities
+   */ 
   let body = (parameterEquations |> eq  =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")  
   <<
   <%&tmp%>
@@ -1037,7 +1041,6 @@ template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
   {
     state mem_state;
     <%varDecls%>
-  
     mem_state = get_memory_state();
     <%body%>
     restore_memory_state(mem_state);

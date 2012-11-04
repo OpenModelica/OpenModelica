@@ -2962,7 +2962,7 @@ algorithm
       equation
         vars = BackendDAEUtil.listVar1(allvars);
         eqs_lst = BackendDAEUtil.equationList(remeqns);
-        (zero_crossings,eqs_lst1,_,countRelations, relationsLst, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, zero_crossings, relationsLst, sampleLst);
+        (zero_crossings,eqs_lst1,whenclauses,countRelations, relationsLst, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, whenclauses, 0, countRelations, zero_crossings, relationsLst, sampleLst);
         remeqns = BackendDAEUtil.listEquation(eqs_lst1);
         eqs_lst = BackendDAEUtil.equationList(inieqns);
         (zero_crossings,eqs_lst1,_,countRelations, relationsLst, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, zero_crossings, relationsLst, sampleLst);
@@ -2991,7 +2991,7 @@ algorithm
       array<DAE.ClassAttributes> clsAttrs;
       BackendDAE.EventInfo einfo,einfo1;
       BackendDAE.ExternalObjectClasses eoc;
-      list<BackendDAE.WhenClause> whenclauses,whenclauses1;
+      list<BackendDAE.WhenClause> whenclauses;
       list<BackendDAE.Equation> eqs_lst,eqs_lst1;
       list<BackendDAE.ZeroCrossing> zero_crossings;
       list<BackendDAE.ZeroCrossing> relations,sampleLst;
@@ -3010,11 +3010,11 @@ algorithm
           eoc,btp,symjacs),allvars))
       equation
         eqs_lst = BackendDAEUtil.equationList(eqns);
-        (zero_crossings,eqs_lst1,whenclauses1,countRelations, relations, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, whenclauses, 0, countRelations, zero_crossings, relations, sampleLst);
+        (zero_crossings,eqs_lst1,_,countRelations, relations, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, zero_crossings, relations, sampleLst);
         Debug.fcall(Flags.RELIDX,print, "findZeroCrossings1 number of relations : " +& intString(countRelations) +& "\n");
         Debug.fcall(Flags.RELIDX,print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
         eqns1 = BackendDAEUtil.listEquation(eqs_lst1);
-        einfo1 = BackendDAE.EVENT_INFO(whenclauses1, zero_crossings, sampleLst, relations, countRelations);
+        einfo1 = BackendDAE.EVENT_INFO(whenclauses, zero_crossings, sampleLst, relations, countRelations);
         allvars = listAppend(allvars,BackendDAEUtil.varList(vars));
       then
         (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),(BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo1,eoc,btp,symjacs),allvars));
