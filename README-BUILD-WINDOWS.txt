@@ -1,3 +1,7 @@
+/* 
+ * RCS: $Id: README-BUILD-WINDOWS.txt 11132 2012-02-14 14:32:13Z adrpo $ 
+ */
+
 How to set up a build machine for OpenModelica (Windows)
 ========================================================
 
