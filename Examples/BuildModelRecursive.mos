@@ -15,8 +15,8 @@ dateAndTime:=readFile("tmp.date");
 system("rm -f tmp.date");
 
 if runModelicaTest then
-  loadModel(ModelicaTest,{"1.1"});
-  loadModelicaTest:="\nloadModel(ModelicaTest,{\"1.1\"});\n";
+  loadModel(ModelicaTest,{"3.2.1"});
+  loadModelicaTest:="\nloadModel(ModelicaTest,{\"3.2.1\"});\n";
 else
   loadModelicaTest:="";
 end if;
