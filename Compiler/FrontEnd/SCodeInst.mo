@@ -145,7 +145,7 @@ algorithm
         // Instantiate global constants (package constants).
         (const_el, functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
         
-        print(InstDump.modelStr(name, cls)); print("\n");
+        //print(InstDump.modelStr(name, cls)); print("\n");
 
         // ------------------- Typing -------------------
         // Build the symboltable to use for typing.
