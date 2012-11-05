@@ -699,7 +699,10 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.terminal = 0;
   data->simulationInfo.initial = 0;
   data->simulationInfo.sampleActivated = 0;
+
+  /*  switches used to evaluate the system */
   data->simulationInfo.solveContinuous = 0;
+  data->simulationInfo.discreteCall = 0;
 
   /* initialize model error code */
   data->simulationInfo.simulationSuccess = 0;

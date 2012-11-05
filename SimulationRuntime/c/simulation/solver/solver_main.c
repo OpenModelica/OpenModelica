@@ -174,6 +174,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   {
     WARNING(LOG_STDOUT, "Error in initialization. Storing results and exiting.\nUse -lv LOG_INIT for more information.");
     simInfo->stopTime = simInfo->startTime;
+    retVal = -1;
   }
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
