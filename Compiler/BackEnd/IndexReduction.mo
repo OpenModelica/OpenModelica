@@ -216,6 +216,7 @@ algorithm
       array<Integer> mapIncRowEqn;
       array<Boolean> barray;
       Integer noofeqns;
+      String eqnstr;
            
     case (true,_,_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_)
       equation
@@ -227,7 +228,8 @@ algorithm
         eqns1 = List.select1(eqns1,intLe,noofeqns);
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\nmarked equations: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns1,intString," ","\n"));
-        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
+        eqnstr = Debug.bcallret2(Flags.isSet(Flags.BLT_DUMP),BackendDump.dumpMarkedEqns,isyst, eqns1,"");
+        Debug.fcall(Flags.BLT_DUMP, print, eqnstr);
         // diff Alias does not yet work proper
         //(syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedeqns,eqns1) = differentiateAliasEqns(isyst,ishared,eqns1,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,{},{});
         //(syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,changedeqns) = differentiateEqns(syst,shared,eqns1,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedeqns);
@@ -238,7 +240,6 @@ algorithm
     case (_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_),_)
       equation
         false = intGt(listLength(eqns),0);
-        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! Found empty set of continues equations.\nmarked equations:\n");
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(alleqns,arrayGet,mapIncRowEqn);
@@ -246,13 +247,13 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dump, BackendDAE.DAE({syst},ishared));
+        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
       then
         fail(); 
 
     case (false,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_),_)
       equation
         true = intGt(listLength(eqns),0);
-        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states.\nmarked equations:\n");
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(alleqns,arrayGet,mapIncRowEqn);
@@ -263,11 +264,18 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dump, BackendDAE.DAE({syst},ishared));
+        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction1 failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
       then
-        fail(); 
+        fail();
+    case (_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_),_)
+      equation
+        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dump, BackendDAE.DAE({syst},ishared));
+      then
+        fail();         
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction failed! Use +d=bltdump to get more information."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction1 failed! Use +d=bltdump to get more information."});
       then
         fail();
   end matchcontinue;
@@ -298,7 +306,7 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m)) := syst;
   ((unassignedEqns,outEqnsLst,discEqns)) := List.fold2(inEqnsLst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
   outEqnsLst := listReverse(outEqnsLst);
-  size := BackendDAEUtil.equationSize(eqns);
+  size := BackendVariable.varsSize(vars);
   statemark := arrayCreate(size,false);
   outStateIndxs := List.fold2(inEqnsLst,statesInEquations,(m,statemark),inAssignments1,{});
   b := intGe(listLength(outStateIndxs),listLength(unassignedEqns));
@@ -587,8 +595,6 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         print("IndexReduction.differentiateEqns failed for eqn " +& intString(e) +& ":\n");
         print(BackendDump.equationStr(eqn)); print("\n");
-        BackendDump.dumpEqSystem(syst);
-        BackendDump.dumpShared(ishared);
       then
         fail();        
     else
@@ -4058,7 +4064,7 @@ algorithm
         eqns = BackendEquation.daeEqns(isyst);
         //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL());
         //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
-        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
+        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE());
         graph = GraphML.getGraph("G",false);  
         ((_,_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraphMatch,(1,vec1,graph));
         //neqns = BackendDAEUtil.equationArraySize(eqns);
@@ -4252,7 +4258,8 @@ protected
   array<Integer> mapIncRowEqn;
 algorithm
   (id,m,vec2,mapIncRowEqn,graph) := inTpl;
-  vars := List.select(m[e], Util.intPositive);
+  //vars := List.select(m[e], Util.intPositive);
+  vars := m[e];
   v := vec2[e];
   ((id,_,graph)) := List.fold1(vars,addDirectedEdgeGraph,mapIncRowEqn[e],(id,v,graph));     
   outTpl := (id,m,vec2,mapIncRowEqn,graph);  
@@ -4264,13 +4271,16 @@ protected function addDirectedEdgeGraph
   input tuple<Integer,Integer,GraphML.Graph> inTpl;
   output tuple<Integer,Integer,GraphML.Graph> outTpl;
 protected
-  Integer id,r;
+  Integer id,r,absv;
   GraphML.Graph graph;
   tuple<Option<GraphML.ArrowType>,Option<GraphML.ArrowType>> arrow;
+  GraphML.LineType lt;
 algorithm
   (id,r,graph) := inTpl;
-  arrow := Util.if_(intEq(r,v),(SOME(GraphML.ARROWSTANDART()),NONE()),(NONE(),SOME(GraphML.ARROWSTANDART())));
-  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),NONE(),arrow,graph);
+  absv := intAbs(v);
+  arrow := Util.if_(intEq(r,absv),(SOME(GraphML.ARROWSTANDART()),NONE()),(NONE(),SOME(GraphML.ARROWSTANDART())));
+  lt := Util.if_(intGt(v,0),GraphML.LINE(),GraphML.DASHED());
+  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(absv),GraphML.COLOR_BLACK,lt,NONE(),arrow,graph);
   outTpl := ((id+1,r,graph));
 end addDirectedEdgeGraph;
 
