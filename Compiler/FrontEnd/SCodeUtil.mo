@@ -899,7 +899,7 @@ algorithm
         res = translateClassdefAlgorithmitems(rest);
       then
         (stmt :: res);
-    case (Absyn.ALGORITHMITEMANN(annotation_ = _) :: rest)
+    case (_ :: rest)
       equation
         res = translateClassdefAlgorithmitems(rest);
       then

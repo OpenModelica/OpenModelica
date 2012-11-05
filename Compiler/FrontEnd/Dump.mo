@@ -1290,7 +1290,7 @@ algorithm
         s1 = unparseAlgorithmStrLst(i, als, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({is,"algorithm\n",s1});
+        str = stringAppendList({is,"algorithm\n",s1,"\n"});
       then
         str;
     
@@ -1299,7 +1299,7 @@ algorithm
         s1 = unparseAlgorithmStrLst(i, als, "\n");
         i_1 = i - 1;
         is = indentStr(i_1);
-        str = stringAppendList({is,"initial algorithm\n",s1});
+        str = stringAppendList({is,"initial algorithm\n",s1,"\n"});
       then
         str;
     
@@ -1494,7 +1494,7 @@ algorithm
         str;
     case (i,Absyn.LEXER_COMMENT(comment=str))
       equation
-        str = System.trimChar(str,"\n");
+        str = System.trimWhitespace(str);
         str = indentStr(i) +& str;
       then str;
   end match;
@@ -3161,13 +3161,15 @@ algorithm
     
     case (_,{},_) then "";
     
+    case (i,{x},sep)
+      then unparseAlgorithmStr(i, x);
+
     case (i,(x :: xs),sep)
       equation
         s1 = unparseAlgorithmStr(i, x);
         s2 = unparseAlgorithmStrLst(i, xs, sep);
         res = stringAppendList({s1,sep,s2});
-      then
-        res;
+      then res;
   end match;
 end unparseAlgorithmStrLst;
 
@@ -3230,13 +3232,13 @@ algorithm
       equation
         s1 = printExpStr(e);
         i_1 = i + 1;
-        s2 = unparseAlgorithmStrLst(i, tb, "\n");
-        s3 = unparseAlgElseifStrLst(i_1, eb, "\n");
-        s4 = unparseAlgorithmStrLst(i, fb, "\n");
+        s2 = unparseAlgorithmStrLst(i_1, tb, "\n");
+        s3 = unparseAlgElseifStrLst(i, eb, "\n");
+        s4 = unparseAlgorithmStrLst(i_1, fb, "\n");
         s5 = unparseCommentOption(optcmt);
         is = indentStr(i);
         str = stringAppendList(
-          {is,"if ",s1," then \n",is,s2,s3,"\n",is,"else ",s4,"\n",is,
+          {is,"if ",s1," then \n",s2,s3,"\n",is,"else\n",s4,"\n",is,
           "end if",s5,";"});
       then
         str;
@@ -3296,13 +3298,6 @@ algorithm
       then
         str;
     
-    case (i,Absyn.ALGORITHMITEMANN(annotation_ = ann))
-      equation
-        str = unparseAnnotationOption(i, SOME(ann));
-        str_1 = stringAppend(str, ";");
-      then
-        str_1;
-    
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_RETURN(),comment = optcmt)) /* ALG_RETURN */
       equation
         s3 = unparseCommentOption(optcmt);
@@ -3361,11 +3356,21 @@ algorithm
           {is,"catch\n",is,s2,is,"end catch",s3,";"});
       then
         str;
+
+    case (i,Absyn.ALGORITHMITEMANN(annotation_ = ann))
+      equation
+        str = unparseAnnotationOption(i, SOME(ann));
+        str_1 = stringAppend(str, ";");
+      then
+        str_1;
+    
+    case (i,Absyn.ALGORITHMITEMCOMMENT(comment = str))
+      then indentStr(i) +& System.trimWhitespace(str);
+
     case (_,_)
       equation
-        Print.printErrorBuf("#Error, unparse_algorithm_str failed\n");
-      then
-        "";
+        Error.addMessage(Error.INTERNAL_ERROR, {"Dump.unparseAlgorithmStr failed"});
+      then fail();
   end matchcontinue;
 end unparseAlgorithmStr;
 
@@ -3531,13 +3536,15 @@ algorithm
     
     case (_,{},_) then "";
     
+    case (i,{x},sep)
+      then unparseAlgElseifStr(i, x);
+
     case (i,(x :: xs),sep)
       equation
         s2 = unparseAlgElseifStrLst(i, xs, sep);
         s1 = unparseAlgElseifStr(i, x);
         res = stringAppendList({s1,sep,s2});
-      then
-        res;
+      then res;
   end match;
 end unparseAlgElseifStrLst;
 
@@ -3557,10 +3564,9 @@ algorithm
     case (i,(e,el))
       equation
         s1 = printExpStr(e);
-        s2 = unparseAlgorithmStrLst(i, el, "\n");
-        i_1 = i - 1;
-        is = indentStr(i_1);
-        str = stringAppendList({is,"elseif ",s1," then\n",s2});
+        s2 = unparseAlgorithmStrLst(i+1, el, "\n");
+        is = indentStr(i);
+        str = stringAppendList({"\n",is,"elseif ",s1," then\n",s2});
       then
         str;
   end match;

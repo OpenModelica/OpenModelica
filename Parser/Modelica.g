@@ -677,10 +677,34 @@ initial_algorithm_clause returns [void* ast] :
   INITIAL T_ALGORITHM as=algorithm_annotation_list {ast = Absyn__INITIALALGORITHMS(as);}
   ;
 
-algorithm_annotation_list returns [void* ast] :
-  { LA(1) == END_IDENT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
+algorithm_annotation_list returns [void* ast]   @init {
+  int first,last;
+  $ast = 0;
+  first = omc_first_comment;
+  last = LT(1)->getTokenIndex(LT(1));
+  omc_first_comment = last;
+} :
+  { LA(1) == END_IDENT || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
+    {
+      ast = mk_nil();
+      for (;first<last;last--) {
+        pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+        if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+          ast = mk_cons(Absyn__ALGORITHMITEMCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),ast);
+        }
+      }
+    }
   |
-  ( al=algorithm SEMICOLON {a = al.ast;} | a=annotation SEMICOLON {a = Absyn__ALGORITHMITEMANN(a);}) as=algorithm_annotation_list {ast = mk_cons(a,as);}
+  ( al=algorithm SEMICOLON {a = al.ast;} | a=annotation SEMICOLON {a = Absyn__ALGORITHMITEMANN(a);}) as=algorithm_annotation_list
+  {
+    ast = mk_cons(a,as);
+    for (;first<last;last--) {
+      pANTLR3_COMMON_TOKEN tok = INPUT->get(INPUT,last-1);
+      if (tok->getChannel(tok) == HIDDEN && (tok->type == LINE_COMMENT || tok->type == ML_COMMENT)) {
+        ast = mk_cons(Absyn__ALGORITHMITEMCOMMENT(mk_scon((char*)tok->getText(tok)->chars)),ast);
+      }
+    }
+  }
   ;
 
 equation returns [void* ast] :

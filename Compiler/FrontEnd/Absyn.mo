@@ -478,6 +478,10 @@ uniontype AlgorithmItem "Info specific for an algorithm item."
     Annotation annotation_ "annotation" ;
   end ALGORITHMITEMANN;
 
+  record ALGORITHMITEMCOMMENT "A comment from the lexer"
+    String comment;
+  end ALGORITHMITEMCOMMENT;
+
 end AlgorithmItem;
 
 public

@@ -1897,6 +1897,21 @@ extern struct record_description Absyn_AlgorithmItem_ALGORITHMITEMANN__desc;
 #define Absyn__ALGORITHMITEMANN_3dBOX1 4
 #define Absyn__ALGORITHMITEMANN(annotation_) (mmc_mk_box2(4,&Absyn_AlgorithmItem_ALGORITHMITEMANN__desc,annotation_))
 #ifdef ADD_METARECORD_DEFINTIONS
+#ifndef Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc_added
+#define Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc_added
+ADD_METARECORD_DEFINTIONS const char* Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc__fields[1] = {"comment"};
+ADD_METARECORD_DEFINTIONS struct record_description Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc = {
+  "Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT",
+  "Absyn.AlgorithmItem.ALGORITHMITEMCOMMENT",
+  Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc__fields
+};
+#endif
+#else /* Only use the file as a header */
+extern struct record_description Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc;
+#endif
+#define Absyn__ALGORITHMITEMCOMMENT_3dBOX1 5
+#define Absyn__ALGORITHMITEMCOMMENT(comment) (mmc_mk_box2(5,&Absyn_AlgorithmItem_ALGORITHMITEMCOMMENT__desc,comment))
+#ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Absyn_Equation_EQ__IF__desc_added
 #define Absyn_Equation_EQ__IF__desc_added
 ADD_METARECORD_DEFINTIONS const char* Absyn_Equation_EQ__IF__desc__fields[4] = {"ifExp","equationTrueItems","elseIfBranches","equationElseItems"};
