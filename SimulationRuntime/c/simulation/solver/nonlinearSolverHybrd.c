@@ -347,7 +347,7 @@ int solveHybrd(DATA *data, int sysNumber) {
         solverData->useXScaling = 1;
     }
 
-
+    /* Debug output */
     if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
       int i,j,l=0;
       INFO(LOG_NONLIN_SYS_V,"Jacobi-Matrix");

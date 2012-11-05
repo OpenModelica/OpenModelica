@@ -301,14 +301,12 @@ static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
       THROW("unsupported option -iom");
 
     storePreValues(data);                       /* save pre-values */
-    storeRelations(data);
     overwriteOldSimulationData(data);           /* if there are non-linear equations */
     updateDiscreteSystem(data);                 /* evaluate discrete variables */
 
     /* valid system for the first time! */
     saveZeroCrossings(data);
     storePreValues(data);
-    storeRelations(data);
     overwriteOldSimulationData(data);
 
     funcValue = leastSquareWithLambda(initData, 1.0);
@@ -550,6 +548,7 @@ static int none_initialization(DATA *data, int updateStartValues)
   restoreExtrapolationDataOld(data);
   resetAllHelpVars(data);
   storePreValues(data);
+  storeRelations(data);
 
   /* dump some information
   initData = initializeInitData(data);
@@ -606,6 +605,7 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   /* and restore start values and helpvars */
   restoreExtrapolationDataOld(data);
   resetAllHelpVars(data);
+  storeRelations(data);
   storePreValues(data);
 
   retVal = initialize(data, optiMethod);

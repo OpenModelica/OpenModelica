@@ -846,13 +846,14 @@ void deInitializeDataStruc(DATA *data)
  * Less is for case LESS and GREATEREQ
  * Greater is for case LESSEQ and GREATER
  */
-static const double tolZC = DBL_EPSILON;
+static const double tolZC = 1e-10;
+
 modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
-  double eps = (direction)? tolZC * fabs(b): tolZC * fabs(a);
+  //double eps = tolZC * fabs(fmax(a,b));
   /*INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)",a, b, (a < b)?'t':'f' , direction?'t':'f');*/
-  retVal = (direction)? (a < b + eps):(a + eps < b);
+  retVal = (direction)? (a < b + tolZC):(a + tolZC < b);
   /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');*/
   return retVal;
 }
@@ -865,9 +866,9 @@ modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
-  double eps = (direction)? tolZC * fabs(a): tolZC * fabs(b);
+  //double eps = tolZC * fabs(fmax(a,b));
   /* INFO4(LOG_EVENTS, "Relation GREATER:  %.20e > %.20e = %c (%c)",a, b, (a > b)?'t':'f' , direction?'t':'f'); */
-  retVal = (direction)? (a + eps > b ):(a  > b + eps);
+  retVal = (direction)? (a + tolZC > b ):(a  > b + tolZC);
   /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f'); */
   return retVal;
 }
