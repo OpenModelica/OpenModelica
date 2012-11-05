@@ -2920,5 +2920,32 @@ algorithm
   // print("buildMetaRecordType " +& id +& " in scope " +& Env.printEnvPathStr(env) +& " OK " +& Types.unparseType(ftype) +&"\n");
 end buildMetaRecordType;
 
+public function splitEnv
+"splits out the for loop scope envs"
+  input Env.Env inEnv;
+  output Env.Env outRealEnv;
+  output Env.Env outForEnv;
+algorithm
+  (outRealEnv, outForEnv) := matchcontinue(inEnv)
+    local 
+      Env.Env r, f, i, fs; 
+      Env.Frame frm;
+    
+    case ({}) then ({}, {});
+    case (frm::fs)
+      equation 
+        true = frameIsImplAddedScope(frm);
+        (r, f) = splitEnv(fs);
+      then
+        (r, frm::f);
+    case (frm::fs)
+      equation 
+        false = frameIsImplAddedScope(frm);
+        (r, f) = splitEnv(fs);
+      then
+        (frm::r, f);
+  end matchcontinue;
+end splitEnv;
+
 end Lookup;
 

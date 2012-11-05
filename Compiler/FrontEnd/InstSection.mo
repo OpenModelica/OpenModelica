@@ -3364,6 +3364,8 @@ algorithm
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
+        // strip last subs to get the full type! 
+        c1_2 = ComponentReference.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,splicedExpData,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) = Lookup.lookupVar(cache, env, c2_2);
         
@@ -3403,6 +3405,7 @@ algorithm
                     envExpandable);
         // ******************************************************************************
 
+        // c1 = Absyn.joinCrefs(ComponentReference.unelabCref(c1_2), Absyn.CREF_IDENT(componentName, {}));
         // then connect each of the components normally.
         (cache,env,ih,sets,dae,graph) = connectExpandableVariables(cache,env,ih,sets,pre,c1,c2,variablesUnion,impl,graph,info);
       then
@@ -3434,6 +3437,8 @@ algorithm
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
+        // strip last subs to get the full type! 
+        c1_2 = ComponentReference.crefStripLastSubs(c1_2);
         (_,attr,ty,binding,cnstForRange,splicedExpData,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) = Lookup.lookupVar(cache, env, c2_2);
         
@@ -3475,6 +3480,8 @@ algorithm
         //Debug.fprintln(Flags.EXPANDABLE, "env component: " +& Env.printEnvStr(envComponent));
         //Debug.fprintln(Flags.EXPANDABLE, "env: " +& Env.printEnvStr(env));
         
+        // use the cannon cref here as we will NOT find [i] in this environment!!!!
+        // c1 = Absyn.joinCrefs(ComponentReference.unelabCref(c1_2), Absyn.CREF_IDENT(componentName, {}));
         // now it should be in the Env, fetch the info!
         (cache,SOME((DAE.CREF(c1_1,t1),prop1,_))) = Static.elabCref(cache, env, c1, impl, false, pre,info);
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
@@ -3562,18 +3569,20 @@ algorithm
       Option<DAE.Const> veCnstForRange,currentCnstForRange;
       Env.Env veEnv "the virtual component environment!";
       Env.Env updatedEnv "the returned updated environment";
-      Env.Env currentEnv;
+      Env.Env currentEnv, forLoopEnv, realEnv;
       String currentName;
 
     // we have reached the top, update and return! 
     case (cache, topEnv, veCref as DAE.CREF_IDENT(ident = currentName), veAttr, veTy, veBinding, veCnstForRange, veEnv)
       equation
+        (realEnv, forLoopEnv) = Lookup.splitEnv(topEnv);
         // update the topEnv
         updatedEnv = Env.updateFrameV(
-                       topEnv, 
+                       realEnv, 
                        DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, veCnstForRange), 
                        Env.VAR_TYPED(),
                        veEnv);
+        updatedEnv = listAppend(forLoopEnv, updatedEnv);
       then
         updatedEnv;
     
@@ -3589,13 +3598,15 @@ algorithm
         // find the correct environment to update
         (_,currentAttr,currentTy,currentBinding,currentCnstForRange,_,_,currentEnv,_) = Lookup.lookupVar(cache, topEnv, qualCref);
         
+        (realEnv, forLoopEnv) = Lookup.splitEnv(currentEnv);
         // update the current environment!
         currentEnv = Env.updateFrameV(
-                       currentEnv, 
+                       realEnv, 
                        DAE.TYPES_VAR(currentName, veAttr, veTy, veBinding, veCnstForRange), 
                        Env.VAR_TYPED(),
                        veEnv);
-                 
+        currentEnv = listAppend(forLoopEnv, currentEnv);
+        
         // call us recursively to reach the top!
         updatedEnv = updateEnvComponentsOnQualPath(
                       cache, 
@@ -3606,7 +3617,8 @@ algorithm
                       currentBinding, 
                       currentCnstForRange, 
                       currentEnv);
-      then updatedEnv;
+      then 
+        updatedEnv;
   end match;
 end updateEnvComponentsOnQualPath;
 
