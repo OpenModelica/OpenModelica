@@ -8247,10 +8247,20 @@ template literalExpConst(Exp lit, Integer index) "These should all be declared s
     let data = flattenArrayExpToList(lit) |> exp => literalExpConstArrayVal(exp) ; separator=", "
     <<
     static _index_t <%name%>_dims[<%ndim%>] = {<%dims%>};
+    <% match getDimensionSizes(ty) case {0} then
+    <<
+    static base_array_t const <%name%> = {
+      <%ndim%>, <%name%>_dims, (void*) 0
+    };
+    >>
+    else
+    <<
     static const modelica_<%sty%> <%name%>_data[] = {<%data%>};
     static <%sty%>_array const <%name%> = {
       <%ndim%>, <%name%>_dims, (void*) <%name%>_data
     };
+    >>
+    %>
     >>
   case BOX(exp=exp as ICONST(__)) then
     <<
