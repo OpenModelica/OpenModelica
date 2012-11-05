@@ -6703,8 +6703,25 @@ public function filterOnTrue
     output Boolean outResult;
   end FilterFunc;
 algorithm
-  outList := filterOnTrue_tail(inList, inFilterFunc, {});
+  outList := listReverse(filterOnTrue_tail(inList, inFilterFunc, {}));
 end filterOnTrue;
+
+public function filterOnTrueReverse
+  "Takes a list of values and a filter function over the values and returns a
+   sub list of values in reverse order for which the matching function returns true.
+     Example:
+       filter({1, 2, 3, 4, 5}, isEven) => {4, 2}"
+  input list<ElementType> inList;
+  input FilterFunc inFilterFunc;
+  output list<ElementType> outList;
+
+  partial function FilterFunc
+    input ElementType inElement;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  outList := filterOnTrue_tail(inList, inFilterFunc, {});
+end filterOnTrueReverse;
 
 protected function filterOnTrue_tail
   "Tail recursive implementation of filter."
@@ -6723,8 +6740,7 @@ algorithm
       ElementType e;
       list<ElementType> rest;
 
-    // Reverse at the end.
-    case ({}, _, _) then listReverse(inAccumList);
+    case ({}, _, _) then inAccumList;
 
     // Add to front if the condition works.
     case (e :: rest, _, _)
@@ -7800,8 +7816,25 @@ public function accumulateMap
     output list<ElementOutType> outList;
   end MapFunc;
 algorithm
-  outList := accumulateMapAccum(inList, inMapFunc, {});
+  outList := listReverse(accumulateMapAccum(inList, inMapFunc, {}));
 end accumulateMap;
+
+public function accumulateMapReverse
+  "Takes a list and a function. The function is applied to each element in the
+   list, and the function is itself responsible for adding elements to the
+   result list."
+  input list<ElementInType> inList;
+  input MapFunc inMapFunc;
+  output list<ElementOutType> outList;
+ 
+  partial function MapFunc
+    input ElementInType inElement;
+    input list<ElementOutType> inAccumList;
+    output list<ElementOutType> outList;
+  end MapFunc;
+algorithm
+  outList := accumulateMapAccum(inList, inMapFunc, {});
+end accumulateMapReverse;
 
 public function accumulateMapAccum
   "Takes a list, a function and a result list. The function is applied to each
@@ -7866,6 +7899,59 @@ algorithm
     case ({}, _, _, _) then inAccumList;
   end match;
 end accumulateMapAccum1;
+
+public function accumulateMapFold
+  input list<ElementInType> inList;
+  input FuncType inFunc;
+  input FoldType inFoldArg;
+  output list<ElementOutType> outList;
+  output FoldType outFoldArg;
+
+  partial function FuncType
+    input ElementInType inElement;
+    input FoldType inFoldArg;
+    input list<ElementOutType> inAccumList;
+    output list<ElementOutType> outList;
+    output FoldType outFoldArg;
+  end FuncType;
+algorithm
+  (outList, outFoldArg) := accumulateMapFoldAccum(inList, inFunc, inFoldArg, {});
+end accumulateMapFold;
+
+public function accumulateMapFoldAccum
+  input list<ElementInType> inList;
+  input FuncType inFunc;
+  input FoldType inFoldArg;
+  input list<ElementOutType> inAccumList;
+  output list<ElementOutType> outList;
+  output FoldType outFoldArg;
+
+  partial function FuncType
+    input ElementInType inElement;
+    input FoldType inFoldArg;
+    input list<ElementOutType> inAccumList;
+    output list<ElementOutType> outList;
+    output FoldType outFoldArg;
+  end FuncType;
+algorithm
+  (outList, outFoldArg) := match(inList, inFunc, inFoldArg, inAccumList)
+    local
+      ElementInType e;
+      list<ElementInType> rest_e;
+      list<ElementOutType> accum;
+      FoldType fold_arg;
+
+    case (e :: rest_e, _, _, accum)
+      equation
+        (accum, fold_arg) = inFunc(e, inFoldArg, accum);
+        (accum, fold_arg) = accumulateMapFoldAccum(rest_e, inFunc, fold_arg, accum);
+      then
+        (accum, fold_arg);
+
+    case ({}, _, _, _) then (inAccumList, inFoldArg);
+
+  end match;
+end accumulateMapFoldAccum;
 
 public function first2FromTuple3
   input tuple<ElementInType, ElementInType, ElementType> inTuple;

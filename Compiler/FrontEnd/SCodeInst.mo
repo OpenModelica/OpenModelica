@@ -145,7 +145,7 @@ algorithm
         // Instantiate global constants (package constants).
         (const_el, functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
         
-        //print(InstDump.modelStr(name, cls)); print("\n");
+        print(InstDump.modelStr(name, cls)); print("\n");
 
         // ------------------- Typing -------------------
         // Build the symboltable to use for typing.
@@ -281,9 +281,13 @@ algorithm
         // Instantiate all equation and algorithm sections.
         (eq, ieq, alg, ialg, functions) = instSections(cdef, env, inPrefix, ip, functions);
 
-        // Create the class.
+        // Flatten the class parts.
+        cls = InstTypes.COMPLEX_CLASS(inTypePath, elems, eq, ieq, alg, ialg);
+        cls = InstFlatten.flattenClass(cls, List.isNotEmpty(exts));
+
+        // Create the class' type.
         state = ClassInf.start(res, Absyn.IDENT(name));
-        (cls, ty) = InstUtil.makeClass(inTypePath, elems, eq, ieq, alg, ialg, state, cse);
+        (cls, ty) = InstUtil.makeClassType(cls, state, cse);
       then
         (cls, ty, InstTypes.NO_PREFIXES(), functions);
 
@@ -543,8 +547,6 @@ protected function instElementList
 algorithm
   (outElements, outContainsSpecialExtends, outFunctions) := instElementList2(inElements, 
     inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false, inFunctions);
-  //outElements := InstFlatten.flattenElements(outElements, inTypePath,
-  //  List.isNotEmpty(inExtends));
 end instElementList;
 
 protected function instElementList2
@@ -2325,7 +2327,6 @@ algorithm
       equation
         initBindings = {};
         inputs = listReverse(inputs);
-        inputs = InstFlatten.flattenElements(inputs, inName, true);
         (inputs, initBindings) = List.mapFold(inputs, dimensionDeps, initBindings);
         (initBindings, {}) = Graph.topologicalSort(
           Graph.buildGraph(initBindings, getStatementDependencies,
@@ -2629,18 +2630,6 @@ algorithm
       then
         (inputs, outputs, locals);
 
-    case (InstTypes.EXTENDED_ELEMENTS(cls = InstTypes.COMPLEX_CLASS(
-        components = els)) :: rest_el, inputs, outputs, locals)
-      equation
-        // somehow extends are in the reverse order, have the rest first, then the elements
-        (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
-        (inputs, outputs, locals) = getFunctionParameters2(els, inputs, outputs, locals);
-        inputs = List.union(inputs, inputs);
-        outputs = List.union(outputs, outputs);
-        locals = List.union(locals, locals);
-      then
-        (inputs, outputs, locals);
-    
     // ignore CONDITIONAL components
     case ((el as InstTypes.CONDITIONAL_ELEMENT(component = _)) :: rest_el, inputs, outputs, locals)
       equation
@@ -2810,11 +2799,6 @@ algorithm
       then
         makeFunctionSlots(rest_inputs, inPositionalArgs, slots, inFuncName, inInfo);
     
-    // ignore extends 
-    case (InstTypes.EXTENDED_ELEMENTS(baseClass = _) :: rest_inputs, _, slots, _, _)
-      then
-        makeFunctionSlots(rest_inputs, inPositionalArgs, slots, inFuncName, inInfo);
-
     // Last vararg input and no positional arguments means we're done.
     case ({InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(prefixes =
         InstTypes.PREFIXES(varArgs = InstTypes.IS_VARARG())))}, {}, _, _, _)
@@ -3794,13 +3778,6 @@ algorithm
         (oel, st, functions) = instConditionalComponent(comp, st, functions);
       then
         (oel, st, functions);
-
-    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st, functions)
-      equation
-        (cls, st, functions) = instConditionalComponents(cls, st, functions);
-        el = InstTypes.EXTENDED_ELEMENTS(bc, cls, ty);
-      then
-        (SOME(el), st, functions);
 
     else (SOME(inElement), inSymbolTable, inFunctions);
 

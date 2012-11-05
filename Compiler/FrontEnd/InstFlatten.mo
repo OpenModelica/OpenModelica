@@ -117,25 +117,116 @@ algorithm
     (System.stringHashDjb2Mod, stringEq, Util.id, valueStr));
 end newSymbolTable;
 
+public type Elements = list<Element>;
+public type Equations = list<Equation>;
+public type Algorithms = list<list<Statement>>;
+
+public function flattenClass
+  input Class inClass;
+  input Boolean inContainsExtends;
+  output Class outFlatClass;
+algorithm
+  outFlatClass := matchcontinue(inClass, inContainsExtends)
+    local
+      Absyn.Path name;
+      Elements el;
+      Equations eq, ieq;
+      Algorithms alg, ialg;
+      list<Class> sections;
+      Integer el_count;
+      Class cls;
+
+    // If we have no extends then we don't need to do anything.
+    case (_, false) then inClass;
+
+    case (InstTypes.COMPLEX_CLASS(name, el, eq, ieq, alg, ialg), _)
+      equation
+        (sections, el_count) =
+          List.accumulateMapFold(el, collectInheritedSections, 0);
+        el = flattenElements(el, el_count, name);
+        cls = InstTypes.COMPLEX_CLASS(name, el, eq, ieq, alg, ialg);
+        cls = List.fold(sections, flattenSections, cls);
+      then
+        cls;
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- InstFlatten.flattenClass failed for " +&
+          Absyn.pathString(InstUtil.getClassName(inClass)) +& "\n");
+      then
+        fail();
+
+  end matchcontinue;
+end flattenClass;
+
+protected function collectInheritedSections
+  input Element inElements;
+  input Integer inElementCount;
+  input list<Class> inAccumSections;
+  output list<Class> outSections;
+  output Integer outElementCount;
+algorithm
+  (outSections, outElementCount) :=
+  match(inElements, inElementCount, inAccumSections)
+    local
+      list<Class> accum;
+      Integer el_count;
+      Elements el;
+      Class cls;
+
+    case (InstTypes.EXTENDED_ELEMENTS(cls = cls as InstTypes.COMPLEX_CLASS(
+        components = el)), _, _)
+      equation
+        el_count = listLength(el) + inElementCount;
+      then
+        (cls :: inAccumSections, el_count);
+
+    else (inAccumSections, inElementCount + 1);
+
+  end match;
+end collectInheritedSections;
+
+protected function flattenSections
+  input Class inSections;
+  input Class inAccumSections;
+  output Class outSections;
+algorithm
+  outSections := match(inSections, inAccumSections)
+    local
+      Elements el;
+      Equations eq1, eq2, ieq1, ieq2;
+      Algorithms alg1, alg2, ialg1, ialg2;
+      Absyn.Path name;
+
+    case (InstTypes.COMPLEX_CLASS(_, _, eq1, ieq1, alg1, ialg1),
+        InstTypes.COMPLEX_CLASS(name, el, eq2, ieq2, alg2, ialg2))
+      equation
+        eq1 = listAppend(eq1, eq2);
+        ieq1 = listAppend(ieq1, ieq2);
+        alg1 = listAppend(alg1, alg2);
+        ialg1 = listAppend(ialg1, ialg2);
+      then
+        InstTypes.COMPLEX_CLASS(name, el, eq1, ieq1, alg1, ialg1);
+
+  end match;
+end flattenSections;
+
 public function flattenElements
   input list<Element> inElements;
+  input Integer inElementCount;
   input Absyn.Path inClassPath;
-  input Boolean inContainsExtends;
   output list<Element> outElements;
 algorithm
-  outElements := matchcontinue(inElements, inClassPath, inContainsExtends)
+  outElements := matchcontinue(inElements, inElementCount, inClassPath)
     local
       SymbolTable st;
-      Integer el_count;
       list<Element> flat_el;
-
-    // The elements are already flattened if we have no extends.
-    case (_, _, false) then inElements;
+      Class sections;
 
     case (_, _, _)
       equation
-        el_count = listLength(inElements);
-        st = newSymbolTable(intDiv(el_count * 4, 3) + 1);
+        st = newSymbolTable(intDiv(inElementCount * 4, 3) + 1);
         (flat_el, _) = flattenElements2(inElements, st, {}, inClassPath, {});
       then
         flat_el;
@@ -216,7 +307,7 @@ algorithm
       equation
         // For extended elements we can use the names from the type, which are
         // already the last identifiers.
-        var_names = List.map(vars, Types.getVarName); 
+        var_names = List.mapReverse(vars, Types.getVarName); 
         (accum_el, st) = flattenExtendedElements(ext_el, var_names,
           bc :: inExtendPath, inClassPath, st, accum_el);
       then
@@ -255,19 +346,25 @@ algorithm
     local
       list<Element> accum_el;
       SymbolTable st;
+      Absyn.Path name;
+      Component comp;
 
-    // Try to add the component to the 
+    // Try to add the component to the symbol table.
     case (_, _, _, _, st, accum_el)
       equation
         st = BaseHashTable.addUnique((inName, (inComponent, inExtendPath)), st); 
       then
         (true, st);
 
+    // If we couldn't add the component to the symbol table it means it already
+    // exists, so we need to check that it's identical to the already existing
+    // component.
     case (_, _, _, _, st, accum_el)
       equation
-        print("Removing equal " +& inName +& "\n");
-        // Look up the already existing component here and check that they are
-        // equal.
+        /**********************************************************************/
+        // TODO: Look up the already existing component here and check that they
+        // are equal.
+        /**********************************************************************/
       then
         (false, st);
         

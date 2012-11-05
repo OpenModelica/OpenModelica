@@ -71,6 +71,9 @@ public uniontype Element
   end CONDITIONAL_ELEMENT;
 
   record EXTENDED_ELEMENTS
+    "This record is used by SCodeInst.instElementList to store elements from
+     extends, but is removed by instFlatten. Most functions which handle
+     elements should therefore be able to ignore this record."
     Absyn.Path baseClass;
     Class cls;
     DAE.Type ty;

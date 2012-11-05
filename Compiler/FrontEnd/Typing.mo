@@ -169,12 +169,6 @@ algorithm
       then
         (InstTypes.ELEMENT(comp, cls), st);
 
-    case (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), _, _, st)
-      equation
-        (cls, st) = typeClass2(cls, inParent, inContext, st);
-      then
-        (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), st);
-
     else (inElement, inSymbolTable);
 
   end match;
@@ -659,8 +653,7 @@ algorithm
         InstTypes.COMPLEX_CLASS(components = elems), st)
       equation
         DAE.T_COMPLEX(state, _, ec, ty_src) = Types.arrayElementType(ty);
-        vars = List.accumulateMap(elems, InstUtil.makeDaeVarsFromElement);
-        vars = listReverse(vars);
+        vars = List.accumulateMapReverse(elems, InstUtil.makeDaeVarsFromElement);
         base_ty = DAE.T_COMPLEX(state, vars, ec, ty_src);
         ty = Types.setArrayElementType(ty, base_ty);
         comp = InstUtil.setTypedComponentType(inComponent, ty);
@@ -1190,12 +1183,6 @@ algorithm
         (cls, conn) = typeSections2(cls, st, conn);
       then
         (InstTypes.ELEMENT(comp, cls), conn);
-
-    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st, conn)
-      equation
-        (cls, conn) = typeSections2(cls, st, conn);
-      then
-        (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), conn);
 
     case (InstTypes.CONDITIONAL_ELEMENT(_), st, _)
       equation

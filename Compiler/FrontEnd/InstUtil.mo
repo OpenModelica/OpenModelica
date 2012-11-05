@@ -75,44 +75,37 @@ public type Prefix = InstTypes.Prefix;
 public type Statement = InstTypes.Statement;
 public type SymbolTable = InstSymbolTable.SymbolTable;
 
-public function makeClass
-  input Absyn.Path inName;
-  input list<Element> inElements;
-  input list<Equation> inEquations;
-  input list<Equation> inInitialEquations;
-  input list<list<Statement>> inAlgorithms;
-  input list<list<Statement>> inInitialAlgorithms;
+public function makeClassType
+  input Class inClass;
   input ClassInf.State inState;
   input Boolean inContainsSpecialExtends;
   output Class outClass;
   output DAE.Type outClassType;
 algorithm
-  (outClass, outClassType) := match(inName, inElements, inEquations, inInitialEquations,
-      inAlgorithms, inInitialAlgorithms, inState, inContainsSpecialExtends)
+  (outClass, outClassType) := match(inClass, inState, inContainsSpecialExtends)
     local
       list<Element> elems;
-      list<Equation> eq, ieq;
-      list<list<Statement>> al, ial;
       Class cls;
       DAE.Type ty;
       list<DAE.Var> vars;
+      Absyn.Path name;
 
-    case (_, elems, eq, ieq, al, ial, _, false)
+    case (InstTypes.COMPLEX_CLASS(components = elems), _, false)
       equation
-        vars = List.accumulateMap(elems, makeDaeVarsFromElement);
+        vars = List.accumulateMapReverse(elems, makeDaeVarsFromElement);
         ty = DAE.T_COMPLEX(inState, vars, NONE(), DAE.emptyTypeSource);
       then
-        (InstTypes.COMPLEX_CLASS(inName, elems, eq, ieq, al, ial), ty);
+        (inClass, ty);
 
-    case (_, _, {}, {}, {}, {}, _, true)
+    case (InstTypes.COMPLEX_CLASS(_, elems, {}, {}, {}, {}), _, true)
       equation
         (InstTypes.EXTENDED_ELEMENTS(cls = cls, ty = ty), elems) =
-          getSpecialExtends(inElements);
+          getSpecialExtends(elems);
       then
         (cls, ty);
 
   end match;
-end makeClass;
+end makeClassType;
 
 public function makeDaeVarsFromElement
   input Element inElement;
@@ -135,9 +128,6 @@ algorithm
       then
         var :: vars;
 
-    case (InstTypes.EXTENDED_ELEMENTS(cls = cls), vars)
-      then makeDaeVarsFromClass(cls, vars);
-
     case (InstTypes.CONDITIONAL_ELEMENT(component = comp), vars)
       equation
         var = componentToDaeVar(comp);
@@ -147,22 +137,6 @@ algorithm
   end match;
 end makeDaeVarsFromElement;
 
-protected function makeDaeVarsFromClass
-  input Class inClass;
-  input list<DAE.Var> inAccumVars;
-  output list<DAE.Var> outVars;
-algorithm
-  outVars := match(inClass, inAccumVars)
-    local
-      list<Element> elems;
-
-    case (InstTypes.BASIC_TYPE(_), _) then inAccumVars;
-    case (InstTypes.COMPLEX_CLASS(components = elems), _)
-      then List.accumulateMapAccum(elems, makeDaeVarsFromElement, inAccumVars);
-
-  end match;
-end makeDaeVarsFromClass;
-    
 protected function componentToDaeVar
   input Component inComponent;
   output DAE.Var outVar;
@@ -1373,12 +1347,6 @@ algorithm
       then
         InstTypes.CONDITIONAL_ELEMENT(comp);
 
-    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), _)
-      equation
-        cls = prefixClass(cls, inPrefix);
-      then
-        InstTypes.EXTENDED_ELEMENTS(bc, cls, ty);
-
   end match;
 end prefixElement;
 
@@ -1451,9 +1419,6 @@ algorithm
 
     case (InstTypes.CONDITIONAL_ELEMENT(component = _), _)
       then 1 + inCount;
-
-    case (InstTypes.EXTENDED_ELEMENTS(cls = cls), _)
-      then countElementsInClass(cls) + inCount;
 
   end match;
 end countElementsInElement;

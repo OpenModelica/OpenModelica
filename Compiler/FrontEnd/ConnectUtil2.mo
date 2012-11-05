@@ -486,9 +486,6 @@ algorithm
     case (InstTypes.ELEMENT(cls = cls as InstTypes.COMPLEX_CLASS(components = _)), _)
       then collectFlowConnectors2(cls, inAccumFlows);
 
-    case (InstTypes.EXTENDED_ELEMENTS(cls = cls), _)
-      then collectFlowConnectors2(cls, inAccumFlows);
-
     else inAccumFlows;
   end matchcontinue;
 end collectFlowConnectors3;
@@ -669,7 +666,7 @@ algorithm
 
     case (_, DAE.T_COMPLEX(varLst = vars), _, _, _)
       equation
-        vars = List.filterOnTrue(vars, DAEUtil.isNotParamOrConstVar);
+        vars = List.filterOnTrueReverse(vars, DAEUtil.isNotParamOrConstVar);
       then
         List.map2(vars, varToConnector, inCref, inFace);
 

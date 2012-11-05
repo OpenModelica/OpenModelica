@@ -161,7 +161,7 @@ public function build
 algorithm
   (outClass, outSymbolTable) := match(inClass)
     local
-      SymbolTable symtab;
+      SymbolTable st;
       Integer comp_size, bucket_size;
       Class cls;
 
@@ -171,14 +171,13 @@ algorithm
         // multiplied with 4/3, to get ~75% occupancy. +1 to make space for time.
         comp_size = InstUtil.countElementsInClass(inClass);
         bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3)) + 1;
-        symtab = createSized(bucket_size);
-        (cls, symtab) = addClass(inClass, symtab);
-        symtab = addAliases(inClass, symtab);
+        st = createSized(bucket_size);
+        (cls, st) = addClass(inClass, st);
+        st = addAliases(inClass, st);
         // Add the special variable time to the symboltable.
-        (symtab, _) = addOptionalComponent(Absyn.IDENT("time"),
-          BUILTIN_TIME_COMP, NONE(), symtab);
+        st = addUniqueComponent(Absyn.IDENT("time"), BUILTIN_TIME_COMP, st);
       then
-        (cls, symtab);
+        (cls, st);
 
   end match;
 end build;
@@ -311,9 +310,9 @@ algorithm
     case (el :: rest_el, st, _)
       equation
         // Try to add the element to the symboltable.
-        (el, st, added) = addElement(el, st);
+        (el, st) = addElement(el, st);
         // Add the element to the accumulation list if it was added.
-        accum_el = List.consOnTrue(added, el, inAccumEl);
+        accum_el = el :: inAccumEl;
         // Add the rest of the elements.
         (rest_el, st) = addElements2(rest_el, st, accum_el);
       then
@@ -330,37 +329,29 @@ public function addElement
   input SymbolTable inSymbolTable;
   output Element outElement;
   output SymbolTable outSymbolTable;
-  output Boolean outAdded;
 algorithm
-  (outElement, outSymbolTable, outAdded) := match(inElement, inSymbolTable)
+  (outElement, outSymbolTable) := match(inElement, inSymbolTable)
     local
       Component comp;
       Class cls;
       SymbolTable st;
-      Boolean added;
       Absyn.Path bc;
       DAE.Type ty;
 
     case (InstTypes.ELEMENT(comp, cls), st)
       equation
-        // Try to add the component.
-        (st, added) = addComponent(comp, st);
-        // Add the component's class if the component was added.
-        (cls, st) = addClassOnTrue(cls, st, added);
+        // Add the component.
+        st = addComponent(comp, st);
+        // Add the component's class.
+        (cls, st) = addClass(cls, st);
       then
-        (InstTypes.ELEMENT(comp, cls), st, added);
+        (InstTypes.ELEMENT(comp, cls), st);
 
     case (InstTypes.CONDITIONAL_ELEMENT(comp), st)
       equation
-        (st, added) = addComponent(comp, st);
+        st = addComponent(comp, st);
       then
-        (InstTypes.CONDITIONAL_ELEMENT(comp), st, added);
-
-    case (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st)
-      equation
-        (cls, st) = addClass(cls, st);
-      then
-        (InstTypes.EXTENDED_ELEMENTS(bc, cls, ty), st, true);
+        (InstTypes.CONDITIONAL_ELEMENT(comp), st);
 
   end match;
 end addElement;
@@ -395,75 +386,36 @@ public function addComponent
   input Component inComponent;
   input SymbolTable inSymbolTable;
   output SymbolTable outSymbolTable;
-  output Boolean outAdded;
 algorithm
-  (outSymbolTable, outAdded) := matchcontinue(inComponent, inSymbolTable) 
+  outSymbolTable := matchcontinue(inComponent, inSymbolTable) 
     local
       Absyn.Path name;
       Option<Component> comp;
       SymbolTable st;
-      Boolean added;
       HashTable scope;
 
     // PACKAGE isn't really a component, so we don't add it. But its class
     // should be added, so return true anyway.
     case (InstTypes.PACKAGE(name = _), st)
-      then (st, true);
+      then st;
 
     // For any other type of component, try to add it.
-    case (_, st as scope::_)
+    case (_, st)
       equation
-        // Try to find the component in the symboltable.
         name = InstUtil.getComponentName(inComponent);
-        comp = lookupNameOpt(name, {scope});
-        // Let addOptionalComponent handle the rest.
-        (st, added) = addOptionalComponent(name, inComponent, comp, st);
+        st = addNoUpdCheck(name, inComponent, st);
       then
-        (st, added);
+        st;
 
     else
       equation
-        print("InstSymbolTable.addComponent failed!\n");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("InstSymbolTable.addComponent failed!");
       then
-        (inSymbolTable, false);
+        fail();
 
   end matchcontinue;
 end addComponent;
-
-protected function addOptionalComponent
-  "Adds a component to the symboltable, if it doesn't already exist in the
-   symboltable. This is indicated by inOldComponent, which is NONE if it doesn't
-   already exist, otherwise SOME."
-  input Absyn.Path inName;
-  input Component inNewComponent;
-  input Option<Component> inOldComponent;
-  input SymbolTable inSymbolTable;
-  output SymbolTable outSymbolTable;
-  output Boolean outAdded;
-algorithm
-  (outSymbolTable, outAdded) :=
-  match(inName, inNewComponent, inOldComponent, inSymbolTable)
-    local
-      Component comp;
-      SymbolTable st;
-
-    // The component doesn't already exist, add it to the symboltable.
-    case (_, comp, NONE(), st)
-      equation
-        st = addNoUpdCheck(inName, comp, st);
-      then
-        (st, true);
-
-    // The component already exists. Check that it's equivalent with the old
-    // component, and return the symboltable unchanged.
-    case (_, _, SOME(comp), st)
-      equation
-        //checkEqualComponents
-      then
-        (inSymbolTable, false);
-
-  end match;
-end addOptionalComponent;
 
 public function addIterator
   "Opens a new scope, or reuses an old iterator scope, and adds the given
@@ -573,12 +525,6 @@ algorithm
 
     case (InstTypes.CONDITIONAL_ELEMENT(component = comp), _, st)
       then addAlias2(comp, inClassPath, st);
-
-    case (InstTypes.EXTENDED_ELEMENTS(cls = InstTypes.COMPLEX_CLASS(components = el)), _, st)
-      equation
-        st = List.fold1(el, addAlias, inClassPath, st);
-      then
-        st;
 
     else inSymbolTable;
 

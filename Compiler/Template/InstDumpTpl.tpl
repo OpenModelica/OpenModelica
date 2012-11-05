@@ -76,8 +76,8 @@ match cls
     <<
 
     initial equation
-      <%eq_str%>
-    <%if eq_str then '' else 'end equation'%>;
+      <%ieq_str%>
+    <%if eq_str then '' else 'end equation;'%>
     >>
     let eq_seq_str = if eq_str then
     <<

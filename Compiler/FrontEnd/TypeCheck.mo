@@ -151,12 +151,6 @@ algorithm
       then
         (InstTypes.ELEMENT(comp, cls), st);
 
-    case (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), _, _, st)
-      equation
-        (cls, st) = checkClass(cls, inParent, inContext, st);
-      then
-        (InstTypes.EXTENDED_ELEMENTS(name, cls, ty), st);
-
     case (InstTypes.CONDITIONAL_ELEMENT(_), _, _, st)
       then (inElement, inSymbolTable);
 

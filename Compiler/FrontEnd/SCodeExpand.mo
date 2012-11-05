@@ -224,12 +224,6 @@ algorithm
       then
         el;
 
-    case (InstTypes.EXTENDED_ELEMENTS(cls = cls), _, _, _)
-      equation
-        el = expandClass(cls, inSubscripts, inAccumEl);
-      then
-        el;
-
     case (InstTypes.CONDITIONAL_ELEMENT(component = comp), _, _, _)
       equation
         path = InstUtil.getComponentName(comp);
