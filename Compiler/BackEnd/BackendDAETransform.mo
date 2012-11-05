@@ -1067,13 +1067,7 @@ algorithm
       list<BackendDAE.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<BackendDAE.Var> var_lst,var_lst_1,cont_var,disc_var;
       list<Integer> indxcont_var,indxdisc_var,indxcont_eqn,indxdisc_eqn;
-      BackendDAE.Variables av;
-      BackendDAE.EquationArray eqns_1,eqns,eeqns;
-      array<DAE.Constraint> constrs;
-      array<DAE.ClassAttributes> clsAttrs;
-      Env.Cache cache;
-      Env.Env env;      
-      DAE.FunctionTree funcs;
+      BackendDAE.EquationArray eqns_1,eqns;
       Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
       BackendDAE.JacobianType jac_tp;
       BackendDAE.StrongComponent sc;
@@ -1111,7 +1105,7 @@ algorithm
         sc = analyseStrongComponentBlock(indxcont_eqn,cont_eqn,var_varindx_lst_cond,syst,shared,ass1,ass2,true);
       then
         BackendDAE.MIXEDEQUATIONSYSTEM(sc,indxdisc_eqn,indxdisc_var);    
-    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared as BackendDAE.SHARED(constraints=constrs,classAttrs=clsAttrs,cache=cache,env=env,functionTree=funcs),ass1,ass2,_)
+    case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,_)
       equation
         var_lst = List.map(var_varindx_lst,Util.tuple21);
         false = BackendVariable.hasDiscreteVar(var_lst);
@@ -1121,11 +1115,7 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendDAEUtil.listVar1(var_lst_1);
         eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
-        av = BackendDAEUtil.emptyVars();
-        eeqns = BackendDAEUtil.listEquation({});
-        evars = BackendDAEUtil.listVar1({});
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.ALGEQSYSTEM(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, true,shared);

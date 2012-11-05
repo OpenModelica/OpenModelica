@@ -4803,17 +4803,58 @@ algorithm
      local
        list<BackendDAE.Var> tvars;
        list<BackendDAE.Equation> reqns;
-       BackendDAE.Variables vars;
-       BackendDAE.EquationArray eqns;
+       BackendDAE.Variables vars,kv,v;
+       BackendDAE.EquationArray eqns,eqns1;
        BackendVarTransform.VariableReplacements repl;
        list<SimCode.SimVar> tempvars;
        list<SimCode.SimEqSystem> simequations,resEqs,simequations1;
        Integer uniqueEqIndex;
        list<DAE.ComponentRef> tcrs,crefs;
-       list<DAE.Exp> elst,ecrlst;
-       list<tuple<DAE.Exp,DAE.Exp>> exptl; 
+       list<DAE.Exp> elst,ecrlst,beqs;
+       list<tuple<DAE.Exp,DAE.Exp>> exptl;
+       DAE.FunctionTree functree;
+       list<SimCode.SimVar> simVars;
+       BackendDAE.EqSystem syst;
+       BackendDAE.IncidenceMatrix m;      
+       list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+       list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
      // linear case
-     /* TODO */
+/*
+     case(true,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),BackendDAE.SHARED(knownVars=kv,functionTree=functree),_,_,_)
+       equation
+         true = intLt(listLength(otherEqns),10);
+         //get tearing vars
+         tvars = List.map1r(tearingVars, BackendVariable.getVarAt, vars);
+         ((simVars,_)) = List.fold(tvars,traversingdlowvarToSimvarFold,({},kv));
+         simVars = listReverse(simVars);
+         // get residual eqns
+         reqns = BackendEquation.getEqns(residualEqns, eqns);
+         // solve other equations 
+         repl = BackendVarTransform.emptyReplacements();
+         repl = solveOtherEquations(otherEqns,eqns,vars,ishared,repl);
+         // replace other equations in residual equations
+         (reqns,_) = BackendVarTransform.replaceEquations(reqns, repl,SOME(BackendVarTransform.skipPreOperator));
+         // States are solved for der(x) not x.
+         reqns = replaceDerOpInEquationList(reqns);
+         tvars = List.map(tvars, transformXToXd);
+         // generatate jacobian
+         v = BackendDAEUtil.listVar1(tvars);
+         eqns1 = BackendDAEUtil.listEquation(reqns);
+         syst = BackendDAE.EQSYSTEM(v,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
+         //  BackendDump.dumpEqSystem(syst);
+         (m,_) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
+         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqns1, m, true,ishared);
+         //  print(BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
+         // generate liniear System
+         ((_,beqs,_,_)) = BackendEquation.traverseBackendDAEEqns(eqns1,BackendEquation.equationToExp,(v,{},{},SOME(functree)));
+         beqs = listReverse(beqs);
+         simJac = List.map1(jac, jacToSimjac, v);
+         // generate other equations
+         (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(otherEqns,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,iuniqueEqIndex+1,itempvars,{SimCode.SES_LINEAR(iuniqueEqIndex, false, simVars, beqs, simJac)});
+       then
+         (simequations,uniqueEqIndex,tempvars); 
+*/
      // nonliniear case  
      case(_,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,_,_,_)
        equation
@@ -4833,6 +4874,95 @@ algorithm
          ({SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs,0)},uniqueEqIndex+1,tempvars);
    end matchcontinue;
 end createTornSystem;
+
+protected function solveOtherEquations "function solveOtherEquations
+  author: Frenkel TUD 2011-05
+  try to solve the equations"
+  input list<tuple<Integer,list<Integer>>> otherEqns;
+  input BackendDAE.EquationArray inEqns;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Shared ishared;
+  input BackendVarTransform.VariableReplacements inRepl;
+  output BackendVarTransform.VariableReplacements outRepl;
+algorithm
+  outRepl := match (otherEqns,inEqns,inVars,ishared,inRepl)
+    local
+      list<tuple<Integer,list<Integer>>> rest;
+      BackendDAE.EquationArray eqns;
+      Integer v,e;
+      DAE.Exp e1,e2,varexp,expr;
+      DAE.ComponentRef cr;
+      DAE.ElementSource source;
+      BackendVarTransform.VariableReplacements repl;
+      BackendDAE.Var var;
+      list<BackendDAE.Var> otherVars,varlst;
+      list<Integer> ds,vlst;
+      list<DAE.Exp> explst1,explst2;
+      BackendDAE.Equation eqn;
+      list<Option<Integer>> ad;
+      list<list<DAE.Subscript>> subslst;
+    case ({},_,_,_,_) then inRepl;
+    case ((e,{v})::rest,_,_,_,_)
+      equation
+        (eqn as BackendDAE.EQUATION(e1,e2,source)) = BackendDAEUtil.equationNth(inEqns, e-1);
+        (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
+        cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
+        varexp = Expression.crefExp(cr);
+        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
+        eqns = BackendEquation.equationSetnth(inEqns,e-1,BackendDAE.EQUATION(expr,varexp,source));
+        repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
+        // BackendDump.debugStrCrefStrExpStr(("",cr," := ",expr,"\n"));
+      then
+        solveOtherEquations(rest,eqns,inVars,ishared,repl);
+    case ((e,vlst)::rest,_,_,_,_)
+      equation
+        (eqn as BackendDAE.ARRAY_EQUATION(ds, e1, e2, source)) = BackendDAEUtil.equationNth(inEqns, e-1);
+        varlst = List.map1r(vlst,BackendVariable.getVarAt,inVars);
+        ad = List.map(ds,Util.makeOption);
+        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
+        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+        explst1 = List.map1r(subslst,Expression.applyExpSubscripts,e1);
+        explst1 = ExpressionSimplify.simplifyList(explst1, {});
+        explst2 = List.map1r(subslst,Expression.applyExpSubscripts,e2);
+        explst2 = ExpressionSimplify.simplifyList(explst2, {});
+        repl = solveOtherEquations1(explst1,explst2,varlst,inVars,ishared,inRepl);
+      then
+        solveOtherEquations(rest,inEqns,inVars,ishared,repl);
+  end match;
+end solveOtherEquations;
+
+protected function solveOtherEquations1 "function solveOtherEquations
+  author: Frenkel TUD 2011-05
+  try to solve the equations"
+  input list<DAE.Exp> iExps1;
+  input list<DAE.Exp> iExps2;
+  input list<BackendDAE.Var> iVars;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Shared ishared;  
+  input BackendVarTransform.VariableReplacements inRepl;
+  output BackendVarTransform.VariableReplacements outRepl;
+algorithm
+  outRepl :=
+  match (iExps1,iExps2,iVars,inVars,ishared,inRepl)
+    local
+      DAE.Exp e1,e2,varexp,expr;
+      DAE.ComponentRef cr;
+      BackendVarTransform.VariableReplacements repl;
+      BackendDAE.Var var;
+      list<BackendDAE.Var> otherVars,rest;
+      list<DAE.Exp> explst1,explst2;
+    case ({},_,_,_,_,_) then inRepl;
+    case (e1::explst1,e2::explst2,(var as BackendDAE.VAR(varName=cr))::rest,_,_,_)
+      equation
+        cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
+        varexp = Expression.crefExp(cr);
+        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
+        repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
+        // BackendDump.debugStrCrefStrExpStr(("",cr," := ",expr,"\n"));
+      then
+        solveOtherEquations1(explst1,explst2,rest,inVars,ishared,repl);
+  end match;
+end solveOtherEquations1;
 
 protected function createTornSystemOtherEqns
   input list<tuple<Integer,list<Integer>>> otherEqns;
