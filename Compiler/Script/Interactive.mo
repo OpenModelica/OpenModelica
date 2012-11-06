@@ -19998,4 +19998,48 @@ algorithm
                          "] file[" +& loadedFromFile +& "]";
 end dumpCompiledFunction;
 
+public function getAllInheritedClasses
+  input Absyn.Path inClassName;
+  input Absyn.Program inProgram;
+  output list<Absyn.Path> outBaseClassNames;
+algorithm
+  outBaseClassNames :=
+  matchcontinue (inClassName,inProgram)
+    local
+      Absyn.Path p_class,name,extpath;
+      list<Absyn.Path> paths; 
+      Absyn.Class cdef;
+      list<Env.Frame> env;
+      list<Absyn.ElementSpec> exts;
+      Absyn.Program p;
+      
+    case (p_class,p)
+      equation
+        cdef = getPathedClassInProgram(p_class, p);
+        env = getClassEnv(p, p_class);
+        exts = getExtendsElementspecInClass(cdef);
+        exts = List.map1(exts, makeExtendsFullyQualified, env);
+        paths = List.map(exts, getBaseClassNameFromExtends);
+      then
+        paths;
+    case (_,_) then {};
+  end matchcontinue;  
+end getAllInheritedClasses;
+
+protected function getBaseClassNameFromExtends
+"function: getBaseClassNameFromExtends"
+  input Absyn.ElementSpec inElementSpec;
+  output Absyn.Path outBaseClassPath;
+algorithm
+  outBaseClassPath := match (inElementSpec)
+    local
+      Absyn.Path path_1,path;
+      list<Absyn.ElementArg> earg;
+      list<Env.Frame> env;
+      Option<Absyn.Annotation> annOpt; 
+
+    case (Absyn.EXTENDS(path = path)) then path;
+  end match;
+end getBaseClassNameFromExtends;
+
 end Interactive;

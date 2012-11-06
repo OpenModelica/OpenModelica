@@ -2551,6 +2551,13 @@ function isExperiment "An experiment is defined as having annotation Experiment(
 external "builtin";
 end isExperiment;
 
+function extendsFrom "returns true if the given class extends from the given base class"
+  input TypeName className;
+  input TypeName baseClassName;
+  output Boolean res;
+external "builtin";
+end extendsFrom;
+
 function loadModelica3D
   output Boolean status;
 protected

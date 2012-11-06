@@ -810,7 +810,7 @@ algorithm
              platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname,filenameprefix,compileDir,libDir,exeDir,configDir,from,to,
              legendStr, gridStr, logXStr, logYStr, x1Str, x2Str, y1Str, y2Str,scriptFile,logFile, simflags2, outputFile;
       list<Values.Value> vals;
-      Absyn.Path path,classpath,className;
+      Absyn.Path path,classpath,className,baseClassPath;
       SCode.Program scodeP,sp;
       Option<list<SCode.Element>> fp;
       list<Env.Frame> env;
@@ -1983,6 +1983,19 @@ algorithm
         b = Interactive.isProtectedClass(classpath, name, p);
       then
         (cache,Values.BOOL(b),st);
+        
+    case (cache,env,"extendsFrom",
+          {Values.CODE(Absyn.C_TYPENAME(classpath)),
+           Values.CODE(Absyn.C_TYPENAME(baseClassPath))},st as Interactive.SYMBOLTABLE(ast=p),_)
+      equation
+        paths = Interactive.getAllInheritedClasses(classpath, p);
+        b = listMember(baseClassPath, paths);
+      then
+        (cache,Values.BOOL(b),st);
+
+    case (cache,env,"extendsFrom",_,st as Interactive.SYMBOLTABLE(ast=p),_)
+      then
+        (cache,Values.BOOL(false),st);
     
     case (cache,env,"isExperiment",{Values.CODE(Absyn.C_TYPENAME(classpath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
