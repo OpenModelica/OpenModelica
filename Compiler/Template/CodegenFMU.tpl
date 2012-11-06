@@ -1162,8 +1162,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input String instanceName;
         input Boolean debugLogging;
         input Real in_time;
-        output fmiEventInfo eventInfo;
-        external "C" eventInfo = fmiInitialize_OMC(fmi, instanceName, debugLogging, in_time) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+        input fmiEventInfo in_eventInfo;
+        input Integer numberOfContinuousStates;
+        output Real fmi_x[numberOfContinuousStates];
+        output fmiEventInfo out_eventInfo;
+        external "C" out_eventInfo = fmiInitialize_OMC(fmi, instanceName, debugLogging, in_time, in_eventInfo, numberOfContinuousStates, fmi_x) annotation(Library = {"omcruntime", "fmilib", "shlwapi"});
       end fmiInitialize;
       
       function fmiSetTime
@@ -1240,12 +1243,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       constant Integer fmiPending=5;
     end fmiStatus;
   initial algorithm
-    eventInfo := fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time);
-  <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
-  <<
-    fmi_x := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, 1);
-  >>
-  %>
+    (fmi_x, eventInfo) := fmiFunctions.fmiInitialize(fmi, "BouncingBall", debugLogging, time, eventInfo, numberOfContinuousStates);
   equation
     der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates, flowControlStatesInputs);
     flowControlTime = fmiFunctions.fmiSetTime(fmi, time, 1);

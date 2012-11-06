@@ -143,6 +143,17 @@ void fmiFreeEventInfo_OMC(void* eventInfo)
 }
 
 /*
+ * Wrapper for the FMI function fmiInstantiateModel.
+ */
+void fmiInstantiateModel_OMC(void* fmi, char* instanceName)
+{
+  jm_status_enu_t status = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
+  if (status == jm_status_error) {
+    fprintf(stderr, "FMI Import Error: Error in fmiInstantiateModel_OMC.\n");fflush(NULL);
+  }
+}
+
+/*
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
@@ -162,24 +173,23 @@ int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
 }
 
 /*
- * Calls the FMI initialize functions e.g fmiInstantiateModel, fmiSetDebugLogging, fmiSetTime and fmiInitialize.
+ * Wrapper for the FMI function fmiInitialize.
  * Returns FMI Event Info i.e fmi1_event_info_t.
  */
-void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double time)
+void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double time, void* in_eventInfo, int numberOfContinuousStates, double* states)
 {
   static int init = 0;
   if (!init) {
-    jm_status_enu_t status = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
-    if (status == jm_status_error) {
-      fprintf(stderr, "FMI Import Error: Error in fmiInstantiateModel_OMC.\n");fflush(NULL);
-      return 0;
-    }
+    init = 1;
+    fmiInstantiateModel_OMC(fmi, instanceName);
     fmiSetDebugLogging_OMC(fmi, debugLogging);
     fmiSetTime_OMC(fmi, time, 1);
+
     fmi1_boolean_t toleranceControlled = fmi1_true;
     fmi1_real_t relativeTolerance = 0.001;
     fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
     fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
+    fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
     switch (fmistatus) {
       case fmi1_status_warning:
         fprintf(stderr, "FMI Import Warning: Warning in fmiInitialize_OMC.\n");fflush(NULL);
@@ -193,9 +203,9 @@ void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double 
       default:
         break;
     }
-    init = 1;
     return eventInfo;
   }
+  return in_eventInfo;
 }
 
 /*
