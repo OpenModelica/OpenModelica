@@ -4762,6 +4762,8 @@ algorithm
   end matchcontinue;
 end traversingComponentRefPresent;
 
+
+
 public function traversingComponentRefFinder "
 Author: BZ 2008-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
@@ -4943,6 +4945,65 @@ algorithm
     
   end matchcontinue;
 end traversingexpHasDerCref;
+
+public function expHasCrefNoPreorDer "
+@author: Frenkel TUD 2011-04
+ returns true if the expression contains the cref, but not in pre,change,edge"
+  input DAE.Exp inExp;
+  input DAE.ComponentRef inCr;
+  output Boolean hasCref;
+algorithm 
+  hasCref := match(inExp,inCr) 
+    local
+      Boolean b;
+      
+    case(_,_)
+      equation
+        ((_,(_,b))) = traverseExpTopDown(inExp, traversingexpHasCrefNoPreorDer, (inCr,false));
+      then
+        b;
+  end match;
+end expHasCrefNoPreorDer;
+
+public function traversingexpHasCrefNoPreorDer "
+@author: Frenkel TUD 2011-04
+Returns a true if the exp the componentRef"
+  input tuple<DAE.Exp, tuple<DAE.ComponentRef,Boolean>> inExp;
+  output tuple<DAE.Exp, Boolean, tuple<DAE.ComponentRef,Boolean>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Boolean b;
+      DAE.ComponentRef cr,cr1;
+      DAE.Exp e;
+
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")), (cr,b)))
+      then
+        ((e,false,(cr,b)));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")), (cr,b)))
+      then
+        ((e,false,(cr,b)));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")), (cr,b)))
+      then
+        ((e,false,(cr,b)));
+
+    
+    case ((e as DAE.CREF(componentRef = cr1), (cr,false)))
+      equation
+        b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
+      then
+        ((e,not b,(cr,b)));
+    
+    case ((e as DAE.CREF(componentRef = cr1), (cr,false)))
+      equation
+        b = ComponentReference.crefPrefixOf(cr1,cr);
+      then
+        ((e,not b,(cr,b)));    
+    
+    case (((e,(cr,b)))) then ((e,not b,(cr,b)));
+    
+  end matchcontinue;
+end traversingexpHasCrefNoPreorDer;
 
 public function traverseCrefsFromExp "
 Author: Frenkel TUD 2011-05, traverses all ComponentRef from an Expression."

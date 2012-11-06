@@ -58,8 +58,8 @@ public function solve
   Solves an equation consisting of a right hand side (rhs) and a
   left hand side (lhs), with respect to the expression given as
   third argument, usually a variable."
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
+  input DAE.Exp inExp1 "lhs";
+  input DAE.Exp inExp2 "rhs";
   input DAE.Exp inExp3;
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
@@ -342,7 +342,7 @@ algorithm
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
-        false = Expression.expHasCref(e2,cr);
+        false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
         (e2,{});
         
@@ -351,7 +351,7 @@ algorithm
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
-        false = Expression.expHasCref(e1,cr);
+        false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
         (e1,{});
        
@@ -360,14 +360,14 @@ algorithm
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
-        false = Expression.expHasCref(e2,cr);
+        false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
         (Expression.negate(e2),{});
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),e2,(crexp as DAE.CREF(componentRef = cr)),linExp)
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
-        false = Expression.expHasCref(e2,cr);
+        false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
         (Expression.negate(e2),{});        
 
@@ -376,14 +376,14 @@ algorithm
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
-        false = Expression.expHasCref(e1,cr);
+        false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
         (Expression.negate(e1),{});     
     case (e1,DAE.LUNARY(operator = DAE.UMINUS_ARR(ty=_), exp = DAE.CREF(componentRef = cr1)),(crexp as DAE.CREF(componentRef = cr)),linExp)
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
-        false = Expression.expHasCref(e1,cr);
+        false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
         (Expression.negate(e1),{});     
         
@@ -392,7 +392,7 @@ algorithm
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
-        false = Expression.expHasCref(e2,cr);
+        false = Expression.expHasCrefNoPreorDer(e2,cr);
       then
         (Expression.negate(e2),{});
         
@@ -401,7 +401,7 @@ algorithm
       equation
         true = ComponentReference.crefEqual(cr1,cr);
         // cr not in e2
-        false = Expression.expHasCref(e1,cr);
+        false = Expression.expHasCrefNoPreorDer(e1,cr);
       then
         (Expression.negate(e1),{});   
 
