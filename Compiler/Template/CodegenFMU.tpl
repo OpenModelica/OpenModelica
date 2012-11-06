@@ -1130,6 +1130,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
     Real fmi_x[numberOfContinuousStates] "States";
     Real fmi_x_new[numberOfContinuousStates] "New States";
+    Real fmi_x_dummy[numberOfContinuousStates] "Dummy States";
     constant Integer numberOfEventIndicators = <%listLength(fmiInfo.fmiNumberOfEventIndicators)%>;
     Real fmi_z[numberOfEventIndicators] "Events Indicators";
     Boolean fmi_z_positive[numberOfEventIndicators];
@@ -1142,6 +1143,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean callEventUpdate = false;
     Real flowControlTime;
     Real flowControlStatesInputs;
+    Real flowControlStates;
   protected
     <%dumpFMICommonObjects(platform)%>
     
@@ -1163,10 +1165,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Boolean debugLogging;
         input Real in_time;
         input fmiEventInfo in_eventInfo;
-        input Integer numberOfContinuousStates;
-        output Real fmi_x[numberOfContinuousStates];
+        output Integer status;
+        output Real out_Flow;
         output fmiEventInfo out_eventInfo;
-        external "C" out_eventInfo = fmiInitialize_OMC(fmi, instanceName, debugLogging, in_time, in_eventInfo, numberOfContinuousStates, fmi_x) annotation(Library = {"omcruntime", "fmilib", "shlwapi"});
+        external "C" out_eventInfo = fmiInitialize_OMC(fmi, instanceName, debugLogging, in_time, in_eventInfo, status, out_Flow) annotation(Library = {"omcruntime", "fmilib", "shlwapi"});
       end fmiInitialize;
       
       function fmiSetTime
@@ -1181,8 +1183,9 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input fmiImportInstance fmi;
         input Integer numberOfContinuousStates;
         input Real in_Flow;
+        input Real dummy_fmi_x[:];
         output Real fmi_x[numberOfContinuousStates];
-        external "C" fmiGetContinuousStates_OMC(fmi, numberOfContinuousStates, fmi_x, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+        external "C" fmiGetContinuousStates_OMC(fmi, numberOfContinuousStates, fmi_x, in_Flow, dummy_fmi_x) annotation(Library = {"omcruntime", "fmilib", "shlwapi"});
       end fmiGetContinuousStates;
       
       function fmiSetContinuousStates
@@ -1242,10 +1245,14 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       constant Integer fmiFatal=4;
       constant Integer fmiPending=5;
     end fmiStatus;
-  initial algorithm
-    (fmi_x, eventInfo) := fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time, eventInfo, numberOfContinuousStates);
   equation
-    der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates, flowControlStatesInputs);
+    (fmi_status, flowControlStates, eventInfo) = fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time, eventInfo);
+  <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
+  <<
+    fmi_x = fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowControlStates, fmi_x_dummy);
+  >>
+  %>
+    der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates, flowControlStates);
     flowControlTime = fmiFunctions.fmiSetTime(fmi, time, 1);
     flowControlStatesInputs = fmiFunctions.fmiSetContinuousStates(fmi, fmi_x, flowControlTime);
     fmi_z = fmiFunctions.fmiGetEventIndicators(fmi, numberOfEventIndicators, flowControlEvent);
@@ -1265,13 +1272,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       fmiFunctions.fmiEventUpdate(fmi, callEventUpdate, eventInfo);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
-      fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowControlEvent);
+      fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowControlEvent, fmi_x_dummy);
       <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
   >>
   %>
-    end when;
-    when terminal() then
-      fmi_status := fmiFunctions.fmiTerminate(fmi);
     end when;
   equation
     flowControlEvent = fmiFunctions.fmiCompletedIntegratorStep(fmi, callEventUpdate, flowControlStatesInputs);

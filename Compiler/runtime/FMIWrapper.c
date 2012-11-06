@@ -176,7 +176,7 @@ int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
  * Wrapper for the FMI function fmiInitialize.
  * Returns FMI Event Info i.e fmi1_event_info_t.
  */
-void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double time, void* in_eventInfo, int numberOfContinuousStates, double* states)
+void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double time, void* in_eventInfo, int* status, double* dummy)
 {
   static int init = 0;
   if (!init) {
@@ -189,7 +189,6 @@ void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double 
     fmi1_real_t relativeTolerance = 0.001;
     fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
     fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
-    fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
     switch (fmistatus) {
       case fmi1_status_warning:
         fprintf(stderr, "FMI Import Warning: Warning in fmiInitialize_OMC.\n");fflush(NULL);
@@ -203,6 +202,7 @@ void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double 
       default:
         break;
     }
+    *status = fmistatus;
     return eventInfo;
   }
   return in_eventInfo;
@@ -212,7 +212,7 @@ void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double 
  * Wrapper for the FMI function fmiGetContinuousStates.
  * Returns states.
  */
-void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double dummy)
+void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double dummy, double* dummyStates)
 {
   fmi1_status_t fmistatus = fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
   switch (fmistatus) {
