@@ -228,6 +228,7 @@ int solveHybrd(DATA *data, int sysNumber) {
   double local_tol = 1e-12;
   double initial_factor = solverData->factor;
   int nfunc_evals = 0;
+  int continuous = 1;
 
   int giveUp = 0;
   int retries = 0;
@@ -302,12 +303,11 @@ int solveHybrd(DATA *data, int sysNumber) {
 
 
     /* set residual function continuous
-     * if solving is while an event step try to
-     * solve with discontinuities
      */
-    if (!(solverData->info == 4 && data->simulationInfo.discreteCall))
+    if (continuous)
       ((DATA*)data)->simulationInfo.solveContinuous = 1;
-
+    else
+      ((DATA*)data)->simulationInfo.solveContinuous = 0;
 
     giveUp = 1;
     _omc_hybrd_(wrapper_fvec_hybrd, &solverData->n, solverData->x,
@@ -319,7 +319,10 @@ int solveHybrd(DATA *data, int sysNumber) {
         solverData->wa2, solverData->wa3, solverData->wa4, data);
 
     /* set residual function continuous */
-    ((DATA*)data)->simulationInfo.solveContinuous = 0;
+    if (continuous)
+      ((DATA*)data)->simulationInfo.solveContinuous = 0;
+    else
+      ((DATA*)data)->simulationInfo.solveContinuous = 1;
 
     /* re-scaling x vector */
     if (solverData->useXScaling){
@@ -340,11 +343,14 @@ int solveHybrd(DATA *data, int sysNumber) {
       if (scaling)
         solverData->useXScaling = 0;
 
+      ((DATA*)data)->simulationInfo.solveContinuous = 0;
+
       wrapper_fvec_hybrd(&solverData->n, solverData->x,  solverData->fvec, &iflag,  data);
-      storeRelations(data);
 
       if (scaling)
         solverData->useXScaling = 1;
+
+      storeRelations(data);
     }
 
     /* Debug output */
@@ -399,161 +405,170 @@ int solveHybrd(DATA *data, int sysNumber) {
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS);
 
       }
-    /* first try to decrease factor*/
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 3) {
-        retries++;
-        giveUp = 0;
-        nfunc_evals += solverData->nfev;
-        solverData->factor = solverData->factor / 10.0;
-        if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-          INFO1(LOG_NONLIN_SYS, " - iteration making no progress:\tdecrease factor to %f",
-              solverData->factor);
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
-        }
     /* try to vary the initial values */
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 5) {
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 1) {
         for (i = 0; i < solverData->n; i++) {
           solverData->x[i] += systemData->nlsxScaling[i] * 0.1;
         };
+        solverData->useXScaling = 1;
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
         if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
           INFO(LOG_NONLIN_SYS, 
-              " - iteration making no progress:\tvary solution point by +1%%");
+              " - iteration making no progress:\t vary solution point by 1%%.");
           printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
         }
     /* try to deactivate x-Scaling */
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 4) {
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 2) {
         solverData->useXScaling = 0;
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
         if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-          INFO(LOG_NONLIN_SYS, 
-              " - iteration making no progress:\tdeactivaed Xscaling +1%%");
+          INFO(LOG_NONLIN_SYS,
+              " - iteration making no progress:\t try without scaling at all.");
           printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
         }
-    /* try to vary the initial values */
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries2 < 1) {
-      for (i = 0; i < solverData->n; i++) {
-        solverData->x[i] = systemData->nlsxExtrapolation[i] * 1.01;
-      };
+    /* first try to decrease factor*/
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 5) {
+        /* set x vector */
+        if (data->simulationInfo.discreteCall)
+          memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+        else
+          memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
+
+        solverData->factor = solverData->factor / 10.0;
+
+        retries++;
+        giveUp = 0;
+        nfunc_evals += solverData->nfev;
+        if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+          INFO1(LOG_NONLIN_SYS, " - iteration making no progress:\t decreasing initial step bound to %f.",
+              solverData->factor);
+          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+        }
+    /* try to solve non-continuous
+     * work-a-round: since other wise some model does
+     * stuck in event iteration. e.g.: Modelica.Mechanics.Rotational.Examples.HeatLosses
+     */
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 6  && data->simulationInfo.discreteCall) {
+
+      memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+
+      retries++;
       solverData->useXScaling = 1;
+      solverData->factor = initial_factor;
+
+      /* try to solve a discontinuous system */
+      continuous = 0;
+
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t try to solve a discontinuous system.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      }
+    /* Then try with old values (instead of extrapolating )*/
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries2 < 1) {
+      /* set x vector */
+      memcpy(solverData->x, systemData->nlsxOld, solverData->n*(sizeof(double)));
+
+      continuous = 1;
+      solverData->factor = initial_factor;
+
       retries = 0;
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, 
-            " - iteration making no progress:\t*restart* vary initial point by adding 1%%");
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t use old values instead extrapolated.");
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
       }
     /* try to vary the initial values */
     } else if ((solverData->info == 4 || solverData->info == 5) && retries2 < 2) {
+      /* set x vector */
+      if (data->simulationInfo.discreteCall)
+        memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+      else
+        memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
       for (i = 0; i < solverData->n; i++) {
-        solverData->x[i] = systemData->nlsxExtrapolation[i] * 0.99;
+        solverData->x[i] *= 1.01;
       };
-      solverData->useXScaling = 1;
+
       retries = 0;
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t*restart* vary initial point by -1%%");
+        INFO(LOG_NONLIN_SYS,
+            " - iteration making no progress:\t vary initial point by adding 1%%.");
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
       }
-    /* Then try with old values (instead of extrapolating )*/
+    /* try to vary the initial values */
     } else if ((solverData->info == 4 || solverData->info == 5) && retries2 < 3) {
+      /* set x vector */
+      if (data->simulationInfo.discreteCall)
+        memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+      else
+        memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
       for (i = 0; i < solverData->n; i++) {
-        solverData->x[i] = systemData->nlsxOld[i];
-      }
-      solverData->factor = initial_factor;
-      solverData->useXScaling = 1;
+        solverData->x[i] *= 0.99;
+      };
+
       retries = 0;
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t*restart*use old values instead extrapolated");
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t vary initial point by -1%%.");
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
       }
-    /* try to use own calculates scaling variables */
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries3 < 1) {
+    /* try to vary the initial values */
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries2 < 4) {
+      /* set x vector */
+      memcpy(solverData->x, systemData->nlsxScaling, solverData->n*(sizeof(double)));
+      retries = 0;
+      retries2++;
+      giveUp = 0;
+      nfunc_evals += solverData->nfev;
+      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t try scaling factor as initial point.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      }
+    /* try own scaling factors */
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries2 < 5) {
+      /* set x vector */
+      if (data->simulationInfo.discreteCall)
+        memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+      else
+        memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
+
       for (i = 0; i < solverData->n; i++) {
         solverData->diag[i] = fabs(solverData->resScaling[i]);
         if (solverData->diag[i] <= 0)
           solverData->diag[i] = 1e-16;
       }
-      solverData->factor = initial_factor;
-      solverData->useXScaling = 1;
       retries = 0;
-      retries2 = 0;
+      retries2++;
+      giveUp = 0;
       solverData->mode = 2;
-      retries3++;
-      giveUp = 0;
       nfunc_evals += solverData->nfev;
       if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tchanged to own scaling factors");
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t try with own scaling factors.");
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
       }
-    /* try to use own calculates scaling variables */
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries3 < 2) {
-      for (i = 0; i < solverData->n; i++) {
-        solverData->x[i] = systemData->nlsxScaling[i];
-      }
-      solverData->factor = initial_factor;
-      solverData->useXScaling = 1;
-      retries = 0;
-      retries2 = 0;
-      solverData->mode = 1;
-      retries3++;
-      giveUp = 0;
-      nfunc_evals += solverData->nfev;
-      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tchange scaling factors");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
-      }
-      /* try to use own calculates scaling variables */
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries3 < 3) {
-      for (i = 0; i < solverData->n; i++) {
-        solverData->x[i] = 1.0;
-      }
-      solverData->factor = initial_factor;
-      solverData->useXScaling = 1;
-      retries = 0;
-      retries2 = 0;
-      solverData->mode = 1;
-      retries3++;
-      giveUp = 0;
-      nfunc_evals += solverData->nfev;
-      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tchange scaling factors");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
-      }
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries3 < 4) {
-      for (i = 0; i < solverData->n; i++) {
-        solverData->x[i] = 0.0;
-      }
-      solverData->factor = initial_factor;
-      solverData->useXScaling = 1;
-      retries = 0;
-      retries2 = 0;
-      solverData->mode = 1;
-      retries3++;
-      giveUp = 0;
-      nfunc_evals += solverData->nfev;
-      if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tchange scaling factors");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
-      }
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries3 < 5) {
-      for (i = 0; i < solverData->n; i++) {
-        solverData->x[i] = systemData->nlsxExtrapolation[i];
+    /* try without internal scaling */
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries3 < 1) {
+      /* set x vector */
+      if (data->simulationInfo.discreteCall)
+        memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+      else
+        memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
+
+      for (i = 0; i < solverData->n; i++)
         solverData->diag[i] = 1.0;
-      }
-      solverData->factor = initial_factor;
-      solverData->useXScaling = 1;
+
       retries = 0;
       retries2 = 0;
       retries3++;
@@ -561,22 +576,30 @@ int solveHybrd(DATA *data, int sysNumber) {
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tremove scaling factor at all!");
+        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t disable solver internal scaling.");
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
       }
-    /* try reduce the tolerance a bit */
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries3 < 7) {
-      solverData->factor = initial_factor;
-      solverData->useXScaling = 1;
+    /* try to reduce the tolerance a bit */
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries3 < 6) {
+      /* set x vector */
+      if (data->simulationInfo.discreteCall)
+        memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
+      else
+        memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
+
+      /* reduce tolarance */
       local_tol = local_tol*10;
+
+      solverData->factor = initial_factor;
+
       retries = 0;
       retries2 = 0;
       retries3++;
-      solverData->mode = 2;
+
       giveUp = 0;
       nfunc_evals += solverData->nfev;
       if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\tremove scaling factor at all!");
+        INFO1(LOG_NONLIN_SYS, " - iteration making no progress:\t reduce the tolerance slightly to %e.",local_tol);
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
       }
     } else if (solverData->info >= 2 && solverData->info <= 5) {
@@ -588,8 +611,7 @@ int solveHybrd(DATA *data, int sysNumber) {
       }
       if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
         RELEASE(LOG_NONLIN_SYS);
-        INFO2(LOG_NONLIN_SYS, "### No Solution! ###\n%d retries +++ %d restarts", retries,
-            retries2+retries3);
+        INFO1(LOG_NONLIN_SYS, "### No Solution! ###\n after %d restarts", retries+retries2+retries3);
         printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS);
       }
     }

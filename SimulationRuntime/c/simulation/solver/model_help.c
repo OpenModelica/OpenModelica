@@ -854,9 +854,9 @@ static const double tolZC = 1e-10;
 modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
-  /* double eps = tolZC * fabs(fmax(a,b)); */
-  /* INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)",a, b, (a < b)?'t':'f' , direction?'t':'f'); */
-  retVal = (direction)? (a < b + tolZC):(a + tolZC < b);
+  double eps = (direction) ? tolZC*fabs(b)+tolZC: tolZC*fabs(a)+tolZC;
+  /* INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)",a, b, (a < b)?'t':'f' , direction?'t':'f');*/
+  retVal = (direction)? (a < b + eps):(a + eps < b);
   /* INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f'); */
   return retVal;
 }
@@ -869,9 +869,9 @@ modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
-  /* double eps = tolZC * fabs(fmax(a,b)); */
+  double eps = (direction) ? tolZC*fabs(a)+tolZC: tolZC*fabs(b)+tolZC;
   /* INFO4(LOG_EVENTS, "Relation GREATER:  %.20e > %.20e = %c (%c)",a, b, (a > b)?'t':'f' , direction?'t':'f'); */
-  retVal = (direction)? (a + tolZC > b ):(a  > b + tolZC);
+  retVal = (direction)? (a + eps > b ):(a  > b + eps);
   /* INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f'); */
   return retVal;
 }
