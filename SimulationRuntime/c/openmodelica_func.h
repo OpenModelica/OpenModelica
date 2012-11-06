@@ -125,11 +125,17 @@ extern const char *initialResidualDescription[];
  */
 extern int initial_residual(DATA *data, double* initialResiduals);
 
+/*! \var useSymbolicInitialization
+ *
+ * is 1 if a system to solve the initial problem symbolically is generated, otherwise 0
+ */
+extern const int useSymbolicInitialization;
+
 /*! \fn functionInitialEquations
  *
  * function for calculate initial values from the initial equations and initial algorithms
  *
- *  \param [in]  [data]
+ *  \param [ref] [data]
  */
 extern int functionInitialEquations(DATA *data);
 

@@ -9250,168 +9250,182 @@ algorithm
   end match;
 end collectAlgorithms;
 
+
+
+
 /*
  * inital system
  *
  */
-
-public function solveInitialSystem
-"function: solveInitialSystem
+public function solveInitialSystem "function solveInitialSystem
   autor Frenkel TUD 2012-10"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.BackendDAE outInitDAE;
 algorithm
-  (outDAE,outInitDAE) := match (inDAE)
+  (outDAE, outInitDAE) := match(inDAE)
     local
       BackendDAE.EqSystems systs;
-      BackendDAE.Variables knvars,vars,fixvars,evars,eavars;
-      BackendDAE.EquationArray inieqns,eqns,emptyeqns,reeqns;
+      BackendDAE.Variables knvars, vars, fixvars, evars, eavars;
+      BackendDAE.EquationArray inieqns, eqns, emptyeqns, reeqns;
       BackendDAE.EqSystem initsyst;
       BackendDAE.BackendDAE initdae;
-      Integer nvars,neqns;
+      Integer nvars, neqns;
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree functionTree;
       list<BackendDAE.Equation> eqnslst;
       array<DAE.Constraint> constraints;
       array<DAE.ClassAttributes> classAttrs;
-    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knownVars=knvars,initialEqs=inieqns,constraints=constraints,classAttrs=classAttrs,cache=cache,env=env,functionTree=functionTree)))
-      equation
-        // collect vars for initial system
-        vars = emptyVars();
-        fixvars = emptyVars();
-        ((vars,fixvars)) = BackendVariable.traverseBackendDAEVars(knvars,collectInitialVars,(vars,fixvars));
-        // collect eqns for initial system
-        ((eqns,reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (listEquation({}),listEquation({})));
-        ((vars,fixvars,eqns,reeqns)) = List.fold(systs,collectInitialVarsEqnsSystem,((vars,fixvars,eqns,reeqns)));
-        // generate initial system
-        initsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        (initsyst,_,_) = getIncidenceMatrix(initsyst, BackendDAE.NORMAL());
-        evars = emptyVars();
-        eavars = emptyVars();
-        emptyeqns = listEquation({});
-        initdae = BackendDAE.DAE({initsyst},
-            BackendDAE.SHARED(fixvars,evars,eavars,emptyeqns,reeqns,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.INITIALSYSTEM(),{}));
-        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Initial System:\n");
-        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, initdae);
-        nvars = BackendVariable.varsSize(vars);
-        neqns = equationSize(eqns);
-        initdae =  solveInitialSystem1(nvars,neqns,initdae);
-      then
-        (inDAE,initdae);
+      
+    case(BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knvars,
+                                                 initialEqs=inieqns,
+                                                 constraints=constraints,
+                                                 classAttrs=classAttrs,
+                                                 cache=cache,
+                                                 env=env,
+                                                 functionTree=functionTree))) equation
+      // collect vars for initial system
+      vars = emptyVars();
+      fixvars = emptyVars();
+      ((vars, fixvars)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars));
+      
+      // collect eqns for initial system
+      ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (listEquation({}), listEquation({})));
+      ((vars, fixvars, eqns, reeqns)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns)));
+      
+      // generate initial system
+      initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
+      (initsyst, _, _) = getIncidenceMatrix(initsyst, BackendDAE.NORMAL());
+      evars = emptyVars();
+      eavars = emptyVars();
+      emptyeqns = listEquation({});
+      initdae = BackendDAE.DAE({initsyst},
+                               BackendDAE.SHARED(fixvars,
+                                                 evars,
+                                                 eavars,
+                                                 emptyeqns,
+                                                 reeqns,
+                                                 constraints,
+                                                 classAttrs,
+                                                 cache,
+                                                 env,
+                                                 functionTree,
+                                                 BackendDAE.EVENT_INFO({},{},{},{},0),
+                                                 {},
+                                                 BackendDAE.INITIALSYSTEM(),
+                                                 {}));
+
+      // some debug prints
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Initial System:\n");
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, initdae);
+      
+      // now let's solve the system!
+      nvars = BackendVariable.varsSize(vars);
+      neqns = equationSize(eqns);
+      initdae =  solveInitialSystem1(nvars, neqns, initdae);
+    then(inDAE, initdae);
   end match;
 end solveInitialSystem;
 
-protected function solveInitialSystem1
-"function: solveInitialSystem1
+protected function solveInitialSystem1 "function solveInitialSystem1
   autor Frenkel TUD 2012-10"
   input Integer nVars;
   input Integer nEqns;
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := matchcontinue (nVars,nEqns,inDAE)
+  outDAE := matchcontinue(nVars, nEqns, inDAE)
     local
       BackendDAE.BackendDAE isyst;
-      list<tuple<pastoptimiseDAEModule,String,Boolean>> pastOptModules;
-      tuple<StructurallySingularSystemHandlerFunc,String,stateDeselectionFunc,String> daeHandler;
-      tuple<matchingAlgorithmFunc,String> matchingAlgorithm;
+      list<tuple<pastoptimiseDAEModule, String, Boolean>> pastOptModules;
+      tuple<StructurallySingularSystemHandlerFunc, String, stateDeselectionFunc, String> daeHandler;
+      tuple<matchingAlgorithmFunc, String> matchingAlgorithm;
+      
     // overconstrainted - report Error 
-    case (_,_,_)
-      equation
-        true = intGt(nEqns,nVars);
-        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "OverConstrained Initial System\n");
-      then
-        fail();
+    case(_, _, _) equation
+      true = intGt(nEqns,nVars);
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "OverConstrained Initial System\n");
+    then fail();
+        
     // equal  
-    case (_,_,_)
-      equation
-        true = intEq(nEqns,nVars);
-        pastOptModules = getPastOptModules(SOME({"constantLinearSystem",/* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem"}));
-        matchingAlgorithm = getMatchingAlgorithm(NONE());
-        daeHandler = getIndexReductionMethod(NONE());
-        // solve system
-        isyst = transformBackendDAE(inDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
-        // simplify system
-        (isyst,Util.SUCCESS()) = pastoptimiseDAE(isyst,pastOptModules,matchingAlgorithm,daeHandler);
-        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Solved Initial System:\n");
-        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, isyst);
-      then
-        isyst;
+    case(_, _, _) equation
+      true = intEq(nEqns,nVars);
+      pastOptModules = getPastOptModules(SOME({"constantLinearSystem",/* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem"}));
+      matchingAlgorithm = getMatchingAlgorithm(NONE());
+      daeHandler = getIndexReductionMethod(NONE());
+      // solve system
+      isyst = transformBackendDAE(inDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+      // simplify system
+      (isyst,Util.SUCCESS()) = pastoptimiseDAE(isyst,pastOptModules,matchingAlgorithm,daeHandler);
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Solved Initial System:\n");
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, isyst);
+    then isyst;
+        
     // underconstrained System  
-    case (_,_,_)
-      equation
-        true = intLt(nEqns,nVars);
-        Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "underconstrained Initial System\n");
-        //BackendDump.dump(inDAE);
-
-      then
-        fail();
+    case(_, _, _) equation
+      true = intLt(nEqns,nVars);
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "underconstrained Initial System\n");
+      //BackendDump.dump(inDAE);
+    then fail();
   end matchcontinue;
 end solveInitialSystem1;
 
-protected function collectInitialVarsEqnsSystem
-"function: collectInitialVarsEqnsSystem
+protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqnsSystem
   autor Frenkel TUD 2012-10"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.EquationArray> iTpl;
-  output tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.EquationArray,BackendDAE.EquationArray> oTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray> iTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray> oTpl;
 algorithm
-  oTpl := match (isyst,iTpl)
+  oTpl := match(isyst, iTpl)
     local
-      BackendDAE.Variables vars,ivars,fixvars;
-      BackendDAE.EquationArray eqns,ieqns,reqns;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),(ivars,fixvars,ieqns,reqns))
-      equation
-        // collect vars for initial system
-        ((ivars,fixvars)) = BackendVariable.traverseBackendDAEVars(vars,collectInitialVars,(ivars,fixvars));
-        // collect eqns for initial system
-        ((ieqns,reqns)) = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, (ieqns,reqns));
-      then
-        ((ivars,fixvars,ieqns,reqns));
+      BackendDAE.Variables vars, ivars, fixvars;
+      BackendDAE.EquationArray eqns, ieqns, reqns;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (ivars, fixvars, ieqns, reqns)) equation
+      // collect vars for initial system
+      ((ivars, fixvars)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialVars, (ivars, fixvars));
+      // collect eqns for initial system
+      ((ieqns,reqns)) = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, (ieqns, reqns));
+    then ((ivars, fixvars, ieqns, reqns));
   end match;
 end collectInitialVarsEqnsSystem;
 
 protected function collectInitialVars
-  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> outTpl;
 algorithm
   outTpl := match(inTpl)
     local
       BackendDAE.Var var;
-      BackendDAE.Variables vars,fixvars;
-      DAE.ComponentRef dummyder,cr;
-      Boolean b;
+      BackendDAE.Variables vars, fixvars;
+      DAE.ComponentRef dummyder, cr;
+      Boolean isFixed;
       DAE.Type ty;
       DAE.InstDims arryDim;
-    case((var as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(),varType=ty,arryDim=arryDim),(vars,fixvars)))
-      equation
-        b = BackendVariable.varFixed(var);
-        var = BackendVariable.setVarKind(var,BackendDAE.VARIABLE());
-        dummyder = ComponentReference.crefPrefixDer(cr);
-        vars = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR()), vars);
-        vars = Debug.bcallret2(not b,BackendVariable.addVar,var,vars,vars);
-        fixvars = Debug.bcallret2(b,BackendVariable.addVar,var,fixvars,fixvars);
-      then
-        ((var,(vars,fixvars)));      
-    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM()),(vars,fixvars)))
-      equation
-        b = BackendVariable.varFixed(var);
-        var = BackendVariable.setVarKind(var,BackendDAE.VARIABLE());
-        vars = Debug.bcallret2(not b,BackendVariable.addVar,var,vars,vars);
-      then
-        ((var,(vars,fixvars)));
-    case((var as BackendDAE.VAR(bindExp=NONE()),(vars,fixvars)))
-      equation
-        b = BackendVariable.varFixed(var);
-        vars = Debug.bcallret2(not b,BackendVariable.addVar,var,vars,vars);
-        fixvars = Debug.bcallret2(b,BackendVariable.addVar,var,fixvars,fixvars);
-      then
-        ((var,(vars,fixvars)));
+      
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, fixvars))) equation
+      isFixed = BackendVariable.varFixed(var);
+      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      dummyder = ComponentReference.crefPrefixDer(cr);
+      vars = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR()), vars);
+      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
+      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
+    then ((var, (vars, fixvars)));
+    
+    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars))) equation
+      isFixed = BackendVariable.varFixed(var);
+      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
+    then ((var, (vars, fixvars)));
+    
+    case((var as BackendDAE.VAR(bindExp=NONE()), (vars, fixvars))) equation
+      isFixed = BackendVariable.varFixed(var);
+      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
+      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
+    then ((var, (vars, fixvars)));
+      
     else
-      then
-        inTpl;
+    then inTpl;
   end match;
 end collectInitialVars;
 
@@ -9424,50 +9438,48 @@ protected
   Integer size;
   Boolean b;
 algorithm
- (eqn,(eqns,reeqns)) := inTpl;
- // replace der(x) with $DER.x
- (eqn1,_) := BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceDerCref,0);
- // add it, if size is zero (terminate,assert,noretcall) move to removed equations
- size := BackendEquation.equationSize(eqn1);
- b := intGt(size,0);
- eqns := Debug.bcallret2(b,BackendEquation.equationAdd,eqn1,eqns,eqns);
- reeqns := Debug.bcallret2(not b,BackendEquation.equationAdd,eqn1,reeqns,reeqns);
- outTpl := (eqn,(eqns,reeqns));
+  (eqn, (eqns, reeqns)) := inTpl;
+  // replace der(x) with $DER.x
+  (eqn1, _) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceDerCref, 0);
+  // add it, if size is zero (terminate,assert,noretcall) move to removed equations
+  size := BackendEquation.equationSize(eqn1);
+  b := intGt(size, 0);
+  eqns := Debug.bcallret2(b, BackendEquation.equationAdd, eqn1, eqns, eqns);
+  reeqns := Debug.bcallret2(not b, BackendEquation.equationAdd, eqn1, reeqns, reeqns);
+  outTpl := (eqn, (eqns, reeqns));
 end collectInitialEqns;
 
-protected function replaceDerCref
-"function: replaceDerCref
+protected function replaceDerCref "function replaceDerCref
   author: Frenkel TUD 2011-05
-  helper for changeDerVariablestoStates"
-  input tuple<DAE.Exp,Integer> inExp;
-  output tuple<DAE.Exp,Integer> outExp;
+  helper for collectInitialEqns"
+  input tuple<DAE.Exp, Integer> inExp;
+  output tuple<DAE.Exp, Integer> outExp;
 protected
    DAE.Exp e;
    Integer i;  
 algorithm
-  (e,i) := inExp;
-  outExp := Expression.traverseExp(e,replaceDerCrefExp,i);
+  (e, i) := inExp;
+  outExp := Expression.traverseExp(e, replaceDerCrefExp, i);
 end replaceDerCref;
 
-protected function replaceDerCrefExp
-"function: replaceDerCrefExp
+protected function replaceDerCrefExp "function replaceDerCrefExp
   author: Frenkel TUD 2011-05
-  helper for changeDerVariablestoStates"
-  input tuple<DAE.Exp,Integer> inExp;
-  output tuple<DAE.Exp,Integer> outExp;
+  helper for replaceDerCref"
+  input tuple<DAE.Exp, Integer> inExp;
+  output tuple<DAE.Exp, Integer> outExp;
 algorithm
-  (outExp) := matchcontinue (inExp)
+  (outExp) := matchcontinue(inExp)
     local
-      DAE.ComponentRef dummyder,cr;
+      DAE.ComponentRef dummyder, cr;
       DAE.Type ty;
       Integer i;
 
-    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)},attr=DAE.CALL_ATTR(ty=ty)),i))
-      equation
-        dummyder = ComponentReference.crefPrefixDer(cr);
-      then
-        ((DAE.CREF(dummyder,ty),i+1));
-    else then inExp;
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}, attr=DAE.CALL_ATTR(ty=ty)), i)) equation
+      dummyder = ComponentReference.crefPrefixDer(cr);
+    then ((DAE.CREF(dummyder, ty), i+1));
+      
+    else
+    then inExp;
   end matchcontinue;
 end replaceDerCrefExp;
 

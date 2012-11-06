@@ -152,8 +152,7 @@ algorithm
   end match;
 end setVarFixed;
 
-public function varFixed
-"function: varFixed
+public function varFixed "function varFixed
   author: PA
   Extracts the fixed attribute of a variable.
   The default fixed value is used if not found. Default is true for parameters
@@ -161,8 +160,7 @@ public function varFixed
   input BackendDAE.Var inVar;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inVar)
+  outBoolean := matchcontinue(inVar)
     local
       Boolean fixed;
       BackendDAE.Var v;
@@ -170,11 +168,9 @@ algorithm
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
-    case (v) /* params are by default fixed */
-      equation
-        BackendDAE.PARAM() = varKind(v);
-      then
-        true;
+    case (v) equation /* params are by default fixed */
+      BackendDAE.PARAM() = varKind(v);
+    then true;
 /*  See Modelica Spec 3.2 page 88: 
     For constants and parameters, the attribute fixed is by default true. For other variables
     fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".      
@@ -185,7 +181,7 @@ algorithm
       then
         not fixed;
 */
-    case (_) then false;  /* rest defaults to false*/
+    case (_) then false;  /* rest defaults to false */
   end matchcontinue;
 end varFixed;
 

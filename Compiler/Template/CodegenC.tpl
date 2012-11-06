@@ -172,7 +172,7 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionInitialResidual(residualEquations)%>
     
-    <%functionInitialEquations(initialEquations)%>
+    <%functionInitialEquations(useSymbolicInitialization, initialEquations)%>
     
     <%functionUpdateBoundParameters(parameterEquations)%>
 
@@ -999,7 +999,7 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
    ;separator="\n\n")
 end functionExtraResiduals;
 
-template functionInitialEquations(list<SimEqSystem> initalEquations)
+template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations)
   "Generates function in simulation file."
 ::=
   let () = System.tmpTickReset(0)
@@ -1008,14 +1008,26 @@ template functionInitialEquations(list<SimEqSystem> initalEquations)
   let body = (initalEquations |> eq  =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
     ;separator="\n")  
+  let info = match useSymbolicInitialization
+         case true then
+           'INFO(LOG_INIT, "symbolic initialization is generated");'
+         else
+           'INFO(LOG_INIT, "symbolic initialization is not generated");'
+  let useSymbolicInitializationToInt = match useSymbolicInitialization
+         case true then
+           '1'
+         else
+           '0'
   <<
   <%&tmp%>
+  const int useSymbolicInitialization = <%useSymbolicInitializationToInt%>; /* <%useSymbolicInitialization%> */
   int functionInitialEquations(DATA *data)
   {
     state mem_state;
     <%varDecls%>
   
     mem_state = get_memory_state();
+    <%info%>
     <%body%>
     restore_memory_state(mem_state);
   

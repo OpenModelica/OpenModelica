@@ -86,6 +86,7 @@ uniontype SimCode
     list<list<SimEqSystem>> odeEquations;
     list<SimEqSystem> algebraicEquations;
     list<SimEqSystem> residualEquations;
+    Boolean useSymbolicInitialization;         // true if a system to solve the initial problem symbolically is generated, otherwise false
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> startValueEquations;
     list<SimEqSystem> parameterEquations;

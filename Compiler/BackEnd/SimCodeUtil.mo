@@ -1821,6 +1821,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> odeEquations;   // --> functionODE
       list<SimCode.SimEqSystem> algebraicEquations;   // --> functionAlgebraics
       list<SimCode.SimEqSystem> residuals;            // --> initial_residual
+      Boolean useSymbolicInitialization;               // true if a system to solve the initial problem symbolically is generated, otherwise false
       list<SimCode.SimEqSystem> initialEquations;     // --> initial_equations
       list<SimCode.SimEqSystem> startValueEquations;  // --> updateBoundStartValues
       list<SimCode.SimEqSystem> parameterEquations;   // --> updateBoundParameters
@@ -1843,7 +1844,7 @@ algorithm
       
       list<SimCode.JacobianMatrix> LinearMatrices;
       SimCode.HashTableCrefToSimVar crefToSimVarHT;
-      Boolean ifcpp,hasDivStmts,initialSystemSolved;
+      Boolean ifcpp,hasDivStmts;
       BackendDAE.EqSystems systs;
       BackendDAE.Shared shared;
       BackendDAE.EquationArray removedEqs;
@@ -1882,7 +1883,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // initialization stuff
-        (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, initialSystemSolved) = createInitialResiduals(dlow2, uniqueEqIndex, {}, helpVarInfo);
+        (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, uniqueEqIndex, {}, helpVarInfo);
         (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
  
         // Add model info
@@ -1897,15 +1898,15 @@ algorithm
 
         // Assertions and crap
         // create parameter equations
-        ((uniqueEqIndex,startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow2,createStartValueEquations,(uniqueEqIndex,{}));
-        ((uniqueEqIndex,parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow2,createVarNominalAssertFromVars,(uniqueEqIndex,{}));
-        (uniqueEqIndex,parameterEquations) = createParameterEquations(shared,uniqueEqIndex,parameterEquations,initialSystemSolved);        
-        ((uniqueEqIndex,removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(uniqueEqIndex,{}));
+        ((uniqueEqIndex, startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createStartValueEquations, (uniqueEqIndex, {}));
+        ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
+        (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization);
+        ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
         
-        ((uniqueEqIndex,algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow2,createAlgorithmAndEquationAsserts,(uniqueEqIndex,{}));
-        discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2,extractDiscreteModelVars,{});
-        makefileParams = createMakefileParams(includeDirs,libs);
-        (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
+        ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow2, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
+        discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2, extractDiscreteModelVars, {});
+        makefileParams = createMakefileParams(includeDirs, libs);
+        (delayedExps, maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
         
         //append removed equation to all equations, since these are actually 
         //just the algorithms without outputs
@@ -1946,6 +1947,7 @@ algorithm
           odeEquations,
           algebraicEquations,
           residuals,
+          useSymbolicInitialization,
           initialEquations,
           startValueEquations,
           parameterEquations,
@@ -2188,51 +2190,6 @@ algorithm
          
   end match;
 end createEquationsForSystems;
-
-protected function addJacobianstoSimCode
-  input SimCode.SimCode inSimCode;
-  input list<SimCode.JacobianMatrix> inJacobians;
-  output SimCode.SimCode outSimCode;
-algorithm
-  outSimCode := match(inSimCode,inJacobians)
-    local
-      SimCode.ModelInfo modelInfo;
-      list<DAE.Exp> literals "shared literals";
-      list<SimCode.RecordDeclaration> recordDecls;
-      list<String> externalFunctionIncludes;
-      list<list<SimCode.SimEqSystem>> odeEquations;
-      list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
-      list<SimCode.SimEqSystem> initialEquations;
-      list<DAE.Constraint> constraints;
-      list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
-      list<SimCode.SampleCondition> sampleConditions;
-      list<SimCode.HelpVarInfo> helpVarInfo;
-      list<SimCode.SimWhenClause> whenClauses;
-      list<DAE.ComponentRef> discreteModelVars;
-      SimCode.ExtObjInfo extObjInfo;
-      SimCode.MakefileParams makefileParams;
-      SimCode.DelayedExpression delayedExps;
-      list<String> labels;
-      Option<SimCode.SimulationSettings> simulationSettingsOpt;
-      String fileNamePrefix;
-      SimCode.HashTableCrefToSimVar crefToSimVarHT;
-      Absyn.Path name;
-      String directory;
-      SimCode.VarInfo varInfo;
-      SimCode.SimVars vars;
-      list<SimCode.Function> functions;     
-
-    case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations,startValueEquations, 
-                 parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
-                 discreteModelVars,extObjInfo,makefileParams,delayedExps,_,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),inJacobians)
-      then
-        SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations,startValueEquations, 
-                  parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
-                  discreteModelVars,extObjInfo,makefileParams,delayedExps,inJacobians,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT);
-                  
-  end match;
-end addJacobianstoSimCode;
-
 
 protected function createJacobianLinearCode
   input BackendDAE.SymbolicJacobians inSymjacs;
@@ -6419,9 +6376,9 @@ protected function createInitialResiduals "function createInitialResiduals
   output Integer outNumberOfInitialAlgorithms;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
-  output Boolean initialSystemSolved;
+  output Boolean useSymbolicInitialization;
 algorithm
-  (outResiduals, outInitialEqns, outNumberOfInitialEquations, outNumberOfInitialAlgorithms, ouniqueEqIndex, otempvars, initialSystemSolved) := matchcontinue(inDAE, iuniqueEqIndex, itempvars, helpVarInfo)
+  (outResiduals, outInitialEqns, outNumberOfInitialEquations, outNumberOfInitialAlgorithms, ouniqueEqIndex, otempvars, useSymbolicInitialization) := matchcontinue(inDAE, iuniqueEqIndex, itempvars, helpVarInfo)
     local
       BackendDAE.EqSystems eqs;
       BackendDAE.EquationArray initialEqs,removedEqs;
@@ -6439,25 +6396,33 @@ algorithm
     // try to solve the inital system symbolical.
     case(_, _, _, _)  equation
       true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
+    
       // generate initalsystem
-      (_,BackendDAE.DAE(systs,shared as BackendDAE.SHARED(knownVars=knvars,aliasVars=aliasVars,removedEqs=removedEqs))) = BackendDAEUtil.solveInitialSystem(inDAE);
+      (_, BackendDAE.DAE(systs, 
+                         shared as BackendDAE.SHARED(knownVars=knvars,
+                                                     aliasVars=aliasVars,
+                                                     removedEqs=removedEqs))) = BackendDAEUtil.solveInitialSystem(inDAE);
       // generate equations from the solved systems
-      (uniqueEqIndex,_,_,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,iuniqueEqIndex,{},{},{},itempvars);
+      (uniqueEqIndex, _, _, allEquations, tempvars) = createEquationsForSystems(systs, shared, helpVarInfo, iuniqueEqIndex, {}, {}, {}, itempvars);
       // generate equations from the removed equations
-      ((uniqueEqIndex,removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs,traversedlowEqToSimEqSystem,(uniqueEqIndex,{}));
-      allEquations = listAppend(allEquations,removedEquations);
+      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+      allEquations = listAppend(allEquations, removedEquations);
       // generate equations from the knvown unfixed variables
-      ((uniqueEqIndex,knvarseqns)) = BackendVariable.traverseBackendDAEVars(knvars,traverseKnVarsToSimEqSystem,(uniqueEqIndex,{}));
-      allEquations = listAppend(allEquations,knvarseqns);
+      ((uniqueEqIndex, knvarseqns)) = BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (uniqueEqIndex, {}));
+      allEquations = listAppend(allEquations, knvarseqns);
       // generate equations from the alias variables
-      ((uniqueEqIndex,aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars,traverseAliasVarsToSimEqSystem,(uniqueEqIndex,{}));
-      allEquations = listAppend(allEquations,aliasEquations);
-    then ({}, allEquations, 0, 0, uniqueEqIndex, tempvars, true);
+      ((uniqueEqIndex, aliasEquations)) = BackendVariable.traverseBackendDAEVars(aliasVars, traverseAliasVarsToSimEqSystem, (uniqueEqIndex, {}));
+      allEquations = listAppend(allEquations, aliasEquations);
+      
+      // also generate all the stuff for the numerical initialization
+      (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
+      (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, uniqueEqIndex, tempvars); 
+    then (residual_equations, allEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, true);
     
     case(_, _, _, _) equation
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars); 
-    then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM));
+    then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: createInitialResiduals failed"});
@@ -12707,6 +12672,7 @@ algorithm
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
+      Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
       list<DAE.Constraint> constraints;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
@@ -12735,7 +12701,7 @@ algorithm
       then
         inSimCode;
     
-    case SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations,startValueEquations, 
+    case SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
                  parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
                  discreteModelVars,extObjInfo,makefileParams,delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT)
       equation
@@ -12751,7 +12717,7 @@ algorithm
         files = List.sort(files, greaterFileInfo);
         modelInfo = SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels);
       then
-        SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,initialEquations,startValueEquations, 
+        SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
                   parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
                   discreteModelVars,extObjInfo,makefileParams,delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT);
                   
@@ -13017,6 +12983,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<SimCode.SimEqSystem> algebraicEquations;
       list<SimCode.SimEqSystem> residualEquations;
+      Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
       list<SimCode.SimEqSystem> startValueEquations;
       list<SimCode.SimEqSystem> parameterEquations;
@@ -13039,14 +13006,14 @@ algorithm
       SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
       A a;
 
-    case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
-                          allEquations, odeEquations, algebraicEquations, residualEquations,
-                          initialEquations, startValueEquations, parameterEquations,
-                          removedEquations, algorithmAndEquationAsserts, constraints,
-                          zeroCrossings, relations, sampleConditions, sampleEquations,
-                          helpVarInfo, whenClauses, discreteModelVars, extObjInfo,
-                          makefileParams, delayedExps, jacobianMatrixes,
-                          simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),_,a)
+    case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
+                          allEquations, odeEquations, algebraicEquations, residualEquations, 
+                          useSymbolicInitialization, initialEquations, startValueEquations, 
+                          parameterEquations, removedEquations, algorithmAndEquationAsserts, 
+                          constraints, zeroCrossings, relations, sampleConditions, sampleEquations, 
+                          helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
+                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
+                          crefToSimVarHT),_,a)
       equation
         (literals,a) = List.mapFoldTuple(literals,func,a);
         (allEquations,a) = traverseExpsEqSystems(allEquations,func,a,{});
@@ -13066,14 +13033,14 @@ algorithm
         /* TODO:extObjInfo */
         /* TODO:delayedExps */
         /* TODO:jacobianMatrixes */
-      then (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
-                            allEquations, odeEquations, algebraicEquations, residualEquations,
-                            initialEquations, startValueEquations, parameterEquations,
-                            removedEquations, algorithmAndEquationAsserts, constraints,
-                            zeroCrossings, relations, sampleConditions, sampleEquations,
-                            helpVarInfo, whenClauses, discreteModelVars, extObjInfo,
-                            makefileParams, delayedExps, jacobianMatrixes,
-                            simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),a);
+      then (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
+                            allEquations, odeEquations, algebraicEquations, residualEquations, 
+                            useSymbolicInitialization, initialEquations, startValueEquations, 
+                            parameterEquations, removedEquations, algorithmAndEquationAsserts, 
+                            constraints, zeroCrossings, relations, sampleConditions, sampleEquations, 
+                            helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
+                            delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
+                            crefToSimVarHT),a);
   end match;
 end traverseExpsSimCode;
 
@@ -13211,6 +13178,7 @@ algorithm
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<SimCode.SimEqSystem> algebraicEquations;
       list<SimCode.SimEqSystem> residualEquations;
+      Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
       list<SimCode.SimEqSystem> startValueEquations;
       list<SimCode.SimEqSystem> parameterEquations;
@@ -13233,21 +13201,19 @@ algorithm
       SimCode.HashTableCrefToSimVar crefToSimVarHT "hidden from typeview - used by cref2simvar() for cref -> SIMVAR lookup available in templates.";
 
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes,
-                          allEquations, odeEquations, algebraicEquations, residualEquations,
-                          initialEquations, startValueEquations, parameterEquations,
-                          removedEquations, algorithmAndEquationAsserts, constraints,
-                          zeroCrossings, relations, sampleConditions, sampleEquations,
-                          helpVarInfo, whenClauses, discreteModelVars, extObjInfo,
-                          makefileParams, delayedExps, jacobianMatrixes,
-                          simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),_)
+                          allEquations, odeEquations, algebraicEquations, residualEquations, 
+                          useSymbolicInitialization, initialEquations, startValueEquations, 
+                          parameterEquations, removedEquations, algorithmAndEquationAsserts,
+                          constraints, zeroCrossings, relations, sampleConditions, sampleEquations,
+                          helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams,
+                          delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),_)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                            allEquations, odeEquations, algebraicEquations, residualEquations,
-                           initialEquations, startValueEquations, parameterEquations,
-                           removedEquations, algorithmAndEquationAsserts, constraints,
-                           zeroCrossings, relations, sampleConditions, sampleEquations,
-                           helpVarInfo, whenClauses, discreteModelVars, extObjInfo,
-                           makefileParams, delayedExps, jacobianMatrixes,
-                           simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
+                           useSymbolicInitialization, initialEquations, startValueEquations,
+                           parameterEquations, removedEquations, algorithmAndEquationAsserts,
+                           constraints, zeroCrossings, relations, sampleConditions, sampleEquations,
+                           helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams,
+                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
   end match;
 end setSimCodeLiterals;
 

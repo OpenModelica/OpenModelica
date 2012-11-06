@@ -127,6 +127,7 @@ package SimCode
       list<list<SimEqSystem>> odeEquations;
       list<SimEqSystem> algebraicEquations;
       list<SimEqSystem> residualEquations;
+      Boolean useSymbolicInitialization;
       list<SimEqSystem> initialEquations;
       list<SimEqSystem> startValueEquations;
       list<SimEqSystem> parameterEquations;

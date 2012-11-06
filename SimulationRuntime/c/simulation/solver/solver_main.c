@@ -192,11 +192,13 @@ int solver_main(DATA* data, const char* init_initMethod,
   storePreValues(data);
 
   /* Activate sample and evaluate again */
-  if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes) {
+  if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
+  {
     simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
-    if (simInfo->sampleActivated){
-      INFO(LOG_SOLVER,"Sample event at beginning of the simulation");
-      /*Activate sample and evaluate again */
+    if (simInfo->sampleActivated)
+    {
+      INFO(LOG_SOLVER, "Sample event at beginning of the simulation");
+      /* Activate sample and evaluate again */
       activateSampleEvents(data);
       /* update the whole system */
       updateDiscreteSystem(data);

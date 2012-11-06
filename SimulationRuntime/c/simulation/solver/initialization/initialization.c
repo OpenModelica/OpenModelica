@@ -59,18 +59,21 @@ enum INIT_INIT_METHOD
   IIM_UNKNOWN = 0,
   IIM_NONE,
   IIM_STATE,
+  IIM_SYMBOLIC,
   IIM_MAX
 };
 
 static const char *initMethodStr[IIM_MAX] = {
   "unknown",
   "none",
-  "state"
+  "state",
+  "symbolic"
 };
 static const char *initMethodDescStr[IIM_MAX] = {
   "unknown",
   "no initialization method",
-  "default initialization method"
+  "default initialization method",
+  "solves the initialization problem symbolically"
 };
 
 enum INIT_OPTI_METHOD
@@ -246,12 +249,13 @@ void dumpInitialization(INIT_DATA *initData)
   RELEASE(LOG_INIT); RELEASE(LOG_INIT);
 }
 
-/*! \fn static int initialize(DATA *data, int optiMethod)
+/*! \fn static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
  *
  *  This is a helper function for initialize.
  *
  *  \param [ref] [initData]
  *  \param [in]  [optiMethod] specified optimization method
+ *  \param [in]  [useScaling] specifies whether scaling should be used or not
  *
  *  \author lochel
  */
@@ -369,7 +373,6 @@ static int initialize(DATA *data, int optiMethod)
   if(data->modelData.nInitResiduals == 0)
   {
     INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
-    functionInitialEquations(data);
     return 0;
   }
 
@@ -582,7 +585,6 @@ static int none_initialization(DATA *data, int updateStartValues)
 static int state_initialization(DATA *data, int optiMethod, int updateStartValues)
 {
   int retVal = 0;
-  int i;
 
   /* set up all variables and parameters with their start-values */
   setAllVarsToStart(data);
@@ -609,6 +611,59 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   storePreValues(data);
 
   retVal = initialize(data, optiMethod);
+
+  storeInitialValues(data);
+  storeInitialValuesParam(data);
+  storePreValues(data);                 /* save pre-values */
+  overwriteOldSimulationData(data);     /* if there are non-linear equations */
+  updateDiscreteSystem(data);           /* evaluate discrete variables */
+
+  /* valid system for the first time! */
+  saveZeroCrossings(data);
+  storeInitialValues(data);
+  storeInitialValuesParam(data);
+  storePreValues(data);                 /* save pre-values */
+  overwriteOldSimulationData(data);     /* if there are non-linear equations */
+
+  return retVal;
+}
+
+/*! \fn static int symbolic_initialization(DATA *data, int updateStartValues)
+ *
+ *  \param [ref] [data]
+ *  \param [in]  [updateStartValues]
+ *
+ *  \author lochel
+ */
+static int symbolic_initialization(DATA *data, int updateStartValues)
+{
+  int retVal = 0;
+
+  /* set up all variables and parameters with their start-values */
+  setAllVarsToStart(data);
+  setAllParamsToStart(data);
+
+  if(updateStartValues)
+  {
+    updateBoundParameters(data);
+    updateBoundStartValues(data);
+  }
+
+  /* initial sample and delay before initial the system */
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
+  initDelay(data, data->simulationInfo.startTime);
+
+  /* initialize all relations that are ZeroCrossings */
+  storePreValues(data);
+  overwriteOldSimulationData(data);
+  updateDiscreteSystem(data);
+
+  /* and restore start values and helpvars */
+  restoreExtrapolationDataOld(data);
+  resetAllHelpVars(data);
+  storePreValues(data);
+
+  functionInitialEquations(data);
 
   storeInitialValues(data);
   storeInitialValuesParam(data);
@@ -825,8 +880,8 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
  */
 int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)
 {
-  int initMethod = IIM_STATE;               /* default method */
-  int optiMethod = IOM_NELDER_MEAD_EX;      /* default method */
+  int initMethod = useSymbolicInitialization ? IIM_SYMBOLIC : IIM_STATE;  /* default method */
+  int optiMethod = IOM_NELDER_MEAD_EX;                                    /* default method */
   int retVal = -1;
   int updateStartValues = 1;
   int i;
@@ -893,6 +948,8 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     retVal = none_initialization(data, updateStartValues);
   else if(initMethod == IIM_STATE)
     retVal = state_initialization(data, optiMethod, updateStartValues);
+  else if(initMethod == IIM_SYMBOLIC)
+    retVal = symbolic_initialization(data, updateStartValues);
   else
     THROW("unsupported option -iim");
 

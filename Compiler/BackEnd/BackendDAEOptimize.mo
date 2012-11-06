@@ -6629,7 +6629,7 @@ algorithm
     list<BackendDAE.Var> vars;
     BackendDAE.Equation eqn;
     list<BackendDAE.Equation> eqns;
-    DAE.Exp e, e1,   crefExp, startExp;
+    DAE.Exp e, e1, crefExp, startExp;
     DAE.ComponentRef cref;
     DAE.Type tp;
     
@@ -6821,17 +6821,17 @@ algorithm
       parameters = List.select(knownVarList, BackendVariable.isParam);
       outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
       
-      (jacobian,_,_) = createJacobian(DAE,                                 // DAE
-                                  states,                                  // 
-                                  BackendDAEUtil.listVar1(states),         // 
-                                  BackendDAEUtil.listVar1(inputs),         // 
-                                  BackendDAEUtil.listVar1(parameters),     // 
-                                  BackendDAEUtil.listVar1(outputs),        // 
-                                  orderedVarList,                          // 
-                                  (orderedVarCrefList, knownVarCrefList),  // 
-                                  "G");                                    // name
+      (jacobian, _, _) = createJacobian(DAE,                                     // DAE
+                                        states,                                  // 
+                                        BackendDAEUtil.listVar1(states),         // 
+                                        BackendDAEUtil.listVar1(inputs),         // 
+                                        BackendDAEUtil.listVar1(parameters),     // 
+                                        BackendDAEUtil.listVar1(outputs),        // 
+                                        orderedVarList,                          // 
+                                        (orderedVarCrefList, knownVarCrefList),  // 
+                                        "G");                                    // name
     then (jacobian, DAE);
-
+    
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function generateInitialMatrices failed"});
     then fail();

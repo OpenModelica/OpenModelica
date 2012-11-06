@@ -1014,6 +1014,7 @@ algorithm
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
+      Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
       list<DAE.Constraint> constraints;
       list<BackendDAE.ZeroCrossing> zeroCrossings,relations;
@@ -1030,7 +1031,7 @@ algorithm
       list<SimCode.JacobianMatrix> jacobianMatrixes;
       list<SimCode.SimEqSystem> eqs;
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
-          algebraicEquations,residualEquations,initialEquations,startValueEquations, 
+          algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
           parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,relations,
           sampleConditions,sampleEquations,helpVarInfo,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),_)
@@ -1038,7 +1039,7 @@ algorithm
       {eqs} = odeEquations;
       eqs = List.map1(eqs,replaceZC,zc_exps);
     then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
-                         allEquations, {eqs}, algebraicEquations, residualEquations,
+                         allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization,
                          initialEquations, startValueEquations, parameterEquations,
                          removedEquations, algorithmAndEquationAsserts, constraints, 
                          zeroCrossings, relations, sampleConditions, sampleEquations,
