@@ -1243,7 +1243,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       constant Integer fmiPending=5;
     end fmiStatus;
   initial algorithm
-    (fmi_x, eventInfo) := fmiFunctions.fmiInitialize(fmi, "BouncingBall", debugLogging, time, eventInfo, numberOfContinuousStates);
+    (fmi_x, eventInfo) := fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time, eventInfo, numberOfContinuousStates);
   equation
     der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates, flowControlStatesInputs);
     flowControlTime = fmiFunctions.fmiSetTime(fmi, time, 1);
