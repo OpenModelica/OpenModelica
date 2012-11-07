@@ -891,6 +891,19 @@ void usub_real_array(real_array_t* a)
     }
 }
 
+void usub_alloc_real_array(real_array_t* a, real_array_t* dest)
+{
+    size_t nr_of_elements, i;
+    clone_real_array_spec(a,dest);
+    alloc_real_array_data(dest);
+
+    nr_of_elements = base_array_nr_of_elements(dest);
+    for(i = 0; i < nr_of_elements; ++i)
+    {
+        real_set(dest, i, -real_get(a, i));
+    }
+}
+
 void sub_real_array(const real_array_t * a, const real_array_t * b, real_array_t* dest)
 {
     size_t nr_of_elements;

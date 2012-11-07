@@ -152,6 +152,7 @@ extern void add_real_array(const real_array_t * a, const real_array_t * b, real_
 
 /* Unary subtraction */
 extern void usub_real_array(real_array_t* a);
+extern void usub_alloc_real_array(real_array_t* a, real_array_t* dest);
 extern void sub_real_array(const real_array_t * a, const real_array_t * b, real_array_t* dest);
 extern void sub_alloc_real_array(const real_array_t * a, const real_array_t * b, real_array_t* dest);
 
