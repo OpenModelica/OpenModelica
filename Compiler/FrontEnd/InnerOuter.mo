@@ -705,9 +705,6 @@ algorithm
         true = inner1;
         false = outer1;
         
-        f1 = ConnectUtil.componentFaceType(cr1);
-        f2 = ConnectUtil.componentFaceType(cr2);
-
         // remove the prefixes so we can find it in the DAE
         cr1 = removeInnerPrefixFromCref(inPrefix, cr1);
         cr2 = removeInnerPrefixFromCref(inPrefix, cr2);
@@ -735,8 +732,7 @@ algorithm
         (inner2, outer2) = innerOuterBooleans(io2);
         true = boolOr(inner1, inner2); // for inner outer we set Absyn.INNER()
         false = boolOr(outer1, outer2);
-        f1 = ConnectUtil.componentFaceType(cr1);
-        f2 = ConnectUtil.componentFaceType(cr2);
+
         io1 = convertInnerOuterInnerToOuter(io1); // we need to change from inner to outer to be able to join sets in: addOuterConnectToSets
         io2 = convertInnerOuterInnerToOuter(io2);
 
