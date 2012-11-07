@@ -724,7 +724,10 @@ constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
 // of the tearing optimazation module.  
 constant ConfigFlag NO_TEARING = CONFIG_FLAG(43, "noTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
-  Util.gettext("Disables tearing at all.")); 
+  Util.gettext("Disables tearing at all."));
+constant ConfigFlag DYNAMIC_PIVOD = CONFIG_FLAG(44, "dynamicpivod",
+  NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
+  Util.gettext("Enable dynamic pivoting of states during simulation. Works only with dynamic state selection"));  
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -772,7 +775,8 @@ constant list<ConfigFlag> allConfigFlags = {
   PLOT_SILENT,
   LOCALE_FLAG,
   DEFAULT_OPENCL_DEVICE,
-  NO_TEARING
+  NO_TEARING,
+  DYNAMIC_PIVOD
 };
 
 public function new

@@ -1451,7 +1451,7 @@ end equationSetnth;
 
 public function getEqns "function: getEqns
   author: Frenkel TUD 2011-05
-  retursn the equations given by the list of indexes"
+  returns the equations given by the list of indexes"
   input list<Integer> inIndxes;
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEqns;

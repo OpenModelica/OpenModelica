@@ -4845,7 +4845,6 @@ algorithm
   outRepl := match (otherEqns,inEqns,inVars,ishared,inRepl)
     local
       list<tuple<Integer,list<Integer>>> rest;
-      BackendDAE.EquationArray eqns;
       Integer v,e;
       DAE.Exp e1,e2,varexp,expr;
       DAE.ComponentRef cr;
@@ -4866,11 +4865,10 @@ algorithm
         cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         varexp = Expression.crefExp(cr);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        eqns = BackendEquation.equationSetnth(inEqns,e-1,BackendDAE.EQUATION(expr,varexp,source));
         repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
         // BackendDump.debugStrCrefStrExpStr(("",cr," := ",expr,"\n"));
       then
-        solveOtherEquations(rest,eqns,inVars,ishared,repl);
+        solveOtherEquations(rest,inEqns,inVars,ishared,repl);
     case ((e,vlst)::rest,_,_,_,_)
       equation
         (eqn as BackendDAE.ARRAY_EQUATION(ds, e1, e2, source)) = BackendDAEUtil.equationNth(inEqns, e-1);
