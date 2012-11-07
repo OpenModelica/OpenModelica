@@ -6444,7 +6444,7 @@ case UNARY(__) then
   case UMINUS_ARR(ty=T_ARRAY(ty=T_REAL(__))) then
     let var = tempDecl("real_array", &varDecls)
     let &preExp += 'usub_alloc_real_array(&<%e%>,&<%var%>);<%\n%>'
-    '<%e%>'
+    '<%var%>'
   case UMINUS_ARR(__) then error(sourceInfo(),"unary minus for non-real arrays not implemented")
   else error(sourceInfo(),"daeExpUnary:ERR")
 end daeExpUnary;

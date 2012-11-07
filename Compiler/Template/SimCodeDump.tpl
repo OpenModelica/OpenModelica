@@ -61,7 +61,11 @@ template dumpEqs(list<SimEqSystem> eqs)
       eq: <%crefStr(e.cref)%> = <%printExpStr(e.exp)%>;
         <%dumpElementSource(e.source)%><%\n%>
       >>
-    case e as SES_ARRAY_CALL_ASSIGN(__) then "SES_ARRAY_CALL_ASSIGN"
+    case e as SES_ARRAY_CALL_ASSIGN(__) then
+      <<
+      array assign: <%crefStr(e.componentRef)%> = <%printExpStr(e.exp)%>;
+        <%dumpElementSource(e.source)%><%\n%>
+      >>
     case e as SES_ALGORITHM(statements={}) then 'empty algorithm<%\n%>'
     case e as SES_ALGORITHM(__)
       then (e.statements |> stmt =>
