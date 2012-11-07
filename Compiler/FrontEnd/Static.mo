@@ -2236,18 +2236,21 @@ algorithm
       DAE.Type tty,tty_1;
       Prefix.Prefix pre;
       list<Slot> slots;
+      list<DAE.Const> consts;
+      DAE.Const c;
     
     case(cache,env,Absyn.PARTEVALFUNCTION(cref,Absyn.FUNCTIONARGS(posArgs,namedArgs)),st,impl,doVect,pre,_)
       equation
         p = Absyn.crefToPath(cref);
         (cache,{tty}) = Lookup.lookupFunctionsInEnv(cache, env, p, info);
         tty = Types.unboxedFunctionType(tty);
-        (cache,args,_,_,tty,_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, impl, NONE(), pre, info);
+        (cache,args,consts,_,tty,_,slots) = elabTypes(cache, env, posArgs, namedArgs, {tty}, true, impl, NONE(), pre, info);
         {p} = Types.getTypeSource(tty);
         tty_1 = stripExtraArgsFromType(slots,tty);
         tty_1 = Types.makeFunctionPolymorphicReference(tty_1);
         ty = Types.simplifyType(tty_1);
-        prop_1 = DAE.PROP(tty_1,DAE.C_VAR());
+        c = List.fold(consts,Types.constAnd,DAE.C_CONST());
+        prop_1 = DAE.PROP(tty_1,c);
         (cache,Util.SUCCESS()) = instantiateDaeFunction(cache, env, p, false, NONE(), true);
       then
         (cache,DAE.PARTEVALFUNCTION(p,args,ty),prop_1,st);
