@@ -1141,118 +1141,17 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     fmiImportContext context = fmiImportContext(fmiLogLevel);
     fmiEventInfo eventInfo;
     Boolean callEventUpdate = false;
-    Real flowControlTime;
+    Real flowInit;
     Real flowControlStatesInputs;
-    Real flowControlStates;
-  protected
-    <%dumpFMICommonObjects(platform)%>
-    
-    class fmiEventInfo
-      extends ExternalObject;
-        function constructor
-        end constructor;
-        
-        function destructor
-          input fmiEventInfo eventInfo;
-          external "C" fmiFreeEventInfo_OMC(eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-        end destructor;
-    end fmiEventInfo;
-    
-    package fmiFunctions
-      function fmiInitialize
-        input fmiImportInstance fmi;
-        input String instanceName;
-        input Boolean debugLogging;
-        input Real in_time;
-        input fmiEventInfo in_eventInfo;
-        output Integer status;
-        output Real out_Flow;
-        output fmiEventInfo out_eventInfo;
-        external "C" out_eventInfo = fmiInitialize_OMC(fmi, instanceName, debugLogging, in_time, in_eventInfo, status, out_Flow) annotation(Library = {"omcruntime", "fmilib", "shlwapi"});
-      end fmiInitialize;
-      
-      function fmiSetTime
-        input fmiImportInstance fmi;
-        input Real in_time;
-        input Real in_Flow;
-        output Real status;
-        external "C" status = fmiSetTime_OMC(fmi, in_time, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiSetTime;
-      
-      function fmiGetContinuousStates
-        input fmiImportInstance fmi;
-        input Integer numberOfContinuousStates;
-        input Real in_Flow;
-        input Real dummy_fmi_x[:];
-        output Real fmi_x[numberOfContinuousStates];
-        external "C" fmiGetContinuousStates_OMC(fmi, numberOfContinuousStates, fmi_x, in_Flow, dummy_fmi_x) annotation(Library = {"omcruntime", "fmilib", "shlwapi"});
-      end fmiGetContinuousStates;
-      
-      function fmiSetContinuousStates
-        input fmiImportInstance fmi;
-        input Real fmi_x[:];
-        input Real in_Flow;
-        output Real status;
-        external "C" status = fmiSetContinuousStates_OMC(fmi, size(fmi_x, 1), fmi_x, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiSetContinuousStates;
-      
-      function fmiGetEventIndicators
-        input fmiImportInstance fmi;
-        input Integer numberOfEventIndicators;
-        input Real in_Flow;
-        output Real fmi_z[numberOfEventIndicators];
-        external "C" fmiGetEventIndicators_OMC(fmi, numberOfEventIndicators, fmi_z, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiGetEventIndicators;
-      
-      function fmiGetDerivatives
-        input fmiImportInstance fmi;
-        input Integer numberOfContinuousStates;
-        input Real in_Flow;
-        output Real fmi_x[numberOfContinuousStates];
-        external "C" fmiGetDerivatives_OMC(fmi, numberOfContinuousStates, fmi_x, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiGetDerivatives;
-      
-      <%dumpFMICommonFunctions(platform)%>
-      
-      function fmiEventUpdate
-        input fmiImportInstance fmi;
-        input Boolean intermediateResults;
-        input fmiEventInfo in_eventInfo;
-        output fmiEventInfo out_eventInfo;
-        external "C" out_eventInfo = fmiEventUpdate_OMC(fmi, intermediateResults, in_eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiEventUpdate;
-      
-      function fmiCompletedIntegratorStep
-        input fmiImportInstance fmi;
-        input Boolean in_callEventUpdate;
-        input Real in_Flow;
-        output Real out_Flow;
-        external "C" out_Flow = fmiCompletedIntegratorStep_OMC(fmi, in_callEventUpdate, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiCompletedIntegratorStep;
-      
-      function fmiTerminate
-        input fmiImportInstance fmi;
-        output Integer status;
-        external "C" status = fmiTerminate_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-      end fmiTerminate;
-    end fmiFunctions;
-    
-    package fmiStatus
-      constant Integer fmiOK=0;
-      constant Integer fmiWarning=1;
-      constant Integer fmiDiscard=2;
-      constant Integer fmiError=3;
-      constant Integer fmiFatal=4;
-      constant Integer fmiPending=5;
-    end fmiStatus;
+    Real flowControlTime;
   equation
-    (fmi_status, flowControlStates, eventInfo) = fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time, eventInfo);
+    (fmi_status, flowInit, eventInfo) = fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time, eventInfo);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
-    fmi_x = fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowControlStates, fmi_x_dummy);
+    fmi_x = fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowInit, fmi_x_dummy);
   >>
   %>
-    der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates, flowControlStates);
+    der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates, flowControlStatesInputs);
     flowControlTime = fmiFunctions.fmiSetTime(fmi, time, 1);
     flowControlStatesInputs = fmiFunctions.fmiSetContinuousStates(fmi, fmi_x, flowControlTime);
     fmi_z = fmiFunctions.fmiGetEventIndicators(fmi, numberOfEventIndicators, flowControlEvent);
@@ -1284,6 +1183,107 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"}, flowControlStatesInputs);"%>
     <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpStringVariablesVR(fmiModelVariablesList)+"}, flowControlStatesInputs);"%>
     annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
+  protected
+    <%dumpFMICommonObjects(platform)%>
+    
+    class fmiEventInfo
+      extends ExternalObject;
+        function constructor
+        end constructor;
+        
+        function destructor
+          input fmiEventInfo eventInfo;
+          external "C" fmiFreeEventInfo_OMC(eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+        end destructor;
+    end fmiEventInfo;
+    
+    package fmiFunctions
+      function fmiInitialize
+        input fmiImportInstance fmi;
+        input String instanceName;
+        input Boolean debugLogging;
+        input Real in_Time;
+        input fmiEventInfo in_EventInfo;
+        output Integer status;
+        output Real out_Flow_Init;
+        output fmiEventInfo out_eventInfo;
+        external "C" out_eventInfo = fmiInitialize_OMC(fmi, instanceName, debugLogging, in_Time, in_EventInfo, status, out_Flow_Init) annotation(Library = {"omcruntime", "fmilib", "shlwapi"});
+      end fmiInitialize;
+      
+      function fmiSetTime
+        input fmiImportInstance fmi;
+        input Real in_Time;
+        input Real in_Flow;
+        output Real status;
+        external "C" status = fmiSetTime_OMC(fmi, in_Time, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiSetTime;
+      
+      function fmiGetContinuousStates
+        input fmiImportInstance fmi;
+        input Integer numberOfContinuousStates;
+        input Real in_Flow_Init;
+        input Real in_fmi_x[:];
+        output Real fmi_x[numberOfContinuousStates];
+        external "C" fmiGetContinuousStates_OMC(fmi, numberOfContinuousStates, fmi_x, in_Flow_Init, in_fmi_x) annotation(Library = {"omcruntime", "fmilib", "shlwapi"});
+      end fmiGetContinuousStates;
+      
+      function fmiSetContinuousStates
+        input fmiImportInstance fmi;
+        input Real fmi_x[:];
+        input Real in_Flow_Time;
+        output Real status;
+        external "C" status = fmiSetContinuousStates_OMC(fmi, size(fmi_x, 1), fmi_x, in_Flow_Time) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiSetContinuousStates;
+      
+      function fmiGetEventIndicators
+        input fmiImportInstance fmi;
+        input Integer numberOfEventIndicators;
+        input Real in_Flow_Event;
+        output Real fmi_z[numberOfEventIndicators];
+        external "C" fmiGetEventIndicators_OMC(fmi, numberOfEventIndicators, fmi_z, in_Flow_Event) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiGetEventIndicators;
+      
+      function fmiGetDerivatives
+        input fmiImportInstance fmi;
+        input Integer numberOfContinuousStates;
+        input Real in_Flow;
+        output Real fmi_x[numberOfContinuousStates];
+        external "C" fmiGetDerivatives_OMC(fmi, numberOfContinuousStates, fmi_x, in_Flow) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiGetDerivatives;
+      
+      <%dumpFMICommonFunctions(platform)%>
+      
+      function fmiEventUpdate
+        input fmiImportInstance fmi;
+        input Boolean intermediateResults;
+        input fmiEventInfo in_eventInfo;
+        output fmiEventInfo out_eventInfo;
+        external "C" out_eventInfo = fmiEventUpdate_OMC(fmi, intermediateResults, in_eventInfo) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiEventUpdate;
+      
+      function fmiCompletedIntegratorStep
+        input fmiImportInstance fmi;
+        input Boolean in_callEventUpdate;
+        input Real in_Flow_States;
+        output Real out_Flow_Event;
+        external "C" out_Flow_Event = fmiCompletedIntegratorStep_OMC(fmi, in_callEventUpdate, in_Flow_States) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiCompletedIntegratorStep;
+      
+      function fmiTerminate
+        input fmiImportInstance fmi;
+        output Integer status;
+        external "C" status = fmiTerminate_OMC(fmi) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiTerminate;
+    end fmiFunctions;
+    
+    package fmiStatus
+      constant Integer fmiOK=0;
+      constant Integer fmiWarning=1;
+      constant Integer fmiDiscard=2;
+      constant Integer fmiError=3;
+      constant Integer fmiFatal=4;
+      constant Integer fmiPending=5;
+    end fmiStatus;
   end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
   >>
 end importFMUModelExchange;

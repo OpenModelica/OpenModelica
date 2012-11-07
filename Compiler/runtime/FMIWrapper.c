@@ -147,20 +147,17 @@ void fmiFreeEventInfo_OMC(void* eventInfo)
  */
 void fmiInstantiateModel_OMC(void* fmi, char* instanceName)
 {
-  jm_status_enu_t status = fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
-  if (status == jm_status_error) {
-    fprintf(stderr, "FMI Import Error: Error in fmiInstantiateModel_OMC.\n");fflush(NULL);
-  }
+  fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
 }
 
 /*
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
-double fmiSetTime_OMC(void* fmi, double time, double dummy)
+double fmiSetTime_OMC(void* fmi, double time, double flowTime)
 {
   fmi1_import_set_time((fmi1_import_t*)fmi, time);
-  return dummy;
+  return flowTime;
 }
 
 /*
@@ -176,7 +173,7 @@ int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
  * Wrapper for the FMI function fmiInitialize.
  * Returns FMI Event Info i.e fmi1_event_info_t.
  */
-void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double time, void* in_eventInfo, int* status, double* dummy)
+void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double time, void* in_eventInfo, int* status, double* flowInit)
 {
   static int init = 0;
   if (!init) {
@@ -189,19 +186,6 @@ void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double 
     fmi1_real_t relativeTolerance = 0.001;
     fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
     fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
-    switch (fmistatus) {
-      case fmi1_status_warning:
-        fprintf(stderr, "FMI Import Warning: Warning in fmiInitialize_OMC.\n");fflush(NULL);
-        break;
-      case fmi1_status_error:
-        fprintf(stderr, "FMI Import Error: Error in fmiInitialize_OMC.\n");fflush(NULL);
-        break;
-      case fmi1_status_fatal:
-        fprintf(stderr, "FMI Import Fatal: Fatal in fmiInitialize_OMC.\n");fflush(NULL);
-        break;
-      default:
-        break;
-    }
     *status = fmistatus;
     return eventInfo;
   }
@@ -212,76 +196,37 @@ void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double 
  * Wrapper for the FMI function fmiGetContinuousStates.
  * Returns states.
  */
-void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double dummy, double* dummyStates)
+void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double flowInit, double* flowStatesArray)
 {
-  fmi1_status_t fmistatus = fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiGetContinuousStates_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiGetContinuousStates_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetContinuousStates_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
+  fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
 /*
  * Wrapper for the FMI function fmiSetContinuousStates.
  * Returns status.
  */
-double fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double dummy)
+double fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double flowTime)
 {
   fmi1_import_set_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
-  return dummy;
+  return flowTime;
 }
 
 /*
  * Wrapper for the FMI function fmiGetEventIndicators.
  * Returns events.
  */
-void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* events, double dummy)
+void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double* events, double flowEvent)
 {
-  fmi1_status_t fmistatus = fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiGetEventIndicators_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiGetEventIndicators_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetEventIndicators_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
+  fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
 }
 
 /*
  * Wrapper for the FMI function fmiGetDerivatives.
  * Returns states.
  */
-void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* states, double dummy)
+void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double* states, double flowStates)
 {
-  fmi1_status_t fmistatus = fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiGetDerivatives_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiGetDerivatives_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetDerivatives_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
+  fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
 fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences, double* valuesReferences)
@@ -300,21 +245,8 @@ fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences
 void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double* realValues, double dummy)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
-  fmi1_status_t fmistatus = fmi1_import_get_real((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
+  fmi1_import_get_real((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
   free(valuesReferences_int);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiGetReal_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiGetReal_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetReal_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
 }
 
 /*
@@ -335,21 +267,8 @@ int fmiSetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesRef
 void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double dummy)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
-  fmi1_status_t fmistatus = fmi1_import_get_integer((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
+  fmi1_import_get_integer((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
   free(valuesReferences_int);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiGetInteger_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiGetInteger_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetInteger_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
 }
 
 /*
@@ -370,21 +289,8 @@ int fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerVal
 void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
-  fmi1_status_t fmistatus = fmi1_import_get_boolean((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
+  fmi1_import_get_boolean((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
   free(valuesReferences_int);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiGetBoolean_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiGetBoolean_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetBoolean_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
 }
 
 /*
@@ -405,21 +311,8 @@ int fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanVal
 void fmiGetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
-  fmi1_status_t fmistatus = fmi1_import_get_string((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
+  fmi1_import_get_string((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
   free(valuesReferences_int);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiGetString_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiGetString_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiGetString_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
 }
 
 /*
@@ -439,7 +332,6 @@ int fmiSetString_OMC(void* fmi, int numberOfValueReferences, double* stringValue
  */
 void* fmiEventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo)
 {
-  //fprintf(stderr, "yesss in fmiEventUpdate\n");fflush(NULL);
   fmi1_import_eventUpdate((fmi1_import_t*)fmi, intermediateResults, (fmi1_event_info_t*)eventInfo);
   return eventInfo;
 }
@@ -447,11 +339,11 @@ void* fmiEventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo)
 /*
  * Wrapper for the FMI function fmiCompletedIntegratorStep.
  */
-double fmiCompletedIntegratorStep_OMC(void* fmi, int in_callEventUpdate, double dummy)
+double fmiCompletedIntegratorStep_OMC(void* fmi, int in_callEventUpdate, double flowStates)
 {
   fmi1_status_t fmistatus = fmi1_import_completed_integrator_step((fmi1_import_t*)fmi, (fmi1_boolean_t*)&in_callEventUpdate);
   //fprintf(stderr, "fmiCompletedIntegratorStep_OMC in_callEventUpdate = %d\n", in_callEventUpdate);fflush(NULL);
-  return dummy;
+  return flowStates;
 }
 
 /*
@@ -460,22 +352,6 @@ double fmiCompletedIntegratorStep_OMC(void* fmi, int in_callEventUpdate, double 
 int fmiTerminate_OMC(void* fmi)
 {
   fmi1_status_t fmistatus = fmi1_import_terminate((fmi1_import_t*)fmi);
-  switch (fmistatus) {
-    case fmi1_status_ok:
-      fmi1_import_free_model_instance((fmi1_import_t*)fmi);
-      break;
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiTerminate_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiTerminate_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiTerminate_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
   return fmistatus;
 }
 
@@ -484,10 +360,7 @@ int fmiTerminate_OMC(void* fmi)
  */
 void fmiInstantiateSlave_OMC(void* fmi, char* instanceName, char* fmuLocation, char* mimeType, double timeout, int visible, int interactive)
 {
-  jm_status_enu_t status = fmi1_import_instantiate_slave((fmi1_import_t*)fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive);
-  if (status == jm_status_error) {
-    fprintf(stderr, "FMI Import Error: Error in fmiInstantiateSlave_OMC.\n");fflush(NULL);
-  }
+  fmi1_import_instantiate_slave((fmi1_import_t*)fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive);
 }
 
 /*
@@ -495,20 +368,7 @@ void fmiInstantiateSlave_OMC(void* fmi, char* instanceName, char* fmuLocation, c
  */
 void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, double tStop)
 {
-  fmi1_status_t fmistatus = fmi1_import_initialize_slave((fmi1_import_t*)fmi, tStart, stopTimeDefined, tStop);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiInitializeSlave_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiInitializeSlave_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiInitializeSlave_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
+  fmi1_import_initialize_slave((fmi1_import_t*)fmi, tStart, stopTimeDefined, tStop);
 }
 
 /*
@@ -516,20 +376,7 @@ void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, doubl
  */
 double fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communicationStepSize, int newStep)
 {
-  fmi1_status_t fmistatus = fmi1_import_do_step((fmi1_import_t*)fmi, currentCommunicationPoint, communicationStepSize, newStep);
-  switch (fmistatus) {
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiDoStep_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiDoStep_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiDoStep_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
+  fmi1_import_do_step((fmi1_import_t*)fmi, currentCommunicationPoint, communicationStepSize, newStep);
   return 0.0;
 }
 
@@ -539,22 +386,6 @@ double fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communi
 int fmiTerminateSlave_OMC(void* fmi)
 {
   fmi1_status_t fmistatus = fmi1_import_terminate_slave((fmi1_import_t*)fmi);
-  switch (fmistatus) {
-    case fmi1_status_ok:
-      fmi1_import_free_slave_instance((fmi1_import_t*)fmi);
-      break;
-    case fmi1_status_warning:
-      fprintf(stderr, "FMI Import Warning: Warning in fmiTerminateSlave_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_error:
-      fprintf(stderr, "FMI Import Error: Error in fmiTerminateSlave_OMC.\n");fflush(NULL);
-      break;
-    case fmi1_status_fatal:
-      fprintf(stderr, "FMI Import Fatal: Fatal in fmiTerminateSlave_OMC.\n");fflush(NULL);
-      break;
-    default:
-      break;
-  }
   return fmistatus;
 }
 
