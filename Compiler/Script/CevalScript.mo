@@ -1489,7 +1489,7 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2)},st,_)
       equation
         Error.clearMessages() "Clear messages";
         true = System.regularFileExists(filename);
@@ -1499,7 +1499,7 @@ algorithm
         true = b; /* if something goes wrong while initializing */
         fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
         s1 = System.tolower(System.platform());
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, fmiContext, fmiInstance, fmiInfo,
+        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo,
                                                                         fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList1));
         pd = System.pathDelimiter();
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
@@ -1512,7 +1512,7 @@ algorithm
       then
         (cache,Values.STRING(filename_1),st);
         
-    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2)},st,_)
       equation
         false = System.regularFileExists(filename);
         Error.clearMessages() "Clear messages";
@@ -1520,7 +1520,7 @@ algorithm
       then
         (cache,Values.STRING(""),st);
     
-    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2)},st,_)
       then
         (cache,Values.STRING(""),st);
         

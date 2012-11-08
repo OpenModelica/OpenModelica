@@ -1130,7 +1130,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant String fmuFile = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     constant Integer fmiLogLevel = <%fmiLogLevel%>;
-    constant Boolean debugLogging = false;
+    constant Boolean debugLogging = <%fmiDebugOutput%>;
     fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
     fmiImportContext context = fmiImportContext(fmiLogLevel);
     fmiEventInfo eventInfo;

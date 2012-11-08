@@ -2714,6 +2714,7 @@ package FMI
       String fmuFileName;
       String fmuWorkingDirectory;
       Integer fmiLogLevel;
+      Boolean fmiDebugOutput;
       Integer fmiContext;
       Integer fmiInstance;
       Info fmiInfo;
