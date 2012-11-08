@@ -69,7 +69,7 @@ algorithm
   end match;
 end printMmaEqnsStr;
 
-protected function printMmaEqnStr "help function to printMmaEqnsStr"
+public function printMmaEqnStr "help function to printMmaEqnsStr"
   input BackendDAE.Equation eqn;
   input tuple<BackendDAE.Variables,BackendDAE.Variables> inTuple "required to find array eqns and algorithms";
   output String str;
@@ -704,7 +704,7 @@ algorithm
   end match;
 end printMmaVarsStr;
 
-protected function printMmaVarStr "help function to printMmaVarsStr"
+public function printMmaVarStr "help function to printMmaVarsStr"
   input BackendDAE.Var v;
   input Boolean selectKind "true for dumping states, false for algebraic vars";
   input BackendDAE.Variables allVars;

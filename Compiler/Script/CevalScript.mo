@@ -858,6 +858,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       SimCode.SimulationSettings simSettings;
+      Boolean dumpExtractionSteps;
     
     case (cache,env,"parseString",{Values.STRING(str1),Values.STRING(str2)},st,_)
       equation
@@ -1125,9 +1126,9 @@ algorithm
     case (cache,env,"translateModel",_,st,_)
       then (cache,Values.STRING("There were errors during translation. Use getErrorString() to see them."),st);
 
-    case (cache,env,"modelEquationsUC",vals as {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(outputFile)},st,_)
+    case (cache,env,"modelEquationsUC",vals as {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(outputFile),Values.BOOL(dumpExtractionSteps)},st,_)
       equation
-        (cache,ret_val,st_1) = Uncertainties.modelEquationsUC(cache, env, className, st, outputFile);
+        (cache,ret_val,st_1) = Uncertainties.modelEquationsUC(cache, env, className, st, outputFile,dumpExtractionSteps);
       then
         (cache,ret_val,st_1);
    

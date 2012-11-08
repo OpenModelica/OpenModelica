@@ -244,7 +244,7 @@ public function elabCallInteractive "function: elabCallInteractive
       Boolean impl;
       Interactive.SymbolTable st;
       Ident cname_str,str;
-      DAE.Exp filenameprefix,exp_1,crefExp,outputFile;
+      DAE.Exp filenameprefix,exp_1,crefExp,outputFile,dumpExtractionSteps;
       DAE.Type recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> excludeList;
@@ -257,7 +257,6 @@ public function elabCallInteractive "function: elabCallInteractive
       Absyn.Path className;
       list<DAE.Exp> simulationArgs;
       String name;
-    
     case (cache,env,cr2 as Absyn.CREF_IDENT(name = name),_,_,impl,SOME(st),_,_)
       equation
         ErrorExt.setCheckpoint("Scripting");
@@ -281,11 +280,10 @@ public function elabCallInteractive "function: elabCallInteractive
       equation
         (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
         className = Static.componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
-        (cache,outputFile) = 
-          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFile", DAE.T_STRING_DEFAULT, 
-                              args, DAE.SCONST(""),pre,info);
+        (cache,outputFile) = Static.getOptionalNamedArg(cache, env, SOME(st), impl, "outputFile", DAE.T_STRING_DEFAULT,args, DAE.SCONST(""),pre,info);
+        (cache,dumpExtractionSteps) = Static.getOptionalNamedArg(cache,env,SOME(st),impl,"dumpSteps",DAE.T_BOOL_DEFAULT,args,DAE.BCONST(false),pre,info);  
       then
-        (cache,Expression.makeBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
+        (cache,Expression.makeBuiltinCall("modelEquationsUC",{DAE.CODE(Absyn.C_TYPENAME(className),DAE.T_UNKNOWN_DEFAULT),outputFile,dumpExtractionSteps},DAE.T_STRING_DEFAULT),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
         
    case (cache,env,Absyn.CREF_IDENT(name = "translateModelCPP"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_)
       equation
