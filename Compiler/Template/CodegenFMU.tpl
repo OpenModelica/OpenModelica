@@ -1113,13 +1113,17 @@ template importFMUModelExchange(FmiImport fmi)
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
   let realVariables = countRealVariables(fmiModelVariablesList)
-  let realStartVariables = countRealStartVariables(fmiModelVariablesList)
+  let realStartVariablesValueReferences = dumpStartRealVariablesValueReference(fmiModelVariablesList)
+  let realStartVariablesNames = dumpStartRealVariablesName(fmiModelVariablesList)
   let integerVariables = countIntegerVariables(fmiModelVariablesList)
-  let integerStartVariables = countIntegerStartVariables(fmiModelVariablesList)
+  let integerStartVariablesValueReferences = dumpStartIntegerVariablesValueReference(fmiModelVariablesList)
+  let integerStartVariablesNames = dumpStartIntegerVariablesName(fmiModelVariablesList)
   let booleanVariables = countBooleanVariables(fmiModelVariablesList)
-  let booleanStartVariables = countBooleanStartVariables(fmiModelVariablesList)
+  let booleanStartVariablesValueReferences = dumpStartBooleanVariablesValueReference(fmiModelVariablesList)
+  let booleanStartVariablesNames = dumpStartBooleanVariablesName(fmiModelVariablesList)
   let stringVariables = countStringVariables(fmiModelVariablesList)
-  let stringStartVariables = countStringStartVariables(fmiModelVariablesList)
+  let stringStartVariablesValueReferences = dumpStartStringVariablesValueReference(fmiModelVariablesList)
+  let stringStartVariablesNames = dumpStartStringVariablesName(fmiModelVariablesList)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
   public
@@ -1147,12 +1151,11 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Boolean callEventUpdate;
     Boolean newStatesAvailable;
     Integer fmi_status;
-  <%/*initial algorithm
-    <%if not stringEq(realStartVariables, "0") then "flowParamsStart := fmiFunctions.fmiSetReal(fmi, {"+dumpStartRealVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartRealVariablesName(fmiModelVariablesList)+"});"%>
-    <%if not stringEq(integerStartVariables, "0") then "flowParamsStart := fmiFunctions.fmiSetInteger(fmi, {"+dumpStartIntegerVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartIntegerVariablesName(fmiModelVariablesList)+"});"%>
-    <%if not stringEq(booleanStartVariables, "0") then "flowParamsStart := fmiFunctions.fmiSetBoolean(fmi, {"+dumpStartBooleanVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartBooleanVariablesName(fmiModelVariablesList)+"});"%>
-    <%if not stringEq(stringStartVariables, "0") then "flowParamsStart := fmiFunctions.fmiSetString(fmi, {"+dumpStartStringVariablesValueReference(fmiModelVariablesList)+"}, {"+dumpStartStringVariablesName(fmiModelVariablesList)+"});"%>
-  */%>
+  initial algorithm
+    <%if not boolAnd(stringEq(realStartVariablesValueReferences, ""), stringEq(realStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetReal(fmi, {"+realStartVariablesValueReferences+"}, {"+realStartVariablesNames+"});"%>
+    <%if not boolAnd(stringEq(integerStartVariablesValueReferences, ""), stringEq(integerStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetInteger(fmi, {"+integerStartVariablesValueReferences+"}, {"+integerStartVariablesNames+"});"%>
+    <%if not boolAnd(stringEq(booleanStartVariablesValueReferences, ""), stringEq(booleanStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetBoolean(fmi, {"+booleanStartVariablesValueReferences+"}, {"+booleanStartVariablesNames+"});"%>
+    <%if not boolAnd(stringEq(stringStartVariablesValueReferences, ""), stringEq(stringStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetString(fmi, {"+stringStartVariablesValueReferences+"}, {"+stringStartVariablesNames+"});"%>
   initial equation
     (flowTimeNext,flowInit,eventInfo) = fmiFunctions.fmiInitialize(fmi, "BouncingBall", debugLogging, time, eventInfo, flowParamsStart+flowInitInputs);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
@@ -1183,13 +1186,13 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     when not initial() then
   >>
   %>
-    (flowTimeNext, newStatesAvailable) := fmiFunctions.fmiEventUpdate(fmi, false, eventInfo, flowStatesInputs);
+      (flowTimeNext, newStatesAvailable) := fmiFunctions.fmiEventUpdate(fmi, false, eventInfo, flowStatesInputs);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
-    if newStatesAvailable then
-      fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowStatesInputs);
-      <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
-    end if;
+      if newStatesAvailable then
+        fmi_x_new := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowStatesInputs);
+        <%fmiInfo.fmiNumberOfContinuousStates |> continuousStates =>  "reinit(fmi_x["+continuousStates+"], fmi_x_new["+continuousStates+"]);" ;separator="\n"%>
+      end if;
   >>
   %>
     end when;
