@@ -1907,12 +1907,13 @@ bool OMCProxy::translateModelFMU(QString modelName)
 //! @param fmuName the FMU location
 //! @param outputDirectory the output location
 //! @return bool true on success
-QString OMCProxy::importFMU(QString fmuName, QString outputDirectory, int logLevel)
+QString OMCProxy::importFMU(QString fmuName, QString outputDirectory, int logLevel, bool debugLogging)
 {
+  QString debugLoggingString = debugLogging ? "true" : "false";
   if (outputDirectory.isEmpty())
-    sendCommand("importFMU(\"" + fmuName + "\", loglevel=" + QString::number(logLevel) + ", fullPath=true)");
+    sendCommand("importFMU(\"" + fmuName + "\", loglevel=" + QString::number(logLevel) + ", fullPath=true, debugLogging=" + debugLoggingString + ")");
   else
-    sendCommand("importFMU(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\", loglevel=" + QString::number(logLevel) + ", fullPath=true)");
+    sendCommand("importFMU(\"" + fmuName + "\", \"" + outputDirectory.replace("\\", "/") + "\", loglevel=" + QString::number(logLevel) + ", fullPath=true, debugLogging=" + debugLoggingString + ")");
   QString fmuFileName = StringHandler::unparse(getResult());
   if (fmuFileName.isEmpty())
     printMessagesStringInternal();

@@ -78,6 +78,8 @@ ImportFMIWidget::ImportFMIWidget(MainWindow *pParent)
   mpLogLevelComboBox->addItem(tr("Verbose"), QVariant(5));
   mpLogLevelComboBox->addItem(tr("Debug"), QVariant(6));
   mpLogLevelComboBox->setCurrentIndex(3);
+  // create debug logging checkbox
+  mpDebugLoggingCheckBox = new QCheckBox(tr("Debug Logging"));
   // import FMI note
   mpOutputDirectoryNoteLabel = new QLabel(tr("* If no Output Directory specified then the FMU files are generated in the current working directory."));
   // create OK button
@@ -98,8 +100,9 @@ ImportFMIWidget::ImportFMIWidget(MainWindow *pParent)
   mainLayout->addWidget(mpOutputDirectoryNoteLabel, 4, 0, 1, 3, Qt::AlignLeft);
   mainLayout->addWidget(mpLogLevelLabel, 5, 0);
   mainLayout->addWidget(mpLogLevelComboBox, 5, 1, 1, 2);
-  mainLayout->addWidget(pNoteLabel, 6, 0, 1, 3, Qt::AlignLeft);
-  mainLayout->addWidget(mpImportButton, 7, 0, 1, 3, Qt::AlignRight);
+  mainLayout->addWidget(mpDebugLoggingCheckBox, 6, 0, 1, 3);
+  mainLayout->addWidget(pNoteLabel, 7, 0, 1, 3, Qt::AlignLeft);
+  mainLayout->addWidget(mpImportButton, 8, 0, 1, 3, Qt::AlignRight);
   setLayout(mainLayout);
 }
 
@@ -129,7 +132,8 @@ void ImportFMIWidget::importFMU()
     return;
   }
   QString fmuFileName = mpParentMainWindow->mpOMCProxy->importFMU(mpFmuFileTextBox->text(), mpOutputDirectoryTextBox->text(),
-                                                                  mpLogLevelComboBox->itemData(mpLogLevelComboBox->currentIndex()).toInt());
+                                                                  mpLogLevelComboBox->itemData(mpLogLevelComboBox->currentIndex()).toInt(),
+                                                                  mpDebugLoggingCheckBox->isChecked());
   if (!fmuFileName.isEmpty())
     mpParentMainWindow->mpProjectTabs->openFile(fmuFileName);
   accept();
