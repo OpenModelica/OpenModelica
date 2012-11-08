@@ -776,7 +776,7 @@ constant list<ConfigFlag> allConfigFlags = {
   LOCALE_FLAG,
   DEFAULT_OPENCL_DEVICE,
   NO_TEARING,
-  DYNAMIC_PIVOD
+  DYNAMIC_PIVOT
 };
 
 public function new
