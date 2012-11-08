@@ -1452,7 +1452,7 @@ algorithm
       DAE.Exp cond;
       list<DAE.Element> eqnl;
       DAE.Element elsePart;
-      String scond;
+      String scond, str;
       DAE.ElementSource source;
 
     case (DAE.WHEN_EQUATION(condition = cond,equations = eqnl,elsewhen_ = NONE(),source=source),_,_,_)
@@ -1469,17 +1469,17 @@ algorithm
         (cond,source,_) = Inline.inlineExp(cond, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (trueEqnLst,reinit) = lowerWhenEqn2(listReverse(eqnl), cond, functionTree, {}, {});
         whenClauseList = makeWhenClauses(listLength(reinit) > 0, cond, reinit,whenClauseList);
-        res = mergeClauses(trueEqnLst,elseEqnLst,inEquationLst);                    
+        res = mergeClauses(trueEqnLst,elseEqnLst,inEquationLst);
       then
         (res,whenClauseList);
 
-    case (DAE.WHEN_EQUATION(condition = cond),_,_,_)
+    case (DAE.WHEN_EQUATION(condition = cond, source = source),_,_,_)
       equation
-        scond = ExpressionDump.printExpStr(cond);
-        print("- BackendDAECreate.lowerWhenEqn: Error in lowerWhenEqn. \n when ");
-        print(scond);
-        print(" ... \n");
-      then fail();
+        str = "BackendDAECreate.lowerWhenEqn: equation not handled:\n" +& 
+              DAEDump.dumpElementsStr({inElement}); 
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {str}, DAEUtil.getElementSourceFileInfo(source));
+      then 
+        fail();
   end matchcontinue;
 end lowerWhenEqn;
 
