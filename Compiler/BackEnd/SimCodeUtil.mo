@@ -1830,6 +1830,7 @@ algorithm
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
       //list<DAE.Statement> algorithmAndEquationAsserts;
       list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, sampleZC, relations;
       list<SimCode.SimWhenClause> whenClauses;
       list<SimCode.SampleCondition> sampleConditions;
@@ -1849,6 +1850,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EquationArray removedEqs;
       array<DAE.Constraint> constrsarr;
+      array<DAE.ClassAttributes> clsattrsarra;
       
       list<DAE.Exp> lits;
       list<SimCode.SimVar> tempvars;
@@ -1867,6 +1869,7 @@ algorithm
         (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
         BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
                                                           constraints = constrsarr,
+                                                          classAttrs = clsattrsarra,
                                                           functionTree = functionTree,
                                                           symjacs = symJacs)) = dlow2;
         
@@ -1938,6 +1941,7 @@ algorithm
         Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
         
         constraints = arrayList(constrsarr);
+        classAttributes = arrayList(clsattrsarra);
         
         simCode = SimCode.SIMCODE(modelInfo,  
           {}, // Set by the traversal below... 
@@ -1954,6 +1958,7 @@ algorithm
           removedEquations,
           algorithmAndEquationAsserts,
           constraints,
+          classAttributes,
           zeroCrossings,
           relations,
           sampleConditions,
@@ -12673,6 +12678,7 @@ algorithm
       Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
       list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
       list<SimCode.SampleCondition> sampleConditions;
       list<SimCode.HelpVarInfo> helpVarInfo;
@@ -12700,7 +12706,7 @@ algorithm
         inSimCode;
     
     case SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
-                 parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
+                 parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,classAttributes,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
                  discreteModelVars,extObjInfo,makefileParams,delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT)
       equation
         SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels) = modelInfo;
@@ -12716,7 +12722,7 @@ algorithm
         modelInfo = SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels);
       then
         SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
-                  parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
+                  parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,classAttributes,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
                   discreteModelVars,extObjInfo,makefileParams,delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT);
                   
     case inSimCode
@@ -12988,6 +12994,7 @@ algorithm
       list<SimCode.SimEqSystem> removedEquations;
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
       list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
       list<SimCode.SampleCondition> sampleConditions;
       list<SimCode.SimEqSystem> sampleEquations;
@@ -13008,7 +13015,7 @@ algorithm
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
                           useSymbolicInitialization, initialEquations, startValueEquations, 
                           parameterEquations, removedEquations, algorithmAndEquationAsserts, 
-                          constraints, zeroCrossings, relations, sampleConditions, sampleEquations, 
+                          constraints, classAttributes, zeroCrossings, relations, sampleConditions, sampleEquations, 
                           helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
                           crefToSimVarHT),_,a)
@@ -13035,7 +13042,7 @@ algorithm
                             allEquations, odeEquations, algebraicEquations, residualEquations, 
                             useSymbolicInitialization, initialEquations, startValueEquations, 
                             parameterEquations, removedEquations, algorithmAndEquationAsserts, 
-                            constraints, zeroCrossings, relations, sampleConditions, sampleEquations, 
+                            constraints, classAttributes, zeroCrossings, relations, sampleConditions, sampleEquations, 
                             helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
                             crefToSimVarHT),a);
@@ -13183,6 +13190,7 @@ algorithm
       list<SimCode.SimEqSystem> removedEquations;
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
       list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
       list<SimCode.SampleCondition> sampleConditions;
       list<SimCode.SimEqSystem> sampleEquations;
@@ -13202,14 +13210,14 @@ algorithm
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
                           useSymbolicInitialization, initialEquations, startValueEquations, 
                           parameterEquations, removedEquations, algorithmAndEquationAsserts,
-                          constraints, zeroCrossings, relations, sampleConditions, sampleEquations,
+                          constraints, classAttributes, zeroCrossings, relations, sampleConditions, sampleEquations,
                           helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),_)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                            allEquations, odeEquations, algebraicEquations, residualEquations,
                            useSymbolicInitialization, initialEquations, startValueEquations,
                            parameterEquations, removedEquations, algorithmAndEquationAsserts,
-                           constraints, zeroCrossings, relations, sampleConditions, sampleEquations,
+                           constraints, classAttributes, zeroCrossings, relations, sampleConditions, sampleEquations,
                            helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                            delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);
   end match;

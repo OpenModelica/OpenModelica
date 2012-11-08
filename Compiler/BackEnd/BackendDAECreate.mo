@@ -223,6 +223,7 @@ algorithm
       list<DAE.Element> daeElts,aliaseqns;
       DAE.Constraint cons_1;
       list<DAE.Constraint> constrs;
+      DAE.ClassAttributes clsattrs_1;
       list<DAE.ClassAttributes> clsAttrs;
       Absyn.Path path;
       BackendDAE.Variables vars,knvars,extVars;
@@ -417,6 +418,10 @@ algorithm
     case (DAE.CONSTRAINT(constraints = cons_1),_,_,_,_,_,_,_,_,_,_,_,_)
       then
         (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,cons_1::inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+    
+    case (DAE.CLASS_ATTRIBUTES(classAttrs = clsattrs_1),_,_,_,_,_,_,_,_,_,_,_,_)
+      then
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,inIEqnsLst,inConstraintLst,clsattrs_1::inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
     
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation

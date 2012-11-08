@@ -135,6 +135,7 @@ package SimCode
       list<SimEqSystem> algorithmAndEquationAsserts;
       //list<DAE.Statement> algorithmAndEquationAsserts;
       list<DAE.Constraint> constraints;
+      list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
       list<BackendDAE.ZeroCrossing> relations;
       list<list<SimVar>> zeroCrossingsNeedSave;
@@ -1614,6 +1615,14 @@ package DAE
       list<Exp> constraintLst;
     end CONSTRAINT_EXPS;
   end Constraint;
+  
+  uniontype ClassAttributes "currently for Optimica extension: these are the objectives of optimization class"
+  record OPTIMIZATION_ATTRS
+    Option<Exp> objetiveE;
+    Option<Exp> startTimeE;
+    Option<Exp> finalTimeE;
+  end OPTIMIZATION_ATTRS;
+end ClassAttributes;
   
 end DAE;
 

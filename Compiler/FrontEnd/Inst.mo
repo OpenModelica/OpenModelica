@@ -13583,6 +13583,11 @@ algorithm
         dae = DAEUtil.joinDaes(constraints_1, constraints_2);
       then
         (cache,env2,dae,ci_state);
+    case (_,_,_,_,_,_)
+      equation 
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instConstraints failed");
+      then
+        fail();
   
   end match;
 end instConstraints;
@@ -13615,6 +13620,11 @@ algorithm
         clsAttrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(NONE(),NONE(),NONE()))});
         (cache,env,dae) = instClassAttributes2(inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,clsAttrs);
       then (cache,env,dae);
+    case (_,_,_,_,_,_)
+      equation 
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassAttributes failed");
+      then
+        fail();
   end match;
 end instClassAttributes;
 
@@ -13695,7 +13705,12 @@ algorithm
         DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,startTimeE,_))}) = attrs;
         attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,startTimeE,SOME(inAttrExp)))});
       then attrs;
-        
+   case (_,_,_)
+      equation 
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.insertClassAttribute failed");
+      then
+        fail();    
+    
   end match;
 end insertClassAttribute;
 
