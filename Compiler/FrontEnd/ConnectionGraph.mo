@@ -322,7 +322,7 @@ algorithm
         canon2 = canonical(partition,ref2);
         //print("canon1: " +& ComponentReference.printComponentRefStr(canon1));
         //print("\tcanon2: " +& ComponentReference.printComponentRefStr(canon2) +& "\n");
-        true = ComponentReference.crefEqual(canon1, canon2);
+        true = ComponentReference.crefEqualNoStringCompare(canon1, canon2);
       then true;
     case(_,_,_) then false;
   end matchcontinue;
@@ -1243,12 +1243,12 @@ algorithm
   ocr := matchcontinue(cr,cref1,cref2)
     case(_,_,_)
       equation
-        true = ComponentReference.crefEqual(cr,cref1);
+        true = ComponentReference.crefEqualNoStringCompare(cr,cref1);
       then
         cref2;
     case(_,_,_)
       equation
-        true = ComponentReference.crefEqual(cr,cref2);
+        true = ComponentReference.crefEqualNoStringCompare(cr,cref2);
       then
         cref1;
   end matchcontinue;
@@ -1288,7 +1288,7 @@ algorithm
     case ((inExp as DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)}), roots))
       equation
-        result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqual);
+        result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalIsRootHelper: " +& 
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
       then ((DAE.BCONST(result), roots));
@@ -1296,7 +1296,7 @@ algorithm
     case ((inExp as DAE.LUNARY(DAE.NOT(_), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)})), roots))
       equation
-        result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqual);
+        result = List.isMemberOnTrue(cref, roots, ComponentReference.crefEqualNoStringCompare);
         result = boolNot(result);
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.evalIsRootHelper: " +& 
            ExpressionDump.printExpStr(inExp) +& " = " +& Util.if_(result, "true", "false"));
@@ -1765,7 +1765,7 @@ algorithm
         toRemove = removeBroken(inConnects, inBroken, {});
         // remove from toRemove the allowed connections
         toKeep = List.unique(List.flatten(List.map(inConnected, List.first2FromTuple3)));
-        intersect = List.intersectionOnTrue(toRemove, toKeep, ComponentReference.crefEqual);
+        intersect = List.intersectionOnTrue(toRemove, toKeep, ComponentReference.crefEqualNoStringCompare);
         
         Debug.fprintln(Flags.CGRAPH, "- ConnectionGraph.removeBrokenConnects: deleted references: " +& 
           stringDelimitList(List.map(toRemove, ComponentReference.printComponentRefStr), ", "));

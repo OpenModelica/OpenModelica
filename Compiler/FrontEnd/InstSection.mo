@@ -3493,7 +3493,7 @@ algorithm
         (cache,env,ih,sets,dae,graph) = instConnect(cache,env,ih,sets,pre,c1,c2,impl,graph,info);
 
         // adrpo: TODO! FIXME! check if is OK
-        state = ClassInf.UNKNOWN(Absyn.IDENT("expandable connector"));
+        state = ClassInf.CONNECTOR(Absyn.IDENT("expandable connector"), true);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);

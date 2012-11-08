@@ -3308,7 +3308,7 @@ algorithm
         (cdefelts,extendsclasselts,extendselts,compelts) = splitElts(els);
         
         // remove components from expandable connectors
-        compelts = Util.if_(valueEq(re, SCode.R_CONNECTOR(true)), {}, compelts);   
+        // compelts = Util.if_(valueEq(re, SCode.R_CONNECTOR(true)), {}, compelts);
         
         extendselts = SCodeUtil.addRedeclareAsElementsToExtends(extendselts, SCodeUtil.getRedeclareAsElements(els));
         
