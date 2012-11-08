@@ -725,7 +725,7 @@ constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
 constant ConfigFlag NO_TEARING = CONFIG_FLAG(43, "noTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
   Util.gettext("Disables tearing at all."));
-constant ConfigFlag DYNAMIC_PIVOD = CONFIG_FLAG(44, "dynamicpivod",
+constant ConfigFlag DYNAMIC_PIVOT = CONFIG_FLAG(44, "dynamicPivot",
   NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
   Util.gettext("Enable dynamic pivoting of states during simulation. Works only with dynamic state selection"));  
 

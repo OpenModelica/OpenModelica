@@ -2165,7 +2165,7 @@ algorithm
         (hov1,dummystates,lov,syst,shared);        
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        true = Flags.getConfigBool(Flags.DYNAMIC_PIVOD);
+        true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
         unassignedEqnsSize = listLength(unassignedEqns);
         rang = listLength(states)-unassignedEqnsSize;
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
