@@ -3795,6 +3795,13 @@ algorithm
       then
         ();
     
+    // everything in expandable is a connector!
+    case (_, _, _)
+      equation
+        true = ConnectUtil.isExpandable(inCref);
+      then
+        ();    
+    
     else
       equation
         str = ComponentReference.printComponentRefStr(inCref);

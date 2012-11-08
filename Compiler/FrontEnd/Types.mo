@@ -2428,7 +2428,7 @@ algorithm
       then
         (s,s2);
         
-    case(_) then ("","");
+    case (it) then ("",printTypeStr(it));
   end matchcontinue;
 end printConnectorTypeStr;
 

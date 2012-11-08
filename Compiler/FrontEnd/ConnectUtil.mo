@@ -351,7 +351,7 @@ algorithm
     DAE.emptyElementSource, inConnectionSet);
 end addFlowVariableFromDAE;
 
-protected function isExpandable
+public function isExpandable
   input DAE.ComponentRef inName;
   output Boolean isExpandableConnector;
 algorithm

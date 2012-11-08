@@ -7908,6 +7908,9 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
+        typeName = SCode.className(cl);
+        (cache, typePath) = makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+        s1 = Absyn.pathString(typePath) +& " " +& s1;
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
@@ -7940,6 +7943,9 @@ algorithm
         s1 = ComponentReference.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);
+        typeName = SCode.className(cl);
+        (cache, typePath) = makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+        s1 = Absyn.pathString(typePath) +& " " +& s1;
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
