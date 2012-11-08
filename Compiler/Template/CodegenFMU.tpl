@@ -1157,7 +1157,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     <%if not boolAnd(stringEq(booleanStartVariablesValueReferences, ""), stringEq(booleanStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetBoolean(fmi, {"+booleanStartVariablesValueReferences+"}, {"+booleanStartVariablesNames+"});"%>
     <%if not boolAnd(stringEq(stringStartVariablesValueReferences, ""), stringEq(stringStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetString(fmi, {"+stringStartVariablesValueReferences+"}, {"+stringStartVariablesNames+"});"%>
   initial equation
-    (flowTimeNext,flowInit,eventInfo) = fmiFunctions.fmiInitialize(fmi, "BouncingBall", debugLogging, time, eventInfo, flowParamsStart+flowInitInputs);
+    (flowTimeNext,flowInit,eventInfo) = fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time, eventInfo, flowParamsStart+flowInitInputs);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
     fmi_x = fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowParamsStart+flowInit);
