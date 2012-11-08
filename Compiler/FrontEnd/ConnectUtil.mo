@@ -383,7 +383,7 @@ protected function daeHasExpandableConnectors
   input DAE.DAElist inDAE;
   output Boolean hasExpandable;
 algorithm
-  outPotential := matchcontinue(inDAE)
+  hasExpandable := matchcontinue(inDAE)
     local
       list<DAE.Element> rest_vars;
       DAE.ComponentRef name;

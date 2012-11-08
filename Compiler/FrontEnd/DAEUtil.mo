@@ -404,7 +404,7 @@ algorithm
   outDae := matchcontinue(dae, vars)
     local
       list<DAE.Element> elements;
-    case (DAE.DAE(elements), vars)
+    case (DAE.DAE(elements), _)
       equation
         elements = removeVariablesFromElements(elements, vars);
       then
@@ -431,7 +431,7 @@ algorithm
     case({},_) then {};
 
     // variable present, remove it
-    case(DAE.VAR(componentRef = cr)::rest, variableNames)
+    case(DAE.VAR(componentRef = cr)::rest, _)
       equation
         // variable is in the list! jump over it
         _::_ = List.select1(variableNames, ComponentReference.crefEqual, cr);
@@ -440,7 +440,7 @@ algorithm
         els;
 
     // variable not present, keep it        
-    case((v as DAE.VAR(componentRef = cr))::rest, variableNames)
+    case((v as DAE.VAR(componentRef = cr))::rest, _)
       equation
         // variable NOT in the list! jump over it
         {} = List.select1(variableNames, ComponentReference.crefEqual, cr);
@@ -449,7 +449,7 @@ algorithm
         v::els;
 
     // handle components
-    case(DAE.COMP(id,elist,source,cmt)::rest, variableNames)
+    case(DAE.COMP(id,elist,source,cmt)::rest, _)
       equation
         elist = removeVariablesFromElements(elist, variableNames);
         els = removeVariablesFromElements(rest, variableNames);
@@ -457,7 +457,7 @@ algorithm
         DAE.COMP(id,elist,source,cmt)::els;
 
     // anything else, just keep it
-    case(v::rest, variableNames)
+    case(v::rest, _)
       equation
         els = removeVariablesFromElements(rest, variableNames);
       then 
