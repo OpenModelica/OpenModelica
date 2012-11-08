@@ -99,7 +99,7 @@ algorithm
       list<String> stepsDumpStrings,stepsDumpStrings2;
       String stepsDump,text;
 
-    case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),outputFile,dumpSteps)
+    case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),outputFile,_)
       equation
         stepsDumpStrings={};     
         (dae,cache,env) = flattenModel(className,p,cache);
@@ -288,11 +288,11 @@ algorithm
     local String h,s,ss; list<String> t;
     case({},_)
       then "";
-    case({h},index)
+    case({h},_)
       equation
         s="{"+&(intString(index))+&","+&h+&"}";
       then s;  
-    case(h::t,index)
+    case(h::t,_)
         equation
           s="{"+&(intString(index))+&","+&h+&"}";
           ss=s+&","+&(numerateList(t,index+1));
@@ -354,16 +354,15 @@ out:=matchcontinue(equations,allEqs,variables,knownVariables,mapIncRowEqn)
     list<String> r;
     BackendDAE.Equation e;
   
-  case({},allEqs,variables,knownVariables,mapIncRowEqn)
-    then {};
+  case({},_,_,_,_) then {};
 
-  case(eqn::eqn_t,allEqs,variables,knownVariables,mapIncRowEqn)
+  case(eqn::eqn_t,_,_,_,_)
    equation
       true = intEq(eqn,0);
       r = getEquationStringOrNothing(eqn_t,allEqs,variables,knownVariables,mapIncRowEqn);
       s = "\"-\"" ;
     then s::r;
-  case(eqn::eqn_t,allEqs,variables,knownVariables,mapIncRowEqn)
+  case(eqn::eqn_t,_,_,_,_)
     equation
       e = BackendDAEUtil.equationNth(allEqs,eqn-1);
       r = getEquationStringOrNothing(eqn_t,allEqs,variables,knownVariables,mapIncRowEqn);
