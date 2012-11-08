@@ -667,6 +667,17 @@ algorithm
   end match;
 end isFunction;
 
+public function isFunctionOrRecord "Fails for states that are not FUNCTION or RECORD."
+  input State inState;
+  output Boolean b;
+algorithm
+  b := match (inState)
+    case FUNCTION(path = _) then true;
+    case RECORD(path = _) then true;
+    else false;
+  end match;
+end isFunctionOrRecord;
+
 public function isConnector "function: isConnector
 
   Fails for states that are not CONNECTOR.

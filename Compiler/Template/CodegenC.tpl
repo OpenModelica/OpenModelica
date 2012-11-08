@@ -6646,14 +6646,17 @@ case IFEXP(__) then
       let resVar = tempDeclTuple(typeof(exp), &varDecls /*BUFD*/)
       let &preExp +=  
       <<
+      /* if exp of type <%unparseType(typeof(exp))%> */
       <%condVar%> = (modelica_boolean)<%condExp%>;
       if (<%condVar%>) {
         <%preExpThen%>
+        /* exp <%printExpStr(expThen)%> has type <%unparseType(typeof(expThen))%> */
         <%if eThen then resultVarAssignment(typeof(exp),resVar,eThen)%>
       } else {
         <%preExpElse%>
         <%if eElse then resultVarAssignment(typeof(exp),resVar,eElse)%>
       }<%\n%>
+      /* end exp of type <%unparseType(typeof(exp))%> => <%resVar%> */
       >>
       resVar)
 end daeExpIf;
@@ -6691,6 +6694,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var3 = daeExp(e3, context, &preExp, &varDecls)
     let &preExp += 'division_alloc_<%type%>_scalar(&<%var1%>, <%var2%>, &<%var%>, <%var3%>);<%\n%>'
     '<%var%>'
+  case exp as CALL(attr=CALL_ATTR(ty=ty), path=IDENT(name="DIVISION_ARRAY_SCALAR")) then
+    error(sourceInfo(),'Code generation does not support <%printExpStr(exp)%>') 
   
   case CALL(path=IDENT(name="der"), expLst={arg as CREF(__)}) then
     '$P$DER<%cref(arg.componentRef)%>'

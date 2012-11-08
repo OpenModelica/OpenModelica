@@ -8091,12 +8091,14 @@ algorithm
       DAE.Mod type_mods;
       SCode.Prefixes pf;
       UnitAbsyn.InstStore store;
+      DAE.ElementSource source;
+      SCode.Variability vt;
 
      // impl component environment dae elements for component Variables of userdefined type,
      // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
      // appear to be an array, they can. Therefore we need to collect
       // the full dimensionality and call instVar2
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = id)),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = id)),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
       equation
         // Collect dimensions
         p1 = Absyn.IDENT(n);
@@ -8110,12 +8112,14 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph) = 
           instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        (cache,dae) = addArrayVarEquation(cache,env,ih,ci_state, dae, ty, mod, InstUtil.toConst(vt), pre, n, source);
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // Generic case: fall through
-    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = id)),attr,pf,dims,idxs,inst_dims,impl,comment,_,graph, csets)
+    case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = id)),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph, csets)
       equation
         p1 = Absyn.IDENT(n);
         p1 = PrefixUtil.prefixPath(p1,pre);
@@ -8127,6 +8131,8 @@ algorithm
         (cache,compenv,ih,store,dae,csets,ty,graph) =
           instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, InstUtil.toConst(vt), pre, n, source);
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
@@ -8137,6 +8143,47 @@ algorithm
       then fail();
   end matchcontinue;
 end instVar_dispatch;
+
+protected function addArrayVarEquation
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input ClassInf.State inState;
+  input DAE.DAElist inDae;
+  input DAE.Type inType;
+  input DAE.Mod mod;
+  input DAE.Const const;
+  input Prefix.Prefix pre;
+  input String n;
+  input DAE.ElementSource source;
+  output Env.Cache outCache;
+  output DAE.DAElist outDae;
+algorithm
+  (outCache,outDae) := matchcontinue (inCache,inEnv,inIH,inState,inDae,inType,mod,const,pre,n,source)
+    local
+      Env.Cache cache;
+      list<DAE.Element> dae;
+      DAE.Exp exp,crExp;
+      DAE.Element eq;
+      DAE.Dimensions dims;
+      DAE.ComponentRef cr;
+      DAE.Type ty;
+    case (_,_,_,_,DAE.DAE(dae),_,_,DAE.C_VAR(),_,_,_)
+      equation
+        false = ClassInf.isFunctionOrRecord(inState);
+        ty = Types.simplifyType(inType);
+        false = Types.isExternalObject(Types.arrayElementType(ty));
+        false = Types.isComplexType(Types.arrayElementType(ty));
+        (dims as _::_) = Types.getDimensions(ty);
+        SOME(exp) = makeVariableBinding(ty, mod, const, pre, n, source);
+        cr = ComponentReference.makeCrefIdent(n,ty,{});
+        (cache,cr) = PrefixUtil.prefixCref(inCache,inEnv,inIH,pre,cr);
+        eq = DAE.ARRAY_EQUATION(dims, DAE.CREF(cr,ty), exp, source);
+        // print("Creating array equation for " +& PrefixUtil.printPrefixStr(pre) +& "." +& n +& " of const " +& DAEUtil.constStr(const) +& " in classinf " +& ClassInf.printStateStr(inState) +& "\n");
+      then (cache,DAE.DAE(eq::dae));
+    else (inCache,inDae);
+  end matchcontinue;
+end addArrayVarEquation;
 
 protected function instVar2
 "function: instVar2
@@ -8489,8 +8536,9 @@ algorithm
       Absyn.InnerOuter io;
       DAE.StartValue start;
       Option<SCode.Attributes> opt_attr;
+      DAE.Mod mod;
 
-    case (cache, env, ih, store, _, _, _, _, 
+    case (cache, env, ih, store, _, mod, _, _, 
         SCode.CLASS(name = cls_name, restriction = res), SCode.ATTR(variability = vt), 
         SCode.PREFIXES(visibility = vis, finalPrefix = fin, innerOuter = io), 
         idxs, _, _, _, _, _, _)
@@ -8532,8 +8580,9 @@ algorithm
           PrefixUtil.prefixToCrefOpt(inPrefix), NONE(), NONE());
 
         // Instantiate the components binding.
-        opt_binding = makeVariableBinding(ty, inMod, InstUtil.toConst(vt), inPrefix, inName, source);
-        start = instStartBindingExp(inMod, ty, vt);
+        mod = Util.if_(listLength(inSubscripts) > 0 and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)),DAE.NOMOD(),inMod);
+        opt_binding = makeVariableBinding(ty, mod, InstUtil.toConst(vt), inPrefix, inName, source);
+        start = instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
 
         // Add the component to the DAE.
         dae2 = daeDeclare(cr, inState, ty, attr, vis, opt_binding, inInstDims,
