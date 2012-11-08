@@ -3221,6 +3221,7 @@ algorithm
       IOStream.IOStream str;
       DAE.Element el;
       Absyn.Path path;
+      DAE.Dimensions dims;
     
     case ({}, str) then str;
     
@@ -3240,11 +3241,13 @@ algorithm
       then
         str;
 
-    case ((DAE.ARRAY_EQUATION(exp = e1,array = e2) :: xs), str)
+    case ((DAE.ARRAY_EQUATION(dimension = dims, exp = e1,array = e2) :: xs), str)
       equation
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        str = IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
+        s3 = Debug.bcallret1(Config.typeinfo(), Types.printDimensionsStr, dims, "");
+        s3 = Util.if_(Config.typeinfo()," /* array equation [" +& s3 +& "] */","");
+        str = IOStream.appendList(str, {"  ", s1, " = ", s2, s3, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
