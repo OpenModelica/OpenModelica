@@ -187,6 +187,7 @@ HashTable4.mo \
 HashTable5.mo \
 HashTableCG.mo \
 HashTableCrILst.mo \
+HashTableCrToExpSourceTpl.mo \
 HashTablePathToFunction.mo \
 HashTableStringToPath.mo \
 HashTableExpToIndex.mo \

@@ -64,6 +64,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import HashTableExpToIndex;
 protected import HashTable;
+protected import HashTableCrToExpSourceTpl;
 protected import Inline;
 protected import List;
 protected import SCode;
@@ -1511,6 +1512,8 @@ algorithm
       Boolean b;
       String s;
       Absyn.Path functionName;
+      HashTableCrToExpSourceTpl.HashTable ht;
+      list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;      
 
     case ({},_,_,_,_) then (iEquationLst,iReinitStatementLst);
     case (DAE.EQUEQUATION(cr1 = cr,cr2 = cr2, source = source) :: xs,_,_,_,_)
@@ -1545,12 +1548,16 @@ algorithm
     case ((el as DAE.IF_EQUATION(condition1=expl,equations2=eqnslst,equations3=eqns, source = source)) :: xs,_,_,_,_)
       equation
         (expl,source,_) = Inline.inlineExps(expl, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        b = not Flags.getConfigBool(Flags.CHECK_MODEL);
-        s = Debug.bcallret1(b, DAEDump.dumpElementsStr, {el}, "");
-        Debug.bcall3(b,Error.addSourceMessage,Error.IF_EQUATION_WARNING, {s}, DAEUtil.getElementSourceFileInfo(source));
-        // ToDo: lower IfEquation in When clause, see ModelicaSpec(3.3) page 85.
-                
-        (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, iEquationLst, iReinitStatementLst);
+        // transform if eqution 
+        // if .. then a=.. elseif .. then a=... else a=.. end if;
+        // to 
+        // a=if .. then .. else if .. then else ..;
+        ht = HashTableCrToExpSourceTpl.emptyHashTable();
+        ht = lowerWhenIfEqnsElse(eqns,functionTree,ht);
+        ht = lowerWhenIfEqns(listReverse(expl),listReverse(eqnslst),functionTree,ht);
+        crexplst = BaseHashTable.hashTableList(ht);
+        eqnl = lowerWhenIfEqns2(crexplst,inCond,source,iEquationLst);                
+        (eqnl,reinit) = lowerWhenEqn2(xs,inCond, functionTree, eqnl, iReinitStatementLst);
       then
         (eqnl,reinit);
 
@@ -1610,6 +1617,212 @@ algorithm
         (eqnl, reinit);
   end matchcontinue;
 end lowerWhenEqn2;
+
+protected function lowerWhenIfEqns2
+  input list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;
+  input DAE.Exp inCond;
+  input DAE.ElementSource iSource;
+  input list<BackendDAE.Equation> inEqns;
+  output list<BackendDAE.Equation> outEqns;
+algorithm
+  outEqns := match(crexplst,inCond,iSource,inEqns)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e,crexp;
+      DAE.ElementSource source;
+      list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> rest;
+    case ({},_,_,_)
+      then
+        inEqns;
+    case ((cr,(e,source))::rest,_,_,_)
+      equation
+        source = DAEUtil.mergeSources(iSource,source);
+      then
+       lowerWhenIfEqns2(rest,inCond,iSource,BackendDAE.WHEN_EQUATION(1,BackendDAE.WHEN_EQ(inCond,cr,e,NONE()),source)::inEqns);       
+  end match;
+end lowerWhenIfEqns2;
+
+protected function lowerWhenIfEqns
+"function: lowerWhenIfEqns
+  autor: Frenkel TUD 2012-10
+  helper for lowerWhen"
+  input list<DAE.Exp> conditions;
+  input list<list<DAE.Element>> theneqns;
+  input DAE.FunctionTree functionTree;
+  input HashTableCrToExpSourceTpl.HashTable iHt;
+  output HashTableCrToExpSourceTpl.HashTable oHt;
+algorithm
+  oHt := match(conditions,theneqns,functionTree,iHt)
+    local
+      HashTableCrToExpSourceTpl.HashTable ht;
+      DAE.Exp c;
+      list<DAE.Exp> explst;
+      list<DAE.Element> eqns;
+      list<list<DAE.Element>> rest;
+    case ({},{},_,_)
+      then
+        iHt;
+    case (c::explst,eqns::rest,_,_)
+      equation
+        ht = lowerWhenIfEqns1(c,eqns,functionTree,iHt);
+      then
+        lowerWhenIfEqns(explst,rest,functionTree,ht);
+  end match;
+end lowerWhenIfEqns;
+
+protected function lowerWhenIfEqns1
+"function: simplifySolvedIfEqns1
+  autor: Frenkel TUD 2012-10
+  helper for lowerWhenIfEqns"
+  input DAE.Exp condition;
+  input list<DAE.Element> brancheqns;
+  input DAE.FunctionTree functionTree; 
+  input HashTableCrToExpSourceTpl.HashTable iHt;
+  output HashTableCrToExpSourceTpl.HashTable oHt;
+algorithm
+  oHt := match(condition,brancheqns,functionTree,iHt)
+    local
+      DAE.ComponentRef cr,cr2;
+      DAE.Exp e,exp;
+      DAE.ElementSource source,source1;
+      HashTableCrToExpSourceTpl.HashTable ht;
+      list<DAE.Element> rest,eqns;
+      list<list<DAE.Element>> eqnslst;
+      list<DAE.Exp> expl;      
+    case (_,{},_,_)
+      then
+        iHt;
+    case (_,DAE.EQUEQUATION(cr1=cr, cr2=cr2, source=source)::rest,_,_)
+      equation
+        e = Expression.crefExp(cr2);
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ((exp,source1)) = BaseHashTable.get(cr, iHt);
+        exp = DAE.IFEXP(condition, e, exp);
+        source = DAEUtil.mergeSources(source,source1);
+        ht = BaseHashTable.add((cr,(exp,source)), iHt);        
+      then
+        lowerWhenIfEqns1(condition,rest,functionTree,ht);
+    case (_,DAE.DEFINE(componentRef=cr, exp=e, source=source)::rest,_,_)
+      equation
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ((exp,source1)) = BaseHashTable.get(cr, iHt);
+        exp = DAE.IFEXP(condition, e, exp);
+        source = DAEUtil.mergeSources(source,source1);
+        ht = BaseHashTable.add((cr,(exp,source)), iHt);
+      then
+        lowerWhenIfEqns1(condition,rest,functionTree,ht);
+    case (_,DAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest,_,_)
+      equation
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ((exp,source1)) = BaseHashTable.get(cr, iHt);
+        exp = DAE.IFEXP(condition, e, exp);
+        source = DAEUtil.mergeSources(source,source1);
+        ht = BaseHashTable.add((cr,(exp,source)), iHt);
+      then
+        lowerWhenIfEqns1(condition,rest,functionTree,ht);
+    case (_,DAE.COMPLEX_EQUATION(lhs=DAE.CREF(componentRef=cr), rhs=e, source=source)::rest,_,_)
+      equation
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ((exp,source1)) = BaseHashTable.get(cr, iHt);
+        exp = DAE.IFEXP(condition, e, exp);
+        source = DAEUtil.mergeSources(source,source1);
+        ht = BaseHashTable.add((cr,(exp,source)), iHt);
+      then
+        lowerWhenIfEqns1(condition,rest,functionTree,ht);
+    case (_,DAE.ARRAY_EQUATION(exp=DAE.CREF(componentRef=cr), array=e, source=source)::rest,_,_)
+      equation
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ((exp,source1)) = BaseHashTable.get(cr, iHt);
+        exp = DAE.IFEXP(condition, e, exp);
+        source = DAEUtil.mergeSources(source,source1);
+        ht = BaseHashTable.add((cr,(exp,source)), iHt);
+      then
+        lowerWhenIfEqns1(condition,rest,functionTree,ht);
+    case (_,DAE.IF_EQUATION(condition1=expl,equations2=eqnslst,equations3=eqns, source = source)::rest,_,_)
+      equation
+        (expl,source,_) = Inline.inlineExps(expl, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ht = lowerWhenIfEqnsElse(eqns,functionTree,iHt);
+        ht = lowerWhenIfEqns(listReverse(expl),listReverse(eqnslst),functionTree,ht);
+      then
+        lowerWhenIfEqns1(condition,rest,functionTree,ht);
+  end match;
+end lowerWhenIfEqns1;
+
+protected function lowerWhenIfEqnsElse
+"function: lowerWhenIfEqnsElse
+  autor: Frenkel TUD 2012-10
+  helper for lowerWhenIfEqns"
+  input list<DAE.Element> elseenqs;
+  input DAE.FunctionTree functionTree; 
+  input HashTableCrToExpSourceTpl.HashTable iHt;
+  output HashTableCrToExpSourceTpl.HashTable oHt;
+algorithm
+  oHt := match(elseenqs,functionTree,iHt)
+    local
+      DAE.ComponentRef cr,cr2;
+      DAE.Exp e;
+      DAE.ElementSource source;
+      HashTableCrToExpSourceTpl.HashTable ht;
+      list<DAE.Element> rest,eqns;
+      list<list<DAE.Element>> eqnslst;
+      list<DAE.Exp> expl;
+    case ({},_,_)
+      then
+        iHt;
+    case (DAE.EQUEQUATION(cr1=cr, cr2=cr2, source=source)::rest,_,_)
+      equation
+        failure( _ = BaseHashTable.get(cr, iHt));
+        e = Expression.crefExp(cr2);
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        ht = BaseHashTable.add((cr,(e,source)), iHt);
+      then
+        lowerWhenIfEqnsElse(rest,functionTree,ht);
+    case (DAE.DEFINE(componentRef=cr, exp=e, source=source)::rest,_,_)
+      equation
+        failure( _ = BaseHashTable.get(cr, iHt));
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ht = BaseHashTable.add((cr,(e,source)), iHt);
+      then
+        lowerWhenIfEqnsElse(rest,functionTree,ht);
+    case (DAE.EQUATION(exp=DAE.CREF(componentRef=cr), scalar=e, source=source)::rest,_,_)
+      equation
+        failure( _ = BaseHashTable.get(cr, iHt));
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ht = BaseHashTable.add((cr,(e,source)), iHt);
+      then
+        lowerWhenIfEqnsElse(rest,functionTree,ht);
+    case (DAE.COMPLEX_EQUATION(lhs=DAE.CREF(componentRef=cr), rhs=e, source=source)::rest,_,_)
+      equation
+        failure( _ = BaseHashTable.get(cr, iHt));
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ht = BaseHashTable.add((cr,(e,source)), iHt);
+      then
+        lowerWhenIfEqnsElse(rest,functionTree,ht);
+    case (DAE.ARRAY_EQUATION(exp=DAE.CREF(componentRef=cr), array=e, source=source)::rest,_,_)
+      equation
+        failure( _ = BaseHashTable.get(cr, iHt));
+        false = Expression.expHasCrefNoPreorDer(e, cr);
+        (e,source,_) = Inline.inlineExp(e, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ht = BaseHashTable.add((cr,(e,source)), iHt);
+      then
+        lowerWhenIfEqnsElse(rest,functionTree,ht);
+    case (DAE.IF_EQUATION(condition1=expl,equations2=eqnslst,equations3=eqns, source = source)::rest,_,_)
+      equation
+        (expl,source,_) = Inline.inlineExps(expl, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        ht = lowerWhenIfEqnsElse(eqns,functionTree,iHt);
+        ht = lowerWhenIfEqns(listReverse(expl),listReverse(eqnslst),functionTree,ht);
+      then
+        lowerWhenIfEqnsElse(rest,functionTree,ht);
+  end match;
+end lowerWhenIfEqnsElse;
 
 protected function makeWhenClauses
 "function: makeWhenClauses
