@@ -202,39 +202,56 @@ QStringList StringHandler::getStrings(QString value)
 QStringList StringHandler::getStrings(QString value, char start, char end)
 {
   QStringList list;
-  QStringList tokenizer = value.split(",", QString::SkipEmptyParts);
-
-  QString t = "";
+  bool mask = false;
+  bool inString = false;
+  int begin = 0;
   int ele = 0;
-  foreach (QString temp, tokenizer)
+
+  for (int i = 0 ; i < value.length() ; i++)
   {
-    if (ele == 0)
+    if (inString)
     {
-      if (t.length() > 0)
+      if (mask)
       {
-        list.append(t.trimmed());
+        mask = false;
       }
-      t = temp;
+      else
+      {
+        if (value.at(i) == '\\')
+        {
+          mask = true;
+        }
+        else if (value.at(i) == '"')
+        {
+          inString = false;
+        }
+      }
     }
     else
     {
-      t = t.trimmed() + ", " + temp.trimmed();
-    }
-
-    for (int i = 0 ; i < temp.length() ; i++)
-    {
-      if (temp.at(i) == start)
+      if (value.at(i) == '"')
+      {
+          inString = true;
+      }
+      else if (value.at(i) == ',')
+      {
+        if (ele == 0)
+        {
+          list.append(value.mid(begin,i-begin).trimmed());
+          begin = i+1;
+        }
+      }
+      else if (value.at(i) == start)
       {
         ele++;
       }
-      else if (temp.at(i) == end)
+      else if (value.at(i) == end)
       {
         ele--;
       }
     }
   }
-  if (t.length() > 0)
-    list.append(t.trimmed());
+  list.append(value.mid(begin,value.length()-begin).trimmed());
 
   return list;
 }
