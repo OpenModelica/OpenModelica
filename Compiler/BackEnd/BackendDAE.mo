@@ -529,6 +529,11 @@ uniontype StrongComponent
     list<Integer> vars "be carefule with states, this are solved for der(x)";
   end SINGLECOMPLEXEQUATION;
 
+  record SINGLEWHENEQUATION
+    Integer eqn;
+    list<Integer> vars "be carefule with states, this are solved for der(x)";
+  end SINGLEWHENEQUATION;
+
   record TORNSYSTEM
     list<Integer> tearingvars;
     list<Integer> residualequations;

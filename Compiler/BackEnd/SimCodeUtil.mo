@@ -3225,7 +3225,7 @@ algorithm
     local
       DAE.Exp cond;
       list<DAE.Exp> conditions;
-      list<tuple<DAE.Exp, Integer>> conditionsWithHindex; 
+      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       list<DAE.ComponentRef> conditionVars; 
       BackendDAE.WhenEquation we;
     case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=NONE()),_,_)
@@ -3365,6 +3365,22 @@ algorithm
         allEquations = listAppend(equations1,allEquations);
       then
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);
+               
+      // A single when equation
+    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEWHENEQUATION(eqn=e)) :: restComps, _, _,_)
+      equation
+        // block is dynamic, belong in dynamic section
+        bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
+        (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        // States are solved for der(x) not x.
+        varlst = List.map(varlst, transformXToXd);
+        (equations1,uniqueEqIndex,tempvars) = createSingleWhenEqnCode(listGet(eqnlst,1),varlst,helpVarInfo,shared,iuniqueEqIndex,itempvars);
+        (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, restComps, helpVarInfo,uniqueEqIndex,tempvars);
+        odeEquations = Debug.bcallret2(bdynamic, listAppend, equations1, odeEquations,odeEquations);
+        algebraicEquations = Debug.bcallret2((not bdynamic), listAppend, equations1, algebraicEquations,algebraicEquations);
+        allEquations = listAppend(equations1,allEquations);
+      then
+        (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);               
                  
         // a system of equations 
     case (_, _, _, comp :: restComps, _,_,_)
@@ -3429,6 +3445,12 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars) = createEquations(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo, iuniqueEqIndex,itempvars);
       then
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
+
+    case (false, _, _, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(eqn=_) :: restComps, _, _,_)
+      equation
+        (equations,noDiscEquations,uniqueEqIndex,tempvars) = createEquations(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo, iuniqueEqIndex,itempvars);
+      then
+        (equations,noDiscEquations,uniqueEqIndex,tempvars);
         
         // ignore discrete if we should not generate them
     case (_, _, false, _, _, BackendDAE.EQSYSTEM(orderedVars=vars), _, BackendDAE.SINGLEEQUATION(var=index) :: restComps, _, _,_)
@@ -3438,6 +3460,11 @@ algorithm
         (equations,noDiscEquations,uniqueEqIndex,tempvars) = createEquations(includeWhen, skipDiscInZc, false,  skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo, iuniqueEqIndex,itempvars);
       then
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
+    case (_, _, false, _, _, BackendDAE.EQSYSTEM(orderedEqs=eqns), _, BackendDAE.SINGLEWHENEQUATION(eqn=_) :: restComps, _, _,_)
+      equation
+        (equations,noDiscEquations,uniqueEqIndex,tempvars) = createEquations(false, skipDiscInZc, genDiscrete, skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo, iuniqueEqIndex,itempvars);
+      then
+        (equations,noDiscEquations,uniqueEqIndex,tempvars);        
         
         // ignore discrete in zero crossing if we should not generate them
     case (_, true, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, BackendDAE.SINGLEEQUATION(eqn=index,var=vindex) :: restComps, _, _,_)
@@ -3497,6 +3524,19 @@ algorithm
         noDiscEquations = listAppend(equations1,noDiscEquations);
       then
         (equations,noDiscEquations,uniqueEqIndex,tempvars);
+          
+      // A single when equation
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEWHENEQUATION(eqn=index)) :: restComps, _, _,_)
+      equation
+        (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        // States are solved for der(x) not x.
+        varlst = List.map(varlst, transformXToXd);
+        (equations1,uniqueEqIndex,tempvars) = createSingleWhenEqnCode(listGet(eqnlst,1),varlst,helpVarInfo,shared,iuniqueEqIndex,itempvars);
+        (equations,noDiscEquations,uniqueEqIndex,tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo,uniqueEqIndex,tempvars);
+        equations = listAppend(equations1,equations);
+        noDiscEquations = listAppend(equations1,noDiscEquations);
+      then
+        (equations,noDiscEquations,uniqueEqIndex,tempvars);          
                  
         // a system of equations 
     case (_, _, _, _, _, _, _, comp :: restComps, _,_,_)
@@ -5746,52 +5786,59 @@ algorithm
   end match;
 end jacToSimjac;
 
-protected function listMap3passthrough "function listMap3passthrough
-  Takes a list and a function and three extra arguments passed to the function.
-  The function produces one new value which is used for creating a new list.
-  The 3.th extra agruments are passed through"
-  input list<Type_a> inTypeALst;
-  input FuncTypeType_aType_bType_cType_dToType_e inFuncTypeTypeATypeBTypeCTypeDToTypeE;
-  input Type_b inTypeB;
-  input Type_c inTypeC;
-  input Type_d inTypeD;
-  output list<Type_e> outTypeELst;
-  output Type_d outTypeD;
-  replaceable type Type_a subtypeof Any;
-  partial function FuncTypeType_aType_bType_cType_dToType_e
-    input Type_a inTypeA;
-    input Type_b inTypeB;
-    input Type_c inTypeC;
-    input Type_d inTypeD;
-    output Type_e outTypeE;
-    output Type_d outTypeD;
-  end FuncTypeType_aType_bType_cType_dToType_e;
-  replaceable type Type_b subtypeof Any;
-  replaceable type Type_c subtypeof Any;
-  replaceable type Type_d subtypeof Any;
-  replaceable type Type_e subtypeof Any;
+
+protected function createSingleWhenEqnCode
+  input BackendDAE.Equation inEquation;
+  input list<BackendDAE.Var> inVars;
+  input list<SimCode.HelpVarInfo> helpVarInfo;
+  input BackendDAE.Shared shared;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  output list<SimCode.SimEqSystem> equations_;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
 algorithm
-  (outTypeELst,outTypeD) := match (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD)
+  (equations_,ouniqueEqIndex,otempvars) := matchcontinue(inEquation,inVars,helpVarInfo,shared,iuniqueEqIndex,itempvars) 
     local
-      Type_e f_1;
-      list<Type_e> r_1;
-      Type_a f;
-      list<Type_a> r;
-      FuncTypeType_aType_bType_cType_dToType_e fn;
-      Type_b extraarg1;
-      Type_c extraarg2;
-      Type_d extraarg3,extraarg31,extraarg32;
-      
-    case ({},_,_,_,extraarg3) then ({},extraarg3);
-      
-    case ((f :: r),fn,extraarg1,extraarg2,extraarg3)
+      Integer uniqueEqIndex;
+      DAE.Exp cond,right;
+      DAE.ComponentRef left;
+      DAE.ElementSource source;
+      list<DAE.ComponentRef> crefs;
+      BackendDAE.WhenEquation elseWhen;
+      list<DAE.Exp> conditions;
+      list<BackendDAE.WhenClause> wcl;
+      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
+      list<SimCode.SimEqSystem> resEqs;
+      SimCode.SimEqSystem elseWhenEquation;
+      list<SimCode.SimVar> tempvars;
+    // when eq without else
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(cond, left, right, NONE()),source=source),_,_,_,_,_)
       equation
-        (r_1,extraarg31) = listMap3passthrough(r, fn, extraarg1, extraarg2, extraarg3);
-        (f_1,extraarg32) = fn(f, extraarg1, extraarg2, extraarg31);
+        crefs = List.map(inVars,BackendVariable.varCref);
+        List.map1rAllValue(crefs,ComponentReference.crefPrefixOf,true,left);
+        conditions = getConditionList(cond);
+        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
       then
-        ((f_1 :: r_1),extraarg32);
-  end match;
-end listMap3passthrough;
+        ({SimCode.SES_WHEN(iuniqueEqIndex,left,right,conditionsWithHindex,NONE(),source)},iuniqueEqIndex+1,itempvars);
+    // when eq with else
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(cond, left, right, SOME(elseWhen)),source=source),_,_,BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wcl)),_,_)
+      equation
+        crefs = List.map(inVars,BackendVariable.varCref);
+        List.map1rAllValue(crefs,ComponentReference.crefPrefixOf,true,left);
+        elseWhenEquation = createElseWhenEquation(elseWhen,wcl,helpVarInfo,source);
+        conditions = getConditionList(cond);
+        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
+      then
+        ({SimCode.SES_WHEN(iuniqueEqIndex,left,right,conditionsWithHindex,SOME(elseWhenEquation),source)},iuniqueEqIndex+1,itempvars);       
+    // failure
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"when equations currently only supported on form v = ..."});
+      then
+        fail();
+  end matchcontinue;
+end createSingleWhenEqnCode;
 
 
 protected function createSingleComplexEqnCode

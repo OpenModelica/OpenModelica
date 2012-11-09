@@ -1091,7 +1091,12 @@ algorithm
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);        
       then
-        BackendDAE.SINGLECOMPLEXEQUATION(compelem,varindxs);        
+        BackendDAE.SINGLECOMPLEXEQUATION(compelem,varindxs);
+    case (compelem::{},BackendDAE.WHEN_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
+      equation
+        varindxs = List.map(var_varindx_lst,Util.tuple22);        
+      then
+        BackendDAE.SINGLEWHENEQUATION(compelem,varindxs);                
     case (compelem::{},_,(_,v)::{},_,_,_,ass2,false)
       then BackendDAE.SINGLEEQUATION(compelem,v);        
     case (comp,eqn_lst,var_varindx_lst,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared,ass1,ass2,false)
@@ -1136,7 +1141,7 @@ algorithm
         msg = msg +& "\n" +& stringDelimitList(slst,"\n");
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
-        fail();            
+        fail();
     else
       equation
         msg = "BackendDAETransform.analyseStrongComponentBlock failed";
@@ -1321,6 +1326,13 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
         ({eqn},varlst,e);
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst),eqns,vars)
+      equation
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+      then
+        ({eqn},varlst,e);
     case (BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst),eqns,vars) 
       equation
         eqnlst = BackendEquation.getEqns(elst,eqns);        
@@ -1415,6 +1427,9 @@ algorithm
       then
         ({e},vlst);
     case BackendDAE.SINGLECOMPLEXEQUATION(eqn=e,vars=vlst)
+      then
+        ({e},vlst);
+    case BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst)
       then
         ({e},vlst);
     case BackendDAE.TORNSYSTEM(tearingvars=vlst, residualequations=elst, otherEqnVarTpl=eqnvartpllst)

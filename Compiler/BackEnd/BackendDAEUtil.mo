@@ -8574,13 +8574,18 @@ algorithm
       equation
         i = listLength(ilst);
         outInt = countComponents(comps,inInt+i);
-      then outInt;        
+      then outInt;
+    case (BackendDAE.SINGLEWHENEQUATION(vars=ilst)::comps,_)
+      equation
+        i = listLength(ilst);
+        outInt = countComponents(comps,inInt+i);
+      then outInt;
     case (BackendDAE.TORNSYSTEM(tearingvars=ilst,otherEqnVarTpl=eqnvartpllst)::comps,_)
       equation
         i = listLength(ilst);
         i1 = listLength(List.flatten(List.map(eqnvartpllst,Util.tuple22)));
         outInt = countComponents(comps,inInt+i+i1);
-      then outInt; 
+      then outInt;
   end match;
 end countComponents;
 

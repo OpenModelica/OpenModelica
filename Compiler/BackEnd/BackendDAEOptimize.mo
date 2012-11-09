@@ -1135,7 +1135,11 @@ algorithm
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest,_,_,_,_) 
         // ToDo: check also this one     
       then 
-         traverseComponents(rest,inFunc,inTypeA,icompflag,mark);   
+         traverseComponents(rest,inFunc,inTypeA,icompflag,mark);
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=e)::rest,_,_,_,_) 
+        // ToDo: check also this one     
+      then 
+         traverseComponents(rest,inFunc,inTypeA,icompflag,mark);
     case (_::rest,_,_,_,_) 
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -1382,6 +1386,14 @@ algorithm
         vars = List.map1r(vars,arrayGet,varindxs);
         vars = List.select1(vars,intGt,0);
         comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLECOMPLEXEQUATION(e,vars), iAcc);
+      then
+        comps;
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vars),_,_,_)
+      equation
+        e = eqnindxs[e];
+        vars = List.map1r(vars,arrayGet,varindxs);
+        vars = List.select1(vars,intGt,0);
+        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEWHENEQUATION(e,vars), iAcc);
       then
         comps;
     case (BackendDAE.TORNSYSTEM(tearingvars=vars,residualequations=eqns,otherEqnVarTpl=eqnvartpllst,linear=b),_,_,_)
@@ -4366,16 +4378,19 @@ algorithm
         {e};
     case (BackendDAE.EQUATIONSYSTEM(eqns=elst))
       then
-        elst;        
+        elst;
     case (BackendDAE.SINGLEARRAY(eqn=e))
       then
         {e};
     case (BackendDAE.SINGLEALGORITHM(eqn=e))
       then
-        {e};  
+        {e};
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e))
       then
-        {e};               
+        {e};
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=e))
+      then
+        {e};
   end match;
 end getEqnIndxFromComp;
 
@@ -6474,6 +6489,21 @@ algorithm
         dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
         List.map_0(dumpList, BackendDump.dumpIncidenceRow);
         print("\n\n");
+        */        
+        result = getSparsePattern(rest,result,inMatrix,inMatrixT);  
+      then result;
+    case(BackendDAE.SINGLEWHENEQUATION(eqn=eqn,vars=vars)::rest,result,_,_)
+      equation
+        //print("SINGLEWHENEQUATION update: ");
+        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
+        rowElements = List.unionList(rowElementsList);
+        eqnlst = arrayGet(result, eqn);
+        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n"); 
         */        
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);  
       then result;
@@ -11473,6 +11503,12 @@ algorithm
       then 
          countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=e)::rest,_,_,_)
+      equation 
+         eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
+      then 
+         countOperationstraverseComps(rest,isyst,ishared,tpl);
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=e)::rest,_,_,_)
       equation 
          eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);

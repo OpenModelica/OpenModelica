@@ -1098,7 +1098,17 @@ algorithm
         dumpEqns({eqn});    
         dumpEqnsSolved2(rest,eqns,vars);
       then 
-        ();  
+        ();
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=e,vars=vlst)::rest,_,_) 
+      equation
+        print("WhenEquation:\n");
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        dumpVars(varlst);
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        dumpEqns({eqn});    
+        dumpEqnsSolved2(rest,eqns,vars);
+      then 
+        ();        
     case (BackendDAE.TORNSYSTEM(tearingvars=vlst,residualequations=elst,otherEqnVarTpl=eqnsvartpllst,linear=b)::rest,_,_) 
       equation
         s = Util.if_(b,"linear","nonlinear");
@@ -2463,6 +2473,18 @@ algorithm
         print("}\n");
       then
         ();
+    case BackendDAE.SINGLEWHENEQUATION(eqn=i,vars=vlst)
+      equation
+        print("WhenEquation ");
+        print(" {");
+        print(intString(i));
+        print(":");
+        ls = List.map(vlst, intString);
+        s = stringDelimitList(ls, ", ");
+        print(s);
+        print("}\n");
+      then
+        ();        
     case BackendDAE.TORNSYSTEM(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst,linear=b)
       equation
         print("{{");
@@ -2567,6 +2589,14 @@ algorithm
         s2 = stringAppendList({"ComplexEquation ",sl," {",s,"}"});
       then
         s2;
+    case BackendDAE.SINGLEWHENEQUATION(eqn=i,vars=vlst)
+      equation
+        ls = List.map(vlst, intString);
+        s = stringDelimitList(ls, ", ");
+        sl = intString(i); 
+        s2 = stringAppendList({"WhenEquation ",sl," {",s,"}"});
+      then
+        s2;        
    case BackendDAE.TORNSYSTEM(residualequations=ilst,tearingvars=vlst,otherEqnVarTpl=eqnvartpllst,linear=b)
       equation
         ls = List.map(eqnvartpllst, printTpl);
@@ -2732,6 +2762,9 @@ algorithm
     case (BackendDAE.SINGLECOMPLEXEQUATION(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys,teqsys))
       then 
         ((seq,salg,sarr,sce+1,eqsys,meqsys,teqsys));
+    case (BackendDAE.SINGLEWHENEQUATION(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys,teqsys))
+      then 
+        ((seq+1,salg,sarr,sce,eqsys,meqsys,teqsys));
     case (BackendDAE.EQUATIONSYSTEM(eqns=ilst,jacType=BackendDAE.JAC_CONSTANT()),(seq,salg,sarr,sce,(e_jc,e_jt,e_jn,e_nj),meqsys,teqsys))
       equation
         e = listLength(ilst);
@@ -2767,6 +2800,11 @@ algorithm
         d = listLength(ilst);
       then 
         ((seq,salg,sarr,sce,eqsys,(m_se,m_salg,m_sarr,d::m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys));
+    case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.SINGLEWHENEQUATION(eqn=_),disc_eqns=ilst),(seq,salg,sarr,sce,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys))
+      equation
+        d = listLength(ilst);
+      then 
+        ((seq,salg,sarr,sce,eqsys,(d::m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys));
     case (BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=BackendDAE.EQUATIONSYSTEM(eqns=ilst1,jacType=BackendDAE.JAC_CONSTANT()),disc_eqns=ilst),(seq,salg,sarr,sce,eqsys,(m_se,m_salg,m_sarr,m_sec,me_jc,me_jt,me_jn,me_nj,me_lt,me_nt),teqsys))
       equation
         d = listLength(ilst);
