@@ -165,6 +165,7 @@ public slots:
   void openIconAttributes();
 protected:
   virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
+  virtual void mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event);
   virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
   virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
   virtual void contextMenuEvent(QGraphicsSceneContextMenuEvent *event);

@@ -464,6 +464,11 @@ void Component::mousePressEvent(QGraphicsSceneMouseEvent *event)
   }
 }
 
+void Component::mouseDoubleClickEvent(QGraphicsSceneMouseEvent *event)
+{
+  openIconProperties();
+}
+
 //! Event when mouse cursor enters component icon.
 void Component::hoverEnterEvent(QGraphicsSceneHoverEvent *event)
 {
@@ -1183,7 +1188,7 @@ void Component::getClassComponents(QString className, int type, Component *pPare
 
 //! this function is called when we need to create a copy of one component
 void Component::copyClassComponents(Component *pComponent)
-{ 
+{
   foreach(Component *inheritance, pComponent->mpInheritanceList)
   {
     Component *inheritanceComponent = new Component(inheritance->mAnnotationString, inheritance->mClassName, inheritance->mType,
