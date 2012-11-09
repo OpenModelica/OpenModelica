@@ -204,6 +204,7 @@ QStringList StringHandler::getStrings(QString value, char start, char end)
   QStringList list;
   bool mask = false;
   bool inString = false;
+  char StringEnd;
   int begin = 0;
   int ele = 0;
 
@@ -221,7 +222,7 @@ QStringList StringHandler::getStrings(QString value, char start, char end)
         {
           mask = true;
         }
-        else if (value.at(i) == '"')
+        else if (value.at(i) == StringEnd)
         {
           inString = false;
         }
@@ -231,6 +232,12 @@ QStringList StringHandler::getStrings(QString value, char start, char end)
     {
       if (value.at(i) == '"')
       {
+          StringEnd = '"';
+          inString = true;
+      }
+      else if (value.at(i) == '\'')
+      {
+          StringEnd = '\'';
           inString = true;
       }
       else if (value.at(i) == ',')
