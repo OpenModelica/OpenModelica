@@ -1513,7 +1513,7 @@ algorithm
       String s;
       Absyn.Path functionName;
       HashTableCrToExpSourceTpl.HashTable ht;
-      list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;      
+      list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;
 
     case ({},_,_,_,_) then (iEquationLst,iReinitStatementLst);
     case (DAE.EQUEQUATION(cr1 = cr,cr2 = cr2, source = source) :: xs,_,_,_,_)
@@ -1619,6 +1619,9 @@ algorithm
 end lowerWhenEqn2;
 
 protected function lowerWhenIfEqns2
+"function: lowerWhenIfEqns
+  autor: Frenkel TUD 2012-11
+  helper for lowerWhen"
   input list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;
   input DAE.Exp inCond;
   input DAE.ElementSource iSource;
@@ -1628,7 +1631,7 @@ algorithm
   outEqns := match(crexplst,inCond,iSource,inEqns)
     local
       DAE.ComponentRef cr;
-      DAE.Exp e,crexp;
+      DAE.Exp e;
       DAE.ElementSource source;
       list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> rest;
     case ({},_,_,_)
@@ -1644,7 +1647,7 @@ end lowerWhenIfEqns2;
 
 protected function lowerWhenIfEqns
 "function: lowerWhenIfEqns
-  autor: Frenkel TUD 2012-10
+  autor: Frenkel TUD 2012-11
   helper for lowerWhen"
   input list<DAE.Exp> conditions;
   input list<list<DAE.Element>> theneqns;
@@ -1672,7 +1675,7 @@ end lowerWhenIfEqns;
 
 protected function lowerWhenIfEqns1
 "function: simplifySolvedIfEqns1
-  autor: Frenkel TUD 2012-10
+  autor: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input DAE.Exp condition;
   input list<DAE.Element> brancheqns;
@@ -1688,7 +1691,8 @@ algorithm
       HashTableCrToExpSourceTpl.HashTable ht;
       list<DAE.Element> rest,eqns;
       list<list<DAE.Element>> eqnslst;
-      list<DAE.Exp> expl;      
+      list<DAE.Exp> expl;
+      list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;      
     case (_,{},_,_)
       then
         iHt;
@@ -1746,16 +1750,50 @@ algorithm
     case (_,DAE.IF_EQUATION(condition1=expl,equations2=eqnslst,equations3=eqns, source = source)::rest,_,_)
       equation
         (expl,source,_) = Inline.inlineExps(expl, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        ht = lowerWhenIfEqnsElse(eqns,functionTree,iHt);
+        ht = HashTableCrToExpSourceTpl.emptyHashTable();
+        ht = lowerWhenIfEqnsElse(eqns,functionTree,ht);
         ht = lowerWhenIfEqns(listReverse(expl),listReverse(eqnslst),functionTree,ht);
+        crexplst = BaseHashTable.hashTableList(ht);
+        ht = lowerWhenIfEqnsMergeNestedIf(crexplst,condition,source,iHt);
       then
         lowerWhenIfEqns1(condition,rest,functionTree,ht);
   end match;
 end lowerWhenIfEqns1;
 
+protected function lowerWhenIfEqnsMergeNestedIf
+"function: lowerWhenIfEqnsMergeNestedIf
+  autor: Frenkel TUD 2012-11
+  helper for lowerWhenIfEqns"
+  input list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;
+  input DAE.Exp inCond;
+  input DAE.ElementSource iSource;
+  input HashTableCrToExpSourceTpl.HashTable iHt;
+  output HashTableCrToExpSourceTpl.HashTable oHt;
+algorithm
+  oHt := match(crexplst,inCond,iSource,iHt)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e,exp;
+      DAE.ElementSource source,source1;
+      list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> rest;
+      HashTableCrToExpSourceTpl.HashTable ht;
+    case ({},_,_,_)
+      then
+        iHt;
+    case ((cr,(e,source))::rest,_,_,_)
+      equation
+        ((exp,source1)) = BaseHashTable.get(cr, iHt);
+        exp = DAE.IFEXP(inCond, e, exp);
+        source = DAEUtil.mergeSources(iSource,source);
+        ht = BaseHashTable.add((cr,(exp,source)), iHt);
+      then
+       lowerWhenIfEqnsMergeNestedIf(rest,inCond,iSource,ht);       
+  end match;
+end lowerWhenIfEqnsMergeNestedIf;
+
 protected function lowerWhenIfEqnsElse
 "function: lowerWhenIfEqnsElse
-  autor: Frenkel TUD 2012-10
+  autor: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input list<DAE.Element> elseenqs;
   input DAE.FunctionTree functionTree; 
