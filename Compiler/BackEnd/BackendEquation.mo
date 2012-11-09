@@ -1826,7 +1826,7 @@ algorithm
         size;
     case BackendDAE.SOLVED_EQUATION(source=_) then 1;
     case BackendDAE.RESIDUAL_EQUATION(source=_) then 1;
-    case BackendDAE.WHEN_EQUATION(size=size) then 1;
+    case BackendDAE.WHEN_EQUATION(size=size) then size;
     case BackendDAE.ALGORITHM(size=size) then size;
     case BackendDAE.COMPLEX_EQUATION(size=size) then size;
     case BackendDAE.IF_EQUATION(eqnsfalse=eqnsfalse)
