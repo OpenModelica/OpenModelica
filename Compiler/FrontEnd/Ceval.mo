@@ -1045,6 +1045,7 @@ algorithm
     case "promote" then cevalBuiltinPromote;
     case "String" then cevalBuiltinString;
     case "Integer" then cevalBuiltinIntegerEnumeration;
+    case "EnumToInteger" then cevalBuiltinIntegerEnumeration;
     case "rooted" then cevalBuiltinRooted; //
     case "cross" then cevalBuiltinCross;
     case "fill" then cevalBuiltinFill;

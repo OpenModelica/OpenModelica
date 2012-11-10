@@ -4705,7 +4705,7 @@ protected function elabBuiltinIntegerEnum
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) := match (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
     local
       DAE.Exp s1_1;
       list<Env.Frame> env;
@@ -4719,7 +4719,12 @@ algorithm
         (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"Integer",pre,info);
       then
         (cache,s1_1,prop);
-  end match;
+    case (cache,env,{s1},_,impl,pre,_)
+      equation
+        (cache,s1_1,prop) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isEnumeration,"EnumToInteger",pre,info);
+      then
+        (cache,s1_1,prop);
+  end matchcontinue;
 end elabBuiltinIntegerEnum;
 
 protected function elabBuiltinDiagonal "function: elabBuiltinDiagonal
@@ -6166,6 +6171,7 @@ algorithm
     case "String" then elabBuiltinString;
     case "rooted" then elabBuiltinRooted;
     case "Integer" then elabBuiltinIntegerEnum;
+    case "EnumToInteger" then elabBuiltinIntegerEnum;
     case "inStream" then elabBuiltinInStream;
     case "actualStream" then elabBuiltinActualStream;
     case "getInstanceName" then elabBuiltinGetInstanceName;
