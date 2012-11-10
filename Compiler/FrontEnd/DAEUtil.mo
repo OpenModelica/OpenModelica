@@ -2288,6 +2288,7 @@ algorithm
       Integer i;
       Option<DAE.Exp> eopt_1,eopt;
       DAE.CallAttributes attr;
+      Option<tuple<DAE.Exp,Integer,Integer>> optionExpisASUB;
     
     case (DAE.CREF(componentRef = cr,ty = t))
       equation
@@ -2317,12 +2318,12 @@ algorithm
         e_1 = toModelicaFormExp(e);
       then
         DAE.LUNARY(op,e_1);
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2,index=i,optionExpisASUB=optionExpisASUB))
       equation
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
       then
-        DAE.RELATION(e1_1,op,e2_1,-1,NONE());
+        DAE.RELATION(e1_1,op,e2_1,i,optionExpisASUB);
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation
         e1_1 = toModelicaFormExp(e1);
