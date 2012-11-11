@@ -1910,38 +1910,24 @@ public function aliasEquation
   Returns the two sides of an alias equation as expressions and cref.
   If the equation is not simple, this function will fail."
   input BackendDAE.Equation eqn;
-  output DAE.ComponentRef cr1;
-  output DAE.ComponentRef cr2;
-  output DAE.Exp e1;
-  output DAE.Exp e2;
-  output Boolean negate;
+  output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
 algorithm
-  (cr1,cr2,e1,e2,negate) := match (eqn)
+  outTpls := match (eqn)
     local
-      DAE.Exp e;
+      DAE.Exp e,e1,e2;
       DAE.ComponentRef cr;
     case (BackendDAE.EQUATION(exp=e1,scalar=e2))
-      equation
-        (cr1,cr2,e1,e2,negate) = aliasEquation1(e1,e2);
-      then (cr1,cr2,e1,e2,negate);
+      then aliasEquation1(e1,e2,{});
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
-      equation
-        (cr1,cr2,e1,e2,negate) = aliasEquation1(e1,e2);
-      then (cr1,cr2,e1,e2,negate);
+      then aliasEquation1(e1,e2,{});
     case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2))
       equation
         e = Expression.crefExp(cr);
-        (cr1,cr2,e1,e2,negate) = aliasEquation1(e,e2);
-      then (cr1,cr2,e1,e2,negate);
+      then aliasEquation1(e,e2,{});
     case (BackendDAE.RESIDUAL_EQUATION(exp=e1))
-      equation
-        (e,_) = Expression.makeZeroExpression(Expression.arrayDimension(Expression.typeof(e1)));
-        (cr1,cr2,e1,e2,negate) = aliasEquation1(e1,e);
-      then (cr1,cr2,e1,e2,negate);
+      then aliasExpression(e1,{});
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
-      equation
-        (cr1,cr2,e1,e2,negate) = aliasEquation1(e1,e2);
-      then (cr1,cr2,e1,e2,negate);        
+      then aliasEquation1(e1,e2,{});      
   end match;
 end aliasEquation;
 
@@ -1951,119 +1937,154 @@ protected function aliasEquation1
   helper for aliasEquation"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
-  output DAE.ComponentRef cr1;
-  output DAE.ComponentRef cr2;
-  output DAE.Exp oExp1 "cr2=oExp1";
-  output DAE.Exp oExp2 "cr1=oExp2";
-  output Boolean negate "true if negated alias";
+  input list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> inTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+  output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
 algorithm
-  (cr1,cr2,oExp1,oExp2,negate) := match (lhs,rhs)
+  outTpls := match (lhs,rhs,inTpls)
       local
+        DAE.ComponentRef cr1,cr2;
         DAE.Exp e,e1,e2,ne,ne1;
         DAE.Type ty;
+        list<DAE.Exp> elst1,elst2;
+        list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
+        list<DAE.Var> varLst1,varLst2;
+        Absyn.Path patha,patha1,pathb,pathb1;
       // a = b;
-      case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2))
-        then (cr1,cr2,lhs,rhs,false);
+      case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2),_)
+        then (cr1,cr2,lhs,rhs,false)::inTpls;
       // a = -b;
-      case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr2)))
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),lhs),rhs,true);
-      case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(ty),DAE.CREF(componentRef = cr2)))
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),lhs),rhs,true);
+      case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),lhs),rhs,true)::inTpls;
+      case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(ty),DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),lhs),rhs,true)::inTpls;
       // -a = b;
-      case (DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2))
-        then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS(ty),rhs),true);
-      case (DAE.UNARY(DAE.UMINUS_ARR(ty),e1 as DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2))
-        then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS_ARR(ty),rhs),true);
+      case (DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
+        then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS(ty),rhs),true)::inTpls;
+      case (DAE.UNARY(DAE.UMINUS_ARR(ty),e1 as DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
+        then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS_ARR(ty),rhs),true)::inTpls;
       // -a = -b;
-      case (DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)))
-        then (cr1,cr2,e1,e2,false);
-      case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)))
-        then (cr1,cr2,e1,e2,false);
-      // a + b = 0
-      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+      case (DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,e2,false)::inTpls;
+      case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,e2,false)::inTpls;
+      // lhs = 0
+      case (_,_,_)
         equation
           true = Expression.isZero(rhs);
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true);
-      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
-        equation
-          true = Expression.isZero(rhs);
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true);
-      // a - b = 0
-      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
-        equation
-          true = Expression.isZero(rhs);
-        then (cr1,cr2,e1,e2,false);
-      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
-        equation
-          true = Expression.isZero(rhs);
-        then (cr1,cr2,e1,e2,false);
-      // -a + b = 0
-      case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
-        equation
-          true = Expression.isZero(rhs);
-        then (cr1,cr2,e1,e2,false);
-      case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
-        equation
-          true = Expression.isZero(rhs);
-        then (cr1,cr2,e1,e2,false);
-      // -a - b = 0
-      case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
-        equation
-          true = Expression.isZero(rhs);
-        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true);
-      case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
-        equation
-          true = Expression.isZero(rhs);
-        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true);
-      // 0 = a + b 
-      case (_,DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)))
+        then aliasExpression(lhs,inTpls);
+      // 0 = rhs
+      case (_,_,_)
         equation
           true = Expression.isZero(lhs);
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true);
-      case (_,DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)))
-        equation
-          true = Expression.isZero(lhs);
-        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true);
-      // 0 = a - b 
-      case (_,DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)))
-        equation
-          true = Expression.isZero(lhs);
-        then (cr1,cr2,e1,e2,false);
-      case (_,DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)))
-        equation
-          true = Expression.isZero(lhs);
-        then (cr1,cr2,e1,e2,false);
-      // 0 = -a + b 
-      case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)))
-        equation
-          true = Expression.isZero(lhs);
-        then (cr1,cr2,e1,e2,false);
-      case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)))
-        equation
-          true = Expression.isZero(lhs);
-        then (cr1,cr2,e1,e2,false);
-      // 0 = -a - b 
-      case (_,DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=ty),e2 as DAE.CREF(componentRef = cr2)))
-        equation
-          true = Expression.isZero(lhs);
-        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true);
-      case (_,DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)))
-        equation
-          true = Expression.isZero(lhs);
-        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true);
+        then aliasExpression(rhs,inTpls);
       // a = not b;
-      case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr2)))
-        then (cr1,cr2,DAE.LUNARY(DAE.NOT(ty),lhs),rhs,true);
+      case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,DAE.LUNARY(DAE.NOT(ty),lhs),rhs,true)::inTpls;
       // not a = b;
-      case (DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2))
+      case (DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
         equation
           ne = Expression.negate(rhs);
-        then (cr1,cr2,lhs,DAE.LUNARY(DAE.NOT(ty),rhs),true);
+        then (cr1,cr2,lhs,DAE.LUNARY(DAE.NOT(ty),rhs),true)::inTpls;
       // not a = not b;
-      case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)))
-        then (cr1,cr2,e1,e2,false);
+      case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,e2,false)::inTpls;
+      // {a1,a2,a3,..} = {b1,b2,b3,..};
+      case (DAE.ARRAY(array = elst1),DAE.ARRAY(array = elst2),_)
+        then List.threadFold(elst1,elst2,aliasEquation1,inTpls);     
+      // {a1+b1,a2+b2,a3+b3,..} = 0;
+      case (DAE.ARRAY(array = elst1),_,_)
+        equation
+          true = Expression.isZero(rhs);  
+        then List.fold(elst1,aliasExpression,inTpls); 
+      // 0 = {a1+b1,a2+b2,a3+b3,..};
+      case (_,DAE.ARRAY(array = elst2),_)
+        equation
+          true = Expression.isZero(lhs);  
+        then List.fold(elst2,aliasExpression,inTpls);
+      // a = {b1,b2,b3,..}
+      //case (DAE.CREF(componentRef = cr1),DAE.ARRAY(array = elst2),_)
+      // -a = {b1,b2,b3,..}
+      //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2),_)
+      // a = -{b1,b2,b3,..}
+      //case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2)),_)
+      // -a = -{b1,b2,b3,..}
+      //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2)),_)
+      // {a1,a2,a3,..} = b      
+      //case (DAE.ARRAY(array = elst1),DAE.CREF(componentRef = cr2),_)
+      // -{a1,a2,a3,..} = b      
+      //case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst1)),DAE.CREF(componentRef = cr2),_)
+      // {a1,a2,a3,..} = -b      
+      //case (DAE.ARRAY(array = elst1),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_)
+      // -{a1,a2,a3,..} = -b      
+      //case (DAE.UNARY(DAE.UMINUS_ARR(_)DAE.ARRAY(array = elst1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_)
+      // not a = {b1,b2,b3,..}
+      //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2),_)
+      // a = not {b1,b2,b3,..}
+      //case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2)),_)
+      // not a = not {b1,b2,b3,..}
+      //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2)),_)
+      // {a1,a2,a3,..} = not b      
+      //case (DAE.ARRAY(array = elst1),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
+      // not {a1,a2,a3,..} = b      
+      //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1)),DAE.CREF(componentRef = cr2),_)
+      // not {a1,a2,a3,..} = not b      
+      //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
+      // a = Record(b1,b2,b3,..)
+      //case (DAE.CREF(componentRef = cr1),DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(pathb1)))),_)
+      //equation
+      //  true = Absyn.pathEqual(pathb,pathb1);
+      // Record(a1,a2,a3,..) = b  
+      //case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(patha1)))),DAE.CREF(componentRef = cr2),_)
+      //equation
+      //  true = Absyn.pathEqual(patha,patha1);
+      // Record(a1,a2,a3,..) = Record(b1,b2,b3,..)
+      case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))),
+            DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))),_)
+        equation
+          true = Absyn.pathEqual(patha,patha1);
+          true = Absyn.pathEqual(pathb,pathb1);
+        then List.threadFold(elst1,elst2,aliasEquation1,inTpls); 
   end match;
 end aliasEquation1;
+
+protected function aliasExpression
+"function aliasExpression
+  autor Frenkel TUD 2011-11
+  Returns the two sides of an alias expression as expressions and cref.
+  If the expression is not simple, this function will fail."
+  input DAE.Exp exp;
+  input list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> inTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+  output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+algorithm
+  outTpls := match (exp,inTpls)
+      local
+        DAE.ComponentRef cr1,cr2;
+        DAE.Exp e,e1,e2,ne,ne1;
+        DAE.Type ty;
+        list<DAE.Exp> elst1,elst2;
+        list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
+      // a + b
+      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true)::inTpls;
+      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true)::inTpls;
+      // a - b 
+      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,e2,false)::inTpls;
+      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,e2,false)::inTpls;
+      // -a + b
+      case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,e2,false)::inTpls;
+      case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,e2,false)::inTpls;
+      // -a - b = 0
+      case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true)::inTpls;
+      case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true)::inTpls;
+  end match;
+end aliasExpression;
 
 public function derivativeEquation
 "function derivativeEquation

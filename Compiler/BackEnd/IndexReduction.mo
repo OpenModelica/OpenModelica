@@ -471,7 +471,7 @@ algorithm
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         // is alias State
-        (cr1,cr2,exp1,exp2,negate) = BackendEquation.aliasEquation(eqn);
+        ((cr1,cr2,exp1,exp2,negate)::{}) = BackendEquation.aliasEquation(eqn);
         (var1::_,i1::_) = BackendVariable.getVar(cr1,v);
         (var2::_,i2::_) = BackendVariable.getVar(cr2,v);
         b1 = BackendVariable.isStateVar(var1);

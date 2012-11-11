@@ -824,7 +824,7 @@ algorithm
     // a = b 
     case ({var,var2},eqn as BackendDAE.EQUATION(source=source),syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared)
       equation
-        (cr,cr2,e1,e2,negate) = BackendEquation.aliasEquation(eqn);
+        ((cr,cr2,e1,e2,negate)::{}) = BackendEquation.aliasEquation(eqn);
         // select candidate
         (cr,es,k,syst,shared) = selectAlias(cr,cr2,e1,e2,syst,shared,negate,source);
         selfgenerated = BackendVariable.selfGeneratedVar(cr);
@@ -1832,7 +1832,7 @@ algorithm
     // a = b 
     case (eqn,var,i,cr,es,source,syst as BackendDAE.EQSYSTEM(orderedEqs=eqns),shared)
       equation
-        (cr,cr2,e1,e2,negate) = BackendEquation.aliasEquation(eqn);
+        ((cr,cr2,e1,e2,negate)::{}) = BackendEquation.aliasEquation(eqn);
         // select candidate
         (cr,es,k,syst,shared) = selectAlias(cr,cr2,e1,e2,syst,shared,negate,source);
         selfgenerated = BackendVariable.selfGeneratedVar(cr);
@@ -2431,7 +2431,7 @@ algorithm
         pos_1 = pos-1;
         eqns = BackendEquation.daeEqns(syst);
         (eqn as BackendDAE.EQUATION(source=source)) = BackendDAEUtil.equationNth(eqns,pos_1);
-        (_,_,_,_,_) = BackendEquation.aliasEquation(eqn);
+        _ = BackendEquation.aliasEquation(eqn);
       then ();
   end matchcontinue;
 end countsimpleEquation;
@@ -13047,7 +13047,7 @@ algorithm
     case ({},_,_,_,_) then (listReverse(iAcc),iInitalAliases,iOptimizationfound);
     case ((eqn as BackendDAE.EQUATION(exp=e1,scalar=e2))::eqnslst,_,_,_,_)
       equation
-        (cr1,cr2,e1,e2,negate) = BackendEquation.aliasEquation(eqn);
+        ((cr1,cr2,e1,e2,negate)::{}) = BackendEquation.aliasEquation(eqn);
         initalAliases = addInitialAlias(cr1,cr2,e1,e2,negate,knvars,iInitalAliases);
         (eqnslst1,initalAliases,optimizationfound) = optimizeInitialSystem1(eqnslst,knvars,initalAliases,iAcc,true);
        then
