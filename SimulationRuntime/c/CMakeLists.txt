@@ -281,6 +281,27 @@ ENDMACRO(BUILDMODELMOS)
 # MACRO BUILDMODEL
 MACRO(BUILDMODELFMU model dir Flags CSRC)
 
+IF(WIN32)
+  SET(COPY copy)
+else(WIN32)
+  SET(COPY cp)
+endif(WIN32)
+
+IF(SUNDIALS_INCLUDE_DIR AND
+   SUNDIALS_LIBRARY_CVODE AND
+   SUNDIALS_LIBRARY_IDA AND
+   SUNDIALS_LIBRARY_NVEC AND
+   SUNDIALS_KINSOL)
+
+  INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
+
+ENDIF(SUNDIALS_INCLUDE_DIR AND
+      SUNDIALS_LIBRARY_CVODE AND
+      SUNDIALS_LIBRARY_IDA AND
+   SUNDIALS_LIBRARY_NVEC AND 
+   SUNDIALS_KINSOL)
+
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
@@ -327,9 +348,9 @@ MACRO(BUILDMODELFMU model dir Flags CSRC)
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/c_runtime/fmu_model_interface.h
-                   ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
-				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmu_model_interface.h
+                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelFunctions.h
+				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
   
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
   TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization)
@@ -347,6 +368,27 @@ ENDMACRO(BUILDMODELFMU)
 # MACRO BUILDMODEL
 MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
 
+IF(WIN32)
+  SET(COPY copy)
+else(WIN32)
+  SET(COPY cp)
+endif(WIN32)
+
+IF(SUNDIALS_INCLUDE_DIR AND
+   SUNDIALS_LIBRARY_CVODE AND
+   SUNDIALS_LIBRARY_IDA AND
+   SUNDIALS_LIBRARY_NVEC AND
+   SUNDIALS_KINSOL)
+
+  INCLUDE_DIRECTORIES(${SUNDIALS_INCLUDE_DIR})
+  SET(SUNDIALS_LIBRARIES ${SUNDIALS_LIBRARY_CVODE} ${SUNDIALS_LIBRARY_IDA} ${SUNDIALS_LIBRARY_NVEC} ${SUNDIALS_KINSOL}) 
+
+ENDIF(SUNDIALS_INCLUDE_DIR AND
+      SUNDIALS_LIBRARY_CVODE AND
+      SUNDIALS_LIBRARY_IDA AND
+   SUNDIALS_LIBRARY_NVEC AND 
+   SUNDIALS_KINSOL)
+
   # includes
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/linearization)
@@ -358,8 +400,8 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/libf2c)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/results)
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/simulation/solver/initialization)
-  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/simulation/solver/initialization)
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/c/util) 
   INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/SimulationRuntime/fmi/export) 
 
   # OMDEV PATH
@@ -370,33 +412,34 @@ MACRO(BUILDMODELFMUMOS model mos Flags CSRC)
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/expat-win32-msvc)  
  
-  SET(OMC_MODELNAME ${model})  
+  STRING(REPLACE "." "_" FMU_MODELNAME ${model})
   # generate model.mos 
   
   # Variablen fuer openmodelica2sarturis
-  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.c
-                 ${CMAKE_CURRENT_BINARY_DIR}/${model}_init.txt)
-  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
-                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_FMU.c
-  #               ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
-				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.h
-				  ${CMAKE_CURRENT_BINARY_DIR}/${model}_records.c)
+  SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}.c
+                 ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_functions.c
+                 ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_init.txt)
+  SET(OMC_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}.c
+                  ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_FMU.c
+  #               ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_functions.cpp
+				  ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_functions.h
+				  ${CMAKE_CURRENT_BINARY_DIR}/${FMU_MODELNAME}_records.c)
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
                      COMMAND ${OMC_DEBUG} ${Flags} ${mos}
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                     COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
+                     COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG} in ${CMAKE_CURRENT_BINARY_DIR}")
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/c_runtime/fmu_model_interface.h
-                   ${OMCTRUNCHOME}/c_runtime/fmiModelFunctions.h
-				   ${OMCTRUNCHOME}/c_runtime/fmiModelTypes.h)
+  SET(OMC_FMU_CODE ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmu_model_interface.h
+                   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelFunctions.h
+				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
   
-  ADD_DEFINITIONS(/TP ${model}.c)
+  ADD_DEFINITIONS(/TP ${FMU_MODELNAME}.c)
+  set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta f2c ModelicaExternalC libexpat initialization ${SUNDIALS_LIBRARIES})
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)

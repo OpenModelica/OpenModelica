@@ -60,6 +60,7 @@ extern "C" {
 #include "nonlinearSystem.h"
 
 /* DATA* initializeDataStruc(); */ /*create in model code */
+extern void setupDataStruc(DATA *data);
 extern void setupDataStruc2(DATA *data);
 
 /* Function for calling external object constructors */

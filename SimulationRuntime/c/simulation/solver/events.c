@@ -41,6 +41,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 double bisection(DATA* data, double*, double*, double*, double*, LIST*, LIST*);
 modelica_boolean checkZeroCrossings(DATA *data, LIST *list, LIST*);
@@ -768,3 +771,6 @@ void saveZeroCrossingsAfterEvent(DATA* data)
   }
 }
 
+#ifdef __cplusplus
+}
+#endif

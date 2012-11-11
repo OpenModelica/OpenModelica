@@ -527,6 +527,8 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   //input_function(comp->fmuData);
   /* initial sample and delay before initial the system */
   callExternalObjectConstructors(comp->fmuData);
+  /* allocate memory for non-linear system solvers */
+  allocateNonlinearSystem(comp->fmuData);
   /*TODO: Simulation stop time is need to calculate in before hand all sample events
           We shouldn't generate them all in beforehand */
   initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
@@ -647,6 +649,8 @@ fmiStatus fmiTerminate(fmiComponent c){
 
   /* deinitDelay(comp->fmuData); */
   callExternalObjectDestructors(comp->fmuData);
+  /* free nonlinear system data */
+  freeNonlinearSystem(comp->fmuData);
   deInitializeDataStruc(comp->fmuData);
   comp->functions.freeMemory(comp->fmuData);
 

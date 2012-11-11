@@ -39,6 +39,10 @@
 #include "solver_main.h"
 #include "list.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 modelica_boolean sample(DATA *data, double start, double interval, int hindex);
 void initSample(DATA *data, double start, double stop);
 modelica_boolean activateSampleEvents(DATA *data);
@@ -53,5 +57,9 @@ int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime);
 int handleSampleEvent(DATA* data);
 
 void findRoot(DATA *data, LIST *eventList, double*);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
