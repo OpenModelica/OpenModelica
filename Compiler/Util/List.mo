@@ -4148,6 +4148,33 @@ algorithm
   end match;
 end map2AllValue;
 
+public function mapListAllValueBool
+  "Same as mapAllValue, but returns true or false instead of succeeding or
+  failing."
+  input list<list<ElementInType>> inList;
+  input MapFunc inMapFunc;
+  input ValueType inValue;
+  output Boolean outAllValue;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outAllValue := matchcontinue(inList, inMapFunc, inValue)
+    local
+      list<ElementInType> lst;
+      list<list<ElementInType>> rest;
+    case ({},_,_) then true;
+    case (lst::rest, _, _)
+      equation
+        mapAllValue(lst, inMapFunc, inValue);
+      then
+        mapListAllValueBool(rest, inMapFunc, inValue);
+    else false;
+  end matchcontinue;
+end mapListAllValueBool;
+
 public function foldAllValue
   "Applies a function to all elements in the lists, and fails if not all
    elements are equal to the given value. This function also takes an extra

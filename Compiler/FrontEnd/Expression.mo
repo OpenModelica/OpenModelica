@@ -5810,7 +5810,7 @@ algorithm
     case(DAE.ARRAY(array = ae)) then List.mapAllValueBool(ae,isZero,true);
     
     case (DAE.MATRIX(matrix = matrix))
-      then List.mapAllValueBool(List.flatten(matrix),isZero,true);
+      then List.mapListAllValueBool(matrix,isZero,true);
     
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
     

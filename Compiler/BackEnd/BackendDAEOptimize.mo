@@ -1967,8 +1967,8 @@ protected
   Boolean b1,b2,s1,s2;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars) := syst;
-  ((var1::_),(ipos1::_)) := BackendVariable.getVar(cr1,vars);
-  ((var2::_),(ipos2::_)) := BackendVariable.getVar(cr2,vars);
+  ((var1::{}),(ipos1::{})) := BackendVariable.getVar(cr1,vars);
+  ((var2::{}),(ipos2::{})) := BackendVariable.getVar(cr2,vars);
   s1 := BackendVariable.isStateVar(var1);
   s2 := BackendVariable.isStateVar(var2);
   b1 := replaceableAlias(var1);

@@ -1917,138 +1917,153 @@ public function aliasEquation
   output Boolean negate;
 algorithm
   (cr1,cr2,e1,e2,negate) := match (eqn)
-      local
-        DAE.Exp e,ne,ne1;
-      // a = b;
-      case (BackendDAE.EQUATION(exp=e1 as DAE.CREF(componentRef = cr1),scalar=e2 as  DAE.CREF(componentRef = cr2)))
-        then (cr1,cr2,e1,e2,false);
-      // a = -b;
-      case (BackendDAE.EQUATION(exp=e1 as DAE.CREF(componentRef = cr1),scalar=e2 as  DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr2))))
-        equation
-          ne = Expression.negate(e1);
-        then (cr1,cr2,ne,e2,true);
-      case (BackendDAE.EQUATION(exp=e1 as DAE.CREF(componentRef = cr1),scalar=e2 as  DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr2))))
-        equation
-          ne = Expression.negate(e1);
-        then (cr1,cr2,ne,e2,true);
-      // -a = b;
-      case (BackendDAE.EQUATION(exp=e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),scalar=e2 as  DAE.CREF(componentRef = cr2)))
-        equation
-          ne = Expression.negate(e2);
-        then (cr1,cr2,e1,ne,true);
-      case (BackendDAE.EQUATION(exp=e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),scalar=e2 as  DAE.CREF(componentRef = cr2)))
-        equation
-          ne = Expression.negate(e2);
-        then (cr1,cr2,e1,ne,true);
-      // -a = -b;
-      case (BackendDAE.EQUATION(exp=DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),scalar=DAE.UNARY(DAE.UMINUS(_),e2 as  DAE.CREF(componentRef = cr2))))
-        then (cr1,cr2,e1,e2,false);
-      case (BackendDAE.EQUATION(exp=DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),scalar=DAE.UNARY(DAE.UMINUS_ARR(_),e2 as  DAE.CREF(componentRef = cr2))))
-        then (cr1,cr2,e1,e2,false);
-      // a + b = 0
-      case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
-        equation
-          true = Expression.isZero(e);
-          ne1 = Expression.negate(e1);
-          ne = Expression.negate(e2);
-        then (cr1,cr2,ne1,ne,true);
-      case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
-        equation
-          true = Expression.isZero(e);
-          ne1 = Expression.negate(e1);
-          ne = Expression.negate(e2);
-        then (cr1,cr2,ne1,ne,true);
-      // a - b = 0
-      case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
-        equation
-          true = Expression.isZero(e);
-        then (cr1,cr2,e1,e2,false);
-      case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
-        equation
-          true = Expression.isZero(e);
-        then (cr1,cr2,e1,e2,false);
-      // -a + b = 0
-      case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
-        equation
-          true = Expression.isZero(e);
-          ne = Expression.negate(e1);
-        then (cr1,cr2,ne,e2,false);
-      case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
-        equation
-          true = Expression.isZero(e);
-          ne = Expression.negate(e1);
-        then (cr1,cr2,ne,e2,false);
-      // -a - b = 0
-      case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
-        equation
-          true = Expression.isZero(e);
-          ne = Expression.negate(e2);
-        then (cr1,cr2,e1,ne,true);
-      case (BackendDAE.EQUATION(exp=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),scalar=e))
-        equation
-          true = Expression.isZero(e);
-          ne = Expression.negate(e2);
-        then (cr1,cr2,e1,ne,true);
-      // 0 = a + b 
-      case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2))))
-        equation
-          true = Expression.isZero(e);
-          ne1 = Expression.negate(e1);
-          ne = Expression.negate(e2);
-        then (cr1,cr2,ne1,ne,true);
-      case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2))))
-        equation
-          true = Expression.isZero(e);
-          ne1 = Expression.negate(e1);
-          ne = Expression.negate(e2);
-        then (cr1,cr2,ne1,ne,true);
-      // 0 = a - b 
-      case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2))))
-        equation
-          true = Expression.isZero(e);
-        then (cr1,cr2,e1,e2,false);
-      case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2))))
-        equation
-          true = Expression.isZero(e);
-        then (cr1,cr2,e1,e2,false);
-      // 0 = -a + b 
-      case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2))))
-        equation
-          true = Expression.isZero(e);
-          ne = Expression.negate(e1);
-        then (cr1,cr2,ne,e2,false);
-      case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2))))
-        equation
-          true = Expression.isZero(e);
-          ne = Expression.negate(e1);
-        then (cr1,cr2,ne,e2,false);
-      // 0 = -a - b 
-      case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2))))
-        equation
-          true = Expression.isZero(e);
-          ne = Expression.negate(e2);
-        then (cr1,cr2,e1,ne,true);
-      case (BackendDAE.EQUATION(exp=e,scalar=DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2))))
-        equation
-          true = Expression.isZero(e);
-          ne = Expression.negate(e2);
-        then (cr1,cr2,e1,ne,true);
-      // a = not b;
-      case (BackendDAE.EQUATION(exp=e1 as DAE.CREF(componentRef = cr1),scalar=e2 as  DAE.LUNARY(DAE.NOT(_),DAE.CREF(componentRef = cr2))))
-        equation
-          ne = Expression.negate(e1);
-        then (cr1,cr2,ne,e2,true);
-      // not a = b;
-      case (BackendDAE.EQUATION(exp=e1 as  DAE.LUNARY(DAE.NOT(_),DAE.CREF(componentRef = cr1)),scalar=e2 as  DAE.CREF(componentRef = cr2)))
-        equation
-          ne = Expression.negate(e2);
-        then (cr1,cr2,e1,ne,true);
-      // not a = not b;
-      case (BackendDAE.EQUATION(exp=DAE.LUNARY(DAE.NOT(_),e1 as  DAE.CREF(componentRef = cr1)),scalar=DAE.LUNARY(DAE.NOT(_),e2 as  DAE.CREF(componentRef = cr2))))
-        then (cr1,cr2,e1,e2,false);
-
+    local
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+    case (BackendDAE.EQUATION(exp=e1,scalar=e2))
+      equation
+        (cr1,cr2,e1,e2,negate) = aliasEquation1(e1,e2);
+      then (cr1,cr2,e1,e2,negate);
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2))
+      equation
+        (cr1,cr2,e1,e2,negate) = aliasEquation1(e1,e2);
+      then (cr1,cr2,e1,e2,negate);
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2))
+      equation
+        e = Expression.crefExp(cr);
+        (cr1,cr2,e1,e2,negate) = aliasEquation1(e,e2);
+      then (cr1,cr2,e1,e2,negate);
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e1))
+      equation
+        (e,_) = Expression.makeZeroExpression(Expression.arrayDimension(Expression.typeof(e1)));
+        (cr1,cr2,e1,e2,negate) = aliasEquation1(e1,e);
+      then (cr1,cr2,e1,e2,negate);
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2))
+      equation
+        (cr1,cr2,e1,e2,negate) = aliasEquation1(e1,e2);
+      then (cr1,cr2,e1,e2,negate);        
   end match;
 end aliasEquation;
+
+protected function aliasEquation1
+"function aliasEquation1
+  autor Frenkel TUD 2011-04
+  helper for aliasEquation"
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  output DAE.ComponentRef cr1;
+  output DAE.ComponentRef cr2;
+  output DAE.Exp oExp1 "cr2=oExp1";
+  output DAE.Exp oExp2 "cr1=oExp2";
+  output Boolean negate "true if negated alias";
+algorithm
+  (cr1,cr2,oExp1,oExp2,negate) := match (lhs,rhs)
+      local
+        DAE.Exp e,e1,e2,ne,ne1;
+        DAE.Type ty;
+      // a = b;
+      case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2))
+        then (cr1,cr2,lhs,rhs,false);
+      // a = -b;
+      case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr2)))
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),lhs),rhs,true);
+      case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(ty),DAE.CREF(componentRef = cr2)))
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),lhs),rhs,true);
+      // -a = b;
+      case (DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2))
+        then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS(ty),rhs),true);
+      case (DAE.UNARY(DAE.UMINUS_ARR(ty),e1 as DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2))
+        then (cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS_ARR(ty),rhs),true);
+      // -a = -b;
+      case (DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)))
+        then (cr1,cr2,e1,e2,false);
+      case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)))
+        then (cr1,cr2,e1,e2,false);
+      // a + b = 0
+      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+        equation
+          true = Expression.isZero(rhs);
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true);
+      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+        equation
+          true = Expression.isZero(rhs);
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true);
+      // a - b = 0
+      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
+        equation
+          true = Expression.isZero(rhs);
+        then (cr1,cr2,e1,e2,false);
+      case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
+        equation
+          true = Expression.isZero(rhs);
+        then (cr1,cr2,e1,e2,false);
+      // -a + b = 0
+      case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
+        equation
+          true = Expression.isZero(rhs);
+        then (cr1,cr2,e1,e2,false);
+      case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_)
+        equation
+          true = Expression.isZero(rhs);
+        then (cr1,cr2,e1,e2,false);
+      // -a - b = 0
+      case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+        equation
+          true = Expression.isZero(rhs);
+        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true);
+      case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_)
+        equation
+          true = Expression.isZero(rhs);
+        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true);
+      // 0 = a + b 
+      case (_,DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)))
+        equation
+          true = Expression.isZero(lhs);
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true);
+      case (_,DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)))
+        equation
+          true = Expression.isZero(lhs);
+        then (cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true);
+      // 0 = a - b 
+      case (_,DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)))
+        equation
+          true = Expression.isZero(lhs);
+        then (cr1,cr2,e1,e2,false);
+      case (_,DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)))
+        equation
+          true = Expression.isZero(lhs);
+        then (cr1,cr2,e1,e2,false);
+      // 0 = -a + b 
+      case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)))
+        equation
+          true = Expression.isZero(lhs);
+        then (cr1,cr2,e1,e2,false);
+      case (_,DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)))
+        equation
+          true = Expression.isZero(lhs);
+        then (cr1,cr2,e1,e2,false);
+      // 0 = -a - b 
+      case (_,DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=ty),e2 as DAE.CREF(componentRef = cr2)))
+        equation
+          true = Expression.isZero(lhs);
+        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true);
+      case (_,DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)))
+        equation
+          true = Expression.isZero(lhs);
+        then (cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true);
+      // a = not b;
+      case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr2)))
+        then (cr1,cr2,DAE.LUNARY(DAE.NOT(ty),lhs),rhs,true);
+      // not a = b;
+      case (DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2))
+        equation
+          ne = Expression.negate(rhs);
+        then (cr1,cr2,lhs,DAE.LUNARY(DAE.NOT(ty),rhs),true);
+      // not a = not b;
+      case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)))
+        then (cr1,cr2,e1,e2,false);
+  end match;
+end aliasEquation1;
 
 public function derivativeEquation
 "function derivativeEquation
