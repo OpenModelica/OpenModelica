@@ -1758,7 +1758,7 @@ algorithm
     case (DAE.UNARY(operator = op)) then typeofOp(op);
     case (DAE.LBINARY(operator = op)) then typeofOp(op);
     case (DAE.LUNARY(operator = op)) then typeofOp(op);
-    case (DAE.RELATION(operator = op)) then typeofOp(op);
+    case (DAE.RELATION(operator = op)) then typeofRelation(typeofOp(op));
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)) then typeof(e2);
     case (DAE.CALL(attr = DAE.CALL_ATTR(ty=tp))) then tp;
     case (DAE.PARTEVALFUNCTION(ty=tp)) then tp;
@@ -1814,6 +1814,27 @@ algorithm
       then fail();
   end match;
 end typeof;
+
+protected function typeofRelation
+"function typeofRelation
+  returns the type of a relation which could only be
+  Boolean or array of boolean"
+  input Type inType;
+  output Type outType;
+algorithm
+  outType := match(inType)
+    local
+      Type ty,ty1;
+      DAE.Dimensions dims;
+      DAE.TypeSource source;
+    case (DAE.T_ARRAY(ty=ty,dims=dims,source=source))
+      equation
+        ty1 = typeofRelation(ty); 
+      then
+        DAE.T_ARRAY(ty,dims,source);
+    else DAE.T_BOOL_DEFAULT;
+  end match;
+end typeofRelation;
 
 public function typeofOp
 "function: typeofOp
