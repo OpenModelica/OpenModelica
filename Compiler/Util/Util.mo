@@ -3587,4 +3587,18 @@ algorithm
   outSize := intMax(outSize, 0);
 end realRangeSize;
 
+public function addInternalError
+  input Boolean shouldShow;
+  input String message;
+algorithm
+  _ := match(shouldShow, message)
+    case (false, _) then ();
+    case (true, _)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{message});
+      then
+        ();
+  end match;
+end addInternalError;
+
 end Util;
