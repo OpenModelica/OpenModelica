@@ -1967,16 +1967,6 @@ algorithm
         then (cr1,cr2,e1,e2,false)::inTpls;
       case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_)
         then (cr1,cr2,e1,e2,false)::inTpls;
-      // lhs = 0
-      case (_,_,_)
-        equation
-          true = Expression.isZero(rhs);
-        then aliasExpression(lhs,inTpls);
-      // 0 = rhs
-      case (_,_,_)
-        equation
-          true = Expression.isZero(lhs);
-        then aliasExpression(rhs,inTpls);
       // a = not b;
       case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr2)),_)
         then (cr1,cr2,DAE.LUNARY(DAE.NOT(ty),lhs),rhs,true)::inTpls;
@@ -1991,16 +1981,6 @@ algorithm
       // {a1,a2,a3,..} = {b1,b2,b3,..};
       case (DAE.ARRAY(array = elst1),DAE.ARRAY(array = elst2),_)
         then List.threadFold(elst1,elst2,aliasEquation1,inTpls);     
-      // {a1+b1,a2+b2,a3+b3,..} = 0;
-      case (DAE.ARRAY(array = elst1),_,_)
-        equation
-          true = Expression.isZero(rhs);  
-        then List.fold(elst1,aliasExpression,inTpls); 
-      // 0 = {a1+b1,a2+b2,a3+b3,..};
-      case (_,DAE.ARRAY(array = elst2),_)
-        equation
-          true = Expression.isZero(lhs);  
-        then List.fold(elst2,aliasExpression,inTpls);
       // a = {b1,b2,b3,..}
       //case (DAE.CREF(componentRef = cr1),DAE.ARRAY(array = elst2),_)
       // -a = {b1,b2,b3,..}
@@ -2044,6 +2024,26 @@ algorithm
           true = Absyn.pathEqual(patha,patha1);
           true = Absyn.pathEqual(pathb,pathb1);
         then List.threadFold(elst1,elst2,aliasEquation1,inTpls); 
+      // {a1+b1,a2+b2,a3+b3,..} = 0;
+      case (DAE.ARRAY(array = elst1),_,_)
+        equation
+          true = Expression.isZero(rhs);  
+        then List.fold(elst1,aliasExpression,inTpls); 
+      // 0 = {a1+b1,a2+b2,a3+b3,..};
+      case (_,DAE.ARRAY(array = elst2),_)
+        equation
+          true = Expression.isZero(lhs);  
+        then List.fold(elst2,aliasExpression,inTpls);
+      // lhs = 0
+      case (_,_,_)
+        equation
+          true = Expression.isZero(rhs);
+        then aliasExpression(lhs,inTpls);
+      // 0 = rhs
+      case (_,_,_)
+        equation
+          true = Expression.isZero(lhs);
+        then aliasExpression(rhs,inTpls);
   end match;
 end aliasEquation1;
 
