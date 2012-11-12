@@ -3649,7 +3649,7 @@ template contextArrayCref(ComponentRef cr, Context context)
  "Generates code for an array component reference depending on the context."
 ::=
   match context
-  case FUNCTION_CONTEXT(__) then "_" + arrayCrefStr(cr)
+  case FUNCTION_CONTEXT(__) then arrayCrefStr(cr)
   else arrayCrefCStr(cr)
 end contextArrayCref;
 
@@ -7298,7 +7298,8 @@ template algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints, Text &pr
       let firstExpPart = daeExp(firstExp, contextSimulationDiscrete,
                               &preExp /*BUFC*/, &varDecls /*BUFD*/,simCode)
       <<
-      data->simulationInfo.helpVars[<%firstInt%>] = <%firstExpPart%>;
+      _event_handling.setHelpVar(<%firstInt%>,<%firstExpPart%>);
+     
       <%rest%>
       >>
 end algStatementWhenPreAssigns;
