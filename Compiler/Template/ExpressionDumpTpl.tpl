@@ -65,6 +65,11 @@ match exp
   case TUPLE(__) then 
     let tuple_str = dumpExpList(PR, stringDelimiter, ", ")
     '(<%tuple_str%>)'
+  case CAST(ty=DAE.T_COMPLEX(__)) then
+    /* TODO: Add this. Keep it not to mess with flat code for now */
+    let exp_str = dumpExp(exp, stringDelimiter)
+    let ty_str = dumpType(ty)
+    '<% if typeinfo() then '/*<%ty_str%>*/'%><%exp_str%>'
   case CAST(__) then
     let exp_str = dumpExp(exp, stringDelimiter)
     let ty_str = dumpType(ty)

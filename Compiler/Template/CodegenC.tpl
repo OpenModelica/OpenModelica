@@ -7119,6 +7119,7 @@ case CAST(__) then
     let from = expTypeFromExpShort(exp)
     let &preExp += 'cast_<%from%>_array_to_<%to%>(&<%expVar%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
+  case T_COMPLEX(complexClassType=rec as RECORD(__))   then '(*((struct <%underscorePath(rec.path)%>*)&<%expVar%>))'
   else 
     '(<%expVar%>) /* could not cast, using the variable as it is */'
 end daeExpCast;
