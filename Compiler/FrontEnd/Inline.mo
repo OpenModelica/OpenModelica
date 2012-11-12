@@ -1429,6 +1429,9 @@ algorithm
         newExp = getRhsExp(fn);
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
+        // add noEvent to avoid events as usually for functions
+        // MSL3.3 GenerateEvents
+        newExp = Expression.addNoEventToRelationsAndConds(newExp);
         ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));

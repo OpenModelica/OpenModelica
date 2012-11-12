@@ -3539,7 +3539,7 @@ algorithm
       BackendDAE.Variables vars,knvars;
       list<BackendDAE.ZeroCrossing> zeroCrossings, zc_lst, relations, samples;
       DAE.Operator op;
-      Integer eq_count,wc_count,itmp,numRelations;
+      Integer eq_count,wc_count,itmp,numRelations,numRelations1;
       BackendDAE.ZeroCrossing zc;
       
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))),((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))))
@@ -3585,15 +3585,16 @@ algorithm
       equation
         Debug.fcall(Flags.RELIDX,print, "continues LBINARY: " +& intString(numRelations) +& "\n");
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e, "\n"));
-        ((e_1,((_,relations,samples,numRelations),(eq_count,wc_count,vars,knvars)))) = Expression.traverseExpTopDown(e1, collectZC, ((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars)));
-        ((e_2,((_,relations,samples,numRelations),(eq_count,wc_count,vars,knvars)))) = Expression.traverseExpTopDown(e2, collectZC, ((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars)));
+        ((e_1,((_,relations,samples,numRelations1),(eq_count,wc_count,vars,knvars)))) = Expression.traverseExpTopDown(e1, collectZC, ((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars)));
+        ((e_2,((_,relations,samples,numRelations1),(eq_count,wc_count,vars,knvars)))) = Expression.traverseExpTopDown(e2, collectZC, ((zeroCrossings,relations,samples,numRelations1),(eq_count,wc_count,vars,knvars)));
+        true = intGt(numRelations1,numRelations);
         e_1 = DAE.LBINARY(e_1,op,e_2);
         {zc} = makeZeroCrossings({e_1}, {eq_count}, {wc_count});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
       then
-        ((e_1,false,((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars))));
+        ((e_1,false,((zeroCrossings,relations,samples,numRelations1),(eq_count,wc_count,vars,knvars))));
     // function with discrete expressions generate no zerocrossing                  
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,relations,samples,numRelations),(eq_count,wc_count,vars,knvars)))) 
       equation
@@ -3635,7 +3636,7 @@ algorithm
       BackendDAE.Variables vars,knvars;
       list<BackendDAE.ZeroCrossing> zeroCrossings, zc_lst, relations, samples;
       DAE.Operator op;
-      Integer numRelations,alg_indx,new_idx,itmp;
+      Integer numRelations,alg_indx,new_idx,itmp,numRelations1;
       BackendDAE.ZeroCrossing zc;
       
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "noEvent"))),(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))))
@@ -3678,15 +3679,16 @@ algorithm
       equation
         Debug.fcall(Flags.RELIDX,print, "continues LBINARY: " +& intString(numRelations) +& "\n");
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e, "\n"));
-        ((e_1,(iterator,le,range,(_,relations,samples,numRelations),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgs, (iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
-        ((e_2,(iterator,le,range,(_,relations,samples,numRelations),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e2, collectZCAlgs, (iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
+        ((e_1,(iterator,le,range,(_,relations,samples,numRelations1),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgs, (iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
+        ((e_2,(iterator,le,range,(_,relations,samples,numRelations1),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e2, collectZCAlgs, (iterator,le,range,(zeroCrossings,relations,samples,numRelations1),(alg_indx,vars,knvars)));
+        true = intGt(numRelations1,numRelations);
         e_1 = DAE.LBINARY(e_1,op,e_2);
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
       then
-        ((e_1,false,(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));        
+        ((e_1,false,(iterator,le,range,(zeroCrossings,relations,samples,numRelations1),(alg_indx,vars,knvars))));        
     // function with discrete expressions generate no zerocrossing
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,le,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)))) 
       equation
@@ -3723,7 +3725,7 @@ algorithm
       BackendDAE.Variables vars,knvars;
       list<BackendDAE.ZeroCrossing> zeroCrossings,zc_lst,zcLstNew,relations,samples;
       DAE.Operator op;
-      Integer numRelations,alg_indx,itmp;
+      Integer numRelations,alg_indx,itmp,numRelations1;
       list<Integer> eqs;
       Boolean b1,b2;
       DAE.Exp startvalue,stepvalue;
@@ -3791,10 +3793,11 @@ algorithm
         b1 = Expression.expContains(e1,iterator);
         b2 = Expression.expContains(e2,iterator);
         true = Util.boolOrList({b1,b2});
-        ((e_1,(iterator,inExpLst,range,(_,relations,samples,numRelations),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
-        ((e_2,(iterator,inExpLst,range,(_,relations,samples,numRelations),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
+        ((e_1,(iterator,inExpLst,range,(_,relations,samples,numRelations1),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
+        ((e_2,(iterator,inExpLst,range,(_,relations,samples,numRelations1),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations1),(alg_indx,vars,knvars)));
+        true = intGt(numRelations1,numRelations);
         e_1 = DAE.LBINARY(e_1,op,e_2);
-        (explst,itmp) = replaceIteratorwithStaticValues(e_1,iterator,inExpLst,numRelations); 
+        (explst,itmp) = replaceIteratorwithStaticValues(e_1,iterator,inExpLst,numRelations1); 
         zc_lst = makeZeroCrossings(explst, {alg_indx}, {});
         zc_lst = listAppend(zeroCrossings, zc_lst);
         zc_lst = mergeZeroCrossings(zc_lst);
@@ -3802,20 +3805,21 @@ algorithm
         zeroCrossings = Util.if_(itmp>0,zc_lst,zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
       then
-        ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));
+        ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations1),(alg_indx,vars,knvars))));
     case (((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))))
       equation
         Debug.fcall(Flags.RELIDX,print, "continues LBINARY: " +& intString(numRelations) +& "\n");
         Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e, "\n"));
-        ((e_1,(iterator,inExpLst,range,(_,relations,samples,numRelations),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
-        ((e_2,(iterator,inExpLst,range,(_,relations,samples,numRelations),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
+        ((e_1,(iterator,inExpLst,range,(_,relations,samples,numRelations1),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e1, collectZCAlgsFor, (iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)));
+        ((e_2,(iterator,inExpLst,range,(_,relations,samples,numRelations1),(alg_indx,vars,knvars)))) = Expression.traverseExpTopDown(e2, collectZCAlgsFor, (iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations1),(alg_indx,vars,knvars)));
+        true = intGt(numRelations1,numRelations);
         e_1 = DAE.LBINARY(e_1,op,e_2);
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
         print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
       then
-        ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars))));          
+        ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations1),(alg_indx,vars,knvars))));          
     // function with discrete expressions generate no zerocrossing.
     case (((e as DAE.RELATION(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations),(alg_indx,vars,knvars)))) 
       equation

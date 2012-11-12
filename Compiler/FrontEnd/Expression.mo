@@ -686,6 +686,29 @@ algorithm
   end matchcontinue;
 end addNoEventToRelationExp;
 
+public function addNoEventToRelationsAndConds
+"Function that adds a  noEvent() call to all relations in an expression"
+  input DAE.Exp e;
+  output DAE.Exp outE;
+algorithm
+  ((outE,_)) := traverseExp(e,addNoEventToRelationandCondExp,0);
+end addNoEventToRelationsAndConds;
+
+protected function addNoEventToRelationandCondExp "
+traversal function for addNoEventToRelationsAndConds"
+  input tuple<DAE.Exp,Integer/*dummy*/> inTpl;
+  output tuple<DAE.Exp,Integer> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+    local 
+        DAE.Exp e,e1,e2;
+       Integer i;
+    case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool),i+1));
+    case((DAE.IFEXP(e,e1,e2),i)) then ((DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{e},DAE.callAttrBuiltinBool),e1,e2),i+1));
+    case((e,i)) then ((e,i));
+  end matchcontinue;
+end addNoEventToRelationandCondExp;
+
 public function addNoEventToEventTriggeringFunctions
 " Function that adds a  noEvent() call to all event triggering functions in an expression"
   input DAE.Exp e;
