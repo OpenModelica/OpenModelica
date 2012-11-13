@@ -3160,12 +3160,30 @@ algorithm
       String str;
       BackendDAE.Shared shared;
       list<BackendDAE.Var> varlst;
+      BackendDAE.Var v;
+      Boolean b;
+      DAE.FunctionTree funcs;
     case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef=cr)})}),(vars,_,_)))
       equation
         str = ComponentReference.crefStr(cr);
         str = stringAppendList({"The model includes derivatives of order > 1 for: ",str,". That is not supported. Real d", str, " = der(", str, ") *might* result in a solvable model"});
         Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then fail();      
+      then fail();
+    // case for arrays
+    case((e1 as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty = DAE.T_ARRAY(dims=_))}),(vars,shared as BackendDAE.SHARED(functionTree=funcs),b)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e1,(SOME(funcs),false)));
+      then Expression.traverseExp(e1,expandDerExp,(vars,shared,b)); 
+    // case for records
+    case((e1 as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty = DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))}),(vars,shared as BackendDAE.SHARED(functionTree=funcs),b)))
+      equation
+        ((e1,(_,true))) = BackendDAEUtil.extendArrExp((e1,(SOME(funcs),false)));
+      then Expression.traverseExp(e1,expandDerExp,(vars,shared,b)); 
+    case((e1 as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,shared,_)))
+      equation
+        ({v},_) = BackendVariable.getVar(cr, vars);
+        (vars,e1) = updateStatesVar(vars,v,e1);       
+      then ((e1,(vars,shared,true)));
     case((e1 as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(vars,shared,_)))
       equation
         (varlst,_) = BackendVariable.getVar(cr, vars);
@@ -3191,7 +3209,14 @@ algorithm outExp := matchcontinue(inExp)
     DAE.ComponentRef cr;
     BackendDAE.Variables vars;
     list<BackendDAE.Var> varlst;
+    BackendDAE.Var v;
     DAE.Exp e;
+  case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
+    equation
+      ({v},_) = BackendVariable.getVar(cr, vars);
+      (vars,e) = updateStatesVar(vars,v,e);
+    then
+      ((e,vars));
   case ((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
     equation
       (varlst,_) = BackendVariable.getVar(cr, vars);
@@ -3202,6 +3227,37 @@ algorithm outExp := matchcontinue(inExp)
 end matchcontinue;
 end derCrefsExp;
 
+protected function updateStatesVar
+"Help function to expandDerExp"
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Var var;
+  input DAE.Exp iExp;
+  output BackendDAE.Variables outVars;
+  output DAE.Exp oExp;
+algorithm
+  (outVars,oExp) := matchcontinue(inVars,var,iExp)
+    local
+      BackendDAE.Variables vars;
+    case(_,_,_)
+      equation
+        true = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
+      then (inVars,DAE.RCONST(0.0));
+    case(_,_,_)
+      equation
+        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
+        false = BackendVariable.isStateVar(var);
+        var = BackendVariable.setVarKind(var,BackendDAE.STATE());
+        vars = BackendVariable.addVar(var, inVars);
+      then (vars,iExp);
+    case(_,_,_)
+      equation
+        /* Might be part of a different equation-system...
+        str = "BackendDAECreate.updateStatesVars failed for: " +& ComponentReference.printComponentRefStr(cr);
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
+        */
+      then (inVars,iExp);
+  end matchcontinue;
+end updateStatesVar;
 
 protected function updateStatesVars
 "Help function to expandDerExp"
@@ -3221,6 +3277,7 @@ algorithm
     case(_,{},true) then inVars;
     case(_,var::newStates,_)
       equation
+        false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
         false = BackendVariable.isStateVar(var);
         var = BackendVariable.setVarKind(var,BackendDAE.STATE());
         vars = BackendVariable.addVar(var, inVars);

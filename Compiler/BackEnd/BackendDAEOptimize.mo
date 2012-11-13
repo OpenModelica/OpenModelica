@@ -423,6 +423,7 @@ algorithm
       DAE.Exp e,e1,e2,ne,ne1;
       DAE.Type ty;
       list<DAE.Exp> elst1,elst2;
+      list<list<DAE.Exp>> elstlst1,elstlst2;
       list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
       list<DAE.Var> varLst1,varLst2;
       Absyn.Path patha,patha1,pathb,pathb1;
@@ -457,35 +458,78 @@ algorithm
     // {a1,a2,a3,..} = {b1,b2,b3,..};
     case (DAE.ARRAY(array = elst1),DAE.ARRAY(array = elst2),_,_,_)
       then List.threadFold2(elst1,elst2,simpleEquation,source,true,inTpl);
-
+    case (DAE.MATRIX(matrix = elstlst1),DAE.MATRIX(matrix = elstlst2),_,_,_)
+      then List.threadFold2(elstlst1,elstlst2,simpleEquationLst,source,true,inTpl);
     // a = {b1,b2,b3,..}
-    //case (DAE.CREF(componentRef = cr1),DAE.ARRAY(array = elst2,dims=dims),_,_,_)
+    case (DAE.CREF(componentRef = cr1),DAE.ARRAY(ty=ty),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.CREF(componentRef = cr1),DAE.MATRIX(ty=ty),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // -a = {b1,b2,b3,..}
-    //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2,dims=dims),_,_,_)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(ty=ty),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.MATRIX(ty=ty),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // a = -{b1,b2,b3,..}
-    //case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2,ty=ty)),_,_,_)
+    case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(ty=ty)),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.MATRIX(ty=ty)),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // -a = -{b1,b2,b3,..}
-    //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2,ty=ty)),_,_,_)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.ARRAY(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.MATRIX(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
     // {a1,a2,a3,..} = b      
-    //case (DAE.ARRAY(array = elst1),DAE.CREF(componentRef = cr2),_,_,_)
+    case (DAE.ARRAY(ty=ty),DAE.CREF(componentRef = cr2),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.MATRIX(ty=ty),DAE.CREF(componentRef = cr2),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // -{a1,a2,a3,..} = b      
-    //case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.CREF(componentRef = cr2),_,_,_)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(ty=ty)),DAE.CREF(componentRef = cr2),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.MATRIX(ty=ty)),DAE.CREF(componentRef = cr2),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // {a1,a2,a3,..} = -b      
-    //case (DAE.ARRAY(array = elst1),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+    case (DAE.ARRAY(ty=ty),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.MATRIX(ty=ty),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // -{a1,a2,a3,..} = -b      
-    //case (DAE.UNARY(DAE.UMINUS_ARR(_)DAE.ARRAY(array = elst1,ty=ty)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.ARRAY(ty=ty)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.MATRIX(ty=ty)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
     // not a = {b1,b2,b3,..}
-    //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2,ty=ty),_,_,_)
+    case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(ty=ty),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.MATRIX(ty=ty),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // a = not {b1,b2,b3,..}
-    //case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2,ty=ty)),_,_,_)
+    case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(ty=ty)),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(_),DAE.MATRIX(ty=ty)),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // not a = not {b1,b2,b3,..}
-    //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2,ty=ty)),_,_,_)
+    case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.ARRAY(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.MATRIX(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
     // {a1,a2,a3,..} = not b      
-    //case (DAE.ARRAY(array = elst1,ty=ty),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+    case (DAE.ARRAY(ty=ty),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.MATRIX(ty=ty),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // not {a1,a2,a3,..} = b      
-    //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.CREF(componentRef = cr2),_,_,_)
+    case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(ty=ty)),DAE.CREF(componentRef = cr2),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
+    case (DAE.LUNARY(DAE.NOT(_),DAE.MATRIX(ty=ty)),DAE.CREF(componentRef = cr2),_,_,_)
+      then simpleArrayEquation(lhs,rhs,ty,source,inTpl);
     // not {a1,a2,a3,..} = not b      
-    //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+    case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.ARRAY(ty=ty)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.MATRIX(ty=ty)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
        
     // a = Record(b1,b2,b3,..)
     case (DAE.CREF(componentRef = cr1),DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(pathb1)))),_,_,_)
@@ -511,6 +555,47 @@ algorithm
       then simpleEquationContinue(lhs,rhs,source,selfCalled,inTpl);
   end match;
 end simpleEquation;
+
+protected function simpleArrayEquation
+"function simpleArrayEquation
+  autor Frenkel TUD 2012-11
+  helper for simpleEquation"
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Type ty;
+  input DAE.ElementSource source;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+protected 
+  DAE.Dimensions dims;
+  list<Integer> ds;
+  list<Option<Integer>> ad;
+  list<list<DAE.Subscript>> subslst;
+  list<DAE.Exp> elst1,elst2;
+algorithm
+  dims := Expression.arrayDimension(ty);
+  ds := Expression.dimensionsSizes(dims);  
+  ad := List.map(ds,Util.makeOption);
+  subslst := BackendDAEUtil.arrayDimensionsToRange(ad);
+  subslst := BackendDAEUtil.rangesToSubscripts(subslst);
+  elst1 := List.map1r(subslst,Expression.applyExpSubscripts,lhs);
+  elst2 := List.map1r(subslst,Expression.applyExpSubscripts,rhs);  
+  outTpl := List.threadFold2(elst1,elst2,simpleEquation,source,true,inTpl); 
+end simpleArrayEquation;
+
+protected function simpleEquationLst
+"function simpleEquationLst
+  autor Frenkel TUD 2012-11
+  helper for simpleEquation"
+  input list<DAE.Exp> elst1;
+  input list<DAE.Exp> elst2;
+  input DAE.ElementSource source;
+  input Boolean selfCalled "this is a flag to know if we are selfcalled to save memory in case of non simple equation";
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := List.threadFold2(elst1,elst2,simpleEquation,source,selfCalled,inTpl); 
+end simpleEquationLst;
 
 protected function simpleEquationContinue
 "function simpleEquation
@@ -663,6 +748,22 @@ algorithm
         tpl = selectAliasNew(cr1,cr2,e1,e2,true,source,true,inTpl);
       then
         simpleRecord(cr,vlst,elst,source,tpl);
+
+    // a = {b1,b2,b3}
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.ARRAY(ty=ty1))::elst,_,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.CREF(cr1,ty);
+        tpl = simpleArrayEquation(e1,e2,ty1,source,inTpl);
+      then
+        simpleRecord(cr,vlst,elst,source,tpl);
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.MATRIX(ty=ty1))::elst,_,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.CREF(cr1,ty);
+        tpl = simpleArrayEquation(e1,e2,ty1,source,inTpl);
+      then
+        simpleRecord(cr,vlst,elst,source,tpl);
         
     // in all other case keep the equation
     case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,e2::elst,_,_)
@@ -710,7 +811,28 @@ algorithm
       then selectAliasNew(cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true,source,selfCalled,inTpl);
     case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
       then selectAliasNew(cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true,source,selfCalled,inTpl);
-   
+
+    // a + {b1,b3,b3}
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(_),e2 as DAE.ARRAY(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(_),e2 as DAE.MATRIX(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    // a - {b1,b3,b3}
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(_),e2 as DAE.ARRAY(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(_),e2 as DAE.MATRIX(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    // -a + {b1,b3,b3}
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(_),e2 as DAE.ARRAY(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(_),e2 as DAE.MATRIX(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    // -a - {b1,b3,b3}
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(_),e2 as DAE.ARRAY(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(_),e2 as DAE.MATRIX(ty=ty)),_,_,_)
+      then simpleArrayEquation(e1,e2,ty,source,inTpl);
+
     // time independent equations
     else
       then timeIndependentExpression(exp,source,selfCalled,inTpl);  
@@ -816,6 +938,7 @@ algorithm
       BackendDAE.Var v;
       list<DAE.SymbolicOperation> ops;
       DAE.ElementSource source;
+      Boolean bs;
     // self generated vars are not stored  
     case (BackendDAE.VAR(varName=cr),_,_,_)
       equation
@@ -828,6 +951,9 @@ algorithm
         ops = DAEUtil.getSymbolicTransformations(source);
         v = BackendVariable.mergeVariableOperations(var,DAE.SOLVED(cr,e)::ops);
         v = BackendVariable.setBindExp(v, e);
+        // State?
+        bs = BackendVariable.isStateVar(v);
+        v = Debug.bcallret2(bs,BackendVariable.setVarKind,v,BackendDAE.DUMMY_STATE(),v);
         shared = BackendVariable.addAliasVarDAE(v,iShared);
       then
         shared;
@@ -1089,20 +1215,16 @@ algorithm
     local
       DAE.ComponentRef cr;
       DAE.Exp cre,es;
-      list<DAE.ComponentRef> crlst;
-      list<Integer> ilst;
       BackendDAE.Var v;
       Integer i,size;
-    case ({BackendDAE.VAR(varName=cr)},{i},_,_,_,_)
+    case ({v as BackendDAE.VAR(varName=cr)},{i},_,_,_,_)
       equation
         // try to solve the equation
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(lhs,rhs,cre);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.SOLVE(cr,lhs,rhs,es,{}));
         // constant or alias
-        //(i,syst,shared,eqTy) = constOrAlias(var,cr,es,syst,shared,DAEUtil.getSymbolicTransformations(source));    
       then
-        fail();
+        constOrAliasNew(v,i,cr,es,source,inTpl);
     case (_,_,_,_,_,_)
       equation
         // size of equation have to be equal with number of vars
@@ -1142,15 +1264,125 @@ algorithm
         // try to solve the equation
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(lhs,rhs,cre);
-        source = DAEUtil.addSymbolicTransformation(source,DAE.SOLVE(cr,lhs,rhs,es,{}));
-        // constant or alias
-        //(i,syst,shared,eqTy) = constOrAlias(var,cr,es,syst,shared,DAEUtil.getSymbolicTransformations(source));    
+        // constant or alias   
       then
-        fail();
+        constOrAliasArray(vlst,ilst,es,source,inTpl);
     // {a1,a2,a3,..} = ...
+    
   end matchcontinue;
 end solveTimeIndependent1;
 
+protected function constOrAliasArray
+"function constOrAliasNew
+  autor Frenkel TUD 2012-11"
+  input list<BackendDAE.Var> vars;
+  input list<Integer> indxs;
+  input DAE.Exp exp;
+  input DAE.ElementSource source;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := match (vars,indxs,exp,source,inTpl)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vlst;
+      Integer i;
+      list<Integer> ilst;
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+      list<DAE.Subscript> subs;
+      tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> tpl;
+    case ({},_,_,_,_) then inTpl;
+    case ((v as BackendDAE.VAR(varName=cr))::vlst,i::ilst,_,_,_)
+      equation
+        subs = ComponentReference.crefLastSubs(cr);
+        e = Expression.applyExpSubscripts(exp,subs);
+        tpl = constOrAliasNew(v,i,cr,e,source,inTpl); 
+      then
+        constOrAliasArray(vlst,ilst,exp,source,tpl);
+  end match;  
+end constOrAliasArray;
+
+protected function constOrAliasNew
+"function constOrAliasNew
+  autor Frenkel TUD 2012-11"
+  input BackendDAE.Var var;
+  input Integer i;
+  input DAE.ComponentRef cr;
+  input DAE.Exp exp;
+  input DAE.ElementSource source;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue (var,i,cr,exp,source,inTpl)
+    local
+      BackendDAE.Shared shared;
+      BackendDAE.EqSystem syst;
+      BackendVarTransform.VariableReplacements repl;
+      list<BackendDAE.Equation> eqns;
+      Boolean b,negate,bs,constExp;
+      BackendDAE.Variables knvars;
+      DAE.ComponentRef cra;
+      BackendDAE.Var v;
+      list<DAE.SymbolicOperation> ops;
+    // self generated
+    case (_,_,_,_,_,(syst,shared,repl,eqns,b))
+      equation
+        true = BackendVariable.selfGeneratedVar(cr);
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Self Generated Var ",cr," = ",exp," found (1).\n"));
+        // add to replacements
+        repl = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        // remove var from vars        
+        (syst,_) = BackendVariable.removeVarDAE(i,syst);        
+      then
+        ((syst,shared,repl,eqns,b));
+    // alias a
+    case (_,_,_,_,_,(syst,shared,repl,eqns,b))
+      equation
+        (negate,cra) = aliasExp(exp);
+        knvars = BackendVariable.daeKnVars(shared);
+        (v::{},_) = BackendVariable.getVar(cra,knvars);
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",cr," = ",exp," found (1).\n"));
+        // merge fixed,start,nominal
+        v = BackendVariable.mergeAliasVars(v,var,negate,knvars);
+        shared = BackendVariable.addKnVarDAE(v,shared);
+        // State?
+        bs = BackendVariable.isStateVar(v);
+        v = Debug.bcallret2(bs,BackendVariable.setVarKind,var,BackendDAE.DUMMY_STATE(),var);        
+        // store changed var
+        ops = DAEUtil.getSymbolicTransformations(source);
+        v = BackendVariable.mergeVariableOperations(v,DAE.SOLVED(cr,exp)::ops);
+        v = BackendVariable.setBindExp(v, exp);
+        shared = BackendVariable.addAliasVarDAE(v,shared);        
+        (syst,_) = BackendVariable.removeVarDAE(i,syst);
+        // add to replacements
+        repl = BackendVarTransform.addReplacement(repl, cr, exp,NONE());         
+      then
+        ((syst,shared,repl,eqns,b));
+    // const
+    case (_,_,_,_,_,(syst,shared,repl,eqns,b))
+      equation
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Const Equation ",cr," = ",exp," found (2).\n"));
+        // add bindExp
+        v = BackendVariable.setBindExp(var,exp);
+        // add bindValue if constant
+        (v,constExp) = setbindValue(exp,v);
+        ops = DAEUtil.getSymbolicTransformations(source);
+        v = BackendVariable.mergeVariableOperations(v,DAE.SOLVED(cr,exp)::ops);
+        // State?
+        bs = BackendVariable.isStateVar(v);
+        v = Debug.bcallret2(bs,BackendVariable.setVarKind,v,BackendDAE.DUMMY_STATE(),v);
+        // remove from vars
+        (syst,_) = BackendVariable.removeVarDAE(i,syst);
+        // store changed var
+        shared = BackendVariable.addKnVarDAE(v,shared);
+        // add to replacements if constant
+        repl = Debug.bcallret4(constExp,BackendVarTransform.addReplacement,repl, cr, exp,NONE(),repl);
+        // if state der(var) has to replaced to 0
+      then
+        ((syst,shared,repl,eqns,b)); 
+  end matchcontinue;
+end constOrAliasNew;
 
 protected function replacementsInEqnsFast
 "function: replacementsInEqnsFast

@@ -3358,15 +3358,7 @@ Author: Frenkel TUD 2010-05"
   input list<list<DAE.Subscript>> inRangelist;
   output list<list<DAE.Subscript>> outSubslst;
 algorithm
-  outSubslst := match(inSub,inRangelist)
-  local 
-    list<list<DAE.Subscript>> rangelist,rangelist1;
-    DAE.Subscript sub;
-    case(sub,rangelist)
-      equation
-        rangelist1 = List.map1(rangelist, List.consr, sub);
-    then rangelist1;
-  end match;
+  outSubslst := List.map1(inRangelist, List.consr, inSub);
 end rangesToSubscripts1;
 
 public function getEquationBlock"function: getEquationBlock

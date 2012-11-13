@@ -1946,6 +1946,7 @@ algorithm
         DAE.Exp e,e1,e2,ne,ne1;
         DAE.Type ty;
         list<DAE.Exp> elst1,elst2;
+        list<list<DAE.Exp>> elstlst1,elstlst2;
         list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
         list<DAE.Var> varLst1,varLst2;
         Absyn.Path patha,patha1,pathb,pathb1;
@@ -1980,6 +1981,8 @@ algorithm
       // {a1,a2,a3,..} = {b1,b2,b3,..};
       case (DAE.ARRAY(array = elst1),DAE.ARRAY(array = elst2),_)
         then List.threadFold(elst1,elst2,aliasEquation1,inTpls);     
+      case (DAE.MATRIX(matrix = elstlst1),DAE.MATRIX(matrix = elstlst2),_)
+        then List.threadFold(elstlst1,elstlst2,aliasEquationLst,inTpls);     
       // a = {b1,b2,b3,..}
       //case (DAE.CREF(componentRef = cr1),DAE.ARRAY(array = elst2,dims=dims),_)
       //  then 
@@ -2036,6 +2039,18 @@ algorithm
         then aliasEquation2(lhs,rhs,inTpls);
   end match;
 end aliasEquation1;
+
+protected function aliasEquationLst
+"function aliasEquation1
+  autor Frenkel TUD 2011-04
+  helper for aliasEquation"
+  input list<DAE.Exp> elst1;
+  input list<DAE.Exp> elst2;
+  input list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> inTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+  output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+algorithm
+  outTpls := List.threadFold(elst1,elst2,aliasEquation1,inTpls); 
+end aliasEquationLst; 
 
 protected function aliasEquation2
 "function aliasEquation1
@@ -2146,6 +2161,7 @@ algorithm
         e1 = DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(cr1,ty));
       then
         aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
+    // a = {b1,b2,b3}        
   end match;        
 end aliasRecord;
 

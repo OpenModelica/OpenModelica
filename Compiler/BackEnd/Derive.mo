@@ -105,18 +105,16 @@ algorithm
     
     // complex equations
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source),timevars,_) /* time varying variables */
-      //equation
-      //  e1_1 = differentiateExpTime(e1, (timevars,shared));
-      //  e2_1 = differentiateExpTime(e2, (timevars,shared));
-      //  (e1_2,_) = ExpressionSimplify.simplify(e1_1);
-      //  (e2_2,_) = ExpressionSimplify.simplify(e2_1);
-      //  op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
-      //  op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
-      //  source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,shared));
+        e2_1 = differentiateExpTime(e2, (timevars,shared));
+       (e1_2,_) = ExpressionSimplify.simplify(e1_1);
+       (e2_2,_) = ExpressionSimplify.simplify(e2_1);
+        op1 = DAE.OP_DERIVE(DAE.crefTime,e1,e1_2);
+        op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
+        source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        //BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source);
-        // because der(Record) is not jet implemented -> fail()
-        fail();            
+        BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source);
    
     // Array Equations   
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source),timevars,_) /* time varying variables */
@@ -144,7 +142,7 @@ algorithm
        then
         BackendDAE.ALGORITHM(size,alg,source);
  
-    // equations
+    // if-equations
     case (BackendDAE.IF_EQUATION(conditions=expExpLst, eqnstrue=eqnslst, eqnsfalse=eqns, source=source),timevars,_) /* time varying variables */
       equation
         eqnslst = List.map2List(eqnslst,differentiateEquationTime,timevars,shared);
@@ -152,15 +150,7 @@ algorithm
       then
         BackendDAE.IF_EQUATION(expExpLst,eqnslst,eqns,source); 
  
-    case (BackendDAE.COMPLEX_EQUATION(source = source),_,_)
-      equation
-        se1 = BackendDump.equationStr(inEquation);
-        msg = stringAppendList({"- Derive.differentiateEquationTime on complex equations ",se1," not impl yet. "});
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
-      then
-        fail();
-
-    case (_,_,_)
+     case (_,_,_)
       equation
         msg = "- Derive.differentiateEquationTime failed for " +& BackendDump.equationStr(inEquation) +& "\n";
         source = BackendEquation.equationSource(inEquation);
@@ -322,10 +312,9 @@ algorithm
       BackendDAE.Variables timevars,knvars;
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl,sub;
-      Absyn.Path a;
+      Absyn.Path a,fname;
       Boolean b;
       Integer i;
-      Absyn.Path fname;
       DAE.FunctionTree functions;
       list<list<DAE.Exp>> explstlst,explstlst1;
       list<DAE.Var> varLst;
@@ -346,9 +335,9 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(a)))),(timevars,_))
       equation
         expl = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr);
-        e1 = DAE.CALL(a,expl,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
       then
-        differentiateExpTime(e1,inVariables);
+        DAE.CALL(a,expl_1,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));        
     // case for arrays
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.T_ARRAY(dims=_))),(_,BackendDAE.SHARED(functionTree=functions)))
       equation
@@ -631,6 +620,14 @@ algorithm
         (e1,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then
         e1;
+        
+    // record constructors
+    case (e as DAE.CALL(path=fname,expLst=expl,attr=attr as DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(a)))),(timevars,_))
+      equation
+        true = Absyn.pathEqual(a,fname);
+        expl_1 = List.map1(expl, differentiateExpTime, inVariables);
+      then
+        DAE.CALL(fname,expl_1,attr);
     
     case (e as DAE.CALL(path = a,expLst = expl),(_,BackendDAE.SHARED(functionTree=functions)))
       equation
