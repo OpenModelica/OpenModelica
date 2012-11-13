@@ -5050,14 +5050,7 @@ algorithm
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")), (cr,b)))
       then
         ((e,false,(cr,b)));
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")), (cr,b)))
-      then
-        ((e,false,(cr,b)));
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")), (cr,b)))
-      then
-        ((e,false,(cr,b)));
-
-    
+   
     case ((e as DAE.CREF(componentRef = cr1), (cr,false)))
       equation
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);

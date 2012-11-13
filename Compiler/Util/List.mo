@@ -1062,6 +1062,39 @@ algorithm
   outList := union_tail({}, inList, {});
 end unique;
 
+public function uniqueIntN
+  "Takes a list of integes and returns a list with duplicates removed, so that
+   each element in the new list is unique. O(listLength(inList))"
+  input list<Integer> inList;
+  input Integer N;
+  output list<Integer> outList;
+protected
+  array<Boolean> arr; 
+algorithm
+  arr := arrayCreate(N,true);
+  outList := uniqueIntN_work(inList, arr, {});
+end uniqueIntN;
+
+protected function uniqueIntN_work
+  input list<Integer> inList;
+  input array<Boolean> arr;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := match(inList,arr,iAcc)
+    local
+      Integer i;
+      list<Integer> ilst,acc;
+    case ({},_,_) then iAcc;
+    case (i::ilst,_,_)
+      equation
+        acc = consOnTrue(arr[i],i,iAcc);
+        _= arrayUpdate(arr,i,false);
+      then
+        uniqueIntN_work(ilst,arr,acc);
+  end match;
+end uniqueIntN_work;
+
 public function uniqueOnTrue
   "Takes a list of elements and a comparison function over two elements of the
    list and returns a list with duplicates removed, so that each element in the

@@ -2454,6 +2454,29 @@ algorithm
   end matchcontinue;
 end removeVars;
   
+public function removeVarDAE
+"function: removeVarDAE
+  author: Frenkel TUD 2012-11
+  Removes a var from the vararray but does not scaling down the array"
+  input Integer inVarPos "1 based index";
+  input BackendDAE.EqSystem syst;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Var outVar;
+algorithm
+  (osyst,outVar) := match (inVarPos,syst)
+    local
+      BackendDAE.Var var;
+      BackendDAE.Variables ordvars,ordvars1;
+      BackendDAE.EquationArray eqns;
+      Option<BackendDAE.IncidenceMatrix> m,mT;
+      BackendDAE.Matching matching;
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching))
+      equation
+        (ordvars1,outVar) = removeVar(inVarPos,ordvars);
+      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),outVar);
+  end match;
+end removeVarDAE;  
+  
 public function removeVar
 "function: removeVar
   author: Frenkel TUD 2011-04
@@ -2648,14 +2671,13 @@ public function addVarDAE
 algorithm
   osyst := match (inVar,syst)
     local
-      BackendDAE.Var var;
       BackendDAE.Variables ordvars,ordvars1;
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-    case (var,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching))
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching))
       equation
-        ordvars1 = addVar(var,ordvars);
+        ordvars1 = addVar(inVar,ordvars);
       then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching);
   end match;
 end addVarDAE;
@@ -2671,7 +2693,6 @@ public function addKnVarDAE
 algorithm
   oshared := match (inVar,shared)
     local
-      BackendDAE.Var var;
       BackendDAE.Variables knvars,exobj,knvars1,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
@@ -2683,9 +2704,9 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.BackendDAEType btp;
-    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
-        knvars1 = addVar(var,knvars);
+        knvars1 = addVar(inVar,knvars);
       then BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addKnVarDAE;
@@ -2701,7 +2722,6 @@ public function addAliasVarDAE
 algorithm
   oshared := match (inVar,shared)
     local
-      BackendDAE.Var var;
       BackendDAE.Variables knvars,exobj,aliasVars;
       BackendDAE.EquationArray remeqns,inieqns;
       array<DAE.Constraint> constrs;
@@ -2713,9 +2733,9 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAE.BackendDAEType btp;
-    case (var,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
-        aliasVars = addVar(var,aliasVars);
+        aliasVars = addVar(inVar,aliasVars);
       then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs);
   end match;
 end addAliasVarDAE;
@@ -2929,6 +2949,28 @@ algorithm
         (varlst,indxlst);
   end match;
 end getVarDAE;
+
+public function getVarShared
+"function: getVarShared
+  author: Frenkel TUD 2012-05
+  return a Variable."
+  input DAE.ComponentRef inComponentRef;
+  input BackendDAE.Shared shared;
+  output list<BackendDAE.Var> outVarLst;
+  output list<Integer> outIntegerLst;
+algorithm
+  (outVarLst,outIntegerLst) := match (inComponentRef,shared)
+    local
+      BackendDAE.Variables vars;
+      list<BackendDAE.Var> varlst;
+      list<Integer> indxlst;
+   case (_,BackendDAE.SHARED(knownVars=vars))
+      equation
+        (varlst,indxlst) = getVar(inComponentRef,vars);
+      then 
+        (varlst,indxlst);
+  end match;
+end getVarShared;
 
 public function getVar
 "function: getVar
@@ -4071,13 +4113,14 @@ public function calcAliasKey
   helper for selectAlias. This function is
   mainly usable to chose the favorite name
   of the keeped var"
-  input DAE.ComponentRef cr;
   input BackendDAE.Var var;
   output Integer i;
 protected 
+  DAE.ComponentRef cr;
   Boolean b;
   Integer d;
 algorithm
+  BackendDAE.VAR(varName=cr) := var;
   // records
   b := ComponentReference.isRecord(cr);
   i := Util.if_(b,-1,0);

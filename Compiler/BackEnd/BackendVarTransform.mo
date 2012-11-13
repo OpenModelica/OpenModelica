@@ -1203,11 +1203,23 @@ public function skipPreOperator "function: skipPreOperator
 algorithm
   outBoolean := matchcontinue (inExp)
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
+    case (_) then true;
+  end matchcontinue;
+end skipPreOperator;
+
+public function skipPreChangeEdgeOperator "function: skipPreChangeEdgeOperator
+  The variable/exp in the pre/change/edge operator should not be replaced.
+  This function is passed to replace_exp to ensure this."
+  input DAE.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inExp)
+    case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
     case (DAE.CALL(path = Absyn.IDENT(name = "change"))) then false;
     case (DAE.CALL(path = Absyn.IDENT(name = "edge"))) then false;
     case (_) then true;
   end matchcontinue;
-end skipPreOperator;
+end skipPreChangeEdgeOperator;
 
 /*********************************************************/
 /* replace Equations  */

@@ -6843,12 +6843,6 @@ algorithm
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b)))
       then
         ((e,false,(vars,b)));         
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(vars,b)))
-      then
-        ((e,false,(vars,b))); 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(vars,b)))
-      then
-        ((e,false,(vars,b)));
     case ((e as DAE.CALL(expLst=expLst),(vars,b)))
       equation
         // check if vars not in condition
@@ -7087,12 +7081,6 @@ algorithm
     case((e as DAE.CALL(path=Absyn.IDENT(name = "pre")),(vars,b)))
       then
         ((e,false,(vars,b)));
-    case((e as DAE.CALL(path=Absyn.IDENT(name = "change")),(vars,b)))
-      then
-        ((e,false,(vars,b)));
-    case((e as DAE.CALL(path=Absyn.IDENT(name = "edge")),(vars,b)))
-      then
-        ((e,false,(vars,b)));
     case ((e,(vars,b))) then ((e,not b,(vars,b)));
   end matchcontinue;
 end traverserjacobianNonlinearExp;
@@ -7178,12 +7166,6 @@ algorithm
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(repl,vars,funcs,b)))
       then
         ((e,false,(repl,vars,funcs,b)));         
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(repl,vars,funcs,b)))
-      then
-        ((e,false,(repl,vars,funcs,b))); 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(repl,vars,funcs,b)))
-      then
-        ((e,false,(repl,vars,funcs,b)));
     case ((e as DAE.CALL(expLst=expLst),(repl,vars,funcs,b)))
       equation
         // check if vars not in condition
@@ -7240,13 +7222,6 @@ algorithm
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,b)))
       then
         ((e,false,(vars,b)));         
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(vars,b)))
-      then
-        ((e,false,(vars,b))); 
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(vars,b)))
-      then
-        ((e,false,(vars,b)));
-
     // found ?
     case ((e as DAE.CREF(componentRef = cr),(vars,_)))
       equation

@@ -2584,8 +2584,8 @@ algorithm
         replaceableAlias(v1);
         replaceableAlias(v2);
         // calc wights
-        w1 = BackendVariable.calcAliasKey(cr1,v1);
-        w2 = BackendVariable.calcAliasKey(cr2,v2);
+        w1 = BackendVariable.calcAliasKey(v1);
+        w2 = BackendVariable.calcAliasKey(v2);
         b = intGt(w2,w1);
         // select alias
         ((acr,avar,aindx,ae,cr,var,e)) = Util.if_(b,(cr2,v2,index2,e2,cr1,v1,e1),(cr1,v1,index1,e1,cr2,v2,e2));

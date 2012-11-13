@@ -353,9 +353,9 @@ end removeSimpleEquationsFast2;
 
 protected function removeSimpleEquationsFastFinder
 "autor: Frenkel TUD 2012-03"
- input BackendDAE.Equation eqn;
- input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
- output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+  input BackendDAE.Equation eqn;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
 protected
   BackendVarTransform.VariableReplacements repl;
   list<BackendDAE.Equation> eqns;
@@ -367,9 +367,9 @@ end removeSimpleEquationsFastFinder;
 
 protected function removeSimpleEquationsFastFinder1
 "autor: Frenkel TUD 2012-03"
- input BackendDAE.Equation eqn;
- input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
- output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+  input BackendDAE.Equation eqn;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
 algorithm
   outTpl:=
   matchcontinue (eqn,inTpl)
@@ -383,19 +383,774 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared; 
       list<BackendDAE.Var> varlst;
-
-    case (_,(syst,shared,repl,eqns,b))
+      DAE.ElementSource source;
+    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),(syst,shared,repl,eqns,b))
       equation
         varlst = BackendEquation.equationVars(eqn,BackendVariable.daeVars(syst));
         (cr,i,exp,syst,shared,eqnType) = simpleEquationPast(varlst,eqn,syst,shared);
         // replace equation if necesarry
         (syst,shared,repl,eqns) = replacementsInEqnsFast(eqnType,cr,i,exp,repl,syst,shared,eqn,eqns);
       then ((syst,shared,repl,eqns,true));
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source),(syst,shared,repl,eqns,b))
+      then ((syst,shared,repl,eqn::eqns,b));
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2,source=source),(syst,shared,repl,eqns,b))
+      equation
+        exp = Expression.crefExp(cr);
+      then ((syst,shared,repl,eqn::eqns,b));
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e1,source=source),(syst,shared,repl,eqns,b))
+      then ((syst,shared,repl,eqn::eqns,b));
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),(syst,shared,repl,eqns,b))
+      then ((syst,shared,repl,eqn::eqns,b));
     case (_,(syst,shared,repl,eqns,b))
-      then 
-        ((syst,shared,repl,eqn::eqns,b));
+      then ((syst,shared,repl,eqn::eqns,b));
    end matchcontinue;
 end removeSimpleEquationsFastFinder1;
+
+protected function simpleEquation
+"function simpleEquation
+  autor Frenkel TUD 2012-11
+  helper for simpleEquations"
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  input Boolean selfCalled "this is a flag to know if we are selfcalled to save memory in case of non simple equation";
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := match (lhs,rhs,source,selfCalled,inTpl)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp e,e1,e2,ne,ne1;
+      DAE.Type ty;
+      list<DAE.Exp> elst1,elst2;
+      list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
+      list<DAE.Var> varLst1,varLst2;
+      Absyn.Path patha,patha1,pathb,pathb1;
+      DAE.Dimensions dims;
+    // a = b;
+    case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2),_,_,_)
+      then selectAliasNew(cr1,cr2,lhs,rhs,false,source,selfCalled,inTpl);
+    // a = -b;
+    case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),lhs),rhs,true,source,selfCalled,inTpl);
+    case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(ty),DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),lhs),rhs,true,source,selfCalled,inTpl);
+    // -a = b;
+    case (DAE.UNARY(DAE.UMINUS(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_,_,_)
+      then selectAliasNew(cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS(ty),rhs),true,source,selfCalled,inTpl);
+    case (DAE.UNARY(DAE.UMINUS_ARR(ty),e1 as DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_,_,_)
+      then selectAliasNew(cr1,cr2,lhs,DAE.UNARY(DAE.UMINUS_ARR(ty),rhs),true,source,selfCalled,inTpl);
+    // -a = -b;
+    case (DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,e2,false,source,selfCalled,inTpl);
+    case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,e2,false,source,selfCalled,inTpl);
+    // a = not b;
+    case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,DAE.LUNARY(DAE.NOT(ty),lhs),rhs,true,source,selfCalled,inTpl);
+    // not a = b;
+    case (DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_,_,_)
+      then selectAliasNew(cr1,cr2,lhs,DAE.LUNARY(DAE.NOT(ty),rhs),true,source,selfCalled,inTpl);
+    // not a = not b;
+    case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,e2,false,source,selfCalled,inTpl);
+    // {a1,a2,a3,..} = {b1,b2,b3,..};
+    case (DAE.ARRAY(array = elst1),DAE.ARRAY(array = elst2),_,_,_)
+      then List.threadFold2(elst1,elst2,simpleEquation,source,true,inTpl);
+
+    // a = {b1,b2,b3,..}
+    //case (DAE.CREF(componentRef = cr1),DAE.ARRAY(array = elst2,dims=dims),_,_,_)
+    // -a = {b1,b2,b3,..}
+    //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2,dims=dims),_,_,_)
+    // a = -{b1,b2,b3,..}
+    //case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2,ty=ty)),_,_,_)
+    // -a = -{b1,b2,b3,..}
+    //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2,ty=ty)),_,_,_)
+    // {a1,a2,a3,..} = b      
+    //case (DAE.ARRAY(array = elst1),DAE.CREF(componentRef = cr2),_,_,_)
+    // -{a1,a2,a3,..} = b      
+    //case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.CREF(componentRef = cr2),_,_,_)
+    // {a1,a2,a3,..} = -b      
+    //case (DAE.ARRAY(array = elst1),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+    // -{a1,a2,a3,..} = -b      
+    //case (DAE.UNARY(DAE.UMINUS_ARR(_)DAE.ARRAY(array = elst1,ty=ty)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+    // not a = {b1,b2,b3,..}
+    //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2,ty=ty),_,_,_)
+    // a = not {b1,b2,b3,..}
+    //case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2,ty=ty)),_,_,_)
+    // not a = not {b1,b2,b3,..}
+    //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2,ty=ty)),_,_,_)
+    // {a1,a2,a3,..} = not b      
+    //case (DAE.ARRAY(array = elst1,ty=ty),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+    // not {a1,a2,a3,..} = b      
+    //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.CREF(componentRef = cr2),_,_,_)
+    // not {a1,a2,a3,..} = not b      
+    //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+       
+    // a = Record(b1,b2,b3,..)
+    case (DAE.CREF(componentRef = cr1),DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(pathb1)))),_,_,_)
+      equation
+        true = Absyn.pathEqual(pathb,pathb1);
+      then
+        simpleRecord(cr1,varLst2,elst2,source,inTpl);
+    // Record(a1,a2,a3,..) = b  
+    case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(patha1)))),DAE.CREF(componentRef = cr2),_,_,_)
+      equation
+        true = Absyn.pathEqual(patha,patha1);
+      then
+        simpleRecord(cr2,varLst1,elst1,source,inTpl);
+    // Record(a1,a2,a3,..) = Record(b1,b2,b3,..)
+    case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))),
+          DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))),_,_,_)
+      equation
+        true = Absyn.pathEqual(patha,patha1);
+        true = Absyn.pathEqual(pathb,pathb1);
+      then List.threadFold2(elst1,elst2,simpleEquation,source,true,inTpl);          
+    // time independent equations
+    else
+      then simpleEquationContinue(lhs,rhs,source,selfCalled,inTpl);
+  end match;
+end simpleEquation;
+
+protected function simpleEquationContinue
+"function simpleEquation
+  autor Frenkel TUD 2012-11
+  helper for simpleEquations"
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  input Boolean selfCalled "this is a flag to know if we are selfcalled to save memory in case of non simple equation";
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue (lhs,rhs,source,selfCalled,inTpl)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp e,e1,e2,ne,ne1;
+      DAE.Type ty;
+      list<DAE.Exp> elst1,elst2;
+      list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
+      list<DAE.Var> varLst1,varLst2;
+      Absyn.Path patha,patha1,pathb,pathb1;
+      DAE.Dimensions dims;
+    // {a1+b1,a2+b2,a3+b3,..} = 0;
+    case (DAE.ARRAY(array = elst1),_,_,_,_)
+      equation
+        true = Expression.isZero(rhs);  
+      then List.fold2(elst1,simpleExpression,source,true,inTpl); 
+    // 0 = {a1+b1,a2+b2,a3+b3,..};
+    case (_,DAE.ARRAY(array = elst2),_,_,_)
+      equation
+        true = Expression.isZero(lhs);  
+      then List.fold2(elst2,simpleExpression,source,true,inTpl);    
+     // lhs = 0
+    case (_,_,_,_,_)
+      equation
+        true = Expression.isZero(rhs);
+      then simpleExpression(lhs,source,selfCalled,inTpl);
+    // 0 = rhs
+    case (_,_,_,_,_)
+      equation
+        true = Expression.isZero(lhs);
+      then simpleExpression(rhs,source,selfCalled,inTpl);
+    // time independent equations
+    else
+      then timeIndependentEquation(lhs,rhs,source,selfCalled,inTpl);
+  end matchcontinue;
+end simpleEquationContinue;
+
+protected function generateEquation
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Type ty;
+  input DAE.ElementSource source;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue (lhs,rhs,ty,source,inTpl)
+    local
+      Integer size;
+      DAE.Dimensions dims;
+      list<Integer> ds;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      BackendVarTransform.VariableReplacements repl;
+      list<BackendDAE.Equation> eqns;
+      Boolean b,b1,b2;
+    // complex types to complex equations  
+    case (_,_,_,_,(syst,shared,repl,eqns,b))
+      equation 
+        true = DAEUtil.expTypeComplex(ty);
+        size = Expression.sizeOf(ty);
+      then
+        ((syst,shared,repl,BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)::eqns,b));
+    // array types to array equations  
+    case (_,_,_,_,(syst,shared,repl,eqns,b))
+      equation 
+        true = DAEUtil.expTypeArray(ty);
+        dims = Expression.arrayDimension(ty);
+        ds = Expression.dimensionsSizes(dims);
+      then
+        ((syst,shared,repl,BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)::eqns,b));
+    // other types  
+    case (_,_,_,_,(syst,shared,repl,eqns,b))
+      equation
+        b1 = DAEUtil.expTypeComplex(ty);
+        b2 = DAEUtil.expTypeArray(ty);
+        false = b1 or b2;
+        //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
+      then
+        ((syst,shared,repl,BackendDAE.EQUATION(lhs,rhs,source)::eqns,b));
+    else
+      equation
+        // show only on failtrace!
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- BackendDAEOptimize.generateEquation failed on: " +& ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs) +& "\n");
+      then
+        fail();      
+  end matchcontinue;  
+end generateEquation;
+
+protected function simpleRecord
+"function simpleRecord
+  autor Frenkel TUD 2012-11
+  helper for simpleEquation"
+  input DAE.ComponentRef cr;
+  input list<DAE.Var> varLst;
+  input list<DAE.Exp> explst;
+  input DAE.ElementSource source;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue (cr,varLst,explst,source,inTpl)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp e1,e2;
+      DAE.Type ty,ty1;
+      list<DAE.Exp> elst;
+      list<DAE.Var> vlst;
+      DAE.Ident ident;
+      tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> tpl;
+    case (_,{},{},_,_) then inTpl;
+    // a = b
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.CREF(componentRef = cr2))::elst,_,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.CREF(cr1,ty);
+        tpl = selectAliasNew(cr1,cr2,e1,e2,false,source,true,inTpl);
+      then
+        simpleRecord(cr,vlst,elst,source,tpl);
+    // a = -b
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(componentRef = cr2)))::elst,_,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(cr1,ty));
+        tpl = selectAliasNew(cr1,cr2,e1,e2,true,source,true,inTpl);
+      then
+        simpleRecord(cr,vlst,elst,source,tpl);
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(componentRef = cr2)))::elst,_,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(cr1,ty));
+        tpl = selectAliasNew(cr1,cr2,e1,e2,true,source,true,inTpl);
+      then
+        simpleRecord(cr,vlst,elst,source,tpl);
+    // a = not b
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(componentRef = cr2)))::elst,_,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(cr1,ty));
+        tpl = selectAliasNew(cr1,cr2,e1,e2,true,source,true,inTpl);
+      then
+        simpleRecord(cr,vlst,elst,source,tpl);
+        
+    // in all other case keep the equation
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,e2::elst,_,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        tpl = generateEquation(DAE.CREF(cr1,ty),e2,ty,source,inTpl);        
+      then
+        simpleRecord(cr,vlst,elst,source,tpl);
+  end matchcontinue;        
+end simpleRecord;
+
+protected function simpleExpression
+"function simpleExpression
+  autor Frenkel TUD 2012-11
+  helper for simpleEquations"
+  input DAE.Exp exp;
+  input DAE.ElementSource source;
+  input Boolean selfCalled "this is a flag to know if we are selfcalled to save memory in case of non simple equation";
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := match (exp,source,selfCalled,inTpl)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp e,e1,e2,ne,ne1;
+      DAE.Type ty;
+      list<DAE.Exp> elst1,elst2;
+    // a + b
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,DAE.UNARY(DAE.UMINUS(ty),e1),DAE.UNARY(DAE.UMINUS(ty),e2),true,source,selfCalled,inTpl);
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.ADD_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true,source,selfCalled,inTpl);
+    // a - b 
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB(ty=_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,e2,false,source,selfCalled,inTpl);
+    case (DAE.BINARY(e1 as DAE.CREF(componentRef = cr1),DAE.SUB_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,e2,false,source,selfCalled,inTpl);
+    // -a + b
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD(ty=_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,e2,false,source,selfCalled,inTpl);
+    case (DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ADD_ARR(ty=_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,e2,false,source,selfCalled,inTpl);
+    // -a - b = 0
+    case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef = cr1)),DAE.SUB(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,DAE.UNARY(DAE.UMINUS(ty),e2),true,source,selfCalled,inTpl);
+    case (DAE.BINARY(e1 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(componentRef = cr1)),DAE.SUB_ARR(ty=ty),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
+      then selectAliasNew(cr1,cr2,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2),true,source,selfCalled,inTpl);
+   
+    // time independent equations
+    else
+      then timeIndependentExpression(exp,source,selfCalled,inTpl);  
+  end match;
+end simpleExpression;
+
+protected function selectAliasNew
+  input DAE.ComponentRef cr1;
+  input DAE.ComponentRef cr2;
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  input Boolean negate;
+  input DAE.ElementSource source "the source of the equation";
+  input Boolean genEqn "true if not possible to get the Alias generate an equation";
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue(cr1,cr2,e1,e2,negate,source,genEqn,inTpl)
+    local
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      list<BackendDAE.Var> vars1,vars2,varsa,vars;
+      list<Integer> ilst1,ilst2,ilsta,ilst;
+      Boolean varskn1,varskn2,varskn;
+      DAE.Exp e;
+      DAE.Type ty;
+    case(_,_,_,_,_,_,_,(syst,shared,_,_,_))
+      equation
+        // get Variables
+        (vars1,ilst1,varskn1) =  getVars(cr1,syst,shared);
+        (vars2,ilst2,varskn2) =  getVars(cr2,syst,shared);
+        // select Alias
+        (varsa,ilsta,vars,ilst,varskn,e) = selectAliasNew1(vars1,ilst1,varskn1,e1,vars2,ilst2,varskn2,e2);
+        // merge Attributes, move Alias, set Attributes to Var
+      then
+        selectAliasNew2(varsa,ilsta,vars,ilst,varskn,negate,e,source,inTpl);  
+    case(_,_,_,_,_,_,true,(syst,shared,_,_,_))
+      equation
+        e = Expression.crefExp(cr1);
+        ty = Expression.typeof(e);
+      then
+        generateEquation(e,e2,ty,source,inTpl);
+  end matchcontinue;  
+end selectAliasNew;
+
+protected function selectAliasNew2
+  input list<BackendDAE.Var> varsa;
+  input list<Integer> ilsta;
+  input list<BackendDAE.Var> vars;
+  input list<Integer> ilst;
+  input Boolean varskn;
+  input Boolean negate;
+  input DAE.Exp e;
+  input DAE.ElementSource source "the source of the equation";
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := match(varsa,ilsta,vars,ilst,varskn,negate,e,source,inTpl)
+    local
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      BackendDAE.Var v,av;
+      BackendVarTransform.VariableReplacements repl;
+      list<BackendDAE.Equation> eqns;
+      Boolean b;
+      DAE.Exp e;
+      DAE.ComponentRef cr,acr;
+      Integer ia,i;
+      list<Integer> ialst,ilst;
+      list<BackendDAE.Var> valst,vlst;
+    case ({},_,{},_,_,_,_,_,_)
+      then inTpl;      
+    case ((av as BackendDAE.VAR(varName=acr))::valst,ia::ialst,(v as BackendDAE.VAR(varName=cr))::vlst,i::ilst,_,_,_,_,(syst,shared,repl,eqns,_))
+      equation
+        e = Expression.crefExp(cr);
+        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (3).\n"));
+        // merge fixed,start,nominal
+        v = BackendVariable.mergeAliasVars(v,av,negate,BackendVariable.daeKnVars(shared));
+        syst = Debug.bcallret2(not varskn,BackendVariable.addVarDAE,v,syst,syst);
+        shared = Debug.bcallret2(varskn,BackendVariable.addKnVarDAE,v,shared,shared);
+        // store changed var
+        shared = handleAliasVar(av,e,source,shared);
+        (syst,_) = BackendVariable.removeVarDAE(ia,syst);
+        // add to replacements
+        repl = BackendVarTransform.addReplacement(repl, cr, e,NONE()); 
+       then
+        selectAliasNew2(valst,ialst,vlst,ilst,varskn,negate,e,source,(syst,shared,repl,eqns,true));
+  end match;
+end selectAliasNew2;
+
+protected function handleAliasVar
+  input BackendDAE.Var var;
+  input DAE.Exp e;
+  input DAE.ElementSource source "the source of the equation";
+  input BackendDAE.Shared iShared;
+  output BackendDAE.Shared oShared;
+algorithm
+  oShared := matchcontinue(var,e,source,iShared)
+    local
+      DAE.ComponentRef cr;
+      BackendDAE.Shared shared;
+      BackendDAE.Var v;
+      list<DAE.SymbolicOperation> ops;
+      DAE.ElementSource source;
+    // self generated vars are not stored  
+    case (BackendDAE.VAR(varName=cr),_,_,_)
+      equation
+        true = BackendVariable.selfGeneratedVar(cr);
+      then
+        iShared;
+    // not self generate vars are stored
+    case (BackendDAE.VAR(varName=cr),_,_,_)
+      equation
+        ops = DAEUtil.getSymbolicTransformations(source);
+        v = BackendVariable.mergeVariableOperations(var,DAE.SOLVED(cr,e)::ops);
+        v = BackendVariable.setBindExp(v, e);
+        shared = BackendVariable.addAliasVarDAE(v,iShared);
+      then
+        shared;
+  end matchcontinue;
+end handleAliasVar;
+
+protected function selectAliasNew1
+  input list<BackendDAE.Var> vars1;
+  input list<Integer> ilst1;
+  input Boolean varskn1;
+  input DAE.Exp e1;
+  input list<BackendDAE.Var> vars2;
+  input list<Integer> ilst2;
+  input Boolean varskn2;
+  input DAE.Exp e2;
+  output list<BackendDAE.Var> varsa;
+  output list<Integer> ilsta;
+  output list<BackendDAE.Var> vars;
+  output list<Integer> ilst;
+  output Boolean varskn;
+  output DAE.Exp e;
+algorithm
+  (varsa,ilsta,vars,ilst,varskn,e) := match(vars1,ilst1,varskn1,e1,vars2,ilst2,varskn2,e2)
+    local 
+      Boolean b1,b2;
+    // parameter - parameter should never happen
+    case(_,_,true,_,_,_,true,_)
+      then fail();
+    case(_,_,true,_,_,_,false,_)
+      equation
+        true = List.mapAllValueBool(vars2,replaceableAliasNew,true);
+      then (vars2,ilst2,vars1,ilst1,varskn1,e1);
+    case(_,_,false,_,_,_,true,_)
+      equation
+        true = List.mapAllValueBool(vars1,replaceableAliasNew,true);
+      then (vars1,ilst1,vars2,ilst2,varskn1,e2);
+    case(_,_,false,_,_,_,false,_)
+      equation
+        b1 = List.mapAllValueBool(vars1,replaceableAliasNew,true);
+        b2 = List.mapAllValueBool(vars1,replaceableAliasNew,true);
+        (varsa,ilsta,vars,ilst,varskn,e) = selectAliasNew1_1(b1,vars1,ilst1,varskn1,e1,b2,vars2,ilst2,varskn2,e2);
+      then
+        (varsa,ilsta,vars,ilst,varskn,e);
+  end match;
+end selectAliasNew1;
+
+protected function selectAliasNew1_1
+  input Boolean replacable1;
+  input list<BackendDAE.Var> vars1;
+  input list<Integer> ilst1;
+  input Boolean varskn1;
+  input DAE.Exp e1;
+  input Boolean replacable2;
+  input list<BackendDAE.Var> vars2;
+  input list<Integer> ilst2;
+  input Boolean varskn2;
+  input DAE.Exp e2;
+  output list<BackendDAE.Var> varsa;
+  output list<Integer> ilsta;
+  output list<BackendDAE.Var> vars;
+  output list<Integer> ilst;
+  output Boolean varskn;
+  output DAE.Exp e;
+algorithm
+  (varsa,ilsta,vars,ilst,varskn,e) := match(replacable1,vars1,ilst1,varskn1,e1,replacable2,vars2,ilst2,varskn2,e2)
+    local
+      list<Integer> il1,il2;
+      Integer i1,i2;
+      Boolean b;
+    case(true,_,_,_,_,true,_,_,_,_)
+      equation
+        il1 = List.map(vars1,BackendVariable.calcAliasKey);
+        il2 = List.map(vars2,BackendVariable.calcAliasKey);
+        i1 = List.fold(il1,intAdd,0);
+        i2 = List.fold(il2,intAdd,0);
+        b = intGt(i2,i1);
+        ((varsa,ilsta,vars,ilst,varskn,e)) = Util.if_(b,(vars2,ilst2,vars1,ilst1,varskn1,e1),(vars1,ilst1,vars2,ilst2,varskn1,e2));       
+      then (varsa,ilsta,vars,ilst,varskn,e);
+    case(false,_,_,_,_,true,_,_,_,_)
+      then (vars2,ilst2,vars1,ilst1,varskn1,e1);
+    case(true,_,_,_,_,false,_,_,_,_)
+      then (vars1,ilst1,vars2,ilst2,varskn1,e2);
+  end match;
+end selectAliasNew1_1;
+
+protected function replaceableAliasNew
+"function replaceableAlias
+  autor Frenkel TUD 2012-11
+  check if the variable is a replaceable alias."
+  input BackendDAE.Var var;
+  output Boolean res;
+algorithm
+  res := matchcontinue (var)
+    local
+      BackendDAE.VarKind kind;
+    case BackendDAE.VAR(varKind=kind)
+      equation
+        BackendVariable.isVarKindVariable(kind) "cr1 not constant";
+        false = BackendVariable.isVarOnTopLevelAndOutput(var);
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
+        false = BackendVariable.varHasUncertainValueRefine(var);
+      then
+        true;        
+    else
+      then
+        false;
+  end matchcontinue;
+end replaceableAliasNew;
+
+protected function getVars
+"function: getVars
+  author: Frenkel TUD 2012-11"
+  input DAE.ComponentRef cr;
+  input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
+  output list<BackendDAE.Var> oVars;
+  output list<Integer> oIndexs;
+  output Boolean varskn;
+algorithm
+  (oVars,oIndexs,varskn) := matchcontinue(cr,syst,shared)
+    case (_,_,_)
+      equation
+        (oVars as _::_,oIndexs) = BackendVariable.getVarDAE(cr,syst);
+      then
+        (oVars,oIndexs,false);
+    case (_,_,_)
+      equation
+        (oVars as _::_,oIndexs) = BackendVariable.getVarShared(cr,shared);
+      then
+        (oVars,oIndexs,true);
+  end matchcontinue;
+end getVars;
+
+protected function timeIndependentEquation
+"function timeIndependentEquation
+  autor Frenkel TUD 2012-11
+  helper for simpleEquations"
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  input Boolean selfCalled "this is a flag to know if we are selfcalled to save memory in case of non simple equation";
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue (lhs,rhs,source,selfCalled,inTpl)
+    local
+      DAE.Type ty;
+      BackendDAE.Variables vars,knvars;
+      list<Integer> ilst;
+      list<BackendDAE.Var> vlst;
+    case (_,_,_,_,(BackendDAE.EQSYSTEM(orderedVars=vars),BackendDAE.SHARED(knownVars=knvars),_,_,_))
+      equation
+        // collect vars and check if variable time not there
+        ((_,(false,_,_,_,_,ilst))) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false,vars,knvars,false,false,{}));
+        ((_,(false,_,_,_,_,ilst))) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false,vars,knvars,false,false,ilst));
+        ilst = List.uniqueIntN(ilst,BackendVariable.varsSize(vars));
+        vlst = List.map1r(ilst,BackendVariable.getVarAt,vars);
+      then
+        solveTimeIndependent(vlst,ilst,lhs,rhs,source,inTpl);
+    // in all other case keep the equation
+    case (_,_,_,true,_)
+      equation
+        ty = Expression.typeof(lhs);
+      then
+        generateEquation(lhs,rhs,ty,source,inTpl);
+  end matchcontinue;
+end timeIndependentEquation;
+
+protected function timeIndependentExpression
+"function timeIndependentExpression
+  autor Frenkel TUD 2012-11
+  helper for simpleEquations"
+  input DAE.Exp exp;
+  input DAE.ElementSource source;
+  input Boolean selfCalled "this is a flag to know if we are selfcalled to save memory in case of non simple equation";
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue (exp,source,selfCalled,inTpl)
+    local
+      DAE.Exp e2;
+      DAE.Type ty;
+      BackendDAE.Variables vars,knvars;
+      list<Integer> ilst;
+      list<BackendDAE.Var> vlst;
+    case (_,_,_,(BackendDAE.EQSYSTEM(orderedVars=vars),BackendDAE.SHARED(knownVars=knvars),_,_,_))
+      equation
+        // collect vars and check if variable time not there
+        ((_,(false,_,_,_,_,ilst))) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false,vars,knvars,false,false,{}));
+        ilst = List.uniqueIntN(ilst,BackendVariable.varsSize(vars));
+        vlst = List.map1r(ilst,BackendVariable.getVarAt,vars);
+      then
+        solveTimeIndependent(vlst,ilst,exp,DAE.RCONST(0.0)/* shoulde be ok since solve checks only for iszero*/,source,inTpl);    
+    // in all other case keep the equation
+    case (_,_,true,_)
+      equation
+        ty = Expression.typeof(exp);
+        e2 = Expression.makeConstZero(ty);        
+      then
+        generateEquation(exp,e2,ty,source,inTpl);
+  end matchcontinue;
+end timeIndependentExpression;
+
+protected function traversingTimeVarsFinder "
+Author: Frenkel 2012-11"
+  input tuple<DAE.Exp, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean,list<Integer>> > inExp;
+  output tuple<DAE.Exp, Boolean, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean,list<Integer>> > outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      DAE.Exp e;
+      Boolean b,b1,b2;
+      BackendDAE.Variables vars,knvars;
+      DAE.ComponentRef cr;
+      BackendDAE.Var var;
+      list<Integer> ilst,vlst;
+    
+    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars,b1,b2,ilst)))
+      then ((e,false,(true,vars,knvars,b1,b2,ilst)));       
+    case((e as DAE.CREF(cr,_), (_,vars,knvars,b1,b2,ilst)))
+      equation
+        (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        true = BackendVariable.isVarOnTopLevelAndInput(var);
+      then ((e,false,(true,vars,knvars,b1,b2,ilst)));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    // case for finding simple equation in jacobians 
+    // there are all known variables mark as input
+    // and they are all time-depending  
+    case((e as DAE.CREF(cr,_), (_,vars,knvars,true,b2,ilst)))
+      equation
+        (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        DAE.INPUT() = BackendVariable.getVarDirection(var);
+      then ((e,false,(true,vars,knvars,true,b2,ilst)));  
+    // var
+    case((e as DAE.CREF(cr,_), (b,vars,knvars,b1,b2,ilst)))
+      equation
+        (var::_,vlst)= BackendVariable.getVar(cr, vars);
+        ilst = listAppend(ilst,vlst);
+      then ((e,true,(b,vars,knvars,b1,b2,ilst)));          
+    case((e,(b,vars,knvars,b1,b2,ilst))) then ((e,not b,(b,vars,knvars,b1,b2,ilst)));
+    
+  end matchcontinue;
+end traversingTimeVarsFinder;
+
+protected function solveTimeIndependent
+"function solveTimeIndependent
+  autor Frenkel TUD 2012-11
+  helper for simpleEquations"
+  input list<BackendDAE.Var> vlst;
+  input list<Integer> ilst;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := match (vlst,ilst,lhs,rhs,source,inTpl)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp cre,es;
+      list<DAE.ComponentRef> crlst;
+      list<Integer> ilst;
+      BackendDAE.Var v;
+      Integer i,size;
+    case ({BackendDAE.VAR(varName=cr)},{i},_,_,_,_)
+      equation
+        // try to solve the equation
+        cre = Expression.crefExp(cr);
+        (es,{}) = ExpressionSolve.solve(lhs,rhs,cre);
+        source = DAEUtil.addSymbolicTransformation(source,DAE.SOLVE(cr,lhs,rhs,es,{}));
+        // constant or alias
+        //(i,syst,shared,eqTy) = constOrAlias(var,cr,es,syst,shared,DAEUtil.getSymbolicTransformations(source));    
+      then
+        fail();
+    case (_,_,_,_,_,_)
+      equation
+        // size of equation have to be equal with number of vars
+        size = Expression.sizeOf(Expression.typeof(lhs));
+        true = intEq(size,listLength(vlst));
+      then
+        solveTimeIndependent1(vlst,ilst,lhs,rhs,source,inTpl);
+  end match;
+end solveTimeIndependent;
+
+protected function solveTimeIndependent1
+"function solveTimeIndependent
+  autor Frenkel TUD 2012-11
+  helper for simpleEquations"
+  input list<BackendDAE.Var> vlst;
+  input list<Integer> ilst;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.ElementSource source;
+  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
+  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue (vlst,ilst,lhs,rhs,source,inTpl)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp cre,es;
+      list<DAE.ComponentRef> crlst;
+      list<Integer> ilst;
+      BackendDAE.Var v;
+      Integer i;
+    // a = ...
+    case (_,_,_,_,_,_)
+      equation
+        cr::crlst = List.map(vlst,BackendVariable.varCref);
+        cr = ComponentReference.crefStripLastSubs(cr);
+        List.map1rAllValue(crlst,ComponentReference.crefPrefixOf,true,cr);
+        // try to solve the equation
+        cre = Expression.crefExp(cr);
+        (es,{}) = ExpressionSolve.solve(lhs,rhs,cre);
+        source = DAEUtil.addSymbolicTransformation(source,DAE.SOLVE(cr,lhs,rhs,es,{}));
+        // constant or alias
+        //(i,syst,shared,eqTy) = constOrAlias(var,cr,es,syst,shared,DAEUtil.getSymbolicTransformations(source));    
+      then
+        fail();
+    // {a1,a2,a3,..} = ...
+  end matchcontinue;
+end solveTimeIndependent1;
+
 
 protected function replacementsInEqnsFast
 "function: replacementsInEqnsFast
@@ -2045,8 +2800,8 @@ algorithm
       equation
         is1 = BackendVariable.varStateSelectPrioAlias(var1);
         is2 = BackendVariable.varStateSelectPrioAlias(var2);
-        i1 = BackendVariable.calcAliasKey(cr1,var1);
-        i2 = BackendVariable.calcAliasKey(cr2,var2);
+        i1 = BackendVariable.calcAliasKey(var1);
+        i2 = BackendVariable.calcAliasKey(var2);
         b = intGt(is1,is2) "always=3...never=-1";
         b = Util.if_(intEq(is1,is2),intGt(i2,i1),b);
         ((acr,avar,aipos,ae,cr,var,e)) = Util.if_(b,(cr2,var2,ipos2,e2,cr1,var1,e1),(cr1,var1,ipos1,e1,cr2,var2,e2));
@@ -2057,8 +2812,8 @@ algorithm
 */        
     case (_,_,true,true,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        i1 = BackendVariable.calcAliasKey(cr1,var1);
-        i2 = BackendVariable.calcAliasKey(cr2,var2);
+        i1 = BackendVariable.calcAliasKey(var1);
+        i2 = BackendVariable.calcAliasKey(var2);
         b = intGt(i2,i1);
         ((acr,avar,aipos,ae,cr,var,e)) = Util.if_(b,(cr2,var2,ipos2,e2,cr1,var1,e1),(cr1,var1,ipos1,e1,cr2,var2,e2));
         (syst,shared) = selectAlias2(acr,cr,avar,var,ae,e,isyst,ishared,negate,source);
@@ -2255,8 +3010,8 @@ algorithm
         (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
         true = BackendVariable.isVarOnTopLevelAndInput(var);
       then ((e,false,(true,vars,knvars,b1,b2)));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2) ));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2)));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2)));
     // case for finding simple equation in jacobians 
     // there are all known variables mark as input
     // and they are all time-depending  
@@ -10631,8 +11386,6 @@ algorithm
       Boolean b;
       
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(ht,b))) then ((e,false,(ht,b)));     
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(ht,b))) then ((e,false,(ht,b)));     
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(ht,b))) then ((e,false,(ht,b)));     
 
     case ((e as DAE.IFEXP(expCond=e1, expThen=e2, expElse=e3),(ht,true)))
       equation
@@ -10676,8 +11429,6 @@ algorithm
       Boolean b,b1;
   
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(ht,b))) then ((e,false,(ht,b)));     
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "edge")),(ht,b))) then ((e,false,(ht,b)));     
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "change")),(ht,b))) then ((e,false,(ht,b)));  
     
     // special case for time, it is never part of the equation system  
     case ((e as DAE.CREF(componentRef = DAE.CREF_IDENT(ident="time")),(ht,true)))

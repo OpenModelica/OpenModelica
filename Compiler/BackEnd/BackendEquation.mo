@@ -1949,6 +1949,7 @@ algorithm
         list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> tpls;
         list<DAE.Var> varLst1,varLst2;
         Absyn.Path patha,patha1,pathb,pathb1;
+        DAE.Dimensions dims;
       // a = b;
       case (DAE.CREF(componentRef = cr1),DAE.CREF(componentRef = cr2),_)
         then (cr1,cr2,lhs,rhs,false)::inTpls;
@@ -1972,8 +1973,6 @@ algorithm
         then (cr1,cr2,DAE.LUNARY(DAE.NOT(ty),lhs),rhs,true)::inTpls;
       // not a = b;
       case (DAE.LUNARY(DAE.NOT(ty),DAE.CREF(componentRef = cr1)),DAE.CREF(componentRef = cr2),_)
-        equation
-          ne = Expression.negate(rhs);
         then (cr1,cr2,lhs,DAE.LUNARY(DAE.NOT(ty),rhs),true)::inTpls;
       // not a = not b;
       case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
@@ -1982,41 +1981,49 @@ algorithm
       case (DAE.ARRAY(array = elst1),DAE.ARRAY(array = elst2),_)
         then List.threadFold(elst1,elst2,aliasEquation1,inTpls);     
       // a = {b1,b2,b3,..}
-      //case (DAE.CREF(componentRef = cr1),DAE.ARRAY(array = elst2),_)
+      //case (DAE.CREF(componentRef = cr1),DAE.ARRAY(array = elst2,dims=dims),_)
+      //  then 
+      //    aliasArray(cr1,false,elst2,dims,inTpls);
       // -a = {b1,b2,b3,..}
-      //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2),_)
+      //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2,dims=dims),_)
+      //  then 
+      //    aliasArray(cr1,true,elst2,dims,inTpls);
       // a = -{b1,b2,b3,..}
-      //case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2)),_)
+      //case (DAE.CREF(componentRef = cr1),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2,ty=ty)),_)
       // -a = -{b1,b2,b3,..}
-      //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2)),_)
+      //case (DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(componentRef = cr1)),DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst2,ty=ty)),_)
       // {a1,a2,a3,..} = b      
       //case (DAE.ARRAY(array = elst1),DAE.CREF(componentRef = cr2),_)
       // -{a1,a2,a3,..} = b      
-      //case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst1)),DAE.CREF(componentRef = cr2),_)
+      //case (DAE.UNARY(DAE.UMINUS_ARR(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.CREF(componentRef = cr2),_)
       // {a1,a2,a3,..} = -b      
       //case (DAE.ARRAY(array = elst1),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_)
       // -{a1,a2,a3,..} = -b      
-      //case (DAE.UNARY(DAE.UMINUS_ARR(_)DAE.ARRAY(array = elst1)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_)
+      //case (DAE.UNARY(DAE.UMINUS_ARR(_)DAE.ARRAY(array = elst1,ty=ty)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(componentRef = cr2)),_)
       // not a = {b1,b2,b3,..}
-      //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2),_)
+      //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.ARRAY(array = elst2,ty=ty),_)
       // a = not {b1,b2,b3,..}
-      //case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2)),_)
+      //case (DAE.CREF(componentRef = cr1),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2,ty=ty)),_)
       // not a = not {b1,b2,b3,..}
-      //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2)),_)
+      //case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.CREF(componentRef = cr1)),DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst2,ty=ty)),_)
       // {a1,a2,a3,..} = not b      
-      //case (DAE.ARRAY(array = elst1),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
+      //case (DAE.ARRAY(array = elst1,ty=ty),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
       // not {a1,a2,a3,..} = b      
-      //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1)),DAE.CREF(componentRef = cr2),_)
+      //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.CREF(componentRef = cr2),_)
       // not {a1,a2,a3,..} = not b      
-      //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
+      //case (DAE.LUNARY(DAE.NOT(_),DAE.ARRAY(array = elst1,ty=ty)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_)
       // a = Record(b1,b2,b3,..)
-      //case (DAE.CREF(componentRef = cr1),DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(pathb1)))),_)
-      //equation
-      //  true = Absyn.pathEqual(pathb,pathb1);
+      case (DAE.CREF(componentRef = cr1),DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(pathb1)))),_)
+        equation
+          true = Absyn.pathEqual(pathb,pathb1);
+        then
+          aliasRecord(cr1,varLst2,elst2,inTpls);
       // Record(a1,a2,a3,..) = b  
-      //case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(patha1)))),DAE.CREF(componentRef = cr2),_)
-      //equation
-      //  true = Absyn.pathEqual(patha,patha1);
+      case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(patha1)))),DAE.CREF(componentRef = cr2),_)
+        equation
+          true = Absyn.pathEqual(patha,patha1);
+        then
+          aliasRecord(cr2,varLst1,elst1,inTpls);
       // Record(a1,a2,a3,..) = Record(b1,b2,b3,..)
       case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))),
             DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))),_)
@@ -2024,28 +2031,123 @@ algorithm
           true = Absyn.pathEqual(patha,patha1);
           true = Absyn.pathEqual(pathb,pathb1);
         then List.threadFold(elst1,elst2,aliasEquation1,inTpls); 
-      // {a1+b1,a2+b2,a3+b3,..} = 0;
-      case (DAE.ARRAY(array = elst1),_,_)
-        equation
-          true = Expression.isZero(rhs);  
-        then List.fold(elst1,aliasExpression,inTpls); 
-      // 0 = {a1+b1,a2+b2,a3+b3,..};
-      case (_,DAE.ARRAY(array = elst2),_)
-        equation
-          true = Expression.isZero(lhs);  
-        then List.fold(elst2,aliasExpression,inTpls);
-      // lhs = 0
-      case (_,_,_)
-        equation
-          true = Expression.isZero(rhs);
-        then aliasExpression(lhs,inTpls);
-      // 0 = rhs
-      case (_,_,_)
-        equation
-          true = Expression.isZero(lhs);
-        then aliasExpression(rhs,inTpls);
+      // matchcontinue part
+      else
+        then aliasEquation2(lhs,rhs,inTpls);
   end match;
 end aliasEquation1;
+
+protected function aliasEquation2
+"function aliasEquation1
+  autor Frenkel TUD 2011-04
+  helper for aliasEquation"
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> inTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+  output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+algorithm
+  outTpls := matchcontinue (lhs,rhs,inTpls)
+    local
+      list<DAE.Exp> elst1,elst2;
+    // {a1+b1,a2+b2,a3+b3,..} = 0;
+    case (DAE.ARRAY(array = elst1),_,_)
+      equation
+        true = Expression.isZero(rhs);  
+      then List.fold(elst1,aliasExpression,inTpls); 
+    // 0 = {a1+b1,a2+b2,a3+b3,..};
+    case (_,DAE.ARRAY(array = elst2),_)
+      equation
+        true = Expression.isZero(lhs);  
+      then List.fold(elst2,aliasExpression,inTpls);
+    // lhs = 0
+    case (_,_,_)
+      equation
+        true = Expression.isZero(rhs);
+       then aliasExpression(lhs,inTpls);
+    // 0 = rhs
+    case (_,_,_)
+      equation
+        true = Expression.isZero(lhs);
+      then aliasExpression(rhs,inTpls);
+  end matchcontinue;
+end aliasEquation2;
+
+protected function aliasArray
+"function aliasArray
+  autor Frenkel TUD 2011-04
+  helper for aliasEquation"
+  input DAE.ComponentRef cr;
+  input Boolean negate;
+  input list<DAE.Exp> explst;
+  input DAE.Type iTy;
+  input list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> inTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+  output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+algorithm
+  outTpls := match (cr,negate,explst,iTy,inTpls)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp e1,e2;
+      DAE.Type ty,ty1;
+      list<DAE.Exp> elst;
+    case (_,_,{},_,_) then inTpls;
+    // a = b
+    case (_,_,(e2 as DAE.CREF(componentRef = cr2))::elst,_,_)
+      equation
+      then
+        aliasArray(cr,negate,elst,iTy,inTpls);
+    // a = -b
+    // a = not b
+  end match;
+end aliasArray;
+
+protected function aliasRecord
+"function aliasRecord
+  autor Frenkel TUD 2011-04
+  helper for aliasEquation"
+  input DAE.ComponentRef cr;
+  input list<DAE.Var> varLst;
+  input list<DAE.Exp> explst;
+  input list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> inTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+  output list<tuple<DAE.ComponentRef,DAE.ComponentRef,DAE.Exp,DAE.Exp,Boolean>> outTpls "(cr1,cr2,cr1=e2,cr2=e1,true if negated alias)";
+algorithm
+  outTpls := match (cr,varLst,explst,inTpls)
+    local
+      DAE.ComponentRef cr1,cr2;
+      DAE.Exp e1,e2;
+      DAE.Type ty,ty1;
+      list<DAE.Exp> elst;
+      list<DAE.Var> vlst;
+      DAE.Ident ident;
+    case (_,{},{},_) then inTpls;
+    // a = b
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.CREF(componentRef = cr2))::elst,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.CREF(cr1,ty);
+      then
+        aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,false)::inTpls);
+    // a = -b
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(componentRef = cr2)))::elst,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(cr1,ty));
+      then
+        aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(componentRef = cr2)))::elst,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(cr1,ty));
+      then
+        aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
+    // a = not b
+    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(componentRef = cr2)))::elst,_)
+      equation
+        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
+        e1 = DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(cr1,ty));
+      then
+        aliasRecord(cr,vlst,elst,(cr1,cr2,e1,e2,true)::inTpls);
+  end match;        
+end aliasRecord;
 
 protected function aliasExpression
 "function aliasExpression
