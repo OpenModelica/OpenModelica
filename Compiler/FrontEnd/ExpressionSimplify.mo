@@ -41,6 +41,7 @@ encapsulated package ExpressionSimplify
 
 // public imports
 public import Absyn;
+public import ClassInf;
 public import DAE;
 public import Error;
 public import SCode;
@@ -672,6 +673,7 @@ algorithm
       list<list<DAE.Exp>> mexps,mexps_1;
       Option<DAE.Exp> eo;
       DAE.Dimensions dims;
+      Absyn.Path p1,p2,p3;
     
     // Real -> Real
     case(DAE.RCONST(r),DAE.T_REAL(varLst = _)) then DAE.RCONST(r);
@@ -727,6 +729,12 @@ algorithm
         tp2 = Expression.unliftArray(tp1);
         mexps_1 = List.map1List(mexps, addCast, tp2);
       then DAE.MATRIX(tp,n,mexps_1);
+    
+    // simplify record constructor from one to another
+    case (DAE.CALL(p1,exps,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p3)))
+      equation
+        true = Absyn.pathEqual(p1,p2) "It is a record constructor since it has the same path called as its output type";
+      then DAE.CALL(p3,exps,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
     
     // fill(e, ...) can be simplified
     case(DAE.CALL(path=Absyn.IDENT("fill"),expLst=e::exps),_) 
@@ -4542,6 +4550,18 @@ algorithm
     case DAE.MUL_MATRIX_PRODUCT(ty=_) then ();
   end match;
 end checkZeroLengthArrayOp;
+
+public function simplifyAddSymbolicOperation
+  input DAE.Exp exp;
+  input DAE.ElementSource source;
+  output DAE.Exp outExp;
+  output DAE.ElementSource outSource;
+protected
+  Boolean changed;
+algorithm
+  (outExp,changed) := simplify(exp);
+  outSource := DAEUtil.condAddSymbolicTransformation(changed,source,DAE.SIMPLIFY(exp,outExp));
+end simplifyAddSymbolicOperation;
 
 end ExpressionSimplify;
 

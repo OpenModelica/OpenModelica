@@ -3833,7 +3833,7 @@ algorithm
   end match;
 end traverseDAE;
 
-protected function traverseDAEFuncLst "help function to traverseDae. Traverses the functions "
+public function traverseDAEFuncLst "help function to traverseDae. Traverses the functions "
   input list<tuple<DAE.AvlKey,DAE.AvlValue>> ifuncLst;
   input FuncExpType func;
   input Type_a iextraArg;

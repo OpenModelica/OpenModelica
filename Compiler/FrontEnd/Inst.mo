@@ -8120,6 +8120,7 @@ algorithm
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache,env,ih,ci_state, dae, ty, mod, InstUtil.toConst(vt), pre, n, source);
+        cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
@@ -8139,6 +8140,7 @@ algorithm
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, InstUtil.toConst(vt), pre, n, source);
+        cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
@@ -8604,7 +8606,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instScalar failed on " +& inName +& "\n");
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instScalar failed on " +& inName +& " in scope " +& PrefixUtil.printPrefixStr(inPrefix) +& " env: " +& Env.printEnvPathStr(inEnv) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -8656,6 +8658,15 @@ algorithm
         dae = DAEUtil.joinDaes(dae, inDae);
       then
         dae;    
+
+    case (_, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)), _, DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = DAE.CAST(exp=DAE.CREF(_, _))))),
+        _, _, _, _)
+      equation
+        dae = instModEquation(inCref, inType, inMod, inSource, inImpl);
+        //move bindings from dae to inClassDae and use the resulting dae
+        dae = moveBindings(dae,inClassDae);
+        dae = DAEUtil.joinDaes(dae, inDae);
+      then dae;    
 
     // Parameter with binding.
     case (_, _, SCode.PARAM(), DAE.MOD(eqModOption = SOME(DAE.TYPED(modifierAsExp = _))),
@@ -8711,21 +8722,18 @@ algorithm
      list<DAE.Element> restDae2;
      DAE.Exp newBindExp;    
     
-    case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::{}),
-      DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, bind, dims, ct, src, varAttOpt, commOpt, inOut)::{}))
+    case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::{}),DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, bind, dims, ct, src, varAttOpt, commOpt, inOut)::{}))
       then (DAE.DAE({DAE.VAR(cref, kind, dir, prl, vis, ty, SOME(newBindExp), dims, ct, src, varAttOpt, commOpt, inOut)}));
     
-    case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::restDae1),
-      DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, bind, dims, ct, src, varAttOpt, commOpt, inOut)::restDae2))
+    case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::restDae1),DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, bind, dims, ct, src, varAttOpt, commOpt, inOut)::restDae2))
       equation
          DAE.DAE(restDae2) = moveBindings(DAE.DAE(restDae1),DAE.DAE(restDae2));
       then (DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, SOME(newBindExp), dims, ct, src, varAttOpt, commOpt, inOut)::restDae2));
     
-    case (_,_)
+    case (DAE.DAE(restDae1),DAE.DAE(restDae2))
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.moveBindings failed");
-      then
-        fail();
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.moveBindings failed:" +& DAEDump.dumpElementsStr(restDae1) +& " ### " +& DAEDump.dumpElementsStr(restDae2));
+      then fail();
    end match;     
 end moveBindings;
 
@@ -18076,5 +18084,31 @@ algorithm
       then ();
   end match;
 end findUnboundVariableUseInCase;
+
+protected function addRecordConstructorFunction "Add record constructor whenever we instantiate a variable. Needed so we can cast to this constructor freely."
+  input Env.Cache inCache;
+  input DAE.Type inType;
+  output Env.Cache outCache;
+algorithm
+  outCache := matchcontinue (inCache,inType)
+    local
+      Absyn.Path p1;
+      DAE.Function fun;
+      list<DAE.Var> vars;
+      list<DAE.FuncArg> fargs;
+      DAE.Type ty;
+    case (_,ty as DAE.T_COMPLEX(varLst=vars,complexClassType=ClassInf.RECORD(p1)))
+      equation
+        p1 = Absyn.makeFullyQualified(p1);
+        failure(_ = DAEUtil.avlTreeGet(Env.getFunctionTree(inCache),p1));
+        fargs = Types.makeFargsList(vars);
+        ty = DAE.T_FUNCTION(fargs, ty, DAE.FUNCTION_ATTRIBUTES_DEFAULT, DAE.emptyTypeSource);
+        fun = DAE.RECORD_CONSTRUCTOR(p1,ty,DAE.emptyElementSource);
+      then addFunctionsToDAE(inCache, {fun}, SCode.NOT_PARTIAL());
+
+    else inCache;
+    
+  end matchcontinue;
+end addRecordConstructorFunction;
 
 end Inst;

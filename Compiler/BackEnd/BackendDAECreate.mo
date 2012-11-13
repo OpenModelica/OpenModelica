@@ -944,6 +944,8 @@ algorithm
       
     case (DAE.EQUATION(exp = e1,scalar = e2,source = source),_,_)
       equation
+        (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
@@ -951,6 +953,8 @@ algorithm
 
     case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = source),_,_)
       equation
+        (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
@@ -965,6 +969,7 @@ algorithm
 
     case (DAE.DEFINE(componentRef = cr1, exp = e2, source = source),_,_)
       equation
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);        
         e1 = Expression.crefExp(cr1);
       then
@@ -973,14 +978,15 @@ algorithm
     case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source),_,_)
       equation
         e1 = Expression.crefExp(cr1);
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
         BackendDAE.EQUATION(e1,e2,source)::inEqns;
 
     case (DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_)
       equation
-        //(e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
-        //(e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
+        (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.forceInlineExp(e1,(SOME(functionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);
         (e2,source,_) = Inline.forceInlineExp(e2,(SOME(functionTree),{DAE.NORM_INLINE(),DAE.NO_INLINE()}),source);        
       then
@@ -988,6 +994,8 @@ algorithm
         
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_)
       equation
+        (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         size = Expression.sizeOf(Expression.typeof(e1));
@@ -996,6 +1004,8 @@ algorithm
 
     case (DAE.ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_)
       equation
+        (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
@@ -1003,6 +1013,8 @@ algorithm
       
     case (DAE.INITIAL_ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_)
       equation
+        (e1,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e1, source);
+        (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);    
       then
@@ -2026,7 +2038,9 @@ algorithm
     // case for complex equations, array equations and equations
     case (target :: rest_targets, source :: rest_sources, _, _, _)
       equation
-        (target,eq_source,_) = Inline.inlineExp(target, (SOME(funcs),{DAE.NORM_INLINE()}), inEq_source);
+        (target,eq_source) = ExpressionSimplify.simplifyAddSymbolicOperation(target, inEq_source);
+        (source,eq_source) = ExpressionSimplify.simplifyAddSymbolicOperation(source, eq_source);
+        (target,eq_source,_) = Inline.inlineExp(target, (SOME(funcs),{DAE.NORM_INLINE()}), eq_source);
         (source,eq_source,_) = Inline.inlineExp(source, (SOME(funcs),{DAE.NORM_INLINE()}), eq_source);
         eqns = lowerextendedRecordEqn(target,source,eq_source,funcs,iEqns);
       then

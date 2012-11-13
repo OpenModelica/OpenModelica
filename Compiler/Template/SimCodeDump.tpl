@@ -58,7 +58,7 @@ template dumpEqs(list<SimEqSystem> eqs)
       >>
     case e as SES_SIMPLE_ASSIGN(__) then
       <<
-      eq: <%crefStr(e.cref)%> = <%printExpStr(e.exp)%>;
+      eq <%index%>: <%crefStr(e.cref)%> = <%printExpStr(e.exp)%>;
         <%dumpElementSource(e.source)%><%\n%>
       >>
     case e as SES_ARRAY_CALL_ASSIGN(__) then

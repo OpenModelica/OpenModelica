@@ -8622,5 +8622,42 @@ algorithm
   end match;
 end dimensionsToExps;
 
+public function splitRecord
+  "Splits a record into its elements. Works for crefs, records constructor calls, and casts of the same"
+  input DAE.Exp inExp;
+  input DAE.Type ty;
+  output list<DAE.Exp> outExps;
+algorithm
+  outExps := match (inExp,ty)
+    local
+      DAE.Exp exp;
+      DAE.Type tt,ty2;
+      list<DAE.Var> vs;
+      DAE.ComponentRef cr;
+      Absyn.Path p1,p2;
+      list<DAE.Exp> exps;
+    case (DAE.CAST(exp=exp),_) then splitRecord(exp,ty);
+    case (DAE.CREF(componentRef=cr),DAE.T_COMPLEX(varLst = vs))
+      then List.map1(vs,splitRecord2,cr);
+    case (DAE.CALL(path=p1,expLst=exps,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(p2)))),_)
+      equation
+        true = Absyn.pathEqual(p1,p2) "is record constructor";
+      then exps;
+  end match;
+end splitRecord;
+
+protected function splitRecord2
+  input DAE.Var var;
+  input DAE.ComponentRef cr;
+  output DAE.Exp exp;
+protected
+  String n;
+  DAE.Type tt,ty;
+algorithm
+  DAE.TYPES_VAR(name = n,ty = tt) := var;
+  ty := Types.simplifyType(tt);
+  exp := makeCrefExp(ComponentReference.crefPrependIdent(cr, n, {}, ty), ty);
+end splitRecord2;
+
 end Expression;
 

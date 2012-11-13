@@ -1264,6 +1264,17 @@ algorithm
       DAE.Const c;
       DAE.TupleConst tp;
 
+      /* TODO: Weird hack to make backend happy */
+    case (e1 as DAE.CREF(componentRef=_), (p1 as DAE.PROP(type_ = t1 as DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
+          e2, (p2 as DAE.PROP(type_ = t2, constFlag = c)), _, initial_, impl) /* If it fails then this rule is matched. */ 
+      equation
+        (e2_1, DAE.PROP(t_1, _)) = Types.matchProp(e2, p2, p1, true);
+        (e1,_) = ExpressionSimplify.simplify(e1);
+        (e2_1,_) = ExpressionSimplify.simplify(e2_1);
+        dae = instEqEquation2(e1, e2_1, t_1, c, source, initial_);
+      then
+        dae;
+
     case (e1, (p1 as DAE.PROP(type_ = t1)),
           e2, (p2 as DAE.PROP(type_ = t2, constFlag = c)), _, initial_, impl) /* impl PR. e1= lefthandside, e2=righthandside
    This seem to be a strange function. 
@@ -1274,16 +1285,21 @@ algorithm
    This rule is matched first, if it fail the next rule is matched.
    If it fails then this rule is matched. 
    BZ(2007-05-30): Not so strange it checks for eihter exp1 or exp2 to be from expected type.*/ 
-      equation 
+      equation
         (e1_1, DAE.PROP(t_1, _)) = Types.matchProp(e1, p1, p2, false);
+        (e1_1,_) = ExpressionSimplify.simplify(e1_1);
+        (e2,_) = ExpressionSimplify.simplify(e2);
         dae = instEqEquation2(e1_1, e2, t_1, c, source, initial_);
       then
         dae;
 
+      /* TODO: Make testsuite run properly even if this is the first case... Unknown dimensions are not matched fine here and should possibly be disallowed. */
     case (e1, (p1 as DAE.PROP(type_ = t1)),
           e2, (p2 as DAE.PROP(type_ = t2, constFlag = c)), _, initial_, impl) /* If it fails then this rule is matched. */ 
       equation 
         (e2_1, DAE.PROP(t_1, _)) = Types.matchProp(e2, p2, p1, true);
+        (e1,_) = ExpressionSimplify.simplify(e1);
+        (e2_1,_) = ExpressionSimplify.simplify(e2_1);
         dae = instEqEquation2(e1, e2_1, t_1, c, source, initial_);
       then
         dae;
@@ -1292,6 +1308,8 @@ algorithm
           e2, (p2 as DAE.PROP_TUPLE(type_ = t2, tupleConst = tp)), _, initial_, impl) /* PR. */ 
       equation 
         (e1_1, DAE.PROP_TUPLE(t_1, _)) = Types.matchProp(e1, p1, p2, false);
+        (e1_1,_) = ExpressionSimplify.simplify(e1_1);
+        (e2,_) = ExpressionSimplify.simplify(e2);
         c = Types.propTupleAllConst(tp);
         dae = instEqEquation2(e1_1, e2, t_1, c, source, initial_);
       then
@@ -1305,6 +1323,8 @@ algorithm
    */ 
       equation 
         (e2_1, DAE.PROP_TUPLE(t_1, _)) = Types.matchProp(e2, p2, p1, true);
+        (e1,_) = ExpressionSimplify.simplify(e1);
+        (e2_1,_) = ExpressionSimplify.simplify(e2_1);
         c = Types.propTupleAllConst(tp);
         dae = instEqEquation2(e1, e2_1, t_1, c, source, initial_);
       then
@@ -1314,7 +1334,9 @@ algorithm
            DAE.PROP(type_ = DAE.T_ENUMERATION(names = _)),
            e2, 
            DAE.PROP(type_ = t as DAE.T_ENUMERATION(names = _), constFlag = c), _, initial_, impl)
-      equation 
+      equation
+        (e1,_) = ExpressionSimplify.simplify(e1);
+        (e2,_) = ExpressionSimplify.simplify(e2);
         dae = instEqEquation2(e1, e2, t, c, source, initial_);
       then
         dae;
@@ -1327,7 +1349,9 @@ algorithm
         p2 = Types.propTupleFirstProp(p2);
         DAE.PROP(constFlag = c) = p2;
         (e1, DAE.PROP(type_ = t_1)) = Types.matchProp(e1, p1, p2, false);
+        (e1,_) = ExpressionSimplify.simplify(e1);
         e2 = DAE.TSUB(e2, 1, t_1);
+        (e2,_) = ExpressionSimplify.simplify(e2);
         dae = instEqEquation2(e1, e2, t_1, c, source, initial_);
       then
         dae;
@@ -1373,6 +1397,9 @@ algorithm
       list<DAE.Element> dael;
       DAE.EqualityConstraint ec;
       DAE.TypeSource ts;
+      DAE.Exp exp1, exp2;
+      list<DAE.Exp> exps1,exps2;
+      list<DAE.Type> tys;
 
     case (e1,e2,DAE.T_INTEGER(varLst = _),_,_,initial_)
       equation 
@@ -1448,53 +1475,18 @@ algorithm
       then
         dae;
   
-    // Complex equation for records on form e1 = e2, expand to equality over record elements 
-    case
-      (DAE.CREF(componentRef=_),DAE.CREF(componentRef=_),DAE.T_COMPLEX(varLst = {}), _,_,initial_) 
-      then DAEUtil.emptyDae;
-    
-    case (DAE.CREF(componentRef = c1,ty = t1),DAE.CREF(componentRef = c2,ty = t2),
-          DAE.T_COMPLEX(complexClassType = cs,varLst = (DAE.TYPES_VAR(name = n,ty = tt) :: vs),
-          equalityConstraint = ec, source = ts), _, _,initial_)
-      equation 
-        ty2 = Types.simplifyType(tt);
-        c1_1 = ComponentReference.crefPrependIdent(c1, n, {}, ty2);
-        c2_1 = ComponentReference.crefPrependIdent(c2, n, {}, ty2);
-        
-        e1 = Expression.makeCrefExp(c1_1,ty2);
-        e2 = Expression.makeCrefExp(c2_1,ty2);
-        dae1 = instEqEquation2(e1, e2, tt, inConst, source, initial_);
-        e1 = Expression.makeCrefExp(c1,t1);
-        e2 = Expression.makeCrefExp(c2,t2);
-        dae2 = instEqEquation2(e1, e2, DAE.T_COMPLEX(cs,vs,ec,ts), inConst, source, initial_);
-        
-        dae = DAEUtil.joinDaes(dae1, dae2);
-      then
-        dae;
-        
-    // split a constant complex equation to its elements 
-    case ((e1 as DAE.CREF(assignedCr,_)),(e2 as DAE.CALL(attr=DAE.CALL_ATTR(ty=ty))),
-        tt as DAE.T_COMPLEX(varLst = _), DAE.C_CONST(), _,initial_)
+    // split a complex equation to its elements
+    case (e1,e2,DAE.T_COMPLEX(varLst = vs),_,_,initial_)
       equation
-        elabedType = Types.simplifyType(tt);
-        true = Expression.equalTypes(elabedType,ty);
-        // adrpo: 2010-02-18, bug: https://openmodelica.org:8443/cb/issue/1175?navigation=true
-        // DO NOT USE Ceval.MSG() here to generate messages 
-        // as it will print error messages such as:
-        //   Error: Variable body.sequence_start[1] not found in scope <global scope>
-        //   Error: No constant value for variable body.sequence_start[1] in scope <global scope>.
-        //   Error: Variable body.sequence_angleStates[1] not found in scope <global scope>
-        //   Error: No constant value for variable body.sequence_angleStates[1] in scope <global scope>.
-        // These errors happen because WE HAVE NO ENVIRONMENT, so we cannot lookup or ceval any cref!
-        (_,value,_) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false, NONE(), Ceval.NO_MSG());
-        dael = assignComplexConstantConstruct(value,assignedCr,source);
-        //print(" SplitComplex \n ");DAEUtil.printDAE(DAE.DAE(dael,dav));
-      then 
-        DAE.DAE(dael);
+        exps1 = Expression.splitRecord(e1,inType3);
+        exps2 = Expression.splitRecord(e2,inType3);
+        tys = List.map(vs, Types.getVarType);
+        dae = instEqEquation2List(exps1, exps2, tys, inConst, source, initial_, {});
+      then dae;
         
    /* all other COMPLEX equations */
    case (e1,e2, tt as DAE.T_COMPLEX(varLst = _),_,_,initial_)
-     equation        
+     equation
        dae = instComplexEquation(e1,e2,tt,source,initial_);
      then dae;
    
@@ -1505,6 +1497,31 @@ algorithm
         fail();
   end matchcontinue;
 end instEqEquation2;
+
+protected function instEqEquation2List
+  input list<DAE.Exp> inExps1;
+  input list<DAE.Exp> inExps2;
+  input list<DAE.Type> inTypes3;
+  input DAE.Const const;
+  input DAE.ElementSource source "the origin of the element";
+  input SCode.Initial initial_;
+  input list<DAE.DAElist> acc;
+  output DAE.DAElist outDae;
+algorithm 
+  outDae := match (inExps1,inExps2,inTypes3, const, source, initial_,acc)
+    local
+      list<DAE.Exp> rest1,rest2;
+      list<DAE.Type> rest3;
+      DAE.Type ty;
+      DAE.Exp exp1,exp2;
+      DAE.DAElist res;
+    case ({},{},{},_,_,_,_) then DAEUtil.joinDaeLst(listReverse(acc));
+    case (exp1::rest1,exp2::rest2,ty::rest3,_,_,_,_)
+      equation
+        res = instEqEquation2(exp1,exp2,ty,const,source,initial_);
+      then instEqEquation2List(rest1,rest2,rest3,const,source,initial_,res::acc);
+  end match;
+end instEqEquation2List;
 
 protected function assignComplexConstantConstruct "
 Author BZ 2010
@@ -1801,7 +1818,7 @@ algorithm
         lhs_str = ExpressionDump.printExpStr(lhs);
         rhs_str = ExpressionDump.printExpStr(rhs);
         eq_str = stringAppendList({lhs_str, "=", rhs_str});
-        Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
+        Error.addSourceMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str}, DAEUtil.getElementSourceFileInfo(source));
       then 
         fail();
 
@@ -3853,7 +3870,7 @@ algorithm
 
     case (_, _, _, _, _)
       equation
-        true = Types.equivtypes(inLhsType, inRhsType);
+        true = Types.equivtypesOrRecordSubtypeOf(inLhsType, inRhsType);
       then
         ();
 
@@ -3862,7 +3879,7 @@ algorithm
       equation
         (t1, _) = Types.flattenArrayType(inLhsType);
         (t2, _) = Types.flattenArrayType(inRhsType);
-        false = Types.equivtypes(t1, t2);
+        false = Types.equivtypesOrRecordSubtypeOf(t1, t2);
         (_, cs1) = Types.printConnectorTypeStr(t1);
         (_, cs2) = Types.printConnectorTypeStr(t2);
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);

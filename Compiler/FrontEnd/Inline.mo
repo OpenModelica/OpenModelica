@@ -1294,8 +1294,7 @@ algorithm
       equation
         ((e_1,(fns,true))) = Expression.traverseExp(e,inlineCall,(fns,false));
         source = DAEUtil.addSymbolicTransformation(source,DAE.OP_INLINE(e,e_1));
-        (e_2,b) = ExpressionSimplify.simplify(e_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b,source,e_1,e_2);
+        (e_2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e_1, source);
       then
         (e_2,source,true);
     else (inExp,inSource,false);
@@ -1527,6 +1526,11 @@ algorithm
       list<DAE.ComponentRef> crlst;
       list<tuple<DAE.ComponentRef,DAE.ComponentRef>> creftpllst;
     case ({},ht) then ({},ht);
+      /* All elements of the record have correct type already. No cast needed. */
+    case((c,(DAE.CAST(exp=e,ty=DAE.T_COMPLEX(varLst=_))))::res,ht)
+      equation
+        (new1,ht1) = extendCrefRecords((c,e)::res,ht);
+      then (new1,ht1);
     case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.T_COMPLEX(varLst=varLst))))::res,ht)
       equation
         (res1,ht1) = extendCrefRecords(res,ht);

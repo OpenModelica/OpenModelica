@@ -514,6 +514,10 @@ public function getVarType "Return the Type of a Var"
 algorithm
   tp := match (v)
     case(DAE.TYPES_VAR(ty = tp)) then tp;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Types.getVarType failed"});
+      then fail();
   end match;
 end getVarType;
 
@@ -1263,6 +1267,24 @@ algorithm
   end matchcontinue;
 end equivtypes;
 
+public function equivtypesOrRecordSubtypeOf
+  "Like equivtypes but accepts non-typeconverted records as well (for connections)."
+  input Type t1;
+  input Type t2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (t1, t2)
+    local
+      ClassInf.State st1,st2;
+      list<Var> els1,els2;
+    case (DAE.T_COMPLEX(complexClassType = st1,varLst = els1), DAE.T_COMPLEX(complexClassType = st2,varLst = els2))
+      equation
+        true = subtypeVarlist(els1, els2);
+      then true;
+    else equivtypes(t1,t2);
+  end matchcontinue;
+end equivtypesOrRecordSubtypeOf;
+
 public function subtype "function: subtype
   Is the first type a subtype of the second type?  
   This function specifies the rules for subtyping in Modelica."
@@ -1386,6 +1408,7 @@ algorithm
     case (DAE.T_COMPLEX(complexClassType = st1,varLst = els1),
           DAE.T_COMPLEX(complexClassType = st2,varLst = els2))
       equation
+        true = classTypeEqualIfRecord(st1, st2) "We need to add a cast from one record to another";
         true = subtypeVarlist(els1, els2);
       then
         true;
@@ -4090,6 +4113,9 @@ algorithm
       DAE.MatchType matchTy;
       list<DAE.Element> localDecls;
       DAE.TypeSource ts,ts1,ts2;
+      list<Var> els1,els2;
+      ClassInf.State st1,st2;
+      Absyn.Path p1,p2;
     
     // try dims as list T_ARRAY(a::b::c)
     case (e,
@@ -4305,6 +4331,14 @@ algorithm
     case (e, t1,DAE.T_SUBTYPE_BASIC(complexType = t2),_) equation
       (e_1,t_1) = typeConvert(e,t1,t2,printFailtrace);
     then (e_1,t_1);
+      
+    // Complex types (records) that need a cast
+    case (e, DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p1),varLst = els1), t2 as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(p2),varLst = els2),_)
+      equation
+        false = Absyn.pathEqual(p1,p2) "We need to add a cast from one record to another";
+        true = subtypeVarlist(els1, els2);
+        e = DAE.CAST(t2, e);
+      then (e, t2);
 
     // MetaModelica Option
     case (DAE.META_OPTION(SOME(e)),DAE.T_METAOPTION(optionType = t1),DAE.T_METAOPTION(t2,ts2),_)
@@ -7370,5 +7404,18 @@ algorithm
     else inTpl;
   end match;
 end hasMetaArrayWork;
+
+protected function classTypeEqualIfRecord
+  input ClassInf.State st1;
+  input ClassInf.State st2;
+  output Boolean b;
+algorithm
+  b := match (st1,st2)
+    local
+      Absyn.Path p1,p2;
+    case (ClassInf.RECORD(p1),ClassInf.RECORD(p2)) then Absyn.pathEqual(p1,p2);
+    else true;
+  end match;
+end classTypeEqualIfRecord;
 
 end Types;

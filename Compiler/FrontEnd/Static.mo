@@ -2518,6 +2518,14 @@ algorithm
     case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
       equation
         (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
+        (e_1,t2) = Types.matchType(e_1, t1, t2, false);
+        c = Types.constAnd(c1, c2);
+      then
+        ((e_1 :: es_1),DAE.PROP(t2,c));
+
+    case (e_1::es_1,DAE.PROP(t1,c1)::props,_,_)
+      equation
+        (es_1,DAE.PROP(t2,c2)) = elabArray2(es_1,props,pre,info);
         false = Types.equivtypes(t1, t2);
         sp = PrefixUtil.printPrefixStr3(pre);
         e_str = ExpressionDump.printExpStr(e_1);
