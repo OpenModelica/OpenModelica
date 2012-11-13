@@ -56,6 +56,7 @@ public type StartValue = Option<Exp>;
 public constant String UNIQUEIO = "$unique$outer$";
 
 public constant String derivativeNamePrefix = "$DER";
+public constant String preNamePrefix = "$PRE";
 
 
 public uniontype VarKind

@@ -378,6 +378,8 @@ constant DebugFlag SHOW_SCODE = DEBUG_FLAG(106, "showSCode",
   Util.gettext("Shows the SCode result of +d=scodeInstShortcut."));
 constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(107, "dumpConstrepl",
   Util.gettext("dump the found replacements for constants"));
+constant DebugFlag PEDANTIC = DEBUG_FLAG(108, "pedantic",
+  Util.gettext("switch into pedantic debug-mode, to get much more feedback"));
 
 
 // This is a list of all debug flags, to keep track of which flags are used. A
@@ -491,7 +493,8 @@ constant list<DebugFlag> allDebugFlags = {
   SOLVE_INITIAL_SYSTEM,
   SCODE_INST_SHORTCUT,
   SHOW_SCODE,
-  DUMP_CONST_REPL
+  DUMP_CONST_REPL,
+  PEDANTIC
 };
 
 // CONFIGURATION FLAGS

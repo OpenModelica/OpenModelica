@@ -550,7 +550,7 @@ end expandAlgorithmStmts;
 
 public  function createEmptyBackendDAE
 " function: createEmptyBackendDAE
-  autor: wbraun
+  author: wbraun
   Copy the dae to avoid changes in
   vectors."
   input BackendDAEType inBDAEType;
@@ -600,7 +600,7 @@ end createEmptyBackendDAE;
 
 public  function copyBackendDAE
 " function: copyBackendDAE
-  autor: Frenkel TUD, wbraun
+  author: Frenkel TUD, wbraun
   Copy the dae to avoid changes in
   vectors."
   input BackendDAE.BackendDAE inBDAE;
@@ -623,7 +623,7 @@ end copyBackendDAE;
 
 public  function copyBackendDAEEqSystem
 " function: copyBackendDAE
-  autor: Frenkel TUD, wbraun
+  author: Frenkel TUD, wbraun
   Copy the dae to avoid changes in
   vectors."
   input BackendDAE.EqSystem inSysts;
@@ -655,7 +655,7 @@ end copyBackendDAEEqSystem;
 
 public  function copyBackendDAEShared
 " function: copyBackendDAEShared
-  autor: Frenkel TUD, wbraun
+  author: Frenkel TUD, wbraun
   Copy the shared part of an BackendDAE to avoid changes in
   vectors."
   input BackendDAE.Shared inShared;
@@ -713,7 +713,7 @@ end copyMatching;
 
 public function addBackendDAESharedJacobian
 " function: addBackendDAESharedJacobian
-  autor:  wbraun"
+  author:  wbraun"
   input BackendDAE.SymbolicJacobian inSymJac;
   input BackendDAE.SparsePattern inSparsePattern;
   input BackendDAE.SparseColoring inSparseColoring;    
@@ -744,7 +744,7 @@ end addBackendDAESharedJacobian;
 
 public function addBackendDAESharedJacobians
 " function: addBackendDAESharedJacobians
-  autor:  wbraun"
+  author:  wbraun"
   input BackendDAE.SymbolicJacobians inSymJac; 
   input BackendDAE.Shared inShared;
   output BackendDAE.Shared outShared;
@@ -771,7 +771,7 @@ end addBackendDAESharedJacobians;
 
 public function addBackendDAESharedJacobianSparsePattern
 " function: addBackendDAESharedJacobianSparsePattern
-  autor:  wbraun"
+  author:  wbraun"
   input BackendDAE.SparsePattern inSparsePattern;
   input BackendDAE.SparseColoring inSparseColoring;
   input Integer inIndex;
@@ -805,7 +805,7 @@ end addBackendDAESharedJacobianSparsePattern;
 public function addBackendDAEKnVars
 " function: addBackendDAEKnVars
   That function replace the KnownVars in BackendDAE.
-  autor:  wbraun"
+  author:  wbraun"
   input BackendDAE.Variables inKnVars;
   input BackendDAE.BackendDAE inBDAE;
   output BackendDAE.BackendDAE outBDAE;
@@ -830,7 +830,7 @@ algorithm
 end addBackendDAEKnVars;
 
 public function addBackendDAEEqSystem "function addBackendDAEEqSystem
-  autor: lochel
+  author: lochel
   This function adds a EqSystem to BackendDAE."
   input BackendDAE.BackendDAE inDAE;
   input BackendDAE.EqSystem inAddEqSystem;
@@ -855,7 +855,7 @@ end addBackendDAEEqSystem;
 public function addBackendDAEFunctionTree
 " function: addBackendDAEFunctionTree
   That function replace the FunctionTree in BackendDAE.
-  autor:  wbraun"
+  author:  wbraun"
   input DAE.FunctionTree inFunctionTree;
   input BackendDAE.BackendDAE inBDAE;
   output BackendDAE.BackendDAE outBDAE;
@@ -2816,7 +2816,7 @@ end whenClauseAddDAE;
 
 public function getStrongComponents
 "function: getStrongComponents
-  autor: Frenkel TUD 2011-11
+  author: Frenkel TUD 2011-11
   This function returns the strongComponents of a BackendDAE."
   input BackendDAE.EqSystem syst;
   output BackendDAE.StrongComponents outComps;
@@ -2826,7 +2826,7 @@ end getStrongComponents;
 
 public function getFunctions
 "function: getFunctions
-  autor: Frenkel TUD 2011-11
+  author: Frenkel TUD 2011-11
   This function returns the Functions of a BackendDAE."
   input BackendDAE.Shared shared;
   output DAE.FunctionTree functionTree;
@@ -9203,8 +9203,80 @@ end collectAlgorithms;
  * inital system
  *
  */
+protected function analyzeInitialSystem "protected function analyzeInitialSystem
+  author: lochel"
+  input BackendDAE.EqSystem inSystem;
+  output BackendDAE.EqSystem outSystem;
+protected
+BackendDAE.EqSystem system;
+  BackendDAE.IncidenceMatrix m, mt;
+algorithm
+  (system, m, mt) := getIncidenceMatrix(inSystem, BackendDAE.NORMAL());
+  system := analyzeInitialSystem1(system, mt, 1); // vars
+  (outSystem, _, _) := getIncidenceMatrix(system, BackendDAE.NORMAL());
+end analyzeInitialSystem;
+
+protected function analyzeInitialSystem1 "protected function analyzeInitialSystem1
+  author: lochel"
+  input BackendDAE.EqSystem inSystem;
+  input BackendDAE.IncidenceMatrix inMT;    // IncidenceMatrix = array<list<IncidenceMatrixElementEntry>>;
+  input Integer inI;                        // current row (var-index)
+  output BackendDAE.EqSystem outSystem;
+algorithm
+  outSystem := matchcontinue(inSystem, inMT, inI)
+    local
+      BackendDAE.EqSystem system;
+      Integer nVars;
+      Integer nIncidences;
+      BackendDAE.Variables vars;
+      BackendDAE.Var var;
+      DAE.ComponentRef cr;
+      Option<DAE.Exp> startValue;
+      BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+      
+      BackendDAE.Equation eqn;
+      DAE.Exp e, crExp, startExp;
+      DAE.Type tp;
+      
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs), _, _) equation
+      nVars = arrayLength(inMT);
+      true = intGt(inI, nVars);
+      
+      vars = BackendVariable.compressVariables(vars);
+      system = BackendDAE.EQSYSTEM(vars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING());
+    then system;
+    
+    case (_, _, _) equation
+      nIncidences = listLength(inMT[inI]);
+      true = intGt(nIncidences, 0);
+      system = analyzeInitialSystem1(inSystem, inMT, inI+1);
+    then system;
+    
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs), _, _) equation
+      true = Flags.isSet(Flags.PEDANTIC);
+      
+      var = BackendVariable.getVarAt(vars, inI);
+      BackendDump.dumpBackendDAEVarList({var}, "Error: following variable does not appear in the initialization problem: ");
+      
+      system = analyzeInitialSystem1(inSystem, inMT, inI+1);
+    then system;
+    
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs), _, _) equation
+      false = Flags.isSet(Flags.PEDANTIC);
+      (vars, var) = BackendVariable.removeVar(inI, vars);
+      
+      system = BackendDAE.EQSYSTEM(vars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING());
+      system = analyzeInitialSystem1(system, inMT, inI+1);
+    then system;
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function analyzeInitialSystem1 failed"});
+    then fail();
+  end matchcontinue;
+end analyzeInitialSystem1;
+
 public function solveInitialSystem "function solveInitialSystem
-  autor Frenkel TUD 2012-10"
+  author Frenkel TUD 2012-10"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.BackendDAE outInitDAE;
@@ -9234,7 +9306,7 @@ algorithm
       // collect vars for initial system
       vars = emptyVars();
       fixvars = emptyVars();
-      ((vars, fixvars)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars));
+      ((vars, fixvars, _)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars, true));
       
       // collect eqns for initial system
       ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (listEquation({}), listEquation({})));
@@ -9242,7 +9314,10 @@ algorithm
       
       // generate initial system
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
-      (initsyst, _, _) = getIncidenceMatrix(initsyst, BackendDAE.NORMAL());
+      initsyst = analyzeInitialSystem(initsyst);
+      BackendDAE.EQSYSTEM(vars, eqns, _, _, _) = initsyst;
+      //(initsyst, _, _) = getIncidenceMatrix(initsyst, BackendDAE.NORMAL());
+      
       evars = emptyVars();
       eavars = emptyVars();
       emptyeqns = listEquation({});
@@ -9269,13 +9344,13 @@ algorithm
       // now let's solve the system!
       nvars = BackendVariable.varsSize(vars);
       neqns = equationSize(eqns);
-      initdae =  solveInitialSystem1(nvars, neqns, initdae);
+      initdae = solveInitialSystem1(nvars, neqns, initdae);
     then(inDAE, initdae);
   end match;
 end solveInitialSystem;
 
 protected function solveInitialSystem1 "function solveInitialSystem1
-  autor Frenkel TUD 2012-10"
+  author Frenkel TUD 2012-10"
   input Integer nVars;
   input Integer nEqns;
   input BackendDAE.BackendDAE inDAE;
@@ -9288,10 +9363,11 @@ algorithm
       tuple<StructurallySingularSystemHandlerFunc, String, stateDeselectionFunc, String> daeHandler;
       tuple<matchingAlgorithmFunc, String> matchingAlgorithm;
       
-    // overconstrainted - report Error 
+    // overconstrainted system
     case(_, _, _) equation
-      true = intGt(nEqns,nVars);
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "OverConstrained Initial System\n");
+      true = intGt(nEqns, nVars);
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "overconstrained initial system\n");
+      Debug.fcall(Flags.PEDANTIC, print, "Warning: overconstrained initial system\n");
     then fail();
         
     // equal  
@@ -9300,25 +9376,28 @@ algorithm
       pastOptModules = getPastOptModules(SOME({"constantLinearSystem",/* here we need a special case and remove only alias and constant (no variables of the system) variables "removeSimpleEquations", */ "tearingSystem"}));
       matchingAlgorithm = getMatchingAlgorithm(NONE());
       daeHandler = getIndexReductionMethod(NONE());
+      
       // solve system
       isyst = transformBackendDAE(inDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT())),NONE(),NONE());
+      
       // simplify system
       (isyst,Util.SUCCESS()) = pastoptimiseDAE(isyst,pastOptModules,matchingAlgorithm,daeHandler);
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Solved Initial System:\n");
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, isyst);
     then isyst;
         
-    // underconstrained System  
+    // underconstrained system  
     case(_, _, _) equation
-      true = intLt(nEqns,nVars);
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "underconstrained Initial System\n");
+      true = intLt(nEqns, nVars);
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "underconstrained initial system\n");
+      Debug.fcall(Flags.PEDANTIC, print, "Warning: underconstrained initial system\n");
       //BackendDump.dump(inDAE);
     then fail();
   end matchcontinue;
 end solveInitialSystem1;
 
 protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqnsSystem
-  autor Frenkel TUD 2012-10"
+  author Frenkel TUD 2012-10"
   input BackendDAE.EqSystem isyst;
   input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray> iTpl;
   output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray> oTpl;
@@ -9329,73 +9408,148 @@ algorithm
       BackendDAE.EquationArray eqns, ieqns, reqns;
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (ivars, fixvars, ieqns, reqns)) equation
       // collect vars for initial system
-      ((ivars, fixvars)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialVars, (ivars, fixvars));
+      ((ivars, fixvars, _)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialVars, (ivars, fixvars, false));
+      
       // collect eqns for initial system
-      ((ieqns,reqns)) = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, (ieqns, reqns));
+      ((ieqns, reqns)) = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, (ieqns, reqns));
     then ((ivars, fixvars, ieqns, reqns));
   end match;
 end collectInitialVarsEqnsSystem;
 
-protected function collectInitialVars
-  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> outTpl;
+protected function collectInitialVars "protected function collectInitialVars
+  This function collects all the vars for the initial system."
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, Boolean>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables, Boolean>> outTpl;
 algorithm
   outTpl := match(inTpl)
     local
-      BackendDAE.Var var;
+      BackendDAE.Var var, preVar;
       BackendDAE.Variables vars, fixvars;
-      DAE.ComponentRef dummyder, cr;
+      DAE.ComponentRef dummyder, cr, preCR;
       Boolean isFixed;
       DAE.Type ty;
       DAE.InstDims arryDim;
+      Option<DAE.Exp> startValue;
+      Boolean defaultFixed;
+    
+    // state
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, fixvars, defaultFixed))) equation
+      isFixed = (BackendVariable.varFixed(var) or defaultFixed);
       
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, fixvars))) equation
-      isFixed = BackendVariable.varFixed(var);
+      var = BackendVariable.setVarFixed(var, isFixed);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-      dummyder = ComponentReference.crefPrefixDer(cr);
+      
+      dummyder = ComponentReference.crefPrefixDer(cr);  // cr => $DER.cr
       vars = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR()), vars);
+      
       vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
-    then ((var, (vars, fixvars)));
+    then ((var, (vars, fixvars, defaultFixed)));
     
-    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars))) equation
+    // discrete
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars, defaultFixed))) equation
+      isFixed = BackendVariable.varFixed(var);
+      startValue = BackendVariable.varStartValueOption(var);
+      
+      var = BackendVariable.setVarFixed(var, defaultFixed);
+      
+      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.setVarFixed(preVar, isFixed);
+      preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
+      
+      vars = Debug.bcallret2(not defaultFixed, BackendVariable.addVar, var, vars, vars);
+      fixvars = Debug.bcallret2(defaultFixed, BackendVariable.addVar, var, fixvars, fixvars);
+      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, preVar, vars, vars);
+      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
+    then ((var, (vars, fixvars, defaultFixed)));
+    
+    // parameter
+    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM()), (vars, fixvars, defaultFixed))) equation
       isFixed = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
-      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
-    then ((var, (vars, fixvars)));
-    
-    case((var as BackendDAE.VAR(bindExp=NONE()), (vars, fixvars))) equation
-      isFixed = BackendVariable.varFixed(var);
+      
       vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
-    then ((var, (vars, fixvars)));
+    then ((var, (vars, fixvars, defaultFixed)));
+    
+    case((var as BackendDAE.VAR(bindExp=NONE()), (vars, fixvars, defaultFixed))) equation
+      isFixed = (BackendVariable.varFixed(var) or defaultFixed);
+      var = BackendVariable.setVarFixed(var, isFixed);
+      
+      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
+      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
+    then ((var, (vars, fixvars, defaultFixed)));
       
     else
     then inTpl;
   end match;
 end collectInitialVars;
 
+protected function generateInitialWhenEqn "public function generateInitialWhenEqn
+  author: lochel
+  This function generates out of a given when-equation, a equation for the initialization-problem."
+  input BackendDAE.Equation inEqn;
+  output BackendDAE.Equation outEqn;
+algorithm
+  outEqn := matchcontinue(inEqn)
+    local
+      .DAE.Exp condition        "The when-condition" ;
+      .DAE.ComponentRef left    "Left hand side of equation" ;
+      .DAE.Exp right            "Right hand side of equation" ;
+      .DAE.ElementSource source "origin of equation";
+      BackendDAE.Equation eqn;
+      .DAE.Type identType;
+      .DAE.ComponentRef preCR;
+      
+    // active when equation during initialization
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
+      true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
+      identType = ComponentReference.crefType(left);
+      eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), right, source);
+    then eqn;
+    
+    // inactive when equation during initialization
+    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
+      identType = ComponentReference.crefType(left);
+      preCR = ComponentReference.crefPrefixPre(left);
+      eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), DAE.CREF(preCR, identType), source);
+    then eqn;
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function generateInitialWhenEqn failed"});
+    then fail();
+  end matchcontinue;
+end generateInitialWhenEqn;
+
 protected function collectInitialEqns
   input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> outTpl;
 protected
-  BackendDAE.Equation eqn,eqn1;
-  BackendDAE.EquationArray eqns,reeqns;
+  BackendDAE.Equation eqn, eqn1;
+  BackendDAE.EquationArray eqns, reeqns;
   Integer size;
-  Boolean b;
+  Boolean b, isWhenEquation;
 algorithm
   (eqn, (eqns, reeqns)) := inTpl;
-  // replace der(x) with $DER.x
-  (eqn1, _) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceDerCref, 0);
+  
+  // replace der(x) with $DER.x and replace pre(x) with $PRE.x
+  (eqn1, _) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceDerPreCref, 0);
+  
+  // traverse when equations
+  isWhenEquation := BackendEquation.isWhenEquation(eqn);
+  eqn1 := Debug.bcallret1(isWhenEquation, generateInitialWhenEqn, eqn1, eqn1);
+  
   // add it, if size is zero (terminate,assert,noretcall) move to removed equations
   size := BackendEquation.equationSize(eqn1);
   b := intGt(size, 0);
+  
   eqns := Debug.bcallret2(b, BackendEquation.equationAdd, eqn1, eqns, eqns);
   reeqns := Debug.bcallret2(not b, BackendEquation.equationAdd, eqn1, reeqns, reeqns);
   outTpl := (eqn, (eqns, reeqns));
 end collectInitialEqns;
 
-protected function replaceDerCref "function replaceDerCref
+protected function replaceDerPreCref "function replaceDerPreCref
   author: Frenkel TUD 2011-05
   helper for collectInitialEqns"
   input tuple<DAE.Exp, Integer> inExp;
@@ -9405,10 +9559,10 @@ protected
    Integer i;  
 algorithm
   (e, i) := inExp;
-  outExp := Expression.traverseExp(e, replaceDerCrefExp, i);
-end replaceDerCref;
+  outExp := Expression.traverseExp(e, replaceDerPreCrefExp, i);
+end replaceDerPreCref;
 
-protected function replaceDerCrefExp "function replaceDerCrefExp
+protected function replaceDerPreCrefExp "function replaceDerPreCrefExp
   author: Frenkel TUD 2011-05
   helper for replaceDerCref"
   input tuple<DAE.Exp, Integer> inExp;
@@ -9423,10 +9577,14 @@ algorithm
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}, attr=DAE.CALL_ATTR(ty=ty)), i)) equation
       dummyder = ComponentReference.crefPrefixDer(cr);
     then ((DAE.CREF(dummyder, ty), i+1));
+    
+    case ((DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}, attr=DAE.CALL_ATTR(ty=ty)), i)) equation
+      dummyder = ComponentReference.crefPrefixPre(cr);
+    then ((DAE.CREF(dummyder, ty), i+1));
       
     else
     then inExp;
   end matchcontinue;
-end replaceDerCrefExp;
+end replaceDerPreCrefExp;
 
 end BackendDAEUtil;

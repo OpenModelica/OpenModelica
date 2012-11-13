@@ -177,7 +177,6 @@ uniontype WhenEquation "- When Equation"
     .DAE.Exp right         "Right hand side of equation" ;
     Option<WhenEquation> elsewhenPart "elsewhen equation with the same cref on the left hand side.";
   end WHEN_EQ;
-
 end WhenEquation;
 
 public

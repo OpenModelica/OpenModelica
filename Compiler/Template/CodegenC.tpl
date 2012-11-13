@@ -509,6 +509,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]   
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
+    #define $P$PRE<%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
@@ -518,6 +519,7 @@ template globalDataVarDefine(SimVar simVar, String arrayName, Integer offset) "t
     #define $P$PRE<%cref(name)%> data->simulationInfo.<%arrayName%>Pre[<%intAdd(offset,index)%>]
     #define $P$ATTRIBUTE<%cref(name)%> data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].attribute
     #define <%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
+    #define $P$PRE<%cref(name)%>__varInfo data->modelData.<%arrayName%>Data[<%intAdd(offset,index)%>].info
     >>
   end match
 end globalDataVarDefine;

@@ -146,27 +146,6 @@ algorithm
   end matchcontinue;
 end fprintl;
 
-/*
-public function ifFlag "function ifFlag
-  Flag controlled if-statement"
-  input Flags.DebugFlag inFlag;
-  input Type_a inThen;
-  input Type_a inElse;
-  output Type_a out;
-  replaceable type Type_a subtypeof Any;
-  
-algorithm
-  out := matchcontinue(inFlag, inThen, inElse)
-    case (_, _, _) equation
-      true = Flags.isSet(inFlag);
-    then inThen;
-    
-    case (_, _, _)
-    then inElse;
-  end matchcontinue;
-end ifFlag;
-*/
-
 public function fcall2
 "function: fcall2
   Flag controlled calling of the given function (2nd arg)"

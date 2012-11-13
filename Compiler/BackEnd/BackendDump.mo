@@ -174,18 +174,14 @@ end printEquationNo;
 
 public function printEquation "function: printEquation
   author: PA
-
-  Helper function to print_equations
-"
+  Helper function to print_equations"
   input BackendDAE.Equation inEquation;
 algorithm
   print(equationStr(inEquation) +& "\n");
 end printEquation;
 
 public function dumpEquation "function: dumpEquation
-  author: Frenkel TUD
-
-"
+  author: Frenkel TUD"
   input BackendDAE.Equation inEquation;
 algorithm
   _:=

@@ -1566,13 +1566,21 @@ algorithm
   end match;
 end crefPrependIdent;
 
-public function crefPrefixDer
-  "Appends $DER to a cref, so a => $DER.a"
+public function crefPrefixDer "public function crefPrefixDer
+  Appends $DER to a cref, so a => $DER.a"
   input ComponentRef inCref;
   output ComponentRef outCref;
 algorithm
-  outCref := makeCrefQual(DAE.derivativeNamePrefix,DAE.T_REAL_DEFAULT,{},inCref);
+  outCref := makeCrefQual(DAE.derivativeNamePrefix, DAE.T_REAL_DEFAULT, {}, inCref);
 end crefPrefixDer;
+
+public function crefPrefixPre "public function crefPrefixPre
+  Appends $DER to a cref, so a => $PRE.a"
+  input ComponentRef inCref;
+  output ComponentRef outCref;
+algorithm
+  outCref := makeCrefQual(DAE.preNamePrefix, DAE.T_REAL_DEFAULT, {}, inCref);
+end crefPrefixPre;
 
 public function crefPrefixString
   "Prefixes a cref with a string identifier, e.g.:

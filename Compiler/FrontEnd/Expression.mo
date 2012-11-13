@@ -3537,6 +3537,32 @@ algorithm
   end matchcontinue;
 end replaceCref;
 
+public function containsInitialCall
+  input DAE.Exp condition;
+  input Boolean inB;  // = false
+  output Boolean res;
+algorithm
+  res := matchcontinue(condition, inB)
+    local
+      Boolean b;
+      DAE.Type ty;
+      list<Exp> array;
+    
+    case (_, true) equation
+    then true;
+    
+    case (DAE.CALL(path = Absyn.IDENT(name = "initial")), _) equation
+    then true;
+    
+    case (DAE.ARRAY(ty=ty, array=array), _) equation
+      b = List.fold(array, containsInitialCall, inB);
+    then b;
+    
+    else
+    then false;
+  end matchcontinue;
+end containsInitialCall;
+
 /***************************************************/
 /* traverse DAE.Exp */
 /***************************************************/

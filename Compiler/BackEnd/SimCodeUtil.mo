@@ -6444,7 +6444,7 @@ algorithm
       BackendDAE.Variables knvars,aliasVars;
       
     // try to solve the inital system symbolical.
-    case(_, _, _, _)  equation
+    case (_, _, _, _) equation
       true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
     
       // generate initalsystem
@@ -6466,12 +6466,14 @@ algorithm
       
       // also generate all the stuff for the numerical initialization
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
-      (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, uniqueEqIndex, tempvars); 
+      (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, uniqueEqIndex, tempvars);
     then (residual_equations, allEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, true);
     
-    case(_, _, _, _) equation
+    case (_, _, _, _) equation
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
-      (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars); 
+      (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars);
+      Debug.fcall(Flags.PEDANTIC, print, "Warning: No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.\n");
+      //Error.addCompilerWarning("No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
     then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation

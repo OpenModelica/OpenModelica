@@ -195,7 +195,7 @@ double leastSquareWithLambda(INIT_DATA *initData, double lambda)
           else
             scalingCoefficient = 1.0; /* no scaling coefficients given */
 
-          funcValue += (1.0-lambda)*((data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient)*((data->modelData.realParameterData[i].attribute.start-data->localData[0]->realVars[i])/scalingCoefficient);
+          funcValue += (1.0-lambda)*((data->modelData.realParameterData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient)*((data->modelData.realParameterData[i].attribute.start-data->simulationInfo.realParameter[i])/scalingCoefficient);
         }
   }
 
@@ -247,6 +247,73 @@ void dumpInitialization(INIT_DATA *initData)
     else
       INFO3(LOG_INIT, "[%ld] [%15g] := %s", i+1, initData->initialResiduals[i], initialResidualDescription[i]);
   RELEASE(LOG_INIT); RELEASE(LOG_INIT);
+}
+
+/*! \fn void dumpInitializationStatus(DATA *data)
+ *
+ *  \param [in]  [data]
+ *
+ *  \author lochel
+ */
+void dumpInitialSolution(DATA *simData)
+{
+  long i, j;
+
+  INFO(LOG_INIT, "initial solution");
+  INDENT(LOG_INIT);
+
+  /* i: all states; j: all unfixed vars */
+  for(i=0, j=0; i<simData->modelData.nStates; ++i)
+  {
+    if(simData->modelData.realVarsData[i].attribute.fixed == 0)
+    {
+      if(simData->modelData.realVarsData[i].attribute.useNominal)
+      {
+        INFO5(LOG_INIT, "[%ld] Real %s(start=%g, nominal=%g) = %g",
+          j+1,
+          simData->modelData.realVarsData[i].info.name,
+          simData->modelData.realVarsData[i].attribute.start,
+          simData->modelData.realVarsData[i].attribute.nominal,
+          simData->localData[0]->realVars[i]);
+      }
+      else
+      {
+        INFO4(LOG_INIT, "[%ld] Real %s(start=%g) = %g",
+          j+1,
+          simData->modelData.realVarsData[i].info.name,
+          simData->modelData.realVarsData[i].attribute.start,
+          simData->localData[0]->realVars[i]);
+      }
+      j++;
+    }
+  }
+
+  /* i: all parameters; j: all unfixed vars */
+  for(i=0; i<simData->modelData.nParametersReal; ++i)
+  {
+    if(simData->modelData.realParameterData[i].attribute.fixed == 0)
+    {
+      if(simData->modelData.realVarsData[i].attribute.useNominal)
+      {
+        INFO5(LOG_INIT, "[%ld] parameter Real %s(start=%g, nominal=%g) = %g",
+          j+1,
+          simData->modelData.realParameterData[i].info.name,
+          simData->modelData.realParameterData[i].attribute.start,
+          simData->modelData.realParameterData[i].attribute.nominal,
+          simData->simulationInfo.realParameter[i]);
+      }
+      else
+      {
+        INFO4(LOG_INIT, "[%ld] parameter Real %s(start=%g) = %g",
+          j+1,
+          simData->modelData.realParameterData[i].info.name,
+          simData->modelData.realParameterData[i].attribute.start,
+          simData->simulationInfo.realParameter[i]);
+      }
+      j++;
+    }
+  }
+  RELEASE(LOG_INIT);
 }
 
 /*! \fn static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
@@ -665,19 +732,6 @@ static int symbolic_initialization(DATA *data, int updateStartValues)
 
   functionInitialEquations(data);
 
-  storeInitialValues(data);
-  storeInitialValuesParam(data);
-  storePreValues(data);                 /* save pre-values */
-  overwriteOldSimulationData(data);     /* if there are non-linear equations */
-  updateDiscreteSystem(data);           /* evaluate discrete variables */
-
-  /* valid system for the first time! */
-  saveZeroCrossings(data);
-  storeInitialValues(data);
-  storeInitialValuesParam(data);
-  storePreValues(data);                 /* save pre-values */
-  overwriteOldSimulationData(data);     /* if there are non-linear equations */
-
   return retVal;
 }
 
@@ -955,6 +1009,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   data->simulationInfo.initial = 0;
 
+  INFO(LOG_INIT, "### FINAL INITIALIZATION RESULTS ###");
+  INDENT(LOG_INIT);
+  dumpInitialSolution(data);
+  RELEASE(LOG_INIT);
   INFO(LOG_INIT, "### END INITIALIZATION ###");
   return retVal;
 }
