@@ -2038,6 +2038,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      HistoryImplType* _historyImpl;
      SparseMatrix _jacobian;
      ublas::vector<double> _jac_y;
+     ublas::vector<double> _jac_tmp;
      ublas::vector<double> _jac_x;
      boost::shared_ptr<IAlgLoopSolverFactory>
         _algLoopSolverFactory;    ///< Factory that provides an appropriate solver
@@ -6865,6 +6866,7 @@ case "A" then
           {
              _jacobian = SparseMatrix(<%index_%>,<%indexColumn%>,<%sp_size_index%>);
              _jac_y =  ublas::zero_vector<double>(<%index_%>);
+             _jac_tmp =  ublas::zero_vector<double>(<%index_%>);
              _jac_x =  ublas::zero_vector<double>(<%index_%>);
             
            }
@@ -6966,7 +6968,7 @@ case _ then
      
       let jaccol = ( indexes |> i_index =>   
          //' _jacobian(<%index0%>,<%intSub(cref(i_index),1)%>) = _jac_y(<%intSub(cref(i_index),1)%>);'
-        ' _jacobian(<%index0%>,<%cref(i_index)%>) = _jac_y(<%cref(i_index)%>);'
+        ' _jacobian(<%index0%>,<%cref(i_index)%><%matrixname%>$indexdiff) = _jac_y(<%cref(i_index)%><%matrixname%>$indexdiff);'
          ;separator="\n" )
       ' _jac_x(<%index0%>)=1;
 calcJacobianColumn();
@@ -7062,7 +7064,7 @@ template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, Str
   Generates Matrixes for Linear Model."
 ::=
   let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
-     '#define <%cref(name)%> <%index0%>'
+     '#define <%cref(name)%><%matrixName%>$indexdiff <%index0%>'
     ;separator="\n")
    /* generate at least one print command to have the same index and avoid the strange side effect */
   <<
