@@ -1469,7 +1469,7 @@ algorithm
       equation
         (orgeqns,eqnslst,eqnindxlst) = getOrgEqn(orgEqnsLst,{},{},{});
         // inline array eqns
-        eqnslst = List.fold(eqnslst,BackendDAEOptimize.getScalarArrayEqns1,{});
+        (eqnslst,_) = BackendDAEOptimize.getScalarArrayEqns(eqnslst,{},false);
         eqns = BackendDAEUtil.listEquation(eqnslst);
         (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov,inDummyStates,isyst,ishared,so,BackendDAEUtil.emptyVars());
         // get derivatives one order less

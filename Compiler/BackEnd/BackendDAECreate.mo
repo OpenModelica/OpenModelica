@@ -1301,85 +1301,53 @@ protected function lowerextendedRecordEqn "
 Author: Frenkel TUD 2012-06"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
-  input DAE.ElementSource isource;
+  input DAE.ElementSource source;
   input DAE.FunctionTree functionTree;
   input list<BackendDAE.Equation> inEqns;  
   output list<BackendDAE.Equation> outEqns; 
 algorithm 
-  outEqns := matchcontinue(inExp1,inExp2,isource,functionTree,inEqns)
+  outEqns := matchcontinue(inExp1,inExp2,source,functionTree,inEqns)
     local
-      DAE.Exp e1,e2;
-      DAE.ElementSource source;
-      DAE.ComponentRef cr1,cr2;
       Expression.Type tp;
       Integer size;
-      list<DAE.Exp> expvarlst,expvarlst1,explst;
-      Boolean b1,b2;
-      list<DAE.Var> varLst; 
-      Absyn.Path path,fname,path1;
       DAE.Dimensions dims;
-      
-    // a=b
-    case (DAE.CREF(componentRef=cr1,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),DAE.CREF(componentRef=cr2),source,_,_)
+      list<DAE.Exp> explst1,explst2;
+      Boolean b1,b2;
+    // a,Record(),CAST(Record())
+    case (_,_,_,_,_)
       equation
-        // create as many equations as the dimension of the record
-        expvarlst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
-        expvarlst1 = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr2);
+        explst1 = Expression.splitRecord(inExp1,Expression.typeof(inExp1));  
+        explst2 = Expression.splitRecord(inExp2,Expression.typeof(inExp2));
       then
-        lowerextendedRecordEqns(expvarlst,expvarlst1,source,functionTree,inEqns);
-
-    // a=Record()
-    case (DAE.CREF(componentRef=cr1,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),DAE.CALL(path=path,expLst=explst),source,_,_)
-      equation
-        SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(functionTree,path);
-        // create as many equations as the dimension of the record
-        expvarlst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
-      then
-        lowerextendedRecordEqns(expvarlst,explst,source,functionTree,inEqns);
-
-    // Record()=a
-    case (DAE.CALL(path=path,expLst=explst),DAE.CREF(componentRef=cr1,ty= DAE.T_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_))),source,_,_)
-      equation
-        SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(functionTree,path);
-        // create as many equations as the dimension of the record
-        expvarlst = List.map1(varLst,Expression.generateCrefsExpFromExpVar,cr1);
-      then
-        lowerextendedRecordEqns(expvarlst,explst,source,functionTree,inEqns);
-
-    // Record()=Record()
-    case (DAE.CALL(path=path,expLst=expvarlst,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),DAE.CALL(path=path1,expLst=explst),source,_,_)
-      equation
-        SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(functionTree,path);
-      then
-        lowerextendedRecordEqns(expvarlst,explst,source,functionTree,inEqns);      
+        lowerextendedRecordEqns(explst1,explst2,source,functionTree,inEqns);
 
     // complex types to complex equations  
-    case (e1,e2,source,_,_)
+    case (_,_,_,_,_)
       equation 
-        tp = Expression.typeof(e1);
+        tp = Expression.typeof(inExp1);
         true = DAEUtil.expTypeComplex(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size,e1,e2,source)::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size,inExp1,inExp2,source)::inEqns;
       
     // array types to array equations  
-    case (e1,e2,source,_,_)
+    case (_,_,_,_,_)
       equation 
-        tp = Expression.typeof(e1);
+        tp = Expression.typeof(inExp1);
         true = DAEUtil.expTypeArray(tp);
         dims = Expression.arrayDimension(tp);
       then
-        lowerArrayEqn(dims,e1,e2,source,inEqns);
+        lowerArrayEqn(dims,inExp1,inExp2,source,inEqns);
     // other types  
-    case (e1,e2,source,_,_)
+    case (_,_,_,_,_)
       equation
-        tp = Expression.typeof(e1);
+        tp = Expression.typeof(inExp1);
         b1 = DAEUtil.expTypeComplex(tp);
         b2 = DAEUtil.expTypeArray(tp);
         false = b1 or b2;
         //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
       then
-        BackendDAE.EQUATION(e1,e2,source)::inEqns;
+        BackendDAE.EQUATION(inExp1,inExp2,source)::inEqns;
     else
       equation
         // show only on failtrace!
@@ -2362,49 +2330,6 @@ algorithm
         (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(List.flatten(explstlst1),List.flatten(explstlst2),source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
       then
         (vars,knvars,extvars,avars,repl,eqns);
-    // cref complex cref complex
-    case (DAE.CREF(componentRef=cr1,ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(_))),
-          DAE.CREF(componentRef=cr2,ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(_))),_,_,_,_,_,_,_)
-      equation
-        // Create a list of crefs from names
-        crefs1 = List.map(varLst1,ComponentReference.creffromVar);
-        crefs1 = List.map1r(crefs1,ComponentReference.joinCrefs,cr1);
-        explst1 = List.map(crefs1,Expression.crefExp);
-        crefs2 = List.map(varLst2,ComponentReference.creffromVar);
-        crefs2 = List.map1r(crefs2,ComponentReference.joinCrefs,cr2);
-        explst2 = List.map(crefs2,Expression.crefExp);
-        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
-      then
-        (vars,knvars,extvars,avars,repl,eqns);
-    // call complex call complex
-    case (DAE.CALL(expLst=explst1,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
-          DAE.CALL(expLst=explst2,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),_,_,_,_,_,_,_)
-      equation
-        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
-      then
-        (vars,knvars,extvars,avars,repl,eqns);
-    // call complex cref complex
-    case (DAE.CALL(expLst=explst1,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),
-          DAE.CREF(componentRef=cr2,ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(_))),_,_,_,_,_,_,_)
-      equation
-        // Create a list of crefs from names
-        crefs2 = List.map(varLst2,ComponentReference.creffromVar);
-        crefs2 = List.map1r(crefs2,ComponentReference.joinCrefs,cr2);
-        explst2 = List.map(crefs2,Expression.crefExp);
-        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
-      then
-        (vars,knvars,extvars,avars,repl,eqns);
-    // cref complex CALL complex
-    case (DAE.CREF(componentRef=cr1,ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(_))),
-          DAE.CALL(expLst=explst2,attr=DAE.CALL_ATTR(ty= DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(_)))),_,_,_,_,_,_,_)
-      equation
-        // Create a list of crefs from names
-        crefs1 = List.map(varLst1,ComponentReference.creffromVar);
-        crefs1 = List.map1r(crefs1,ComponentReference.joinCrefs,cr1);
-        explst1 = List.map(crefs1,Expression.crefExp);
-        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
-      then
-        (vars,knvars,extvars,avars,repl,eqns);
     // scalar case  
     case (DAE.CREF(componentRef=cr1),
           DAE.CREF(componentRef=cr2),_,_,_,_,_,_,_)
@@ -2414,6 +2339,15 @@ algorithm
         (vars,knvars,extvars,avars,repl) = selectAliasVar(v1,i1,arrayTyp1,exp1,v2,i2,arrayTyp2,exp2,source,iVars,iKnVars,iExtVars,iAVars,iRepl);
       then
         (vars,knvars,extvars,avars,repl,iEqns);
+    // complex 
+    case (_,_,_,_,_,_,_,_,_)
+      equation
+        // Create a list of crefs from names
+        explst1 = Expression.splitRecord(exp1,Expression.typeof(exp1));
+        explst2 = Expression.splitRecord(exp2,Expression.typeof(exp2));
+        (vars,knvars,extvars,avars,repl,eqns) = selectAliasLst(explst1,explst2,source,iVars,iKnVars,iExtVars,iAVars,iRepl,iEqns);
+      then
+        (vars,knvars,extvars,avars,repl,eqns);        
     // if no alias selectable add as equation
     case (_,_,_,_,_,_,_,_,_)
       then
@@ -3238,6 +3172,7 @@ algorithm
   (outVars,oExp) := matchcontinue(inVars,var,iExp)
     local
       BackendDAE.Variables vars;
+      BackendDAE.Var var1;
     case(_,_,_)
       equation
         true = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
@@ -3246,8 +3181,8 @@ algorithm
       equation
         false = BackendVariable.isVarDiscrete(var) "do not change discrete vars to states, because they have no derivative" ;
         false = BackendVariable.isStateVar(var);
-        var = BackendVariable.setVarKind(var,BackendDAE.STATE());
-        vars = BackendVariable.addVar(var, inVars);
+        var1 = BackendVariable.setVarKind(var,BackendDAE.STATE());
+        vars = BackendVariable.addVar(var1, inVars);
       then (vars,iExp);
     case(_,_,_)
       equation

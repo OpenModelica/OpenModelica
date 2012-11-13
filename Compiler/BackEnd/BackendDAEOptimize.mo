@@ -120,15 +120,16 @@ algorithm
       BackendDAE.Shared shared;
       list<BackendDAE.Var> ordvarslst;
       list<BackendDAE.Equation> eqnslst;
+      Boolean b;
     case (_) then inDAE;
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,ev,eoc,btp,symjacs)))
       equation
         eqnslst = BackendDAEUtil.equationList(inieqns);
-        eqnslst = getScalarArrayEqns(eqnslst,{});
-        inieqns = BackendDAEUtil.listEquation(eqnslst);
+        (eqnslst,b) = getScalarArrayEqns(eqnslst,{},false);
+        inieqns = Debug.bcallret1(b,BackendDAEUtil.listEquation,eqnslst,inieqns);
         eqnslst = BackendDAEUtil.equationList(remeqns);
-        eqnslst = getScalarArrayEqns(eqnslst,{});
-        remeqns = BackendDAEUtil.listEquation(eqnslst);
+        (eqnslst,b) = getScalarArrayEqns(eqnslst,{},false);
+        remeqns = Debug.bcallret1(b,BackendDAEUtil.listEquation,eqnslst,remeqns);
       then 
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,ev,eoc,btp,symjacs));
   end match;
@@ -155,10 +156,7 @@ algorithm
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching),(shared,_))
       equation
         eqnslst = BackendDAEUtil.equationList(eqns);
-        oldsize = listLength(eqnslst);
-        eqnslst = getScalarArrayEqns(eqnslst,{});
-        newsize = listLength(eqnslst);
-        true = intGt(newsize,oldsize);
+        (eqnslst,true) = getScalarArrayEqns(eqnslst,{},false);
         eqns = BackendDAEUtil.listEquation(eqnslst);
       then
         (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()),(shared,true));
@@ -168,88 +166,139 @@ algorithm
   end matchcontinue;
 end inlineArrayEqn1;
 
-protected function getScalarArrayEqns
+public function getScalarArrayEqns
   input list<BackendDAE.Equation> iEqsLst;
   input list<BackendDAE.Equation> iAcc;
+  input Boolean iFound;
   output list<BackendDAE.Equation> oEqsLst;
+  output Boolean oFound;
 algorithm
-  oEqsLst := match(iEqsLst,iAcc)
+  (oEqsLst,oFound) := match(iEqsLst,iAcc,iFound)
     local
       BackendDAE.Equation eqn;
       list<BackendDAE.Equation> eqns,eqns1;
-    case ({},_) then listReverse(iAcc);
-    case (eqn::eqns,_)
+      Boolean b;
+    case ({},_,_) then (listReverse(iAcc),iFound);
+    case (eqn::eqns,_,_)
      equation
-       eqns1 = getScalarArrayEqns1(eqn,iAcc);
+       (eqns1,b) = getScalarArrayEqns1(eqn,iAcc);
+       (eqns1,b) = getScalarArrayEqns(eqns,eqns1,b or iFound);
      then
-       getScalarArrayEqns(eqns,eqns1);
+       (eqns1,b);
   end match;
 end getScalarArrayEqns;
 
-public function getScalarArrayEqns1"
+protected function getScalarArrayEqns1"
   author: Frenkel TUD 2012-06"
   input  BackendDAE.Equation iEqn;
   input list<BackendDAE.Equation> iAcc;
   output list<BackendDAE.Equation> outEqsLst;
+  output Boolean oFound;
 algorithm
-  outEqsLst := matchcontinue (iEqn,iAcc)
+  (outEqsLst,oFound) := matchcontinue (iEqn,iAcc)
     local
       DAE.ElementSource source;
       DAE.Exp e1,e2,e1_1,e2_1;
       list<DAE.Exp> ea1,ea2;
+      list<BackendDAE.Equation> eqns;
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source),_)
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2);
+        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
       then
-        generateScalarArrayEqns2(ea1,ea2,source,iAcc);
+        (eqns,true);
     case (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source),_)
       equation
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2);
+        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
       then
-        generateScalarArrayEqns2(ea1,ea2,source,iAcc);
+        (eqns,true);
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source),_)
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
+        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
       then
-        generateScalarArrayEqns2(ea1,ea2,source,iAcc);
+        (eqns,true);
     case (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source),_)
       equation
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
+        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
       then
-        generateScalarArrayEqns2(ea1,ea2,source,iAcc);
-    case (_,_) then iEqn::iAcc;
+        (eqns,true);
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),_)
+      equation
+        ea1 = Expression.splitRecord(e1,Expression.typeof(e1));
+        ea2 = Expression.splitRecord(e2,Expression.typeof(e2));
+        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
+      then
+        (eqns,true);        
+    case (_,_) then (iEqn::iAcc,false);
   end matchcontinue;
 end getScalarArrayEqns1;
 
 protected function generateScalarArrayEqns2 "function generateScalarArrayEqns2
   author: Frenkel TUD 2012-06"
-  input list<DAE.Exp> iE1lst;
-  input list<DAE.Exp> iE2lst;
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
   input DAE.ElementSource source;
-  input list<BackendDAE.Equation> iAcc;
+  input list<BackendDAE.Equation> iEqns;
   output list<BackendDAE.Equation> oEqns;
 algorithm
-  oEqns := match(iE1lst,iE2lst,source,iAcc)
+  oEqns := matchcontinue(inExp1,inExp2,source,iEqns)
     local
-      DAE.Exp e1,e2;
-      list<DAE.Exp> e1lst,e2lst;
-    case ({},{},_,_) then iAcc;
-    case (e1::e1lst,e2::e2lst,_,_)
+      Expression.Type tp;
+      Integer size;
+      DAE.Dimensions dims;
+      list<Integer> ds;
+      Boolean b1,b2;
+    // complex types to complex equations  
+    case (_,_,_,_)
+      equation 
+        tp = Expression.typeof(inExp1);
+        true = DAEUtil.expTypeComplex(tp);
+        size = Expression.sizeOf(tp);
       then
-        generateScalarArrayEqns2(e1lst,e2lst,source,BackendDAE.EQUATION(e1,e2,source)::iAcc);
-  end match;
+        BackendDAE.COMPLEX_EQUATION(size,inExp1,inExp2,source)::iEqns;
+      
+    // array types to array equations  
+    case (_,_,_,_)
+      equation 
+        tp = Expression.typeof(inExp1);
+        true = DAEUtil.expTypeArray(tp);
+        dims = Expression.arrayDimension(tp);
+        ds = Expression.dimensionsSizes(dims);
+      then
+        BackendDAE.ARRAY_EQUATION(ds,inExp1,inExp2,source)::iEqns;
+    // other types  
+    case (_,_,_,_)
+      equation
+        tp = Expression.typeof(inExp1);
+        b1 = DAEUtil.expTypeComplex(tp);
+        b2 = DAEUtil.expTypeArray(tp);
+        false = b1 or b2;
+        //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
+      then
+        BackendDAE.EQUATION(inExp1,inExp2,source)::iEqns;
+    else
+      equation
+        // show only on failtrace!
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- BackendDAEOptimize.generateScalarArrayEqns2 failed on: " +& ExpressionDump.printExpStr(inExp1) +& " = " +& ExpressionDump.printExpStr(inExp2) +& "\n");
+      then
+        fail();      
+  end matchcontinue;  
 end generateScalarArrayEqns2;
 
 
@@ -530,26 +579,6 @@ algorithm
       then simpleArrayEquation(e1,e2,ty,source,inTpl);
     case (DAE.LUNARY(DAE.NOT(_),e1 as DAE.MATRIX(ty=ty)),DAE.LUNARY(DAE.NOT(_),e2 as DAE.CREF(componentRef = cr2)),_,_,_)
       then simpleArrayEquation(e1,e2,ty,source,inTpl);
-       
-    // a = Record(b1,b2,b3,..)
-    case (DAE.CREF(componentRef = cr1),DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst2,complexClassType=ClassInf.RECORD(pathb1)))),_,_,_)
-      equation
-        true = Absyn.pathEqual(pathb,pathb1);
-      then
-        simpleRecord(cr1,varLst2,elst2,source,inTpl);
-    // Record(a1,a2,a3,..) = b  
-    case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(varLst=varLst1,complexClassType=ClassInf.RECORD(patha1)))),DAE.CREF(componentRef = cr2),_,_,_)
-      equation
-        true = Absyn.pathEqual(patha,patha1);
-      then
-        simpleRecord(cr2,varLst1,elst1,source,inTpl);
-    // Record(a1,a2,a3,..) = Record(b1,b2,b3,..)
-    case (DAE.CALL(path=patha,expLst=elst1,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(patha1)))),
-          DAE.CALL(path=pathb,expLst=elst2,attr=DAE.CALL_ATTR(ty=DAE.T_COMPLEX(complexClassType=ClassInf.RECORD(pathb1)))),_,_,_)
-      equation
-        true = Absyn.pathEqual(patha,patha1);
-        true = Absyn.pathEqual(pathb,pathb1);
-      then List.threadFold2(elst1,elst2,simpleEquation,source,true,inTpl);          
     // time independent equations
     else
       then simpleEquationContinue(lhs,rhs,source,selfCalled,inTpl);
@@ -618,6 +647,12 @@ algorithm
       list<DAE.Var> varLst1,varLst2;
       Absyn.Path patha,patha1,pathb,pathb1;
       DAE.Dimensions dims;
+    // Record
+    case (_,_,_,_,_)
+      equation
+        elst1 = Expression.splitRecord(lhs,Expression.typeof(lhs));
+        elst2 = Expression.splitRecord(rhs,Expression.typeof(rhs));        
+      then List.threadFold2(elst1,elst2,simpleEquation,source,true,inTpl);
     // {a1+b1,a2+b2,a3+b3,..} = 0;
     case (DAE.ARRAY(array = elst1),_,_,_,_)
       equation
