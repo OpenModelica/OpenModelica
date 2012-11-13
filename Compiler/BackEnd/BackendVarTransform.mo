@@ -850,13 +850,6 @@ algorithm
         true = c1 or c2 or c3;
       then
         (DAE.IFEXP(e1_1,e2_1,e3_1),true);
-      /* Special case when a variable in pre() is an alias for unary minus of another */
-    case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF(componentRef = _)},attr=attr),repl,cond)
-      equation
-        true = replaceExpCond(cond, e);
-        (DAE.UNARY(DAE.UMINUS(ety),e),true) = replaceExp(e, repl, cond);
-      then
-        (DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},attr)),true);
     case ((e as DAE.CALL(path = path,expLst = expl,attr = attr)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
