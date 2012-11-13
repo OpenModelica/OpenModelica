@@ -2044,6 +2044,7 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
      <%generateAlgloopsolverVariables(allEquations,simCode)%>
      //workaround for jacobian variables
       <%variableDefinitionsJacobians(jacobianMatrixes)%>   
+      
    };
   >>
 end generateClassDeclarationCode;
@@ -6986,23 +6987,29 @@ end generateMatrix;
 template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes)
  "Generates defines for jacobian vars."
 ::=
-  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, _, _, _) hasindex index0 =>
-    variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
+  let analyticVars = (JacobianMatrixes |> (jacColumn, seedVars, name, (_,(diffVars,diffedVars)), _, _) hasindex index0 =>
+    let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
+    let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
+    <<
+    <%varsDef%>
+    <%sparseDef%>
+    >>
     ;separator="\n";empty)
-<<
-/* Jacobian Variables */
-<%analyticVars%>
->>
+  
+  <<
+  /* Jacobian Variables */
+  <%analyticVars%>
+  >>
 end variableDefinitionsJacobians;
 
 template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name)
  "Generates Matrixes for Linear Model."
 ::=
   let seedVarsResult = (seedVars |> var hasindex index0 =>
-    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0)
+    jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0,name)
     ;separator="\n";empty)
   let columnVarsResult = (jacobianColumn |> (_,vars,_) =>
-      (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0)
+      (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0,name)
       ;separator="\n";empty)
     ;separator="\n\n")
 <<
@@ -7012,7 +7019,7 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
 end variableDefinitionsJacobians2;
 
 
-template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0)
+template jacobianVarDefine(SimVar simVar, String array, Integer indexJac, Integer index0,String matrixName)
 ""
 ::=
 match array
@@ -7035,11 +7042,35 @@ case "jacobianVarsSeed" then
   case SIMVAR(aliasvar=NOALIAS()) then
   let tmp = System.tmpTick()
     <<
-    #define <%cref(name)%> _jac_x(<%index0%>)
+    #define _<%jacobianVarsSeedDefine(name)%>$pDER<%matrixName%>$P<%jacobianVarsSeedDefine(name)%> _jac_x(<%index0%>)
     >> 
   end match  
 end jacobianVarDefine;
    
+   template jacobianVarsSeedDefine(ComponentRef cr)
+::=
+  match cr
+  case CREF_IDENT(__) then '<%ident%>'
+ case CREF_QUAL(__) then               '<%ident%><%subscriptsToCStrForArray(subscriptLst)%>$P<%crefToCStr1(componentRef)%>'
+
+  case WILD(__) then ' '
+  else "CREF_NOT_IDENT_OR_QUAL"
+end jacobianVarsSeedDefine;
+
+
+template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, String matrixName) "template variableDefinitionsJacobians2
+  Generates Matrixes for Linear Model."
+::=
+  let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
+     '#define <%cref(name)%> <%index0%>'
+    ;separator="\n")
+   /* generate at least one print command to have the same index and avoid the strange side effect */
+  <<
+  /* <%matrixName%> sparse indexes */
+  <%diffVarsResult%>
+  >>
+end defineSparseIndexes;
+ 
     
 //Generation of Algorithm section
 template algStatement(DAE.Statement stmt, Context context, Text &varDecls,SimCode simCode)
