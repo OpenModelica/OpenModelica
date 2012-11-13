@@ -45,6 +45,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_SIMULATION",
   "LOG_STATS",
   "LOG_INIT",
+  "LOG_SOTI",  /* LOG_INIT_SOLUTION */
   "LOG_RES_INIT",
   "LOG_SOLVER",
   "LOG_JAC",
@@ -64,6 +65,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "simulation",
   "stats",
   "init",
+  "init solution",
   "res_init",
   "solver",
   "jac",

@@ -6472,8 +6472,7 @@ algorithm
     case (_, _, _, _) equation
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars);
-      Debug.fcall(Flags.PEDANTIC, print, "Warning: No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.\n");
-      //Error.addCompilerWarning("No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.\n");
     then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation

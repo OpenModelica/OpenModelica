@@ -258,18 +258,17 @@ void dumpInitialization(INIT_DATA *initData)
 void dumpInitialSolution(DATA *simData)
 {
   long i, j;
-
-  INFO(LOG_INIT, "initial solution");
-  INDENT(LOG_INIT);
-
+  
   /* i: all states; j: all unfixed vars */
+  INFO(LOG_SOTI, "unfixed states");
+  INDENT(LOG_SOTI);
   for(i=0, j=0; i<simData->modelData.nStates; ++i)
   {
     if(simData->modelData.realVarsData[i].attribute.fixed == 0)
     {
       if(simData->modelData.realVarsData[i].attribute.useNominal)
       {
-        INFO5(LOG_INIT, "[%ld] Real %s(start=%g, nominal=%g) = %g",
+        INFO5(LOG_SOTI, "[%ld] Real %s(start=%g, nominal=%g) = %g",
           j+1,
           simData->modelData.realVarsData[i].info.name,
           simData->modelData.realVarsData[i].attribute.start,
@@ -278,7 +277,7 @@ void dumpInitialSolution(DATA *simData)
       }
       else
       {
-        INFO4(LOG_INIT, "[%ld] Real %s(start=%g) = %g",
+        INFO4(LOG_SOTI, "[%ld] Real %s(start=%g) = %g",
           j+1,
           simData->modelData.realVarsData[i].info.name,
           simData->modelData.realVarsData[i].attribute.start,
@@ -287,15 +286,18 @@ void dumpInitialSolution(DATA *simData)
       j++;
     }
   }
+  RELEASE(LOG_SOTI);
 
   /* i: all parameters; j: all unfixed vars */
+  INFO(LOG_SOTI, "unfixed parameters");
+  INDENT(LOG_SOTI);
   for(i=0; i<simData->modelData.nParametersReal; ++i)
   {
     if(simData->modelData.realParameterData[i].attribute.fixed == 0)
     {
       if(simData->modelData.realVarsData[i].attribute.useNominal)
       {
-        INFO5(LOG_INIT, "[%ld] parameter Real %s(start=%g, nominal=%g) = %g",
+        INFO5(LOG_SOTI, "[%ld] parameter Real %s(start=%g, nominal=%g) = %g",
           j+1,
           simData->modelData.realParameterData[i].info.name,
           simData->modelData.realParameterData[i].attribute.start,
@@ -304,7 +306,7 @@ void dumpInitialSolution(DATA *simData)
       }
       else
       {
-        INFO4(LOG_INIT, "[%ld] parameter Real %s(start=%g) = %g",
+        INFO4(LOG_SOTI, "[%ld] parameter Real %s(start=%g) = %g",
           j+1,
           simData->modelData.realParameterData[i].info.name,
           simData->modelData.realParameterData[i].attribute.start,
@@ -313,7 +315,7 @@ void dumpInitialSolution(DATA *simData)
       j++;
     }
   }
-  RELEASE(LOG_INIT);
+  RELEASE(LOG_SOTI);
 }
 
 /*! \fn static int initialize2(INIT_DATA *initData, int optiMethod, int useScaling)
@@ -1009,10 +1011,14 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   data->simulationInfo.initial = 0;
 
-  INFO(LOG_INIT, "### FINAL INITIALIZATION RESULTS ###");
-  INDENT(LOG_INIT);
+  /* dump LOG_SOTI if LOG_INIT is enabled */
+  if(useStream[LOG_INIT])
+    useStream[LOG_SOTI] = 1;
+
+  INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
+  INDENT(LOG_SOTI);
   dumpInitialSolution(data);
-  RELEASE(LOG_INIT);
+  RELEASE(LOG_SOTI);
   INFO(LOG_INIT, "### END INITIALIZATION ###");
   return retVal;
 }
