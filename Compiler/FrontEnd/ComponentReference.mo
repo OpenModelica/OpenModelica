@@ -2238,6 +2238,15 @@ algorithm
   res := "{" +& stringDelimitList(List.map(crs, printComponentRefStr), ",") +& "}";
 end printComponentRefListStr;
 
+public function printComponentRefList
+  input list<ComponentRef> crs;
+protected
+  String buffer;
+algorithm
+  buffer := "{" +& stringDelimitList(List.map(crs, printComponentRefStr), ", ") +& "}\n";
+  print(buffer);
+end printComponentRefList;
+
 public function replaceWholeDimSubscript
   input ComponentRef icr;
   input Integer index;

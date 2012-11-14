@@ -6399,7 +6399,7 @@ algorithm
       
     case(DAE, _) equation
       true = Flags.isSet(Flags.SYMBOLIC_INITIALIZATION);
-      (jacobian, DAE2) = BackendDAEOptimize.generateInitialMatrices(DAE);
+      (jacobian, _, DAE2) = BackendDAEOptimize.generateInitialMatrices(DAE);
       (jacG, iniqueEqIndex) = createInitSymbolicJacobianssSimCode(jacobian, DAE2, inIniqueEqIndex);
     then (jacG, iniqueEqIndex);
       

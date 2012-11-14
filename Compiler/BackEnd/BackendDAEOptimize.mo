@@ -7037,8 +7037,8 @@ function: generateSparsePattern
 Author: wbraun
 "
   input BackendDAE.BackendDAE inBackendDAE;
-  input list<BackendDAE.Var> inDiffVars;
-  input list<BackendDAE.Var> inDiffedVars;
+  input list<BackendDAE.Var> inDiffVars;    // "vars"
+  input list<BackendDAE.Var> inDiffedVars;  // "eqns"
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outColoredCols;
 algorithm
@@ -7722,9 +7722,10 @@ public function generateInitialMatrices "function generateInitialMatrices
   This function generates symbolic matrices for initialization."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.SymbolicJacobian outJacG;
+  output BackendDAE.SparsePattern outSparsityPattern;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  (outJacG, outDAE) := matchcontinue(inDAE)
+  (outJacG, outSparsityPattern, outDAE) := matchcontinue(inDAE)
     local
       BackendDAE.BackendDAE DAE;
       
@@ -7740,6 +7741,7 @@ algorithm
       
       list<BackendDAE.Var>  orderedVarList, knownVarList, states, inputs, outputs, parameters;
       list<DAE.ComponentRef> orderedVarCrefList, knownVarCrefList;
+      BackendDAE.SparsePattern sparsityPattern;
       
       BackendDAE.Shared shared;
     
@@ -7784,22 +7786,174 @@ algorithm
       parameters = List.select(knownVarList, BackendVariable.isParam);
       outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
       
-      (jacobian, _, _) = createJacobian(DAE,                                     // DAE
-                                        states,                                  // 
-                                        BackendDAEUtil.listVar1(states),         // 
-                                        BackendDAEUtil.listVar1(inputs),         // 
-                                        BackendDAEUtil.listVar1(parameters),     // 
-                                        BackendDAEUtil.listVar1(outputs),        // 
-                                        orderedVarList,                          // 
-                                        (orderedVarCrefList, knownVarCrefList),  // 
-                                        "G");                                    // name
-    then (jacobian, DAE);
+      (jacobian, sparsityPattern, _) = createJacobian(DAE,                                     // DAE
+                                                      states,                                  // 
+                                                      BackendDAEUtil.listVar1(states),         // 
+                                                      BackendDAEUtil.listVar1(inputs),         // 
+                                                      BackendDAEUtil.listVar1(parameters),     // 
+                                                      BackendDAEUtil.listVar1(outputs),        // 
+                                                      orderedVarList,                          // 
+                                                      (orderedVarCrefList, knownVarCrefList),  // 
+                                                      "G");                                    // name
+    then (jacobian, sparsityPattern, DAE);
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function generateInitialMatrices failed"});
     then fail();
   end matchcontinue;
 end generateInitialMatrices;
+
+public function generateInitialMatricesDAE "function generateInitialMatricesDAE
+  author: lochel
+  This function generates a DAE for the symbolic matrices for initialization."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+  output list<BackendDAE.Var> outVars;  // "initial equation"
+algorithm
+  (outDAE, outVars) := matchcontinue(inDAE)
+    local
+      BackendDAE.BackendDAE DAE;
+      
+      list<BackendDAE.Equation> initialEqs_lst, initialEquationList;
+      list<BackendDAE.Var>  initialVariableList;
+      BackendDAE.Variables initialVars;
+      BackendDAE.EquationArray initialEqs;
+      BackendDAE.EqSystem initEqSystem;
+      BackendDAE.SymbolicJacobian jacobian;
+      
+      BackendDAE.Variables orderedVars, knownVars;
+      BackendDAE.EquationArray orderedEqs;
+      
+      list<BackendDAE.Var>  orderedVarList, knownVarList, states, inputs, outputs, parameters;
+      list<DAE.ComponentRef> orderedVarCrefList, knownVarCrefList;
+      BackendDAE.SparsePattern sparsityPattern;
+      
+      BackendDAE.Shared shared;
+    
+    case(DAE) equation
+      (initialEqs_lst, _, _) = collectInitialEquations(DAE);
+      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
+      
+      //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals", false);
+      (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
+      initialEqs = BackendDAEUtil.listEquation(initialEquationList);
+      initialVars = BackendDAEUtil.listVar1(initialVariableList);
+      //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
+      //BackendDump.dumpBackendDAEVarList(initialVariableList, "initial vars");
+      
+      initEqSystem = BackendDAE.EQSYSTEM(initialVars, initialEqs, NONE(), NONE(), BackendDAE.NO_MATCHING());
+      
+      // redirect output to bidir
+      DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
+      DAE = collapseIndependentBlocks(DAE);
+      BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)}, shared=shared) = DAE;
+      orderedVarList = BackendDAEUtil.varList(orderedVars);
+      //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 1");
+      orderedVarList = redirectOutputToBiDir(orderedVarList);
+      //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 2");
+      orderedVars = BackendDAEUtil.listVar1(orderedVarList);
+      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, shared);
+      
+      DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
+      DAE = BackendDAEUtil.addBackendDAEEqSystem(DAE, initEqSystem);    // add initial equations and $res-variables
+      DAE = collapseIndependentBlocks(DAE);                             // merge everything together
+      DAE = BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), SOME("dummyDerivative"));  // calculate matching
+      
+      // preparing all needed variables
+      BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
+
+      orderedVarList = BackendDAEUtil.varList(orderedVars);
+      orderedVarCrefList = List.map(orderedVarList, BackendVariable.varCref);
+      knownVarList = BackendDAEUtil.varList(knownVars);
+      knownVarCrefList = List.map(knownVarList, BackendVariable.varCref);
+      states = BackendVariable.getAllStateVarFromVariables(orderedVars);
+      inputs = List.select(knownVarList, BackendVariable.isInput);
+      parameters = List.select(knownVarList, BackendVariable.isParam);
+      outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
+    then (DAE, outputs);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function generateInitialMatricesDAE failed"});
+    then fail();
+  end matchcontinue;
+end generateInitialMatricesDAE;
+
+public function generateInitialMatricesSparsityPattern "function generateInitialMatricesSparsityPattern
+  author: lochel
+  This function generates symbolic matrices for initialization."
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.SparsePattern outSparsityPattern;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  (outSparsityPattern, outDAE) := matchcontinue(inDAE)
+    local
+      BackendDAE.BackendDAE DAE;
+      
+      list<BackendDAE.Equation> initialEqs_lst, initialEquationList;
+      list<BackendDAE.Var>  initialVariableList;
+      BackendDAE.Variables initialVars;
+      BackendDAE.EquationArray initialEqs;
+      BackendDAE.EqSystem initEqSystem;
+      BackendDAE.SymbolicJacobian jacobian;
+      
+      BackendDAE.Variables orderedVars, knownVars;
+      BackendDAE.EquationArray orderedEqs;
+      
+      list<BackendDAE.Var>  orderedVarList, knownVarList, states, inputs, outputs, parameters;
+      list<DAE.ComponentRef> orderedVarCrefList, knownVarCrefList;
+      BackendDAE.SparsePattern sparsityPattern;
+      
+      BackendDAE.Shared shared;
+    
+    case(DAE) equation
+      (initialEqs_lst, _, _) = collectInitialEquations(DAE);
+      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
+      
+      //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals", false);
+      (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
+      initialEqs = BackendDAEUtil.listEquation(initialEquationList);
+      initialVars = BackendDAEUtil.listVar1(initialVariableList);
+      //BackendDump.dumpBackendDAEEqnList(initialEquationList, "initial equations", false);
+      //BackendDump.dumpBackendDAEVarList(initialVariableList, "initial vars");
+      
+      initEqSystem = BackendDAE.EQSYSTEM(initialVars, initialEqs, NONE(), NONE(), BackendDAE.NO_MATCHING());
+      
+      // redirect output to bidir
+      DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
+      DAE = collapseIndependentBlocks(DAE);
+      BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)}, shared=shared) = DAE;
+      orderedVarList = BackendDAEUtil.varList(orderedVars);
+      //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 1");
+      orderedVarList = redirectOutputToBiDir(orderedVarList);
+      //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 2");
+      orderedVars = BackendDAEUtil.listVar1(orderedVarList);
+      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, shared);
+      
+      DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
+      DAE = BackendDAEUtil.addBackendDAEEqSystem(DAE, initEqSystem);    // add initial equations and $res-variables
+      DAE = collapseIndependentBlocks(DAE);                             // merge everything together
+      DAE = BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), SOME("dummyDerivative"));  // calculate matching
+      
+      // preparing all needed variables
+      BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs)}, BackendDAE.SHARED(knownVars=knownVars)) = DAE;
+
+      orderedVarList = BackendDAEUtil.varList(orderedVars);
+      orderedVarCrefList = List.map(orderedVarList, BackendVariable.varCref);
+      knownVarList = BackendDAEUtil.varList(knownVars);
+      knownVarCrefList = List.map(knownVarList, BackendVariable.varCref);
+      states = BackendVariable.getAllStateVarFromVariables(orderedVars);
+      inputs = List.select(knownVarList, BackendVariable.isInput);
+      parameters = List.select(knownVarList, BackendVariable.isParam);
+      outputs = List.select(orderedVarList, BackendVariable.isVarOnTopLevelAndOutput);
+
+      (sparsityPattern, _) = generateSparsePattern(DAE, states, outputs);
+    then (sparsityPattern, DAE);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function generateInitialMatricesSparsityPattern failed"});
+    then fail();
+  end matchcontinue;
+end generateInitialMatricesSparsityPattern;
 
 
 
@@ -8493,6 +8647,7 @@ algorithm
       list<Option<Integer>> ad;
       list<list<DAE.Subscript>> subslst;
       list<BackendDAE.Var> solvedvars;
+      String dumpBuffer;
 
     case(currEquation as BackendDAE.WHEN_EQUATION(size=_),_, vars, functions, inputVars, paramVars, stateVars, knownVars,  _, _, _) equation
       Debug.fcall(Flags.JAC_DUMP, print,"BackendDAEOptimize.derive: WHEN_EQUATION has been removed.\n");
@@ -8542,9 +8697,13 @@ algorithm
     case(currEquation as BackendDAE.COMPLEX_EQUATION(source=_),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.derive failed: COMPLEX_EQUATION-case"});
     then fail();
+    
+    case(currEquation, _, _, _, _, _, _, _, _, _, _) equation
+      dumpBuffer = "BackendDAEOptimize.derive failed: " +& BackendDump.equationStr(currEquation);
+      Error.addMessage(Error.INTERNAL_ERROR, {dumpBuffer});
+    then fail();
       
-    else
-     equation
+    else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.derive failed"});
     then fail();
   end matchcontinue;
