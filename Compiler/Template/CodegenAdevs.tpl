@@ -316,7 +316,8 @@ template declareExtraResiduals(list<SimEqSystem> allEquations)
      case eq as SES_MIXED(__) then declareExtraResiduals(fill(eq.cont,1))
      case eq as SES_NONLINEAR(__) then
      <<
-     void residualFunc<%index%>_cpp(int *n, double* xloc, double* res, int* iflag);
+     void residualFunc<%index%>_cpp(double* y, double* res);
+     void solve_residualFunc<%index%>_cpp();
      >>
    )
    ;separator="\n")
@@ -328,6 +329,7 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
   (allEquations |> eqn => (match eqn
      case eq as SES_MIXED(__) then makeExtraResiduals(fill(eq.cont,1),name)
      case eq as SES_NONLINEAR(__) then
+     let size = listLength(crefs)
      let &varDecls = buffer "" /*BUFD*/
      let algs = (eq.eqs |> eq2 as SES_ALGORITHM(__) =>
          equation_(eq2, contextSimulationDiscrete, &varDecls /*BUFD*/)
@@ -342,17 +344,54 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
          '<%preExp%>res[<%i0%>] = <%expPart%>;'
        ;separator="\n")
      <<
-     static void residualFunc<%index%>(int *n, double* xloc, double* res, int* iflag, void*)
+     static int residualFunc<%index%>(N_Vector y, N_Vector f, void*)
      {
-        active_model->residualFunc<%index%>_cpp(n,xloc,res,iflag);
+	    double* yd = NV_DATA_S(y);
+		double* fd = NV_DATA_S(f);
+        active_model->residualFunc<%index%>_cpp(yd,fd);
+		return 0;
      }
      
-     void <%name%>::residualFunc<%index%>_cpp(int *n, double* xloc, double* res, int* iflag)
+     void <%name%>::residualFunc<%index%>_cpp(double* y, double* res)
      {
+		<%crefs |> name hasindex i0 =>
+		<<
+		<%cref(name)%> = y[<%i0%>];
+    	>>
+	   ;separator="\n"%>
        <%varDecls%>
        <%algs%>
        <%prebody%>
        <%body%>
+     }
+
+     void <%name%>::solve_residualFunc<%index%>_cpp()
+     {
+         int flag;
+         int NEQ = <%size%>;
+         N_Vector y = N_VNew_Serial(NEQ);
+         N_Vector scale = N_VNew_Serial(NEQ);
+         void* kmem = KINCreate();
+         assert(kmem != NULL);
+         flag = KINInit(kmem, residualFunc<%index%>, y);
+		 assert(flag == KIN_SUCCESS);
+         flag = KINDense(kmem, NEQ);
+		 assert(flag == KIN_SUCCESS);
+		 N_VConst_Serial(1.0,scale);
+		 <%crefs |> name hasindex i0 =>
+		 <<
+         NV_Ith_S(y,<%i0%>) = <%cref(name)%>;
+    	 >>
+	     ;separator="\n"%>
+         flag = KINSol(kmem,y,KIN_LINESEARCH,scale,scale);
+		 <%crefs |> name hasindex i0 =>
+		 <<
+         <%cref(name)%> = NV_Ith_S(y,<%i0%>);
+    	 >>
+	     ;separator="\n"%>
+         N_VDestroy_Serial(y);
+         N_VDestroy_Serial(scale);
+         KINFree(&kmem);
      }
      >>
    )
@@ -977,37 +1016,36 @@ case SES_LINEAR(__) then
   let size = listLength(vars)
   let aname = 'A<%uid%>'
   let bname = 'b<%uid%>'
+  let pname = 'p<%uid%>'
   let mixedPostfix = if partOfMixed then "_mixed" //else ""
   <<
   <% if not partOfMixed then
     <<
-    #ifdef _OMC_MEASURE_TIME
-    SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);<%\n%>
-    #endif<%\n%>
     >> %>
-  double <%aname%>[<%size%>*<%size%>]={0};
-  double <%bname%> [<%size%>]={0};
+  double** <%aname%> = newDenseMat(<%size%>,<%size%>);
+  double* <%bname%> = newRealArray(<%size%>);
+  long int* <%pname%> = newLintArray(<%size%>);
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
-     '<%preExp%>set_matrix_elt(<%aname%>, <%row%>, <%col%>, <%size%>, <%expPart%>);'
+     '<%preExp%><%aname%>[<%row%>][<%col%>] = <%expPart%>;'
   ;separator="\n"%>
   <%beqs |> exp hasindex i0 =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-     '<%preExp%>set_vector_elt(<%bname%>, <%i0%>, <%expPart%>);'
+     '<%preExp%><%bname%>[<%i0%>] = <%expPart%>;'
   ;separator="\n"%>
-  solve_linear_equation_system<%mixedPostfix%>(<%aname%>, <%bname%>, <%size%>, <%uid%>);
-  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%><%inlineVars(context,vars)%>
+  denseGETRF<%mixedPostfix%>(<%aname%>,<%size%>,<%size%>,<%pname%>);
+  denseGETRS<%mixedPostfix%>(<%aname%>,<%size%>,<%pname%>,<%bname%>);
+  <%vars |> SIMVAR(__) hasindex i0 => '<%cref(name)%> = <%bname%>[<%i0%>];' ;separator="\n"%><%inlineVars(context,vars)%>
   <% if not partOfMixed then
   <<
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
-  #endif<%\n%>
+  destroyMat(<%aname%>);
+  destroyArray(<%bname%>);
+  destroyArray(<%pname%>);
   >> %>
   >>
 end equationLinear;
-
 
 template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
  "Generates a mixed equation system."
@@ -1059,23 +1097,8 @@ template equationNonlinear(SimEqSystem eq, Context context, Text &varDecls /*BUF
 ::=
 match eq
 case SES_NONLINEAR(__) then
-  let size = listLength(crefs)
   <<
-  omc_equationInfo eqn_info_<%index%>;
-  eqn_info_<%index%>.id = <%index%>;
-  eqn_info_<%index%>.numVar = 0;
-  eqn_info_<%index%>.name = NULL;
-  eqn_info_<%index%>.vars = NULL;
-  start_nonlinear_system(<%size%>);
-  <%crefs |> name hasindex i0 =>
-    <<
-    nls_x[<%i0%>] = extraPolate(<%cref(name)%>);
-    nls_xold[<%i0%>] = $P$old<%cref(name)%>;
-    >>
-  ;separator="\n"%>
-  solve_nonlinear_system(residualFunc<%index%>, eqn_info_<%index%>,(void*)NULL);
-  <%crefs |> name hasindex i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
-  end_nonlinear_system();<%inlineCrefs(context,crefs)%>
+  solve_residualFunc<%index%>_cpp();
   >>
 end equationNonlinear;
 
