@@ -9438,20 +9438,18 @@ protected function fixUnderDeterminedInitialSystem "protected function fixUnderD
   input BackendDAE.BackendDAE inDAE;
   input BackendDAE.Variables inVars;
   input BackendDAE.EquationArray inEqns;
-  output Boolean outFixed;
+  output Boolean outSucceed;
   output BackendDAE.Variables outVars;
   output BackendDAE.EquationArray outEqns;
 algorithm
-  (outFixed, outVars, outEqns) := matchcontinue(inDAE, inVars, inEqns)
+  (outSucceed, outVars, outEqns) := matchcontinue(inDAE, inVars, inEqns)
     local
       BackendDAE.SymbolicJacobian jacG;
-      BackendDAE.SparsePattern sparsityPattern;     // type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>,  // column-wise sparse pattern
-                                                    //                            tuple<list< .DAE.ComponentRef>,                             // diff vars
-                                                    //                                  list< .DAE.ComponentRef>>>;                           // diffed vars
+      BackendDAE.SparsePattern sparsityPattern;
       BackendDAE.BackendDAE dae;
       
-      .DAE.ComponentRef cr;
-      list< .DAE.ComponentRef> diffVars, diffedVars;
+      .DAE.ComponentRef cr, currRes;
+      list< .DAE.ComponentRef> diffVars, diffedVars, currDependencies, someStates;
       String str;
       list<BackendDAE.Var> vars;    // all vars
       list<BackendDAE.Var> outputs; // $res1 ... $resN (initial equations)
@@ -9461,12 +9459,12 @@ algorithm
       Integer nVars, nStates, nEqns;
       BackendDAE.EquationArray eqns;
       
+      list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> dep;
+    
+    // fix all states
     case(_, _, eqns) equation
       (dae, outputs) = BackendDAEOptimize.generateInitialMatricesDAE(inDAE);
-      
-      vars = varList(inVars);
-      (sparsityPattern, _) = BackendDAEOptimize.generateSparsePattern(dae, vars, outputs);
-      
+            
       BackendDAE.DAE(eqs=systs) = inDAE;
       ivars = emptyVars();
       ivars = List.fold(systs, collectUnfixedStatesFromSystem, ivars);
@@ -9477,15 +9475,125 @@ algorithm
       nEqns = equationSize(eqns);
       true = intEq(nVars, nEqns+nStates);
       
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Setting all (" +& intString(nStates) +& ") states to fixed=true to solve the initial system.");
-
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " states:");
       eqns = addStartValueEquations(states, eqns);
+    then (true, inVars, eqns);
+    
+    // fix a subset of unfixed states
+    case(_, _, eqns) equation
+      (dae, outputs) = BackendDAEOptimize.generateInitialMatricesDAE(inDAE);
+      
+      BackendDAE.DAE(eqs=systs) = inDAE;
+      ivars = emptyVars();
+      ivars = List.fold(systs, collectUnfixedStatesFromSystem, ivars);
+      states = varList(ivars);
+
+      nVars = BackendVariable.varsSize(inVars);
+      nEqns = equationSize(eqns);
+      true = intLt(nEqns, nVars);
+      
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
+      
+      // type SparsePattern = tuple<list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>>,  // column-wise sparse pattern
+      //                            tuple<list< .DAE.ComponentRef>,                             // diff vars
+      //                                  list< .DAE.ComponentRef>>>;                           // diffed vars
+      (sparsityPattern, _) = BackendDAEOptimize.generateSparsePattern(dae, states, outputs);
+      (dep, _) = sparsityPattern;
+      someStates = collectIndependentVars(dep, {});
+      
+      //printSparsityPattern(sparsityPattern);
+      //print("selection (" +& intString(listLength(someStates)) +& ") ########\n");
+      //ComponentReference.printComponentRefList(someStates);
+
+      eqns = addStartValueEquations1(someStates, eqns);
     then (true, inVars, eqns);
     
     else
     then (false, inVars, inEqns);
   end matchcontinue;
 end fixUnderDeterminedInitialSystem;
+
+protected function printSparsityPattern "protected function printSparsityPattern
+  author lochel"
+  input BackendDAE.SparsePattern inPattern;
+protected
+  list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> pattern;
+  list< .DAE.ComponentRef> diffVars, diffedVars;
+algorithm
+  (pattern, (diffVars, diffedVars)) := inPattern;
+  
+  print("diffVars (" +& intString(listLength(diffVars)) +& ") ########\n");
+  ComponentReference.printComponentRefList(diffVars);
+  
+  print("diffedVars (" +& intString(listLength(diffedVars)) +& ") ########\n");
+  ComponentReference.printComponentRefList(diffedVars);
+  
+  printSparsityPattern1(pattern);
+end printSparsityPattern;
+
+protected function printSparsityPattern1 "protected function printSparsityPattern1
+  author lochel"
+  input list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> inPattern;
+algorithm
+  () := matchcontinue(inPattern)
+    local
+      tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>> curr;
+      list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> rest;
+      .DAE.ComponentRef cr;
+      list< .DAE.ComponentRef> crList;
+      String crStr;
+      
+    case ({})
+    then ();
+    
+    case (curr::rest) equation
+      (cr, crList) = curr;
+      crStr = ComponentReference.crefStr(cr);
+      print(crStr +& " (" +& intString(listLength(crList)) +& ") ########\n");
+      ComponentReference.printComponentRefList(crList);
+    
+      printSparsityPattern1(rest);
+    then ();
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function printSparsityPattern1 failed"});
+    then fail();
+  end matchcontinue;
+end printSparsityPattern1;
+
+protected function collectIndependentVars "protected function collectIndependentVars
+  author lochel"
+  input list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> inPattern;
+  input list< .DAE.ComponentRef> inVars;
+  output list< .DAE.ComponentRef> outVars;
+algorithm
+  outVars := matchcontinue(inPattern, inVars)
+    local
+      tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>> curr;
+      list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> rest;
+      .DAE.ComponentRef cr;
+      list< .DAE.ComponentRef> crList, vars;
+      
+    case ({}, _)
+    then inVars;
+    
+    case (curr::rest, _) equation
+      (cr, crList) = curr;
+      0 = listLength(crList);
+    
+      vars = collectIndependentVars(rest, inVars);
+      vars = cr::vars;
+    then vars;
+    
+    case (curr::rest, _) equation
+      vars = collectIndependentVars(rest, inVars);
+    then vars;
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function collectIndependentVars failed"});
+    then fail();
+  end matchcontinue;
+end collectIndependentVars;
 
 protected function addStartValueEquations "function addStartValueEquations
   author lochel"
@@ -9503,19 +9611,25 @@ algorithm
       DAE.Exp e, e1, crefExp, startExp;
       DAE.ComponentRef cref;
       DAE.Type tp;
+      String crStr;
       
     case ({}, _)
     then inEqns;
     
     case (var::vars, eqns) equation
       cref = BackendVariable.varCref(var);
-      crefExp = DAE.CREF(cref, DAE.T_REAL_DEFAULT);
+      tp = BackendVariable.varType(var);
+      
+      crefExp = DAE.CREF(cref, tp);
       
       e = Expression.crefExp(cref);
       tp = Expression.typeof(e);
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       
       eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource);
+      
+      crStr = ComponentReference.crefStr(cref);
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  " +& crStr);
       
       eqns = BackendEquation.equationAdd(eqn, eqns);
       eqns = addStartValueEquations(vars, eqns);
@@ -9526,6 +9640,50 @@ algorithm
     then fail();
   end matchcontinue;
 end addStartValueEquations;
+
+protected function addStartValueEquations1 "function addStartValueEquations1
+  author lochel
+  Same as addStartValueEquations - just with list<DAE.ComponentRef> instead of list<BackendDAE.Var>"
+  input list<DAE.ComponentRef> inVars;
+  input BackendDAE.EquationArray inEqns;
+  output BackendDAE.EquationArray outEqns;
+algorithm
+  outEqns := matchcontinue(inVars, inEqns)
+    local
+      DAE.ComponentRef var;
+      list<DAE.ComponentRef> vars;
+      BackendDAE.Equation eqn;
+      BackendDAE.EquationArray eqns;
+      
+      DAE.Exp e, e1, crefExp, startExp;
+      DAE.ComponentRef cref;
+      DAE.Type tp;
+      String crStr;
+      
+    case ({}, _)
+    then inEqns;
+    
+    case (var::vars, eqns) equation      
+      crefExp = DAE.CREF(var, DAE.T_REAL_DEFAULT);
+      
+      e = Expression.crefExp(var);
+      tp = Expression.typeof(e);
+      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+      
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource);
+      
+      crStr = ComponentReference.crefStr(var);
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  " +& crStr);
+      
+      eqns = BackendEquation.equationAdd(eqn, eqns);
+      eqns = addStartValueEquations1(vars, eqns);
+    then eqns;
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function addStartValueEquations1 failed"});
+    then fail();
+  end matchcontinue;
+end addStartValueEquations1;
 
 protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqnsSystem
   author Frenkel TUD 2012-10"
