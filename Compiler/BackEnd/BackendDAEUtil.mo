@@ -79,6 +79,7 @@ protected import ExpressionDump;
 protected import Flags;
 protected import Global;
 protected import HashSet;
+protected import HashTable2;
 protected import IndexReduction;
 protected import Inline;
 protected import List;
@@ -474,20 +475,20 @@ algorithm
   outTpl := matchcontinue(inTpl)
     local
       DAE.Algorithm alg;
-      DAE.Algorithm algExpanded;
+      list<DAE.Statement> statements;
       BackendDAE.Equation eqn;
       BackendDAE.Variables vars;
       Integer size;
       list<DAE.Exp> outputs;
       DAE.ElementSource source;
       list<DAE.ComponentRef> crlst;
-    case((eqn as BackendDAE.ALGORITHM(size=size,alg=alg,source=source),vars))
+    case((eqn as BackendDAE.ALGORITHM(size=size,alg=alg as DAE.ALGORITHM_STMTS(statements),source=source),vars))
       equation
         crlst = CheckModel.algorithmOutputs(alg);
         outputs = List.map(crlst,Expression.crefExp);
-        algExpanded = expandAlgorithmStmts(alg,outputs,vars);
+        statements = expandAlgorithmStmts(statements,outputs,vars);
       then 
-        ((BackendDAE.ALGORITHM(size,algExpanded,source), vars));
+        ((BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statements),source), vars));
     else
       then inTpl;     
   end matchcontinue;
@@ -500,14 +501,13 @@ protected function expandAlgorithmStmts
   - A non-discrete variable is initialized with its start value (i.e. the value of the start-attribute). 
   - A discrete variable v is initialized with pre(v).
   Helper function to expandAlgorithmsbyInitStmts1."
-  input DAE.Algorithm inAlg;
+  input list<DAE.Statement> inAlg;
   input list<DAE.Exp> inOutputs;
   input BackendDAE.Variables inVars;
-  output DAE.Algorithm outAlg;
+  output list<DAE.Statement> outAlg;
 algorithm
-   outAlg := matchcontinue(inAlg, inOutputs, inVars)
+   outAlg := match(inAlg, inOutputs, inVars)
  local
-   DAE.Algorithm alg;
    DAE.Exp out,initExp;
    list<DAE.Exp> rest;
    DAE.ComponentRef cref;
@@ -515,32 +515,20 @@ algorithm
    DAE.Statement stmt;
    DAE.Type type_;
    list<DAE.Statement> statements,statements1;
-   case(alg,{},_) then (alg);
-   case(alg,out::rest,_)
+   Boolean b;
+   case(statements,{},_) then statements;
+   case(statements,out::rest,_)
      equation
        cref = Expression.expCref(out);
        type_ = Expression.typeof(out);
        type_ = Expression.arrayEltType(type_);
        (var::_,_) = BackendVariable.getVar(cref, inVars);
-       true = BackendVariable.isVarDiscrete(var);
-       initExp = Expression.makeBuiltinCall("pre", {out}, type_);
+       b = BackendVariable.isVarDiscrete(var);
+       initExp = Expression.makeBuiltinCall(Util.if_(b,"pre","$_start"), {out}, type_);
        stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR()), initExp, DAE.PROP(type_,DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
-       (DAE.ALGORITHM_STMTS(statements)) = expandAlgorithmStmts(alg,rest,inVars);
-       statements1 = listAppend({stmt},statements);
-     then (DAE.ALGORITHM_STMTS(statements1));
-   case(alg,out::rest,_)
-     equation
-       cref = Expression.expCref(out);
-       type_ = Expression.typeof(out);
-       type_ = Expression.arrayEltType(type_);
-       (var::_,_) = BackendVariable.getVar(cref, inVars);
-       false = BackendVariable.isVarDiscrete(var);
-       initExp = Expression.makeBuiltinCall("$_start", {out}, type_);
-       stmt = Algorithm.makeAssignment(DAE.CREF(cref,type_), DAE.PROP(type_,DAE.C_VAR()), initExp, DAE.PROP(type_,DAE.C_VAR()), DAE.dummyAttrVar, SCode.NON_INITIAL(), DAE.emptyElementSource);
-       (DAE.ALGORITHM_STMTS(statements)) = expandAlgorithmStmts(alg,rest,inVars);
-       statements1 = listAppend({stmt},statements);
-     then (DAE.ALGORITHM_STMTS(statements1));
-   end matchcontinue;
+     then 
+       expandAlgorithmStmts(stmt::statements,rest,inVars);
+   end match;
 end expandAlgorithmStmts;
 
 
@@ -8197,9 +8185,10 @@ algorithm
   sode1 := BackendDAECreate.findZeroCrossings(optsode);
   Debug.execStat("findZeroCrossings",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   _ := traverseBackendDAEExpsNoCopyWithUpdate(sode1,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
-  sode2 := calculateValues(sode1);
-  Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  outSODE := expandAlgorithmsbyInitStmts(sode2);
+  outSODE := calculateValues(sode1);
+  // moved to SimCodeUtil because of initial system 
+  //Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  //outSODE := expandAlgorithmsbyInitStmts(sode2);
   Debug.execStat("expandAlgorithmsbyInitStmts",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
   Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dump, outSODE);
@@ -9329,6 +9318,7 @@ algorithm
       array<DAE.ClassAttributes> classAttrs;
       HashSet.HashSet usedPreVars;
       list<DAE.ComponentRef> inaktiveWhen;
+      Boolean b;
       
     case(BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knvars,
                                                  initialEqs=inieqns,
@@ -9337,6 +9327,10 @@ algorithm
                                                  cache=cache,
                                                  env=env,
                                                  functionTree=functionTree))) equation
+      // remove multiple equal definted pre vars
+      ((eqnslst,_,b)) = BackendEquation.traverseBackendDAEEqns(inieqns,removeMultipleEqualPre,({},HashTable2.emptyHashTable(),false));
+      inieqns = Debug.bcallret1(b,listEquation,eqnslst,inieqns);
+
       // collect used pre vars
       usedPreVars = HashSet.emptyHashSet();
       usedPreVars = traverseBackendDAEExpsEqns(inieqns, collectPreCrefExp, usedPreVars);
@@ -9698,6 +9692,52 @@ algorithm
   end matchcontinue;
 end addStartValueEquations1;
 
+protected function removeMultipleEqualPre
+  input tuple<BackendDAE.Equation, tuple<list<BackendDAE.Equation>,HashTable2.HashTable,Boolean>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<list<BackendDAE.Equation>,HashTable2.HashTable,Boolean>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+    local
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> eqns;
+      HashTable2.HashTable multiplepre;
+      Boolean b;
+      DAE.ComponentRef cr;
+      DAE.Exp e,e1;
+    case ((eqn as BackendDAE.EQUATION(exp=DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}),scalar=e),(eqns,multiplepre,b)))
+      equation
+        true = Expression.isConst(e);
+        e1 = BaseHashTable.get(cr,multiplepre);
+        true = Expression.expEqual(e,e1);
+      then
+        ((eqn,(eqns,multiplepre,true)));
+    case ((eqn as BackendDAE.EQUATION(exp=e,scalar=DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)})),(eqns,multiplepre,b)))
+      equation
+        true = Expression.isConst(e);
+        e1 = BaseHashTable.get(cr,multiplepre);
+        true = Expression.expEqual(e,e1);
+      then
+        ((eqn,(eqns,multiplepre,true)));
+    case ((eqn as BackendDAE.EQUATION(exp=DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}),scalar=e),(eqns,multiplepre,b)))
+      equation
+        true = Expression.isConst(e);
+        failure( _ = BaseHashTable.get(cr,multiplepre));
+        multiplepre = BaseHashTable.add((cr,e),multiplepre);
+      then
+        ((eqn,(eqn::eqns,multiplepre,b)));
+    case ((eqn as BackendDAE.EQUATION(exp=e,scalar=DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)})),(eqns,multiplepre,b)))
+      equation
+        true = Expression.isConst(e);
+        failure( _ = BaseHashTable.get(cr,multiplepre));
+        multiplepre = BaseHashTable.add((cr,e),multiplepre);
+      then
+        ((eqn,(eqn::eqns,multiplepre,b)));
+    case ((eqn,(eqns,multiplepre,b)))
+      then
+        ((eqn,(eqn::eqns,multiplepre,b)));
+  end matchcontinue;
+end removeMultipleEqualPre;
+
 protected function handleinaktiveWhen
   input DAE.ComponentRef inaktiveWhen;
   input BackendDAE.Variables vars;
@@ -9911,6 +9951,7 @@ algorithm
       Integer size;
       Boolean b;
       BackendDAE.EquationArray eqns,reeqns;
+      list<DAE.Statement> statementLst;
     // active when equation during initialization
     case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right),size=size, source=source),_,_,_)
       equation
@@ -9938,12 +9979,36 @@ algorithm
         reeqns = Debug.bcallret2(not b, BackendEquation.equationAdd, eqn, iReeqns, iReeqns);
       then 
         (eqns,reeqns,left::iInaktiveWhen);
+
+    // inactive when equation during initialization
+    case (BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst=statementLst),size=size, source=source),_,_,_)
+      equation
+        statementLst = List.select(statementLst,isStmtWhenAktive);
+        b = intGt(listLength(statementLst),0);
+        eqns = Debug.bcallret2(b, BackendEquation.equationAdd, BackendDAE.ALGORITHM(size,DAE.ALGORITHM_STMTS(statementLst),source), iEqns, iEqns);
+      then 
+        (eqns,iReeqns,iInaktiveWhen);
+
     else
       equation
         eqns = BackendEquation.equationAdd(inEqn, iEqns);  
       then (eqns,iReeqns,iInaktiveWhen);
   end matchcontinue;
 end generateInitialWhenEqn;
+
+protected function isStmtWhenAktive
+  input DAE.Statement statement;
+  output Boolean b;
+algorithm
+  b := match(statement)
+    local
+      DAE.Exp e;
+    case DAE.STMT_WHEN(exp=e)
+      then Expression.containsInitialCall(e, false);
+    else
+      then true;
+  end match;
+end isStmtWhenAktive;
 
 protected function collectInitialEqns
   input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray,list<DAE.ComponentRef>>> inTpl;

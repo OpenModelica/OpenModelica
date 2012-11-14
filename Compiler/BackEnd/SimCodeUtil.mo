@@ -1889,6 +1889,14 @@ algorithm
         (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, uniqueEqIndex, {}, helpVarInfo);
         (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
  
+        // expandAlgorithmsbyInitStmts
+        dlow2 = BackendDAEUtil.expandAlgorithmsbyInitStmts(dlow2);
+        BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
+                                                          constraints = constrsarr,
+                                                          classAttrs = clsattrsarra,
+                                                          functionTree = functionTree,
+                                                          symjacs = symJacs)) = dlow2;        
+        
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir,ifcpp);
         
@@ -3760,7 +3768,8 @@ algorithm
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This has not been implemented yet.\n"});
+        message = ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
+        message = stringAppendList({"Inverse Algorithm needs to be solved for ",message," in ",algStr,". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
         // Algorithm for single variable.
@@ -3787,7 +3796,8 @@ algorithm
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This has not been implemented yet.\n"});
+        message = ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
+        message = stringAppendList({"Inverse Algorithm needs to be solved for ",message," in ",algStr,". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
   end matchcontinue;
@@ -6186,7 +6196,8 @@ algorithm
         // The variables solved for musst all be part of the output variables of the algorithm.
         failure(List.map2AllValue(solvedVars,List.isMemberOnTrue,true,algOutVars,ComponentReference.crefEqualNoStringCompare));
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This has not been implemented yet.\n"});
+        message = ComponentReference.printComponentRefListStr(solvedVars);
+        message = stringAppendList({"Inverse Algorithm needs to be solved for ",message," in ",algStr,". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then
          fail();      

@@ -42,7 +42,7 @@
 //
 //   - Code after a case should be indented with 2 spaces if not written on the
 //     same line
-
+  
 package CodegenAdevs
 import interface SimCodeTV;
 
@@ -346,19 +346,19 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
      <<
      static int residualFunc<%index%>(N_Vector y, N_Vector f, void*)
      {
-	    double* yd = NV_DATA_S(y);
-		double* fd = NV_DATA_S(f);
-        active_model->residualFunc<%index%>_cpp(yd,fd);
-		return 0;
+       double* yd = NV_DATA_S(y);
+       double* fd = NV_DATA_S(f);
+       active_model->residualFunc<%index%>_cpp(yd,fd);
+       return 0;
      }
      
      void <%name%>::residualFunc<%index%>_cpp(double* y, double* res)
      {
-		<%crefs |> name hasindex i0 =>
-		<<
-		<%cref(name)%> = y[<%i0%>];
-    	>>
-	   ;separator="\n"%>
+       <%crefs |> name hasindex i0 =>
+       <<
+       <%cref(name)%> = y[<%i0%>];
+       >>
+       ;separator="\n"%>
        <%varDecls%>
        <%algs%>
        <%prebody%>
@@ -374,21 +374,21 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
          void* kmem = KINCreate();
          assert(kmem != NULL);
          flag = KINInit(kmem, residualFunc<%index%>, y);
-		 assert(flag == KIN_SUCCESS);
+         assert(flag == KIN_SUCCESS);
          flag = KINDense(kmem, NEQ);
-		 assert(flag == KIN_SUCCESS);
-		 N_VConst_Serial(1.0,scale);
-		 <%crefs |> name hasindex i0 =>
-		 <<
+         assert(flag == KIN_SUCCESS);
+         N_VConst_Serial(1.0,scale);
+         <%crefs |> name hasindex i0 =>
+         <<
          NV_Ith_S(y,<%i0%>) = <%cref(name)%>;
-    	 >>
-	     ;separator="\n"%>
+         >>
+         ;separator="\n"%>
          flag = KINSol(kmem,y,KIN_LINESEARCH,scale,scale);
-		 <%crefs |> name hasindex i0 =>
-		 <<
+         <%crefs |> name hasindex i0 =>
+         <<
          <%cref(name)%> = NV_Ith_S(y,<%i0%>);
-    	 >>
-	     ;separator="\n"%>
+         >>
+         ;separator="\n"%>
          N_VDestroy_Serial(y);
          N_VDestroy_Serial(scale);
          KINFree(&kmem);
