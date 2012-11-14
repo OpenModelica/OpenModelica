@@ -1724,12 +1724,14 @@ algorithm
     local
       DAE.Mod m;
       list<DAE.SubMod> submods;
-      String strPrefix, s;
+      String strPrefix, s1, s2, s3, s4;
       Option<Absyn.Path> p;
       
     case (DAE.NOMOD(),DAE.NOMOD(),_,_) then DAE.NOMOD();
     case (DAE.NOMOD(),m,_,_) then m;
     case (m,DAE.NOMOD(),_,_) then m;
+      /* That's a NOMOD() if I ever saw one... */
+    case (m,DAE.MOD(subModLst={},eqModOption=NONE()),_,_) then m;
       
     case(_,_,_,_)
       equation
@@ -1739,9 +1741,10 @@ algorithm
     case(_,_,_,_)
       equation
         true = modSubsetOrEqualOrNonOverlap(inModOuter,inModInner);
-      then doMerge(inModOuter,inModInner,inEnv,inPrefix);
+        m = doMerge(inModOuter,inModInner,inEnv,inPrefix);
+      then m;
 
-    // two exactly the same redeclares, return just one!
+    // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
     case(DAE.REDECL(finalPrefix = _),DAE.REDECL(finalPrefix = _),_,_)
       equation
         true = valueEq(inModOuter,inModInner);
@@ -1753,17 +1756,11 @@ algorithm
         false = merge2(inModInner);
         false = modSubsetOrEqualOrNonOverlap(inModOuter,inModInner);
         p = Env.getEnvPath(inEnv);
-        s = Absyn.optPathString(p);
-        // put both modifiers in one big modifier
-        strPrefix = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix);
-        submods = {DAE.NAMEMOD("", inModOuter), DAE.NAMEMOD("", inModInner)};
-        m = DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), submods, NONE());
-        s = s +& "\n\tby using modifiers: " +&  strPrefix +& printSubsStr(submods, true) +& 
-        " that do not agree.";
-        
-        Error.addMessage(Error.FINAL_OVERRIDE, {s}); // having a string there incase we
-        // print(" final override: " +& s +& "\n ");
-        // print("trying to override final while merging mod1:\n" +& printModStr(inModOuter) +& " with mod2(final):\n" +& printModStr(inModInner) +& "\n");
+        s1 = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix);
+        s2 = Absyn.optPathString(p);
+        s3 = printModStr(inModOuter);
+        s4 = printModStr(inModInner);
+        Error.addMessage(Error.FINAL_OVERRIDE, {s1,s2,s3,s4});
       then fail();
   end matchcontinue;
 end merge;
@@ -2124,7 +2121,7 @@ algorithm
       then 
         true;
     case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_))
-      then false;
+      then valueEq(mod1,mod2);
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
     case (_,_) then false;
     case(_, _) 
@@ -2262,7 +2259,7 @@ algorithm
       then 
         true;
     
-    case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_)) then false;
+    case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_)) then valueEq(mod1,mod2);
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
     
     // adrpo: do not fail, return false!
