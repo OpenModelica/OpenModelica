@@ -1135,6 +1135,16 @@ algorithm
   end matchcontinue;
 end isArrayElement;
 
+public function isPreCref
+  input ComponentRef cr;
+  output Boolean b;
+algorithm
+  b := match(cr)
+    case(DAE.CREF_QUAL(ident = "$PRE")) then true;
+    else then false;
+  end match;
+end isPreCref;
+
 public function crefIsFirstArrayElt
 "function: crefIsFirstArrayElt
   This function returns true for component references that
@@ -1579,7 +1589,7 @@ public function crefPrefixPre "public function crefPrefixPre
   input ComponentRef inCref;
   output ComponentRef outCref;
 algorithm
-  outCref := makeCrefQual(DAE.preNamePrefix, DAE.T_REAL_DEFAULT, {}, inCref);
+  outCref := makeCrefQual(DAE.preNamePrefix, DAE.T_UNKNOWN_DEFAULT, {}, inCref);
 end crefPrefixPre;
 
 public function crefPrefixString

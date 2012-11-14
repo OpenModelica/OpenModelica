@@ -399,15 +399,11 @@ public function varStartValue
   Returns the DAE.StartValue of a variable."
   input BackendDAE.Var v;
   output DAE.Exp sv;
+protected
+  Option<DAE.VariableAttributes> attr;
 algorithm
-  sv := match(v)
-    local
-      Option<DAE.VariableAttributes> attr;
-    case (BackendDAE.VAR(values = attr))
-      equation
-        sv=DAEUtil.getStartAttr(attr);
-      then sv;
-   end match;
+  BackendDAE.VAR(values = attr) := v;
+  sv := DAEUtil.getStartAttr(attr);
 end varStartValue;
 
 public function varStartValueFail
@@ -417,16 +413,48 @@ public function varStartValueFail
   Otherwise fail"
   input BackendDAE.Var v;
   output DAE.Exp sv;
+protected
+  Option<DAE.VariableAttributes> attr;
 algorithm
-  sv := match(v)
+  BackendDAE.VAR(values = attr) := v;
+  sv := DAEUtil.getStartAttrFail(attr);
+end varStartValueFail;
+
+public function varStartValueType
+"function varStartValueType
+  author: Frenkel TUD 2012-11
+  Returns the DAE.StartValue of a variable. If nothing is set the type specific one is used"
+  input BackendDAE.Var v;
+  output DAE.Exp sv;
+algorithm
+  sv := matchcontinue(v)
     local
       Option<DAE.VariableAttributes> attr;
+      DAE.Type ty;
     case (BackendDAE.VAR(values = attr))
       equation
         sv=DAEUtil.getStartAttrFail(attr);
       then sv;
-   end match;
-end varStartValueFail;
+    case BackendDAE.VAR(varType=ty)
+      equation
+        true = Types.isIntegerOrSubTypeInteger(ty);
+      then
+        DAE.ICONST(0);
+    case BackendDAE.VAR(varType=ty)
+      equation
+        true = Types.isBooleanOrSubTypeBoolean(ty);
+      then
+        DAE.BCONST(false);
+    case BackendDAE.VAR(varType=ty)
+      equation
+        true = Types.isStringOrSubTypeString(ty);
+      then
+        DAE.SCONST("");
+    else
+      then
+        DAE.RCONST(0.0);        
+   end matchcontinue;
+end varStartValueType;
 
 public function varStartValueOption
 "function varStartValueOption

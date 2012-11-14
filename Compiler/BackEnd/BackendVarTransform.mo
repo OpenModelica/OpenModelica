@@ -43,9 +43,11 @@ public import BackendDAE;
 public import DAE;
 public import HashTable2;
 public import HashTable3;
+public import HashSet;
 
 protected import Absyn;
 protected import BaseHashTable;
+protected import BaseHashSet;
 protected import BackendDAEUtil;
 protected import ClassInf;
 protected import ComponentReference;
@@ -71,6 +73,7 @@ uniontype VariableReplacements
     HashTable3.HashTable invHashTable "dst -> list of sources. dst is a variable, sources are variables.";
     HashTable2.HashTable extendhashTable "src -> noting, used for extend arrays and records.";
     list<DAE.Ident> iterationVars "this are the implicit declerate iteration variables for for and range expressions";
+    Option<HashSet.HashSet> derConst "this is used if states are constant to replace der(state) with 0.0";
   end REPLACEMENTS;
 
 end VariableReplacements;
@@ -91,7 +94,7 @@ algorithm
         eht = HashTable2.emptyHashTable();
         invHt = HashTable3.emptyHashTable();
       then
-        REPLACEMENTS(ht,invHt,eht,{});
+        REPLACEMENTS(ht,invHt,eht,{},NONE());
   end match;
 end emptyReplacements;
 
@@ -109,7 +112,7 @@ algorithm
         invHt = HashTable3.emptyHashTableSized(size);
         eht = HashTable2.emptyHashTableSized(size);
       then
-        REPLACEMENTS(ht,invHt,eht,{});
+        REPLACEMENTS(ht,invHt,eht,{},NONE());
   end match;
 end emptyReplacementsSized;
 
@@ -166,6 +169,7 @@ algorithm
       HashTable3.HashTable invHt,invHt_1;
       list<DAE.Ident> iv;
       String s;
+      Option<HashSet.HashSet> derConst;
     // PA: Commented out this, since it will only slow things down without adding any functionality.
     // Once match is available as a complement to matchcontinue, this case could be useful again.
     //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
@@ -176,7 +180,7 @@ algorithm
      
     case (_,src,dst,_)
       equation        
-        (REPLACEMENTS(ht,invHt,eht,iv),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
+        (REPLACEMENTS(ht,invHt,eht,iv,derConst),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
         /*s1 = ComponentReference.printComponentRefStr(src);
         s2 = ExpressionDump.printExpStr(dst);
         s3 = ComponentReference.printComponentRefStr(src_1);
@@ -190,7 +194,7 @@ algorithm
         invHt_1 = addReplacementInv(invHt, src_1, dst_1);
         eht_1 = addExtendReplacement(eht,src_1,NONE());
       then
-        REPLACEMENTS(ht_1,invHt_1,eht_1,iv);
+        REPLACEMENTS(ht_1,invHt_1,eht_1,iv,derConst);
     case (_,_,_,_)
       equation
         s = ComponentReference.printComponentRefStr(inSrc);
@@ -216,18 +220,19 @@ algorithm
       HashTable2.HashTable ht,ht_1,eht,eht_1;
       HashTable3.HashTable invHt,invHt_1;
       list<DAE.Ident> iv;
+      Option<HashSet.HashSet> derConst;
     case ((REPLACEMENTS(hashTable=ht)),src,dst) /* source dest */
       equation
         olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
       then
         fail();
-    case ((REPLACEMENTS(ht,invHt,eht,iv)),src,dst)
+    case ((REPLACEMENTS(ht,invHt,eht,iv,derConst)),src,dst)
       equation
         ht_1 = BaseHashTable.add((src, dst),ht);
         invHt_1 = addReplacementInv(invHt, src, dst);
         eht_1 = addExtendReplacement(eht,src,NONE());
       then
-        REPLACEMENTS(ht_1,invHt_1,eht_1,iv);
+        REPLACEMENTS(ht_1,invHt_1,eht_1,iv,derConst);
     case (_,_,_)
       equation
         print("-add_replacement failed\n");
@@ -562,9 +567,10 @@ algorithm
       HashTable2.HashTable ht,eht;
       HashTable3.HashTable invHt;
       list<DAE.Ident> iv;
-    case (REPLACEMENTS(ht,invHt,eht,iv),_)
+      Option<HashSet.HashSet> derConst;
+    case (REPLACEMENTS(ht,invHt,eht,iv,derConst),_)
       then
-        REPLACEMENTS(ht,invHt,eht,inVar::iv);
+        REPLACEMENTS(ht,invHt,eht,inVar::iv,derConst);
   end match;
 end addIterationVar;
 
@@ -581,11 +587,12 @@ algorithm
       HashTable2.HashTable ht,eht;
       HashTable3.HashTable invHt;
       list<DAE.Ident> iv;
-    case (REPLACEMENTS(ht,invHt,eht,iv),_)
+      Option<HashSet.HashSet> derConst;
+    case (REPLACEMENTS(ht,invHt,eht,iv,derConst),_)
       equation
         iv = removeFirstOnTrue(iv,stringEq,inVar,{});
       then
-        REPLACEMENTS(ht,invHt,eht,iv);
+        REPLACEMENTS(ht,invHt,eht,iv,derConst);
   end match;
 end removeIterationVar;
 

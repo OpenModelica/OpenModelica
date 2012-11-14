@@ -61,6 +61,7 @@ protected import BackendEquation;
 protected import BackendVariable;
 protected import BackendVarTransform;
 protected import BaseHashTable;
+protected import BaseHashSet;
 protected import BinaryTree;
 protected import CheckModel;
 protected import ComponentReference;
@@ -77,6 +78,7 @@ protected import ExpressionSimplify;
 protected import ExpressionDump;
 protected import Flags;
 protected import Global;
+protected import HashSet;
 protected import IndexReduction;
 protected import Inline;
 protected import List;
@@ -9227,6 +9229,7 @@ algorithm
       
       var = BackendVariable.getVarAt(vars, inI);
       cr = BackendVariable.varCref(var);
+      true = ComponentReference.isPreCref(cr);
       crStr = ComponentReference.crefStr(cr);
       
       true = intEq(0, System.strncmp(crStr, DAE.preNamePrefix, stringLength(DAE.preNamePrefix)));
@@ -9324,6 +9327,8 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       array<DAE.Constraint> constraints;
       array<DAE.ClassAttributes> classAttrs;
+      HashSet.HashSet usedPreVars;
+      list<DAE.ComponentRef> inaktiveWhen;
       
     case(BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knvars,
                                                  initialEqs=inieqns,
@@ -9332,14 +9337,22 @@ algorithm
                                                  cache=cache,
                                                  env=env,
                                                  functionTree=functionTree))) equation
+      // collect used pre vars
+      usedPreVars = HashSet.emptyHashSet();
+      usedPreVars = traverseBackendDAEExpsEqns(inieqns, collectPreCrefExp, usedPreVars);
+      
       // collect vars for initial system
       vars = emptyVars();
       fixvars = emptyVars();
       ((vars, fixvars)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars));
       
       // collect eqns for initial system
-      ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (listEquation({}), listEquation({})));
-      ((vars, fixvars, eqns, reeqns)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns)));
+      ((eqns, reeqns, inaktiveWhen)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (listEquation({}), listEquation({}), {}));
+      ((vars, fixvars, eqns, reeqns, usedPreVars, inaktiveWhen)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns, usedPreVars, inaktiveWhen)));
+
+      // add vor each inaktiveWhen the equation pre(cr) = startvalue
+      // BaseHashSet.dumpHashSet(usedPreVars);
+      eqns = List.fold3(inaktiveWhen,handleinaktiveWhen,vars,usedPreVars,false,eqns);
       
       // generate initial system
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
@@ -9685,23 +9698,66 @@ algorithm
   end matchcontinue;
 end addStartValueEquations1;
 
+protected function handleinaktiveWhen
+  input DAE.ComponentRef inaktiveWhen;
+  input BackendDAE.Variables vars;
+  input HashSet.HashSet usedPreVars;
+  input Boolean internalCall;
+  input BackendDAE.EquationArray iEqns;
+  output BackendDAE.EquationArray oEqns;
+algorithm
+  oEqns := matchcontinue(inaktiveWhen,vars,usedPreVars,internalCall,iEqns)
+    local
+      list<DAE.ComponentRef> crlst;
+      BackendDAE.EquationArray eqns;
+      DAE.ComponentRef cr;
+      BackendDAE.Var var;
+      DAE.Exp startValue,cre;
+      DAE.ElementSource source;
+    case (_,_,_,false,_)
+      equation
+        crlst = ComponentReference.expandCref(inaktiveWhen,true);
+        eqns = List.fold3(crlst,handleinaktiveWhen,vars,usedPreVars,true,iEqns);
+      then
+        eqns;
+    case (_,_,_,true,_)
+      equation
+        false = BaseHashSet.has(inaktiveWhen,usedPreVars);
+        ({var},_) = BackendVariable.getVar(inaktiveWhen,vars);
+        startValue = BackendVariable.varStartValueType(var);
+        source = BackendVariable.getVarSource(var);
+        cr = ComponentReference.crefPrefixPre(inaktiveWhen);
+        cre = Expression.crefExp(cr);
+        eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(cre, startValue, source),iEqns);
+      then
+        eqns;
+    else
+      then iEqns;
+  end matchcontinue;
+end handleinaktiveWhen;
+
 protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqnsSystem
   author Frenkel TUD 2012-10"
   input BackendDAE.EqSystem isyst;
-  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray> iTpl;
-  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray> oTpl;
+  input tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet, list<DAE.ComponentRef>> iTpl;
+  output tuple<BackendDAE.Variables, BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.EquationArray, HashSet.HashSet, list<DAE.ComponentRef>> oTpl;
 algorithm
   oTpl := match(isyst, iTpl)
     local
       BackendDAE.Variables vars, ivars, fixvars;
       BackendDAE.EquationArray eqns, ieqns, reqns;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (ivars, fixvars, ieqns, reqns)) equation
+      HashSet.HashSet usedPreVars;
+      list<DAE.ComponentRef> inaktiveWhen;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (ivars, fixvars, ieqns, reqns, usedPreVars, inaktiveWhen)) equation
+      // collect used pre vars
+      usedPreVars = traverseBackendDAEExpsEqns(eqns, collectPreCrefExp, usedPreVars);
+      
       // collect vars for initial system
       ((ivars, fixvars)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialVars, (ivars, fixvars));
       
       // collect eqns for initial system
-      ((ieqns, reqns)) = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, (ieqns, reqns));
-    then ((ivars, fixvars, ieqns, reqns));
+      ((ieqns, reqns, inaktiveWhen)) = BackendEquation.traverseBackendDAEEqns(eqns, collectInitialEqns, (ieqns, reqns, inaktiveWhen));
+    then ((ivars, fixvars, ieqns, reqns, usedPreVars, inaktiveWhen));
   end match;
 end collectInitialVarsEqnsSystem;
 
@@ -9759,7 +9815,6 @@ algorithm
       DAE.Type ty;
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
-    
     // state
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), bindExp=NONE(), varType=ty, arryDim=arryDim), (vars, fixvars))) equation
       isFixed = BackendVariable.varFixed(var);
@@ -9834,11 +9889,17 @@ end collectInitialVars;
 
 protected function generateInitialWhenEqn "public function generateInitialWhenEqn
   author: lochel
-  This function generates out of a given when-equation, a equation for the initialization-problem."
+  This function generates out of a given when-equation, a equation for the initialization-problem.
+  see MSL3.1 8.6"
   input BackendDAE.Equation inEqn;
-  output BackendDAE.Equation outEqn;
+  input BackendDAE.EquationArray iEqns;
+  input BackendDAE.EquationArray iReeqns;
+  input list<DAE.ComponentRef> iInaktiveWhen;
+  output BackendDAE.EquationArray oEqns;
+  output BackendDAE.EquationArray oReeqns;
+  output list<DAE.ComponentRef> oInaktiveWhen;
 algorithm
-  outEqn := matchcontinue(inEqn)
+  (oEqns,oReeqns,oInaktiveWhen) := matchcontinue(inEqn, iEqns, iReeqns, iInaktiveWhen)
     local
       .DAE.Exp condition        "The when-condition" ;
       .DAE.ComponentRef left    "Left hand side of equation" ;
@@ -9847,52 +9908,63 @@ algorithm
       BackendDAE.Equation eqn;
       .DAE.Type identType;
       .DAE.ComponentRef preCR;
-      
+      Integer size;
+      Boolean b;
+      BackendDAE.EquationArray eqns,reeqns;
     // active when equation during initialization
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
-      true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
-      identType = ComponentReference.crefType(left);
-      eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), right, source);
-    then eqn;
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right),size=size, source=source),_,_,_)
+      equation
+        true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
+        identType = ComponentReference.crefType(left);
+        eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), right, source);
+      
+        // add it, if size is zero (terminate,assert,noretcall) move to removed equations
+        b = intGt(size, 0);
+        eqns = Debug.bcallret2(b, BackendEquation.equationAdd, eqn, iEqns, iEqns);
+        reeqns = Debug.bcallret2(not b, BackendEquation.equationAdd, eqn, iReeqns, iReeqns);
+      then
+        (eqns,reeqns,iInaktiveWhen);
     
     // inactive when equation during initialization
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
-      identType = ComponentReference.crefType(left);
-      preCR = ComponentReference.crefPrefixPre(left);
-      eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), DAE.CREF(preCR, identType), source);
-    then eqn;
-    
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function generateInitialWhenEqn failed"});
-    then fail();
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right),size=size, source=source),_,_,_)
+      equation
+        identType = ComponentReference.crefType(left);
+        preCR = ComponentReference.crefPrefixPre(left);
+        eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), DAE.CREF(preCR, identType), source);
+
+        // add it, if size is zero (terminate,assert,noretcall) move to removed equations
+        b = intGt(size, 0);
+        eqns = Debug.bcallret2(b, BackendEquation.equationAdd, eqn, iEqns, iEqns);
+        reeqns = Debug.bcallret2(not b, BackendEquation.equationAdd, eqn, iReeqns, iReeqns);
+      then 
+        (eqns,reeqns,left::iInaktiveWhen);
+    else
+      equation
+        eqns = BackendEquation.equationAdd(inEqn, iEqns);  
+      then (eqns,iReeqns,iInaktiveWhen);
   end matchcontinue;
 end generateInitialWhenEqn;
 
 protected function collectInitialEqns
-  input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> outTpl;
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray,list<DAE.ComponentRef>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray,list<DAE.ComponentRef>>> outTpl;
 protected
   BackendDAE.Equation eqn, eqn1;
   BackendDAE.EquationArray eqns, reeqns;
   Integer size;
   Boolean b, isWhenEquation;
+  HashSet.HashSet usedPreVars;
+  list<DAE.ComponentRef> inaktiveWhen;
 algorithm
-  (eqn, (eqns, reeqns)) := inTpl;
-  
+  (eqn, (eqns, reeqns, inaktiveWhen)) := inTpl;
+    
   // replace der(x) with $DER.x and replace pre(x) with $PRE.x
   (eqn1, _) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceDerPreCref, 0);
   
   // traverse when equations
-  isWhenEquation := BackendEquation.isWhenEquation(eqn);
-  eqn1 := Debug.bcallret1(isWhenEquation, generateInitialWhenEqn, eqn1, eqn1);
+  (eqns,reeqns,inaktiveWhen) := generateInitialWhenEqn(eqn1,eqns,reeqns,inaktiveWhen);
   
-  // add it, if size is zero (terminate,assert,noretcall) move to removed equations
-  size := BackendEquation.equationSize(eqn1);
-  b := intGt(size, 0);
-  
-  eqns := Debug.bcallret2(b, BackendEquation.equationAdd, eqn1, eqns, eqns);
-  reeqns := Debug.bcallret2(not b, BackendEquation.equationAdd, eqn1, reeqns, reeqns);
-  outTpl := (eqn, (eqns, reeqns));
+  outTpl := (eqn, (eqns, reeqns, inaktiveWhen));
 end collectInitialEqns;
 
 protected function replaceDerPreCref "function replaceDerPreCref
@@ -9932,5 +10004,43 @@ algorithm
     then inExp;
   end matchcontinue;
 end replaceDerPreCrefExp;
+
+protected function collectPreCref "function collectPreCref
+  author: Frenkel TUD 2011-05
+  helper for collectInitialEqns"
+  input tuple<DAE.Exp, HashSet.HashSet> inExp;
+  output tuple<DAE.Exp, HashSet.HashSet> outExp;
+protected
+   DAE.Exp e;
+   HashSet.HashSet usedPreVars;
+algorithm
+  (e, usedPreVars) := inExp;
+  outExp := Expression.traverseExp(e, collectPreCrefExp, usedPreVars);
+end collectPreCref;
+
+protected function collectPreCrefExp "function collectPreCrefExp
+  author: Frenkel TUD 2011-05
+  helper for replaceDerCref"
+  input tuple<DAE.Exp, HashSet.HashSet> inExp;
+  output tuple<DAE.Exp, HashSet.HashSet> outExp;
+algorithm
+  (outExp) := matchcontinue(inExp)
+    local
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crlst;
+      HashSet.HashSet usedPreVars;
+
+    
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}), usedPreVars)) equation
+      crlst = ComponentReference.expandCref(cr,true);
+      usedPreVars = List.fold(crlst,BaseHashSet.add,usedPreVars);
+    then ((e, usedPreVars));
+      
+    else
+    then inExp;
+  end matchcontinue;
+end collectPreCrefExp;
+
 
 end BackendDAEUtil;

@@ -3962,6 +3962,36 @@ algorithm
     // false OR e => e
     case (DAE.OR(_),e1 as DAE.BCONST(b),e2) then Util.if_(b,e1,e2);
     case (DAE.OR(_),e1,e2 as DAE.BCONST(b)) then Util.if_(b,e2,e1);
+
+    // a AND not a -> false
+    case (DAE.AND(_),e1,DAE.UNARY(DAE.NOT(_),e2))
+      equation
+        true = Expression.expEqual(e1, e2);
+      then DAE.BCONST(false);
+    case (DAE.AND(_),DAE.UNARY(DAE.NOT(_),e1),e2)
+      equation
+        true = Expression.expEqual(e1, e2);
+      then DAE.BCONST(false);
+    // a AND a -> a
+    case (DAE.AND(_),e1,e2)
+      equation
+        true = Expression.expEqual(e1, e2);
+      then e1;
+    // a OR a -> a
+    case (DAE.OR(_),e1,e2)
+      equation
+        true = Expression.expEqual(e1, e2);
+      then e1;
+    // a OR not a -> true
+    case (DAE.OR(_),e1,DAE.UNARY(DAE.NOT(_),e2))
+      equation
+        true = Expression.expEqual(e1, e2);
+      then DAE.BCONST(false);
+    case (DAE.OR(_),DAE.UNARY(DAE.NOT(_),e1),e2)
+      equation
+        true = Expression.expEqual(e1, e2);
+      then DAE.BCONST(false);
+
       
       
     case (DAE.ADD(ty=_),DAE.RANGE(ty=ty,start = e1,step=oexp,stop=e2),_)

@@ -3547,6 +3547,7 @@ algorithm
       Boolean b;
       DAE.Type ty;
       list<Exp> array;
+      Exp e1,e2;
     
     case (_, true) equation
     then true;
@@ -3557,7 +3558,12 @@ algorithm
     case (DAE.ARRAY(ty=ty, array=array), _) equation
       b = List.fold(array, containsInitialCall, inB);
     then b;
-    
+
+    case (DAE.LBINARY(exp1=e1,operator=DAE.OR(_),exp2=e2), _) equation
+      b = containsInitialCall(e1,inB);
+      b = containsInitialCall(e2,b);
+    then b;
+
     else
     then false;
   end matchcontinue;
