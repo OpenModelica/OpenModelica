@@ -258,7 +258,14 @@ algorithm
     case ({}) then {};
     case (v::rest)
       equation
-        DAE.GIVEN() = BackendVariable.varUncertainty(v);
+       DAE.GIVEN() = BackendVariable.varUncertainty(v);
+       varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
+       varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
+       strLst = generateXMLLibraryInputs(rest);    
+      then varStr::strLst;
+    case (v::rest)
+      equation
+       DAE.REFINE() = BackendVariable.varUncertainty(v);
        varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
        varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
        strLst = generateXMLLibraryInputs(rest);    
