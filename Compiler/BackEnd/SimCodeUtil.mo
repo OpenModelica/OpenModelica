@@ -3384,8 +3384,6 @@ algorithm
         varlst = List.map(varlst, transformXToXd);
         (equations1,uniqueEqIndex,tempvars) = createSingleWhenEqnCode(listGet(eqnlst,1),varlst,helpVarInfo,shared,iuniqueEqIndex,itempvars);
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, restComps, helpVarInfo,uniqueEqIndex,tempvars);
-        odeEquations = Debug.bcallret2(bdynamic, listAppend, equations1, odeEquations,odeEquations);
-        algebraicEquations = Debug.bcallret2((not bdynamic), listAppend, equations1, algebraicEquations,algebraicEquations);
         allEquations = listAppend(equations1,allEquations);
       then
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);               
