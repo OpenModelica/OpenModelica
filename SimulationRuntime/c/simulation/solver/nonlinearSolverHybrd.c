@@ -193,16 +193,16 @@ void printStatus(DATA_HYBRD *solverData, const int *nfunc_evals,const double *xe
 
   INDENT(logLevel);
   INDENT(logLevel);
-  INFO3(logLevel, "nfunc = %d +++ error = %.15e +++ error_scaled = %.15e", *nfunc_evals, *xerror, *xerror_scaled);
+  INFO3(logLevel, "nfunc = %d +++ error = %.20e +++ error_scaled = %.20e", *nfunc_evals, *xerror, *xerror_scaled);
   RELEASE(logLevel);
   for (i = 0; i < solverData->n; i++) {
     INDENT(logLevel);
-    INFO3(logLevel, "x[%d] = %.15e\n\tscaling factor = %f", i, solverData->x[i],solverData->diag[i]);
+    INFO3(logLevel, "x[%d] = %.20e\n\tscaling factor = %f", i, solverData->x[i],solverData->diag[i]);
     RELEASE(logLevel);
   }
   for (i = 0; i < solverData->n; i++) {
     INDENT(logLevel);
-    INFO3(logLevel, "res[%d] = %.15e\n\tscaling factor = %f", i, solverData->fvec[i], solverData->resScaling[i]);
+    INFO3(logLevel, "res[%d] = %.20e\n\tscaling factor = %f", i, solverData->fvec[i], solverData->resScaling[i]);
     RELEASE(logLevel);
   }
   RELEASE(logLevel);
@@ -247,9 +247,9 @@ int solveHybrd(DATA *data, int sysNumber) {
     for(i = 0; i < solverData->n; i++)
     {
       INDENT(LOG_NONLIN_SYS);
-      INFO2(LOG_NONLIN_SYS, "x[%d] = %.15e", i, systemData->nlsx[i]);
+      INFO2(LOG_NONLIN_SYS, "x[%d] = %.20e", i, systemData->nlsx[i]);
       INDENT(LOG_NONLIN_SYS);
-      INFO3(LOG_NONLIN_SYS, "scaling = %f +++ old = %e +++ extrapolated = %e",
+      INFO3(LOG_NONLIN_SYS, "scaling = %f +++ old = %.20e +++ extrapolated = %.20e",
             systemData->nlsxScaling[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
       RELEASE(LOG_NONLIN_SYS);
       RELEASE(LOG_NONLIN_SYS);
@@ -379,7 +379,7 @@ int solveHybrd(DATA *data, int sysNumber) {
               ? fabs(solverData->fjacobian[l]) : solverData->resScaling[i];
           l++;
         }
-        INFO2(LOG_NONLIN_SYS_V, "[%d] : %.15e", i, solverData->resScaling[i]);
+        INFO2(LOG_NONLIN_SYS_V, "[%d] : %.20e", i, solverData->resScaling[i]);
         solverData->resScaling[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
       }
       RELEASE(LOG_NONLIN_SYS_V);

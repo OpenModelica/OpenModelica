@@ -47,7 +47,7 @@ enum DASSL_METHOD
   DASSL_SYMJAC,
   DASSL_NUMJAC,
   DASSL_COLOREDSYMJAC,
-  DASSL_COLOREDNUMJAC,
+  DASSL_INTERNALNUMJAC,
   DASSL_TEST,
   DASSL_MAX
 };
@@ -63,7 +63,7 @@ typedef struct DASSL_DATA{
 
   fortran_integer idid;
   fortran_integer* ipar;
-  void* rpar;
+  double** rpar;
   /* size of work arrays for DASSL */
   fortran_integer liw;
   fortran_integer lrw;
@@ -77,9 +77,11 @@ typedef struct DASSL_DATA{
   fortran_integer ng;
   fortran_integer *jroot;
 
-  /* Used when calculating residual for its side effects. (alg. var calc) */
-  double *dummy_delta;
-
+  /* varibales used in jacobian calculation */
+  double sqrteps;
+  double *ysave;
+  double *delta_hh;
+  double *newdelta;
 
 } DASSL_DATA;
 

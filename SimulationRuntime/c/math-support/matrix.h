@@ -99,7 +99,7 @@ _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
 free(ipiv); \
 } while (0) /* (no trailing ; ) */
 
-#define extraPolate(v,old1,old2) (data->localData[1]->timeValue == data->localData[2]->timeValue ) ? v: \
+#define extraPolate(v,old1,old2) (data->localData[1]->timeValue == data->localData[2]->timeValue ) ? old1: \
 (((old1)-(old2))/(data->localData[1]->timeValue-data->localData[2]->timeValue)*data->localData[0]->timeValue \
 +(data->localData[1]->timeValue*(old2)-data->localData[2]->timeValue*(old1))/ \
 (data->localData[1]->timeValue-data->localData[2]->timeValue))

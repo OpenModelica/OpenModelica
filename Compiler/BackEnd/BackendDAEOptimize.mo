@@ -7146,10 +7146,10 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> translated to DAE.ComRefs\n");
         sparsetuple = List.threadTuple(diffCompRefs, translated);
         
-        /*
+        
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse  graph.");
         // build up a graph of pattern
-        nodesList = List.intRange2(1,sparseLength);
+        nodesList = List.intRange2(1,adjSize);
         sparseGraph = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
         sparseGraphT = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArrayT);
         Debug.fcall(Flags.JAC_DUMP2,print,"sparse graph: \n");
@@ -7159,8 +7159,8 @@ algorithm
         
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.");
         // color sparse bipartite graph
-        forbiddenColor = arrayCreate(sparseLength,NONE());
-        colored = arrayCreate(sparseLength,0);
+        forbiddenColor = arrayCreate(adjSize,NONE());
+        colored = arrayCreate(adjSize,0);
         arraysparseGraph = listArray(sparseGraph);        
         colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
         
@@ -7176,9 +7176,9 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpSparsePattern, coloredlist);
         
         coloring = List.mapList1_1(coloredlist, List.getIndexFirst, diffCompRefs);
-        */
+        
         //without coloring
-        coloring = List.transposeList({diffCompRefs});
+        //coloring = List.transposeList({diffCompRefs});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians[SPARSE] -> ready! " +& realString(clock()) +& "\n");
       then ((sparsetuple, (diffCompRefs, diffedCompRefs)), coloring);
         else

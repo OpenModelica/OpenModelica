@@ -152,6 +152,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
   if(!flags)
   {
+    /* default activated */
     useStream[LOG_STDOUT] = 1;
     useStream[LOG_ASSERT] = 1;
     return; // no lv flag given.
@@ -172,8 +173,13 @@ void setGlobalVerboseLevel(int argc, char**argv)
         useStream[i] = 0;
     }
   }
+  /* default activated */
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
+
+  /* print states if LOG_SOLVER if active */
+  if (useStream[LOG_SOLVER] == 1)
+    useStream[LOG_STATS] = 1;
 
   delete flags;
 }
@@ -268,16 +274,17 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
 int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
 {
   int retVal = -1;
+  int measureSimTime = 0;
 
   /* linear model option is set : <-l lintime> */
   int create_linearmodel = flagSet("l", argc, argv);
   string* lintime = (string*) getFlagValue("l", argc, argv);
 
-  /* mesure time option is set : -mt */
-  if(flagSet("mt", argc, argv))
+  /* activated measure time option with LOG_STATS */
+  if(DEBUG_STREAM(LOG_STATS) && !measure_time_flag)
   {
-    fprintf(stderr, "Error: The -mt was replaced by the simulate option measureTime, which compiles a simulation more suitable for profiling.\n");
-    return 1;
+    measure_time_flag = 1;
+    measureSimTime = 1;
   }
 
   function_initMemoryState();
@@ -360,6 +367,15 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     rt_accumulate(SIM_TIMER_LINEARIZE);
     cout << "Linear model is created!" << endl;
   }
+  /* disable measure_time_flag to prevent producing
+   * all profiling files, since measure_time_flag
+   * was not activated while compiling, it was
+   * just used for measure simulation time for LOG_STATS.
+   */
+  if (measureSimTime){
+    measure_time_flag = 0;
+  }
+
 
   if(retVal == 0 && measure_time_flag)
   {
@@ -448,8 +464,8 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
                       simData->simulationInfo.numSteps, simData->simulationInfo.tolerance, 3);
 #endif
   } else {
-    INFO1(LOG_SOLVER, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
-    INFO(LOG_SOLVER, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslColorNumJac, qss.");
+    INFO1(LOG_STDOUT, " | Unrecognized solver: %s.", simData->simulationInfo.solverMethod);
+    INFO(LOG_STDOUT, " | valid solvers are: dassl, euler, rungekutta, inline-euler, inline-rungekutta, dasslwort, dasslSymJac, dasslNumJac, dasslColorSymJac, dasslInternalNumJac, qss.");
     retVal = 1;
   }
 
