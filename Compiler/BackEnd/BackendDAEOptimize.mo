@@ -10414,25 +10414,38 @@ algorithm
       BackendDAE.JacobianType jacType;
     case (_,_,{},_,_)
       then (listReverse(iAcc),iRunMatching);
+    // don't tear linear system as long as we do not handle them 
+    // as linear system while the runtime
     case (_,_,
       (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_)
       equation
+        equality(jacType = BackendDAE.JAC_TIME_VARYING());
+        true = Flags.isSet(Flags.LINEAR_TEARING);
         (comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,ojac,jacType);
         (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);
       then
         (acc,b1);
+    // tearing of non-linear systems
+    case (_,_,
+      (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_)
+      equation
+        failure(equality(jacType = BackendDAE.JAC_TIME_VARYING()));
+        (comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,ojac,jacType);
+        (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);
+      then
+        (acc,b1);        
+    // only continues part of a mixed system
     case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_)
       equation
         true = Flags.isSet(Flags.NO_MIXED_TEARING);
-        // only continues part
         (comp1::{},true) = tearingSystemNew1(isyst,ishared,{comp1},false,{});
         (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,BackendDAE.MIXEDEQUATIONSYSTEM(comp1,eindex,vindx)::iAcc);
       then
-        (acc,b1);        
+        (acc,b1);
+    // mixed and continues part
     case (_,_,(comp as BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=eindex,disc_vars=vindx))::comps,_,_)
       equation
         false = Flags.isSet(Flags.NO_MIXED_TEARING);
-        // mixed and continues part
         (eindex,vindx) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
         (comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,NONE(),BackendDAE.JAC_NO_ANALYTIC());
         (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);

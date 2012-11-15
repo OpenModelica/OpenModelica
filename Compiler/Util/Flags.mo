@@ -369,17 +369,19 @@ constant DebugFlag SHOW_START_ORIGIN = DEBUG_FLAG(101, "showStartOrigin",
 // The flags mixedTearing are only needed as long tearing of mixed system in not default.
 constant DebugFlag NO_MIXED_TEARING = DEBUG_FLAG(102, "noMixedTearing",
   Util.gettext("Disables tearing of mixed system."));
-constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(103, "dumpinitialsystem",
+constant DebugFlag LINEAR_TEARING = DEBUG_FLAG(103, "doLinearTearing",
+  Util.gettext("Enables tearing of linear systems, but for now they aren't handled efficent in the runtime."));    
+constant DebugFlag DUMP_INITIAL_SYSTEM = DEBUG_FLAG(104, "dumpinitialsystem",
   Util.gettext("Dumps the initial equation system."));
-constant DebugFlag SOLVE_INITIAL_SYSTEM = DEBUG_FLAG(104, "solveinitialsystem",
+constant DebugFlag SOLVE_INITIAL_SYSTEM = DEBUG_FLAG(105, "solveinitialsystem",
   Util.gettext("solve the initial equation system symbolical."));
-constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(105, "scodeInstShortcut",
+constant DebugFlag SCODE_INST_SHORTCUT = DEBUG_FLAG(106, "scodeInstShortcut",
   Util.gettext("Enables experimental SCode instantiation shortcut phase."));
-constant DebugFlag SHOW_SCODE = DEBUG_FLAG(106, "showSCode",
+constant DebugFlag SHOW_SCODE = DEBUG_FLAG(107, "showSCode",
   Util.gettext("Shows the SCode result of +d=scodeInstShortcut."));
-constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(107, "dumpConstrepl",
+constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(108, "dumpConstrepl",
   Util.gettext("dump the found replacements for constants"));
-constant DebugFlag PEDANTIC = DEBUG_FLAG(108, "pedantic",
+constant DebugFlag PEDANTIC = DEBUG_FLAG(109, "pedantic",
   Util.gettext("switch into pedantic debug-mode, to get much more feedback"));
 
 
@@ -490,6 +492,7 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_DAE,
   SHOW_START_ORIGIN,
   NO_MIXED_TEARING,
+  LINEAR_TEARING,
   DUMP_INITIAL_SYSTEM,
   SOLVE_INITIAL_SYSTEM,
   SCODE_INST_SHORTCUT,
