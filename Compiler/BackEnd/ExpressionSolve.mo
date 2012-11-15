@@ -310,7 +310,7 @@ algorithm
       DAE.Exp lhs,dere,zeroe,rhs,e,z,a;
       DAE.ComponentRef cr,cr1;
       DAE.Exp invCr;
-      DAE.Type tp;
+      DAE.Type tp,tp1;
       list<DAE.Exp> factors;
       list<DAE.Statement> asserts;
     
@@ -372,6 +372,23 @@ algorithm
         asserts = generateAssert(inExp1,inExp2,inExp3,a,asserts);
       then
         (rhs,asserts);
+        
+    // a^b = f(..) -> a = sign(pre(a))*(f(...)^(1/b))   
+    case (_,_,DAE.CREF(componentRef = cr),_)
+      equation
+        e = Expression.makeDiff(inExp1,inExp2);
+        ((e,(_,false,SOME(DAE.BINARY(operator=DAE.POW(tp1),exp2 = a))))) = Expression.traverseExpTopDown(e, traversingVarOnlyinPow, (cr,false,NONE()));
+        tp = Expression.typeof(e);
+        (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        (rhs,asserts) = solve(e,z,inExp3);
+        a = Expression.expDiv(DAE.RCONST(1.0),a);
+        rhs = DAE.BINARY(rhs,DAE.POW(tp1),a);
+        tp = Expression.typeof(inExp3);                   
+        dere = Expression.makeBuiltinCall("pre",{inExp3},tp);
+        dere = Expression.makeBuiltinCall("sign",{dere},DAE.T_INTEGER_DEFAULT);
+        rhs = Expression.expMul(dere,rhs);
+      then
+        (rhs,asserts);        
 /*
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
@@ -414,6 +431,43 @@ algorithm
   end matchcontinue;
 end solve2;
 
+protected function traversingVarOnlyinPow "
+@author: Frenkel TUD 2011-04
+Returns true if in the exp the componentRef is only in pow"
+  input tuple<DAE.Exp, tuple<DAE.ComponentRef,Boolean,Option<DAE.Exp>>> inExp;
+  output tuple<DAE.Exp, Boolean, tuple<DAE.ComponentRef,Boolean,Option<DAE.Exp>>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      Boolean b;
+      DAE.ComponentRef cr,cr1;
+      DAE.Exp e,e1,e2;
+      Option<DAE.Exp> oe;
+
+    case ((e as DAE.BINARY(exp1 = e1 as DAE.CREF(componentRef = cr1),operator = DAE.POW(_),exp2 = e2), (cr,false,NONE())))
+      equation
+        true = ComponentReference.crefPrefixOf(cr1,cr);
+        false = Expression.expHasCrefNoPreorDer(e2, cr);
+      then
+        ((e1,false,(cr,false,SOME(e))));
+   
+    case ((e as DAE.CREF(componentRef = cr1), (cr,false,oe)))
+      equation
+        b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
+      then
+        ((e,not b,(cr,b,oe)));
+    
+    case ((e as DAE.CREF(componentRef = cr1), (cr,false,oe)))
+      equation
+        b = ComponentReference.crefPrefixOf(cr1,cr);
+      then
+        ((e,not b,(cr,b,oe)));    
+    
+    case (((e,(cr,b,oe)))) then ((e,not b,(cr,b,oe)));
+    
+  end matchcontinue;
+end traversingVarOnlyinPow;
+
 protected function generateAssert
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -422,7 +476,7 @@ protected function generateAssert
   input list<DAE.Statement> inAsserts;
   output list<DAE.Statement> outAsserts;
 algorithm
-  (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3,a,inAsserts)
+  outAsserts := matchcontinue (inExp1,inExp2,inExp3,a,inAsserts)
     local
       DAE.Exp a,z;
       DAE.Type tp;
