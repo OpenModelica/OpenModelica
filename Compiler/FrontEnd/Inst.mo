@@ -4322,12 +4322,13 @@ protected function hasExtendsOfExternalObject
   input list<SCode.Element> inEls;
   output Boolean res;
 algorithm
-  res:= matchcontinue(inEls)
-    local list<SCode.Element> els;
+  res:= match (inEls)
+    local
+      list<SCode.Element> els;
+    case {} then false;
     case SCode.EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject"))::_ then true;
     case _::els then hasExtendsOfExternalObject(els);
-    case _ then false;
-  end matchcontinue;
+  end match;
 end hasExtendsOfExternalObject;
 
 protected function hasExternalObjectDestructor
