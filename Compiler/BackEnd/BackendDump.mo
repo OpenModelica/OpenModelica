@@ -871,7 +871,6 @@ algorithm
   end match;
 end dumpConstraints;
 
-
 public function dumpSparsePattern
 "function:  dumpSparsePattern
  author: wbraun
@@ -904,6 +903,52 @@ algorithm
     then ();
   end match;   
 end dumpSparsePattern2;
+
+public function printSparsityPattern "public function printSparsityPattern
+  author lochel"
+  input BackendDAE.SparsePattern inPattern;
+protected
+  list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> pattern;
+  list< .DAE.ComponentRef> diffVars, diffedVars;
+algorithm
+  (pattern, (diffVars, diffedVars)) := inPattern;
+  
+  print("Sparsity Pattern\n================\n");
+  print("independents [or inputs] (" +& intString(listLength(diffVars)) +& ")\n  ");
+  ComponentReference.printComponentRefList(diffVars);
+  
+  print("dependents [or outputs] (" +& intString(listLength(diffedVars)) +& ")\n  ");
+  ComponentReference.printComponentRefList(diffedVars);
+  
+  printSparsityPattern1(pattern);
+  print("\n");
+end printSparsityPattern;
+
+protected function printSparsityPattern1 "protected function printSparsityPattern1
+  author lochel"
+  input list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> inPattern;
+algorithm
+  () := matchcontinue(inPattern)
+    local
+      tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>> curr;
+      list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> rest;
+      .DAE.ComponentRef cr;
+      list< .DAE.ComponentRef> crList;
+      String crStr;
+    
+    case (curr::rest) equation
+      (cr, crList) = curr;
+      crStr = ComponentReference.crefStr(cr);
+      print(crStr +& " affects the following (" +& intString(listLength(crList)) +& ") outputs\n  ");
+      ComponentReference.printComponentRefList(crList);
+    
+      printSparsityPattern1(rest);
+    then ();
+    
+    else
+    then ();
+  end matchcontinue;
+end printSparsityPattern1;
 
 public function dumpJacobianStr
 "function: dumpJacobianStr
