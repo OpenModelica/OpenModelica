@@ -4754,9 +4754,8 @@ algorithm
         
     /* Tuple with rhs constant */
     case (cache,env,ih,pre,Absyn.TUPLE(expressions = expl),e_1,eprop,_,source,_,impl,_,_)
-      equation 
+      equation
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl, info);
-        (_,_,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e_1, false,NONE(), Ceval.MSG(info));
         (cache,expl_2,cprops,attrs,_) = Static.elabExpCrefNoEvalList(cache,env, expl, impl,NONE(),false,pre,info, Error.getNumErrorMessages());
         Static.checkAssignmentToInputs(expl, attrs, env, info);
         (cache,expl_2) = PrefixUtil.prefixExpList(cache, env, ih, expl_2, pre);
