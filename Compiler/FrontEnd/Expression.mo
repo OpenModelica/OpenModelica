@@ -3537,9 +3537,15 @@ algorithm
   end matchcontinue;
 end replaceCref;
 
-public function containsInitialCall
-  input DAE.Exp condition;
-  input Boolean inB;  // = false
+public function containsInitialCall "public function containsInitialCall
+  author: lochel
+  Spec33 p. 90:
+  [...] The equations of a when-clause are active during initialization, if 
+  and only if they are explicitly enabled with the initial() operator; and 
+  only in one of the two forms when initial() then or when {…,initial(),…} 
+  then. [...]"
+  input DAE.Exp condition;    // expression of a when-clause
+  input Boolean inB;          // use false for primary calls - it us for internal use only
   output Boolean res;
 algorithm
   res := matchcontinue(condition, inB)
@@ -3547,7 +3553,7 @@ algorithm
       Boolean b;
       DAE.Type ty;
       list<Exp> array;
-      Exp e1,e2;
+      Exp e1, e2;
     
     case (_, true) equation
     then true;
@@ -3558,10 +3564,14 @@ algorithm
     case (DAE.ARRAY(ty=ty, array=array), _) equation
       b = List.fold(array, containsInitialCall, inB);
     then b;
-
-    case (DAE.LBINARY(exp1=e1,operator=DAE.OR(_),exp2=e2), _) equation
-      b = containsInitialCall(e1,inB);
-      b = containsInitialCall(e2,b);
+    
+    // just to provide older models
+    case (DAE.LBINARY(exp1=e1, operator=DAE.OR(_), exp2=e2), _) equation
+      b = containsInitialCall(e1, inB);
+      b = containsInitialCall(e2, b);
+      true = b;
+      
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "The equations of a when-clause are active during initialization, if and only if they are explicitly enabled with the initial() operator in one of the two forms when initial() then or when {…,initial(),…} then.");
     then b;
 
     else

@@ -7767,10 +7767,11 @@ algorithm
       orderedVarList = redirectOutputToBiDir(orderedVarList);
       //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 2");
       orderedVars = BackendDAEUtil.listVar1(orderedVarList);
-      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, shared);
       
+      // add initial equations and $res-variables
+      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING()), initEqSystem}, shared);
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
-      DAE = BackendDAEUtil.addBackendDAEEqSystem(DAE, initEqSystem);    // add initial equations and $res-variables
+      
       DAE = collapseIndependentBlocks(DAE);                             // merge everything together
       DAE = BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), SOME("dummyDerivative"));  // calculate matching
       
@@ -7852,10 +7853,11 @@ algorithm
       orderedVarList = redirectOutputToBiDir(orderedVarList);
       //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 2");
       orderedVars = BackendDAEUtil.listVar1(orderedVarList);
-      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, shared);
       
+      // add initial equations and $res-variables
+      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING()), initEqSystem}, shared);
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
-      DAE = BackendDAEUtil.addBackendDAEEqSystem(DAE, initEqSystem);    // add initial equations and $res-variables
+
       DAE = collapseIndependentBlocks(DAE);                             // merge everything together
       DAE = BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), SOME("dummyDerivative"));  // calculate matching
       
@@ -7927,10 +7929,11 @@ algorithm
       orderedVarList = redirectOutputToBiDir(orderedVarList);
       //BackendDump.dumpBackendDAEVarList(orderedVarList, "initial vars 2");
       orderedVars = BackendDAEUtil.listVar1(orderedVarList);
-      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, shared);
       
+      // add initial equations and $res-variables
+      DAE = BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING()), initEqSystem}, shared);
       DAE = BackendDAEUtil.copyBackendDAE(DAE);                         // to avoid side effects from arrays
-      DAE = BackendDAEUtil.addBackendDAEEqSystem(DAE, initEqSystem);    // add initial equations and $res-variables
+
       DAE = collapseIndependentBlocks(DAE);                             // merge everything together
       DAE = BackendDAEUtil.transformBackendDAE(DAE, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), SOME("dummyDerivative"));  // calculate matching
       
