@@ -377,7 +377,8 @@ algorithm
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         e = Expression.makeDiff(inExp1,inExp2);
-        ((e,(_,false,SOME(DAE.BINARY(operator=DAE.POW(tp1),exp2 = a))))) = Expression.traverseExpTopDown(e, traversingVarOnlyinPow, (cr,false,NONE()));
+        ((e,(_,false,SOME(a)))) = Expression.traverseExpTopDown(e, traversingVarOnlyinPow, (cr,false,NONE()));
+        DAE.BINARY(operator=DAE.POW(ty=tp1),exp2 = a) = a;
         tp = Expression.typeof(e);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         (rhs,asserts) = solve(e,z,inExp3);
@@ -478,7 +479,7 @@ protected function generateAssert
 algorithm
   outAsserts := matchcontinue (inExp1,inExp2,inExp3,a,inAsserts)
     local
-      DAE.Exp a,z;
+      DAE.Exp z;
       DAE.Type tp;
       list<DAE.Statement> asserts;
       String estr,se1,se2,sa;

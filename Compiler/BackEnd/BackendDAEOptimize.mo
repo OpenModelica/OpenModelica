@@ -10280,8 +10280,8 @@ algorithm
     case (_,_,
       (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=ojac,jacType=jacType))::comps,_,_)
       equation
-        equality(jacType = BackendDAE.JAC_TIME_VARYING());
-        true = Flags.isSet(Flags.LINEAR_TEARING);
+        //equality(jacType = BackendDAE.JAC_TIME_VARYING());
+        //true = Flags.isSet(Flags.LINEAR_TEARING);
         (comp1,true) = tearingSystemNew1_1(isyst,ishared,eindex,vindx,ojac,jacType);
         (acc,b1) = tearingSystemNew1(isyst,ishared,comps,true,comp1::iAcc);
       then

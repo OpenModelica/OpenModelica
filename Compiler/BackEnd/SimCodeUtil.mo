@@ -4805,7 +4805,6 @@ algorithm
        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
        list<tuple<Integer, Integer, SimCode.SimEqSystem>> simJac;
      // linear case
-/*
      case(true,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),BackendDAE.SHARED(knownVars=kv,functionTree=functree),_,_,_)
        equation
          true = intLt(listLength(otherEqns),10);
@@ -4839,8 +4838,7 @@ algorithm
          // generate other equations
          (simequations,uniqueEqIndex,tempvars) = createTornSystemOtherEqns(otherEqns,skipDiscInAlgorithm,isyst,ishared,helpVarInfo,iuniqueEqIndex+1,itempvars,{SimCode.SES_LINEAR(iuniqueEqIndex, false, simVars, beqs, simJac)});
        then
-         (simequations,uniqueEqIndex,tempvars); 
-*/
+         (simequations,uniqueEqIndex,tempvars);
      // nonliniear case  
      case(_,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,_,_,_)
        equation
