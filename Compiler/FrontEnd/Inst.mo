@@ -13684,7 +13684,7 @@ algorithm
                   
     case (_,_,_,_,_,_) 
       equation
-        clsAttrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(NONE(),NONE(),NONE()))});
+        clsAttrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(NONE(),NONE(),NONE(),NONE()))});
         (cache,env,dae) = instClassAttributes2(inCache,inEnv,inPrefix,inAttrs,inBoolean,inInfo,clsAttrs);
       then (cache,env,dae);
     case (_,_,_,_,_,_)
@@ -13752,25 +13752,31 @@ protected function insertClassAttribute
 algorithm
   outAttrs := match(inAttrs, attrName, inAttrExp)
     local
-      Option<DAE.Exp> objectiveE,startTimeE,finalTimeE;
+      Option<DAE.Exp> objectiveE,startTimeE,finalTimeE,objectiveIntegrandE;
       DAE.DAElist attrs;
       
     case (attrs, "objective", _)
       equation
-        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(_,startTimeE,finalTimeE))}) = attrs;
-        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(SOME(inAttrExp),startTimeE,finalTimeE))});
+        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(_,objectiveIntegrandE,startTimeE,finalTimeE))}) = attrs;
+        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(SOME(inAttrExp),objectiveIntegrandE,startTimeE,finalTimeE))});
+      then attrs;
+        
+    case (attrs, "objectiveIntegrand", _)
+      equation
+        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,_,startTimeE,finalTimeE))}) = attrs;
+        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,SOME(inAttrExp),startTimeE,finalTimeE))});
       then attrs;
         
     case (attrs, "startTime", _)
       equation
-        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,_,finalTimeE))}) = attrs;
-        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,SOME(inAttrExp),finalTimeE))});
+        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,objectiveIntegrandE,_,finalTimeE))}) = attrs;
+        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,objectiveIntegrandE,SOME(inAttrExp),finalTimeE))});
       then attrs;
         
     case (attrs, "finalTime", _)
       equation
-        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,startTimeE,_))}) = attrs;
-        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,startTimeE,SOME(inAttrExp)))});
+        DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,objectiveIntegrandE,startTimeE,_))}) = attrs;
+        attrs = DAE.DAE({DAE.CLASS_ATTRIBUTES(DAE.OPTIMIZATION_ATTRS(objectiveE,objectiveIntegrandE,startTimeE,SOME(inAttrExp)))});
       then attrs;
    case (_,_,_)
       equation 

@@ -7051,12 +7051,13 @@ algorithm
       SCode.Element cl,scodeClass,recordCl;
       Absyn.Path fn,fn_1,fqPath,utPath,fnPrefix,componentType,correctFunctionPath,functionClassPath;
       list<Absyn.Exp> args,t4;
+      Absyn.Exp argexp;
       list<Absyn.NamedArg> nargs, translatedNArgs;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
       list<DAE.Type> typelist;
       DAE.Dimensions vect_dims;
-      DAE.Exp call_exp,callExp;
+      DAE.Exp call_exp,callExp,daeexp;
       list<String> t_lst,names;
       String fn_str,types_str,scope,pre_str,componentName,fnIdent;
       String s,name,argStr,stringifiedInstanceFunctionName,lastId;
@@ -7071,6 +7072,8 @@ algorithm
       list<SCode.Element> comps;
       Absyn.InnerOuter innerOuter;
       list<Absyn.Path> operNames;
+      Absyn.ComponentRef cref;
+      DAE.ComponentRef daecref;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /*
@@ -7304,6 +7307,19 @@ algorithm
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
       then
         (cache,NONE());
+        
+    // In Optimica there is an odd syntax like for eg.,  x(finalTime) + y(finalTime); where both x and y are normal variables
+    // not functions. So it is not really a call Exp but the compiler treats it as if it is up until this point.
+    // This is a kind of trick to handle that.     
+    case (cache,env,fn,{argexp as Absyn.CREF(Absyn.CREF_IDENT(name,_))},_,impl,_,st,pre,_)
+      equation
+        true = Config.acceptOptimicaGrammar();
+        cref = Absyn.pathToCref(fn);
+        (cache,SOME((daeexp as DAE.CREF(daecref,tp),prop,_))) = elabCref(cache,env, cref, impl,true,pre,info);
+        daeexp = DAE.CREF(DAE.OPTIMICA_ATTR_INST_CREF(daecref,name), tp);
+        expProps = SOME((daeexp,prop));
+      then
+        (cache,expProps);
 
     case (cache,env,fn,args,nargs,impl,_,st,pre,_)
       equation

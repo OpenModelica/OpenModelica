@@ -5562,6 +5562,7 @@ algorithm
       list<DAE.Subscript> subs,subs_1;
       Type_a arg;
       Integer ix;
+      String instant;
 
     case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _, arg)
       equation
@@ -5582,6 +5583,13 @@ algorithm
       equation
         (subs_1, arg) = traverseExpSubs(subs, rel, arg);
         cr = Util.if_(referenceEq(subs,subs_1),inCref,DAE.CREF_ITER(name, ix, ty, subs_1));
+      then
+        (cr, arg);
+    
+    case (DAE.OPTIMICA_ATTR_INST_CREF(componentRef = cr, instant = instant), _, arg)
+      equation
+        (cr_1, arg) = traverseExpCref(cr, rel, arg);
+        cr = Util.if_(referenceEq(cr,cr_1),inCref,DAE.OPTIMICA_ATTR_INST_CREF(cr_1, instant));
       then
         (cr, arg);
 

@@ -291,7 +291,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
     pLexer->recover = lexNoRecover;
     tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(((pMetaModelica_Lexer)lxr)));
   } 
-  else if (ModelicaParser_flags & PARSE_PAR_MODELICA) {
+  else if (ModelicaParser_flags & PARSE_PARMODELICA) {
     lxr = ParModelica_LexerNew(input);
     //printf("Parsing ParModelica.\n\n");
     if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); exit(ANTLR3_ERR_NOMEM); }
@@ -340,7 +340,7 @@ static void* parseStream(pANTLR3_INPUT_STREAM input, int runningTestsuite)
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     ((pMetaModelica_Lexer)lxr)->free((pMetaModelica_Lexer)lxr);
   } 
-  else if (ModelicaParser_flags & PARSE_PAR_MODELICA) {
+  else if (ModelicaParser_flags & PARSE_PARMODELICA) {
     ((pParModelica_Lexer)lxr)->free((pParModelica_Lexer)lxr);
   } else {
     ((pModelica_3_Lexer)lxr)->free((pModelica_3_Lexer)lxr);
@@ -391,7 +391,7 @@ static void* parseFile(const char* fileName, int flags, const char *encoding, in
 
   ModelicaParser_encoding = encoding;
   ModelicaParser_filename_C = fileName;
-  ModelicaParser_flags = flags;
+  ModelicaParser_flags = flags;  
   isReadOnly = !SystemImpl__regularFileWritable(ModelicaParser_filename_C);
   omc_first_comment = 0;
 

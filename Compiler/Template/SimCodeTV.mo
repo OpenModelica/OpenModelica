@@ -1123,6 +1123,10 @@ package DAE
       Type identType;
       list<Subscript> subscriptLst;
     end CREF_IDENT;
+    record OPTIMICA_ATTR_INST_CREF
+      ComponentRef componentRef;
+      String instant;
+    end OPTIMICA_ATTR_INST_CREF;
     record WILD end WILD;
   end ComponentRef;
   
@@ -1619,6 +1623,7 @@ package DAE
   uniontype ClassAttributes "currently for Optimica extension: these are the objectives of optimization class"
   record OPTIMIZATION_ATTRS
     Option<Exp> objetiveE;
+    Option<Exp> objectiveIntegrandE;
     Option<Exp> startTimeE;
     Option<Exp> finalTimeE;
   end OPTIMIZATION_ATTRS;

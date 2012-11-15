@@ -160,6 +160,7 @@ end ValidOptions;
 public constant Integer MODELICA = 1;
 public constant Integer METAMODELICA = 2;
 public constant Integer PARMODELICA = 3;
+public constant Integer OPTIMICA = 4;
 
 // DEBUG FLAGS
 public
@@ -515,7 +516,7 @@ constant ConfigFlag TARGET = CONFIG_FLAG(5, "target", NONE(), EXTERNAL(),
   STRING_FLAG("gcc"), SOME(STRING_OPTION({"gcc", "msvc"})),
   Util.gettext("Sets the target compiler to use."));
 constant ConfigFlag GRAMMAR = CONFIG_FLAG(6, "grammar", SOME("g"), EXTERNAL(),
-  ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA)}), 
+  ENUM_FLAG(MODELICA, {("Modelica", MODELICA), ("MetaModelica", METAMODELICA), ("ParModelica", PARMODELICA), ("Optimica", OPTIMICA)}), 
   SOME(STRING_OPTION({"Modelica", "MetaModelica", "ParModelica"})),
   Util.gettext("Sets the grammar and semantics to accept."));
 constant ConfigFlag ANNOTATION_VERSION = CONFIG_FLAG(7, "annotationVersion",

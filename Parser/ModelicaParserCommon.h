@@ -50,9 +50,11 @@ extern const char *ModelicaParser_encoding;
 #define PARSE_META_MODELICA   1<<1
 #define PARSE_EXPRESSION      1<<2
 #define PARSE_CODE_EXPRESSION 1<<3
-#define PARSE_PAR_MODELICA    1<<4
+#define PARSE_PARMODELICA     1<<4
+#define PARSE_OPTIMICA        1<<5
 #define metamodelica_enabled() (ModelicaParser_flags&PARSE_META_MODELICA)
-#define parmodelica_enabled() (ModelicaParser_flags&PARSE_PAR_MODELICA)
+#define parmodelica_enabled() (ModelicaParser_flags&PARSE_PARMODELICA)
+#define optimica_enabled() (ModelicaParser_flags&PARSE_OPTIMICA)
 #define code_expressions_enabled() (ModelicaParser_flags&PARSE_CODE_EXPRESSION)
 #define flat_modelica_enabled() (ModelicaParser_flags&PARSE_FLAT)
 

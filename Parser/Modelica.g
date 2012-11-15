@@ -214,7 +214,7 @@ class_specifier2 returns [void* ast, const char *s2] @init {
     }
 | (lp = LPAR na=named_arguments rp=RPAR) cmt=string_comment c=composition id=END_IDENT
     {
-      modelicaParserAssert(metamodelica_enabled(),"Class attributes are currently allowed only for Optimica. Use +g=MetaModelica.", class_specifier2, $start->line, $start->charPosition+1, $lp->line, $lp->charPosition+2);
+      modelicaParserAssert(optimica_enabled(),"Class attributes are currently allowed only for Optimica. Use +g=Optimica.", class_specifier2, $start->line, $start->charPosition+1, $lp->line, $lp->charPosition+2);
       $ast = Absyn__PARTS(mk_nil(), na, c, mk_some_or_none(cmt));
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment

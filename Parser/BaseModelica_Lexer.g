@@ -260,9 +260,14 @@ COLON : ':';
 SEMICOLON : ';';
 
 // ---------
-// OptiMo
+// Optimica
 // ---------
-// in the file MetaModelica_Lexer.g
+
+OPTIMIZATION : 'optimization';
+CONSTRAINT : 'constraint';
+//INITIALGUESS : 'initialGuess';
+//FREE : 'free';
+//FINALTIME : 'finalTime';
 
 /*------------------------------------------------------------------
  * LEXER RULES
