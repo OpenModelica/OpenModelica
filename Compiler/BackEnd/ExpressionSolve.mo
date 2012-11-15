@@ -181,7 +181,7 @@ protected function solveSimple
   output DAE.Exp outExp;
   output list<DAE.Statement> outAsserts;
 algorithm
-  (outExp,outAsserts) := match (inExp1,inExp2,inExp3)
+  (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3)
     local
       DAE.Exp res;
       DAE.ComponentRef cr,cr1;
@@ -290,7 +290,7 @@ algorithm
       then
         (Expression.negate(inExp1),{});
 
-  end match;
+  end matchcontinue;
 end solveSimple;
 
 
