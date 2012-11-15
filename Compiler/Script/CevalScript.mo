@@ -6688,6 +6688,7 @@ algorithm
    case (cache, env, fpath)
      equation
        true = System.getPartialInstantiation();
+       (_, SCode.CLASS(prefixes = SCode.PREFIXES(replaceablePrefix=SCode.REPLACEABLE(cc=_))), _) = Lookup.lookupClass(cache, env, fpath, false); 
      then
        false;
    

@@ -8723,6 +8723,9 @@ algorithm
      list<DAE.Element> restDae2;
      DAE.Exp newBindExp;    
     
+    case (_,DAE.DAE({})) then inDae1;
+    case (DAE.DAE({}),_) then inDae2;     
+    
     case (DAE.DAE(DAE.EQUATION(scalar = newBindExp)::{}),DAE.DAE(DAE.VAR(cref, kind, dir, prl, vis, ty, bind, dims, ct, src, varAttOpt, commOpt, inOut)::{}))
       then (DAE.DAE({DAE.VAR(cref, kind, dir, prl, vis, ty, SOME(newBindExp), dims, ct, src, varAttOpt, commOpt, inOut)}));
     
