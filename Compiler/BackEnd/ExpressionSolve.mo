@@ -307,13 +307,12 @@ protected function solve2
 algorithm
   (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3,linearExps)
     local
-      DAE.Exp lhs,dere,zeroe,rhs,e,a,z;
+      DAE.Exp lhs,dere,zeroe,rhs,e,z,a;
       DAE.ComponentRef cr,cr1;
       DAE.Exp invCr;
-      list<DAE.Exp> factors;
       DAE.Type tp;
+      list<DAE.Exp> factors;
       list<DAE.Statement> asserts;
-      String estr,se1,se2,sa;
     
      // cr = (e1(0)-e2(0))/(der(e1-e2,cr)) 
     case (_,_,DAE.CREF(componentRef = cr),_)
@@ -355,30 +354,24 @@ algorithm
       equation
         true = Expression.isZero(inExp1);
         (e,a) = solve3(inExp2,inExp3);
-        (rhs,asserts) = solve(e,a,inExp3);
-        tp = Expression.typeof(a);
+        tp = Expression.typeof(e);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        se1 = ExpressionDump.printExpStr(inExp1);
-        se2 = ExpressionDump.printExpStr(inExp2);
-        sa = ExpressionDump.printExpStr(a);
-        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
+        (rhs,asserts) = solve(e,z,inExp3);
+        asserts = generateAssert(inExp1,inExp2,inExp3,a,asserts);
       then
-        (rhs,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::asserts);
+        (rhs,asserts);
        
     // swapped args: a*(b-c) = 0  solve for b     
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         true = Expression.isZero(inExp2);
         (e,a) = solve3(inExp1,inExp3);
-        (rhs,asserts) = solve(e,a,inExp3);
-        tp = Expression.typeof(a);
+        tp = Expression.typeof(e);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
-        se1 = ExpressionDump.printExpStr(inExp2);
-        se2 = ExpressionDump.printExpStr(inExp1);
-        sa = ExpressionDump.printExpStr(a);
-        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
+        (rhs,asserts) = solve(e,z,inExp3);
+        asserts = generateAssert(inExp1,inExp2,inExp3,a,asserts);
       then
-        (rhs,DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::asserts);
+        (rhs,asserts);
 /*
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
@@ -420,6 +413,39 @@ algorithm
      */
   end matchcontinue;
 end solve2;
+
+protected function generateAssert
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;
+  input DAE.Exp a;
+  input list<DAE.Statement> inAsserts;
+  output list<DAE.Statement> outAsserts;
+algorithm
+  (outExp,outAsserts) := matchcontinue (inExp1,inExp2,inExp3,a,inAsserts)
+    local
+      DAE.Exp a,z;
+      DAE.Type tp;
+      list<DAE.Statement> asserts;
+      String estr,se1,se2,sa;
+    case (_,_,_,_,_)
+      equation
+        // zero check already done
+        true = Expression.isConst(a);
+      then
+        inAsserts;
+    else
+      equation    
+        tp = Expression.typeof(a);
+        (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
+        se1 = ExpressionDump.printExpStr(inExp2);
+        se2 = ExpressionDump.printExpStr(inExp1);
+        sa = ExpressionDump.printExpStr(a);
+        estr = stringAppendList({"Singular expression ",se1," = ",se2," because ",sa," is Zero!"});
+      then
+        DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
+  end matchcontinue;
+end generateAssert;
 
 protected function solve3
 "function: solve3
