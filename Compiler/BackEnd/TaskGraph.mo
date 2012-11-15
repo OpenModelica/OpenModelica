@@ -55,6 +55,7 @@ protected import BackendDAETransform;
 protected import ComponentReference;
 protected import DAE;
 protected import DAEUtil;
+protected import Debug;
 protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSolve;
@@ -310,37 +311,16 @@ algorithm
         e_1 = e - 1 "Solving for non-states" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
-        origname_str = ComponentReference.printComponentRefStr(cr);
-        true = BackendVariable.isNonStateVar(v);
-        varexp = Expression.crefExp(cr) "print \"Solving for non-states\\n\" &" ;
+        varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
+        cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
+        origname_str = ComponentReference.printComponentRefStr(cr);
         buildAssignment(cr, expr, origname_str) "  Expression.print_exp_str e1 => e1s &
   Expression.print_exp_str e2 => e2s &
   print \"Equation \" & print e1s & print \" = \" & print e2s &
   print \" solved for \" & Expression.print_exp_str varexp => s &
   print s & print \" giving \" &
-  Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
-      then
-        ();
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
-      equation
-        e_1 = e - 1 "Solving the state s means solving for der(s)" ;
-        BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE())) = BackendVariable.getVarAt(vars,v_1);
-        origname_str = ComponentReference.printComponentRefStr(cr);
-        name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
-        //c_name = Util.modelicaStringToCStr(name,true);
-        c_name = name;
-        //id = stringAppendList({DAE.derivativeNamePrefix,c_name});
-        id = c_name;
-        cr_1 = ComponentReference.makeCrefIdent(id,DAE.T_REAL_DEFAULT,{});
-        varexp = Expression.crefExp(cr_1);
-        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        buildAssignment(cr_1, expr, origname_str) "  Expression.print_exp_str e1 => e1s &
-  Expression.print_exp_str e2 => e2s &
-  print \"Equation \" & print e1s & print \" = \" & print e2s &
-  print \"solved for \" & Expression.print_exp_str varexp => s &
-  print s & print \"giving \" &
   Expression.print_exp_str expr => s2 & print s2 & print \"\\n\" &" ;
       then
         ();
@@ -356,28 +336,12 @@ algorithm
   build_equation(BackendDAE.DAE(BackendDAE.VARIABLES(_,_,vararr,_,_),_,eqns,_,_,_,_,_),ass1,ass2,e) => fail
  */
       equation
-        e_1 = e - 1 "state nonlinear" ;
-        BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
-        (v as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE())) = BackendVariable.getVarAt(vars,v_1);
-        name = ComponentReference.printComponentRefStr(cr) "  Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
-        //c_name = Util.modelicaStringToCStr(name,true);
-        c_name = name;
-        //id = stringAppendList({DAE.derivativeNamePrefix,c_name});
-        id = c_name;
-        cr_1 = ComponentReference.makeCrefIdent(id,DAE.T_REAL_DEFAULT,{});
-        varexp = Expression.crefExp(cr_1);
-        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
-        buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2)});
-      then
-        ();
-    case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}),BackendDAE.SINGLEEQUATION(eqn=e,var=v_1))
-      equation
-        e_1 = e - 1 "Solving nonlinear for non-states" ;
+        e_1 = e - 1 "Solving nonlinear" ;
         BackendDAE.EQUATION(e1,e2,_) = BackendDAEUtil.equationNth(eqns, e_1);
         (v as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(vars,v_1);
-        true = BackendVariable.isNonStateVar(v);
-        varexp = Expression.crefExp(cr) "print \"Solving for non-states\\n\" &" ;
-        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
+        varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp)) "print \"Solving nonlinear \\n\" &"; 
         buildNonlinearEquations({varexp}, {DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2)});
       then
         ();

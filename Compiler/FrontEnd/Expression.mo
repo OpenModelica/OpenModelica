@@ -602,6 +602,16 @@ algorithm
   end matchcontinue;
 end expand;
 
+public function expDer
+"function: expDer
+  author: Frenkel TUD 2012-11
+  exp -> der(exp)"
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := DAE.CALL(Absyn.IDENT("der"),{inExp},DAE.callAttrBuiltinReal);
+end expDer;
+
 public function expAbs
 "function: expAbs
   author: PA
@@ -4997,16 +5007,7 @@ public function expHasDerCref "
   input ComponentRef inCr;
   output Boolean hasCref;
 algorithm 
-  hasCref := match(inExp,inCr) 
-    local
-      Boolean b;
-      
-    case(_,_)
-      equation
-        ((_,(_,b))) = traverseExpTopDown(inExp, traversingexpHasDerCref, (inCr,false));
-      then
-        b;
-  end match;
+  ((_,(_,hasCref))) := traverseExpTopDown(inExp, traversingexpHasDerCref, (inCr,false));
 end expHasDerCref;
 
 public function traversingexpHasDerCref "
@@ -5026,6 +5027,12 @@ algorithm
         b = ComponentReference.crefEqualNoStringCompare(cr,cr1);
       then
         ((e,not b,(cr,b)));
+
+    case ((e as DAE.CALL(path= Absyn.IDENT("der"),expLst={DAE.CREF(componentRef = cr1)}), (cr,false)))
+      equation
+        b = ComponentReference.crefPrefixOf(cr,cr1);
+      then
+        ((e,not b,(cr,b)));
     
     case (((e,(cr,b)))) then ((e,not b,(cr,b)));
     
@@ -5039,16 +5046,7 @@ public function expHasCrefNoPreorDer "
   input DAE.ComponentRef inCr;
   output Boolean hasCref;
 algorithm 
-  hasCref := match(inExp,inCr) 
-    local
-      Boolean b;
-      
-    case(_,_)
-      equation
-        ((_,(_,b))) = traverseExpTopDown(inExp, traversingexpHasCrefNoPreorDer, (inCr,false));
-      then
-        b;
-  end match;
+  ((_,(_,hasCref))) := traverseExpTopDown(inExp, traversingexpHasCrefNoPreorDer, (inCr,false));
 end expHasCrefNoPreorDer;
 
 public function traversingexpHasCrefNoPreorDer "

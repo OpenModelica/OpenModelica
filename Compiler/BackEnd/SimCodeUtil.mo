@@ -3624,23 +3624,26 @@ algorithm
         _, true, _,_,_)
       equation
         BackendDAE.EQUATION(e1, e2, source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        BackendDAE.VAR(varName = cr, varKind = kind) = BackendVariable.getVarAt(vars,varNum);
+        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars,varNum);
         varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
         (exp_,asserts) = ExpressionSolve.solveLin(e1, e2, varexp);
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         (resEqs,uniqueEqIndex) = addAssertEqn(asserts,{SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,cr, exp_, source)},iuniqueEqIndex+1);
       then
         (resEqs,uniqueEqIndex,itempvars);
         
-        // non-state non-linear
+        // non-linear
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,
         _, true, _,_,_)
       equation
         (eqn as BackendDAE.EQUATION(e1, e2, source)) = BackendDAEUtil.equationNth(eqns, eqNum-1);
         (v as BackendDAE.VAR(varName = cr, varKind = kind)) = BackendVariable.getVarAt(vars,varNum);
         varexp = Expression.crefExp(cr);
-        failure((_,_) = solve(e1, e2, varexp));
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        failure((_,_) =ExpressionSolve.solve(e1, e2, varexp));
         eqStr = BackendDump.equationStr(eqn);
+        cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
         message = ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.WARNING_JACOBIAN_EQUATION_SOLVE,{eqStr,message,message});
       then
@@ -3671,64 +3674,37 @@ algorithm
       then
         ({SimCode.SES_WHEN(iuniqueEqIndex,left,right,conditionsWithHindex,SOME(elseWhenEquation),source)},iuniqueEqIndex+1,itempvars);
         
-        // single equation: non-state
+        // single equation
     case (_, _,
         BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_,
         _, false, _,_,_)
       equation
         BackendDAE.EQUATION(e1, e2, source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        (v as BackendDAE.VAR(varName = cr, varKind = kind, values=values)) = BackendVariable.getVarAt(vars,varNum);
-        true = BackendVariable.isNonStateVar(v);
+        (v as BackendDAE.VAR(varName = cr, values=values)) = BackendVariable.getVarAt(vars,varNum);
         varexp = Expression.crefExp(cr);
-        (exp_,asserts) = solve(e1, e2, varexp);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        (exp_,asserts) = ExpressionSolve.solve(e1, e2, varexp);
+        cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
         source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
         (resEqs,uniqueEqIndex) = addAssertEqn(asserts,{SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,cr, exp_, source)},iuniqueEqIndex+1);
       then
         (resEqs,uniqueEqIndex,itempvars);
         
-        // single equation: state
-    case (_, _,
-        BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_,
-        _, false, _,_,_)
-      equation
-        BackendDAE.EQUATION(e1, e2, source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE(), values=values) = BackendVariable.getVarAt(vars,varNum);        
-        cr = ComponentReference.crefPrefixDer(cr);
-        (exp_,asserts) = solve(e1, e2, Expression.crefExp(cr));
-        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp_, asserts);
-        (resEqs,uniqueEqIndex) = addAssertEqn(asserts,{SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,cr, exp_, source)},iuniqueEqIndex+1);
-      then
-        (resEqs,uniqueEqIndex,itempvars);
-        
-        // non-state non-linear
+        // non-linear
     case (_, _,
         BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,
         _, false, _,_,_)
       equation
         (eqn as BackendDAE.EQUATION(e1, e2, source)) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        (v as BackendDAE.VAR(varName = cr, varKind = kind)) = BackendVariable.getVarAt(vars,varNum);
-        true = BackendVariable.isNonStateVar(v);
+        (v as BackendDAE.VAR(varName = cr)) = BackendVariable.getVarAt(vars,varNum);
         varexp = Expression.crefExp(cr);
-        failure((_,_) = solve(e1, e2, varexp));
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
         //index = System.tmpTick();
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn},iuniqueEqIndex,itempvars);
+        cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr},0)},uniqueEqIndex+1,tempvars);
-        
-        // state nonlinear
-    case (_, _,
-        BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,
-        _, false, _,_,_)
-      equation
-        (eqn as BackendDAE.EQUATION(e1, e2, source)) = BackendDAEUtil.equationNth(eqns, eqNum-1);
-        BackendDAE.VAR(varName = cr, varKind = BackendDAE.STATE()) = BackendVariable.getVarAt(vars,varNum); 
-        cr_1 = ComponentReference.crefPrefixDer(cr);
-        varexp = Expression.crefExp(cr_1);
-        failure((_,_) = solve(e1, e2, varexp));
-        //index = System.tmpTick();
-        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn},iuniqueEqIndex,itempvars);
-      then
-        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr_1},0)},uniqueEqIndex+1,tempvars);
         
         // Algorithm for single variable.
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_, _, false, true,_,_)
@@ -4902,7 +4878,7 @@ algorithm
       list<tuple<Integer,list<Integer>>> rest;
       Integer v,e;
       DAE.Exp e1,e2,varexp,expr;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,dcr;
       DAE.ElementSource source;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Var var;
@@ -4917,10 +4893,12 @@ algorithm
       equation
         (eqn as BackendDAE.EQUATION(e1,e2,source)) = BackendDAEUtil.equationNth(inEqns, e-1);
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
-        cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
+        dcr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
+        repl = BackendVarTransform.addReplacement(inRepl,dcr,expr,SOME(BackendVarTransform.skipPreOperator));
+        repl = Debug.bcallret3(BackendVariable.isStateVar(var), BackendVarTransform.addDerConstRepl, cr, expr, repl, repl);
         // BackendDump.debugStrCrefStrExpStr(("",cr," := ",expr,"\n"));
       then
         solveOtherEquations(rest,inEqns,inVars,ishared,repl);
@@ -4956,7 +4934,7 @@ algorithm
   match (iExps1,iExps2,iVars,inVars,ishared,inRepl)
     local
       DAE.Exp e1,e2,varexp,expr;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,dcr;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Var var;
       list<BackendDAE.Var> otherVars,rest;
@@ -4964,10 +4942,12 @@ algorithm
     case ({},_,_,_,_,_) then inRepl;
     case (e1::explst1,e2::explst2,(var as BackendDAE.VAR(varName=cr))::rest,_,_,_)
       equation
-        cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
+        dcr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
+        repl = BackendVarTransform.addReplacement(inRepl,dcr,expr,SOME(BackendVarTransform.skipPreOperator));
+        repl = Debug.bcallret3(BackendVariable.isStateVar(var), BackendVarTransform.addDerConstRepl, cr, expr, repl, repl);
         // BackendDump.debugStrCrefStrExpStr(("",cr," := ",expr,"\n"));
       then
         solveOtherEquations1(explst1,explst2,rest,inVars,ishared,repl);

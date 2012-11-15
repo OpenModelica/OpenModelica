@@ -43,11 +43,9 @@ public import BackendDAE;
 public import DAE;
 public import HashTable2;
 public import HashTable3;
-public import HashSet;
 
 protected import Absyn;
 protected import BaseHashTable;
-protected import BaseHashSet;
 protected import BackendDAEUtil;
 protected import ClassInf;
 protected import ComponentReference;
@@ -73,7 +71,7 @@ uniontype VariableReplacements
     HashTable3.HashTable invHashTable "dst -> list of sources. dst is a variable, sources are variables.";
     HashTable2.HashTable extendhashTable "src -> noting, used for extend arrays and records.";
     list<DAE.Ident> iterationVars "this are the implicit declerate iteration variables for for and range expressions";
-    Option<HashSet.HashSet> derConst "this is used if states are constant to replace der(state) with 0.0";
+    Option<HashTable2.HashTable> derConst "this is used if states are constant to replace der(state) with 0.0";
   end REPLACEMENTS;
 
 end VariableReplacements;
@@ -169,7 +167,7 @@ algorithm
       HashTable3.HashTable invHt,invHt_1;
       list<DAE.Ident> iv;
       String s;
-      Option<HashSet.HashSet> derConst;
+      Option<HashTable2.HashTable> derConst;
     // PA: Commented out this, since it will only slow things down without adding any functionality.
     // Once match is available as a complement to matchcontinue, this case could be useful again.
     //case ((repl as REPLACEMENTS(ht,invHt)),src,dst) /* source dest */
@@ -220,7 +218,7 @@ algorithm
       HashTable2.HashTable ht,ht_1,eht,eht_1;
       HashTable3.HashTable invHt,invHt_1;
       list<DAE.Ident> iv;
-      Option<HashSet.HashSet> derConst;
+      Option<HashTable2.HashTable> derConst;
     case ((REPLACEMENTS(hashTable=ht)),src,dst) /* source dest */
       equation
         olddst = BaseHashTable.get(src,ht) "if rule a->b exists, fail" ;
@@ -567,7 +565,7 @@ algorithm
       HashTable2.HashTable ht,eht;
       HashTable3.HashTable invHt;
       list<DAE.Ident> iv;
-      Option<HashSet.HashSet> derConst;
+      Option<HashTable2.HashTable> derConst;
     case (REPLACEMENTS(ht,invHt,eht,iv,derConst),_)
       then
         REPLACEMENTS(ht,invHt,eht,inVar::iv,derConst);
@@ -587,7 +585,7 @@ algorithm
       HashTable2.HashTable ht,eht;
       HashTable3.HashTable invHt;
       list<DAE.Ident> iv;
-      Option<HashSet.HashSet> derConst;
+      Option<HashTable2.HashTable> derConst;
     case (REPLACEMENTS(ht,invHt,eht,iv,derConst),_)
       equation
         iv = removeFirstOnTrue(iv,stringEq,inVar,{});
@@ -644,6 +642,33 @@ algorithm
   end matchcontinue;
 end removeFirstOnTrue;
 
+public function addDerConstRepl 
+"function addDerConstRepl
+  add a var to the derConst replacements, replace der(const) with 0.0"
+  input DAE.ComponentRef inComponentRef;
+  input DAE.Exp inExp;
+  input VariableReplacements repl;
+  output VariableReplacements outRepl;
+algorithm
+  outRepl:= match (inComponentRef,inExp,repl)
+    local
+      HashTable2.HashTable ht,eht;
+      HashTable3.HashTable invHt;
+      list<DAE.Ident> iv;
+      HashTable2.HashTable derConst;
+    case (_,_,REPLACEMENTS(ht,invHt,eht,iv,NONE()))
+      equation
+        derConst = HashTable2.emptyHashTable();
+        derConst = BaseHashTable.add((inComponentRef,inExp),derConst);
+      then
+        REPLACEMENTS(ht,invHt,eht,iv,SOME(derConst));
+    case (_,_,REPLACEMENTS(ht,invHt,eht,iv,SOME(derConst)))
+      equation
+        derConst = BaseHashTable.add((inComponentRef,inExp),derConst);
+      then
+        REPLACEMENTS(ht,invHt,eht,iv,SOME(derConst));
+  end match;
+end addDerConstRepl;
 
 public function getReplacement "function: getReplacement
 
@@ -783,6 +808,7 @@ algorithm
       DAE.ReductionIterators iters;
       DAE.CallAttributes attr;
       DAE.Ident ident;
+      HashTable2.HashTable derConst;
       
       // Note: Most of these functions check if a subexpression did a replacement.
       // If it did not, we do not create a new copy of the expression (to save some memory).
@@ -857,6 +883,12 @@ algorithm
         true = c1 or c2 or c3;
       then
         (DAE.IFEXP(e1_1,e2_1,e3_1),true);
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef = cr,ty=t)}),REPLACEMENTS(derConst=SOME(derConst)),cond)
+      equation
+        e = BaseHashTable.get(cr,derConst);
+        (e,_) = replaceExp(e, inVariableReplacements, cond);
+      then
+        (e,true);
     case ((e as DAE.CALL(path = path,expLst = expl,attr = attr)),repl,cond)
       equation
         true = replaceExpCond(cond, e);

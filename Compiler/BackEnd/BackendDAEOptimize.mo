@@ -411,6 +411,7 @@ protected
 algorithm
   (_,_,repl,_,_) := inTpl;
   (eqns,_) := BackendVarTransform.replaceEquations({eqn},repl,NONE());
+  // print("Check Equations:\n"); BackendDump.dumpEqns(eqns);
   outTpl := List.fold(eqns,removeSimpleEquationsFastFinder1,inTpl);
 end removeSimpleEquationsFastFinder;
 
@@ -440,17 +441,19 @@ algorithm
         // replace equation if necesarry
         (syst,shared,repl,eqns) = replacementsInEqnsFast(eqnType,cr,i,exp,repl,syst,shared,eqn,eqns);
       then ((syst,shared,repl,eqns,true));
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source),(syst,shared,repl,eqns,b))
-      then ((syst,shared,repl,eqn::eqns,b));
-    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2,source=source),(syst,shared,repl,eqns,b))
+/*    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),_)
+      then simpleEquation(e1,e2,source,false,inTpl);
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source),_)
+      then simpleEquation(e1,e2,source,false,inTpl);
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2,source=source),_)
       equation
-        exp = Expression.crefExp(cr);
-      then ((syst,shared,repl,eqn::eqns,b));
-    case (BackendDAE.RESIDUAL_EQUATION(exp=e1,source=source),(syst,shared,repl,eqns,b))
-      then ((syst,shared,repl,eqn::eqns,b));
-    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),(syst,shared,repl,eqns,b))
-      then ((syst,shared,repl,eqn::eqns,b));
-    case (_,(syst,shared,repl,eqns,b))
+        e1 = Expression.crefExp(cr);
+      then simpleEquation(e1,e2,source,false,inTpl);
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e1,source=source),_)
+      then simpleExpression(e1,source,false,inTpl);
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),_)
+      then simpleEquation(e1,e2,source,false,inTpl);
+*/    case (_,(syst,shared,repl,eqns,b))
       then ((syst,shared,repl,eqn::eqns,b));
    end matchcontinue;
 end removeSimpleEquationsFastFinder1;
@@ -702,7 +705,8 @@ algorithm
       equation 
         true = DAEUtil.expTypeComplex(ty);
         size = Expression.sizeOf(ty);
-      then
+          print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)) +& "\n");
+       then
         ((syst,shared,repl,BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)::eqns,b));
     // array types to array equations  
     case (_,_,_,_,(syst,shared,repl,eqns,b))
@@ -710,6 +714,7 @@ algorithm
         true = DAEUtil.expTypeArray(ty);
         dims = Expression.arrayDimension(ty);
         ds = Expression.dimensionsSizes(dims);
+          print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)) +& "\n");
       then
         ((syst,shared,repl,BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)::eqns,b));
     // other types  
@@ -718,6 +723,7 @@ algorithm
         b1 = DAEUtil.expTypeComplex(ty);
         b2 = DAEUtil.expTypeArray(ty);
         false = b1 or b2;
+          print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.EQUATION(lhs,rhs,source)) +& "\n");
         //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
       then
         ((syst,shared,repl,BackendDAE.EQUATION(lhs,rhs,source)::eqns,b));
@@ -730,85 +736,6 @@ algorithm
         fail();      
   end matchcontinue;  
 end generateEquation;
-
-protected function simpleRecord
-"function simpleRecord
-  autor Frenkel TUD 2012-11
-  helper for simpleEquation"
-  input DAE.ComponentRef cr;
-  input list<DAE.Var> varLst;
-  input list<DAE.Exp> explst;
-  input DAE.ElementSource source;
-  input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
-  output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
-algorithm
-  outTpl := matchcontinue (cr,varLst,explst,source,inTpl)
-    local
-      DAE.ComponentRef cr1,cr2;
-      DAE.Exp e1,e2;
-      DAE.Type ty,ty1;
-      list<DAE.Exp> elst;
-      list<DAE.Var> vlst;
-      DAE.Ident ident;
-      tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> tpl;
-    case (_,{},{},_,_) then inTpl;
-    // a = b
-    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.CREF(componentRef = cr2))::elst,_,_)
-      equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.CREF(cr1,ty);
-        tpl = selectAliasNew(cr1,cr2,e1,e2,false,source,true,inTpl);
-      then
-        simpleRecord(cr,vlst,elst,source,tpl);
-    // a = -b
-    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(componentRef = cr2)))::elst,_,_)
-      equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.UNARY(DAE.UMINUS(ty1),DAE.CREF(cr1,ty));
-        tpl = selectAliasNew(cr1,cr2,e1,e2,true,source,true,inTpl);
-      then
-        simpleRecord(cr,vlst,elst,source,tpl);
-    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(componentRef = cr2)))::elst,_,_)
-      equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.UNARY(DAE.UMINUS_ARR(ty1),DAE.CREF(cr1,ty));
-        tpl = selectAliasNew(cr1,cr2,e1,e2,true,source,true,inTpl);
-      then
-        simpleRecord(cr,vlst,elst,source,tpl);
-    // a = not b
-    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(componentRef = cr2)))::elst,_,_)
-      equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.LUNARY(DAE.NOT(ty1),DAE.CREF(cr1,ty));
-        tpl = selectAliasNew(cr1,cr2,e1,e2,true,source,true,inTpl);
-      then
-        simpleRecord(cr,vlst,elst,source,tpl);
-
-    // a = {b1,b2,b3}
-    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.ARRAY(ty=ty1))::elst,_,_)
-      equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.CREF(cr1,ty);
-        tpl = simpleArrayEquation(e1,e2,ty1,source,inTpl);
-      then
-        simpleRecord(cr,vlst,elst,source,tpl);
-    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,(e2 as DAE.MATRIX(ty=ty1))::elst,_,_)
-      equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        e1 = DAE.CREF(cr1,ty);
-        tpl = simpleArrayEquation(e1,e2,ty1,source,inTpl);
-      then
-        simpleRecord(cr,vlst,elst,source,tpl);
-        
-    // in all other case keep the equation
-    case (_,DAE.TYPES_VAR(name=ident,ty=ty)::vlst,e2::elst,_,_)
-      equation
-        cr1 = ComponentReference.crefPrependIdent(cr,ident,{},ty);
-        tpl = generateEquation(DAE.CREF(cr1,ty),e2,ty,source,inTpl);        
-      then
-        simpleRecord(cr,vlst,elst,source,tpl);
-  end matchcontinue;        
-end simpleRecord;
 
 protected function simpleExpression
 "function simpleExpression
@@ -896,6 +823,7 @@ algorithm
       DAE.Type ty;
     case(_,_,_,_,_,_,_,(syst,shared,_,_,_))
       equation
+          print("Found Alias " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ComponentReference.printComponentRefStr(cr2) +& " Negate:" +& boolString(negate) +& ".\n");
         // get Variables
         (vars1,ilst1,varskn1) =  getVars(cr1,syst,shared);
         (vars2,ilst2,varskn2) =  getVars(cr2,syst,shared);
@@ -933,29 +861,29 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
       list<BackendDAE.Equation> eqns;
       Boolean b;
-      DAE.Exp e;
+      DAE.Exp cre;
       DAE.ComponentRef cr,acr;
       Integer ia,i;
-      list<Integer> ialst,ilst;
+      list<Integer> ialst,ilst1;
       list<BackendDAE.Var> valst,vlst;
     case ({},_,{},_,_,_,_,_,_)
       then inTpl;      
-    case ((av as BackendDAE.VAR(varName=acr))::valst,ia::ialst,(v as BackendDAE.VAR(varName=cr))::vlst,i::ilst,_,_,_,_,(syst,shared,repl,eqns,_))
+    case ((av as BackendDAE.VAR(varName=acr))::valst,ia::ialst,(v as BackendDAE.VAR(varName=cr))::vlst,i::ilst1,_,_,_,_,(syst,shared,repl,eqns,_))
       equation
-        e = Expression.crefExp(cr);
-        e = Debug.bcallret1(negate,Expression.negate,e,e);
-        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",e," found (3).\n"));
+        cre = Expression.crefExp(cr);
+        cre = Debug.bcallret1(negate,Expression.negate,cre,cre);
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",cre," found (3).\n"));
         // merge fixed,start,nominal
         v = BackendVariable.mergeAliasVars(v,av,negate,BackendVariable.daeKnVars(shared));
         syst = Debug.bcallret2(not varskn,BackendVariable.addVarDAE,v,syst,syst);
         shared = Debug.bcallret2(varskn,BackendVariable.addKnVarDAE,v,shared,shared);
         // store changed var
-        shared = handleAliasVar(av,e,source,shared);
+        shared = handleAliasVar(av,cre,source,shared);
         (syst,_) = BackendVariable.removeVarDAE(ia,syst);
         // add to replacements
-        repl = BackendVarTransform.addReplacement(repl, cr, e,NONE()); 
+        repl = BackendVarTransform.addReplacement(repl, cr, cre,NONE()); 
        then
-        selectAliasNew2(valst,ialst,vlst,ilst,varskn,negate,e,source,(syst,shared,repl,eqns,true));
+        selectAliasNew2(valst,ialst,vlst,ilst1,varskn,negate,e,source,(syst,shared,repl,eqns,true));
   end match;
 end selectAliasNew2;
 
@@ -972,7 +900,6 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.Var v;
       list<DAE.SymbolicOperation> ops;
-      DAE.ElementSource source;
       Boolean bs;
     // self generated vars are not stored  
     case (BackendDAE.VAR(varName=cr),_,_,_)
@@ -1391,7 +1318,8 @@ algorithm
         shared = BackendVariable.addAliasVarDAE(v,shared);        
         (syst,_) = BackendVariable.removeVarDAE(i,syst);
         // add to replacements
-        repl = BackendVarTransform.addReplacement(repl, cr, exp,NONE());         
+        repl = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        repl = Debug.bcallret3(bs,BackendVarTransform.addDerConstRepl,cr,DAE.RCONST(0.0),repl,repl);
       then
         ((syst,shared,repl,eqns,b));
     // const
@@ -6918,73 +6846,6 @@ algorithm
   end matchcontinue;
 end splitComps;
 
-protected function solveEquations
-" function: solveEquations
-  try to solve the equations"
-  input BackendDAE.EquationArray inEqnArray;
-  input list<Integer> inEqns;
-  input array<Integer> inAssigments;
-  input BackendDAE.Variables inVars;
-  input list<DAE.ComponentRef> inCrlst;
-  output BackendDAE.EquationArray outEqnArray;
-algorithm
-  outEqnArray:=
-  match (inEqnArray,inEqns,inAssigments,inVars,inCrlst)
-    local
-      BackendDAE.EquationArray eqns,eqns_1,eqns_2;
-      list<Integer> rest;
-      Integer e,e_1,v;
-      array<Integer> ass;
-      BackendDAE.Variables vars;
-      DAE.Exp e1,e2,varexp,expr;
-      list<DAE.Exp> divexplst,constexplst,nonconstexplst,tfixedexplst,tnofixedexplst;
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> crlst;
-      list<list<DAE.ComponentRef>> crlstlst;
-      DAE.ElementSource source;
-      list<Boolean> blst,blst_1;
-      list<list<Boolean>> blstlst;
-    case (eqns,{},ass,vars,crlst) then eqns;
-    case (eqns,e::rest,ass,vars,crlst)
-      equation
-        e_1 = e - 1;
-        BackendDAE.EQUATION(e1,e2,source) = BackendDAEUtil.equationNth(eqns, e_1);
-        v = ass[e_1 + 1];
-        BackendDAE.VAR(varName=cr) = BackendVariable.getVarAt(vars, v);
-        varexp = Expression.crefExp(cr);
-
-        (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, expr, {});
-        divexplst = Expression.extractDivExpFromExp(expr);
-        (constexplst,nonconstexplst) = List.splitOnTrue(divexplst,Expression.isConst);
-        // check constexplst if equal 0
-        blst = List.map(constexplst, Expression.isZero);
-        false = Util.boolOrList(blst);
-        // check nonconstexplst if tearing variables or variables which will be
-        // changed during solving process inside
-        crlstlst = List.map(nonconstexplst,Expression.extractCrefsFromExp);
-        // add explst with variables which will not be changed during solving prozess
-        blstlst = List.map2List(crlstlst,List.isMemberOnTrue,crlst,ComponentReference.crefEqualNoStringCompare);
-        blst_1 = List.map(blstlst,Util.boolOrList);
-        (tnofixedexplst,tfixedexplst) = List.splitOnBoolList(nonconstexplst,blst_1);
-        true = listLength(tnofixedexplst) < 1;
-/*        print("\ntfixedexplst DivExpLst:\n");
-        s = List.map(tfixedexplst, ExpressionDump.printExpStr);
-        List.map_0(s,print);
-        print("\n===============================\n");
-        print("\ntnofixedexplst DivExpLst:\n");
-        s = List.map(tnofixedexplst, ExpressionDump.printExpStr);
-        List.map_0(s,print);
-        print("\n===============================\n");
-*/        eqns_1 = BackendEquation.equationSetnth(eqns,e_1,BackendDAE.EQUATION(expr,varexp,source));
-        eqns_2 = solveEquations(eqns_1,rest,ass,vars,crlst);
-      then
-        eqns_2;
-  end match;
-end solveEquations;
-
-
-
 /* 
  * Generate sparse pattern
  */
@@ -12329,7 +12190,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       Integer v,c,e;
       DAE.Exp e1,e2,varexp,expr;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,dcr;
       DAE.ElementSource source;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Var var;
@@ -12347,12 +12208,13 @@ algorithm
         v = ass2[c];
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
         varexp = Expression.crefExp(cr);
-        varexp = Debug.bcallret2(BackendVariable.isStateVar(var), Derive.differentiateExpTime, varexp, (inVars,ishared), varexp);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
         eqns = BackendEquation.equationSetnth(inEqns,e-1,BackendDAE.EQUATION(expr,varexp,source));
-        cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
-        repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrCrefStrExpStr,("",cr," := ",expr,"\n"));
+        dcr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
+        repl = BackendVarTransform.addReplacement(inRepl,dcr,expr,SOME(BackendVarTransform.skipPreOperator));
+        repl = Debug.bcallret3(BackendVariable.isStateVar(var), BackendVarTransform.addDerConstRepl, cr, expr, repl, repl);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrCrefStrExpStr,("",dcr," := ",expr,"\n"));
         (eqns,repl,otherVars) = solveOtherEquations(rest,eqns,inVars,ass2,mapIncRowEqn,ishared,repl,var::iOtherVars);
       then
         (eqns,repl,otherVars);
@@ -12395,7 +12257,7 @@ algorithm
   match (iExps1,iExps2,iVars,inVars,ishared,inRepl,iOtherVars)
     local
       DAE.Exp e1,e2,varexp,expr;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,dcr;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Var var;
       list<BackendDAE.Var> otherVars,rest;
@@ -12404,11 +12266,12 @@ algorithm
     case (e1::explst1,e2::explst2,(var as BackendDAE.VAR(varName=cr))::rest,_,_,_,_)
       equation
         varexp = Expression.crefExp(cr);
-        varexp = Debug.bcallret2(BackendVariable.isStateVar(var), Derive.differentiateExpTime, varexp, (inVars,ishared), varexp);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
-        repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrCrefStrExpStr,("",cr," := ",expr,"\n"));
+        dcr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
+        repl = BackendVarTransform.addReplacement(inRepl,dcr,expr,SOME(BackendVarTransform.skipPreOperator));
+        repl = Debug.bcallret3(BackendVariable.isStateVar(var), BackendVarTransform.addDerConstRepl, cr, expr, repl, repl);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrCrefStrExpStr,("",dcr," := ",expr,"\n"));
         (repl,otherVars) = solveOtherEquations1(explst1,explst2,rest,inVars,ishared,repl,var::iOtherVars);
       then
         (repl,otherVars);

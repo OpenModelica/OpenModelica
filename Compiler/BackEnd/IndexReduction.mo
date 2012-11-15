@@ -2352,7 +2352,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       Integer v,c,e;
       DAE.Exp e1,e2,varexp,expr;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,dcr;
       DAE.ElementSource source;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Var var;
@@ -2370,13 +2370,15 @@ algorithm
         v = ass2[c];
         _ = arrayUpdate(solvedeqns,c,true);
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
-        cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
         (e1,_) = BackendVarTransform.replaceExp(e1,inRepl,SOME(BackendVarTransform.skipPreOperator));
         (e2,_) = BackendVarTransform.replaceExp(e2,inRepl,SOME(BackendVarTransform.skipPreOperator));
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStrExpStr,("",cr," := ",expr,"\n"));
+        dcr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
+        repl = BackendVarTransform.addReplacement(inRepl,dcr,expr,SOME(BackendVarTransform.skipPreOperator));
+        repl = Debug.bcallret3(BackendVariable.isStateVar(var), BackendVarTransform.addDerConstRepl, cr, expr, repl, repl);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStrExpStr,("",dcr," := ",expr,"\n"));
       then
         solveOtherEquations(rest,solvedeqns,inEqns,inVars,ass2,iMapEqnIncRow,iMapIncRowEqn,ishared,repl);
     case (c::rest,_,_,_,_,_,_,_,_)
@@ -2415,7 +2417,7 @@ algorithm
   match (iExps1,iExps2,iVars,inVars,ishared,inRepl)
     local
       DAE.Exp e1,e2,varexp,expr;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,dcr;
       BackendVarTransform.VariableReplacements repl;
       BackendDAE.Var var;
       list<BackendDAE.Var> otherVars,rest;
@@ -2423,13 +2425,15 @@ algorithm
     case ({},_,_,_,_,_) then inRepl;
     case (e1::explst1,e2::explst2,(var as BackendDAE.VAR(varName=cr))::rest,_,_,_)
       equation
-        cr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
         (e1,_) = BackendVarTransform.replaceExp(e1,inRepl,SOME(BackendVarTransform.skipPreOperator));
         (e2,_) = BackendVarTransform.replaceExp(e2,inRepl,SOME(BackendVarTransform.skipPreOperator));
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        repl = BackendVarTransform.addReplacement(inRepl,cr,expr,SOME(BackendVarTransform.skipPreOperator));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStrExpStr,("",cr," := ",expr,"\n"));
+        dcr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
+        repl = BackendVarTransform.addReplacement(inRepl,dcr,expr,SOME(BackendVarTransform.skipPreOperator));
+        repl = Debug.bcallret3(BackendVariable.isStateVar(var), BackendVarTransform.addDerConstRepl, cr, expr, repl, repl);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStrExpStr,("",dcr," := ",expr,"\n"));
       then
         solveOtherEquations1(explst1,explst2,rest,inVars,ishared,repl);
   end match;
