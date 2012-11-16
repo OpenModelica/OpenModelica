@@ -12842,7 +12842,7 @@ algorithm
       equation 
         (cache,SOME((exp,prop,attr))) = Static.elabCref(cache,env,cref,impl,false /* Do NOT vectorize arrays; we require a CREF */,pre,info);
         (cache,extarg) = instExtGetFargsSingle(cache,env,exp,prop);
-        assertExtArgOutputIsCrefVariable(extarg,Types.getPropType(prop),Types.propAllConst(prop),info);
+        assertExtArgOutputIsCrefVariable(lang,extarg,Types.getPropType(prop),Types.propAllConst(prop),info);
       then
         (cache,extarg);
 
@@ -12855,21 +12855,23 @@ algorithm
 end instExtGetRettype;
 
 protected function assertExtArgOutputIsCrefVariable
+  input Option<String> lang;
   input DAE.ExtArg arg;
   input DAE.Type ty;
   input DAE.Const c;
   input Absyn.Info info;
 algorithm
-  _ := match (arg,ty,c,info)
+  _ := match (lang,arg,ty,c,info)
     local
       String str;
-    case (_,DAE.T_ARRAY(ty = _),_,_)
+    case (SOME("builtin"),_,_,_,_) then ();
+    case (_,_,DAE.T_ARRAY(ty = _),_,_)
       equation
         str = Types.unparseType(ty);
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_ARRAY_TYPE,{str},info);
       then fail();
-    case (DAE.EXTARG(type_=_),_,DAE.C_VAR(),_) then ();
-    case (_,_,DAE.C_VAR(),_)
+    case (_,DAE.EXTARG(type_=_),_,DAE.C_VAR(),_) then ();
+    case (_,_,_,DAE.C_VAR(),_)
       equation
         str = DAEDump.dumpExtArgStr(arg);
         Error.addSourceMessage(Error.EXTERNAL_FUNCTION_RESULT_NOT_CREF,{str},info);
