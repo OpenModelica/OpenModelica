@@ -9150,7 +9150,6 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       DAE.FunctionTree functionTree;
-      list<BackendDAE.Equation> eqnslst;
       array<DAE.Constraint> constraints;
       array<DAE.ClassAttributes> classAttrs;
       
@@ -9202,7 +9201,7 @@ algorithm
                                                  {}));
 
       // some debug prints
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Initial System:\n");
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "initial system\n");
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, initdae);
       
       // now let's solve the system!
@@ -9276,7 +9275,7 @@ protected function analyzeInitialSystem "protected function analyzeInitialSystem
   input BackendDAE.BackendDAE inDAE;      // original DAE
   output BackendDAE.EqSystem outSystem;
 protected
-BackendDAE.EqSystem system;
+  BackendDAE.EqSystem system;
   BackendDAE.IncidenceMatrix m, mt;
 algorithm
   (system, m, mt) := getIncidenceMatrix(inSystem, BackendDAE.NORMAL());
@@ -9300,11 +9299,10 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.Var var;
       DAE.ComponentRef cr, preCR;
-      Option<DAE.Exp> startValue;
       BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
       
       BackendDAE.Equation eqn;
-      DAE.Exp e, crExp, startExp, preExp;
+      DAE.Exp startExp, preExp;
       DAE.Type tp;
       String crStr;
       
@@ -9334,14 +9332,13 @@ algorithm
 
       tp = BackendVariable.varType(var);
             
-      e = Expression.crefExp(cr);
-      tp = Expression.typeof(e);
-      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
+      startExp = Expression.crefExp(cr);
+      tp = Expression.typeof(startExp);
+      startExp = Expression.makeBuiltinCall("$_start", {startExp}, tp);
       
-      e = Expression.crefExp(preCR);
+      preExp = Expression.crefExp(preCR);
       
-      eqn = BackendDAE.EQUATION(e, startExp, DAE.emptyElementSource);
-      
+      eqn = BackendDAE.EQUATION(preExp, startExp, DAE.emptyElementSource);
       orderedEqs = BackendEquation.equationAdd(eqn, orderedEqs);
       
       system = BackendDAE.EQSYSTEM(vars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING());
@@ -9375,9 +9372,6 @@ algorithm
   outSystem := matchcontinue(inSystem, inDAE)
     local
       BackendDAE.EqSystem system;
-      list<tuple<pastoptimiseDAEModule, String, Boolean>> pastOptModules;
-      tuple<StructurallySingularSystemHandlerFunc, String, stateDeselectionFunc, String> daeHandler;
-      tuple<matchingAlgorithmFunc, String> matchingAlgorithm;
       Integer nVars, nEqns;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -9402,7 +9396,7 @@ algorithm
       system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
     then system;
     
-    case (_, _)
+    else
     then inSystem;
   end matchcontinue;
 end analyzeInitialSystem2;
@@ -9418,21 +9412,15 @@ protected function fixUnderDeterminedInitialSystem "protected function fixUnderD
 algorithm
   (outSucceed, outVars, outEqns) := matchcontinue(inDAE, inVars, inEqns)
     local
-      BackendDAE.SymbolicJacobian jacG;
       BackendDAE.SparsePattern sparsityPattern;
       BackendDAE.BackendDAE dae;
-      
-      .DAE.ComponentRef cr, currRes;
-      list< .DAE.ComponentRef> diffVars, diffedVars, currDependencies, someStates;
-      String str;
-      list<BackendDAE.Var> vars;    // all vars
+      list< .DAE.ComponentRef> someStates;
       list<BackendDAE.Var> outputs; // $res1 ... $resN (initial equations)
       list<BackendDAE.Var> states;
       BackendDAE.EqSystems systs;
       BackendDAE.Variables ivars;
       Integer nVars, nStates, nEqns;
       BackendDAE.EquationArray eqns;
-      
       list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> dep;
     
     // fix all states
@@ -9530,7 +9518,6 @@ algorithm
       list<BackendDAE.Var> vars;
       BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns;
-      
       DAE.Exp e, e1, crefExp, startExp;
       DAE.ComponentRef cref;
       DAE.Type tp;
@@ -9577,9 +9564,7 @@ algorithm
       list<DAE.ComponentRef> vars;
       BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns;
-      
       DAE.Exp e, e1, crefExp, startExp;
-      DAE.ComponentRef cref;
       DAE.Type tp;
       String crStr;
       
@@ -9632,15 +9617,11 @@ protected function collectUnfixedStatesFromSystem
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Variables inVars;
   output BackendDAE.Variables outVars;
+protected
+  BackendDAE.Variables vars;
 algorithm
-  outVars := match(isyst, inVars)
-    local
-      BackendDAE.Variables vars, ivars;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars), ivars) equation
-      // collect vars for initial system
-      ivars = BackendVariable.traverseBackendDAEVars(vars, collectUnfixedStates, ivars);
-    then ivars;
-  end match;
+  BackendDAE.EQSYSTEM(orderedVars=vars) := isyst;
+  outVars := BackendVariable.traverseBackendDAEVars(vars, collectUnfixedStates, inVars);
 end collectUnfixedStatesFromSystem;
 
 protected function collectUnfixedStates
@@ -9649,13 +9630,8 @@ protected function collectUnfixedStates
 algorithm
   outTpl := matchcontinue(inTpl)
     local
-      BackendDAE.Var var, preVar, derVar;
-      BackendDAE.Variables vars, fixvars;
-      DAE.ComponentRef cr, preCR, derCR;
-      Boolean isFixed;
-      DAE.Type ty;
-      DAE.InstDims arryDim;
-      Option<DAE.Exp> startValue;
+      BackendDAE.Var var;
+      BackendDAE.Variables vars;
     
     // state
     case((var as BackendDAE.VAR(varKind=BackendDAE.STATE()), vars)) equation
