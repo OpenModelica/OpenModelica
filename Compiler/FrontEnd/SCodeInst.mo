@@ -228,7 +228,7 @@ algorithm
       list<tuple<SCode.Element, Modifier>> mel;
       Absyn.TypeSpec dty;
       Item item;
-      Env env;
+      Env env, envDerived;
       Absyn.Info info;
       SCode.Mod smod;
       Modifier mod;
@@ -255,6 +255,7 @@ algorithm
       Prefixes prefs;
       FunctionHashTable functions;
       Prefix prefix;
+      list<SCodeEnv.Redeclaration> redeclares;
 
     case (_, SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
         classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _, functions) 
@@ -294,17 +295,25 @@ algorithm
     // A derived class, look up the inherited class and instantiate it.
     case (_, SCodeEnv.CLASS(cls = scls as SCode.CLASS(name = name, classDef =
         SCode.DERIVED(modifications = smod, typeSpec = dty, attributes = attr),
-        restriction = res, info = info)), _, _, _, _, ip, functions)
+        restriction = res, info = info), env = envDerived), _, _, _, _, ip, functions)
       equation
         // Look up the inherited class.
-        (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
+        (item, _, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
         path = Absyn.typeSpecPath(dty);
-
+        
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
+        
         // Merge the modifiers and instantiate the inherited class.
         dims = Absyn.typeSpecDimensions(dty);
         dim_count = listLength(dims);
         mod = SCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
+         
+        redeclares = listAppend(
+          SCodeEnv.getDerivedClassRedeclares(name, dty, envDerived), 
+          SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod));
+        (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redeclares, item, env, inEnv, inPrefix);
+        
         (cls, ty, prefs, functions) = instClassItem(inTypePath, item, mod, inPrefixes, env, inPrefix, ip, functions);
 
         // Merge the attributes of this class with the prefixes of the inherited
@@ -578,7 +587,7 @@ algorithm
 
     case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, functions)
       equation
-        (elem, env) = resolveRedeclaredElement(elem, inEnv);
+        (elem, env, _) = resolveRedeclaredElement(elem, inEnv);
         (accum_el, exts, cse, functions) = instElement_dispatch(elem, inPrefixes, exts,
           env, inPrefix, inInstPolicy, accum_el, cse, functions);
         (accum_el, cse, functions) = instElementList2(rest_el, inPrefixes, exts,
@@ -602,7 +611,7 @@ algorithm
   end match;
 end instElementList2;
 
-protected function resolveRedeclaredElement
+public function resolveRedeclaredElement
   "This function makes sure that an element is up-to-date in case it has been
    redeclared. This is achieved by looking the element up in the environment. In
    the case that the element has been redeclared, the environment where it should
@@ -611,14 +620,17 @@ protected function resolveRedeclaredElement
   input Env inEnv;
   output tuple<SCode.Element, Modifier> outElement;
   output Env outEnv;
+  output list<tuple<SCodeEnv.Item, Env>> outPreviousItem;
 algorithm
-  (outElement, outEnv) := match(inElement, inEnv)
+  (outElement, outEnv, outPreviousItem) := match(inElement, inEnv)
     local
       Modifier mod;
       String name;
       Item item;
       SCode.Element el;
       Env env;
+      Boolean b;
+      list<tuple<SCodeEnv.Item, Env>> previousItem;
       
     // Only components which are actually replaceable needs to be looked up,
     // since non-replaceable components can't have been replaced.
@@ -626,15 +638,25 @@ algorithm
         SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _)
       equation
         (item, _) = SCodeLookup.lookupInClass(name, inEnv);
-        (SCodeEnv.VAR(var = el), env) = SCodeEnv.resolveRedeclaredItem(item, inEnv);
+        (SCodeEnv.VAR(var = el), env, previousItem) = SCodeEnv.resolveRedeclaredItem(item, inEnv);
       then
-        ((el, mod), env);
+        ((el, mod), env, previousItem);
+
+    /*
+    case ((SCode.CLASS(name = name, prefixes =
+        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _)
+      equation
+        (item, _) = SCodeLookup.lookupInClass(name, inEnv);
+        (SCodeEnv.CLASS(cls = el), env, b) = SCodeEnv.resolveRedeclaredItem(item, inEnv);
+        previousElement = Util.if_(b, {(item, inEnv)}, {});
+      then
+        ((el, mod), env, previousElement);*/
 
     // Other elements doesn't need to be looked up. Extends may not be
     // replaceable, and classes are looked up in the environment anyway. The
     // exception is packages with constants, but those are handled in
     // instPackageConstants.
-    else (inElement, inEnv);
+    else (inElement, inEnv, {});
 
   end match;
 end resolveRedeclaredElement;
@@ -816,7 +838,7 @@ algorithm
       equation
         // Look up the class of the component.
         (item, _, env) = SCodeLookup.lookupClassName(tpath, inEnv, info);
-        (item, env) = SCodeEnv.resolveRedeclaredItem(item, env);
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
         SCodeCheck.checkPartialInstance(item, info);
 
         // Instantiate array dimensions and add them to the prefix.
@@ -840,7 +862,7 @@ algorithm
         // Apply redeclarations to the class definition and instantiate it.
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
         
-        (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
         (cls, ty, cls_prefs, functions) = instClassItem(tpath, item, mod, prefs, env, prefix, ip, functions);
         prefs = InstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
@@ -921,7 +943,7 @@ algorithm
         checkRecursiveExtends(path, inEnv, info);
 
         // Apply the redeclarations.
-        (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           inRedeclares, item, env, inEnv, inPrefix);
 
         // Instantiate the class.
@@ -944,7 +966,7 @@ algorithm
   end match;
 end instExtends;
 
-protected function checkRecursiveExtends
+public function checkRecursiveExtends
   input Absyn.Path inExtendedClass;
   input Env inEnv;
   input Absyn.Info inInfo;
@@ -996,7 +1018,7 @@ algorithm
     case (SCode.CLASS(name = name), _, _, _, functions)
       equation
         (item, env) = SCodeLookup.lookupInClass(name, inEnv);
-        (item, env) = SCodeEnv.resolveRedeclaredItem(item, env);
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
         (cls, _, _, functions) = instClassItem(Absyn.IDENT(name), item, inMod, InstTypes.NO_PREFIXES(), env,
           prefix, INST_ONLY_CONST(), functions);

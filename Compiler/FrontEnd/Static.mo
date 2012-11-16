@@ -10329,7 +10329,7 @@ algorithm
         scope = Env.printEnvPathStr(env);
         pre_str = PrefixUtil.printPrefixStr2(pre);
         s = pre_str +& s;
-        Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {s,scope}, info);
+        // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {s,scope}, info);
         Debug.fprintln(Flags.STATIC,"- Static.elabCref2 failed on: " +& pre_str +& s +& " with no constant binding in scope: " +& scope);
         expTy = Types.simplifyType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);

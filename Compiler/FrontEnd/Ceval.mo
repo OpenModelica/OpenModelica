@@ -4723,7 +4723,7 @@ algorithm
       equation
         str = ComponentReference.printComponentRefStr(inCref);
         scope_str = Env.printEnvPathStr(inEnv);
-        Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {str, scope_str}, info);
+        // Error.addSourceMessage(Error.NO_CONSTANT_BINDING, {str, scope_str}, info);
         Debug.fprintln(Flags.CEVAL, "- Ceval.cevalCref on: " +& str +& 
           " failed with no constant binding in scope: " +& scope_str);
         // build a default binding for it!

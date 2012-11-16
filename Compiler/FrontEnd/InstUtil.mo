@@ -2028,5 +2028,73 @@ algorithm
   end match;
 end getClassName;
 
+public function prefixToStr
+  input Prefix inPrefix;
+  output String outStr;
+algorithm
+  outStr := match(inPrefix)
+    local
+      String name, str;
+      Prefix rest_prefix;
+      Absyn.Path path;
+
+    case InstTypes.EMPTY_PREFIX(classPath = NONE()) then "E()";
+    
+    case InstTypes.EMPTY_PREFIX(classPath = SOME(path))
+      equation
+        str = "E(" +& Absyn.pathLastIdent(path) +& ")";
+      then
+        str;
+    
+    case InstTypes.PREFIX(name = name, restPrefix = rest_prefix)
+      equation
+        str = prefixToStr(rest_prefix) +& "." +& name;
+      then
+        str;
+
+  end match;
+end prefixToStr;
+
+public function prefixToStrNoEmpty
+  input Prefix inPrefix;
+  output String outStr;
+algorithm
+  outStr := match(inPrefix)
+    local
+      String name, str;
+      Prefix rest_prefix;
+      Absyn.Path path;
+
+    case InstTypes.EMPTY_PREFIX(classPath = _) then "";
+
+    case InstTypes.PREFIX(name = name, 
+         restPrefix = InstTypes.EMPTY_PREFIX(classPath = _))
+      then
+        name;
+
+    case InstTypes.PREFIX(name = name, restPrefix = rest_prefix)
+      equation
+        str = prefixToStrNoEmpty(rest_prefix) +& "." +& name;
+      then
+        str;
+
+  end match;
+end prefixToStrNoEmpty;
+
+public function prefixFirstName
+  input Prefix inPrefix;
+  output String outStr;
+algorithm
+  outStr := match(inPrefix)
+    local
+      String name, str;
+      Prefix rest_prefix;
+      Absyn.Path path;
+
+    case InstTypes.EMPTY_PREFIX(classPath = _) then "";
+    case InstTypes.PREFIX(name = name) then name;
+
+  end match; 
+end prefixFirstName;
 
 end InstUtil;

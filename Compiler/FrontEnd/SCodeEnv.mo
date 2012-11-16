@@ -1549,11 +1549,11 @@ algorithm
 end getItemInfo;
 
 public function itemStr
-  "Returns the name of an environment item."
+"Returns more info on an environment item."
   input Item inItem;
   output String outName;
 algorithm
-  outName := match(inItem)
+  outName := matchcontinue(inItem)
     local 
       String name, alias_str;
       SCode.Element el;
@@ -1561,23 +1561,26 @@ algorithm
       Item item;
 
     case VAR(var = el) 
-      then SCodeDump.printElementStr(el);
+      then SCodeDump.unparseElementStr(el);
     case CLASS(cls = el) 
-      then SCodeDump.printElementStr(el);
+      then SCodeDump.unparseElementStr(el);
     case ALIAS(name = name, path = SOME(path))
       equation
         alias_str = Absyn.pathString(path);
       then
-        "alias " +& name +& " -> " +& alias_str;
+        "alias " +& name +& " -> (" +& alias_str +& "." +& name +& ")";
     case ALIAS(name = name, path = NONE())
-      then "alias " +& name +& " ->";
+      then "alias " +& name +& " -> ()";
     case REDECLARED_ITEM(item = item)
       equation
         name = itemStr(item);
       then
         "redeclared " +& name;
-
-  end match;
+    
+    else "UNHANDLED ITEM";
+      
+      
+  end matchcontinue;
 end itemStr;
 
 public function getItemName
@@ -1609,8 +1612,54 @@ algorithm
 
     case CLASS(env = env) then env;
     case REDECLARED_ITEM(item = item) then getItemEnv(item);
+  
   end match;
 end getItemEnv;
+
+public function getItemEnvNoFail
+  "Returns the environment in an environment item."
+  input Item inItem;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue(inItem)
+    local
+      Env env;
+      Item item;
+      String str;
+      Frame f;
+
+    case CLASS(env = env) then env;
+    case REDECLARED_ITEM(item = item) then getItemEnvNoFail(item);
+    else
+      equation
+        str = "NO ENV FOR ITEM: " +& getItemName(inItem);
+        f = newFrame(SOME(str), ENCAPSULATED_SCOPE());
+        env = {f};
+      then 
+        env;
+
+  end matchcontinue;
+end getItemEnvNoFail;
+
+public function setItemEnv
+  "Sets the environment in an environment item."
+  input Item inItem;
+  input Env inNewEnv;
+  output Item outItem;
+algorithm
+  outItem := match(inItem, inNewEnv)
+    local
+      Env env;
+      Item item;
+      SCode.Element cls;
+      ClassType ct;
+
+    case (CLASS(cls, env, ct), _) 
+      then CLASS(cls, inNewEnv, ct);
+    case (REDECLARED_ITEM(item = item), _) 
+      then setItemEnv(item, inNewEnv);
+  end match;
+end setItemEnv;
 
 public function mergeItemEnv
   "Merges an environment item's environment with the given environment."
@@ -1649,14 +1698,17 @@ public function resolveRedeclaredItem
   input Env inEnv;
   output Item outItem;
   output Env outEnv;
+  output list<tuple<Item, Env>> outPreviousItem;
 algorithm
-  (outItem, outEnv) := match(inItem, inEnv)
+  (outItem, outEnv, outPreviousItem) := match(inItem, inEnv)
     local
       Item item;
       Env env;
 
-    case (REDECLARED_ITEM(item = item, declaredEnv = env), _) then (item, env);
-    else (inItem, inEnv);
+    case (REDECLARED_ITEM(item = item, declaredEnv = env), _) then (item, env, {(inItem, inEnv)});
+    
+    else (inItem, inEnv, {});
+    
   end match;
 end resolveRedeclaredItem;
 
@@ -1673,6 +1725,43 @@ public function getEnvExtendsFromTable
 algorithm
   EXTENDS_TABLE(baseClasses = outExtends) := getEnvExtendsTable(inEnv);
 end getEnvExtendsFromTable;
+
+public function getDerivedClassRedeclares
+"@author: adrpo
+ returns the redeclares inside the extends table for the given class.
+ The derived class should have only 1 extends"
+ input SCode.Ident inDerivedName;
+ input Absyn.TypeSpec inTypeSpec;
+ input Env inEnv;
+ output list<Redeclaration> outRedeclarations;
+algorithm
+  outRedeclarations := matchcontinue(inDerivedName, inTypeSpec, inEnv)
+    local 
+      Absyn.Path bc, path;
+      list<Redeclaration> rm;
+      Absyn.Info i;
+    
+    // only one extends! 
+    case (_, Absyn.TPATH(path, _), _)
+      equation
+        {EXTENDS(bc, rm, i)} = getEnvExtendsFromTable(inEnv);
+        true = Absyn.pathSuffixOf(path, bc);        
+      then
+        rm;
+    
+    case (_, Absyn.TPATH(path, _), _)
+      equation
+        {EXTENDS(bc, rm, i)} = getEnvExtendsFromTable(inEnv);
+        false = Absyn.pathSuffixOf(path, bc);
+        print("Derived paths are not the same: " +& Absyn.pathString(path) +& " != " +& Absyn.pathString(bc) +& "\n");
+      then
+        rm;
+        
+    // else nothing 
+    else then {};
+
+  end matchcontinue; 
+end getDerivedClassRedeclares;
 
 public function setEnvExtendsTable
   input ExtendsTable inExtendsTable;
@@ -1730,6 +1819,33 @@ algorithm
     else then inPath;
   end matchcontinue;
 end mergePathWithEnvPath;
+
+public function mergeTypeSpecWithEnvPath
+  "Merges a path with the environment path."
+  input Absyn.TypeSpec inTS;
+  input Env inEnv;
+  output Absyn.TypeSpec outTS;
+algorithm
+  outTS := matchcontinue(inTS, inEnv)
+    local
+      Absyn.Path path;
+      Absyn.Ident id;
+      Option<Absyn.ArrayDim> ad;
+
+    // Try to merge the last identifier in the path with the environment path.
+    case (Absyn.TPATH(path, ad), _)
+      equation
+        id = Absyn.pathLastIdent(path);
+        path = Absyn.joinPaths(getEnvPath(inEnv), Absyn.IDENT(id));
+      then
+        Absyn.TPATH(path, ad);
+
+    // If the previous case failed (which will happen at the top-scope when
+    // getEnvPath fails), just return the path as it is.
+    else then inTS;
+    
+  end matchcontinue;
+end mergeTypeSpecWithEnvPath;
 
 public function prefixIdentWithEnv
   input String inIdent;
@@ -1870,25 +1986,31 @@ end printEnvStr;
 protected function printFrameStr
   input Frame inFrame;
   output String outString;
-protected
-  Option<String> name;
-  FrameType ty;
-  AvlTree tree;
-  ExtendsTable exts;
-  ImportTable imps;
-  String name_str, ty_str, tree_str, ext_str, imp_str;
 algorithm
-  FRAME(name, ty, tree, exts, imps, _) := inFrame;
-  name_str := printFrameNameStr(name);
-  ty_str := printFrameTypeStr(ty);
-  tree_str := printAvlTreeStr(SOME(tree));
-  ext_str := printExtendsTableStr(exts);
-  imp_str := printImportTableStr(imps);
-  name_str := "<<<" +& ty_str +& " frame " +& name_str +& ">>>\n";
-  outString := name_str +& 
-    "\tImports:\n" +& imp_str +&
-    "\n\tExtends:\n" +& ext_str +&
-    "\n\tComponents:\n" +& tree_str +& "\n";
+  outString := match(inFrame)
+    local
+      Option<String> name;
+      FrameType ty;
+      AvlTree tree;
+      ExtendsTable exts;
+      ImportTable imps;
+      String name_str, ty_str, tree_str, ext_str, imp_str, out;
+    
+    case (FRAME(name, ty, tree, exts, imps, _))
+      equation
+        name_str = printFrameNameStr(name);
+        ty_str = printFrameTypeStr(ty);
+        tree_str = printAvlTreeStr(SOME(tree));
+        ext_str = printExtendsTableStr(exts);
+        imp_str = printImportTableStr(imps);
+        name_str = "<<<" +& ty_str +& " frame " +& name_str +& ">>>\n";
+        out = name_str +& 
+              "\tImports:\n" +& imp_str +&
+              "\n\tExtends:\n" +& ext_str +&
+              "\n\tComponents:\n" +& tree_str +& "\n";
+      then
+        out;
+  end match;
 end printFrameStr;
 
 protected function printFrameNameStr
@@ -1936,7 +2058,6 @@ algorithm
         value_str = value_str +& left_str +& right_str;
       then
         value_str;
-
   end match;
 end printAvlTreeStr;
 
@@ -1948,6 +2069,7 @@ algorithm
     local
       String key_str, alias_str, name;
       Absyn.Path path;
+      Item i;
 
     case (AVLTREEVALUE(key = key_str, value = CLASS(cls = _)))
       then "\t\tClass " +& key_str +& "\n";
@@ -1964,10 +2086,13 @@ algorithm
     case (AVLTREEVALUE(key = key_str, value = ALIAS(name = name)))
       then "\t\tAlias " +& key_str +& " -> " +& name +& "\n";
 
+    case (AVLTREEVALUE(key = key_str, value = REDECLARED_ITEM(item = i)))
+      then "\t\tRedeclare " +& key_str +& " -> " +& getItemName(i) +& "\n";
+
   end match;
 end printAvlValueStr;
 
-protected function printExtendsTableStr
+public function printExtendsTableStr
   input ExtendsTable inExtendsTable;
   output String outString;
 protected
@@ -1978,12 +2103,12 @@ algorithm
   EXTENDS_TABLE(baseClasses = bcl, redeclaredElements = re, classExtendsInfo = cei) := inExtendsTable;
   outString := stringDelimitList(List.map(bcl, printExtendsStr), "\n") +& 
     "\n\t\tRedeclare elements:\n\t\t\t" +&
-    stringDelimitList(List.map(re, SCodeDump.printElementStr), "\n\t\t\t") +&
+    stringDelimitList(List.map(re, SCodeDump.unparseElementStr), "\n\t\t\t") +&
     "\n\t\tClass extends:\n\t\t\t" +&
-    Util.stringOption(Util.applyOption(cei, SCodeDump.printElementStr)); 
+    Util.stringOption(Util.applyOption(cei, SCodeDump.unparseElementStr)); 
 end printExtendsTableStr;
 
-protected function printExtendsStr
+public function printExtendsStr
   input Extends inExtends;
   output String outString;
 protected
@@ -2001,7 +2126,14 @@ public function printRedeclarationStr
   input Redeclaration inRedeclare;
   output String outString;
 algorithm
-  outString := SCodeDump.printElementStr(getRedeclarationElement(inRedeclare));
+  outString := matchcontinue(inRedeclare)
+    local String name; Absyn.Path p;
+    case (PROCESSED_MODIFIER(modifier = ALIAS(name = name, path = SOME(p)))) 
+      then "ALIAS(" +& Absyn.pathString(p) +& "." +& name +& ")";
+    case (PROCESSED_MODIFIER(modifier = ALIAS(name = name))) 
+      then "ALIAS(" +& name +& ")";
+    case _ then SCodeDump.unparseElementStr(getRedeclarationElement(inRedeclare));
+  end matchcontinue;
 end printRedeclarationStr;
 
 protected function printImportTableStr

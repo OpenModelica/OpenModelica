@@ -284,13 +284,6 @@ algorithm
       then
         res;
 
-    case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp))
-      equation
-        ioStr = Dump.unparseInnerouterStr(io) +& redeclareStr(rdp) +& replaceablePrefixStr(rpp) +& partialStr(pp);
-        res = stringAppendList({ioStr, "class ",n,";"});
-      then
-        res;
-
     case SCode.CLASS(name = n, partialPrefix = pp, prefixes = SCode.PREFIXES(innerOuter = io, redeclarePrefix = rdp, replaceablePrefix = rpp), 
                      classDef = SCode.CLASS_EXTENDS(baseClassName = str))
       equation

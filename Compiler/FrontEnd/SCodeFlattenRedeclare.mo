@@ -102,6 +102,27 @@ public type Item = SCodeEnv.Item;
 public type Extends = SCodeEnv.Extends;
 public type Prefix = InstTypes.Prefix;
 
+public uniontype Replacement
+  record REPLACED "an item got replaced"
+    SCode.Ident name;
+    Item old;
+    Item new;
+    Env env;
+  end REPLACED;
+  
+  record PUSHED "the redeclares got pushed into the extends of the base classes"
+    SCode.Ident name;
+    Item redeclaredItem;
+    list<Absyn.Path> baseClasses;
+    SCodeEnv.ExtendsTable old;
+    SCodeEnv.ExtendsTable new;
+    Env env;
+  end PUSHED;  
+end Replacement;
+
+public type Replacements = list<Replacement>;
+public constant Replacements emptyReplacements = {};
+
 protected import Debug;
 protected import Error;
 protected import Flags;
@@ -462,25 +483,24 @@ public function processRedeclare
   input InstTypes.Prefix inPrefix;
   output SCodeEnv.Redeclaration outRedeclare;
 algorithm
-  outRedeclare := match(inRedeclare, inEnv, inPrefix)
+  outRedeclare := matchcontinue(inRedeclare, inEnv, inPrefix)
     local
       SCode.Ident name;
       SCode.Partial pp;
       SCode.Encapsulated ep;
       SCode.Prefixes prefixes;
-      Option<Absyn.ArrayDim> ad;
       Absyn.Path path;
-      SCode.Mod mods;
+      SCode.Mod mod;
       Option<SCode.Comment> cmt;
       SCode.Restriction res;
       Absyn.Info info;
       SCode.Attributes attr;
       Option<Absyn.Exp> cond;
-      Option<Absyn.ArrayDim> array_dim;
+      Option<Absyn.ArrayDim> ad;
 
       Item el_item, redecl_item;
       SCode.Element el;
-      Env cls_env;
+      Env cls_env, env;
    
    case (SCodeEnv.RAW_MODIFIER(modifier = el as SCode.CLASS(name = _)), _, _)
       equation
@@ -507,7 +527,7 @@ algorithm
           " in " +& Absyn.pathString(SCodeEnv.getEnvPath(inEnv)));
       then
         fail();
-  end match;
+  end matchcontinue;
 end processRedeclare;
 
 public function replaceRedeclares
@@ -536,7 +556,7 @@ algorithm
 
     case (_, _, _, _, SCodeLookup.INSERT_REDECLARES())
       equation
-        (item, env) = replaceRedeclaredElementsInEnv(inRedeclares,
+        (item, env, _) = replaceRedeclaredElementsInEnv(inRedeclares,
           inClassItem, inClassEnv, inElementEnv, InstTypes.emptyPrefix);
       then
         (SOME(item), SOME(env));
@@ -558,8 +578,9 @@ public function replaceRedeclaredElementsInEnv
   input InstTypes.Prefix inPrefix;
   output Item outItem;
   output Env outEnv;
+  output Replacements outReplacements "what replacements where performed if any";
 algorithm
-  (outItem, outEnv) :=
+  (outItem, outEnv, outReplacements) :=
   matchcontinue(inRedeclares, inItem, inTypeEnv, inElementEnv, inPrefix)
     local
       SCode.Element cls;
@@ -567,9 +588,10 @@ algorithm
       SCodeEnv.Frame item_env;
       SCodeEnv.ClassType cls_ty;
       list<SCodeEnv.Redeclaration> redecls;
+      Replacements repl;
 
     // no redeclares!
-    case ({}, _, _, _, _) then (inItem, inTypeEnv);
+    case ({}, _, _, _, _) then (inItem, inTypeEnv, {});
 
     case (_, SCodeEnv.CLASS(cls = cls, env = {item_env}, classType = cls_ty), _, _, _)
       equation
@@ -577,10 +599,10 @@ algorithm
         // enclosing scopes of the classes we need to replace.
         env = SCodeEnv.enterFrame(item_env, inTypeEnv);
         redecls = List.map2(inRedeclares, processRedeclare, inElementEnv, inPrefix);
-        env = List.fold(redecls, replaceRedeclaredElementInEnv, env);
+        ((env, repl)) = List.fold(redecls, replaceRedeclaredElementInEnv, ((env, emptyReplacements)));
         item_env :: env = env;
       then
-        (SCodeEnv.CLASS(cls, {item_env}, cls_ty), env);
+        (SCodeEnv.CLASS(cls, {item_env}, cls_ty), env, repl);
 
     else
       equation
@@ -641,8 +663,8 @@ end extractRedeclareFromSubMod;
 protected function replaceRedeclaredElementInEnv
   "Replaces a redeclaration in the environment."
   input SCodeEnv.Redeclaration inRedeclare;
-  input Env inEnv;
-  output Env outEnv;
+  input tuple<Env, Replacements> inEnv;
+  output tuple<Env, Replacements> outEnv;
 algorithm
   outEnv := matchcontinue(inRedeclare, inEnv)
     local
@@ -651,13 +673,19 @@ algorithm
       Absyn.Info info;
       list<Absyn.Path> bcl;
       list<String> bcl_str;
+      Env env;
+      tuple<Env, Replacements> envRpl;
 
     // Try to redeclare this element in the current scope.
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
       equation
         name = SCodeEnv.getItemName(item);
+        // do not asume the story ends here
+        // you have to push into extends again 
+        // even if you find it in the local scope!
+        envRpl = pushRedeclareIntoExtendsNoFail(name, item, inEnv);
       then  
-        replaceElementInScope(name, item, inEnv);
+        replaceElementInScope(name, item, envRpl);
         
     // If the previous case failed, see if we can find the redeclared element in
     // any of the base classes. If so, push the redeclare into those base
@@ -666,14 +694,14 @@ algorithm
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
       equation
         name = SCodeEnv.getItemName(item);
-        bcl = SCodeLookup.lookupBaseClasses(name, inEnv);
+        bcl = SCodeLookup.lookupBaseClasses(name, Util.tuple21(inEnv));
       then
         pushRedeclareIntoExtends(name, item, bcl, inEnv);
         
     // The redeclared element could not be found, show an error.
     case (SCodeEnv.PROCESSED_MODIFIER(modifier = item), _)
       equation
-        scope_name = SCodeEnv.getScopeName(inEnv);
+        scope_name = SCodeEnv.getScopeName(Util.tuple21(inEnv));
         name = SCodeEnv.getItemName(item);
         info = SCodeEnv.getItemInfo(item);
         Error.addSourceMessage(Error.MISSING_MODIFIED_ELEMENT,
@@ -684,24 +712,62 @@ algorithm
   end matchcontinue;
 end replaceRedeclaredElementInEnv;
 
+protected function pushRedeclareIntoExtendsNoFail
+"Pushes a redeclare into the given extends in the environment if it can.
+ if not just returns the same tuple<env, repl>"
+  input SCode.Ident inName;
+  input Item inRedeclare;
+  input tuple<Env, Replacements> inEnv;
+  output tuple<Env, Replacements> outEnv;
+algorithm
+  outEnv := matchcontinue(inName, inRedeclare, inEnv)
+    local
+      SCode.Ident name, scope_name;
+      Item item;
+      Absyn.Info info;
+      list<Absyn.Path> bcl;
+      list<String> bcl_str;
+      Env env;
+      tuple<Env, Replacements> envRpl;
+    
+    case (_, _, _)
+      equation
+        bcl = SCodeLookup.lookupBaseClasses(inName, Util.tuple21(inEnv));
+        (envRpl) = pushRedeclareIntoExtends(inName, inRedeclare, bcl, inEnv);
+      then
+        envRpl;
+    
+    else inEnv;
+  end matchcontinue;
+end pushRedeclareIntoExtendsNoFail;
+
 protected function pushRedeclareIntoExtends
   "Pushes a redeclare into the given extends in the environment."
   input SCode.Ident inName;
   input Item inRedeclare;
   input list<Absyn.Path> inBaseClasses;
-  input Env inEnv;
-  output Env outEnv;
+  input tuple<Env, Replacements> inEnv;
+  output tuple<Env, Replacements> outEnv;
 protected
   list<SCodeEnv.Extends> exts;
   list<SCode.Element> re;
   Option<SCode.Element> cei;
-  SCodeEnv.ExtendsTable et;
+  SCodeEnv.ExtendsTable etNew, etOld;
   String name;
+  Env env;
+  Replacements repl;
 algorithm
-  SCodeEnv.FRAME(extendsTable = SCodeEnv.EXTENDS_TABLE(exts, re, cei)) :: _ := inEnv;
+  (env, repl) := inEnv; 
+  
+  SCodeEnv.FRAME(extendsTable = etOld as SCodeEnv.EXTENDS_TABLE(exts, re, cei)) :: _ := env;
   exts := pushRedeclareIntoExtends2(inName, inRedeclare, inBaseClasses, exts);
-  et := SCodeEnv.EXTENDS_TABLE(exts, re, cei);
-  outEnv := SCodeEnv.setEnvExtendsTable(et, inEnv);
+  etNew := SCodeEnv.EXTENDS_TABLE(exts, re, cei);
+  
+  env := SCodeEnv.setEnvExtendsTable(etNew, env);
+  repl := PUSHED(inName, inRedeclare, inBaseClasses, etOld, etNew, env)::repl;
+  
+  outEnv := (env, repl);
+  // tracePushRedeclareIntoExtends(inName, inRedeclare, inBaseClasses, env, etOld, etNew);
 end pushRedeclareIntoExtends;
 
 protected function pushRedeclareIntoExtends2
@@ -796,19 +862,21 @@ algorithm
   end matchcontinue;
 end pushRedeclareIntoExtends3;
         
-protected function replaceElementInScope
+public function replaceElementInScope
   "Replaces an element in the current scope."
   input SCode.Ident inElementName;
   input Item inElement;
-  input Env inEnv;
-  output Env outEnv;
+  input tuple<Env, Replacements> inEnv;
+  output tuple<Env, Replacements> outEnv;
 algorithm
   outEnv := match(inElementName, inElement, inEnv)
     local
       SCodeEnv.AvlTree tree;
       Item old_item, new_item;
+      Env env;
+      Replacements repl;
 
-    case (_, _, SCodeEnv.FRAME(clsAndVars = tree) :: _)
+    case (_, _, (env as SCodeEnv.FRAME(clsAndVars = tree) :: _, repl))
       equation
         old_item = SCodeEnv.avlTreeGet(tree, inElementName);
         /*********************************************************************/
@@ -817,8 +885,11 @@ algorithm
         new_item = propagateItemPrefixes(old_item, inElement);
         new_item = SCodeEnv.linkItemUsage(old_item, new_item);
         tree = SCodeEnv.avlTreeReplace(tree, inElementName, new_item);
+        env = SCodeEnv.setEnvClsAndVars(tree, env);
+        repl = REPLACED(inElementName, old_item, new_item, env)::repl;
+        // traceReplaceElementInScope(inElementName, old_item, new_item, env);
       then
-        SCodeEnv.setEnvClsAndVars(tree, inEnv);
+        ((env, repl));
 
   end match;
 end replaceElementInScope;
@@ -898,7 +969,7 @@ algorithm
   outNewVar := SCode.COMPONENT(name, pref2, attr2, ty, mod, cmt, cond, info);
 end propagateAttributesVar;
 
-protected function propagateAttributesClass
+public function propagateAttributesClass
   input SCode.Element inOriginalClass;
   input SCode.Element inNewClass;
   output SCode.Element outNewClass;
@@ -1020,5 +1091,60 @@ algorithm
     else inNewDirection;
   end match;
 end propagateDirection;
+
+protected function traceReplaceElementInScope
+"@author: adrpo
+ good for debugging redeclares.
+ uncomment it in replaceElementInScope to activate it"
+  input SCode.Ident inElementName;
+  input Item inOldItem;
+  input Item inNewItem;
+  input Env inEnv;
+algorithm
+  _ := matchcontinue(inElementName, inOldItem, inNewItem, inEnv)
+    case (_, _, _, _)
+      equation
+        print("replacing element: " +& inElementName +& " env: " +& SCodeEnv.getEnvName(inEnv) +& "\n\t");
+        print("Old Element:" +& SCodeEnv.itemStr(inOldItem) +& 
+              " env: " +& SCodeEnv.getEnvName(SCodeEnv.getItemEnvNoFail(inOldItem)) +& "\n\t");
+        print("New Element:" +& SCodeEnv.itemStr(inNewItem) +& 
+              " env: " +& SCodeEnv.getEnvName(SCodeEnv.getItemEnvNoFail(inNewItem)) +& 
+              "\n===============\n");
+      then ();
+    
+    else
+      equation
+        print("traceReplaceElementInScope failed on element: " +& inElementName +& "\n");
+      then ();
+  end matchcontinue;
+end traceReplaceElementInScope;
+
+protected function tracePushRedeclareIntoExtends
+"@author: adrpo
+ good for debugging redeclares.
+ uncomment it in pushRedeclareIntoExtends to activate it"
+  input SCode.Ident inName;
+  input SCodeEnv.Item inRedeclare;
+  input list<Absyn.Path> inBaseClasses;
+  input Env inEnv;
+  input SCodeEnv.ExtendsTable inEtNew;
+  input SCodeEnv.ExtendsTable inEtOld;
+algorithm
+  _ := matchcontinue(inName, inRedeclare, inBaseClasses, inEnv, inEtNew, inEtOld)
+    case (_, _, _, _, _, _)
+      equation
+        print("pushing: " +& inName +& " redeclare: " +& SCodeEnv.itemStr(inRedeclare) +& "\n\t"); 
+        print("into baseclases: " +& stringDelimitList(List.map(inBaseClasses, Absyn.pathString), ", ") +& "\n\t");
+        print("called from env: " +& SCodeEnv.getEnvName(inEnv) +& "\n");
+        print("-----------------\n");
+      then ();
+
+    else
+      equation
+        print("tracePushRedeclareIntoExtends failed on element: " +& inName +& "\n");
+      then ();
+
+  end matchcontinue;
+end tracePushRedeclareIntoExtends;
 
 end SCodeFlattenRedeclare;

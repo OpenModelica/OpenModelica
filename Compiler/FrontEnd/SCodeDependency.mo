@@ -135,7 +135,7 @@ algorithm
     case (_, _, _, _)
       equation
         (item, env) = lookupClass2(inPath, inEnv, inInfo, inErrorType);
-        (item, env) = SCodeEnv.resolveRedeclaredItem(item, env);
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
       then
         (item, env);
 
@@ -184,7 +184,7 @@ algorithm
       equation
         (item, _, env, _) = 
           SCodeLookup.lookupNameSilent(Absyn.IDENT(id), inEnv, inInfo);
-        (item, env) = SCodeEnv.resolveRedeclaredItem(item, env);
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
         analyseItem(item, env);
         (item, env) = lookupNameInItem(rest_path, item, env, inErrorType);
       then  
@@ -225,7 +225,7 @@ algorithm
       equation
         (item, type_env) = lookupClass(type_path, inEnv, info, inErrorType);
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        (item, type_env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv, InstTypes.emptyPrefix);
         (item, env) = lookupNameInItem(inName, item, type_env, inErrorType);
       then
@@ -480,8 +480,8 @@ algorithm
       equation
         env = Util.if_(inInModifierScope, inEnv, env);
         analyseTypeSpec(ty, env, inInfo);
-        (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, env, inInfo);
-        (ty_item, ty_env) = SCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
+        (ty_item, _, ty_env) = SCodeLookup.lookupTypeSpec(ty, env, inInfo);
+        (ty_item, ty_env, _) = SCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
         // TODO! Analyse array dimensions from attributes! 
         analyseModifier(mods, inEnv, ty_env, inInfo);
@@ -739,8 +739,8 @@ algorithm
         markAsUsedOnRestriction(name, inClassRestriction, inEnv, info);
         analyseAttributes(attr, inEnv, info);
         analyseTypeSpec(ty, inEnv, info);
-        (ty_item, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, info);
-        (ty_item, ty_env) = SCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
+        (ty_item, _, ty_env) = SCodeLookup.lookupTypeSpec(ty, inEnv, info);
+        (ty_item, ty_env, _) = SCodeEnv.resolveRedeclaredItem(ty_item, ty_env);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
         SCodeCheck.checkRecursiveComponentDeclaration(name, info, ty_env,
           ty_item, inEnv);
@@ -1099,7 +1099,7 @@ algorithm
     case (_, _, _)
       equation
         (item, _, env, _) = SCodeLookup.lookupNameSilent(inPath, inEnv, inInfo);
-        (item, env) = SCodeEnv.resolveRedeclaredItem(item, env);
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
       then
         (SOME(item), SOME(env));
 
@@ -1288,7 +1288,7 @@ protected
 algorithm
   (item, _, env, _) := 
     SCodeLookup.lookupNameSilent(Absyn.IDENT(inName), inEnv, inInfo);
-  (item, env) := SCodeEnv.resolveRedeclaredItem(item, env);
+  (item, env, _) := SCodeEnv.resolveRedeclaredItem(item, env);
   analyseItem(item, env);
 end analyseAnnotationName;
 

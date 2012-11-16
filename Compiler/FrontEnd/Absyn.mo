@@ -69,6 +69,7 @@ encapsulated package Absyn
 protected import Debug;
 protected import Dump;
 protected import System;
+protected import Flags;
 
 public
 type Ident = String "An identifier, for example a variable name" ;
@@ -2639,6 +2640,15 @@ algorithm
       Path p1,p2;
       Option<ArrayDim> oad1,oad2;
       list<TypeSpec> lst1,lst2;
+    case(TPATH(p1,oad1), TPATH(p2,oad2))
+      equation
+        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
+        p1 = stripLast(p1);
+        p2 = stripLast(p2);
+        true = pathEqual(p1,p2);
+        true = optArrayDimEqual(oad1,oad2);
+      then
+        true;
     case(TPATH(p1,oad1), TPATH(p2,oad2))
       equation
         true = pathEqual(p1,p2);
@@ -5744,5 +5754,32 @@ public function componentName
 algorithm
   COMPONENTITEM(component=COMPONENT(name=name)) := c;
 end componentName;
+
+public function pathSetLastIdent
+  input Path inPath;
+  input Path inLastIdent;
+  output Path outPath;
+algorithm
+  outPath := matchcontinue(inPath, inLastIdent)
+    local
+      Path p;
+      String n;
+
+    case (IDENT(_), _) then inLastIdent;
+    
+    case (QUALIFIED(n, p), _)
+      equation
+        p = pathSetLastIdent(p, inLastIdent);
+      then
+        QUALIFIED(n, p);
+    
+    case (FULLYQUALIFIED(p), _)
+      equation
+        p = pathSetLastIdent(p, inLastIdent);
+      then
+        FULLYQUALIFIED(p);
+          
+  end matchcontinue;
+end pathSetLastIdent;
 
 end Absyn;

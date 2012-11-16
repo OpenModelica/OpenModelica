@@ -60,7 +60,9 @@ protected import SCodeFlattenRedeclare;
 protected import SCodeLookup;
 protected import SCodeMod;
 protected import Util;
-
+protected import SCodeInst;
+protected import SCodeApplyRedeclare;
+protected import SCodeAnalyseRedeclare;
 
 public type Binding = InstTypes.Binding;
 public type Class = SCode.Element;
@@ -73,29 +75,39 @@ public type ParamType = InstTypes.ParamType;
 public type Prefixes = InstTypes.Prefixes;
 public type Prefix = InstTypes.Prefix;
 
-public type InstInfo = list<Absyn.Path>;
+public type InstInfo = list<Absyn.Path>; 
 public constant InstInfo emptyInstInfo = {};
 
 protected type Item = SCodeEnv.Item;
 
 public function translate
-  "Flattens a class."
+"translates a class to a class without redeclarations"
   input Absyn.Path inClassPath;
   input Env inEnv;
+  input SCode.Program inProgram;
   output SCode.Program outSCode;
 algorithm
-  outSCode := matchcontinue(inClassPath, inEnv)
+  outSCode := matchcontinue(inClassPath, inEnv, inProgram)
     local 
       list<Class> classes;
       String name;
     
-    case (_, _)
+    case (_, _, _)
+      equation
+        classes = SCodeApplyRedeclare.translate(inClassPath, inEnv, inProgram);
+        showSCode(classes);
+        // print("Done with SCodeInstShortcut ...\n");
+      then
+        classes;
+    
+    /*
+    case (_, _, _)
       equation
         classes = mkClass(inClassPath, inEnv);
         showSCode(classes);
       then
-        classes;
-
+        classes;*/
+    
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -111,18 +123,28 @@ protected function showSCode
   input SCode.Program inProgram;
 algorithm
   _ := matchcontinue(inProgram)
-    case (_)
+    local 
+      SCode.Program rest; 
+      SCode.Element e;
+    
+    case ({}) then ();
+    
+    case (e::rest)
       equation
         true = Flags.isSet(Flags.SHOW_SCODE);
-        print(SCodeDump.programStr(inProgram));
+        print("// " +& SCode.getElementName(e) +& "\n");
+        print(SCodeDump.unparseElementStr(e));
+        print(";\n\n");
+        showSCode(rest);
       then
         ();
+    
     else ();
   end matchcontinue;
 end showSCode;
 
 protected function mkClass
-  "Flattens a class."
+"translates a class to a class without redeclarations"
   input Absyn.Path inClassPath;
   input Env inEnv;
   output SCode.Program outSCode;
@@ -141,7 +163,7 @@ algorithm
         name = Absyn.pathLastIdent(inClassPath);
 
         // ---------------- Instantiation ---------------
-        // Look up the class to instantiate in the environment.
+        // Look up the class to translate it in the environment.
         (item, path, env) = SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
         // Instantiate that class.
         (classes, _, _) = 
@@ -192,7 +214,7 @@ algorithm
       Absyn.TypeSpec dty;
       Option<Absyn.ArrayDim> ad;
       Item item;
-      Env env;
+      Env env, envDerived;
       Absyn.Info info;
       SCode.Mod smod;
       Modifier mod;
@@ -226,6 +248,8 @@ algorithm
       Option<SCode.Comment> cmt;
       InstInfo ii;
       Boolean isBasic, isChain;
+      list<SCodeEnv.Redeclaration> redeclares;
+      
 
     case (SCodeEnv.CLASS(
             cls = scls as SCode.CLASS(name = name), 
@@ -259,7 +283,7 @@ algorithm
         // Apply modifications to the elements and instantiate them.
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = SCodeEnv.getEnvExtendsFromTable(env);
-        (elems, ii) = mkElementList(mel, inPrefixes, exts, env, inPrefix, inInstInfo);
+        (elems, ii) = mkElementList(mel, inPrefixes, exts, env, inPrefix, {}, inInstInfo);
 
         sprefs = SCode.prefixesSetRedeclare(sprefs, SCode.NOT_REDECLARE());
         sprefs = SCode.prefixesSetReplaceable(sprefs, SCode.NOT_REPLACEABLE());
@@ -281,7 +305,7 @@ algorithm
           _, _, _, _, _)
       equation
         // Look up the inherited class.
-        (item as SCodeEnv.CLASS(classType = SCodeEnv.BASIC_TYPE()), env) =
+        (item as SCodeEnv.CLASS(classType = SCodeEnv.BASIC_TYPE()), _, env) =
           SCodeLookup.lookupTypeSpec(dty, inEnv, info);
         
         prefs = inPrefixes;
@@ -294,18 +318,28 @@ algorithm
     case (SCodeEnv.CLASS(cls = scls as  
             SCode.CLASS(
                     name, sprefs, ep, pp, res,
-                    SCode.DERIVED(dty as Absyn.TPATH(path, ad), smod, attr, cmt), info)), 
+                    SCode.DERIVED(dty as Absyn.TPATH(path, ad), smod, attr, cmt), info),
+                    env = envDerived), 
           _, _, _, _, _)
       equation
         // Look up the inherited class.
-        (item, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
+        (item, _, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
         path = Absyn.typeSpecPath(dty);
+
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
 
         // Merge the modifiers and instantiate the inherited class.
         dims = Absyn.typeSpecDimensions(dty);
         dim_count = listLength(dims);
         mod = SCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
+        
+        // Apply the redeclarations from the derived environment!!!!
+        redeclares = listAppend(
+          SCodeEnv.getDerivedClassRedeclares(name, dty, envDerived), 
+          SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod));
+        (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redeclares, item, env, inEnv, inPrefix);     
+        
         (classes, prefs, ii) = mkClassItem(item, mod, inPrefixes, env, inPrefix, inInstInfo);
 
         // Merge the attributes of this class with the prefixes of the inherited
@@ -386,7 +420,7 @@ algorithm
       InstInfo ii;
 
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod, 
-          composition = cdef)), _, _, _, _, _, _)
+            composition = cdef)), _, _, _, _, _, _)
       equation
         (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
         ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
@@ -420,7 +454,7 @@ algorithm
       String name;
 
     case (SCodeEnv.FRAME(extendsTable = SCodeEnv.EXTENDS_TABLE(
-        baseClasses = SCodeEnv.EXTENDS(baseClass = bc, info = info) :: _)) :: _)
+            baseClasses = SCodeEnv.EXTENDS(baseClass = bc, info = info) :: _)) :: _)
       then (bc, info);
 
     else
@@ -435,21 +469,7 @@ algorithm
 end getClassExtendsBaseClass;
         
 protected function mkElementList
-  "Instantiates a list of elements."
-  input list<tuple<SCode.Element, Modifier>> inElements;
-  input Prefixes inPrefixes;
-  input list<SCodeEnv.Extends> inExtends;
-  input Env inEnv;
-  input Prefix inPrefix;
-  input InstInfo inInstInfo;
-  output list<Element> outElements;
-  output InstInfo outInstInfo;
-algorithm
-  (outElements, outInstInfo) := mkElementList2(inElements, inPrefixes, inExtends, inEnv, inPrefix, {}, inInstInfo);
-end mkElementList;
-
-protected function mkElementList2
-  "Helper function to instElementList."
+"Helper function to mkClassItem."
   input list<tuple<SCode.Element, Modifier>> inElements;
   input Prefixes inPrefixes;
   input list<SCodeEnv.Extends> inExtends;
@@ -473,86 +493,30 @@ algorithm
 
     case (elem :: rest_el, _, exts, _, _, accum_el, _)
       equation
-        (elem, env) = resolveRedeclaredElement(elem, inEnv);
+        (elem, env, _) = SCodeInst.resolveRedeclaredElement(elem, inEnv);
         (accum_el, exts, ii) = mkElement_dispatch(elem, inPrefixes, exts, env, inPrefix, accum_el, inInstInfo);
-        (accum_el, ii) = mkElementList2(rest_el, inPrefixes, exts, inEnv, inPrefix, accum_el, ii);
+        (accum_el, ii) = mkElementList(rest_el, inPrefixes, exts, inEnv, inPrefix, accum_el, ii);
       then
         (accum_el, ii);
 
     case ({}, _, {}, _, _, _, _) then (inAccumEl, inInstInfo);
 
-    // instElementList takes a list of Extends, which contains the extends
+    // mkElementList takes a list of Extends, which contains the extends
     // information from the environment. We should have one Extends element for
     // each extends clause, so if we have any left when we've run out of
     // elements something has gone very wrong.
     case ({}, _, _ :: _, _, _, _, _)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SCodeInstShortcut.mkElementList2 has extends left!."});
+        Error.addMessage(Error.INTERNAL_ERROR, {"SCodeInstShortcut.mkElementList has extends left!."});
       then
         fail();
 
   end match;
-end mkElementList2;
-
-protected function resolveRedeclaredElement
-  "This function makes sure that an element is up-to-date in case it has been
-   redeclared. This is achieved by looking the element up in the environment. In
-   the case that the element has been redeclared, the environment where it should
-   be instantiated is returned, otherwise the old environment."
-  input tuple<SCode.Element, Modifier> inElement;
-  input Env inEnv;
-  output tuple<SCode.Element, Modifier> outElement;
-  output Env outEnv;
-algorithm
-  (outElement, outEnv) := match(inElement, inEnv)
-    local
-      Modifier mod;
-      String name;
-      Item item;
-      SCode.Element el;
-      Env env;
-      
-    // Only components which are actually replaceable needs to be looked up,
-    // since non-replaceable components can't have been replaced.
-    case ((SCode.COMPONENT(name = name, prefixes =
-        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _)
-      equation
-        (item, _) = SCodeLookup.lookupInClass(name, inEnv);
-        (SCodeEnv.VAR(var = el), env) = SCodeEnv.resolveRedeclaredItem(item, inEnv);
-      then
-        ((el, mod), env);
-
-    // Other elements doesn't need to be looked up. Extends may not be
-    // replaceable, and classes are looked up in the environment anyway. The
-    // exception is packages with constants, but those are handled in
-    // instPackageConstants.
-    else (inElement, inEnv);
-
-  end match;
-end resolveRedeclaredElement;
-
-protected function resolveRedeclaredComponent
-  input Item inItem;
-  input Env inEnv;
-  output SCode.Element outComponent;
-  output Env outEnv;
-algorithm
-  (outComponent, outEnv) := match(inItem, inEnv)
-    local
-      SCode.Element comp;
-      Env env;
-
-    case (SCodeEnv.VAR(var = comp), _) then (comp, inEnv);
-
-    case (SCodeEnv.REDECLARED_ITEM(item = SCodeEnv.VAR(var = comp),
-        declaredEnv = env), _) then (comp, env);
-
-  end match;
-end resolveRedeclaredComponent;
+end mkElementList;
 
 protected function mkElement_dispatch
-  "Helper function to instElementList2. Dispatches the given element to the
-   correct function for instantiation."
+"Helper function to mkElementList. 
+ Dispatches the given element to the correct function for transformation."
   input tuple<SCode.Element, Modifier> inElement;
   input Prefixes inPrefixes;
   input list<SCodeEnv.Extends> inExtends;
@@ -583,7 +547,7 @@ algorithm
       Absyn.Path fullName;
       InstInfo ii;
 
-    // A component when we're in 'instantiate everything'-mode.
+    // A component 
     case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, _)
       equation
         (res, ii) = mkElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstInfo);
@@ -591,8 +555,7 @@ algorithm
       then
         (accum_el, inExtends, ii);
 
-    // An extends clause. Instantiate it together with the next Extends element
-    // from the environment.
+    // An extends clause. Transform it it together with the next Extends element from the environment.
     case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
         SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, _)
       equation
@@ -612,7 +575,7 @@ algorithm
         (item, env) = SCodeLookup.lookupInClass(name, inEnv);
         (res, _, ii) = mkClassItem(item, mod, InstTypes.NO_PREFIXES(), env, prefix, ii);
         ii = inInstInfo;
-         accum_el = listAppend(inAccumEl, res);
+        accum_el = listAppend(inAccumEl, res);
       then
         (accum_el, inExtends, ii);
     
@@ -625,9 +588,23 @@ algorithm
       then
         fail();
 
+    /*/ debugging case
+    case (_, _, _, _, _, _, _)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        (elem, _) = inElement;
+        print("Ignoring: " +& SCodeDump.unparseElementStr(elem) +& "\n");
+        (accum_el, rest_exts, ii) = mkElement_dispatch(inElement, inPrefixes, inExtends, inEnv, inPrefix, inAccumEl, inInstInfo);
+      then
+        (accum_el, rest_exts, ii); //(inAccumEl, inExtends, inInstInfo);*/
+    
     // Ignore any other kind of elements (class definitions, etc.).
-    else (inAccumEl, inExtends, inInstInfo);
-
+    else
+      equation
+        (elem, _) = inElement;
+        // print("Ignoring: " +& SCodeDump.unparseElementStr(elem) +& "\n");
+      then 
+        (inAccumEl, inExtends, inInstInfo);
   end matchcontinue;
 end mkElement_dispatch;
 
@@ -672,23 +649,15 @@ algorithm
       Option<SCode.Comment> cmt;
       Option<Absyn.Exp> condition;
       InstInfo ii;
-      Boolean sameEnv, isBasic;
-
-    /*/ an outer component, keep it like it is
-    case (SCode.COMPONENT(name = name, 
-        typeSpec = Absyn.TPATH(path = tpath),
-        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _)
-      equation
-        
-      then
-        ({inElement}, inInstInfo);*/
+      Boolean sameEnv, isBasic, isCompInsideType;
+      Option<Absyn.ArrayDim> arrayDimOpt;
 
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(
             name, 
             sprefixes,
             attributes as SCode.ATTR(arrayDims = ad),
-            typeSpec as Absyn.TPATH(path = tpath),
+            typeSpec as Absyn.TPATH(tpath, arrayDimOpt),
             smod,
             cmt, 
             condition,
@@ -696,8 +665,8 @@ algorithm
       equation
         // Look up the class of the component.
         (item, tpath, env) = SCodeLookup.lookupClassName(tpath, inEnv, info);
-        (item, env) = SCodeEnv.resolveRedeclaredItem(item, env);
-        SCodeCheck.checkPartialInstance(item, info);
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
+        // SCodeCheck.checkPartialInstance(item, info);
         
         // the class is defined in the same env as the component
         sameEnv = stringEq(SCodeEnv.getEnvName(inEnv), SCodeEnv.getEnvName(env));
@@ -724,7 +693,7 @@ algorithm
 
         // Apply redeclarations to the class definition and instantiate it.
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
-        (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
         (classes, cls_prefs, ii) = mkClassItem(item, mod, prefs, env, prefix, inInstInfo);
         //prefs = InstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
@@ -759,7 +728,7 @@ algorithm
             attributes,
             typeSpec,
             smod,
-            cmt, 
+            cmt,
             condition,
             info);
         
@@ -776,6 +745,31 @@ algorithm
 
   end match;
 end mkElement;
+
+
+protected function isInsideType
+"detects things like the types in equalityConstraint function
+ i.e. recursive types."
+  input Env inCompEnv;
+  input Absyn.Path inTypePath;
+  input Env inTypeEnv;
+  input Absyn.Info inInfo;
+  output Boolean componentIsInsideType;
+algorithm
+  componentIsInsideType := matchcontinue(inCompEnv, inTypePath, inTypeEnv, inInfo)
+    local 
+      Absyn.Path tpath;
+    case (_, _, _, _)
+      equation
+        tpath = SCodeLookup.qualifyPath(inTypePath, inTypeEnv, inInfo, NONE()); 
+      then 
+        Absyn.pathPrefixOf(tpath, SCodeEnv.getEnvPath(inCompEnv));
+    case (_, _, _, _) 
+      then 
+        Absyn.pathPrefixOf(inTypePath, SCodeEnv.getEnvPath(inCompEnv));
+    else false;
+  end matchcontinue;
+end  isInsideType;
 
 protected function appendUnion
   input SCode.Program inProg1;
@@ -822,10 +816,10 @@ algorithm
         // Look up the base class in the environment.
         (item, path, env) = SCodeLookup.lookupBaseClassName(path, inEnv, info);
         path = SCodeEnv.mergePathWithEnvPath(path, env);
-        checkRecursiveExtends(path, inEnv, info);
+        SCodeInst.checkRecursiveExtends(path, inEnv, info);
 
         // Apply the redeclarations.
-        (item, env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           inRedeclares, item, env, inEnv, inPrefix);
 
         // Instantiate the class.
@@ -863,32 +857,5 @@ algorithm
 
   end match;
 end mkExtends;
-
-protected function checkRecursiveExtends
-  input Absyn.Path inExtendedClass;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-algorithm
-  _ := matchcontinue(inExtendedClass, inEnv, inInfo)
-    local
-      Absyn.Path env_path;
-      String env_str, path_str;
-
-    case (_, _, _)
-      equation
-        env_path = SCodeEnv.getEnvPath(inEnv);
-        false = Absyn.pathPrefixOf(inExtendedClass, env_path);
-      then
-        ();
-
-    else
-      equation
-        path_str = Absyn.pathString(inExtendedClass);
-        Error.addSourceMessage(Error.RECURSIVE_EXTENDS, {path_str}, inInfo);
-      then
-        fail();
-
-  end matchcontinue;
-end checkRecursiveExtends;
 
 end SCodeInstShortcut;

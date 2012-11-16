@@ -4030,5 +4030,461 @@ algorithm
   end match;
 end makeElementProtected;
 
+public function replaceOrAddElementInProgram
+"replace the element in program at the specified path (includes the element name).
+ if the element does not exist at that location then it fails.
+ this function will fail if any of the path prefixes 
+ to the element are not found in the given program"
+  input Program inProgram;
+  input Element inElement;
+  input Absyn.Path inClassPath;
+  output Program outProgram;
+algorithm
+  outProgram := matchcontinue(inProgram, inElement, inClassPath)
+    local
+      Program sp;
+      Element c, e;
+      Absyn.Path p;
+      Absyn.Ident i;
+      
+    case (_, _, Absyn.QUALIFIED(i, p))
+      equation
+        e = getElementWithId(inProgram, i);
+        sp = getElementsFromElement(inProgram, e);
+        sp = replaceOrAddElementInProgram(sp, inElement, p);
+        e = replaceElementsInElement(inProgram, e, sp);
+        sp = replaceOrAddElementWithId(inProgram, e, i);
+      then 
+        sp;
+        
+    case (_, _, Absyn.IDENT(i))
+      equation
+        sp = replaceOrAddElementWithId(inProgram, inElement, i);
+      then 
+        sp;
+        
+    case (_, _, Absyn.FULLYQUALIFIED(p))
+      equation
+        sp = replaceOrAddElementInProgram(inProgram, inElement, p);
+      then 
+        sp;
+  end matchcontinue;
+end replaceOrAddElementInProgram;
+
+public function replaceOrAddElementWithId
+"replace the class in program at the specified id.
+ if the class does not exist at that location then is is added"
+  input Program inProgram;
+  input Element inElement;
+  input Ident inId;
+  output Program outProgram;
+algorithm
+  outProgram := matchcontinue(inProgram, inElement, inId)
+    local
+      Program sp, rest;
+      Element c, e;
+      Absyn.Path p;
+      Absyn.Ident i, n;
+    
+    case (CLASS(name = n)::rest, _, i)
+      equation
+        true = stringEq(n, i);
+      then 
+        inElement::rest;
+        
+    case (COMPONENT(name = n)::rest, _, i)
+      equation
+        true = stringEq(n, i);
+      then 
+        inElement::rest;
+
+    case (EXTENDS(baseClassPath = p)::rest, _, i)
+      equation
+        true = stringEq(Absyn.pathString(p), i);
+      then
+        inElement::rest;
+    
+    case (e::rest, _, i)
+      equation
+        sp = replaceOrAddElementWithId(rest, inElement, i);
+      then 
+        e::sp;
+    
+    // not found, add it
+    case ({}, _, i)
+      equation
+        sp = {inElement};
+      then 
+        sp;
+  end matchcontinue;
+end replaceOrAddElementWithId;
+
+public function getElementWithId
+"returns the element from the program having the name as the id.
+ if the element does not exist it fails"
+  input Program inProgram;
+  input Ident inId;
+  output Element outElement;
+algorithm
+  outElement := matchcontinue(inProgram, inId)
+    local
+      Program sp, rest;
+      Element c, e;
+      Absyn.Path p;
+      Absyn.Ident i, n;
+    
+    case ((e as CLASS(name = n))::rest, i)
+      equation
+        true = stringEq(n, i);
+      then 
+        e;
+        
+    case ((e as COMPONENT(name = n))::rest, i)
+      equation
+        true = stringEq(n, i);
+      then 
+        e;
+        
+    case ((e as EXTENDS(baseClassPath = p))::rest, i)
+      equation
+        true = stringEq(Absyn.pathString(p), i);
+      then 
+        e;
+    
+    case (_::rest, i)
+      equation
+        e = getElementWithId(rest, i);
+      then 
+        e;    
+    
+    // not found, fail
+    case ({}, i)
+      equation
+        print("SCode.getElementWithId: an element with name: " +& i +& " was not found in the given program.");
+      then 
+        fail();
+  end matchcontinue;
+end getElementWithId;
+
+public function getElementWithPath
+"returns the element from the program having the name as the id.
+ if the element does not exist it fails"
+  input Program inProgram;
+  input Absyn.Path inPath;
+  output Element outElement;
+algorithm
+  outElement := matchcontinue(inProgram, inPath)
+    local
+      Program sp, rest;
+      Element c, e;
+      Absyn.Path p;
+      Absyn.Ident i, n;
+    
+    case (_, Absyn.FULLYQUALIFIED(p))
+      then getElementWithPath(inProgram, p);
+    
+    case (_, Absyn.IDENT(i))
+      equation
+        e = getElementWithId(inProgram, i);
+      then 
+        e;
+        
+    case (_, Absyn.QUALIFIED(i, p))
+      equation
+        e = getElementWithId(inProgram, i);
+        sp = getElementsFromElement(inProgram, e);
+        e = getElementWithPath(sp, p);
+      then 
+        e;
+  end matchcontinue;
+end getElementWithPath;
+
+public function getElementsFromElement
+  input Program inProgram;
+  input Element inElement;
+  output Program outProgram;
+algorithm
+  outProgram := matchcontinue(inProgram, inElement)
+    local 
+      Program els;
+      Element e;
+      Absyn.Path p;
+      Absyn.Ident i;
+    
+    // a class with parts
+    case (_, CLASS(classDef = PARTS(elementLst = els))) then els;
+    // a class extends
+    case (_, CLASS(classDef = CLASS_EXTENDS(composition = PARTS(elementLst = els)))) then els;
+    // a derived class
+    case (_, CLASS(classDef = DERIVED(typeSpec = Absyn.TPATH(path = p))))
+      equation
+        e = getElementWithPath(inProgram, p);
+        els = getElementsFromElement(inProgram, e);
+      then 
+        els;
+  end matchcontinue;
+end getElementsFromElement;
+
+public function replaceElementsInElement
+"replaces elements in element, it will search for elements pointed by derived"
+  input Program inProgram;
+  input Element inElement;
+  input Program inElements;
+  output Element outElement;
+algorithm
+  outElement := matchcontinue(inProgram, inElement, inElements)
+    local 
+      Program els;
+      Element e;
+      Absyn.Path p;
+      Absyn.Ident i;
+      Ident name "the name of the class";
+      Prefixes prefixes "the common class or component prefixes";
+      Encapsulated encapsulatedPrefix "the encapsulated prefix";
+      Partial partialPrefix "the partial prefix";
+      Restriction restriction "the restriction of the class";
+      ClassDef classDef "the class specification";
+      Absyn.Info info "the class information";
+    
+    // a class with parts, non derived
+    case (_, CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info), _)
+      equation
+        (classDef, NONE()) = replaceElementsInClassDef(inProgram, classDef, inElements);
+      then 
+        CLASS(name, prefixes, encapsulatedPrefix, partialPrefix, restriction, classDef, info);
+
+    // a class derived
+    case (_, CLASS(classDef = classDef), _)
+      equation
+        (classDef, SOME(e)) = replaceElementsInClassDef(inProgram, classDef, inElements);
+      then 
+        e;
+
+  end matchcontinue;
+end replaceElementsInElement;
+
+public function replaceElementsInClassDef
+"replaces the elements in class definition.
+ if derived a SOME(element) is returned, 
+ otherwise the modified class def and NONE()"
+  input Program inProgram;
+  input ClassDef inClassDef;
+  input Program inElements;
+  output ClassDef outClassDef;
+  output Option<Element> outElementOpt;
+algorithm
+  (outClassDef, outElementOpt) := matchcontinue(inProgram, inClassDef, inElements)
+    local 
+      Program els;
+      Element e;
+      Absyn.Path p;
+      Absyn.Ident i;
+      list<Element> elementLst "the list of elements";
+      list<Equation> normalEquationLst "the list of equations";
+      list<Equation> initialEquationLst "the list of initial equations";
+      list<AlgorithmSection> normalAlgorithmLst "the list of algorithms";
+      list<AlgorithmSection> initialAlgorithmLst "the list of initial algorithms";
+      list<ConstraintSection> constraintLst "the list of constraints";
+      list<Absyn.NamedArg> clsattrs "the list of class attributes. Currently for Optimica extensions";
+      Option<ExternalDecl> externalDecl "used by external functions";
+      list<Annotation> annotationLst "the list of annotations found in between class elements, equations and algorithms";
+      Option<Comment> comment "the class comment";
+      Ident baseClassName "the name of the base class we have to extend";
+      Mod modifications "the modifications that need to be applied to the base class";
+      ClassDef composition;      
+    
+    // a derived class
+    case (_, DERIVED(typeSpec = Absyn.TPATH(path = p)), _)
+      equation
+        e = getElementWithPath(inProgram, p);
+        e = replaceElementsInElement(inProgram, e, inElements);
+      then 
+        (inClassDef, SOME(e));
+
+    // a parts
+    case (_, 
+          PARTS(
+            elementLst, 
+            normalEquationLst, 
+            initialEquationLst, 
+            normalAlgorithmLst, 
+            initialAlgorithmLst, 
+            constraintLst, 
+            clsattrs, 
+            externalDecl, 
+            annotationLst, 
+            comment), 
+          _)        
+      then 
+        (PARTS(inElements,
+               normalEquationLst, 
+               initialEquationLst, 
+               normalAlgorithmLst, 
+               initialAlgorithmLst, 
+               constraintLst, 
+               clsattrs, 
+               externalDecl, 
+               annotationLst, 
+               comment), NONE());
+        
+    // a class extends, non derived
+    case (_, CLASS_EXTENDS(baseClassName, modifications, composition), _)
+      equation
+        (composition, NONE()) = replaceElementsInClassDef(inProgram, composition, inElements);  
+      then 
+        (CLASS_EXTENDS(baseClassName, modifications, composition), NONE());
+        
+    // a class extends
+    case (_, CLASS_EXTENDS(baseClassName, modifications, composition), _)
+      equation
+        (composition, SOME(e)) = replaceElementsInClassDef(inProgram, composition, inElements);  
+      then 
+        (inClassDef, SOME(e));
+  end matchcontinue;
+end replaceElementsInClassDef;
+
+public function getElementName ""
+  input Element e;
+  output String s;
+algorithm
+  s := match(e)
+    local Absyn.Path p;
+    case (COMPONENT(name = s)) then s;
+    case (CLASS(name = s)) then s;
+    case (EXTENDS(baseClassPath = p)) then Absyn.pathString(p);
+  end match;
+end getElementName;
+
+public function setBaseClassPath 
+"@auhtor: adrpo
+ set the base class path in extends"
+  input Element inE;
+  input Absyn.Path inBcPath;
+  output Element outE;
+protected
+  Path bc;
+  Visibility v;
+  Mod m;
+  Option<Annotation> a;
+  Absyn.Info i;
+algorithm 
+  EXTENDS(bc, v, m, a, i) := inE;
+  outE := EXTENDS(inBcPath, v, m, a, i);
+end setBaseClassPath;
+
+public function getBaseClassPath 
+"@auhtor: adrpo
+ return the base class path in extends"
+  input Element inE;
+  output Absyn.Path outBcPath;
+protected
+  Path bc;
+  Visibility v;
+  Mod m;
+  Option<Annotation> a;
+  Absyn.Info i;
+algorithm 
+  EXTENDS(baseClassPath = outBcPath) := inE;
+end getBaseClassPath;
+
+public function setComponentTypeSpec 
+"@auhtor: adrpo
+ set the typespec path in component"
+  input Element inE;
+  input Absyn.TypeSpec inTypeSpec;
+  output Element outE;
+protected
+  Ident n;
+  Prefixes pr;
+  Attributes atr;
+  Absyn.TypeSpec ts;
+  Option<Comment> cmt;
+  Option<Absyn.Exp> cnd;
+  Path bc;
+  Visibility v;
+  Mod m;
+  Option<Annotation> a;
+  Absyn.Info i;
+algorithm 
+  COMPONENT(n, pr, atr, ts, m, cmt, cnd, i) := inE;
+  outE := COMPONENT(n, pr, atr, inTypeSpec, m, cmt, cnd, i);
+end setComponentTypeSpec;
+
+public function getComponentTypeSpec 
+"@auhtor: adrpo
+ get the typespec path in component"
+  input Element inE;
+  output Absyn.TypeSpec outTypeSpec;
+protected
+algorithm 
+  COMPONENT(typeSpec = outTypeSpec) := inE;
+end getComponentTypeSpec;
+
+public function isDerivedClass
+  input Element inClass;
+  output Boolean isDerived;
+algorithm
+  isDerived := match(inClass)
+    case CLASS(classDef = DERIVED(typeSpec = _)) then true;
+    else false;
+  end match;
+end isDerivedClass;
+
+public function setDerivedTypeSpec 
+"@auhtor: adrpo
+ set the base class path in extends"
+  input Element inE;
+  input Absyn.TypeSpec inTypeSpec;
+  output Element outE;
+protected
+  Ident n;
+  Prefixes pr;
+  Attributes atr;
+  Encapsulated ep;
+  Partial pp;
+  Restriction res;
+  ClassDef cd;  
+  Absyn.Info i;
+  Absyn.TypeSpec ts;
+  Option<Comment> cmt;
+  Mod m;  
+algorithm 
+  CLASS(n, pr, ep, pp, res, cd, i) := inE;
+  DERIVED(ts, m, atr, cmt) := cd;
+  cd := DERIVED(inTypeSpec, m, atr, cmt);
+  outE := CLASS(n, pr, ep, pp, res, cd, i);
+end setDerivedTypeSpec;
+
+public function getDerivedTypeSpec 
+"@auhtor: adrpo
+ set the base class path in extends"
+  input Element inE;
+  output Absyn.TypeSpec outTypeSpec;
+protected
+algorithm 
+  CLASS(classDef=DERIVED(typeSpec = outTypeSpec)) := inE;
+end getDerivedTypeSpec;
+
+public function setClassPrefixes
+  input Prefixes inPrefixes;
+  input Element cl;
+  output Element outCl;
+algorithm
+  outCl := matchcontinue(inPrefixes, cl)
+    local 
+      ClassDef parts;
+      Encapsulated e;
+      Ident id;
+      Absyn.Info info;
+      Restriction restriction;
+      Prefixes prefixes;
+      Partial pp;
+        
+    // not the same, change
+    case(_,CLASS(id,prefixes,e,pp,restriction,parts,info)) 
+      then CLASS(id,inPrefixes,e,pp,restriction,parts,info);
+  end matchcontinue;
+end setClassPrefixes;
+
 end SCode;
 

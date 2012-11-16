@@ -944,10 +944,10 @@ algorithm
       equation
         //env = SCodeEnv.setImportTableHidden(env, false);
         // Look up the variable type.
-        (item, type_env) = lookupTypeSpec(type_spec, env, info);
+        (item, _, type_env) = lookupTypeSpec(type_spec, env, info);
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        (item, type_env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv, InstTypes.emptyPrefix);
         (item, path, env) = lookupNameInItem(inName, item, type_env);
       then
@@ -996,10 +996,10 @@ algorithm
         modifications = mods, info = info)), _)
       equation
         // Look up the variables' type.
-        (item, type_env) = lookupTypeSpec(type_spec, inEnv, info);
+        (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
-        (item, type_env) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
+        (item, type_env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redeclares, item, type_env, inEnv, InstTypes.emptyPrefix);
         (item, cref) = lookupCrefInItem(inCref, item, type_env);
       then
@@ -1659,29 +1659,32 @@ public function lookupTypeSpec
   input Env inEnv;
   input Absyn.Info inInfo;
   output Item outItem;
+  output Absyn.TypeSpec outTypeSpec;
   output Env outTypeEnv;
 algorithm
-  (outItem, outTypeEnv) := match(inTypeSpec, inEnv, inInfo)
+  (outItem, outTypeSpec, outTypeEnv) := match(inTypeSpec, inEnv, inInfo)
     local
-      Absyn.Path path;
+      Absyn.Path path, newpath;
       Absyn.Ident name;
       Item item;
       Env env;
       SCode.Element cls;
+      Option<Absyn.ArrayDim> ad;
 
     // A normal type.
-    case (Absyn.TPATH(path = path), _, _)
+    case (Absyn.TPATH(path, ad), _, _)
       equation
-        (item, _, env) = lookupClassName(path, inEnv, inInfo);
+        (item, newpath, env) = lookupClassName(path, inEnv, inInfo);
       then
-        (item, env);
+        (item, Absyn.TPATH(newpath, ad), env);
 
     // A MetaModelica type such as list or tuple.
     case (Absyn.TCOMPLEX(path = Absyn.IDENT(name = name)), _, _)
       equation
         cls = makeDummyMetaType(name);
       then 
-        (SCodeEnv.CLASS(cls, SCodeEnv.emptyEnv, SCodeEnv.BASIC_TYPE()), 
+        (SCodeEnv.CLASS(cls, SCodeEnv.emptyEnv, SCodeEnv.BASIC_TYPE()),
+          inTypeSpec,
           SCodeEnv.emptyEnv);
          
   end match;

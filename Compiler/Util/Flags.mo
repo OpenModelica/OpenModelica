@@ -383,7 +383,10 @@ constant DebugFlag DUMP_CONST_REPL = DEBUG_FLAG(108, "dumpConstrepl",
   Util.gettext("dump the found replacements for constants"));
 constant DebugFlag PEDANTIC = DEBUG_FLAG(109, "pedantic",
   Util.gettext("switch into pedantic debug-mode, to get much more feedback"));
-
+constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(110, "showRedeclareAnalysis",
+  Util.gettext("prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)"));
+constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(111, "showProgramChanges",
+    Util.gettext("prints the replacements to be done on program to remove redeclares (only works with +d=scodeInstShortcut)"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -498,7 +501,9 @@ constant list<DebugFlag> allDebugFlags = {
   SCODE_INST_SHORTCUT,
   SHOW_SCODE,
   DUMP_CONST_REPL,
-  PEDANTIC
+  PEDANTIC,
+  SHOW_REDECLARE_ANALYSIS,
+  SHOW_PROGRAM_CHANGES
 };
 
 // CONFIGURATION FLAGS

@@ -85,6 +85,8 @@ Patternm.mo \
 Prefix.mo \
 PrefixUtil.mo \
 SCode.mo \
+SCodeApplyRedeclare.mo \
+SCodeAnalyseRedeclare.mo \
 SCodeCheck.mo \
 SCodeDependency.mo \
 SCodeDump.mo \

@@ -94,10 +94,10 @@ typedef void* iconv_t;
 #define MAXPATHLEN MAX_PATH
 #define S_IFLNK  0120000  /* symbolic link */
 
-#if defined(__MINGW32__) || defined(_MSC_VER) /* include dirent for MINGW */
 #include <sys/types.h>
 #include <dirent.h>
-#endif
+
+char *realpath(const char *path, char resolved_path[PATH_MAX]);
 
 #else
 /* includes/defines specific for LINUX/OS X */
@@ -263,22 +263,57 @@ extern int SystemImpl__setLDFlags(const char *str)
   return 0;
 }
 
+extern char* SystemImpl__pwd()
+{
+  char buf[MAXPATHLEN];
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  char* buf2;
+  LPTSTR bufPtr=buf;
+  DWORD bufLen = MAXPATHLEN;
+  if (!GetCurrentDirectory(bufLen,bufPtr)) {
+    fprintf(stderr, "System.pwd failed\n");
+    return NULL;
+  }
+
+  /* Make sure windows paths use fronslash and not backslash */
+  return _replace(buf,"\\","/"); // free this result later
+#else
+  if (NULL == getcwd(buf,MAXPATHLEN)) {
+    fprintf(stderr, "System.pwd failed\n");
+    return NULL;
+  }
+  return strdup(buf); // to mimic Windows behaviour
+#endif
+}
+
 extern int SystemImpl__regularFileExists(const char* str)
 {
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(_MSC_VER)
   int ret_val;
   void *res;
   WIN32_FIND_DATA FileData;
   HANDLE sh;
 
   sh = FindFirstFile(str, &FileData);
+
   if (sh == INVALID_HANDLE_VALUE) {
+    if (strlen(str) >= MAXPATHLEN)
+    {
+      const char *c_tokens[1]={str};
+      c_add_message(85, /* error opening file */
+        ErrorType_scripting,
+        ErrorLevel_error,
+        gettext("Error opening file: %s."),
+        c_tokens,
+        1);
+    }
     return 0;
   }
   FindClose(sh);
   return ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0);
 #else
   struct stat buf;
+  /* adrpo: TODO: check if str leads to a path > PATH_MAX, maybe use realpath impl. from below */
   if (stat(str, &buf)) return 0;
   return (buf.st_mode & S_IFREG) != 0;
 #endif
@@ -645,26 +680,6 @@ double SystemImpl__time()
 {
   clock_t cl = clock();
   return (double)cl / (double)CLOCKS_PER_SEC;
-}
-
-extern char* SystemImpl__pwd()
-{
-  char buf[MAXPATHLEN];
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  char* buf2;
-  LPTSTR bufPtr=buf;
-  DWORD bufLen = MAXPATHLEN;
-  GetCurrentDirectory(bufLen,bufPtr);
-
-  /* Make sure windows paths use fronslash and not backslash */
-  return _replace(buf,"\\","/"); // free this result later
-#else
-  if (NULL == getcwd(buf,MAXPATHLEN)) {
-    fprintf(stderr, "System.pwd failed\n");
-    return NULL;
-  }
-  return strdup(buf); // to mimic Windows behaviour
-#endif
 }
 
 extern int SystemImpl__directoryExists(const char *str)
@@ -1974,6 +1989,146 @@ const char* SystemImpl__gettext(const char *msgid)
   return gettext(msgid);
 #endif
 }
+
+
+#if defined(__MINGW32__) || defined(_MSC_VER)
+/*
+realpath() Win32 implementation, supports non standard glibc extension
+This file has no copyright assigned and is placed in the Public Domain.
+Written by Nach M. S. September 8, 2005
+*/
+
+#include <windows.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <errno.h>
+#include <sys/stat.h>
+
+char *realpath(const char *path, char resolved_path[PATH_MAX])
+{
+  char *return_path = 0;
+
+  if (path) //Else EINVAL
+  {
+    if (resolved_path)
+    {
+      return_path = resolved_path;
+    }
+    else
+    {
+      //Non standard extension that glibc uses
+      return_path = malloc(PATH_MAX);
+    }
+
+    if (return_path) //Else EINVAL
+    {
+      //This is a Win32 API function similar to what realpath() is supposed to do
+      size_t size = GetFullPathNameA(path, PATH_MAX, return_path, 0);
+
+      //GetFullPathNameA() returns a size larger than buffer if buffer is too small
+      if (size > PATH_MAX)
+      {
+        if (return_path != resolved_path) //Malloc'd buffer - Unstandard extension retry
+        {
+          size_t new_size;
+
+          free(return_path);
+          return_path = malloc(size);
+
+          if (return_path)
+          {
+            new_size = GetFullPathNameA(path, size, return_path, 0); //Try again
+
+            if (new_size > size) //If it's still too large, we have a problem, don't try again
+            {
+              free(return_path);
+              return_path = 0;
+              errno = ENAMETOOLONG;
+            }
+            else
+            {
+              size = new_size;
+            }
+          }
+          else
+          {
+            //I wasn't sure what to return here, but the standard does say to return EINVAL
+            //if resolved_path is null, and in this case we couldn't malloc large enough buffer
+            errno = EINVAL;
+          }
+        }
+        else //resolved_path buffer isn't big enough
+        {
+          return_path = 0;
+          errno = ENAMETOOLONG;
+        }
+      }
+
+      //GetFullPathNameA() returns 0 if some path resolve problem occured
+      if (!size)
+      {
+        if (return_path != resolved_path) //Malloc'd buffer
+        {
+          free(return_path);
+        }
+
+        return_path = 0;
+
+        //Convert MS errors into standard errors
+        switch (GetLastError())
+        {
+          case ERROR_FILE_NOT_FOUND:
+            errno = ENOENT;
+            break;
+
+          case ERROR_PATH_NOT_FOUND: case ERROR_INVALID_DRIVE:
+            errno = ENOTDIR;
+            break;
+
+          case ERROR_ACCESS_DENIED:
+            errno = EACCES;
+            break;
+
+          default: //Unknown Error
+            errno = EIO;
+            break;
+        }
+      }
+
+      //If we get to here with a valid return_path, we're still doing good
+      if (return_path)
+      {
+        struct stat stat_buffer;
+
+        //Make sure path exists, stat() returns 0 on success
+        if (stat(return_path, &stat_buffer))
+        {
+          if (return_path != resolved_path)
+          {
+            free(return_path);
+          }
+
+          return_path = 0;
+          //stat() will set the correct errno for us
+        }
+        //else we succeeded!
+      }
+    }
+    else
+    {
+      errno = EINVAL;
+    }
+  }
+  else
+  {
+    errno = EINVAL;
+  }
+
+  return return_path;
+}
+#endif
+
+
 
 #ifdef __cplusplus
 }

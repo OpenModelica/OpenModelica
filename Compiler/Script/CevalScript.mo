@@ -1308,12 +1308,22 @@ algorithm
         (cache,scriptFile,st) = buildOpenTURNSInterface(cache,env,vals,st,msg);
       then    
         (cache,Values.STRING(scriptFile),st);
+    case(cache,env,"buildOpenTURNSInterface",vals,st,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"buildOpenTURNSInterface failed. Use getErrorString() to see why."}); 
+      then    
+        fail();
         
     case(cache,env,"runOpenTURNSPythonScript",vals,st,_) 
       equation
         (cache,logFile,st) = runOpenTURNSPythonScript(cache,env,vals,st,msg);
       then    
         (cache,Values.STRING(logFile),st);
+    case(cache,env,"runOpenTURNSPythonScript",vals,st,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"runOpenTURNSPythonScript failed. Use getErrorString() to see why"}); 
+      then    
+        fail();
         
     case (cache,env,"buildModel",_,st,_) /* failing build_model */
       then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st);
@@ -2848,13 +2858,10 @@ algorithm
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
         scodeP = SCodeSimplify.simplifyProgram(scodeP);
-        (_, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
-        scodePNew = SCodeInstShortcut.translate(className, senv);
-        scodeP = listAppend(scodeP, scodePNew);
-        // use just last ident as translate just generates that!
-        classNameStr = Absyn.pathLastIdent(className);
-        newClassName = Absyn.IDENT(classNameStr);
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodeP,newClassName);
+        (scodeP, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
+        scodePNew = SCodeInstShortcut.translate(className, senv, scodeP);
+        (scodePNew, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodePNew);
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodePNew,className);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
       then 
         (cache,env,dae,Interactive.SYMBOLTABLE(p,aDep,fp,ic_1,iv,cf,lf));
@@ -3430,7 +3437,9 @@ algorithm
       //print("lowered class\n");      
       //print("calling generateOpenTurnsInterface\n");  
       scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
-    then (cache,scriptFile,inSt);
+    then 
+      (cache,scriptFile,inSt);
+  
   end match;
 end buildOpenTURNSInterface;
 

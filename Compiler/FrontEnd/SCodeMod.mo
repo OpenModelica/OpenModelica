@@ -143,7 +143,7 @@ public function applyModifications
   output list<tuple<SCode.Element, Modifier>> outElements;
 protected
   list<tuple<String, Modifier>> mods;
-  list<tuple<String, Option<Absyn.Path>, Modifier>> upd_mods;
+  list<tuple<String, list<Absyn.Path>, Modifier>> upd_mods;
   list<tuple<SCode.Element, Modifier>> el;
 algorithm
   mods := splitMod(inMod, inPrefix);
@@ -167,7 +167,7 @@ protected function updateModElement
   input tuple<String, Modifier> inMod;
   input Env inEnv;
   input Prefix inPrefix;
-  output tuple<String, Option<Absyn.Path>, Modifier> outMod;
+  output tuple<String, list<Absyn.Path>, Modifier> outMod;
 protected
 algorithm
   outMod := matchcontinue(inMod, inEnv, inPrefix)
@@ -176,23 +176,36 @@ algorithm
       Modifier mod;
       Absyn.Path path;
       Absyn.Info info;
+      list<Absyn.Path> baseClasses;
 
     // Check if the element can be found in the local scope first.
     case ((name, mod), _, _)
       equation
         (_, _) = SCodeLookup.lookupInClass(name, inEnv);
       then
-        ((name, NONE(), mod));
+        ((name, {}, mod));
 
     // Check which extends the element comes from.
     /*************************************************************************/
     // TODO: The element might come from multiple extends!
+    // adrpo: tried to fix it by using lookupBaseClasses but it doesn't work yet.
     /*************************************************************************/
+    
+    case ((name, mod), _, _)
+      equation
+        baseClasses = SCodeLookup.lookupBaseClasses(name, inEnv);
+        /*
+        print("Modifier: " +& name +& 
+              "\n\tfound in: " +& stringDelimitList(List.map(baseClasses, Absyn.pathString), ", ") +& 
+              "\n\tenv: " +& SCodeEnv.getEnvName(inEnv) +& "\n");*/
+      then
+        ((name, baseClasses, mod));
+
     case ((name, mod), _, _)
       equation
         path = SCodeLookup.lookupBaseClass(name, inEnv);
       then
-        ((name, SOME(path), mod));
+        ((name, {path}, mod));
 
     case ((name, mod), _, _)
       equation
@@ -221,7 +234,7 @@ algorithm
 end getModifierInfo;
 
 protected function applyModifications2
-  input tuple<String, Option<Absyn.Path>, Modifier> inMod;
+  input tuple<String, list<Absyn.Path>, Modifier> inMod;
   input list<tuple<SCode.Element, Modifier>> inElements;
   output list<tuple<SCode.Element, Modifier>> outElements;
 algorithm
@@ -231,14 +244,15 @@ algorithm
       Absyn.Path path, bc_path;
       Modifier outer_mod, inner_mod;
       SCode.Element el;
-      list<tuple<SCode.Element, Modifier>> rest_el;
+      list<tuple<SCode.Element, Modifier>> rest_el, els;
       tuple<SCode.Element, Modifier> e;
+      list<Absyn.Path> baseClasses;
 
     // No more elements, this should actually be an error!
     case (_, {}) then {};
 
-    // The optional path is NONE, we are looking for an element.
-    case ((id, NONE(), outer_mod),
+    // The optional path is nothing, we are looking for an element.
+    case ((id, {}, outer_mod),
         (el as SCode.COMPONENT(name = name), inner_mod) :: rest_el)
       equation
         true = stringEq(id, name);
@@ -247,19 +261,14 @@ algorithm
       then
         (el, inner_mod) :: rest_el;
 
-    // The optional path is SOME, we are looking for an extends.
-    case ((id, SOME(path), outer_mod),
+    // The optional path is some list, we are looking for an extends.
+    case ((id, baseClasses, outer_mod),
         (el as SCode.EXTENDS(baseClassPath = bc_path), inner_mod) :: rest_el)
       equation
-        true = Absyn.pathEqual(path, bc_path);
-        // Element name matches. Create a new modifier with the given modifier
-        // as a named sub modifier, since the modifier is meant for an element
-        // in the extended class, and merge the modifiers.
-        outer_mod = InstTypes.MODIFIER("", SCode.NOT_FINAL(), SCode.NOT_EACH(),
-          InstTypes.UNBOUND(), {outer_mod}, Absyn.dummyInfo);
-        inner_mod = mergeMod(outer_mod, inner_mod);
+        els = applyModsBaseClasses(inMod, (el, inner_mod));
+        els =  listAppend(els, rest_el);
       then
-        (el, inner_mod) :: rest_el;
+        els;
 
     // No match, search the rest of the elements.
     case (_, e :: rest_el)
@@ -270,7 +279,46 @@ algorithm
 
   end matchcontinue;
 end applyModifications2;
-        
+
+protected function applyModsBaseClasses
+  input tuple<String, list<Absyn.Path>, Modifier> inMod;
+  input tuple<SCode.Element, Modifier> inElement;
+  output list<tuple<SCode.Element, Modifier>> outElements;
+algorithm
+  outElements := matchcontinue(inMod, inElement)
+    local
+      String name, id;
+      Absyn.Path path, bc_path;
+      Modifier outer_mod, inner_mod;
+      SCode.Element el;
+      list<tuple<SCode.Element, Modifier>> rest_el;
+      tuple<SCode.Element, Modifier> e;
+      list<Absyn.Path> baseClasses;
+    
+    // case ((id, {}, outer_mod), _) then {};
+    
+    case ((id, path::baseClasses, outer_mod),
+          (el as SCode.EXTENDS(baseClassPath = bc_path), inner_mod))
+      equation
+        true = Absyn.pathEqual(path, bc_path);
+        // Element name matches. Create a new modifier with the given modifier
+        // as a named sub modifier, since the modifier is meant for an element
+        // in the extended class, and merge the modifiers.
+        outer_mod = InstTypes.MODIFIER("", SCode.NOT_FINAL(), SCode.NOT_EACH(), InstTypes.UNBOUND(), {outer_mod}, Absyn.dummyInfo);
+        inner_mod = mergeMod(outer_mod, inner_mod);
+      then
+        {(el, inner_mod)};
+    
+    case ((id, path::baseClasses, outer_mod),
+          (el as SCode.EXTENDS(baseClassPath = bc_path), inner_mod))
+      equation
+        false = Absyn.pathEqual(path, bc_path);
+        rest_el = applyModsBaseClasses((id, baseClasses, outer_mod), inElement);
+      then
+        rest_el;
+  end matchcontinue;
+end applyModsBaseClasses;
+
 public function mergeMod
   "Merges two modifiers, where the outer modifier has higher priority than the
    inner one."
