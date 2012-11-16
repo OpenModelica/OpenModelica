@@ -1025,6 +1025,15 @@ case SES_LINEAR(__) then
   double** <%aname%> = newDenseMat(<%size%>,<%size%>);
   double* <%bname%> = newRealArray(<%size%>);
   long int* <%pname%> = newLintArray(<%size%>);
+  for (int i = 0; i < <%size%>; i++)
+  {
+      for (int j = 0; j <%size%>; j++)
+	  {
+		  <%aname%>[i][j] = 0.0;
+	  }
+	  <%pname%>[i] = i;
+	  <%bname%>[i] = 0.0;
+  }
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
      let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFD*/)
