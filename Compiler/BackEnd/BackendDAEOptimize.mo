@@ -2492,6 +2492,7 @@ algorithm
         (aliasVars,(_,varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceAliasVarTraverser,(repl,{}));
         aliasVars = List.fold(varlst,fixAliasConstBindings,aliasVars);
         (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceVarTraverser,repl);
+        (inieqns,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,repl);
         (remeqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,repl);
         (whenClauseLst1,_) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         systs1 = removeSimpleEquationsShared1(systs,{},repl);
@@ -2630,32 +2631,10 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
     case ((e,repl))
       equation
-        ({e1},_) = BackendVarTransform.replaceEquations({e},repl,NONE());
+        ({e1},_) = BackendVarTransform.replaceEquations({e},repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
       then ((e1,repl));
   end match;
 end replaceEquationTraverser;
-
-
-protected function replaceWhenClauseTraverser "function: replaceWhenClauseTraverser
-  author: Frenkel TUD 2010-04
-  It is possible to change the when clause.
-"
-  input tuple<DAE.Exp,BackendVarTransform.VariableReplacements> inTpl;
-  output tuple<DAE.Exp,BackendVarTransform.VariableReplacements> outTpl;
-algorithm
-  outTpl:=
-  match (inTpl)
-    local 
-      DAE.Exp e,e1;
-      BackendVarTransform.VariableReplacements repl;
-    case ((e,repl))
-      equation
-        (e1,_) = BackendVarTransform.replaceExp(e, repl, NONE());
-      then
-        ((e1,repl));
-    case _ then inTpl;
-  end match;
-end replaceWhenClauseTraverser;
 
 protected function replacementsInEqns2
 "function: replacementsInEqns1
@@ -10186,6 +10165,9 @@ algorithm
         (_::{},_) = BackendVariable.getVar(cr, knvars);
       then
         ((e,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
+      then
+        ((e,(knvars,aliasvars,true)));
     case((e as DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
       equation
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
@@ -10199,6 +10181,9 @@ algorithm
         zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
       then 
         ((zero,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
+      then
+        ((DAE.BCONST(false),(knvars,aliasvars,true)));
     case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
       equation
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
@@ -10212,6 +10197,9 @@ algorithm
         zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
       then
         ((zero,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
+      then
+        ((DAE.BCONST(false),(knvars,aliasvars,true)));
     case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
       equation
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
@@ -10238,18 +10226,27 @@ algorithm
         (_::{},_) = BackendVariable.getVar(cr, knvars);
       then
         e;
+    case (DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),_)
+      then
+        e;
     case(DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),_)
       equation
         (_::{},_) = BackendVariable.getVar(cr, knvars);
         e = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
       then 
         e;
+    case (DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),_)
+      then
+        DAE.BCONST(false);
     case(DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),_)
       equation
         (_::{},_) = BackendVariable.getVar(cr, knvars);
         e = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
       then 
         e;
+    case (DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),_)
+      then
+        DAE.BCONST(false);
     else
       then
         inE;
