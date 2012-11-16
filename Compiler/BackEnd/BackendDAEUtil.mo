@@ -9293,62 +9293,66 @@ algorithm
       Integer nIncidences;
       BackendDAE.Variables vars;
       BackendDAE.Var var;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr, preCR;
       Option<DAE.Exp> startValue;
       BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
       
       BackendDAE.Equation eqn;
-      DAE.Exp e, crExp, startExp;
+      DAE.Exp e, crExp, startExp, preExp;
       DAE.Type tp;
       String crStr;
       
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs), _, _) equation
       nVars = arrayLength(inMT);
       true = intGt(inI, nVars);
-      
-      vars = BackendVariable.compressVariables(vars);
-      system = BackendDAE.EQSYSTEM(vars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING());
-    then system;
+    then inSystem;
     
     case (_, _, _) equation
       nIncidences = listLength(inMT[inI]);
       true = intGt(nIncidences, 0);
+      
       system = analyzeInitialSystem1(inSystem, inMT, inI+1);
     then system;
     
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs), _, _) equation
-      true = Flags.isSet(Flags.PEDANTIC);
+      nIncidences = listLength(inMT[inI]);
+      true = intEq(nIncidences, 0);
       
       var = BackendVariable.getVarAt(vars, inI);
-      cr = BackendVariable.varCref(var);
-      true = ComponentReference.isPreCref(cr);
+      preCR = BackendVariable.varCref(var);
+      true = ComponentReference.isPreCref(preCR);
+      cr = ComponentReference.popPreCref(preCR);
       
-      crStr = ComponentReference.crefStr(cr);      
-      Error.addCompilerWarning("Following pre-variable does not appear in any of the equations of the initialization system. It will be removed: " +& crStr);
+      crStr = ComponentReference.crefStr(cr);
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "pre(" +& crStr +& ") does not appear in the initialization system. Assuming fixed start value for " +& crStr);
+
+      tp = BackendVariable.varType(var);
+            
+      e = Expression.crefExp(cr);
+      tp = Expression.typeof(e);
+      startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       
-      (vars, var) = BackendVariable.removeVar(inI, vars);
+      e = Expression.crefExp(preCR);
+      
+      eqn = BackendDAE.EQUATION(e, startExp, DAE.emptyElementSource);
+      
+      orderedEqs = BackendEquation.equationAdd(eqn, orderedEqs);
+      
       system = BackendDAE.EQSYSTEM(vars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING());
       system = analyzeInitialSystem1(system, inMT, inI+1);
     then system;
     
     case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs), _, _) equation
-      true = Flags.isSet(Flags.PEDANTIC);
+      nIncidences = listLength(inMT[inI]);
+      true = intEq(nIncidences, 0);
       
       var = BackendVariable.getVarAt(vars, inI);
       cr = BackendVariable.varCref(var);
       false = ComponentReference.isPreCref(cr);
       
-      crStr = ComponentReference.crefStr(cr);
-      Error.addCompilerWarning("Following variable does not appear in any of the equations of the initialization system: " +& crStr);
+      crStr = "Following variable does not appear in any of the equations of the initialization system: " +& ComponentReference.crefStr(cr);
+      Error.addMessage(Error.INTERNAL_ERROR, {crStr});
     then fail();
-    
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=orderedEqs), _, _) equation
-      false = Flags.isSet(Flags.PEDANTIC);
-      
-      (vars, var) = BackendVariable.removeVar(inI, vars);
-      system = BackendDAE.EQSYSTEM(vars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING());
-      system = analyzeInitialSystem1(system, inMT, inI+1);
-    then system;
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function analyzeInitialSystem1 failed"});

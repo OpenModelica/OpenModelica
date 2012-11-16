@@ -1145,6 +1145,17 @@ algorithm
   end match;
 end isPreCref;
 
+public function popPreCref
+  input ComponentRef inCR;
+  output ComponentRef outCR;
+algorithm
+  outCR := match(inCR)
+    local ComponentRef cr;
+    case(DAE.CREF_QUAL(ident = "$PRE", componentRef=cr)) then cr;
+    else then inCR;
+  end match;
+end popPreCref;
+
 public function crefIsFirstArrayElt
 "function: crefIsFirstArrayElt
   This function returns true for component references that
