@@ -179,7 +179,7 @@ int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
  * Wrapper for the FMI function fmiInitialize.
  * Returns FMI Event Info i.e fmi1_event_info_t.
  */
-void* fmiInitialize_OMC(void* fmi, void* inEventInfo, double flowInit, int* status)
+void* fmiInitialize_OMC(void* fmi, void* inEventInfo, double flowInit)
 {
   static int init = 0;
   if (!init) {
@@ -187,8 +187,7 @@ void* fmiInitialize_OMC(void* fmi, void* inEventInfo, double flowInit, int* stat
     fmi1_boolean_t toleranceControlled = fmi1_true;
     fmi1_real_t relativeTolerance = 0.001;
     fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
-    fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
-    *status = fmistatus;
+    fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
     return eventInfo;
   }
   return inEventInfo;
@@ -200,12 +199,7 @@ void* fmiInitialize_OMC(void* fmi, void* inEventInfo, double flowInit, int* stat
  */
 void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowInit, double* states)
 {
-  int i;
-  for (i = 0 ; i < numberOfContinuousStates ; i++)
-    fprintf(stderr, "State before %d = %f\n", i, states[i]);fflush(NULL);
   fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
-  for (i = 0 ; i < numberOfContinuousStates ; i++)
-      fprintf(stderr, "State after %d = %f\n", i, states[i]);fflush(NULL);
 }
 
 /*
