@@ -705,7 +705,7 @@ algorithm
       equation 
         true = DAEUtil.expTypeComplex(ty);
         size = Expression.sizeOf(ty);
-          print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)) +& "\n");
+        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)) +& "\n");
        then
         ((syst,shared,repl,BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)::eqns,b));
     // array types to array equations  
@@ -714,7 +714,7 @@ algorithm
         true = DAEUtil.expTypeArray(ty);
         dims = Expression.arrayDimension(ty);
         ds = Expression.dimensionsSizes(dims);
-          print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)) +& "\n");
+        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)) +& "\n");
       then
         ((syst,shared,repl,BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)::eqns,b));
     // other types  
@@ -723,7 +723,7 @@ algorithm
         b1 = DAEUtil.expTypeComplex(ty);
         b2 = DAEUtil.expTypeArray(ty);
         false = b1 or b2;
-          print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.EQUATION(lhs,rhs,source)) +& "\n");
+        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.EQUATION(lhs,rhs,source)) +& "\n");
         //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
       then
         ((syst,shared,repl,BackendDAE.EQUATION(lhs,rhs,source)::eqns,b));
@@ -823,7 +823,7 @@ algorithm
       DAE.Type ty;
     case(_,_,_,_,_,_,_,(syst,shared,_,_,_))
       equation
-          print("Found Alias " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ComponentReference.printComponentRefStr(cr2) +& " Negate:" +& boolString(negate) +& ".\n");
+        //  print("Found Alias " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ComponentReference.printComponentRefStr(cr2) +& " Negate:" +& boolString(negate) +& ".\n");
         // get Variables
         (vars1,ilst1,varskn1,time1) =  getVars(cr1,syst,shared);
         (vars2,ilst2,varskn2,time2) =  getVars(cr2,syst,shared);
@@ -10282,6 +10282,7 @@ algorithm
       BackendDAE.EqSystems systs;  
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs)))
       equation
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
       then 
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs));
