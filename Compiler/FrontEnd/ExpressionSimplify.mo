@@ -234,6 +234,12 @@ algorithm
     case ((e as DAE.CALL(path=Absyn.IDENT("pre"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
       then
         ((e,(b,options)));
+    case ((e as DAE.CALL(path=Absyn.IDENT("change"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
+      then
+        ((e,(b,options)));
+    case ((e as DAE.CALL(path=Absyn.IDENT("edge"), expLst={DAE.CREF(componentRef=_)}), (b, options)))
+      then
+        ((e,(b,options)));
     
     case ((e1 as DAE.CALL(path=Absyn.IDENT("pre"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
       equation
@@ -241,23 +247,35 @@ algorithm
         e1 = Util.if_(b2,e,e1);
       then
         ((e1,(b or b2,options)));
+    case ((e1 as DAE.CALL(path=Absyn.IDENT("change"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
+      equation
+        b2 = Expression.isConst(exp);
+        e1 = Util.if_(b2,DAE.BCONST(false),e1);
+      then
+        ((e1,(b or b2,options)));
+    case ((e1 as DAE.CALL(path=Absyn.IDENT("edge"), expLst={e as DAE.ASUB(exp = exp)}), (b, options)))
+      equation
+        b2 = Expression.isConst(exp);
+        e1 = Util.if_(b2,DAE.BCONST(false),e1);
+      then
+        ((e1,(b or b2,options)));
 
     // move pre inside
     case ((DAE.CALL(path=Absyn.IDENT("pre"), expLst={e}), (b, options)))
       equation
-        ((e,_)) = Expression.traverseExp(e,preCref,false);
+        ((e,b2)) = Expression.traverseExpTopDown(e,preCref,false);
       then
-        ((e,(true,options)));
+        ((e,(b or b2,options)));
     case ((DAE.CALL(path=Absyn.IDENT("change"), expLst={e}), (b, options)))
       equation
-        ((e,_)) = Expression.traverseExp(e,changeCref,false);
+        ((e,b2)) = Expression.traverseExpTopDown(e,changeCref,false);
       then
-        ((e,(true,options)));
+        ((e,(b or b2,options)));
     case ((DAE.CALL(path=Absyn.IDENT("edge"), expLst={e}), (b, options)))
       equation
-        ((e,_)) = Expression.traverseExp(e,edgeCref,false);
+        ((e,b2)) = Expression.traverseExpTopDown(e,edgeCref,false);
       then
-        ((e,(true,options)));
+        ((e,(b or b2,options)));
         
     // normal call 
     case ((e as DAE.CALL(expLst=expl),(_,options)))
@@ -410,43 +428,46 @@ end simplifyWork;
 
 protected function preCref
   input tuple<DAE.Exp,Boolean> iExp;
-  output tuple<DAE.Exp,Boolean> oExp;
+  output tuple<DAE.Exp,Boolean,Boolean> oExp;
 algorithm
   oExp := match(iExp)
     local
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("pre"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),true));
-    else then iExp;
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("pre"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CALL(path=Absyn.IDENT("pre")),b)) then ((e,false,b));
+    case ((e,b)) then ((e,not b,b));
   end match;
 end preCref;
 
 protected function changeCref
   input tuple<DAE.Exp,Boolean> iExp;
-  output tuple<DAE.Exp,Boolean> oExp;
+  output tuple<DAE.Exp,Boolean,Boolean> oExp;
 algorithm
   oExp := match(iExp)
     local
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("change"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),true));
-    else then iExp;
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("change"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CALL(path=Absyn.IDENT("change")),b)) then ((e,false,b));
+    case ((e,b)) then ((e,not b,b));
   end match;
 end changeCref;
 
 protected function edgeCref
   input tuple<DAE.Exp,Boolean> iExp;
-  output tuple<DAE.Exp,Boolean> oExp;
+  output tuple<DAE.Exp,Boolean,Boolean> oExp;
 algorithm
   oExp := match(iExp)
     local
       DAE.Exp e;
       Boolean b;
       DAE.Type ty;
-    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("edge"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),true));
-    else then iExp;
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("edge"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),false,true));
+    case ((e as DAE.CALL(path=Absyn.IDENT("edge")),b)) then ((e,false,b));
+    case ((e,b)) then ((e,not b,b));
   end match;
 end edgeCref;
 

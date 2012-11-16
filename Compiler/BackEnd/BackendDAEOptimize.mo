@@ -1317,7 +1317,7 @@ algorithm
         // remove var from vars        
         (syst,_) = BackendVariable.removeVarDAE(i,syst);        
       then
-        ((syst,shared,repl,eqns,b));
+        ((syst,shared,repl,eqns,true));
     // alias a
     case (_,_,_,_,_,(syst,shared,repl,eqns,b))
       equation
@@ -1341,7 +1341,7 @@ algorithm
         repl = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         repl = Debug.bcallret3(bs,BackendVarTransform.addDerConstRepl,cr,DAE.RCONST(0.0),repl,repl);
       then
-        ((syst,shared,repl,eqns,b));
+        ((syst,shared,repl,eqns,true));
     // const
     case (_,_,_,_,_,(syst,shared,repl,eqns,b))
       equation
@@ -1362,8 +1362,9 @@ algorithm
         // add to replacements if constant
         repl = Debug.bcallret4(constExp,BackendVarTransform.addReplacement,repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator),repl);
         // if state der(var) has to replaced to 0
+        repl = Debug.bcallret3(bs,BackendVarTransform.addDerConstRepl, cr, DAE.RCONST(0.0), repl, repl);
       then
-        ((syst,shared,repl,eqns,b)); 
+        ((syst,shared,repl,eqns,true));
   end matchcontinue;
 end constOrAliasNew;
 
