@@ -375,7 +375,7 @@ algorithm
       then
         (rhs,asserts);
         
-    // a^b = f(..) -> a = sign(pre(a))*(f(...)^(1/b))   
+    // a^b = f(..) -> a = sign(pre(a))*(f(...)^(1/b))
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         e = Expression.makeDiff(inExp1,inExp2);

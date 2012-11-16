@@ -410,7 +410,7 @@ protected
   list<BackendDAE.Equation> eqns;
 algorithm
   (_,_,repl,_,_) := inTpl;
-  (eqns,_) := BackendVarTransform.replaceEquations({eqn},repl,NONE());
+  (eqns,_) := BackendVarTransform.replaceEquations({eqn},repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
   // print("Check Equations:\n"); BackendDump.dumpEqns(eqns);
   outTpl := List.fold(eqns,removeSimpleEquationsFastFinder1,inTpl);
 end removeSimpleEquationsFastFinder;
@@ -818,20 +818,20 @@ algorithm
       BackendDAE.Shared shared;
       list<BackendDAE.Var> vars1,vars2,varsa,vars;
       list<Integer> ilst1,ilst2,ilsta,ilst;
-      Boolean varskn1,varskn2,varskn;
+      Boolean varskn1,varskn2,varskn,time1,time2,time_;
       DAE.Exp e;
       DAE.Type ty;
     case(_,_,_,_,_,_,_,(syst,shared,_,_,_))
       equation
           print("Found Alias " +& ComponentReference.printComponentRefStr(cr1) +& " = " +& ComponentReference.printComponentRefStr(cr2) +& " Negate:" +& boolString(negate) +& ".\n");
         // get Variables
-        (vars1,ilst1,varskn1) =  getVars(cr1,syst,shared);
-        (vars2,ilst2,varskn2) =  getVars(cr2,syst,shared);
+        (vars1,ilst1,varskn1,time1) =  getVars(cr1,syst,shared);
+        (vars2,ilst2,varskn2,time2) =  getVars(cr2,syst,shared);
         // select Alias
-        (varsa,ilsta,vars,ilst,varskn,e) = selectAliasNew1(vars1,ilst1,varskn1,e1,vars2,ilst2,varskn2,e2);
+        (varsa,ilsta,vars,ilst,varskn,time_,e) = selectAliasNew1(vars1,ilst1,varskn1,time1,e1,vars2,ilst2,varskn2,time2,e2);
         // merge Attributes, move Alias, set Attributes to Var
       then
-        selectAliasNew2(varsa,ilsta,vars,ilst,varskn,negate,e,source,inTpl);  
+        selectAliasNew2(varsa,ilsta,vars,ilst,varskn,time_,negate,e,source,inTpl);  
     case(_,_,_,_,_,_,true,(syst,shared,_,_,_))
       equation
         e = Expression.crefExp(cr1);
@@ -847,13 +847,14 @@ protected function selectAliasNew2
   input list<BackendDAE.Var> vars;
   input list<Integer> ilst;
   input Boolean varskn;
+  input Boolean time_;
   input Boolean negate;
   input DAE.Exp e;
   input DAE.ElementSource source "the source of the equation";
   input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
   output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
 algorithm
-  outTpl := match(varsa,ilsta,vars,ilst,varskn,negate,e,source,inTpl)
+  outTpl := match(varsa,ilsta,vars,ilst,varskn,time_,negate,e,source,inTpl)
     local
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
@@ -866,9 +867,22 @@ algorithm
       Integer ia,i;
       list<Integer> ialst,ilst1;
       list<BackendDAE.Var> valst,vlst;
-    case ({},_,{},_,_,_,_,_,_)
+    case ({},_,{},_,_,_,_,_,_,_)
       then inTpl;      
-    case ((av as BackendDAE.VAR(varName=acr))::valst,ia::ialst,(v as BackendDAE.VAR(varName=cr))::vlst,i::ilst1,_,_,_,_,(syst,shared,repl,eqns,_))
+    // case for time
+    case ((av as BackendDAE.VAR(varName=acr))::valst,ia::ialst,_,_,_,true,_,_,_,(syst,shared,repl,eqns,_))
+      equation
+        cre = Expression.crefExp(DAE.CREF_IDENT("time",DAE.T_REAL_DEFAULT,{}));
+        cre = Debug.bcallret1(negate,Expression.negate,cre,cre);
+        Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",cre," found (3).\n"));
+        // store changed var
+        shared = handleAliasVar(av,cre,source,shared);
+        (syst,_) = BackendVariable.removeVarDAE(ia,syst);
+        // add to replacements
+        repl = BackendVarTransform.addReplacement(repl, acr, cre,SOME(BackendVarTransform.skipPreChangeEdgeOperator)); 
+       then
+        selectAliasNew2(valst,ialst,vars,ilst,varskn,time_,negate,e,source,(syst,shared,repl,eqns,true));
+    case ((av as BackendDAE.VAR(varName=acr))::valst,ia::ialst,(v as BackendDAE.VAR(varName=cr))::vlst,i::ilst1,_,_,_,_,_,(syst,shared,repl,eqns,_))
       equation
         cre = Expression.crefExp(cr);
         cre = Debug.bcallret1(negate,Expression.negate,cre,cre);
@@ -881,9 +895,9 @@ algorithm
         shared = handleAliasVar(av,cre,source,shared);
         (syst,_) = BackendVariable.removeVarDAE(ia,syst);
         // add to replacements
-        repl = BackendVarTransform.addReplacement(repl, cr, cre,NONE()); 
+        repl = BackendVarTransform.addReplacement(repl, acr, cre,SOME(BackendVarTransform.skipPreChangeEdgeOperator)); 
        then
-        selectAliasNew2(valst,ialst,vlst,ilst1,varskn,negate,e,source,(syst,shared,repl,eqns,true));
+        selectAliasNew2(valst,ialst,vlst,ilst1,varskn,time_,negate,e,source,(syst,shared,repl,eqns,true));
   end match;
 end selectAliasNew2;
 
@@ -926,39 +940,42 @@ protected function selectAliasNew1
   input list<BackendDAE.Var> vars1;
   input list<Integer> ilst1;
   input Boolean varskn1;
+  input Boolean time1;
   input DAE.Exp e1;
   input list<BackendDAE.Var> vars2;
   input list<Integer> ilst2;
   input Boolean varskn2;
+  input Boolean time2;
   input DAE.Exp e2;
   output list<BackendDAE.Var> varsa;
   output list<Integer> ilsta;
   output list<BackendDAE.Var> vars;
   output list<Integer> ilst;
   output Boolean varskn;
+  output Boolean time_;
   output DAE.Exp e;
 algorithm
-  (varsa,ilsta,vars,ilst,varskn,e) := match(vars1,ilst1,varskn1,e1,vars2,ilst2,varskn2,e2)
+  (varsa,ilsta,vars,ilst,varskn,time_,e) := match(vars1,ilst1,varskn1,time1,e1,vars2,ilst2,varskn2,time2,e2)
     local 
       Boolean b1,b2;
     // parameter - parameter should never happen
-    case(_,_,true,_,_,_,true,_)
+    case(_,_,true,_,_,_,_,true,_,_)
       then fail();
-    case(_,_,true,_,_,_,false,_)
+    case(_,_,true,_,_,_,_,false,_,_)
       equation
         true = List.mapAllValueBool(vars2,replaceableAliasNew,true);
-      then (vars2,ilst2,vars1,ilst1,varskn1,e1);
-    case(_,_,false,_,_,_,true,_)
+      then (vars2,ilst2,vars1,ilst1,varskn1,time1,e1);
+    case(_,_,false,_,_,_,_,true,_,_)
       equation
         true = List.mapAllValueBool(vars1,replaceableAliasNew,true);
-      then (vars1,ilst1,vars2,ilst2,varskn1,e2);
-    case(_,_,false,_,_,_,false,_)
+      then (vars1,ilst1,vars2,ilst2,varskn2,time2,e2);
+    case(_,_,false,_,_,_,_,false,_,_)
       equation
         b1 = List.mapAllValueBool(vars1,replaceableAliasNew,true);
         b2 = List.mapAllValueBool(vars1,replaceableAliasNew,true);
         (varsa,ilsta,vars,ilst,varskn,e) = selectAliasNew1_1(b1,vars1,ilst1,varskn1,e1,b2,vars2,ilst2,varskn2,e2);
       then
-        (varsa,ilsta,vars,ilst,varskn,e);
+        (varsa,ilsta,vars,ilst,varskn,false,e);
   end match;
 end selectAliasNew1;
 
@@ -992,12 +1009,12 @@ algorithm
         i1 = List.fold(il1,intAdd,0);
         i2 = List.fold(il2,intAdd,0);
         b = intGt(i2,i1);
-        ((varsa,ilsta,vars,ilst,varskn,e)) = Util.if_(b,(vars2,ilst2,vars1,ilst1,varskn1,e1),(vars1,ilst1,vars2,ilst2,varskn1,e2));       
+        ((varsa,ilsta,vars,ilst,varskn,e)) = Util.if_(b,(vars2,ilst2,vars1,ilst1,varskn1,e1),(vars1,ilst1,vars2,ilst2,varskn2,e2));       
       then (varsa,ilsta,vars,ilst,varskn,e);
     case(false,_,_,_,_,true,_,_,_,_)
       then (vars2,ilst2,vars1,ilst1,varskn1,e1);
     case(true,_,_,_,_,false,_,_,_,_)
-      then (vars1,ilst1,vars2,ilst2,varskn1,e2);
+      then (vars1,ilst1,vars2,ilst2,varskn2,e2);
   end match;
 end selectAliasNew1_1;
 
@@ -1034,18 +1051,22 @@ protected function getVars
   output list<BackendDAE.Var> oVars;
   output list<Integer> oIndexs;
   output Boolean varskn;
+  output Boolean time_;
 algorithm
-  (oVars,oIndexs,varskn) := matchcontinue(cr,syst,shared)
+  (oVars,oIndexs,varskn,time_) := matchcontinue(cr,syst,shared)
+    case (DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_,_)
+      then
+        ({},{},true,true);
     case (_,_,_)
       equation
         (oVars as _::_,oIndexs) = BackendVariable.getVarDAE(cr,syst);
       then
-        (oVars,oIndexs,false);
+        (oVars,oIndexs,false,false);
     case (_,_,_)
       equation
         (oVars as _::_,oIndexs) = BackendVariable.getVarShared(cr,shared);
       then
-        (oVars,oIndexs,true);
+        (oVars,oIndexs,true,false);
   end matchcontinue;
 end getVars;
 
@@ -1214,7 +1235,6 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp cre,es;
       list<DAE.ComponentRef> crlst;
-      list<Integer> ilst;
       BackendDAE.Var v;
       Integer i;
     // a = ...
@@ -1293,7 +1313,7 @@ algorithm
         true = BackendVariable.selfGeneratedVar(cr);
         Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Self Generated Var ",cr," = ",exp," found (1).\n"));
         // add to replacements
-        repl = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        repl = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         // remove var from vars        
         (syst,_) = BackendVariable.removeVarDAE(i,syst);        
       then
@@ -1318,7 +1338,7 @@ algorithm
         shared = BackendVariable.addAliasVarDAE(v,shared);        
         (syst,_) = BackendVariable.removeVarDAE(i,syst);
         // add to replacements
-        repl = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        repl = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         repl = Debug.bcallret3(bs,BackendVarTransform.addDerConstRepl,cr,DAE.RCONST(0.0),repl,repl);
       then
         ((syst,shared,repl,eqns,b));
@@ -1340,7 +1360,7 @@ algorithm
         // store changed var
         shared = BackendVariable.addKnVarDAE(v,shared);
         // add to replacements if constant
-        repl = Debug.bcallret4(constExp,BackendVarTransform.addReplacement,repl, cr, exp,NONE(),repl);
+        repl = Debug.bcallret4(constExp,BackendVarTransform.addReplacement,repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator),repl);
         // if state der(var) has to replaced to 0
       then
         ((syst,shared,repl,eqns,b)); 
@@ -1390,7 +1410,7 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared = BackendVariable.addKnVarDAE(v, ishared);
         // update Replacements
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());        
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));        
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared,repl_1,iEqns);
     // a = b alias
     case (1,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),_,_,_)
@@ -1399,7 +1419,7 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared = BackendVariable.addAliasVarDAE(v, ishared);
         // update Replacements
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared,repl_1,iEqns);
     // a = der(b) der replacement
     case (2,_,_,_,_,_,_,_,_)
@@ -1410,7 +1430,7 @@ algorithm
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         // update Replacements
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());        
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));        
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),ishared,repl_1,iEqns);        
   end match;
 end replacementsInEqnsFast;
@@ -1612,7 +1632,7 @@ algorithm
         // get Vars in Eqn
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(eqns,pos_1);
-        ({eqn},_) = BackendVarTransform.replaceEquations({eqn}, repl,NONE());
+        ({eqn},_) = BackendVarTransform.replaceEquations({eqn}, repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         varlst = BackendEquation.equationVars(eqn,vars);
         ((vareqns,(syst1,shared1,repl_1,derrepl_1,dereqnarray,meqns1,b))) = removeSimpleEquationsPastFinder1((pos,varlst,compflag,mark,eqn,(syst,shared,repl,derrepl,dereqnarray,meqns,b)));
       then ((vareqns,(syst1,shared1,repl_1,derrepl_1,dereqnarray,meqns1,b)));
@@ -1855,7 +1875,7 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared1 = BackendVariable.addKnVarDAE(v, shared);
         // update Replacements
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl_1,inDerrepl,iDereqnarray,pos::meqns);
     // Alias a = b 
     case (1,_,_,_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=SOME(mT),matching=matching),shared,meqns)
@@ -1866,7 +1886,7 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared1 = BackendVariable.addAliasVarDAE(v, shared);
         // update Replacements
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         // update Assignments
         matching = updateAliasMatching(matching,i,pos);
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared1,repl_1,inDerrepl,iDereqnarray,pos::meqns);
@@ -1896,7 +1916,7 @@ algorithm
         // remove var from vars
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         // update Replacements
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,NONE());
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         // update Assignments
         matching = updateAliasMatching(matching,i,pos);
       then (vareqns,BackendDAE.EQSYSTEM(ordvars1,eqns,m,SOME(mT),matching),shared,repl_1,inDerrepl,iDereqnarray,pos::meqns);
@@ -2450,7 +2470,7 @@ algorithm
     local
       BackendDAE.Variables ordvars,knvars,exobj,knvars1;
       BackendDAE.Variables aliasVars;      
-      BackendDAE.EquationArray remeqns,inieqns,inieqns1,remeqns1;
+      BackendDAE.EquationArray remeqns,inieqns,remeqns1;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
@@ -2467,18 +2487,17 @@ algorithm
     case (false,_,_) then inDAE;
     case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfRealtions),eoc,btp,symjacs)),_)
       equation
-        // replace moved vars in knvars,ineqns,remeqns
+        // replace moved vars in knvars,remeqns
         (aliasVars,(_,varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceAliasVarTraverser,(repl,{}));
         aliasVars = List.fold(varlst,fixAliasConstBindings,aliasVars);
         (knvars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,replaceVarTraverser,repl);
-        (inieqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,replaceEquationTraverser,repl);
         (remeqns1,_) = BackendEquation.traverseBackendDAEEqnsWithUpdate(remeqns,replaceEquationTraverser,repl);
-        (whenClauseLst1,_) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, NONE());
+        (whenClauseLst1,_) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         systs1 = removeSimpleEquationsShared1(systs,{},repl);
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendDAEUtil.listEquation(List.select(BackendDAEUtil.equationList(remeqns1),assertWithCondTrue));
       then 
-        BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns1,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRealtions),eoc,btp,symjacs));
+        BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRealtions),eoc,btp,symjacs));
   end match;
 end removeSimpleEquationsShared;
 
@@ -10113,15 +10132,15 @@ algorithm
   (osyst,osharedChanged) := 
     matchcontinue(isyst,sharedChanged)
     local
-      BackendDAE.Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
-      BackendDAE.EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
+      BackendDAE.Variables orderedVars,knvars,aliasvars;
+      BackendDAE.EquationArray orderedEqs;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
       BackendDAE.Matching matching;
       BackendDAE.Shared shared;
-    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared, _))
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared as BackendDAE.SHARED(knownVars = knvars,aliasVars = aliasvars), _))
       equation
-        ((_,true)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traversersimplifyTimeIndepFuncCalls,(BackendVariable.daeKnVars(shared),false));
+        ((_,_,true)) = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traversersimplifyTimeIndepFuncCalls,(knvars,aliasvars,false));
       then
         (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,true));
     else
@@ -10131,11 +10150,11 @@ end simplifyTimeIndepFuncCalls0;
 
 protected function traversersimplifyTimeIndepFuncCalls "function traversersimplifyTimeIndepFuncCalls
   author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> itpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> outTpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> itpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> outTpl;
 protected
   DAE.Exp e;
-  tuple<BackendDAE.Variables,Boolean> tpl;
+  tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean> tpl;
 algorithm
   (e,tpl) := itpl;
   outTpl := Expression.traverseExp(e,traverserExpsimplifyTimeIndepFuncCalls,tpl);
@@ -10143,41 +10162,98 @@ end traversersimplifyTimeIndepFuncCalls;
 
 protected function traverserExpsimplifyTimeIndepFuncCalls "function traverserExpsimplifyTimeIndepFuncCalls
   author: Frenkel TUD 2012-06"
-  input tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> tpl;
-  output tuple<DAE.Exp,tuple<BackendDAE.Variables,Boolean>> outTpl;
+  input tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> tpl;
+  output tuple<DAE.Exp,tuple<BackendDAE.Variables,BackendDAE.Variables,Boolean>> outTpl;
 algorithm
   outTpl := matchcontinue(tpl)
     local
-      BackendDAE.Variables vars;
+      BackendDAE.Variables knvars,aliasvars;
       DAE.Type tp;
       DAE.Exp e,zero;
       DAE.ComponentRef cr;
       BackendDAE.Var var;
-    case((DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
+      DAE.CallAttributes attr;
+    case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
       equation
-        (var::{},_) = BackendVariable.getVar(cr, vars);
+        (var::{},_) = BackendVariable.getVar(cr, knvars);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
         (zero,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
       then 
-        ((zero,(vars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
+        ((zero,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr)}),(knvars,aliasvars,_)))
       equation
-        (_::{},_) = BackendVariable.getVar(cr, vars);
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
       then
-        ((e,(vars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
+        ((e,(knvars,aliasvars,true)));
+    case((e as DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
       equation
-        (_::{},_) = BackendVariable.getVar(cr, vars);
+        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
+        (cr,_) = BackendVariable.getAlias(var);
+        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("pre"),{DAE.CREF(cr,tp)},attr),knvars);
       then 
-        ((DAE.BCONST(false),(vars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(vars,_)))
+        ((e,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
       equation
-        (_::{},_) = BackendVariable.getVar(cr, vars);
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
+        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
+      then 
+        ((zero,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
+        (cr,_) = BackendVariable.getAlias(var);
+        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("change"),{DAE.CREF(cr,tp)},attr),knvars);
+      then 
+        ((e,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
+      equation
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
+        zero = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
       then
-        ((DAE.BCONST(false),(vars,true)));
+        ((zero,(knvars,aliasvars,true)));
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
+      equation
+        (var::{},_) = BackendVariable.getVar(cr, aliasvars);
+        (cr,_) = BackendVariable.getAlias(var);
+        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("edge"),{DAE.CREF(cr,tp)},attr),knvars);
+      then 
+        ((e,(knvars,aliasvars,true)));
     case _ then tpl;
   end matchcontinue;
 end traverserExpsimplifyTimeIndepFuncCalls;
+
+protected function simplifyTimeIndepFuncCallsGetAliasExp
+  input DAE.Exp inE;
+  input BackendDAE.Variables knvars;
+  output DAE.Exp outE; 
+algorithm
+  outE := matchcontinue(inE,knvars)
+    local      
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+      DAE.Type tp;
+    case (DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr)}),_)
+      equation
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
+      then
+        e;
+    case(DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),_)
+      equation
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
+        e = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
+      then 
+        e;
+    case(DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),_)
+      equation
+        (_::{},_) = BackendVariable.getVar(cr, knvars);
+        e = Expression.arrayFill(Expression.arrayDimension(tp),DAE.BCONST(false));
+      then 
+        e;
+    else
+      then
+        inE;
+  end matchcontinue;
+end simplifyTimeIndepFuncCallsGetAliasExp;
 
 protected function simplifyTimeIndepFuncCallsShared "function simplifyTimeIndepFuncCallsShared
   simplifies time independent built in function calls like
@@ -10205,8 +10281,7 @@ algorithm
       BackendDAE.EqSystems systs;  
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs)))
       equation
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,traversersimplifyTimeIndepFuncCalls,(knvars,false));
-        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traversersimplifyTimeIndepFuncCalls,(knvars,false));
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
       then 
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs));
   end match;

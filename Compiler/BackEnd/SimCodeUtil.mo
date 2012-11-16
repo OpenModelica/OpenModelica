@@ -1811,7 +1811,7 @@ algorithm
       String cname,   fileDir;
       Integer n_h,maxDelayedExpIndex, uniqueEqIndex, numberofNonLinearSys, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms;
       list<SimCode.HelpVarInfo> helpVarInfo;
-      BackendDAE.BackendDAE dlow,dlow2;
+      BackendDAE.BackendDAE dlow,dlow2,initDAE;
       DAE.FunctionTree functionTree;
       BackendDAE.SymbolicJacobians symJacs;
       Absyn.Path class_;
@@ -1862,6 +1862,12 @@ algorithm
         ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
          //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
+
+        // generate initalsystem
+        (_, initDAE) = BackendDAEUtil.solveInitialSystem(dlow);
+        
+        // replace pre(alias) in time-equations
+        dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
        
         // check if the Sytems has states
         dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
@@ -1886,7 +1892,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // initialization stuff
-        (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, uniqueEqIndex, {}, helpVarInfo);
+        (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, {}, helpVarInfo);
         (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
  
         // expandAlgorithmsbyInitStmts
@@ -6404,6 +6410,7 @@ protected function createInitialResiduals "function createInitialResiduals
   author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;
+  input BackendDAE.BackendDAE inInitDAE;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
   input list<SimCode.HelpVarInfo> helpVarInfo;
@@ -6415,7 +6422,8 @@ protected function createInitialResiduals "function createInitialResiduals
   output list<SimCode.SimVar> otempvars;
   output Boolean useSymbolicInitialization;
 algorithm
-  (outResiduals, outInitialEqns, outNumberOfInitialEquations, outNumberOfInitialAlgorithms, ouniqueEqIndex, otempvars, useSymbolicInitialization) := matchcontinue(inDAE, iuniqueEqIndex, itempvars, helpVarInfo)
+  (outResiduals, outInitialEqns, outNumberOfInitialEquations, outNumberOfInitialAlgorithms, ouniqueEqIndex, otempvars, useSymbolicInitialization) := 
+  matchcontinue(inDAE, inInitDAE, iuniqueEqIndex, itempvars, helpVarInfo)
     local
       BackendDAE.EqSystems eqs;
       BackendDAE.EquationArray initialEqs,removedEqs;
@@ -6431,14 +6439,12 @@ algorithm
       BackendDAE.Variables knvars,aliasVars;
       
     // try to solve the inital system symbolical.
-    case (_, _, _, _) equation
-      true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
-    
-      // generate initalsystem
-      (_, BackendDAE.DAE(systs, 
+    case (_, BackendDAE.DAE(systs, 
                          shared as BackendDAE.SHARED(knownVars=knvars,
                                                      aliasVars=aliasVars,
-                                                     removedEqs=removedEqs))) = BackendDAEUtil.solveInitialSystem(inDAE);
+                                                     removedEqs=removedEqs)),  _, _, _) equation
+      true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
+
       // generate equations from the solved systems
       (uniqueEqIndex, _, _, allEquations, tempvars) = createEquationsForSystems(systs, shared, helpVarInfo, iuniqueEqIndex, {}, {}, {}, itempvars);
       // generate equations from the removed equations
@@ -6456,7 +6462,7 @@ algorithm
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, uniqueEqIndex, tempvars);
     then (residual_equations, allEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, true);
     
-    case (_, _, _, _) equation
+    case (_, _, _, _, _) equation
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars);
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.\n");

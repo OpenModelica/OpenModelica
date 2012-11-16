@@ -248,6 +248,16 @@ algorithm
         ((e,_)) = Expression.traverseExp(e,preCref,false);
       then
         ((e,(true,options)));
+    case ((DAE.CALL(path=Absyn.IDENT("change"), expLst={e}), (b, options)))
+      equation
+        ((e,_)) = Expression.traverseExp(e,changeCref,false);
+      then
+        ((e,(true,options)));
+    case ((DAE.CALL(path=Absyn.IDENT("edge"), expLst={e}), (b, options)))
+      equation
+        ((e,_)) = Expression.traverseExp(e,edgeCref,false);
+      then
+        ((e,(true,options)));
         
     // normal call 
     case ((e as DAE.CALL(expLst=expl),(_,options)))
@@ -411,6 +421,34 @@ algorithm
     else then iExp;
   end match;
 end preCref;
+
+protected function changeCref
+  input tuple<DAE.Exp,Boolean> iExp;
+  output tuple<DAE.Exp,Boolean> oExp;
+algorithm
+  oExp := match(iExp)
+    local
+      DAE.Exp e;
+      Boolean b;
+      DAE.Type ty;
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("change"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),true));
+    else then iExp;
+  end match;
+end changeCref;
+
+protected function edgeCref
+  input tuple<DAE.Exp,Boolean> iExp;
+  output tuple<DAE.Exp,Boolean> oExp;
+algorithm
+  oExp := match(iExp)
+    local
+      DAE.Exp e;
+      Boolean b;
+      DAE.Type ty;
+    case ((e as DAE.CREF(ty=ty),_)) then ((DAE.CALL(Absyn.IDENT("edge"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),true));
+    else then iExp;
+  end match;
+end edgeCref;
 
 public function simplify1
 "function: simplify1

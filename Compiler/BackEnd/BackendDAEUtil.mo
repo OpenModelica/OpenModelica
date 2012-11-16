@@ -9140,7 +9140,7 @@ public function solveInitialSystem "public function solveInitialSystem
   output BackendDAE.BackendDAE outDAE;
   output BackendDAE.BackendDAE outInitDAE;
 algorithm
-  (outDAE, outInitDAE) := match(inDAE)
+  (outDAE, outInitDAE) := matchcontinue(inDAE)
     local
       BackendDAE.EqSystems systs;
       BackendDAE.Variables knvars, vars, fixvars, evars, eavars;
@@ -9153,6 +9153,12 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       array<DAE.Constraint> constraints;
       array<DAE.ClassAttributes> classAttrs;
+      
+    case (_)
+      equation
+        false = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
+      then
+        (inDAE,inDAE);      
       
     case(BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knvars,
                                                  initialEqs=inieqns,
@@ -9202,7 +9208,7 @@ algorithm
       // now let's solve the system!
       initdae = solveInitialSystem1(vars, eqns, inDAE, initdae);
     then(inDAE, initdae);
-  end match;
+  end matchcontinue;
 end solveInitialSystem;
 
 protected function solveInitialSystem1 "protected function solveInitialSystem1

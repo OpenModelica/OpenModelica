@@ -2018,6 +2018,51 @@ algorithm
   greaterThan := ComponentReference.crefSortFunc(varCref(v1), varCref(v2));
 end varSortFunc;
 
+
+public function getAlias
+" function getAlias
+  autor: Frenkel TUD 2012-11
+  returns the original Varname of an AliasVar"
+  input BackendDAE.Var inVar;
+  output DAE.ComponentRef outCr;
+  output Boolean negated;
+protected
+  DAE.Exp e; 
+algorithm
+  e := varBindExp(inVar);
+  (outCr,negated) := getAlias1(e);
+end getAlias;
+
+protected function getAlias1
+  input DAE.Exp inExp;
+  output DAE.ComponentRef outCr;
+  output Boolean negated;
+algorithm
+  (outCr,negated) :=
+  match (inExp)
+    local
+      DAE.ComponentRef name;
+      Absyn.Path fname;
+    
+    case DAE.CREF(componentRef=name) then (name,false);
+    case DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CREF(componentRef=name)) then (name,true);
+    case DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CREF(componentRef=name)) then (name,true);
+    case DAE.LUNARY(operator=DAE.NOT(_),exp=DAE.CREF(componentRef=name)) then (name,true);
+    case DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=name)})
+      equation
+        name = ComponentReference.crefPrefixDer(name);
+      then (name,false);
+    case DAE.UNARY(operator=DAE.UMINUS(_),exp=DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=name)}))
+      equation
+       name = ComponentReference.crefPrefixDer(name);
+    then (name,true);
+    case DAE.UNARY(operator=DAE.UMINUS_ARR(_),exp=DAE.CALL(path=Absyn.IDENT(name = "der"), expLst={DAE.CREF(componentRef=name)}))
+      equation
+       name = ComponentReference.crefPrefixDer(name);
+    then (name,true);
+  end match;
+end getAlias1;
+
 /* =======================================================
  *
  *  Section for functions that deals with VariablesArray 
@@ -2227,6 +2272,13 @@ public function daeKnVars
 algorithm
   BackendDAE.SHARED(knownVars = vars) := shared;
 end daeKnVars;
+
+public function daeAliasVars
+  input BackendDAE.Shared shared;
+  output BackendDAE.Variables vars;
+algorithm
+  BackendDAE.SHARED(aliasVars = vars) := shared;
+end daeAliasVars;
 
 public function varsSize "function: varsSize
   author: PA
