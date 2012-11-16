@@ -3349,8 +3349,8 @@ algorithm
   oExp := matchcontinue(dims,inExp)
     local
       list<DAE.Exp> expl;
-    case({},inExp) then inExp;
-    case(dims,inExp)
+    case({},_) then inExp;
+    case(_,_)
       equation
         oExp = arrayFill2(dims,inExp);
       then
@@ -3359,18 +3359,18 @@ algorithm
 end arrayFill;
 
 protected function arrayFill2
-  input DAE.Dimensions dims;
+  input DAE.Dimensions iDims;
   input DAE.Exp inExp;
   output DAE.Exp oExp;
 algorithm 
-  oExp := matchcontinue(dims,inExp)
+  oExp := matchcontinue(iDims,inExp)
   local
     Integer i;
     DAE.Dimension d;
     Type ty;
     list<DAE.Exp> expl;
-  
-  case({d},inExp)
+    DAE.Dimensions dims;
+  case({d},_)
     equation
       ty = typeof(inExp);
       i = dimensionSize(d);
@@ -3378,7 +3378,7 @@ algorithm
     then
       DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),true,expl);
   
-  case(_::dims,inExp)
+  case(_::dims,_)
     equation
       print(" arrayFill2 not implemented for matrixes, only single arrays \n");
     then
@@ -3394,12 +3394,12 @@ input Integer n;
 input DAE.Exp e;
 output list<DAE.Exp> expl;
 algorithm expl := matchcontinue(n,e)
-  case(n,e)
+  case(_,_)
     equation
     true = intEq(n,0);
     then
       {};
-  case(n,e)
+  case(_,_)
     equation
       true = n>0;
       expl = listCreateExp(n-1,e);
