@@ -818,7 +818,7 @@ algorithm
       BackendDAE.Shared shared;
       list<BackendDAE.Var> vars1,vars2,varsa,vars;
       list<Integer> ilst1,ilst2,ilsta,ilst;
-      Boolean varskn1,varskn2,varskn,time1,time2,time_;
+      Boolean varskn1,varskn2,varskn,time1,time2,time_,s;
       DAE.Exp e;
       DAE.Type ty;
     case(_,_,_,_,_,_,_,(syst,shared,_,_,_))
@@ -828,7 +828,9 @@ algorithm
         (vars1,ilst1,varskn1,time1) =  getVars(cr1,syst,shared);
         (vars2,ilst2,varskn2,time2) =  getVars(cr2,syst,shared);
         // select Alias
-        (varsa,ilsta,vars,ilst,varskn,time_,e) = selectAliasNew1(vars1,ilst1,varskn1,time1,e1,vars2,ilst2,varskn2,time2,e2);
+        (varsa,ilsta,vars,ilst,varskn,time_,s,e) = selectAliasNew1(vars1,ilst1,varskn1,time1,e1,vars2,ilst2,varskn2,time2,e2);
+        // if no states in the removed var add the replacement to replace also vektor calls directly
+        //repl = Debug.bcallret3(s,BackendVarTransform.addReplacement,repl, acr, e, SOME(BackendVarTransform.skipPreChangeEdgeOperator), repl);
         // merge Attributes, move Alias, set Attributes to Var
       then
         selectAliasNew2(varsa,ilsta,vars,ilst,varskn,time_,negate,e,source,inTpl);  
@@ -854,19 +856,20 @@ protected function selectAliasNew2
   input tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> inTpl;
   output tuple<BackendDAE.EqSystem,BackendDAE.Shared,BackendVarTransform.VariableReplacements,list<BackendDAE.Equation>,Boolean> outTpl;
 algorithm
-  outTpl := match(varsa,ilsta,vars,ilst,varskn,time_,negate,e,source,inTpl)
+  outTpl := matchcontinue(varsa,ilsta,vars,ilst,varskn,time_,negate,e,source,inTpl)
     local
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.Var v,av;
       BackendVarTransform.VariableReplacements repl;
       list<BackendDAE.Equation> eqns;
-      Boolean b;
-      DAE.Exp cre;
+      Boolean b,astate,vstate,vrepl;
+      DAE.Exp cre,acre;
       DAE.ComponentRef cr,acr;
       Integer ia,i;
       list<Integer> ialst,ilst1;
       list<BackendDAE.Var> valst,vlst;
+      DAE.Type ty;
     case ({},_,{},_,_,_,_,_,_,_)
       then inTpl;      
     // case for time
@@ -882,8 +885,14 @@ algorithm
         repl = BackendVarTransform.addReplacement(repl, acr, cre,SOME(BackendVarTransform.skipPreChangeEdgeOperator)); 
        then
         selectAliasNew2(valst,ialst,vars,ilst,varskn,time_,negate,e,source,(syst,shared,repl,eqns,true));
-    case ((av as BackendDAE.VAR(varName=acr))::valst,ia::ialst,(v as BackendDAE.VAR(varName=cr))::vlst,i::ilst1,_,_,_,_,_,(syst,shared,repl,eqns,_))
+    case (av::valst,ia::ialst,v::vlst,i::ilst1,_,_,_,_,_,(syst,shared,repl,eqns,_))
       equation
+        // if av is state and v not and replacable switch them
+        astate = BackendVariable.isStateVar(av);
+        vstate = BackendVariable.isStateVar(v);
+        vrepl = replaceableAliasNew(v);
+        (av as BackendDAE.VAR(varName=acr),ia,v as BackendDAE.VAR(varName=cr),i) = switchStateAlias(astate,vstate,vrepl,av,ia,v,i);        
+        // move var to alias vars
         cre = Expression.crefExp(cr);
         cre = Debug.bcallret1(negate,Expression.negate,cre,cre);
         Debug.fcall(Flags.DEBUG_ALIAS,BackendDump.debugStrCrefStrExpStr,("Alias Equation ",acr," = ",cre," found (3).\n"));
@@ -895,11 +904,45 @@ algorithm
         shared = handleAliasVar(av,cre,source,shared);
         (syst,_) = BackendVariable.removeVarDAE(ia,syst);
         // add to replacements
-        repl = BackendVarTransform.addReplacement(repl, acr, cre,SOME(BackendVarTransform.skipPreChangeEdgeOperator)); 
+        repl = BackendVarTransform.addReplacement(repl, acr, cre,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
        then
         selectAliasNew2(valst,ialst,vlst,ilst1,varskn,time_,negate,e,source,(syst,shared,repl,eqns,true));
-  end match;
+        
+    case ((av as BackendDAE.VAR(varName=acr))::valst,ia::ialst,(v as BackendDAE.VAR(varName=cr))::vlst,i::ilst1,_,_,_,_,_,(syst,shared,repl,eqns,_))
+      equation
+        cre = Expression.crefExp(cr);
+        cre = Debug.bcallret1(negate,Expression.negate,cre,cre);
+        acre = Expression.crefExp(acr);
+        ty = Expression.typeof(acre);
+      then
+        generateEquation(acre,cre,ty,source,inTpl);
+  end matchcontinue;
 end selectAliasNew2;
+
+protected function switchStateAlias
+ input Boolean astate;
+ input Boolean vstate;
+ input Boolean vrepl;
+ input BackendDAE.Var av;
+ input Integer ia;
+ input BackendDAE.Var v;
+ input Integer i;
+ output BackendDAE.Var av;
+ output Integer ia;
+ output BackendDAE.Var v;
+ output Integer i;
+algorithm
+  (av,ia,v,i) := match(astate,vstate,vrepl,av,ia,v,i)
+    // no state keep it like it is
+    case (false,_,_,_,_,_,_) then (av,ia,v,i);
+    // alias state, var no state and replaceable -> switch
+    case (true,false,true,_,_,_,_) then (v,i,av,ia);
+    // alias state, var state keep it like it is
+    case (true,true,_,_,_,_,_) then (av,ia,v,i);
+    // alias state, var not replacable -> do not replace
+    case (true,_,false,_,_,_,_) then fail();
+  end match;
+end switchStateAlias;
 
 protected function handleAliasVar
   input BackendDAE.Var var;
@@ -953,29 +996,32 @@ protected function selectAliasNew1
   output list<Integer> ilst;
   output Boolean varskn;
   output Boolean time_;
+  output Boolean s "true if no states in varsa";
   output DAE.Exp e;
 algorithm
-  (varsa,ilsta,vars,ilst,varskn,time_,e) := match(vars1,ilst1,varskn1,time1,e1,vars2,ilst2,varskn2,time2,e2)
+  (varsa,ilsta,vars,ilst,varskn,time_,s,e) := match(vars1,ilst1,varskn1,time1,e1,vars2,ilst2,varskn2,time2,e2)
     local 
-      Boolean b1,b2;
+      Boolean b1,b2,s1,s2;
     // parameter - parameter should never happen
     case(_,_,true,_,_,_,_,true,_,_)
       then fail();
     case(_,_,true,_,_,_,_,false,_,_)
       equation
         true = List.mapAllValueBool(vars2,replaceableAliasNew,true);
-      then (vars2,ilst2,vars1,ilst1,varskn1,time1,e1);
+        s2 = List.mapAllValueBool(vars2,BackendVariable.isStateVar,false);
+      then (vars2,ilst2,vars1,ilst1,varskn1,time1,s2,e1);
     case(_,_,false,_,_,_,_,true,_,_)
       equation
         true = List.mapAllValueBool(vars1,replaceableAliasNew,true);
-      then (vars1,ilst1,vars2,ilst2,varskn2,time2,e2);
+        s1 = List.mapAllValueBool(vars1,BackendVariable.isStateVar,false);
+      then (vars1,ilst1,vars2,ilst2,varskn2,time2,s1,e2);
     case(_,_,false,_,_,_,_,false,_,_)
       equation
         b1 = List.mapAllValueBool(vars1,replaceableAliasNew,true);
         b2 = List.mapAllValueBool(vars1,replaceableAliasNew,true);
-        (varsa,ilsta,vars,ilst,varskn,e) = selectAliasNew1_1(b1,vars1,ilst1,varskn1,e1,b2,vars2,ilst2,varskn2,e2);
+        (varsa,ilsta,vars,ilst,varskn,s,e) = selectAliasNew1_1(b1,vars1,ilst1,varskn1,e1,b2,vars2,ilst2,varskn2,e2);
       then
-        (varsa,ilsta,vars,ilst,varskn,false,e);
+        (varsa,ilsta,vars,ilst,varskn,false,s,e);
   end match;
 end selectAliasNew1;
 
@@ -995,13 +1041,14 @@ protected function selectAliasNew1_1
   output list<BackendDAE.Var> vars;
   output list<Integer> ilst;
   output Boolean varskn;
+  output Boolean s;
   output DAE.Exp e;
 algorithm
-  (varsa,ilsta,vars,ilst,varskn,e) := match(replacable1,vars1,ilst1,varskn1,e1,replacable2,vars2,ilst2,varskn2,e2)
+  (varsa,ilsta,vars,ilst,varskn,s,e) := match(replacable1,vars1,ilst1,varskn1,e1,replacable2,vars2,ilst2,varskn2,e2)
     local
       list<Integer> il1,il2;
       Integer i1,i2;
-      Boolean b;
+      Boolean b,s1,s2;
     case(true,_,_,_,_,true,_,_,_,_)
       equation
         il1 = List.map(vars1,BackendVariable.calcAliasKey);
@@ -1010,11 +1057,16 @@ algorithm
         i2 = List.fold(il2,intAdd,0);
         b = intGt(i2,i1);
         ((varsa,ilsta,vars,ilst,varskn,e)) = Util.if_(b,(vars2,ilst2,vars1,ilst1,varskn1,e1),(vars1,ilst1,vars2,ilst2,varskn2,e2));       
-      then (varsa,ilsta,vars,ilst,varskn,e);
+        s = List.mapAllValueBool(varsa,BackendVariable.isStateVar,false);
+      then (varsa,ilsta,vars,ilst,varskn,s,e);
     case(false,_,_,_,_,true,_,_,_,_)
-      then (vars2,ilst2,vars1,ilst1,varskn1,e1);
+      equation
+        s2 = List.mapAllValueBool(vars2,BackendVariable.isStateVar,false);
+      then (vars2,ilst2,vars1,ilst1,varskn1,s2,e1);
     case(true,_,_,_,_,false,_,_,_,_)
-      then (vars1,ilst1,vars2,ilst2,varskn2,e2);
+      equation
+        s1 = List.mapAllValueBool(vars1,BackendVariable.isStateVar,false);
+      then (vars1,ilst1,vars2,ilst2,varskn2,s1,e2);
   end match;
 end selectAliasNew1_1;
 
@@ -1163,6 +1215,8 @@ algorithm
       then ((e,false,(true,vars,knvars,b1,b2,ilst)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "change"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "edge"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
     // case for finding simple equation in jacobians 
     // there are all known variables mark as input
     // and they are all time-depending  
@@ -3199,6 +3253,7 @@ algorithm
     
     case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars,b1,b2)))
       then ((e,false,(true,vars,knvars,b1,b2)));       
+
     case((e as DAE.CREF(cr,_), (_,vars,knvars,b1,b2)))
       equation
         (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
@@ -3206,6 +3261,8 @@ algorithm
       then ((e,false,(true,vars,knvars,b1,b2)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2)));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "change"), expLst = {_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2)));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "edge"), expLst = {_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2)));
     // case for finding simple equation in jacobians 
     // there are all known variables mark as input
     // and they are all time-depending  
@@ -10153,6 +10210,7 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       DAE.CallAttributes attr;
+      Boolean negate;
     case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
       equation
         (var::{},_) = BackendVariable.getVar(cr, knvars);
@@ -10168,11 +10226,13 @@ algorithm
     case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
       then
         ((e,(knvars,aliasvars,true)));
-    case((e as DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
+    case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
       equation
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,_) = BackendVariable.getAlias(var);
-        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("pre"),{DAE.CREF(cr,tp)},attr),knvars);
+        (cr,negate) = BackendVariable.getAlias(var);
+        e = DAE.CREF(cr,tp);
+        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("pre"),{e},attr),knvars);
       then 
         ((e,(knvars,aliasvars,true)));
     case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
@@ -10184,11 +10244,13 @@ algorithm
     case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
       then
         ((DAE.BCONST(false),(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
       equation
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,_) = BackendVariable.getAlias(var);
-        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("change"),{DAE.CREF(cr,tp)},attr),knvars);
+        (cr,negate) = BackendVariable.getAlias(var);
+        e = DAE.CREF(cr,tp);
+        e = Debug.bcallret1(negate,Expression.negate,e,e);
+        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("change"),{e},attr),knvars);
       then 
         ((e,(knvars,aliasvars,true)));
     case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)}),(knvars,aliasvars,_)))
@@ -10200,11 +10262,13 @@ algorithm
     case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=DAE.CREF_IDENT(ident="time"))}),(knvars,aliasvars,_)))
       then
         ((DAE.BCONST(false),(knvars,aliasvars,true)));
-    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e as DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={DAE.CREF(componentRef=cr,ty=tp)},attr=attr),(knvars,aliasvars,_)))
       equation
         (var::{},_) = BackendVariable.getVar(cr, aliasvars);
-        (cr,_) = BackendVariable.getAlias(var);
-        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("edge"),{DAE.CREF(cr,tp)},attr),knvars);
+        (cr,negate) = BackendVariable.getAlias(var);
+        e = DAE.CREF(cr,tp);
+        e = Debug.bcallret1(negate,Expression.negate,e,e);        
+        e = simplifyTimeIndepFuncCallsGetAliasExp(DAE.CALL(Absyn.IDENT("edge"),{e},attr),knvars);
       then 
         ((e,(knvars,aliasvars,true)));
     case _ then tpl;
@@ -10279,6 +10343,7 @@ algorithm
       BackendDAE.EqSystems systs;  
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs)))
       equation
+        _ = BackendDAEUtil.traverseBackendDAEExpsVarsWithUpdate(knvars,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(inieqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traversersimplifyTimeIndepFuncCalls,(knvars,aliasVars,false));
       then 

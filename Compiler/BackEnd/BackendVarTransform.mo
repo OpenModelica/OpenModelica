@@ -1246,12 +1246,31 @@ public function skipPreChangeEdgeOperator "function: skipPreChangeEdgeOperator
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inExp)
-    case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
-    case (DAE.CALL(path = Absyn.IDENT(name = "change"))) then false;
-    case (DAE.CALL(path = Absyn.IDENT(name = "edge"))) then false;
+    local
+      DAE.ComponentRef cr;
+    case DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
+    case DAE.CALL(path = Absyn.IDENT(name = "change"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
+    case DAE.CALL(path = Absyn.IDENT(name = "edge"),expLst = {DAE.CREF(componentRef=cr)}) then selfGeneratedVar(cr);
+    case DAE.CALL(path = Absyn.IDENT(name = "pre")) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "change")) then false;
+    case DAE.CALL(path = Absyn.IDENT(name = "edge")) then false;
     case (_) then true;
   end matchcontinue;
 end skipPreChangeEdgeOperator;
+
+protected function selfGeneratedVar
+  input DAE.ComponentRef inCref;
+  output Boolean b;
+algorithm
+  b := match(inCref)
+    case DAE.CREF_QUAL(ident = "$ZERO") then true;
+    case DAE.CREF_QUAL(ident = "$_DER") then true;
+    case DAE.CREF_QUAL(ident = "$pDER") then true;
+    // keep same a while untill we know which are needed  
+    //case DAE.CREF_QUAL(ident = "$DER") then true;
+    else then false;
+  end match;
+end selfGeneratedVar;
 
 /*********************************************************/
 /* replace Equations  */

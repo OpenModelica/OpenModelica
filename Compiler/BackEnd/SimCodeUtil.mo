@@ -1868,7 +1868,7 @@ algorithm
         
         // replace pre(alias) in time-equations
         dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
-       
+
         // check if the Sytems has states
         dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
         
