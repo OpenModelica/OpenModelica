@@ -313,6 +313,8 @@ algorithm
       DAE.Type tp,tp1;
       list<DAE.Exp> factors;
       list<DAE.Statement> asserts;
+      Real r;
+      Integer i;
     
      // cr = (e1(0)-e2(0))/(der(e1-e2,cr)) 
     case (_,_,DAE.CREF(componentRef = cr),_)
@@ -379,6 +381,11 @@ algorithm
         e = Expression.makeDiff(inExp1,inExp2);
         ((e,(_,false,SOME(a)))) = Expression.traverseExpTopDown(e, traversingVarOnlyinPow, (cr,false,NONE()));
         DAE.BINARY(operator=DAE.POW(ty=tp1),exp2 = a) = a;
+        // check if a is even number integer
+        r = Expression.expReal(a);
+        i = realInt(r);
+        true = realEq(intReal(i),r);
+        true = intEq(intMod(i,2),0);
         tp = Expression.typeof(e);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         (rhs,asserts) = solve(e,z,inExp3);
