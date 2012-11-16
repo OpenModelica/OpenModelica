@@ -17778,7 +17778,7 @@ algorithm
     case (DAE.VAR(direction=dir,componentRef=DAE.CREF_IDENT(ident=name),dims=dims,binding=NONE())::rest,_,unbound,outputs,_)
       equation
         // Arrays with unknown bounds (size(cr,1), etc) are treated as initialized because they may have 0 dimensions checked for in the code
-        unbound = List.consOnTrue(List.fold(dims,foldIsKnownSubscriptDimension,true),name,unbound);
+        unbound = List.consOnTrue(List.fold(dims,foldIsKnownSubscriptDimensionNonZero,true),name,unbound);
         outputs = List.consOnTrue(DAEUtil.varDirectionEqual(dir,DAE.OUTPUT()),name,inOutputs);
         unbound = checkFunctionDefUse2(rest,alg,unbound,outputs,inInfo);
       then unbound;
@@ -17806,17 +17806,18 @@ algorithm
   outUnbound := List.filter1OnTrue(inUnbound,Util.stringNotEqual,name);
 end checkOutputDefUse;
 
-protected function foldIsKnownSubscriptDimension
+protected function foldIsKnownSubscriptDimensionNonZero
   "Helper beacuase DAE.VAR contains Subscript instead of Dimension"
   input DAE.Subscript sub;
   input Boolean known;
   output Boolean outKnown;
 algorithm
   outKnown := match (sub,known)
+    case (DAE.INDEX(DAE.ICONST(0)),_) then false;
     case (DAE.INDEX(DAE.ICONST(_)),true) then true;
     else false;
   end match;
-end foldIsKnownSubscriptDimension;
+end foldIsKnownSubscriptDimensionNonZero;
 
 protected function checkFunctionDefUseStmt
   "Find any variable that might be used in the statement without prior definition. Any defined variables are removed from undefined."
