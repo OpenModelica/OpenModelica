@@ -1249,22 +1249,11 @@ public function equivtypes "function: equivtypes
   This is the type equivalence function.  It is defined in terms of
   the subtype function.  Two types are considered equivalent if they
   are subtypes of each other."
-  input Type inType1;
-  input Type inType2;
+  input Type t1;
+  input Type t2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inType1,inType2)
-    local Type t1,t2;
-    case (t1,t2)
-      equation
-        true = subtype(t1, t2);
-        true = subtype(t2, t1);
-      then
-        true;
-    case (t1,t2)
-      then false;  /* default */
-  end matchcontinue;
+  outBoolean := subtype(t1, t2) and subtype(t2, t1);
 end equivtypes;
 
 public function equivtypesOrRecordSubtypeOf
@@ -1273,16 +1262,7 @@ public function equivtypesOrRecordSubtypeOf
   input Type t2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (t1, t2)
-    local
-      ClassInf.State st1,st2;
-      list<Var> els1,els2;
-    case (DAE.T_COMPLEX(complexClassType = st1,varLst = els1), DAE.T_COMPLEX(complexClassType = st2,varLst = els2))
-      equation
-        true = subtypeVarlist(els1, els2);
-      then true;
-    else equivtypes(t1,t2);
-  end matchcontinue;
+  outBoolean := subtype2(t1, t2, false /* Allow record names to differ */) and subtype2(t2, t1, false);
 end equivtypesOrRecordSubtypeOf;
 
 public function subtype "function: subtype
@@ -1292,7 +1272,18 @@ public function subtype "function: subtype
   input Type inType2;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inType1,inType2)
+  outBoolean := subtype2(inType1,inType2,true);
+end subtype;
+
+protected function subtype2 "function: subtype
+  Is the first type a subtype of the second type?  
+  This function specifies the rules for subtyping in Modelica."
+  input Type inType1;
+  input Type inType2;
+  input Boolean requireRecordNamesEqual;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue (inType1,inType2,requireRecordNamesEqual)
     local
       Boolean res;
       Ident l1,l2;
@@ -1309,184 +1300,184 @@ algorithm
       DAE.Exp e1,e2;
       DAE.TypeSource ts;
     
-    case (DAE.T_ANYTYPE(anyClassType = _),_) then true;
-    case (_,DAE.T_ANYTYPE(anyClassType = _)) then true;
-    case (DAE.T_INTEGER(varLst = _),DAE.T_INTEGER(varLst = _)) then true;
-    case (DAE.T_REAL(varLst = _),DAE.T_REAL(varLst = _)) then true;
-    case (DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _)) then true;
-    case (DAE.T_BOOL(varLst = _),DAE.T_BOOL(varLst = _)) then true;
+    case (DAE.T_ANYTYPE(anyClassType = _),_,_) then true;
+    case (_,DAE.T_ANYTYPE(anyClassType = _),_) then true;
+    case (DAE.T_INTEGER(varLst = _),DAE.T_INTEGER(varLst = _),_) then true;
+    case (DAE.T_REAL(varLst = _),DAE.T_REAL(varLst = _),_) then true;
+    case (DAE.T_STRING(varLst = _),DAE.T_STRING(varLst = _),_) then true;
+    case (DAE.T_BOOL(varLst = _),DAE.T_BOOL(varLst = _),_) then true;
     
-    case (DAE.T_ENUMERATION(names = {}),DAE.T_ENUMERATION(names = _)) then true;
-    case (DAE.T_ENUMERATION(names = _),DAE.T_ENUMERATION(names = {})) then true;
+    case (DAE.T_ENUMERATION(names = {}),DAE.T_ENUMERATION(names = _),_) then true;
+    case (DAE.T_ENUMERATION(names = _),DAE.T_ENUMERATION(names = {}),_) then true;
       
     case (DAE.T_ENUMERATION(names = names1),
-          DAE.T_ENUMERATION(names = names2))
+          DAE.T_ENUMERATION(names = names2),_)
       equation
         res = List.isEqualOnTrue(names1, names2, stringEq);
       then
         res;
         
     case (DAE.T_ARRAY(dims = dlst1 as _::_::_, ty = t1),
-          DAE.T_ARRAY(dims = dlst2 as _::_::_, ty = t2))
+          DAE.T_ARRAY(dims = dlst2 as _::_::_, ty = t2),_)
       equation
         true = Expression.dimsEqual(dlst1, dlst2);
-        true = subtype(t1, t2);
+        true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
     
     // try dims as list vs. dims as tree 
     // T_ARRAY(a::b::c) vs. T_ARRAY(a, T_ARRAY(b, T_ARRAY(c)))
     case (DAE.T_ARRAY(dims = {dim1}, ty = t1),
-          DAE.T_ARRAY(dims = dim2::(dlst2 as _::_), ty = t2, source = ts))
+          DAE.T_ARRAY(dims = dim2::(dlst2 as _::_), ty = t2, source = ts),_)
       equation
         true = Expression.dimensionsEqual(dim1, dim2);
-        true = subtype(t1, DAE.T_ARRAY(t2, dlst2, ts));
+        true = subtype2(t1, DAE.T_ARRAY(t2, dlst2, ts), requireRecordNamesEqual);
       then
         true;
     
     // try subtype of dimension list vs. dimension tree
     case (DAE.T_ARRAY(dims = dim1::(dlst1 as _::_), ty = t1, source = ts),
-          DAE.T_ARRAY(dims = {dim2}, ty = t2))
+          DAE.T_ARRAY(dims = {dim2}, ty = t2),_)
       equation
         true = Expression.dimensionsEqual(dim1, dim2);
-        true = subtype(DAE.T_ARRAY(t1, dlst1, ts), t2);
+        true = subtype2(DAE.T_ARRAY(t1, dlst1, ts), t2, requireRecordNamesEqual);
       then
         true;
     
-    case (DAE.T_ARRAY(ty = t1),DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t2))
+    case (DAE.T_ARRAY(ty = t1),DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t2), _)
       equation
-        true = subtype(t1, t2);
+        true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
     
-    case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t1),DAE.T_ARRAY(ty = t2))
+    case (DAE.T_ARRAY(dims = {DAE.DIM_UNKNOWN()}, ty = t1),DAE.T_ARRAY(ty = t2), _)
       equation
-        true = subtype(t1, t2);
+        true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
                 
     case (DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = e1)}, ty = t1), 
-          DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = e2)}, ty = t2))
+          DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = e2)}, ty = t2), _)
       equation
         /* HUGE TODO: FIXME: After MSL is updated? */
         // true = Expression.expEqual(e1,e2);
-        true = subtype(t1, t2);
+        true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
 
     case (DAE.T_ARRAY(ty = t1), 
-          DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t2))
+          DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t2), _)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        true = subtype(t1, t2);
+        true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
         
     case (DAE.T_ARRAY(dims = {DAE.DIM_EXP(exp = _)}, ty = t1), 
-          DAE.T_ARRAY(ty = t2))
+          DAE.T_ARRAY(ty = t2), _)
       equation
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
-        true = subtype(t1, t2);
+        true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
     
     // Array
-    case (DAE.T_ARRAY(dims = {dim1}, ty = t1),DAE.T_ARRAY(dims = {dim2}, ty = t2))
+    case (DAE.T_ARRAY(dims = {dim1}, ty = t1),DAE.T_ARRAY(dims = {dim2}, ty = t2), _)
       equation
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
-        true = subtype(t1, t2);
+        true = subtype2(t1, t2, requireRecordNamesEqual);
       then
         true;
         
     // External objects use a nominal type system
     case (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(p1)),
-          DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(p2)))
+          DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(p2)), _)
       then 
         Absyn.pathEqual(p1,p2);
 
     // Complex type
     case (DAE.T_COMPLEX(complexClassType = st1,varLst = els1),
-          DAE.T_COMPLEX(complexClassType = st2,varLst = els2))
+          DAE.T_COMPLEX(complexClassType = st2,varLst = els2), _)
       equation
-        true = classTypeEqualIfRecord(st1, st2) "We need to add a cast from one record to another";
+        true = classTypeEqualIfRecord(st1, st2) or not requireRecordNamesEqual "We need to add a cast from one record to another";
         true = subtypeVarlist(els1, els2);
       then
         true;
     
     // A complex type that extends a basic type is checked against the baseclass basic type         
-    case (DAE.T_SUBTYPE_BASIC(complexClassType = st1,varLst = els1,complexType = tp1),tp2) 
+    case (DAE.T_SUBTYPE_BASIC(complexClassType = st1,varLst = els1,complexType = tp1),tp2,_)
       equation 
-        res = subtype(tp1, tp2);
+        res = subtype2(tp1, tp2, requireRecordNamesEqual);
       then
         res;
     
     // A complex type that extends a basic type is checked against the baseclass basic type         
-    case (tp1,DAE.T_SUBTYPE_BASIC(complexClassType = st1,varLst = els1,complexType = tp2)) 
-      equation 
-        res = subtype(tp1, tp2);
+    case (tp1,DAE.T_SUBTYPE_BASIC(complexClassType = st1,varLst = els1,complexType = tp2),_)
+      equation
+        res = subtype2(tp1, tp2, requireRecordNamesEqual);
       then
         res;
     
     // Check of tuples, similar to complex. Just that identifier name do not have to be checked. Only types are checked. 
     case (DAE.T_TUPLE(tupleType = type_list1),
-          DAE.T_TUPLE(tupleType = type_list2)) 
+          DAE.T_TUPLE(tupleType = type_list2),_)
       equation 
-        true = subtypeTypelist(type_list1, type_list2);
+        true = subtypeTypelist(type_list1, type_list2, requireRecordNamesEqual);
       then
         true;
     
     // Part of MetaModelica extension. KS
-    case (DAE.T_METALIST(listType = t1),DAE.T_METALIST(listType = t2)) then subtype(t1,t2);
-    case (DAE.T_METAARRAY(ty = t1),DAE.T_METAARRAY(ty = t2)) then subtype(t1,t2);
-    case (DAE.T_METATUPLE(types = tList1),DAE.T_METATUPLE(types = tList2))
+    case (DAE.T_METALIST(listType = t1),DAE.T_METALIST(listType = t2),_) then subtype(t1,t2);
+    case (DAE.T_METAARRAY(ty = t1),DAE.T_METAARRAY(ty = t2),_) then subtype(t1,t2);
+    case (DAE.T_METATUPLE(types = tList1),DAE.T_METATUPLE(types = tList2),_)
       equation
-        res = subtypeTypelist(tList1,tList2);
+        res = subtypeTypelist(tList1,tList2,requireRecordNamesEqual);
       then res;
-    case (DAE.T_METAOPTION(optionType = t1),DAE.T_METAOPTION(optionType = t2))
-      then subtype(t1,t2);
+    case (DAE.T_METAOPTION(optionType = t1),DAE.T_METAOPTION(optionType = t2),_)
+      then subtype2(t1,t2,requireRecordNamesEqual);
     
-    case (DAE.T_METABOXED(ty = t1),DAE.T_METABOXED(ty = t2)) then subtype(t1,t2);
-    case (DAE.T_METABOXED(ty = t1),t2) equation true = isBoxedType(t2); then subtype(t1,t2);
-    case (t1,DAE.T_METABOXED(ty = t2)) equation true = isBoxedType(t1); then subtype(t1,t2);
+    case (DAE.T_METABOXED(ty = t1),DAE.T_METABOXED(ty = t2),_) then subtype2(t1,t2,requireRecordNamesEqual);
+    case (DAE.T_METABOXED(ty = t1),t2,_) equation true = isBoxedType(t2); then subtype2(t1,t2,requireRecordNamesEqual);
+    case (t1,DAE.T_METABOXED(ty = t2),_) equation true = isBoxedType(t1); then subtype2(t1,t2,requireRecordNamesEqual);
     
-    case (DAE.T_METAPOLYMORPHIC(name = l1),DAE.T_METAPOLYMORPHIC(name = l2)) then l1 ==& l2;
-    case (DAE.T_UNKNOWN(_),t2) then true;
-    case (t1,DAE.T_UNKNOWN(_)) then true;
-    case (DAE.T_NORETCALL(_),DAE.T_NORETCALL(_)) then true;
+    case (DAE.T_METAPOLYMORPHIC(name = l1),DAE.T_METAPOLYMORPHIC(name = l2),_) then l1 ==& l2;
+    case (DAE.T_UNKNOWN(_),t2,_) then true;
+    case (t1,DAE.T_UNKNOWN(_),_) then true;
+    case (DAE.T_NORETCALL(_),DAE.T_NORETCALL(_),_) then true;
     
-    // MM Function Reference. sjoelund
-    case (DAE.T_FUNCTION(funcArg = farg1,funcResultType = t1),DAE.T_FUNCTION(funcArg = farg2,funcResultType = t2))
+    // MM Function Reference
+    case (DAE.T_FUNCTION(funcArg = farg1,funcResultType = t1),DAE.T_FUNCTION(funcArg = farg2,funcResultType = t2),_)
       equation
         tList1 = List.map(farg1, Util.tuple42);
         tList2 = List.map(farg2, Util.tuple42);
-        true = subtypeTypelist(tList1,tList2);
-        true = subtype(t1,t2);
+        true = subtypeTypelist(tList1,tList2,requireRecordNamesEqual);
+        true = subtype2(t1,t2,requireRecordNamesEqual);
       then true;
     
-    case(DAE.T_METARECORD(utPath=p1),DAE.T_METARECORD(utPath=p2))
+    case(DAE.T_METARECORD(utPath=p1),DAE.T_METARECORD(utPath=p2),_)
       then Absyn.pathEqual(p1,p2);
     
-    case (DAE.T_METAUNIONTYPE(paths = _, source = {p1}),DAE.T_METARECORD(utPath=p2))
+    case (DAE.T_METAUNIONTYPE(paths = _, source = {p1}),DAE.T_METARECORD(utPath=p2),_)
       then Absyn.pathEqual(p1,p2);
 
-    case (DAE.T_METARECORD(utPath=p1),DAE.T_METAUNIONTYPE(paths = _, source = {p2}))
+    case (DAE.T_METARECORD(utPath=p1),DAE.T_METAUNIONTYPE(paths = _, source = {p2}),_)
       then Absyn.pathEqual(p1,p2);
     
     // <uniontype> = <uniontype>
-    case(DAE.T_METAUNIONTYPE(paths = _, source = {p1}), DAE.T_METAUNIONTYPE(paths = _, source = {p2}))
+    case (DAE.T_METAUNIONTYPE(paths = _, source = {p1}), DAE.T_METAUNIONTYPE(paths = _, source = {p2}),_)
       then Absyn.pathEqual(p1,p2);
-    case(DAE.T_METAUNIONTYPE(paths = _, source = {p1}), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}))
+    case (DAE.T_METAUNIONTYPE(paths = _, source = {p1}), DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}),_)
       then Absyn.pathEqual(p1,p2);
-    case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(paths = _, source = {p1}))
+    case(DAE.T_COMPLEX(complexClassType=ClassInf.META_UNIONTYPE(_), source = {p2}), DAE.T_METAUNIONTYPE(paths = _, source = {p1}),_)
       then Absyn.pathEqual(p1,p2);
 
-    case (DAE.T_CODE(ty = c1),DAE.T_CODE(ty = c2)) then valueEq(c1,c2);
+    case (DAE.T_CODE(ty = c1),DAE.T_CODE(ty = c2),_) then valueEq(c1,c2);
     
-    case (DAE.T_METATYPE(ty = t1),DAE.T_METATYPE(ty = t2)) then subtype(t1,t2);     
-    case (t1,DAE.T_METATYPE(ty = t2)) then subtype(t1,t2);
-    case (DAE.T_METATYPE(ty = t1),t2) then subtype(t1,t2);
+    case (DAE.T_METATYPE(ty = t1),DAE.T_METATYPE(ty = t2),_) then subtype2(t1,t2,requireRecordNamesEqual);     
+    case (t1,DAE.T_METATYPE(ty = t2),_) then subtype2(t1,t2,requireRecordNamesEqual);
+    case (DAE.T_METATYPE(ty = t1),t2,_) then subtype2(t1,t2,requireRecordNamesEqual);
 
-    case (t1,t2)
+    case (t1,t2,_)
       equation
         /* Uncomment for debugging
         l1 = unparseType(t1);
@@ -1496,27 +1487,26 @@ algorithm
         */
       then false;
   end matchcontinue;
-end subtype;
+end subtype2;
 
 protected function subtypeTypelist "PR. function: subtypeTypelist
   This function checks if the both Type lists matches types, element by element."
   input list<Type> inTypeLst1;
   input list<Type> inTypeLst2;
+  input Boolean requireRecordNamesEqual;
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inTypeLst1,inTypeLst2)
+  outBoolean := matchcontinue (inTypeLst1,inTypeLst2,requireRecordNamesEqual)
     local
       Type t1,t2;
       list<Type> rest1,rest2;
     
-    case ({},{}) then true;
-    case ((t1 :: rest1),(t2 :: rest2))
+    case ({},{},_) then true;
+    case ((t1 :: rest1),(t2 :: rest2),_)
       equation
-        true = subtype(t1, t2);
-        true = subtypeTypelist(rest1, rest2);
-      then
-        true;
-    case (_,_) then false;  /* default */
+        true = subtype2(t1, t2, requireRecordNamesEqual);
+      then subtypeTypelist(rest1, rest2, requireRecordNamesEqual);
+    else false;  /* default */
   end matchcontinue;
 end subtypeTypelist;
 
@@ -1541,12 +1531,10 @@ algorithm
     case (l,(DAE.TYPES_VAR(name = n,ty = t2) :: vs))
       equation
         DAE.TYPES_VAR(ty = t1) = varlistLookup(l, n);
-        true = subtype(t1, t2);
-        true = subtypeVarlist(l, vs);
-      then
-        true;
+        true = subtype2(t1, t2, false);
+      then subtypeVarlist(l, vs);
     
-    case (_,_) then false;  /* default */ 
+    else false;  /* default */ 
   end matchcontinue;
 end subtypeVarlist;
 

@@ -3890,7 +3890,7 @@ algorithm
         fail();
 
     // Different dimensionality.
-    else
+    case (_, _, _, _, _)
       equation
         (t1, dims1) = Types.flattenArrayType(inLhsType);
         (t2, dims2) = Types.flattenArrayType(inRhsType);
@@ -3902,7 +3902,7 @@ algorithm
           {cref_str1, cref_str2}, inInfo);
       then
         fail();
-  
+
   end matchcontinue;
 end checkConnectTypesType;
       
