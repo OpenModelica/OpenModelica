@@ -923,22 +923,22 @@ protected function switchStateAlias
  input Boolean astate;
  input Boolean vstate;
  input Boolean vrepl;
- input BackendDAE.Var av;
- input Integer ia;
- input BackendDAE.Var v;
- input Integer i;
+ input BackendDAE.Var in_av;
+ input Integer in_ia;
+ input BackendDAE.Var in_v;
+ input Integer in_i;
  output BackendDAE.Var av;
  output Integer ia;
  output BackendDAE.Var v;
  output Integer i;
 algorithm
-  (av,ia,v,i) := match(astate,vstate,vrepl,av,ia,v,i)
+  (av,ia,v,i) := match(astate,vstate,vrepl,in_av,in_ia,in_v,in_i)
     // no state keep it like it is
-    case (false,_,_,_,_,_,_) then (av,ia,v,i);
+    case (false,_,_,_,_,_,_) then (in_av,in_ia,in_v,in_i);
     // alias state, var no state and replaceable -> switch
-    case (true,false,true,_,_,_,_) then (v,i,av,ia);
+    case (true,false,true,_,_,_,_) then (in_v,in_i,in_av,in_ia);
     // alias state, var state keep it like it is
-    case (true,true,_,_,_,_,_) then (av,ia,v,i);
+    case (true,true,_,_,_,_,_) then (in_av,in_ia,in_v,in_i);
     // alias state, var not replacable -> do not replace
     case (true,_,false,_,_,_,_) then fail();
   end match;
