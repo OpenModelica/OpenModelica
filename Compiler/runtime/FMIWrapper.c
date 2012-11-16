@@ -145,19 +145,25 @@ void fmiFreeEventInfo_OMC(void* eventInfo)
 /*
  * Wrapper for the FMI function fmiInstantiateModel.
  */
-void fmiInstantiateModel_OMC(void* fmi, char* instanceName)
+double fmiInstantiateModel_OMC(void* fmi, char* instanceName, int debugLogging)
 {
-  fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
+  static int init = 0;
+  if (!init) {
+    init = 1;
+    fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
+    fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
+  }
+  return 1;
 }
 
 /*
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
-double fmiSetTime_OMC(void* fmi, double time, double flowTime)
+double fmiSetTime_OMC(void* fmi, double time, double flowInstantiate)
 {
   fmi1_import_set_time((fmi1_import_t*)fmi, time);
-  return flowTime;
+  return flowInstantiate;
 }
 
 /*
@@ -173,23 +179,19 @@ int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
  * Wrapper for the FMI function fmiInitialize.
  * Returns FMI Event Info i.e fmi1_event_info_t.
  */
-void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double time, void* in_eventInfo, double flowInit, double* fmi_TNext, double* fmi_Initialized)
+void* fmiInitialize_OMC(void* fmi, void* inEventInfo, double flowInit, int* status)
 {
   static int init = 0;
   if (!init) {
     init = 1;
-    fmiInstantiateModel_OMC(fmi, instanceName);
-    fmiSetDebugLogging_OMC(fmi, debugLogging);
-    fmiSetTime_OMC(fmi, time, 1);
-
     fmi1_boolean_t toleranceControlled = fmi1_true;
     fmi1_real_t relativeTolerance = 0.001;
     fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
     fmi1_status_t fmistatus = fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
-    *fmi_TNext = (double)fmistatus;
+    *status = fmistatus;
     return eventInfo;
   }
-  return in_eventInfo;
+  return inEventInfo;
 }
 
 /*
@@ -198,7 +200,12 @@ void* fmiInitialize_OMC(void* fmi, char* instanceName, int debugLogging, double 
  */
 void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowInit, double* states)
 {
+  int i;
+  for (i = 0 ; i < numberOfContinuousStates ; i++)
+    fprintf(stderr, "State before %d = %f\n", i, states[i]);fflush(NULL);
   fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
+  for (i = 0 ; i < numberOfContinuousStates ; i++)
+      fprintf(stderr, "State after %d = %f\n", i, states[i]);fflush(NULL);
 }
 
 /*
@@ -330,7 +337,7 @@ double fmiSetString_OMC(void* fmi, int numberOfValueReferences, double* stringVa
  * Wrapper for the FMI function fmiEventUpdate.
  * Returns FMI Event Info i.e fmi1_event_info_t
  */
-int fmiEventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo, double flowStates, double* flowTime)
+int fmiEventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo, double flowStates)
 {
   fmi1_event_info_t* e = (fmi1_event_info_t*)eventInfo;
   fmi1_import_eventUpdate((fmi1_import_t*)fmi, intermediateResults, e);

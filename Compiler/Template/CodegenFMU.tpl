@@ -1141,31 +1141,32 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant Integer numberOfEventIndicators = <%listLength(fmiInfo.fmiNumberOfEventIndicators)%>;
     Real fmi_z[numberOfEventIndicators] "Events Indicators";
     Boolean fmi_z_positive[numberOfEventIndicators];
-    Real flowTimeNext;
-    parameter Real flowInit(fixed=false);
-    parameter Real flowInitInputs(fixed=false);
-    parameter Real flowParamsStart(fixed=false);
+    parameter Real flowInstantiate(fixed=false);
     Real flowTime;
-    Real flowStatesInputs = flowStates;
-    Real flowStates;
+    parameter Real flowParamsStart(fixed=false);
+    Integer flowInitStatus;
+    Real flowStatesInputs;
     Boolean callEventUpdate;
     Boolean newStatesAvailable;
     Integer fmi_status;
   initial algorithm
+    flowInstantiate := fmiFunctions.fmiInstantiateModel(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging);
+    flowTime := fmiFunctions.fmiSetTime(fmi, time, flowInstantiate);
     <%if not boolAnd(stringEq(realStartVariablesValueReferences, ""), stringEq(realStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetReal(fmi, {"+realStartVariablesValueReferences+"}, {"+realStartVariablesNames+"});"%>
     <%if not boolAnd(stringEq(integerStartVariablesValueReferences, ""), stringEq(integerStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetInteger(fmi, {"+integerStartVariablesValueReferences+"}, {"+integerStartVariablesNames+"});"%>
     <%if not boolAnd(stringEq(booleanStartVariablesValueReferences, ""), stringEq(booleanStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetBoolean(fmi, {"+booleanStartVariablesValueReferences+"}, {"+booleanStartVariablesNames+"});"%>
     <%if not boolAnd(stringEq(stringStartVariablesValueReferences, ""), stringEq(stringStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmiSetString(fmi, {"+stringStartVariablesValueReferences+"}, {"+stringStartVariablesNames+"});"%>
-  initial equation
-    (flowTimeNext,flowInit,eventInfo) = fmiFunctions.fmiInitialize(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging, time, eventInfo, flowParamsStart+flowInitInputs);
+    (flowInitStatus, eventInfo) := fmiFunctions.fmiInitialize(fmi, eventInfo, flowParamsStart);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
-  <<
-    fmi_x = fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowParamsStart+flowInit);
-  >>
+    <<
+      fmi_x := fmiFunctions.fmiGetContinuousStates(fmi, numberOfContinuousStates, flowStatesInputs);
+    >>
   %>
+  algorithm
+    flowInitStatus := 1;
   equation
-    flowTime = fmiFunctions.fmiSetTime(fmi, time, 1);
-    flowStates = fmiFunctions.fmiSetContinuousStates(fmi, fmi_x, flowParamsStart + flowTime);
+    flowTime = fmiFunctions.fmiSetTime(fmi, time, flowInstantiate);
+    flowStatesInputs = fmiFunctions.fmiSetContinuousStates(fmi, fmi_x, flowParamsStart + flowTime);
     der(fmi_x) = fmiFunctions.fmiGetDerivatives(fmi, numberOfContinuousStates, flowStatesInputs);
     fmi_z  = fmiFunctions.fmiGetEventIndicators(fmi, numberOfEventIndicators, flowStatesInputs);
     for i in 1:size(fmi_z,1) loop
@@ -1186,7 +1187,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     when not initial() then
   >>
   %>
-      (flowTimeNext, newStatesAvailable) := fmiFunctions.fmiEventUpdate(fmi, false, eventInfo, flowStatesInputs);
+      (newStatesAvailable) := fmiFunctions.fmiEventUpdate(fmi, false, eventInfo, flowStatesInputs);
   <%if intGt(listLength(fmiInfo.fmiNumberOfContinuousStates), 0) then
   <<
       if newStatesAvailable then
@@ -1215,17 +1216,21 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     end fmiEventInfo;
     
     package fmiFunctions
-      function fmiInitialize
+      function fmiInstantiateModel
         input fmiImportInstance fmi;
         input String instanceName;
         input Boolean debugLogging;
-        input Real in_Time;
-        input fmiEventInfo in_EventInfo;
-        input Real in_Flow_Init_Inputs;
-        output Real out_Flow_Time;
-        output Real out_Flow_Init;
-        output fmiEventInfo out_eventInfo;
-        external "C" out_eventInfo = fmiInitialize_OMC(fmi, instanceName, debugLogging, in_Time, in_EventInfo, in_Flow_Init_Inputs, out_Flow_Time, out_Flow_Init) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+        output Real outFlowInstantiate;
+        external "C" outFlowInstantiate = fmiInstantiateModel_OMC(fmi, instanceName, debugLogging) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+      end fmiInstantiateModel;
+      
+      function fmiInitialize
+        input fmiImportInstance fmi;
+        input fmiEventInfo inEventInfo;
+        input Real inFlowInit;
+        output Integer outFlowInitStatus;
+        output fmiEventInfo outEventInfo;
+        external "C" outEventInfo = fmiInitialize_OMC(fmi, inEventInfo, inFlowInit, outFlowInitStatus) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiInitialize;
       
       function fmiSetTime
@@ -1239,9 +1244,9 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       function fmiGetContinuousStates
         input fmiImportInstance fmi;
         input Integer numberOfContinuousStates;
-        input Real in_Flow_Init;
+        input Real inFlowInit;
         output Real fmi_x[numberOfContinuousStates];
-        external "C" fmiGetContinuousStates_OMC(fmi, numberOfContinuousStates, in_Flow_Init, fmi_x) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+        external "C" fmiGetContinuousStates_OMC(fmi, numberOfContinuousStates, inFlowInit, fmi_x) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiGetContinuousStates;
       
       function fmiSetContinuousStates
@@ -1273,11 +1278,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       function fmiEventUpdate
         input fmiImportInstance fmi;
         input Boolean intermediateResults;
-        input fmiEventInfo in_eventInfo;
-        input Real in_Flow_States;
-        output Real out_Flow_Time;
-        output Boolean out_NewStates;
-        external "C" out_NewStates = fmiEventUpdate_OMC(fmi, intermediateResults, in_eventInfo, in_Flow_States, out_Flow_Time) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+        input fmiEventInfo inEventInfo;
+        input Real inFlowStates;
+        output Boolean outNewStatesAvailable;
+        external "C" outNewStatesAvailable = fmiEventUpdate_OMC(fmi, intermediateResults, inEventInfo, inFlowStates) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiEventUpdate;
       
       function fmiCompletedIntegratorStep
