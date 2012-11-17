@@ -14187,7 +14187,7 @@ algorithm
       BackendDAE.Shared shared;
     case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared, _))
       equation
-        true = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traverserreplaceEdgeChange,false);
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traverserreplaceEdgeChange,false);
       then
         (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,true));
     else
