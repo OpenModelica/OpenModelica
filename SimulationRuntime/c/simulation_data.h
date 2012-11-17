@@ -334,13 +334,16 @@
     modelica_string outputFormat;
     modelica_string variableFilter;
 
-    modelica_boolean initial;        /* =1 during initialization, 0 otherwise. */
-    modelica_boolean terminal;       /* =1 at the end of the simulation, 0 otherwise. */
-    modelica_boolean discreteCall;   /* =1 for a discrete step, otherwise 0 */
-    modelica_boolean needToIterate;  /* =1 if reinit has been activated, iteration about the system is needed */
+    /* indicators for simulations state */
+    modelica_boolean initial;           /* =1 during initialization, 0 otherwise. */
+    modelica_boolean terminal;          /* =1 at the end of the simulation, 0 otherwise. */
+    modelica_boolean discreteCall;      /* =1 for a discrete step, otherwise 0 */
+    modelica_boolean needToIterate;     /* =1 if reinit has been activated, iteration about the system is needed */
     modelica_boolean simulationSuccess; /*=0 the simulation run successful, otherwise an error code is set */
-    modelica_boolean sampleActivated;    /* =1 a sample expresion if going to be actived, 0 otherwise */
-    modelica_boolean solveContinuous;        /* =1 for the first step to initialize all relation,  0 otherwise. */
+    modelica_boolean sampleActivated;   /* =1 a sample expresion if going to be actived, 0 otherwise */
+    modelica_boolean solveContinuous;   /* =1 during the continuous integration to avoid zero-crossings jums,  0 otherwise. */
+    modelica_boolean noThrowDivZero;    /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
+    modelica_boolean found_solution;    /* helper for mixed systems */
 
     void** extObjs; /* External objects */
 
@@ -383,8 +386,6 @@
 
     NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
     int currentNonlinearSystemIndex;
-
-    int found_solution;             /* helper for mixed systems */
 
     /* delay vars */
     double tStart;

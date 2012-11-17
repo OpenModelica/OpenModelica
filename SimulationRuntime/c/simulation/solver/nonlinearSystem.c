@@ -116,6 +116,9 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
 
   data->simulationInfo.currentNonlinearSystemIndex = sysNumber;
 
+  /* enable to avoid division by zero */
+  data->simulationInfo.noThrowDivZero = 1;
+
   /* strategy for solving nonlinear system
    *
    *
@@ -126,6 +129,10 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
   /* for now just use hybrd solver as before */
   success = solveHybrd(data, sysNumber);
   nonlinsys[sysNumber].solved = success;
+
+  /* enable to avoid division by zero */
+  data->simulationInfo.noThrowDivZero = 0;
+
 
   return 0;
 }

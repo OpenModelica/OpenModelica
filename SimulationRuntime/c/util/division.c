@@ -36,16 +36,32 @@
 #include "division.h"
 #include "omc_error.h"
 
-modelica_real division_error_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line)
+modelica_real division_error_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line, modelica_boolean noThrow)
+{
+  if (noThrow){
+    WARNING1(LOG_UTIL, "division by zero in partial equation: %s", division_str);
+    WARNING1(LOG_UTIL, "at Time=%f", time);
+    WARNING(LOG_UTIL,  "solver will try to handle that.");
+  } else {
+    WARNING1(LOG_STDOUT, "division by zero in partial equation: %s", division_str);
+    WARNING1(LOG_STDOUT, "at Time=%f", time);
+    WARNING2(LOG_STDOUT, "[line] %ld | [file] %s", line, file);
+#ifndef __APPLE_CC__
+    THROW("division by zero");
+#endif
+  }
+  return b;
+}
+
+modelica_real division_warning_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line)
 {
   WARNING1(LOG_STDOUT, "division by zero in partial equation: %s", division_str);
   WARNING1(LOG_STDOUT, "at Time=%f", time);
-  WARNING2(LOG_STDOUT, "[line] %ld | [file] %s", line, file);
-#ifndef __APPLE_CC__
-  THROW("division by zero");
-#endif
+
   return b;
 }
+
+
 
 modelica_real division_error(modelica_real b, const char* division_str, const char* file, long line)
 {
