@@ -1027,7 +1027,7 @@ case SES_LINEAR(__) then
   long int* <%pname%> = newLintArray(<%size%>);
   for (int i = 0; i < <%size%>; i++)
   {
-      for (int j = 0; j <%size%>; j++)
+    for (int j = 0; j < <%size%>; j++)
     {
       <%aname%>[i][j] = 0.0;
     }
@@ -1062,41 +1062,17 @@ template equationMixed(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 match eq
 case SES_MIXED(__) then
   let contEqs = equation_(cont, context, &varDecls /*BUFD*/)
-  let numDiscVarsStr = listLength(discVars) 
-  /*
-  let valuesLenStr = listLength(values)
-  */
   let &preDisc = buffer "" /*BUFD*/
   let discLoc2 = (discEqs |> SES_SIMPLE_ASSIGN(__) hasindex i0 =>
       let expPart = daeExp(exp, context, &preDisc /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%cref(cref)%> = <%expPart%>;
-      discrete_loc2[<%i0%>] = <%cref(cref)%>;
       >>
     ;separator="\n")
   <<
-  <%/*
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
-  #endif
-  mixed_equation_system(<%numDiscVarsStr%>);
-  modelica_boolean values[<%valuesLenStr%>] = {<%values ;separator=", "%>};
-  int value_dims[<%numDiscVarsStr%>] = {<%value_dims ;separator=", "%>};
-  <%discVars |> SIMVAR(__) hasindex i0 => 'discrete_loc[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
-  {
-    <%contEqs%>
-  }
   <%preDisc%>
   <%discLoc2%>
-  {
-    modelica_boolean *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(modelica_boolean*)&<%cref(name)%>' ;separator=", "%>};
-    check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
-  }
-  mixed_equation_system_end(<%numDiscVarsStr%>);
-  #ifdef _OMC_MEASURE_TIME
-  SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
-  #endif<%\n%>
-  */%>
+  <%contEqs%>
   >>
 end equationMixed;
 
