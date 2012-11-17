@@ -3051,7 +3051,7 @@ algorithm
     case ((DAE.CALL(path = Absyn.IDENT("actualStream"),
                     expLst = {DAE.CREF(componentRef = cr)}), sets))
       then ((evaluateActualStream(cr, sets), sets));
-    else then inTuple;
+    else inTuple;
   end match;
 end evaluateStreamOperatorsExp;
 
@@ -3168,6 +3168,8 @@ algorithm
         (outside, inside) = List.splitOnTrue(inStreams, isOutsideStream);
         inside = removeStreamSetElement(inStreamCref, inside);
         e = streamSumEquationExp(outside, inside);
+        // Evaluate any inStream calls that were generated.
+        ((e, _)) = evaluateStreamOperators2((e, inSets));
       then
         e;
   end match;
