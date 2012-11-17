@@ -573,6 +573,7 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     ("collapseIndependentBlocks", Util.gettext("Collapses all equation systems back into one big system again (undo partitionIndependentBlocks)")),
     ("expandDerOperator", Util.notrans("DESCRIBE ME")),
     ("simplifyIfEquations", Util.gettext("tries to simplify if equations by use of information from evaluated parameters")),
+    ("replaceEdgeChange", Util.gettext("replace edge(b) = b and not pre(b) and change(b) = v <> pre(v)")),
     ("residualForm", Util.gettext("Transforms simple equations x=y to zero-sum equations 0=y-x"))})),
   Util.gettext("Sets the pre optimization modules to use in the back end. See +help=optmodules for more info."));
 constant ConfigFlag CHEAPMATCHING_ALGORITHM = CONFIG_FLAG(13, "cheapmatchingAlgorithm",

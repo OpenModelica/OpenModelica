@@ -14152,6 +14152,114 @@ algorithm
   end matchcontinue;
 end removeConstantsFinder;
 
+
+/*
+ * reaplace edge and change with (b and not pre(b)) and (v <> pre(v) 
+ *
+ */
+public function replaceEdgeChange "function replaceEdgeChange
+  replace 
+  edge(b) = b and not pre(b)
+  change(b) = v <> pre(v)
+  author: Frenkel TUD 2012-11"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,replaceEdgeChange0,false);
+  outDAE := replaceEdgeChangeShared(outDAE);
+end replaceEdgeChange;
+
+protected function replaceEdgeChange0 "function replaceEdgeChange0
+  author: Frenkel TUD 2012-11"
+  input BackendDAE.EqSystem isyst;
+  input tuple<BackendDAE.Shared,Boolean> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared,Boolean> osharedChanged;
+algorithm
+  (osyst,osharedChanged) := 
+    matchcontinue(isyst,sharedChanged)
+    local
+      BackendDAE.Variables orderedVars;
+      BackendDAE.EquationArray orderedEqs;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+      BackendDAE.Shared shared;
+    case (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared, _))
+      equation
+        true = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(orderedEqs,traverserreplaceEdgeChange,false);
+      then
+        (BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching),(shared,true));
+    else
+      (isyst,sharedChanged);
+  end matchcontinue;
+end replaceEdgeChange0;
+
+protected function traverserreplaceEdgeChange "function 
+  author: Frenkel TUD 2012-11"
+  input tuple<DAE.Exp,Boolean> itpl;
+  output tuple<DAE.Exp,Boolean> outTpl;
+protected
+  DAE.Exp e;
+  Boolean b;
+algorithm
+  (e,b) := itpl;
+  outTpl := Expression.traverseExp(e,traverserExpreplaceEdgeChange,b);
+end traverserreplaceEdgeChange;
+
+protected function traverserExpreplaceEdgeChange "function traverserExpreplaceEdgeChange
+  author: Frenkel TUD 2012-11"
+  input tuple<DAE.Exp,Boolean> tpl;
+  output tuple<DAE.Exp,Boolean> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      DAE.Exp e;
+      DAE.Type ty;
+    // change(v) -> v <> pre(v)
+    case((DAE.CALL(path=Absyn.IDENT(name = "change"),expLst={e}),_))
+      equation
+        ty = Expression.typeof(e);
+      then
+        ((DAE.RELATION(e,DAE.NEQUAL(ty),DAE.CALL(Absyn.IDENT("pre"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),-1,NONE()),true));
+    // edge(b) = b and not pre(b)
+    case((DAE.CALL(path=Absyn.IDENT(name = "edge"),expLst={e}),_))
+      equation
+        ty = Expression.typeof(e); 
+      then
+        ((DAE.LBINARY(e,DAE.AND(ty),DAE.LUNARY(DAE.NOT(ty),DAE.CALL(Absyn.IDENT("pre"),{e},DAE.CALL_ATTR(ty,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())))),true));
+    case _ then tpl;
+  end matchcontinue;
+end traverserExpreplaceEdgeChange;
+
+protected function replaceEdgeChangeShared "function replaceEdgeChangeShared
+  author: Frenkel TUD 2012-11"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  outDAE:= match (inDAE)
+    local
+      BackendDAE.Variables knvars,exobj,aliasVars;
+      BackendDAE.EquationArray remeqns,inieqns;
+      array<DAE.Constraint> constrs;
+      array<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      Env.Env env;      
+      DAE.FunctionTree funcTree;
+      BackendDAE.ExternalObjectClasses eoc;
+      BackendDAE.SymbolicJacobians symjacs;
+      BackendDAE.EventInfo eventInfo;
+      BackendDAE.BackendDAEType btp; 
+      BackendDAE.EqSystems systs;  
+    case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs)))
+      equation
+        _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(remeqns,traverserreplaceEdgeChange,false);
+      then 
+        BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,eventInfo,eoc,btp,symjacs));
+  end match;
+end replaceEdgeChangeShared;
+
+
 /*
  * optimize inital system
  *
