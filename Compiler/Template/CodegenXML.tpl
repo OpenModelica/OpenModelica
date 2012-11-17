@@ -176,7 +176,7 @@ case SIMVAR(__) then
   let variableCategory = variableCategoryXml(varKind)
   << 
     <ScalarVariable name="<%crefStrXml(name)%>" <%description%> valueReference="<%valueReference%>" variability="<%variability%>" causality="<%caus%>" alias="<%alias%>">
-      <%ScalarVariableTypeXml(type_,unit,displayUnit,initialValue,isFixed)%>
+      <%ScalarVariableTypeXml(type_,unit,displayUnit, minValue, maxValue, initialValue,isFixed)%>
       <QualifiedName>
         <%qualifiedNamePartXml(name)%>
       </QualifiedName>
@@ -230,12 +230,12 @@ template variableCategoryXml(VarKind varKind)
   else error(sourceInfo(), "Unexpected simVarTypeName varKind")
 end variableCategoryXml;
 
-template ScalarVariableTypeXml(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> initialValue, Boolean isFixed)
+template ScalarVariableTypeXml(DAE.Type type_, String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> initialValue, Boolean isFixed)
  "Generates XML code for ScalarVariable Type file."
 ::=
 match type_
-  case T_INTEGER(__) then '<Integer <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%>/>' 
-  case T_REAL(__) then '<Real <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%> <%ScalarVariableTypeRealAttributeXml(unit,displayUnit)%>/>' 
+  case T_INTEGER(__) then '<Integer <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%>/> <%ScalarVariableTypeMinAttribute(minValue)%> <%ScalarVariableTypeMaxAttribute(maxValue)%>' 
+  case T_REAL(__) then '<Real <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%> <%ScalarVariableTypeMinAttribute(minValue)%> <%ScalarVariableTypeMaxAttribute(maxValue)%> <%ScalarVariableTypeRealAttributeXml(unit,displayUnit)%>/>' 
   case T_BOOL(__) then '<Boolean <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%>/>' 
   case T_STRING(__) then '<String <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%>/>' 
   case T_ENUMERATION(__) then '<Real <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%>/>' 
@@ -248,6 +248,20 @@ template ScalarVariableTypeCommonAttributeXml(Option<DAE.Exp> initialValue, Bool
 match initialValue
   case SOME(exp) then 'start="<%initValXml(exp)%>" fixed="<%isFixed%>"'
 end ScalarVariableTypeCommonAttributeXml;
+
+template ScalarVariableTypeMinAttribute(Option<DAE.Exp> minValue)
+ "generates code for min attribute"
+::=
+match minValue
+  case SOME(exp) then 'min="<%initValXml(exp)%>"' 
+end ScalarVariableTypeMinAttribute;
+
+template ScalarVariableTypeMaxAttribute(Option<DAE.Exp> maxValue)
+ "generates code for max attribute"
+::=
+match maxValue
+  case SOME(exp) then 'max="<%initValXml(exp)%>"' 
+end ScalarVariableTypeMaxAttribute;
 
 template initValXml(Exp initialValue)
   "Returns initial value of ScalarVariable." 
