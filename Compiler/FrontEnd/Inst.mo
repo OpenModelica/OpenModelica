@@ -15194,6 +15194,8 @@ algorithm
       equation
         // split into inner, inner outer and other elements
         (innerElts, innerouterElts, otherElts) = splitInnerAndOtherTplLstElementMod(inTplLstElementMod);
+        // sort the inners to put Modelica types first!  
+        innerElts = sortInnerPutModelicaFirst(innerElts, {});
         // put the inner elements first
         sorted = listAppend(innerElts, innerouterElts);
         // put the innerouter elements second
@@ -15203,7 +15205,41 @@ algorithm
   end matchcontinue;
 end sortInnerFirstTplLstElementMod;
 
+protected function sortInnerPutModelicaFirst
+"@author: adrpo
+  This function will move all the *inner* Modelica.*
+  elements first in the given list of elements"
+  input list<tuple<SCode.Element, DAE.Mod>> inTplLstElementMod;
+  input list<tuple<SCode.Element, DAE.Mod>> inAcc;
+  output list<tuple<SCode.Element, DAE.Mod>> outTplLstElementMod;
+algorithm
+  outTplLstElementMod := matchcontinue(inTplLstElementMod, inAcc)
+    local
+      list<tuple<SCode.Element, DAE.Mod>> rest, acc;
+      SCode.Element e;
+      DAE.Mod m;
+      tuple<SCode.Element, DAE.Mod> em;
+      Absyn.Path p;
 
+    case ({}, _)
+      then listReverse(inAcc);
+
+    case (em::rest, _)
+      equation
+        e = Util.tuple21(em);
+        Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
+        true = stringEq("Modelica", Absyn.pathFirstIdent(p));
+        acc = sortInnerPutModelicaFirst(rest, listAppend(inAcc, {em}));
+      then
+        acc;
+    
+    case ((em as (e, m))::rest, _)
+      equation
+        acc = sortInnerPutModelicaFirst(rest, em::inAcc);
+      then
+        acc;
+  end matchcontinue;
+end sortInnerPutModelicaFirst;
 
 public function splitInnerAndOtherTplLstElementMod 
 "@author: adrpo
