@@ -1753,9 +1753,9 @@ algorithm
     case ({}, _, _) 
       then 
         fail();
-    
+        
     // we have some outer references, search for our prefix + cref in them 
-    case ({TOP_INSTANCE(_, _, outerPrefixes)}, _, _)
+    case ({TOP_INSTANCE(_, _, outerPrefixes as _::_)}, _, _)
       equation
         (_,fullCref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, inOuterComponentRef);
 
@@ -1836,6 +1836,11 @@ algorithm
     // handle the head that matches 
     case (_, OUTER(crOuter, crInner)::rest)
       equation
+        /*
+         print("Full: " +& ComponentReference.printComponentRefStr(fullCref) +& 
+               " outer: " +& ComponentReference.printComponentRefStr(crOuter) +&
+               " inner: " +& ComponentReference.printComponentRefStr(crInner) +& "\n");
+         */        
          true = ComponentReference.crefPrefixOf(crOuter, fullCref);
       then 
         (crOuter, crInner);

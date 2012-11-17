@@ -1181,74 +1181,100 @@ algorithm
       DAE.ComponentRef c,cr1,cr2;
       Absyn.Path functionName;
       list<DAE.Exp> functionArgs;
+      DAE.ElementSource src;
+      String sourceStr;
 
-    case (DAE.EQUATION(exp = e1,scalar = e2))
+    case (DAE.EQUATION(exp = e1, scalar = e2, source = src))
       equation
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
         ExpressionDump.printExp(e2);
+        sourceStr = getSourceInformationStr(src);
+        Print.printBuf(sourceStr);
         Print.printBuf(";\n");
       then
         ();
 
-      case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2))
+      case (DAE.EQUEQUATION(cr1=cr1, cr2=cr2, source = src))
       equation
         Print.printBuf("  ");
         ComponentReference.printComponentRef(cr1);
         Print.printBuf(" = ");
         ComponentReference.printComponentRef(cr2);
+        sourceStr = getSourceInformationStr(src);
+        Print.printBuf(sourceStr);
         Print.printBuf(";\n");
       then
         ();
 
-    case (DAE.ARRAY_EQUATION(exp = e1,array= e2))
+    case (DAE.ARRAY_EQUATION(exp = e1, array= e2, source = src))
       equation
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
         ExpressionDump.printExp(e2);
+        sourceStr = getSourceInformationStr(src);
+        Print.printBuf(sourceStr);        
         Print.printBuf(";\n");
       then
         ();
 
-    case (DAE.COMPLEX_EQUATION(lhs = e1,rhs= e2))
+    case (DAE.COMPLEX_EQUATION(lhs = e1, rhs= e2, source = src))
       equation
         Print.printBuf("  ");
         ExpressionDump.printExp(e1);
         Print.printBuf(" = ");
         ExpressionDump.printExp(e2);
+        sourceStr = getSourceInformationStr(src);
+        Print.printBuf(sourceStr);        
         Print.printBuf(";\n");
       then
         ();
 
-    case (DAE.DEFINE(componentRef = c,exp = e))
+    case (DAE.DEFINE(componentRef = c, exp = e, source = src))
       equation
         Print.printBuf("  ");
         ComponentReference.printComponentRef(c);
         Print.printBuf(" ::= ");
         ExpressionDump.printExp(e);
+        sourceStr = getSourceInformationStr(src);
+        Print.printBuf(sourceStr);        
         Print.printBuf(";\n");
       then
         ();
-    case (DAE.ASSERT(condition=e1,message=e2))
+    
+    case (DAE.ASSERT(condition=e1, message=e2, source = src))
       equation
         Print.printBuf("assert(");
         ExpressionDump.printExp(e1);
         Print.printBuf(",");
-        ExpressionDump.printExp(e2);
-        Print.printBuf(");\n");
+        ExpressionDump.printExp(e2);        
+        Print.printBuf(") ");
+        sourceStr = getSourceInformationStr(src);
+        Print.printBuf(sourceStr);
+        Print.printBuf(";\n");
       then
         ();
-    case (DAE.NORETCALL(functionName = functionName, functionArgs = functionArgs))
+    
+    case (DAE.NORETCALL(functionName = functionName, functionArgs = functionArgs, source = src))
       equation
         Print.printBuf(Absyn.pathString(functionName));
         Print.printBuf("(");
         Print.printBuf(ExpressionDump.printExpListStr(functionArgs));
-        Print.printBuf(");\n");
+        Print.printBuf(") ");        
+        sourceStr = getSourceInformationStr(src);
+        Print.printBuf(sourceStr);        
+        Print.printBuf(";\n");
       then
         ();
-    case _ then ();
+    
+    case _
+      equation
+         Print.printBuf("/* FIXME: UNHANDLED_EQUATION in DAEDump.dumpEquation */;\n");
+      then 
+        ();
+    
   end matchcontinue;
 end dumpEquation;
 
@@ -1332,77 +1358,93 @@ public function dumpEquationStr "function: dumpEquationStr
 algorithm
   outString := matchcontinue (inElement)
     local
-      String s1,s2,s3,s4,s5,str;
+      String s1,s2,s3,s4,s5,str,sourceStr;
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c,cr1,cr2;
       list<DAE.Exp> es;
       Absyn.Path path;
+      DAE.ElementSource src;
+      list<SCode.Comment> cmt;
 
-    case (DAE.EQUATION(exp = e1,scalar = e2))
+    case (DAE.EQUATION(exp = e1,scalar = e2,source = src))
       equation
+        cmt = DAEUtil.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
-        s2 = stringAppend("  ", s1);
-        s3 = stringAppend(s2, " = ");
-        s4 = ExpressionDump.printExpStr(e2);
-        s5 = stringAppend(s3, s4);
-        str = stringAppend(s5, ";\n");
+        s2 = ExpressionDump.printExpStr(e2);
+        str = stringAppendList({"  ", s1, " = ", s2, sourceStr, ";\n"});
       then
         str;
 
-     case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2))
+     case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2,source = src))
       equation
+        cmt = DAEUtil.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
         s1 = ComponentReference.printComponentRefStr(cr1);
-        s2 = stringAppend("  ", s1);
-        s3 = stringAppend(s2, " = ");
-        s4 = ComponentReference.printComponentRefStr(cr2);
-        s5 = stringAppend(s3, s4);
-        str = stringAppend(s5, ";\n");
+        s2 = ComponentReference.printComponentRefStr(cr2);
+        str = stringAppendList({"  ", s1, " = ", s2, sourceStr, ";\n"});
       then
         str;
 
-    case(DAE.ARRAY_EQUATION(exp=e1,array=e2)) equation
-      s1 = ExpressionDump.printExpStr(e1);
-      s2 = ExpressionDump.printExpStr(e2);
-      str = "  " +& s1 +& " = " +& s2;
-    then str;
-
-    case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2)) equation
-      s1 = ExpressionDump.printExpStr(e1);
-      s2 = ExpressionDump.printExpStr(e2);
-      str = "  " +& s1 +& " = " +& s2;
-    then str;
-
-    case (DAE.DEFINE(componentRef = c,exp = e))
+    case(DAE.ARRAY_EQUATION(exp=e1,array=e2,source = src)) 
       equation
+        cmt = DAEUtil.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = "  " +& s1 +& " = " +& s2 +& sourceStr +& ";\n";
+      then 
+        str;
+
+    case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2,source = src)) 
+      equation
+        cmt = DAEUtil.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
+        s1 = ExpressionDump.printExpStr(e1);
+        s2 = ExpressionDump.printExpStr(e2);
+        str = "  " +& s1 +& " = " +& s2 +& sourceStr +& ";\n";
+      then 
+        str;
+
+    case (DAE.DEFINE(componentRef = c,exp = e,source = src))
+      equation
+        cmt = DAEUtil.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
         s1 = ComponentReference.printComponentRefStr(c);
         s2 = stringAppend("  ", s1);
         s3 = stringAppend(" ::= ", s2);
         s4 = ExpressionDump.printExpStr(e);
         s5 = stringAppend(s3, s4);
-        str = stringAppend(s5, ";\n");
+        str = stringAppend(s5, sourceStr +& ";\n");
       then
         str;
 
-    case (DAE.ASSERT(condition=e1,message = e2))
+    case (DAE.ASSERT(condition=e1,message = e2,source = src))
       equation
+        cmt = DAEUtil.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        str = stringAppendList({"  assert(",s1, ",",s2,");\n"});
+        str = stringAppendList({"  assert(",s1, ",",s2,") ", sourceStr, ";\n"});
       then
         str;
 
-    case (DAE.TERMINATE(message=e1))
+    case (DAE.TERMINATE(message=e1,source = src))
       equation
+        cmt = DAEUtil.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
         s1 = ExpressionDump.printExpStr(e1);
-        str = stringAppendList({"  terminate(",s1,");\n"});
+        str = stringAppendList({"  terminate(",s1,") ", sourceStr, ";\n"});
       then
         str;
 
-    case (DAE.NORETCALL(functionName=path,functionArgs=es))
+    case (DAE.NORETCALL(functionName=path,functionArgs=es,source = src))
       equation
+        cmt = DAEUtil.getCommentsFromSource(src);
+        sourceStr = cmtListToString(cmt);
         s1 = Absyn.pathString(path);
         s2 = ExpressionDump.printExpStr(DAE.TUPLE(es));
-        str = stringAppendList({"  ",s1,s2,";\n"});
+        str = stringAppendList({"  ", s1, s2, sourceStr, ";\n"});
       then
         str;
     // adrpo: TODO! FIXME! should we say UNKNOWN equation here? we don't handle all cases!
@@ -3212,7 +3254,7 @@ protected function dumpEquationsStream "function: dumpEquationsStream
 algorithm
   outStream := match (inElementLst, inStream)
     local
-      String s1,s2,s3,s;
+      String s1,s2,s3,s,sourceStr;
       DAE.Exp e1,e2,e3,e;
       list<DAE.Exp> conds,expl;
       list<DAE.Element> xs,xs1,xs2;
@@ -3222,77 +3264,91 @@ algorithm
       DAE.Element el;
       Absyn.Path path;
       DAE.Dimensions dims;
+      DAE.ElementSource src;
     
     case ({}, str) then str;
     
-    case ((DAE.EQUATION(exp = e1,scalar = e2) :: xs), str)
+    case ((DAE.EQUATION(exp = e1, scalar = e2, source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        str = IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
+        str = IOStream.appendList(str, {"  ", s1, " = ", s2, sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
     
-    case ((DAE.EQUEQUATION(cr1=cr1,cr2=cr2) :: xs), str)
+    case ((DAE.EQUEQUATION(cr1=cr1, cr2=cr2, source = src) :: xs), str)
       equation
-        str = IOStream.append(str, "  " +& ComponentReference.printComponentRefStr(cr1) +&" = " +& ComponentReference.printComponentRefStr(cr2) +& ";\n");
+        sourceStr = getSourceInformationStr(src);
+        str = IOStream.append(str, "  " +& 
+          ComponentReference.printComponentRefStr(cr1) +& 
+          " = " +& 
+          ComponentReference.printComponentRefStr(cr2) +&
+          sourceStr +&
+          ";\n");
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.ARRAY_EQUATION(dimension = dims, exp = e1,array = e2) :: xs), str)
+    case ((DAE.ARRAY_EQUATION(dimension = dims, exp = e1, array = e2, source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         s3 = Debug.bcallret1(Config.typeinfo(), Types.printDimensionsStr, dims, "");
         s3 = Util.if_(Config.typeinfo()," /* array equation [" +& s3 +& "] */","");
-        str = IOStream.appendList(str, {"  ", s1, " = ", s2, s3, ";\n"});
+        str = IOStream.appendList(str, {"  ", s1, " = ", s2, s3, sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.COMPLEX_EQUATION(lhs = e1,rhs= e2) :: xs), str)
+    case ((DAE.COMPLEX_EQUATION(lhs = e1, rhs= e2, source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        str = IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
+        str = IOStream.appendList(str, {"  ", s1, " = ", s2, sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.DEFINE(componentRef = c,exp = e) :: xs), str)
+    case ((DAE.DEFINE(componentRef = c, exp = e, source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s1 = ComponentReference.printComponentRefStr(c);
         s2 = ExpressionDump.printExpStr(e);
-        str = IOStream.appendList(str, {"  ", s1, " = ", s2, ";\n"});
+        str = IOStream.appendList(str, {"  ", s1, " = ", s2, sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.ASSERT(condition=e1,message = e2,level = DAE.ENUM_LITERAL(index=1)) :: xs), str)
+    case ((DAE.ASSERT(condition=e1, message = e2, level = DAE.ENUM_LITERAL(index=1), source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
-        str = IOStream.appendList(str, {"  assert(",s1,",",s2,");\n"});
+        str = IOStream.appendList(str, {"  assert(",s1,",",s2,")", sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.ASSERT(condition=e1,message = e2,level = e3) :: xs), str)
+    case ((DAE.ASSERT(condition=e1, message = e2, level = e3, source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s1 = ExpressionDump.printExpStr(e1);
         s2 = ExpressionDump.printExpStr(e2);
         s3 = ExpressionDump.printExpStr(e3);
-        str = IOStream.appendList(str, {"  assert(",s1,",",s2,",",s3,");\n"});
+        str = IOStream.appendList(str, {"  assert(",s1,",",s2,",",s3,")",sourceStr,";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
         
-    case (DAE.TERMINATE(message=e1) :: xs, str)
+    case (DAE.TERMINATE(message=e1, source = src) :: xs, str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s1 = ExpressionDump.printExpStr(e1);
-        str = IOStream.appendList(str, {"  terminate(",s1,");\n"});
+        str = IOStream.appendList(str, {"  terminate(",s1,")", sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
@@ -3301,20 +3357,23 @@ algorithm
       then 
         str;
 
-    case ((DAE.IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::tb),equations3 = {}) :: xs), str)
-      equation        
+    case ((DAE.IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::tb),equations3 = {}, source = src) :: xs), str)
+      equation
+        sourceStr = getSourceInformationStr(src);        
         str = IOStream.append(str, "  if ");
         str = IOStream.append(str, ExpressionDump.printExpStr(e));
         str = IOStream.append(str, " then\n");
         str = dumpEquationsStream(xs1, str);
         str = dumpIfEquationsStream(conds, tb, str);
-        str = IOStream.append(str, "  end if;\n");
+        str = IOStream.append(str, "  end if");
+        str = IOStream.append(str, sourceStr +& ";\n");
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::tb),equations3 = xs2) :: xs), str)
+    case ((DAE.IF_EQUATION(condition1 = (e::conds),equations2 = (xs1::tb),equations3 = xs2, source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         str = IOStream.append(str, "  if ");
         str = IOStream.append(str, ExpressionDump.printExpStr(e));
         str = IOStream.append(str, " then\n");
@@ -3322,13 +3381,14 @@ algorithm
         str = dumpIfEquationsStream(conds, tb, str);
         str = IOStream.append(str, "  else\n");
         str = dumpEquationsStream(xs2, str);
-        str = IOStream.append(str, "  end if;\n");
+        str = IOStream.append(str, "  end if" +& sourceStr +& ";\n");
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.WHEN_EQUATION(condition = e,equations = xs1,elsewhen_ = SOME(el)) :: xs), str)
+    case ((DAE.WHEN_EQUATION(condition = e,equations = xs1,elsewhen_ = SOME(el), source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);        
         str = IOStream.append(str, "when ");
         str = IOStream.append(str, ExpressionDump.printExpStr(e));
         str = IOStream.append(str, " then\n");
@@ -3338,37 +3398,41 @@ algorithm
       then
         str;
 
-    case ((DAE.WHEN_EQUATION(condition = e,equations = xs1,elsewhen_ = NONE()) :: xs), str)
+    case ((DAE.WHEN_EQUATION(condition = e,equations = xs1,elsewhen_ = NONE(), source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         str = IOStream.append(str, "  when ");
         str = IOStream.append(str, ExpressionDump.printExpStr(e));
         str = IOStream.append(str, " then\n");
         str = dumpEquationsStream(xs1, str);
-        str = IOStream.append(str, "  end when;\n");
+        str = IOStream.append(str, "  end when" +& sourceStr +& ";\n");
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.REINIT(componentRef = cr,exp = e) :: xs), str)
+    case ((DAE.REINIT(componentRef = cr, exp = e, source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s = ComponentReference.printComponentRefStr(cr);
         s1 = ExpressionDump.printExpStr(e);
-        str = IOStream.appendList(str, {"  reinit(",s,",",s1,");\n"});
+        str = IOStream.appendList(str, {"  reinit(",s,",",s1,")",sourceStr,";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
 
-    case ((DAE.NORETCALL(functionName=path,functionArgs=expl) :: xs), str)
+    case ((DAE.NORETCALL(functionName = path, functionArgs = expl, source = src) :: xs), str)
       equation
+        sourceStr = getSourceInformationStr(src);
         s = Absyn.pathString(path);
         s1 = stringDelimitList(List.map(expl,ExpressionDump.printExpStr),",");
-        str = IOStream.appendList(str, {"  ",s,"(",s1,");\n"});
+        str = IOStream.appendList(str, {"  ",s,"(",s1,")", sourceStr, ";\n"});
         str = dumpEquationsStream(xs, str);
       then
         str;
 
     case ((_ :: xs), str)
       equation
+        str = IOStream.append(str, "  /* unhandled equation in DAEDump.dumpEquationsStream FIXME! */\n");
         str = dumpEquationsStream(xs, str);
       then
         str;
@@ -3849,5 +3913,79 @@ algorithm
     case DAE.OUTPUT() then "output";
   end match;
 end unparseVarDirection;
+
+public function getSourceInformationStr
+"@author: adrpo
+ display the source information as string"
+  input DAE.ElementSource inSource;
+  output String outStr;
+algorithm
+  outStr := matchcontinue(inSource)
+    local
+      Absyn.Info i;
+      list<Absyn.Within> po;
+      list<Option<DAE.ComponentRef>> iol;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> ceol;
+      list<Absyn.Path> tl;
+      list<DAE.SymbolicOperation> op;
+      list<SCode.Comment> cmt;
+      String str;
+    
+    case (_)
+      equation
+        false = Flags.isSet(Flags.SHOW_EQUATION_SOURCE);
+      then
+        "";
+    
+    case (DAE.SOURCE(i, po, iol, ceol, tl, op, cmt))
+      equation
+        str = cmtListToString(cmt);
+        str = str +& " /* models: " +& stringDelimitList(List.map(po, withinString), ", ") +& " */";
+      then
+        str;
+  end matchcontinue;
+end getSourceInformationStr;
+
+protected function withinString
+  input Absyn.Within w;
+  output String str;
+algorithm
+  str := match (w)
+    local
+      Absyn.Path p1;
+    case (Absyn.TOP()) then "TOP";
+    case (Absyn.WITHIN(p1)) then Absyn.pathString(p1);
+  end match;
+end withinString;
+
+public function cmtListToString
+  input list<SCode.Comment> inCmtLst;
+  output String outStr;
+algorithm
+  outStr := matchcontinue(inCmtLst)
+    local 
+      SCode.Comment c; 
+      list<SCode.Comment> rest;
+      String str;
+      
+    case ({}) then "";
+    
+    case ({c})
+      equation
+        str = dumpCommentOptionStr(SOME(c));
+      then
+        str;
+    
+    case (c::rest)
+      equation
+        str = dumpCommentOptionStr(SOME(c));
+        str = str +& " " +& cmtListToString(rest);
+      then
+        str;
+    
+    case (_) then "";
+  
+  end matchcontinue;
+end cmtListToString;
 
 end DAEDump;

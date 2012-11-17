@@ -7861,7 +7861,7 @@ algorithm
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         (cache,crefInner) = PrefixUtil.prefixCref(cache,env,ih,innerPrefix, ComponentReference.makeCrefIdent(n, DAE.T_UNKNOWN_DEFAULT, {}));
         ih = InnerOuter.addOuterPrefixToIH(ih, crefOuter, crefInner);
-        
+        outers = List.unionElt(crefOuter, outers);
         // update the inner with the outer for easy reference
         ih = InnerOuter.updateInstHierarchy(ih, innerPrefix, ioInner,
                InnerOuter.INST_INNER(
@@ -7872,7 +7872,7 @@ algorithm
                   typePath, // fully qual type path
                   innerScope, // the scope,                  
                   instResult, 
-                  crefOuter::outers // outers connected to this inner
+                  outers // outers connected to this inner
                   ));
 
         // outer dae has no meaning!

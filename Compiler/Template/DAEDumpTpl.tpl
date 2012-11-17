@@ -571,53 +571,63 @@ match lst
   case EQUATION(__) then 
     let lhs_str = dumpExp(exp)
     let rhs_str = dumpExp(scalar)
+    let source_src = dumpSource(source)
     <<
-    <%lhs_str%> = <%rhs_str%>;
+    <%lhs_str%> = <%rhs_str%><%source_src%>;
     >>
   case EQUEQUATION(__) then 
     let lhs_cref = dumpCref(cr1)
     let rhs_cref = dumpCref(cr2)
+    let source_src = dumpSource(source)
     <<
-    <%lhs_cref%> = <%rhs_cref%>;
+    <%lhs_cref%> = <%rhs_cref%><%source_src%>;
     >>
   case ARRAY_EQUATION(__) then
     let lhs_str = dumpExp(exp)
-    let rhs_str = dumpExp(array) 
+    let rhs_str = dumpExp(array)
+    let source_src = dumpSource(source)
     <<
-    <%lhs_str%> = <%rhs_str%>;
+    <%lhs_str%> = <%rhs_str%><%source_src%>;
     >>
   case COMPLEX_EQUATION(__) then 
     let lhs_str = dumpExp(lhs)
-    let rhs_str = dumpExp(rhs) 
+    let rhs_str = dumpExp(rhs)
+    let source_src = dumpSource(source)
     <<
-    <%lhs_str%> = <%rhs_str%>;
+    <%lhs_str%> = <%rhs_str%><%source_src%>;
     >>
   case DEFINE(__) then
     let lhs_str = dumpCref(componentRef)
-    let rhs_str = dumpExp(exp) 
+    let rhs_str = dumpExp(exp)
+    let source_src = dumpSource(source)
     <<
-    <%lhs_str%> = <%rhs_str%>;
+    <%lhs_str%> = <%rhs_str%><%source_src%>;
     >>  
   case WHEN_EQUATION(__) then dumpWhenEquation(lst)
   case IF_EQUATION(__) then dumpIfEquation(lst)
   case ASSERT(__) then 
     let cond_str = dumpExp(condition)
     let msg_str = dumpExp(message)
+    let source_src = dumpSource(source)
     <<
-    assert(<%cond_str%>,<%msg_str%>);
+    assert(<%cond_str%>,<%msg_str%>)<%source_src%>;
     >>
   case TERMINATE(__) then 
     let msg_str = dumpExp(message)
+    let source_src = dumpSource(source)
     <<
-    terminate(<%msg_str%>);
+    terminate(<%msg_str%>)<%source_src%>;
     >>
   case REINIT(__) then 
     let cref_str = dumpCref(componentRef)
     let exp_str = dumpExp(exp)
+    let source_src = dumpSource(source)
     <<
-    reinit(<%cref_str%>,<%exp_str%>);
+    reinit(<%cref_str%>,<%exp_str%>)<%source_src%>;
     >>
-  case NORETCALL(__) then 'NO RETURN CALL'
+  case NORETCALL(__) then 
+    let source_src = dumpSource(source) 
+    'NO_RETURN_CALL<%source_src%>;'
   else 'UNKNOWN EQUATION TYPE'
 end dumpEquation;
 
@@ -941,6 +951,14 @@ match path
   case IDENT(__) then  '<%name%>'
   else errorMsg("dumpPathLastIndent: Unknown path.")
 end dumpPathLastIndent;
+
+template dumpSource(DAE.ElementSource source)
+::=
+match source
+  case SOURCE(__) then
+    let cmt = (comment |> c => dumpComment(c) ;separator=" ")
+    '<%cmt%>'  
+end dumpSource;
 
 template errorMsg(String errMessage)
 ::=

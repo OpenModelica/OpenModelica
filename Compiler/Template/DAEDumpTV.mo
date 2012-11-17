@@ -249,6 +249,18 @@ package DAE
   
   end AvlTreeValue;
     
+  uniontype ElementSource "gives information about the origin of the element"
+    record SOURCE
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      list<Absyn.Within> partOfLst "the model(s) this element came from";
+      list<Option<ComponentRef>> instanceOptLst "the instance(s) this element is part of";
+      list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
+      list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
+      list<SymbolicOperation> operations "the symbolic operations used to end up with the final state of the element";
+      list<SCode.Comment> comment;
+    end SOURCE;
+  end ElementSource;
+    
   uniontype Element
     record VAR
       ComponentRef componentRef " The variable name";

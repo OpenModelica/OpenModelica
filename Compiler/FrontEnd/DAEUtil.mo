@@ -5061,12 +5061,12 @@ algorithm
     case (DAE.SOURCE(info, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1, operations1, comment1),
           DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2, operations2, comment2))
       equation
-        p = listAppend(partOfLst1, partOfLst2);
-        i = listAppend(instanceOptLst1, instanceOptLst2);
-        c = listAppend(connectEquationOptLst1, connectEquationOptLst2);
-        t = listAppend(typeLst1, typeLst2);
+        p = List.union(partOfLst1, partOfLst2);
+        i = List.union(instanceOptLst1, instanceOptLst2);
+        c = List.union(connectEquationOptLst1, connectEquationOptLst2);
+        t = List.union(typeLst1, typeLst2);
         o = listAppend(operations1, operations2);
-        comment = listAppend(comment1,comment2);
+        comment = List.union(comment1,comment2);
       then DAE.SOURCE(info,p,i,c,t, o,comment);
  end match;
 end mergeSources;
@@ -6548,5 +6548,48 @@ public function getElements
 algorithm
   DAE.DAE(outElements) := inDAE;
 end getElements;
+
+public function addAdditionalComment
+  input DAE.ElementSource source;
+  input String message;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue (source,message)
+    local
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<DAE.SymbolicOperation> operations;
+      DAE.Exp h1,t1,t2;
+      list<DAE.Exp> es1,es2,es;
+      list<SCode.Comment> comment;
+      Boolean b;
+      SCode.Comment c;
+
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations, comment),_)
+      equation
+        c = SCode.COMMENT(NONE(), SOME(message));        
+        b = listMember(c, comment);
+        comment = Util.if_(b, comment, c::comment);
+      then 
+        DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst, operations, comment);
+
+  end matchcontinue;
+end addAdditionalComment;
+
+public function getCommentsFromSource
+  input DAE.ElementSource source;
+  output list<SCode.Comment> outComments;
+algorithm
+  outComments := matchcontinue (source)
+    local
+      list<SCode.Comment> comment;
+
+    case (DAE.SOURCE(comment = comment)) then comment; 
+
+  end matchcontinue;
+end getCommentsFromSource;
   
 end DAEUtil;

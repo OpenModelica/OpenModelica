@@ -387,6 +387,8 @@ constant DebugFlag SHOW_REDECLARE_ANALYSIS = DEBUG_FLAG(110, "showRedeclareAnaly
   Util.gettext("prints the result of the redeclare analysis (only works with +d=scodeInstShortcut)"));
 constant DebugFlag SHOW_PROGRAM_CHANGES = DEBUG_FLAG(111, "showProgramChanges",
     Util.gettext("prints the replacements to be done on program to remove redeclares (only works with +d=scodeInstShortcut)"));
+constant DebugFlag SHOW_EQUATION_SOURCE = DEBUG_FLAG(112, "showEquationSource",
+    Util.gettext("display the element source information in the dumped DAE for easier debugging"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -503,7 +505,8 @@ constant list<DebugFlag> allDebugFlags = {
   DUMP_CONST_REPL,
   PEDANTIC,
   SHOW_REDECLARE_ANALYSIS,
-  SHOW_PROGRAM_CHANGES
+  SHOW_PROGRAM_CHANGES,
+  SHOW_EQUATION_SOURCE
 };
 
 // CONFIGURATION FLAGS
