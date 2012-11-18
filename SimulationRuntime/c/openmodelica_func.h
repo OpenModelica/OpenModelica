@@ -58,6 +58,7 @@ extern "C" {
 #include "model_help.h"
 #include "delay.h"
 #include "nonlinearSystem.h"
+#include "events.h" /* sample*/ 
 
 /* DATA* initializeDataStruc(); */ /*create in model code */
 extern void setupDataStruc(DATA *data);

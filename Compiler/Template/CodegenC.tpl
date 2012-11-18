@@ -1470,11 +1470,21 @@ template functionRelations(list<ZeroCrossing> relations) "template functionRelat
   let resDesc = (relations |> ZERO_CROSSING(__) => '"<%ExpressionDump.printExpStr(relation_)%>", ' 
     ;separator="\n") 
   
+  let desc = match relations
+             case {} then
+               <<
+               const char *relationDescription[1] = {"empty"};
+               >> 
+             else
+               <<
+               const char *relationDescription[] = 
+               {
+                 <%resDesc%>
+               };
+               >>    
+  
   <<
-  const char *relationDescription[] =  
-  { 
-    <%resDesc%> 
-  }; 
+  <%desc%> 
   
   int function_updateRelations(DATA *data, int evalforZeroCross)
   {

@@ -87,7 +87,7 @@ typedef struct omc_ModelInput
   /* these two we need to know to be able to add
      the stuff in <Real ... />, <String ... /> to
      the correct variable in the correct map */
-  int                   lastCI; /* index */ 
+  int                   lastCI; /* index */
   omc_ModelVariables*   lastCT; /* type (classification) */
 } omc_ModelInput;
 
@@ -773,11 +773,13 @@ void read_input_xml(int argc, char **argv,
       modelData->realAlias[i].nameID  = (*itParam).second;
       modelData->realAlias[i].aliasType = 1;
     }
-    else if(aliasTmp.compare("time"))
+    else if(aliasTmp.compare("time")==0)
       modelData->realAlias[i].aliasType = 2;
     else
-      THROW("Alias variable not found.");
-
+    {
+      std::string msg = "Real Alias variable " + aliasTmp + " not found.";
+      THROW(msg.c_str());
+    }
     INFO3(LOG_DEBUG, "| read for %s aliasID %d from %s from setup file",
                 modelData->realAlias[i].info.name,
                 modelData->realAlias[i].nameID,
@@ -835,8 +837,10 @@ void read_input_xml(int argc, char **argv,
       modelData->integerAlias[i].aliasType = 1;
     }
     else
-      THROW("Alias variable not found.");
-
+    {
+      std::string msg = "Integer Alias variable " + aliasTmp + " not found.";
+      THROW(msg.c_str());
+    }
     INFO3(LOG_DEBUG, "| read for %s aliasID %d from %s from setup file",
                 modelData->integerAlias[i].info.name,
                 modelData->integerAlias[i].nameID,
@@ -894,8 +898,10 @@ void read_input_xml(int argc, char **argv,
       modelData->booleanAlias[i].aliasType = 1;
     }
     else
-      THROW("Alias variable not found.");
-
+    {
+      std::string msg = "Boolean Alias variable " + aliasTmp + " not found.";
+      THROW(msg.c_str());
+    }
     INFO3(LOG_DEBUG, "| read for %s aliasID %d from %s from setup file",
                 modelData->booleanAlias[i].info.name,
                 modelData->booleanAlias[i].nameID,
@@ -953,8 +959,10 @@ void read_input_xml(int argc, char **argv,
       modelData->stringAlias[i].aliasType = 1;
     }
     else
-      THROW("Alias variable not found.");
-
+    {
+      std::string msg = "String Alias variable " + aliasTmp + " not found.";
+      THROW(msg.c_str());
+    }
     INFO3(LOG_DEBUG, "| read for %s aliasID %d from %s from setup file",
                 modelData->stringAlias[i].info.name,
                 modelData->stringAlias[i].nameID,

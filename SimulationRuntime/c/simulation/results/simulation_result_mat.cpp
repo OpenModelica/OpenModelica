@@ -380,6 +380,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
     rows = 1+nVars+mdl_data->nParameters+mdl_data->nVarsAliases; */
   size_t ccol = 0; /* current column - index offset */
   size_t indx = 1;
+  size_t aliascol = 0;
   INTMAP::iterator it;
   /* assign rows & cols */
   rows = nVars + nParams;
@@ -424,10 +425,11 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
         /* row 1 - which table */
         dataInfo[ccol] = table;
         /* row 2 - index of var in table (variable 'Time' have index 1) */
+        aliascol = table==2?1:it->second+1;
         if (mdl_data->realAlias[i].negate)
-          dataInfo[ccol+1] = -(it->second+1);
+          dataInfo[ccol+1] = -aliascol;
         else
-          dataInfo[ccol+1] = it->second+1;
+          dataInfo[ccol+1] = aliascol;
         /* row 3 - linear interpolation == 0 */
         dataInfo[ccol+2] = 0;
         /* row 4 - not defined outside of the defined time range == -1 */
@@ -456,7 +458,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
       {
         /* row 1 - which table */
         dataInfo[ccol] = table;
-        /* row 2 - index of var in table (variable 'Time' have index 1) */
+        /* row 2 - index of var in table */
         if (mdl_data->integerAlias[i].negate)
           dataInfo[ccol+1] = -(it->second+1);
         else
@@ -495,7 +497,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
       {
         /* row 1 - which table */
         dataInfo[ccol] = table;
-        /* row 2 - index of var in table (variable 'Time' have index 1) */
+        /* row 2 - index of var in table */
         if (mdl_data->booleanAlias[i].negate)
         {
           dataInfo[ccol+1] = indx;

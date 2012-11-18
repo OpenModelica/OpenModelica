@@ -122,6 +122,7 @@ void simulation_result_plt::emit(DATA *data)
  */
 void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *simData)
 {
+  modelica_real value=0;
   /* save time first */
   /* cerr << "adding result for time: " << time; */
   /* cerr.flush(); */
@@ -156,10 +157,14 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
   for (int i = 0; i < simData->modelData.nAliasReal; i++) {
     if (!simData->modelData.realAlias[i].filterOutput) {
       ss << simData->modelData.realAlias[i].info.name << "\n";
-      if (simData->modelData.realAlias[i].negate)
-        ss << (data[currentPos++] = -simData->localData[0]->realVars[simData->modelData.realAlias[i].nameID]) << "\n";
+      if (simData->modelData.realAlias[i].aliasType == 2)
+        value = (simData->localData[0])->timeValue;
       else
-        ss << (data[currentPos++] = simData->localData[0]->realVars[simData->modelData.realAlias[i].nameID]) << "\n";
+        value = (simData->localData[0])->realVars[simData->modelData.realAlias[i].nameID];
+      if (simData->modelData.realAlias[i].negate)
+        ss << (data[currentPos++] = -value) << "\n";
+      else
+        ss << (data[currentPos++] = value) << "\n";
     }
   }
   /* .. alias integers .. */

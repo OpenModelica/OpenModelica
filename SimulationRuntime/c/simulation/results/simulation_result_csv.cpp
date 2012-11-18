@@ -56,6 +56,7 @@ void simulation_result_csv::emit(DATA *data)
   const char* formatint = "%i,";
   const char* formatbool = "%i,";
   const char* formatstring = "\"%s\",";
+  modelica_real value=0;
   rt_tick(SIM_TIMER_OUTPUT);
   fprintf(fout, format, data->localData[0]->timeValue);
 
@@ -69,10 +70,14 @@ void simulation_result_csv::emit(DATA *data)
     fprintf(fout, formatstring, (data->localData[0])->stringVars[i]);
 
   for (int i = 0; i < data->modelData.nAliasReal; i++) if (!data->modelData.realAlias[i].filterOutput){
-    if (data->modelData.realAlias[i].negate)
-      fprintf(fout, format, -(data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
+    if (data->modelData.realAlias[i].aliasType == 2)
+      value = (data->localData[0])->timeValue;
     else
-      fprintf(fout, format, (data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
+      value = (data->localData[0])->realVars[data->modelData.realAlias[i].nameID];
+    if (data->modelData.realAlias[i].negate)
+      fprintf(fout, format, -value);
+    else
+      fprintf(fout, format, value);
   }
   for (int i = 0; i < data->modelData.nAliasInteger; i++) if (!data->modelData.integerAlias[i].filterOutput){
     if (data->modelData.integerAlias[i].negate)
