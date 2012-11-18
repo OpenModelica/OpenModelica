@@ -214,10 +214,11 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
 
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */
+     // top level class
+    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2)))
       equation
         cache = Env.setCacheClassName(cache,path);
-        (cdecls, _, _) = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
+        cdecls = scodeFlatten(cdecls, inPath);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls);
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
@@ -235,10 +236,11 @@ algorithm
       then
         (cache,env_2,ih,dae2);
 
-    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
+    // class in package 
+    case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) 
       equation
         cache = Env.setCacheClassName(cache,path);
-        (cdecls, _, _) = SCodeFlatten.flattenClassInProgram(inPath, cdecls);
+        cdecls = scodeFlatten(cdecls, inPath);
         pathstr = Absyn.pathString(path);
                 
         //System.startTimer();
@@ -294,6 +296,30 @@ algorithm
 
   end match;
 end instantiateClass_dispatch;
+
+protected function scodeFlatten
+  input SCode.Program inProgram;
+  input Absyn.Path inPath;
+  output SCode.Program outProgram;
+algorithm
+  outProgram := matchcontinue(inProgram, inPath)
+  
+    // don't do dependency analysis on the program with 
+    // +d=scodeInstShortcut as it doesn't work yet in ALL cases  
+    case (_, _)
+      equation
+        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
+      then 
+        inProgram;
+    
+    case (_, _)
+      equation
+        (outProgram, _, _) = SCodeFlatten.flattenClassInProgram(inPath, inProgram);
+      then
+        outProgram;
+  
+  end matchcontinue;
+end scodeFlatten;
 
 public function instantiateClass
 "function: instantiateClass
@@ -2035,66 +2061,66 @@ algorithm
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("unit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"unit",optVal,exp,DAE.T_STRING_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("displayUnit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"displayUnit",optVal,exp,DAE.T_STRING_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     // min, the case of non-expanded arrays      
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     // max, the case of non-expanded arrays      
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         true = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_REAL_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     // start, the case of non-expanded arrays      
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         false = Config.splitArrays();
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"start",optVal,exp,ty,p);
-        then v::varLst;
+      then v::varLst;
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
         v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_REAL_DEFAULT,p);
-        then v::varLst;
+      then v::varLst;
     case(_,_,DAE.MOD(f,e,DAE.NAMEMOD("stateSelect",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_,_))))::submods,eqmod),_,ty)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre,ty);
@@ -6998,6 +7024,8 @@ algorithm
           info = info), _), _, _, _, _, _)
       equation
         failure((_, _, _) = Lookup.lookupClass(cache, env, t, false));
+        // good for GDB debugging to re-run the instElement again 
+        // (cache, env, ih, store, dae, csets, ci_state, vars, graph) = instElement(inCache, inEnv, inIH, inUnitStore, inMod, inPrefix, inState, inElement, inInstDims, inImplicit, inCallingScope, inGraph, inSets);        
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);
         pre = PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state);

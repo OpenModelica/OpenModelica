@@ -2860,7 +2860,8 @@ algorithm
         scodeP = SCodeSimplify.simplifyProgram(scodeP);
         (scodeP, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
         scodePNew = SCodeInstShortcut.translate(className, senv, scodeP);
-        (scodePNew, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodePNew);
+        // don't do the second dependency as it doesn't work in some cases!
+        // (scodePNew, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodePNew);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodePNew,className);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
       then 
