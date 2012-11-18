@@ -2976,7 +2976,7 @@ protected function makeInStreamCall
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   outInStreamCall := DAE.CALL(Absyn.IDENT("inStream"), {inStreamExp},
-    DAE.CALL_ATTR(DAE.T_UNKNOWN_DEFAULT, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
+    DAE.CALL_ATTR(DAE.T_REAL_DEFAULT, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
 end makeInStreamCall;
 
 protected function makePositiveMaxCall
