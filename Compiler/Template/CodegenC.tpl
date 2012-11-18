@@ -7888,7 +7888,7 @@ template expTypeShort(DAE.Type type)
   case T_COMPLEX(__)     then 'struct <%underscorePath(ClassInf.getStateName(complexClassType))%>'  
   case T_METATYPE(__) case T_METABOXED(__)    then "metatype"
   case T_FUNCTION_REFERENCE_VAR(__) then "fnptr"
-  case T_UNKNOWN(__) then "complex" /* TODO: Don't do this to me! */
+  case T_UNKNOWN(__) then "real /* assumming real for uknown type! */" /* TODO: Don't do this to me! */
   case T_ANYTYPE(__) then "complex" /* TODO: Don't do this to me! */
   else error(sourceInfo(),'expTypeShort:<%unparseType(type)%>')
 end expTypeShort;
