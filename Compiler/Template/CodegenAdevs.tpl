@@ -153,6 +153,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          void save_vars();
          void restore_vars();
          void clear_event_flags();
+		 bool check_for_new_events();
          bool initial() const { return atInit; }
 
          // Junk for the OpenModelica c runtime
@@ -414,6 +415,29 @@ template makeStateEventFunc(SimCode simCode)
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   <<
+
+  bool <%lastIdentOfPath(modelInfo.name)%>::check_for_new_events()
+  {
+	  bool result = false;
+	  double* z = new double[numZeroCrossings()];
+      <%zeroCrossingEqns(relations)%>
+	  for (int i = 0; i < numZeroCrossings(); i++)
+	  {
+		  if (z[i] < -epsilon && zc[i] == 1)
+		  {
+			  result = true;
+			  zc[i] = 0;
+		  }
+		  else if (z[i] > epsilon && zc[i] == 0)
+		  {
+			  result = true;
+			  zc[i] = 1;
+		  }
+	  }
+	  delete [] z;
+	  return result;
+  }
+
   void <%lastIdentOfPath(modelInfo.name)%>::state_event_func(const double* q, double* z)
   {
       calc_vars(q);
@@ -603,7 +627,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   <<
   void <%lastIdentOfPath(modelInfo.name)%>::calc_vars(const double* q, bool doReinit)
   {
-      bool iterate = false;
+      bool reInit = false, newEvents = false;
       active_model = this;
       if (doReinit) clear_event_flags();
       // Copy state variable arrays to values used in the odes
@@ -614,10 +638,12 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       }
       // Calculate the odes
       <%allEqns(allEquations,whenClauses)%>
-      if (iterate) 
+      if (atEvent)
+		  newEvents = check_for_new_events();
+      if (reInit || newEvents) 
       {
           save_vars();
-          calc_vars(NULL,true);
+          calc_vars(NULL,reInit);
       }
   }
   >>
@@ -820,7 +846,7 @@ template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDe
       <%preExp%>
                 double <%cref(stateVar)%>_tmp = <%cref(stateVar)%>;
                 <%cref(stateVar)%> = <%val%>;
-                iterate = iterate || (<%cref(stateVar)%>_tmp != <%cref(stateVar)%>);
+                reInit = reInit || (<%cref(stateVar)%>_tmp != <%cref(stateVar)%>);
                 >>
     case TERMINATE(__) then 
       let &preExp = buffer "" /*BUFD*/
