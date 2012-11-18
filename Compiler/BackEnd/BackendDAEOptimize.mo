@@ -434,14 +434,14 @@ algorithm
       BackendDAE.Shared shared; 
       list<BackendDAE.Var> varlst;
       DAE.ElementSource source;
-/*    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),(syst,shared,repl,eqns,b))
+    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),(syst,shared,repl,eqns,b))
       equation
         varlst = BackendEquation.equationVars(eqn,BackendVariable.daeVars(syst));
         (cr,i,exp,syst,shared,eqnType) = simpleEquationPast(varlst,eqn,syst,shared);
         // replace equation if necesarry
         (syst,shared,repl,eqns) = replacementsInEqnsFast(eqnType,cr,i,exp,repl,syst,shared,eqn,eqns);
       then ((syst,shared,repl,eqns,true));
-*/    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),_)
+/*    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),_)
       then simpleEquation(e1,e2,source,false,inTpl);
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source),_)
       then simpleEquation(e1,e2,source,false,inTpl);
@@ -453,7 +453,7 @@ algorithm
       then simpleExpression(e1,source,false,inTpl);
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),_)
       then simpleEquation(e1,e2,source,false,inTpl);
-    case (_,(syst,shared,repl,eqns,b))
+*/    case (_,(syst,shared,repl,eqns,b))
       then ((syst,shared,repl,eqn::eqns,b));
    end matchcontinue;
 end removeSimpleEquationsFastFinder1;
