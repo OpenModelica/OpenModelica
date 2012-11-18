@@ -153,7 +153,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          void save_vars();
          void restore_vars();
          void clear_event_flags();
-		 bool check_for_new_events();
+         bool check_for_new_events();
          bool initial() const { return atInit; }
 
          void calc_vars(const double* q = NULL, bool doReinit = false);
@@ -414,24 +414,24 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
 
   bool <%lastIdentOfPath(modelInfo.name)%>::check_for_new_events()
   {
-	  bool result = false;
-	  double* z = new double[numZeroCrossings()];
+    bool result = false;
+    double* z = new double[numZeroCrossings()];
       <%zeroCrossingEqns(relations)%>
-	  for (int i = 0; i < numZeroCrossings(); i++)
-	  {
-		  if (z[i] < -epsilon && zc[i] == 1)
-		  {
-			  result = true;
-			  zc[i] = 0;
-		  }
-		  else if (z[i] > epsilon && zc[i] == 0)
-		  {
-			  result = true;
-			  zc[i] = 1;
-		  }
-	  }
-	  delete [] z;
-	  return result;
+    for (int i = 0; i < numZeroCrossings(); i++)
+    {
+      if (z[i] < -epsilon && zc[i] == 1)
+      {
+        result = true;
+        zc[i] = 0;
+      }
+      else if (z[i] > epsilon && zc[i] == 0)
+      {
+        result = true;
+        zc[i] = 1;
+      }
+    }
+    delete [] z;
+    return result;
   }
 
   void <%lastIdentOfPath(modelInfo.name)%>::state_event_func(const double* q, double* z)
@@ -635,7 +635,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       // Calculate the odes
       <%allEqns(allEquations,whenClauses)%>
       if (atEvent)
-		  newEvents = check_for_new_events();
+      newEvents = check_for_new_events();
       if (reInit || newEvents) 
       {
           save_vars();
