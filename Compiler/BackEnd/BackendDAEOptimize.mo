@@ -434,14 +434,14 @@ algorithm
       BackendDAE.Shared shared; 
       list<BackendDAE.Var> varlst;
       DAE.ElementSource source;
-    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),(syst,shared,repl,eqns,b))
+/*    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),(syst,shared,repl,eqns,b))
       equation
         varlst = BackendEquation.equationVars(eqn,BackendVariable.daeVars(syst));
         (cr,i,exp,syst,shared,eqnType) = simpleEquationPast(varlst,eqn,syst,shared);
         // replace equation if necesarry
         (syst,shared,repl,eqns) = replacementsInEqnsFast(eqnType,cr,i,exp,repl,syst,shared,eqn,eqns);
       then ((syst,shared,repl,eqns,true));
-/*    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),_)
+*/    case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),_)
       then simpleEquation(e1,e2,source,false,inTpl);
     case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source),_)
       then simpleEquation(e1,e2,source,false,inTpl);
@@ -453,7 +453,7 @@ algorithm
       then simpleExpression(e1,source,false,inTpl);
     case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),_)
       then simpleEquation(e1,e2,source,false,inTpl);
-*/    case (_,(syst,shared,repl,eqns,b))
+    case (_,(syst,shared,repl,eqns,b))
       then ((syst,shared,repl,eqn::eqns,b));
    end matchcontinue;
 end removeSimpleEquationsFastFinder1;
@@ -933,12 +933,20 @@ protected function switchStateAlias
  output Integer i;
 algorithm
   (av,ia,v,i) := match(astate,vstate,vrepl,in_av,in_ia,in_v,in_i)
+    local
+      Integer s,sa;
     // no state keep it like it is
     case (false,_,_,_,_,_,_) then (in_av,in_ia,in_v,in_i);
     // alias state, var no state and replaceable -> switch
     case (true,false,true,_,_,_,_) then (in_v,in_i,in_av,in_ia);
-    // alias state, var state keep it like it is
-    case (true,true,_,_,_,_,_) then (in_av,in_ia,in_v,in_i);
+    // alias state, var state -> check StateSelect
+    case (true,true,_,_,_,_,_)
+      equation
+        sa = BackendVariable.varStateSelectPrioAlias(in_av);
+        s = BackendVariable.varStateSelectPrioAlias(in_v);
+        ((av,ia,v,i)) = Util.if_(intGt(sa,s),(in_v,in_i,in_av,in_ia),(in_av,in_ia,in_v,in_i));
+      then 
+        (av,ia,v,i);
     // alias state, var not replacable -> do not replace
     case (true,_,false,_,_,_,_) then fail();
   end match;
@@ -1082,6 +1090,7 @@ algorithm
       BackendDAE.VarKind kind;
     case BackendDAE.VAR(varKind=kind)
       equation
+        false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
