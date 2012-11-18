@@ -409,23 +409,29 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
       {
         it = r_indx_map.find(mdl_data->realAlias[i].nameID);
         if (it != r_indx_map.end())
+        {
           table = 2;
+          aliascol = it->second+1;
+        }
       }
       else if (mdl_data->realAlias[i].aliasType == 1) /* parameter */
       {
         it = r_indx_parammap.find(mdl_data->realAlias[i].nameID);
         if (it != r_indx_map.end())
+        {
           table = 1;
+          aliascol = it->second+1;
+        }
       } else if (mdl_data->realAlias[i].aliasType == 2) /* time */
       {
         table = 2;
+        aliascol = 1;
       }
       if(table)
       {
         /* row 1 - which table */
         dataInfo[ccol] = table;
         /* row 2 - index of var in table (variable 'Time' have index 1) */
-        aliascol = table==2?1:it->second+1;
         if (mdl_data->realAlias[i].negate)
           dataInfo[ccol+1] = -aliascol;
         else
