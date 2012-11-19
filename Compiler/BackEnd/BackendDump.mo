@@ -1187,7 +1187,7 @@ public function dumpEqnsArray
   Helper function to dump."
   input BackendDAE.EquationArray eqns;
 algorithm
-  dumpEqns2(BackendDAEUtil.equationList(eqns), 1);
+  _ := List.fold(BackendDAEUtil.equationList(eqns),dumpEqns2,1);
 end dumpEqnsArray;
 
 public function dumpEqns
@@ -1195,35 +1195,18 @@ public function dumpEqns
   Helper function to dump."
   input list<BackendDAE.Equation> eqns;
 algorithm
-  dumpEqns2(eqns, 1);
+  _ := List.fold(eqns,dumpEqns2,1);
 end dumpEqns;
 
 protected function dumpEqns2
 "function: dumpEqns2
   Helper function to dump_eqns"
-  input list<BackendDAE.Equation> inEquationLst;
+  input BackendDAE.Equation inEquation;
   input Integer inInteger;
+  output Integer oInteger;
 algorithm
-  _ := match (inEquationLst,inInteger)
-    local
-      String es,is;
-      Integer index_1,index;
-      BackendDAE.Equation eqn;
-      list<BackendDAE.Equation> eqns;
-    case ({},_) then ();
-    case ((eqn :: eqns),index)
-      equation
-        es = equationStr(eqn);
-        is = intString(index);
-        print(is);
-        print(" : ");
-        print(es);
-        print("\n");
-        index_1 = index + 1;
-        dumpEqns2(eqns, index_1);
-      then
-        ();
-  end match;
+  print(intString(inInteger) +& " (" +& intString(BackendEquation.equationSize(inEquation)) +& "): " +& equationStr(inEquation) +& "\n");
+  oInteger := inInteger + 1;
 end dumpEqns2;
 
 public function dumpEqnsStr
@@ -1236,7 +1219,7 @@ algorithm
 end dumpEqnsStr;
 
 protected function dumpEqnsStr2
-"function: dumpEqns2
+"function: dumpEqnsStr2
   Helper function to dump_eqns"
   input list<BackendDAE.Equation> inEquationLst;
   input Integer inInteger;
@@ -1995,7 +1978,7 @@ algorithm
   len_str := intString(len);
   print(len_str);
   print(" variables and equations\n");
-  dumpMatching2(v, 1);
+  dumpMatching2(v, 1, len);
 end dumpMatching;
 
 protected function dumpMatching2
@@ -2004,30 +1987,23 @@ protected function dumpMatching2
   Helper function to dumpMatching."
   input array<Integer> v;
   input Integer i;
+  input Integer len;
 algorithm
-  _ := matchcontinue (v,i)
+  _ := matchcontinue (v,i,len)
     local
-      Integer len,eqn;
+      Integer eqn;
       String s,s2;
-    case (_,_)
+    case (_,_,_)
       equation
-        len = arrayLength(v);
-        (len == i) = true;
+        true = intLe(i,len);
         s = intString(i);
         eqn = v[i];
         s2 = intString(eqn);
         print("var " +& s +& " is solved in eqn " +& s2 +& "\n");
+        dumpMatching2(v, i+1, len);
       then
         ();
-    case (_,_)
-      equation
-        len = arrayLength(v);
-        (len == i) = false;
-        s = intString(i);
-        eqn = v[i];
-        s2 = intString(eqn);
-        print("var " +& s +& " is solved in eqn " +& s2 +& "\n");
-        dumpMatching2(v, i+1);
+    else
       then
         ();
   end matchcontinue;

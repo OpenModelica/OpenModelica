@@ -1669,7 +1669,7 @@ algorithm
     case ((cr,(e,source))::rest,_,_,_)
       equation
         source = DAEUtil.mergeSources(iSource,source);
-        size = Expression.sizeOf(ComponentReference.crefTypeConsiderSubs(cr));
+        size = Expression.sizeOf(Expression.typeof(e));
       then
        lowerWhenIfEqns2(rest,inCond,iSource,BackendDAE.WHEN_EQUATION(size,BackendDAE.WHEN_EQ(inCond,cr,e,NONE()),source)::inEqns);       
   end match;

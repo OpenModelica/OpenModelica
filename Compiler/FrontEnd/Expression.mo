@@ -1805,7 +1805,7 @@ algorithm
     case (DAE.RCONST(real = _)) then DAE.T_REAL_DEFAULT;
     case (DAE.SCONST(string = _)) then DAE.T_STRING_DEFAULT;
     case (DAE.BCONST(bool = _)) then DAE.T_BOOL_DEFAULT;
-    case (DAE.ENUM_LITERAL(name = p)) then DAE.T_ENUMERATION(NONE(), p, {}, {}, {}, DAE.emptyTypeSource);
+    case (DAE.ENUM_LITERAL(name = p, index=i)) then DAE.T_ENUMERATION(SOME(i), p, {}, {}, {}, DAE.emptyTypeSource);
     case (DAE.CREF(ty = tp)) then tp;
     case (DAE.BINARY(operator = op)) then typeofOp(op);
     case (DAE.UNARY(operator = op)) then typeofOp(op);

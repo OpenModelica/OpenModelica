@@ -9144,7 +9144,8 @@ algorithm
   (outDAE, outInitDAE) := matchcontinue(inDAE)
     local
       BackendDAE.EqSystems systs;
-      BackendDAE.Variables knvars, vars, fixvars, evars, eavars;
+      BackendDAE.Shared shared;
+      BackendDAE.Variables knvars, vars, fixvars, evars, eavars, avars;
       BackendDAE.EquationArray inieqns, eqns, emptyeqns, reeqns;
       BackendDAE.EqSystem initsyst;
       BackendDAE.BackendDAE initdae;
@@ -9154,19 +9155,15 @@ algorithm
       array<DAE.Constraint> constraints;
       array<DAE.ClassAttributes> classAttrs;
       
-    case (_)
-      equation
-        false = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
-      then
-        (inDAE,inDAE);      
-      
     case(BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knvars,
+                                                 aliasVars=avars,
                                                  initialEqs=inieqns,
                                                  constraints=constraints,
                                                  classAttrs=classAttrs,
                                                  cache=cache,
                                                  env=env,
                                                  functionTree=functionTree))) equation
+      true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
       // collect vars for initial system
       vars = emptyVars();
       fixvars = emptyVars();
@@ -9175,6 +9172,10 @@ algorithm
       // collect eqns for initial system
       ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (listEquation({}), listEquation({})));
       ((vars, fixvars, eqns, reeqns)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns)));
+      
+      // collect pre(var) from alias
+      //((_, vars, fixvars)) = traverseBackendDAEExpsEqns(eqns, collectAliasPreVars, (avars, vars, fixvars));
+      //((_, vars, fixvars)) = traverseBackendDAEExpsEqns(reeqns, collectAliasPreVars, (avars, vars, fixvars));
       
       // generate initial system
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
@@ -9208,6 +9209,10 @@ algorithm
       // now let's solve the system!
       initdae = solveInitialSystem1(vars, eqns, inDAE, initdae);
     then(inDAE, initdae);
+      
+    case BackendDAE.DAE(systs, shared)
+      then
+        (inDAE,BackendDAE.DAE({}, shared));      
   end matchcontinue;
 end solveInitialSystem;
 
@@ -9593,6 +9598,46 @@ algorithm
     then fail();
   end matchcontinue;
 end addStartValueEquations1;
+
+protected function collectAliasPreVars
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      BackendDAE.Variables avars,vars,fixvars;
+    case ((exp,(avars,vars,fixvars)))
+      equation
+         ((_,(avars,vars,fixvars))) = Expression.traverseExp(exp,collectAliasPreVarsExp,(avars,vars,fixvars));
+       then
+        ((exp,(avars,vars,fixvars)));
+    case _ then inTpl;
+  end matchcontinue;
+end collectAliasPreVars;
+
+protected function collectAliasPreVarsExp
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      BackendDAE.Variables avars,vars,fixvars;
+      DAE.ComponentRef cr;
+      BackendDAE.Var v;    
+    // add it?
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}),(avars,vars,fixvars)))
+      equation
+         (v::_,_) = BackendVariable.getVar(cr, avars);
+         ((_,(vars,fixvars))) =  collectInitialVars((v,(vars,fixvars)));
+      then
+        ((e, (avars,vars,fixvars)));
+    else then inTuple;
+  end matchcontinue;
+end collectAliasPreVarsExp;
+
 
 protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqnsSystem
   author Frenkel TUD 2012-10"
