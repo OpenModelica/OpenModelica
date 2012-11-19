@@ -450,6 +450,29 @@ algorithm
   end matchcontinue;
 end addIterator;
 
+public function merge
+  "Copies all entires from the first scope of inSrcTable to the first scope of
+   inDestTable."
+  input SymbolTable inDestTable;
+  input SymbolTable inSrcTable;
+  output SymbolTable outSymbolTable;
+algorithm
+  outSymbolTable := match(inDestTable, inSrcTable)
+    local
+      list<tuple<Key, Value>> entries;
+      HashTable src_ht, dest_ht;
+      SymbolTable rest_st;
+
+    case (dest_ht :: rest_st, src_ht :: _)
+      equation
+        entries = BaseHashTable.hashTableList(src_ht);
+        dest_ht = List.fold(entries, BaseHashTable.add, dest_ht);
+      then
+        dest_ht :: rest_st;
+
+  end match;
+end merge;
+
 protected function addAliases
   "This function adds aliases for all top-level components in a class. For each
    component we add an alias from the fully qualified name to the component's

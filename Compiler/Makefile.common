@@ -58,6 +58,7 @@ Dependency.mo \
 Dump.mo \
 DumpGraphviz.mo \
 Env.mo \
+EnvExtends.mo \
 EvalFunction.mo \
 ExpandableConnectors.mo \
 Expression.mo \

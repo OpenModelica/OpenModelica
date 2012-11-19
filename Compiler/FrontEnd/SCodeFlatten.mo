@@ -47,6 +47,7 @@ public import SCodeEnv;
 public import SCodeFlattenImports;
 
 protected import Debug;
+protected import EnvExtends;
 protected import Flags;
 protected import List;
 protected import System;
@@ -115,11 +116,12 @@ algorithm
     case (_, prog)
       equation
         //System.startTimer();
-        System.tmpTickResetIndex(0,SCodeEnv.tmpTickIndex);
+        System.tmpTickResetIndex(0, SCodeEnv.tmpTickIndex);
+        System.tmpTickResetIndex(1, SCodeEnv.extendsTickIndex);
 
         env = SCodeEnv.buildInitialEnv();
         env = SCodeEnv.extendEnvWithClasses(prog, env);
-        env = SCodeEnv.updateExtendsInEnv(env);
+        env = EnvExtends.update(env);
         
         (prog, env, consts) = SCodeDependency.analyse(inClassName, env, prog);
         checkForCardinality(env);
@@ -178,7 +180,7 @@ algorithm
       equation
         env = SCodeEnv.buildInitialEnv();
         env = SCodeEnv.extendEnvWithClasses(prog, env);
-        env = SCodeEnv.updateExtendsInEnv(env);
+        env = EnvExtends.update(env);
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
       then
         prog;

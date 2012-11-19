@@ -37,58 +37,32 @@ encapsulated package SCodeFlattenRedeclare
   RCS: $Id$
 
   This module contains redeclare-specific functions used by SCodeFlatten to
-  handle redeclares. There are three different types of redeclares that are
-  handled: redeclare modifiers, element redeclares and class extends.
+  handle redeclares. Redeclares can be either modifiers or elements.
 
   REDECLARE MODIFIERS:
-  Redeclare modifiers are redeclarations given as modifiers on an extends
-  clause. When an extends clause is added to the environment with
-  SCodeEnv.extendEnvWithExtends these modifiers are extracted with
-  extractRedeclareFromModifier as a list of elements, and then stored in the
-  SCodeEnv.EXTENDS representation. When SCodeLookup.lookupInBaseClasses is used
-  to search for an identifier in a base class, these elements are replaced in
-  the environment prior to searching in it by the replaceRedeclares function.
+  Redeclare modifiers are redeclarations given as modifiers on e.g. extends
+  clauses. The redeclares are usually extracted from modifiers with the
+  extractRedeclaresFromModifier function, like in SCodeEnv.extendEnvWithExtends.
+  The redeclares are in the form of raw modifiers, which are simply
+  SCode.Elements. They are then replaced when needed with the replaceRedeclares
+  function, which use the function processRedeclare to turn the into Items ready
+  to be inserted in the environment. The replaced items are of the type
+  SCodeEnv.REDECLARED_ITEM, which contains the new item and the environment it
+  was declared in. The function SCodeEnv.resolveRedeclaredItem may then be used
+  to resolve a redeclared item to get the actual item and it's environment,
+  which is important to make sure that e.g. redeclared elements are instantiated
+  in the environment where they were declared.
 
   ELEMENT REDECLARES:
   Element redeclares are similar to redeclare modifiers, but they are declared
   as standalone elements that redeclare an inherited element. When the
   environment is built they are initially added to a list of elements in the
   extends tables by SCodeEnv.addElementRedeclarationToEnvExtendsTable. When the
-  environment is complete and SCodeEnv.updateExtendsInEnv is used to update the
-  extends these redeclares are handled by addElementRedeclarationsToEnv, which
-  looks up which base class each redeclare is redeclaring in. The element
+  environment is complete and EnvExtends.update is used to update the extends
+  these redeclares are handled by addElementRedeclarationsToEnv, which looks up
+  which base classes the redeclared elements should be applied to. The element
   redeclares are then added to the list of redeclarations in the correct
   SCodeEnv.EXTENDS, and handled in the same way as redeclare modifiers.
-
-  CLASS EXTENDS:
-  Class extends are handled by adding them to the environment with
-  extendEnvWithClassExtends. This function adds the given class as a normal
-  class to the environment, and sets the class extends information field in
-  the class's environment. This information is the base class and modifiers of
-  the class extends. This information is later used when extends are updated
-  with SCodeEnv.updateExtendsInEnv, and updateClassExtends is called.
-  updateClassExtends looks up the full path to the base class of the class
-  extends, and adds an extends clause to the class that extends from the base
-  class. 
-  
-  However, since it's possible to redeclare the base class of a class
-  extends it's possible that the base class is replaced with a class that
-  extends from it. If the base class were to be replaced with this class it
-  would mean that the class extends itself, causing a loop. To avoid this an
-  alias for the base class is added instead, and the base class itself is added
-  with the BASE_CLASS_SUFFIX defined in SCodeEnv. The alias can then be safely
-  redeclared while preserving the base class for the class extends to extend
-  from. It's somewhat difficult to only add aliases for classes that are used by
-  class extends though, so an alias is added for all replaceable classes in
-  SCodeEnv.extendEnvWithClassDef for simplicity's sake. The function
-  SCodeLookup.resolveAlias is then used to resolve any alias items to the real
-  items whenever an item is looked up in the environment.
-  
-  Class extends on the form 'redeclare class extends X' are thus
-  translated to 'class X extends BaseClass.X$base', and then mostly handled like a
-  normal class. Some care is needed in the dependency analysis to make sure
-  that nothing important is removed, see comment in
-  SCodeDependency.analyseClassExtends.  
 "
 
 public import Absyn;
@@ -131,232 +105,6 @@ protected import SCodeCheck;
 protected import Util;
 protected import SCodeDump;
 
-public function extendEnvWithClassExtends
-  input SCode.Element inClassExtends;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := match(inClassExtends, inEnv)
-    local
-      SCode.Ident bc;
-      list<SCode.Element> el;
-      SCode.Partial pp;
-      SCode.Encapsulated ep;
-      SCode.Restriction res;
-      SCode.Prefixes prefixes;
-      Absyn.Info info;
-      Env env, cls_env;
-      SCode.Mod mods;
-      Option<SCode.ExternalDecl> ext_decl;
-      list<SCode.Annotation> annl;
-      Option<SCode.Comment> cmt;
-      list<SCode.Equation> nel, iel;
-      list<SCode.AlgorithmSection> nal, ial;
-      list<SCode.ConstraintSection> nco;
-      list<Absyn.NamedArg> clats;  //class attributes
-      SCode.ClassDef cdef;
-      SCode.Element cls, ext;
-      String el_str, env_str, err_msg;
-
-    // When a 'redeclare class extends X' is encountered we insert a 'class X
-    // extends BaseClass.X' into the environment, with the same elements as the
-    // class extends clause. BaseClass is the class that class X is inherited
-    // from. This allows us to look up elements in class extends, because
-    // lookup can handle normal extends. This is the first phase where the
-    // CLASS_EXTENDS is converted to a PARTS and added to the environment, and
-    // the extends is added to the class environment's extends table. The
-    // proper base class will be looked up in the second phase, in
-    // updateClassExtends
-    case (SCode.CLASS(
-        prefixes = prefixes,
-        encapsulatedPrefix = ep,
-        partialPrefix = pp,
-        restriction = res,
-        classDef = SCode.CLASS_EXTENDS(
-          baseClassName = bc, 
-          modifications = mods,
-          composition = SCode.PARTS(
-            elementLst = el,
-            normalEquationLst = nel,
-            initialEquationLst = iel,
-            normalAlgorithmLst = nal,
-            initialAlgorithmLst = ial,
-            constraintLst =  nco,
-            clsattrs = clats,
-            externalDecl = ext_decl,
-            annotationLst = annl,
-            comment = cmt)),
-        info = info), _)
-      equation
-        // Construct a PARTS from the CLASS_EXTENDS.
-        cdef = SCode.PARTS(el, nel, iel, nal, ial, nco, clats, ext_decl, annl, cmt);
-        cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, info);
-
-        // Construct the class environment and add the new extends to it.
-        cls_env = SCodeEnv.makeClassEnvironment(cls, false);
-        ext = SCode.EXTENDS(Absyn.IDENT(bc), SCode.PUBLIC(), mods, NONE(), info);
-        cls_env = addClassExtendsInfoToEnv(ext, cls_env);
-
-        // Finally add the class to the environment.
-        env = SCodeEnv.extendEnvWithItem(
-          SCodeEnv.newClassItem(cls, cls_env, SCodeEnv.CLASS_EXTENDS()), inEnv, bc);
-      then env;
-
-    case (_, _)
-      equation
-        info = SCode.elementInfo(inClassExtends);
-        el_str = SCodeDump.printElementStr(inClassExtends);
-        env_str = SCodeEnv.getEnvName(inEnv);
-        err_msg = "SCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +& 
-          el_str +& " in " +& env_str;
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {err_msg}, info);
-      then
-        fail();
-
-  end match;
-end extendEnvWithClassExtends;
-  
-protected function addClassExtendsInfoToEnv
-  "Adds a class extends to the environment."
-  input SCode.Element inClassExtends;
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inClassExtends, inEnv)
-    local
-      list<Extends> bcl;
-      list<SCode.Element> re;
-      String estr;
-      SCodeEnv.ExtendsTable ext;
-
-    case (_, _)
-      equation
-        SCodeEnv.EXTENDS_TABLE(bcl, re, NONE()) = 
-          SCodeEnv.getEnvExtendsTable(inEnv);
-        ext = SCodeEnv.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
-      then
-        SCodeEnv.setEnvExtendsTable(ext, inEnv);
-
-    else
-      equation
-        estr = "- SCodeFlattenRedeclare.addClassExtendsInfoToEnv: Trying to overwrite " +& 
-               "existing class extends information, this should not happen!.";
-        Error.addMessage(Error.INTERNAL_ERROR, {estr});
-      then
-        fail();
-
-  end matchcontinue;
-end addClassExtendsInfoToEnv;
-
-public function updateClassExtends
-  input SCode.Element inClass;
-  input Env inEnv;
-  input SCodeEnv.ClassType inClassType;
-  output SCode.Element outClass;
-  output Env outEnv;
-algorithm
-  (outClass, outEnv) := match(inClass, inEnv, inClassType)
-    local
-      String name;
-      Env env;
-      SCode.Mod mods;
-      Absyn.Info info;
-      SCode.Element cls, ext;
-
-    case (_, SCodeEnv.FRAME(name = SOME(name), 
-        extendsTable = SCodeEnv.EXTENDS_TABLE(classExtendsInfo = SOME(ext))) :: _,
-        SCodeEnv.CLASS_EXTENDS())
-      equation
-        SCode.EXTENDS(modifications = mods, info = info) = ext;
-        (cls, env) = updateClassExtends2(inClass, name, mods, info, inEnv);
-      then
-        (cls, env);
-
-    else (inClass, inEnv);
-  end match;
-end updateClassExtends;
-
-protected function updateClassExtends2
-  input SCode.Element inClass;
-  input String inName;
-  input SCode.Mod inMods;
-  input Absyn.Info inInfo;
-  input Env inEnv;
-  output SCode.Element outClass;
-  output Env outEnv;
-algorithm
-  (outClass, outEnv) := match(inClass, inName, inMods, inInfo, inEnv)
-    local
-      Absyn.Path path;
-      SCode.Element ext;
-      SCodeEnv.Frame cls_frame;
-      Env env;
-      SCode.Element cls;
-      Item item;
-
-    case (_, _, _, _, cls_frame :: env)
-      equation
-        (path, item) = lookupClassExtendsBaseClass(inName, env, inInfo);
-        SCodeCheck.checkClassExtendsReplaceability(item, Absyn.dummyInfo);
-        ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
-        {cls_frame} = SCodeEnv.extendEnvWithExtends(ext, {cls_frame});
-        cls = SCode.addElementToClass(ext, inClass);
-      then
-        (cls, cls_frame :: env);
-
-  end match;
-end updateClassExtends2;
-
-protected function lookupClassExtendsBaseClass
-  "This function takes the name of a base class and looks up that name suffixed
-   with the base class suffix defined in SCodeEnv. I.e. it looks up the real base
-   class of a class extends, and not the alias introduced when adding replaceable
-   classes to the environment in SCodeEnv.extendEnvWithClassDef. It returns the
-   fully qualified path and the item for that base class."
-  input String inName;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  output Absyn.Path outPath;
-  output Item outItem;
-algorithm
-  (outPath, outItem) := matchcontinue(inName, inEnv, inInfo)
-    local
-      Absyn.Path path;
-      Item item;
-      String basename;
-      Env env;
-
-    // Add the base class suffix to the name and try to look it up.
-    case (_, _, _)
-      equation
-        basename = inName +& SCodeEnv.BASE_CLASS_SUFFIX;
-        (item, _, env) = SCodeLookup.lookupInheritedName(basename, inEnv);
-        // Use a special $ce qualified so that we can find the correct class
-        // with SCodeLookup.lookupBaseClassName.
-        path = Absyn.QUALIFIED("$ce", Absyn.IDENT(basename));
-      then
-        (path, item);
-
-    // The previous case will fail if we try to class extend a
-    // non-replaceable class, because they don't have aliases. To get the
-    // correct error message later we look the class up via the non-alias name
-    // instead and return that result if found.
-    case (_, _, _)
-      equation
-        (item, path, env) = SCodeLookup.lookupInheritedName(inName, inEnv);
-      then
-        (path, item);
-        
-    else
-      equation
-        Error.addSourceMessage(Error.INVALID_REDECLARATION_OF_CLASS,
-          {inName}, inInfo);
-      then
-        fail();
-
-  end matchcontinue;
-end lookupClassExtendsBaseClass;
-
 public function addElementRedeclarationsToEnv
   input list<SCode.Element> inRedeclares;
   input Env inEnv;
@@ -374,7 +122,8 @@ algorithm
     local
       SCode.Ident cls_name, name;
       Absyn.Info info;
-      Absyn.Path ext_path, env_path;
+      Absyn.Path env_path;
+      list<Absyn.Path> ext_pathl;
       Env env;
       Item base_item, item;
       SCode.Element redecl;
@@ -383,10 +132,10 @@ algorithm
       equation
         name = SCode.elementName(inRedeclare);
         info = SCode.elementInfo(inRedeclare);
-        ext_path = lookupElementRedeclaration(name, inEnv, info);
+        ext_pathl = lookupElementRedeclaration(name, inEnv, info);
         env_path = SCodeEnv.getEnvPath(inEnv);
         item = SCodeEnv.ALIAS(name, SOME(env_path), info);
-        env = addRedeclareToEnvExtendsTable(item, ext_path, inEnv, info);
+        env = addRedeclareToEnvExtendsTable(item, ext_pathl, inEnv, info);
       then
         env;
 
@@ -405,17 +154,17 @@ protected function lookupElementRedeclaration
   input SCode.Ident inName;
   input Env inEnv;
   input Absyn.Info inInfo;
-  output Absyn.Path outPath;
+  output list<Absyn.Path> outPaths;
 algorithm
-  outPath := matchcontinue(inName, inEnv, inInfo)
+  outPaths := matchcontinue(inName, inEnv, inInfo)
     local
-      Absyn.Path path;
+      list<Absyn.Path> paths;
 
     case (_, _, _)
       equation
-        path = SCodeLookup.lookupBaseClass(inName, inEnv);
+        paths = SCodeLookup.lookupBaseClasses(inName, inEnv);
       then
-        path;
+        paths;
 
     else
       equation
@@ -429,7 +178,7 @@ end lookupElementRedeclaration;
 
 protected function addRedeclareToEnvExtendsTable
   input Item inRedeclaredElement;
-  input Absyn.Path inBaseClass;
+  input list<Absyn.Path> inBaseClasses;
   input Env inEnv;
   input Absyn.Info inInfo;
   output Env outEnv;
@@ -439,37 +188,42 @@ protected
   Option<SCode.Element> cei;
 algorithm
   SCodeEnv.EXTENDS_TABLE(bcl, re, cei) := SCodeEnv.getEnvExtendsTable(inEnv);
-  bcl := addRedeclareToEnvExtendsTable2(inRedeclaredElement, inBaseClass, bcl);
+  bcl := addRedeclareToEnvExtendsTable2(inRedeclaredElement, inBaseClasses, bcl);
   outEnv := SCodeEnv.setEnvExtendsTable(SCodeEnv.EXTENDS_TABLE(bcl, re, cei), inEnv);
 end addRedeclareToEnvExtendsTable;
 
 protected function addRedeclareToEnvExtendsTable2
   input Item inRedeclaredElement;
-  input Absyn.Path inBaseClass;
+  input list<Absyn.Path> inBaseClasses;
   input list<Extends> inExtends;
   output list<Extends> outExtends;
 algorithm
-  outExtends := matchcontinue(inRedeclaredElement, inBaseClass, inExtends)
+  outExtends := matchcontinue(inRedeclaredElement, inBaseClasses, inExtends)
     local
       Extends ex;
       list<Extends> exl;
-      Absyn.Path bc;
+      Absyn.Path bc1, bc2;
+      list<Absyn.Path> rest_bc;
       list<SCodeEnv.Redeclaration> el;
+      Integer index;
       Absyn.Info info;
       SCodeEnv.Redeclaration redecl;
 
-    case (_, _, SCodeEnv.EXTENDS(bc, el, info) :: exl)
+    case (_, bc1 :: rest_bc, SCodeEnv.EXTENDS(bc2, el, index, info) :: exl)
       equation
-        true = Absyn.pathEqual(inBaseClass, bc);
+        true = Absyn.pathEqual(bc1, bc2);
         redecl = SCodeEnv.PROCESSED_MODIFIER(inRedeclaredElement);
         SCodeCheck.checkDuplicateRedeclarations(redecl, el);
-        ex = SCodeEnv.EXTENDS(bc, redecl :: el, info);
+        ex = SCodeEnv.EXTENDS(bc2, redecl :: el, index, info);
+        exl = addRedeclareToEnvExtendsTable2(inRedeclaredElement, rest_bc, exl);
       then
         ex :: exl;
 
+    case (_, {}, _) then inExtends;
+
     case (_, _, ex :: exl)
       equation
-        exl = addRedeclareToEnvExtendsTable2(inRedeclaredElement, inBaseClass, exl);
+        exl = addRedeclareToEnvExtendsTable2(inRedeclaredElement, inBaseClasses, exl);
       then
         ex :: exl;
     
@@ -590,7 +344,7 @@ algorithm
       list<SCodeEnv.Redeclaration> redecls;
       Replacements repl;
 
-    // no redeclares!
+    // No redeclares!
     case ({}, _, _, _, _) then (inItem, inTypeEnv, {});
 
     case (_, SCodeEnv.CLASS(cls = cls, env = {item_env}, classType = cls_ty), _, _, _)
@@ -789,19 +543,20 @@ algorithm
       SCodeEnv.Extends ext;
       list<SCodeEnv.Extends> rest_exts;
       list<SCodeEnv.Redeclaration> redecls;
+      Integer index;
       Absyn.Info info;
       list<String> bc_strl;
       String bcl_str, err_msg;
 
     // See if the first base class path matches the first extends. Push the
     // redeclare into that extends if so.
-    case (_, _, bc1 :: rest_bc, SCodeEnv.EXTENDS(bc2, redecls, info) :: rest_exts)
+    case (_, _, bc1 :: rest_bc, SCodeEnv.EXTENDS(bc2, redecls, index, info) :: rest_exts)
       equation
         true = Absyn.pathEqual(bc1, bc2);
         redecls = pushRedeclareIntoExtends3(inRedeclare, inName, redecls);
         rest_exts = pushRedeclareIntoExtends2(inName, inRedeclare, rest_bc, rest_exts);
       then
-        SCodeEnv.EXTENDS(bc2, redecls, info) :: rest_exts;
+        SCodeEnv.EXTENDS(bc2, redecls, index, info) :: rest_exts;
 
     // The extends didn't match, continue with the rest of them.
     case (_, _, rest_bc, ext :: rest_exts)

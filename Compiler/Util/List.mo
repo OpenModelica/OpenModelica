@@ -2843,6 +2843,26 @@ algorithm
   outList := listReverse(map2_tail(inList, inFunc, inArg1, inArg2, {}));
 end map2;
 
+public function map2Reverse
+  "Takes a list, a function and two extra arguments, and creates a new list
+   by applying the function to each element of the list. The created list will
+   be reversed compared to the given list."
+  input list<ElementInType> inList;
+  input MapFunc inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  output list<ElementOutType> outList;
+
+  partial function MapFunc
+    input ElementInType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output ElementOutType outElement;
+  end MapFunc;
+algorithm
+  outList := map2_tail(inList, inFunc, inArg1, inArg2, {});
+end map2Reverse;
+
 public function map2_tail
   "Tail-recursive implementation of map2"
   input list<ElementInType> inList;

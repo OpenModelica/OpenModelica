@@ -3689,6 +3689,21 @@ algorithm
   end match;
 end joinPathsOpt;
 
+public function joinPathsOptSuffix
+  input Path inPath1;
+  input Option<Path> inPath2;
+  output Path outPath;
+algorithm
+  outPath := match(inPath1, inPath2)
+    local
+      Path p;
+
+    case (_, SOME(p)) then joinPaths(inPath1, p);
+    else inPath1;
+
+  end match;
+end joinPathsOptSuffix;
+
 public function selectPathsOpt "function: selectPathsOpt
   This function selects the second path when the first one
   is NONE() otherwise it will select the first one."

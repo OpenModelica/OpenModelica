@@ -176,7 +176,7 @@ algorithm
     // among the inherited elements of the enclosing class.
     case (Absyn.QUALIFIED(name = "$ce", path = Absyn.IDENT(name = id)), _ :: env, _, _)
       equation
-        (item, _, env) = SCodeLookup.lookupInheritedName(id, env);
+        (item, env) = SCodeLookup.lookupInheritedName(id, env);
       then
         (item, env);
 
@@ -390,7 +390,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
   end matchcontinue;
 end markEnvAsUsed;
 
@@ -444,7 +444,7 @@ algorithm
         initialAlgorithmLst = ial, externalDecl = ext_decl,
         annotationLst = annl, comment = cmt), _, _, _, _)
       equation
-        List.map2_0(el, analyseElement, inEnv, inRestriction);
+        analyseElements(el, inEnv, inRestriction);
         List.map1_0(nel, analyseEquation, inEnv);
         List.map1_0(iel, analyseEquation, inEnv);
         List.map1_0(nal, analyseAlgorithm, inEnv);
@@ -525,7 +525,7 @@ protected function isNotExternalObject
 algorithm
   _ := match(inElement)
     case SCode.EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject")) then fail();
-    else then ();
+    else ();
   end match;
 end isNotExternalObject;
 
@@ -631,7 +631,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
   end match;
 end analyseMetaType;
  
@@ -692,15 +692,52 @@ algorithm
   end matchcontinue;
 end analyseRedeclaredClass2; 
         
+protected function analyseElements
+  input list<SCode.Element> inElements;
+  input Env inEnv;
+  input SCode.Restriction inClassRestriction;
+protected
+  list<Extends> exts;
+algorithm
+  exts := SCodeEnv.getEnvExtendsFromTable(inEnv);
+  analyseElements2(inElements, inEnv, exts, inClassRestriction);
+end analyseElements;
+
+protected function analyseElements2
+  input list<SCode.Element> inElements;
+  input Env inEnv;
+  input list<Extends> inExtends;
+  input SCode.Restriction inClassRestriction;
+algorithm
+  _ := match(inElements, inEnv, inExtends, inClassRestriction)
+    local
+      SCode.Element el;
+      list<SCode.Element> rest_el;
+      list<Extends> exts;
+
+    case (el :: rest_el, _, _, _)
+      equation
+        exts = analyseElement(el, inEnv, inExtends, inClassRestriction);
+        analyseElements2(rest_el, inEnv, exts, inClassRestriction);
+      then
+        ();
+
+    case ({}, _, _, _) then ();
+
+  end match;
+end analyseElements2;
+
 protected function analyseElement
   "Analyses an element."
   input SCode.Element inElement;
   input Env inEnv;
+  input list<Extends> inExtends;
   input SCode.Restriction inClassRestriction;
+  output list<Extends> outExtends;
 algorithm
-  _ := match(inElement, inEnv, inClassRestriction)
+  outExtends := match(inElement, inEnv, inExtends, inClassRestriction)
     local
-      Absyn.Path bc;
+      Absyn.Path bc, bc2;
       SCode.Mod mods;
       Absyn.TypeSpec ty;
       Absyn.Info info;
@@ -712,29 +749,30 @@ algorithm
       SCode.Prefixes prefixes;
       SCode.Restriction res;
       String errorMessage;
+      list<Extends> exts;
 
     // Fail on 'extends ExternalObject' so we can handle it as a special case in
     // analyseClassDef.
-    case (SCode.EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject")), _, _)
+    case (SCode.EXTENDS(baseClassPath = Absyn.IDENT("ExternalObject")), _, _, _)
       then fail();
 
     // An extends-clause.
-    case (SCode.EXTENDS(baseClassPath = bc, modifications = mods, info = info),
-        _, _)
+    case (SCode.EXTENDS(baseClassPath = bc2, modifications = mods, info = info), _,
+        SCodeEnv.EXTENDS(baseClass = bc) :: exts, _)
       equation
-        env = SCodeEnv.removeExtendFromLocalScope(bc, inEnv);
-        true = checkNotExtendsDependent(bc, env, info);
-        analyseExtends(bc, env, info);
+        //print("bc = " +& Absyn.pathString(bc) +& "\n");
+        //print("bc2 = " +& Absyn.pathString(bc2) +& "\n");
         (ty_item, _, ty_env) = 
-          SCodeLookup.lookupBaseClassName(bc, env, info);
+          SCodeLookup.lookupBaseClassName(bc, inEnv, info);
+        analyseExtends(bc, inEnv, info);
         ty_env = SCodeEnv.mergeItemEnv(ty_item, ty_env);
         analyseModifier(mods, inEnv, ty_env, info);
       then
-        ();
+        exts;
         
     // A component.
     case (SCode.COMPONENT(name = name, attributes = attr, typeSpec = ty,
-        modifications = mods, condition = cond_exp, prefixes = prefixes, info = info), _, _)
+        modifications = mods, condition = cond_exp, prefixes = prefixes, info = info), _, _, _)
       equation
         markAsUsedOnRestriction(name, inClassRestriction, inEnv, info);
         analyseAttributes(attr, inEnv, info);
@@ -748,17 +786,18 @@ algorithm
         analyseOptExp(cond_exp, inEnv, info);
         analyseConstrainClass(SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes)), inEnv, info);
       then
-        ();
+        inExtends;
 
     //operators in operator record might be used later. 
-    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, SCode.R_OPERATOR_RECORD())
+    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, SCode.R_OPERATOR_RECORD())
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
-      then(); 
+      then
+        inExtends; 
         
         
     //operators in any other class type are error. 
-    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _)
+    case (SCode.CLASS(name = name, restriction=SCode.R_OPERATOR(), info = info), _, _, _)
       equation
         //mahge: FIX HERE.
         errorMessage = "operators are allowed in OPERATOR RECORD only. Error on:" +& name;
@@ -767,13 +806,14 @@ algorithm
         fail();      
     
     //operator functions in operator record might be used later. 
-    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, SCode.R_OPERATOR_RECORD())
+    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, SCode.R_OPERATOR_RECORD())
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
-      then();  
+      then
+        inExtends;  
         
      //operators functions in any other class type are error. 
-    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _)
+    case (SCode.CLASS(name = name, restriction=SCode.R_FUNCTION(SCode.FR_OPERATOR_FUNCTION()), info = info), _, _, _)
       equation
         //mahge: FIX HERE.
         errorMessage = "Operator functions are allowed in OPERATOR RECORD only. Error on:" +& name;
@@ -782,15 +822,16 @@ algorithm
         fail();     
     
     //functions in operator might be used later. 
-    case (SCode.CLASS(name = name, restriction=res, info = info), _, SCode.R_OPERATOR())
+    case (SCode.CLASS(name = name, restriction=res, info = info), _, _, SCode.R_OPERATOR())
       equation
         // Allowing external functions to be used operator functions
         true = SCode.isFunctionOrExtFunctionRestriction(res);
         analyseClass(Absyn.IDENT(name), inEnv, info);
-      then();  
+      then
+        inExtends;  
         
     //operators should only contain function definitions    
-    case (SCode.CLASS(name = name, restriction = res, info = info), _, SCode.R_OPERATOR())
+    case (SCode.CLASS(name = name, restriction = res, info = info), _, _, SCode.R_OPERATOR())
       equation
         false = SCode.isFunctionOrExtFunctionRestriction(res);
         //mahge: FIX HERE.
@@ -801,13 +842,13 @@ algorithm
       
     // equalityConstraints may not be explicitly used but might be needed anyway
     // (if the record is used in a connect for example), so always mark it as used.
-    case (SCode.CLASS(name = name as "equalityConstraint", info = info), _, _)
+    case (SCode.CLASS(name = name as "equalityConstraint", info = info), _, _, _)
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
-        ();
+        inExtends;
 
-    else then ();
+    else inExtends;
   end match;
 end analyseElement;
 
@@ -831,7 +872,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
   end matchcontinue;
 end markAsUsedOnRestriction;
 
@@ -881,7 +922,7 @@ algorithm
     case (_, _, _, _)
       equation
         id = Absyn.pathFirstIdent(inBaseClass);
-        bc = SCodeLookup.lookupBaseClass(id, inEnv);
+        bc :: _ = SCodeLookup.lookupBaseClasses(id, inEnv);
         bc_name = Absyn.pathString(bc);
         Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
           {bc_name, id}, inInfo);
@@ -906,8 +947,7 @@ protected
   Item item;
   Env env;
 algorithm
-  (item, env) := lookupClass(inClassName, inEnv, inInfo,
-    SOME(Error.LOOKUP_BASECLASS_ERROR));
+  (item, env) := lookupClass(inClassName, inEnv, inInfo, NONE());
   analyseItem(item, env);
 end analyseExtends;
 
@@ -982,7 +1022,7 @@ algorithm
     // Otherwise we can just use analyseElements.
     else
       equation
-        analyseElement(inElement, inEnv, SCode.R_CLASS());
+        _ = analyseElement(inElement, inEnv, {}, SCode.R_CLASS());
       then
         ();
   end match;
@@ -1198,7 +1238,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
   end match;
 end analyseExternalDecl;
 
@@ -1219,7 +1259,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
   end match;
 end analyseComment;
 
@@ -1273,7 +1313,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
   end matchcontinue;
 end analyseAnnotationMod;
 
@@ -1318,7 +1358,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
   end match;
 end analyseOptExp;
 
@@ -1380,7 +1420,7 @@ algorithm
       then
         env;
 
-    else then inEnv;
+    else inEnv;
   end match;
 end analyseExp2;
 
@@ -1408,7 +1448,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
 
   end matchcontinue;
 end analyseCref;
@@ -1436,7 +1476,7 @@ algorithm
       then
         ((e, (env, info)));
 
-    else then inTuple;
+    else inTuple;
   end match;
 end analyseExpTraverserExit;
 
@@ -1641,7 +1681,7 @@ algorithm
       then
         ();
 
-    else then ();
+    else ();
   end matchcontinue;
 end analyseAvlValue;
 
@@ -1939,7 +1979,7 @@ algorithm
     case (SCode.ENUMERATION(enumLst = _), _, _, _, _, _)
       then (inClassDef, {inClassEnv}, inAccumPath :: inGlobalConstants);
 
-    else then (inClassDef, {inClassEnv}, inGlobalConstants);
+    else (inClassDef, {inClassEnv}, inGlobalConstants);
   end match;
 end collectUsedClassDef;
          
@@ -2079,7 +2119,7 @@ algorithm
       then
         (inElement, env, inAccumConsts);
 
-    else then (inElement, inAccumEnv, inAccumConsts);
+    else (inElement, inAccumEnv, inAccumConsts);
 
   end match;
 end collectUsedElement;
@@ -2117,12 +2157,13 @@ protected function removeUnusedRedeclares2
 protected
   Absyn.Path bc;
   list<SCodeEnv.Redeclaration> redeclares;
+  Integer index;
   Absyn.Info info;
   Env env;
 algorithm
-  SCodeEnv.EXTENDS(bc, redeclares, info) := inExtends;
+  SCodeEnv.EXTENDS(bc, redeclares, index, info) := inExtends;
   redeclares := List.filter1(redeclares, removeUnusedRedeclares3, inEnv);
-  outExtends := SCodeEnv.EXTENDS(bc, redeclares, info);
+  outExtends := SCodeEnv.EXTENDS(bc, redeclares, index, info);
 end removeUnusedRedeclares2;
 
 protected function removeUnusedRedeclares3

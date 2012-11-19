@@ -1322,6 +1322,25 @@ algorithm
   end match;
 end pathPrefix2;
 
+public function envPrefix
+  input Env inEnv;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := matchcontinue(inEnv)
+    local
+      Absyn.Path path;
+
+    case _
+      equation
+        path = SCodeEnv.getEnvPath(inEnv);
+      then
+        pathPrefix(path);
+
+    else InstTypes.emptyPrefix;
+
+  end matchcontinue;
+end envPrefix;
+
 public function prefixElement
   input Element inElement;
   input Prefix inPrefix;

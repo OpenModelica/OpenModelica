@@ -2873,7 +2873,7 @@ algorithm
         true = Flags.isSet(Flags.SCODE_INST);
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
-        scodeP = SCodeSimplify.simplifyProgram(scodeP);
+        //scodeP = SCodeSimplify.simplifyProgram(scodeP);
         (_, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
         (dae, funcs) = SCodeInst.instClass(className, senv, consts);
 

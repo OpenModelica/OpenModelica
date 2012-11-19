@@ -49,9 +49,11 @@ public import SCodeEnv;
 
 protected import ComponentReference;
 protected import Debug;
+protected import EnvExtends;
 protected import Flags;
 protected import InstUtil;
 protected import List;
+protected import SCodeCheck;
 protected import SCodeFlattenImports;
 protected import SCodeFlattenRedeclare;
 
@@ -581,7 +583,7 @@ algorithm
   end match;
 end resolveAlias;
 
-public function lookupInBaseClasses
+protected function lookupInBaseClasses
   "Looks up an identifier by following the extends clauses in a scope."
   input Absyn.Ident inName;
   input Env inEnv;
@@ -596,24 +598,18 @@ protected
 algorithm
   SCodeEnv.FRAME(extendsTable = 
     SCodeEnv.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
-  // We need to remove the extends from the current scope, because the names of
-  // extended classes should not be found by lookup through the extends-clauses
-  // (Modelica Specification 3.2, section 5.6.1.).
-  /***************************************************************************/
-  // TODO: We should probably avoid removing the extends here, since we are
-  // anyways fully qualifying the paths. We could instead check this restriction
-  // in SCodeEnv.qualifyExtends2. Then we don't need to send two environments to
-  // lookupInBaseClasses2 either.
-  /***************************************************************************/
+  // Remove the extends, base class names should not be inherited.
   env := SCodeEnv.removeExtendsFromLocalScope(inEnv);
+  // Unhide the imports in case they've been hidden so we can find the base
+  // classes.
   env := SCodeEnv.setImportTableHidden(env, false);
   (outItem, outPath, outEnv) := 
     lookupInBaseClasses2(inName, bcl, env, inEnv, inReplaceRedeclares, inVisitedScopes);
 end lookupInBaseClasses;
 
-public function lookupInBaseClasses2
-  "Helper function to lookupInBaseClasses. Looks up an identifier through the
-  extends clauses in a scope."
+protected function lookupInBaseClasses2
+  "Helper function to lookupInBaseClasses. Tries to find an identifier by
+   looking in the extended classes in a scope."
   input Absyn.Ident inName;
   input list<Extends> inBaseClasses;
   input Env inEnv;
@@ -624,9 +620,48 @@ public function lookupInBaseClasses2
   output Option<Absyn.Path> outPath;
   output Option<Env> outEnv;
 algorithm
-  (outItem, outPath, outEnv) := 
+  (outItem, outPath, outEnv) :=
   matchcontinue(inName, inBaseClasses, inEnv, inEnvWithExtends,
       inReplaceRedeclares, inVisitedScopes)
+    local
+      Extends ext;
+      list<Extends> rest_ext;
+      Option<Item> item;
+      Option<Absyn.Path> path;
+      Option<Env> env;
+
+    case (_, ext :: _, _, _, _, _)
+      equation
+        (item, path, env) = lookupInBaseClasses3(inName, ext, inEnv,
+          inEnvWithExtends, inReplaceRedeclares, inVisitedScopes);
+      then
+        (item, path, env);
+
+    case (_, _ :: rest_ext, _, _, _, _)
+      equation
+        (item, path, env) = lookupInBaseClasses2(inName, rest_ext, inEnv,
+          inEnvWithExtends, inReplaceRedeclares, inVisitedScopes);
+      then
+        (item, path, env);
+
+  end matchcontinue;
+end lookupInBaseClasses2;
+
+public function lookupInBaseClasses3
+  "Helper function to lookupInBaseClasses2. Looks up an identifier in the given
+   extended class."
+  input Absyn.Ident inName;
+  input Extends inBaseClass;
+  input Env inEnv;
+  input Env inEnvWithExtends;
+  input RedeclareReplaceStrategy inReplaceRedeclares;
+  input list<String> inVisitedScopes;
+  output Option<Item> outItem;
+  output Option<Absyn.Path> outPath;
+  output Option<Env> outEnv;
+algorithm
+  (outItem, outPath, outEnv) := match(inName, inBaseClass, inEnv,
+      inEnvWithExtends, inReplaceRedeclares, inVisitedScopes)
     local
       Absyn.Path bc, path;
       list<Extends> rest_bc;
@@ -638,9 +673,16 @@ algorithm
       Option<Item> opt_item;
       Option<Env> opt_env;
 
+    case (_, SCodeEnv.EXTENDS(baseClass = bc as Absyn.QUALIFIED(name = "$E"),
+        info = info), _, _, _, _)
+      equation
+        EnvExtends.printExtendsError(bc, inEnvWithExtends, info);
+      then
+        (NONE(), NONE(), NONE());
+
     // Look in the first base class.
-    case (_, SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, 
-        info = info) :: _, _, _, _, _)
+    case (_, SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls, info = info),
+        _, _, _, _)
       equation
         // Find the base class.
         (item, path, env) = lookupBaseClassName(bc, inEnv, info);
@@ -652,20 +694,12 @@ algorithm
         (opt_item, opt_env) = SCodeFlattenRedeclare.replaceRedeclares(redecls, 
           item, env, inEnvWithExtends, inReplaceRedeclares); 
         (opt_item, opt_path, opt_env) = 
-          lookupInBaseClasses3(Absyn.IDENT(inName), opt_item, opt_env);
+          lookupInBaseClasses4(Absyn.IDENT(inName), opt_item, opt_env);
       then
         (opt_item, opt_path, opt_env);
 
-    // No match, check the rest of the base classes.
-    case (_, _ :: rest_bc, _, _, _, _)
-      equation
-        (opt_item, opt_path, opt_env) = 
-        lookupInBaseClasses2(inName, rest_bc, inEnv, inEnvWithExtends, inReplaceRedeclares, inVisitedScopes);
-      then
-        (opt_item, opt_path, opt_env);
-
-  end matchcontinue;
-end lookupInBaseClasses2;
+  end match;
+end lookupInBaseClasses3;
 
 protected function checkVisitedScopes
   "Checks if we are trying to look up a base class that we are coming from when
@@ -694,7 +728,9 @@ algorithm
   end matchcontinue;
 end checkVisitedScopes;
 
-protected function lookupInBaseClasses3
+protected function lookupInBaseClasses4
+  "Helper function to lookupInBaseClasses3. Tries to find the name in the given
+   item."
   input Absyn.Path inName;
   input Option<Item> inItem;
   input Option<Env> inEnv;
@@ -708,16 +744,20 @@ algorithm
       Absyn.Path path;
       Env env;
       
+    // If the item and env is NONE it means that an error occured (hopefully a
+    // user error), and we should stop searching.
     case (_, NONE(), NONE()) then (NONE(), NONE(), NONE());
 
+    // Otherwise, try to find the name in the given item. If the name can not be
+    // found we fail, so that we can continue to look in other base classes.
     case (_, SOME(item), SOME(env))
       equation
         (item, path, env) = lookupNameInItem(inName, item, env);
       then
         (SOME(item), SOME(path), SOME(env));
-  end match;
 
-end lookupInBaseClasses3;
+  end match;
+end lookupInBaseClasses4;
 
 public function lookupInQualifiedImports
   "Looks up a name through the qualified imports in a scope. If it finds the
@@ -995,7 +1035,7 @@ algorithm
     case (_, SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = type_spec, 
         modifications = mods, info = info)), _)
       equation
-        // Look up the variables' type.
+        // Look up the variable's type.
         (item, _, type_env) = lookupTypeSpec(type_spec, inEnv, info);
         // Apply redeclares to the type and look for the name inside the type.
         redeclares = SCodeFlattenRedeclare.extractRedeclaresFromModifier(mods);
@@ -1023,16 +1063,6 @@ algorithm
   end match;
 end lookupCrefInItem;
 
-public function lookupBaseClass
-  "Looks up from which base class a certain element is inherited from by searching
-   the extends in the local scope."
-  input SCode.Ident inName;
-  input Env inEnv;
-  output Absyn.Path outBaseClass;
-algorithm
-  outBaseClass :: _ := lookupBaseClasses(inName, inEnv);
-end lookupBaseClass;
-
 public function lookupBaseClasses
   "Looks up the given name, and returns a list of all the base classes in the
    current scope that the name was found in."
@@ -1044,7 +1074,8 @@ protected
 algorithm
   SCodeEnv.FRAME(extendsTable =
     SCodeEnv.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
-  outBaseClasses := List.fold2(bcl, lookupBaseClasses2, inName, inEnv, {});
+  ((_, outBaseClasses)) :=
+    List.fold2(bcl, lookupBaseClasses2, inName, inEnv, ({}, {}));
   false := List.isEmpty(outBaseClasses);
   outBaseClasses := listReverse(outBaseClasses);
 end lookupBaseClasses;
@@ -1056,10 +1087,10 @@ protected function lookupBaseClasses2
   input Extends inBaseClass;
   input SCode.Ident inName;
   input Env inEnv;
-  input list<Absyn.Path> inFoundBaseClasses;
-  output list<Absyn.Path> outFoundBaseClasses;
+  input tuple<list<Item>, list<Absyn.Path>> inAccum;
+  output tuple<list<Item>, list<Absyn.Path>> outResult;
 algorithm
-  outFoundBaseClasses := matchcontinue(inBaseClass, inName, inEnv, inFoundBaseClasses)
+  outResult := matchcontinue(inBaseClass, inName, inEnv, inAccum)
     local
       Absyn.Path bc;
       list<SCodeEnv.Redeclaration> redecls;
@@ -1068,6 +1099,8 @@ algorithm
       Item item;
       Option<Item> opt_item;
       Option<Env> opt_env;
+      list<Item> items;
+      list<Absyn.Path> bcl;
 
     case (SCodeEnv.EXTENDS(baseClass = bc, redeclareModifiers = redecls,
         info = info), _, _, _)
@@ -1086,28 +1119,43 @@ algorithm
 
         // Check if we can find the name in the base class. If so, add the base
         // class path to the list.
-        (_, _, _) = lookupNameInItem(Absyn.IDENT(inName), item, env);
+        (item, _, _) = lookupNameInItem(Absyn.IDENT(inName), item, env);
+        (items, bcl) = inAccum;
       then
-        bc :: inFoundBaseClasses;
+        ((item :: items, bc :: bcl));
 
-    else inFoundBaseClasses;
+    else inAccum;
 
   end matchcontinue;
 end lookupBaseClasses2;
 
 public function lookupInheritedName
-  "Looks up an inherited name by searching the extends in the local scope.
-   Silently fails if the name could not be found."
-  input SCode.Ident inName "The name of the element.";
-  input Env inEnv "The environment to search in.";
-  output Item outItem "The found environment item.";
-  output Absyn.Path outBaseClass "The immediate baseclass the name was found in.";
-  output Env outEnv "The environment the item was found in.";
+  "Looks up an inherited name by searching the extends in the local scope."
+  input SCode.Ident inName;
+  input Env inEnv;
+  output Item outItem;
+  output Env outEnv;
 algorithm
-  (SOME(outItem), SOME(outBaseClass), SOME(outEnv)) :=
+  (SOME(outItem), _, SOME(outEnv)) :=
     lookupInBaseClasses(inName, inEnv, INSERT_REDECLARES(), {});
 end lookupInheritedName;
 
+public function lookupInheritedNameAndBC
+  input SCode.Ident inName;
+  input Env inEnv;
+  output list<Item> outItems;
+  output list<Absyn.Path> outBaseClasses;
+protected
+  list<Extends> bcl;
+algorithm
+  SCodeEnv.FRAME(extendsTable =
+    SCodeEnv.EXTENDS_TABLE(baseClasses = bcl as _ :: _)) :: _ := inEnv;
+  ((outItems, outBaseClasses)) :=
+    List.fold2(bcl, lookupBaseClasses2, inName, inEnv, ({}, {}));
+  outBaseClasses := listReverse(outBaseClasses);
+  outItems := listReverse(outItems);
+end lookupInheritedNameAndBC;
+  
 public function lookupRedeclaredClassByItem
   input Item inItem;
   input Env inEnv;
@@ -1416,11 +1464,18 @@ algorithm
 
     // Special case for the baseclass of a class extends. Should be looked up
     // among the inherited elements of the enclosing class.
-    case (Absyn.QUALIFIED(name = "$ce", path = Absyn.IDENT(name = id)), _ :: env, _)
+    case (Absyn.QUALIFIED(name = "$ce", path = path as Absyn.IDENT(name = id)), _ :: env, _)
       equation
-        (item, path, env) = lookupInheritedName(id, env);
+        (item, env) = lookupInheritedName(id, env);
       then
         (item, path, env);
+
+    // The extends was marked as erroneous in the qualifying phase, print an error.
+    case (Absyn.QUALIFIED(name = "$E"), _, _)
+      equation
+        EnvExtends.printExtendsError(inName, inEnv, inInfo);
+      then
+        fail();
 
     // Normal baseclass.
     else
@@ -1744,7 +1799,7 @@ algorithm
   end matchcontinue;
 end qualifyPath;
 
-protected function itemOrigin
+public function itemOrigin
   input Item inItem;
   output Origin outOrigin;
 algorithm
@@ -1842,7 +1897,7 @@ algorithm
     case (_, _)
       equation
         (SOME(item), _, _) = lookupInLocalScope(inIdentifier, inEnv, {});
-        // If the name was found in a local class, say that's it's a global
+        // If the name was found in a local class, say that it's a global
         // name. Otherwise it's a local name.
         is_global = SCodeEnv.isClassItem(item);
       then
