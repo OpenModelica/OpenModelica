@@ -214,6 +214,7 @@ protected
 algorithm
   varLst := BackendDAEUtil.getAllVarLst(dae);
   varLst := List.select(varLst,BackendVariable.varHasUncertaintyAttribute);
+  varLst := listReverse(varLst); 
   inputs := stringDelimitList(generateXMLLibraryInputs(varLst),"\n");
   outputs := stringDelimitList(generateXMLLibraryOutputs(varLst),"\n");
   dllStr := " <path>" +& className +& cStrWrapperSuffix +& System.getDllExt() +& "</path>";
@@ -259,14 +260,14 @@ algorithm
     case (v::rest)
       equation
        DAE.GIVEN() = BackendVariable.varUncertainty(v);
-       varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
+       varName = ComponentReference.crefStr(BackendVariable.varCref(v));
        varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
-       strLst = generateXMLLibraryInputs(rest);    
+       strLst = generateXMLLibraryInputs(rest);
       then varStr::strLst;
     case (v::rest)
       equation
        DAE.REFINE() = BackendVariable.varUncertainty(v);
-       varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
+       varName = ComponentReference.crefStr(BackendVariable.varCref(v));
        varStr =  "    <variable id=\""+&varName+&"\" type=\"in\" />";
        strLst = generateXMLLibraryInputs(rest);    
       then varStr::strLst;
@@ -289,7 +290,7 @@ algorithm
   case({}) then {};  
   case(v::rest) equation
      DAE.SOUGHT() = BackendVariable.varUncertainty(v);
-     varName = ComponentReference.crefModelicaStr(BackendVariable.varCref(v));
+     varName = ComponentReference.crefStr(BackendVariable.varCref(v));
      varStr =  "    <variable id=\""+&varName+&"\" type=\"out\" />";
      strLst = generateXMLLibraryOutputs(rest);    
     then varStr::strLst;
@@ -407,7 +408,7 @@ algorithm
       distVar ="distribution"+&varName; 
       // add LogNormal.MUSIGMA!
       str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)\n";
-    then (str,(varName,distVar));    
+    then (str,(varName,distVar));
     
     case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) equation
       // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
