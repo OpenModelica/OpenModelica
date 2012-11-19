@@ -175,8 +175,7 @@ algorithm
     // equations
     case((elem as DAE.EQUATION(exp=e1))::rest,_,_,_,_)
       equation
-        //size = Expression.sizeOf(Expression.typeof(e1));
-        size = 1;
+        size = Expression.sizeOf(Expression.typeof(e1));
         (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,elem::ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs);    
@@ -191,9 +190,8 @@ algorithm
     // effort variable equality equations
     case ((elem as DAE.EQUEQUATION(cr1 = cr))::rest,_,_,_,_)
       equation
-        //tp = ComponentReference.crefTypeConsiderSubs(cr);
-        //size = Expression.sizeOf(tp);
-        size = 1;
+        tp = ComponentReference.crefTypeConsiderSubs(cr);
+        size = Expression.sizeOf(tp);
         (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,elem::ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs);    
@@ -201,9 +199,8 @@ algorithm
     // a solved equation 
     case ((elem as DAE.DEFINE(componentRef = cr))::rest,_,_,_,_)
       equation
-        //tp = ComponentReference.crefTypeConsiderSubs(cr);
-        //size = Expression.sizeOf(tp);
-        size = 1;
+        tp = ComponentReference.crefTypeConsiderSubs(cr);
+        size = Expression.sizeOf(tp);
         (varSize,eqnSize,eqns,hs) = countVarEqnSize(rest,ivarSize,ieqnSize+size,elem::ieqnslst,ihs);
       then
         (varSize,eqnSize,eqns,hs);
@@ -576,9 +573,8 @@ algorithm
     // effort variable equality equations
     case ((elem as DAE.EQUEQUATION(cr1 = cr))::rest,_,_)
       equation
-        //tp = ComponentReference.crefTypeConsiderSubs(cr);
-        //size = Expression.sizeOf(tp);
-        size = 1;
+        tp = ComponentReference.crefTypeConsiderSubs(cr);
+        size = Expression.sizeOf(tp);
       then
         countSympleEqnSize(rest,isimpleEqnSize+size,ihs);
         

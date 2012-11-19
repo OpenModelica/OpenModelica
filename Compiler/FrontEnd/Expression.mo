@@ -1689,11 +1689,11 @@ algorithm
         nr = List.reduce(lstInt, intAdd);
       then
         nr;
-
+/* Size of Enumeration is 1 like a Integer
     case DAE.T_ENUMERATION(index=NONE(),names=strlst)
       then
         listLength(strlst);
-
+*/
     case DAE.T_FUNCTION(funcResultType=ty)
       then
         sizeOf(ty);

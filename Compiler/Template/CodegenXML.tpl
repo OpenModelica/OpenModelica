@@ -1419,7 +1419,7 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
           <%startTime%>
           <%finalTime%>
           <opt:pathConstraints>
-          	<%constraints%>
+              <%constraints%>
           </opt:pathConstraints>          
         </opt:Optimization>
         >> 
