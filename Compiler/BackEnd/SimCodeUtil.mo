@@ -6823,19 +6823,21 @@ algorithm
       DAE.Exp e,cre;
       DAE.ElementSource source;
       list<Integer> v1,v2;
-      Integer pos,epos;
+      Integer pos;
       list<BackendDAE.Var> v,kn;
+      Boolean b1,b2;
       
     case ((var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source),(eqns,v,kn,v1,v2,pos)))
       equation
-        false = Expression.isConst(e);
+        b1 = BackendVariable.isParam(var);
+        b2 = Expression.isConstValue(e);
+        // if not parameter use it, else use it only if not constant
+        true = (not b1) or (b1 and not b2);
         cre = Expression.crefExp(cr);
         initialEquation = BackendDAE.EQUATION(cre, e, source);
-        epos = listLength(v1)+1;
         var1 = BackendVariable.setVarKind(var,BackendDAE.VARIABLE());
       then
-        ((var,(initialEquation :: eqns,var1::v,kn,epos::v1,pos::v2,pos+1)));
-        
+        ((var,(initialEquation :: eqns,var1::v,kn,pos::v1,pos::v2,pos+1)));        
     case ((var,(eqns,v,kn,v1,v2,pos)))
       equation
         var1 = BackendVariable.setVarKind(var,BackendDAE.PARAM());
