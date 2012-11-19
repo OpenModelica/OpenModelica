@@ -6826,6 +6826,10 @@ algorithm
       Integer pos;
       list<BackendDAE.Var> v,kn;
       Boolean b1,b2;
+
+    // ignore constants
+    case ((var as BackendDAE.VAR(varKind=BackendDAE.CONST()),(eqns,v,kn,v1,v2,pos)))
+      then ((var,(eqns,v,var1::kn,v1,v2,pos)));
       
     case ((var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source),(eqns,v,kn,v1,v2,pos)))
       equation
