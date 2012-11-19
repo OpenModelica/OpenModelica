@@ -18198,7 +18198,7 @@ protected function checkParallelismWRTEnv
   input Absyn.Info inInfo;
   output Boolean isValid;
 algorithm
-  _ := matchcontinue(inEnv,inName,inAttr,inInfo)
+  isValid := matchcontinue(inEnv,inName,inAttr,inInfo)
     local
       String errorString,scopeName;
       Env.ScopeType stype;
