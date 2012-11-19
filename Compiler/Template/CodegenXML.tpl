@@ -1,4 +1,5 @@
 // This file defines templates for transforming flattened Modelica code to Xml code.
+// @author Alachew Shitahun <alash325@student.liu.se> - Some templates taken from CodegenC.tpl
 
 package CodegenXML
 
@@ -58,8 +59,10 @@ case SIMCODE(modelInfo = MODELINFO(__)) then
   
     <%functionsXml(modelInfo.functions)%>
   
-    <%optimizationXml(constraints)%>
-      
+    <%/*optimizationXml(constraints)*/%>
+    
+    <%objectiveFunctionXml(classAttributes, simCode)%>  
+    
   </OpenModelicaModelDescription>
   >>
  end generateXml;
@@ -226,7 +229,7 @@ template variableCategoryXml(VarKind varKind)
   case DUMMY_STATE(__) then "algebraic" 
   case DISCRETE(__)    then "algebraic"
   case PARAM(__)       then "parameter" 
-  case CONST(__)       then "constant"
+  case CONST(__)       then "IndependentConstant"
   else error(sourceInfo(), "Unexpected simVarTypeName varKind")
 end variableCategoryXml;
 
@@ -234,7 +237,7 @@ template ScalarVariableTypeXml(DAE.Type type_, String unit, String displayUnit, 
  "Generates XML code for ScalarVariable Type file."
 ::=
 match type_
-  case T_INTEGER(__) then '<Integer <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%>/> <%ScalarVariableTypeMinAttribute(minValue)%> <%ScalarVariableTypeMaxAttribute(maxValue)%>' 
+  case T_INTEGER(__) then '<Integer <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%> <%ScalarVariableTypeMinAttribute(minValue)%> <%ScalarVariableTypeMaxAttribute(maxValue)%>/>' 
   case T_REAL(__) then '<Real <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%> <%ScalarVariableTypeMinAttribute(minValue)%> <%ScalarVariableTypeMaxAttribute(maxValue)%> <%ScalarVariableTypeRealAttributeXml(unit,displayUnit)%>/>' 
   case T_BOOL(__) then '<Boolean <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%>/>' 
   case T_STRING(__) then '<String <%ScalarVariableTypeCommonAttributeXml(initialValue,isFixed)%>/>' 
@@ -1370,35 +1373,81 @@ end extArgF77Xml;
  *         SECTION: GENERATE OPTIMIZATION IN SIMULATION FILE
  *****************************************************************************/
  
+template objectiveFunctionXml( list<DAE.ClassAttributes> classAttributes ,SimCode simCode)
+  "Generates XML for Objective Functions."
+::=
+    (classAttributes |> classAttribute => classAttributesXml(classAttribute,simCode); separator="\n")
+    
+end objectiveFunctionXml;
 
-template optimizationXml( list<DAE.Constraint> constraints)
+template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
+"Generates XML for class attributes of objective function."
+::=
+  match classAttribute
+    case OPTIMIZATION_ATTRS(__) then
+      let &varDecls = buffer "" /*BUFD*/
+      let &preExp = buffer "" /*BUFD*/
+      let objectiveFunction = match objetiveE case SOME(exp) then
+        <<
+        <opt:ObjectiveFunction>
+          <%daeExpXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>
+        </opt:ObjectiveFunction>
+        >> 
+      let objectiveIntegrand = match objectiveIntegrandE case SOME(exp) then
+        <<
+        <opt:IntegrandObjectiveFunction>
+          <%daeExpXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>
+        </opt:IntegrandObjectiveFunction>
+        >> 
+      let startTime = match startTimeE case SOME(exp) then
+        <<
+        <opt:IntervalStartTime>
+          <opt:Value><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Value>
+        </opt:IntervalStartTime>
+        >> 
+      let finalTime = match finalTimeE case SOME(exp) then
+        <<
+        <opt:IntervalFinalTime>
+          <opt:Value><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Value>
+        </opt:IntervalFinalTime>
+        >>
+      let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then constraintsXml(constraints)              
+        <<
+        <opt:Optimization>
+          <%objectiveFunction%>
+          <%objectiveIntegrand%>
+          <%startTime%>
+          <%finalTime%>
+          <opt:pathConstraints>
+          	<%constraints%>
+          </opt:pathConstraints>          
+        </opt:Optimization>
+        >> 
+    else error(sourceInfo(), 'Unknown Constraint List')
+end classAttributesXml;
+
+template constraintsXml( list<DAE.Constraint> constraints)
   "Generates XML for Optimization."
 ::=
-    (constraints |> constraint => constraintsXml(constraint); separator="\n")
+    (constraints |> constraint => constraintXml(constraint); separator="\n")
     
-end optimizationXml;
+end constraintsXml;
 
-template constraintsXml(Constraint cons)
+template constraintXml(Constraint cons)
 "Generates XML for List of Constraints."
 ::=
   match cons
     case CONSTRAINT_EXPS(__) then
-    let &varDecls = buffer "" /*BUFD*/
+      let &varDecls = buffer "" /*BUFD*/
       let &preExp = buffer "" /*BUFD*/
       let constrain = (constraintLst |> constraint =>
          daeExpConstraintXml(constraint, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
           ;separator="\n")
       <<
-      <opt:Optimization>
-        <opt:Constraints>
-          <%constrain%>
-        </opt:Constraints>
-      </opt:Optimization>
+      <%constrain%>
       >> 
     else error(sourceInfo(), 'Unknown Constraint List')
-end constraintsXml;
-
-
+end constraintXml;
 
 /*****************************************************************************
  *         SECTION: GENERATE All Algorithm IN SIMULATION FILE
@@ -2073,6 +2122,13 @@ template daeExpXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDec
   else error(sourceInfo(), 'Unknown expression: <%ExpressionDump.printExpStr(exp)%>')
 end daeExpXml;
 
+template daeExpValueXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+ "Expression-XML generation mainly used for optimica extension start and final value."
+::=
+  match exp
+  case e as ICONST(__)          then '<%integer%>' 
+  case e as RCONST(__)          then '<%real%>'
+end daeExpValueXml;
 
 template daeExternalXmlExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
   "Like daeExp, "
