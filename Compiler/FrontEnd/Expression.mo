@@ -1388,6 +1388,26 @@ algorithm
   end matchcontinue;
 end expCrefInclIfExpFactors;
 
+public function getArrayContents "returns the list of expressions in the array"
+  input DAE.Exp e;
+  output list<DAE.Exp> es;
+algorithm
+  DAE.ARRAY(array=es) := e;
+end getArrayContents;
+
+public function get2dArrayOrMatrixContent "returns the list of expressions in the array"
+  input DAE.Exp e;
+  output list<list<DAE.Exp>> outExps;
+algorithm
+  outExps := match e
+    local
+      list<DAE.Exp> es;
+      list<list<DAE.Exp>> ess;
+    case DAE.ARRAY(array=es) then List.map(es,getArrayContents);
+    case DAE.MATRIX(matrix=ess) then ess;
+  end match;
+end get2dArrayOrMatrixContent;
+
 public function getBoolConst "returns the expression as a Boolean value.
 "
 input DAE.Exp e;

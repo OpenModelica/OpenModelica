@@ -3789,6 +3789,13 @@ algorithm
   end matchcontinue;
 end getFunctionList;
 
+public function getFunctionNames
+  input DAE.FunctionTree ft;
+  output list<String> strs;
+algorithm
+  strs := List.mapMap(getFunctionList(ft), functionName, Absyn.pathString);
+end getFunctionNames;
+
 protected function isInvalidFunctionEntry
   input tuple<DAE.AvlKey,DAE.AvlValue> tpl;
   output Boolean b;

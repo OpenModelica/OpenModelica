@@ -1050,6 +1050,22 @@ algorithm
         i = listLength(es);
         e = Expression.makeBuiltinCall("cat",DAE.ICONST(i)::es,tp);
       then e;
+
+    // promote 1-dim to 2-dim
+    case DAE.CALL(path=Absyn.IDENT("promote"),expLst=(e as DAE.ARRAY(tp1 as DAE.T_ARRAY(dims={_}),sc,es))::DAE.ICONST(1)::{},attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        es = List.map2(List.map(es,List.create), Expression.makeArray, Types.liftArray(Types.unliftArray(tp1),DAE.DIM_INTEGER(1)), sc);
+        e = DAE.ARRAY(tp,false,es);
+      then e;
+
+    case DAE.CALL(path=Absyn.IDENT("transpose"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        mexpl = List.transposeList(Expression.get2dArrayOrMatrixContent(e));
+        tp1 = Types.unliftArray(tp);
+        es = List.map2(mexpl, Expression.makeArray, tp1, not Types.isArray(tp1,{}));
+        e = Expression.makeArray(es, tp, false);
+      then e;
+
   end matchcontinue;
 end simplifyBuiltinCalls;
 
@@ -1516,7 +1532,13 @@ algorithm
         e_1 = simplifyMatrixProduct(e1, e2);
       then
         e_1;
-    
+
+    case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
+      equation
+        res = simplifyScalarProduct(e1, e2);
+      then
+        res;
+
     case(e1,op as DAE.ADD_ARR(ty = _),e2)
       equation
         a1 = simplifyVectorBinary0(e1,op,e2);
@@ -1578,12 +1600,6 @@ algorithm
         simplifyVectorScalar(s1, op, a1);
 
     case (e1,DAE.MUL_SCALAR_PRODUCT(ty = tp),e2)
-      equation
-        res = simplifyScalarProduct(e1, e2);
-      then
-        res;
-
-    case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
       equation
         res = simplifyScalarProduct(e1, e2);
       then
@@ -2133,19 +2149,24 @@ protected function simplifyMatrixProduct
 algorithm
   outExp := match (inExp1,inExp2)
     local
+      list<DAE.Exp> es;
       list<list<DAE.Exp>> expl_1,expl1,expl2;
       Type tp;
-      Integer size1,size2;
-      DAE.Dimension n, p;
+      Integer n, p;
       DAE.TypeSource ts;
+      DAE.Exp e1,e2;
       
     /* A[n, m] * B[m, p] = C[n, p] */
-    case (DAE.MATRIX(ty = DAE.T_ARRAY(ty = tp, dims = {n, _}, source = ts),integer = size1,matrix = expl1),
-          DAE.MATRIX(ty = DAE.T_ARRAY(dims = {_, p}),integer = size2,matrix = expl2))
+    case (e1,e2)
       equation
-        expl_1 = simplifyMatrixProduct2(expl1, expl2);
+        DAE.T_ARRAY(ty=tp,source=ts) = Types.simplifyType(Expression.typeof(e1));
+        (expl1 as es::_) = Expression.get2dArrayOrMatrixContent(e1);
+        (expl2 as es::_) = Expression.get2dArrayOrMatrixContent(e2);
+        (expl_1 as es::_) = simplifyMatrixProduct2(expl1, expl2);
+        n = listLength(expl_1);
+        p = listLength(es);
       then
-        DAE.MATRIX(DAE.T_ARRAY(tp, {n, p}, ts),size1,expl_1);
+        DAE.MATRIX(DAE.T_ARRAY(tp, {DAE.DIM_INTEGER(n), DAE.DIM_INTEGER(p)}, ts),n,expl_1);
   end match;
 end simplifyMatrixProduct;
 

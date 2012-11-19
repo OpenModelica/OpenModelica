@@ -5991,7 +5991,7 @@ algorithm
         (exp, props);
 
     // 1-dimensional array
-    case (_, _, DAE.ARRAY(ty = _), _, _, _)
+    case (_, _, _, _, _, _)
       equation
         1 = Types.numberOfDimensions(inType);
         (exp, props) = promoteExp(inArg, inProperties, 1);
@@ -7384,6 +7384,7 @@ protected
   Util.Status status;
   Env.Cache cache;
   Env.Env env;
+  Boolean didInline;
 algorithm
   (cache,
    args_1,
@@ -7426,7 +7427,10 @@ algorithm
   /* Instantiate any implicit record constructors needed and add them to the dae function tree */
   cache := instantiateImplicitRecordConstructors(cache, inEnv, args_1, st);
   functionTree := Env.getFunctionTree(cache);
-  ((call_exp,_)) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
+  ((call_exp,(_,didInline))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
+  (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
+  didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
+  prop_1 := Debug.bcallret2(didInline, Types.setTypeInProps, Debug.bcallret1(didInline, Expression.typeof, call_exp, DAE.T_UNKNOWN_DEFAULT), prop_1, prop_1);
   expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
   outCache := cache;
 end elabCallArgs3;

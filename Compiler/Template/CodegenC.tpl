@@ -6860,14 +6860,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
 
-  case CALL(path=IDENT(name="outerProduct"), expLst={A,B}) then
-    let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let var2 = daeExp(B, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let arr_tp_str = expTypeFromExpArray(A)
-    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
-    let &preExp += 'outer_product_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
-    '<%tvar%>'
-  
   case CALL(path=IDENT(name="rem"), expLst={e1, e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)

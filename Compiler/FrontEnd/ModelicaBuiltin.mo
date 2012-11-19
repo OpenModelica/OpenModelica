@@ -781,24 +781,18 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     input Integer[:] v1;
     input Integer[:] v2;
     output Integer[size(v1,1),size(v2,1)] o;
-    external "builtin" o=outerProduct(v1,v2);
-  /* Not working due to problems with matrix and transpose :(
   algorithm
     o := matrix(v1) * transpose(matrix(v2));
-  */
-  annotation(preferredView="text");
+  annotation(__OpenModelica_EarlyInline=true,preferredView="text");
   end outerProductInt;
 
   function outerProductReal
     input Real[:] v1;
     input Real[:] v2;
     output Real[size(v1,1),size(v2,1)] o;
-    external "builtin" o=outerProduct(v1,v2);
-  /* Not working due to problems with matrix and transpose :(
   algorithm
     o := matrix(v1) * transpose(matrix(v2));
-  */
-  annotation(preferredView="text");
+  annotation(__OpenModelica_EarlyInline=true,preferredView="text");
   end outerProductReal;
 
   function crossInt

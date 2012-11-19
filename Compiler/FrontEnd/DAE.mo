@@ -1245,7 +1245,7 @@ uniontype Exp "Expressions
 
   record MATRIX
     Type ty;
-    Integer integer;
+    Integer integer "Size of the first dimension";
     list<list<Exp>> matrix;
   end MATRIX;
 
