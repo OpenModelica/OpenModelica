@@ -6787,7 +6787,9 @@ algorithm
         // print("  instElement: A component: " +& name +& "\n");
         //print("instElement: " +& name +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCodeDump.printModStr(m) +& " cm: " +& Mod.printModStr(cmod) +& " mods:" +& Mod.printModStr(mods) +& "\n");
         //print("Env:\n" +& Env.printEnvStr(env) +& "\n");
-                
+        
+        true = Util.if_(Config.acceptParModelicaGrammar(), checkParallelismWRTEnv(env,name,attr,info), true);        
+        
         m = traverseModAddFinal(m, final_prefix);
         comp = SCode.COMPONENT(name, prefixes, attr, ts, m, comment, cond, info);
 
@@ -18187,5 +18189,42 @@ algorithm
     
   end matchcontinue;
 end addRecordConstructorFunction;
+
+
+protected function checkParallelismWRTEnv
+  input Env.Env inEnv;
+  input String inName;
+  input SCode.Attributes inAttr;
+  input Absyn.Info inInfo;
+  output Boolean isValid;
+algorithm
+  _ := matchcontinue(inEnv,inName,inAttr,inInfo)
+    local
+      String errorString,scopeName;
+      Env.ScopeType stype;
+      Absyn.Direction dir;
+      SCode.Parallelism prl;
+      Boolean isparglobal;
+      Boolean hasnodir;
+      
+    case(Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _, SCode.ATTR(parallelism = prl, direction = dir), _)
+      equation
+        isparglobal = SCode.parallelismEqual(prl, SCode.PARGLOBAL());
+        hasnodir = not Absyn.isInputOrOutput(dir);
+        true = isparglobal and hasnodir;
+        
+        errorString = "\n" +& 
+        "- local parglobal component '" +& inName +& 
+        "' is declared in parallel/parkernel function '" +& scopeName +& "'. \n" +&
+        "- parglobal variables can be declared only in normal functions. \n";
+        
+        Error.addSourceMessage(Error.PARMODELICA_ERROR, 
+          {errorString}, inInfo);
+      then false;
+        
+    case(_,_,_,_) then true;
+      
+ end matchcontinue;  
+end checkParallelismWRTEnv;
 
 end Inst;

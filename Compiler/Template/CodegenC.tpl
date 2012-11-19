@@ -3242,7 +3242,7 @@ template functionHeaderKernelFunctionInterface(String fname, list<Variable> farg
     %>
   } <%fname%>_rettype;
 
-  <%fname%>_rettype _<%fname%>(<%fargsStr%>);
+  <%fname%>_rettype omc_<%fname%>(<%fargsStr%>);
   >> else <<
 
   void _<%fname%>(<%fargsStr%>);
@@ -3737,7 +3737,7 @@ case KERNEL_FUNCTION(__) then
   
   <<
   
-  __kernel void _<%fname%>(
+  __kernel void omc_<%fname%>(
     <%\t%><%\t%><%argStr%>
   ) {
  
@@ -3796,7 +3796,7 @@ case PARALLEL_FUNCTION(__) then
   
 
   <<
-  <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
+  <%retType%> omc_<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
   {
     <%funArgs%>
     <%varDecls%>
@@ -3881,7 +3881,7 @@ case KERNEL_FUNCTION(__) then
   <<
   
   /* Interface function to <%fname%> defined in parallelFunctions.cl file. */
-  <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", "%>)
+  <%retType%> omc_<%fname%>(<%functionArguments |> var => funArgDefinitionKernelFunctionInterface(var) ;separator=", "%>)
   {
     <%funArgs%>
     <%varDecls%>
@@ -3893,7 +3893,7 @@ case KERNEL_FUNCTION(__) then
   
     /* functionBodyKernelFunctionInterface : <%fname%> Kernel creation and execution */
     int <%kernel_arg_number%> = 0;
-    <%cl_kernelVar%> = ocl_create_kernel(omc_ocl_program, "_<%fname%>");
+    <%cl_kernelVar%> = ocl_create_kernel(omc_ocl_program, "omc_<%fname%>");
     <%kernelArgSets%>
     ocl_execute_kernel(<%cl_kernelVar%>);
     clReleaseKernel(<%cl_kernelVar%>);
