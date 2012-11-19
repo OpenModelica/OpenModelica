@@ -887,57 +887,6 @@ algorithm
   end match;
 end markAsUsedOnRestriction2;
 
-protected function checkNotExtendsDependent
-  "Wrapper function for checkNotExtendsDependent2 which adds the error message
-  count to the function arguments."
-  input Absyn.Path inBaseClass;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  output Boolean outResult;
-algorithm
-  outResult := checkNotExtendsDependent2(inBaseClass, inEnv, inInfo,
-    Error.getNumErrorMessages());
-end checkNotExtendsDependent;
-
-protected function checkNotExtendsDependent2
-  "The Modelica specification 3.2 says (section 5.6.1): 'The lookup of the names
-  of extended classes should give the same result before and after flattening
-  the extends. One should not find any element used during this flattening by
-  lookup through the extends-clauses.' This means that it's not allowed to have
-  a name in an extends-clause that's inherited from another extends-clause. This
-  function checks this, and returns true if an extends doesn't depend on an
-  extend in the local scope."
-  input Absyn.Path inBaseClass;
-  input Env inEnv;
-  input Absyn.Info inInfo;
-  input Integer inErrorCount;
-  output Boolean outResult;
-algorithm
-  outResult := matchcontinue(inBaseClass, inEnv, inInfo, inErrorCount)
-    local
-      Absyn.Path bc;
-      Absyn.Ident id;
-      String bc_name;
-
-    case (_, _, _, _)
-      equation
-        id = Absyn.pathFirstIdent(inBaseClass);
-        bc :: _ = SCodeLookup.lookupBaseClasses(id, inEnv);
-        bc_name = Absyn.pathString(bc);
-        Error.addSourceMessage(Error.EXTENDS_INHERITED_FROM_LOCAL_EXTENDS,
-          {bc_name, id}, inInfo);
-      then
-        false;
-
-    else
-      equation
-        true = intEq(inErrorCount, Error.getNumErrorMessages());
-      then
-        true;
-
-  end matchcontinue;
-end checkNotExtendsDependent2;
-
 protected function analyseExtends
   "Analyses an extends-clause."
   input Absyn.Path inClassName;
