@@ -6833,6 +6833,7 @@ algorithm
       
     case ((var as BackendDAE.VAR(varName=cr, bindExp=SOME(e), source = source),(eqns,v,kn,v1,v2,pos)))
       equation
+        false = BackendVariable.isVarOnTopLevelAndInput(var);
         b1 = BackendVariable.isParam(var);
         b2 = Expression.isConstValue(e);
         // if not parameter use it, else use it only if not constant
