@@ -3251,7 +3251,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.DAElist fdae;
-      Boolean unrollForLoops;
+      Boolean unrollForLoops, zero_dims;
       Absyn.Info info2;
       list<Absyn.TypeSpec> tSpecs;
       list<DAE.Type> tys;
@@ -3435,7 +3435,8 @@ algorithm
 
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
-        csets1 = ConnectUtil.addConnectorVariablesFromDAE(ci_state1, pre, vars, csets, info);
+        zero_dims = instDimsHasZeroDims(inst_dims);
+        csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, csets, info);
 
         // Reorder the connect equations to have non-expandable connect first:
         //   connect(non_expandable, non_expandable);
@@ -18226,5 +18227,26 @@ algorithm
       
  end matchcontinue;  
 end checkParallelismWRTEnv;
+
+protected function instDimsHasZeroDims
+  input InstDims inInstDims;
+  output Boolean outHasZeroDims;
+algorithm
+  outHasZeroDims := matchcontinue(inInstDims)
+    local
+      list<DAE.Subscript> dims;
+      InstDims rest_dims;
+
+    case (dims :: _)
+      equation
+        true = List.exist(dims, Expression.subscriptIsZero);
+      then
+        true;
+
+    case (_ :: rest_dims) then instDimsHasZeroDims(rest_dims);
+
+    else false;
+  end matchcontinue;
+end instDimsHasZeroDims;
 
 end Inst;

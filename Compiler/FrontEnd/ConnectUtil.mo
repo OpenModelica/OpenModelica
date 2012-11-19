@@ -311,6 +311,7 @@ end makeConnectorType;
 public function addConnectorVariablesFromDAE
   "If the class state indicates a connector, this function adds all flow
   variables in the dae as inside connectors to the connection sets."
+  input Boolean inIgnore;
   input ClassInf.State inClassState;
   input Prefix.Prefix inPrefix;
   input list<DAE.Var> inVars;
@@ -318,14 +319,15 @@ public function addConnectorVariablesFromDAE
   input Absyn.Info info;
   output Sets outConnectionSet;
 algorithm
-  outConnectionSet := match(inClassState, inPrefix, inVars, inConnectionSet, info)
+  outConnectionSet :=
+  match(inIgnore, inClassState, inPrefix, inVars, inConnectionSet, info)
     local
       Absyn.Path class_path;
       list<DAE.Var>  streams, flows;
       Sets cs;
     
     // check balance of non expandable connectors!
-    case (ClassInf.CONNECTOR(path = class_path, isExpandable = false), _, _, cs, _)
+    case (false, ClassInf.CONNECTOR(path = class_path, isExpandable = false), _, _, cs, _)
       equation
         checkConnectorBalance(inVars, class_path, info);
         (flows, streams) = getStreamAndFlowVariables(inVars, {}, {});
@@ -334,7 +336,7 @@ algorithm
       then
         cs;
 
-    else then inConnectionSet;
+    else inConnectionSet;
   end match;
 end addConnectorVariablesFromDAE;
 

@@ -81,59 +81,59 @@ protected import Util;
 /* transform to other types */
 /***************************************************/
 
-public function intSubscripts
-"function: intSubscripts
-  This function describes the function between a list of integers
-  and a list of DAE.Subscript where each integer is converted to
-  an integer indexing expression."
-  input list<Integer> inIntegerLst;
-  output list<Subscript> outSubscriptLst;
+public function intSubscript
+  "Converts an integer into an index subscript."
+  input Integer inInteger;
+  output Subscript outSubscript;
 algorithm
-  outSubscriptLst := match (inIntegerLst)
-    local
-      list<Subscript> xs_1;
-      Integer x;
-      list<Integer> xs;
-    
-    case {} then {};
-    
-    case (x :: xs)
-      equation
-        xs_1 = intSubscripts(xs);
-      then
-        (DAE.INDEX(DAE.ICONST(x)) :: xs_1);
-  end match;
+  outSubscript := DAE.INDEX(DAE.ICONST(inInteger));
+end intSubscript;
+
+public function intSubscripts
+  "Converts a list of integers into index subscripts."
+  input list<Integer> inIntegers;
+  output list<Subscript> outSubscripts;
+algorithm
+  outSubscripts := List.map(inIntegers, intSubscript);
 end intSubscripts;
 
-public function subscriptsInt "
-function: subscriptsInt
-  author: PA
-  This function creates a list of ints from
-  a subscript list, see also intSubscripts."
-  input list<Subscript> inSubscriptLst;
-  output list<Integer> outIntegerLst;
+public function subscriptInt
+  "Tries to convert a subscript to an integer index."
+  input Subscript inSubscript;
+  output Integer outInteger;
 algorithm
-  outIntegerLst := matchcontinue (inSubscriptLst)
+  outInteger := match(inSubscript)
     local
-      list<Integer> xs_1;
       Integer x;
-      list<Subscript> xs;
-    
-    case {} then {};
-    
-    case (DAE.INDEX(exp = DAE.ICONST(integer = x)) :: xs)
-      equation
-        xs_1 = subscriptsInt(xs);
-      then
-        (x :: xs_1);
-    
-    case (DAE.INDEX(exp = DAE.ENUM_LITERAL(index = x)) :: xs)
-      equation
-        xs_1 = subscriptsInt(xs);
-      then
-        (x :: xs_1);
-  end matchcontinue;
+
+    case DAE.INDEX(exp = DAE.ICONST(integer = x)) then x;
+    case DAE.INDEX(exp = DAE.ENUM_LITERAL(index = x)) then x;
+
+  end match;
+end subscriptInt;
+
+public function subscriptsInt
+  "Tries to convert a list of subscripts to integer indices."
+  input list<Subscript> inSubscripts;
+  output list<Integer> outIntegers;
+algorithm
+  outIntegers := List.map(inSubscripts, subscriptInt);
 end subscriptsInt;
+
+public function subscriptIsZero
+  input Subscript inSubscript;
+  output Boolean outIsZero;
+algorithm
+  outIsZero := matchcontinue(inSubscript)
+    case _
+      equation
+        true = 0 == subscriptInt(inSubscript);
+      then
+        true;
+
+    else false;
+  end matchcontinue;
+end subscriptIsZero;
 
 public function unelabExp
 "function: unelabExp
