@@ -1344,26 +1344,34 @@ void transpose_integer_array(const integer_array_t * a, integer_array_t* dest)
     }
 }
 
-void outer_product_integer_array(const integer_array_t * v1,const integer_array_t * v2,
-                                 integer_array_t* dest)
+void outer_product_integer_array(const integer_array_t * v1,const integer_array_t * v2, integer_array_t* dest)
 {
-    size_t i;
-    size_t j;
-    size_t number_of_elements_a;
-    size_t number_of_elements_b;
+  size_t i;
+  size_t j;
+  size_t number_of_elements_a;
+  size_t number_of_elements_b;
 
-    number_of_elements_a = base_array_nr_of_elements(v1);
-    number_of_elements_b = base_array_nr_of_elements(v2);
+  number_of_elements_a = base_array_nr_of_elements(v1);
+  number_of_elements_b = base_array_nr_of_elements(v2);
 
-    /* Assert a is a vector */
-    /* Assert b is a vector */
+  /* Assert a is a vector */
+  /* Assert b is a vector */
 
-    for (i = 0; i < number_of_elements_a; ++i) {
-        for (j = 0; i < number_of_elements_b; ++j) {
-            integer_set(dest, (i * number_of_elements_b) + j,
-                        integer_get(v1, i)*integer_get(v2, j));
-  }
+  for (i = 0; i < number_of_elements_a; ++i) {
+    for (j = 0; i < number_of_elements_b; ++j) {
+      integer_set(dest, (i * number_of_elements_b) + j, integer_get(v1, i)*integer_get(v2, j));
     }
+  }
+}
+
+void outer_product_alloc_integer_array(const integer_array_t* v1, const integer_array_t* v2, integer_array_t* dest)
+{
+  size_t dim1,dim2;
+  assert(base_array_ok(v1));
+  dim1 = base_array_nr_of_elements(v1);
+  dim2 = base_array_nr_of_elements(v2);
+  alloc_integer_array(dest,dim1,dim2);
+  outer_product_integer_array(v1,v2,dest);
 }
 
 /* Fills an array with a value. */

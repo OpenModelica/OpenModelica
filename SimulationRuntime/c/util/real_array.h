@@ -212,8 +212,8 @@ extern void matrix_real_array(const real_array_t * a, real_array_t* dest);
 extern void matrix_real_scalar(modelica_real a,real_array_t* dest);
 extern void transpose_alloc_real_array(const real_array_t * a, real_array_t* dest);
 extern void transpose_real_array(const real_array_t * a, real_array_t* dest);
-extern void outer_product_real_array(const real_array_t * v1,const real_array_t * v2,
-                              real_array_t* dest);
+extern void outer_product_alloc_real_array(real_array_t* v1, real_array_t* v2, real_array_t* dest);
+extern void outer_product_real_array(const real_array_t * v1,const real_array_t * v2, real_array_t* dest);
 extern void identity_real_array(int n, real_array_t* dest);
 extern void diagonal_real_array(const real_array_t * v,real_array_t* dest);
 extern void fill_real_array(real_array_t* dest,modelica_real s);

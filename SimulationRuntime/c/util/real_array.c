@@ -1386,6 +1386,16 @@ void outer_product_real_array(const real_array_t * v1, const real_array_t * v2,
     }
 }
 
+void outer_product_alloc_real_array(real_array_t* v1, real_array_t* v2, real_array_t* dest)
+{
+  size_t dim1,dim2;
+  assert(base_array_ok(v1));
+  dim1 = base_array_nr_of_elements(v1);
+  dim2 = base_array_nr_of_elements(v2);
+  alloc_real_array(dest,dim1,dim2);
+  outer_product_real_array(v1,v2,dest);
+}
+
 void identity_real_array(int n, real_array_t* dest)
 {
     int i;

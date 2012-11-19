@@ -237,8 +237,8 @@ extern void matrix_integer_array(const integer_array_t * a, integer_array_t* des
 extern void matrix_integer_scalar(modelica_integer a,integer_array_t* dest);
 extern void transpose_integer_array(const integer_array_t * a, integer_array_t* dest);
 extern void transpose_alloc_integer_array(const integer_array_t * a, integer_array_t* dest);
-extern void outer_product_integer_array(const integer_array_t * v1,const integer_array_t * v2,
-                                        integer_array_t* dest);
+extern void outer_product_alloc_integer_array(const integer_array_t * v1,const integer_array_t * v2, integer_array_t* dest);
+extern void outer_product_integer_array(const integer_array_t * v1,const integer_array_t * v2, integer_array_t* dest);
 extern void fill_alloc_integer_array(integer_array_t* dest, modelica_integer value, int ndims, ...);
 extern void identity_integer_array(int n, integer_array_t* dest);
 extern void identity_alloc_integer_array(int n, integer_array_t* dest);
