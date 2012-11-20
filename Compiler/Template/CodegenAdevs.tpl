@@ -369,6 +369,7 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
          N_Vector y = N_VNew_Serial(NEQ);
          N_Vector scale = N_VNew_Serial(NEQ);
          void* kmem = KINCreate();
+		 active_model = this;
          assert(kmem != NULL);
          flag = KINInit(kmem, residualFunc<%index%>, y);
          assert(flag == KIN_SUCCESS);
@@ -381,11 +382,8 @@ template makeExtraResiduals(list<SimEqSystem> allEquations, String name)
          >>
          ;separator="\n"%>
          flag = KINSol(kmem,y,KIN_LINESEARCH,scale,scale);
-         <%crefs |> name hasindex i0 =>
-         <<
-         <%cref(name)%> = NV_Ith_S(y,<%i0%>);
-         >>
-         ;separator="\n"%>
+		 // Save the outcome and calculate any dependent variables
+		 residualFunc<%index%>(y,scale,NULL);
          N_VDestroy_Serial(y);
          N_VDestroy_Serial(scale);
          KINFree(&kmem);
