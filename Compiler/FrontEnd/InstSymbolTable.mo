@@ -263,7 +263,7 @@ algorithm
       Absyn.Path name;
 
     // A basic type doesn't have any components, nothing to add.
-    case (InstTypes.BASIC_TYPE(name), st) then (inClass, st);
+    case (InstTypes.BASIC_TYPE(name), st) then st;
 
     // A complex class, add its components to the symboltable.
     case (InstTypes.COMPLEX_CLASS(components = comps), st)
@@ -318,20 +318,19 @@ public function addClassOnTrue
   input Class inClass;
   input SymbolTable inSymbolTable;
   input Boolean inCondition;
-  output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
-  (outClass, outSymbolTable) := match(inClass, inSymbolTable, inCondition)
+  outSymbolTable := match(inClass, inSymbolTable, inCondition)
     local
       Class cls;
       SymbolTable st;
 
-    case (cls, st, false) then (cls, st);
+    case (cls, st, false) then st;
     case (cls, st, true)
       equation
-        (cls, st) = addClass(cls, st);
+        st = addClass(cls, st);
       then
-        (cls, st);
+        st;
 
   end match;
 end addClassOnTrue;
@@ -591,7 +590,7 @@ algorithm
         // Try to add the component to the symboltable.
         (st, added) = addInstCondComponent(name, comp, opt_comp, st);
         // Add the element's class if the component was added.
-        (cls, st) = addClassOnTrue(cls, st, added);
+        st = addClassOnTrue(cls, st, added);
       then
         (st, added);
 

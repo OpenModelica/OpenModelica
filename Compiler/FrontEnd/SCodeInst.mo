@@ -2297,7 +2297,7 @@ algorithm
         (elem, (consts, funcs)) = instElement(selem, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), inGlobals);
 
-        (_, consts) = InstSymbolTable.addElement(elem, consts);
+        consts = InstSymbolTable.addElement(elem, consts);
       then
         ((consts, funcs));
 
@@ -2344,7 +2344,7 @@ algorithm
         (elem, (consts, funcs)) = instElement(selem, InstTypes.NOMOD(),
           InstTypes.NO_PREFIXES(), env, prefix, INST_ALL(), inGlobals);
 
-        (_, consts) = InstSymbolTable.addElement(elem, consts);
+        consts = InstSymbolTable.addElement(elem, consts);
       then
         ((consts, funcs));
 
