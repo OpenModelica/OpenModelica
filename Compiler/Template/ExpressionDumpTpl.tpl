@@ -56,7 +56,7 @@ match exp
     '<%if typeinfo() then (if scalar then "/* scalar */ " else "/* non-scalar */ ")%>{<%expl%>}'
   case MATRIX(__) then
     let mat_str = (matrix |> row => dumpExpList(row, stringDelimiter, ", ") ;separator="}, {")
-    '<%if typeinfo() then "/* matrix */ "%>{{<%mat_str%>}}'
+    '<%if typeinfo() then '/* matrix <%unparseType(ty) %> */ '%>{{<%mat_str%>}}'
   case e as RANGE(__) then
     let start_str = dumpOperand(start, e, false)
     let step_str = match step case SOME(step) then '<%dumpOperand(step, e, false)%>:'

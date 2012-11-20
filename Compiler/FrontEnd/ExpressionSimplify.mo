@@ -2160,8 +2160,8 @@ algorithm
     case (e1,e2)
       equation
         DAE.T_ARRAY(ty=tp,source=ts) = Types.simplifyType(Expression.typeof(e1));
-        (expl1 as es::_) = Expression.get2dArrayOrMatrixContent(e1);
-        (expl2 as es::_) = Expression.get2dArrayOrMatrixContent(e2);
+        (expl1) = Expression.get2dArrayOrMatrixContent(e1);
+        (expl2) = Expression.get2dArrayOrMatrixContent(e2);
         (expl_1 as es::_) = simplifyMatrixProduct2(expl1, expl2);
         n = listLength(expl_1);
         p = listLength(es);

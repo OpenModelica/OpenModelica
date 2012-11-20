@@ -764,4 +764,11 @@ package Config
   end typeinfo;
 end Config;
 
+package Types
+  function unparseType
+    input DAE.Type ty;
+    output String str;
+  end unparseType;
+end Types;
+
 end ExpressionDumpTV;

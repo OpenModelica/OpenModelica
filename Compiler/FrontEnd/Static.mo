@@ -7430,7 +7430,8 @@ algorithm
   ((call_exp,(_,didInline))) := Inline.inlineCall((call_exp,((SOME(functionTree),{DAE.EARLY_INLINE()}),false)));
   (call_exp,_) := ExpressionSimplify.condsimplify(didInline,call_exp);
   didInline := didInline and (not Config.acceptMetaModelicaGrammar() /* Some weird errors when inlining. Becomes boxed even if it shouldn't... */);
-  prop_1 := Debug.bcallret2(didInline, Types.setTypeInProps, Debug.bcallret1(didInline, Expression.typeof, call_exp, DAE.T_UNKNOWN_DEFAULT), prop_1, prop_1);
+  restype := Debug.bcallret2(didInline, Types.fixUnknownDimensions, Types.getPropType(prop_1), Debug.bcallret1(didInline, Expression.typeof, call_exp, DAE.T_UNKNOWN_DEFAULT), Types.getPropType(prop_1));
+  prop_1 := Debug.bcallret2(didInline, Types.setTypeInProps, restype, prop_1, prop_1);
   expProps := Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
   outCache := cache;
 end elabCallArgs3;
