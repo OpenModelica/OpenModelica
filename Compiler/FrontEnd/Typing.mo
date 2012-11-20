@@ -1927,9 +1927,9 @@ algorithm
         algorithms = al), _, ht, st)
       equation
         st = InstSymbolTable.addFunctionScope(st);
-        (_, st) = InstSymbolTable.addElements(inputs, st);
-        (_, st) = InstSymbolTable.addElements(outputs, st);
-        (_, st) = InstSymbolTable.addElements(locals, st);
+        st = InstSymbolTable.addElements(inputs, st);
+        st = InstSymbolTable.addElements(outputs, st);
+        st = InstSymbolTable.addElements(locals, st);
         (inputs, st) = List.map2Fold(inputs, typeElement, NONE(), CONTEXT_FUNCTION(), st);
         (outputs, st) = List.map2Fold(outputs, typeElement, NONE(), CONTEXT_FUNCTION(), st);
         (locals, st) = List.map2Fold(locals, typeElement, NONE(), CONTEXT_FUNCTION(), st);
