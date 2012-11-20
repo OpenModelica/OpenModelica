@@ -221,6 +221,8 @@ int solveHybrd(DATA *data, int sysNumber) {
 
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(((SOLVER_DATA*)systemData->solverData)->hybrdData);
+  /* We are given the number of the non-linear system. We want to look it up among all equations. */
+  int eqSystemNumber = data->modelData.equationInfo_reverse_prof_index[systemData->simProfEqNr];
 
   int i, iflag=0;
   double xerror, xerror_scaled;
@@ -239,7 +241,7 @@ int solveHybrd(DATA *data, int sysNumber) {
   if(DEBUG_STREAM(LOG_NONLIN_SYS))
   {
     INFO2(LOG_NONLIN_SYS, "Start solving Non-Linear System %s at time %e",
-      data->modelData.equationInfo[systemData->simProfEqNr].name,
+      data->modelData.equationInfo[eqSystemNumber].name,
       data->localData[0]->timeValue);
     INDENT(LOG_NONLIN_SYS);
 
@@ -332,7 +334,7 @@ int solveHybrd(DATA *data, int sysNumber) {
     }
     /* check for proper inputs */
     if (solverData->info == 0) {
-      printErrorEqSyst(IMPROPER_INPUT, data->modelData.equationInfo[systemData->simProfEqNr],
+      printErrorEqSyst(IMPROPER_INPUT, data->modelData.equationInfo[eqSystemNumber],
           data->localData[0]->timeValue);
       data->simulationInfo.found_solution = -1;
     }
@@ -607,7 +609,7 @@ int solveHybrd(DATA *data, int sysNumber) {
 
       /* while the initialization it's ok to every time a solution */
       if (!data->simulationInfo.initial){
-        printErrorEqSyst(ERROR_AT_TIME, data->modelData.equationInfo[systemData->simProfEqNr], data->localData[0]->timeValue);
+        printErrorEqSyst(ERROR_AT_TIME, data->modelData.equationInfo[eqSystemNumber], data->localData[0]->timeValue);
       }
       if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
         RELEASE(LOG_NONLIN_SYS);

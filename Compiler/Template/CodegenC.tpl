@@ -301,34 +301,11 @@ template functionSimProfDef(SimEqSystem eq, Integer value)
   "Generates function in simulation file."
 ::=
   match eq
-  case SES_ALGORITHM(__) then
-    <<
-    >>
-  case SES_WHEN(__) then
-    <<
-    >>
-  case SES_RESIDUAL(__) then
-    <<
-    >>
-  case SES_ARRAY_CALL_ASSIGN(__) then
-    <<
-    >>
-  case SES_SIMPLE_ASSIGN(__)   then
-    <<
-    >>
-  case SES_MIXED(__) then
-    <<
-    #define SIM_PROF_EQ_<%index%> <%value%><%\n%>
-    >>
-  case SES_LINEAR(__) then
-    <<
-    >>
+  case SES_MIXED(__)
+  case SES_LINEAR(__)
   case SES_NONLINEAR(__) then
     <<
     #define SIM_PROF_EQ_<%index%> <%value%><%\n%>
-    >>  
-  else 
-    <<
     >>
   end match
 end functionSimProfDef;
@@ -360,16 +337,16 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
       <%eqnInfo%>
       memcpy(data->modelData.equationInfo, &equationInfo, data->modelData.nEquations*sizeof(EQUATION_INFO));
       
-      data->modelData.nProfileBlocks = 0 <% allEquations |> eq => match eq
-        case SES_MIXED(__)
-        case SES_LINEAR(__)
-        case SES_NONLINEAR(__) then '+1'
+      data->modelData.nProfileBlocks = 0 <% listAppend(listAppend(initialEquations,parameterEquations),allEquations) |> eq => match eq
+        case SES_MIXED(__) then "+1"
+        case SES_LINEAR(__) then "+1"
+        case SES_NONLINEAR(__) then "+1"
       %>;
       data->modelData.equationInfo_reverse_prof_index = (int*) malloc(data->modelData.nProfileBlocks*sizeof(int));
       <%System.tmpTickReset(0)%>
-      <% allEquations |> eq hasindex i0 => match eq
-        case SES_MIXED(__)
-        case SES_LINEAR(__)
+      <% listAppend(listAppend(initialEquations,parameterEquations),allEquations) |> eq hasindex i0 => match eq
+        case SES_MIXED(__)     then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
+        case SES_LINEAR(__)    then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
         case SES_NONLINEAR(__) then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
       ; empty
       %>
@@ -8393,24 +8370,24 @@ template equationInfo1(SimEqSystem eq, Text &preBuf, Text &eqnsDefines)
 ::=
 match eq
   case SES_RESIDUAL(__) then
-    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+    // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
     '{<%index%>,"SES_RESIDUAL <%index%>",0,NULL}'
   case SES_SIMPLE_ASSIGN(__) then
-    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+    // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
     let var = '<%cref(cref)%>__varInfo'
     let &preBuf += 'const VAR_INFO** equationInfo_cref<%index%> = (const VAR_INFO**)calloc(1,sizeof(VAR_INFO*));<%\n%>'
     let &preBuf += 'equationInfo_cref<%index%>[0] = &<%var%>;<%\n%>'
     '{<%index%>,"SES_SIMPLE_ASSIGN <%index%>",1,equationInfo_cref<%index%>}'
   case SES_ARRAY_CALL_ASSIGN(__) then
-    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+    // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
     //let var = '<%cref(componentRef)%>__varInfo'
     //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%index%> = &<%var%>;'
     '{<%index%>,"SES_ARRAY_CALL_ASSIGN <%index%>",0,NULL}'
   case SES_ALGORITHM(__) then 
-    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+    // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
     '{<%index%>,"SES_ALGORITHM <%index%>", 0, NULL}'
   case SES_WHEN(__) then 
-    let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+    // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
     '{<%index%>,"SES_WHEN <%index%>", 0, NULL}'
   case SES_LINEAR(__) then
     let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
