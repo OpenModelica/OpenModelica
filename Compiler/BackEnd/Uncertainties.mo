@@ -682,6 +682,7 @@ algorithm
     list<Integer> setC;
     String dump,text;
     list<String> dumpList;
+    Integer nxVarMap,nxEqMap;
   case(_,{},_,_,_,_,_,_)
     equation
     then ({},{});
@@ -704,18 +705,20 @@ algorithm
         //dumpExtIncidenceMatrix(knownsSystemComp);
 
         (xEqMap,xVarMap,mx)=prepareForMatching(knownsSystemComp);
-        Matching.matchingExternalsetIncidenceMatrix(listLength(xVarMap),listLength(xEqMap),mx);
+        nxVarMap = listLength(xVarMap);
+        nxEqMap = listLength(xEqMap);
+        Matching.matchingExternalsetIncidenceMatrix(nxVarMap,nxEqMap,mx);
         
 
-        ass1=listArray(List.fill(0,listLength(xEqMap))); 
-        ass2=listArray(List.fill(0,listLength(xVarMap)));
+        ass1=listArray(List.fill(0,nxEqMap)); 
+        ass2=listArray(List.fill(0,nxVarMap));
 
-        true = BackendDAEEXT.setAssignment(listLength(xVarMap),listLength(xEqMap),ass2,ass1);
-        BackendDAEEXT.matching(listLength(xVarMap),listLength(xEqMap),1,-1,1.0,0);
+        true = BackendDAEEXT.setAssignment(nxVarMap,nxEqMap,ass2,ass1);
+        BackendDAEEXT.matching(nxVarMap,nxEqMap,1,-1,1.0,0);
 
         BackendDAEEXT.getAssignment(ass1,ass2);
 
-        mt = BackendDAEUtil.transposeMatrix(mx);
+        mt = BackendDAEUtil.transposeMatrix(mx,nxVarMap);
 
         comps = getComponentsWrapper(mx,mt,ass1,ass2);
         

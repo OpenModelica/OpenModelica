@@ -448,14 +448,14 @@ algorithm
       equation
         false = intEq(0, arrayLength(array));
         initElt = func(array[1]);
-        outArray = arrayMapHelp1(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
+        outArray = arrayMapHelp(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
       then
         outArray;
         
   end matchcontinue;
 end arrayMap;
 
-protected function arrayMapHelp1 "help function to arrayMap"
+protected function arrayMapHelp "help function to arrayMap"
   input array<Type_a> array;
   input array<Type_b> inNewArray;
   input FuncType func;
@@ -481,9 +481,86 @@ algorithm
     case(_,newArray,_,_,_) equation
       newElt = func(array[pos]);
       newArray = arrayUpdate(newArray,pos,newElt);
-      newArray = arrayMapHelp1(array,newArray,func,pos+1,len);
+      newArray = arrayMapHelp(array,newArray,func,pos+1,len);
     then newArray;
     case(_,_,_,_,_) equation
+      print("arrayMapHelp failed\n");
+    then fail();
+  end matchcontinue;
+end arrayMapHelp;
+
+public function arrayMap1 
+"@author: Frenkel TUD
+  Takes an array and a function and an extra argument over the elements of the array, which is applied for each element.
+  Since it will update the array values the returned array must not have the same type, the array 
+  will first be initialized with the result of the first call if it exists. 
+  If the input array is empty use listArray->listMap->arrayList way. 
+  See also listMap, arrayMapNoCopy"
+  input array<Type_a> array;
+  input FuncType func;
+  input Type_arg1 arg1;
+  output array<Type_b> outArray;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_arg1 subtypeof Any;
+  partial function FuncType
+    input Type_a x;
+    input Type_arg1 arg1;
+    output Type_b y;
+  end FuncType;
+algorithm    
+  outArray := matchcontinue(array, func, arg1)
+    local
+      Type_b initElt;
+    // if the array is empty, use list transformations to fix the types!
+    case (_, _, _)
+      equation
+        true = intEq(0, arrayLength(array));
+        outArray = listArray({});
+      then
+        outArray;
+    // otherwise, use the first element to create the new array
+    case (_, _, _)
+      equation
+        false = intEq(0, arrayLength(array));
+        initElt = func(array[1], arg1);
+        outArray = arrayMapHelp1(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array),arg1);
+      then
+        outArray;
+  end matchcontinue;
+end arrayMap1;
+
+protected function arrayMapHelp1 "help function to arrayMap"
+  input array<Type_a> array;
+  input array<Type_b> inNewArray;
+  input FuncType func;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  input Type_arg1 arg1;
+  output array<Type_b> outArray;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_a x;
+    input Type_arg1 arg1;
+    output Type_b y;
+  end FuncType;
+algorithm
+  outArray := matchcontinue(array,inNewArray,func,pos,len,arg1)
+    local 
+      Type_b newElt;
+      array<Type_b> newArray;
+    
+    case(_,newArray,_,_,_,_) equation 
+      true = pos > len;
+    then newArray;
+    
+    case(_,newArray,_,_,_,_) equation
+      newElt = func(array[pos],arg1);
+      newArray = arrayUpdate(newArray,pos,newElt);
+      newArray = arrayMapHelp1(array,newArray,func,pos+1,len,arg1);
+    then newArray;
+    case(_,_,_,_,_,_) equation
       print("arrayMapHelp1 failed\n");
     then fail();
   end matchcontinue;

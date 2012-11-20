@@ -4245,11 +4245,17 @@ public function varStateSelectPrioAlias
   DAE.StateSelect ss;
 algorithm
   ss := varStateSelect(v);
-  prio := varStateSelectPrioAlias2(ss);
+  prio := stateSelectToInteger(ss);
 end varStateSelectPrioAlias;
 
-protected function varStateSelectPrioAlias2
-"helper function to varStateSelectPrioAlias"
+public function stateSelectToInteger
+"helper function to stateSelectToInteger
+  return 
+  Never: -1
+  Avoid: 0
+  Default: 1
+  Prefer: 2
+  Always: 3"
   input DAE.StateSelect ss;
   output Integer prio;
 algorithm
@@ -4260,6 +4266,6 @@ algorithm
     case (DAE.PREFER()) then 2;
     case (DAE.ALWAYS()) then 3;
   end match;
-end varStateSelectPrioAlias2;
+end stateSelectToInteger;
 
 end BackendVariable;

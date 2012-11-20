@@ -1286,7 +1286,7 @@ void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
     }
   }
 
-  if(matching_id >= do_hk || cheap_id != do_old_cheap) {
+  if(matching_id >= do_hk || cheap_id > do_old_cheap) {
 
     row_ptrs = (int*) malloc((m+1) * sizeof(int));
     memset(row_ptrs, 0, (m+1) * sizeof(int));
@@ -1336,7 +1336,7 @@ void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
   } else if(matching_id == do_pr_fifo_fair) {
     match_pr_fifo_fair(col_ptrs, col_ids, row_ptrs, row_ids, match, row_match, n, m, relabel_period);
   }
-  if(matching_id >= do_hk || cheap_id != do_old_cheap) {
+  if(matching_id >= do_hk || cheap_id > do_old_cheap) {
     free(row_ids);
     free(row_ptrs);
   }

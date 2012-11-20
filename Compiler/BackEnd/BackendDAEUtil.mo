@@ -4230,70 +4230,47 @@ end incidenceRowExp1withInput;
 
 public function transposeMatrix
 "function: transposeMatrix
-  author: PA
+  author: Frenkel TUD 2012-11
   Calculates the transpose of the incidence matrix,
   i.e. which equations each variable is present in."
   input BackendDAE.IncidenceMatrix m;
+  input Integer nRowsMt;
   output BackendDAE.IncidenceMatrixT mt;
-protected
-  list<list<Integer>> mlst,mtlst;
 algorithm
-  mlst := arrayList(m);
-  mtlst := transposeMatrix2(mlst);
-  mt := listArray(mtlst);
+  mt := arrayCreate(nRowsMt,{});
+  ((mt,_)) := Util.arrayFold(m,transposeRow,(mt,1));
 end transposeMatrix;
 
-protected function transposeMatrix2
-"function: transposeMatrix2
+protected function transposeRow
+"function: transposeRow
   author: PA
-  Helper function to transposeMatrix"
-  input list<list<Integer>> inIntegerLstLst;
-  output list<list<Integer>> outIntegerLstLst;
+  Helper function to transposeMatrix2.
+  Input: BackendDAE.IncidenceMatrix (eqn => var)
+  Input: row number (variable)
+  Input: iterator (start with one)
+  inputs:  (int list list, int /* row */,int /* iter */)
+  outputs:  int list"
+  input list<Integer> row;
+  input tuple<BackendDAE.IncidenceMatrixT,Integer> inTpl "(m,index)";
+  output tuple<BackendDAE.IncidenceMatrixT,Integer> outTpl;
 algorithm
-  outIntegerLstLst := matchcontinue (inIntegerLstLst)
+  outTpl := match (row,inTpl)
     local
-      Integer neq;
-      list<list<Integer>> mt,m;
-    case (m)
+      Integer i,indx,indx1,iabs;
+      list<Integer> res,col;
+      BackendDAE.IncidenceMatrixT mt;
+    case ({},(mt,indx)) then ((mt,indx+1));
+    case (i::res,(mt,indx))
       equation
-        neq = listLength(m);
-        mt = transposeMatrix3(m, neq, 0, {});
+        iabs = intAbs(i);
+        mt = Util.arrayExpand(iabs - arrayLength(mt),mt,{});
+        col = mt[iabs];
+        indx1 = Util.if_(intLt(i,0),-indx,indx);
+        _ = arrayUpdate(mt,iabs,indx1::col);
       then
-        mt;
-    case (_)
-      equation
-        print("- BackendDAEUtil.transposeMatrix2 failed\n");
-      then
-        fail();
-  end matchcontinue;
-end transposeMatrix2;
-
-protected function transposeMatrix3
-"function: transposeMatrix3
-  author: PA
-  Helper function to transposeMatrix2"
-  input list<list<Integer>> inIntegerLstLst1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  input list<list<Integer>> inIntegerLstLst4;
-  output list<list<Integer>> outIntegerLstLst;
-algorithm
-  outIntegerLstLst := matchcontinue (inIntegerLstLst1,inInteger2,inInteger3,inIntegerLstLst4)
-    local
-      Integer neq_1,eqno_1,neq,eqno;
-      list<list<Integer>> mt_1,m,mt;
-      list<Integer> row;
-    case (_,0,_,_) then {};
-    case (m,neq,eqno,mt)
-      equation
-        neq_1 = neq - 1;
-        eqno_1 = eqno + 1;
-        mt_1 = transposeMatrix3(m, neq_1, eqno_1, mt);
-        row = transposeRow(m, eqno_1, 1);
-      then
-        (row :: mt_1);
-  end matchcontinue;
-end transposeMatrix3;
+        transposeRow(res, (mt,indx));
+  end match;
+end transposeRow;
 
 public function absIncidenceMatrix
 "function absIncidenceMatrix
@@ -4321,56 +4298,6 @@ algorithm
   mlst := arrayList(m);
   res := List.flatten(mlst);
 end varsIncidenceMatrix;
-
-protected function transposeRow
-"function: transposeRow
-  author: PA
-  Helper function to transposeMatrix2.
-  Input: BackendDAE.IncidenceMatrix (eqn => var)
-  Input: row number (variable)
-  Input: iterator (start with one)
-  inputs:  (int list list, int /* row */,int /* iter */)
-  outputs:  int list"
-  input list<list<Integer>> inIntegerLstLst1;
-  input Integer inInteger2;
-  input Integer inInteger3;
-  output list<Integer> outIntegerLst;
-algorithm
-  outIntegerLst := matchcontinue (inIntegerLstLst1,inInteger2,inInteger3)
-    local
-      Integer eqn_1,varno,eqn,varno_1,eqnneg;
-      list<Integer> res,m;
-      list<list<Integer>> ms;
-    case ({},_,_) then {};
-    case ((m :: ms),varno,eqn)
-      equation
-        true = listMember(varno, m);
-        eqn_1 = eqn + 1;
-        res = transposeRow(ms, varno, eqn_1);
-      then
-        (eqn :: res);
-    case ((m :: ms),varno,eqn)
-      equation
-        varno_1 = 0 - varno "Negative index present, state variable. list_member(varno,m) => false &" ;
-        true = listMember(varno_1, m);
-        eqnneg = 0 - eqn;
-        eqn_1 = eqn + 1;
-        res = transposeRow(ms, varno, eqn_1);
-      then
-        (eqnneg :: res);
-    case ((m :: ms),varno,eqn)
-      equation
-        eqn_1 = eqn + 1 "not present at all" ;
-        res = transposeRow(ms, varno, eqn_1);
-      then
-        res;
-    case (_,_,_)
-      equation
-        print("- BackendDAEUtil.transposeRow failed\n");
-      then
-        fail();
-  end matchcontinue;
-end transposeRow;
 
 public function updateIncidenceMatrix
 "function: updateIncidenceMatrix
@@ -4765,7 +4692,7 @@ algorithm
         (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
     case(BackendDAE.EQSYSTEM(v,eq,SOME(m),NONE(),matching),_)
       equation  
-        mT = transposeMatrix(m);
+        mT = transposeMatrix(m,BackendVariable.varsSize(v));
       then
         (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
     case(BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),_)

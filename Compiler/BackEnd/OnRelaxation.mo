@@ -1639,7 +1639,7 @@ algorithm
   // add links to the order
   omark := getOrphansOrderEdvanced4(linkslst,m,mt,mark,rowmarks,order,{});
   //  BackendDump.dumpIncidenceMatrix(m);  
-  mt := BackendDAEUtil.transposeMatrix(m);
+  mt := BackendDAEUtil.transposeMatrix(m,arrayLength(mt));
   comps := BackendDAETransform.tarjanAlgorithm(m, mt, ass, ass);
   //  BackendDump.dumpComponentsOLD(comps);
   sortvorphans := List.flatten(listReverse(comps));  
