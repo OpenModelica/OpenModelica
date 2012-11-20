@@ -7158,6 +7158,10 @@ algorithm
     /* Record constructors, user defined or implicit */ // try the hard stuff first
     case (cache,env,fn,args,nargs,impl,_,st,pre,_)
       equation
+        
+        // For unrolling errors if an overloaded 'constructor' matches later.
+        ErrorExt.setCheckpoint("RecordConstructor");
+        
         (cache,
          t as DAE.T_FUNCTION(
                 funcArg = fargs, 
@@ -7216,6 +7220,9 @@ algorithm
        /* Instantiate the function and add to dae function tree*/
         (cache,status) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
         expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
+        
+        ErrorExt.rollBack("RecordConstructor");
+        
       then
         (cache,expProps);
         
@@ -7241,6 +7248,8 @@ algorithm
         Util.setStatefulBoolean(stopElab,true);
         (cache,expProps) = elabCallArgs3(cache,env,typelist,fn_1,args,nargs,impl,st,pre,info); 
         
+        ErrorExt.rollBack("RecordConstructor");
+        
       then
         (cache,expProps);
 
@@ -7248,6 +7257,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,_,st,pre,_) /* Metamodelica extension, added by simbj */
       equation
         true = Config.acceptMetaModelicaGrammar();
+        ErrorExt.delCheckpoint("RecordConstructor");
         false = Util.getStatefulBoolean(stopElab);
         (cache,t as DAE.T_METARECORD(utPath=utPath,index=index,fields=vars,source={fqPath}),env_1) = Lookup.lookupType(cache, env, fn, NONE());
         Util.setStatefulBoolean(stopElab,true);
@@ -7258,6 +7268,10 @@ algorithm
       /* ..Other functions */
     case (cache,env,fn,args,nargs,impl,_,st,pre,_)
       equation
+        
+        ErrorExt.delCheckpoint("RecordConstructor");        
+        ErrorExt.setCheckpoint("elabCallArgs2FunctionLookup");
+        
         false = Util.getStatefulBoolean(stopElab);
         (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache, env, fn, info)
         "PR. A function can have several types. Taking an array with
@@ -7269,6 +7283,9 @@ algorithm
          function name and the function\'s type." ;
         Util.setStatefulBoolean(stopElab,true);
         (cache,expProps) = elabCallArgs3(cache,env,typelist,fn,args,nargs,impl,st,pre,info);
+        
+        ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
+        
       then
         (cache,expProps);
 
@@ -7282,6 +7299,8 @@ algorithm
         fn_str = Absyn.pathString(fn) +& "(" +& argStr +& ")\nof type\n  " +& Types.unparseType(functype);
         types_str = "\n  " +& Types.unparseType(tp1);
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
+        
+        ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");        
       then
         (cache,NONE());
 
@@ -7292,19 +7311,22 @@ algorithm
         fn_str = Absyn.pathString(fn);
         s = SCodeDump.restrString(re);
         Error.addSourceMessage(Error.LOOKUP_FUNCTION_GOT_CLASS, {fn_str,s}, info);
+
+        ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
       then
         (cache,NONE());
 
     case (cache,env,fn,args,nargs,impl,_,st,pre,_) /* no matching type found, with candidates */
       equation
         (cache,typelist as _::_::_) = Lookup.lookupFunctionsInEnv(cache,env, fn, info);
-
         t_lst = List.map(typelist, Types.unparseType);
         fn_str = Absyn.pathString(fn);
         pre_str = PrefixUtil.printPrefixStr3(pre);
         types_str = stringDelimitList(t_lst, "\n -");
         //fn_str = fn_str +& " in component " +& pre_str;
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,pre_str,types_str}, info);
+        
+        ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
       then
         (cache,NONE());
         
@@ -7315,7 +7337,10 @@ algorithm
       equation
         true = Config.acceptOptimicaGrammar();
         cref = Absyn.pathToCref(fn);
+        
         (cache,SOME((daeexp as DAE.CREF(daecref,tp),prop,_))) = elabCref(cache,env, cref, impl,true,pre,info);
+        ErrorExt.rollBack("elabCallArgs2FunctionLookup");
+        
         daeexp = DAE.CREF(DAE.OPTIMICA_ATTR_INST_CREF(daecref,name), tp);
         expProps = SOME((daeexp,prop));
       then
@@ -7328,6 +7353,8 @@ algorithm
         scope = Env.printEnvPathStr(env) +& " (looking for a function or record)";
         fn_str = Absyn.pathString(fn);
         Error.addSourceMessage(Error.LOOKUP_ERROR, {fn_str,scope}, info); // No need to add prefix because only depends on scope?
+
+        ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
       then
         (cache,NONE());
     
@@ -7338,11 +7365,14 @@ algorithm
         pre_str = PrefixUtil.printPrefixStr3(pre);
         fn_str = fn_str +& " in component " +& pre_str;
         Error.addSourceMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {fn_str}, info);
+
+        ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
       then
         (cache,NONE());
 
     case (cache,env,fn,args,nargs,impl,_,st,pre,_)
       equation
+        ErrorExt.delCheckpoint("elabCallArgs2FunctionLookup");
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.fprintln(Flags.FAILTRACE, "- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& Env.printEnvPathStr(env));
       then
