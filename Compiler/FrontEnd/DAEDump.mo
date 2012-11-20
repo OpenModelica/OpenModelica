@@ -3940,11 +3940,53 @@ algorithm
     case (DAE.SOURCE(i, po, iol, ceol, tl, op, cmt))
       equation
         str = cmtListToString(cmt);
-        str = str +& " /* models: " +& stringDelimitList(List.map(po, withinString), ", ") +& " */";
+        str = str +& " /* models: {" +& stringDelimitList(List.map(po, withinString), ", ") +& "}" +& 
+                     " connects: {" +& stringDelimitList(connectsStr(ceol), ", ") +& "} */";
       then
         str;
   end matchcontinue;
 end getSourceInformationStr;
+
+protected function connectsStr
+  input list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> inLst;
+  output list<String> outStr;
+algorithm
+  outstr := matchcontinue(inLst)
+    local
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> rest;
+      list<String> slst;
+      String str;
+      DAE.ComponentRef c1, c2;
+      
+    case ({}) then {};
+    
+    case ({NONE()}) then {};
+    
+    case ({SOME((c1,c2))})
+      equation
+        str = ComponentReference.printComponentRefStr(c1) +& "," +& 
+              ComponentReference.printComponentRefStr(c2);
+        str =  "connect(" +& str +& ")";
+      then 
+        {str};
+    
+    case (SOME((c1,c2))::rest)
+      equation
+        str = ComponentReference.printComponentRefStr(c1) +& "," +& 
+              ComponentReference.printComponentRefStr(c2);
+        str =  "connect(" +& str +& ")";
+        slst = connectsStr(rest);   
+      then 
+        str::slst;
+    
+    case (NONE()::rest)
+      equation
+        slst = connectsStr(rest);   
+      then 
+        slst;
+  
+  end matchcontinue;
+end connectsStr;
 
 protected function withinString
   input Absyn.Within w;

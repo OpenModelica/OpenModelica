@@ -3261,6 +3261,7 @@ algorithm
       Option<SCode.Comment> cmt;
       UnitAbsyn.InstStore store;
       Option<SCode.ExternalDecl> ed;
+      DAE.ElementSource elementSource;
       
     /*// uncomment for debugging
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,inClassDef6,
@@ -3436,7 +3437,8 @@ algorithm
         // If we are currently instantiating a connector, add all flow variables
         // in it as inside connectors.
         zero_dims = instDimsHasZeroDims(inst_dims);
-        csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, csets, info);
+        elementSource = DAEUtil.createElementSource(info, Env.getEnvPath(env4), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
+        csets1 = ConnectUtil.addConnectorVariablesFromDAE(zero_dims, ci_state1, pre, vars, csets, info, elementSource);
 
         // Reorder the connect equations to have non-expandable connect first:
         //   connect(non_expandable, non_expandable);
