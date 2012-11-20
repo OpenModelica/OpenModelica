@@ -1891,7 +1891,7 @@ algorithm
       equation
         _ = lookupBuiltinType(inIdentifier);
       then
-        (true, SCodeEnv.emptyEnv);
+        (false, SCodeEnv.emptyEnv);
 
     // Try to find the identifier in the local scope.
     case (_, _)

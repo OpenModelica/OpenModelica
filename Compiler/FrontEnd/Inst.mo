@@ -314,7 +314,7 @@ algorithm
     
     case (_, _)
       equation
-        (outProgram, _, _) = SCodeFlatten.flattenClassInProgram(inPath, inProgram);
+        (outProgram, _) = SCodeFlatten.flattenClassInProgram(inPath, inProgram);
       then
         outProgram;
   

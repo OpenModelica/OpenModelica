@@ -898,7 +898,7 @@ algorithm
     local
       list<SCode.Element> el;
       list<SCode.Enum> enums;
-      Absyn.TypeSpec ty, enum_type;
+      Absyn.TypeSpec ty;
       Env env;
       SCode.Mod mods;
       Absyn.Path path;
@@ -921,8 +921,8 @@ algorithm
 
     case (_, SCode.ENUMERATION(enumLst = enums), _, _, _)
       equation
-        enum_type = Absyn.TPATH(Absyn.IDENT(inClassName), NONE());
-        env = extendEnvWithEnumLiterals(enums, enum_type, 1, inEnv);
+        path = Absyn.IDENT(inClassName);
+        env = extendEnvWithEnumLiterals(enums, path, 1, inEnv);
       then
         env;
 
@@ -1040,12 +1040,12 @@ end compareQualifiedImportNames;
 
 protected function extendEnvWithEnumLiterals
   input list<SCode.Enum> inEnum;
-  input Absyn.TypeSpec inEnumType;
+  input Absyn.Path inEnumPath;
   input Integer inNextValue;
   input Env inEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(inEnum, inEnumType, inNextValue, inEnv)
+  outEnv := match(inEnum, inEnumPath, inNextValue, inEnv)
     local
       SCode.Enum lit;
       list<SCode.Enum> rest_lits;
@@ -1053,9 +1053,9 @@ algorithm
 
     case (lit :: rest_lits, _, _, _)
       equation
-        env = extendEnvWithEnum(lit, inEnumType, inNextValue, inEnv);
+        env = extendEnvWithEnum(lit, inEnumPath, inNextValue, inEnv);
       then
-        extendEnvWithEnumLiterals(rest_lits, inEnumType, inNextValue + 1, env);
+        extendEnvWithEnumLiterals(rest_lits, inEnumPath, inNextValue + 1, env);
 
     case ({}, _, _, _) then inEnv;
 
@@ -1065,21 +1065,23 @@ end extendEnvWithEnumLiterals;
 protected function extendEnvWithEnum
   "Extends the environment with an enumeration."
   input SCode.Enum inEnum;
-  input Absyn.TypeSpec inEnumType;
+  input Absyn.Path inEnumPath;
   input Integer inValue;
   input Env inEnv;
   output Env outEnv;
 protected
   SCode.Element enum_lit;
   SCode.Ident lit_name;
-  SCode.Mod binding;
+  Absyn.TypeSpec ty;
+  String index;
 algorithm
   SCode.ENUM(literal = lit_name) := inEnum;
-  binding := SCode.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {},
-    SOME((Absyn.INTEGER(inValue), false)), Absyn.dummyInfo);
-  enum_lit := SCode.COMPONENT(lit_name, SCode.defaultPrefixes,
-    SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
-    inEnumType, binding, NONE(), NONE(), Absyn.dummyInfo);
+  index := intString(inValue);
+  ty := Absyn.TPATH(Absyn.QUALIFIED("$EnumType",
+    Absyn.QUALIFIED(index, inEnumPath)), NONE());
+  enum_lit := SCode.COMPONENT(lit_name, SCode.defaultPrefixes, SCode.ATTR({},
+    SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()), ty,
+    SCode.NOMOD(), NONE(), NONE(), Absyn.dummyInfo);
   outEnv := extendEnvWithElement(enum_lit, inEnv);
 end extendEnvWithEnum;
 

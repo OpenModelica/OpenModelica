@@ -99,6 +99,7 @@ public type Statement = InstTypes.Statement;
 protected type FunctionSlot = InstTypes.FunctionSlot;
 protected type Item = SCodeEnv.Item;
 protected type SymbolTable = InstSymbolTable.SymbolTable;
+protected type Globals = tuple<SymbolTable, FunctionHashTable>;
 
 protected uniontype InstPolicy
   record INST_ALL end INST_ALL;
@@ -109,19 +110,17 @@ public function instClass
   "Flattens a class."
   input Absyn.Path inClassPath;
   input Env inEnv;
-  input list<Absyn.Path> inGlobalConstants;
   output DAE.DAElist outDae;
-  output DAE.FunctionTree outFunctions;
+  output DAE.FunctionTree outGlobals;
 algorithm
-  (outDae, outFunctions) := matchcontinue(inClassPath, inEnv, inGlobalConstants)
+  (outDae, outGlobals) := matchcontinue(inClassPath, inEnv)
     local
       Item item;
       Absyn.Path path;
       Env env; 
       String name;
-      Class cls;
-      SymbolTable symtab;
-      list<Element> const_el;
+      Class cls, builtin_el;
+      SymbolTable symtab, constants;
       FunctionHashTable functions;
       Connections conn;
       list<Connect2.Connector> flows;
@@ -129,7 +128,7 @@ algorithm
       DAE.FunctionTree func_tree;
       SCode.Element sc;
 
-    case (_, _, _)
+    case (_, _)
       equation
         System.startTimer();
         name = Absyn.pathLastIdent(inClassPath);
@@ -140,33 +139,40 @@ algorithm
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
         // Instantiate that class.
         functions = HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize);
-        (cls, _, _, functions) = instClassItem(path, item, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), env, InstTypes.EMPTY_PREFIX(SOME(path)), INST_ALL(), functions);
-        // Instantiate global constants (package constants).
-        (const_el, functions) = instGlobalConstants(inGlobalConstants, inClassPath, inEnv, functions);
+        constants = InstSymbolTable.create();
+        (cls, _, _, (constants, functions)) = instClassItem(path, item, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), env, InstTypes.EMPTY_PREFIX(SOME(path)),
+          INST_ALL(), (constants, functions));
+
+        builtin_el = instBuiltinElements((constants, functions));
         
         //print(InstDump.modelStr(name, cls)); print("\n");
 
         // ------------------- Typing -------------------
         // Build the symboltable to use for typing.
         (cls, symtab) = InstSymbolTable.build(cls);
-        (_, symtab) = InstSymbolTable.addElements(const_el, symtab);
+        symtab = InstSymbolTable.merge(symtab, constants);
+        (_, symtab) = InstSymbolTable.addClass(builtin_el, symtab);
 
         // Mark structural parameters.
         (cls, symtab) = assignParamTypes(cls, symtab);
-        // Type all instantiated functions.
-        ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions),
-          Typing.typeFunction, (functions, symtab));
         // Type the instantiated class.
         (cls, symtab) = Typing.typeClass(cls, Typing.CONTEXT_MODEL(), symtab);
 
         // Instantiate conditional components now that we have typed all crefs
         // that might be used as conditions.
-        (cls, symtab, functions) = instConditionalComponents(cls, symtab, functions);
+        constants = InstSymbolTable.create();
+        (cls, symtab, (constants, functions)) =
+          instConditionalComponents(cls, symtab, (constants, functions));
+
         // Type the instantiated class again, to type any instantiated
-                // conditional components that might have been added.
+        // conditional components that might have been added.
         (cls, symtab) = Typing.typeClass(cls, Typing.CONTEXT_MODEL(), symtab);
         
+        // Type all instantiated functions.
+        ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions),
+          Typing.typeFunction, (functions, symtab));
+
         // Type check the typed class components.
         (cls, symtab) = TypeCheck.checkClassComponents(cls, Typing.CONTEXT_MODEL(), symtab);        
         
@@ -215,14 +221,14 @@ protected function instClassItem
   input Env inEnv;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Class outClass;
   output DAE.Type outType;
   output Prefixes outPrefixes;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outClass, outType, outPrefixes, outFunctions) :=
-  match(inTypePath, inItem, inMod, inPrefixes, inEnv, inPrefix, inInstPolicy, inFunctions)
+  (outClass, outType, outPrefixes, outGlobals) :=
+  match(inTypePath, inItem, inMod, inPrefixes, inEnv, inPrefix, inInstPolicy, inGlobals)
     local
       list<SCode.Element> el;
       list<tuple<SCode.Element, Modifier>> mel;
@@ -253,22 +259,22 @@ algorithm
       InstPolicy ip;
       SCode.Attributes attr;
       Prefixes prefs;
-      FunctionHashTable functions;
       Prefix prefix;
-      list<SCodeEnv.Redeclaration> redeclares;
+      Globals globals;
+      list<SCodeEnv.Redeclaration> redecls;
 
     case (_, SCodeEnv.CLASS(cls = SCode.CLASS(name = name), env = env,
-        classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _, functions) 
+        classType = SCodeEnv.BASIC_TYPE()), _, _, _, _, _, globals) 
       equation
-        (vars,functions) = instBasicTypeAttributes(inMod, env, functions);
+        (vars, globals) = instBasicTypeAttributes(inMod, env, globals);
         ty = instBasicType(name, inMod, vars);
       then 
-        (InstTypes.BASIC_TYPE(inTypePath), ty, InstTypes.NO_PREFIXES(), functions);
+        (InstTypes.BASIC_TYPE(inTypePath), ty, InstTypes.NO_PREFIXES(), globals);
         
     // A class with parts, instantiate all elements in it.
     case (_, SCodeEnv.CLASS(cls = SCode.CLASS(name = name, restriction = res,
         classDef = cdef as SCode.PARTS(elementLst = el), info = info),
-        env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _, ip, functions)
+        env = {SCodeEnv.FRAME(clsAndVars = cls_and_vars)}), _, _, _, _, ip, globals)
       equation
         // Enter the class scope and look up all class elements.
         env = SCodeEnv.mergeItemEnv(inItem, inEnv);
@@ -276,11 +282,11 @@ algorithm
         // Apply modifications to the elements and instantiate them.
         mel = SCodeMod.applyModifications(inMod, el, inPrefix, env);
         exts = SCodeEnv.getEnvExtendsFromTable(env);
-        (elems, cse, functions) = instElementList(mel, inPrefixes, exts, env,
-          inTypePath, inPrefix, ip, functions);
+        (elems, cse, globals) = instElementList(mel, inPrefixes, exts, env,
+          inTypePath, inPrefix, ip, globals);
 
         // Instantiate all equation and algorithm sections.
-        (eq, ieq, alg, ialg, functions) = instSections(cdef, env, inPrefix, ip, functions);
+        (eq, ieq, alg, ialg, globals) = instSections(cdef, env, inPrefix, ip, globals);
 
         // Flatten the class parts.
         cls = InstTypes.COMPLEX_CLASS(inTypePath, elems, eq, ieq, alg, ialg);
@@ -290,12 +296,12 @@ algorithm
         state = ClassInf.start(res, Absyn.IDENT(name));
         (cls, ty) = InstUtil.makeClassType(cls, state, cse);
       then
-        (cls, ty, InstTypes.NO_PREFIXES(), functions);
+        (cls, ty, InstTypes.NO_PREFIXES(), globals);
 
     // A derived class, look up the inherited class and instantiate it.
     case (_, SCodeEnv.CLASS(cls = scls as SCode.CLASS(name = name, classDef =
         SCode.DERIVED(modifications = smod, typeSpec = dty, attributes = attr),
-        restriction = res, info = info), env = envDerived), _, _, _, _, ip, functions)
+        restriction = res, info = info), env = envDerived), _, _, _, _, ip, globals)
       equation
         // Look up the inherited class.
         (item, _, env) = SCodeLookup.lookupTypeSpec(dty, inEnv, info);
@@ -309,47 +315,46 @@ algorithm
         mod = SCodeMod.translateMod(smod, "", dim_count, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inMod, mod);
          
-        redeclares = listAppend(
+        redecls = listAppend(
           SCodeEnv.getDerivedClassRedeclares(name, dty, envDerived), 
           SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod));
-        (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redeclares, item, env, inEnv, inPrefix);
+          (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv, inPrefix);
         
-        (cls, ty, prefs, functions) = instClassItem(inTypePath, item, mod, inPrefixes, env, inPrefix, ip, functions);
+        (cls, ty, prefs, globals) = instClassItem(inTypePath, item, mod, inPrefixes, env, inPrefix, ip, globals);
 
         // Merge the attributes of this class with the prefixes of the inherited
         // class.
         prefs = InstUtil.mergePrefixesWithDerivedClass(path, scls, prefs);
         // Add any dimensions from this class to the resulting type.
-        (ty,functions) = liftArrayType(dims, ty, inEnv, inPrefix, info, functions);
+        (ty, globals) = liftArrayType(dims, ty, inEnv, inPrefix, info, globals);
 
         state = ClassInf.start(res, Absyn.IDENT(name));
         ty = InstUtil.makeDerivedClassType(ty, state);
       then
-        (cls, ty, prefs, functions);
+        (cls, ty, prefs, globals);
 
     case (_, SCodeEnv.CLASS(cls = scls, classType = SCodeEnv.CLASS_EXTENDS(), env = env),
-        _, _, _, _, ip, functions)
+        _, _, _, _, ip, globals)
       equation
-        (cls, ty, functions) =
-          instClassExtends(scls, inMod, inPrefixes, env, inEnv, inPrefix, ip, functions);
+        (cls, ty, globals) =
+          instClassExtends(scls, inMod, inPrefixes, env, inEnv, inPrefix, ip, globals);
       then
-        (cls, ty, InstTypes.NO_PREFIXES(), functions);
+        (cls, ty, InstTypes.NO_PREFIXES(), globals);
 
     case (_, SCodeEnv.CLASS(cls = SCode.CLASS(classDef =
-        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _, functions)
+        SCode.ENUMERATION(enumLst = enums), info = info)), _, _, _, _, _, globals)
       equation
-        path = InstUtil.prefixToPath(inPrefix);
-        ty = InstUtil.makeEnumType(enums, path);
+        ty = InstUtil.makeEnumType(enums, inTypePath);
       then
-        (InstTypes.BASIC_TYPE(inTypePath), ty, InstTypes.NO_PREFIXES(), functions);
+        (InstTypes.BASIC_TYPE(inTypePath), ty, InstTypes.NO_PREFIXES(), globals);
 
     case (_, SCodeEnv.REDECLARED_ITEM(item = item, declaredEnv = env), _, _, _,
         _, _, _)
       equation
-        (cls, ty, prefs, functions) = instClassItem(inTypePath, item, inMod,
-            inPrefixes, env, inPrefix, inInstPolicy, inFunctions);
+        (cls, ty, prefs, globals) = instClassItem(inTypePath, item, inMod,
+          inPrefixes, env, inPrefix, inInstPolicy, inGlobals);
       then
-        (cls, ty, prefs, functions);
+        (cls, ty, prefs, globals);
 
     else
       equation
@@ -369,14 +374,14 @@ protected function instClassExtends
   input Env inEnv;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Class outClass;
   output DAE.Type outType;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outClass, outType, outFunctions) := 
+  (outClass, outType, outGlobals) := 
   matchcontinue(inClassExtends, inMod, inPrefixes, inClassEnv, inEnv, inPrefix,
-      inInstPolicy, inFunctions)
+      inInstPolicy, inGlobals)
     local
       SCode.ClassDef cdef;
       SCode.Mod mod;
@@ -387,22 +392,21 @@ algorithm
       Item item;
       Env base_env, ext_env;
       InstPolicy ip;
-      FunctionHashTable functions;
       Class base_cls, ext_cls, comp_cls;
       DAE.Type base_ty, ext_ty, comp_ty;
-
+      Globals globals;
 
     case (SCode.CLASS(classDef = SCode.CLASS_EXTENDS(modifications = mod, 
-        composition = cdef)), _, _, _, _, _, ip, functions)
+        composition = cdef)), _, _, _, _, _, ip, globals)
       equation
         (bc_path, info) = getClassExtendsBaseClass(inClassEnv);
         ext = SCode.EXTENDS(bc_path, SCode.PUBLIC(), mod, NONE(), info);
         cdef = SCode.addElementToCompositeClassDef(ext, cdef);
         scls = SCode.setElementClassDefinition(cdef, inClassExtends);
         item = SCodeEnv.CLASS(scls, inClassEnv, SCodeEnv.CLASS_EXTENDS());
-        (comp_cls, comp_ty, _, functions) = instClassItem(bc_path, item, inMod, inPrefixes, inEnv, inPrefix, ip, functions);
+        (comp_cls, comp_ty, _, globals) = instClassItem(bc_path, item, inMod, inPrefixes, inEnv, inPrefix, ip, globals);
       then
-        (comp_cls, comp_ty, functions);
+        (comp_cls, comp_ty, globals);
 
     else
       equation
@@ -459,27 +463,29 @@ end instBasicType;
 protected function instBasicTypeAttributes
   input Modifier inMod;
   input Env inEnv;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<DAE.Var> outVars;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outVars,outFunctions) := match(inMod, inEnv, inFunctions)
+  (outVars, outGlobals) :=
+  match(inMod, inEnv, inGlobals)
     local
       list<Modifier> submods;
       SCodeEnv.AvlTree attrs;
       list<DAE.Var> vars;
       SCode.Element el;
       Absyn.Info info;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (InstTypes.NOMOD(), _, functions) then ({},functions);
+    case (InstTypes.NOMOD(), _, globals) then ({}, globals);
 
     case (InstTypes.MODIFIER(subModifiers = submods), 
-        SCodeEnv.FRAME(clsAndVars = attrs) :: _,functions)
+        SCodeEnv.FRAME(clsAndVars = attrs) :: _, globals)
       equation
-        (vars,functions) = List.map1Fold(submods, instBasicTypeAttribute, attrs, functions);
+        (vars, globals) =
+          List.map1Fold(submods, instBasicTypeAttribute, attrs, globals);
       then
-        (vars,functions);
+        (vars, globals);
 
     case (InstTypes.REDECLARE(element = el), _, _)
       equation
@@ -494,11 +500,11 @@ end instBasicTypeAttributes;
 protected function instBasicTypeAttribute
   input Modifier inMod;
   input SCodeEnv.AvlTree inAttributes;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Var outAttribute;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outAttribute,outFunctions) := match(inMod, inAttributes, inFunctions)
+  (outAttribute, outGlobals) := match(inMod, inAttributes, inGlobals)
     local
       String ident, tspec;
       DAE.Type ty;
@@ -507,20 +513,20 @@ algorithm
       DAE.Binding binding;
       Env env;
       Prefix prefix;
-      FunctionHashTable functions;
+      Globals globals;
       Absyn.Info info;
 
     case (InstTypes.MODIFIER(name = ident, subModifiers = {}, 
-        binding = InstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, functions)
+        binding = InstTypes.RAW_BINDING(bind_exp, env, prefix, _, _), info = info), _, globals)
       equation
         SCodeEnv.VAR(var = SCode.COMPONENT(typeSpec = Absyn.TPATH(path =
           Absyn.IDENT(tspec)))) = SCodeEnv.avlTreeGet(inAttributes, ident);
         ty = instBasicTypeAttributeType(tspec);
-        (inst_exp,functions) = instExp(bind_exp, env, prefix, info, functions);
+        (inst_exp, globals) = instExp(bind_exp, env, prefix, info, globals);
         binding = DAE.EQBOUND(inst_exp, NONE(), DAE.C_UNKNOWN(), 
           DAE.BINDING_FROM_DEFAULT_VALUE());
       then
-        (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), functions);
+        (DAE.TYPES_VAR(ident, DAE.dummyAttrParam, ty, binding, NONE()), globals);
 
     // TODO: Print error message for invalid attributes.
   end match;
@@ -549,13 +555,13 @@ protected function instElementList
   input Absyn.Path inTypePath;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Element> outElements;
   output Boolean outContainsSpecialExtends;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElements, outContainsSpecialExtends, outFunctions) := instElementList2(inElements, 
-    inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false, inFunctions);
+  (outElements, outContainsSpecialExtends, outGlobals) := instElementList2(inElements, 
+    inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy, {}, false, inGlobals);
 end instElementList;
 
 protected function instElementList2
@@ -568,34 +574,34 @@ protected function instElementList2
   input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Element> outElements;
   output Boolean outContainsSpecialExtends;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElements, outContainsSpecialExtends, outFunctions) :=
+  (outElements, outContainsSpecialExtends, outGlobals) :=
   match(inElements, inPrefixes, inExtends, inEnv, inPrefix,
-      inInstPolicy, inAccumEl, inContainsSpecialExtends, inFunctions)
+      inInstPolicy, inAccumEl, inContainsSpecialExtends, inGlobals)
     local
       tuple<SCode.Element, Modifier> elem;
       list<tuple<SCode.Element, Modifier>> rest_el;
       Boolean cse;
       list<Element> accum_el;
       list<SCodeEnv.Extends> exts;
-      FunctionHashTable functions;
+      Globals globals;
       Env env;
 
-    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, functions)
+    case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, globals)
       equation
         (elem, env, _) = resolveRedeclaredElement(elem, inEnv);
-        (accum_el, exts, cse, functions) = instElement_dispatch(elem, inPrefixes, exts,
-          env, inPrefix, inInstPolicy, accum_el, cse, functions);
-        (accum_el, cse, functions) = instElementList2(rest_el, inPrefixes, exts,
-          inEnv, inPrefix, inInstPolicy, accum_el, cse, functions);
+        (accum_el, exts, cse, globals) = instElement_dispatch(elem, inPrefixes, exts,
+          env, inPrefix, inInstPolicy, accum_el, cse, globals);
+        (accum_el, cse, globals) = instElementList2(rest_el, inPrefixes, exts,
+          inEnv, inPrefix, inInstPolicy, accum_el, cse, globals);
       then
-        (accum_el, cse, functions);
+        (accum_el, cse, globals);
 
-    case ({}, _, {}, _, _, _, _, cse, functions) then (inAccumEl, cse, functions);
+    case ({}, _, {}, _, _, _, _, cse, globals) then (inAccumEl, cse, globals);
 
     // instElementList takes a list of Extends, which contains the extends
     // information from the environment. We should have one Extends element for
@@ -642,16 +648,6 @@ algorithm
       then
         ((el, mod), env, previousItem);
 
-    /*
-    case ((SCode.CLASS(name = name, prefixes =
-        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _)
-      equation
-        (item, _) = SCodeLookup.lookupInClass(name, inEnv);
-        (SCodeEnv.CLASS(cls = el), env, b) = SCodeEnv.resolveRedeclaredItem(item, inEnv);
-        previousElement = Util.if_(b, {(item, inEnv)}, {});
-      then
-        ((el, mod), env, previousElement);*/
-
     // Other elements doesn't need to be looked up. Extends may not be
     // replaceable, and classes are looked up in the environment anyway. The
     // exception is packages with constants, but those are handled in
@@ -661,25 +657,6 @@ algorithm
   end match;
 end resolveRedeclaredElement;
 
-protected function resolveRedeclaredComponent
-  input Item inItem;
-  input Env inEnv;
-  output SCode.Element outComponent;
-  output Env outEnv;
-algorithm
-  (outComponent, outEnv) := match(inItem, inEnv)
-    local
-      SCode.Element comp;
-      Env env;
-
-    case (SCodeEnv.VAR(var = comp), _) then (comp, inEnv);
-
-    case (SCodeEnv.REDECLARED_ITEM(item = SCodeEnv.VAR(var = comp),
-        declaredEnv = env), _) then (comp, env);
-
-  end match;
-end resolveRedeclaredComponent;
-        
 protected function instElement_dispatch
   "Helper function to instElementList2. Dispatches the given element to the
    correct function for instantiation."
@@ -691,15 +668,15 @@ protected function instElement_dispatch
   input InstPolicy inInstPolicy;
   input list<Element> inAccumEl;
   input Boolean inContainsSpecialExtends;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Element> outElements;
   output list<SCodeEnv.Extends> outExtends;
   output Boolean outContainsSpecialExtends;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElements, outExtends, outContainsSpecialExtends, outFunctions) :=
+  (outElements, outExtends, outContainsSpecialExtends, outGlobals) :=
   match(inElement, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
-      inAccumEl, inContainsSpecialExtends, inFunctions)
+      inAccumEl, inContainsSpecialExtends, inGlobals)
     local
       SCode.Element elem;
       Modifier mod;
@@ -711,60 +688,46 @@ algorithm
       list<SCodeEnv.Extends> rest_exts;
       String name;
       InstPolicy ip;
-      FunctionHashTable functions;
+      Globals globals;
       Prefix prefix;
       Env env;
       Class cls;
       Item item;
 
     // A component when we're in 'instantiate everything'-mode.
-    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, INST_ALL(), _, cse, functions)
+    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, INST_ALL(), _, cse, globals)
       equation
-        (res,functions) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, functions);
+        (res, globals) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, globals);
       then
-        (res :: inAccumEl, inExtends, cse, functions);
+        (res :: inAccumEl, inExtends, cse, globals);
 
     // A constant when we're on 'instantiate only constants'-mode.
     case ((elem as SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), mod), _, _, _, _, INST_ONLY_CONST(), _, cse, functions)
+        SCode.CONST())), mod), _, _, _, _, INST_ONLY_CONST(), _, cse, globals)
       equation
-        (res,functions) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, functions);
+        (res, globals) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, globals);
       then
-        (res :: inAccumEl, inExtends, cse, functions);
+        (res :: inAccumEl, inExtends, cse, globals);
 
     // An extends clause. Instantiate it together with the next Extends element
     // from the environment.
     case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
-        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, ip, _, _, functions)
+        SCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, ip, _, _, globals)
       equation
-        (res, cse, functions) = instExtends(elem, mod, inPrefixes, redecls,
-          inEnv, inPrefix, ip, functions);
+        (res, cse, globals) = instExtends(elem, mod, inPrefixes, redecls,
+          inEnv, inPrefix, ip, globals);
         cse = inContainsSpecialExtends or cse;
       then
-        (res :: inAccumEl, rest_exts, cse, functions);
-
-    /*
-    case ((elem as SCode.CLASS(name = name, restriction = SCode.R_FUNCTION(_)),
-        mod), _, _, _, _, _, ip, _, cse, functions)
-      equation
-        print("Function: " +& name +& "\n");
-        (item, env) = SCodeLookup.lookupInClass(name, inEnv);
-        prefix = InstUtil.addPrefix(name, {}, inPrefix);
-        (cls, _, _, functions) = instClassItem(Absyn.IDENT(name), item, mod, InstTypes.NO_PREFIXES(), env,
-          prefix, INST_ALL(), functions);
-        res = InstTypes.ELEMENT(InstTypes.PACKAGE(Absyn.IDENT(name), NONE()), cls);
-      then
-        (res :: inAccumEl, inExtends, cse, functions);
-    */
+        (res :: inAccumEl, rest_exts, cse, globals);
     
     // A package, instantiate only the constants.
     case ((elem as SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
-        mod), _, _, _, _, ip, _, cse, functions)
+        mod), _, _, _, _, ip, _, cse, globals)
       equation
-        (ores,functions) = instPackageConstants(elem, mod, inEnv, inPrefix, functions);
+        (ores, globals) = instPackageConstants(elem, mod, inEnv, inPrefix, globals);
         accum_el = List.consOption(ores, inAccumEl);
       then
-        (accum_el, inExtends, cse, functions);
+        (accum_el, inExtends, cse, globals);
 
     // We should have one Extends element for each extends clause in the class.
     // If we get an extends clause but don't have any Extends elements left,
@@ -777,7 +740,7 @@ algorithm
         fail();
 
     // Ignore any other kind of elements (class definitions, etc.).
-    else (inAccumEl, inExtends, inContainsSpecialExtends, inFunctions);
+    else (inAccumEl, inExtends, inContainsSpecialExtends, inGlobals);
 
   end match;
 end instElement_dispatch;
@@ -789,12 +752,12 @@ protected function instElement
   input Env inEnv;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Element outElement;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElement,outFunctions) := 
-  match(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy, inFunctions)
+  (outElement,outGlobals) := 
+  match(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy, inGlobals)
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
@@ -808,33 +771,51 @@ algorithm
       Prefix prefix;
       SCode.Mod smod;
       Modifier mod, cmod;
-      String name;
+      String name, enum_idx_str;
       list<DAE.Dimension> dims;
       array<Dimension> dim_arr;
       Class cls;
       Prefixes prefs, cls_prefs;
-      Integer dim_count;
+      Integer dim_count, enum_idx;
       InstPolicy ip;
       Absyn.Exp cond_exp;
       DAE.Exp inst_exp;
       ParamType pty;
-      FunctionHashTable functions;
+      Globals globals;
 
     // an outer component
     case (SCode.COMPONENT(name = name, 
         typeSpec = Absyn.TPATH(path = tpath),
-        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, functions)
+        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, globals)
       equation
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
         path = InstUtil.prefixToPath(prefix);
         comp = InstTypes.OUTER_COMPONENT(path, NONE());
       then
-        (InstTypes.ELEMENT(comp, InstTypes.BASIC_TYPE(tpath)),functions);
+        (InstTypes.ELEMENT(comp, InstTypes.BASIC_TYPE(tpath)), globals);
+
+    case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path =
+        Absyn.QUALIFIED(name = "$EnumType", path = tpath)), info = info),
+        _, _, _, _, ip, globals)
+      equation
+        Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
+        enum_idx = stringInt(enum_idx_str);
+
+        (item, _, env) = SCodeLookup.lookupClassName(tpath, inEnv, info);
+        path = InstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
+        (cls, ty, cls_prefs, globals) = instClassItem(tpath, item, inClassMod,
+          inPrefixes, env, inPrefix, ip, globals);
+
+        binding = InstTypes.TYPED_BINDING(DAE.ENUM_LITERAL(path, enum_idx), ty, -1, info);
+        comp = InstTypes.TYPED_COMPONENT(path, ty, NONE(),
+          InstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info);
+      then
+        (InstTypes.ELEMENT(comp, cls), globals);
 
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
         typeSpec = Absyn.TPATH(path = tpath), modifications = smod,
-        condition = NONE(), info = info), _, _, _, _, ip, functions)
+        condition = NONE(), info = info), _, _, _, _, ip, globals)
       equation
         // Look up the class of the component.
         (item, _, env) = SCodeLookup.lookupClassName(tpath, inEnv, info);
@@ -842,7 +823,7 @@ algorithm
         SCodeCheck.checkPartialInstance(item, info);
 
         // Instantiate array dimensions and add them to the prefix.
-        (dims,functions) = instDimensions(ad, inEnv, inPrefix, info, functions);
+        (dims, globals) = instDimensions(ad, inEnv, inPrefix, info, globals);
         prefix = InstUtil.addPrefix(name, dims, inPrefix);
 
         // Check that it's legal to instantiate the class.
@@ -864,7 +845,7 @@ algorithm
         
         (item, env, _) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(
           redecls, item, env, inEnv, inPrefix);
-        (cls, ty, cls_prefs, functions) = instClassItem(tpath, item, mod, prefs, env, prefix, ip, functions);
+        (cls, ty, cls_prefs, globals) = instClassItem(tpath, item, mod, prefs, env, prefix, ip, globals);
         prefs = InstUtil.mergePrefixes(prefs, cls_prefs, path, "variable");
 
         // Add dimensions from the class type.
@@ -875,23 +856,23 @@ algorithm
         // Instantiate the binding.
         mod = SCodeMod.propagateMod(mod, dim_count);
         binding = SCodeMod.getModifierBinding(mod);
-        (binding,functions) = instBinding(binding, dim_count, functions);
+        (binding, globals) = instBinding(binding, dim_count, globals);
 
         // Create the component and add it to the program.
         comp = InstTypes.UNTYPED_COMPONENT(path, ty, dim_arr, prefs, pty, binding, info);
       then
-        (InstTypes.ELEMENT(comp, cls),functions);
+        (InstTypes.ELEMENT(comp, cls), globals);
 
     // A conditional component, save it for later.
     case (SCode.COMPONENT(name = name, condition = SOME(cond_exp), info = info),
-        _, _, _, _, _, functions)
+        _, _, _, _, _, globals)
       equation
         path = InstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
-        (inst_exp,functions) = instExp(cond_exp, inEnv, inPrefix, info, functions);
+        (inst_exp, globals) = instExp(cond_exp, inEnv, inPrefix, info, globals);
         comp = InstTypes.CONDITIONAL_COMPONENT(path, inst_exp, inElement,
           inClassMod, inPrefixes, inEnv, inPrefix, info);
       then
-        (InstTypes.CONDITIONAL_ELEMENT(comp),functions);
+        (InstTypes.CONDITIONAL_ELEMENT(comp), globals);
 
     else
       equation
@@ -911,14 +892,14 @@ protected function instExtends
   input Env inEnv;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Element outElement;
   output Boolean outContainsSpecialExtends;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElement, outContainsSpecialExtends, outFunctions) :=
+  (outElement, outContainsSpecialExtends, outGlobals) :=
   match(inExtends, inClassMod, inPrefixes, inRedeclares, inEnv, inPrefix,
-      inInstPolicy, inFunctions)
+      inInstPolicy, inGlobals)
     local
       Absyn.Path path;
       SCode.Mod smod;
@@ -931,11 +912,11 @@ algorithm
       Boolean cse;
       InstPolicy ip;
       Prefixes prefs;
-      FunctionHashTable functions;
+      Globals globals;
       String name;
 
     case (SCode.EXTENDS(baseClassPath = path, modifications = smod, info = info),
-        _, _, _, _, _, ip, functions)
+        _, _, _, _, _, ip, globals)
       equation
         // Look up the base class in the environment.
         (item, path, env) = SCodeLookup.lookupBaseClassName(path, inEnv, info);
@@ -950,11 +931,11 @@ algorithm
         prefs = InstUtil.mergePrefixesFromExtends(inExtends, inPrefixes);
         mod = SCodeMod.translateMod(smod, "", 0, inPrefix, inEnv);
         mod = SCodeMod.mergeMod(inClassMod, mod);
-        (cls, ty, _, functions) = 
-          instClassItem(path, item, mod, prefs, env, inPrefix, ip, functions);
+        (cls, ty, _, globals) = 
+          instClassItem(path, item, mod, prefs, env, inPrefix, ip, globals);
         cse = InstUtil.isSpecialExtends(ty);
       then
-        (InstTypes.EXTENDED_ELEMENTS(path, cls, ty), cse, functions);
+        (InstTypes.EXTENDED_ELEMENTS(path, cls, ty), cse, globals);
         
     else
       equation
@@ -998,35 +979,35 @@ protected function instPackageConstants
   input Modifier inMod;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Option<Element> outElement;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElement,outFunctions) := match(inPackage, inMod, inEnv, inPrefix, inFunctions)
+  (outElement,outGlobals) := match(inPackage, inMod, inEnv, inPrefix, inGlobals)
     local
       String name;
       Option<Element> oel;
       Prefix prefix;
       Item item;
       Class cls;
-      FunctionHashTable functions;
+      Globals globals;
       Env env;
       
     case (SCode.CLASS(partialPrefix = SCode.PARTIAL()), _, _, _, _)
-      then (NONE(),inFunctions);
+      then (NONE(),inGlobals);
 
-    case (SCode.CLASS(name = name), _, _, _, functions)
+    case (SCode.CLASS(name = name), _, _, _, globals)
       equation
         (item, env) = SCodeLookup.lookupInClass(name, inEnv);
         (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
-        (cls, _, _, functions) = instClassItem(Absyn.IDENT(name), item, inMod, InstTypes.NO_PREFIXES(), env,
-          prefix, INST_ONLY_CONST(), functions);
+        (cls, _, _, globals) = instClassItem(Absyn.IDENT(name), item, inMod, InstTypes.NO_PREFIXES(), env,
+          prefix, INST_ONLY_CONST(), globals);
         oel = makeConstantsPackage(prefix, cls);
       then
-        (oel, functions);
+        (oel, globals);
 
-    else (NONE(), inFunctions);
+    else (NONE(), inGlobals);
 
   end match;
 end instPackageConstants;
@@ -1112,14 +1093,34 @@ algorithm
   end match;
 end instEnumLiteral;
 
+protected function instBuiltinElements
+  input Globals inGlobals;
+  output Class outElements;
+algorithm
+  outElements := matchcontinue(inGlobals)
+    local
+      Class stateselect_cls;
+
+    case (_)
+      equation
+        (stateselect_cls, _, _, _) = instClassItem(Absyn.IDENT("StateSelect"),
+          SCodeLookup.BUILTIN_STATESELECT, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), {}, InstTypes.EMPTY_PREFIX(NONE()),
+          INST_ALL(), inGlobals); 
+      then
+        stateselect_cls; 
+
+  end matchcontinue;
+end instBuiltinElements;
+
 protected function instBinding
   input Binding inBinding;
   input Integer inCompDimensions;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Binding outBinding;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outBinding,outFunctions) := match(inBinding, inCompDimensions, inFunctions)
+  (outBinding,outGlobals) := match(inBinding, inCompDimensions, inGlobals)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
@@ -1127,15 +1128,15 @@ algorithm
       Prefix prefix;
       Integer pl, cd;
       Absyn.Info info;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (InstTypes.RAW_BINDING(aexp, env, prefix, pl, info), cd, functions)
+    case (InstTypes.RAW_BINDING(aexp, env, prefix, pl, info), cd, globals)
       equation
-        (dexp, functions) = instExp(aexp, env, prefix, info, functions);
+        (dexp, globals) = instExp(aexp, env, prefix, info, globals);
       then
-        (InstTypes.UNTYPED_BINDING(dexp, false, pl, info), functions);
+        (InstTypes.UNTYPED_BINDING(dexp, false, pl, info), globals);
 
-    else (inBinding,inFunctions);
+    else (inBinding,inGlobals);
 
   end match;
 end instBinding;
@@ -1145,12 +1146,12 @@ protected function instDimensions
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<DAE.Dimension> outDimensions;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outDimensions,outFunctions) :=
-    List.map3Fold(inSubscript, instDimension, inEnv, inPrefix, inInfo, inFunctions);
+  (outDimensions,outGlobals) :=
+    List.map3Fold(inSubscript, instDimension, inEnv, inPrefix, inInfo, inGlobals);
 end instDimensions;
 
 protected function instDimension
@@ -1158,24 +1159,24 @@ protected function instDimension
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Dimension outDimension;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outDimension,outFunctions) :=
-  match(inSubscript, inEnv, inPrefix, inInfo, inFunctions)
+  (outDimension,outGlobals) :=
+  match(inSubscript, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (Absyn.NOSUB(), _, _, _, _) then (DAE.DIM_UNKNOWN(),inFunctions);
+    case (Absyn.NOSUB(), _, _, _, _) then (DAE.DIM_UNKNOWN(),inGlobals);
 
-    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, _, functions)
+    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, _, globals)
       equation
-        (dexp,functions) = instExp(aexp, inEnv, inPrefix, inInfo, functions);
+        (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
       then
-        (InstUtil.makeDimension(dexp),functions);
+        (InstUtil.makeDimension(dexp), globals);
 
   end match;
 end instDimension;
@@ -1185,12 +1186,12 @@ protected function instSubscripts
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<DAE.Subscript> outSubscripts;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outSubscripts,outFunctions) :=
-    List.map3Fold(inSubscripts, instSubscript, inEnv, inPrefix, inInfo, inFunctions);
+  (outSubscripts,outGlobals) :=
+    List.map3Fold(inSubscripts, instSubscript, inEnv, inPrefix, inInfo, inGlobals);
 end instSubscripts;
 
 protected function instSubscript
@@ -1198,24 +1199,24 @@ protected function instSubscript
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Subscript outSubscript;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outSubscript,outFunctions) :=
-  match(inSubscript, inEnv, inPrefix, inInfo, inFunctions)
+  (outSubscript,outGlobals) :=
+  match(inSubscript, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (Absyn.NOSUB(), _, _, _, functions) then (DAE.WHOLEDIM(),functions);
+    case (Absyn.NOSUB(), _, _, _, globals) then (DAE.WHOLEDIM(), globals);
 
-    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, _, functions)
+    case (Absyn.SUBSCRIPT(subscript = aexp), _, _, _, globals)
       equation
-        (dexp,functions) = instExp(aexp, inEnv, inPrefix, inInfo, functions);
+        (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
       then
-        (makeSubscript(dexp),functions);
+        (makeSubscript(dexp), globals);
 
   end match;
 end instSubscript;
@@ -1239,33 +1240,33 @@ protected function liftArrayType
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Type outType;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outType,outFunctions) :=
-  match(inDims, inType, inEnv, inPrefix, inInfo, inFunctions)
+  (outType,outGlobals) :=
+  match(inDims, inType, inEnv, inPrefix, inInfo, inGlobals)
     local
       DAE.Dimensions dims1, dims2;
       DAE.TypeSource src;
       DAE.Type ty;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case ({}, _, _, _, _, _) then (inType,inFunctions);
-    case (_, DAE.T_ARRAY(ty, dims1, src), _, _, _, functions)
+    case ({}, _, _, _, _, _) then (inType,inGlobals);
+    case (_, DAE.T_ARRAY(ty, dims1, src), _, _, _, globals)
       equation
-        (dims2,functions) =
-          List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, functions);
+        (dims2, globals) =
+          List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, globals);
         dims1 = listAppend(dims2, dims1);
       then
-        (DAE.T_ARRAY(ty, dims1, src),functions);
+        (DAE.T_ARRAY(ty, dims1, src), globals);
 
     else
       equation
-        (dims2,functions) =
-          List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, inFunctions);
+        (dims2, globals) =
+          List.map3Fold(inDims, instDimension, inEnv, inPrefix, inInfo, inGlobals);
       then
-        (DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource),functions);
+        (DAE.T_ARRAY(inType, dims2, DAE.emptyTypeSource), globals);
   
   end match;
 end liftArrayType;
@@ -1299,12 +1300,12 @@ protected function instExpList
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<DAE.Exp> outExp;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outExp,outFunctions) :=
-    List.map3Fold(inExp, instExp, inEnv, inPrefix, inInfo, inFunctions);
+  (outExp,outGlobals) :=
+    List.map3Fold(inExp, instExp, inEnv, inPrefix, inInfo, inGlobals);
 end instExpList;
 
 protected function instExpOpt
@@ -1312,23 +1313,23 @@ protected function instExpOpt
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Option<DAE.Exp> outExp;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outExp,outFunctions) := match (inExp, inEnv, inPrefix, inInfo, inFunctions)
+  (outExp,outGlobals) := match (inExp, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.Exp aexp;
       DAE.Exp dexp;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (SOME(aexp), _, _, _, functions)
+    case (SOME(aexp), _, _, _, globals)
       equation
-        (dexp,functions) = instExp(aexp, inEnv, inPrefix, inInfo, functions);
+        (dexp, globals) = instExp(aexp, inEnv, inPrefix, inInfo, globals);
       then
-        (SOME(dexp),functions);
+        (SOME(dexp), globals);
 
-    else (NONE(),inFunctions);
+    else (NONE(), inGlobals);
 
   end match;
 end instExpOpt;
@@ -1398,18 +1399,18 @@ protected function instBuiltinFunctionCall
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Exp outExp;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outExp,outFunctions) := match (inExp, inEnv, inPrefix, inInfo, inFunctions)
+  (outExp,outGlobals) := match (inExp, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.ComponentRef acref;
       Absyn.Exp aexp1, aexp2;
       DAE.Exp dexp1, dexp2;
       list<Absyn.Exp>  afargs;
       list<Absyn.NamedArg> anamed_args;
-      FunctionHashTable functions;
+      Globals globals;
       Absyn.Path call_path;
       list<DAE.Exp> pos_args, args;
       list<tuple<String, DAE.Exp>> named_args;
@@ -1418,260 +1419,260 @@ algorithm
       Env env;      
 
     case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.SIZE(dexp1, SOME(dexp2)), functions);
+        (DAE.SIZE(dexp1, SOME(dexp2)), globals);
         
     case (Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.SIZE(dexp1, NONE()), functions);
+        (DAE.SIZE(dexp1, NONE()), globals);
 
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "smooth"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1, aexp2})), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1,dexp2}, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, {dexp1,dexp2}, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "rooted"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
 
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "transpose"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "skew"),
-        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = {aexp1})), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);    
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);    
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "min"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
             
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "max"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "cross"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "diagonal"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
         
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "abs"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
         
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "product"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
         
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "pre"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
         
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "noEvent"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "sum"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "assert"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
         
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "change"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "array"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
         
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "array"),
-        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
         env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
-        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "sum"),
-        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
         env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
-        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "min"),
-        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
         env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
-        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "max"),
-        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
         env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
-        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "product"),
-        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, functions)
+        functionArgs = Absyn.FOR_ITER_FARG(exp=aexp1, iterators=iters)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
         env = SCodeEnv.extendEnvWithIterators(iters, System.tmpTickIndex(SCodeEnv.tmpTickIndex), inEnv);
-        (dexp1,functions) = instExp(aexp1, env, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, env, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, {dexp1}, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "cat"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "rem"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args, functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
 
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "actualStream"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);    
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);    
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "inStream"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
     
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "String"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
         
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "Integer"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
         
     case (Absyn.CALL(function_ = acref as Absyn.CREF_IDENT(name = "Real"),
-        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(args = afargs)), _, _, _, globals)
       equation
         call_path = Absyn.crefToPath(acref);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, pos_args, DAE.callAttrBuiltinOther), globals);
     
     // hopefully all the other ones have a complete entry in ModelicaBuiltin.mo
     case (Absyn.CALL(function_ = acref, 
-        functionArgs = Absyn.FUNCTIONARGS(afargs, anamed_args)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(afargs, anamed_args)), _, _, _, globals)
       equation
-        (call_path, InstTypes.FUNCTION(inputs=inputs,outputs=outputs), functions) = instFunction(acref, inEnv, inPrefix, inInfo, functions);
-        (pos_args,functions) = instExpList(afargs, inEnv, inPrefix, inInfo, functions);
-        (named_args,functions) = List.map3Fold(anamed_args, instNamedArg, inEnv, inPrefix, inInfo, functions);
+        (call_path, InstTypes.FUNCTION(inputs=inputs,outputs=outputs), globals) = instFunction(acref, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = instExpList(afargs, inEnv, inPrefix, inInfo, globals);
+        (named_args, globals) = List.map3Fold(anamed_args, instNamedArg, inEnv, inPrefix, inInfo, globals);
         args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
-        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther), globals);
         
  end match;
 end instBuiltinFunctionCall;
@@ -1681,11 +1682,11 @@ protected function instFunctionCallDispatch
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Exp outExp;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outExp,outFunctions) := matchcontinue (inExp, inEnv, inPrefix, inInfo, inFunctions)
+  (outExp,outGlobals) := matchcontinue (inExp, inEnv, inPrefix, inInfo, inGlobals)
     local
       String str;
       Boolean bval;
@@ -1693,27 +1694,27 @@ algorithm
       DAE.Exp dexp1;
       list<Absyn.Exp>  afargs;
       list<Absyn.NamedArg> named_args;
-      FunctionHashTable functions;
+      Globals globals;
 
     // handle builtin
     case (Absyn.CALL(function_ = funcName), _, _, _, _)
       equation
         true = isBuiltinFunctionName(funcName);
-        (dexp1,functions) = instBuiltinFunctionCall(inExp, inEnv, inPrefix, inInfo, inFunctions);
+        (dexp1, globals) = instBuiltinFunctionCall(inExp, inEnv, inPrefix, inInfo, inGlobals);
       then
-        (dexp1,functions);
+        (dexp1, globals);
 
     // handle normal calls
     case (Absyn.CALL(function_ = funcName, 
-        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, functions)
+        functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, globals)
       equation
         false = isBuiltinFunctionName(funcName);
-        (dexp1,functions) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, globals);
       then
-        (dexp1,functions);
+        (dexp1, globals);
     
     // failure
-    case (Absyn.CALL(function_ = funcName), _, _, _, functions)
+    case (Absyn.CALL(function_ = funcName), _, _, _, globals)
       equation
         bval = isBuiltinFunctionName(funcName);
         str = Util.if_(bval, "*builtin*", "*regular*");
@@ -1725,12 +1726,12 @@ algorithm
     // handle normal calls - put here for debugging so if it fails above you still can debug after.
     // Let's keep this commented out when not used, otherwise we'll get duplicate error messages.
     //case (Absyn.CALL(function_ = funcName, 
-    //    functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, functions)
+    //    functionArgs = Absyn.FUNCTIONARGS(afargs, named_args)), _, _, _, globals)
     //  equation
     //    false = isBuiltinFunctionName(funcName);
-    //    (dexp1,functions) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, functions);
+    //    (dexp1, globals) = instFunctionCall(funcName, afargs, named_args, inEnv, inPrefix, inInfo, globals);
     //  then
-    //    (dexp1,functions);
+    //    (dexp1, globals);
 
  end matchcontinue;
 end instFunctionCallDispatch;
@@ -1740,11 +1741,11 @@ protected function instExp
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Exp outExp;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outExp,outFunctions) := matchcontinue (inExp, inEnv, inPrefix, inInfo, inFunctions)
+  (outExp,outGlobals) := matchcontinue (inExp, inEnv, inPrefix, inInfo, inGlobals)
     local
       Integer ival;
       Real rval;
@@ -1761,120 +1762,120 @@ algorithm
       list<list<Absyn.Exp>> mat_expl;
       Option<Absyn.Exp> oaexp;
       Option<DAE.Exp> odexp;
-      FunctionHashTable functions;
+      Globals globals;
       list<tuple<Absyn.Exp, Absyn.Exp>> elseIfBranch;
 
-    case (Absyn.REAL(value = rval), _, _, _, functions) 
-      then (DAE.RCONST(rval),functions);
+    case (Absyn.REAL(value = rval), _, _, _, globals) 
+      then (DAE.RCONST(rval), globals);
 
-    case (Absyn.INTEGER(value = ival), _, _, _, functions)
-      then (DAE.ICONST(ival),functions);
+    case (Absyn.INTEGER(value = ival), _, _, _, globals)
+      then (DAE.ICONST(ival), globals);
 
-    case (Absyn.BOOL(value = bval), _, _, _, functions)
-      then (DAE.BCONST(bval),functions);
+    case (Absyn.BOOL(value = bval), _, _, _, globals)
+      then (DAE.BCONST(bval), globals);
 
-    case (Absyn.STRING(value = sval), _, _, _, functions)
-      then (DAE.SCONST(sval),functions);
+    case (Absyn.STRING(value = sval), _, _, _, globals)
+      then (DAE.SCONST(sval), globals);
 
-    case (Absyn.CREF(componentRef = acref), _, _, _, functions)
+    case (Absyn.CREF(componentRef = acref), _, _, _, globals)
       equation
-        (dcref,functions) = instCref(acref, inEnv, inPrefix, inInfo, functions);
+        (dcref, globals) = instCref(acref, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CREF(dcref, DAE.T_UNKNOWN_DEFAULT),functions);
+        (DAE.CREF(dcref, DAE.T_UNKNOWN_DEFAULT), globals);
 
-    case (Absyn.BINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, functions)
+    case (Absyn.BINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
         dop = instOperator(aop);
       then
-        (DAE.BINARY(dexp1, dop, dexp2),functions);
+        (DAE.BINARY(dexp1, dop, dexp2), globals);
 
-    case (Absyn.UNARY(op = aop, exp = aexp1), _, _, _, functions)
+    case (Absyn.UNARY(op = aop, exp = aexp1), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
         dop = instOperator(aop);
       then
-        (DAE.UNARY(dop, dexp1),functions);
+        (DAE.UNARY(dop, dexp1), globals);
 
-    case (Absyn.LBINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, functions)
+    case (Absyn.LBINARY(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
         dop = instOperator(aop);
       then
-        (DAE.LBINARY(dexp1, dop, dexp2),functions);
+        (DAE.LBINARY(dexp1, dop, dexp2), globals);
 
-    case (Absyn.LUNARY(op = aop, exp = aexp1), _, _, _, functions)
+    case (Absyn.LUNARY(op = aop, exp = aexp1), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
         //dop = instOperator(aop);
         dop = DAE.NOT(DAE.T_BOOL_DEFAULT);
       then
-        (DAE.LUNARY(dop, dexp1),functions);
+        (DAE.LUNARY(dop, dexp1), globals);
 
-    case (Absyn.RELATION(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, functions)
+    case (Absyn.RELATION(exp1 = aexp1, op = aop, exp2 = aexp2), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
         dop = instOperator(aop);
       then
-        (DAE.RELATION(dexp1, dop, dexp2, -1, NONE()),functions);
+        (DAE.RELATION(dexp1, dop, dexp2, -1, NONE()), globals);
 
-    case (Absyn.ARRAY(arrayExp = aexpl), _, _, _, functions)
+    case (Absyn.ARRAY(arrayExp = aexpl), _, _, _, globals)
       equation
-        (dexp1,functions) = instArray(aexpl, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instArray(aexpl, inEnv, inPrefix, inInfo, globals);
       then
-        (dexp1,functions);
+        (dexp1, globals);
 
-    case (Absyn.MATRIX(matrix = mat_expl), _, _, _, functions)
+    case (Absyn.MATRIX(matrix = mat_expl), _, _, _, globals)
       equation
-        (dexpl,functions) =
-          List.map3Fold(mat_expl, instArray, inEnv, inPrefix, inInfo, functions);
+        (dexpl, globals) =
+          List.map3Fold(mat_expl, instArray, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl),functions);
+        (DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, dexpl), globals);
 
     case (Absyn.CALL(function_ = _), _, _, _, _)
       equation
-        (dexp1,functions) = instFunctionCallDispatch(inExp, inEnv, inPrefix, inInfo, inFunctions);
+        (dexp1, globals) = instFunctionCallDispatch(inExp, inEnv, inPrefix, inInfo, inGlobals);
       then
-        (dexp1,functions);
+        (dexp1, globals);
 
-    case (Absyn.RANGE(start = aexp1, step = oaexp, stop = aexp2), _, _, _, functions)
+    case (Absyn.RANGE(start = aexp1, step = oaexp, stop = aexp2), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
-        (odexp,functions) = instExpOpt(oaexp, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+        (odexp, globals) = instExpOpt(oaexp, inEnv, inPrefix, inInfo, globals);
+        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.RANGE(DAE.T_UNKNOWN_DEFAULT, dexp1, odexp, dexp2), functions);
+        (DAE.RANGE(DAE.T_UNKNOWN_DEFAULT, dexp1, odexp, dexp2), globals);
 
-    case (Absyn.TUPLE(expressions = aexpl), _, _, _, functions)
+    case (Absyn.TUPLE(expressions = aexpl), _, _, _, globals)
       equation
-        (dexpl,functions) = instExpList(aexpl, inEnv, inPrefix, inInfo, functions);
+        (dexpl, globals) = instExpList(aexpl, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.TUPLE(dexpl),functions);
+        (DAE.TUPLE(dexpl), globals);
 
-    case (Absyn.LIST(exps = aexpl), _, _, _, functions)
+    case (Absyn.LIST(exps = aexpl), _, _, _, globals)
       equation
-        (dexpl,functions) = instExpList(aexpl, inEnv, inPrefix, inInfo, functions);
+        (dexpl, globals) = instExpList(aexpl, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.LIST(dexpl),functions);
+        (DAE.LIST(dexpl), globals);
 
-    case (Absyn.CONS(head = aexp1, rest = aexp2), _, _, _, functions)
+    case (Absyn.CONS(head = aexp1, rest = aexp2), _, _, _, globals)
       equation
-        (dexp1,functions) = instExp(aexp1, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(aexp2, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(aexp1, inEnv, inPrefix, inInfo, globals);
+        (dexp2, globals) = instExp(aexp2, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CONS(dexp1, dexp2),functions);
+        (DAE.CONS(dexp1, dexp2), globals);
         
-    case (Absyn.IFEXP(ifExp = _), _, _, _, functions)
+    case (Absyn.IFEXP(ifExp = _), _, _, _, globals)
       equation
         Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(inExp);
-        (dexp1,functions) = instExp(e1, inEnv, inPrefix, inInfo, functions);
-        (dexp2,functions) = instExp(e2, inEnv, inPrefix, inInfo, functions);
-        (dexp3,functions) = instExp(e3, inEnv, inPrefix, inInfo, functions);
+        (dexp1, globals) = instExp(e1, inEnv, inPrefix, inInfo, globals);
+        (dexp2, globals) = instExp(e2, inEnv, inPrefix, inInfo, globals);
+        (dexp3, globals) = instExp(e3, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.IFEXP(dexp1, dexp2, dexp3),functions);
+        (DAE.IFEXP(dexp1, dexp2, dexp3), globals);
 
     //Absyn.PARTEVALFUNCTION
     //Absyn.END
@@ -1888,7 +1889,7 @@ algorithm
       str = "SCodeInst.instExp: Unhandled Expression FIXME: " +& str;
       print(str +& "\n");
     then
-      (DAE.SCONST(str),inFunctions);
+      (DAE.SCONST(str),inGlobals);
   end matchcontinue;
 end instExp;
 
@@ -1897,14 +1898,14 @@ protected function instArray
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Exp outArray;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 protected
   list<DAE.Exp> expl;
 algorithm
-  (expl,outFunctions) :=
-    List.map3Fold(inExpl, instExp, inEnv, inPrefix, inInfo, inFunctions);
+  (expl,outGlobals) :=
+    List.map3Fold(inExpl, instExp, inEnv, inPrefix, inInfo, inGlobals);
   outArray := DAE.ARRAY(DAE.T_UNKNOWN_DEFAULT, false, expl);
 end instArray;
 
@@ -1949,33 +1950,35 @@ protected function instCref
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.ComponentRef outCref;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outCref,outFunctions) :=
-  matchcontinue(inCref, inEnv, inPrefix, inInfo, inFunctions)
+  (outCref,outGlobals) :=
+  matchcontinue(inCref, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.ComponentRef acref;
       DAE.ComponentRef cref;
       Absyn.Path path;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (Absyn.WILD(), _, _, _, _) then (DAE.WILD(),inFunctions);
-    case (Absyn.ALLWILD(), _, _, _, _) then (DAE.WILD(),inFunctions);
-    case (Absyn.CREF_FULLYQUALIFIED(acref), _, _, _, functions)
+    case (Absyn.WILD(), _, _, _, _) then (DAE.WILD(),inGlobals);
+    case (Absyn.ALLWILD(), _, _, _, _) then (DAE.WILD(),inGlobals);
+    case (Absyn.CREF_FULLYQUALIFIED(acref), _, _, _, globals)
       equation
-        (cref,functions) = instCref2(acref, inEnv, inPrefix, inInfo, functions);
-      then
-        (cref,functions);
-
-    case (_, _, _, _, functions)
-      equation
-        (cref,functions) = instCref2(inCref, inEnv, inPrefix, inInfo, functions);
+        (cref, globals) = instCref2(acref, inEnv, inPrefix, inInfo, globals);
         path = Absyn.crefToPathIgnoreSubs(inCref);
-        cref = prefixCref(cref, path, inPrefix, inEnv, inInfo);
+        globals = instPackageConstant(true, path, inEnv, inInfo, inGlobals);
       then
-        (cref,functions);
+        (cref, globals);
+
+    case (_, _, _, _, globals)
+      equation
+        (cref, globals) = instCref2(inCref, inEnv, inPrefix, inInfo, globals);
+        path = Absyn.crefToPathIgnoreSubs(inCref);
+        (cref, globals) = prefixCref(cref, path, inPrefix, inEnv, inInfo, globals);
+      then
+        (cref, globals);
 
     else
       equation
@@ -1996,39 +1999,39 @@ protected function instCref2
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.ComponentRef outCref;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outCref,outFunctions) := match(inCref, inEnv, inPrefix, inInfo, inFunctions)
+  (outCref,outGlobals) := match(inCref, inEnv, inPrefix, inInfo, inGlobals)
     local
       String name;
       Absyn.ComponentRef cref;
       DAE.ComponentRef dcref;
       list<Absyn.Subscript> asubs;
       list<DAE.Subscript> dsubs;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (Absyn.CREF_IDENT(name, asubs), _, _, _, functions)
+    case (Absyn.CREF_IDENT(name, asubs), _, _, _, globals)
       equation
-        (dsubs,functions) =
-          instSubscripts(asubs, inEnv, inPrefix, inInfo, functions);
+        (dsubs, globals) =
+          instSubscripts(asubs, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, dsubs),functions);
+        (DAE.CREF_IDENT(name, DAE.T_UNKNOWN_DEFAULT, dsubs), globals);
 
-    case (Absyn.CREF_QUAL(name, asubs, cref), _, _, _, functions)
+    case (Absyn.CREF_QUAL(name, asubs, cref), _, _, _, globals)
       equation
-        (dsubs,functions) =
-          instSubscripts(asubs, inEnv, inPrefix, inInfo, functions);
-        (dcref,functions) = instCref2(cref, inEnv, inPrefix, inInfo, functions);
+        (dsubs, globals) =
+          instSubscripts(asubs, inEnv, inPrefix, inInfo, globals);
+        (dcref, globals) = instCref2(cref, inEnv, inPrefix, inInfo, globals);
       then
-        (DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, dsubs, dcref),functions);
+        (DAE.CREF_QUAL(name, DAE.T_UNKNOWN_DEFAULT, dsubs, dcref), globals);
 
-    case (Absyn.CREF_FULLYQUALIFIED(cref), _, _, _, functions)
+    case (Absyn.CREF_FULLYQUALIFIED(cref), _, _, _, globals)
       equation
-        (dcref,functions) = instCref2(cref, inEnv, inPrefix, inInfo, functions);
+        (dcref, globals) = instCref2(cref, inEnv, inPrefix, inInfo, globals);
       then
-        (dcref,functions);
+        (dcref, globals);
 
   end match;
 end instCref2;
@@ -2040,9 +2043,12 @@ protected function prefixCref
   input Prefix inPrefix;
   input Env inEnv;
   input Absyn.Info inInfo;
+  input Globals inGlobals;
   output DAE.ComponentRef outCref;
+  output Globals outGlobals;
 algorithm
-  outCref := matchcontinue(inCref, inCrefPath, inPrefix, inEnv, inInfo)
+  (outCref, outGlobals) :=
+  matchcontinue(inCref, inCrefPath, inPrefix, inEnv, inInfo, inGlobals)
     local
       Env env;
       DAE.ComponentRef cref;
@@ -2051,13 +2057,15 @@ algorithm
       Absyn.Path path;
       String name_str, env_str;
       Item item;
+      Globals globals;
 
-    case (_, _, _, _, _)
+    case (_, _, _, _, _, _)
       equation
         (is_global, env) = SCodeLookup.lookupCrefUnique(inCref, inEnv);
         cref = prefixCref2(inCref, inPrefix, inEnv, env, is_global);
+        globals = instPackageConstant(is_global, inCrefPath, env, inInfo, inGlobals);
       then
-        cref;
+        (cref, globals);
 
     // If the cref couldn't be found, print an error message here instead of
     // letting SCodeLookup do it, to get the correct scope.
@@ -2239,6 +2247,102 @@ algorithm
   end match;
 end reducePrefix;
 
+protected function instPackageConstant
+  input Boolean inIsGlobal;
+  input Absyn.Path inName;
+  input Env inEnv;
+  input Absyn.Info inInfo;
+  input Globals inGlobals;
+  output Globals outGlobals;
+algorithm
+  outGlobals := matchcontinue(inIsGlobal, inName, inEnv, inInfo, inGlobals)
+    local
+      SymbolTable consts;
+      FunctionHashTable funcs;
+      Item item;
+      Env env;
+      SCode.Element selem;
+      Element elem;
+      Absyn.Path name;
+      Prefix prefix;
+      Globals globals;
+
+    case (false, _, _, _, _) then inGlobals;
+
+    case (_, _, _, _, (consts, _))
+      equation
+        _ = InstSymbolTable.lookupName(inName, consts);
+      then
+        inGlobals;
+
+    case (_, Absyn.FULLYQUALIFIED(path = _), _, _, _)
+      equation
+        (item, _, env) = SCodeLookup.lookupFullyQualified(inName, inEnv);
+        (SCodeEnv.VAR(var = selem), env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
+
+        (elem, (consts, funcs)) = instElement(selem, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), inGlobals);
+
+        (_, consts) = InstSymbolTable.addElement(elem, consts);
+      then
+        ((consts, funcs));
+
+    case (_, _, _, _, _)
+      equation
+        (item, _, env) = SCodeLookup.lookupVariableName(inName, inEnv, inInfo);
+        (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
+
+        globals = instPackageConstant2(item, env, inGlobals);
+      then
+        globals;
+        
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- instPackageConstant failed on " +& Absyn.pathString(inName));
+      then
+        fail();
+
+  end matchcontinue;
+end instPackageConstant;
+        
+protected function instPackageConstant2
+  input Item inItem;
+  input Env inEnv;
+  input Globals inGlobals;
+  output Globals outGlobals;
+algorithm
+  outGlobals := match(inItem, inEnv, inGlobals)
+    local
+      SCode.Element selem;
+      Element elem;
+      SymbolTable consts;
+      FunctionHashTable funcs;
+      Env env;
+      Prefix prefix;
+
+      Absyn.Path name;
+      String cls_name;
+
+    case (SCodeEnv.VAR(var = selem), env, _)
+      equation
+        prefix = InstUtil.envPrefix(env);
+        (elem, (consts, funcs)) = instElement(selem, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), env, prefix, INST_ALL(), inGlobals);
+
+        (_, consts) = InstSymbolTable.addElement(elem, consts);
+      then
+        ((consts, funcs));
+
+    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = cls_name)), _, _)
+      equation
+        //print("instPackageConstant2 class " +& cls_name +& "\n");
+        //print("Env: " +& SCodeEnv.getEnvName(inEnv) +& "\n");
+      then inGlobals;
+
+  end match;
+end instPackageConstant2;
+
 protected function instFunctionCall
   input Absyn.ComponentRef inName;
   input list<Absyn.Exp> inPositionalArgs;
@@ -2246,28 +2350,28 @@ protected function instFunctionCall
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output DAE.Exp outCallExp;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outCallExp,outFunctions) := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo, inFunctions)
+  (outCallExp,outGlobals) := match(inName, inPositionalArgs, inNamedArgs, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.Path call_path;
       list<DAE.Exp> pos_args, args;
       list<tuple<String, DAE.Exp>> named_args;
       Function func;
       list<Element> inputs; 
-      FunctionHashTable functions;
+      Globals globals;
     
-    case (_, _, _, _, _, _, functions)
+    case (_, _, _, _, _, _, globals)
       equation
-        (call_path, func, functions) = instFunction(inName, inEnv, inPrefix, inInfo, functions);
-        (pos_args,functions) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, functions);
-        (named_args,functions) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, functions);
+        (call_path, func, globals) = instFunction(inName, inEnv, inPrefix, inInfo, globals);
+        (pos_args, globals) = instExpList(inPositionalArgs, inEnv, inPrefix, inInfo, globals);
+        (named_args, globals) = List.map3Fold(inNamedArgs, instNamedArg, inEnv, inPrefix, inInfo, globals);
         inputs = InstUtil.getFunctionInputs(func);
         args = fillFunctionSlots(pos_args, named_args, inputs, call_path, inInfo);
       then
-        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther),functions);
+        (DAE.CALL(call_path, args, DAE.callAttrBuiltinOther), globals);
     
   end match;
 end instFunctionCall;
@@ -2277,12 +2381,12 @@ protected function instFunction
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Absyn.Path outName;
   output Function outFunction;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outName, outFunction, outFunctions) := matchcontinue (inName, inEnv, inPrefix, inInfo, inFunctions)
+  (outName, outFunction, outGlobals) := matchcontinue (inName, inEnv, inPrefix, inInfo, inGlobals)
     local
       Absyn.Path path;
       Item item;
@@ -2293,37 +2397,39 @@ algorithm
       list<Element> inputs, outputs, locals;
       list<list<Statement>> algorithms;
       list<Statement> stmts;
-      FunctionHashTable functions;
       list<Statement> initBindings;
       Function func;
       Boolean is_record;
       DAE.Type ty;
+      FunctionHashTable functions;
+      SymbolTable consts;
+
     /*
-    case (_, _, _, _, functions)
+    case (_, _, _, _, globals)
       equation
         path = Absyn.crefToPath(inName);
-        outFunction = BaseHashTable.get(path,functions);
-      then (path, outFunction, functions);
+        outFunction = BaseHashTable.get(path, globals);
+      then (path, outFunction, globals);
     */
 
-    case (_, _, _, _, functions)
+    case (_, _, _, _, _)
       equation
         path = Absyn.crefToPath(inName);
         (item, _, env, origin) = SCodeLookup.lookupFunctionName(path, inEnv, inInfo);
         path = instFunctionName(item, path, origin, env, inPrefix);
-        (cls, ty, _, functions) = instClassItem(path, item, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), env, InstTypes.functionPrefix, INST_ALL(), functions);
+        (cls, ty, _, (consts, functions)) = instClassItem(path, item, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), env, InstTypes.functionPrefix, INST_ALL(), inGlobals);
         is_record = Types.isRecord(ty);
         func = instFunction2(path, cls, is_record);
         functions = BaseHashTable.add((path, func), functions);
       then
-        (path, func, functions);
+        (path, func, (consts, functions));
 
     else
       equation
         print("SCodeInst.instFunction failed: " +& Absyn.printComponentRefStr(inName) +&
         " at position: " +& Error.infoStr(inInfo) +& "\n");
-        //(_, _, _) = instFunction(inName, inEnv, inPrefix, inInfo, inFunctions);
+        //(_, _, _) = instFunction(inName, inEnv, inPrefix, inInfo, inGlobals);
       then fail();
   end matchcontinue;
 end instFunction;
@@ -2342,7 +2448,7 @@ algorithm
       list<Statement> initBindings;
       Function func;
 
-    // Records, treat them the same as functions and add bindings as algorithm
+    // Records, treat them the same as globals and add bindings as algorithm
     // statements.
     case (_, InstTypes.COMPLEX_CLASS(components = inputs,
         algorithms = algorithms), true)
@@ -2359,7 +2465,7 @@ algorithm
       then
         InstTypes.RECORD(inName, inputs, stmts);
 
-    // Normal functions.
+    // Normal globals.
     case (_, InstTypes.COMPLEX_CLASS(algorithms = algorithms), false)
       equation
         (inputs, outputs, locals) = getFunctionParameters(inFunction);
@@ -2570,16 +2676,16 @@ protected function instNamedArg
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output tuple<String, DAE.Exp> outNamedArg;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 protected
   String name;
   Absyn.Exp aexp;
   DAE.Exp dexp;
 algorithm
   Absyn.NAMEDARG(argName = name, argValue = aexp) := inNamedArg;
-  (dexp,outFunctions) := instExp(aexp, inEnv, inPrefix, inInfo, inFunctions);
+  (dexp,outGlobals) := instExp(aexp, inEnv, inPrefix, inInfo, inGlobals);
   outNamedArg := (name, dexp);
 end instNamedArg;
 
@@ -3162,33 +3268,33 @@ protected function instSections
   input Env inEnv;
   input Prefix inPrefix;
   input InstPolicy inInstPolicy;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Equation> outEquations;
   output list<Equation> outInitialEquations;
   output list<list<Statement>> outStatements;
   output list<list<Statement>> outInitialStatements;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outEquations, outInitialEquations, outStatements, outInitialStatements, outFunctions) :=
-  match(inClassDef, inEnv, inPrefix, inInstPolicy, inFunctions)
+  (outEquations, outInitialEquations, outStatements, outInitialStatements, outGlobals) :=
+  match(inClassDef, inEnv, inPrefix, inInstPolicy, inGlobals)
     local
       list<SCode.Equation> snel, siel;
       list<SCode.AlgorithmSection> snal, sial;
       list<Equation> inel, iiel;
       list<list<Statement>> inal, iial;
-      FunctionHashTable functions;
+      Globals globals;
 
     case (SCode.PARTS(normalEquationLst = snel, initialEquationLst = siel, normalAlgorithmLst = snal, initialAlgorithmLst = sial), _,
-        _, INST_ALL(), functions)
+        _, INST_ALL(), globals)
       equation
-        (inel,functions) = instEquations(snel, inEnv, inPrefix, functions);
-        (iiel,functions) = instEquations(siel, inEnv, inPrefix, functions);
-        (inal,functions) = instAlgorithmSections(snal, inEnv, inPrefix, functions);
-        (iial,functions) = instAlgorithmSections(sial, inEnv, inPrefix, functions);
+        (inel, globals) = instEquations(snel, inEnv, inPrefix, globals);
+        (iiel, globals) = instEquations(siel, inEnv, inPrefix, globals);
+        (inal, globals) = instAlgorithmSections(snal, inEnv, inPrefix, globals);
+        (iial, globals) = instAlgorithmSections(sial, inEnv, inPrefix, globals);
       then
-        (inel, iiel, inal, iial, functions);
+        (inel, iiel, inal, iial, globals);
 
-    case (_, _, _, INST_ONLY_CONST(), _) then ({}, {}, {}, {}, inFunctions);
+    case (_, _, _, INST_ONLY_CONST(), _) then ({}, {}, {}, {}, inGlobals);
 
   end match;
 end instSections;
@@ -3197,47 +3303,47 @@ protected function instEquations
   input list<SCode.Equation> inEquations;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Equation> outEquations;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outEquations,outFunctions) := List.map2Fold(inEquations, instEquation, inEnv, inPrefix, inFunctions);
+  (outEquations,outGlobals) := List.map2Fold(inEquations, instEquation, inEnv, inPrefix, inGlobals);
 end instEquations;
 
 protected function instEquation
   input SCode.Equation inEquation;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Equation outEquation;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 protected
   SCode.EEquation eq; 
 algorithm
   SCode.EQUATION(eEquation = eq) := inEquation;
-  (outEquation,outFunctions) := instEEquation(eq, inEnv, inPrefix, inFunctions);
+  (outEquation,outGlobals) := instEEquation(eq, inEnv, inPrefix, inGlobals);
 end instEquation;
 
 protected function instEEquations
   input list<SCode.EEquation> inEquations;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Equation> outEquations;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outEquations,outFunctions) := List.map2Fold(inEquations, instEEquation, inEnv, inPrefix, inFunctions);
+  (outEquations,outGlobals) := List.map2Fold(inEquations, instEEquation, inEnv, inPrefix, inGlobals);
 end instEEquations;
 
 protected function instEEquation
   input SCode.EEquation inEquation;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Equation outEquation;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outEquation,outFunctions) := matchcontinue (inEquation, inEnv, inPrefix, inFunctions)
+  (outEquation,outGlobals) := matchcontinue (inEquation, inEnv, inPrefix, inGlobals)
     local
       Absyn.Exp exp1, exp2, exp3;
       DAE.Exp dexp1, dexp2, dexp3;
@@ -3253,95 +3359,95 @@ algorithm
       list<tuple<DAE.Exp, list<Equation>>> inst_branches;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> when_branches;
       Env env;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _, functions)
+    case (SCode.EQ_EQUALS(exp1, exp2, _, info), _, _, globals)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
-        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, info, functions);
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+        (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
       then
-        (InstTypes.EQUALITY_EQUATION(dexp1, dexp2, info),functions);
+        (InstTypes.EQUALITY_EQUATION(dexp1, dexp2, info), globals);
 
     // To determine whether a connected component is inside or outside we need
     // to know the type of the first identifier in the cref. Since it's illegal
     // to connect to global constants we can just save the prefix until we do
     // the typing, which means that we can then determine this with a hashtable
     // lookup.
-    case (SCode.EQ_CONNECT(crefLeft = cref1, crefRight = cref2, info = info), _, _, functions)
+    case (SCode.EQ_CONNECT(crefLeft = cref1, crefRight = cref2, info = info), _, _, globals)
       equation
-        (dcref1,functions) = instCref2(cref1, inEnv, inPrefix, info, functions);
-        (dcref2,functions) = instCref2(cref2, inEnv, inPrefix, info, functions);
+        (dcref1, globals) = instCref2(cref1, inEnv, inPrefix, info, globals);
+        (dcref2, globals) = instCref2(cref2, inEnv, inPrefix, info, globals);
       then
         (InstTypes.CONNECT_EQUATION(dcref1, Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT,
-          dcref2, Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), functions);
+          dcref2, Connect2.NO_FACE(), DAE.T_UNKNOWN_DEFAULT, inPrefix, info), globals);
 
     case (SCode.EQ_FOR(index = for_index, range = SOME(exp1), eEquationLst = eql,
-        info = info), _, _, functions)
+        info = info), _, _, globals)
       equation
         index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
         env = SCodeEnv.extendEnvWithIterators(
           {Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-        (dexp1,functions) = instExp(exp1, env, inPrefix, info, functions);
-        (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
+        (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
+        (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
       then
-        (InstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info),functions);
+        (InstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ieql, info), globals);
 
     case (SCode.EQ_FOR(index = for_index, range = NONE(), eEquationLst = eql,
-        info = info), _, _, functions)
+        info = info), _, _, globals)
       equation
         index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
         env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-        (ieql,functions) = instEEquations(eql, env, inPrefix, functions);
+        (ieql, globals) = instEEquations(eql, env, inPrefix, globals);
       then
-        (InstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), functions);
+        (InstTypes.FOR_EQUATION(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ieql, info), globals);
 
     case (SCode.EQ_IF(condition = if_condition, thenBranch = if_branches,
-        elseBranch = eql, info = info), _, _, functions)
+        elseBranch = eql, info = info), _, _, globals)
       equation
-        (inst_branches,functions) = List.threadMap3ReverseFold(if_condition, if_branches, instIfBranch, inEnv, inPrefix, info, functions);
-        (ieql,functions) = instEEquations(eql, inEnv, inPrefix, functions);
+        (inst_branches, globals) = List.threadMap3ReverseFold(if_condition, if_branches, instIfBranch, inEnv, inPrefix, info, globals);
+        (ieql, globals) = instEEquations(eql, inEnv, inPrefix, globals);
         // Add else branch as a branch with condition true last in the list.
         inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
       then
-        (InstTypes.IF_EQUATION(inst_branches, info),functions);
+        (InstTypes.IF_EQUATION(inst_branches, info), globals);
          
     case (SCode.EQ_WHEN(condition = exp1, eEquationLst = eql,
-        elseBranches = when_branches, info = info), _, _, functions)
+        elseBranches = when_branches, info = info), _, _, globals)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
-        (ieql,functions) = instEEquations(eql, inEnv, inPrefix, functions);
-        (inst_branches,functions) = List.map3Fold(when_branches, instWhenBranch, inEnv, inPrefix, info, functions);
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+        (ieql, globals) = instEEquations(eql, inEnv, inPrefix, globals);
+        (inst_branches, globals) = List.map3Fold(when_branches, instWhenBranch, inEnv, inPrefix, info, globals);
         // Add else branch as a branch with condition true last in the list.
         inst_branches = listReverse((DAE.BCONST(true), ieql) :: inst_branches);
       then
-        (InstTypes.WHEN_EQUATION(inst_branches, info), functions);
+        (InstTypes.WHEN_EQUATION(inst_branches, info), globals);
 
-    case (SCode.EQ_ASSERT(condition = exp1, message = exp2, level = exp3, info = info), _, _, functions)
+    case (SCode.EQ_ASSERT(condition = exp1, message = exp2, level = exp3, info = info), _, _, globals)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
-        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, info, functions);
-        (dexp3,functions) = instExp(exp3, inEnv, inPrefix, info, functions);
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+        (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
+        (dexp3, globals) = instExp(exp3, inEnv, inPrefix, info, globals);
       then
-        (InstTypes.ASSERT_EQUATION(dexp1, dexp2, dexp3, info), functions);
+        (InstTypes.ASSERT_EQUATION(dexp1, dexp2, dexp3, info), globals);
 
-    case (SCode.EQ_TERMINATE(message = exp1, info = info), _, _, functions)
+    case (SCode.EQ_TERMINATE(message = exp1, info = info), _, _, globals)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
       then
-        (InstTypes.TERMINATE_EQUATION(dexp1, info), functions);
+        (InstTypes.TERMINATE_EQUATION(dexp1, info), globals);
 
-    case (SCode.EQ_REINIT(cref = cref1, expReinit = exp1, info = info), _, _, functions)
+    case (SCode.EQ_REINIT(cref = cref1, expReinit = exp1, info = info), _, _, globals)
       equation
-        (dcref1,functions) = instCref(cref1, inEnv, inPrefix, info, functions);
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
+        (dcref1, globals) = instCref(cref1, inEnv, inPrefix, info, globals);
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
       then
-        (InstTypes.REINIT_EQUATION(dcref1, dexp1, info), functions);
+        (InstTypes.REINIT_EQUATION(dcref1, dexp1, info), globals);
         
-    case (SCode.EQ_NORETCALL(exp = exp1, info = info), _, _, functions)
+    case (SCode.EQ_NORETCALL(exp = exp1, info = info), _, _, globals)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
       then
-        (InstTypes.NORETCALL_EQUATION(dexp1, info), functions);
+        (InstTypes.NORETCALL_EQUATION(dexp1, info), globals);
 
     else
       equation
@@ -3358,47 +3464,47 @@ protected function instAlgorithmSections
   input list<SCode.AlgorithmSection> inSections;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<list<Statement>> outStatements;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outStatements,outFunctions) := List.map2Fold(inSections, instAlgorithmSection, inEnv, inPrefix, inFunctions);
+  (outStatements,outGlobals) := List.map2Fold(inSections, instAlgorithmSection, inEnv, inPrefix, inGlobals);
 end instAlgorithmSections;
 
 protected function instAlgorithmSection
   input SCode.AlgorithmSection inSection;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Statement> outStatements;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 protected
   list<SCode.Statement> sstatements;
 algorithm
   SCode.ALGORITHM(statements=sstatements) := inSection;
-  (outStatements,outFunctions) := List.map2Fold(sstatements, instStatement, inEnv, inPrefix, inFunctions);
+  (outStatements,outGlobals) := List.map2Fold(sstatements, instStatement, inEnv, inPrefix, inGlobals);
 end instAlgorithmSection;
 
 protected function instStatements
   input list<SCode.Statement> sstatements;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Statement> outStatements;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outStatements,outFunctions) := List.map2Fold(sstatements, instStatement, inEnv, inPrefix, inFunctions);
+  (outStatements,outGlobals) := List.map2Fold(sstatements, instStatement, inEnv, inPrefix, inGlobals);
 end instStatements;
 
 protected function instStatement
   input SCode.Statement statement;
   input Env inEnv;
   input Prefix inPrefix;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Statement outStatement;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outStatement,outFunctions) := match (statement,inEnv,inPrefix,inFunctions)
+  (outStatement,outGlobals) := match (statement,inEnv,inPrefix,inGlobals)
     local
       Absyn.Exp exp1, exp2, if_condition;
       Absyn.Info info;
@@ -3410,66 +3516,66 @@ algorithm
       list<Statement> ibody;
       String for_index;
       Integer index;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _, functions)
+    case (SCode.ALG_ASSIGN(exp1, exp2, _, info), _, _, globals)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
-        (dexp2,functions) = instExp(exp2, inEnv, inPrefix, info, functions);
-      then (InstTypes.ASSIGN_STMT(dexp1, dexp2, info),functions);
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+        (dexp2, globals) = instExp(exp2, inEnv, inPrefix, info, globals);
+      then (InstTypes.ASSIGN_STMT(dexp1, dexp2, info), globals);
 
-    case (SCode.ALG_FOR(index = for_index, range = SOME(exp1), forBody = body, info = info), _, _, functions)
-      equation
-        index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
-        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-        (dexp1,functions) = instExp(exp1, env, inPrefix, info, functions);
-        (ibody,functions) = instStatements(body, env, inPrefix, functions);
-      then
-        (InstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info),functions);
-
-    case (SCode.ALG_FOR(index = for_index, range = NONE(), forBody = body, info = info), _, _, functions)
+    case (SCode.ALG_FOR(index = for_index, range = SOME(exp1), forBody = body, info = info), _, _, globals)
       equation
         index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
         env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
-        (ibody,functions) = instStatements(body, env, inPrefix, functions);
+        (dexp1, globals) = instExp(exp1, env, inPrefix, info, globals);
+        (ibody, globals) = instStatements(body, env, inPrefix, globals);
       then
-        (InstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info),functions);
+        (InstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, SOME(dexp1), ibody, info), globals);
 
-    case (SCode.ALG_WHILE(boolExpr = exp1, whileBody = body, info = info), _, _, functions)
+    case (SCode.ALG_FOR(index = for_index, range = NONE(), forBody = body, info = info), _, _, globals)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
-        (ibody,functions) = instStatements(body, inEnv, inPrefix, functions);
+        index = System.tmpTickIndex(SCodeEnv.tmpTickIndex);
+        env = SCodeEnv.extendEnvWithIterators({Absyn.ITERATOR(for_index, NONE(), NONE())}, index, inEnv);
+        (ibody, globals) = instStatements(body, env, inPrefix, globals);
       then
-        (InstTypes.WHILE_STMT(dexp1, ibody, info),functions);
+        (InstTypes.FOR_STMT(for_index, index, DAE.T_UNKNOWN_DEFAULT, NONE(), ibody, info), globals);
+
+    case (SCode.ALG_WHILE(boolExpr = exp1, whileBody = body, info = info), _, _, globals)
+      equation
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+        (ibody, globals) = instStatements(body, inEnv, inPrefix, globals);
+      then
+        (InstTypes.WHILE_STMT(dexp1, ibody, info), globals);
 
     case (SCode.ALG_IF(boolExpr = if_condition, trueBranch = if_branch,
         elseIfBranch = elseif_branches,
-        elseBranch = else_branch, info = info), _, _, functions)
+        elseBranch = else_branch, info = info), _, _, globals)
       equation
         elseif_branches = (if_condition,if_branch)::elseif_branches;
         /* Save some memory by making this more complicated than it is */
-        (inst_branches,functions) = List.map3Fold_tail(elseif_branches,instStatementBranch,inEnv,inPrefix,info,functions,{});
-        (inst_branches,functions) = List.map3Fold_tail({(Absyn.BOOL(true),else_branch)},instStatementBranch,inEnv,inPrefix,info, functions,inst_branches);
+        (inst_branches, globals) = List.map3Fold_tail(elseif_branches,instStatementBranch,inEnv,inPrefix,info, globals,{});
+        (inst_branches, globals) = List.map3Fold_tail({(Absyn.BOOL(true),else_branch)},instStatementBranch,inEnv,inPrefix,info, globals,inst_branches);
         inst_branches = listReverse(inst_branches);
       then
-        (InstTypes.IF_STMT(inst_branches, info),functions);
+        (InstTypes.IF_STMT(inst_branches, info), globals);
 
-    case (SCode.ALG_WHEN_A(branches = branches, info = info), _, _, functions)
+    case (SCode.ALG_WHEN_A(branches = branches, info = info), _, _, globals)
       equation
-        (inst_branches,functions) = List.map3Fold(branches,instStatementBranch,inEnv,inPrefix,info,functions);
+        (inst_branches, globals) = List.map3Fold(branches,instStatementBranch,inEnv,inPrefix,info, globals);
       then
-        (InstTypes.WHEN_STMT(inst_branches, info),functions);
+        (InstTypes.WHEN_STMT(inst_branches, info), globals);
 
-    case (SCode.ALG_NORETCALL(exp = exp1, info = info), _, _, functions)
+    case (SCode.ALG_NORETCALL(exp = exp1, info = info), _, _, globals)
       equation
-        (dexp1,functions) = instExp(exp1, inEnv, inPrefix, info, functions);
-      then (InstTypes.NORETCALL_STMT(dexp1, info),functions);
+        (dexp1, globals) = instExp(exp1, inEnv, inPrefix, info, globals);
+      then (InstTypes.NORETCALL_STMT(dexp1, info), globals);
 
-    case (SCode.ALG_RETURN(info = info), _, _, functions)
-      then (InstTypes.RETURN_STMT(info), functions);
+    case (SCode.ALG_RETURN(info = info), _, _, globals)
+      then (InstTypes.RETURN_STMT(info), globals);
 
-    case (SCode.ALG_BREAK(info = info), _, _, functions)
-      then (InstTypes.BREAK_STMT(info), functions);
+    case (SCode.ALG_BREAK(info = info), _, _, globals)
+      then (InstTypes.BREAK_STMT(info), globals);
 
     else
       equation
@@ -3485,15 +3591,15 @@ protected function instIfBranch
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output tuple<DAE.Exp, list<Equation>> outIfBranch;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 protected
   DAE.Exp cond_exp;
   list<Equation> eql;
 algorithm
-  (cond_exp,outFunctions) := instExp(inCondition, inEnv, inPrefix, inInfo, inFunctions);
-  (eql,outFunctions) := instEEquations(inBody, inEnv, inPrefix, outFunctions);
+  (cond_exp,outGlobals) := instExp(inCondition, inEnv, inPrefix, inInfo, inGlobals);
+  (eql,outGlobals) := instEEquations(inBody, inEnv, inPrefix, outGlobals);
   outIfBranch := (cond_exp, eql);
 end instIfBranch;
 
@@ -3502,9 +3608,9 @@ protected function instStatementBranch
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output tuple<DAE.Exp, list<Statement>> outIfBranch;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 protected
   Absyn.Exp cond;
   DAE.Exp icond;
@@ -3512,8 +3618,8 @@ protected
   list<Statement> istmts;
 algorithm
   (cond,stmts) := tpl;
-  (icond,outFunctions) := instExp(cond, inEnv, inPrefix, inInfo, inFunctions);
-  (istmts,outFunctions) := instStatements(stmts, inEnv, inPrefix, outFunctions);
+  (icond,outGlobals) := instExp(cond, inEnv, inPrefix, inInfo, inGlobals);
+  (istmts,outGlobals) := instStatements(stmts, inEnv, inPrefix, outGlobals);
   outIfBranch := (icond, istmts);
 end instStatementBranch;
 
@@ -3522,9 +3628,9 @@ protected function instWhenBranch
   input Env inEnv;
   input Prefix inPrefix;
   input Absyn.Info inInfo;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output tuple<DAE.Exp, list<Equation>> outBranch;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 protected
   Absyn.Exp aexp;
   list<SCode.EEquation> eql;
@@ -3532,183 +3638,35 @@ protected
   list<Equation> ieql;
 algorithm
   (aexp, eql) := inBranch;
-  (dexp, outFunctions) := instExp(aexp, inEnv, inPrefix, inInfo, inFunctions);
-  (ieql,outFunctions) := instEEquations(eql, inEnv, inPrefix, outFunctions);
+  (dexp, outGlobals) := instExp(aexp, inEnv, inPrefix, inInfo, inGlobals);
+  (ieql,outGlobals) := instEEquations(eql, inEnv, inPrefix, outGlobals);
   outBranch := (dexp, ieql);
 end instWhenBranch;
-
-protected function instGlobalConstants
-  input list<Absyn.Path> inGlobalConstants;
-  input Absyn.Path inClassPath;
-  input Env inEnv;
-  input FunctionHashTable inFunctions;
-  output list<Element> outElements;
-  output FunctionHashTable outFunctions;
-algorithm
-  (outElements,outFunctions) := matchcontinue(inGlobalConstants, inClassPath, inEnv, inFunctions)
-    local
-      list<Element> el;
-      Element ss;
-      FunctionHashTable functions;
-
-    case (_, _, _, functions)
-      equation
-        (el,functions) = List.map2Fold(inGlobalConstants, instGlobalConstant, inClassPath, inEnv, functions);
-        (ss,functions) = instGlobalConstant2(SCodeLookup.BUILTIN_STATESELECT,
-          Absyn.IDENT("StateSelect"), false, {}, functions);
-      then
-        (ss :: el,functions);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("SCodeInst.instGlobalConstants failed\n");
-      then
-        fail();
-
-  end matchcontinue;
-end instGlobalConstants;
-
-protected function instGlobalConstant
-  input Absyn.Path inPath;
-  input Absyn.Path inClassPath;
-  input Env inEnv;
-  input FunctionHashTable inFunctions;
-  output Element outElement;
-  output FunctionHashTable outFunctions;
-algorithm
-  (outElement,outFunctions) := matchcontinue(inPath, inClassPath, inEnv, inFunctions)
-    local
-      Item item;
-      Env env;
-      Boolean loc;
-      FunctionHashTable functions;
-      
-    case (_, _, _, functions)
-      equation
-        (item, _, env) = SCodeLookup.lookupFullyQualified(inPath, inEnv);
-        loc = Absyn.pathPrefixOf(inClassPath, inPath);
-        (outElement, functions) = instGlobalConstant2(item, inPath, loc, env, functions);
-      then
-        (outElement, functions);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("SCodeInst.instGlobalConstant failed on " +&
-          Absyn.pathString(inPath) +& "\n");
-      then
-        fail();
-
-  end matchcontinue;
-end instGlobalConstant;
-
-protected function instGlobalConstant2
-  input Item inItem;
-  input Absyn.Path inPath;
-  input Boolean inLocal;
-  input Env inEnv;
-  input FunctionHashTable inFunctions;
-  output Element outElement;
-  output FunctionHashTable outFunctions;
-algorithm
-  (outElement,outFunctions) := matchcontinue(inItem, inPath, inLocal, inEnv, inFunctions)
-    local
-      Absyn.Path  pre_path, name;
-      Prefix prefix;
-      SCode.Element el;
-      list<SCode.Enum> enuml;
-      DAE.Type ty, arr_ty;
-      list<Element> enum_el;
-      list<DAE.Exp> enum_exps;
-      Integer enum_count;
-      DAE.Exp bind_exp;
-      Binding binding;
-      Absyn.Info info;
-      Element iel;
-      FunctionHashTable functions;
-      DAE.ComponentRef cref;
-
-    case (SCodeEnv.VAR(var = el), _, true, _, functions)
-      equation
-        (iel,_) = instElement(el, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv,
-          InstTypes.emptyPrefix, INST_ALL(), functions);
-        pre_path = Absyn.pathPrefix(inPath);
-        prefix = InstUtil.pathPrefix(pre_path);
-        iel = InstUtil.prefixElement(iel, prefix);
-      then  
-        (iel,functions);
-        
-    case (SCodeEnv.VAR(var = el), _, false, _, functions)
-      equation
-        pre_path = Absyn.pathPrefix(inPath);
-        prefix = InstUtil.pathPrefix(pre_path);
-        (iel,functions) = instElement(el, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv, prefix, INST_ALL(), functions);
-      then
-        (iel,functions);
-
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(classDef = 
-        SCode.ENUMERATION(enumLst = enuml), info = info)), _, _, _, functions)
-      equation
-        // Instantiate the literals.
-        ty = InstUtil.makeEnumType(enuml, inPath);
-        enum_el = instEnumLiterals(enuml, inPath, ty, 1, {});
-        // Create a binding for the enumeration type, i.e. an array of all
-        // literals.
-        enum_exps = List.map(enum_el, makeEnumExpFromElement);
-        enum_count = listLength(enum_exps);
-        arr_ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(enum_count)}, DAE.emptyTypeSource);
-        bind_exp = DAE.ARRAY(arr_ty, true, enum_exps);
-        // TODO: Check this, should it really be 1?
-        binding = InstTypes.TYPED_BINDING(bind_exp, arr_ty, 1, info);
-      then
-        (InstTypes.ELEMENT(InstTypes.TYPED_COMPONENT(inPath, ty, NONE(),
-            InstTypes.DEFAULT_CONST_DAE_PREFIXES, binding, info),
-          InstTypes.COMPLEX_CLASS(inPath, enum_el, {}, {}, {}, {})),functions);
-
-    else
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("SCodeInst.instGlobalConstant failed on " +&
-          Absyn.pathString(inPath) +& "\n");
-      then
-        fail();
-
-  end matchcontinue;
-end instGlobalConstant2;
-
-protected function makeEnumExpFromElement
-  input Element inElement;
-  output DAE.Exp outExp;
-algorithm
-  InstTypes.ELEMENT(component = InstTypes.TYPED_COMPONENT(binding = 
-    InstTypes.TYPED_BINDING(bindingExp = outExp))) := inElement;
-end makeEnumExpFromElement;
 
 protected function instConditionalComponents
   input Class inClass;
   input SymbolTable inSymbolTable;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Class outClass;
   output SymbolTable outSymbolTable;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outClass, outSymbolTable, outFunctions) := match(inClass, inSymbolTable, inFunctions)
+  (outClass, outSymbolTable, outGlobals) := match(inClass, inSymbolTable, inGlobals)
     local
       SymbolTable st;
       list<Element> comps;
       list<Equation> eq, ieq;
       list<list<Statement>> al, ial;
-      FunctionHashTable functions;
+      Globals globals;
       Absyn.Path name;
 
-    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, functions)
+    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, globals)
       equation
-        (comps, st, functions) = instConditionalElements(comps, st, {}, functions);
+        (comps, st, globals) = instConditionalElements(comps, st, {}, globals);
       then
-        (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, functions);
+        (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, globals);
 
-    else (inClass, inSymbolTable, inFunctions);
+    else (inClass, inSymbolTable, inGlobals);
 
   end match;
 end instConditionalComponents;
@@ -3717,28 +3675,28 @@ protected function instConditionalElements
   input list<Element> inElements;
   input SymbolTable inSymbolTable;
   input list<Element> inAccumEl;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output list<Element> outElements;
   output SymbolTable outSymbolTable;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElements, outSymbolTable, outFunctions) := match(inElements, inSymbolTable, inAccumEl, inFunctions)
+  (outElements, outSymbolTable, outGlobals) := match(inElements, inSymbolTable, inAccumEl, inGlobals)
     local
       Element el;
       list<Element> rest_el, accum_el;
       SymbolTable st;
       Option<Element> oel;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case ({}, st, accum_el, functions) then (listReverse(accum_el), st, functions);
+    case ({}, st, accum_el, globals) then (listReverse(accum_el), st, globals);
 
-    case (el :: rest_el, st, accum_el, functions)
+    case (el :: rest_el, st, accum_el, globals)
       equation
-        (oel, st, functions) = instConditionalElement(el, st, functions);
+        (oel, st, globals) = instConditionalElement(el, st, globals);
         accum_el = List.consOption(oel, accum_el);
-        (accum_el, st, functions) = instConditionalElements(rest_el, st, accum_el, functions);
+        (accum_el, st, globals) = instConditionalElements(rest_el, st, accum_el, globals);
       then
-        (accum_el, st, functions);
+        (accum_el, st, globals);
 
   end match;
 end instConditionalElements;
@@ -3747,24 +3705,24 @@ protected function instConditionalElementOnTrue
   input Boolean inCondition;
   input Element inElement;
   input SymbolTable inSymbolTable;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Option<Element> outElement;
   output SymbolTable outSymbolTable;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElement, outSymbolTable, outFunctions) := match(inCondition, inElement, inSymbolTable, inFunctions)
+  (outElement, outSymbolTable, outGlobals) := match(inCondition, inElement, inSymbolTable, inGlobals)
     local
       Option<Element> oel;
       SymbolTable st;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (true, _, st, functions)
+    case (true, _, st, globals)
       equation
-        (oel, st, functions) = instConditionalElement(inElement, st, functions);
+        (oel, st, globals) = instConditionalElement(inElement, st, globals);
       then
-        (oel, st, functions);
+        (oel, st, globals);
 
-    else (NONE(), inSymbolTable, inFunctions);
+    else (NONE(), inSymbolTable, inGlobals);
 
   end match;
 end instConditionalElementOnTrue;
@@ -3772,12 +3730,12 @@ end instConditionalElementOnTrue;
 protected function instConditionalElement
   input Element inElement;
   input SymbolTable inSymbolTable;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Option<Element> outElement;
   output SymbolTable outSymbolTable;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElement, outSymbolTable, outFunctions) := match(inElement, inSymbolTable, inFunctions)
+  (outElement, outSymbolTable, outGlobals) := match(inElement, inSymbolTable, inGlobals)
     local
       Component comp;
       Class cls;
@@ -3786,22 +3744,22 @@ algorithm
       Option<Element> oel;
       Absyn.Path bc;
       DAE.Type ty;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (InstTypes.ELEMENT(comp, cls), st, functions)
+    case (InstTypes.ELEMENT(comp, cls), st, globals)
       equation
-        (cls, st, functions) = instConditionalComponents(cls, st, functions);
+        (cls, st, globals) = instConditionalComponents(cls, st, globals);
         el = InstTypes.ELEMENT(comp, cls);
       then
-        (SOME(el), st, functions);
+        (SOME(el), st, globals);
 
-    case (InstTypes.CONDITIONAL_ELEMENT(comp), st, functions)
+    case (InstTypes.CONDITIONAL_ELEMENT(comp), st, globals)
       equation
-        (oel, st, functions) = instConditionalComponent(comp, st, functions);
+        (oel, st, globals) = instConditionalComponent(comp, st, globals);
       then
-        (oel, st, functions);
+        (oel, st, globals);
 
-    else (SOME(inElement), inSymbolTable, inFunctions);
+    else (SOME(inElement), inSymbolTable, inGlobals);
 
   end match;
 end instConditionalElement;
@@ -3809,12 +3767,12 @@ end instConditionalElement;
 protected function instConditionalComponent
   input Component inComponent;
   input SymbolTable inSymbolTable;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Option<Element> outElement;
   output SymbolTable outSymbolTable;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElement, outSymbolTable, outFunctions) := matchcontinue(inComponent, inSymbolTable, inFunctions)
+  (outElement, outSymbolTable, outGlobals) := matchcontinue(inComponent, inSymbolTable, inGlobals)
     local
       SCode.Element sel;
       Env env;
@@ -3828,18 +3786,18 @@ algorithm
       Modifier mod;
       Option<Element> el;
       Prefixes prefs;
-      FunctionHashTable functions;
+      Globals globals;
 
     case (InstTypes.CONDITIONAL_COMPONENT(name, cond_exp, sel, mod, prefs, env,
-        prefix, info), st, functions)
+        prefix, info), st, globals)
       equation
         (cond_exp, ty, _, st) = Typing.typeExp(cond_exp, Typing.EVAL_CONST_PARAM(),
           Typing.CONTEXT_MODEL(), st);
         (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
         cond = evaluateConditionalExp(cond_exp, ty, name, info);
-        (el, st, functions) = instConditionalComponent2(cond, name, sel, mod, prefs, env, prefix, st, functions);
+        (el, st, globals) = instConditionalComponent2(cond, name, sel, mod, prefs, env, prefix, st, globals);
       then
-        (el, st, functions);
+        (el, st, globals);
          
     else
       equation
@@ -3861,13 +3819,13 @@ protected function instConditionalComponent2
   input Env inEnv;
   input Prefix inPrefix;
   input SymbolTable inSymbolTable;
-  input FunctionHashTable inFunctions;
+  input Globals inGlobals;
   output Option<Element> outElement;
   output SymbolTable outSymbolTable;
-  output FunctionHashTable outFunctions;
+  output Globals outGlobals;
 algorithm
-  (outElement, outSymbolTable, outFunctions) := 
-  match(inCondition, inName, inElement, inMod, inPrefixes, inEnv, inPrefix, inSymbolTable, inFunctions)
+  (outElement, outSymbolTable, outGlobals) := 
+  match(inCondition, inName, inElement, inMod, inPrefixes, inEnv, inPrefix, inSymbolTable, inGlobals)
     local
       SCode.Element sel;
       Element el;
@@ -3875,27 +3833,27 @@ algorithm
       Boolean added;
       Option<Element> oel;
       Component comp;
-      FunctionHashTable functions;
+      Globals globals;
 
-    case (InstTypes.SINGLE_CONDITION(true), _, _, _, _, _, _, st, functions)
+    case (InstTypes.SINGLE_CONDITION(true), _, _, _, _, _, _, st, globals)
       equation
         // We need to remove the condition from the element, otherwise
         // instElement will just add it as a conditional component again.
         sel = SCode.removeComponentCondition(inElement);
         // Instantiate the element and update the symbol table.
-        (el,functions) = instElement(sel, inMod, inPrefixes, inEnv, inPrefix, INST_ALL(), functions);
+        (el, globals) = instElement(sel, inMod, inPrefixes, inEnv, inPrefix, INST_ALL(), globals);
         (el, st, added) = InstSymbolTable.addInstCondElement(el, st);
         // Recursively instantiate any conditional components in this element.
-        (oel, st, functions) = instConditionalElementOnTrue(added, el, st, functions);
+        (oel, st, globals) = instConditionalElementOnTrue(added, el, st, globals);
       then
-        (oel, st, functions);
+        (oel, st, globals);
 
-    case (InstTypes.SINGLE_CONDITION(false), _, _, _, _, _, _, st, functions)
+    case (InstTypes.SINGLE_CONDITION(false), _, _, _, _, _, _, st, globals)
       equation
         comp = InstTypes.DELETED_COMPONENT(inName);
         st = InstSymbolTable.updateComponent(comp, inSymbolTable);
       then
-        (NONE(), st, functions);
+        (NONE(), st, globals);
 
     case (InstTypes.ARRAY_CONDITION(conditions = _), _, _, _, _, _, _, st, _)
       equation

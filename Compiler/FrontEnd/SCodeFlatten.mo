@@ -52,7 +52,6 @@ protected import Flags;
 protected import List;
 protected import System;
 protected import SCodeLookup;
-protected import SCodeInst;
 
 public type Env = SCodeEnv.Env;
 
@@ -64,7 +63,7 @@ protected
   Absyn.Path cls_path;
 algorithm
   cls_path := getLastClassNameInProgram(inProgram);
-  (outProgram, _, _) := flattenClassInProgram(cls_path, inProgram);
+  (outProgram, _) := flattenClassInProgram(cls_path, inProgram);
 end flattenProgram;
 
 protected function getLastClassNameInProgram
@@ -105,13 +104,11 @@ public function flattenClassInProgram
   input SCode.Program inProgram;
   output SCode.Program outProgram;
   output Env outEnv;
-  output list<Absyn.Path> outConstants;
 algorithm
-  (outProgram, outEnv, outConstants) := matchcontinue(inClassName, inProgram)
+  (outProgram, outEnv) := matchcontinue(inClassName, inProgram)
     local
       Env env;
       SCode.Program prog;
-      list<Absyn.Path> consts;
 
     case (_, prog)
       equation
@@ -123,7 +120,7 @@ algorithm
         env = SCodeEnv.extendEnvWithClasses(prog, env);
         env = EnvExtends.update(env);
         
-        (prog, env, consts) = SCodeDependency.analyse(inClassName, env, prog);
+        (prog, env) = SCodeDependency.analyse(inClassName, env, prog);
         checkForCardinality(env);
         (prog, env) = SCodeFlattenImports.flattenProgram(prog, env);
 
@@ -132,7 +129,7 @@ algorithm
         //  realString(System.getTimerIntervalTime()) +& " seconds");
         
       then
-        (prog, env, consts);
+        (prog, env);
 
     else
       equation

@@ -1914,7 +1914,7 @@ algorithm
         {Values.STRING(filename), Values.CODE(Absyn.C_TYPENAME(classpath))}, st, _)
       equation
         (scodeP, st) = Interactive.symbolTableToSCode(st);
-        (scodeP, _, _) = SCodeFlatten.flattenClassInProgram(classpath, scodeP);
+        (scodeP, _) = SCodeFlatten.flattenClassInProgram(classpath, scodeP);
         scodeP = SCode.removeBuiltinsFromTopScope(scodeP);
         str = SCodeDump.programStr(scodeP);
         System.writeFile(filename, str);
@@ -2848,7 +2848,6 @@ algorithm
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
       SCodeEnv.Env senv;
-      list<Absyn.Path> consts;
       DAE.FunctionTree funcs;
       Absyn.Path newClassName;
       
@@ -2858,10 +2857,10 @@ algorithm
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
         scodeP = SCodeSimplify.simplifyProgram(scodeP);
-        (scodeP, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
+        (scodeP, senv) = SCodeFlatten.flattenClassInProgram(className, scodeP);
         scodePNew = SCodeInstShortcut.translate(className, senv, scodeP);
         // don't do the second dependency as it doesn't work in some cases!
-        // (scodePNew, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodePNew);
+        // (scodePNew, senv) = SCodeFlatten.flattenClassInProgram(className, scodePNew);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodePNew,className);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
       then 
@@ -2874,8 +2873,8 @@ algorithm
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
         //scodeP = SCodeSimplify.simplifyProgram(scodeP);
-        (_, senv, consts) = SCodeFlatten.flattenClassInProgram(className, scodeP);
-        (dae, funcs) = SCodeInst.instClass(className, senv, consts);
+        (_, senv) = SCodeFlatten.flattenClassInProgram(className, scodeP);
+        (dae, funcs) = SCodeInst.instClass(className, senv);
 
         cache = Env.emptyCache();
         cache = Env.setCachedFunctionTree(cache, funcs);

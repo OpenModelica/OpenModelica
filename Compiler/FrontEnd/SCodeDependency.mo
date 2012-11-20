@@ -73,11 +73,10 @@ public function analyse
   input SCode.Program inProgram;
   output SCode.Program outProgram;
   output Env outEnv;
-  output list<Absyn.Path> outGlobalConstants;
 algorithm
   analyseClass(inClassName, inEnv, Absyn.dummyInfo);
   analyseClassExtends(inEnv);
-  (outEnv, outProgram, outGlobalConstants) := 
+  (outEnv, outProgram) := 
     collectUsedProgram(inEnv, inProgram, inClassName);
 end analyse;
 
@@ -1687,15 +1686,14 @@ protected function collectUsedProgram
   input Absyn.Path inClassName;
   output Env outEnv;
   output SCode.Program outProgram;
-  output list<Absyn.Path> outGlobalConstants;
 protected
   Env env;
   SCodeEnv.AvlTree cls_and_vars;
 algorithm
   env := SCodeEnv.buildInitialEnv();
   SCodeEnv.FRAME(clsAndVars = cls_and_vars) :: _ := inEnv;
-  (outProgram, outEnv, outGlobalConstants) := 
-    collectUsedProgram2(cls_and_vars, inEnv, inProgram, inClassName, env, {});
+  (outProgram, outEnv) := 
+    collectUsedProgram2(cls_and_vars, inEnv, inProgram, inClassName, env);
 end collectUsedProgram;
 
 protected function collectUsedProgram2
@@ -1709,44 +1707,41 @@ protected function collectUsedProgram2
   input SCode.Program inProgram;
   input Absyn.Path inClassName;
   input Env inAccumEnv;
-  input list<Absyn.Path> inGlobalConstants;
   output SCode.Program outProgram;
   output Env outAccumEnv;
-  output list<Absyn.Path> outGlobalConstants;
 algorithm
-  (outProgram, outAccumEnv, outGlobalConstants) := 
-  matchcontinue(clsAndVars, inEnv, inProgram, inClassName, inAccumEnv, inGlobalConstants)
+  (outProgram, outAccumEnv) := 
+  matchcontinue(clsAndVars, inEnv, inProgram, inClassName, inAccumEnv)
     local
       SCode.Element cls_el;
       SCode.Element cls;
       SCode.Program rest_prog;
       String name;
       Env env;
-      list<Absyn.Path> consts;
 
     // We're done!
-    case (_, _, {}, _, _, _) then (inProgram, inAccumEnv, inGlobalConstants);
+    case (_, _, {}, _, _) then (inProgram, inAccumEnv);
 
     // Try to collect the first class in the list.
-    case (_, _, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env, consts)
+    case (_, _, (cls as SCode.CLASS(name = name)) :: rest_prog, _, env)
       equation
         cls_el = cls;
-        (cls_el, env, consts) = collectUsedClass(cls_el, inEnv, clsAndVars,
-          inClassName, env, Absyn.IDENT(name), consts);
+        (cls_el, env) = collectUsedClass(cls_el, inEnv, clsAndVars,
+          inClassName, env, Absyn.IDENT(name));
         SCode.CLASS(name = _) = cls_el;
         cls = cls_el;
-        (rest_prog, env, consts) = 
-          collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env, consts);
+        (rest_prog, env) = 
+          collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
       then
-        (cls :: rest_prog, env, consts);
+        (cls :: rest_prog, env);
 
     // Could not collect the class (i.e. it's not used), continue with the rest.
-    case (_, _, _ :: rest_prog, _, env, consts)
+    case (_, _, _ :: rest_prog, _, env)
       equation
-        (rest_prog, env, consts) = 
-          collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env, consts);
+        (rest_prog, env) = 
+          collectUsedProgram2(clsAndVars, inEnv, rest_prog, inClassName, env);
       then
-        (rest_prog, env, consts);
+        (rest_prog, env);
 
   end matchcontinue;
 end collectUsedProgram2;
@@ -1760,14 +1755,11 @@ protected function collectUsedClass
   input Absyn.Path inClassName;
   input Env inAccumEnv;
   input Absyn.Path inAccumPath;
-  input list<Absyn.Path> inGlobalConstants;
   output SCode.Element outClass;
   output Env outAccumEnv;
-  output list<Absyn.Path> outGlobalConstants;
 algorithm
-  (outClass, outAccumEnv, outGlobalConstants) := 
-  match(inClass, inEnv, inClsAndVars, inClassName, inAccumEnv, inAccumPath,
-      inGlobalConstants)
+  (outClass, outAccumEnv) := 
+  match(inClass, inEnv, inClsAndVars, inClassName, inAccumEnv, inAccumPath)
     local
       SCode.Ident name, basename;
       SCode.Prefixes prefixes;
@@ -1781,10 +1773,9 @@ algorithm
       Env class_env, env, enclosing_env;
       Option<SCode.ConstrainClass> cc;
       SCode.Element cls;
-      list<Absyn.Path> consts;
   
     case (SCode.CLASS(name, prefixes as SCode.PREFIXES(replaceablePrefix =
-        SCode.REPLACEABLE(cc)), ep, pp, res, cdef, info), _, _, _, _, _ , consts)
+        SCode.REPLACEABLE(cc)), ep, pp, res, cdef, info), _, _, _, _, _)
       equation
         /*********************************************************************/
         // TODO: Fix the usage of alias items in this case.
@@ -1796,8 +1787,8 @@ algorithm
         // The class is used, recursively collect its contents.
         {class_frame} = SCodeEnv.getItemEnv(resolved_item);
         enclosing_env = SCodeEnv.enterScope(inEnv, name);
-        (cdef, class_env, consts) =
-          collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath, consts);
+        (cdef, class_env) =
+          collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
         
         //Fix operator record restriction to record
         res = fixRestrictionOfOperatorRecord(res);  
@@ -1807,9 +1798,9 @@ algorithm
         env = SCodeEnv.extendEnvWithItem(resolved_item, inAccumEnv, basename);
         env = SCodeEnv.extendEnvWithItem(item, env, name);
       then
-        (cls, env, consts);
+        (cls, env);
 
-    case (SCode.CLASS(name, prefixes, ep, pp, res, cdef, info), _, _, _, _, _, consts)
+    case (SCode.CLASS(name, prefixes, ep, pp, res, cdef, info), _, _, _, _, _)
       equation
         // TODO! FIXME! add cc to the used classes!
         cc = SCode.replaceableOptConstraint(SCode.prefixesReplaceable(prefixes));
@@ -1819,8 +1810,8 @@ algorithm
         // The class is used, recursively collect it's contents.
         {class_frame} = SCodeEnv.getItemEnv(item);
         enclosing_env = SCodeEnv.enterScope(inEnv, name);
-        (cdef, class_env, consts) = 
-          collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath, consts);
+        (cdef, class_env) = 
+          collectUsedClassDef(cdef, enclosing_env, class_frame, inClassName, inAccumPath);
         //Fix operator record restriction to record
         res = fixRestrictionOfOperatorRecord(res);
         // Add the class to the new environment.
@@ -1828,7 +1819,7 @@ algorithm
         item = updateItemEnv(item, cls, class_env);
         env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
       then
-        (cls, env, consts);
+        (cls, env);
 
   end match;
 end collectUsedClass;
@@ -1888,13 +1879,11 @@ protected function collectUsedClassDef
   input SCodeEnv.Frame inClassEnv;
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
-  input list<Absyn.Path> inGlobalConstants;
   output SCode.ClassDef outClass;
   output Env outEnv;
-  output list<Absyn.Path> outGlobalConstants;
 algorithm
-  (outClass, outEnv, outGlobalConstants) := 
-  match(inClassDef, inEnv, inClassEnv, inClassName, inAccumPath, inGlobalConstants)
+  (outClass, outEnv) := 
+  match(inClassDef, inEnv, inClassEnv, inClassName, inAccumPath)
     local
       list<SCode.Element> el;
       list<SCode.Equation> neq, ieq;
@@ -1906,29 +1895,28 @@ algorithm
       SCode.Ident bc;
       SCode.Mod mods;
       Env env;
-      list<Absyn.Path> consts;
       list<Absyn.NamedArg> clats;
 
-    case (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), _, _, _, _, consts)
+    case (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), _, _, _, _)
       equation
-        (el, env, consts) = 
-          collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath, consts);
+        (el, env) = 
+          collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath);
       then
-        (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), env, consts);
+        (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), env);
 
     case (SCode.CLASS_EXTENDS(bc, mods, 
-        SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt)), _, _, _, _, consts)
+        SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt)), _, _, _, _)
       equation
-        (el, env, consts) = 
-          collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath, consts);
+        (el, env) = 
+          collectUsedElements(el, inEnv, inClassEnv, inClassName, inAccumPath);
       then
         (SCode.CLASS_EXTENDS(bc, mods, 
-          SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt)), env, consts);
+          SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt)), env);
 
-    case (SCode.ENUMERATION(enumLst = _), _, _, _, _, _)
-      then (inClassDef, {inClassEnv}, inAccumPath :: inGlobalConstants);
+    case (SCode.ENUMERATION(enumLst = _), _, _, _, _)
+      then (inClassDef, {inClassEnv});
 
-    else (inClassDef, {inClassEnv}, inGlobalConstants);
+    else (inClassDef, {inClassEnv});
   end match;
 end collectUsedClassDef;
          
@@ -1939,10 +1927,8 @@ protected function collectUsedElements
   input SCodeEnv.Frame inClassEnv;
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
-  input list<Absyn.Path> inGlobalConstants;
   output list<SCode.Element> outUsedElements;
   output Env outNewEnv;
-  output list<Absyn.Path> outGlobalConstants;
 protected
   SCodeEnv.Frame empty_class_env;
   SCodeEnv.AvlTree cls_and_vars;
@@ -1954,10 +1940,9 @@ algorithm
   // Collect all constants in the top class, even if they're not used.
   // This makes it easier to write test cases.
   collect_constants := Absyn.pathEqual(inClassName, inAccumPath);
-  //collect_constants := false;
-  (outUsedElements, outNewEnv, outGlobalConstants) := 
+  (outUsedElements, outNewEnv) := 
     collectUsedElements2(inElements, inEnv, cls_and_vars, {}, {empty_class_env},
-      inClassName, inAccumPath, collect_constants, inGlobalConstants);
+      inClassName, inAccumPath, collect_constants);
   outNewEnv := removeUnusedRedeclares(outNewEnv, inEnv);
 end collectUsedElements;
 
@@ -1972,42 +1957,38 @@ protected function collectUsedElements2
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
   input Boolean inCollectConstants;
-  input list<Absyn.Path> inGlobalConstants;
   output list<SCode.Element> outAccumElements;
   output Env outAccumEnv;
-  output list<Absyn.Path> outGlobalConstants;
 algorithm
-  (outAccumElements, outAccumEnv, outGlobalConstants) := 
+  (outAccumElements, outAccumEnv) := 
   matchcontinue(inElements, inEnclosingEnv, inClsAndVars, inAccumElements,
-      inAccumEnv, inClassName, inAccumPath, inCollectConstants, inGlobalConstants)
+      inAccumEnv, inClassName, inAccumPath, inCollectConstants)
     local
       SCode.Element el;
       list<SCode.Element> rest_el, accum_el;
       Env accum_env;
-      list<Absyn.Path> consts;
 
     // Tail recursive function, reverse the result list.
-    case ({}, _, _, _, _, _, _, _, _) 
-      then (listReverse(inAccumElements), inAccumEnv, inGlobalConstants);
+    case ({}, _, _, _, _, _, _, _) 
+      then (listReverse(inAccumElements), inAccumEnv);
 
-    case (el :: rest_el, _, _, accum_el, accum_env, _, _, _, consts)
+    case (el :: rest_el, _, _, accum_el, accum_env, _, _, _)
       equation
-        (el, accum_env, consts) = collectUsedElement(el, inEnclosingEnv, inClsAndVars, 
-          accum_env, inClassName, inAccumPath, inCollectConstants, consts);
+        (el, accum_env) = collectUsedElement(el, inEnclosingEnv, inClsAndVars, 
+          accum_env, inClassName, inAccumPath, inCollectConstants);
         accum_el = el :: accum_el;
-        (accum_el, accum_env, consts) = collectUsedElements2(rest_el,
-          inEnclosingEnv, inClsAndVars, accum_el, accum_env, inClassName,
-            inAccumPath, inCollectConstants, consts);
+        (accum_el, accum_env) = collectUsedElements2(rest_el, inEnclosingEnv,
+          inClsAndVars, accum_el, accum_env, inClassName, inAccumPath, inCollectConstants);
       then
-        (accum_el, accum_env, consts);
+        (accum_el, accum_env);
 
-    case (_ :: rest_el, _, _, accum_el, accum_env, _, _, _, consts)
+    case (_ :: rest_el, _, _, accum_el, accum_env, _, _, _)
       equation
-        (accum_el, accum_env, consts) = collectUsedElements2(rest_el,
+        (accum_el, accum_env) = collectUsedElements2(rest_el,
           inEnclosingEnv, inClsAndVars, accum_el, accum_env, inClassName,
-          inAccumPath, inCollectConstants, consts);
+          inAccumPath, inCollectConstants);
       then
-        (accum_el, accum_env, consts);
+        (accum_el, accum_env);
 
   end matchcontinue;
 end collectUsedElements2;
@@ -2021,54 +2002,49 @@ protected function collectUsedElement
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
   input Boolean inCollectConstants;
-  input list<Absyn.Path> inAccumConsts;
   output SCode.Element outElement;
   output Env outAccumEnv;
-  output list<Absyn.Path> outAccumConsts;
 algorithm
-  (outElement, outAccumEnv, outAccumConsts) := 
+  (outElement, outAccumEnv) := 
   match(inElement, inEnclosingEnv, inClsAndVars, inAccumEnv, inClassName,
-      inAccumPath, inCollectConstants, inAccumConsts)
+      inAccumPath, inCollectConstants)
     local
       SCode.Ident name;
       SCode.Element cls;
       Env env;
       Item item;
       Absyn.Path cls_path, const_path;
-      list<Absyn.Path> consts;
 
     // A class definition, just use collectUsedClass.
-    case (SCode.CLASS(name = name), _, _, env, _, _, _, consts)
+    case (SCode.CLASS(name = name), _, _, env, _, _, _)
       equation
         cls_path = Absyn.joinPaths(inAccumPath, Absyn.IDENT(name));
-        (cls, env, consts) = 
+        (cls, env) = 
           collectUsedClass(inElement, inEnclosingEnv, inClsAndVars,
-            inClassName,env, cls_path, consts);
+            inClassName,env, cls_path);
       then
-        (cls, env, consts);
+        (cls, env);
   
     // A constant.
     case (SCode.COMPONENT(name = name, 
-      attributes = SCode.ATTR(variability = SCode.CONST())), _, _, _, _, _, _, _)
+      attributes = SCode.ATTR(variability = SCode.CONST())), _, _, _, _, _, _)
       equation
         item = SCodeEnv.avlTreeGet(inClsAndVars, name);
         true = inCollectConstants or SCodeEnv.isItemUsed(item);
         env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
-        const_path = Absyn.suffixPath(inAccumPath, name);
-        consts = List.consOnTrue(not inCollectConstants, const_path, inAccumConsts);
       then
-        (inElement, env, consts);
+        (inElement, env);
         
     // Class components are always collected, regardless of whether they are
     // used or not.
-    case (SCode.COMPONENT(name = name), _, _, _, _, _, _, _)
+    case (SCode.COMPONENT(name = name), _, _, _, _, _, _)
       equation
         item = SCodeEnv.newVarItem(inElement, true);
         env = SCodeEnv.extendEnvWithItem(item, inAccumEnv, name);
       then
-        (inElement, env, inAccumConsts);
+        (inElement, env);
 
-    else (inElement, inAccumEnv, inAccumConsts);
+    else (inElement, inAccumEnv);
 
   end match;
 end collectUsedElement;
