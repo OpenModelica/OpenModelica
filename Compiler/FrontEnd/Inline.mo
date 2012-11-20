@@ -1675,7 +1675,8 @@ algorithm
       then body;
     case(_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "Inline.getFunctionBody failed");
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("Inline.getFunctionBody failed for function: " +& Absyn.pathString(p));
         // Error.addMessage(Error.INTERNAL_ERROR, {"Inline.getFunctionBody failed"});
       then
         fail();

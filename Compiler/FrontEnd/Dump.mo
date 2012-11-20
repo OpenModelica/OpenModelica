@@ -882,19 +882,21 @@ algorithm
     case Absyn.R_CONNECTOR() equation Print.printBuf("Absyn.R_CONNECTOR"); then ();
     case Absyn.R_EXP_CONNECTOR() equation Print.printBuf("Absyn.R_EXP_CONNECTOR"); then ();
     case Absyn.R_TYPE() equation Print.printBuf("Absyn.R_TYPE"); then ();
-    case Absyn.R_UNIONTYPE() equation Print.printBuf("Absyn.R_UNIONTYPE"); then ();
     case Absyn.R_PACKAGE() equation Print.printBuf("Absyn.R_PACKAGE"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_NORMAL_FUNCTION)"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_OPERATOR_FUNCTION)"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_PARALLEL_FUNCTION)"); then ();
     case Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION()) equation Print.printBuf("Absyn.R_FUNCTION(Absyn.FR_KERNEL_FUNCTION)"); then ();
+    case Absyn.R_OPERATOR() equation Print.printBuf("Absyn.R_OPERATOR"); then ();
+    case Absyn.R_OPERATOR_RECORD() equation Print.printBuf("Absyn.R_OPERATOR_RECORD"); then ();
     case Absyn.R_ENUMERATION() equation Print.printBuf("Absyn.R_ENUMERATION"); then ();
     case Absyn.R_PREDEFINED_INTEGER() equation Print.printBuf("Absyn.R_PREDEFINED_INTEGER"); then ();
     case Absyn.R_PREDEFINED_REAL() equation Print.printBuf("Absyn.R_PREDEFINED_REAL"); then ();
     case Absyn.R_PREDEFINED_STRING() equation Print.printBuf("Absyn.R_PREDEFINED_STRING"); then ();
     case Absyn.R_PREDEFINED_BOOLEAN() equation Print.printBuf("Absyn.R_PREDEFINED_BOOLEAN"); then ();
     case Absyn.R_PREDEFINED_ENUMERATION() equation Print.printBuf("Absyn.R_PREDEFINED_ENUMERATION"); then ();
-    case _ then ();
+    case Absyn.R_UNIONTYPE() equation Print.printBuf("Absyn.R_UNIONTYPE"); then ();
+    case _ equation Print.printBuf("/* UNKNOWN RESTRICTION! FIXME! */"); then ();
   end matchcontinue;
 end printClassRestriction;
 

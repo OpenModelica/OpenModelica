@@ -595,10 +595,15 @@ algorithm
             modifications = smod,
             info = info), _, _, _, _, _, _)
       equation 
-        // Look up the class of the component.        
+        // Look up the class of the component.
+        // print("Looking up: " +& Absyn.pathString(tpath) +& " for component: " +& name +& "\n");
         (item, tpath, env) = SCodeLookup.lookupClassName(tpath, inEnv, info);
         tpath = SCodeEnv.mergePathWithEnvPath(tpath, env);
-        false = listMember(tpath, inInstStack);
+        false = List.applyAndFold1(inInstStack, boolOr, Absyn.pathEqual, tpath, false);
+        
+        // add it
+        ii = tpath::inInstStack;        
+        
         (item, env, previousItem) = SCodeEnv.resolveRedeclaredItem(item, env);
         
         prefix = InstUtil.addPrefix(name, {}, inPrefix);
@@ -614,7 +619,10 @@ algorithm
         redecls = SCodeFlattenRedeclare.extractRedeclaresFromModifier(smod);
         (item, env, replacements) = SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv(redecls, item, env, inEnv, inPrefix);
         
-        (islist, ii) = analyseItem(item, env, mod, prefix, emptyIScopes, inInstStack);
+        (islist, ii) = analyseItem(item, env, mod, prefix, emptyIScopes, ii);
+        
+        // remove it
+        ii = inInstStack;
         
         comp = inElement;
         comp = SCode.setComponentTypeSpec(comp, Absyn.TPATH(tpath, ad));
@@ -643,7 +651,8 @@ algorithm
             prefixes = SCode.PREFIXES(replaceablePrefix = _ /*SCode.REPLACEABLE(_)*/)), _, _, _, _, _, _)
       equation
         fullName = SCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
-        false = listMember(fullName, inInstStack);
+        // print("Looking up CLASS: " +& Absyn.pathString(fullName) +& "\n");
+        false = List.applyAndFold1(inInstStack, boolOr, Absyn.pathEqual, fullName, false);
         // add it
         ii = fullName::inInstStack;
         
@@ -653,7 +662,7 @@ algorithm
         (islist, ii) = analyseItem(item, env, inClassMod, inPrefix, {}, ii);
         
         // remove it
-        ii = inInstStack;        
+        ii = inInstStack;
         
         infos = mkInfos(listAppend(previousItem,inPreviousItem), {EI(inElement, env)});
         
