@@ -156,10 +156,9 @@ public function build
    class with the duplicate elements removed is returned along with the new
    symboltable."
   input Class inClass;
-  output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
-  (outClass, outSymbolTable) := match(inClass)
+  outSymbolTable := match(inClass)
     local
       SymbolTable st;
       Integer comp_size, bucket_size;
@@ -172,12 +171,12 @@ algorithm
         comp_size = InstUtil.countElementsInClass(inClass);
         bucket_size = Util.nextPrime(intDiv((comp_size * 4), 3)) + 1;
         st = createSized(bucket_size);
-        (cls, st) = addClass(inClass, st);
+        st = addClass(inClass, st);
         st = addAliases(inClass, st);
         // Add the special variable time to the symboltable.
         st = addUniqueComponent(Absyn.IDENT("time"), BUILTIN_TIME_COMP, st);
       then
-        (cls, st);
+        st;
 
   end match;
 end build;
@@ -250,13 +249,12 @@ algorithm
 end get;
 
 public function addClass
-  "Adds the elements of a given class to the symboltable."
+  "Adds the components of a given class to the symboltable."
   input Class inClass;
   input SymbolTable inSymbolTable;
-  output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
-  (outClass, outSymbolTable) := match(inClass, inSymbolTable)
+  outSymbolTable := match(inClass, inSymbolTable)
     local
       list<Element> comps;
       list<Equation> eq, ieq;
@@ -264,15 +262,12 @@ algorithm
       SymbolTable st;
       Absyn.Path name;
 
-    // A basic type doesn't have any elements, nothing to add.
+    // A basic type doesn't have any components, nothing to add.
     case (InstTypes.BASIC_TYPE(name), st) then (inClass, st);
 
-    // A complex class, add it's elements to the symboltable.
-    case (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st)
-      equation
-        (comps, st) = addElements(comps, st);
-      then
-        (InstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st);
+    // A complex class, add its components to the symboltable.
+    case (InstTypes.COMPLEX_CLASS(components = comps), st)
+      then addElements(comps, st);
 
   end match;
 end addClass;
@@ -283,43 +278,10 @@ public function addElements
    removed, as well as the updated symboltable."
   input list<Element> inElements;
   input SymbolTable inSymbolTable;
-  output list<Element> outElements;
   output SymbolTable outSymbolTable;
 algorithm
-  (outElements, outSymbolTable) :=
-    addElements2(inElements, inSymbolTable, {});
+  outSymbolTable := List.fold(inElements, addElement, inSymbolTable);
 end addElements;
-
-protected function addElements2
-  "Tail-recursive implementation of addElements."
-  input list<Element> inElements;
-  input SymbolTable inSymbolTable;
-  input list<Element> inAccumEl;
-  output list<Element> outElements;
-  output SymbolTable outSymbolTable;
-algorithm
-  (outElements, outSymbolTable) := match(inElements, inSymbolTable, inAccumEl)
-    local
-      Element el;
-      list<Element> rest_el, accum_el;
-      Boolean added;
-      SymbolTable st;
-
-    case ({}, st, _) then (inAccumEl, st);
-
-    case (el :: rest_el, st, _)
-      equation
-        // Try to add the element to the symboltable.
-        (el, st) = addElement(el, st);
-        // Add the element to the accumulation list if it was added.
-        accum_el = el :: inAccumEl;
-        // Add the rest of the elements.
-        (rest_el, st) = addElements2(rest_el, st, accum_el);
-      then
-        (rest_el, st);
-
-  end match;
-end addElements2;
 
 public function addElement
   "Adds an element to the symboltable. Returns the element with duplicate
@@ -327,31 +289,25 @@ public function addElement
    tells if the element was added to the symboltable or not."
   input Element inElement;
   input SymbolTable inSymbolTable;
-  output Element outElement;
   output SymbolTable outSymbolTable;
 algorithm
-  (outElement, outSymbolTable) := match(inElement, inSymbolTable)
+  outSymbolTable := match(inElement, inSymbolTable)
     local
       Component comp;
       Class cls;
       SymbolTable st;
-      Absyn.Path bc;
-      DAE.Type ty;
 
     case (InstTypes.ELEMENT(comp, cls), st)
       equation
         // Add the component.
         st = addComponent(comp, st);
         // Add the component's class.
-        (cls, st) = addClass(cls, st);
+        st = addClass(cls, st);
       then
-        (InstTypes.ELEMENT(comp, cls), st);
+        st;
 
     case (InstTypes.CONDITIONAL_ELEMENT(comp), st)
-      equation
-        st = addComponent(comp, st);
-      then
-        (InstTypes.CONDITIONAL_ELEMENT(comp), st);
+      then addComponent(comp, st);
 
   end match;
 end addElement;
@@ -615,11 +571,10 @@ public function addInstCondElement
    symboltable and a boolean which tells if the element was added or not."
   input Element inElement;
   input SymbolTable inSymbolTable;
-  output Element outElement;
   output SymbolTable outSymbolTable;
   output Boolean outAdded;
 algorithm
-  (outElement, outSymbolTable, outAdded) := match(inElement, inSymbolTable)
+  (outSymbolTable, outAdded) := match(inElement, inSymbolTable)
     local
       Component comp;
       Class cls;
@@ -638,7 +593,7 @@ algorithm
         // Add the element's class if the component was added.
         (cls, st) = addClassOnTrue(cls, st, added);
       then
-        (InstTypes.ELEMENT(comp, cls), st, added);
+        (st, added);
 
   end match;
 end addInstCondElement;
@@ -673,9 +628,13 @@ algorithm
     // component. This means that it's already been updated due to a duplicate
     // element from an extends. In that case we should make sure that the new
     // component is equivalent to the old one, and return the symboltable
-    // unchagned.
+    // unchanged.
     case (_, _, SOME(comp), st)
       equation
+        /*********************************************************************/
+        // TODO: Check if this is still needed, since we check duplicate
+        // elements in SCodeInst.instClassItem now.
+        /*********************************************************************/
         //checkEqualComponents
       then
         (st, false);

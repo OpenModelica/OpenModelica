@@ -133,10 +133,14 @@ algorithm
         System.startTimer();
         name = Absyn.pathLastIdent(inClassPath);
 
-        // ---------------- Instantiation ---------------
+        /*********************************************************************/
+        /* ------------------------- INSTANTIATION ------------------------- */
+        /*********************************************************************/
+
         // Look up the class to instantiate in the environment.
         (item, path, env) = 
           SCodeLookup.lookupClassName(inClassPath, inEnv, Absyn.dummyInfo);
+
         // Instantiate that class.
         functions = HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize);
         constants = InstSymbolTable.create();
@@ -148,11 +152,16 @@ algorithm
         
         //print(InstDump.modelStr(name, cls)); print("\n");
 
-        // ------------------- Typing -------------------
+        /*********************************************************************/
+        /* ----------------------------- TYPING ---------------------------- */
+        /*********************************************************************/
+
         // Build the symboltable to use for typing.
-        (cls, symtab) = InstSymbolTable.build(cls);
+        symtab = InstSymbolTable.build(cls);
+        // Add the package constants found during instantiation.
         symtab = InstSymbolTable.merge(symtab, constants);
-        (_, symtab) = InstSymbolTable.addClass(builtin_el, symtab);
+        // Add any builtin elements we might need, like StateSelect.
+        symtab = InstSymbolTable.addClass(builtin_el, symtab);
 
         // Mark structural parameters.
         (cls, symtab) = assignParamTypes(cls, symtab);
@@ -179,6 +188,7 @@ algorithm
         // Type all equation and algorithm sections in the class.
         (cls, conn) = Typing.typeSections(cls, symtab);
         
+        // Generate connect equations.
         flows = ConnectUtil2.collectFlowConnectors(cls);
         dae_conn = ConnectEquations.generateEquations(conn, flows);
 
@@ -191,6 +201,10 @@ algorithm
         //print("\n");
 
         //print("SCodeInst took " +& realString(System.getTimerIntervalTime()) +& " seconds.\n");
+
+        /*********************************************************************/
+        /* --------------------------- EXPANSION --------------------------- */
+        /*********************************************************************/
 
         // Expand the instantiated and typed class into scalar components,
         // equations and algorithms.
@@ -3842,7 +3856,7 @@ algorithm
         sel = SCode.removeComponentCondition(inElement);
         // Instantiate the element and update the symbol table.
         (el, globals) = instElement(sel, inMod, inPrefixes, inEnv, inPrefix, INST_ALL(), globals);
-        (el, st, added) = InstSymbolTable.addInstCondElement(el, st);
+        (st, added) = InstSymbolTable.addInstCondElement(el, st);
         // Recursively instantiate any conditional components in this element.
         (oel, st, globals) = instConditionalElementOnTrue(added, el, st, globals);
       then
