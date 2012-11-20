@@ -149,6 +149,16 @@ algorithm
         Connect.SETS(sets = Connect.SET_TRIE_NODE(cref = DAE.WILD())))
       then inChildSets;
 
+    // Check if the node already exists. In that case it's probably due to
+    // multiple inheritance and we should ignore it.
+    case (Connect.SETS(sets = Connect.SET_TRIE_NODE(nodes = nodes)),
+        Connect.SETS(sets = node))
+      equation
+        name = setTrieNodeName(node);
+        _ = setTrieGetNode(name, nodes);
+      then
+        inParentSets;
+
     // In the normal case we add the trie on the child sets to the parent, and
     // also merge their lists of connection crefs and outer connects.
     case (Connect.SETS(Connect.SET_TRIE_NODE(name = name, cref = cr,
@@ -1252,6 +1262,21 @@ algorithm
 
   end match;
 end setTrieNewNode;
+
+protected function setTrieNodeName
+  input SetTrieNode inNode;
+  output String outName;
+algorithm
+  outName := match(inNode)
+    local
+      String name;
+
+    case Connect.SET_TRIE_NODE(name = name) then name;
+    case Connect.SET_TRIE_LEAF(name = name) then name;
+    case Connect.SET_TRIE_DELETED(name = name) then name;
+
+  end match;
+end setTrieNodeName;
 
 protected function mergeSets
   "Merges two sets."

@@ -682,24 +682,27 @@ end expandConnector2;
 public function getConnectorFace
   "Determines the face of a connector element, i.e. inside or outside. A
    connector element is outside if the first identifier in the cref is a
-   connector, otherwise inside. This function takes the optional component
-   returned from lookupConnectorCref instead of a cref though."
-  input Option<Component> inPrefixComponent;
+   connector, otherwise inside."
+  input DAE.ComponentRef inCref;
+  input Component inComponent;
   output Face outFace;
 algorithm
-  outFace := match(inPrefixComponent)
+  outFace := match(inCref, inComponent)
     local
       Component comp;
       Boolean is_conn;
       Face face;
 
-    // No prefix component means a simple identifier, i.e. the connector element
-    // itself is the first identifier.
-    case NONE() then Connect2.OUTSIDE();
+    // Non-qualified connector crefs are always outside.
+    case (DAE.CREF_IDENT(ident = _), _) then Connect2.OUTSIDE();
 
-    // A prefix component, face depends on if it's a connector or not.
-    case SOME(comp)
+    // Qualified connector crefs are allowed to be on two forms: m.c or
+    // c1.c2.c3..., where m is a non-connector component and cN a connector.
+    // To determine the face of a connector we only need to look at the parent
+    // of the given connector element.
+    case (DAE.CREF_QUAL(ident = _), _)
       equation
+        SOME(comp) = InstUtil.getComponentParent(inComponent);
         is_conn = InstUtil.isConnectorComponent(comp);
         // Connector => outside, not connector => inside.
         face = Util.if_(is_conn, Connect2.OUTSIDE(), Connect2.INSIDE());
@@ -708,7 +711,7 @@ algorithm
 
   end match;
 end getConnectorFace;
-
+        
 public function isConstOrComplexConnector
   input Connector inConnector;
   output Boolean outIsConstOrComplex;

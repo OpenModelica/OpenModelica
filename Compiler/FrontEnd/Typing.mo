@@ -1535,7 +1535,7 @@ algorithm
       equation
         (cref, comp, pre_comp) =
           lookupConnectorCref(inCref, inPrefix, inSymbolTable, inInfo);
-        (cref, face, is_deleted) = typeConnectorCref2(cref, comp, pre_comp, inInfo);
+        (cref, face, is_deleted) = typeConnectorCref2(cref, inCref, comp, pre_comp, inInfo);
       then
         (cref, face, comp, is_deleted);
   
@@ -1544,6 +1544,7 @@ end typeConnectorCref;
 
 protected function typeConnectorCref2
   input DAE.ComponentRef inCref;
+  input DAE.ComponentRef inUnprefixedCref;
   input Option<Component> inComponent;
   input Option<Component> inPrefixComponent;
   input Absyn.Info inInfo;
@@ -1552,7 +1553,7 @@ protected function typeConnectorCref2
   output Boolean outIsDeleted;
 algorithm
   (outCref, outFace, outIsDeleted) :=
-  match(inCref, inComponent, inPrefixComponent, inInfo)
+  match(inCref, inUnprefixedCref, inComponent, inPrefixComponent, inInfo)
     local
       Face face;
       Component comp;
@@ -1562,16 +1563,16 @@ algorithm
       ConnectorType cty;
 
     // A connector that is part of a deleted conditional component.
-    case (_, NONE(), NONE(), _)
+    case (_, _, NONE(), NONE(), _)
       then (inCref, Connect2.NO_FACE(), true);
 
     // A connector which is itself deleted.
-    case (_, SOME(InstTypes.DELETED_COMPONENT(_)), _, _)
+    case (_, _, SOME(InstTypes.DELETED_COMPONENT(_)), _, _)
       then (inCref, Connect2.NO_FACE(), true);
 
     // A component that should be added to an expandable connector. It can only
     // be outside, since only connectors on the form m.c are inside.
-    case (_, NONE(), SOME(comp), _)
+    case (_, _, NONE(), SOME(comp), _)
       equation
         /* ------------------------------------------------------------------*/
         // TODO: This can be made more efficient by just typing everything but
@@ -1584,13 +1585,13 @@ algorithm
         (cref, Connect2.OUTSIDE(), false);
 
     // A normal connector.
-    case (cref, SOME(comp), _, _)
+    case (cref, _, SOME(comp), _, _)
       equation
         /* ------------------------------------------------------------------*/
         // TODO: Resolve outer references here?
         /* ------------------------------------------------------------------*/
         ConnectCheck.checkComponentIsConnector(comp, inPrefixComponent, inCref, inInfo);
-        face = ConnectUtil2.getConnectorFace(inPrefixComponent);
+        face = ConnectUtil2.getConnectorFace(inUnprefixedCref, comp);
         cref = InstUtil.typeCrefWithComponent(cref, comp);
       then
         (cref, face, false);
@@ -1652,9 +1653,8 @@ algorithm
     case (_, _)
       equation
         comp = InstSymbolTable.lookupCref(inCref, inSymbolTable);
-        opt_pre_comp = InstUtil.getComponentParent(comp);
       then
-        (SOME(comp), opt_pre_comp);
+        (SOME(comp), NONE());
 
     // If the cref is qualified but we couldn't find it, it might be part of a
     // deleted conditional component (i.e. it hasn't been instantiated). It
