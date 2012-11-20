@@ -1912,6 +1912,15 @@ int SystemImpl__intRand(int n)
   return r % n;
 }
 
+char* alloc_locale_str(const char *locale, int llen, const char *suffix, int slen)
+{
+  char *loc = malloc(sizeof(char) * (llen + slen + 1));
+  assert(loc != NULL);
+  strncpy(loc, locale, llen);
+  strncpy(loc + llen, suffix, slen + 1);
+  return loc;
+}
+
 void SystemImpl__gettextInit(const char *locale)
 {
 #if defined(_MSC_VER)
@@ -1935,12 +1944,12 @@ void SystemImpl__gettextInit(const char *locale)
   }
 #else
   /* We might get sent sv_SE when only sv_SE.utf8 exists, etc */
-  char *locale2 = NULL;
-  char *locale3 = NULL;
+  int locale_len = strlen(locale);
+  char *locale2 = alloc_locale_str(locale, locale_len, ".utf8", 5);
+  char *locale3 = alloc_locale_str(locale, locale_len, ".UTF-8", 6);
   char *old_ctype = strdup(setlocale(LC_CTYPE, ""));
   int old_ctype_is_utf8 = strcmp(nl_langinfo(CODESET), "UTF-8") == 0;
-  assert(asprintf(&locale2, "%s.utf8", locale) > 0);
-  assert(asprintf(&locale3, "%s.UTF-8", locale) > 0);
+
   int res = *locale == 0 ? setlocale(LC_MESSAGES, "") && setlocale(LC_CTYPE, ""):
     (setlocale(LC_MESSAGES, locale3) && setlocale(LC_CTYPE, locale3))  ||
     (setlocale(LC_MESSAGES, locale2) && setlocale(LC_CTYPE, locale2)) ||
