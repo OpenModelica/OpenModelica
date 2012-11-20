@@ -1780,7 +1780,6 @@ case FUNCTION(__) then
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
   let retVar = if outVars then tempDecl(retType, &varDecls /*BUFD*/)
-  let stateVar = if not acceptMetaModelicaGrammar() then tempDecl("state", &varDecls /*BUFD*/)
   let _ = (variableDeclarations |> var hasindex i1 fromindex 1 =>
       varInit(var, "", i1, &varDecls /*BUFD*/, &varInits /*BUFC*/)
     )
@@ -1799,24 +1798,12 @@ case FUNCTION(__) then
   <<
   <%retType%> _<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
   {
-  
-    /* GC: save roots mark when you enter the function */    
-    <%if acceptMetaModelicaGrammar() 
-      then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("_<%fname%>");'%>  
-    /* GC: adding inputs as roots! */
-    <%if acceptMetaModelicaGrammar() then '<%addRootsInputs%>'%>
-    
-    /* GC: do garbage collection */
-    <%if acceptMetaModelicaGrammar() then 'mmc_GC_collect(mmc_GC_local_state);'%>
-      
     /* arguments */
     <%funArgs%>
     /* locals */
     <%varDecls%>
     /* out inits */
     <%outVarInits%>
-    
-    <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
     
     /* var inits */
     <%varInits%>
@@ -1826,14 +1813,9 @@ case FUNCTION(__) then
     _return:
     /* out var copy */
     <%outVarCopy%>    
-    <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
     /* out var assign */
     <%outVarAssign%>    
     
-    /* GC: pop the mark! */
-    <%if acceptMetaModelicaGrammar() 
-      then 'mmc_GC_undo_roots_state(mmc_GC_local_state);'%>
-
     /* return the outs */
     return <%if outVars then ' <%retVar%>' %>;
   }
