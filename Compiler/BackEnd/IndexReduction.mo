@@ -1426,18 +1426,18 @@ protected function processComps3New
   author: Frenkel TUD 2012-11
   process all strong connected components of the system and collect the 
   derived equations for dummy state selection"
-  input Integer varSize;
-  input Integer eqnsSize;
-  input BackendDAE.EqSystem subsyst;
-  input BackendDAE.AdjacencyMatrixEnhanced me;
-  input BackendDAE.AdjacencyMatrixTEnhanced meT;   
-  input array<list<Integer>> mapEqnIncRow1;
-  input array<Integer> mapIncRowEqn1;    
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Shared ishared;
-  input array<Integer> vec2;
+  input Integer inVarSize;
+  input Integer inEqnsSize;
+  input BackendDAE.EqSystem inSubsyst;
+  input BackendDAE.AdjacencyMatrixEnhanced inMe;
+  input BackendDAE.AdjacencyMatrixTEnhanced inMeT;   
+  input array<list<Integer>> inMapEqnIncRow1;
+  input array<Integer> inMapIncRowEqn1;    
+  input BackendDAE.EqSystem inIsyst;
+  input BackendDAE.Shared inIshared;
+  input array<Integer> inVec2;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  input list<BackendDAE.Var> hov; 
+  input list<BackendDAE.Var> inHov; 
   input list<DAE.ComponentRef> inDummyStates;
   output list<BackendDAE.Var> outDummyVars;
   output list<DAE.ComponentRef> outDummyStates; 
@@ -1445,7 +1445,7 @@ protected function processComps3New
   output BackendDAE.Shared oshared;  
 algorithm
   (outDummyVars,outDummyStates,osyst,oshared) := 
-  matchcontinue(varSize,eqnsSize,subsyst,me,meT,mapEqnIncRow1,mapIncRowEqn1,isyst,ishared,vec2,inArg,hov,inDummyStates)
+  matchcontinue(inVarSize,inEqnsSize,inSubsyst,inMe,inMeT,inMapEqnIncRow1,inMapIncRowEqn1,inIsyst,inIshared,inVec2,inArg,inHov,inDummyStates)
     local 
       BackendDAE.StateOrder so;
       BackendDAE.ConstraintEquations orgEqnsLst;
@@ -1467,22 +1467,23 @@ algorithm
       list<tuple<DAE.ComponentRef, Integer>> states,dstates; 
       list<Integer> unassigned,assigned;
       list<BackendDAE.Var> vlst;
+    
     case (_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_)
       equation
-        m = incidenceMatrixfromEnhanced2(me,vars);
-        mT = BackendDAEUtil.transposeMatrix(m,varSize);
+        m = incidenceMatrixfromEnhanced2(inMe,vars);
+        mT = BackendDAEUtil.transposeMatrix(m,inVarSize);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING()));
-        Matching.matchingExternalsetIncidenceMatrix(eqnsSize,varSize,mT);
-        BackendDAEEXT.matching(eqnsSize,varSize,3,-1,1.0,1);
-        vec1 = arrayCreate(eqnsSize,-1);
-        vec2 = arrayCreate(varSize,-1);
+        Matching.matchingExternalsetIncidenceMatrix(inEqnsSize,inVarSize,mT);
+        BackendDAEEXT.matching(inEqnsSize,inVarSize,3,-1,1.0,1);
+        vec1 = arrayCreate(inEqnsSize,-1);
+        vec2 = arrayCreate(inVarSize,-1);
         BackendDAEEXT.getAssignment(vec2,vec1);         
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching,vec1);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching,vec2);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec1);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec2);
 
-        (dstates,states) = checkAssignment(1,varSize,vec2,vars,{},{});
-        unassigned = Matching.getUnassigned(eqnsSize, vec1, {});
-        assigned = Matching.getAssigned(eqnsSize, vec1, {});
+        (dstates,states) = checkAssignment(1,inVarSize,vec2,vars,{},{});
+        unassigned = Matching.getUnassigned(inEqnsSize, vec1, {});
+        assigned = Matching.getAssigned(inEqnsSize, vec1, {});
         
         Debug.fcall(Flags.BLT_DUMP, print, ("dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));     
@@ -1496,9 +1497,10 @@ algorithm
         vlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
         dummyStates = List.map(vlst,BackendVariable.varCref);
         dummyStates = listAppend(dummyStates,inDummyStates);        
-//        (hov1,dummystates,lov,syst,shared) = selectDummyDerivatives2(dstates,states,unassigned,assigned,vec1,vec2,me,meT,iMapEqnIncRow,iMapIncRowEqn,vars,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov);
+        // (hov1,dummystates,lov,syst,shared) = selectDummyDerivatives2(dstates,states,unassigned,assigned,vec1,vec2,me,meT,iMapEqnIncRow,iMapIncRowEqn,vars,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov);
       then
-        (vlst,dummyStates,isyst,ishared);
+        (vlst,dummyStates,inIsyst,inIshared);
+  
   end matchcontinue;
 end processComps3New;
 
