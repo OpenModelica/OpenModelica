@@ -1456,9 +1456,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;
-      BackendDAE.AdjacencyMatrixEnhanced me;
-      BackendDAE.AdjacencyMatrixTEnhanced meT;      
+      BackendDAE.Shared shared;     
       BackendDAE.Variables hov1,lov;
       list<DAE.ComponentRef> dummystates;
       BackendDAE.IncidenceMatrix m;
