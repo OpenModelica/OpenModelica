@@ -615,7 +615,8 @@ algorithm
       then
         (accum_el, cse, globals);
 
-    case ({}, _, {}, _, _, _, _, cse, globals) then (inAccumEl, cse, globals);
+    case ({}, _, {}, _, _, _, _, cse, globals)
+      then (listReverse(inAccumEl), cse, globals);
 
     // instElementList takes a list of Extends, which contains the extends
     // information from the environment. We should have one Extends element for
