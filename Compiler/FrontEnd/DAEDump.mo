@@ -3951,7 +3951,7 @@ protected function connectsStr
   input list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> inLst;
   output list<String> outStr;
 algorithm
-  outstr := matchcontinue(inLst)
+  outStr := matchcontinue(inLst)
     local
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> rest;
       list<String> slst;
