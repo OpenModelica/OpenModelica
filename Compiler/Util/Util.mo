@@ -540,6 +540,7 @@ protected function arrayMapHelp1 "help function to arrayMap"
   output array<Type_b> outArray;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
+  replaceable type Type_arg1 subtypeof Any;
   partial function FuncType
     input Type_a x;
     input Type_arg1 arg1;
