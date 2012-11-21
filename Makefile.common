@@ -84,7 +84,6 @@ runtimeCPP:
 
 runtimeCPPinstall: 
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) install
-	(time $(MAKE) -C testsuite/openmodelica/cppruntime -f Makefile)
 
 
 testlibrariemsl31cpp:
