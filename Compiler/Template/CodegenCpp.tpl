@@ -6866,7 +6866,7 @@ case "A" then
           {
              _jacobian = SparseMatrix(<%index_%>,<%indexColumn%>,<%sp_size_index%>);
              _jac_y =  ublas::zero_vector<double>(<%index_%>);
-             _jac_tmp =  ublas::zero_vector<double>(<%index_%>);
+             _jac_tmp =  ublas::zero_vector<double>(<%tmpvarsSize%>);
              _jac_x =  ublas::zero_vector<double>(<%index_%>);
             
            }
@@ -7007,6 +7007,8 @@ end variableDefinitionsJacobians;
 template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColumn> jacobianColumn, list<SimVar> seedVars, String name)
  "Generates Matrixes for Linear Model."
 ::=
+   match name
+   case "A" then
   let seedVarsResult = (seedVars |> var hasindex index0 =>
     jacobianVarDefine(var, "jacobianVarsSeed", indexJacobian, index0,name)
     ;separator="\n";empty)
@@ -7014,6 +7016,7 @@ template variableDefinitionsJacobians2(Integer indexJacobian, list<JacobianColum
       (vars |> var hasindex index0 => jacobianVarDefine(var, "jacobianVars", indexJacobian, index0,name)
       ;separator="\n";empty)
     ;separator="\n\n")
+ 
 <<
 <%seedVarsResult%>
 <%columnVarsResult%>
@@ -7063,6 +7066,8 @@ end jacobianVarsSeedDefine;
 template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, String matrixName) "template variableDefinitionsJacobians2
   Generates Matrixes for Linear Model."
 ::=
+match matrixName
+case "A" then
   let diffVarsResult = (diffVars |> var as SIMVAR(name=name) hasindex index0 =>
      '#define <%cref(name)%><%matrixName%>$indexdiff <%index0%>'
     ;separator="\n")
@@ -7071,6 +7076,7 @@ template defineSparseIndexes(list<SimVar> diffVars, list<SimVar> diffedVars, Str
   /* <%matrixName%> sparse indexes */
   <%diffVarsResult%>
   >>
+  else " "
 end defineSparseIndexes;
  
     
