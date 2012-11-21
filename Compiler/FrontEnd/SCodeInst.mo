@@ -2844,18 +2844,7 @@ algorithm
       Absyn.Info info;
       Element el;
       list<Element> rest_el;
-      list<Element> inputs, outputs, locals, els;
-
-    case ({}, _, _, _) 
-      then (listReverse(inAccumInputs), listReverse(inAccumOutputs), listReverse(inAccumLocals));
-
-    // ignore packages! Modelica.Media.IdealGases.Common.SingleGasNasa.T_h contains package Internal.
-    case ((el as InstTypes.ELEMENT(component = InstTypes.PACKAGE(name = name))) :: rest_el,
-        inputs, outputs, locals)
-      equation
-        (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
-      then
-        (inputs, outputs, locals);
+      list<Element> inputs, outputs, locals;
 
     case ((el as InstTypes.ELEMENT(component = InstTypes.UNTYPED_COMPONENT(
         name = name, baseType = ty, prefixes = prefs, info = info))) :: rest_el,
@@ -2868,12 +2857,16 @@ algorithm
       then
         (inputs, outputs, locals);
 
-    // ignore CONDITIONAL components
-    case ((el as InstTypes.CONDITIONAL_ELEMENT(component = _)) :: rest_el, inputs, outputs, locals)
+    // Ignore any elements which are not untyped components.
+    case (_ :: rest_el, inputs, outputs, locals)
       equation
         (inputs, outputs, locals) = getFunctionParameters2(rest_el, inputs, outputs, locals);
       then
         (inputs, outputs, locals);
+
+    case ({}, _, _, _) 
+      then (listReverse(inAccumInputs), listReverse(inAccumOutputs), listReverse(inAccumLocals));
+
   end match;
 end getFunctionParameters2;
 
