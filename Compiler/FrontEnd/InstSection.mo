@@ -487,6 +487,7 @@ algorithm
         (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl, info);
          
         (cache,e1_1,e2_1,prop1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,prop2,impl,pre,info);
+        
         (cache,e1_2) = PrefixUtil.prefixExp(cache,env, ih, e1_1, pre);
         (cache,e2_2) = PrefixUtil.prefixExp(cache,env, ih, e2_1, pre);
         
@@ -3257,7 +3258,7 @@ algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inSets,inPrefix,inComponentRefLeft,inComponentRefRight,inBoolean,inGraph,info)
     local
-      DAE.ComponentRef c1_1,c2_1,c1_2,c2_2;
+      DAE.ComponentRef c1_1,c2_1,c1_2,c2_2, c1p,c2p;
       DAE.Type t1,t2;
       DAE.Properties prop1,prop2;
       DAE.Attributes attr1,attr2,attr;
@@ -3514,7 +3515,9 @@ algorithm
 
         // adrpo: TODO! FIXME! check if is OK
         state = ClassInf.CONNECTOR(Absyn.IDENT("expandable connector"), true);
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
+        (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2_2);
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
         // declare the added component in the DAE!
         (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         daeExpandable = Inst.daeDeclare(c1_2, state, ty1, 
@@ -4052,7 +4055,7 @@ algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph) :=
   matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inConnectorType,io1,io2,inGraph,info)
     local
-      DAE.ComponentRef c1_1,c2_1,c1,c2;
+      DAE.ComponentRef c1_1,c2_1,c1,c2,c1p,c2p;
       Connect.Sets sets_1,sets;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -4137,11 +4140,11 @@ algorithm
 
         // TODO: FIXME!
         // adrpo 2012-10-14: should we not prefix here??!!
-        //(cache,c1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
-        //(cache,c2) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1,c2)), NONE());
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
         sets_1 = ConnectUtil.addConnection(sets, c1, f1, c2, f2, inConnectorType, source);
       then
@@ -4178,7 +4181,9 @@ algorithm
         true = List.isEqualOnTrue(dims, dims2, Expression.dimensionsKnownAndEqual);
 
         // set the source of this element
-        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1,c2)), NONE());
+        (cache,c1p) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
+        (cache,c2p) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1p,c2p)), NONE());
 
         sets_1 = ConnectUtil.addArrayConnection(sets, c1, f1, c2, f2, source, ct);
       then

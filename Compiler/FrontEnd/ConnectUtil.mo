@@ -695,7 +695,7 @@ algorithm
       equation
         sc = sc + 1;
         src = DAEUtil.addAdditionalComment(inSource, " add inside flow(" +&
-                PrefixUtil.printPrefixStr(inPrefix) +& "." +&
+                PrefixUtil.printPrefixStr(inPrefix) +& "/" +&
                 ComponentReference.printComponentRefStr(inCref) +&  
                 ")");
         e = newElement(inCref, Connect.INSIDE(), Connect.FLOW(), src, sc);

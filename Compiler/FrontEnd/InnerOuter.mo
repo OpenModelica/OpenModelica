@@ -619,15 +619,17 @@ public function retrieveOuterConnections
   input Prefix.Prefix inPrefix;
   input Connect.Sets inSets;
   input Boolean inTopCall;
+  input ConnectionGraph.ConnectionGraph inCGraph;
   output Connect.Sets outSets;
   output list<Connect.OuterConnect> outInnerOuterConnects;
+  output ConnectionGraph.ConnectionGraph outCGraph;
 protected
   list<Connect.OuterConnect> oc;
   Connect.Sets csets;
 algorithm
   Connect.SETS(outerConnects = oc) := inSets;
-  (oc, csets, outInnerOuterConnects) :=
-    retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, oc, inSets, inTopCall);
+  (oc, csets, outInnerOuterConnects, outCGraph) :=
+    retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, oc, inSets, inTopCall, inCGraph);
   outSets := ConnectUtil.setOuterConnects(csets, oc);
 end retrieveOuterConnections;
 
@@ -675,12 +677,14 @@ protected function retrieveOuterConnections2
   input list<Connect.OuterConnect> inOuterConnects;
   input Connect.Sets inSets;
   input Boolean inTopCall;
+  input ConnectionGraph.ConnectionGraph inCGraph;
   output list<Connect.OuterConnect> outOuterConnects;
   output Connect.Sets outSets;
   output list<Connect.OuterConnect> outInnerOuterConnects;
+  output ConnectionGraph.ConnectionGraph outCGraph;
 algorithm
-  (outOuterConnects, outSets, outInnerOuterConnects) :=
-  matchcontinue(inCache, inEnv, inIH, inPrefix, inOuterConnects, inSets, inTopCall)
+  (outOuterConnects, outSets, outInnerOuterConnects, outCGraph) :=
+  matchcontinue(inCache, inEnv, inIH, inPrefix, inOuterConnects, inSets, inTopCall, inCGraph)
     local
       DAE.ComponentRef cr1, cr2;
       Absyn.InnerOuter io1, io2;
@@ -692,13 +696,14 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       Absyn.Info info;
       Connect.Sets sets;
+      ConnectionGraph.ConnectionGraph graph;
 
     // handle empty
-    case (_, _, _, _, {}, _, _) then (inOuterConnects, inSets, {});
+    case (_, _, _, _, {}, _, _, _) then (inOuterConnects, inSets, {}, inCGraph);
 
     // an inner only outer connect  
     case(_, _, _, _, Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2,
-        source as DAE.SOURCE(info = info)) :: rest_oc, sets, _)
+        source as DAE.SOURCE(info = info)) :: rest_oc, sets, _, graph)
       equation
         (inner1, outer1) = lookupVarInnerOuterAttr(inCache, inEnv, inIH, cr1, cr2);
         
@@ -712,21 +717,21 @@ algorithm
         (sets, added) = ConnectUtil.addOuterConnectToSets(cr1, cr2, io1, io2, f1, f2, sets, info);
         
         // if no connection set available (added = false), create new one
-        sets = addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
-          added, cr1, io1, f1, cr2, io2, f2, info);
+        (sets, graph) = addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
+          added, cr1, io1, f1, cr2, io2, f2, info, graph);
         
-        (rest_oc, sets, ioc) =
-          retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, inTopCall);
+        (rest_oc, sets, ioc, graph) =
+          retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, inTopCall, graph);
         
         // if is also outer, then keep it also in the outer connects 
         rest_oc = Util.if_(outer1, 
           Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2, source) :: rest_oc, rest_oc);
       then
-        (rest_oc, sets, ioc);
+        (rest_oc, sets, ioc, graph);
     
     // this case is for innerouter declarations, since we do not have them in environment we need to treat them in a special way 
     case(_, _, _, _, Connect.OUTERCONNECT(scope, cr1, io1, f1, cr2, io2, f2,
-        source as DAE.SOURCE(info = info)) :: rest_oc, sets, true)
+        source as DAE.SOURCE(info = info)) :: rest_oc, sets, true, graph)
       equation
         (inner1, outer1) = innerOuterBooleans(io1);
         (inner2, outer2) = innerOuterBooleans(io2);
@@ -738,20 +743,20 @@ algorithm
 
         (sets, added) = ConnectUtil.addOuterConnectToSets(cr1, cr2, io1, io2, f1, f2, sets, info);
         // If no connection set available (added = false), create new one
-        sets = addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
-          added, cr1, io1, f1, cr2, io2, f2, info);
-        (rest_oc, sets, ioc) =
-          retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, true);
+        (sets, graph) = addOuterConnectIfEmpty(inCache, inEnv, inIH, inPrefix, sets,
+          added, cr1, io1, f1, cr2, io2, f2, info, graph);
+        (rest_oc, sets, ioc, graph) =
+          retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, true, graph);
       then
-        (rest_oc, sets, ioc);
+        (rest_oc, sets, ioc, graph);
     
     // just keep the outer connects the same if we don't find them in the same scope   
-    case(_, _, _, _, oc :: rest_oc, sets, _)
+    case(_, _, _, _, oc :: rest_oc, sets, _, graph)
       equation
-        (rest_oc, sets, ioc) =
-          retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, inTopCall);
+        (rest_oc, sets, ioc, graph) =
+          retrieveOuterConnections2(inCache, inEnv, inIH, inPrefix, rest_oc, sets, inTopCall, graph);
       then
-        (oc :: rest_oc, sets, ioc);
+        (oc :: rest_oc, sets, ioc, graph);
   end matchcontinue;
 end retrieveOuterConnections2;
 
@@ -790,9 +795,11 @@ protected function addOuterConnectIfEmpty
   input Absyn.InnerOuter iio2;
   input Connect.Face f2;
   input Absyn.Info info;
+  input ConnectionGraph.ConnectionGraph inCGraph;  
   output Connect.Sets outSets;
+  output ConnectionGraph.ConnectionGraph outCGraph;
 algorithm
-  outSets := match(inCache,inEnv,inIH,pre,inSets,added,cr1,iio1,f1,cr2,iio2,f2,info)
+  (outSets, outCGraph) := match(inCache,inEnv,inIH,pre,inSets,added,cr1,iio1,f1,cr2,iio2,f2,info,inCGraph)
      local 
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
@@ -806,27 +813,32 @@ algorithm
        list<Connect.OuterConnect> oc;
        Env.Cache cache;
        Env.Env env;
-       Absyn.InnerOuter io1,io2;      
+       Absyn.InnerOuter io1,io2;
+       ConnectionGraph.ConnectionGraph graph;
 
     // if it was added, return the same
-    case(cache,env,ih,_,_,true,_,_,_,_,_,_,_)
-      then inSets;
+    case(cache,env,ih,_,_,true,_,_,_,_,_,_,_,_)
+      then (inSets, inCGraph);
     
     // if it was not added, add it (search for both components)
-    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, cc, oc),false,_,io1,_,_,io2,_,_)
+    case(cache,env,ih,_, Connect.SETS(sets, sc, cl, cc, oc),false,_,io1,_,_,io2,_,_, graph)
       equation
         (cache,DAE.ATTR(connectorType = ct, variability = vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (cache,DAE.ATTR(variability = vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
-        (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),dae,_) =
-        InstSection.connectComponents(cache,env,ih,Connect.SETS(sets, sc, cl, {}, {}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,io1,io2,ConnectionGraph.EMPTY,info);
+        (cache,env,ih, Connect.SETS(sets = sets, setCount = sc, connections = cl),dae, graph) =
+          InstSection.connectComponents(
+            cache,env,ih,
+            Connect.SETS(sets, sc, cl, {}, {}),
+            pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,ct,io1,io2,
+            graph,info);
         // TODO: take care of dae, can contain asserts from connections
       then
-        Connect.SETS(sets, sc, cl, cc, oc);
+        (Connect.SETS(sets, sc, cl, cc, oc), graph);
 
     // This can fail, for innerouter, the inner part is not declared in env so instead the call to addOuterConnectIfEmptyNoEnv will succed.
-    case(cache,env,ih,_,_,_,_,_,_,_,_,_,_)
+    case(cache,env,ih,_,_,_,_,_,_,_,_,_,_,_)
       equation
         //print("Failed lookup: " +& ComponentReference.printComponentRefStr(cr1) +& "\n");
         //print("Failed lookup: " +& ComponentReference.printComponentRefStr(cr2) +& "\n");

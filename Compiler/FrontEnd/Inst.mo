@@ -1052,7 +1052,7 @@ algorithm
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         
         reportUnitConsistency(callscope_1,store);
-        (csets,_) = InnerOuter.retrieveOuterConnections(cache,env_3,ih,pre,csets,callscope_1);
+        (csets, _, graph) = InnerOuter.retrieveOuterConnections(cache,env_3,ih,pre,csets,callscope_1, graph);
         
         //System.startTimer();
         //print("\nConnect equations and the OverConstrained graph in one step");        
@@ -5846,9 +5846,13 @@ algorithm
         classmod = Mod.lookupModificationP(mods, t);
         mm = Mod.lookupCompModification(mods, n);
         */
-        // A frequent used debugging line
-        //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& ", elements to go: " +& intString(listLength(els)) +&
-        //"\t mods: " +& Mod.printModStr(mod) +&  "\n");
+        /*// A frequent used debugging line
+        print("Instantiating element: " +& elementName +& 
+              "\n\tin scope " +& Env.getScopeName(env) +& 
+              "\n\telements to go: " +& intString(listLength(els)) +&
+              "\n\tmods: " +& Mod.printModStr(mod) +&
+              "\n\telement: " +& SCodeDump.shortElementStr(ele) +& 
+              "\n");*/
 
         (cache,env_1,ih,store,dae1,csets,ci_state_1,tys1,graph) =
           instElement(cache,env,ih,store, mod, pre, ci_state, el, inst_dims, impl, callscope, graph, csets);
