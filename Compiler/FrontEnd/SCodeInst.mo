@@ -52,7 +52,6 @@ protected import ClassInf;
 protected import ComponentReference;
 protected import ConnectEquations;
 protected import ConnectUtil2;
-protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
@@ -1983,7 +1982,7 @@ algorithm
       equation
         (cref, globals) = instCref2(acref, inEnv, inPrefix, inInfo, globals);
         path = Absyn.crefToPathIgnoreSubs(inCref);
-        globals = instPackageConstant(true, path, inEnv, inInfo, inGlobals);
+        (cref, globals) = instPackageConstant(true, cref, path, inEnv, inInfo, inGlobals);
       then
         (cref, globals);
 
@@ -2078,7 +2077,7 @@ algorithm
       equation
         (is_global, env) = SCodeLookup.lookupCrefUnique(inCref, inEnv);
         cref = prefixCref2(inCref, inPrefix, inEnv, env, is_global);
-        globals = instPackageConstant(is_global, inCrefPath, env, inInfo, inGlobals);
+        (cref, globals) = instPackageConstant(is_global, cref, inCrefPath, env, inInfo, inGlobals);
       then
         (cref, globals);
 
@@ -2264,13 +2263,16 @@ end reducePrefix;
 
 protected function instPackageConstant
   input Boolean inIsGlobal;
+  input DAE.ComponentRef inCref;
   input Absyn.Path inName;
   input Env inEnv;
   input Absyn.Info inInfo;
   input Globals inGlobals;
+  output DAE.ComponentRef outCref;
   output Globals outGlobals;
 algorithm
-  outGlobals := matchcontinue(inIsGlobal, inName, inEnv, inInfo, inGlobals)
+  (outCref, outGlobals) :=
+  matchcontinue(inIsGlobal, inCref, inName, inEnv, inInfo, inGlobals)
     local
       SymbolTable consts;
       FunctionHashTable funcs;
@@ -2281,35 +2283,43 @@ algorithm
       Absyn.Path name;
       Prefix prefix;
       Globals globals;
+      String item_name;
+      DAE.ComponentRef cref;
 
-    case (false, _, _, _, _) then inGlobals;
+      Component comp;
 
-    case (_, _, _, _, (consts, _))
+    case (false, _, _, _, _, _) then (inCref, inGlobals);
+
+    case (_, _, Absyn.FULLYQUALIFIED(path = _), _, _, _)
       equation
-        _ = InstSymbolTable.lookupName(inName, consts);
-      then
-        inGlobals;
-
-    case (_, Absyn.FULLYQUALIFIED(path = _), _, _, _)
-      equation
-        (item, _, env) = SCodeLookup.lookupFullyQualified(inName, inEnv);
+        name = Absyn.makeNotFullyQualified(inName);
+        (item, _, env) = SCodeLookup.lookupFullyQualified(name, inEnv);
         (SCodeEnv.VAR(var = selem), env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
 
+        prefix = InstUtil.restPrefix(InstUtil.pathPrefix(inName));
         (elem, (consts, funcs)) = instElement(selem, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), env, InstTypes.emptyPrefix, INST_ALL(), inGlobals);
+          InstTypes.NO_PREFIXES(), env, prefix, INST_ALL(), inGlobals);
 
         consts = InstSymbolTable.addElement(elem, consts);
       then
-        ((consts, funcs));
+        (inCref, (consts, funcs));
 
-    case (_, _, _, _, _)
+    case (_, _, _, _, _, _)
       equation
-        (item, _, env) = SCodeLookup.lookupVariableName(inName, inEnv, inInfo);
+        (item, _, env, _) = SCodeLookup.lookupNameInPackage(inName, inEnv);
         (item, env, _) = SCodeEnv.resolveRedeclaredItem(item, env);
 
-        globals = instPackageConstant2(item, env, inGlobals);
+        //print("Instantiating " +& Absyn.pathString(inName) +& "\n");
+        //print("Env: " +& SCodeEnv.getEnvName(inEnv) +& "\n");
+        //print("Found env: " +& SCodeEnv.getEnvName(env) +& "\n");
+        //print("Result: " +& Absyn.pathString(name) +& "\n");
+
+        (prefix, name, cref) = makePackageConstantPrefix(inName, inCref, item, env, inEnv);
+
+        //print("Adding " +& Absyn.pathString(name) +& "\n");
+        globals = instPackageConstant2(name, item, env, prefix, inGlobals);
       then
-        globals;
+        (cref, globals);
         
     else
       equation
@@ -2321,13 +2331,63 @@ algorithm
   end matchcontinue;
 end instPackageConstant;
         
+protected function makePackageConstantPrefix
+  input Absyn.Path inName;
+  input DAE.ComponentRef inCref;
+  input Item inItem;
+  input Env inFoundEnv;
+  input Env inOriginEnv;
+  output Prefix outPrefix;
+  output Absyn.Path outName;
+  output DAE.ComponentRef outCref;
+algorithm
+  (outPrefix, outName, outCref) :=
+  match(inName, inCref, inItem, inFoundEnv, inOriginEnv)
+    local
+      Prefix prefix;
+      String name;
+      Absyn.Path path;
+      DAE.ComponentRef cref;
+
+    case (_, _, SCodeEnv.VAR(var = SCode.COMPONENT(name = name, typeSpec =
+        Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType")))), _, _)
+      equation
+        prefix = InstUtil.envPrefix(inFoundEnv);
+        path = SCodeEnv.prefixIdentWithEnv(name, inFoundEnv);
+        // The lookup rules forbid looking a class up in a component, so there's
+        // no way to have subscripts in the cref for a enumeration literal. So
+        // we can safely just convert the path to a cref here.
+        cref = ComponentReference.pathToCref(path);
+      then
+        (prefix, path, cref);
+
+    case (_, _, SCodeEnv.CLASS(cls = SCode.CLASS(name = name)), _, _)
+      equation
+        prefix = InstUtil.envPrefix(inFoundEnv);
+        path = SCodeEnv.prefixIdentWithEnv(name, inFoundEnv);
+        cref = ComponentReference.pathToCref(path);
+      then
+        (prefix, path, cref);
+
+    else
+      equation
+        prefix = InstUtil.envPrefix(inOriginEnv);
+        InstTypes.PREFIX(restPrefix = prefix) = InstUtil.addPathPrefix(inName, prefix);
+      then
+        (prefix, inName, inCref);
+
+  end match;
+end makePackageConstantPrefix;
+
 protected function instPackageConstant2
+  input Absyn.Path inName;
   input Item inItem;
   input Env inEnv;
+  input Prefix inPrefix;
   input Globals inGlobals;
   output Globals outGlobals;
 algorithm
-  outGlobals := match(inItem, inEnv, inGlobals)
+  outGlobals := matchcontinue(inName, inItem, inEnv, inPrefix, inGlobals)
     local
       SCode.Element selem;
       Element elem;
@@ -2335,27 +2395,62 @@ algorithm
       FunctionHashTable funcs;
       Env env;
       Prefix prefix;
+      DAE.Type ty;
+      Component comp;
+      Absyn.Info info;
 
       Absyn.Path name;
       String cls_name;
 
-    case (SCodeEnv.VAR(var = selem), env, _)
+    case (_, _, _, _, (consts, _))
       equation
-        prefix = InstUtil.envPrefix(env);
+        //print("Looking for " +& Absyn.pathString(inName) +& " in symboltable\n");
+        _ = InstSymbolTable.lookupName(inName, consts);
+        //print(Absyn.pathString(inName) +& " already added\n");
+      then
+        inGlobals;
+
+    case (_, SCodeEnv.VAR(var = selem as SCode.COMPONENT(typeSpec =
+        Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType")))), env, _, _)
+      equation
         (elem, (consts, funcs)) = instElement(selem, InstTypes.NOMOD(),
-          InstTypes.NO_PREFIXES(), env, prefix, INST_ALL(), inGlobals);
+          InstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
+        consts = InstSymbolTable.addElement(elem, consts);
+      then
+        ((consts, funcs));
+
+    // A normal package constant.
+    case (_, SCodeEnv.VAR(var = selem), env, _, _)
+      equation
+        (elem, (consts, funcs)) = instElement(selem, InstTypes.NOMOD(),
+          InstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
+
+        InstTypes.ELEMENT(component = comp) = elem;
+        name = InstUtil.getComponentName(comp);
 
         consts = InstSymbolTable.addElement(elem, consts);
       then
         ((consts, funcs));
 
-    case (SCodeEnv.CLASS(cls = SCode.CLASS(name = cls_name)), _, _)
+    // An enumeration type used as a value.
+    case (_, SCodeEnv.CLASS(cls = SCode.CLASS(name = cls_name, info = info)), _, _, _)
       equation
-        //print("instPackageConstant2 class " +& cls_name +& "\n");
-        //print("Env: " +& SCodeEnv.getEnvName(inEnv) +& "\n");
-      then inGlobals;
+        // Instantiate the enumeration type to get its type.
+        (_, ty, _, (consts, funcs)) = instClassItem(inName,
+          inItem, InstTypes.NOMOD(), InstTypes.NO_PREFIXES(), inEnv,
+          InstTypes.emptyPrefix, INST_ALL(), inGlobals);
+        /*********************************************************************/
+        // TODO: Check the type, make sure it's an enumeration! Any other types
+        // allowed to be used here?
+        /*********************************************************************/
 
-  end match;
+        comp = InstTypes.TYPED_COMPONENT(inName, ty, NONE(),
+          InstTypes.DEFAULT_CONST_DAE_PREFIXES, InstTypes.UNBOUND(), info);
+        consts = InstSymbolTable.addComponent(comp, consts);
+      then
+        ((consts, funcs));
+
+  end matchcontinue;
 end instPackageConstant2;
 
 protected function instFunctionCall
@@ -2469,7 +2564,6 @@ algorithm
         algorithms = algorithms), true)
       equation
         initBindings = {};
-        inputs = listReverse(inputs);
         (inputs, initBindings) = List.mapFold(inputs, dimensionDeps, initBindings);
         (initBindings, {}) = Graph.topologicalSort(
           Graph.buildGraph(initBindings, getStatementDependencies,
@@ -2752,7 +2846,8 @@ algorithm
       list<Element> rest_el;
       list<Element> inputs, outputs, locals, els;
 
-    case ({}, _, _, _) then (inAccumInputs, inAccumOutputs, inAccumLocals);
+    case ({}, _, _, _) 
+      then (listReverse(inAccumInputs), listReverse(inAccumOutputs), listReverse(inAccumLocals));
 
     // ignore packages! Modelica.Media.IdealGases.Common.SingleGasNasa.T_h contains package Internal.
     case ((el as InstTypes.ELEMENT(component = InstTypes.PACKAGE(name = name))) :: rest_el,

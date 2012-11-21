@@ -1831,7 +1831,10 @@ public function lookupCrefUnique
    environment it was found in. The environment is the environment the name is
    defined in after flattening extends, e.g. if class A extends B, and x is
    defined in B, then A will be returned if we're looking for x in A. This is
-   contrary to e.g. lookupName, which would return B.
+   contrary to e.g. lookupName, which would return B. Also note that only the
+   first identifier of the cref is looked up, since that's enough to determine
+   the scope, so the returned environment is the environment where the first
+   identifier of the cref is defined.
    
    The Unique part of the function name comes from the fact that this function
    is used by SCodeInst.prefixCref to find a unique name for all crefs."
@@ -1845,6 +1848,9 @@ algorithm
       String id;
       Boolean is_global;
       Env env;
+
+    case (DAE.CREF_IDENT(ident = "time"), _)
+      then (false, SCodeEnv.emptyEnv);
 
     // A simple identifier.
     case (DAE.CREF_IDENT(ident = id), _)

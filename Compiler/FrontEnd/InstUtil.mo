@@ -1194,6 +1194,14 @@ algorithm
   outPrefix := InstTypes.PREFIX(inName, inDimensions, inPrefix);
 end addPrefix;
 
+public function addPathPrefix
+  input Absyn.Path inPath;
+  input Prefix inPrefix;
+  output Prefix outPrefix;
+algorithm
+  outPrefix := pathPrefix2(inPath, inPrefix);
+end addPathPrefix;
+
 public function prefixCref
   input DAE.ComponentRef inCref;
   input Prefix inPrefix;
@@ -1340,6 +1348,13 @@ algorithm
 
   end matchcontinue;
 end envPrefix;
+
+public function restPrefix
+  input Prefix inPrefix;
+  output Prefix outRestPrefix;
+algorithm
+  InstTypes.PREFIX(restPrefix = outRestPrefix) := inPrefix;
+end restPrefix;
 
 public function prefixElement
   input Element inElement;
