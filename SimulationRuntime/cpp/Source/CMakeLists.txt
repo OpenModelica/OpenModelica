@@ -16,17 +16,12 @@ SET(SUNDIALS_INLCUDE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/include)
 
 if(MSVC)
 SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/vc100)
-SET(LIBINSTALLEXT "cpp")
 elseif(MINGW)
 SET(SUNDIALS_LIBRARY_RELEASE_HOME  $ENV{OMDEV}/lib/3rdParty/Sundials/lib/release/mingw/dlls)
-SET(LIBINSTALLEXT "cpp")
-else()
-SET(LIBINSTALLEXT "cpp")
 endif()
-
 SET(INSTALL_OMDEV_LIBS ON)
-
 ENDIF( WIN32 )
+SET(LIBINSTALLEXT "cpp")
 
 SET(MODELICA_MODEL "ModelicaSystem")
 SET(LIBPREFIX "OMCpp")
