@@ -2878,6 +2878,23 @@ algorithm
   end match;  
 end dumpCompShort2;
 
+public function dumpNrOfEquations
+"function dumpNrOfEquations
+  autor Frenkel TUD 2012-11
+  prints the number of scalar equations in the dae system"
+  input BackendDAE.BackendDAE inDAE;
+  input String preStr;
+protected
+  list<Integer> nlst;
+  Integer n;
+  BackendDAE.EqSystems systs;
+algorithm
+  BackendDAE.DAE(eqs=systs) := inDAE;
+  nlst := List.map(systs,BackendDAEUtil.systemSize);
+  n := List.fold(nlst,intAdd,0);
+  print(preStr +& " NrOfEquations: " +& intString(n) +& "\n");
+end dumpNrOfEquations;
+
 /*******************************************/
 /* Debug dump functions */
 /*******************************************/

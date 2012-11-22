@@ -1511,7 +1511,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacements();
   (outDAE,(repl1,b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,removeSimpleEquationsPast1,(repl,false));
   outDAE := removeSimpleEquationsShared(b,outDAE,repl1);
-  // until remove simple equations does not update assignments and comps  
+  // until remove simple equations does not update assignments and comps
 end removeSimpleEquationsPast;
 
 protected function removeSimpleEquationsPast1

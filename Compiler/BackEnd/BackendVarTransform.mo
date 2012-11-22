@@ -1785,13 +1785,18 @@ algorithm
       then
         ( es_1,b);
     
-    case ((DAE.STMT_ASSIGN_ARR(type_=type_,componentRef=cr,exp=e1,source=source)::es),repl,_,_,_)
+    case ((DAE.STMT_ASSIGN_ARR(type_=type_,componentRef=cr,exp=e2,source=source)::es),repl,_,_,_)
       equation
-        (e1_1,true) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
-        source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e1,e1_1);
-        (e1_2,b1) = ExpressionSimplify.simplify(e1_1);
-        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
-        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_ASSIGN_ARR(type_,cr,e1_2,source)::inAcc,true);
+        e1 = Expression.crefExp(cr);
+        (e1_1,b1) = replaceExp(e1,repl,inFuncTypeExpExpToBooleanOption);        
+        (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
+        true = b1 or b2;
+        source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_1);
+        source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
+        (e2_2,b2) = ExpressionSimplify.simplify(e2_1);
+        source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e2_1,e2_2);
+        es = validLhsArrayAssignSTMT(cr,e1_1,e2_2,type_,source,inAcc);
+        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,es,true);
       then
         ( es_1,b);
     
@@ -1953,6 +1958,78 @@ algorithm
         (es_1,b1);
   end matchcontinue;
 end replaceStatementLst;
+
+protected function validLhsArrayAssignSTMT "
+function: validLhsArrayAssignSTMT
+  autor Frenkel TUD 2012-11
+  checks if the lhs is a variable or an array of variables."
+  input DAE.ComponentRef oldCr;
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Type type_;
+  input DAE.ElementSource source;
+  input list<DAE.Statement> inStatementLst;
+  output list<DAE.Statement> outStatementLst;
+algorithm
+  outStatementLst :=
+  matchcontinue (oldCr,lhs,rhs,type_,source,inStatementLst)
+    local
+      list<DAE.Statement> statementLst;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> elst,elst1;
+      DAE.Type tp;
+      DAE.Exp e;
+      list<Integer> ds;
+      list<Option<Integer>> ad;
+      list<list<DAE.Subscript>> subslst;
+      String msg;
+    case (_,DAE.CREF(componentRef=cr),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,rhs,source)::inStatementLst;
+    case (_,DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(componentRef=cr)),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
+    case (_,DAE.UNARY(DAE.UMINUS_ARR(tp),DAE.CREF(componentRef=cr)),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,DAE.UNARY(DAE.UMINUS_ARR(tp),rhs),source)::inStatementLst;
+    case (_,DAE.LUNARY(DAE.NOT(tp),DAE.CREF(componentRef=cr)),_,_,_,_) then DAE.STMT_ASSIGN_ARR(type_,cr,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
+    case (_,DAE.ARRAY(array=elst),_,_,_,_)
+      equation
+        ds = Expression.dimensionsSizes(Expression.arrayDimension(type_));
+        ad = List.map(ds,Util.makeOption);
+        subslst = BackendDAEUtil.arrayDimensionsToRange(ad);
+        subslst = BackendDAEUtil.rangesToSubscripts(subslst);
+        elst1 = List.map1r(subslst,Expression.applyExpSubscripts,rhs);
+        e = listGet(elst1,1);
+        tp = Expression.typeof(e);
+        statementLst = List.threadFold2(elst,elst1,validLhsAssignSTMT,tp,source,inStatementLst);
+      then
+        statementLst;
+    else
+      equation
+        msg = "BackendVarTransform: failed to replace left hand side of array assign statement " +& 
+              ComponentReference.printComponentRefStr(oldCr) +& " with " +& ExpressionDump.printExpStr(lhs) +& "\n";
+        // print(msg +& "\n");
+        Debug.fprintln(Flags.FAILTRACE, msg);        
+      then
+        fail();        
+  end matchcontinue;
+ end validLhsArrayAssignSTMT;
+
+protected function validLhsAssignSTMT "
+function: validLhsAssignSTMT
+  autor Frenkel TUD 2012-11
+  checks if the lhs is a variable or an array of variables."
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Type type_;
+  input DAE.ElementSource source;
+  input list<DAE.Statement> inStatementLst;
+  output list<DAE.Statement> outStatementLst;
+algorithm
+  outStatementLst :=
+  match (lhs,rhs,type_,source,inStatementLst)
+    local DAE.Type tp;
+    case (DAE.CREF(componentRef=_),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,rhs,source)::inStatementLst;
+    case (DAE.UNARY(DAE.UMINUS(tp),DAE.CREF(componentRef=_)),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,DAE.UNARY(DAE.UMINUS(tp),rhs),source)::inStatementLst;
+    case (DAE.LUNARY(DAE.NOT(tp),DAE.CREF(componentRef=_)),_,_,_,_) then DAE.STMT_ASSIGN(type_,lhs,DAE.LUNARY(DAE.NOT(tp),rhs),source)::inStatementLst;
+  end match;
+ end validLhsAssignSTMT;
+
 
 protected function replaceElse "function: replaceElse
 
