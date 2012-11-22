@@ -333,7 +333,7 @@ LIBS=$SUNDIALS_LDFLAGS
 AC_MSG_CHECKING([Sundials linking])
 AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
   [AC_MSG_RESULT([ok])],
-  [AC_MSG_RESULT([failed to link KINInit])])
+  [AC_MSG_RESULT([failed to link KINInit]); NO_SUNDIALS="yes"])
 
 if ! test "$NO_SUNDIALS" = "yes"; then
   FINAL_MESSAGES="$FINAL_MESSAGES\nSimulations may use sundials suite: Yes"
