@@ -3462,13 +3462,13 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__)))
      
       <%{
        (vars.algVars |> SIMVAR(__) =>
-        '_event_handling.save(<%cref(name)%>,"<%cref(name)%>");'
+        '_event_handling.saveDiscreteVar(<%cref(name)%>,"<%cref(name)%>");'
       ;separator="\n"),
       (vars.intAlgVars |> SIMVAR(__) =>
-       '_event_handling.save(<%cref(name)%>,"<%cref(name)%>");'
+       '_event_handling.saveDiscreteVar(<%cref(name)%>,"<%cref(name)%>");'
       ;separator="\n"),
       (vars.boolAlgVars |> SIMVAR(__) =>
-        '_event_handling.save(<%cref(name)%>,"<%cref(name)%>");'
+        '_event_handling.saveDiscreteVar(<%cref(name)%>,"<%cref(name)%>");'
       ;separator="\n")}
      ;separator="\n"%>
      
@@ -6330,8 +6330,6 @@ template handleSystemEvents2(Integer index1, Exp relation, Text &varDecls /*BUFP
     if(events[<%zerocrossingIndex%>])
     {
       checkConditions(<%zerocrossingIndex%>,false);
-      _event_handling.addEvent(<%zerocrossingIndex%>);
-      handleEvent(<%zerocrossingIndex%>);
     }
    >>
  end handleSystemEvents2;
@@ -6621,7 +6619,7 @@ template checkForDiscreteEvents(list<ComponentRef> discreteModelVars,SimCode sim
 ::=
 
   let changediscreteVars = (discreteModelVars |> var => match var case CREF_QUAL(__) case CREF_IDENT(__) then
-       'if (_event_handling.change(<%cref(var)%>,"<%cref(var)%>")) {  restart=true; }'
+       'if (_event_handling.changeDiscreteVar(<%cref(var)%>,"<%cref(var)%>")) {  restart=true; }'
        ;separator="\n")
   match simCode
   case SIMCODE(modelInfo = MODELINFO(__)) then

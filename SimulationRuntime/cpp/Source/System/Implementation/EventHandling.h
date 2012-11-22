@@ -29,7 +29,7 @@ public:
   void save(double var,string key);
   //saves all helpvariables
   void saveH();
-    void setHelpVar(unsigned int i,double var);
+  void setHelpVar(unsigned int i,double var);
   const double& operator[](unsigned int i) const;
     //Implementation of the Modelica pre  operator
   double pre(double var,string key);
@@ -39,14 +39,11 @@ public:
   bool change(double var,string key);
   //Implementation of the Modelica change  operator
   double sample(double start,double interval);
-  //Adds an event to the eventqueue
-  void addEvent(long index);
-  //removes an event from the eventqueue
-  void removeEvent(long index);
   //Handles  all events occured a the same time. Returns true if a second event iteration is needed
   bool IterateEventQueue(const bool* events);
 
-  
+  void saveDiscreteVar(double var,string key);
+   bool changeDiscreteVar(double var,string key);
   void addTimeEvent(long index,double time);
   void addTimeEvents( event_times_type times);
    event_times_type makePeriodeEvents(double ts,double te,double ti,long index);
@@ -57,9 +54,10 @@ public:
 private:
   //Stores all varibales occured before an event
   unordered_map<string,double> _pre_vars;
-  //stores all eventes 
-  vector<long> _event_queue;
-  IDAESystem* _system;
+
+  //Stores all descrete varibales occured before an event
+  unordered_map<string,double> _pre_discrete_vars;
+   IDAESystem* _system;
   //Helpvarsvector for discrete variables
   double* _h;
   //Dimesion of Helpvarsvector

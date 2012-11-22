@@ -117,6 +117,16 @@ bool EventHandling::change(double var,string key)
 {
   return var && !pre(var,key) || !var && pre(var,key);
 }
+
+void EventHandling::saveDiscreteVar(double var,string key)
+{
+    _pre_discrete_vars[key]=var;
+}
+bool EventHandling::changeDiscreteVar(double var,string key)
+{
+    return var && !_pre_discrete_vars[key] || !var && _pre_discrete_vars[key];
+}
+
 /**
 Implementation of the Modelica change  operator
 */
@@ -124,23 +134,8 @@ double EventHandling::sample(double start,double interval)
 {
   return 0.0;
 }
-/**
-Adds an event to the eventqueue if not was before
-*/
-void EventHandling::addEvent(long index)
-{
-  if(std::find(_event_queue.begin(),_event_queue.end(),index)==_event_queue.end())
-    _event_queue.push_back(index);
-}
-/**
-Removes an event from the eventqueu
-*/
-void  EventHandling::removeEvent(long index)
-{
-  vector<long>::iterator iter;
-  if((iter = std::find(_event_queue.begin(),_event_queue.end(),index))!=_event_queue.end())
-    _event_queue.erase(iter);
-}
+
+
 /**
 Handles  all events occured a the same time. These are stored  the eventqueue
 */
