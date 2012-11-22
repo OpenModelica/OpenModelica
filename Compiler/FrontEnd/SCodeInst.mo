@@ -2445,7 +2445,7 @@ algorithm
         /*********************************************************************/
 
         comp = InstTypes.TYPED_COMPONENT(inName, ty, NONE(),
-          InstTypes.DEFAULT_CONST_DAE_PREFIXES, InstTypes.UNBOUND(), info);
+          InstTypes.NO_DAE_PREFIXES(), InstTypes.UNBOUND(), info);
         consts = InstSymbolTable.addComponent(comp, consts);
       then
         ((consts, funcs));

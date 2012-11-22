@@ -1154,6 +1154,20 @@ algorithm
   end matchcontinue;
 end extendsBasicType;
 
+public function derivedBasicType
+  "Returns the actual type of a type extending one of the builtin types."
+  input Type inType;
+  output Type outType;
+algorithm
+  outType := match(inType)
+    local
+      Type ty;
+
+    case DAE.T_SUBTYPE_BASIC(complexType = ty) then ty;
+    else inType;
+  end match;
+end derivedBasicType;
+
 public function arrayType "function: arrayType
   Test whether a type is an array type."
   input Type inType;

@@ -787,13 +787,26 @@ public function makeDimension
   input DAE.Exp inExp;
   output DAE.Dimension outDimension;
 algorithm
-  outDimension := match(inExp)
+  outDimension := matchcontinue(inExp)
     local
       Integer idim;
+      DAE.Type ty;
+      Absyn.Path path;
+      list<String> enum_lits;
+      Integer dim_size;
 
     case DAE.ICONST(idim) then DAE.DIM_INTEGER(idim);
+
+    case DAE.CREF(ty = ty)
+      equation
+        DAE.T_ENUMERATION(path = path, names = enum_lits) =
+          Types.derivedBasicType(ty);
+        dim_size = listLength(enum_lits);
+      then
+        DAE.DIM_ENUM(path, enum_lits, dim_size);
+
     else DAE.DIM_EXP(inExp);
-  end match;
+  end matchcontinue;
 end makeDimension;
 
 public function makeDimensionArray
@@ -1967,7 +1980,19 @@ public function typeCrefWithComponent
   input Component inComponent;
   output DAE.ComponentRef outCref;
 algorithm
-  (outCref, _) := typeCrefWithComponent2(inCref, inComponent);
+  outCref := match(inCref, inComponent)
+    local
+      DAE.ComponentRef cref;
+
+    case (_, InstTypes.TYPED_COMPONENT(parent = NONE())) then inCref;
+
+    else
+      equation
+        (cref, _) = typeCrefWithComponent2(inCref, inComponent);
+      then
+        cref;
+
+  end match;
 end typeCrefWithComponent;
 
 protected function typeCrefWithComponent2
@@ -1976,7 +2001,7 @@ protected function typeCrefWithComponent2
   output DAE.ComponentRef outCref;
   output Option<Component> outParent;
 algorithm
-  (outCref, outParent) := match(inCref, inComponent)
+  (outCref, outParent) := matchcontinue(inCref, inComponent)
     local
       Option<Component> parent;
       DAE.Ident id;
@@ -2005,7 +2030,7 @@ algorithm
       then
         fail();
 
-  end match;
+  end matchcontinue;
 end typeCrefWithComponent2;
 
 public function toConst

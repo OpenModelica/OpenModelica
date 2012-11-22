@@ -306,6 +306,9 @@ algorithm
       list<list<DAE.Subscript>> rest_subs;
       String dim_str;
       DAE.Exp exp;
+      Absyn.Path enum_path;
+      list<String> enum_lits;
+      list<DAE.Exp> enum_expl;
 
     case (_, _, {}, subs :: rest_subs, _, _)
       equation
@@ -322,11 +325,14 @@ algorithm
       then
         el;
 
-    case (_, _, DAE.DIM_ENUM(enumTypeName = _) :: _, _, _, _)
+    case (_, _, DAE.DIM_ENUM(enumTypeName = enum_path, literals = enum_lits) ::
+        rest_dims, _, _, _)
       equation
-        print("SCodeExpand.expandArray TODO: implement support for enum dims.\n");
+        enum_expl = Expression.makeEnumLiterals(enum_path, enum_lits);
+        el = expandArrayEnumDim(inElement, inKind, enum_expl, rest_dims,
+          inSubscripts, inAccumEl, inScalarFunc);
       then
-        fail();
+        el;
 
     case (_, EXPAND_FUNCTION(), DAE.DIM_EXP(exp) :: rest_dims, subs :: rest_subs, _, _)
       then expandArrayExpDim(inElement, DAE.INDEX(exp), rest_dims, inSubscripts, inAccumEl, inScalarFunc);
@@ -379,6 +385,39 @@ algorithm
 
   end matchcontinue;
 end expandArrayIntDim;      
+
+protected function expandArrayEnumDim
+  input ElementType inElement;
+  input ExpandKind inKind;
+  input list<DAE.Exp> inEnumLiterals;
+  input list<DAE.Dimension> inDimensions;
+  input list<list<DAE.Subscript>> inSubscripts;
+  input list<AccumType> inAccumEl;
+  input ExpandScalarFunc inScalarFunc;
+  output list<AccumType> outElements;
+algorithm
+  outElements := match(inElement, inKind, inEnumLiterals, inDimensions,
+      inSubscripts, inAccumEl, inScalarFunc)
+    local
+      list<DAE.Subscript> subs;
+      list<list<DAE.Subscript>> rest_subs;
+      list<AccumType> el;
+      DAE.Exp lit;
+      list<DAE.Exp> rest_lits;
+
+    case (_, _, lit :: rest_lits, _, subs :: rest_subs, _, _)
+      equation
+        subs = DAE.INDEX(lit) :: subs;
+        el = expandArray(inElement, inKind, inDimensions, subs :: rest_subs,
+          inAccumEl, inScalarFunc);
+      then
+        expandArrayEnumDim(inElement, inKind, rest_lits, inDimensions,
+          inSubscripts, el, inScalarFunc);
+
+    case (_, _, {}, _, _, _, _) then inAccumEl;
+
+  end match;
+end expandArrayEnumDim;
 
 protected function expandArrayExpDim
   input ElementType inElement;
