@@ -167,15 +167,6 @@ double fmiSetTime_OMC(void* fmi, double time)
 }
 
 /*
- * Wrapper for the FMI function fmiSetDebugLogging.
- * Returns status.
- */
-int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
-{
-  return fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
-}
-
-/*
  * Wrapper for the FMI function fmiInitialize.
  * Returns FMI Event Info i.e fmi1_event_info_t.
  */
@@ -374,9 +365,10 @@ int fmiTerminate_OMC(void* fmi)
 /*
  * Wrapper for the FMI function fmiInstantiateSlave.
  */
-void fmiInstantiateSlave_OMC(void* fmi, char* instanceName, char* fmuLocation, char* mimeType, double timeout, int visible, int interactive)
+void fmiInstantiateSlave_OMC(void* fmi, char* instanceName, char* fmuLocation, char* mimeType, double timeout, int visible, int interactive, int debugLogging)
 {
   fmi1_import_instantiate_slave((fmi1_import_t*)fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive);
+  fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
 }
 
 /*
@@ -389,6 +381,7 @@ void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, doubl
 
 /*
  * Wrapper for the FMI function fmiDoStep.
+ * Return value is dummy and is only used to run the equations in sequence.
  */
 double fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communicationStepSize, int newStep)
 {

@@ -1324,17 +1324,37 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant String fmuFile = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     constant Integer fmiLogLevel = <%fmiLogLevel%>;
+    constant Boolean debugLogging = <%fmiDebugOutput%>;
     constant String mimeType = "";
     constant Real timeout = 0.0;
     constant Boolean visible = false;
     constant Boolean interactive = false;
     constant Real communicationStepSize = 0.005;
-    <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
-    constant Boolean debugLogging = false;
     fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
     fmiImportContext context = fmiImportContext(fmiLogLevel);
+    <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
+    constant Boolean stopTimeDefined = false;
     Real flowControl;
     Boolean initializationDone(start=false);
+  initial algorithm
+    if not initializationDone then
+      fmiFunctions.fmiInstantiateSlave(fmi, "<%fmiInfo.fmiModelIdentifier%>", fmuFile, mimeType, timeout, visible, interactive, debugLogging);
+      fmiFunctions.fmiInitializeSlave(fmi, <%fmiExperimentAnnotation.fmiExperimentStartTime%>, stopTimeDefined, <%fmiExperimentAnnotation.fmiExperimentStopTime%>);
+      initializationDone := true;
+    end if;
+  algorithm
+    initializationDone := true;
+  equation
+    flowControl = fmiFunctions.fmiDoStep(fmi, time, communicationStepSize, true);
+    <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
+    <%if not stringEq(integerVariables, "0") then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
+    <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
+    <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpStringVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
+  algorithm
+    when terminal() then
+      fmiFunctions.fmiTerminateSlave(fmi);
+    end when;
+    annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
   protected
     <%dumpFMICommonObjects(platform)%>
     
@@ -1347,7 +1367,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real timeout;
         input Boolean visible;
         input Boolean interactive;
-        external "C" fmiInstantiateSlave_OMC(fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+        input Boolean debugLogging;
+        external "C" fmiInstantiateSlave_OMC(fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive, debugLogging) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiInstantiateSlave;
       
       function fmiInitializeSlave
@@ -1363,8 +1384,8 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
         input Real currentCommunicationPoint;
         input Real communicationStepSize;
         input Boolean newStep;
-        output Real out_Flow;
-        external "C" out_Flow = fmiDoStep_OMC(fmi, currentCommunicationPoint, communicationStepSize, newStep) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
+        output Real outFlowControl;
+        external "C" outFlowControl = fmiDoStep_OMC(fmi, currentCommunicationPoint, communicationStepSize, newStep) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
       end fmiDoStep;
       
       <%dumpFMICommonFunctions(platform)%>
@@ -1384,26 +1405,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       constant Integer fmiFatal=4;
       constant Integer fmiPending=5;
     end fmiStatus;
-  initial algorithm
-    if not initializationDone then
-      fmiFunctions.fmiInstantiateSlave(fmi, "<%fmiInfo.fmiModelIdentifier%>", fmuFile, mimeType, timeout, visible, interactive);
-      fmiFunctions.fmiSetDebugLogging(fmi, debugLogging);
-      fmiFunctions.fmiInitializeSlave(fmi, <%fmiExperimentAnnotation.fmiExperimentStartTime%>, false, <%fmiExperimentAnnotation.fmiExperimentStopTime%>);
-      initializationDone := true;
-    end if;
-  algorithm
-    initializationDone := true;
-  equation
-    flowControl = fmiFunctions.fmiDoStep(fmi, time, communicationStepSize, true);
-    <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
-    <%if not stringEq(integerVariables, "0") then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
-    <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
-    <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpStringVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
-  algorithm
-    when terminal() then
-      fmiFunctions.fmiTerminateSlave(fmi);
-    end when;
-    annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
   end <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU;
   >>
 end importFMUCoSimulationStandAlone;
@@ -1447,13 +1448,6 @@ template dumpFMICommonFunctions(String platform)
  "Generates the common FMI functions wrapped by OMC."
 ::=
   <<
-  function fmiSetDebugLogging
-    input fmiImportInstance fmi;
-    input Boolean debugLogging;
-    output Integer status;
-    external "C" status = fmiSetDebugLogging_OMC(fmi, debugLogging) annotation(Library = {"omcruntime", "fmilib"<%if stringEq(platform, "win32") then ", \"shlwapi\""%>});
-  end fmiSetDebugLogging;
-      
   function fmiGetReal
     input fmiImportInstance fmi;
     input Real realValuesReferences[:];
