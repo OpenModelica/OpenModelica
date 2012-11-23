@@ -232,6 +232,7 @@ install (FILES "DataExchange/Interfaces/IHistory.h"
  Utils/extension/impl/adaptable_factory.hpp Utils/extension/impl/adaptable_factory_free_functions.hpp Utils/extension/impl/adaptable_factory_set.hpp
  Utils/extension/impl/create.hpp  Utils/extension/impl/create_func.hpp Utils/extension/impl/decl.hpp
  Utils/extension/impl/factory.hpp Utils/extension/impl/factory_map.hpp Utils/extension/impl/function.hpp Utils/extension/impl/library_impl.hpp 
- Utils/extension/impl/shared_library.hpp Utils/extension/impl/typeinfo.hpp) 
+ Utils/extension/impl/shared_library.hpp Utils/extension/impl/typeinfo.hpp
+ FMU/fmiModelFunctions.h FMU/fmiModelTypes.h FMU/fmu_model_interface.c FMU/fmu_model_interface.h) 
    INSTALL_HEADERS_WITH_DIRECTORY(HS)
   

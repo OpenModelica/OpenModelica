@@ -59,20 +59,21 @@ match simCode
 case SIMCODE(modelInfo=modelInfo as MODELINFO(__)) then
   let guid = getUUIDStr()
   let target  = simulationCodeTarget()
-  let()= textFile(simulationHeaderFile(simCode), '<%lastIdentOfPath(modelInfo.name)%>.h')
-  let()= textFile(simulationCppFile(simCode), '<%lastIdentOfPath(modelInfo.name)%>.cpp')
+  let name = lastIdentOfPath(modelInfo.name)
+  let()= textFile(simulationHeaderFile(simCode), '<%name%>.h')
+  let()= textFile(simulationCppFile(simCode), '<%name%>.cpp')
   let()= textFile(simulationFunctionsHeaderFile(simCode,modelInfo.functions,literals), 'Functions.h')
   let()= textFile(simulationFunctionsFile(simCode, modelInfo.functions,literals), 'Functions.cpp')
-  let()= textFile(fmumodel_identifierFile(simCode,guid), '<%fileNamePrefix%>_FMU.c')
+  let()= textFile(fmumodel_identifierFile(simCode,guid,name), '<%name%>FMU.cpp')
   let()= textFile(fmuModelDescriptionFile(simCode,guid), 'modelDescription.xml')
-  let()= textFile(fmudeffile(simCode), '<%fileNamePrefix%>.def')
-  let()= textFile(fmuMakefile(simCode), '<%fileNamePrefix%>_FMU.makefile')
+  let()= textFile(fmudeffile(simCode), '<%name%>.def')
+  let()= textFile(fmuMakefile(target,simCode), '<%fileNamePrefix%>_FMU.makefile')
   algloopfiles(allEquations,simCode)   
    // Return empty result since result written to files directly
 end translateModel;
 
 
-template fmumodel_identifierFile(SimCode simCode, String guid)
+template fmumodel_identifierFile(SimCode simCode, String guid, String name)
  "Generates code for ModelDescription file for FMU target."
 ::=
 match simCode
@@ -87,16 +88,12 @@ case SIMCODE(__) then
   #include <stdio.h>
   #include <string.h>
   #include <assert.h>  
-  #include "openmodelica.h"
-  #include "openmodelica_func.h"
-  #include "simulation_data.h"  
-  #include "omc_error.h"
-  #include "fmiModelTypes.h"
-  #include "fmiModelFunctions.h"
-  #include "<%fileNamePrefix%>_functions.h"
-  #include "initialization.h"
-  #include "events.h"
-  #include "fmu_model_interface.h"  
+
+  #define OBJECTCONSTRUCTOR <%name%>FMU::staticConstructor()
+
+  #include "FMU/fmiModelTypes.h"
+  #include "FMU/fmiModelFunctions.h"
+  #include "FMU/fmu_model_interface.h"  
 
   #ifdef __cplusplus
   extern "C" {
@@ -117,7 +114,7 @@ case SIMCODE(__) then
   <%ModelDefineData(modelInfo)%>
   
   // implementation of the Model Exchange functions
-  #include "fmu_model_interface.c"
+  #include "FMU/fmu_model_interface.c"
  
   <%setDefaultStartValues(modelInfo)%>
   <%setStartValues(modelInfo)%>
@@ -230,7 +227,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setDefaultStartValues(ModelInstance *comp) {
-  
+  /*
   <%vars.stateVars |> var => initValsDefault(var,"realVars",0) ;separator="\n"%>
   <%vars.derivativeVars |> var => initValsDefault(var,"realVars",numStateVars) ;separator="\n"%>
   <%vars.algVars |> var => initValsDefault(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
@@ -241,6 +238,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <%vars.intParamVars |> var => initParamsDefault(var,"integerParameter") ;separator="\n"%>
   <%vars.boolParamVars |> var => initParamsDefault(var,"booleanParameter") ;separator="\n"%>
   <%vars.stringParamVars |> var => initParamsDefault(var,"stringParameter") ;separator="\n"%>
+  */
   }
   >>
 end setDefaultStartValues;
@@ -253,7 +251,7 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <<
   // Set values for all variables that define a start value
   void setStartValues(ModelInstance *comp) {
-  
+  /*
   <%vars.stateVars |> var => initVals(var,"realVars",0) ;separator="\n"%>
   <%vars.derivativeVars |> var => initVals(var,"realVars",numStateVars) ;separator="\n"%>
   <%vars.algVars |> var => initVals(var,"realVars",intMul(2,numStateVars)) ;separator="\n"%>
@@ -264,32 +262,10 @@ case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars),vars=SIMVARS(__)) then
   <%vars.intParamVars |> var => initParams(var,"integerParameter") ;separator="\n"%>
   <%vars.boolParamVars |> var => initParams(var,"booleanParameter") ;separator="\n"%>
   <%vars.stringParamVars |> var => initParams(var,"stringParameter") ;separator="\n"%>
+  */
   }
   >>
 end setStartValues;
-
-template initializeFunction(list<SimEqSystem> allEquations)
-  "Generates initialize function for c file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let eqPart = ""/* (allEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls)
-    ;separator="\n") */
-  <<
-  // Used to set the first time event, if any.
-  void initialize(ModelInstance* comp, fmiEventInfo* eventInfo) {
-
-    <%varDecls%>
-  
-    <%eqPart%>
-    <%allEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
-    ;separator="\n"%>
-  
-  }
-  >>
-end initializeFunction;
-
 
 template initVals(SimVar var, String arrayName, Integer offset) ::=
   match var
@@ -371,11 +347,13 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
   <<
   fmiReal getReal(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
+  /*
         <%vars.stateVars |> var => SwitchVars(var, "realVars", 0) ;separator="\n"%>
         <%vars.derivativeVars |> var => SwitchVars(var, "realVars", numStateVars) ;separator="\n"%>
         <%vars.algVars |> var => SwitchVars(var, "realVars", intMul(2,numStateVars)) ;separator="\n"%>
         <%vars.paramVars |> var => SwitchParameters(var, "realParameter") ;separator="\n"%>
         <%vars.aliasVars |> var => SwitchAliasVars(var, "Real","-") ;separator="\n"%>
+  */
         default: 
             return fmiError;
     }
@@ -391,6 +369,7 @@ match modelInfo
 case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
   <<
   fmiStatus setReal(ModelInstance* comp, const fmiValueReference vr, const fmiReal value) {
+  /*
     switch (vr) {
         <%vars.stateVars |> var => SwitchVarsSet(var, "realVars", 0) ;separator="\n"%>
         <%vars.derivativeVars |> var => SwitchVarsSet(var, "realVars", numStateVars) ;separator="\n"%>
@@ -400,6 +379,7 @@ case MODELINFO(vars=SIMVARS(__),varInfo=VARINFO(numStateVars=numStateVars)) then
         default: 
             return fmiError;
     }
+    */
     return fmiOK;
   }
   
@@ -414,9 +394,11 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiInteger getInteger(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
+    /*
         <%vars.intAlgVars |> var => SwitchVars(var, "integerVars", 0) ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchParameters(var, "integerParameter") ;separator="\n"%>
         <%vars.intAliasVars |> var => SwitchAliasVars(var, "Integer", "-") ;separator="\n"%>
+    */
         default: 
             return 0;
     }
@@ -432,9 +414,11 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiStatus setInteger(ModelInstance* comp, const fmiValueReference vr, const fmiInteger value) {
     switch (vr) {
+    /*
         <%vars.intAlgVars |> var => SwitchVarsSet(var, "integerVars", 0) ;separator="\n"%>
         <%vars.intParamVars |> var => SwitchParametersSet(var, "integerParameter") ;separator="\n"%>
-        <%vars.intAliasVars |> var => SwitchAliasVarsSet(var, "Integer", "-") ;separator="\n"%>        
+        <%vars.intAliasVars |> var => SwitchAliasVarsSet(var, "Integer", "-") ;separator="\n"%>
+    */        
         default: 
             return fmiError;
     }
@@ -451,9 +435,11 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiBoolean getBoolean(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
+    /*
         <%vars.boolAlgVars |> var => SwitchVars(var, "booleanVars", 0) ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchParameters(var, "booleanParameter") ;separator="\n"%>
-        <%vars.boolAliasVars |> var => SwitchAliasVars(var, "Boolean", "!") ;separator="\n"%>        
+        <%vars.boolAliasVars |> var => SwitchAliasVars(var, "Boolean", "!") ;separator="\n"%>
+    */        
         default: 
             return 0;
     }
@@ -470,9 +456,11 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiStatus setBoolean(ModelInstance* comp, const fmiValueReference vr, const fmiBoolean value) {
     switch (vr) {
+    /*
         <%vars.boolAlgVars |> var => SwitchVarsSet(var, "booleanVars", 0) ;separator="\n"%>
         <%vars.boolParamVars |> var => SwitchParametersSet(var, "booleanParameter") ;separator="\n"%>
-        <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var, "Boolean", "!") ;separator="\n"%> 
+        <%vars.boolAliasVars |> var => SwitchAliasVarsSet(var, "Boolean", "!") ;separator="\n"%>
+    */ 
         default: 
             return fmiError;
     }
@@ -490,9 +478,11 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiString getString(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
+    /*
         <%vars.stringAlgVars |> var => SwitchVars(var, "stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParameters(var, "stringParameter") ;separator="\n"%>
         <%vars.stringAliasVars |> var => SwitchAliasVars(var, "string", "") ;separator="\n"%>
+    */
         default: 
             return 0;
     }
@@ -509,9 +499,11 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiString getString(ModelInstance* comp, const fmiValueReference vr) {
     switch (vr) {
+    /*
         <%vars.stringAlgVars |> var => SwitchVarsSet(var, "stringVars", 0) ;separator="\n"%>
         <%vars.stringParamVars |> var => SwitchParametersSet(var, "stringParameter") ;separator="\n"%>
-        <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var, "String", "") ;separator="\n"%>    
+        <%vars.stringAliasVars |> var => SwitchAliasVarsSet(var, "String", "") ;separator="\n"%>
+    */    
         default: 
             return 0;
     }
@@ -529,7 +521,9 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   fmiStatus setExternalFunction(ModelInstance* c, const fmiValueReference vr, const void* value){
     switch (vr) {
+    /*
         <%externalFuncs%>
+    */
         default: 
             return fmiError;
     }
@@ -710,51 +704,96 @@ match platform
   >>
 end getPlatformString2; 
 
-template fmuMakefile(SimCode simCode)
+template fmuMakefile(String target,SimCode simCode)
  "Generates the contents of the makefile for the simulation case. Copy libexpat & correct linux fmu"
 ::=
+match target
+case "msvc" then
 match simCode
 case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
   let dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
   let libsStr = (makefileParams.libs |> lib => lib ;separator=" ")
   let libsPos1 = if not dirExtra then libsStr //else ""
   let libsPos2 = if dirExtra then libsStr // else ""
+  let ParModelicaLibs = if acceptParModelicaGrammar() then '-lOMOCLRuntime -lOpenCL' // else ""
   let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
+    '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
+       case "inline-euler" then "-D_OMC_INLINE_EULER "
+       case "inline-rungekutta" then "-D_OMC_INLINE_RK "
+       case "dassljac" then "-D_OMC_JACOBIAN "%>'
+    
+  <<
+  # Makefile generated by OpenModelica
+
+  # Simulations use -O3 by default
+  SIM_OR_DYNLOAD_OPT_LEVEL=
+  MODELICAUSERCFLAGS=
+  CXX=cl
+  EXEEXT=.exe
+  DLLEXT=.dll
+  include <%makefileParams.omhome%>/include/omc/cpp/ModelicaConfic.inc
+  # /Od - Optimization disabled
+  # /EHa enable C++ EH (w/ SEH exceptions)
+  # /fp:except - consider floating-point exceptions when generating code
+  # /arch:SSE2 - enable use of instructions available with SSE2 enabled CPUs
+  # /I - Include Directories
+  # /DNOMINMAX - Define NOMINMAX (does what it says)
+  # /TP - Use C++ Compiler
+  CFLAGS=/Od /EHa /MP /fp:except /I"<%makefileParams.omhome%>/include/omc/cpp/" -I"$(BOOST_INCLUDE)" /I. /DNOMINMAX /TP /DNO_INTERACTIVE_DEPENDENCY
+
+  # /ZI enable Edit and Continue debug info 
+  CDFLAGS = /ZI
+
+  # /MD - link with MSVCRT.LIB
+  # /link - [linker options and libraries]
+  # /LIBPATH: - Directories where libs can be found
+  LDFLAGS=/MD   /link /DLL /NOENTRY /LIBPATH:"<%makefileParams.omhome%>/lib/omc/cpp/" /LIBPATH:"<%makefileParams.omhome%>/bin" OMCppSystem.lib OMCppMath.lib OMCppModelicaExternalC.lib
+
+  # /MDd link with MSVCRTD.LIB debug lib
+  # lib names should not be appended with a d just switch to lib/omc/cpp
+
+
+  FILEPREFIX=<%fileNamePrefix%>
+  FUNCTIONFILE=Functions.cpp
+  MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
+  MAINFILEFMU=<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
+  MAINOBJ=$(MODELICA_SYSTEM_LIB)
+  GENERATEDFILES=$(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> 
+ 
+  $(MODELICA_SYSTEM_LIB)$(DLLEXT): 
+  <%\t%>$(CXX) /Fe$(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%> $(CFLAGS) $(LDFLAGS)  
+  >>
+end match
+case "gcc" then      
+match simCode
+case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simulationSettingsOpt = sopt) then
+let extraCflags = match sopt case SOME(s as SIMULATION_SETTINGS(__)) then
     '<%if s.measureTime then "-D_OMC_MEASURE_TIME "%> <%match s.method
        case "inline-euler" then "-D_OMC_INLINE_EULER"
        case "inline-rungekutta" then "-D_OMC_INLINE_RK"%>'
-  let compilecmds = getPlatformString2(makefileParams.platform, fileNamePrefix, dirExtra, libsPos1, libsPos2, makefileParams.omhome)
-  <<
-  # Makefile generated by OpenModelica
- 
-  # Simulation of the fmu with dymola does not work 
-  # with inline-small-functions
-  SIM_OR_DYNLOAD_OPT_LEVEL=-O #-O2  -fno-inline-small-functions
-  CC=<%makefileParams.ccompiler%>
-  CXX=<%makefileParams.cxxcompiler%>
-  LINK=<%makefileParams.linker%>
-  EXEEXT=<%makefileParams.exeext%>
-  DLLEXT=<%makefileParams.dllext%>
-  CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
-  PLATLINUX = <%makefileParams.platform%>
-  PLAT34 = <%makefileParams.platform%>
-  CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
-  CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -lSimulationRuntimeC -linteractive <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
-  PERL=perl
-  MAINFILE=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.c
-  MAINOBJ=<%fileNamePrefix%>_FMU<% if acceptMetaModelicaGrammar() then ".conv"%>.o  
-  
-  PHONY: <%fileNamePrefix%>_FMU
-  <%compilecmds%>
-  
-  <%fileNamePrefix%>.conv.c: <%fileNamePrefix%>.c
-  <%\t%> $(PERL) <%makefileParams.omhome%>/share/omc/scripts/convert_lines.pl $< $@.tmp
-  <%\t%> @mv $@.tmp $@
-  $(MAINOBJ): $(MAINFILE) <%fileNamePrefix%>.c <%fileNamePrefix%>_functions.c <%fileNamePrefix%>_functions.h
-  clean:
-  <%\t%> @rm -f <%fileNamePrefix%>_records.o $(MAINOBJ) <%fileNamePrefix%>_FMU.o <%fileNamePrefix%>.o 
-  >>
+<<
+# Makefile generated by OpenModelica
+include <%makefileParams.omhome%>/include/omc/cpp/ModelicaConfic.inc
+# Simulations use -O0 by default
+SIM_OR_DYNLOAD_OPT_LEVEL=-O0
+CC=<%makefileParams.ccompiler%>
+CXX=<%makefileParams.cxxcompiler%>
+LINK=<%makefileParams.linker%>
+EXEEXT=<%makefileParams.exeext%>
+DLLEXT=<%makefileParams.dllext%>
+CFLAGS_BASED_ON_INIT_FILE=<%extraCflags%>
+CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) -I"<%makefileParams.omhome%>/include/omc/cpp" -I"$(BOOST_INCLUDE)" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags %>
+LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc/cpp"    
+
+MAINFILE=<%lastIdentOfPath(modelInfo.name)%><% if acceptMetaModelicaGrammar() then ".conv"%>.cpp
+MAINFILEFMU=<%lastIdentOfPath(modelInfo.name)%>FMU.cpp
+FUNCTIONFILE=Functions.cpp
+
+.PHONY: <%lastIdentOfPath(modelInfo.name)%>_FMU
+<%lastIdentOfPath(modelInfo.name)%>_FMU: $(MAINFILEFMU) $(MAINFILE) 
+<%\t%>$(CXX) -shared -I. -o $(MODELICA_SYSTEM_LIB) $(MAINFILEFMU) $(MAINFILE) $(FUNCTIONFILE)  <%algloopcppfilenames(allEquations,simCode)%>     $(CFLAGS)  $(LDFLAGS) -lOMCppSystem -lOMCppMath -lOMCppModelicaExternalC -Wl,-Bstatic  -Wl,-Bdynamic
+     
+>>
 end fmuMakefile;
 
 
