@@ -51,6 +51,8 @@ AC_SUBST(WITH_SUNDIALS)
 AC_SUBST(WITH_IPOPT)
 AC_SUBST(OMNOTEBOOK)
 AC_SUBST(FPMATHFORTRAN)
+AC_SUBST(OMOPTIM_CC)
+AC_SUBST(OMOPTIM_CXX)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -585,7 +587,17 @@ if test -n "$QMAKE"; then
     if test x"$with_paradiseo" = "xyes"; then
       with_paradiseo_checked=""
       for f in /{usr,opt,$PREFIX}; do
-        test -d "$f/include/paradiseo/" -a -d "$f/lib/paradiseo/" && with_paradiseo_include="$f/include/paradiseo/ $f/include/paradiseo/utils/" && with_paradiseo_lib="-L$f/lib/paradiseo/" && with_paradiseo="$f" || with_paradiseo_checked="$with_paradiseo_checked $f"
+        if test -d "$f/include/paradiseo/" -a -d "$f"/lib/paradiseo/; then
+          with_paradiseo_include="$f/include/paradiseo/ $f/include/paradiseo/utils/"
+          with_paradiseo_lib="-L$f"/lib/paradiseo/
+          with_paradiseo="$f"
+        elif test -d "$f/include/paradiseo/" -a -f "$f"/lib*/libeo.a ; then
+          with_paradiseo_include=`for inc in $f/include/paradiseo/*; do echo -n " $inc"; done`
+          with_paradiseo_lib="-L"`dirname "$f"/lib*/libeo.a`
+          with_paradiseo="$f"
+        else
+          with_paradiseo_checked="$with_paradiseo_checked $f"
+        fi
       done
     fi
 
@@ -598,6 +610,13 @@ if test -n "$QMAKE"; then
       AC_MSG_RESULT($with_paradiseo)
     fi
     
+  fi
+  if test -f /usr/bin/gcc-4.4 -a -f /usr/bin/g++-4.4; then
+    OMOPTIM_CC=gcc-4.4
+    OMOPTIM_CXX=g++-4.4
+  else
+    OMOPTIM_CC=$CC
+    OMOPTIM_CXX=$CXX
   fi
 fi
 
