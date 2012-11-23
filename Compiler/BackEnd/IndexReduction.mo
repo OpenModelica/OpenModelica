@@ -310,8 +310,8 @@ algorithm
   statemark := arrayCreate(size,-1);
   // check over all mss
   unassignedEqns := List.flatten(inEqnsLst);
-  ((unassignedEqns,outEqnsLst,discEqns)) := List.fold2(unassignedEqns,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
   outStateIndxs := List.fold2(unassignedEqns,statesInEquations,(m,statemark,0),inAssignments1,{});
+  ((unassignedEqns,outEqnsLst,discEqns)) := List.fold2(unassignedEqns,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
   b := intGe(listLength(outStateIndxs),listLength(unassignedEqns));
   // check each mss
   (b,outEqnsLst,outStateIndxs,discEqns) := minimalStructurallySingularSystem1(b,inEqnsLst,inAssignments1,inAssignments2,statemark,1,m,vars,outEqnsLst,outStateIndxs,discEqns);
