@@ -340,9 +340,6 @@ algorithm
         ((unassignedEqns,eqnsLst,discEqns)) = List.fold2(ilst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
         stateIndxs = List.fold2(ilst,statesInEquations,(m,statemark,mark),inAssignments1,{});
         b = intGe(listLength(stateIndxs),listLength(unassignedEqns));
-//print("Eqns: " +& intString(listLength(unassignedEqns)) +& " States " +& intString(listLength(stateIndxs)) +& "\n");
-//print("unassignedEqns: " +& stringDelimitList(List.map(unassignedEqns,intString),", ") +& "\n");
-//print("stateIndxs: " +& stringDelimitList(List.map(stateIndxs,intString),", ") +& "\n");
         (b,eqnsLst,stateIndxs,discEqns) = minimalStructurallySingularSystem2(b,eqnsLst,stateIndxs,discEqns,rest,inAssignments1,inAssignments2,statemark,mark+1,m,vars,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc);
      then
        (b,eqnsLst,stateIndxs,discEqns);
@@ -425,7 +422,7 @@ algorithm
         // if there is a continues variable than b is false
         b = Util.boolAndList(blst);
         eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
-        unassignedEqns = List.consOnTrue(not b and ba, eindx, unassignedEqns);
+        unassignedEqns = List.consOnTrue(ba and not b, eindx, unassignedEqns);
         discEqns = List.consOnTrue(b, eindx, discEqns);
       then
        ((unassignedEqns,eqnsLst,discEqns));       

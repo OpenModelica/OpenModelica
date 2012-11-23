@@ -253,14 +253,6 @@ public function matching
   external "C" BackendDAEEXT_matching(nv,ne,matchingID,cheapID,relabel_period,clear_match) annotation(Library = "omcruntime");
 end matching;
 
-public function getEqnsforIndexReduction
-"function: getEqnsforIndexReduction
-  author: Frenkel TUD 2012-04
-  "
-  output list<list<Integer>> eqns;
-  external "C" eqns = BackendDAEEXT_getEqnsforIndexReduction() annotation(Library = "omcruntime");
-end getEqnsforIndexReduction;
-
 public function getAssignment
 "function: getAssignment
   author: Frenkel TUD 2012-04"

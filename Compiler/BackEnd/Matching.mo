@@ -1525,7 +1525,7 @@ algorithm
     case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = PFaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
         (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = PF1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
@@ -1937,7 +1937,7 @@ algorithm
     case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = PFPlusaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{},false);
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
         (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (i_1,ass1_2,ass2_2,syst,shared,arg1) = PFPlus1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
@@ -2306,7 +2306,7 @@ algorithm
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = HKphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = HK1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
@@ -2966,7 +2966,7 @@ algorithm
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = HKDWphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = HKDW1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
@@ -3305,7 +3305,7 @@ algorithm
         lim = realInt(realMul(0.1,realSqrt(intReal(arrayLength(ass1)))));
         unmatched1 = ABMPphase(unmatched,i,nv,ne,m,mt,rowmarks,rlevel,colptrs,lim,ass1,ass2);
         (i_1,unmatched1) = HKphase(i+1,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
         (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = ABMP2(meqns,unmatched1,{},rowmarks,collummarks,level,rlevel,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = ABMP1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,rlevel1,colptrs,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
@@ -4017,7 +4017,7 @@ algorithm
         PR_Global_Relabel(l_label,r_label,nv,ne,m,mt,ass1,ass2);
         PR_FIFO_FAIRphase(0,unmatched,nv+ne,-1,nv,ne,m,mt,l_label,r_label,ass1,ass2,{});
         unmatched1 = getUnassigned(ne, ass1, {});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
         (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PR_FIFO_FAIR2(meqns,unmatched1,{},l_label,r_label,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = PR_FIFO_FAIR1(unmatched1,l_label1,r_label1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
@@ -5493,6 +5493,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,memsize;
       BackendDAE.EquationConstraints eq_cons;
+      list<Integer> unmatched1;
       list<list<Integer>> meqns1;
       String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
@@ -5509,8 +5510,9 @@ algorithm
       equation
         matchingExternalsetIncidenceMatrix(nv,ne,m);
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
-        meqns1 = BackendDAEEXT.getEqnsforIndexReduction();
         BackendDAEEXT.getAssignment(ass1,ass2);
+        unmatched1 = getUnassigned(ne, ass1, {});
+        meqns1 = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
         (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns1,true,algIndx,-1,0,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
@@ -5678,17 +5680,19 @@ protected function getEqnsforIndexReduction
   input list<Integer> U;
   input Integer neqns;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
+  input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   output list<list<Integer>> eqns;
 algorithm
-  eqns := match(U,neqns,m,ass2)
+  eqns := match(U,neqns,m,mT,ass1,ass2)
     local array<Boolean> colummarks;
-    case({},_,_,_) then {};
+    case({},_,_,_,_,_) then {};
     else
       equation
         colummarks = arrayCreate(neqns,false);
       then
-        getEqnsforIndexReduction1(U,m,colummarks,ass2,{});
+        getEqnsforIndexReduction1(U,m,mT,colummarks,ass1,ass2,{});
     end match;
 end getEqnsforIndexReduction;
 
@@ -5697,50 +5701,58 @@ protected function getEqnsforIndexReduction1
  autor: Frenkel TUD 2012-04"
   input list<Integer> U;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
+  input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Boolean> colummarks;
+  input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input list<list<Integer>> inEqns;
   output list<list<Integer>> outEqns;
 algorithm
-  outEqns:= matchcontinue (U,m,colummarks,ass2,inEqns)
+  outEqns:= matchcontinue (U,m,mT,colummarks,ass1,ass2,inEqns)
     local 
       list<Integer> rest,eqns;
       Integer e;
-    case ({},_,_,_,_) then listReverse(inEqns);
-    case (e::rest,_,_,_,_)
+    case ({},_,_,_,_,_,_) then listReverse(inEqns);
+    case (e::rest,_,_,_,_,_,_)
       equation
         // row is not visited
         false = colummarks[e];
         _= arrayUpdate(colummarks,e,true);
-        eqns = getEqnsforIndexReductionphase(e,m,colummarks,ass2,{e});
+        eqns = getEqnsforIndexReductionphase({e},m,mT,colummarks,ass1,ass2,{e});
       then
-        getEqnsforIndexReduction1(rest,m,colummarks,ass2,eqns::inEqns);
-    case (_::rest,_,_,_,_)
+        getEqnsforIndexReduction1(rest,m,mT,colummarks,ass1,ass2,eqns::inEqns);
+    case (_::rest,_,_,_,_,_,_)
       then
-        getEqnsforIndexReduction1(rest,m,colummarks,ass2,inEqns);        
+        getEqnsforIndexReduction1(rest,m,mT,colummarks,ass1,ass2,inEqns);        
   end matchcontinue;
 end getEqnsforIndexReduction1;
 
 protected function getEqnsforIndexReductionphase
-"function helper for getEqnsforIndexReduction
- autor: Frenkel TUD 2012-04"
-  input Integer e;
+"function getEqnsforIndexReductionphase
+  helper for getEqnsforIndexReduction
+  autor: Frenkel TUD 2012-04"
+  input list<Integer> elst;
   input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
   input array<Boolean> colummarks;
+  input array<Integer> ass1;
   input array<Integer> ass2;
   input list<Integer> inEqns;
   output list<Integer> outEqns;
 algorithm
   outEqns :=
-  match (e,m,colummarks,ass2,inEqns)
+  match (elst,m,mT,colummarks,ass1,ass2,inEqns)
     local
-      list<Integer> rows; 
-    case (_,_,_,_,_)
+      Integer e;
+      list<Integer> rows,rest,eqns;
+    case ({},_,_,_,_,_,_) then inEqns;
+    case (e::rest,_,_,_,_,_,_)
       equation
         // traverse all adiacent rows
         rows = List.select(m[e], Util.intPositive);
+        eqns = getEqnsforIndexReductiontraverseRows(rows,{},m,mT,colummarks,ass1,ass2,inEqns);
       then
-        getEqnsforIndexReductiontraverseRows(rows,m,colummarks,ass2,inEqns);
+        getEqnsforIndexReductionphase(rest,m,mT,colummarks,ass1,ass2,eqns);
     else
       then
         fail();
@@ -5748,36 +5760,79 @@ algorithm
 end getEqnsforIndexReductionphase;
 
 protected function getEqnsforIndexReductiontraverseRows
-"function helper for getEqnsforIndexReductiont
- autor: Frenkel TUD 2012-04"
+"function getEqnsforIndexReductiontraverseRows
+  helper for getEqnsforIndexReduction
+  autor: Frenkel TUD 2012-04"
   input list<Integer> rows;
+  input list<Integer> nextColums;
   input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
   input array<Boolean> colummarks;
+  input array<Integer> ass1;
   input array<Integer> ass2;
   input list<Integer> inEqns;
   output list<Integer> outEqns;
 algorithm
   outEqns:=
-  matchcontinue (rows,m,colummarks,ass2,inEqns)
+  matchcontinue (rows,nextColums,m,mT,colummarks,ass1,ass2,inEqns)
     local
-      list<Integer> rest,queue; 
+      list<Integer> rest,queue,nextqueue; 
       Integer rc,r;    
-    case ({},_,_,_,_) then inEqns;
-    case (r::rest,_,_,_,_)
+    case ({},{},_,_,_,_,_,_) then inEqns;
+    case ({},_,_,_,_,_,_,_) 
+      then 
+        getEqnsforIndexReductionphase(nextColums,m,mT,colummarks,ass1,ass2,inEqns);
+    case (r::rest,_,_,_,_,_,_,_)
       equation
         // row is matched
         rc = ass2[r];
         true = intGt(rc,0);
         false = colummarks[rc];
-        _= arrayUpdate(colummarks,rc,true);        
-        queue = getEqnsforIndexReductionphase(rc,m,colummarks,ass2,rc::inEqns);
+        _= arrayUpdate(colummarks,rc,true);
+        (nextqueue,queue) = getEqnsforIndexReductiontraverseColums(mT[r],colummarks,ass1,rc::nextColums,rc::inEqns);
       then
-        getEqnsforIndexReductiontraverseRows(rest,m,colummarks,ass2,queue);
-    case (_::rest,_,_,_,_)
+        getEqnsforIndexReductiontraverseRows(rest,nextqueue,m,mT,colummarks,ass1,ass2,queue);
+    case (_::rest,_,_,_,_,_,_,_)
       then
-        getEqnsforIndexReductiontraverseRows(rest,m,colummarks,ass2,inEqns);
+        getEqnsforIndexReductiontraverseRows(rest,nextColums,m,mT,colummarks,ass1,ass2,inEqns);
   end matchcontinue;
 end getEqnsforIndexReductiontraverseRows;
+
+protected function getEqnsforIndexReductiontraverseColums
+"function getEqnsforIndexReductiontraverseColums
+  helper for getEqnsforIndexReduction
+  autor: Frenkel TUD 2012-04"
+  input list<Integer> collums;
+  input array<Boolean> colummarks;
+  input array<Integer> ass1;
+  input list<Integer> inNextColums;
+  input list<Integer> inEqns;
+  output list<Integer> outNextColums;
+  output list<Integer> outEqns;
+algorithm
+  (outNextColums,outEqns):=
+  matchcontinue (collums,colummarks,ass1,inNextColums,inEqns)
+    local
+      list<Integer> rest,queue,nextqueue; 
+      Integer c,r;    
+    case ({},_,_,_,_) then (inNextColums,inEqns);
+    case (c::rest,_,_,_,_) 
+      equation
+        // colum is unmatched
+        r = ass1[c];
+        false = intGt(r,0);
+        false = colummarks[c];
+        _= arrayUpdate(colummarks,c,true);
+        (nextqueue,queue) = getEqnsforIndexReductiontraverseColums(rest,colummarks,ass1,c::inNextColums,c::inEqns);
+      then
+        (nextqueue,queue);
+    case (_::rest,_,_,_,_)
+      equation
+        (nextqueue,queue) = getEqnsforIndexReductiontraverseColums(rest,colummarks,ass1,inNextColums,inEqns);
+      then
+        (nextqueue,queue);
+  end matchcontinue;
+end getEqnsforIndexReductiontraverseColums;
 
 protected function reduceIndexifNecessary
 "function: reduceIndexifNecessary, calls sssHandler if system need index reduction
