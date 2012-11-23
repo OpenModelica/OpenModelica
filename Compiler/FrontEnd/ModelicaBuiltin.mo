@@ -1673,6 +1673,7 @@ end instantiateModel;
 function buildOpenTURNSInterface "generates wrapper code for OpenTURNS"
   input TypeName className;
   input String pythonTemplateFile;
+  input Boolean showFlatModelica := false;
   output String outPythonScript;
   external "builtin";
 end buildOpenTURNSInterface;

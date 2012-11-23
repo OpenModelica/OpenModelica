@@ -1596,7 +1596,7 @@ algorithm
 end crefPrefixDer;
 
 public function crefPrefixPre "public function crefPrefixPre
-  Appends $DER to a cref, so a => $PRE.a"
+  Appends $PRE to a cref, so a => $PRE.a"
   input ComponentRef inCref;
   output ComponentRef outCref;
 algorithm

@@ -19,7 +19,7 @@
 #include <string.h>
 #include <assert.h>
 
-#define DEBUG      0
+#define DEBUG      1
 #define MAX_BUFFER 8000
 
 long callOpenModelicaModel(STATE p_state, INPOINT inPoint, OUTPOINT outPoint, EXCHANGEDDATA p_exchangedData, ERROR p_error)

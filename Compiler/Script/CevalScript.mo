@@ -3414,7 +3414,7 @@ protected function buildOpenTURNSInterface "builds the OpenTURNS interface by ca
 algorithm
   (outCache,scriptFile,outSt):= match(inCache,inEnv,vals,inSt,inMsg)
   local
-    String templateFile;
+    String templateFile, str;
     Absyn.Program p;
     Absyn.Path className;
     Env.Cache cache;
@@ -3423,11 +3423,14 @@ algorithm
     BackendDAE.BackendDAE dlow;
     DAE.FunctionTree funcs;
     Interactive.SymbolTable st;
+    Boolean showFlatModelica;
     
-    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile)},Interactive.SYMBOLTABLE(ast=p),_) equation      
+    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},Interactive.SYMBOLTABLE(ast=p),_) equation      
       (cache,env,dae,st) = runFrontEnd(cache,inEnv,className,inSt,false);
       //print("instantiated class\n");
       dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+      str = Debug.bcallret2(showFlatModelica, DAEDump.dumpStr, dae, Env.getFunctionTree(cache), "");
+      Debug.bcall(showFlatModelica, print, str);
       // get all the variable names with a distribution
       // TODO FIXME
       // sort all variable names in the distribution order
@@ -6692,6 +6695,10 @@ algorithm
      Env.Env env;
      SCode.Element c;
      Absyn.Path fpath;
+     SCode.Replaceable repp;
+     SCode.Redeclare redp;
+     SCode.Partial ppp;
+     list<Absyn.Path> functionDependencies;
    
    // if is partial instantiation no function evaluation/generation
    case (cache, env, fpath)
@@ -6710,6 +6717,38 @@ algorithm
    
    case (cache, env, fpath) 
      then true;
+
+   case (cache, env, fpath)
+     equation
+       // not partial instantiation
+       false = System.getPartialInstantiation();
+       /*
+       // not replaceable, replaceable + redeclare, not partial
+       (_, SCode.CLASS(partialPrefix = ppp, 
+                       prefixes = SCode.PREFIXES(
+                                          replaceablePrefix=repp, 
+                                          redeclarePrefix = redp)), _) = Lookup.lookupClass(cache, env, fpath, false);
+       // if is replaceable and not redeclared, no joy or partial
+       false = SCode.partialBool(ppp);
+       true = boolOr(boolAnd(SCode.replaceableBool(repp), SCode.redeclareBool(redp)), 
+                     SCode.redeclareBool(redp)); 
+       
+       // try at least to see if we can get all the dependencies
+       // (_, functionDependencies, _) = getFunctionDependencies(cache, fpath);
+       
+       // we should do the same for ALL the dependencies but IS SLOW AS HELL!
+       // (_, functionDependencies, _) = getFunctionDependencies(cache, fpath);
+       // functionDependencies = List.deleteMember(functionDependencies, fpath);
+       // true = List.fold(List.map2r(functionDependencies, isCompleteFunction, cache, env), boolAnd, true);
+       */
+     then 
+       true;
+
+   // if it fails above always assume the worst!
+   case (cache, env, fpath)
+     equation
+     then
+       false;
    
   end matchcontinue;
 end isCompleteFunction;
