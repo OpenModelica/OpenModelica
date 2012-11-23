@@ -303,15 +303,52 @@ protected
   BackendDAE.EquationArray eqns;
   array<Integer> statemark;
   Integer size;
+  Boolean b;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m)) := syst;
   size := BackendVariable.varsSize(vars);
   statemark := arrayCreate(size,-1);
-  (b,outEqnsLst,outStateIndxs,discEqns) := minimalStructurallySingularSystem1(inEqnsLst,inAssignments1,inAssignments2,statemark,1,m,vars,{},{},{});
+  // check over all mss
+  unassignedEqns := List.flatten(inEqnsLst);
+  ((unassignedEqns,outEqnsLst,discEqns)) := List.fold2(unassignedEqns,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
+  outStateIndxs := List.fold2(unassignedEqns,statesInEquations,(m,statemark,0),inAssignments1,{});
+  b := intGe(listLength(outStateIndxs),listLength(unassignedEqns));
+  // check each mss
+  (b,outEqnsLst,outStateIndxs,discEqns) := minimalStructurallySingularSystem1(b,inEqnsLst,inAssignments1,inAssignments2,statemark,1,m,vars,outEqnsLst,outStateIndxs,discEqns);
 end minimalStructurallySingularSystem;
 
 protected function minimalStructurallySingularSystem1
 "function: minimalStructurallySingularSystem1
+  author: Frenkel TUD - 2012-11,
+  helper for minimalStructurallySingularSystem"
+  input Boolean b;
+  input list<list<Integer>> inEqnsLst;
+  input array<Integer> inAssignments1;
+  input array<Integer> inAssignments2;
+  input array<Integer> statemark;
+  input Integer mark;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.Variables vars;
+  input list<Integer> inEqnsLstAcc;
+  input list<Integer> inStateIndxsAcc;
+  input list<Integer> inDiscEqnsAcc;
+  output Boolean outB;
+  output list<Integer> outEqnsLst;
+  output list<Integer> outStateIndxs;
+  output list<Integer> outDiscEqns;
+algorithm
+  (outB,outEqnsLst,outStateIndxs,outDiscEqns) := match(b,inEqnsLst,inAssignments1,inAssignments2,statemark,mark,m,vars,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc)
+    case (false,_,_,_,_,_,_,_,_,_,_) then (false,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc);
+    case (true,_,_,_,_,_,_,_,_,_,_)
+      equation
+        (outB,outEqnsLst,outStateIndxs,outDiscEqns) = minimalStructurallySingularSystem2(inEqnsLst,inAssignments1,inAssignments2,statemark,mark,m,vars,{},{},{});
+     then
+       (outB,outEqnsLst,outStateIndxs,outDiscEqns);
+  end match;
+end minimalStructurallySingularSystem1;
+
+protected function minimalStructurallySingularSystem2
+"function: minimalStructurallySingularSystem2
   author: Frenkel TUD - 2012-11,
   helper for minimalStructurallySingularSystem"
   input list<list<Integer>> inEqnsLst;
@@ -340,14 +377,14 @@ algorithm
         ((unassignedEqns,eqnsLst,discEqns)) = List.fold2(ilst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
         stateIndxs = List.fold2(ilst,statesInEquations,(m,statemark,mark),inAssignments1,{});
         b = intGe(listLength(stateIndxs),listLength(unassignedEqns));
-        (b,eqnsLst,stateIndxs,discEqns) = minimalStructurallySingularSystem2(b,eqnsLst,stateIndxs,discEqns,rest,inAssignments1,inAssignments2,statemark,mark+1,m,vars,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc);
+        (b,eqnsLst,stateIndxs,discEqns) = minimalStructurallySingularSystem3(b,eqnsLst,stateIndxs,discEqns,rest,inAssignments1,inAssignments2,statemark,mark+1,m,vars,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc);
      then
        (b,eqnsLst,stateIndxs,discEqns);
   end match;
-end minimalStructurallySingularSystem1;
+end minimalStructurallySingularSystem2;
 
-protected function minimalStructurallySingularSystem2
-"function: minimalStructurallySingularSystem2
+protected function minimalStructurallySingularSystem3
+"function: minimalStructurallySingularSystem3
   author: Frenkel TUD - 2012-11,
   helper for minimalStructurallySingularSystem."
   input Boolean inB;
@@ -380,11 +417,11 @@ algorithm
         eqnsLst = listAppend(inEqnsLstAcc,inEqnsLst);
         stateIndxs = listAppend(inStateIndxsAcc,inStateIndxs);        
         discEqns = listAppend(inDiscEqnsAcc,inDiscEqns);
-        (b,eqnsLst,stateIndxs,discEqns) = minimalStructurallySingularSystem1(rest,inAssignments1,inAssignments2,statemark,mark,m,vars,eqnsLst,stateIndxs,discEqns);
+        (b,eqnsLst,stateIndxs,discEqns) = minimalStructurallySingularSystem2(rest,inAssignments1,inAssignments2,statemark,mark,m,vars,eqnsLst,stateIndxs,discEqns);
      then
        (b,eqnsLst,stateIndxs,discEqns);
   end match;
-end minimalStructurallySingularSystem2;
+end minimalStructurallySingularSystem3;
 
 protected function unassignedContinuesEqns
   input Integer eindx;
