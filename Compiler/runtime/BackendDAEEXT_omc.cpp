@@ -210,17 +210,42 @@ extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, mod
 
 extern void* BackendDAEEXT_getEqnsforIndexReduction()
 {
-  int i=0;
-  int *eqns = (int*) malloc((n+1) * sizeof(int));
-  int eqns_size=0;
   void *res = mk_nil();
-  if ((match != NULL) && (row_match != NULL) && (eqns != NULL)) {
-    eqns_size = getEqnsForIndexReduction(col_ptrs,col_ids,match,row_match,n,m,eqns);
+  if ((match != NULL) && (row_match != NULL)) {
+    char* visited = (char*)malloc(sizeof(char) * m);
+    int* queue = (int*)malloc(sizeof(int) * n);
+    int queue_ptr, queue_col, ptr, i, j, queue_size, row, col, eptr;
+
+    memset(visited, 0, sizeof(char) * m);
+
+    for(i = 0; i < n; i++) {
+      if(match[i] < 0) {
+        void *res1 = mk_nil();
+        queue[0] = i; queue_ptr = 0; queue_size = 1;
+	    res1 = mk_cons(mk_icon(i+1),res1);
+        if (col_ptrs[i] != col_ptrs[i+1]) {
+          while(queue_size > queue_ptr) {
+            queue_col = queue[queue_ptr++];
+            eptr = col_ptrs[queue_col + 1];
+            for(ptr = col_ptrs[queue_col]; ptr < eptr; ptr++) {
+              row = col_ids[ptr];
+              if(visited[row] != 1) {
+                visited[row] = 1;
+                col = row_match[row];
+                if(col > -1) {
+                  queue[queue_size++] = col;
+                  res1 = mk_cons(mk_icon(col+1),res1);
+                }
+              }
+            }
+          }
+        }
+        res = mk_cons(res1,res);
+      }
+    }
+    free(queue);
+    free(visited);
   }
-  for (i = 0; i < eqns_size; i++) {
-    res = mk_cons(mk_icon(eqns[i]+1),res);
-  }
-  free(eqns);
   return res;
 }
 

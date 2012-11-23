@@ -257,7 +257,7 @@ public function getEqnsforIndexReduction
 "function: getEqnsforIndexReduction
   author: Frenkel TUD 2012-04
   "
-  output list<Integer> eqns;
+  output list<list<Integer>> eqns;
   external "C" eqns = BackendDAEEXT_getEqnsforIndexReduction() annotation(Library = "omcruntime");
 end getEqnsforIndexReduction;
 

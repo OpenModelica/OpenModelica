@@ -62,7 +62,7 @@ protected import System;
 /*************************************/
 
 public partial function StructurallySingularSystemHandlerFunc
-  input list<Integer> eqns;
+  input list<list<Integer>> eqns;
   input Integer actualEqn;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -229,7 +229,7 @@ algorithm
     case (_,_,_,_,_,_,_,_,_,match_opts as (BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
       equation
         meqns = getMarked(nf,i,emark,{});
-        (_,i_1,syst,shared,ass1_1,ass2_1,arg) = sssHandler(meqns,i,isyst,ishared,ass1,ass2,inArg) 
+        (_,i_1,syst,shared,ass1_1,ass2_1,arg) = sssHandler({meqns},i,isyst,ishared,ass1,ass2,inArg) 
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -1509,7 +1509,8 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
-      list<Integer> unmatched1,meqns_1;
+      list<Integer> unmatched1;
+      list<list<Integer>> meqns;
       String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
@@ -1524,8 +1525,8 @@ algorithm
     case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = PFaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{});
-        meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
-        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns_1,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = PF1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
@@ -1543,7 +1544,7 @@ end PF1;
 protected function PF2
 "function: PF2, helper for PF
   author: Frenkel TUD 2012-03"
-  input list<Integer> meqns "Marked Equations for Index Reduction";
+  input list<list<Integer>> meqns "Marked Equations for Index Reduction";
   input list<Integer> unmatched;
   input list<Integer> changedEqns;
   input array<Integer> rowmarks;
@@ -1920,7 +1921,8 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
-      list<Integer> unmatched1,meqns_1;
+      list<Integer> unmatched1;
+      list<list<Integer>> meqns;
       String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
@@ -1935,8 +1937,8 @@ algorithm
     case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = PFPlusaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{},false);
-        meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
-        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns_1,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (i_1,ass1_2,ass2_2,syst,shared,arg1) = PFPlus1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (i_1,ass1_2,ass2_2,syst,shared,arg1);
@@ -2288,7 +2290,8 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
-      list<Integer> unmatched1,meqns_1;
+      list<Integer> unmatched1;
+      list<list<Integer>> meqns;
       String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
@@ -2303,8 +2306,8 @@ algorithm
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = HKphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
-        (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns_1,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = HK1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
@@ -2322,7 +2325,7 @@ end HK1;
 protected function HK2
 "function: HK2, helper for HK
   author: Frenkel TUD 2012-03"
-  input list<Integer> meqns "Marked Equations for Index Reduction";
+  input list<list<Integer>> meqns "Marked Equations for Index Reduction";
   input list<Integer> unmatched;
   input list<Integer> changedEqns;
   input array<Integer> rowmarks;
@@ -2947,7 +2950,8 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
-      list<Integer> unmatched1,meqns_1;
+      list<Integer> unmatched1;
+      list<list<Integer>> meqns;
       String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
@@ -2962,8 +2966,8 @@ algorithm
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = HKDWphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
-        (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns_1,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = HKDW1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
@@ -3283,7 +3287,8 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1,lim;
-      list<Integer> unmatched1,meqns_1;
+      list<Integer> unmatched1;
+      list<list<Integer>> meqns;
       String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
@@ -3300,8 +3305,8 @@ algorithm
         lim = realInt(realMul(0.1,realSqrt(intReal(arrayLength(ass1)))));
         unmatched1 = ABMPphase(unmatched,i,nv,ne,m,mt,rowmarks,rlevel,colptrs,lim,ass1,ass2);
         (i_1,unmatched1) = HKphase(i+1,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
-        (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = ABMP2(meqns_1,unmatched1,{},rowmarks,collummarks,level,rlevel,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = ABMP2(meqns,unmatched1,{},rowmarks,collummarks,level,rlevel,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = ABMP1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,rlevel1,colptrs,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
@@ -3319,7 +3324,7 @@ end ABMP1;
 protected function ABMP2
 "function: ABMP2, helper for ABMP
   author: Frenkel TUD 2012-03"
-  input list<Integer> meqns "Marked Equations for Index Reduction";
+  input list<list<Integer>> meqns "Marked Equations for Index Reduction";
   input list<Integer> unmatched;
   input list<Integer> changedEqns;
   input array<Integer> rowmarks;
@@ -3994,7 +3999,8 @@ algorithm
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1;
-      list<Integer> unmatched1,meqns_1;
+      list<Integer> unmatched1;
+      list<list<Integer>> meqns;
       String eqn_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
@@ -4011,8 +4017,8 @@ algorithm
         PR_Global_Relabel(l_label,r_label,nv,ne,m,mt,ass1,ass2);
         PR_FIFO_FAIRphase(0,unmatched,nv+ne,-1,nv,ne,m,mt,l_label,r_label,ass1,ass2,{});
         unmatched1 = getUnassigned(ne, ass1, {});
-        meqns_1 = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
-        (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PR_FIFO_FAIR2(meqns_1,unmatched1,{},l_label,r_label,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,ass2);
+        (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PR_FIFO_FAIR2(meqns,unmatched1,{},l_label,r_label,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = PR_FIFO_FAIR1(unmatched1,l_label1,r_label1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
@@ -4030,7 +4036,7 @@ end PR_FIFO_FAIR1;
 protected function PR_FIFO_FAIR2
 "function: PR_FIFO_FAIR2, helper for PR_FIFO_FAIR
   author: Frenkel TUD 2012-03"
-  input list<Integer> meqns "Marked Equations for Index Reduction";
+  input list<list<Integer>> meqns "Marked Equations for Index Reduction";
   input list<Integer> unmatched;
   input list<Integer> changedEqns;
   input array<Integer> l_label;
@@ -5461,7 +5467,7 @@ end PR_FIFO_FAIRExternal;
 protected function matchingExternal
 "function: matchingExternal, helper for external matching algorithms
   author: Frenkel TUD"
-  input list<Integer> meqns "Marked Equations for Index Reduction";
+  input list<list<Integer>> meqns "Marked Equations for Index Reduction";
   input Boolean internalCall "true if function is called from it self";
   input Integer algIndx "Index of the algorithm, see BackendDAEEXT.matching";
   input Integer cheapMatching "Method for cheap Matching";
@@ -5487,7 +5493,7 @@ algorithm
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,memsize;
       BackendDAE.EquationConstraints eq_cons;
-      list<Integer> meqns_1;
+      list<list<Integer>> meqns1;
       String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
@@ -5503,9 +5509,9 @@ algorithm
       equation
         matchingExternalsetIncidenceMatrix(nv,ne,m);
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
-        meqns_1 = BackendDAEEXT.getEqnsforIndexReduction();
+        meqns1 = BackendDAEEXT.getEqnsforIndexReduction();
         BackendDAEEXT.getAssignment(ass1,ass2);
-        (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns_1,true,algIndx,-1,0,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns1,true,algIndx,-1,0,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
     case (_::_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
@@ -5673,7 +5679,7 @@ protected function getEqnsforIndexReduction
   input Integer neqns;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
-  output list<Integer> eqns;
+  output list<list<Integer>> eqns;
 algorithm
   eqns := match(U,neqns,m,ass2)
     local array<Boolean> colummarks;
@@ -5693,8 +5699,8 @@ protected function getEqnsforIndexReduction1
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
   input array<Boolean> colummarks;
   input array<Integer> ass2 "ass[varindx]=eqnindx";
-  input list<Integer> inEqns;
-  output list<Integer> outEqns;
+  input list<list<Integer>> inEqns;
+  output list<list<Integer>> outEqns;
 algorithm
   outEqns:= matchcontinue (U,m,colummarks,ass2,inEqns)
     local 
@@ -5706,9 +5712,9 @@ algorithm
         // row is not visited
         false = colummarks[e];
         _= arrayUpdate(colummarks,e,true);
-        eqns = getEqnsforIndexReductionphase(e,m,colummarks,ass2,e::inEqns);
+        eqns = getEqnsforIndexReductionphase(e,m,colummarks,ass2,{e});
       then
-        getEqnsforIndexReduction1(rest,m,colummarks,ass2,eqns);
+        getEqnsforIndexReduction1(rest,m,colummarks,ass2,eqns::inEqns);
     case (_::rest,_,_,_,_)
       then
         getEqnsforIndexReduction1(rest,m,colummarks,ass2,inEqns);        
@@ -5813,7 +5819,7 @@ algorithm
         ({},actualEqn+1,isyst,ishared,nv,ne,ass1,ass2,inArg);
     case (_::_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
       equation
-        (changedEqns,i_1,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,actualEqn,isyst,ishared,ass2,ass1,inArg);
+        (changedEqns,i_1,syst,shared,ass2_1,ass1_1,arg) = sssHandler({meqns},actualEqn,isyst,ishared,ass2,ass1,inArg);
         ne_1 = BackendDAEUtil.systemSize(syst);
         nv_1 = BackendVariable.daenumVariables(syst);
         ass1_2 = assignmentsArrayExpand(ass1_1,ne_1,arrayLength(ass1_1),-1);
@@ -6035,7 +6041,7 @@ public function testMatchingAlgorithms1
     output BackendDAE.Shared oshared;
     output BackendDAE.StructurallySingularSystemHandlerArg outArg;
     partial function StructurallySingularSystemHandlerFunc
-      input list<Integer> eqns;
+      input list<list<Integer>> eqns;
       input Integer actualEqn;
       input BackendDAE.EqSystem isyst;
       input BackendDAE.Shared ishared;
@@ -6097,7 +6103,7 @@ public function testMatchingAlgorithm
     output BackendDAE.Shared oshared;
     output BackendDAE.StructurallySingularSystemHandlerArg outArg;
     partial function StructurallySingularSystemHandlerFunc
-      input list<Integer> eqns;
+      input list<list<Integer>> eqns;
       input Integer actualEqn;
       input BackendDAE.EqSystem isyst;
       input BackendDAE.Shared ishared;

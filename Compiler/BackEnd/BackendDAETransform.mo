@@ -104,7 +104,7 @@ public function matchingAlgorithm
   output BackendDAE.Shared oshared;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;  
   partial function StructurallySingularSystemHandlerFunc
-    input list<Integer> eqns;
+    input list<list<Integer>> eqns;
     input Integer actualEqn;
     input BackendDAE.EqSystem isyst;
     input BackendDAE.Shared ishared;
@@ -407,7 +407,7 @@ public function matchingAlgorithm2
   output BackendDAE.Shared oshared;
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
   partial function StructurallySingularSystemHandlerFunc
-    input list<Integer> eqns;
+    input list<list<Integer>> eqns;
     input Integer actualEqn;
     input BackendDAE.EqSystem isyst;
     input BackendDAE.Shared ishared;
@@ -462,7 +462,7 @@ algorithm
     case (_,_,_,_,_,BackendDAE.ASSIGNMENTS(an1,am1,vec1),BackendDAE.ASSIGNMENTS(an2,am2,vec2),match_opts as (BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
       equation
         meqns = BackendDAEEXT.getMarkedEqns();
-        (_,i_1,syst,shared,vec1,vec2,arg) = sssHandler(meqns,i,isyst,ishared,vec1,vec2,inArg)
+        (_,i_1,syst,shared,vec1,vec2,arg) = sssHandler({meqns},i,isyst,ishared,vec1,vec2,inArg)
         "path_found failed, Try index reduction using dummy derivatives.
          When a constraint exist between states and index reduction is needed
          the dummy derivative will select one of the states as a dummy state
@@ -2663,7 +2663,7 @@ public function reduceIndexDummyDer
   inputs: (BackendDAE, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT,
              int /* number of vars */, int /* number of eqns */, int /* i */)
   outputs: (BackendDAE, BackendDAE.IncidenceMatrix, IncidenceMatrixT)"
-  input list<Integer> eqns;
+  input list<list<Integer>> eqns;
   input Integer actualEqn;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -2681,7 +2681,7 @@ algorithm
   (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg):=
   matchcontinue (eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
     local
-      list<Integer> eqns1,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
+      list<Integer> eqnsf,eqns1,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<DAE.ComponentRef> states;
       array<list<Integer>> mt;
       Integer stateno,noofeqns;
@@ -2699,8 +2699,9 @@ algorithm
 
     case (_,_,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,ass1,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns))
       equation
+        eqnsf = List.flatten(eqns);
         // get from scalar eqns indexes the indexes in the equation array
-        eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
+        eqns1 = List.map1r(eqnsf,arrayGet,mapIncRowEqn);
         eqns1 = List.unique(eqns1);
         // BackendDump.dumpStateVariables(BackendVariable.daeVars(syst));
         // print("marked equations:");print(stringDelimitList(List.map(eqns,intString),","));print("\n");
@@ -2711,7 +2712,7 @@ algorithm
 
         // Collect the states in the equations that are singular, i.e. composing a constraint between states.
         // Note that states are collected from -all- marked equations, not only the differentiated ones.
-        (states,stateindx) = statesInEqns(eqns, syst,{},{});
+        (states,stateindx) = statesInEqns(eqnsf, syst,{},{});
         (syst,shared,deqns,so1,orgEqnsLst1) = differentiateEqns(syst,shared,eqns_1,so,orgEqnsLst);
         (state,stateno) = selectDummyState(states, stateindx, syst, mapIncRowEqn, so);
         // print("Selected ");print(ComponentReference.printComponentRefStr(state));print(" as dummy state\n");
@@ -2742,15 +2743,16 @@ algorithm
 
     case (_,_,syst,shared,_,_,(_,_,_,mapIncRowEqn,_))
       equation
+        eqnsf = List.flatten(eqns);
         // get from scalar eqns indexes the indexes in the equation array
-        eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
+        eqns1 = List.map1r(eqnsf,arrayGet,mapIncRowEqn);
         eqns1 = List.unique(eqns1);        
         diff_eqns = BackendDAEEXT.getDifferentiatedEqns();
         eqns_1 = List.setDifferenceOnTrue(eqns1, diff_eqns, intEq);
         es = List.map(eqns_1, intString);
         es_1 = stringDelimitList(es, ", ");
         print("eqns =");print(es_1);print("\n");
-        ({},_) = statesInEqns(eqns, syst,{},{});
+        ({},_) = statesInEqns(eqnsf, syst,{},{});
         print("no states found in equations:");
         BackendDump.printEquations(eqns_1, syst);
         print("differentiated equations:");

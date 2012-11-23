@@ -85,7 +85,7 @@ public function pantelidesIndexReduction
 "function: pantelidesIndexReduction
   author: Frenkel TUD 2012-04
   Index Reduction algorithm to get a index 1 or 0 system."
-  input list<Integer> eqns;
+  input list<list<Integer>> eqns;
   input Integer actualEqn;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -121,7 +121,7 @@ algorithm
         barray = arrayCreate(size,false);
         barray = List.fold(eqns_1,setBArray,barray);
         (barray,syst,shared,ass1,ass2,arg) =
-         pantelidesIndexReduction1(b,unassignedStates,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,barray);
+         pantelidesIndexReduction1(b,unassignedStates,List.flatten(eqns),eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,barray);
         // get from eqns indexes the scalar indexes
         newsize = BackendDAEUtil.systemSize(syst);
         barray = List.fold(discEqns,setBArray,barray);
@@ -224,7 +224,7 @@ algorithm
         true = intGt(listLength(eqns),0);
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
-        eqns1 = List.unique(eqns1);                
+        eqns1 = List.uniqueIntN(eqns1,arrayLength(mapIncRowEqn));              
         // do not differentiate self generated equations $_DER.x = der(x) 
         eqns1 = List.select1(eqns1,intLe,noofeqns);
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\nmarked equations: ");
@@ -257,8 +257,8 @@ algorithm
         true = intGt(listLength(eqns),0);
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states.\nmarked equations:\n");
         // get from scalar eqns indexes the indexes in the equation array
-        eqns1 = List.map1r(alleqns,arrayGet,mapIncRowEqn);
-        eqns1 = List.unique(eqns1);          
+        eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
+        eqns1 = List.uniqueIntN(eqns1,arrayLength(mapIncRowEqn));        
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
         Debug.fcall(Flags.BLT_DUMP, print, "unassgined states:\n");
         varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,BackendVariable.daeVars(isyst));
@@ -288,7 +288,7 @@ protected function minimalStructurallySingularSystem
   checks if the subset of equations is minimal structurally singular.
   The number of states must be larger or equal to the number of unmatched
   equations."
-  input list<Integer> inEqnsLst;
+  input list<list<Integer>> inEqnsLst;
   input BackendDAE.EqSystem syst;
   input array<Integer> inAssignments1;
   input array<Integer> inAssignments2;
@@ -301,17 +301,93 @@ protected
   BackendDAE.IncidenceMatrix m;
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  array<Boolean> statemark;
+  array<Integer> statemark;
   Integer size;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m)) := syst;
-  ((unassignedEqns,outEqnsLst,discEqns)) := List.fold2(inEqnsLst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
-  outEqnsLst := listReverse(outEqnsLst);
   size := BackendVariable.varsSize(vars);
-  statemark := arrayCreate(size,false);
-  outStateIndxs := List.fold2(inEqnsLst,statesInEquations,(m,statemark),inAssignments1,{});
-  b := intGe(listLength(outStateIndxs),listLength(unassignedEqns));
+  statemark := arrayCreate(size,-1);
+  (b,outEqnsLst,outStateIndxs,discEqns) := minimalStructurallySingularSystem1(inEqnsLst,inAssignments1,inAssignments2,statemark,1,m,vars,{},{},{});
 end minimalStructurallySingularSystem;
+
+protected function minimalStructurallySingularSystem1
+"function: minimalStructurallySingularSystem1
+  author: Frenkel TUD - 2012-11,
+  helper for minimalStructurallySingularSystem"
+  input list<list<Integer>> inEqnsLst;
+  input array<Integer> inAssignments1;
+  input array<Integer> inAssignments2;
+  input array<Integer> statemark;
+  input Integer mark;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.Variables vars;
+  input list<Integer> inEqnsLstAcc;
+  input list<Integer> inStateIndxsAcc;
+  input list<Integer> inDiscEqnsAcc;
+  output Boolean outB;
+  output list<Integer> outEqnsLst;
+  output list<Integer> outStateIndxs;
+  output list<Integer> outDiscEqns;
+algorithm
+  (outB,outEqnsLst,outStateIndxs,outDiscEqns) := match(inEqnsLst,inAssignments1,inAssignments2,statemark,mark,m,vars,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc)
+    local
+      list<Integer> ilst,unassignedEqns,eqnsLst,discEqns,stateIndxs;
+      list<list<Integer>> rest;
+      Boolean b;
+    case ({},_,_,_,_,_,_,_,_,_) then (true,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc);
+    case (ilst::rest,_,_,_,_,_,_,_,_,_)
+      equation
+        ((unassignedEqns,eqnsLst,discEqns)) = List.fold2(ilst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
+        stateIndxs = List.fold2(ilst,statesInEquations,(m,statemark,mark),inAssignments1,{});
+        b = intGe(listLength(stateIndxs),listLength(unassignedEqns));
+//print("Eqns: " +& intString(listLength(unassignedEqns)) +& " States " +& intString(listLength(stateIndxs)) +& "\n");
+//print("unassignedEqns: " +& stringDelimitList(List.map(unassignedEqns,intString),", ") +& "\n");
+//print("stateIndxs: " +& stringDelimitList(List.map(stateIndxs,intString),", ") +& "\n");
+        (b,eqnsLst,stateIndxs,discEqns) = minimalStructurallySingularSystem2(b,eqnsLst,stateIndxs,discEqns,rest,inAssignments1,inAssignments2,statemark,mark+1,m,vars,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc);
+     then
+       (b,eqnsLst,stateIndxs,discEqns);
+  end match;
+end minimalStructurallySingularSystem1;
+
+protected function minimalStructurallySingularSystem2
+"function: minimalStructurallySingularSystem2
+  author: Frenkel TUD - 2012-11,
+  helper for minimalStructurallySingularSystem."
+  input Boolean inB;
+  input list<Integer> inEqnsLst;
+  input list<Integer> inStateIndxs;
+  input list<Integer> inDiscEqns;
+  input list<list<Integer>> rest;
+  input array<Integer> inAssignments1;
+  input array<Integer> inAssignments2;
+  input array<Integer> statemark;
+  input Integer mark;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.Variables vars;
+  input list<Integer> inEqnsLstAcc;
+  input list<Integer> inStateIndxsAcc;
+  input list<Integer> inDiscEqnsAcc;
+  output Boolean outB;
+  output list<Integer> outEqnsLst;
+  output list<Integer> outStateIndxs;
+  output list<Integer> outDiscEqns;
+algorithm
+  (outB,outEqnsLst,outStateIndxs,outDiscEqns) := 
+  match(inB,inEqnsLst,inStateIndxs,inDiscEqns,rest,inAssignments1,inAssignments2,statemark,mark,m,vars,inEqnsLstAcc,inStateIndxsAcc,inDiscEqnsAcc)
+    local
+      list<Integer> eqnsLst,discEqns,stateIndxs;
+      Boolean b;
+    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_) then (false,inEqnsLst,inStateIndxs,inDiscEqns);
+    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        eqnsLst = listAppend(inEqnsLstAcc,inEqnsLst);
+        stateIndxs = listAppend(inStateIndxsAcc,inStateIndxs);        
+        discEqns = listAppend(inDiscEqnsAcc,inDiscEqns);
+        (b,eqnsLst,stateIndxs,discEqns) = minimalStructurallySingularSystem1(rest,inAssignments1,inAssignments2,statemark,mark,m,vars,eqnsLst,stateIndxs,discEqns);
+     then
+       (b,eqnsLst,stateIndxs,discEqns);
+  end match;
+end minimalStructurallySingularSystem2;
 
 protected function unassignedContinuesEqns
   input Integer eindx;
@@ -349,7 +425,7 @@ algorithm
         // if there is a continues variable than b is false
         b = Util.boolAndList(blst);
         eqnsLst = List.consOnTrue(not b, eindx, eqnsLst);
-        unassignedEqns = List.consOnTrue(b, eindx, unassignedEqns);
+        unassignedEqns = List.consOnTrue(not b and ba, eindx, unassignedEqns);
         discEqns = List.consOnTrue(b, eindx, discEqns);
       then
        ((unassignedEqns,eqnsLst,discEqns));       
@@ -366,23 +442,24 @@ protected function statesInEquations
 "function: statesInEquations
   author: Frenkel TUD 2012-04"
   input Integer eindx;
-  input tuple<BackendDAE.IncidenceMatrix,array<Boolean>> inTpl;
+  input tuple<BackendDAE.IncidenceMatrix,array<Integer>,Integer> inTpl;
   input array<Integer> ass1;
   input list<Integer> inStateLst;
   output list<Integer> outStateLst;
 protected
   list<Integer> vars;
   BackendDAE.IncidenceMatrix m;
-  array<Boolean> statemark;
+  array<Integer> statemark;
+  Integer mark;
 algorithm
-  (m,statemark) := inTpl;
+  (m,statemark,mark) := inTpl;
   // get States;
   vars := List.removeOnTrue(0, intLt, m[eindx]);
   // get unassigned
 //  vars := List.removeOnTrue(ass1, Matching.isUnAssigned, vars);
   vars := List.map(vars,intAbs);
-  vars := List.removeOnTrue(statemark, isMarked, vars);
-  _ := List.fold(vars, markTrue, statemark);
+  vars := List.removeOnTrue((statemark,mark), isMarked, vars);
+  _ := List.fold(vars, markTrue, (statemark,mark));
   // add states to list
   outStateLst := listAppend(inStateLst,vars);        
 end statesInEquations;
@@ -390,31 +467,44 @@ end statesInEquations;
 public function isMarked
 "function isMarked
   author: Frenkel TUD 2012-05"
-  input array<Boolean> ass;
+  input tuple<array<Integer>,Integer> ass;
   input Integer indx;
   output Boolean b;
+protected
+  array<Integer> arr;
+  Integer mark;
 algorithm
-  b := ass[intAbs(indx)];
+  (arr,mark) := ass;
+  b := intEq(arr[intAbs(indx)],mark);
 end isMarked;
 
 public function isUnMarked
 "function isUnMarked
   author: Frenkel TUD 2012-05"
-  input array<Boolean> ass;
+  input tuple<array<Integer>,Integer> ass;
   input Integer indx;
   output Boolean b;
+protected
+  array<Integer> arr;
+  Integer mark;
 algorithm
-  b := not ass[intAbs(indx)];
+  (arr,mark) := ass;
+  b := not intEq(arr[intAbs(indx)],mark);
 end isUnMarked;
 
 public function markTrue
 "function markElement
   author: Frenkel TUD 2012-05"
   input Integer indx;
-  input array<Boolean> iMark;
-  output array<Boolean> oMark;
+  input tuple<array<Integer>,Integer> iMark;
+  output tuple<array<Integer>,Integer> oMark;
+protected
+  array<Integer> arr;
+  Integer mark;
 algorithm
-  oMark := arrayUpdate(iMark,intAbs(indx),true);
+  (arr,mark) := iMark;
+  _ := arrayUpdate(arr,intAbs(indx),mark);
+  oMark := iMark;
 end markTrue;
 
 protected function differentiateAliasEqns
@@ -1337,7 +1427,7 @@ algorithm
         // get Orgequations of that level
         (eqnslst,ilst,orgEqnsLst) = getFirstOrgEqns(orgEqnsLst,{},{},{});
         (eqnslst,_) = BackendDAEOptimize.getScalarArrayEqns(eqnslst,{},false);
-        // remove stateSelect=StateSelect.always wars
+        // remove stateSelect=StateSelect.always vars
         varlst = List.filter(hov, notVarStateSelectAlways);
         neqns = BackendEquation.equationLstSize(eqnslst);
         freeStates = listLength(varlst);
@@ -1513,6 +1603,55 @@ algorithm
   v := BackendVariable.setVarKind(v,kind);
   outTpl := (v,kind); 
 end setVarKind;
+
+protected function getEqnBlockMapper
+  input Integer nEqns "Number of Equations";
+  input  list<list<Integer>> inComps;
+  output array<Integer> mapEqnBlock "mapEqnBlock[eqn]=block";
+  output array<list<Integer>> mapBlockEqn "mapBlockEqn[block]=eqns";
+algorithm
+  mapEqnBlock := arrayCreate(nEqns,-1);
+  getEqnBlockMapper1(inComps,1,mapEqnBlock);
+  mapBlockEqn := listArray(inComps);
+end getEqnBlockMapper;
+
+protected function getEqnBlockMapper1
+  input list<list<Integer>> inComps;
+  input Integer blockId;
+  input array<Integer> mapEqnBlock "mapEqnBlock[eqn]=block";
+algorithm
+  _ := match(inComps,blockId,mapEqnBlock)
+    local
+      list<Integer> comp;
+      list<list<Integer>> comps;
+    case({},_,_) then ();
+    case(comp::comps,_,_)
+      equation
+        getEqnBlockMapper2(comp,blockId,mapEqnBlock);
+        getEqnBlockMapper1(comps,blockId+1,mapEqnBlock);
+      then
+        ();
+  end match;
+end getEqnBlockMapper1;
+
+protected function getEqnBlockMapper2
+  input list<Integer> inComp;
+  input Integer blockId;
+  input array<Integer> mapEqnBlock "mapEqnBlock[eqn]=block";
+algorithm
+  _ := match(inComp,blockId,mapEqnBlock)
+    local
+      Integer c;
+      list<Integer> comp;
+    case({},_,_) then ();
+    case(c::comp,_,_)
+      equation
+        _ = arrayUpdate(mapEqnBlock,c,blockId);
+        getEqnBlockMapper2(comp,blockId,mapEqnBlock);
+      then
+        ();
+  end match;
+end getEqnBlockMapper2;
 
 protected function processComps1
 "function: processComps1

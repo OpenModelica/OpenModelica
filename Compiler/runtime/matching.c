@@ -1230,47 +1230,6 @@ void match_pr_fifo_fair(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids
   free(r_label);
 }
 
-int getEqnsForIndexReduction(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int* eqns) {
-  char* visited = (char*)malloc(sizeof(char) * m);
-  int* queue = (int*)malloc(sizeof(int) * n);
-
-  int queue_ptr, queue_col, ptr, i, j, queue_size,
-  row, col, eptr;
-    int eqns_size = 0;
-
-  memset(visited, 0, sizeof(char) * m);
-
-  for(i = 0; i < n; i++) {
-    if(match[i] < 0) {
-      queue[0] = i; queue_ptr = 0; queue_size = 1;
-
-      eqns[eqns_size++] = i;
-      if (col_ptrs[i] == col_ptrs[i+1]) {
-        continue;
-      }
-
-      while(queue_size > queue_ptr) {
-        queue_col = queue[queue_ptr++];
-        eptr = col_ptrs[queue_col + 1];
-        for(ptr = col_ptrs[queue_col]; ptr < eptr; ptr++) {
-          row = col_ids[ptr];
-          if(visited[row] != 1) {
-            visited[row] = 1;
-            col = row_match[row];
-            if(col > -1) {
-              queue[queue_size++] = col;
-              eqns[eqns_size++] = col;
-            }
-          }
-        }
-      }
-    }
-  }
-  free(queue);
-  free(visited);
-  return eqns_size;
-}
-
 void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int matching_id, int cheap_id, double relabel_period, int clear_match) {
   int* row_ptrs;
   int* row_ids;
@@ -1341,5 +1300,4 @@ void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, in
     free(row_ptrs);
   }
 }
-
 

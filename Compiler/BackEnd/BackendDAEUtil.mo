@@ -8005,7 +8005,7 @@ partial function pastoptimiseDAEModule
 end pastoptimiseDAEModule;
 
 partial function StructurallySingularSystemHandlerFunc
-  input list<Integer> eqns;
+  input list<list<Integer>> eqns;
   input Integer actualEqn;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;

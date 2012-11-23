@@ -36,6 +36,7 @@
 #define do_abmp_bfs 9
 #define do_pr_fifo_fair 10
 
+
 void old_cheap(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m);
 void sk_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m);
 void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m);
@@ -56,7 +57,5 @@ void pr_global_relabel(int* l_label, int* r_label, int* row_ptrs, int* row_ids, 
 
 void cheap_matching(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids, int* match, int* row_match, int n, int m, int cheap_id);
 void matching(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int match_id, int cheap_id, double relabel_period, int clear_match);
-
-int getEqnsForIndexReduction(int* col_ptrs, int* col_ids, int* match, int* row_match, int n, int m, int* eqns);
 
 #endif /* MATCHMAKER_H_ */
