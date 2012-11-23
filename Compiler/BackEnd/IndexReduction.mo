@@ -303,7 +303,6 @@ protected
   BackendDAE.EquationArray eqns;
   array<Integer> statemark;
   Integer size;
-  Boolean b;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m)) := syst;
   size := BackendVariable.varsSize(vars);
