@@ -112,7 +112,7 @@ fmiComponent fmiInstantiateModel(fmiString instanceName, fmiString GUID,
   }
   comp = (ModelInstance *)functions.allocateMemory(1, sizeof(ModelInstance));
   if (comp) {
-	/* not fmi standard because allocate memory with new */
+  /* not fmi standard because allocate memory with new */
     /* comp->fmuData = OBJECTCONSTRUCTOR; */
     if (!comp->fmuObj) {
       functions.logger(NULL, instanceName, fmiError, "error",
@@ -271,7 +271,7 @@ fmiStatus fmiSetString(fmiComponent c, const fmiValueReference vr[], size_t nvr,
         comp->functions.logger(NULL, comp->instanceName, fmiError, "error", "fmiSetString: Out of memory.");
         return fmiError;
       }
-	  */
+    */
     }
     /*strcpy((char*)comp->fmuData->localData[0]->stringVars[vr[i]], (char*)value[i]); */
   }
