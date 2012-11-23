@@ -3481,7 +3481,7 @@ algorithm
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
       equation
         repl = BackendVarTransform.emptyReplacements();
-        ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
+        (_,(repl1,_)) = BackendVariable.traverseBackendDAEVarsWithUpdate(knvars,removeFinalParametersFinder,(repl,knvars));
         (knvars1,repl2) = replaceFinalVars(1,knvars,repl1);
         Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl2);
         systs = List.map1(systs,evaluateFinalParametersVariables,repl2);
@@ -3595,6 +3595,7 @@ algorithm
         true = BackendVariable.isFinalVar(v);
         ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp1,NONE());
+        v = BackendVariable.setBindExp(v,exp1);
       then ((v,(repl_1,vars)));
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),(repl,vars)))
       equation
