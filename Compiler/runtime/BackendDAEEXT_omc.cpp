@@ -222,7 +222,7 @@ extern void* BackendDAEEXT_getEqnsforIndexReduction()
       if(match[i] < 0) {
         void *res1 = mk_nil();
         queue[0] = i; queue_ptr = 0; queue_size = 1;
-	    res1 = mk_cons(mk_icon(i+1),res1);
+        res1 = mk_cons(mk_icon(i+1),res1);
         if (col_ptrs[i] != col_ptrs[i+1]) {
           while(queue_size > queue_ptr) {
             queue_col = queue[queue_ptr++];
