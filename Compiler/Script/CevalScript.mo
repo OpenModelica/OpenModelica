@@ -3413,35 +3413,36 @@ protected function buildOpenTURNSInterface "builds the OpenTURNS interface by ca
   output Interactive.SymbolTable outSt;
 algorithm
   (outCache,scriptFile,outSt):= match(inCache,inEnv,vals,inSt,inMsg)
-  local
-    String templateFile, str;
-    Absyn.Program p;
-    Absyn.Path className;
-    Env.Cache cache;
-    DAE.DAElist dae;
-    Env.Env env;
-    BackendDAE.BackendDAE dlow;
-    DAE.FunctionTree funcs;
-    Interactive.SymbolTable st;
-    Boolean showFlatModelica;
+    local
+      String templateFile, str;
+      Absyn.Program p;
+      Absyn.Path className;
+      Env.Cache cache;
+      DAE.DAElist dae;
+      Env.Env env;
+      BackendDAE.BackendDAE dlow;
+      DAE.FunctionTree funcs;
+      Interactive.SymbolTable st;
+      Boolean showFlatModelica;
     
-    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},Interactive.SYMBOLTABLE(ast=p),_) equation      
-      (cache,env,dae,st) = runFrontEnd(cache,inEnv,className,inSt,false);
-      //print("instantiated class\n");
-      dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
-      str = Debug.bcallret2(showFlatModelica, DAEDump.dumpStr, dae, Env.getFunctionTree(cache), "");
-      Debug.bcall(showFlatModelica, print, str);
-      // get all the variable names with a distribution
-      // TODO FIXME
-      // sort all variable names in the distribution order
-      // TODO FIXME
-      funcs = Env.getFunctionTree(cache);
-      dlow = BackendDAECreate.lower(dae,cache,env);      
-      //print("lowered class\n");      
-      //print("calling generateOpenTurnsInterface\n");  
-      scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
-    then 
-      (cache,scriptFile,inSt);
+    case(cache,_,{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(templateFile),Values.BOOL(showFlatModelica)},Interactive.SYMBOLTABLE(ast=p),_) 
+      equation
+        (cache,env,dae,st) = runFrontEnd(cache,inEnv,className,inSt,false);
+        //print("instantiated class\n");
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+        funcs = Env.getFunctionTree(cache);
+        str = Debug.bcallret2(showFlatModelica, DAEDump.dumpStr, dae, funcs, "");
+        Debug.bcall(showFlatModelica, print, str);
+        // get all the variable names with a distribution
+        // TODO FIXME
+        // sort all variable names in the distribution order
+        // TODO FIXME
+        dlow = BackendDAECreate.lower(dae,cache,env);
+        //print("lowered class\n");
+        //print("calling generateOpenTurnsInterface\n");
+        scriptFile = OpenTURNS.generateOpenTURNSInterface(cache,inEnv,dlow,funcs,className,p,dae,templateFile);
+      then 
+        (cache,scriptFile,inSt);
   
   end match;
 end buildOpenTURNSInterface;
