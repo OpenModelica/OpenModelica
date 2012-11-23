@@ -160,10 +160,10 @@ double fmiInstantiateModel_OMC(void* fmi, char* instanceName, int debugLogging)
  * Wrapper for the FMI function fmiSetTime.
  * Returns status.
  */
-double fmiSetTime_OMC(void* fmi, double time, double flowInstantiate)
+double fmiSetTime_OMC(void* fmi, double time)
 {
   fmi1_import_set_time((fmi1_import_t*)fmi, time);
-  return flowInstantiate;
+  return time;
 }
 
 /*
@@ -179,7 +179,7 @@ int fmiSetDebugLogging_OMC(void* fmi, int debugLogging)
  * Wrapper for the FMI function fmiInitialize.
  * Returns FMI Event Info i.e fmi1_event_info_t.
  */
-void* fmiInitialize_OMC(void* fmi, void* inEventInfo, double flowInit)
+void* fmiInitialize_OMC(void* fmi, void* inEventInfo)
 {
   static int init = 0;
   if (!init) {
@@ -195,34 +195,38 @@ void* fmiInitialize_OMC(void* fmi, void* inEventInfo, double flowInit)
 
 /*
  * Wrapper for the FMI function fmiGetContinuousStates.
+ * parameter flowParams is dummy and is only used to run the equations in sequence.
  * Returns states.
  */
-void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowInit, double* states)
+void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowParams, double* states)
 {
   fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
 /*
  * Wrapper for the FMI function fmiSetContinuousStates.
+ * parameter flowParams is dummy and is only used to run the equations in sequence.
  * Returns status.
  */
-double fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double* states, double flowTime)
+double fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowParams, double* states)
 {
   fmi1_import_set_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
-  return flowTime;
+  return flowParams;
 }
 
 /*
  * Wrapper for the FMI function fmiGetEventIndicators.
+ * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns events.
  */
-void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double flowEvent, double* events)
+void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double flowStates, double* events)
 {
   fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
 }
 
 /*
  * Wrapper for the FMI function fmiGetDerivatives.
+ * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns states.
  */
 void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double flowStates, double* states)
@@ -230,6 +234,11 @@ void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double flowS
   fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
+/*
+ * OpenModelica uses signed integers and according to FMI specifications the value references should be unsigned integers.
+ * So to overcome this we use value references as Real in the Modelica code.
+ * This function converts back the value references from double to int and use them in FMI specific functions.
+ */
 fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences, double* valuesReferences)
 {
   fmi1_value_reference_t* valuesReferences_int = malloc(sizeof(fmi1_value_reference_t)*numberOfValueReferences);
@@ -241,9 +250,10 @@ fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences
 
 /*
  * Wrapper for the FMI function fmiGetReal.
+ * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns realValues.
  */
-void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double* realValues, double dummy)
+void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
   fmi1_import_get_real((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
@@ -263,9 +273,10 @@ double fmiSetReal_OMC(void* fmi, int numberOfValueReferences, double* realValues
 
 /*
  * Wrapper for the FMI function fmiGetInteger.
+ * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns integerValues.
  */
-void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double dummy)
+void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
   fmi1_import_get_integer((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
@@ -276,7 +287,7 @@ void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerVa
  * Wrapper for the FMI function fmiSetInteger.
  * Returns status.
  */
-double fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, int* integerValues, double dummy)
+double fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, int* integerValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
   fmi1_status_t fmistatus = fmi1_import_set_integer((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
@@ -285,9 +296,10 @@ double fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, double* integer
 
 /*
  * Wrapper for the FMI function fmiGetBoolean.
+ * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns booleanValues.
  */
-void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
+void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
   fmi1_import_get_boolean((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
@@ -298,7 +310,7 @@ void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanVa
  * Wrapper for the FMI function fmiSetBoolean.
  * Returns status.
  */
-double fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues, double dummy)
+double fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
   fmi1_status_t fmistatus = fmi1_import_set_boolean((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
@@ -307,9 +319,10 @@ double fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, double* boolean
 
 /*
  * Wrapper for the FMI function fmiGetString.
+ * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns stringValues.
  */
-void fmiGetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
+void fmiGetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
   fmi1_import_get_string((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
@@ -320,7 +333,7 @@ void fmiGetString_OMC(void* fmi, int numberOfValueReferences, double* stringValu
  * Wrapper for the FMI function fmiSetString.
  * Returns status.
  */
-double fmiSetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, char** stringValues, double dummy)
+double fmiSetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
   fmi1_status_t fmistatus = fmi1_import_set_string((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
@@ -329,6 +342,7 @@ double fmiSetString_OMC(void* fmi, int numberOfValueReferences, double* stringVa
 
 /*
  * Wrapper for the FMI function fmiEventUpdate.
+ * parameter flowStates is dummy and is only used to run the equations in sequence.
  * Returns FMI Event Info i.e fmi1_event_info_t
  */
 int fmiEventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo, double flowStates)
