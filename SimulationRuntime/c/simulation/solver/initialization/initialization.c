@@ -733,6 +733,7 @@ static int symbolic_initialization(DATA *data, int updateStartValues)
   storePreValues(data);
 
   functionInitialEquations(data);
+  storeInitialValuesParam(data);
 
   return retVal;
 }
@@ -1011,14 +1012,16 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   data->simulationInfo.initial = 0;
 
-  /* dump LOG_SOTI if LOG_INIT is enabled */
-  if(useStream[LOG_INIT])
-    useStream[LOG_SOTI] = 1;
+  if (DEBUG_STREAM(LOG_DEBUG))
+    printParameters(data);
 
   INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
   dumpInitialSolution(data);
   RELEASE(LOG_SOTI);
   INFO(LOG_INIT, "### END INITIALIZATION ###");
+
+  if (DEBUG_STREAM(LOG_DEBUG))
+    printParameters(data);
   return retVal;
 }

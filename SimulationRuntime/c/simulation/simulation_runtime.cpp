@@ -177,6 +177,10 @@ void setGlobalVerboseLevel(int argc, char**argv)
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
 
+  /* print LOG_SOTI if LOG_INIT is enabled */
+  if(useStream[LOG_INIT])
+    useStream[LOG_SOTI] = 1;
+
   /* print states if LOG_SOLVER if active */
   if (useStream[LOG_SOLVER] == 1)
     useStream[LOG_STATS] = 1;
@@ -491,7 +495,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
              "\n\t\t[specify the solver]" << "\n\t"
          << "<-interactive> <-port value> "
              "\n\t\t[specify interactive simulation and port]" << "\n\t"
-         << "<-iim initialization method:{none,state}> "
+         << "<-iim initialization method:{none,state,symbolic}> "
              "\n\t\t[specify the initialization method]" << "\n\t"
          << "<-iom optimization method:{nelder_mead_ex,nelder_mead_ex2,simplex,newuoa}> "
              "\n\t\t[specify the initialization optimization method]" << "\n\t"

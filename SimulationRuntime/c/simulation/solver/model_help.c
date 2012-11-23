@@ -206,8 +206,9 @@ void printParameters(DATA *data)
 
   INFO(1," Print parameter values: ");
   INFO(1," | real parameters");
-  for(i=0; i<mData->nParametersReal; ++i){
-    INFO3(1," | | %ld: %s = %g", i, mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.initial);
+  for(i=0; i<mData->nParametersReal; ++i)
+  {
+    INFO4(1," | | %ld: %s = %g (%g)", i, mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.initial, data->simulationInfo.realParameter[0]);
   }
   INFO(1," | integer parameters");
   for(i=0; i<mData->nParametersInteger; ++i){
