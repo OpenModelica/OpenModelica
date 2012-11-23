@@ -43,8 +43,10 @@
 
 static const struct VAR_INFO timeValName = {0,"time","Simulation time [s]",{"",-1,-1,-1,-1}};
 
-int simulation_result_mat::calcDataSize(MODEL_DATA *modelData)
+int simulation_result_mat::calcDataSize()
 {
+  const MODEL_DATA *modelData = &(data->modelData);
+
   int sz = 1; /* start with one for the timeValue */
   for (int i = 0; i < modelData->nVariablesReal; i++)
     if (!modelData->realVarsData[i].filterOutput)
@@ -79,8 +81,10 @@ int simulation_result_mat::calcDataSize(MODEL_DATA *modelData)
   return sz;
 }
 
-const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *modelData)
-    {
+const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize)
+{
+  const MODEL_DATA *modelData = &(data->modelData);
+
   const VAR_INFO** names = (const VAR_INFO**) malloc((dataSize)*sizeof(struct VAR_INFO*));
   int curVar = 0;
   int sz = 1;
@@ -118,7 +122,7 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize, MODEL_DATA *
 }
 
 /* write the parameter data after updateBoundParameters is called */
-void simulation_result_mat::writeParameterData(MODEL_DATA *modelData)
+void simulation_result_mat::writeParameterData()
 {
   int rows, cols;
   double *doubleMatrix = NULL;
@@ -126,7 +130,7 @@ void simulation_result_mat::writeParameterData(MODEL_DATA *modelData)
     std::ofstream::pos_type remember = fp.tellp();
     fp.seekp(data1HdrPos);
     /* generate `data_1' matrix (with parameter data) */
-    generateData_1(doubleMatrix, rows, cols, modelData, startTime, stopTime);
+    generateData_1(doubleMatrix, rows, cols, startTime, stopTime);
     /*  write `data_1' matrix */
     writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
     free(doubleMatrix); doubleMatrix = NULL;
@@ -140,14 +144,15 @@ void simulation_result_mat::writeParameterData(MODEL_DATA *modelData)
 
 
 
-simulation_result_mat::simulation_result_mat(const char* filename,
-               double tstart, double tstop, MODEL_DATA *modelData)
-  : simulation_result(filename,numpoints),fp(),data1HdrPos(-1),data2HdrPos(-1),ntimepoints(0),startTime(tstart),stopTime(tstop)
+simulation_result_mat::simulation_result_mat(const char* filename, double tstart, double tstop, const DATA *data)
+  : simulation_result(filename, numpoints, data), fp(), data1HdrPos(-1), data2HdrPos(-1), ntimepoints(0), startTime(tstart), stopTime(tstop)
 {
+  const MODEL_DATA *mData = &(data->modelData);
+
   const char Aclass[] = "A1 bt. ir1 na  Tj  re  ac  nt  so   r   y   ";
 
   const struct VAR_INFO** names = NULL;
-  const int nParams = modelData->nParametersReal + modelData->nParametersInteger + modelData->nParametersBoolean;
+  const int nParams = mData->nParametersReal + mData->nParametersInteger + mData->nParametersBoolean;
 
   char *stringMatrix = NULL;
   int rows, cols;
@@ -155,8 +160,8 @@ simulation_result_mat::simulation_result_mat(const char* filename,
   double *doubleMatrix = NULL;
   assert(sizeof(char) == 1);
   rt_tick(SIM_TIMER_OUTPUT);
-  numVars = calcDataSize(modelData);
-  names = calcDataNames(numVars+nParams, modelData);
+  numVars = calcDataSize();
+  names = calcDataNames(numVars+nParams);
 
   try {
     /* open file */
@@ -179,7 +184,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
     free(stringMatrix); stringMatrix = NULL;
 
     /* generate dataInfo table */
-    generateDataInfo(intMatrix, rows, cols, modelData, numVars, nParams);
+    generateDataInfo(intMatrix, rows, cols, numVars, nParams);
     /* write `dataInfo' matrix */
     writeMatVer4Matrix("dataInfo", cols, rows, intMatrix, sizeof(int32_t));
 
@@ -188,7 +193,7 @@ simulation_result_mat::simulation_result_mat(const char* filename,
 
     /* adrpo: i cannot use writeParameterData here as it would return back to dataHdr1Pos */
     /* generate `data_1' matrix (with parameter data) */
-    generateData_1(doubleMatrix, rows, cols, modelData, tstart, tstop);
+    generateData_1(doubleMatrix, rows, cols, tstart, tstop);
     /*  write `data_1' matrix */
     writeMatVer4Matrix("data_1", cols, rows, doubleMatrix, sizeof(double));
 
@@ -232,7 +237,7 @@ simulation_result_mat::~simulation_result_mat()
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
 
-void simulation_result_mat::emit(DATA *data)
+void simulation_result_mat::emit()
 {
   double datPoint=0;
 
@@ -371,11 +376,10 @@ void simulation_result_mat::writeMatVer4Matrix(const char *name,
 }
 
 
-void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
-    int& rows, int& cols,
-    const MODEL_DATA *mdl_data,
-    int nVars, int nParams)
+void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int& cols, int nVars, int nParams)
 {
+  const MODEL_DATA *mdl_data = &(data->modelData);
+
   /* size_t nVars = mdl_data->nStates*2+mdl_data->nAlgebraic;
     rows = 1+nVars+mdl_data->nParameters+mdl_data->nVarsAliases; */
   size_t ccol = 0; /* current column - index offset */
@@ -534,39 +538,46 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo,
   /* ccol += mdl_data->nParameters*4; */
 }
 
-void simulation_result_mat::generateData_1(double* &data_1,
-    int& rows, int& cols,
-    const MODEL_DATA *mdl_data,
-    double tstart, double tstop)
+void simulation_result_mat::generateData_1(double* &data_1, int& rows, int& cols, double tstart, double tstop)
 {
-  int offset;
+  const SIMULATION_INFO *sInfo = &(data->simulationInfo);
+  const MODEL_DATA      *mData = &(data->modelData);
+
+  int offset = 1;
   long i = 0;
+
   /* calculate number of rows and columns */
   rows = 2;
-  cols = 1+mdl_data->nParametersReal+mdl_data->nParametersInteger
-      +mdl_data->nParametersBoolean;
-  /* allocate data buffer */
-  data_1 = (double*)calloc(rows*cols,sizeof(double));
-  ASSERT(data_1,"Malloc failed");
-  data_1[0] = tstart; /* start time */
-  data_1[cols] = tstop; /* stop time */
-  offset = 1;
-  /* double variables */
-  for(i = 0; i < mdl_data->nParametersReal; ++i) {
-    data_1[offset+i] = mdl_data->realParameterData[i].attribute.initial;
-    data_1[offset+i+cols] =  mdl_data->realParameterData[i].attribute.initial;
-  }
-  offset += mdl_data->nParametersReal;
-  /* integer variables */
-  for(i = 0; i < mdl_data->nParametersInteger; ++i) {
-    data_1[offset+i] = (double)mdl_data->integerParameterData[i].attribute.initial;
-    data_1[offset+i+cols] = (double)mdl_data->integerParameterData[i].attribute.initial;
-  }
-  offset += mdl_data->nParametersInteger;
-  /* bool variables */
-  for(i = 0; i < mdl_data->nParametersBoolean; ++i) {
-    data_1[offset+i] = (double)mdl_data->booleanParameterData[i].attribute.initial;
-    data_1[offset+i+cols] = (double)mdl_data->booleanParameterData[i].attribute.initial;
-  }
+  cols = 1 + mData->nParametersReal + 
+             mData->nParametersInteger + 
+             mData->nParametersBoolean;
 
+  /* allocate data buffer */
+  data_1 = (double*)calloc(rows*cols, sizeof(double));
+  ASSERT(data_1, "Malloc failed");
+  data_1[0] = tstart;     /* start time */
+  data_1[cols] = tstop;   /* stop time */
+
+  /* double variables */
+  for(i = 0; i < mData->nParametersReal; ++i)
+  {
+    data_1[offset+i] = sInfo->realParameter[i];
+    data_1[offset+i+cols] = sInfo->realParameter[i];
+  }
+  offset += mData->nParametersReal;
+
+  /* integer variables */
+  for(i = 0; i < mData->nParametersInteger; ++i)
+  {
+    data_1[offset+i] = (double)sInfo->integerParameter[i];
+    data_1[offset+i+cols] = (double)sInfo->integerParameter[i];
+  }
+  offset += mData->nParametersInteger;
+
+  /* bool variables */
+  for(i = 0; i < mData->nParametersBoolean; ++i)
+  {
+    data_1[offset+i] = (double)sInfo->booleanParameter[i];
+    data_1[offset+i+cols] = (double)sInfo->booleanParameter[i];
+  }
 }

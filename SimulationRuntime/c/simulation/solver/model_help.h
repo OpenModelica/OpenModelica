@@ -85,9 +85,6 @@ void restoreExtrapolationDataOld(DATA *data);
 void setAllVarsToStart(DATA* data);
 void setAllParamsToStart(DATA *data);
 
-void storeInitialValues(DATA *data);
-void storeInitialValuesParam(DATA *data);
-
 void storePreValues(DATA *data);
 
 void storeRelations(DATA *data);

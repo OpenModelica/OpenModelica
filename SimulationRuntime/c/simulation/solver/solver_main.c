@@ -645,19 +645,19 @@ void writeOutputVars(char* names, DATA* data)
     /* parameters */
     for (i = 0; i < data->modelData.nParametersReal; i++)
       if (!strcmp(p, data->modelData.realParameterData[i].info.name))
-        fprintf(stdout, ",%s=%.20g", p, data->modelData.realParameterData[i].attribute.initial);
+        fprintf(stdout, ",%s=%.20g", p, data->simulationInfo.realParameter[i]);
 
     for (i = 0; i < data->modelData.nParametersInteger; i++)
       if (!strcmp(p, data->modelData.integerParameterData[i].info.name))
-        fprintf(stdout, ",%s=%li", p, data->modelData.integerParameterData[i].attribute.initial);
+        fprintf(stdout, ",%s=%li", p, data->simulationInfo.integerParameter[i]);
 
     for (i = 0; i < data->modelData.nParametersBoolean; i++)
       if (!strcmp(p, data->modelData.booleanParameterData[i].info.name))
-        fprintf(stdout, ",%s=%i", p, data->modelData.booleanParameterData[i].attribute.initial);
+        fprintf(stdout, ",%s=%i", p, data->simulationInfo.booleanParameter[i]);
 
     for (i = 0; i < data->modelData.nParametersString; i++)
       if (!strcmp(p, data->modelData.stringParameterData[i].info.name))
-        fprintf(stdout, ",%s=\"%s\"", p, data->modelData.stringParameterData[i].attribute.initial);
+        fprintf(stdout, ",%s=\"%s\"", p, data->simulationInfo.stringParameter[i]);
 
     /* move to next */
     p = strtok(NULL, ",");

@@ -412,13 +412,13 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 
   long maxSteps = 4 * simData->simulationInfo.numSteps;
   if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
+    sim_result = new simulation_result_empty(result_file_cstr.c_str(), maxSteps, simData);
   } else if (0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, &(simData->modelData));
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, simData);
   } else if (0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, &(simData->modelData));
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, simData);
   } else if (0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
-    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, &(simData->modelData));
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, simData);
   } else {
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
     return 1;
@@ -671,15 +671,17 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 }
 
 /* C-Interface for sim_result->emit(); */
-void sim_result_emit(DATA *data)
+void sim_result_emit()
 {
-   if (sim_result) sim_result->emit(data);
+   if(sim_result)
+     sim_result->emit();
 }
 
 /* C-Interface for sim_result->writeParameterData(); */
-void sim_result_writeParameterData(MODEL_DATA *modelData)
+void sim_result_writeParameterData()
 {
-   if (sim_result) sim_result->writeParameterData(modelData);
+   if(sim_result)
+     sim_result->writeParameterData();
 }
 
 static void omc_assert_simulation(const char *msg, FILE_INFO info)

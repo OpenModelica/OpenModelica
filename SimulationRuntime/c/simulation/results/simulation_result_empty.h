@@ -34,14 +34,13 @@
 #ifndef _SIMULATION_RESULT_EMPTY_H
 #define _SIMULATION_RESULT_EMPTY_H
 
-class simulation_result_empty : public simulation_result { 
+class simulation_result_empty : public simulation_result
+{ 
 public:
-
-simulation_result_empty(const char* filename, long numpoints) : simulation_result(filename,numpoints) {};
-void emit(DATA *data) {;};
-void writeParameterData(MODEL_DATA *modelData) { /* do nothing */ };
-virtual const char* result_type() {return "no result file";};
-
+  simulation_result_empty(const char* filename, long numpoints, const DATA* data) : simulation_result(filename, numpoints, data) {}
+  void emit() { /* do nothing */ }
+  void writeParameterData() { /* do nothing */ }
+  virtual const char* result_type() {return "no result file";}
 };
 
 #endif

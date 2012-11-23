@@ -717,16 +717,16 @@ JacobianSymbolic(double *t, double *y, double *yprime, double *deltaD, double *p
  *  numerical method finite differences
  */
 int
-jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, fortran_integer *ipar) {
-
+jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, fortran_integer *ipar)
+{
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
-  const int index = INDEX_JAC_A;
+  /* const int index = INDEX_JAC_A; */
 
   double delta_h = dasslData->sqrteps;
   double delta_hh,delta_hhh, deltaInv;
   double ysave;
   int ires;
-  int i,j,l=0;
+  int i,j;
 
   for (i = data->modelData.nStates-1; i >=0 ; i--) {
     delta_hhh = *h * yprime[i];
@@ -804,8 +804,8 @@ int JacobianOwnNum(double *t, double *y, double *yprime, double *deltaD, double 
  *  numerical method finite differences
  */
 int
-jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, fortran_integer *ipar) {
-
+jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta, double *matrixA, double *cj, double *h, double *wt, double *rpar, fortran_integer *ipar)
+{
   const int index = INDEX_JAC_A;
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double delta_h = dasslData->sqrteps;

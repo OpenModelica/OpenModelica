@@ -58,7 +58,7 @@
 
 /* static const char * timeName = "time"; */
 
-static int calcDataSize(MODEL_DATA *modelData)
+static int calcDataSize(const MODEL_DATA *modelData)
 {
   int sz = 1; // time
   for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realVarsData[i].filterOutput) sz++;
@@ -100,18 +100,18 @@ static const char** calcDataNames(MODEL_DATA *modelData, int dataSize)
 }
 */
 
-void simulation_result_plt::emit(DATA *data)
+void simulation_result_plt::emit()
 {
   rt_tick(SIM_TIMER_OUTPUT);
   if (actualPoints < maxPoints) {
-      add_result(simulationResultData,&actualPoints,data); /*used for non-interactive simulation */
+      add_result(simulationResultData,&actualPoints); /*used for non-interactive simulation */
   } else {
     maxPoints = (long)(1.4*maxPoints + (maxPoints-actualPoints) + 2000);
     /* cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl; */
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
     if (!simulationResultData)
       ASSERT1(0, "Error allocating simulation result data of size %ld",maxPoints * dataSize);
-    add_result(simulationResultData,&actualPoints,data);
+    add_result(simulationResultData,&actualPoints);
   }
   rt_accumulate(SIM_TIMER_OUTPUT);
 }
@@ -120,9 +120,9 @@ void simulation_result_plt::emit(DATA *data)
  * add the values of one step for all variables to the data
  * array to be able to later store this on file.
  */
-void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *simData)
+void simulation_result_plt::add_result(double *data_, long *actualPoints)
 {
-  modelica_real value=0;
+  const DATA *simData = data;
   /* save time first */
   /* cerr << "adding result for time: " << time; */
   /* cerr.flush(); */
@@ -131,7 +131,7 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
   {
   std::ostringstream ss;
   ss << "time" << "\n";
-  ss << (data[currentPos++] = simData->localData[0]->timeValue) << "\n";
+  ss << (data_[currentPos++] = simData->localData[0]->timeValue) << "\n";
   /* .. reals .. */
   for (int i = 0; i < simData->modelData.nVariablesReal; i++) {
     if (!simData->modelData.realVarsData[i].filterOutput) {
@@ -143,14 +143,14 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
   for (int i = 0; i < simData->modelData.nVariablesInteger; i++) {
     if (!simData->modelData.integerVarsData[i].filterOutput) {
       ss << simData->modelData.integerVarsData[i].info.name << "\n";
-      ss << (data[currentPos++] = simData->localData[0]->integerVars[i]) << "\n";
+      ss << (data_[currentPos++] = simData->localData[0]->integerVars[i]) << "\n";
     }
   }
   /* .. booleans .. */
   for (int i = 0; i < simData->modelData.nVariablesBoolean; i++) {
     if (!simData->modelData.booleanVarsData[i].filterOutput) {
       ss << simData->modelData.booleanVarsData[i].info.name << "\n";
-      ss << (data[currentPos++] = simData->localData[0]->booleanVars[i]) << "\n";
+      ss << (data_[currentPos++] = simData->localData[0]->booleanVars[i]) << "\n";
     }
   }
   /* .. alias reals .. */
@@ -162,9 +162,9 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
       else
         value = (simData->localData[0])->realVars[simData->modelData.realAlias[i].nameID];
       if (simData->modelData.realAlias[i].negate)
-        ss << (data[currentPos++] = -value) << "\n";
+        ss << (data_[currentPos++] = -value) << "\n";
       else
-        ss << (data[currentPos++] = value) << "\n";
+        ss << (data_[currentPos++] = value) << "\n";
     }
   }
   /* .. alias integers .. */
@@ -172,9 +172,9 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
     if (!simData->modelData.integerAlias[i].filterOutput) {
       ss << simData->modelData.integerAlias[i].info.name << "\n";
       if (simData->modelData.integerAlias[i].negate)
-        ss << (data[currentPos++] = -simData->localData[0]->integerVars[simData->modelData.integerAlias[i].nameID]) << "\n";
+        ss << (data_[currentPos++] = -simData->localData[0]->integerVars[simData->modelData.integerAlias[i].nameID]) << "\n";
       else
-        ss << (data[currentPos++] = simData->localData[0]->integerVars[simData->modelData.integerAlias[i].nameID]) << "\n";
+        ss << (data_[currentPos++] = simData->localData[0]->integerVars[simData->modelData.integerAlias[i].nameID]) << "\n";
     }
   }
   /* .. alias booleans .. */
@@ -182,9 +182,9 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
     if (!simData->modelData.booleanAlias[i].filterOutput) {
       ss << simData->modelData.booleanAlias[i].info.name << "\n";
       if (simData->modelData.booleanAlias[i].negate)
-        ss << (data[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]==1?0:1) << "\n";
+        ss << (data_[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]==1?0:1) << "\n";
       else
-        ss << (data[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]) << "\n";
+        ss << (data_[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]) << "\n";
     }
   }
   sendPacket(ss.str().c_str());
@@ -192,51 +192,51 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
   else
 #endif /* CONFIG_WITH_SENDDATA */
   {
-    data[currentPos++] = simData->localData[0]->timeValue;
+    data_[currentPos++] = simData->localData[0]->timeValue;
 
     /* .. reals .. */
     for (int i = 0; i < simData->modelData.nVariablesReal; i++) {
       if (!simData->modelData.realVarsData[i].filterOutput) {
-        data[currentPos++] = simData->localData[0]->realVars[i];
+        data_[currentPos++] = simData->localData[0]->realVars[i];
       }
     }
     /* .. integers .. */
     for (int i = 0; i < simData->modelData.nVariablesInteger; i++) {
       if (!simData->modelData.integerVarsData[i].filterOutput) {
-        data[currentPos++] = simData->localData[0]->integerVars[i];
+        data_[currentPos++] = simData->localData[0]->integerVars[i];
       }
     }
     /* .. booleans .. */
     for (int i = 0; i < simData->modelData.nVariablesBoolean; i++) {
       if (!simData->modelData.booleanVarsData[i].filterOutput) {
-        data[currentPos++] = simData->localData[0]->booleanVars[i];
+        data_[currentPos++] = simData->localData[0]->booleanVars[i];
       }
     }
     /* .. alias reals .. */
     for (int i = 0; i < simData->modelData.nAliasReal; i++) {
       if (!simData->modelData.realAlias[i].filterOutput) {
         if (simData->modelData.realAlias[i].negate)
-          data[currentPos++] = -simData->localData[0]->realVars[simData->modelData.realAlias[i].nameID];
+          data_[currentPos++] = -simData->localData[0]->realVars[simData->modelData.realAlias[i].nameID];
         else
-          data[currentPos++] = simData->localData[0]->realVars[simData->modelData.realAlias[i].nameID];
+          data_[currentPos++] = simData->localData[0]->realVars[simData->modelData.realAlias[i].nameID];
       }
     }
     /* .. alias integers .. */
     for (int i = 0; i < simData->modelData.nAliasInteger; i++) {
       if (!simData->modelData.integerAlias[i].filterOutput) {
         if (simData->modelData.integerAlias[i].negate)
-          data[currentPos++] = -simData->localData[0]->integerVars[simData->modelData.integerAlias[i].nameID];
+          data_[currentPos++] = -simData->localData[0]->integerVars[simData->modelData.integerAlias[i].nameID];
         else
-          data[currentPos++] = simData->localData[0]->integerVars[simData->modelData.integerAlias[i].nameID];
+          data_[currentPos++] = simData->localData[0]->integerVars[simData->modelData.integerAlias[i].nameID];
       }
     }
     /* .. alias booleans .. */
     for (int i = 0; i < simData->modelData.nAliasBoolean; i++) {
       if (!simData->modelData.booleanAlias[i].filterOutput) {
         if (simData->modelData.booleanAlias[i].negate)
-          data[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]==1?0:1;
+          data_[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID]==1?0:1;
         else
-          data[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID];
+          data_[currentPos++] = simData->localData[0]->booleanVars[simData->modelData.booleanAlias[i].nameID];
       }
     }
   }
@@ -245,8 +245,8 @@ void simulation_result_plt::add_result(double *data, long *actualPoints, DATA *s
   (*actualPoints)++;
 }
 
-simulation_result_plt::simulation_result_plt(const char* filename, long numpoints, MODEL_DATA *modeldata) :
-simulation_result(filename,numpoints), modelData(modeldata)
+simulation_result_plt::simulation_result_plt(const char* filename, long numpoints, const DATA *data)
+  : simulation_result(filename, numpoints, data)
 {
   rt_tick(SIM_TIMER_OUTPUT);
   /*
@@ -264,8 +264,8 @@ simulation_result(filename,numpoints), modelData(modeldata)
     numpoints = abs(numpoints);
     maxPoints = abs(numpoints);
   }
-  num_vars = calcDataSize(modelData);
-  dataSize = calcDataSize(modelData);
+  num_vars = calcDataSize(&(data->modelData));
+  dataSize = calcDataSize(&(data->modelData));
   simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));
   if (!simulationResultData) {
     ASSERT1(0, "Error allocating simulation result data of size %ld failed",numpoints * dataSize);
@@ -297,7 +297,8 @@ void simulation_result_plt::deallocResult()
     free(simulationResultData);
 }
 
-void simulation_result_plt::printPltLine(FILE* f, double time, double val) {
+void simulation_result_plt::printPltLine(FILE* f, double time, double val)
+{
 #if 0
   fwrite(&time, sizeof(double), 1, f);
   fputs(", ", f);
@@ -314,6 +315,8 @@ void simulation_result_plt::printPltLine(FILE* f, double time, double val) {
 */
 simulation_result_plt::~simulation_result_plt()
 {
+  const MODEL_DATA *modelData = &(data->modelData);
+
 #ifdef CONFIG_WITH_SENDDATA
   if(Static::enabled())
     closeSendData();

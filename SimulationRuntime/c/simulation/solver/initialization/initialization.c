@@ -627,16 +627,12 @@ static int none_initialization(DATA *data, int updateStartValues)
   if(initData)
     freeInitData(initData);*/
 
-  storeInitialValues(data);
-  storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
   saveZeroCrossings(data);
-  storeInitialValues(data);
-  storeInitialValuesParam(data);
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
 
@@ -681,16 +677,12 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
 
   retVal = initialize(data, optiMethod);
 
-  storeInitialValues(data);
-  storeInitialValuesParam(data);
   storePreValues(data);                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */
 
   /* valid system for the first time! */
   saveZeroCrossings(data);
-  storeInitialValues(data);
-  storeInitialValuesParam(data);
   storePreValues(data);                 /* save pre-values */
   overwriteOldSimulationData(data);     /* if there are non-linear equations */
 
@@ -733,7 +725,6 @@ static int symbolic_initialization(DATA *data, int updateStartValues)
   storePreValues(data);
 
   functionInitialEquations(data);
-  storeInitialValuesParam(data);
 
   return retVal;
 }
@@ -1012,16 +1003,11 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   data->simulationInfo.initial = 0;
 
-  if (DEBUG_STREAM(LOG_DEBUG))
-    printParameters(data);
-
   INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
   dumpInitialSolution(data);
   RELEASE(LOG_SOTI);
   INFO(LOG_INIT, "### END INITIALIZATION ###");
 
-  if (DEBUG_STREAM(LOG_DEBUG))
-    printParameters(data);
   return retVal;
 }

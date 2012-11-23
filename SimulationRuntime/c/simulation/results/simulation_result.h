@@ -54,19 +54,22 @@ class SimulationResultReallocException : SimulationResultBaseException {};
  * ny number of variables
  * np number of parameters  (not used in this impl.)
  */
-class simulation_result {
+class simulation_result
+{
 protected:
-  const char* filename;
+  const char *filename;
   const long numpoints;
+  const DATA *data;
+
 public:
 
-  simulation_result(const char* filename, long numpoints) : filename(filename), numpoints(numpoints) {};
+  simulation_result(const char* filename, long numpoints, const DATA* data) : filename(filename), numpoints(numpoints), data(data) {};
   virtual ~simulation_result() {};
-  virtual void emit(DATA *data) = 0;
-  /* write the parameter data after updateBoundParameters is called */
-  virtual void writeParameterData(MODEL_DATA *modelData) = 0;
-  virtual const char* result_type() = 0;
+  virtual void emit() = 0;
 
+  /* write the parameter data after updateBoundParameters is called */
+  virtual void writeParameterData() = 0;
+  virtual const char* result_type() = 0;
 };
 
 #endif

@@ -35,16 +35,18 @@
 #ifndef _SIMULATION_RESULT_CSV_H
 #define _SIMULATION_RESULT_CSV_H
 
-class simulation_result_csv : public simulation_result { 
+class simulation_result_csv : public simulation_result
+{ 
 private:
-FILE* fout;
-public:
+  FILE* fout;
 
-simulation_result_csv(const char* filename, long numpoints, MODEL_DATA *modelData);
-virtual ~simulation_result_csv();
-virtual void emit(DATA *data);
-void writeParameterData(MODEL_DATA *modelData) { /* do nothing */ };
-virtual const char* result_type() {return "csv";};
+public:
+  simulation_result_csv(const char* filename, long numpoints, const DATA* data);
+  virtual ~simulation_result_csv();
+
+  virtual void emit();
+  void writeParameterData() { /* do nothing */ };
+  virtual const char* result_type() {return "csv";};
 };
 
 #endif

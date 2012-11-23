@@ -142,7 +142,6 @@ void copyStartValuestoInitValues(DATA *data)
 {
   /* just copy all start values to initial */
   setAllParamsToStart(data);
-  storeInitialValuesParam(data);
   setAllVarsToStart(data);
   storePreValues(data);
   overwriteOldSimulationData(data);
@@ -204,24 +203,32 @@ void printParameters(DATA *data)
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
-  INFO(1," Print parameter values: ");
-  INFO(1," | real parameters");
+  INFO(LOG_STDOUT, "Print parameter values");
+  INDENT(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "real parameters");
+  INDENT(LOG_STDOUT);
   for(i=0; i<mData->nParametersReal; ++i)
-  {
-    INFO4(1," | | %ld: %s = %g (%g)", i, mData->realParameterData[i].info.name, mData->realParameterData[i].attribute.initial, data->simulationInfo.realParameter[0]);
-  }
-  INFO(1," | integer parameters");
-  for(i=0; i<mData->nParametersInteger; ++i){
-    INFO3(1," | | %ld: %s = %ld", i, mData->integerParameterData[i].info.name, mData->integerParameterData[i].attribute.initial);
-  }
-  INFO(1," | boolean parameters");
-  for(i=0; i<mData->nParametersBoolean; ++i){
-    INFO3(1," | | %ld: %s = %s", i, mData->booleanParameterData[i].info.name, mData->booleanParameterData[i].attribute.initial ? "true" : "false");
-  }
-  INFO(1," | string parameters");
-  for(i=0; i<mData->nParametersString; ++i){
-    INFO3(1," | | %ld: %s = %s", i, mData->stringParameterData[i].info.name, mData->stringParameterData[i].attribute.initial);
-  }
+    INFO3(LOG_STDOUT, "%ld: %s = %g", i+1, mData->realParameterData[i].info.name, data->simulationInfo.realParameter[i]);
+  RELEASE(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "integer parameters");
+  INDENT(LOG_STDOUT);
+  for(i=0; i<mData->nParametersInteger; ++i)
+    INFO3(LOG_STDOUT, " | | %ld: %s = %ld", i+1, mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
+  RELEASE(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "boolean parameters");
+  INDENT(LOG_STDOUT);
+  for(i=0; i<mData->nParametersBoolean; ++i)
+    INFO3(LOG_STDOUT, "%ld: %s = %s", i+1, mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i] ? "true" : "false");
+  RELEASE(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "string parameters");
+  INDENT(LOG_STDOUT);
+  for(i=0; i<mData->nParametersString; ++i)
+    INFO3(LOG_STDOUT, "%ld: %s = %s", i+1, mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
+  RELEASE(LOG_STDOUT);
 }
 
 /*! \fn printAllHelpVars
@@ -374,100 +381,23 @@ void setAllParamsToStart(DATA *data)
 
   for(i=0; i<mData->nParametersReal; ++i)
   {
-    mData->realParameterData[i].attribute.initial = mData->realParameterData[i].attribute.start;
     sInfo->realParameter[i] = mData->realParameterData[i].attribute.start;
     INFO2(LOG_DEBUG, "Set Real var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
   }
   for(i=0; i<mData->nParametersInteger; ++i)
   {
-    mData->integerParameterData[i].attribute.initial = mData->integerParameterData[i].attribute.start;
     sInfo->integerParameter[i] = mData->integerParameterData[i].attribute.start;
     INFO2(LOG_DEBUG, "Set Integer var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
   }
   for(i=0; i<mData->nParametersBoolean; ++i)
   {
-    mData->booleanParameterData[i].attribute.initial = mData->booleanParameterData[i].attribute.start;
     sInfo->booleanParameter[i] = mData->booleanParameterData[i].attribute.start;
     INFO2(LOG_DEBUG, "Set Boolean var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
   }
   for(i=0; i<mData->nParametersString; ++i)
   {
-    mData->stringParameterData[i].attribute.initial = mData->stringParameterData[i].attribute.start;
     sInfo->stringParameter[i] = mData->stringParameterData[i].attribute.start;
     INFO2(LOG_DEBUG, "Set String var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
-  }
-}
-
-/*! \fn storeInitialValues
- *
- *  This function sets all variables initial values to their current values..
- *
- *  \param [ref] [data]
- *
- *  \author wbraun
- */
-void storeInitialValues(DATA *data)
-{
-  SIMULATION_DATA *sData = data->localData[0];
-  MODEL_DATA      *mData = &(data->modelData);
-  long i;
-
-  for(i=0; i<mData->nVariablesReal; ++i)
-  {
-    mData->realVarsData[i].attribute.initial = sData->realVars[i];
-    INFO2(LOG_DEBUG, "Set Real Parameter var %s = %g", mData->realVarsData[i].info.name, sData->realVars[i]);
-  }
-  for(i=0; i<mData->nVariablesInteger; ++i)
-  {
-    mData->integerVarsData[i].attribute.initial = sData->integerVars[i];
-    INFO2(LOG_DEBUG, "Set Integer Parameter var %s = %ld", mData->integerVarsData[i].info.name, sData->integerVars[i]);
-  }
-  for(i=0; i<mData->nVariablesBoolean; ++i)
-  {
-    mData->booleanVarsData[i].attribute.initial = sData->booleanVars[i];
-    INFO2(LOG_DEBUG, "Set Boolean Parameter var %s = %s", mData->booleanVarsData[i].info.name, sData->booleanVars[i] ? "true" : "false");
-  }
-  for(i=0; i<mData->nVariablesString; ++i)
-  {
-    mData->stringVarsData[i].attribute.initial = sData->stringVars[i];
-    INFO2(LOG_DEBUG, "Set String initial Parameter var %s = %s", mData->stringVarsData[i].info.name, sData->stringVars[i]);
-  }
-}
-
-
-/*! \fn storeInitialValuesParam
- *
- *  This function sets all parameters initial values to their current values.
- *
- *  \param [ref] [data]
- *
- *  \author wbraun
- */
-void storeInitialValuesParam(DATA *data)
-{
-  SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  MODEL_DATA      *mData = &(data->modelData);
-  long i;
-
-  for(i=0; i<mData->nParametersReal; ++i)
-  {
-    mData->realParameterData[i].attribute.initial = sInfo->realParameter[i];
-    INFO2(LOG_DEBUG, "Set Real Parameter var %s = %g", mData->realParameterData[i].info.name, sInfo->realParameter[i]);
-  }
-  for(i=0; i<mData->nParametersInteger; ++i)
-  {
-    mData->integerParameterData[i].attribute.initial = sInfo->integerParameter[i];
-    INFO2(LOG_DEBUG, "Set Integer Parameter var %s = %ld", mData->integerParameterData[i].info.name, sInfo->integerParameter[i]);
-  }
-  for(i=0; i<mData->nParametersBoolean; ++i)
-  {
-    mData->booleanParameterData[i].attribute.initial = sInfo->booleanParameter[i];
-    INFO2(LOG_DEBUG, "Set Boolean Parameter var %s = %s", mData->booleanParameterData[i].info.name, sInfo->booleanParameter[i] ? "true" : "false");
-  }
-  for(i=0; i<mData->nParametersString; ++i)
-  {
-    mData->stringParameterData[i].attribute.initial = sInfo->stringParameter[i];
-    INFO2(LOG_DEBUG, "Set String initial Parameter var %s = %s", mData->stringParameterData[i].info.name, sInfo->stringParameter[i]);
   }
 }
 
