@@ -1056,6 +1056,7 @@ algorithm
       then
         env;
     
+    /*
     case (_, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
@@ -1063,7 +1064,7 @@ algorithm
               "\n\tinFromEnv: " +& getEnvNameStr(inFromEnv) +& 
               "\n\tinToEnv: " +& getEnvNameStr(inToEnv) +& "\n");
       then
-        fail();
+        fail();*/
     
     // never fail, return the ToEnv
     else inToEnv; 
