@@ -1936,7 +1936,7 @@ algorithm
               );
         // do not add if const true
         false = Expression.isConstTrue(cond);
-        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING);
+        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})};
     case(_,_,_,_,_) then {};
@@ -2001,13 +2001,12 @@ algorithm
               );
         // do not add if const true
         false = Expression.isConstTrue(cond);
-        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING);
+        BackendDAEUtil.checkAssertCondition(cond,msg,DAE.ASSERTIONLEVEL_WARNING,DAEUtil.getElementSourceFileInfo(source));
       then 
         {DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,DAE.ASSERTIONLEVEL_WARNING,source)})};
     case(_,_,_,_,_) then {};
   end matchcontinue;
 end getNominalAssert;
-
 
 public function varSortFunc "function varSortFun
   A sorting function (greatherThan) for Variables based on crefs"

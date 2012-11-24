@@ -50,8 +50,8 @@ encapsulated package BackendDAEUtil
 public import BackendDAE;
 public import DAE;
 public import Env;
+public import Absyn;
 
-protected import Absyn;
 protected import Algorithm;
 protected import BackendDump;
 protected import BackendDAECreate;
@@ -395,28 +395,29 @@ public function checkAssertCondition "Succeds if condition of assert is not cons
   input DAE.Exp cond;
   input DAE.Exp message;
   input DAE.Exp level;
+  input Absyn.Info info;
 algorithm
-  _ := matchcontinue(cond,message,level)
+  _ := matchcontinue(cond,message,level,info)
     local 
       String messageStr;
-    case(_, _, _)
+    case(_, _, _,_)
       equation
         // Don't check assertions when checking models
         true = Flags.getConfigBool(Flags.CHECK_MODEL);
       then ();
-    case (_,_,_)
+    case (_,_,_,_)
       equation
         false = Expression.isConstFalse(cond);
       then ();
-    case (_,_,_)
+    case (_,_,_,_)
       equation
         failure(DAE.ENUM_LITERAL(index=1) = level);
       then ();
-    case(_,_,_)
+    case(_,_,_,_)
       equation
         true = Expression.isConstFalse(cond);
         messageStr = ExpressionDump.printExpStr(message);
-        Error.addMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{messageStr});
+        Error.addSourceMessage(Error.ASSERT_CONSTANT_FALSE_ERROR,{messageStr},info);
       then fail();
   end matchcontinue;
 end checkAssertCondition;

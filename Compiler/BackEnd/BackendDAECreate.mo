@@ -2076,7 +2076,7 @@ algorithm
         (cond,source,_) = Inline.inlineExp(cond,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         (msg,source,_) = Inline.inlineExp(msg,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
         (level,source,_) = Inline.inlineExp(level,(SOME(functionTree),{DAE.NORM_INLINE()}),source);
-        BackendDAEUtil.checkAssertCondition(cond,msg,level);
+        BackendDAEUtil.checkAssertCondition(cond,msg,level,DAEUtil.getElementSourceFileInfo(source));
         alg = DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,level,source)});
       then
         (inEquations,BackendDAE.ALGORITHM(0,alg,source)::inREquations,inIEquations);  
