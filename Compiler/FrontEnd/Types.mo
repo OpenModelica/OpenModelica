@@ -1443,12 +1443,14 @@ algorithm
     // check of tuple vs. type: i.e. abs(fcallReturningTuple)
     // we try subtype of the first tuple element with the other type!
     case (DAE.T_TUPLE(tupleType = tp1::_), tp2, _)
-      equation 
+      equation
+        false = Config.acceptMetaModelicaGrammar();
         true = subtype2(tp1, tp2, requireRecordNamesEqual);
       then
         true;
     case (tp1, DAE.T_TUPLE(tupleType = tp2::_), _)
-      equation 
+      equation
+        false = Config.acceptMetaModelicaGrammar();
         true = subtype2(tp1, tp2, requireRecordNamesEqual);
       then
         true;
