@@ -91,11 +91,11 @@ template fmiModelDescription(SimCode simCode, String guid)
 match simCode
 case SIMCODE(__) then
   <<
-  <fmiModelDescription 
+  <fmiModelDescription
     <%fmiModelDescriptionAttributes(simCode,guid)%>>
     <%DefaultExperiment(simulationSettingsOpt)%>
-    <%ModelVariables(modelInfo)%>  
-  </fmiModelDescription>  
+    <%ModelVariables(modelInfo)%>
+  </fmiModelDescription>
   >>
 end fmiModelDescription;
 
@@ -151,7 +151,7 @@ match simCode
 case SIMCODE(__) then
   <<
   <UnitDefinitions>
-  </UnitDefinitions>  
+  </UnitDefinitions>
   >>
 end UnitDefinitions;
 
@@ -173,7 +173,7 @@ match simulationSettingsOpt
   case SOME(v) then 
     <<
     <DefaultExperiment <%DefaultExperimentAttribute(v)%>/>
-      >>
+    >>
 end DefaultExperiment;
 
 template DefaultExperimentAttribute(SimulationSettings simulationSettings)
@@ -285,11 +285,11 @@ match simVar
   let alias = getAliasVar(aliasvar)
   let caus = getCausality(causality)
   <<
-  name="<%System.stringReplace(crefStr(name),"$", "_D_")%>" 
-  valueReference="<%valueReference%>" 
+  name="<%System.stringReplace(crefStr(name),"$", "_D_")%>"
+  valueReference="<%valueReference%>"
   <%description%>
-  variability="<%variability%>" 
-  causality="<%caus%>" 
+  variability="<%variability%>"
+  causality="<%caus%>"
   alias="<%alias%>"
   >>  
 end ScalarVariableAttribute;
@@ -319,8 +319,10 @@ template getAliasVar(AliasVariable aliasvar)
 ::=
 match aliasvar
   case NOALIAS(__) then "noAlias"
-  case ALIAS(__) then "alias"
+  /* We don't handle the alias and negatedAlias properly. If a variable is alias it must get the valueReference of the aliased variable. */ 
+  /*case ALIAS(__) then "alias"
   case NEGATEDALIAS(__) then "negatedAlias"
+  */
   else "noAlias"
 end getAliasVar;
 
@@ -328,11 +330,12 @@ template ScalarVariableType(DAE.Type type_, String unit, String displayUnit, Opt
  "Generates code for ScalarVariable Type file for FMU target."
 ::=
 match type_
-  case T_INTEGER(__) then '<Integer/>' 
-  case T_REAL(__) then '<Real <%ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)%>/>' 
-  case T_BOOL(__) then '<Boolean/>' 
-  case T_STRING(__) then '<String/>' 
-  case T_ENUMERATION(__) then '<Real/>' 
+  case T_INTEGER(__) then '<Integer/>'
+  /* Don't generate the units for now since it is wrong. If you generate a unit attribute here then we must add the UnitDefinitions tag section also. */
+  case T_REAL(__) then '<Real <%/*ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
+  case T_BOOL(__) then '<Boolean/>'
+  case T_STRING(__) then '<String/>'
+  case T_ENUMERATION(__) then '<Real/>'
   else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
