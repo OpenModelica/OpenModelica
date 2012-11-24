@@ -280,6 +280,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   const char* guid = fmi1_import_get_GUID(fmi);
   /* Read the FMI description from FMU's modelDescription.xml file. */
   const char* description = fmi1_import_get_description(fmi);
+  description = (description && omc__escapedStringLength(description,0) > strlen(description)) ? omc__escapedString(description,0) : "";
   /* Read the FMI generation tool from FMU's modelDescription.xml file. */
   const char* generationTool = fmi1_import_get_generation_tool(fmi);
   /* Read the FMI generation date and time from FMU's modelDescription.xml file. */
@@ -329,7 +330,8 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     void* variable_name = mk_scon(name);
     free(name);
     const char* description = fmi1_import_get_variable_description(model_variable);
-    void* variable_description = description ? mk_scon(description) : mk_scon("");
+    description = (description && omc__escapedStringLength(description,0) > strlen(description)) ? omc__escapedString(description,0) : "";
+    void* variable_description = mk_scon(description);
     void* variable_base_type = mk_scon(getModelVariableBaseType(model_variable));
     void* variable_variability = mk_scon(getModelVariableVariability(model_variable));
     void* variable_causality = mk_scon(getModelVariableCausality(model_variable));
