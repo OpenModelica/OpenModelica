@@ -4486,5 +4486,12 @@ algorithm
   end matchcontinue;
 end setClassPrefixes;
 
+public function makeEquation
+  input EEquation inEEq;
+  output Equation outEq;
+algorithm
+  outEq := EQUATION(inEEq);
+end makeEquation;
+
 end SCode;
 

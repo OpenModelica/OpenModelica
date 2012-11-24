@@ -160,8 +160,6 @@ protected import ValuesUtil;
 protected import System;
 protected import SCodeFlatten;
 protected import SCodeDump;
-protected import SCodeMod;
-//protected import Database;
 
 public function newIdent
 "function: newIdent
@@ -4658,18 +4656,23 @@ algorithm
       SCode.Encapsulated enc;
       InstanceHierarchy ih;
       list<SCode.Element> defineUnits;
+      Env.CSetsType clst;
 
     case (Connect.SETS(connectionCrefs = crs),_,
-      (Env.FRAME( n,st,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
+      (Env.FRAME( n,st,bt1,bt2,imp,clst,enc,defineUnits) :: fs),ih)
       equation
         prefix_cr = PrefixUtil.prefixToCref(prefix);
-      then (Env.FRAME(n,st,bt1,bt2,imp,(crs,prefix_cr),enc,defineUnits) :: fs,ih);
+        // strip the subs!
+        prefix_cr = ComponentReference.crefStripSubs(prefix_cr);
+      then 
+        (Env.FRAME(n,st,bt1,bt2,imp,(crs,prefix_cr)::clst,enc,defineUnits) :: fs,ih);
     
     case (Connect.SETS(connectionCrefs = crs),_,
-        (Env.FRAME(n,st,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
+        (Env.FRAME(n,st,bt1,bt2,imp,clst,enc,defineUnits) :: fs),ih)
       equation
         cref_ = ComponentReference.makeCrefIdent("",DAE.T_UNKNOWN_DEFAULT,{});
-      then (Env.FRAME(n,st,bt1,bt2,imp,(crs,cref_),enc,defineUnits) :: fs,ih);
+      then 
+        (Env.FRAME(n,st,bt1,bt2,imp,(crs,cref_)::clst,enc,defineUnits) :: fs,ih);
 
   end matchcontinue;
 end addConnectionSetToEnv;
@@ -4685,7 +4688,9 @@ algorithm
     local
       Absyn.ComponentRef acr1, acr2;
       DAE.ComponentRef ecr1, ecr2;
-      list<SCode.Equation> es;
+      list<SCode.Equation> es, eqs;
+      list<SCode.EEquation> eeqlst;
+      list<DAE.ComponentRef> acc;
 
     case ({}, _) then inAccumCrefs;
 
@@ -4694,8 +4699,19 @@ algorithm
       equation
         ecr1 = ComponentReference.toExpCref(acr1);
         ecr2 = ComponentReference.toExpCref(acr2);
+        // strip the subs as we don't care!
+        ecr1 = ComponentReference.crefStripSubs(ecr1);
+        ecr2 = ComponentReference.crefStripSubs(ecr2);
       then
         extractConnectionCrefs(es, ecr1 :: ecr2 :: inAccumCrefs);
+
+    case (SCode.EQUATION(eEquation = 
+        SCode.EQ_FOR(eEquationLst = eeqlst)) :: es, _)
+      equation
+        eqs = List.map(eeqlst, SCode.makeEquation);
+        acc = extractConnectionCrefs(eqs, inAccumCrefs);
+      then
+        extractConnectionCrefs(es, acc);
 
     case (_ :: es, _)
       then extractConnectionCrefs(es, inAccumCrefs);
@@ -4723,6 +4739,10 @@ algorithm
       equation
         first_pre = PrefixUtil.prefixFirst(pre);
         cr = PrefixUtil.prefixToCref(first_pre);
+        
+        // strip the subs!
+        cr = ComponentReference.crefStripSubs(cr);
+        
         crs = List.select1r(crs, ComponentReference.crefPrefixOf, cr);
         s = ConnectUtil.setConnectionCrefs(inSets, crs);
       then
@@ -6880,7 +6900,7 @@ algorithm
           Absyn.TPATH(t, _), m, comment, cond, _), mod_1) 
           = redeclareType(cache, env2, ih, mod, comp, pre, ci_state, impl, DAE.NOMOD());
 
-        (cache, cls, cenv) = Lookup.lookupClass(cache, env, t, true);
+        (cache, cls, cenv) = Lookup.lookupClass(cache, env2 /* env */, t, true);
         attr = SCode.mergeAttributesFromClass(attr, cls);
         
         // If the element is protected, and an external modification 
@@ -6911,7 +6931,8 @@ algorithm
         // adrpo: 2010-09-28: check if the IDX mod doesn't overlap!
         Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state), info);
         
-        // replace classes
+        // merge cardinality sets from env2 to cenv!
+        cenv = Env.mergeEnvConnectionSet(env2, cenv);
         
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) = instVar(cache,
           cenv, ih, store, ci_state, mod_1, pre, name, cls, attr,

@@ -972,7 +972,7 @@ algorithm
       equation
         id = Absyn.pathString(path);
         handler = cevalBuiltinHandler(id);
-        (cache,v,st) = handler(cache,env, args, impl, st, msg);
+        (cache,v,st) = handler(cache, env, args, impl, st, msg);
       then
         (cache,v,st);
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,attr = DAE.CALL_ATTR(builtin = true))),impl,(st as NONE()),msg)
@@ -1743,30 +1743,13 @@ algorithm
       Absyn.Ident currentPrefixIdent;
       list<DAE.Exp> expl;
       list<Values.Value> vals;
+      Env.CSetsType clst;
 
     case (DAE.CREF(componentRef = cr), env)
       equation
-        (env as (Env.FRAME(connectionSet = (crs,prefix))::_)) = Env.stripForLoopScope(env);
-        cr_lst = List.select1(crs, ComponentReference.crefContainedIn, cr);
-        currentPrefixIdent= ComponentReference.crefLastIdent(prefix);
-        currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.T_UNKNOWN_DEFAULT,{});
-         //  Select connect references that has cr as suffix and correct Prefix.
-        cr_lst = List.select1r(cr_lst, ComponentReference.crefPrefixOf, currentPrefix);
-
-        // Select connect references that are identifiers (inside connectors)
-        cr_lst2 = List.select(crs,ComponentReference.crefIsIdent);
-        cr_lst2 = List.select1(cr_lst2,ComponentReference.crefEqual,cr);
-
-        cr_totlst = List.unionOnTrue(listAppend(cr_lst,cr_lst2),{},ComponentReference.crefEqual);
-        res = listLength(cr_totlst);
-
-        /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");
-        print("cardinality(");print(ComponentReference.printComponentRefStr(cr));print(")=");print(intString(res));
-        print("\nicrefs =");print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),","));
-        print("\ncrefs =");print(stringDelimitList(List.map(cr_totlst,ComponentReference.printComponentRefStr),","));
-        print("\n");
-         print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
-       //  print("env:");print(Env.printEnvStr(env));
+        env = Env.stripForLoopScope(env);
+        Env.FRAME(connectionSet = clst)::_ = env;
+        res = cevalCardinality2(cr, clst, env, 0);
       then
         Values.INTEGER(res);
 
@@ -1779,6 +1762,58 @@ algorithm
 
   end match;
 end cevalCardinality;
+
+protected function cevalCardinality2 
+  input DAE.ComponentRef inCref;
+  input Env.CSetsType inCSets;
+  input Env.Env inEnv;
+  input Integer inStartValue;
+  output Integer outValue;
+algorithm
+  outValue := match(inCref, inCSets, inEnv, inStartValue)
+    local
+      Env.Env env;
+      list<DAE.ComponentRef> cr_lst,cr_lst2,cr_totlst,crs;
+      Integer res, dim;
+      DAE.ComponentRef cr;
+      DAE.ComponentRef prefix,currentPrefix;
+      Absyn.Ident currentPrefixIdent;
+      list<DAE.Exp> expl;
+      list<Values.Value> vals;
+      Env.CSetsType rest;
+
+    case (cr, {}, env, _) then inStartValue;
+
+    case (cr, (crs,prefix)::rest, env, _)
+      equation
+        // strip the subs from the cref!
+        cr = ComponentReference.crefStripSubs(cr);
+        
+        cr_lst = List.select1(crs, ComponentReference.crefContainedIn, cr);
+        currentPrefixIdent = ComponentReference.crefLastIdent(prefix);
+        currentPrefix = ComponentReference.makeCrefIdent(currentPrefixIdent,DAE.T_UNKNOWN_DEFAULT,{});
+         //  Select connect references that has cr as suffix and correct Prefix.
+        cr_lst = List.select1r(cr_lst, ComponentReference.crefPrefixOf, currentPrefix);
+
+        // Select connect references that are identifiers (inside connectors)
+        cr_lst2 = List.select(crs,ComponentReference.crefIsIdent);
+        cr_lst2 = List.select1(cr_lst2,ComponentReference.crefEqual,cr);
+
+        cr_totlst = List.unionOnTrue(listAppend(cr_lst,cr_lst2),{},ComponentReference.crefEqual);
+        res = listLength(cr_totlst);
+        /*print("inFrame :");print(Env.printEnvPathStr(env));print("\n");
+        print("cardinality(");print(ComponentReference.printComponentRefStr(cr));print(")=");print(intString(res));
+        print("\nicrefs =");print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),","));
+        print("\ncrefs =");print(stringDelimitList(List.map(cr_totlst,ComponentReference.printComponentRefStr),","));
+        print("\n");
+         print("prefix =");print(ComponentReference.printComponentRefStr(prefix));print("\n");*/
+       //  print("env:");print(Env.printEnvStr(env));
+       res = cevalCardinality2(cr, rest, inEnv, res + inStartValue);
+      then
+       res;
+
+  end match;
+end cevalCardinality2;
 
 protected function cevalBuiltinCat "function: cevalBuiltinCat
   author: PA

@@ -373,21 +373,28 @@ algorithm
         // ({BackendDAE.VAR(varKind = BackendDAE.STATE())},_) = BackendVariable.getVar(cr, timevars);
       then DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
 
+    // der(sign(x)) -> 0
+    case (DAE.CALL(path = Absyn.IDENT("sign"),expLst = {e}),_)
+      then
+        DAE.RCONST(0.0);
+
+    // der(sin(x)) = der(x)cos(x) 
     case (DAE.CALL(path = Absyn.IDENT("sin"),expLst = {e}),_)
       equation
-        e_1 = differentiateExpTime(e, inVariables) "der(sin(x)) = der(x)cos(x)" ;
+        e_1 = differentiateExpTime(e, inVariables);
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.CALL(Absyn.IDENT("cos"),{e},DAE.callAttrBuiltinReal));
 
+    // der(cos(x)) = -der(x)sin(x)
     case (DAE.CALL(path = Absyn.IDENT("cos"),expLst = {e}),_)
       equation
-        e_1 = differentiateExpTime(e, inVariables) "der(cos(x)) = -der(x)sin(x)" ;
+        e_1 = differentiateExpTime(e, inVariables);
       then
         DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.CALL(Absyn.IDENT("sin"),{e},DAE.callAttrBuiltinReal)));
 
-        // der(arccos(x)) = -der(x)/sqrt(1-x^2)
+    // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (DAE.CALL(path = Absyn.IDENT("acos"),expLst = {e}),_)
       equation
         e_1 = differentiateExpTime(e, inVariables);
@@ -396,59 +403,63 @@ algorithm
           DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},
                    DAE.callAttrBuiltinReal)));
 
-        // der(arcsin(x)) = der(x)/sqrt(1-x^2)
-      case (DAE.CALL(path = Absyn.IDENT("asin"),expLst = {e}),_)
-        equation
-          e_1 = differentiateExpTime(e, inVariables)  ;
-        then
-         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),
-            DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},
-                     DAE.callAttrBuiltinReal));
+    // der(arcsin(x)) = der(x)/sqrt(1-x^2)
+    case (DAE.CALL(path = Absyn.IDENT("asin"),expLst = {e}),_)
+      equation
+        e_1 = differentiateExpTime(e, inVariables)  ;
+      then
+       DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),
+         DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e))},
+                  DAE.callAttrBuiltinReal));
 
-        // der(arctan(x)) = der(x)/1+x^2
-      case (DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e}),_)
-        equation
-          e_1 = differentiateExpTime(e, inVariables)  ;
-        then
-          DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e)));
+    // der(arctan(x)) = der(x)/1+x^2
+    case (DAE.CALL(path = Absyn.IDENT("atan"),expLst = {e}),_)
+      equation
+        e_1 = differentiateExpTime(e, inVariables)  ;
+      then
+        DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e)));
 
-        // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
-      case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),_)
-        equation
-          true = Expression.isZero(e1);
-          (exp,_) = Expression.makeZeroExpression({});
-        then
-          exp;
+    // der(arctan2(y,0)) = der(sign(y)*pi/2) = 0
+    case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),_)
+      equation
+        true = Expression.isZero(e1);
+        (exp,_) = Expression.makeZeroExpression({});
+      then
+        exp;
 
-        // der(arctan2(y,x)) = der(y/x)/1+(y/x)^2
-      case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),_)
-        equation
-          false = Expression.isZero(e1);
-          exp = Expression.makeDiv(e,e1);
-          e_1 = differentiateExpTime(exp, inVariables);
-        then
-          DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e)));
+    // der(arctan2(y,x)) = der(y/x)/1+(y/x)^2
+    case (DAE.CALL(path = Absyn.IDENT("atan2"),expLst = {e,e1}),_)
+      equation
+        false = Expression.isZero(e1);
+        exp = Expression.makeDiv(e,e1);
+        e_1 = differentiateExpTime(exp, inVariables);
+      then
+        DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.T_REAL_DEFAULT),DAE.BINARY(e,DAE.MUL(DAE.T_REAL_DEFAULT),e)));
 
+    // der(exp(x)) = der(x)exp(x)
     case (DAE.CALL(path = fname as Absyn.IDENT("exp"),expLst = {e}),_)
       equation
-        e_1 = differentiateExpTime(e, inVariables) "der(exp(x)) = der(x)exp(x)" ;
+        e_1 = differentiateExpTime(e, inVariables);
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.T_REAL_DEFAULT),
           DAE.CALL(fname,{e},DAE.callAttrBuiltinReal));
 
+    // der(log(x)) = der(x)/x
     case (DAE.CALL(path = Absyn.IDENT("log"),expLst = {e}),_)
       equation
-        e_1 = differentiateExpTime(e, inVariables) "der(log(x)) = der(x)/x";
+        e_1 = differentiateExpTime(e, inVariables);
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),e);
 
+    // der(log10(x)) = der(x)/(ln(10)*x)
     case (DAE.CALL(path = Absyn.IDENT("log10"),expLst = {e}),_)
       equation
-        e_1 = differentiateExpTime(e, inVariables) "der(log10(x)) = der(x)/(ln(10)*x)";
+        e_1 = differentiateExpTime(e, inVariables);
         r = realLn(10.0);
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.T_REAL_DEFAULT),DAE.BINARY(DAE.RCONST(r),DAE.MUL(DAE.T_REAL_DEFAULT),e));
 
+    
     case (DAE.CALL(path = fname as Absyn.IDENT("max"),expLst = {e1,e2},attr=DAE.CALL_ATTR(ty=tp)),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);

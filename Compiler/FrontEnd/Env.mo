@@ -102,6 +102,7 @@ protected import Util;
 protected import Types;
 protected import SCodeDump;
 protected import Mod;
+protected import Lookup;
 
 public type Ident = String " An identifier is just a string " ;
 public type Env = list<Frame> "an environment is a list of frames";
@@ -133,10 +134,11 @@ public uniontype CacheTree
   end CACHETREE;
 end CacheTree;
 
-type CSetsType = tuple<list<DAE.ComponentRef>,DAE.ComponentRef>;
+type CSetsType = list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef>>;
 
 public uniontype ScopeType
   record FUNCTION_SCOPE end FUNCTION_SCOPE;
+  
   record CLASS_SCOPE end CLASS_SCOPE;
   
   record PARALLEL_SCOPE end PARALLEL_SCOPE;
@@ -247,7 +249,7 @@ algorithm
   ht := avlTreeNew();
   httypes := avlTreeNew();
   cref_ := ComponentReference.makeCrefIdent("",DAE.T_UNKNOWN_DEFAULT,{});
-  outFrame := FRAME(inName,inType,ht,httypes,{},({},cref_),encapsulatedPrefix,{});
+  outFrame := FRAME(inName,inType,ht,httypes,{},{({},cref_)},encapsulatedPrefix,{});
 end newFrame;
 
 public function isTyped "
@@ -380,7 +382,7 @@ algorithm
       AvlTree clsAndVars, types ;
       list<Item> imports;
       list<Frame> fs;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crefs;
+      CSetsType crefs;
       SCode.Encapsulated enc;
       list<SCode.Element> defineUnits;
 
@@ -463,7 +465,7 @@ algorithm
       Option<Ident> id;
       Option<ScopeType> st;
       list<AvlValue> imps;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Encapsulated encflag;
       SCode.Element c;
       Ident n;
@@ -501,7 +503,7 @@ algorithm
       Option<ScopeType> st;
       list<AvlValue> imps;
       Env fs, env, frames, classEnv, oldCE;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Element e, oldE;
       Ident n;
       list<SCode.Element> defineUnits;
@@ -576,7 +578,7 @@ algorithm
       Option<ScopeType> st;
       list<AvlValue> imps;
       Env fs;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Encapsulated encflag;
       list<SCode.Element> defineUnits;
 
@@ -606,7 +608,7 @@ algorithm
       Option<ScopeType> st;
       list<AvlValue> imps;
       Env fs,env,remember;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Encapsulated encflag;
       InstStatus i;
       DAE.Var v;
@@ -653,7 +655,7 @@ algorithm
       Option<ScopeType> st;
       list<AvlValue> imps;
       Env fs,env,frames;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       DAE.Var v;
       Ident n,id;
       list<SCode.Element> defineUnits;
@@ -707,7 +709,7 @@ algorithm
       Option<ScopeType> st;
       list<AvlValue> imps;
       Env fs;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Encapsulated encflag;
       Ident n;
       DAE.Type t;
@@ -741,7 +743,7 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Encapsulated encflag;
       Absyn.Import imp;
       Env fs,env;
@@ -769,7 +771,7 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Encapsulated encflag;
       Env fs;
       list<SCode.Element> defineUnits;
@@ -849,7 +851,7 @@ algorithm
       AvlTree cls;
       list<AvlValue> imps;
       Env bc,fs;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crefs;
+      CSetsType crefs;
       Boolean enc;
       Frame f;
       list<SCode.Element> defineUnits;
@@ -1011,6 +1013,63 @@ algorithm
   end matchcontinue;
 end joinEnvPath;
 
+public function getEnvNameStr
+  "Returns the FQ name of the environment, see also getEnvPath"
+  input Env inEnv;
+  output String outString;
+algorithm
+  outString := matchcontinue(inEnv)
+    case (_)
+      then
+        Absyn.pathString(getEnvName(inEnv));
+    else ".";
+  end matchcontinue;
+end getEnvNameStr;
+
+public function mergeEnvConnectionSet
+"@author: adrpo
+ adds the connectionSet from the FromEnv to the ToEnv"
+  input Env inFromEnv;
+  input Env inToEnv;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue(inFromEnv, inToEnv)
+    local
+      Env env, forloopenv;
+      CSetsType clst, clst1, clst2;
+      Option<Ident> on;
+      Option<ScopeType> ot;
+      AvlTree cv;
+      AvlTree tys;
+      list<Item> i;
+      SCode.Encapsulated ep;
+      list<SCode.Element> du;      
+      
+    case (_, _)
+      equation
+        false = isTopScope(inFromEnv);
+        false = isTopScope(inToEnv);
+        FRAME(connectionSet = clst1)::_ = stripForLoopScope(inFromEnv);
+        (FRAME(on,ot,cv,tys,i,clst2,ep,du)::env, forloopenv) = Lookup.splitEnv(inToEnv);
+        clst = listAppend(clst2, clst1);
+        env = listAppend(forloopenv, FRAME(on,ot,cv,tys,i,clst,ep,du)::env);
+      then
+        env;
+    
+    case (_, _)
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        print("Env.mergeEnvConnectionSet failed on:" +&
+              "\n\tinFromEnv: " +& getEnvNameStr(inFromEnv) +& 
+              "\n\tinToEnv: " +& getEnvNameStr(inToEnv) +& "\n");
+      then
+        fail();
+    
+    // never fail, return the ToEnv
+    else inToEnv; 
+  end matchcontinue;
+end mergeEnvConnectionSet;
+
 public function printEnvPathStr "function: printEnvPathStr
  Retrive the environment path as a string, see getEnvPath."
   input Env inEnv;
@@ -1092,11 +1151,16 @@ algorithm
   _ := matchcontinue(env)
     local
       list<DAE.ComponentRef> crs;
-    case(env as (FRAME(connectionSet = (crs,_))::_)) equation
-      print(printEnvPathStr(env));print(" :   ");
-      print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
-      print("\n");
-    then ();
+      CSetsType clst;
+    
+    case(env as (FRAME(connectionSet = clst)::_)) 
+      equation
+        crs = List.flatten(List.map(clst, Util.tuple21));
+        print(printEnvPathStr(env));print(" :   ");
+        print(stringDelimitList(List.map(crs,ComponentReference.printComponentRefStr),", "));
+        print("\n");
+      then 
+        ();
   end matchcontinue;
 end printEnvConnectionCrefs;
 
@@ -1112,8 +1176,9 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Encapsulated encflag;
+
     case FRAME(optName = optName,clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
       equation
         sid = Util.getOptionOrDefault(optName, "unnamed");
@@ -1140,7 +1205,7 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      CSetsType crs;
       SCode.Encapsulated encflag;
 
     case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
