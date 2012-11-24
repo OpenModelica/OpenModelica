@@ -1440,6 +1440,19 @@ algorithm
       then
         true;
     
+    // check of tuple vs. type: i.e. abs(fcallReturningTuple)
+    // we try subtype of the first tuple element with the other type!
+    case (DAE.T_TUPLE(tupleType = tp1::_), tp2, _)
+      equation 
+        true = subtype2(tp1, tp2, requireRecordNamesEqual);
+      then
+        true;
+    case (tp1, DAE.T_TUPLE(tupleType = tp2::_), _)
+      equation 
+        true = subtype2(tp1, tp2, requireRecordNamesEqual);
+      then
+        true;
+    
     // Part of MetaModelica extension. KS
     case (DAE.T_METALIST(listType = t1),DAE.T_METALIST(listType = t2),_) then subtype(t1,t2);
     case (DAE.T_METAARRAY(ty = t1),DAE.T_METAARRAY(ty = t2),_) then subtype(t1,t2);
