@@ -1560,7 +1560,7 @@ end dumpFMIModelVariableVariability;
 template dumpFMIModelVariableCausality(String causality)
 ::=
   <<
-  <%if stringEq(causality, "") then "" else causality+" "%>
+  <%if boolOr(stringEq(causality, ""),stringEq(causality, "input")) then "" else causality+" "%>
   >>
 end dumpFMIModelVariableCausality;
 
