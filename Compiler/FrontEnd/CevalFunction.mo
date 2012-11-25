@@ -2771,6 +2771,11 @@ algorithm
         exp = Expression.makeCrefExp(cref, ety);
       then
         ((exp, env));
+    
+    case ((DAE.TSUB(exp = DAE.TUPLE(exp::_), ix = 1, ty = ety), env))
+      then
+        ((exp, env));
+    
     else then inTuple;
   end match;
 end optimizeExpTraverser;

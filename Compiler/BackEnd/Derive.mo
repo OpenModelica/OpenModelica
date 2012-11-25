@@ -764,6 +764,12 @@ algorithm
       then
         Expression.makeASUB(e_1,sub);
     
+    case (DAE.TSUB(e,i,tp),_)
+      equation
+        e_1 = differentiateExpTime(e, inVariables);
+      then
+        DAE.TSUB(e_1,i,tp);
+    
     case (DAE.REDUCTION(reductionInfo = reductionInfo,expr = e1,iterators = iters),_)
       equation
         e1_1 = differentiateExpTime(e1, inVariables);

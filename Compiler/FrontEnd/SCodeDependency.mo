@@ -847,6 +847,12 @@ algorithm
       then
         inExtends;
 
+    case (SCode.CLASS(name = name, info = info, classDef=SCode.CLASS_EXTENDS(baseClassName = _)), _, _, _)
+      equation
+        analyseClass(Absyn.IDENT(name), inEnv, info);
+      then
+        inExtends;
+
     else inExtends;
   end match;
 end analyseElement;

@@ -3976,6 +3976,8 @@ algorithm
       then ((e,false,(vars,pa)));
         
     case ((e as DAE.TSUB(exp = _),(vars,pa)))
+      equation
+        ((_,(vars,pa))) = Expression.traverseExpTopDown(e, traversingincidenceRowExpFinder, (vars,pa));
       then ((e,false,(vars,pa)));
                             
     case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
