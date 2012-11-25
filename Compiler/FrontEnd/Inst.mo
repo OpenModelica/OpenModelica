@@ -6932,7 +6932,8 @@ algorithm
         Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(name, {}, pre, vt, ci_state), info);
         
         // merge cardinality sets from env2 to cenv!
-        cenv = Env.mergeEnvConnectionSet(env2, cenv);
+        // geez, this is not actually needed!
+        // cenv = Env.mergeEnvConnectionSet(env2, cenv);
         
         (cache, comp_env, ih, store, dae, csets, ty, graph_new) = instVar(cache,
           cenv, ih, store, ci_state, mod_1, pre, name, cls, attr,
