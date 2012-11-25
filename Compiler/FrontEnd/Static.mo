@@ -1196,6 +1196,9 @@ algorithm
       Option<Values.Value> v;
       list<DAE.ReductionIterator> reductionIters;
       DAE.Dimensions dims;
+      DAE.Properties props;
+      list<DAE.Type> restTupleTypes;
+      DAE.TypeSource tsrc;
 
     case (cache,env,fn,exp,_,_,st,doVect,pre,_)
       equation
@@ -1206,6 +1209,29 @@ algorithm
         (cache,exp_1,DAE.PROP(expty, expconst),st) = elabExp(cache, env_1, exp, impl, st, doVect, pre, info);
         // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
         const = Types.constAnd(expconst, iterconst);
+        fn_1 = Absyn.crefToPath(fn);
+        (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
+        prop = DAE.PROP(expty, const);
+        (env_foldExp,afoldExp) = makeReductionFoldExp(env_1,fn_1,expty);
+        (cache,foldExp,_,st) = elabExpOptAndMatchType(cache, env_foldExp, afoldExp, expty, impl, st, doVect,pre,info);
+        // print("make reduction: " +& Absyn.pathString(fn_1) +& " exp_1: " +& ExpressionDump.printExpStr(exp_1) +& "\n");
+        exp_1 = DAE.REDUCTION(DAE.REDUCTIONINFO(fn_1,expty,v,foldExp),exp_1,reductionIters);
+      then
+        (cache,exp_1,prop,st);
+
+    // the freaking expression can be a function call returning a tuple!
+    case (cache,env,fn,exp,_,_,st,doVect,pre,_)
+      equation
+        false = Config.acceptMetaModelicaGrammar();
+        env_1 = Env.openScope(env, SCode.NOT_ENCAPSULATED(), SOME(Env.forIterScopeName), NONE());
+        (cache,env_1,reductionIters,dims,iterconst,hasGuardExp,st) = elabCallReductionIterators(cache, env_1, iterators, impl, st, doVect, pre, info);
+        dims = listReverse(dims);
+        // print("elabReductionExp: " +& Dump.printExpStr(exp) +& "\n");
+        (cache,exp_1,props,st) = elabExp(cache, env_1, exp, impl, st, doVect, pre, info);
+        // print("exp_1 has type: " +& Types.unparseType(expty) +& "\n");
+        DAE.PROP(expty, expconst) = Types.propTupleFirstProp(props);
+        const = Types.constAnd(expconst, iterconst);
+        exp_1 = DAE.TSUB(exp_1, 1, expty);
         fn_1 = Absyn.crefToPath(fn);
         (cache,exp_1,expty,v,fn_1) = reductionType(cache, env, fn_1, exp_1, expty, Types.unboxedType(expty), dims, hasGuardExp, info);
         prop = DAE.PROP(expty, const);

@@ -729,6 +729,13 @@ algorithm
         e2 = Expression.makeASUB(e1,es_1);
       then 
         (cache,e2);
+        
+    case (cache,env,ih,(e as DAE.TSUB(e1, index_, t)),pre) 
+      equation
+        (cache,e1) = prefixExp(cache, env, ih, e1, pre);
+        e2 = DAE.TSUB(e1, index_, t);
+      then 
+        (cache,e2);
     
     case (cache,env,ih,DAE.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
       equation
@@ -875,7 +882,7 @@ algorithm
     case (_,_,_,e,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprint(Flags.FAILTRACE, "-prefix_exp failed on exp:");
+        Debug.fprint(Flags.FAILTRACE, "-PrefixUtil.prefixExp failed on exp: ");
         s = ExpressionDump.printExpStr(e);
         Debug.fprint(Flags.FAILTRACE, s);
         Debug.fprint(Flags.FAILTRACE, "\n");
