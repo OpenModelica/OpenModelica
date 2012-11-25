@@ -12590,7 +12590,6 @@ algorithm
   end match;
 end isOpElemWise;
 
-
 public function isFuncWithArrayInput
   input DAE.Type inType;
   output Boolean outBool;
@@ -12912,16 +12911,36 @@ algorithm
        local
          Env.Cache cache;
          Env.Env env;
-          list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> opList;
+         list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> opList;
          DAE.Type type1,type2, otype;
          DAE.Exp exp1,exp2,exp;
          DAE.Const const1,const2, const;
          DAE.Operator oper;
          Absyn.Operator aboper;
-         DAE.Properties prop;
+         DAE.Properties prop, props1, props2;
          Absyn.Exp  absexp1, absexp2;
-         Boolean lastRound;
+         Boolean lastRound; 
          
+     // handle tuple op non_tuple
+     case (_, _, aboper, props1 as DAE.PROP_TUPLE(type_ = _), exp1, props2 as DAE.PROP(type_ = _), exp2, _, _, _, _, _, _, _) 
+       equation
+         false = Config.acceptMetaModelicaGrammar();
+         (prop as DAE.PROP(type1, const1)) = Types.propTupleFirstProp(props1);
+         exp = DAE.TSUB(inExp1, 1, type1);
+         (cache, exp, prop) = operatorDeoverloadBinary(inCache, inEnv, inOperator1, prop, exp, inProp2, inExp2, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
+       then
+         (inCache, exp, prop);
+
+     // handle non_tuple op tuple
+     case (_, _, aboper, props1 as DAE.PROP(type_ = _), exp1, props2 as DAE.PROP_TUPLE(type_ = _), exp2, _, _, _, _, _, _, _) 
+       equation
+         false = Config.acceptMetaModelicaGrammar();
+         (prop as DAE.PROP(type2, const2)) = Types.propTupleFirstProp(props2);
+         exp = DAE.TSUB(inExp2, 1, type2);
+         (cache, exp, prop) = operatorDeoverloadBinary(inCache, inEnv, inOperator1, inProp1, inExp1, prop, exp, AbExp, AbExp1, AbExp2, inImpl, inSymTab, inPre, inInfo);
+       then
+         (inCache, exp, prop);
+
      case (_, _, aboper, DAE.PROP(type1,const1), exp1, DAE.PROP(type2,const2), exp2, _, _, _, _, _, _, _) 
        equation
          false = typeIsRecord(Types.arrayElementType(type1));
@@ -12934,7 +12953,7 @@ algorithm
          prop = DAE.PROP(otype,const);      
          warnUnsafeRelations(inEnv,AbExp,const, type1,type2,exp1,exp2,oper,inPre);      
        then
-           (inCache,exp, prop);
+         (inCache,exp, prop);
       
       // The order of this two cases determines the priority given to operators
       // Now left has priority for all.
@@ -12950,8 +12969,8 @@ algorithm
          // If the right side is not record then (lastRound is true) which means we should print errors on this round (last one:).
          lastRound = not typeIsRecord(Types.arrayElementType(type2));
          
-        (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp1,absexp2,type1,type2,inImpl,inSymTab,inPre,inInfo,lastRound /**/);
-        (exp,_) = ExpressionSimplify.simplify(exp);
+         (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp1,absexp2,type1,type2,inImpl,inSymTab,inPre,inInfo,lastRound /**/);
+         (exp,_) = ExpressionSimplify.simplify(exp);
        then
          (cache, exp, prop);   
          
@@ -12959,8 +12978,8 @@ algorithm
      case(cache, env, aboper, DAE.PROP(type1, const1), exp1, DAE.PROP(type2, const2), exp2, _, absexp1, absexp2, _, _, _, _)
        equation
          true = typeIsRecord(Types.arrayElementType(type2));
-        (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp2,absexp1,type2,type1,inImpl,inSymTab,inPre,inInfo, true); /*we have tried left side*/
-        (exp,_) = ExpressionSimplify.simplify(exp);
+         (cache, exp , prop) = userDefOperatorDeoverloadBinary(cache,env,aboper,absexp2,absexp1,type2,type1,inImpl,inSymTab,inPre,inInfo, true); /*we have tried left side*/
+         (exp,_) = ExpressionSimplify.simplify(exp);
        then
          (cache, exp, prop);   
               
@@ -13008,7 +13027,17 @@ algorithm
        Absyn.Operator aboper;
        DAE.Properties prop;
        Absyn.Exp  absexp1;
-         
+
+     // handle op tuple
+     case (_, _, aboper, DAE.PROP_TUPLE(type_ = _), exp1, _, _, _, _, _, _) 
+       equation
+         false = Config.acceptMetaModelicaGrammar();
+         (prop as DAE.PROP(type1, const)) = Types.propTupleFirstProp(inProp1);
+         exp = DAE.TSUB(exp1, 1, type1);
+         (cache, exp, prop) = operatorDeoverloadUnary(inCache, inEnv, inOperator1, prop, exp, AbExp, AbExp1, inImpl, inSymTab, inPre, inInfo);
+       then
+         (cache, exp, prop);
+
      case (_, _, aboper, DAE.PROP(type1,const), exp1, _, _, _, _, _, _) 
        equation
          false = typeIsRecord(Types.arrayElementType(type1)); 

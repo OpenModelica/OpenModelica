@@ -7314,7 +7314,7 @@ algorithm
     local
       SCode.Element oldElt,newElt;
       DAE.Mod oldMod,newMod;
-      String s1,s2;
+      String s1,s2,s;
       SCode.Mod smod1, smod2;
       Env.Env env, env1, env2;
       Env.Cache cache;
@@ -7327,6 +7327,7 @@ algorithm
       String n1, n2;
       Option<Absyn.ArrayDim> ad1, ad2;
       Option<Absyn.Exp> cond1, cond2;
+      Boolean b;
 
     // try equality first!
     case(cache,env,(oldElt,oldMod),(newElt,newMod))
@@ -7360,6 +7361,34 @@ algorithm
         s1 = SCodeDump.unparseElementStr(oldElt);
         s2 = SCodeDump.unparseElementStr(newElt);
         Error.addSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,{s1,s2}, aInfo);
+      then ();
+    
+    // adrpo: handle bug: https://trac.modelica.org/Modelica/ticket/627
+    //        TODO! FIXME! REMOVE! remove when the bug is fixed!
+    case (cache,env,(oldElt as SCode.COMPONENT(n1, prefixes1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo),oldMod),
+                    (newElt as SCode.COMPONENT(n2, prefixes2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _),newMod))
+      equation
+        // see if the most stuff is the same!
+        true = stringEq(n1, n2);
+        true = stringEq(n1, "m_flow");        
+        true = SCode.prefixesEqual(prefixes1, prefixes2);
+        true = SCode.attributesEqual(attr1, attr2);
+        false = SCode.modEqual(smod1, smod2);
+        equality(ad1 = ad2);
+        equality(cond1 = cond2);
+        // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
+        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1, false);
+        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2, false);
+        // the class has the same environment
+        true = stringEq(Env.printEnvPathStr(env1), Env.printEnvPathStr(env2));
+        // the classes are the same!
+        true = SCode.elementEqual(c1, c2);
+        // add a warning and let it continue!
+        s1 = SCodeDump.unparseElementStr(oldElt);
+        s2 = SCodeDump.unparseElementStr(newElt);
+        s = "Inherited elements are not identical: bug: https://trac.modelica.org/Modelica/ticket/627\n\tfirst:  " +&
+            s1 +& "\n\tsecond: " +& s2 +& "\nContinue ....";
+        Error.addSourceMessage(Error.COMPILER_WARNING, {s}, aInfo);
       then ();
     
     // fail baby and add a source message!
