@@ -1201,7 +1201,7 @@ algorithm
         (ilist as _::_) = getDerivedIScopes(rest, {});
         // start with original and fold derived prefixes on to it.
         e = List.applyAndFold(ilist, SCodeFlattenRedeclare.propagateAttributesClass, getElementFromIScope, e);
-        e = List.applyAndFold(ilist, propagateModifiersAndArrayDims, getElementFromIScope, e);
+        // e = List.applyAndFold(ilist, propagateModifiersAndArrayDims, getElementFromIScope, e);
         last = List.last(ilist);
         EI(eLast,envLast) = getEIFromIScope(last);
         // a = a, a = c, c = d, d = e -> a = e 

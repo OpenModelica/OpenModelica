@@ -6639,7 +6639,6 @@ case IFEXP(__) then
       <%condVar%> = (modelica_boolean)<%condExp%>;
       if (<%condVar%>) {
         <%preExpThen%>
-        // exp <%printExpStr(expThen)%> has type <%unparseType(typeof(expThen))%>
         <%if eThen then resultVarAssignment(typeof(exp),resVar,eThen)%>
       } else {
         <%preExpElse%>
