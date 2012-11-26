@@ -118,6 +118,7 @@ extern modelica_metatype arrayUpdate(modelica_metatype, modelica_integer, modeli
 extern modelica_metatype arrayCopy(modelica_metatype);
 extern modelica_metatype arrayAdd(modelica_metatype, modelica_metatype);
 
+#define boxptr_listArray listArray
 #define boxptr_arrayList arrayList
 #define boxptr_arrayCopy arrayCopy
 extern modelica_metatype boxptr_arrayNth(modelica_metatype,modelica_metatype);

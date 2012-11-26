@@ -893,6 +893,7 @@ algorithm
       Boolean scalar,sc;
       list<Values.Value> valueLst;
       Integer i,i1,i2,dim;
+      array<array<DAE.Exp>> marr;
     
     // min/max function on arrays of only 1 element
     case (DAE.CALL(path=Absyn.IDENT("min"),expLst={DAE.ARRAY(array={e})})) then e;
@@ -1066,8 +1067,52 @@ algorithm
         e = Expression.makeArray(es, tp, false);
       then e;
 
+    case DAE.CALL(path=Absyn.IDENT("symmetric"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        {{}} = Expression.get2dArrayOrMatrixContent(e);
+      then e;
+
+    case DAE.CALL(path=Absyn.IDENT("symmetric"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        {{_}} = Expression.get2dArrayOrMatrixContent(e);
+      then e;
+
+    case DAE.CALL(path=Absyn.IDENT("symmetric"),expLst=e::{},attr=DAE.CALL_ATTR(ty=tp))
+      equation
+        mexpl = Expression.get2dArrayOrMatrixContent(e);
+        marr = listArray(List.map(mexpl,listArray));
+        true = arrayLength(marr) == arrayLength(arrayGet(marr,1));
+        true = arrayLength(marr) > 1;
+        simplifySymmetric(marr, arrayLength(marr)-1, arrayLength(marr));
+        mexpl = List.map(arrayList(marr), arrayList);
+        tp1 = Types.unliftArray(tp);
+        es = List.map2(mexpl, Expression.makeArray, tp1, not Types.isArray(tp1,{}));
+        e = Expression.makeArray(es, tp, false);
+      then e;
+
   end matchcontinue;
 end simplifyBuiltinCalls;
+
+protected function simplifySymmetric
+  input array<array<DAE.Exp>> marr;
+  input Integer i1;
+  input Integer i2;
+algorithm
+  _ := match (marr,i1,i2)
+    local
+      array<DAE.Exp> v1,v2;
+      DAE.Exp exp;
+    case (_,0,1) then ();
+    case (_,_,_)
+      equation
+        v1 = arrayGet(marr, i1);
+        v2 = arrayGet(marr, i2);
+        exp = arrayGet(v1,i2);
+        _ = arrayUpdate(v2, i1, exp);
+        simplifySymmetric(marr, Util.if_(i1==1,i2-2,i1-1), Util.if_(i1==1,i2-1,i2));
+      then ();
+  end match;
+end simplifySymmetric;
 
 protected function simplifyCat
   input Integer dim;

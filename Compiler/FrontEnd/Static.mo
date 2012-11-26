@@ -3652,6 +3652,49 @@ algorithm
   end match;
 end makeFillArgListType;
 
+protected function elabBuiltinSymmetric "This function elaborates the builtin operator symmetric"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outExp,outProperties) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix,info)
+    local
+      DAE.Type tp;
+      Boolean sc, impl;
+      list<DAE.Exp> expl,exp_2;
+      DAE.Dimension d1,d2;
+      DAE.Type eltp,newtp;
+      Integer dim1,dim2,dimMax;
+      DAE.Properties prop;
+      DAE.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp matexp;
+      DAE.Exp exp_1,exp;
+      Env.Cache cache;
+      Prefix.Prefix pre;
+      list<list<DAE.Exp>> mexpl,mexp_2;
+      Integer i;
+
+    case (cache,env,{matexp},_,impl,pre,_)
+      equation
+        (cache,exp_1,DAE.PROP(DAE.T_ARRAY(dims = {d1}, ty = DAE.T_ARRAY(dims = {d2}, ty = eltp)), c),_)
+          = elabExp(cache,env, matexp, impl,NONE(),true,pre,info);
+        newtp = DAE.T_ARRAY(DAE.T_ARRAY(eltp, {d1}, DAE.emptyTypeSource), {d2}, DAE.emptyTypeSource);
+        tp = Types.simplifyType(newtp);
+        exp = Expression.makeBuiltinCall("symmetric", {exp_1}, tp);
+        prop = DAE.PROP(newtp,c);
+      then
+        (cache,exp,prop);
+  end matchcontinue;
+end elabBuiltinSymmetric;
+
 protected function elabBuiltinTranspose "function: elabBuiltinTranspose
   This function elaborates the builtin operator transpose
   The input is the arguments to fill as Absyn.Exp expressions and the environment Env.Env"
@@ -6210,6 +6253,7 @@ algorithm
     case "max" then elabBuiltinMax;
     case "min" then elabBuiltinMin;
     case "transpose" then elabBuiltinTranspose;
+    case "symmetric" then elabBuiltinSymmetric;
     case "array" then elabBuiltinArray;
     case "sum" then elabBuiltinSum;
     case "product" then elabBuiltinProduct;
