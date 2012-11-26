@@ -71,6 +71,7 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import InstSection;
+protected import ExpressionDump;
 
 // Import some types from Connect.
 public type Face = Connect.Face;
@@ -2957,9 +2958,11 @@ protected function sumInside1
   output DAE.Exp outExp;
 protected
   DAE.Exp stream_exp, flow_exp;
+  DAE.Type flowTy, streamTy;
 algorithm
   (stream_exp, flow_exp) := streamFlowExp(inElement);
-  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), flow_exp);
+  flowTy := Expression.typeof(flow_exp); 
+  flow_exp := DAE.UNARY(DAE.UMINUS(flowTy), flow_exp);
   outExp := Expression.expMul(makePositiveMaxCall(flow_exp), stream_exp);
 end sumInside1;
 
@@ -2984,9 +2987,11 @@ protected function sumInside2
   output DAE.Exp outExp;
 protected
   DAE.Exp flow_exp;
+  DAE.Type flowTy;
 algorithm
   flow_exp := flowExp(inElement);
-  flow_exp := DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT), flow_exp);
+  flowTy := Expression.typeof(flow_exp);
+  flow_exp := DAE.UNARY(DAE.UMINUS(flowTy), flow_exp);
   outExp := makePositiveMaxCall(flow_exp);
 end sumInside2;
 
@@ -3008,9 +3013,20 @@ protected function makeInStreamCall
   input DAE.Exp inStreamExp;
   output DAE.Exp outInStreamCall;
   annotation(__OpenModelica_EarlyInline = true);
+protected
+  DAE.Type ty;
 algorithm
-  outInStreamCall := DAE.CALL(Absyn.IDENT("inStream"), {inStreamExp},
-    DAE.CALL_ATTR(DAE.T_REAL_DEFAULT, false, false, DAE.NO_INLINE(), DAE.NO_TAIL()));
+  ty := Expression.typeof(inStreamExp);
+  outInStreamCall := 
+    DAE.CALL(
+      Absyn.IDENT("inStream"), 
+      {inStreamExp},
+      DAE.CALL_ATTR(
+        ty,
+        false, 
+        false, 
+        DAE.NO_INLINE(), 
+        DAE.NO_TAIL()));
 end makeInStreamCall;
 
 protected function makePositiveMaxCall
@@ -3018,9 +3034,20 @@ protected function makePositiveMaxCall
   input DAE.Exp inFlowExp;
   output DAE.Exp outPositiveMaxCall;
   annotation(__OpenModelica_EarlyInline = true);
+protected
+  DAE.Type ty;
 algorithm
-  outPositiveMaxCall := DAE.CALL(Absyn.IDENT("max"), 
-    {inFlowExp, DAE.RCONST(1e-15)}, DAE.CALL_ATTR(DAE.T_REAL_DEFAULT, false, true, DAE.NO_INLINE(), DAE.NO_TAIL()));
+  ty := Expression.typeof(inFlowExp);
+  outPositiveMaxCall := 
+     DAE.CALL(
+        Absyn.IDENT("max"), 
+        {inFlowExp, DAE.RCONST(1e-15)}, 
+        DAE.CALL_ATTR(
+          ty, 
+          false, 
+          true, 
+          DAE.NO_INLINE(), 
+          DAE.NO_TAIL()));
 end makePositiveMaxCall;
 
 protected function evaluateStreamOperators
@@ -3074,20 +3101,68 @@ protected function evaluateStreamOperatorsExp
   input tuple<DAE.Exp, tuple<Connect.Sets, array<Set>>> inTuple;
   output tuple<DAE.Exp, tuple<Connect.Sets, array<Set>>> outTuple;
 algorithm
-  outTuple := match(inTuple)
+  outTuple := matchcontinue(inTuple)
     local
       DAE.ComponentRef cr;
       tuple<Connect.Sets, array<Set>> sets;
+      DAE.Exp e;
+      DAE.Type ty;
+      String s;
 
-    case ((DAE.CALL(path = Absyn.IDENT("inStream"),
-                    expLst = {DAE.CREF(componentRef = cr)}), sets))
-      then ((evaluateInStream(cr, sets), sets));
-    case ((DAE.CALL(path = Absyn.IDENT("actualStream"),
-                    expLst = {DAE.CREF(componentRef = cr)}), sets))
-      then ((evaluateActualStream(cr, sets), sets));
+    // sometimes we get ASUB(inStream/actualStream, 1) so we should remove that 
+    /*/ TODO! FIXME! make this work correctly without this workaround!
+    case ((DAE.ASUB(e, _), sets))
+      equation
+        DAE.CALL(path = Absyn.IDENT(s)) = e;
+        true = listMember(s, {"inStream", "actualStream"});
+        ((e, sets)) = evaluateStreamOperatorsExp((e, sets));
+        print("Evaluated ASUB(" +& ExpressionDump.dumpExpStr(e, 0) +& ")\n");
+      then
+        ((e, sets));*/
+
+    case ((DAE.CALL(path = Absyn.IDENT("inStream"), 
+                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), sets))
+      equation
+        e = evaluateInStream(cr, sets);
+        // print("Evaluated inStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
+      then 
+        ((e, sets));
+    case ((DAE.CALL(path = Absyn.IDENT("actualStream"), 
+                    expLst = {DAE.CREF(componentRef = cr, ty = ty)}), sets))
+      equation
+        e = evaluateActualStream(cr, sets);
+        // print("Evaluated actualStream(" +& ExpressionDump.dumpExpStr(DAE.CREF(cr, ty), 0) +& ") ->\n" +& ExpressionDump.dumpExpStr(e, 0) +& "\n");
+      then
+        ((e, sets));
+    
     else inTuple;
-  end match;
+  
+  end matchcontinue;
 end evaluateStreamOperatorsExp;
+
+protected function mkArrayIfNeeded
+"@author: adrpo
+ does an array out of exp if needed"
+  input DAE.Type inTy;
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue(inTy, inExp)
+    local 
+      DAE.Exp exp;
+      DAE.Dimensions dims;
+    
+    case (_, _)
+      equation
+        dims = Types.getDimensions(inTy);
+        exp = Expression.arrayFill(dims, inExp);
+      then
+        exp;
+    
+    else inExp; 
+    
+  end matchcontinue;
+end mkArrayIfNeeded;
 
 public function evaluateInStream
   "This function evaluates the inStream operator for a component reference,

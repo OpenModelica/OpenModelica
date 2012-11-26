@@ -648,16 +648,28 @@ algorithm
     
     case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
       equation
-        str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ",");
-        str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "}" , "");
-        // this printing way will be useful when adressin the  'crefEqual' bug.
-        // str = ComponentReference.printComponentRef2Str(s, subs);
+        str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
+        str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "]", "");
         str2 = Types.unparseType(ty);
         str = stringAppendList({str," [",str2,"]"});
       then
         str;
     
-    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr) /* Does not handle names with underscores */
+    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
+      equation
+        false = Config.modelicaOutput();
+        str_1 = ExpressionDump.printListStr(subs, ExpressionDump.debugPrintSubscriptStr, ", ");
+        str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "]", "");
+        str2 = Types.unparseType(ty);
+        strrest = debugPrintComponentRefTypeStr(cr);
+        str = stringAppendList({str," [",str2,"] ", ".", strrest});
+      then
+        str;
+    
+    case DAE.WILD() then "_";
+      
+    // Does not handle names with underscores
+    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
       equation
         true = Config.modelicaOutput();
         str = printComponentRef2Str(s, subs);
@@ -666,18 +678,7 @@ algorithm
         str = stringAppendList({str," [",str2,"] ", "__", strrest});
       then
         str;
-    
-    case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr)
-      equation
-        false = Config.modelicaOutput();
-        str = printComponentRef2Str(s, subs);
-        str2 = Types.unparseType(ty);
-        strrest = debugPrintComponentRefTypeStr(cr);
-        str = stringAppendList({str," [",str2,"] ", ".", strrest});
-      then
-        str;
-    
-    case DAE.WILD() then "_";
+      
   end matchcontinue;
 end debugPrintComponentRefTypeStr;
 

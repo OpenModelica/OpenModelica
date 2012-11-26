@@ -4085,17 +4085,29 @@ algorithm
   (outCache, outExp, outProperties) := 
   match (inCache, inEnv, inArgs, inNamedArgs, inImpl, inPrefix, inInfo)
     local
-      DAE.Exp exp_1;
+      DAE.Exp exp_1, e;
       DAE.Type tp;
       DAE.Const c;
       Env.Env env;
       Absyn.Exp exp;
       Env.Cache cache;
+      Absyn.Info info;      
+      DAE.Properties prop;
+
+    // use elab_call_args to also try vectorized calls
+    case (cache, env, {exp}, _, _, _, info)
+      equation
+        (_, exp_1, DAE.PROP(tp, c),_) = elabExp(cache, env, exp, inImpl, NONE(), true, inPrefix, info);
+        true = Types.dimensionsKnown(tp);
+        // check the stream prefix
+        _ = elabBuiltinStreamOperator(cache, env, "inStream", exp_1, tp, inInfo);
+        (cache, e, prop) = elabCallArgs(cache, env, Absyn.IDENT("inStream"), {exp}, {}, inImpl, NONE(), inPrefix, info);
+      then
+        (cache, e, prop);
 
     case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, _, _, _)
       equation
-        (cache, exp_1, DAE.PROP(tp, c), _) =
-          elabExp(cache, env, exp, inImpl, NONE(), true, inPrefix, inInfo);
+        (cache, exp_1, DAE.PROP(tp, c), _) = elabExp(cache, env, exp, inImpl, NONE(), true, inPrefix, inInfo);        
         exp_1 = elabBuiltinStreamOperator(cache, env, "inStream", exp_1, tp, inInfo);
       then
         (cache, exp_1, DAE.PROP(tp, c));
@@ -4120,16 +4132,28 @@ algorithm
   match(inCache, inEnv, inArgs, inNamedArgs, inImpl, inPrefix, inInfo)
     local
       Absyn.Exp exp;
-      DAE.Exp exp_1;
+      DAE.Exp exp_1, e;
       DAE.Type tp;
       DAE.Const c;
       Env.Env env;
       Env.Cache cache;
+      Absyn.Info info;
+      DAE.Properties prop;
+
+    // use elab_call_args to also try vectorized calls
+    case (cache, env, {exp}, _, _, _, info)
+      equation
+        (_, exp_1, DAE.PROP(tp, c),_) = elabExp(cache, env, exp, inImpl, NONE(), true, inPrefix, info);
+        true = Types.dimensionsKnown(tp);
+        // check the stream prefix
+        _ = elabBuiltinStreamOperator(cache, env, "actualStream", exp_1, tp, inInfo);
+        (cache, e, prop) = elabCallArgs(cache, env, Absyn.IDENT("actualStream"), {exp}, {}, inImpl, NONE(), inPrefix, info);
+      then
+        (cache, e, prop);
 
     case (cache, env, {exp as Absyn.CREF(componentRef = _)}, _, _, _, _)
       equation
-        (cache, exp_1, DAE.PROP(tp, c), _) =
-          elabExp(cache, env, exp, inImpl, NONE(), true, inPrefix, inInfo);
+        (cache, exp_1, DAE.PROP(tp, c), _) = elabExp(cache, env, exp, inImpl, NONE(), true, inPrefix, inInfo);
         exp_1 = elabBuiltinStreamOperator(cache, env, "actualStream", exp_1, tp, inInfo);
       then
         (cache, exp_1, DAE.PROP(tp, c));
@@ -5141,7 +5165,7 @@ algorithm
       then
         (cache,e,DAE.PROP(ty,DAE.C_CONST()));
 
-      /* use elab_call_args to also try vectorized calls */
+    // use elab_call_args to also try vectorized calls
     case (cache,env,{exp},_,impl,pre,_)
       equation
         (_,ee1,DAE.PROP(ety,c),_) = elabExp(cache, env, exp, impl,NONE(),true,pre,info);

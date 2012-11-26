@@ -387,16 +387,19 @@ algorithm
     case (DAE.INDEX(exp = e1))
       equation
         s = dumpExpStr(e1,0);
+        s = System.stringReplace(s, "\n", "");
       then
         s;
     case (DAE.SLICE(exp = e1))
       equation
         s = dumpExpStr(e1,0);
+        s = System.stringReplace(s, "\n", "");
       then
         s;
     case (DAE.WHOLE_NONEXP(exp = e1))
       equation
         s = dumpExpStr(e1,0);
+        s = System.stringReplace(s, "\n", "");
       then
         "1:"+&s;
   end match;
@@ -1238,7 +1241,7 @@ algorithm
       list<list<DAE.Exp>> lstes;
       Boolean b;
     
-    case (DAE.ICONST(integer = x),level) /* Graphviz.LNODE(\"ICONST\",{s},{},{}) */
+    case (DAE.ICONST(integer = x),level) 
       equation
         gen_str = genStringNTime("   |", level);
         s = intString(x);
@@ -1246,7 +1249,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.RCONST(real = r),level) /* Graphviz.LNODE(\"RCONST\",{s},{},{}) */
+    case (DAE.RCONST(real = r),level) 
       equation
         gen_str = genStringNTime("   |", level);
         s = realString(r);
@@ -1254,7 +1257,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.SCONST(string = s),level) /* Graphviz.LNODE(\"SCONST\",{s\'\'},{},{}) */
+    case (DAE.SCONST(string = s),level) 
       equation
         gen_str = genStringNTime("   |", level);
         s = System.escapedString(s,true);
@@ -1262,14 +1265,14 @@ algorithm
       then
         res_str;
     
-    case (DAE.BCONST(bool = false),level) /* Graphviz.LNODE(\"BCONST\",{\"false\"},{},{}) */
+    case (DAE.BCONST(bool = false),level) 
       equation
         gen_str = genStringNTime("   |", level);
         res_str = stringAppendList({gen_str,"BCONST ","false","\n"});
       then
         res_str;
     
-    case (DAE.BCONST(bool = true),level) /* Graphviz.LNODE(\"BCONST\",{\"true\"},{},{}) */
+    case (DAE.BCONST(bool = true),level) 
       equation
         gen_str = genStringNTime("   |", level);
         res_str = stringAppendList({gen_str,"BCONST ","true","\n"});
@@ -1285,7 +1288,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.CREF(componentRef = c,ty=ty),level) /* Graphviz.LNODE(\"CREF\",{s},{},{}) */
+    case (DAE.CREF(componentRef = c,ty=ty),level) 
       equation
         gen_str = genStringNTime("   |", level);
         s = /*ComponentReference.printComponentRefStr*/ComponentReference.debugPrintComponentRefTypeStr(c);
@@ -1294,7 +1297,7 @@ algorithm
       then
         res_str;
     
-    case (exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"BINARY\",{sym},{},{lt,rt}) */
+    case (exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1308,18 +1311,18 @@ algorithm
       then
         res_str;
     
-    case (DAE.UNARY(operator = op,exp = e),level) /* Graphviz.LNODE(\"UNARY\",{sym},{},{ct}) */
+    case (DAE.UNARY(operator = op,exp = e),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         sym = unaryopSymbol(op);
         ct = dumpExpStr(e, new_level1);
-        str = "expType:"+&Types.unparseType(Expression.typeof(e))+&" optype:"+&Types.unparseType(Expression.typeofOp(op))+&"\n";
+        str = "expType:"+&Types.unparseType(Expression.typeof(e))+&" optype:"+&Types.unparseType(Expression.typeofOp(op));
         res_str = stringAppendList({gen_str,"UNARY ",sym," ",str,"\n",ct,""});
       then
         res_str;
     
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"LBINARY\",{sym},{},{lt,rt}) */
+    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1331,7 +1334,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.LUNARY(operator = op,exp = e),level) /* Graphviz.LNODE(\"LUNARY\",{sym},{},{ct}) */
+    case (DAE.LUNARY(operator = op,exp = e),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1341,7 +1344,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"RELATION\",{sym},{},{lt,rt}) */
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1353,7 +1356,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.IFEXP(expCond = cond,expThen = t,expElse = f),level) /* Graphviz.NODE(\"IFEXP\",{},{ct,tt,ft}) */
+    case (DAE.IFEXP(expCond = cond,expThen = t,expElse = f),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1366,7 +1369,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.CALL(path = fcn,expLst = args),level) /* Graphviz.LNODE(\"CALL\",{fs},{},argnodes) Graphviz.NODE(\"ARRAY\",{},nodes) */
+    case (DAE.CALL(path = fcn,expLst = args),level)
       equation
         gen_str = genStringNTime("   |", level);
         fs = Absyn.pathString(fcn);
@@ -1400,7 +1403,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.TUPLE(PR = es),level) /* Graphviz.NODE(\"TUPLE\",{},nodes) */
+    case (DAE.TUPLE(PR = es),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1410,7 +1413,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.MATRIX(matrix = lstes),level) /* Graphviz.LNODE(\"MATRIX\",{s\'\'},{},{}) */
+    case (DAE.MATRIX(matrix = lstes),level)
       equation
         gen_str = genStringNTime("   |", level);
         s = stringDelimitList(List.map1(lstes, printRowStr, "\""), "},{");
@@ -1418,7 +1421,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.RANGE(start = start,step = NONE(),stop = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
+    case (DAE.RANGE(start = start,step = NONE(),stop = stop),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1430,7 +1433,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.RANGE(start = start,step = SOME(step),stop = stop),level) /* Graphviz.NODE(\"RANGE\",{},{t1,t2,t3}) */
+    case (DAE.RANGE(start = start,step = SOME(step),stop = stop),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1443,7 +1446,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.CAST(ty = ty,exp = e),level) /* Graphviz.LNODE(\"CAST\",{tystr},{},{ct}) */
+    case (DAE.CAST(ty = ty,exp = e),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1453,7 +1456,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i))::{})),level) /* Graphviz.LNODE(\"ASUB\",{s},{},{ct}) */
+    case (DAE.ASUB(exp = e,sub = ((ae1 as DAE.ICONST(i))::{})),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1464,7 +1467,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.SIZE(exp = cr,sz = SOME(dim)),level) /* Graphviz.NODE(\"SIZE\",{},{crt,dimt}) */
+    case (DAE.SIZE(exp = cr,sz = SOME(dim)),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1475,7 +1478,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.SIZE(exp = cr,sz = NONE()),level) /* Graphviz.NODE(\"SIZE\",{},{crt}) */
+    case (DAE.SIZE(exp = cr,sz = NONE()),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1484,7 +1487,7 @@ algorithm
       then
         res_str;
     
-    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators={DAE.REDUCTIONITER(exp=iterexp)}),level) /* Graphviz.LNODE(\"REDUCTION\",{fs},{},{expt,itert}) */
+    case (DAE.REDUCTION(reductionInfo=DAE.REDUCTIONINFO(path = fcn),expr = exp,iterators={DAE.REDUCTIONITER(exp=iterexp)}),level)
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
@@ -1496,7 +1499,7 @@ algorithm
       then
         res_str;
     
-    case (_,level) /* Graphviz.NODE(\"#UNKNOWN EXPRESSION# ----eeestr \",{},{}) */
+    case (_,level)
       equation
         gen_str = genStringNTime("   |", level);
         res_str = stringAppendList({gen_str," UNKNOWN EXPRESSION ","\n"});

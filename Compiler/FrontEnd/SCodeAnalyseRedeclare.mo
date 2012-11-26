@@ -1201,6 +1201,7 @@ algorithm
         (ilist as _::_) = getDerivedIScopes(rest, {});
         // start with original and fold derived prefixes on to it.
         e = List.applyAndFold(ilist, SCodeFlattenRedeclare.propagateAttributesClass, getElementFromIScope, e);
+        e = List.applyAndFold(ilist, propagateModifiersAndArrayDims, getElementFromIScope, e);
         last = List.last(ilist);
         EI(eLast,envLast) = getEIFromIScope(last);
         // a = a, a = c, c = d, d = e -> a = e 
@@ -1219,6 +1220,48 @@ algorithm
           
   end matchcontinue;
 end mergeDerivedClasses;
+
+public function propagateModifiersAndArrayDims
+  input SCode.Element inOriginalClass;
+  input SCode.Element inNewClass;
+  output SCode.Element outNewClass;
+protected
+  SCode.Ident name;
+  SCode.Prefixes pref1, pref2;
+  SCode.Encapsulated ep;
+  SCode.Partial pp;
+  SCode.Restriction res;
+  SCode.ClassDef cdef1, cdef2, cdef;
+  Absyn.Info info;
+algorithm
+  SCode.CLASS(classDef=cdef1) := inOriginalClass;
+  SCode.CLASS(name, pref2, ep, pp, res, cdef2, info) := inNewClass;
+  cdef := mergeCdefs(cdef1, cdef2);
+  outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, info);
+end propagateModifiersAndArrayDims;
+
+public function mergeCdefs
+"@auhtor: adrpo
+ merge two derived classdefs first onto second"
+  input SCode.ClassDef inCd1;
+  input SCode.ClassDef inCd2;
+  output SCode.ClassDef outCd;
+algorithm 
+  outCd := matchcontinue(inCd1, inCd2)
+    local
+      SCode.Attributes atr1, atr2;
+      SCode.ClassDef cd1, cd2, cd;  
+      Absyn.TypeSpec ts1, ts2, ts;
+      Option<SCode.Comment> cmt1, cmt2, cmt;
+      SCode.Mod m1, m2, m;
+      
+    case (SCode.DERIVED(ts1, m1, atr1, cmt1), SCode.DERIVED(ts2, m2, atr2, cmt2))
+      equation
+        cd = SCode.DERIVED(ts2, m1, atr2, cmt2);
+      then
+        cd;
+  end matchcontinue;
+end mergeCdefs;
 
 public function removeRedeclareMods
   input Element inElement;

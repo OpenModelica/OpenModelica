@@ -742,7 +742,7 @@ algorithm
   pref2 := propagatePrefixes(pref1, pref2);
   outNewClass := SCode.CLASS(name, pref2, ep, pp, res, cdef, info);
 end propagateAttributesClass;
-    
+
 protected function propagatePrefixes
   input SCode.Prefixes inOriginalPrefixes;
   input SCode.Prefixes inNewPrefixes;
