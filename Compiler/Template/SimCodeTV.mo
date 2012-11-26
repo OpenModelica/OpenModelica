@@ -2729,46 +2729,6 @@ package FMI
     end FMIIMPORT;
   end FmiImport;
   
-  function countRealVariables
-    input list<ModelVariables> inVariables;
-    output Integer outInteger;
-  end countRealVariables;
-  
-  function countRealStartVariables
-    input list<ModelVariables> inVariables;
-    output Integer outInteger;
-  end countRealStartVariables;
-  
-  function countIntegerVariables
-    input list<ModelVariables> inVariables;
-    output Integer outInteger;
-  end countIntegerVariables;
-  
-  function countIntegerStartVariables
-    input list<ModelVariables> inVariables;
-    output Integer outInteger;
-  end countIntegerStartVariables;
-
-  function countBooleanVariables
-    input list<ModelVariables> inVariables;
-    output Integer outInteger;
-  end countBooleanVariables;
-  
-  function countBooleanStartVariables
-    input list<ModelVariables> inVariables;
-    output Integer outInteger;
-  end countBooleanStartVariables;
-
-  function countStringVariables
-    input list<ModelVariables> inVariables;
-    output Integer outInteger;
-  end countStringVariables;
-  
-  function countStringStartVariables
-    input list<ModelVariables> inVariables;
-    output Integer outInteger;
-  end countStringStartVariables;
-  
   function getFMIType
     input Info inFMIInfo;
     output String fmiType;

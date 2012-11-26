@@ -1115,16 +1115,28 @@ template importFMUModelExchange(FmiImport fmi)
 ::=
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
-  let realVariables = countRealVariables(fmiModelVariablesList)
+  /* Get Real varibales and their value references */
+  let realVariablesNames = dumpRealVariablesName(fmiModelVariablesList)
+  let realVariablesValueReferences = dumpRealVariablesVR(fmiModelVariablesList)
+  /* Get start Real varibales and their value references */
   let realStartVariablesValueReferences = dumpStartRealVariablesValueReference(fmiModelVariablesList)
   let realStartVariablesNames = dumpStartRealVariablesName(fmiModelVariablesList)
-  let integerVariables = countIntegerVariables(fmiModelVariablesList)
+  /* Get Integer varibales and their value references */
+  let integerVariablesNames = dumpIntegerVariablesName(fmiModelVariablesList)
+  let integerVariablesValueReferences = dumpIntegerVariablesVR(fmiModelVariablesList)
+  /* Get start Integer varibales and their value references */
   let integerStartVariablesValueReferences = dumpStartIntegerVariablesValueReference(fmiModelVariablesList)
   let integerStartVariablesNames = dumpStartIntegerVariablesName(fmiModelVariablesList)
-  let booleanVariables = countBooleanVariables(fmiModelVariablesList)
+  /* Get Boolean varibales and their value references */
+  let booleanVariablesNames = dumpBooleanVariablesName(fmiModelVariablesList)
+  let booleanVariablesValueReferences = dumpBooleanVariablesVR(fmiModelVariablesList)
+  /* Get start Boolean varibales and their value references */
   let booleanStartVariablesValueReferences = dumpStartBooleanVariablesValueReference(fmiModelVariablesList)
   let booleanStartVariablesNames = dumpStartBooleanVariablesName(fmiModelVariablesList)
-  let stringVariables = countStringVariables(fmiModelVariablesList)
+  /* Get String varibales and their value references */
+  let stringVariablesNames = dumpStringVariablesName(fmiModelVariablesList)
+  let stringVariablesValueReferences = dumpStringVariablesVR(fmiModelVariablesList)
+  /* Get start String varibales and their value references */
   let stringStartVariablesValueReferences = dumpStartStringVariablesValueReference(fmiModelVariablesList)
   let stringStartVariablesNames = dumpStartStringVariablesName(fmiModelVariablesList)
   <<
@@ -1174,10 +1186,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       fmi_z_positive[i] = if not terminal() then fmi_z[i] > 0 else pre(fmi_z_positive[i]);
     end for;
     callEventUpdate = fmiFunctions.fmiCompletedIntegratorStep(fmi, flowStatesInputs);
-    <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
-    <%if not stringEq(integerVariables, "0") then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
-    <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
-    <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpStringVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
+    <%if not boolAnd(stringEq(realVariablesNames, ""), stringEq(realVariablesValueReferences, "")) then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
+    <%if not boolAnd(stringEq(integerVariablesNames, ""), stringEq(integerVariablesValueReferences, "")) then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
+    <%if not boolAnd(stringEq(booleanVariablesNames, ""), stringEq(booleanVariablesValueReferences, "")) then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
+    <%if not boolAnd(stringEq(stringVariablesNames, ""), stringEq(stringVariablesValueReferences, "")) then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpStringVariablesVR(fmiModelVariablesList)+"}, flowStatesInputs);"%>
   algorithm
   <%if intGt(listLength(fmiInfo.fmiNumberOfEventIndicators), 0) then
   <<
@@ -1313,14 +1325,30 @@ template importFMUCoSimulationStandAlone(FmiImport fmi)
 ::=
 match fmi
 case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)) then
-  let realVariables = countRealVariables(fmiModelVariablesList)
-  let realStartVariables = countRealStartVariables(fmiModelVariablesList)
-  let integerVariables = countIntegerVariables(fmiModelVariablesList)
-  let integerStartVariables = countIntegerStartVariables(fmiModelVariablesList)
-  let booleanVariables = countBooleanVariables(fmiModelVariablesList)
-  let booleanStartVariables = countBooleanStartVariables(fmiModelVariablesList)
-  let stringVariables = countStringVariables(fmiModelVariablesList)
-  let stringStartVariables = countStringStartVariables(fmiModelVariablesList)
+  /* Get Real varibales and their value references */
+  let realVariablesNames = dumpRealVariablesName(fmiModelVariablesList)
+  let realVariablesValueReferences = dumpRealVariablesVR(fmiModelVariablesList)
+  /* Get start Real varibales and their value references */
+  let realStartVariablesValueReferences = dumpStartRealVariablesValueReference(fmiModelVariablesList)
+  let realStartVariablesNames = dumpStartRealVariablesName(fmiModelVariablesList)
+  /* Get Integer varibales and their value references */
+  let integerVariablesNames = dumpIntegerVariablesName(fmiModelVariablesList)
+  let integerVariablesValueReferences = dumpIntegerVariablesVR(fmiModelVariablesList)
+  /* Get start Integer varibales and their value references */
+  let integerStartVariablesValueReferences = dumpStartIntegerVariablesValueReference(fmiModelVariablesList)
+  let integerStartVariablesNames = dumpStartIntegerVariablesName(fmiModelVariablesList)
+  /* Get Boolean varibales and their value references */
+  let booleanVariablesNames = dumpBooleanVariablesName(fmiModelVariablesList)
+  let booleanVariablesValueReferences = dumpBooleanVariablesVR(fmiModelVariablesList)
+  /* Get start Boolean varibales and their value references */
+  let booleanStartVariablesValueReferences = dumpStartBooleanVariablesValueReference(fmiModelVariablesList)
+  let booleanStartVariablesNames = dumpStartBooleanVariablesName(fmiModelVariablesList)
+  /* Get String varibales and their value references */
+  let stringVariablesNames = dumpStringVariablesName(fmiModelVariablesList)
+  let stringVariablesValueReferences = dumpStringVariablesVR(fmiModelVariablesList)
+  /* Get start String varibales and their value references */
+  let stringStartVariablesValueReferences = dumpStartStringVariablesValueReference(fmiModelVariablesList)
+  let stringStartVariablesNames = dumpStartStringVariablesName(fmiModelVariablesList)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
   public
@@ -1349,10 +1377,10 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     initializationDone := true;
   equation
     flowControl = fmiFunctions.fmiDoStep(fmi, time, communicationStepSize, true);
-    <%if not stringEq(realVariables, "0") then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
-    <%if not stringEq(integerVariables, "0") then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
-    <%if not stringEq(booleanVariables, "0") then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
-    <%if not stringEq(stringVariables, "0") then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpStringVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
+    <%if not boolAnd(stringEq(realVariablesNames, ""), stringEq(realVariablesValueReferences, "")) then "{"+dumpRealVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetReal(fmi, {"+dumpRealVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
+    <%if not boolAnd(stringEq(integerVariablesNames, ""), stringEq(integerVariablesValueReferences, "")) then "{"+dumpIntegerVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetInteger(fmi, {"+dumpIntegerVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
+    <%if not boolAnd(stringEq(booleanVariablesNames, ""), stringEq(booleanVariablesValueReferences, "")) then "{"+dumpBooleanVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetBoolean(fmi, {"+dumpBooleanVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
+    <%if not boolAnd(stringEq(stringVariablesNames, ""), stringEq(stringVariablesValueReferences, "")) then "{"+dumpStringVariablesName(fmiModelVariablesList)+"} = fmiFunctions.fmiGetString(fmi, {"+dumpStringVariablesVR(fmiModelVariablesList)+"}, flowControl);"%>
   algorithm
     when terminal() then
       fmiFunctions.fmiTerminateSlave(fmi);
@@ -1560,7 +1588,7 @@ end dumpFMIModelVariableVariability;
 template dumpFMIModelVariableCausality(String causality)
 ::=
   <<
-  <%if boolOr(stringEq(causality, ""),stringEq(causality, "input")) then "" else causality+" "%>
+  <%if stringEq(causality, "") then "" else causality+" "%>
   >>
 end dumpFMIModelVariableCausality;
 
@@ -1610,7 +1638,11 @@ end dumpRealVariablesVR;
 template dumpRealVariableVR(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case REALVARIABLE(variability = "") then
+case REALVARIABLE(variability = "",causality="") then
+  <<
+  <%valueReference%>
+  >>
+case REALVARIABLE(variability = "",causality="output") then
   <<
   <%valueReference%>
   >>
@@ -1627,7 +1659,11 @@ end dumpIntegerVariablesVR;
 template dumpIntegerVariableVR(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case INTEGERVARIABLE(variability = "") then
+case INTEGERVARIABLE(variability = "",causality="") then
+  <<
+  <%valueReference%>
+  >>
+case INTEGERVARIABLE(variability = "",causality="output") then
   <<
   <%valueReference%>
   >>
@@ -1644,7 +1680,11 @@ end dumpBooleanVariablesVR;
 template dumpBooleanVariableVR(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case BOOLEANVARIABLE(variability = "") then
+case BOOLEANVARIABLE(variability = "",causality="") then
+  <<
+  <%valueReference%>
+  >>
+case BOOLEANVARIABLE(variability = "",causality="output") then
   <<
   <%valueReference%>
   >>
@@ -1661,7 +1701,11 @@ end dumpStringVariablesVR;
 template dumpStringVariableVR(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case STRINGVARIABLE(variability = "") then
+case STRINGVARIABLE(variability = "",causality="") then
+  <<
+  <%valueReference%>
+  >>
+case STRINGVARIABLE(variability = "",causality="output") then
   <<
   <%valueReference%>
   >>
@@ -1681,6 +1725,10 @@ case REALVARIABLE(hasStartValue = true, isFixed = false) then
   <<
   <%valueReference%>
   >>
+case REALVARIABLE(causality="input") then
+  <<
+  <%valueReference%>
+  >>
 end dumpStartRealVariableValueReference;
 
 template dumpStartRealVariablesName(list<ModelVariables> fmiModelVariablesList)
@@ -1694,6 +1742,10 @@ template dumpStartRealVariableName(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
 case REALVARIABLE(hasStartValue = true, isFixed = false) then
+  <<
+  <%name%>
+  >>
+case REALVARIABLE(causality="input") then
   <<
   <%name%>
   >>
@@ -1713,6 +1765,10 @@ case INTEGERVARIABLE(hasStartValue = true, isFixed = false) then
   <<
   <%valueReference%>
   >>
+case INTEGERVARIABLE(causality="input") then
+  <<
+  <%valueReference%>
+  >>
 end dumpStartIntegerVariableValueReference;
 
 template dumpStartIntegerVariablesName(list<ModelVariables> fmiModelVariablesList)
@@ -1726,6 +1782,10 @@ template dumpStartIntegerVariableName(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
 case INTEGERVARIABLE(hasStartValue = true, isFixed = false) then
+  <<
+  <%name%>
+  >>
+case INTEGERVARIABLE(causality="input") then
   <<
   <%name%>
   >>
@@ -1745,6 +1805,10 @@ case BOOLEANVARIABLE(hasStartValue = true, isFixed = false) then
   <<
   <%valueReference%>
   >>
+case BOOLEANVARIABLE(causality="input") then
+  <<
+  <%valueReference%>
+  >>
 end dumpStartBooleanVariableValueReference;
 
 template dumpStartBooleanVariablesName(list<ModelVariables> fmiModelVariablesList)
@@ -1758,6 +1822,10 @@ template dumpStartBooleanVariableName(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
 case BOOLEANVARIABLE(hasStartValue = true, isFixed = false) then
+  <<
+  <%name%>
+  >>
+case BOOLEANVARIABLE(causality="input") then
   <<
   <%name%>
   >>
@@ -1777,6 +1845,10 @@ case STRINGVARIABLE(hasStartValue = true, isFixed = false) then
   <<
   <%valueReference%>
   >>
+case STRINGVARIABLE(causality="input") then
+  <<
+  <%valueReference%>
+  >>
 end dumpStartStringVariableValueReference;
 
 template dumpStartStringVariablesName(list<ModelVariables> fmiModelVariablesList)
@@ -1793,6 +1865,10 @@ case STRINGVARIABLE(hasStartValue = true, isFixed = false) then
   <<
   <%name%>
   >>
+case STRINGVARIABLE(causality="input") then
+  <<
+  <%name%>
+  >>
 end dumpStartStringVariableName;
 
 template dumpRealVariablesName(list<ModelVariables> fmiModelVariablesList)
@@ -1805,7 +1881,11 @@ end dumpRealVariablesName;
 template dumpRealVariableName(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case REALVARIABLE(variability = "") then
+case REALVARIABLE(variability = "",causality="") then
+  <<
+  <%name%>
+  >>
+case REALVARIABLE(variability = "",causality="output") then
   <<
   <%name%>
   >>
@@ -1821,7 +1901,11 @@ end dumpIntegerVariablesName;
 template dumpIntegerVariableName(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case INTEGERVARIABLE(variability = "") then
+case INTEGERVARIABLE(variability = "",causality="") then
+  <<
+  <%name%>
+  >>
+case INTEGERVARIABLE(variability = "",causality="output") then
   <<
   <%name%>
   >>
@@ -1837,7 +1921,11 @@ end dumpBooleanVariablesName;
 template dumpBooleanVariableName(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case BOOLEANVARIABLE(variability = "") then
+case BOOLEANVARIABLE(variability = "",causality="") then
+  <<
+  <%name%>
+  >>
+case BOOLEANVARIABLE(variability = "",causality="output") then
   <<
   <%name%>
   >>
@@ -1853,7 +1941,11 @@ end dumpStringVariablesName;
 template dumpStringVariableName(ModelVariables fmiModelVariable)
 ::=
 match fmiModelVariable
-case STRINGVARIABLE(variability = "") then
+case STRINGVARIABLE(variability = "",causality="") then
+  <<
+  <%name%>
+  >>
+case STRINGVARIABLE(variability = "",causality="output") then
   <<
   <%name%>
   >>
