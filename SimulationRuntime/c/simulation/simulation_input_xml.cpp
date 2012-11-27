@@ -778,7 +778,7 @@ void read_input_xml(int argc, char **argv,
     else
     {
       std::string msg = "Real Alias variable " + aliasTmp + " not found.";
-      THROW(msg.c_str());
+      THROW1("%s", msg.c_str());
     }
     INFO3(LOG_DEBUG, "| read for %s aliasID %d from %s from setup file",
                 modelData->realAlias[i].info.name,
@@ -839,7 +839,7 @@ void read_input_xml(int argc, char **argv,
     else
     {
       std::string msg = "Integer Alias variable " + aliasTmp + " not found.";
-      THROW(msg.c_str());
+      THROW1("%s", msg.c_str());
     }
     INFO3(LOG_DEBUG, "| read for %s aliasID %d from %s from setup file",
                 modelData->integerAlias[i].info.name,
@@ -900,7 +900,7 @@ void read_input_xml(int argc, char **argv,
     else
     {
       std::string msg = "Boolean Alias variable " + aliasTmp + " not found.";
-      THROW(msg.c_str());
+      THROW1("%s", msg.c_str());
     }
     INFO3(LOG_DEBUG, "| read for %s aliasID %d from %s from setup file",
                 modelData->booleanAlias[i].info.name,
@@ -961,7 +961,7 @@ void read_input_xml(int argc, char **argv,
     else
     {
       std::string msg = "String Alias variable " + aliasTmp + " not found.";
-      THROW(msg.c_str());
+      THROW1("%s", msg.c_str());
     }
     INFO3(LOG_DEBUG, "| read for %s aliasID %d from %s from setup file",
                 modelData->stringAlias[i].info.name,
