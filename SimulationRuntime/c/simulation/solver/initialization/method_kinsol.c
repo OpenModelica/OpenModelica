@@ -224,7 +224,7 @@
 
     if(error_code < 0)
     {
-      INFO(LOG_INIT, "kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
+      INFO(LOG_STDOUT, "kinsol failed. see last warning. use [-lv LOG_INIT] for more output.");
       return error_code;
     }
 
