@@ -62,23 +62,21 @@ void updateDiscreteSystem(DATA *data)
     printRelations(data);
 
   functionDAE(data);
-  INFO(LOG_EVENTS, "| events | updated discrete System.");
+  INFO(LOG_EVENTS, "updated discrete System.");
 
-  if (DEBUG_STREAM(LOG_EVENTS))
+  if(DEBUG_STREAM(LOG_EVENTS))
     printRelations(data);
 
   relationChanged = checkRelations(data);
   discreteChanged = checkForDiscreteChanges(data);
   while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
-
     if (data->simulationInfo.needToIterate)
       INFO(LOG_EVENTS, "| reinit() call. Iteration needed!");
     if (relationChanged)
       INFO(LOG_EVENTS,"| relations changed. Iteration needed.");
     if (discreteChanged)
       INFO(LOG_EVENTS, "| discrete Variable changed. Iteration needed.");
-
 
     storePreValues(data);
     storeRelations(data);
@@ -124,7 +122,7 @@ void saveZeroCrossings(DATA* data)
 {
   long i = 0;
 
-  INFO(LOG_ZEROCROSSINGS, "| events | Save ZeroCrossings!");
+  INFO(LOG_ZEROCROSSINGS, "save all zerocrossings");
 
   for(i=0;i<data->modelData.nZeroCrossings;i++)
     data->simulationInfo.zeroCrossingsPre[i] = data->simulationInfo.zeroCrossings[i];
@@ -161,31 +159,53 @@ void printAllVars(DATA *data, int ringSegment)
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
-  INFO2(1, " Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
-  INFO (1, " | states variables");
-  for(i=0; i<mData->nStates; ++i){
-    INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+  INFO2(LOG_STDOUT, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
+  INDENT(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "states variables");
+  INDENT(LOG_STDOUT);
+  for(i=0; i<mData->nStates; ++i)
+  {
+    INFO3(LOG_STDOUT, "%ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  INFO(1," | derivatives variables");
-  for(i=mData->nStates; i<2*mData->nStates; ++i){
-    INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+  RELEASE(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "derivatives variables");
+  INDENT(LOG_STDOUT);
+  for(i=mData->nStates; i<2*mData->nStates; ++i)
+  {
+    INFO3(LOG_STDOUT, "%ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  INFO(1," | other real values");
+  RELEASE(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "other real values");
+  INDENT(LOG_STDOUT);
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i){
-    INFO3(1," | | %ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO3(LOG_STDOUT, "%ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  INFO(1," | integer variables");
+  RELEASE(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "integer variables");
+  INDENT(LOG_STDOUT);
   for(i=0; i<mData->nVariablesInteger; ++i){
-    INFO3(1," | | %ld: %s = %ld", i, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
+    INFO3(LOG_STDOUT, "%ld: %s = %ld", i, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
   }
-  INFO(1," | boolean variables");
+  RELEASE(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "boolean variables");
+  INDENT(LOG_STDOUT);
   for(i=0; i<mData->nVariablesBoolean; ++i){
-    INFO3(1," | | %ld: %s = %s", i, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
+    INFO3(LOG_STDOUT, "%ld: %s = %s", i, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
   }
-  INFO(1," | string variables");
-  for(i=0; i<mData->nVariablesString; ++i){
-    INFO3(1," | | %ld: %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
+  RELEASE(LOG_STDOUT);
+
+  INFO(LOG_STDOUT, "string variables");
+  INDENT(LOG_STDOUT);
+  for(i=0; i<mData->nVariablesString; ++i)
+  {
+    INFO3(LOG_STDOUT, "%ld: %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
   }
+  RELEASE(LOG_STDOUT);
 }
 
 
@@ -241,12 +261,15 @@ void printParameters(DATA *data)
  */
 void printAllHelpVars(DATA *data)
 {
-  int i;
+  long i;
+
+  INFO(LOG_STDOUT, "Status of help vars:");
+  INDENT(LOG_STDOUT);
   for(i=0; i<data->modelData.nHelpVars; i++)
   {
-    INFO2(1," | helpVars[%d]= %c", i, data->simulationInfo.helpVars[i]?'T':'F');
-    INFO2(1," | - helpVarsPre[%d]= %c", i, data->simulationInfo.helpVarsPre[i]?'T':'F');
+    INFO3(LOG_STDOUT, "[%ld] helpVars = %c | helpVarsPre = %c", i, data->simulationInfo.helpVars[i] ? 'T' : 'F', data->simulationInfo.helpVarsPre[i] ? 'T' : 'F');
   }
+  RELEASE(LOG_STDOUT);
 }
 
 
@@ -261,19 +284,13 @@ void printAllHelpVars(DATA *data)
 void printRelations(DATA *data)
 {
   long i;
-  INDENT(LOG_STDOUT);
-  INFO(LOG_STDOUT," Status of relations:");
+
+  INFO(LOG_STDOUT, "Status of relations:");
   INDENT(LOG_STDOUT);
   for(i=0; i<data->modelData.nRelations; i++)
   {
-    INDENT(LOG_STDOUT);
-    INFO3(LOG_STDOUT," [%ld] %s = %c", i, relationDescription[i], data->simulationInfo.backupRelations[i]?'T':'F');
-    INDENT(LOG_STDOUT);
-    INFO3(LOG_STDOUT," [%ld] pre(%s) = %c", i, relationDescription[i], data->simulationInfo.backupRelationsPre[i]?'T':'F');
-    RELEASE(LOG_STDOUT);
-    RELEASE(LOG_STDOUT);
+    INFO5(LOG_STDOUT, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.backupRelations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.backupRelationsPre[i] ? 'T' : 'F');
   }
-  RELEASE(LOG_STDOUT);
   RELEASE(LOG_STDOUT);
 }
 
