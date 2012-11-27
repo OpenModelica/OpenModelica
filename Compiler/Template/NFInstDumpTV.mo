@@ -79,7 +79,7 @@ package Expression
   end typeof;
 end Expression;
 
-package NFInstDump.
+package NFInstDump
   function dumpUntypedComponentDims
     input NFInstTypes.Component inComponent;
     output String outString;
