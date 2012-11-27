@@ -1649,28 +1649,6 @@ static int getLoadModelPathFromDefaultTarget(const char *name, modelicaPathEntry
   long foundVersion = -1;
   int i,foundIndex = -1;
 
-  /* Force preferred version MSL 3.1 */
-  if (0 == strcmp("Modelica",name)) {
-    for (i=0; i<numEntries; i++) {
-      if (entries[i].version == 0x03010000 && entries[i].versionExtra[0] == '\0') {
-        *outDir = entries[i].dir;
-        *outName = entries[i].file;
-        *isDir = entries[i].fileIsDir;
-        return 0;
-      }
-    }
-  }
-  /* Force preferred version MS 1.0 */
-  if (0 == strcmp("ModelicaServices",name)) {
-    for (i=0; i<numEntries; i++) {
-      if (entries[i].version == 0x01000000 && entries[i].versionExtra[0] == '\0') {
-        *outDir = entries[i].dir;
-        *outName = entries[i].file;
-        *isDir = entries[i].fileIsDir;
-        return 0;
-      }
-    }
-  }
   /* Look for best release version */
   for (i=0; i<numEntries; i++) {
     if (entries[i].version > foundVersion && entries[i].versionExtra[0] == '\0') {
