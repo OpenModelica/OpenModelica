@@ -72,6 +72,8 @@ typedef struct DATA_HYBRD
   int initialized; /* 1 = initialized, else = 0*/
   double* resScaling;
   int useXScaling;
+  double* xScalefactors;
+  double* fvecScaled;
 
   int n;
   double* x;

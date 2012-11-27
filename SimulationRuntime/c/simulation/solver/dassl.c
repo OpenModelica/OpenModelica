@@ -191,6 +191,7 @@ dasrt_initial(DATA* simData, SOLVER_INFO* solverInfo, DASSL_DATA *dasslData){
   if (dasslData->dasslMethod == DASSL_SYMJAC ||
       dasslData->dasslMethod == DASSL_COLOREDSYMJAC ||
       dasslData->dasslMethod == DASSL_NUMJAC ||
+      dasslData->dasslMethod == DASSL_WORT ||
       dasslData->dasslMethod == DASSL_RT ||
       dasslData->dasslMethod == DASSL_TEST){
     if (initialAnalyticJacobianA(simData)){
@@ -351,7 +352,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
-          (double*) (void*)dasslData->rpar, dasslData->ipar, dummy_Jacobian,
+          (double*) (void*)dasslData->rpar, dasslData->ipar, JacobianOwnNumColored,
           dummy_zeroCrossing, &dasslData->ngdummy, NULL);
     }
     else

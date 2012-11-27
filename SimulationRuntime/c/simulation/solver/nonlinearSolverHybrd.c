@@ -56,7 +56,9 @@ int allocateHybrdData(int* size, void** voiddata)
 
   data->initialized = 0;
   data->resScaling = (double*) malloc(*size*sizeof(double));
+  data->fvecScaled = (double*) malloc(*size*sizeof(double));
   data->useXScaling = 1;
+  data->xScalefactors = (double*) malloc(*size*sizeof(double));
 
   data->n = *size;
   data->x = (double*) malloc(*size*sizeof(double));
@@ -96,6 +98,8 @@ int freeHybrdData(void **voiddata){
   DATA_HYBRD* data = (DATA_HYBRD*) *voiddata;
 
   free(data->resScaling);
+  free(data->fvecScaled);
+  free(data->xScalefactors);
   free(data->x);
   free(data->fvec);
   free(data->diag);
@@ -124,7 +128,6 @@ void wrapper_fvec_hybrd(int* n, double* x, double* f, int* iflag, void* data){
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
   DATA_HYBRD* solverData = (DATA_HYBRD*)(((SOLVER_DATA*)systemData->solverData)->hybrdData);
 
-  ASSERT(solverData,"SolverData not valid!");
   /* Debug output */
   if (DEBUG_STREAM(LOG_NONLIN_SYS_V)){
     INFO(LOG_NONLIN_SYS_V,"Call residual function:");
@@ -140,12 +143,11 @@ void wrapper_fvec_hybrd(int* n, double* x, double* f, int* iflag, void* data){
   /* re-scaling x vector */
   if (solverData->useXScaling ){
     for(i=0;i<*n;i++){
-      x[i] = x[i]*systemData->nlsxScaling[i];
+      x[i] = x[i]*solverData->xScalefactors[i];
     }
   }
 
   /* Debug output */
-
   if (DEBUG_STREAM(LOG_NONLIN_SYS_V)){
     INFO(LOG_NONLIN_SYS_V,"Iteration variable values:");
     INDENT(LOG_NONLIN_SYS_V);
@@ -162,12 +164,11 @@ void wrapper_fvec_hybrd(int* n, double* x, double* f, int* iflag, void* data){
   /* Scaling x vector */
   if (solverData->useXScaling ){
     for(i=0;i<*n;i++){
-      x[i] = (1.0/systemData->nlsxScaling[i]) * x[i];
+      x[i] = (1.0/solverData->xScalefactors[i]) * x[i];
     }
   }
 
   /* Debug output */
-
   if (DEBUG_STREAM(LOG_NONLIN_SYS_V)){
     INFO(LOG_NONLIN_SYS_V,"Residual values:");
     INDENT(LOG_NONLIN_SYS_V);
@@ -265,6 +266,10 @@ int solveHybrd(DATA *data, int sysNumber) {
   else
     memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
 
+  for(i=0;i<solverData->n;i++){
+    solverData->xScalefactors[i] = fmax(solverData->x[i], systemData->nlsxScaling[i]);
+  }
+
 
   /* evaluate with discontinuities */
   {
@@ -281,20 +286,21 @@ int solveHybrd(DATA *data, int sysNumber) {
   while (!giveUp && !success) {
 
     /* debug output */
-    INFO(LOG_NONLIN_SYS_V,"Iteration variable values scaled:");
-    INDENT(LOG_NONLIN_SYS_V);
-    for(i=0;i<solverData->n;i++){
-      INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, solverData->x[i]);
+    if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
+      INFO(LOG_NONLIN_SYS_V,"Iteration variable values scaled:");
+      INDENT(LOG_NONLIN_SYS_V);
+      for(i=0;i<solverData->n;i++){
+        INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, solverData->x[i]);
+      }
+      RELEASE(LOG_NONLIN_SYS_V);
     }
-    RELEASE(LOG_NONLIN_SYS_V);
 
     /* Scaling x vector */
     if (solverData->useXScaling){
       for(i=0;i<solverData->n;i++){
-        solverData->x[i] = (1.0/systemData->nlsxScaling[i]) * solverData->x[i];
+        solverData->x[i] = (1.0/solverData->xScalefactors[i]) * solverData->x[i];
       }
     }
-
     /* debug output */
     INFO(LOG_NONLIN_SYS_V,"Iteration variable values scaled:");
     INDENT(LOG_NONLIN_SYS_V);
@@ -329,7 +335,7 @@ int solveHybrd(DATA *data, int sysNumber) {
     /* re-scaling x vector */
     if (solverData->useXScaling){
       for(i=0;i<solverData->n;i++){
-        solverData->x[i] = solverData->x[i]*systemData->nlsxScaling[i];
+        solverData->x[i] = solverData->x[i]*solverData->xScalefactors[i];
       }
     }
     /* check for proper inputs */
@@ -370,10 +376,8 @@ int solveHybrd(DATA *data, int sysNumber) {
 
     /* Scaling residual vector */
     {
+      double tmp;
       int i,j,l=0;
-      INDENT(LOG_NONLIN_SYS_V);
-      INFO(LOG_NONLIN_SYS_V, "scaling factors for residual vector");
-      INDENT(LOG_NONLIN_SYS_V);
       for(i=0;i<solverData->n;i++){
         solverData->resScaling[i] = 1e-16;
         for(j=0;j<solverData->n;j++){
@@ -381,15 +385,23 @@ int solveHybrd(DATA *data, int sysNumber) {
               ? fabs(solverData->fjacobian[l]) : solverData->resScaling[i];
           l++;
         }
-        INFO2(LOG_NONLIN_SYS_V, "[%d] : %.20e", i, solverData->resScaling[i]);
-        solverData->resScaling[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
+        solverData->fvecScaled[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
       }
-      RELEASE(LOG_NONLIN_SYS_V);
-      RELEASE(LOG_NONLIN_SYS_V);
+      if (DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
+        INFO(LOG_NONLIN_SYS_V, "scaling factors for residual vector");
+        INDENT(LOG_NONLIN_SYS_V);
+        for(i=0;i<solverData->n;i++){
+          INFO2(LOG_NONLIN_SYS_V, "scaling factor [%d] : %.20e", i, solverData->fvecScaled[i]);
+          INDENT(LOG_NONLIN_SYS_V);
+          INFO2(LOG_NONLIN_SYS_V, "scaled residual [%d] : %.20e", i, solverData->resScaling[i]);
+          RELEASE(LOG_NONLIN_SYS_V);
+        }
+        RELEASE(LOG_NONLIN_SYS_V);
+      }
     }
 
     /* check for error  */
-    xerror_scaled = enorm_(&solverData->n, solverData->resScaling);
+    xerror_scaled = enorm_(&solverData->n, solverData->fvecScaled);
     xerror = enorm_(&solverData->n, solverData->fvec);
     if (solverData->info == 1 && (xerror > local_tol && xerror_scaled > local_tol))
       solverData->info = 4;
@@ -417,13 +429,28 @@ int solveHybrd(DATA *data, int sysNumber) {
         giveUp = 0;
         nfunc_evals += solverData->nfev;
         if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
-          INFO(LOG_NONLIN_SYS, 
+          INFO(LOG_NONLIN_SYS,
               " - iteration making no progress:\t vary solution point by 1%%.");
           printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
         }
-    /* try to deactivate x-Scaling */
+    /* try old values as x-Scaling factors */
     } else if ((solverData->info == 4 || solverData->info == 5) && retries < 2) {
+
+        for(i=0;i<solverData->n;i++){
+          solverData->xScalefactors[i] = fmax(systemData->nlsxOld[i], systemData->nlsxScaling[i]);
+        }
+        retries++;
+        giveUp = 0;
+        nfunc_evals += solverData->nfev;
+        if (DEBUG_STREAM(LOG_NONLIN_SYS)) {
+          INFO(LOG_NONLIN_SYS,
+              " - iteration making no progress:\t try without scaling at all.");
+          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+        }
+    /* try to disable x-Scaling */
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 3) {
         solverData->useXScaling = 0;
+        memcpy(solverData->xScalefactors, systemData->nlsxScaling, solverData->n*(sizeof(double)));
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
@@ -433,7 +460,7 @@ int solveHybrd(DATA *data, int sysNumber) {
           printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
         }
     /* first try to decrease factor*/
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 5) {
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 6) {
         /* set x vector */
         if (data->simulationInfo.discreteCall)
           memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
@@ -454,7 +481,7 @@ int solveHybrd(DATA *data, int sysNumber) {
      * work-a-round: since other wise some model does
      * stuck in event iteration. e.g.: Modelica.Mechanics.Rotational.Examples.HeatLosses
      */
-    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 6  && data->simulationInfo.discreteCall) {
+    } else if ((solverData->info == 4 || solverData->info == 5) && retries < 7  && data->simulationInfo.discreteCall) {
 
       memcpy(solverData->x, systemData->nlsx, solverData->n*(sizeof(double)));
 

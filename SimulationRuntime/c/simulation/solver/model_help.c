@@ -650,6 +650,7 @@ void initializeDataStruc(DATA *data)
 
   /*  switches used to evaluate the system */
   data->simulationInfo.solveContinuous = 0;
+  data->simulationInfo.noThrowDivZero = 0;
   data->simulationInfo.discreteCall = 0;
 
   /* initialize model error code */
