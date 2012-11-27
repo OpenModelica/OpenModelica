@@ -295,7 +295,7 @@ void dumpInitialSolution(DATA *simData)
   {
     if(simData->modelData.realParameterData[i].attribute.fixed == 0)
     {
-      if(simData->modelData.realVarsData[i].attribute.useNominal)
+      if(simData->modelData.realParameterData[i].attribute.useNominal)
       {
         INFO5(LOG_SOTI, "[%ld] parameter Real %s(start=%g, nominal=%g) = %g",
           j+1,
