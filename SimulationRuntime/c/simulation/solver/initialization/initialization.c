@@ -587,26 +587,14 @@ static int initialize(DATA *data, int optiMethod)
   return retVal;
 }
 
-/*! \fn static int none_initialization(DATA *data, int updateStartValues)
+/*! \fn static int none_initialization(DATA *data)
  *
  *  \param [ref] [data]
- *  \param [in]  [updateStartValues]
  *
  *  \author lochel
  */
-static int none_initialization(DATA *data, int updateStartValues)
+static int none_initialization(DATA *data)
 {
-  /*INIT_DATA *initData = NULL;*/
-
-  /* set up all variables and parameters with their start-values */
-  setAllVarsToStart(data);
-  setAllParamsToStart(data);
-  if(updateStartValues)
-  {
-    updateBoundParameters(data);
-    updateBoundStartValues(data);
-  }
-
   /* initial sample and delay before initial the system */
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
   initDelay(data, data->simulationInfo.startTime);
@@ -622,11 +610,6 @@ static int none_initialization(DATA *data, int updateStartValues)
   storePreValues(data);
   storeRelations(data);
 
-  /* dump some information
-  initData = initializeInitData(data);
-  if(initData)
-    freeInitData(initData);*/
-
   storePreValues(data);             /* save pre-values */
   overwriteOldSimulationData(data); /* if there are non-linear equations */
   updateDiscreteSystem(data);           /* evaluate discrete variables */
@@ -639,26 +622,16 @@ static int none_initialization(DATA *data, int updateStartValues)
   return 0;
 }
 
-/*! \fn static int state_initialization(DATA *data, int optiMethod, int updateStartValues)
+/*! \fn static int state_initialization(DATA *data, int optiMethod)
  *
  *  \param [ref] [data]
  *  \param [in]  [optiMethod] specified optimization method
- *  \param [in]  [updateStartValues]
  *
  *  \author lochel
  */
-static int state_initialization(DATA *data, int optiMethod, int updateStartValues)
+static int state_initialization(DATA *data, int optiMethod)
 {
   int retVal = 0;
-
-  /* set up all variables and parameters with their start-values */
-  setAllVarsToStart(data);
-  setAllParamsToStart(data);
-  if(updateStartValues)
-  {
-    updateBoundParameters(data);
-    updateBoundStartValues(data);
-  }
 
   /* initial sample and delay before initial the system */
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
@@ -689,26 +662,15 @@ static int state_initialization(DATA *data, int optiMethod, int updateStartValue
   return retVal;
 }
 
-/*! \fn static int symbolic_initialization(DATA *data, int updateStartValues)
+/*! \fn static int symbolic_initialization(DATA *data)
  *
  *  \param [ref] [data]
- *  \param [in]  [updateStartValues]
  *
  *  \author lochel
  */
-static int symbolic_initialization(DATA *data, int updateStartValues)
+static int symbolic_initialization(DATA *data)
 {
   int retVal = 0;
-
-  /* set up all variables and parameters with their start-values */
-  setAllVarsToStart(data);
-  setAllParamsToStart(data);
-
-  if(updateStartValues)
-  {
-    updateBoundParameters(data);
-    updateBoundStartValues(data);
-  }
 
   /* initial sample and delay before initial the system */
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
@@ -931,16 +893,24 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   int initMethod = useSymbolicInitialization ? IIM_SYMBOLIC : IIM_STATE;  /* default method */
   int optiMethod = IOM_NELDER_MEAD_EX;                                    /* default method */
   int retVal = -1;
-  int updateStartValues = 1;
   int i;
 
   INFO(LOG_INIT, "### START INITIALIZATION ###");
-
+  
   /* import start values from extern mat-file */
   if(pInitFile && strcmp(pInitFile, ""))
   {
     importStartValues(data, pInitFile, initTime);
-    updateStartValues = 0;
+  }
+
+  /* set up all variables and parameters with their start-values */
+  setAllParamsToStart(data);
+  setAllVarsToStart(data);
+
+  if(!(pInitFile && strcmp(pInitFile, "")))
+  {
+    updateBoundParameters(data);
+    updateBoundStartValues(data);
   }
 
   /* if there are user-specified options, use them! */
@@ -986,18 +956,17 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   INFO2(LOG_INIT, "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
   INFO2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
-  INFO1(LOG_INIT, "update start values:   %s", updateStartValues ? "true" : "false");
 
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
 
   /* select the right initialization-method */
   if(initMethod == IIM_NONE)
-    retVal = none_initialization(data, updateStartValues);
+    retVal = none_initialization(data);
   else if(initMethod == IIM_STATE)
-    retVal = state_initialization(data, optiMethod, updateStartValues);
+    retVal = state_initialization(data, optiMethod);
   else if(initMethod == IIM_SYMBOLIC)
-    retVal = symbolic_initialization(data, updateStartValues);
+    retVal = symbolic_initialization(data);
   else
     THROW("unsupported option -iim");
 
