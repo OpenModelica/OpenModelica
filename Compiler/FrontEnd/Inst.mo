@@ -141,7 +141,7 @@ protected import HashTable;
 protected import HashTable5;
 protected import InstSection;
 protected import InstExtends;
-protected import InstUtil;
+protected import NFInstUtil;
 protected import Interactive;
 protected import List;
 protected import Lookup;
@@ -158,7 +158,7 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
-protected import SCodeFlatten;
+protected import NFSCodeFlatten;
 protected import SCodeDump;
 
 public function newIdent
@@ -312,7 +312,7 @@ algorithm
     
     case (_, _)
       equation
-        (outProgram, _) = SCodeFlatten.flattenClassInProgram(inPath, inProgram);
+        (outProgram, _) = NFSCodeFlatten.flattenClassInProgram(inPath, inProgram);
       then
         outProgram;
   
@@ -4591,7 +4591,7 @@ protected function addConnectionCrefsFromEqs
    from connect statements to the connection set. It also adds the connection
    set to the environment so that ceval can evaluate the cardinality operator.
    All this work is only for the cardinality operator, so the function doesn't
-   do anything if cardinality isn't used as determined in SCodeFlatten."
+   do anything if cardinality isn't used as determined in NFSCodeFlatten."
   input Connect.Sets inSets;
   input list<SCode.Equation> inEquations;
   input Prefix.Prefix inPrefix;
@@ -8208,7 +8208,7 @@ algorithm
           instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        (cache,dae) = addArrayVarEquation(cache,env,ih,ci_state, dae, ty, mod, InstUtil.toConst(vt), pre, n, source);
+        (cache,dae) = addArrayVarEquation(cache,env,ih,ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
         cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
@@ -8228,7 +8228,7 @@ algorithm
           instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, InstUtil.toConst(vt), pre, n, source);
+        (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
         cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
@@ -8678,7 +8678,7 @@ algorithm
 
         // Instantiate the components binding.
         mod = Util.if_(listLength(inSubscripts) > 0 and not SCode.isParameterOrConst(vt) and not ClassInf.isFunctionOrRecord(inState) and not Types.isComplexType(Types.arrayElementType(ty)) and not Types.isExternalObject(Types.arrayElementType(ty)),DAE.NOMOD(),inMod);
-        opt_binding = makeVariableBinding(ty, mod, InstUtil.toConst(vt), inPrefix, inName, source);
+        opt_binding = makeVariableBinding(ty, mod, NFInstUtil.toConst(vt), inPrefix, inName, source);
         start = instStartBindingExp(inMod /* Yup, let's keep the start-binding. It seems sane. */, ty, vt);
 
         // Add the component to the DAE.
@@ -16424,7 +16424,7 @@ algorithm
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         (cache,dims) = elabArraydim(cache,cenv, c1, sty, ad, NONE(), impl, NONE(), true, false, pre, info, inst_dims);
          
-        sM = SCodeMod.removeCrefPrefixFromModExp(scodeMod, inRef);
+        sM = NFSCodeMod.removeCrefPrefixFromModExp(scodeMod, inRef);
          
         //(cache, dM) = elabMod(cache, env, ih, pre, sM, impl, info);
         dM = Mod.elabUntypedMod(sM, env, pre);          

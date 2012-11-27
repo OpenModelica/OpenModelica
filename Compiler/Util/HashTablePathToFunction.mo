@@ -7,7 +7,7 @@ encapsulated package HashTablePathToFunction "
 
   file:        HashTablePathToFunction.mo
   package:     HashTablePathToFunction
-  description: Absyn.Path to InstTypes.Function
+  description: Absyn.Path to NFInstTypes.Function
 
   RCS: $Id$
 
@@ -25,12 +25,12 @@ keyEqual   - A comparison function between two keys, returns true if equal.
 
 public import BaseHashTable;
 public import Absyn;
-public import InstTypes;
+public import NFInstTypes;
 
 protected import System;
 
 public type Key = Absyn.Path;
-public type Value = InstTypes.Function;
+public type Value = NFInstTypes.Function;
 
 public type HashTableCrefFunctionsType = tuple<FuncHashCref,FuncCrefEqual,FuncCrefStr,FuncExpStr>;
 public type HashTable = tuple<

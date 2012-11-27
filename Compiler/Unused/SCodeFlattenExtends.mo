@@ -45,14 +45,14 @@ encapsulated package SCodeFlattenExtends
 // public imports
 public import Absyn;
 public import SCode;
-public import SCodeEnv;
+public import NFSCodeEnv;
 public import AvlTree;
 public import Scope;
 public import Name;
 
 protected import Flags;
 protected import List;
-protected import SCodeLookup;
+protected import NFSCodeLookup;
 protected import SCodeDump;
 
 public
@@ -60,7 +60,7 @@ uniontype Item
   record I
     SCode.Element el;
     list<SCode.Mod> mods;
-    SCodeEnv.Env env;
+    NFSCodeEnv.Env env;
   end I;
 end Item;
 
@@ -83,7 +83,7 @@ uniontype Extra
   record E
     ScopeId parentId  "the parent scope";
     EnvTree tree      "the tree passed down";
-    SCodeEnv.Env cEnv "the current environment";
+    NFSCodeEnv.Env cEnv "the current environment";
   end E;
 end Extra;
 
@@ -91,13 +91,13 @@ public function flattenProgram
   "Flattens the last class in a program."
   input Absyn.Path inClassName;
   input SCode.Program inProgram;
-  input SCodeEnv.Env inEnv;  
+  input NFSCodeEnv.Env inEnv;  
   output SCode.Program outProgram;
 algorithm
   outProgram := matchcontinue(inClassName, inProgram, inEnv)
     local
       SCode.Element c;
-      SCodeEnv.Env env;
+      NFSCodeEnv.Env env;
 
     case (_, _, _)
       equation
@@ -108,7 +108,7 @@ algorithm
     case (_, _, _)
       equation
         
-        (SCodeEnv.CLASS(c, _, _), _, env) = SCodeLookup.lookupClassName(inClassName, inEnv, Absyn.dummyInfo);
+        (NFSCodeEnv.CLASS(c, _, _), _, env) = NFSCodeLookup.lookupClassName(inClassName, inEnv, Absyn.dummyInfo);
         c = flattenClass(c, env);
         
         print("FinalSCodeProgram:\n-----------------------\n" +& 
@@ -122,12 +122,12 @@ end flattenProgram;
 protected function flattenClass
   "simplifies a class."
   input SCode.Element inClass;
-  input SCodeEnv.Env inEnv;
+  input NFSCodeEnv.Env inEnv;
   output SCode.Element outClass;
 algorithm
   outClass := matchcontinue(inClass, inEnv)
     local
-      SCodeEnv.Env env;
+      NFSCodeEnv.Env env;
       SCode.Element cl;
       SCode.Element element;
       SCode.Ident className;
@@ -141,10 +141,10 @@ algorithm
       
     case (cl as SCode.CLASS(n, pref, ep, pp, restr, cDef, info), env)
       equation
-        print(SCodeEnv.getEnvName(env) +& "/CL:" +& SCodeDump.shortElementStr(cl) +& "\n");
+        print(NFSCodeEnv.getEnvName(env) +& "/CL:" +& SCodeDump.shortElementStr(cl) +& "\n");
         className = SCode.className(cl);        
         element = cl;
-        env = SCodeEnv.enterScope(env, className);
+        env = NFSCodeEnv.enterScope(env, className);
         cDef = flattenClassDef(cDef, env, info);        
       then 
         SCode.CLASS(n, pref, ep, pp, restr, cDef, info);
@@ -161,14 +161,14 @@ end flattenClass;
 protected function flattenClassDef
   "Flattens a classdef."  
   input SCode.ClassDef inClassDef;
-  input SCodeEnv.Env inEnv;
+  input NFSCodeEnv.Env inEnv;
   input Absyn.Info inInfo;
   output SCode.ClassDef outClassDef;
 algorithm
   outClassDef := matchcontinue(inClassDef, inEnv, inInfo)
     local
-      SCodeEnv.Env env;
-      SCodeEnv.ClassType cls_ty;
+      NFSCodeEnv.Env env;
+      NFSCodeEnv.ClassType cls_ty;
       SCode.Element el;
       SCode.Ident  baseClassName;
       Absyn.Path path;
@@ -207,10 +207,10 @@ algorithm
       equation        
         // Remove the extends from the local scope before flattening the derived
         // type, because the type should not be looked up via itself.
-        env = SCodeEnv.removeExtendsFromLocalScope(env);
+        env = NFSCodeEnv.removeExtendsFromLocalScope(env);
         
-        (SCodeEnv.CLASS(cls = el as SCode.CLASS(classDef = cDef, info = info), classType = SCodeEnv.BUILTIN()), path, env) = 
-          SCodeLookup.lookupBaseClassName(path, env, info);                
+        (NFSCodeEnv.CLASS(cls = el as SCode.CLASS(classDef = cDef, info = info), classType = NFSCodeEnv.BUILTIN()), path, env) = 
+          NFSCodeLookup.lookupBaseClassName(path, env, info);                
       then 
         cDef;
     
@@ -219,15 +219,15 @@ algorithm
       equation        
         // Remove the extends from the local scope before flattening the derived
         // type, because the type should not be looked up via itself.
-        env = SCodeEnv.removeExtendsFromLocalScope(env);
+        env = NFSCodeEnv.removeExtendsFromLocalScope(env);
         
-        (SCodeEnv.CLASS(cls = el as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
-          SCodeLookup.lookupBaseClassName(path, env, info);
+        (NFSCodeEnv.CLASS(cls = el as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
+          NFSCodeLookup.lookupBaseClassName(path, env, info);
 
-        print(SCodeEnv.getEnvName(env) +& "/DE:" +& SCodeDump.shortElementStr(el) +& "\n");
+        print(NFSCodeEnv.getEnvName(env) +& "/DE:" +& SCodeDump.shortElementStr(el) +& "\n");
         
         // entering the base class
-        env = SCodeEnv.enterScope(env, Absyn.pathLastIdent(path));
+        env = NFSCodeEnv.enterScope(env, Absyn.pathLastIdent(path));
         
         cDef = flattenClassDef(cDef, env, info);
       then 
@@ -253,13 +253,13 @@ end flattenClassDef;
 protected function flattenElements
   "flatten elements"
   input list<SCode.Element> inElements;
-  input SCodeEnv.Env inEnv;
+  input NFSCodeEnv.Env inEnv;
   input Absyn.Info inInfo;
   output list<SCode.Element> outElements;  
 algorithm
   outElements := match(inElements, inEnv, inInfo)
     local
-      SCodeEnv.Env env;
+      NFSCodeEnv.Env env;
       SCode.Element el;
       list<SCode.Element> rest, lst1, lst2, lst;
       Absyn.Info info;
@@ -282,14 +282,14 @@ end flattenElements;
 protected function flattenElement
   "flatten an element"  
   input SCode.Element inElement;
-  input SCodeEnv.Env inEnv;
+  input NFSCodeEnv.Env inEnv;
   input Absyn.Info inInfo;
   output list<SCode.Element> outElements;  
 algorithm
   outElements := matchcontinue(inElement, inEnv, inInfo)
     local
-      SCodeEnv.Env env;
-      SCodeEnv.ClassType cls_ty;      
+      NFSCodeEnv.Env env;
+      NFSCodeEnv.ClassType cls_ty;      
       SCode.Ident name;
       Absyn.Path path;
       SCode.Element el, cl;
@@ -305,15 +305,15 @@ algorithm
       equation
         // Remove the extends from the local scope before flattening the extends
         // type, because the type should not be looked up via itself.
-        env = SCodeEnv.removeExtendsFromLocalScope(env);
+        env = NFSCodeEnv.removeExtendsFromLocalScope(env);
         
-        (SCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
-          SCodeLookup.lookupBaseClassName(path, env, info);
+        (NFSCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
+          NFSCodeLookup.lookupBaseClassName(path, env, info);
         
-        print(SCodeEnv.getEnvName(env) +& "/EXT:" +& SCodeDump.shortElementStr(el) +& "\n");
+        print(NFSCodeEnv.getEnvName(env) +& "/EXT:" +& SCodeDump.shortElementStr(el) +& "\n");
         
         // entering the base class
-        env = SCodeEnv.enterScope(env, Absyn.pathLastIdent(path));
+        env = NFSCodeEnv.enterScope(env, Absyn.pathLastIdent(path));
 
         cDef = flattenClassDef(cDef,env,info);
       then 
@@ -322,7 +322,7 @@ algorithm
     // handle classdef
     case (el as SCode.CLASS(name = name, classDef = cDef, info = info), env, _)
       equation
-        env = SCodeEnv.enterScope(env, name);
+        env = NFSCodeEnv.enterScope(env, name);
 
         cDef = flattenClassDef(cDef, env, info);
       then 
@@ -338,16 +338,16 @@ algorithm
     // handle basic type component
     case (el as SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path = path)), env, info)
       equation
-        (SCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = SCodeEnv.BUILTIN()), path, env) = 
-          SCodeLookup.lookupClassName(path, env, info);
+        (NFSCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = NFSCodeEnv.BUILTIN()), path, env) = 
+          NFSCodeLookup.lookupClassName(path, env, info);
       then 
         {el};
 
     // handle user defined component
     case (el as SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path = path)), env, info)
       equation
-        (SCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
-          SCodeLookup.lookupClassName(path, env, info);
+        (NFSCodeEnv.CLASS(cls = cl as SCode.CLASS(classDef = cDef, info = info), classType = cls_ty), path, env) = 
+          NFSCodeLookup.lookupClassName(path, env, info);
         cl = flattenClass(cl, env);
       then 
         {el};

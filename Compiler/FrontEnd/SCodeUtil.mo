@@ -60,8 +60,8 @@ protected import MetaUtil;
 protected import System;
 protected import Types;
 protected import Util;
-protected import SCodeCheck;
-protected import SCodeFlatten;
+protected import NFSCodeCheck;
+protected import NFSCodeFlatten;
 protected import SCodeDump;
 
 public function translateAbsyn2SCode
@@ -100,7 +100,7 @@ algorithm
         // translate builtin functions
         spInitial = List.fold(initialClasses, translate2, {});
         // call flatten program on the initial classes only
-        spInitial = SCodeFlatten.flattenCompleteProgram(spInitial);
+        spInitial = NFSCodeFlatten.flattenCompleteProgram(spInitial);
         spInitial = listReverse(spInitial);
         
         // translate given absyn to scode.
@@ -112,9 +112,9 @@ algorithm
         //       ModelicaBuiltin.mo and MetaModelicaBuiltin.mo
         
         // check duplicates in builtin (initial) functions
-        SCodeCheck.checkDuplicateElements(spInitial);
+        NFSCodeCheck.checkDuplicateElements(spInitial);
         // check duplicates in absyn
-        SCodeCheck.checkDuplicateElements(spAbsyn);
+        NFSCodeCheck.checkDuplicateElements(spAbsyn);
          
         sp = listAppend(spInitial, spAbsyn);
       then
@@ -1438,7 +1438,7 @@ algorithm
       (attr as Absyn.ATTR(flowPrefix = fl,streamPrefix=st,parallelism=parallelism,variability = variability,direction = di,arrayDim = ad)),typeSpec = t,
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       equation
-        true = SCodeCheck.checkIdentNotEqTypeName(n, t, info);
+        true = NFSCodeCheck.checkIdentNotEqTypeName(n, t, info);
         // Debug.fprintln(Flags.TRANSLATE, "translating component: " +& n +& " final: " +& SCode.finalStr(SCode.boolFinal(finalPrefix)));
         setHasInnerOuterDefinitionsHandler(io); // signal the external flag that we have inner/outer definitions
         setHasStreamConnectorsHandler(st);      // signal the external flag that we have stream connectors

@@ -63,7 +63,7 @@ protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
 protected import Inst;
-protected import InstUtil;
+protected import NFInstUtil;
 protected import List;
 protected import Lookup;
 protected import MetaUtil;
@@ -4123,8 +4123,8 @@ algorithm
         crefExp1 = Expression.crefExp(c1_1);
         crefExp2 = Expression.crefExp(c2_1);
         // Evaluate constant crefs away
-        const1 = InstUtil.toConst(vt1);
-        const2 = InstUtil.toConst(vt2);
+        const1 = NFInstUtil.toConst(vt1);
+        const2 = NFInstUtil.toConst(vt2);
         (cache, crefExp1, _) = Ceval.cevalIfConstant(cache, env, crefExp1, DAE.PROP(t1,const1), true, info);
         (cache, crefExp2, _) = Ceval.cevalIfConstant(cache, env, crefExp2, DAE.PROP(t2,const2), true, info);
         (exp,_) = ExpressionSimplify.simplify(DAE.RELATION(crefExp1,DAE.EQUAL(DAE.T_BOOL_DEFAULT),crefExp2,-1,NONE()));

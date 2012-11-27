@@ -85,7 +85,7 @@ protected import Parser;
 protected import Prefix;
 protected import Print;
 protected import Refactor;
-protected import SCodeFlatten;
+protected import NFSCodeFlatten;
 protected import SimCodeUtil;
 protected import StaticScript;
 protected import System;
@@ -422,7 +422,7 @@ algorithm
       equation
         (env,st) = buildEnvFromSymboltable(st);
         scode_class = SCodeUtil.translateClass(absyn_class);
-        scode_class = SCodeFlatten.flattenClass(scode_class);
+        scode_class = NFSCodeFlatten.flattenClass(scode_class);
 
         (_,env_1,_) = Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), scode_class, {});

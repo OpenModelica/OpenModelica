@@ -619,7 +619,7 @@ public constant Attributes defaultConstAttr =
 // .......... functionality .........
 protected import Util;
 protected import List;
-protected import SCodeCheck;
+protected import NFSCodeCheck;
 
 
 public function stripSubmod
@@ -2057,7 +2057,7 @@ protected
   Option<Comment> comment;
 algorithm
   ENUM(literal = literal, comment = comment) := inEnum;
-  SCodeCheck.checkValidEnumLiteral(literal, inInfo);
+  NFSCodeCheck.checkValidEnumLiteral(literal, inInfo);
   outEnumType := COMPONENT(literal, defaultPrefixes, defaultConstAttr,
     Absyn.TPATH(Absyn.IDENT("EnumType"), NONE()), 
     NOMOD(), comment, NONE(), inInfo);

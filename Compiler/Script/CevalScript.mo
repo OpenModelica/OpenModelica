@@ -96,10 +96,10 @@ protected import Parser;
 protected import Print;
 protected import Refactor;
 protected import SCodeDump;
-protected import SCodeEnv;
-protected import SCodeFlatten;
-protected import SCodeInst;
-protected import SCodeInstShortcut;
+protected import NFSCodeEnv;
+protected import NFSCodeFlatten;
+protected import NFSCodeInst;
+protected import NFSCodeInstShortcut;
 protected import SCodeSimplify;
 protected import SimCodeUtil;
 protected import System;
@@ -1914,7 +1914,7 @@ algorithm
         {Values.STRING(filename), Values.CODE(Absyn.C_TYPENAME(classpath))}, st, _)
       equation
         (scodeP, st) = Interactive.symbolTableToSCode(st);
-        (scodeP, _) = SCodeFlatten.flattenClassInProgram(classpath, scodeP);
+        (scodeP, _) = NFSCodeFlatten.flattenClassInProgram(classpath, scodeP);
         scodeP = SCode.removeBuiltinsFromTopScope(scodeP);
         str = SCodeDump.programStr(scodeP);
         System.writeFile(filename, str);
@@ -2847,7 +2847,7 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
-      SCodeEnv.Env senv;
+      NFSCodeEnv.Env senv;
       DAE.FunctionTree funcs;
       Absyn.Path newClassName;
       
@@ -2857,10 +2857,10 @@ algorithm
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
         scodeP = SCodeSimplify.simplifyProgram(scodeP);
-        (scodeP, senv) = SCodeFlatten.flattenClassInProgram(className, scodeP);
-        scodePNew = SCodeInstShortcut.translate(className, senv, scodeP);
+        (scodeP, senv) = NFSCodeFlatten.flattenClassInProgram(className, scodeP);
+        scodePNew = NFSCodeInstShortcut.translate(className, senv, scodeP);
         // don't do the second dependency as it doesn't work in some cases!
-        // (scodePNew, senv) = SCodeFlatten.flattenClassInProgram(className, scodePNew);
+        // (scodePNew, senv) = NFSCodeFlatten.flattenClassInProgram(className, scodePNew);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,scodePNew,className);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
       then 
@@ -2873,8 +2873,8 @@ algorithm
         scodeP = SCodeUtil.translateAbsyn2SCode(p);
         // remove extends Modelica.Icons.*
         //scodeP = SCodeSimplify.simplifyProgram(scodeP);
-        (_, senv) = SCodeFlatten.flattenClassInProgram(className, scodeP);
-        (dae, funcs) = SCodeInst.instClass(className, senv);
+        (_, senv) = NFSCodeFlatten.flattenClassInProgram(className, scodeP);
+        (dae, funcs) = NFSCodeInst.instClass(className, senv);
 
         cache = Env.emptyCache();
         cache = Env.setCachedFunctionTree(cache, funcs);
