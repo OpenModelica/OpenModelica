@@ -1299,7 +1299,7 @@ protected function subtype2 "function: subtype
 algorithm
   outBoolean := matchcontinue (inType1,inType2,requireRecordNamesEqual)
     local
-      Boolean res;
+      Boolean res, b1, b2, b;
       Ident l1,l2;
       list<Var> els1,els2;
       Absyn.Path p1,p2;
@@ -1398,6 +1398,10 @@ algorithm
     // Array
     case (DAE.T_ARRAY(dims = {dim1}, ty = t1),DAE.T_ARRAY(dims = {dim2}, ty = t2), _)
       equation
+        /*
+        true = boolOr(Expression.dimensionsKnownAndEqual(dim1, dim2),
+                      Expression.dimensionsEqualAllowZero(dim1, dim2));
+        */
         true = Expression.dimensionsKnownAndEqual(dim1, dim2);
         true = subtype2(t1, t2, requireRecordNamesEqual);
       then

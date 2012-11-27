@@ -7864,6 +7864,60 @@ algorithm
   end matchcontinue;
 end dimsEqual;
 
+public function dimsEqualAllowZero
+"Returns whether two dimensions are equal or not.
+ 0 == anydim is allowed"
+  input DAE.Dimensions dims1;
+  input DAE.Dimensions dims2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(dims1, dims2)
+    local 
+      DAE.Dimension d1, d2;
+      DAE.Dimensions dl1, dl2; 
+      
+    case ({}, {}) then true;
+    case (d1::dl1, d2::dl2)
+      equation
+        true = dimensionsEqualAllowZero(d1, d2);
+        true = dimsEqualAllowZero(dl1, dl2);    
+      then 
+        true;
+    case (_, _) then false;
+  end matchcontinue;
+end dimsEqualAllowZero;
+
+public function dimensionsEqualAllowZero
+"Returns whether two dimensions are equal or not.
+ 0 == anyDim is allowed"
+  input DAE.Dimension dim1;
+  input DAE.Dimension dim2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(dim1, dim2)
+    local 
+      Boolean b;
+      Integer d1, d2;
+      
+    case (DAE.DIM_UNKNOWN(), _) then true;
+    case (_, DAE.DIM_UNKNOWN()) then true;
+    case (DAE.DIM_EXP(exp = _), _) then true;
+    case (_, DAE.DIM_EXP(exp = _)) then true;
+    
+    case (_, _)
+      equation
+        d1 = dimensionSize(dim1);
+        d2 = dimensionSize(dim2);
+        b = boolOr(
+              intEq(d1, d2), 
+              boolOr(
+                boolAnd(intEq(d1,0), intNe(d2,0)),
+                boolAnd(intEq(d2,0), intNe(d1,0))));
+      then
+        b;
+  end matchcontinue;
+end dimensionsEqualAllowZero;
+
 public function dimensionsKnownAndEqual
   "Checks that two dimensions are specified and equal."
   input DAE.Dimension dim1;

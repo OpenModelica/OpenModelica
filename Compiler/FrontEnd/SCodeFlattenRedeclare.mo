@@ -343,6 +343,7 @@ algorithm
       SCodeEnv.ClassType cls_ty;
       list<SCodeEnv.Redeclaration> redecls;
       Replacements repl;
+      Item item;
 
     // No redeclares!
     case ({}, _, _, _, _) then (inItem, inTypeEnv, {});
@@ -361,10 +362,10 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for: ");
+        Debug.trace("- SCodeFlattenRedeclare.replaceRedeclaredElementsInEnv failed for:\n\t");
         Debug.traceln("redeclares: " +& 
           stringDelimitList(List.map(inRedeclares, SCodeEnv.printRedeclarationStr), "\n---------\n") +&  
-          " item: " +& SCodeEnv.getItemName(inItem) +& " in scope:" +& SCodeEnv.getEnvName(inElementEnv));
+          "\n\titem: " +& SCodeEnv.itemStr(inItem) +& "\n\tin scope:" +& SCodeEnv.getEnvName(inElementEnv));
       then
         fail();
   end matchcontinue;
