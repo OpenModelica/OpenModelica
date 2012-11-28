@@ -237,6 +237,52 @@ algorithm
   end matchcontinue;
 end dumpOperatorString;
 
+public function dumpOperatorSymbol "
+Author bz  printOperator
+Dump operator to a string."
+  input DAE.Operator op;
+  output String str;
+algorithm
+  str := matchcontinue(op)
+    local
+      Absyn.Path p;
+      DAE.Type ty;
+    case(DAE.ADD(_)) then " + ";
+    case(DAE.SUB(_)) then " - ";
+    case(DAE.MUL(_)) then " * ";
+    case(DAE.DIV(_)) then " / ";
+    case(DAE.POW(_)) then " ^ ";
+    case(DAE.UMINUS(_)) then " - ";
+    case(DAE.UMINUS_ARR(_)) then " - ";
+    case(DAE.ADD_ARR(_)) then " + ";
+    case(DAE.SUB_ARR(_)) then " - ";
+    case(DAE.MUL_ARR(_)) then " * ";
+    case(DAE.DIV_ARR(_)) then " / ";
+    case(DAE.MUL_ARRAY_SCALAR(_)) then " * ";
+    case(DAE.ADD_ARRAY_SCALAR(_)) then " .+ ";
+    case(DAE.SUB_SCALAR_ARRAY(_)) then " .- ";
+    case(DAE.MUL_SCALAR_PRODUCT(_)) then " * ";
+    case(DAE.MUL_MATRIX_PRODUCT(_)) then " * ";
+    case(DAE.DIV_ARRAY_SCALAR(_)) then " / ";
+    case(DAE.DIV_SCALAR_ARRAY(_)) then " / ";
+    case(DAE.POW_ARRAY_SCALAR(_)) then " ^ ";
+    case(DAE.POW_SCALAR_ARRAY(_)) then " ^ ";
+    case(DAE.POW_ARR(_)) then " ^ ";
+    case(DAE.POW_ARR2(_)) then " .^ ";
+    case(DAE.OR(_)) then " or ";
+    case(DAE.AND(_)) then " and ";
+    case(DAE.NOT(_)) then " not ";
+    case(DAE.LESSEQ(_)) then " <= ";
+    case(DAE.GREATER(_)) then " > ";
+    case(DAE.GREATEREQ(_)) then " >= ";
+    case(DAE.LESS(_)) then " < ";
+    case(DAE.EQUAL(_)) then " == ";
+    case(DAE.NEQUAL(_)) then " <> ";
+    case(DAE.USERDEFINED(p)) then " Userdefined:" +& Absyn.pathString(p) +& " ";
+    case(_) then " --UNDEFINED-- ";
+  end matchcontinue;
+end dumpOperatorSymbol;
+
 public function dump2str "
 printDAEString daeString "
 input DAE.DAElist inDAElist;

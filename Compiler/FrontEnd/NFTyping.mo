@@ -754,9 +754,9 @@ algorithm
   (outExp, outType, outConst, outSymbolTable) :=
   match(inExp, inEvalPolicy, inContext, inSymbolTable)
     local
-      DAE.Exp e1, e2;
+      DAE.Exp e1, e2, e3;
       DAE.ComponentRef cref;
-      DAE.Type ty,tyOp;
+      DAE.Type ty,ty1,ty2,tyOp;
       SymbolTable st;
       DAE.Operator op;
       Component comp;
@@ -790,22 +790,24 @@ algorithm
 
     case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
       equation
-        (e1, ty, const1, st) = typeExp(e1, ep, c, st);
-        (e2, ty, const2, st) = typeExp(e2, ep, c, st);
-        // get the type of the operator, not the types of 
-        // the last operand as for == it DOES NOT HOLD
-        tyOp = Expression.typeofOp(op);
-        ty = selectType(tyOp, ty);
+        (e1, ty1, const1, st) = typeExp(e1, ep, c, st);
+        (e2, ty2, const2, st) = typeExp(e2, ep, c, st);
+         
+         // Check operands vs operator
+        (e3,ty) = NFTypeCheck.checkBinaryOperation(e1,ty1,op,e2,ty2);
+
         const = Types.constAnd(const1, const2);
       then
-        (DAE.BINARY(e1, op, e2), ty, const, st);
+        (e3, ty, const, st);
 
     case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
       equation
-        (e1, ty, const1, st) = typeExp(e1, ep, c, st);
-        (e2, ty, const2, st) = typeExp(e2, ep, c, st);
-        tyOp = Expression.typeofOp(op);
-        ty = selectType(tyOp, ty);
+        (e1, ty1, const1, st) = typeExp(e1, ep, c, st);
+        (e2, ty2, const2, st) = typeExp(e2, ep, c, st);
+        
+        // Check operands vs operator
+        (e3,ty) = NFTypeCheck.checkLogicalBinaryOperation(e1,ty1,op,e2,ty2);
+        
         const = Types.constAnd(const1, const2);
       then
         (DAE.LBINARY(e1, op, e2), ty, const, st);
@@ -817,6 +819,18 @@ algorithm
         ty = selectType(tyOp, ty);
       then
         (DAE.LUNARY(op, e1), ty, const, st);
+    
+    case (DAE.RELATION(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
+      equation
+        (e1, ty1, const1, st) = typeExp(e1, ep, c, st);
+        (e2, ty2, const2, st) = typeExp(e2, ep, c, st);
+         
+         // Check operands vs operator
+        (e3,ty) = NFTypeCheck.checkRelationOperation(e1,ty1,op,e2,ty2);
+
+        const = Types.constAnd(const1, const2);
+      then
+        (e3, ty, const, st);
 
     case (DAE.SIZE(exp = e1 as DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, c, st)
       equation
