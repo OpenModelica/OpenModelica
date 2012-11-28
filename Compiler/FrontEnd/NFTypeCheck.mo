@@ -396,14 +396,14 @@ algorithm
       equation
         (e, t) = Types.matchType(inExp2, inTy2, inTy1, true);
       then
-        (inExp1, t, e, t);
+        (inExp1, inTy1, e, t);
     
     // the other way arround just for equations!
     case (_, _, _, _, "equ", _)
       equation
         (e, t) = Types.matchType(inExp1, inTy1, inTy2, true);
       then
-        (e, t, inExp2, t);
+        (e, t, inExp2, inTy2);
     
     // not really fine!
     case (_, _, _, _, "equ", _)
