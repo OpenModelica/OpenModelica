@@ -40,14 +40,19 @@
  *  memory to allocate a new older generation we switch to a
  *  mark-and-sweep collector.
  * 
- * RCS: $Id: gc.h 8047 2011-03-01 10:19:49Z perost $
+ * RCS: $Id: mmc_gc.h 8047 2011-03-01 10:19:49Z perost $
  *
  */
 
 #ifndef META_MODELICA_GC_H_
 #define META_MODELICA_GC_H_
-/*
+
+/* uncomment this to use the MetaModelica Garbage collector
 #define _MMC_GC_ 1
+*/
+
+/* uncomment this to use the BOEHM Garbage collector
+#define _MMC_USE_BOEHM_GC_
 */
 
 #if defined(__cplusplus)
@@ -110,15 +115,30 @@ static inline void mmc_GC_add_roots(modelica_metatype* p, int n, mmc_GC_local_st
   }
 } 
 
-#else /* NO GC */
+#else
+
+#if defined(_MMC_USE_BOEHM_GC_) /* use the BOEHM Garbage collector */
 
 extern mmc_GC_local_state_type dummy_local_GC_state;
 
-#define mmc_GC_init(settings)                          
-#define mmc_GC_init_default(void)                      
-#define mmc_GC_clear(void)                             
-#define mmc_GC_collect(local_GC_state)                 
+#define LARGE_CONFIG
+#include <gc.h>
 
+#define mmc_GC_init(settings) GC_INIT()
+#define mmc_GC_init_default(void) GC_INIT()
+#define mmc_GC_clear(void)
+#define mmc_GC_collect(local_GC_state)
+
+#else /* NO_GC */
+
+extern mmc_GC_local_state_type dummy_local_GC_state;
+
+#define mmc_GC_init(settings)
+#define mmc_GC_init_default(void)
+#define mmc_GC_clear(void)
+#define mmc_GC_collect(local_GC_state)
+
+#endif
 #endif /* defined(_MMC_GC_) */
 
 

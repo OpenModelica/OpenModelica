@@ -33,7 +33,7 @@
 /*
  * Adrian Pop [Adrian.Pop@liu.se]
  * This file implements the new MetaModelica mark-and-sweep garbage collector
- * See more information in gc.h file.
+ * See more information in mmc_gc.h file.
  *
  * RCS: $Id: marksweep.c 8047 2011-03-01 10:19:49Z perost $
  *
@@ -585,7 +585,18 @@ void *mmc_alloc_words(unsigned nwords)
   return mmc_gen_alloc_words(nwords);
 }
 
-#else /* normal GC */
+#elif defined(_MMC_USE_BOEHM_GC_) /* use the BOEHM Garbage collector */
+
+#define LARGE_CONFIG 1
+#include <gc.h>
+
+/* primary allocation routine for MetaModelica */
+void *mmc_alloc_words(unsigned nwords)
+{
+  return GC_MALLOC(nwords * sizeof(void*));
+}
+
+#else /* NO GC */
 
 void *mmc_alloc_bytes(unsigned nbytes)
 {
@@ -624,7 +635,6 @@ void *mmc_alloc_words(unsigned nwords)
 {
   return mmc_alloc_bytes(nwords * sizeof(void*));
 }
-
 
 #endif /* defined(_MMC_GC_) */
 

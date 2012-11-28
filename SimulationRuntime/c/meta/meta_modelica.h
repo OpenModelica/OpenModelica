@@ -43,7 +43,7 @@ extern "C" {
 #endif
 
 #include "openmodelica.h"
-#include "gc.h"
+#include "mmc_gc.h"
 #include "meta_modelica_string_lit.h"
 #include "meta_modelica_builtin.h"
 #include <stdio.h>

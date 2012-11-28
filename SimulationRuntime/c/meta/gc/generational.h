@@ -33,7 +33,7 @@
 /*
  * Adrian Pop [Adrian.Pop@liu.se]
  * This file implements the MetaModelica generational garbage collector
- * See more information in gc.h file.
+ * See more information in mmc_gc.h file.
  *
  * RCS: $Id: generational.h 8047 2011-03-01 10:19:49Z perost $
  *

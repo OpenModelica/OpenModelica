@@ -34,7 +34,7 @@
  * Adrian Pop [Adrian.Pop@liu.se]
  * This file implements the new MetaModelica Garbage Collector
  * which is a mark-and-sweep collector. See more information
- * in gc.h file.
+ * in mmc_gc.h file.
  *
  * RCS: $Id: generational.c 8047 2011-03-01 10:19:49Z perost $
  *

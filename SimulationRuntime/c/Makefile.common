@@ -17,7 +17,7 @@ RUNTIME_HEADERS = ./simulation/libf2c/f2c.h \
 ./math-support/blaswrap.h \
 ./math-support/matrix.h \
 ./meta/gc/common.h \
-./meta/gc/gc.h \
+./meta/gc/mmc_gc.h \
 ./meta/gc/generational.h \
 ./meta/gc/marksweep.h \
 ./meta/gc/roots.h \
