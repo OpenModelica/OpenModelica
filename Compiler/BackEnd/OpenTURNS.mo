@@ -214,7 +214,8 @@ protected
 algorithm
   varLst := BackendDAEUtil.getAllVarLst(dae);
   varLst := List.select(varLst,BackendVariable.varHasUncertaintyAttribute);
-  varLst := listReverse(varLst); 
+  // adrpo: 2012-11-28: sems the order is fine without listReverse!
+  // varLst := listReverse(varLst); 
   inputs := stringDelimitList(generateXMLLibraryInputs(varLst),"\n");
   outputs := stringDelimitList(generateXMLLibraryOutputs(varLst),"\n");
   dllStr := " <path>" +& className +& cStrWrapperSuffix +& System.getDllExt() +& "</path>";
@@ -292,7 +293,7 @@ algorithm
      DAE.SOUGHT() = BackendVariable.varUncertainty(v);
      varName = ComponentReference.crefStr(BackendVariable.varCref(v));
      varStr =  "    <variable id=\""+&varName+&"\" type=\"out\" />";
-     strLst = generateXMLLibraryOutputs(rest);    
+     strLst = generateXMLLibraryOutputs(rest);
     then varStr::strLst;
     case(_::rest) equation
      strLst = generateXMLLibraryOutputs(rest);
@@ -353,13 +354,10 @@ model A
   parameter Distribution distributionL = Uniform(250, 260);
   parameter Distribution distributionI = Beta(2.5, 4.0, 3.1e2, 4.5e2);
   Real u(distribution = LogNormal(30000, 9000, 15000, LogNormal.MUSIGMA)); // distribution name becomes <instancename>+\"_\"+<distribution name> 
-end A;
-
-"
+end A; "
   input BackendDAE.BackendDAE dae;
   output String distributions;
   output list<tuple<String,String>> distributionVarLst;
-  
 protected
   list<BackendDAE.Var> varLst;
   list<DAE.Distribution> dists;  
@@ -367,7 +365,7 @@ protected
   String header;
   BackendDAE.BackendDAE dae2;
 algorithm
-    //print("enter, dae:");
+  //print("enter, dae:");
   //BackendDump.dump(dae);
   dae2 := BackendDAEOptimize.removeParameters(dae);
   //print("removed parameters, dae2:");
@@ -383,7 +381,7 @@ algorithm
   distributionVarLst := listReverse(distributionVarLst);
   sLst := listReverse(sLst);
   
-  header := "# "+&intString(listLength(sLst))+&" distributions from Modelica model\n";
+  header := "# "+&intString(listLength(sLst))+&" distributions from Modelica model";
   distributions := stringDelimitList(header::sLst,"\n");
 end generateDistributions;
 
@@ -394,44 +392,55 @@ protected function generateDistributionVariable " generates a distribution varia
    output tuple<String,String> distributionVar "the name of the python variable for the distribution and the description (Modelica variable name), used later for generating the collection"; 
 algorithm
   (str,distributionVar) := matchcontinue(tpl,dae)
-  local 
-    String name,args,varName,distVar;
-    DAE.Exp e1,e2,e3,e2_1,e3_1;
-    DAE.ComponentRef cr;
-    list<DAE.Exp> expl1,expl2;
-    
-    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) equation
-      // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
-      // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
-      args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
-      varName = ComponentReference.crefModelicaStr(cr);
-      distVar ="distribution"+&varName; 
-      // add LogNormal.MUSIGMA!
-      str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)\n";
-    then (str,(varName,distVar));
-    
-    case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) equation
-      // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
-      // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
-      args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
-      varName = ComponentReference.crefModelicaStr(cr);
-      distVar ="distribution"+&varName; 
-      str = distVar+& " = " +& name +& "("+&args+&")\n";
-    then (str,(varName,distVar));
-    case((DAE.DISTRIBUTION(e1,e2,e3),cr),_) equation
-      ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
-      ((e3_1,_)) = BackendDAEUtil.extendArrExp((e3,(NONE(),false)));
-      false = Expression.expEqual(e2,e2_1); // Prevent infinte recursion
-      false = Expression.expEqual(e3,e3_1);
-      //print("extended arr="+&ExpressionDump.printExpStr(e2_1)+&"\n");
-      //print("extended sarr="+&ExpressionDump.printExpStr(e3_1)+&"\n");
-      (str,distributionVar) = generateDistributionVariable((DAE.DISTRIBUTION(e1,e2_1,e3_1),cr),dae);
-    then (str,distributionVar);
+    local 
+      String name,args,varName,distVar;
+      DAE.Exp e1,e2,e3,e2_1,e3_1;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> expl1,expl2;
+      
+    case((DAE.DISTRIBUTION(DAE.SCONST(name as "LogNormal"),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) 
+      equation
+        // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
+        // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
+        args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
+        // keep the variable name EXACTLY as it is
+        varName = ComponentReference.crefStr(cr);
+        // use the variable name with "." replaced by "_"
+        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr); 
+        // add LogNormal.MUSIGMA!
+        str = distVar+& " = " +& name +& "(" +& args+& ", " +& "LogNormal.MUSIGMA)";
+      then 
+        (str,(varName,distVar));
+        
+    case((DAE.DISTRIBUTION(DAE.SCONST(name),DAE.ARRAY(array=expl1),DAE.ARRAY(array=expl2)),cr),_) 
+      equation
+        // e.g. distributionL = Beta(0.93, 3.2, 2.8e7, 4.8e7)
+        // TODO:  make sure that the arguments are in correct order by looking at the expl2 list containing strings of argument names
+        args = stringDelimitList(List.map(expl1,ExpressionDump.printExpStr),",");
+        // keep the variable name EXACTLY as it is
+        varName = ComponentReference.crefStr(cr);
+        // use the variable name with "." replaced by "_"        
+        distVar = "distribution" +& ComponentReference.crefModelicaStr(cr); 
+        str = distVar+& " = " +& name +& "("+&args+&")";
+      then 
+        (str,(varName,distVar));
+        
+    case((DAE.DISTRIBUTION(e1,e2,e3),cr),_) 
+      equation
+        ((e2_1,_)) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
+        ((e3_1,_)) = BackendDAEUtil.extendArrExp((e3,(NONE(),false)));
+        false = Expression.expEqual(e2,e2_1); // Prevent infinte recursion
+        false = Expression.expEqual(e3,e3_1);
+        //print("extended arr="+&ExpressionDump.printExpStr(e2_1)+&"\n");
+        //print("extended sarr="+&ExpressionDump.printExpStr(e3_1)+&"\n");
+        (str,distributionVar) = generateDistributionVariable((DAE.DISTRIBUTION(e1,e2_1,e3_1),cr),dae);
+      then 
+        (str,distributionVar);
   end matchcontinue;
 end generateDistributionVariable;
 
-protected function generateCorrelationMatrix "
-"
+protected function generateCorrelationMatrix 
+"function to generate the corelation matrix in the python script"
   input BackendDAE.BackendDAE dae;
   input Integer numDists "number of distributions == number of uncertain variables == size of correlation matrix";
   input list<String> uncertainVars;
@@ -468,8 +477,9 @@ algorithm
   end matchcontinue;
 end generateCorrelationMatrix;
 
-protected function stripCorrelationFromDae "removes the correlation vector and it's corresponding algorithm section from the DAE.
-This means that it must remove from two places, the variables and the equations"
+protected function stripCorrelationFromDae 
+"removes the correlation vector and it's corresponding algorithm section from the DAE.
+ This means that it must remove from two places, the variables and the equations"
   input BackendDAE.BackendDAE dae; 
   output BackendDAE.BackendDAE strippedDae;
 protected
@@ -482,16 +492,17 @@ algorithm
   strippedDae := BackendDAE.DAE(eqs,shared);
 end stripCorrelationFromDae;
 
-protected function eqnSystemNotZero "returns true if system contains variables and equations"
-   input BackendDAE.EqSystem eqs; 
-   output Boolean notZero;
+protected function eqnSystemNotZero 
+"returns true if system contains variables and equations"
+  input BackendDAE.EqSystem eqs; 
+  output Boolean notZero;
 protected
   BackendDAE.EquationArray eqns;
   BackendDAE.Variables vars;
- algorithm
-   BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs=eqns) := eqs;
-   notZero := BackendVariable.varsSize(vars) > 0 and BackendDAEUtil.equationArraySize(eqns) > 0;
- end eqnSystemNotZero;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs=eqns) := eqs;
+  notZero := BackendVariable.varsSize(vars) > 0 and BackendDAEUtil.equationArraySize(eqns) > 0;
+end eqnSystemNotZero;
 
 protected function stripCorrelationVarsAndEqns " help function "
   input BackendDAE.EqSystem eqsys;
@@ -521,13 +532,11 @@ protected function equationIsCorrelationBinding "help function"
   output Boolean res;
 algorithm
   res := matchcontinue(eqn)
-  local 
-    DAE.Algorithm alg;
+    local DAE.Algorithm alg;
 
-    case(BackendDAE.ALGORITHM(alg=alg))
-       then 
-         hasCorrelationStatement(alg);
+    case(BackendDAE.ALGORITHM(alg=alg)) then hasCorrelationStatement(alg);
     case(_) then false;
+  
   end matchcontinue;
 end equationIsCorrelationBinding;
 
@@ -546,14 +555,16 @@ protected function isCorrelationVar "help function"
   output Boolean res;
 algorithm
   res := matchcontinue(var)
-  local 
-    DAE.ComponentRef cr;
+    local DAE.ComponentRef cr;
     
-    case _ equation
-      cr = BackendVariable.varCref(var);
-      true = isCorrelationVarCref(cr);      
-    then true;
+    case _ 
+      equation
+        cr = BackendVariable.varCref(var);
+        true = isCorrelationVarCref(cr);      
+      then true;
+    
     case(_) then false;
+  
   end matchcontinue;  
 end isCorrelationVar;
 
@@ -569,12 +580,13 @@ protected function hasCorrelationStatement " help function "
   output Boolean res;
 algorithm
   res := matchcontinue(alg)
-  local 
-    list<DAE.Statement> stmts;
+    local 
+      list<DAE.Statement> stmts;
     
     case(DAE.ALGORITHM_STMTS({})) then false;
     case(DAE.ALGORITHM_STMTS(DAE.STMT_ASSIGN_ARR(_,DAE.CREF_IDENT(ident="correlation"),_,_)::_)) then true;
     case(DAE.ALGORITHM_STMTS(_::stmts)) then hasCorrelationStatement(DAE.ALGORITHM_STMTS(stmts));
+  
   end matchcontinue;
 end hasCorrelationStatement;
 
@@ -583,11 +595,11 @@ protected function getCorrelationExp " help function "
   output DAE.Exp res;
 algorithm
   res := matchcontinue(alg)
-  local 
-    list<DAE.Statement> stmts;
+    local list<DAE.Statement> stmts;
     
     case(DAE.ALGORITHM_STMTS(DAE.STMT_ASSIGN_ARR(_,DAE.CREF_IDENT(ident="correlation"),res,_)::_)) then res;
     case(DAE.ALGORITHM_STMTS(_::stmts)) then getCorrelationExp(DAE.ALGORITHM_STMTS(stmts));
+  
   end matchcontinue;
 end getCorrelationExp;
 
@@ -612,19 +624,18 @@ protected
   DAE.Exp val;
   String valStr;
   Integer p1,p2,plow,phigh;
-
 algorithm
   DAE.CALL(path = Absyn.IDENT("Correlation"),expLst = {DAE.CREF(cr1,_),DAE.CREF(cr2,_),val}) := exp;
   valStr := ExpressionDump.printExpStr(val);
-  p1 := List.position(ComponentReference.crefModelicaStr(cr1),uncertainVars);
-  p2 := List.position(ComponentReference.crefModelicaStr(cr2),uncertainVars);
+  p1 := List.position(ComponentReference.crefStr(cr1),uncertainVars);
+  p2 := List.position(ComponentReference.crefStr(cr2),uncertainVars);
   plow := intMin(p1,p2);
   phigh := intMax(p1,p2);
   str := "RS["+&intString(plow)+&","+&intString(phigh)+&"] = "+&valStr;
 end generateCorrelationMatrix3;   
   
-protected function generateCollectionDistributions "
-"
+protected function generateCollectionDistributions 
+"generate the collection distributions in the python script"
   input BackendDAE.BackendDAE dae;
   input list<tuple<String,String>> distributionVarLst;
   output String collectionDistributions;
@@ -652,13 +663,12 @@ algorithm
   str := Util.tuple21(tpl)+& ".add(Distribution(" +& Util.tuple22(distVarTpl) +& ",\"" +&Util.tuple21(distVarTpl)+&"\"))";  
 end generateCollectionDistributions2;
 
-protected function generateInputDescriptions "
-"
+protected function generateInputDescriptions 
+"generates the input variables for the XML wrapper"
   input BackendDAE.BackendDAE dae;
   output String inputDescriptions;
 algorithm
-  inputDescriptions := "# input descriptions currently not used, set above";   
-
+  inputDescriptions := "# input descriptions currently not used, set above";
 end generateInputDescriptions;
 
 public function getFullSharePath
