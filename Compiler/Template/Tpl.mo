@@ -1255,8 +1255,7 @@ public function iterSeparatorString
   output Integer outActualPositionOnLine;
   output Boolean outAtStartOfLine;
 algorithm
-  (outActualPositionOnLine, outAtStartOfLine)
-   := matchcontinue (inTokens, inSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
+  (outActualPositionOnLine, outAtStartOfLine) := match (inTokens, inSeparator, inActualPositionOnLine, inAtStartOfLine, inAfterNewLineIndent)
     local
       Tokens toks;
       StringToken tok, septok;
@@ -1275,13 +1274,7 @@ algorithm
          = iterSeparatorString(toks, septok, pos, isstart, aind);
       then 
         (pos, isstart);
-    //should not ever happen 
-    case (_,_,_,_,_)
-      equation
-        Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.iterSeparatorString failed.\n");
-      then 
-        fail();
-  end matchcontinue;
+  end match;
 end iterSeparatorString;
 
 
