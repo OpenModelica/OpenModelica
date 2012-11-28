@@ -43,6 +43,8 @@ build/lib/omc/libgc.so.1: 3rdParty/gc-7.2/.libs/libgc.so.1 mkbuilddirs
 	cp -pP $< $@
 build/lib/omc/libgc.so.1.0.3: 3rdParty/gc-7.2/.libs/libgc.so.1.0.3 mkbuilddirs
 	cp -pP $< $@
+3rdParty/gc-7.2/.libs/libgc.so 3rdParty/gc-7.2/.libs/libgc.so.1 3rdParty/gc-7.2/.libs/libgc.so.1.0.3: 3rdParty/gc-7.2/Makefile
+	$(MAKE) -C 3rdParty/gc-7.2/
 
 qtclean-common:
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
