@@ -280,7 +280,7 @@ public function dgeqpf
   output list<Integer> outJPVT;
   output list<Real> outTAU;
   output Integer outINFO;
-  external "C" LapackImpl__dgeqpf(inM, inN, inA, inLDA, inWORK, inJPVT, outA,
+  external "C" LapackImpl__dgeqpf(inM, inN, inA, inLDA, inJPVT, inWORK, outA,
     outJPVT, outTAU, outINFO) annotation(Library = {"omcruntime", "Lapack"});
 end dgeqpf;
 
