@@ -59,6 +59,11 @@ docs: mkbuilddirs omlibrary
 	# man pages
 	(cd doc/manpages/ && for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
+boehm-gc: 3rdParty/gc-7.2/Makefile
+	$(MAKE) -C 3rdParty/gc-7.2/
+3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
+	(cd 3rdParty/gc-7.2 && ./configure --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)")
+
 fmi: interactive
 	$(MAKE) -C SimulationRuntime/fmi/import -f $(defaultMakefileTarget)
 	(cp -p SimulationRuntime/fmi/import/fmuWrapper.h SimulationRuntime/fmi/import/xmlparser.h $(builddir_inc))
