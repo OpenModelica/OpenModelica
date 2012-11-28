@@ -22,7 +22,7 @@ INSTALL_MANDIR     = ${DESTDIR}${datadir}/man/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 INSTALL_LOCALEDIR  = ${DESTDIR}${datadir}/locale
 
-.PHONY : interactive omc release qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall 
+.PHONY : interactive omc release qtclient mosh all mkbuilddirs fmi test install-dirs susan susan_all susgen sustst install-python install-openturns runtimeCPPinstall boehm-gc
 
 mkbuilddirs:
 	if [ "$(EXE)" = ".app" ]; then mkdir -p $(builddir_app); fi
@@ -45,7 +45,7 @@ install-python:
 install-openturns: mkbuilddirs
 	(time cp SimulationRuntime/OpenTurns/* $(builddir_share)/omc/scripts/OpenTurns/)
 
-interactive: .testvariables mkbuilddirs
+interactive: .testvariables mkbuilddirs boehm-gc
 	$(MAKE) -C SimulationRuntime/interactive -f $(defaultMakefileTarget)
 	# Depends on libinteractive.a
 	$(MAKE) -C SimulationRuntime/c -f $(defaultMakefileTarget)
@@ -59,7 +59,27 @@ docs: mkbuilddirs omlibrary
 	# man pages
 	(cd doc/manpages/ && for f in *.1; do gzip $$f -c > ../../$(builddir_man)/man1/$$f.gz && touch -r $$f ../../$(builddir_man)/man1/$$f.gz; done)
 
-boehm-gc: 3rdParty/gc-7.2/Makefile
+GC_HEADERS=gc.h gc_allocator.h gc_amiga_redirects.h gc_backptr.h gc_config_macros.h gc_gcj.h
+libgc-dev: /usr/include/gc/gc_inline.h
+libgc-dev: /usr/include/gc/gc_mark.h
+libgc-dev: /usr/include/gc/gc_pthread_redirects.h
+libgc-dev: /usr/include/gc/gc_tiny_fl.h
+libgc-dev: /usr/include/gc/gc_typed.h
+libgc-dev: /usr/include/gc/gc_version.h
+libgc-dev: /usr/include/gc/leak_detector.h
+libgc-dev: /usr/include/gc/new_gc_alloc.h
+libgc-dev: /usr/include/gc/weakpointer.h
+
+boehm-gc: build/lib/omc/libgc.a build/include/omc/gc.h build/include/omc/gc_config_macros.h build/include/omc/gc_version.h
+build/include/omc/gc.h: 3rdParty/gc-7.2/include/gc.h
+	cp $< $@
+build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h
+	cp $< $@
+build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h
+	cp $< $@
+build/lib/omc/libgc.a: 3rdParty/gc-7.2/.libs/libgc.a
+	cp $< $@
+3rdParty/gc-7.2/.libs/libgc.a: 3rdParty/gc-7.2/Makefile
 	$(MAKE) -C 3rdParty/gc-7.2/
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
 	(cd 3rdParty/gc-7.2 && ./configure --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)")
@@ -208,7 +228,10 @@ distclean: clean
 	rm -rf build/
 fmil-clean:
 	rm -rf 3rdParty/FMIL/build 3rdParty/FMIL/install 3rdParty/FMIL/Makefile
-clean: qtclean fmil-clean opencl_rt_clean
+gc-clean:
+	if test -f 3rdParty/gc-7.2/Makefile; then make -C 3rdParty/gc-7.2 clean; fi
+	rm -f 3rdParty/gc-7.2/Makefile
+clean: qtclean fmil-clean opencl_rt_clean gc-clean
 	(cd SimulationRuntime/c && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd SimulationRuntime/interactive && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)

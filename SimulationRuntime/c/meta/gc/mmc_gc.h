@@ -47,13 +47,11 @@
 #ifndef META_MODELICA_GC_H_
 #define META_MODELICA_GC_H_
 
-/* uncomment this to use the MetaModelica Garbage collector
-#define _MMC_GC_ 1
-*/
+/* uncomment this to use the MetaModelica Garbage collector */
+/* #define _MMC_GC_ 1 */
 
-/* uncomment this to use the BOEHM Garbage collector
-#define _MMC_USE_BOEHM_GC_
-*/
+/* uncomment this to use the BOEHM Garbage collector */
+/* #define _MMC_USE_BOEHM_GC_ */
 
 #if defined(__cplusplus)
 extern "C" {

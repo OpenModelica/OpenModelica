@@ -6,7 +6,7 @@
 
 include Makefile.objs
 
-CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc -I./simulation/libf2c/
+CPPFLAGS = -I. -I$(UTILPATH) -I. -I$(METAPATH) -I$(METAPATH)gc -I./simulation/libf2c/ -I$(top_builddir)/3rdParty/gc-7.2/include
 CFLAGS = $(CPPFLAGS) $(CONFIG_CFLAGS) -Wall -pedantic $(EXTRA_CFLAGS)
 CXXFLAGS = $(CFLAGS)
 FFLAGS  = -O -fexceptions

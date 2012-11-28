@@ -627,9 +627,9 @@ else
 fi
 
 if test "Darwin" != `uname`; then
-  RT_LDFLAGS="$RT_LDFLAGS -lrt $OPENMP"
+  RT_LDFLAGS="$RT_LDFLAGS -lrt -lgc $OPENMP"
 else
-  RT_LDFLAGS="$RT_LDFLAGS -liconv $OPENMP"
+  RT_LDFLAGS="$RT_LDFLAGS -liconv -lgc $OPENMP"
 fi
 
 dnl should we compile modpar
