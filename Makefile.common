@@ -70,16 +70,16 @@ libgc-dev: /usr/include/gc/leak_detector.h
 libgc-dev: /usr/include/gc/new_gc_alloc.h
 libgc-dev: /usr/include/gc/weakpointer.h
 
-boehm-gc: build/lib/omc/libgc.a build/include/omc/gc.h build/include/omc/gc_config_macros.h build/include/omc/gc_version.h
-build/include/omc/gc.h: 3rdParty/gc-7.2/include/gc.h
+boehm-gc: mkbuilddirs build/lib/omc/libgc.so build/include/omc/gc.h build/include/omc/gc_config_macros.h build/include/omc/gc_version.h
+build/include/omc/gc.h: 3rdParty/gc-7.2/include/gc.h mkbuilddirs
 	cp $< $@
-build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h
+build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h mkbuilddirs
 	cp $< $@
-build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h
+build/include/omc/gc_version.h: 3rdParty/gc-7.2/include/gc_version.h mkbuilddirs
 	cp $< $@
-build/lib/omc/libgc.a: 3rdParty/gc-7.2/.libs/libgc.a
+build/lib/omc/libgc.so: 3rdParty/gc-7.2/.libs/libgc.so mkbuilddirs
 	cp $< $@
-3rdParty/gc-7.2/.libs/libgc.a: 3rdParty/gc-7.2/Makefile
+3rdParty/gc-7.2/.libs/libgc.so: 3rdParty/gc-7.2/Makefile
 	$(MAKE) -C 3rdParty/gc-7.2/
 3rdParty/gc-7.2/Makefile: 3rdParty/gc-7.2/Makefile.in 3rdParty/gc-7.2/configure
 	(cd 3rdParty/gc-7.2 && ./configure --enable-large-config CC="$(CC)" CXX="$(CXX)" CFLAGS="$(CFLAGS)")
