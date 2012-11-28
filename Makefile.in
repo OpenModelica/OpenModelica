@@ -39,11 +39,11 @@ omcd: difftool interactive docs fmi fmil opencl_rt
 boehm-gc-lib: build/lib/omc/libgc.so build/lib/omc/libgc.so.1 build/lib/omc/libgc.so.1.0.3
 build/lib/omc/libgc.so: 3rdParty/gc-7.2/.libs/libgc.so mkbuilddirs
 	cp -pP $< $@
-build/lib/omc/libgc.so.1: 3rdParty/gc-7.2/.libs/libgc.so.1 mkbuilddirs
+build/lib/omc/libgc.so.1: 3rdParty/gc-7.2/.libs/libgc.so.1 3rdParty/gc-7.2/.libs/libgc.so mkbuilddirs
 	cp -pP $< $@
-build/lib/omc/libgc.so.1.0.3: 3rdParty/gc-7.2/.libs/libgc.so.1.0.3 mkbuilddirs
+build/lib/omc/libgc.so.1.0.3: 3rdParty/gc-7.2/.libs/libgc.so.1.0.3 build/lib/omc/libgc.so mkbuilddirs
 	cp -pP $< $@
-3rdParty/gc-7.2/.libs/libgc.so 3rdParty/gc-7.2/.libs/libgc.so.1 3rdParty/gc-7.2/.libs/libgc.so.1.0.3: 3rdParty/gc-7.2/Makefile
+3rdParty/gc-7.2/.libs/libgc.so: 3rdParty/gc-7.2/Makefile
 	$(MAKE) -C 3rdParty/gc-7.2/
 
 qtclean-common:
