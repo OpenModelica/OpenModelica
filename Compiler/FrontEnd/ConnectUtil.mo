@@ -2158,7 +2158,7 @@ protected function getAllEquCrefs
   input list<DAE.ComponentRef> inAcc;
   output list<DAE.ComponentRef> outCrefs;
 algorithm
-  outCrefs := matchcontinue(inSets, inAcc)
+  outCrefs := match (inSets, inAcc)
     local 
       list<Set> rest;
       list<ConnectorElement> elms;
@@ -2187,7 +2187,7 @@ algorithm
     */
     case (_::rest, _)
       then getAllEquCrefs(rest, inAcc); 
-  end matchcontinue;
+  end match;
 end getAllEquCrefs;
 
 protected function generateSetArray
