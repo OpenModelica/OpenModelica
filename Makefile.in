@@ -36,6 +36,14 @@ omc: difftool interactive docs fmi fmil opencl_rt
 omcd: difftool interactive docs fmi fmil opencl_rt
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
+boehm-gc-lib: build/lib/omc/libgc.so build/lib/omc/libgc.so.1 build/lib/omc/libgc.so.1.0.3
+build/lib/omc/libgc.so: 3rdParty/gc-7.2/.libs/libgc.so mkbuilddirs
+	cp -pP $< $@
+build/lib/omc/libgc.so.1: 3rdParty/gc-7.2/.libs/libgc.so.1 mkbuilddirs
+	cp -pP $< $@
+build/lib/omc/libgc.so.1.0.3: 3rdParty/gc-7.2/.libs/libgc.so.1.0.3 mkbuilddirs
+	cp -pP $< $@
+
 qtclean-common:
 	rm -rf OMShell/bin/OMShell$(EXE) OMShell/OMShellGUI/omc_communication.*
 	rm -rf OMNotebook/bin/OMNotebook$(EXE) OMNotebook/OMNotebookGUI/omc_communication.*

@@ -2558,7 +2558,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   CFLAGS=$(CFLAGS_BASED_ON_INIT_FILE) <%makefileParams.cflags%> <%match sopt case SOME(s as SIMULATION_SETTINGS(__)) then s.cflags /* From the simulate() command */%>
   CPPFLAGS=-I"<%makefileParams.omhome%>/include/omc" -I. <%dirExtra%> <%makefileParams.includes ; separator=" "%>
   LIBSIMULATIONRUNTIMEC=<% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then "-Wl,-whole-archive "%>-lSimulationRuntimeC <% if boolAnd(boolNot(stringEq(os(), "OSX")), boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS))) then " -Wl,-no-whole-archive"%> <% if stringEq(makefileParams.platform, "win32") then "" else " -ldl"%>
-  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' $(LIBSIMULATIONRUNTIMEC) -linteractive <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   FILEPREFIX=<%fileNamePrefix%>
   MAINFILE=$(FILEPREFIX)<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
@@ -2785,7 +2785,7 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
   CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.includes ; separator=" "%> <%makefileParams.cflags%>
-  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -lOpenModelicaRuntimeC <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
+  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" -Wl,-rpath,'<%makefileParams.omhome%>/lib/omc' -lOpenModelicaRuntimeC <%ParModelicaLibs%> <%makefileParams.ldflags%> <%makefileParams.runtimelibs%>
   PERL=perl
   MAINFILE=<%name%><% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then ".conv"%>.c
   
