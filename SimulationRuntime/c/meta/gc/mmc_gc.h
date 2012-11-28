@@ -51,7 +51,10 @@
 /* #define _MMC_GC_ 1 */
 
 /* uncomment this to use the BOEHM Garbage collector */
+
+#if !defined(_MSC_VER)  /* no gc on MSVC! */
 #define _MMC_USE_BOEHM_GC_
+#endif
 
 #if defined(__cplusplus)
 extern "C" {
