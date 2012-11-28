@@ -1864,6 +1864,9 @@ algorithm
          //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
         
+        // generate initalsystem before replacing pre(alias)!
+        (_, initDAE) = BackendDAEUtil.solveInitialSystem(dlow);
+        
         // replace pre(alias) in time-equations
         dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
@@ -1890,7 +1893,6 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // initialization stuff
-        (_, initDAE) = BackendDAEUtil.solveInitialSystem(dlow);   // generate initalsystem
         (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, {}, helpVarInfo);
         (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
  
