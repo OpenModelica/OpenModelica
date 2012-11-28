@@ -590,6 +590,10 @@ void *mmc_alloc_words(unsigned nwords)
 #define LARGE_CONFIG 1
 #include <gc.h>
 
+static mmc_GC_state_type x_mmc_GC_state;
+mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
+mmc_GC_local_state_type dummy_local_GC_state = 0;
+
 /* primary allocation routine for MetaModelica */
 void *mmc_alloc_words(unsigned nwords)
 {
@@ -597,6 +601,10 @@ void *mmc_alloc_words(unsigned nwords)
 }
 
 #else /* NO GC */
+
+static mmc_GC_state_type x_mmc_GC_state;
+mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
+mmc_GC_local_state_type dummy_local_GC_state = 0;
 
 void *mmc_alloc_bytes(unsigned nbytes)
 {
@@ -625,10 +633,6 @@ void *mmc_alloc_bytes(unsigned nbytes)
   /* fprintf(stderr, "2 mmc_alloc_bytes(%ld): %ld,%ld => %ld\n", nbytes, mmc_cur_malloc_buf, mmc_cur_malloc_buf_ix, p); */
   return p;
 }
-
-static mmc_GC_state_type x_mmc_GC_state;
-mmc_GC_state_type *mmc_GC_state = &x_mmc_GC_state;
-mmc_GC_local_state_type dummy_local_GC_state = 0;
 
 /* primary allocation routine for MetaModelica */
 void *mmc_alloc_words(unsigned nwords)
