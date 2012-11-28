@@ -6317,14 +6317,15 @@ public function traverseEquationToScalarResidualForm "function traverseEquationT
   input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
   output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
 algorithm
-  outTpl := matchcontinue (inTpl)
+  outTpl := matchcontinue(inTpl)
     local
       list<BackendDAE.Equation> eqns,reqn;
       BackendDAE.Equation eqn;
-    case ((eqn,eqns)) equation
+      
+    case ((eqn, eqns)) equation
       reqn = BackendEquation.equationToScalarResidualForm(eqn);
       eqns = listAppend(reqn,eqns);
-    then ((eqn,eqns));
+    then ((eqn, eqns));
     
     case _
     then inTpl;
@@ -9069,7 +9070,7 @@ public function solveInitialSystem "public function solveInitialSystem
   This function generates a algebraic system of equations for the initialization and solves it."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
-  output BackendDAE.BackendDAE outInitDAE;
+  output Option<BackendDAE.BackendDAE> outInitDAE;
 algorithm
   (outDAE, outInitDAE) := matchcontinue(inDAE)
     local
@@ -9138,11 +9139,10 @@ algorithm
       
       // now let's solve the system!
       initdae = solveInitialSystem1(vars, eqns, inDAE, initdae);
-    then(inDAE, initdae);
+    then (inDAE, SOME(initdae));
       
     case BackendDAE.DAE(systs, shared)
-      then
-        (inDAE,BackendDAE.DAE({}, shared));      
+    then (inDAE, NONE());
   end matchcontinue;
 end solveInitialSystem;
 

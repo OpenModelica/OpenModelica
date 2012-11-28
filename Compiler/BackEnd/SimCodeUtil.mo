@@ -1811,7 +1811,8 @@ algorithm
       String cname,   fileDir;
       Integer n_h,maxDelayedExpIndex, uniqueEqIndex, numberofNonLinearSys, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms;
       list<SimCode.HelpVarInfo> helpVarInfo;
-      BackendDAE.BackendDAE dlow,dlow2,initDAE;
+      BackendDAE.BackendDAE dlow,dlow2;
+      Option<BackendDAE.BackendDAE> initDAE;
       DAE.FunctionTree functionTree;
       BackendDAE.SymbolicJacobians symJacs;
       Absyn.Path class_;
@@ -1862,9 +1863,6 @@ algorithm
         ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
          //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
         cname = Absyn.pathStringNoQual(class_);
-
-        // generate initalsystem
-        (_, initDAE) = BackendDAEUtil.solveInitialSystem(dlow);
         
         // replace pre(alias) in time-equations
         dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
@@ -1892,6 +1890,7 @@ algorithm
         n_h = listLength(helpVarInfo);
         
         // initialization stuff
+        (_, initDAE) = BackendDAEUtil.solveInitialSystem(dlow);   // generate initalsystem
         (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, {}, helpVarInfo);
         (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
  
@@ -4309,8 +4308,7 @@ protected function createNonlinearResidualEquations
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
 algorithm
-  (eqSystems,ouniqueEqIndex,otempvars) :=
-  matchcontinue (eqs,iuniqueEqIndex,itempvars)
+  (eqSystems,ouniqueEqIndex,otempvars) := matchcontinue (eqs, iuniqueEqIndex, itempvars)
     local
       Integer size,uniqueEqIndex;
       DAE.Exp res_exp,e1,e2,e;
@@ -4321,7 +4319,6 @@ algorithm
       list<Integer> ds;
       list<Option<Integer>> ad;
       DAE.ComponentRef left;
-      String eqstr;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source;
       list<tuple<DAE.Exp,DAE.Exp>> exptl,exptl1;
@@ -4330,109 +4327,96 @@ algorithm
       list<SimCode.SimVar> tempvars;
       BackendVarTransform.VariableReplacements repl;
       DAE.Type ty;
-    case ({},_,_) then ({},iuniqueEqIndex,itempvars);
-      
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source) :: rest,_,_)
-      equation
-        res_exp = createNonlinearResidualExp(e1,e2);
-        res_exp = replaceDerOpInExp(res_exp);
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
-      then
-        (SimCode.SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
+      String errorMessage;
+
+    case ({},_,_)
+    then ({},iuniqueEqIndex,itempvars);
+
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source) :: rest,_,_) equation
+      res_exp = createNonlinearResidualExp(e1,e2);
+      res_exp = replaceDerOpInExp(res_exp);
+      (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
+    then (SimCode.SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
         
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: rest,_,_)
-      equation
-        (res_exp,_) = ExpressionSimplify.simplify(e);
-        res_exp = replaceDerOpInExp(res_exp);
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
-      then
-        (SimCode.SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
-   
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: rest,_,_) equation
+      (res_exp,_) = ExpressionSimplify.simplify(e);
+      res_exp = replaceDerOpInExp(res_exp);
+      (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,iuniqueEqIndex,itempvars);
+    then (SimCode.SES_RESIDUAL(uniqueEqIndex,res_exp,source) :: eqSystemsRest,uniqueEqIndex+1,tempvars);
+
     // An array equation
-    case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2, source=source) :: rest,_,_)
-      equation
-        ty = Expression.typeof(e1);
-        left = ComponentReference.makeCrefIdent("$TMP_" +& intString(iuniqueEqIndex), ty, {});
-        res_exp = createNonlinearResidualExp(e1,e2);
-        res_exp = replaceDerOpInExp(res_exp);
-        crefstmp = ComponentReference.expandCref(left,false);
-        explst1 = List.map(crefstmp,Expression.crefExp);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(explst1,makeSES_RESIDUAL,source,iuniqueEqIndex);
-        eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex,left,res_exp,source)::eqSystlst;
-        tempvars = greateArrayTempVar(left,ds,explst1,itempvars);
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex+1,tempvars);
-        eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);                
-      then 
-        (eqSystemsRest,uniqueEqIndex+1,tempvars);     
+    case (BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1, right=e2, source=source) :: rest,_,_) equation
+      ty = Expression.typeof(e1);
+      left = ComponentReference.makeCrefIdent("$TMP_" +& intString(iuniqueEqIndex), ty, {});
+      res_exp = createNonlinearResidualExp(e1,e2);
+      res_exp = replaceDerOpInExp(res_exp);
+      crefstmp = ComponentReference.expandCref(left,false);
+      explst1 = List.map(crefstmp,Expression.crefExp);
+      (eqSystlst,uniqueEqIndex) = List.map1Fold(explst1,makeSES_RESIDUAL,source,iuniqueEqIndex);
+      eqSystlst = SimCode.SES_ARRAY_CALL_ASSIGN(uniqueEqIndex,left,res_exp,source)::eqSystlst;
+      tempvars = greateArrayTempVar(left,ds,explst1,itempvars);
+      (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex+1,tempvars);
+      eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);                
+    then  (eqSystemsRest,uniqueEqIndex+1,tempvars);
 
-        // An complex equation
-    case (BackendDAE.COMPLEX_EQUATION(size=size,left=e1, right=e2, source=source) :: rest,_,_)
-      equation
-        (e1,_) = ExpressionSimplify.simplify(e1);
-        e1 = replaceDerOpInExp(e1);
-        (e2,_) = ExpressionSimplify.simplify(e2);
-        e2 = replaceDerOpInExp(e2);
-        (eqSystlst,uniqueEqIndex,tempvars) = createNonlinearResidualEquationsComplex(e1,e2,source,iuniqueEqIndex,itempvars);
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex,tempvars);
-        eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
-      then 
-        (eqSystemsRest,uniqueEqIndex,tempvars);        
+    // An complex equation
+    case (BackendDAE.COMPLEX_EQUATION(size=size,left=e1, right=e2, source=source) :: rest,_,_) equation
+      (e1,_) = ExpressionSimplify.simplify(e1);
+      e1 = replaceDerOpInExp(e1);
+      (e2,_) = ExpressionSimplify.simplify(e2);
+      e2 = replaceDerOpInExp(e2);
+      (eqSystlst,uniqueEqIndex,tempvars) = createNonlinearResidualEquationsComplex(e1,e2,source,iuniqueEqIndex,itempvars);
+      (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex,tempvars);
+      eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
+    then (eqSystemsRest,uniqueEqIndex,tempvars);        
 
-        
-    case ((eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = left, right = e2)))::rest,_,_)
-      equation
-        // This following does not work. It does not take index or elseWhen into account.
-        // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
-        /*
-         tp = Expression.typeof(e2);
-         e1 = Expression.makeCrefExp(left,tp);
-         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
-         res_exp = ExpressionSimplify.simplify(res_exp);
-         res_exp = replaceDerOpInExp(res_exp);
-         (eqSystemsRest) = createNonlinearResidualEquations(rest,repl,uniqueEqIndex );
-         then
-         (SimCode.SES_RESIDUAL(0,res_exp) :: eqSystemsRest,entrylst1);
-         */
-        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"non-linear equations within when-equations","Perform non-linear operations outside the when-equation (this is slower, but works)"},BackendEquation.equationInfo(eq));
-      then
-        fail();
+    case ((eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(left = left, right = e2)))::rest,_,_) equation
+      // This following does not work. It does not take index or elseWhen into account.
+      // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
+      /*
+       tp = Expression.typeof(e2);
+       e1 = Expression.makeCrefExp(left,tp);
+       res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+       res_exp = ExpressionSimplify.simplify(res_exp);
+       res_exp = replaceDerOpInExp(res_exp);
+       (eqSystemsRest) = createNonlinearResidualEquations(rest,repl,uniqueEqIndex );
+       then
+       (SimCode.SES_RESIDUAL(0,res_exp) :: eqSystemsRest,entrylst1);
+       */
+      Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"non-linear equations within when-equations","Perform non-linear operations outside the when-equation (this is slower, but works)"},BackendEquation.equationInfo(eq));
+    then fail();
    
-    case ((BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements),source=source) :: rest),_,_)
-      equation
-        crefs = CheckModel.algorithmOutputs(DAE.ALGORITHM_STMTS(algStatements));
-        //BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ",", "\n"));
-        (crefstmp,repl) = createTmpCrefs(crefs, iuniqueEqIndex, {}, BackendVarTransform.emptyReplacements());
-        //BackendDump.debugStrCrefLstStr(("Crefs : ", crefstmp, ",", "\n"));
-        explst = List.map(crefs,Expression.crefExp);
-        explst = List.map(explst,replaceDerOpInExp);
-        
-        //BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)},0);
-        (algStatements,_) = BackendVarTransform.replaceStatementLst(algStatements, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
-        //BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)},0);
-        
-        explst1 = List.map(crefstmp,Expression.crefExp);
-        explst1 = List.map(explst1,replaceDerOpInExp);
-        tempvars = greateTempVarsforCrefs(explst1,itempvars);
-        
-        // 0 = a - tmp        
-        exptl = List.threadTuple(explst,explst1);
-        (eqSystlst,uniqueEqIndex) = List.map1Fold(exptl,makeSES_RESIDUAL1,source,iuniqueEqIndex);
+    case ((BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(algStatements), source=source)::rest), _, _) equation
+      crefs = CheckModel.algorithmOutputs(DAE.ALGORITHM_STMTS(algStatements));
+      //BackendDump.debugStrCrefLstStr(("Crefs : ", crefs, ",", "\n"));
+      (crefstmp,repl) = createTmpCrefs(crefs, iuniqueEqIndex, {}, BackendVarTransform.emptyReplacements());
+      //BackendDump.debugStrCrefLstStr(("Crefs : ", crefstmp, ",", "\n"));
+      explst = List.map(crefs,Expression.crefExp);
+      explst = List.map(explst,replaceDerOpInExp);
+      
+      //BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)},0);
+      (algStatements, _) = BackendVarTransform.replaceStatementLst(algStatements, repl, SOME(BackendVarTransform.skipPreOperator), {}, false);
+      //BackendDump.dumpAlgorithms({DAE.ALGORITHM_STMTS(algStatements)},0);
+      
+      explst1 = List.map(crefstmp, Expression.crefExp);
+      explst1 = List.map(explst1, replaceDerOpInExp);
+      tempvars = greateTempVarsforCrefs(explst1, itempvars);
+      
+      // 0 = a - tmp        
+      exptl = List.threadTuple(explst, explst1);
+      (eqSystlst, uniqueEqIndex) = List.map1Fold(exptl, makeSES_RESIDUAL1, source, iuniqueEqIndex);
 
-        eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex,algStatements)::eqSystlst;
-        //Tpl.tplPrint(SimCodeDump.dumpEqs, eqSystlst);
-        
-        (eqSystemsRest,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(rest,uniqueEqIndex,tempvars);
-        eqSystemsRest = listAppend(eqSystlst,eqSystemsRest);
-      then
-        (eqSystemsRest,uniqueEqIndex+1,tempvars);   
+      eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex,algStatements)::eqSystlst;
+      //Tpl.tplPrint(SimCodeDump.dumpEqs, eqSystlst);
+      
+      (eqSystemsRest, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(rest, uniqueEqIndex, tempvars);
+      eqSystemsRest = listAppend(eqSystlst, eqSystemsRest);
+    then (eqSystemsRest, uniqueEqIndex+1, tempvars);
                 
-    case (eq::_,_,_)
-      equation
-        eqstr = BackendDump.equationStr(eq);
-        eqstr = stringAppend("SimCode.createNonlinearResidualEquations failed for equation: ",eqstr);
-        Error.addSourceMessage(Error.INTERNAL_ERROR, {eqstr},BackendEquation.equationInfo(eq));
-      then
-        fail();
+    case (eq::_, _, _) equation
+      errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createNonlinearResidualEquations failed for equation: " +& BackendDump.equationStr(eq);
+      Error.addSourceMessage(Error.INTERNAL_ERROR, {errorMessage}, BackendEquation.equationInfo(eq));
+    then fail();
   end matchcontinue;
 end createNonlinearResidualEquations;
 
@@ -6410,7 +6394,7 @@ protected function createInitialResiduals "function createInitialResiduals
   author: lochel
   This function generates all initial_residuals."
   input BackendDAE.BackendDAE inDAE;
-  input BackendDAE.BackendDAE inInitDAE;
+  input Option<BackendDAE.BackendDAE> inInitDAE;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
   input list<SimCode.HelpVarInfo> helpVarInfo;
@@ -6439,10 +6423,10 @@ algorithm
       BackendDAE.Variables knvars,aliasVars;
       
     // try to solve the inital system symbolical.
-    case (_, BackendDAE.DAE(systs, 
-                         shared as BackendDAE.SHARED(knownVars=knvars,
-                                                     aliasVars=aliasVars,
-                                                     removedEqs=removedEqs)),  _, _, _) equation
+    case (_, SOME(BackendDAE.DAE(systs, 
+                                 shared as BackendDAE.SHARED(knownVars=knvars,
+                                                             aliasVars=aliasVars,
+                                                             removedEqs=removedEqs))),  _, _, _) equation
       true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
 
       // generate equations from the solved systems
@@ -6465,7 +6449,7 @@ algorithm
     case (_, _, _, _, _) equation
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars);
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.\n");
+      Debug.fcall(Flags.SOLVE_INITIAL_SYSTEM, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.\n");
     then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation

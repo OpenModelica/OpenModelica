@@ -7588,7 +7588,7 @@ algorithm
       DAE.Exp exp;
       DAE.ElementSource source "origin of equation";
       
-      String varName;
+      String varName, errorMessage;
       DAE.ComponentRef componentRef;
       BackendDAE.Equation currEquation;
       BackendDAE.Var currVariable;
@@ -7606,6 +7606,11 @@ algorithm
 
       (equationList, variableList) = convertInitialResidualsIntoInitialEquations2(restEquationList, index+1,currEquation::iEquationList,currVariable::iVariableList);
     then (equationList, variableList);
+    
+    case(currEquation::_, _,_,_) equation
+      errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function convertInitialResidualsIntoInitialEquations2 failed: " +& BackendDump.equationStr(currEquation);
+      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+    then fail();
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function convertInitialResidualsIntoInitialEquations2 failed"});
@@ -7677,9 +7682,11 @@ algorithm
     
     case(DAE) equation
       (initialEqs_lst, _, _) = collectInitialEquations(DAE);
-      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
       
-      //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals", false);
+      //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals 1", false);
+      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
+      //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals 2", false);
+      
       (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
       initialEqs = BackendDAEUtil.listEquation(initialEquationList);
       initialVars = BackendDAEUtil.listVar1(initialVariableList);
@@ -7763,9 +7770,11 @@ algorithm
     
     case(DAE) equation
       (initialEqs_lst, _, _) = collectInitialEquations(DAE);
-      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
       
-      //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals", false);
+      //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals 1", false);
+      initialEqs_lst = BackendEquation.traverseBackendDAEEqns(BackendDAEUtil.listEquation(initialEqs_lst), BackendDAEUtil.traverseEquationToScalarResidualForm, {});  // ugly
+      //BackendDump.dumpBackendDAEEqnList(initialEqs_lst, "initial residuals 2", false);
+      
       (initialEquationList, initialVariableList) = convertInitialResidualsIntoInitialEquations(initialEqs_lst);
       initialEqs = BackendDAEUtil.listEquation(initialEquationList);
       initialVars = BackendDAEUtil.listVar1(initialVariableList);
