@@ -891,7 +891,7 @@ algorithm
         astate = BackendVariable.isStateVar(av);
         vstate = BackendVariable.isStateVar(v);
         vrepl = replaceableAliasNew(v);
-        (av as BackendDAE.VAR(varName=acr),ia,v as BackendDAE.VAR(varName=cr),i) = switchStateAlias(astate,vstate,vrepl,av,ia,v,i);        
+        (av as BackendDAE.VAR(varName=acr),ia,v as BackendDAE.VAR(varName=cr),i) = switchStateAlias(astate,vstate,vrepl,varskn,av,ia,v,i);        
         // move var to alias vars
         cre = Expression.crefExp(cr);
         cre = Debug.bcallret1(negate,Expression.negate,cre,cre);
@@ -923,6 +923,7 @@ protected function switchStateAlias
  input Boolean astate;
  input Boolean vstate;
  input Boolean vrepl;
+ input Boolean varskn;
  input BackendDAE.Var in_av;
  input Integer in_ia;
  input BackendDAE.Var in_v;
@@ -932,23 +933,25 @@ protected function switchStateAlias
  output BackendDAE.Var v;
  output Integer i;
 algorithm
-  (av,ia,v,i) := match(astate,vstate,vrepl,in_av,in_ia,in_v,in_i)
+  (av,ia,v,i) := match(astate,vstate,vrepl,varskn,in_av,in_ia,in_v,in_i)
     local
       Integer s,sa;
     // no state keep it like it is
-    case (false,_,_,_,_,_,_) then (in_av,in_ia,in_v,in_i);
+    case (false,_,_,_,_,_,_,_) then (in_av,in_ia,in_v,in_i);
     // alias state, var no state and replaceable -> switch
-    case (true,false,true,_,_,_,_) then (in_v,in_i,in_av,in_ia);
+    case (true,false,true,_,_,_,_,_) then (in_v,in_i,in_av,in_ia);
     // alias state, var state -> check StateSelect
-    case (true,true,_,_,_,_,_)
+    case (true,true,_,_,_,_,_,_)
       equation
         sa = BackendVariable.varStateSelectPrioAlias(in_av);
         s = BackendVariable.varStateSelectPrioAlias(in_v);
         ((av,ia,v,i)) = Util.if_(intGt(sa,s),(in_v,in_i,in_av,in_ia),(in_av,in_ia,in_v,in_i));
       then 
         (av,ia,v,i);
+    // alias state, var not replacable but known -> replace
+    case (true,_,false,true,_,_,_,_) then (in_av,in_ia,in_v,in_i);
     // alias state, var not replacable -> do not replace
-    case (true,_,false,_,_,_,_) then fail();
+    case (true,_,false,false,_,_,_,_) then fail();
   end match;
 end switchStateAlias;
 
@@ -1090,7 +1093,7 @@ algorithm
       BackendDAE.VarKind kind;
     case BackendDAE.VAR(varKind=kind)
       equation
-        false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
+        //false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
         false = BackendVariable.isVarOnTopLevelAndInput(var);

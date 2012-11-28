@@ -743,10 +743,10 @@ algorithm
   (outVarKind) := matchcontinue (inVarKind,inType,inComponentRef,inVarDirection,inConnectorType,daeAttr)
     // variable -> state if have stateSelect=StateSelect.always
     case (DAE.VARIABLE(),_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.ALWAYS()))))
-    then (BackendDAE.STATE());
+      then (BackendDAE.STATE());
     // variable -> state if have stateSelect=StateSelect.prefer
     case (DAE.VARIABLE(),_,_,_,_,SOME(DAE.VAR_ATTR_REAL(stateSelectOption = SOME(DAE.PREFER()))))
-    then (BackendDAE.STATE());
+      then (BackendDAE.STATE());
 
     case (DAE.VARIABLE(),DAE.T_BOOL(varLst = _),_,_,_,_)
       equation

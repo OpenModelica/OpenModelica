@@ -745,7 +745,10 @@ constant ConfigFlag NO_TEARING = CONFIG_FLAG(43, "noTearing",
   Util.gettext("Disables tearing at all."));
 constant ConfigFlag DYNAMIC_PIVOT = CONFIG_FLAG(44, "dynamicPivot",
   NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
-  Util.gettext("Enable dynamic pivoting of states during simulation. Works only with dynamic state selection"));  
+  Util.gettext("Enable dynamic pivoting of states during simulation. Works only with dynamic state selection"));
+constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(45, "dumpTarget",
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
+  Util.gettext("rederect the dump to file. If file ends with .html HTML code is generated."));
 
 // This is a list of all configuration flags. A flag can not be used unless it's
 // in this list, and the list is checked at initialization so that all flags are
@@ -794,7 +797,8 @@ constant list<ConfigFlag> allConfigFlags = {
   LOCALE_FLAG,
   DEFAULT_OPENCL_DEVICE,
   NO_TEARING,
-  DYNAMIC_PIVOT
+  DYNAMIC_PIVOT,
+  DUMP_TARGET
 };
 
 public function new

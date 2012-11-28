@@ -46,18 +46,20 @@ protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendVariable;
 protected import BackendEquation;
+protected import ClassInf;
 protected import ComponentReference;
 protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
+protected import DumpHTML;
 protected import Expression;
 protected import ExpressionDump;
 protected import Flags;
 protected import IOStream;
 protected import List;
 protected import SCode;
+protected import System;
 protected import Util;
-protected import ClassInf;
 
 public function printComponentRefStrDIVISION
   input DAE.ComponentRef inCref;
@@ -598,20 +600,14 @@ public function dump
 "function: dump
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
+protected
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
 algorithm
-  _:=
-  match (inBackendDAE)
-    local
-      BackendDAE.EqSystems eqs;
-      BackendDAE.Shared shared;
-    case (BackendDAE.DAE(eqs,shared))
-      equation
-        List.map_0(eqs,dumpEqSystem);
-        print("\n");
-        dumpShared(shared);
-      then
-        ();
-  end match;
+  BackendDAE.DAE(eqs,shared) := inBackendDAE;
+  List.map_0(eqs,dumpEqSystem);
+  print("\n");
+  dumpShared(shared);  
 end dump;
 
 public function dumpOption
@@ -636,74 +632,42 @@ public function dumpEqSystem
 "function: dumpEqSystem
   This function dumps the BackendDAE.EqSystem representaton to stdout."
   input BackendDAE.EqSystem inEqSystem;
+protected
+  list<BackendDAE.Var> vars;
+  Integer varlen,eqnlen,eqnssize;
+  String varlen_str,eqnlen_str;
+  list<BackendDAE.Equation> eqnsl;
+  BackendDAE.Variables vars1;
+  BackendDAE.EquationArray eqns;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrix> mT;
+  BackendDAE.Matching matching;     
 algorithm
-  _:=
-  match (inEqSystem)
-    local
-      list<BackendDAE.Var> vars;
-      Integer varlen,eqnlen,eqnssize;
-      String varlen_str,eqnlen_str;
-      list<BackendDAE.Equation> eqnsl;
-      BackendDAE.Variables vars1;
-      BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrix> mT;
-      BackendDAE.Matching matching;     
-    case (BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching))
-      equation
-        print("Variables (");
-        vars = BackendDAEUtil.varList(vars1);
-        varlen = listLength(vars);
-        varlen_str = intString(varlen);
-        print(varlen_str);
-        print(")\n");
-        print("=========\n");
-        dumpVars(vars);
-        print("\n");        
-        print("\nEquations (");
-        eqnsl = BackendDAEUtil.equationList(eqns);
-        eqnlen = listLength(eqnsl);
-        eqnlen_str = intString(eqnlen);
-        print(eqnlen_str);
-        eqnssize = BackendDAEUtil.equationSize(eqns);
-        print(", ");
-        print(intString(eqnssize));
-        print(")\n");
-        print("=========\n");
-        dumpEqns(eqnsl);
-        print("\n");
-        dumpOption(m,dumpIncidenceMatrix);
-        dumpOption(mT,dumpIncidenceMatrixT);
-        dumpFullMatching(matching);
-       then
-        ();
-    case (BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns))
-      equation
-        print("Variables (");
-        vars = BackendDAEUtil.varList(vars1);
-        varlen = listLength(vars);
-        varlen_str = intString(varlen);
-        print(varlen_str);
-        print(")\n");
-        print("=========\n");
-        dumpVars(vars);
-        print("\n");        
-        print("\nEquations (");
-        eqnsl = BackendDAEUtil.equationList(eqns);
-        eqnlen = listLength(eqnsl);
-        eqnlen_str = intString(eqnlen);
-        print(eqnlen_str);
-        eqnssize = BackendDAEUtil.equationSize(eqns);
-        print(", ");
-        print(intString(eqnssize));
-        print(")\n");        
-        print(")\n");
-        print("=========\n");
-        dumpEqns(eqnsl);
-        print("\n");
-       then
-        ();        
-  end match;
+  BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching) := inEqSystem;
+  print("Variables (");
+  vars := BackendDAEUtil.varList(vars1);
+  varlen := listLength(vars);
+  varlen_str := intString(varlen);
+  print(varlen_str);
+  print(")\n");
+  print("=========\n");
+  dumpVars(vars);
+  print("\n");        
+  print("\nEquations (");
+  eqnsl := BackendDAEUtil.equationList(eqns);
+  eqnlen := listLength(eqnsl);
+  eqnlen_str := intString(eqnlen);
+  print(eqnlen_str);
+  eqnssize := BackendDAEUtil.equationSize(eqns);
+  print(", ");
+  print(intString(eqnssize));
+  print(")\n");
+  print("=========\n");
+  dumpEqns(eqnsl);
+  print("\n");
+  dumpOption(m,dumpIncidenceMatrix);
+  dumpOption(mT,dumpIncidenceMatrixT);
+  dumpFullMatching(matching);
 end dumpEqSystem;
 
 public function dumpShared
@@ -809,6 +773,203 @@ algorithm
         ();
   end match;
 end dumpShared;
+
+protected function dumpEqSystemHTML
+"function: dumpEqSystemHTML
+  This function dumps the BackendDAE.EqSystem representaton to stdout."
+  input BackendDAE.EqSystem inEqSystem;
+  input String inPrefixIdstr;
+  input tuple<DumpHTML.Document,Integer> inTpl;
+  output tuple<DumpHTML.Document,Integer> outTpl;
+protected
+  list<BackendDAE.Var> vars;
+  Integer eqnlen,eqnssize,i;
+  String varlen_str,eqnlen_str,prefixIdstr,prefixId;
+  list<BackendDAE.Equation> eqnsl;
+  BackendDAE.Variables vars1;
+  BackendDAE.EquationArray eqns;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrix> mT;
+  BackendDAE.Matching matching;
+  DumpHTML.Document doc;
+  DumpHTML.Tags tags;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching) := inEqSystem;
+  (doc,i) := inTpl;
+  prefixId := inPrefixIdstr +& "_" +& intString(i);
+  vars := BackendDAEUtil.varList(vars1);
+  varlen_str := "Variables (" +& intString(listLength(vars)) +& ")";
+  tags := DumpHTML.addHeadingTag(2,varlen_str,{});
+  tags := dumpVarsHTML(vars,prefixId,tags);
+  eqnsl := BackendDAEUtil.equationList(eqns);
+  eqnlen_str := "Equations (" +& intString(listLength(eqnsl)) +& "," +& intString(BackendDAEUtil.equationSize(eqns)) +& ")";
+  tags := DumpHTML.addHeadingTag(2,eqnlen_str,tags);
+  tags := dumpEqnsHTML(eqnsl,prefixId,tags);
+  //dumpOption(m,dumpIncidenceMatrix);
+  //dumpOption(mT,dumpIncidenceMatrixT);
+  tags := dumpFullMatchingHTML(matching,prefixId,tags);
+//  doc := DumpHTML.addBodyTags(tags,doc);
+  doc := DumpHTML.addHyperLink("javascript:toggle('" +& prefixId +& "system')","System einblenden","System " +& intString(i) +& " ein/ausblenden",doc);
+  doc := DumpHTML.addLine("",doc);
+  doc := DumpHTML.addDivision(prefixId +& "system",{("display","none")},tags,doc);
+  outTpl := (doc,i+1);
+end dumpEqSystemHTML;
+
+protected function dumpVarsHTML
+"function: dumpVarsHTML
+  Helper function to dumpVars."
+  input list<BackendDAE.Var> vars;
+  input String prefixId;
+  input DumpHTML.Tags inTags;
+  output DumpHTML.Tags outTags;
+protected
+  DumpHTML.Tags tags;
+algorithm
+  ((tags,_)) := List.fold1(vars,dumpVarHTML,prefixId,({},1));
+  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" +& prefixId +& "variables')","Variablen einblenden","Variablen ein/ausblenden",inTags);
+  outTags := DumpHTML.addDivisionTag(prefixId +& "variables",{("background","#FFFFCC"),("display","none")},tags,outTags);
+end dumpVarsHTML;
+
+protected function dumpVarHTML
+"function: dumpVar
+  Helper function to dumpVars."
+  input BackendDAE.Var inVar;
+  input String prefixId;
+  input tuple<DumpHTML.Tags,Integer> inTpl;
+  output tuple<DumpHTML.Tags,Integer> oTpl;
+protected
+  DumpHTML.Tags tags;
+  Integer i;
+  String ln,istr;
+algorithm
+  (tags,i) := inTpl;
+  istr := intString(i);
+  ln := prefixId +& "varanker" +& istr;
+  tags := DumpHTML.addAnkerTag(ln,tags);
+  ln := istr +& ": " +& varString(inVar);
+  tags := DumpHTML.addLineTag(ln,tags);
+  oTpl := (tags,i+1);
+end dumpVarHTML;
+
+protected function dumpEqnsHTML
+"function: dumpVarsHTML
+  Helper function to dumpVars."
+  input list<BackendDAE.Equation> eqns;
+  input String prefixId;
+  input DumpHTML.Tags inTags;
+  output DumpHTML.Tags outTags;
+protected
+  DumpHTML.Tags tags;
+algorithm
+  ((tags,_)) := List.fold1(eqns,dumpEqnHTML,prefixId,({},1));
+  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" +& prefixId +& "equations')","Equations einblenden","Equations ein/ausblenden",inTags);
+  outTags := DumpHTML.addDivisionTag(prefixId +& "equations",{("background","#C0C0C0"),("display","none")},tags,outTags);
+end dumpEqnsHTML;
+
+protected function dumpEqnHTML
+"function: dumpEqnHTML
+  Helper function to dump_eqns"
+  input BackendDAE.Equation inEquation;
+  input String prefixId;
+  input tuple<DumpHTML.Tags,Integer> inTpl;
+  output tuple<DumpHTML.Tags,Integer> oTpl;
+protected
+  DumpHTML.Tags tags;
+  Integer i;
+  String ln,istr;
+algorithm
+  (tags,i) := inTpl;
+  istr := intString(i);
+  ln := prefixId +& "eqanker" +& istr;
+  tags := DumpHTML.addAnkerTag(ln,tags);
+  ln := istr +& " (" +& intString(BackendEquation.equationSize(inEquation)) +& "): " +& equationStr(inEquation);
+  tags := DumpHTML.addLineTag(ln,tags);
+  oTpl := (tags,i+1);
+end dumpEqnHTML;
+
+protected function dumpFullMatchingHTML
+  input BackendDAE.Matching inMatch;
+  input String prefixId;
+  input DumpHTML.Tags inTags;
+  output DumpHTML.Tags outTags;  
+algorithm
+  outTags:= match(inMatch,prefixId,inTags)
+    local 
+      array<Integer> ass1;
+      DumpHTML.Tags tags;
+      BackendDAE.StrongComponents comps;
+    case (BackendDAE.NO_MATCHING(),_,_) then inTags;
+    case (BackendDAE.MATCHING(ass1,_,comps),_,_)
+      equation
+        tags = dumpMatchingHTML(ass1,prefixId,inTags);
+        //dumpComponents(comps);          
+      then
+        tags;
+  end match;
+end dumpFullMatchingHTML;
+
+protected function dumpMatchingHTML
+"function: dumpMatching
+  author: Frenkel TUD 2012-11
+  prints the matching information on stdout."
+  input array<Integer> v;
+  input String prefixId;
+  input DumpHTML.Tags inTags;
+  output DumpHTML.Tags outTags;  
+protected
+  Integer len;
+  String len_str;
+  DumpHTML.Tags tags;
+algorithm
+  outTags := DumpHTML.addHeadingTag(2,"Matching",inTags);
+  len := arrayLength(v);
+  len_str := intString(len) +& " variables and equations\n";
+  outTags := DumpHTML.addLineTag(len_str,outTags);
+  tags := dumpMatchingHTML2(v, 1, len, prefixId, {});
+  outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" +& prefixId +& "matching')","Matching einblenden","Matching ein/ausblenden",outTags);
+  outTags := DumpHTML.addDivisionTag(prefixId +& "matching",{("background","#339966"),("display","none")},tags,outTags);  
+end dumpMatchingHTML;
+
+protected function dumpMatchingHTML2
+"function: dumpMatchingHTML2
+  author: PA
+  Helper function to dumpMatching."
+  input array<Integer> v;
+  input Integer i;
+  input Integer len;
+  input String prefixId;
+  input DumpHTML.Tags inTags;
+  output DumpHTML.Tags outTags;  
+algorithm
+  outTags := matchcontinue (v,i,len,prefixId,inTags)
+    local
+      Integer eqn;
+      String s,s2;
+    case (_,_,_,_,_)
+      equation
+        true = intLe(i,len);
+        s = intString(i);
+        eqn = v[i];
+        s2 = intString(eqn);
+        s = "Variable <a href=\"#" +& prefixId +& "varanker" +& s +& "\">" +& s +& "</a> is solved in Equation  <a href=\"#" +& prefixId +& "eqanker" +& s2 +& "\">" +& s2 +& "</a>";
+      then
+        dumpMatchingHTML2(v, i+1, len, prefixId, DumpHTML.LINE(s)::inTags);
+    else
+      then
+        inTags;
+  end matchcontinue;
+end dumpMatchingHTML2;
+
+protected function dumpSharedHTML
+"function: dumpSharedHTML
+  This function dumps the BackendDAE.Shared representaton to stdout."
+  input BackendDAE.Shared inShared;
+  input DumpHTML.Document inDoc;
+  output DumpHTML.Document outDoc;
+algorithm
+  outDoc:= inDoc;
+end dumpSharedHTML;
+
 
 public function dumpBackendDAEType
   input BackendDAE.BackendDAEType btp; 
@@ -1431,7 +1592,7 @@ public function dumpVarsArray
   Helper function to dump."
   input BackendDAE.Variables vars;
 algorithm
-  dumpVars2(BackendDAEUtil.varList(vars), 1);
+  _ := List.fold(BackendDAEUtil.varList(vars),dumpVar,1);
 end dumpVarsArray;
 
 public function dumpVars
@@ -1439,163 +1600,108 @@ public function dumpVars
   Helper function to dump."
   input list<BackendDAE.Var> vars;
 algorithm
-  dumpVars2(vars, 1);
+  _ := List.fold(vars,dumpVar,1);
 end dumpVars;
 
-protected function dumpVars2
-"function: dumpVars2
+protected function dumpVar
+"function: dumpVar
   Helper function to dumpVars."
-  input list<BackendDAE.Var> inVarLst;
-  input Integer inInteger;
+  input BackendDAE.Var inVar;
+  input Integer inVarNo;
+  output Integer outVarNo;
 algorithm
-  _ := matchcontinue (inVarLst,inInteger)
-    local
-      String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
-      list<String> paths_lst,path_strs;
-      Integer varno_1,varno;
-      BackendDAE.Var v;
-      DAE.ComponentRef cr;
-      BackendDAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.Exp e;
-      list<Absyn.Path> paths;
-      DAE.ElementSource source;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.ConnectorType ct;
-      list<BackendDAE.Var> xs;
-      BackendDAE.Type var_type;
-      DAE.InstDims arrayDim;
+  print(intString(inVarNo));
+  print(": ");
+  print(varString(inVar));
+  print("\n");
+  outVarNo := inVarNo + 1;
+end dumpVar;
 
-    case ({},_) then ();
-
-    case (((v as BackendDAE.VAR(varName = cr,
+protected function varString
+"function: varString
+  Helper function to dumpVars."
+  input BackendDAE.Var inVar;
+  output String outStr;
+protected
+  DAE.ComponentRef cr;
+  BackendDAE.VarKind kind;
+  DAE.VarDirection dir;
+  BackendDAE.Type var_type;
+  DAE.InstDims arrayDim;
+  Option<DAE.Exp> bindExp;  
+  DAE.ElementSource source;
+  Option<DAE.VariableAttributes> dae_var_attr;
+  Option<SCode.Comment> comment;
+  DAE.ConnectorType ct;
+  list<Absyn.Path> paths;
+  list<String> paths_lst;
+  String path_str;
+algorithm
+  BackendDAE.VAR(varName = cr,
                      varKind = kind,
                      varDirection = dir,
                      varType = var_type,
                      arryDim = arrayDim,
-                     bindExp = SOME(e),
+                     bindExp = bindExp,
                      source = source,
                      values = dae_var_attr,
                      comment = comment,
-                     connectorType = ct)) :: xs),varno)
-      equation
-        varnostr = intString(varno);
-        print(varnostr);
-        print(": ");
-        dirstr = DAEDump.dumpDirectionStr(dir);
-        print(dirstr);
-        print(" ");
-        str = ComponentReference.printComponentRefStr(cr);
-        print(str);
-        print(":");
-        dumpKind(kind);
-        print("(");
-        dumpConnectorType(ct);
-        dumpAttributes(dae_var_attr);
-        print(") ");
-        paths = DAEUtil.getElementSourceTypes(source);
-        paths_lst = List.map(paths, Absyn.pathString);
-        path_str = stringDelimitList(paths_lst, ", ");
-        comment_str = DAEDump.dumpCommentOptionStr(comment);
-        print(" = ");
-        s = ExpressionDump.printExpStr(e);
-        print(s);
-        print(" ");
-        print(path_str);
-        str = dumpTypeStr(var_type);print( " type: "); print(str);
-        print(ComponentReference.printComponentRef2Str("", arrayDim));
-        print("(");
-        dumpAttributes(dae_var_attr);
-        print(")\n");
-        varno_1 = varno + 1;
-        dumpVars2(xs, varno_1) "DAEDump.dump_variable_attributes(dae_var_attr) &" ;
-      then
-        ();
-
-    case (((v as BackendDAE.VAR(varName = cr,
-                     varKind = kind,
-                     varDirection = dir,
-                     varType = var_type,
-                     arryDim = arrayDim,
-                     bindExp = NONE(),
-                     source = source,
-                     values = dae_var_attr,
-                     comment = comment,
-                     connectorType = ct)) :: xs),varno)
-      equation
-        varnostr = intString(varno);
-        print(varnostr);
-        print(": ");
-        dirstr = DAEDump.dumpDirectionStr(dir);
-        print(dirstr);
-        print(" ");
-        str = ComponentReference.printComponentRefStr(cr);
-        paths = DAEUtil.getElementSourceTypes(source);
-        path_strs = List.map(paths, Absyn.pathString);
-        path_str = stringDelimitList(path_strs, ", ");
-        comment_str = DAEDump.dumpCommentOptionStr(comment);
-        print(str);
-        print(":");
-        dumpKind(kind);
-        print("(");
-        dumpConnectorType(ct);
-        dumpAttributes(dae_var_attr);
-        print(") ");        
-        print(path_str);
-        str = dumpTypeStr(var_type);print( " type: "); print(str);
-        print(ComponentReference.printComponentRef2Str("", arrayDim));
-        print("\n");
-        varno_1 = varno + 1;
-        dumpVars2(xs, varno_1);
-      then
-        ();
-
-    case (v :: xs,varno)
-      equation
-        varnostr = intString(varno);
-        print(varnostr);
-        print(": UNKNOWN VAR!");
-        print("\n");
-        debug_print("variable",v);
-        varno_1 = varno + 1;
-        dumpVars2(xs, varno_1);
-      then ();
-
-  end matchcontinue;
-end dumpVars2;
+                     connectorType = ct) := inVar;
+  paths := DAEUtil.getElementSourceTypes(source);
+  paths_lst := List.map(paths, Absyn.pathString);
+  outStr := DAEDump.dumpDirectionStr(dir) +& " " +& ComponentReference.printComponentRefStr(cr) +& ":" 
+            +& kindString(kind) +& "(" +& connectorTypeString(ct) +& attributesString(dae_var_attr) 
+            +& ") " +& optExpressionString(bindExp,"") +& DAEDump.dumpCommentOptionStr(comment)
+            +& stringDelimitList(paths_lst, ", ") +& " type: " +& dumpTypeStr(var_type) +& ComponentReference.printComponentRef2Str("", arrayDim);
+end varString;
 
 public function dumpKind
 "function: dumpKind
   Helper function to dump."
   input BackendDAE.VarKind inVarKind;
 algorithm
-  _:=
+  print(kindString(inVarKind));
+end dumpKind;
+
+public function kindString
+"function: kindString
+  Helper function to dump."
+  input BackendDAE.VarKind inVarKind;
+  output String kindStr;
+algorithm
+  kindStr:=
   match (inVarKind)
     local Absyn.Path path;
-    case BackendDAE.VARIABLE()    equation print("VARIABLE");    then ();
-    case BackendDAE.STATE()       equation print("STATE");       then ();
-    case BackendDAE.STATE_DER()   equation print("STATE_DER");   then ();
-    case BackendDAE.DUMMY_DER()   equation print("DUMMY_DER");   then ();
-    case BackendDAE.DUMMY_STATE() equation print("DUMMY_STATE"); then ();
-    case BackendDAE.DISCRETE()    equation print("DISCRETE");    then ();
-    case BackendDAE.PARAM()       equation print("PARAM");       then ();
-    case BackendDAE.CONST()       equation print("CONST");       then ();
-    case BackendDAE.EXTOBJ(path)  equation print("EXTOBJ: ");print(Absyn.pathString(path)); then ();
-    case BackendDAE.JAC_VAR()     equation print("JACOBIAN_VAR");then ();
-    case BackendDAE.JAC_DIFF_VAR()equation print("JACOBIAN_DIFF_VAR");then ();      
+    case BackendDAE.VARIABLE()    then "VARIABLE";
+    case BackendDAE.STATE()       then "STATE";
+    case BackendDAE.STATE_DER()   then "STATE_DER";
+    case BackendDAE.DUMMY_DER()   then "DUMMY_DER";
+    case BackendDAE.DUMMY_STATE() then "DUMMY_STATE";
+    case BackendDAE.DISCRETE()    then "DISCRETE";
+    case BackendDAE.PARAM()       then "PARAM";
+    case BackendDAE.CONST()       then "CONST";
+    case BackendDAE.EXTOBJ(path)  then "EXTOBJ: " +& Absyn.pathString(path);
+    case BackendDAE.JAC_VAR()     then "JACOBIAN_VAR";
+    case BackendDAE.JAC_DIFF_VAR()then "JACOBIAN_DIFF_VAR";      
   end match;
-end dumpKind;
+end kindString;
 
 public function dumpConnectorType
   input DAE.ConnectorType inConnectorType;
 algorithm
-  _ := match(inConnectorType)
-    case DAE.FLOW() equation print("flow=true "); then ();
-    case DAE.POTENTIAL() equation print("flow=false "); then ();
-    else ();
-  end match;
+  print(connectorTypeString(inConnectorType));
 end dumpConnectorType;
+
+public function connectorTypeString
+  input DAE.ConnectorType inConnectorType;
+  output String connectorTypeStr;
+algorithm
+  connectorTypeStr := match(inConnectorType)
+    case DAE.FLOW() then "flow=true ";
+    case DAE.POTENTIAL() then "flow=false ";
+    else "";
+  end match;
+end connectorTypeString;
 
 public function dumpAttributes
 "function: dumpAttributes
@@ -1742,6 +1848,135 @@ algorithm
     else ();
   end match;
 end dumpOptBoolean;
+
+public function attributesString
+"function: attributesString
+  Helper function to dump."
+  input Option<DAE.VariableAttributes> inAttr;
+  output String outString;
+algorithm
+  outString :=
+  match (inAttr)
+    local
+       Option<DAE.Exp> min,max,start,fixed,nominal;
+       Option<Boolean> isProtected,finalPrefix;
+       Option<DAE.Distribution> dist;
+       Option<DAE.StateSelect> stateSelectOption;
+       String str;
+    case NONE() then "";
+    case SOME(DAE.VAR_ATTR_REAL(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),nominal=NONE(),stateSelectOption=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
+     then "";
+    case SOME(DAE.VAR_ATTR_REAL(min=(min,max),initial_=start,fixed=fixed,nominal=nominal,stateSelectOption=stateSelectOption,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
+      equation
+        str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
+             +& optExpressionString(nominal,"nominal") +& optStateSelectionString(stateSelectOption) +& optBooleanString(isProtected,"protected") 
+             +& optBooleanString(finalPrefix,"final") +& optDistributionString(dist);
+     then str;
+    case SOME(DAE.VAR_ATTR_INT(min=(NONE(),NONE()),initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE(),distributionOption=NONE()))
+     then "";
+    case SOME(DAE.VAR_ATTR_INT(min=(min,max),initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix,distributionOption=dist))
+      equation
+        str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
+             +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
+     then str;        
+    case SOME(DAE.VAR_ATTR_BOOL(initial_=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+      then "";
+    case SOME(DAE.VAR_ATTR_BOOL(initial_=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
+      equation
+        str = optExpressionString(start,"start") +& optExpressionString(fixed,"fixed") +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
+     then str;
+    case SOME(DAE.VAR_ATTR_STRING(initial_=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+     then "";
+    case SOME(DAE.VAR_ATTR_STRING(initial_=start,isProtected=isProtected,finalPrefix=finalPrefix))
+      equation
+        str = optExpressionString(start,"start") +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
+     then str;
+    case SOME(DAE.VAR_ATTR_ENUMERATION(min=(NONE(),NONE()),start=NONE(),fixed=NONE(),isProtected=NONE(),finalPrefix=NONE()))
+     then "";
+    case SOME(DAE.VAR_ATTR_ENUMERATION(min=(min,max),start=start,fixed=fixed,isProtected=isProtected,finalPrefix=finalPrefix))
+      equation
+        str = optExpressionString(min,"min") +& optExpressionString(max,"max") +& optExpressionString(start,"start") +& optExpressionString(fixed,"fixed")
+             +& optBooleanString(isProtected,"protected") +& optBooleanString(finalPrefix,"final");
+     then str;
+    else "";
+  end match;
+end attributesString;
+
+protected function optDistributionString
+"funcion optDistributionString"
+  input Option<DAE.Distribution> dist;
+  output String outString;
+algorithm
+  outString := match(dist)
+    local
+      DAE.Exp e1,e2,e3;
+      String str;
+    case(NONE()) then "";
+    case(SOME(DAE.DISTRIBUTION(e1,e2,e3))) 
+      equation
+        str =  "distribution = Distribution(" +& ExpressionDump.printExpStr(e1) +& ", "
+             +& ExpressionDump.printExpStr(e2) +& ", "
+             +& ExpressionDump.printExpStr(e3) +& ")";
+    then str;  
+  end match;
+end optDistributionString;
+
+
+protected function optStateSelectionString
+" function optStateSelectionString "
+  input Option<DAE.StateSelect> ss;
+  output String outString;
+algorithm
+  outString:= match(ss)
+  local
+    case(SOME(DAE.NEVER())) then  "stateSelect=StateSelect.never ";
+    case(SOME(DAE.AVOID())) then  "stateSelect=StateSelect.avoid ";
+    case(SOME(DAE.DEFAULT())) then "";
+    case(SOME(DAE.PREFER())) then  "stateSelect=StateSelect.prefer ";
+    case(SOME(DAE.ALWAYS())) then  "stateSelect=StateSelect.alwas ";
+    else "";
+  end match;
+end optStateSelectionString;
+
+protected function optExpressionString
+"function: optExpressionString
+  Helper function to dump."
+  input Option<DAE.Exp> inExp;
+  input String inString;
+  output String outString;
+algorithm
+  outString:=
+  match (inExp,inString)
+    local
+       DAE.Exp e;
+       String se,str;
+    case (SOME(e),_)
+      equation
+         se = ExpressionDump.printExpStr(e);
+         str = inString +& " = " +& se +& " ";
+     then str;
+    else "";
+  end match;
+end optExpressionString;
+
+protected function optBooleanString
+"function: optBooleanString
+  Helper function to dump."
+  input Option<Boolean> inExp;
+  input String inString;
+  output String outString;
+algorithm
+  outString :=
+  match (inExp,inString)
+    local
+       String str;
+    case (SOME(true),_)
+      equation
+         str = inString +& " = true ";
+     then str;
+    else "";
+  end match;
+end optBooleanString;
 
 public function dumpIncidenceMatrix
 "function: dumpIncidenceMatrix
@@ -2273,17 +2508,37 @@ end dumpStateVariable;
 public function bltdump
 "autor: Frenkel TUD 2011-03"
   input tuple<String,BackendDAE.BackendDAE> inTpl;
-protected
-  String str;
-  BackendDAE.IncidenceMatrix m;
-  BackendDAE.IncidenceMatrix mT;
-  array<Integer> v1,v2;
-  BackendDAE.StrongComponents comps;
-  BackendDAE.BackendDAE ode;
 algorithm
-  (str,ode) := inTpl;
-  print(str); print(":\n");
-  dump(ode);
+   _:=
+  matchcontinue (inTpl)
+    local
+      BackendDAE.EqSystems eqs;
+      BackendDAE.Shared shared;
+      String str,strlow,headerline;
+      DumpHTML.Document doc;
+    case ((headerline,BackendDAE.DAE(eqs,shared)))
+      equation
+        Flags.STRING_FLAG(data=str) = Flags.getConfigValue(Flags.DUMP_TARGET);
+        strlow = System.tolower(str);
+        true = intGt(System.stringFind(str,".html"),0);
+        doc = DumpHTML.emtypDocumentWithToggleFunktion();
+        doc = DumpHTML.addHeading(1,headerline,doc);
+        strlow = intString(realInt(System.time()));
+        ((doc,_)) = List.fold1(eqs,dumpEqSystemHTML,strlow,(doc,1));
+        doc = dumpSharedHTML(shared,doc);
+        str = strlow +& str;
+        DumpHTML.dumpDocument(doc,str);
+      then
+        ();
+    case ((headerline,BackendDAE.DAE(eqs,shared)))
+      equation
+        print(headerline); print(":\n");
+        List.map_0(eqs,dumpEqSystem);
+        print("\n");
+        dumpShared(shared);
+      then
+        ();
+  end matchcontinue; 
 end bltdump;
 
 public function dumpComponentsAdvanced "function: dumpComponents

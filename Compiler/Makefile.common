@@ -127,6 +127,7 @@ BinaryTree.mo \
 BinaryTreeInt.mo \
 DAEQuery.mo \
 Derive.mo \
+DumpHTML.mo \
 ExpressionSolve.mo \
 GraphML.mo \
 HashTableCrSimVars.mo \
