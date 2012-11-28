@@ -143,7 +143,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);        
+        (syst,ishared,inArg);
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.DFSLH failed\n");
@@ -202,7 +202,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;   
       BackendDAE.MatchingOptions match_opts;   
-
+      array<Integer> mapIncRowEqn;
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = intGe(i,nv);
@@ -259,11 +259,14 @@ algorithm
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
-    else
+    case (_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
         // "When index reduction also fails, the model is structurally singular." ;
         eqn_lst = getMarked(nf,i,emark,{});
         var_lst = getMarked(nv,i,vmark,{});
+        // get from scalar eqns indexes the indexes in the equation array
+        eqn_lst = List.map1r(eqn_lst,arrayGet,mapIncRowEqn);
+        eqn_lst = List.uniqueIntN(eqn_lst,arrayLength(mapIncRowEqn));
         eqn_str = BackendDump.dumpMarkedEqns(isyst, eqn_lst);
         var_str = BackendDump.dumpMarkedVars(isyst, var_lst);
         i_1::_ = eqn_lst;
@@ -446,7 +449,7 @@ algorithm
         assarg = ass1[v];
         (ass1_1,ass2_1) = pathFound(m, mt, assarg, imark, emark, vmark, ass1, ass2);
         ass1_2 = arrayUpdate(ass1_1,v,i);
-        ass2_2 = arrayUpdate(ass2_1,i,v);       
+        ass2_2 = arrayUpdate(ass2_1,i,v);
       then
         (ass1_2,ass2_2);
     case (_,_,_,_,_,_,(vars as (v :: vs)),_,_)
@@ -510,7 +513,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);         
+        (syst,ishared,inArg); 
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.BFSB failed\n");
@@ -707,7 +710,7 @@ algorithm
         rc = ass2[r];
         false = intLt(rc,0);
         queue1 = BFSBenque(queue,rowmark,c,rc,r,intLt(rowmarks[r],rowmark),rowmarks,parentcolum);
-        (queue2,b) = BFSBtraverseRows(rest,queue1,rowmark,i,c,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2);        
+        (queue2,b) = BFSBtraverseRows(rest,queue1,rowmark,i,c,nv,ne,m,mT,rowmarks,parentcolum,ass1,ass2);
       then
         (queue2,b);
     else
@@ -752,7 +755,7 @@ algorithm
       equation
         print("Matching.BFSBreasign failed in Equation " +& intString(i) +& "\n");
       then
-        fail();            
+        fail();    
    end matchcontinue;
 end BFSBreasign;
 
@@ -779,7 +782,7 @@ algorithm
         // store parent colum
         _ = arrayUpdate(parentcolum,r,c);
       then
-        (rc::queue);        
+        (rc::queue);
     else
       equation
         print("Matching.BFSBenque failed!\n");
@@ -824,7 +827,7 @@ algorithm
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         rowmarks = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);       
+        vec2 = arrayCreate(nvars,-1);
         _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);
         (vec1,vec2,syst,shared,arg) = DFSB1(1,1,nvars,neqns,m,mt,rowmarks,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -841,7 +844,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);          
+        (syst,ishared,inArg);  
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.BFSB failed\n");
@@ -996,7 +999,7 @@ algorithm
         DFSBtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,visitedColums);
     case (_::rest,_,_,_,_,_,_,_,_,_,_)
       then
-        DFSBtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);        
+        DFSBtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,ass1,ass2,inVisitedColums);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.DFSBtraverseRows failed\n"});
@@ -1089,7 +1092,7 @@ algorithm
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);
         vec1 = arrayCreate(neqns,-1);
-        vec2 = arrayCreate(nvars,-1);       
+        vec2 = arrayCreate(nvars,-1);
         _ = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,false);      
         (vec1,vec2,syst,shared,arg) = MC21A1(1,1,nvars,neqns,m,mt,rowmarks,lookahead,vec1,vec2,isyst,ishared,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{}));
@@ -1106,7 +1109,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);        
+        (syst,ishared,inArg);
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.MC21A failed\n");
@@ -1211,7 +1214,7 @@ algorithm
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.MC21A1fixArrays failed!\n"});
       then
-        fail();        
+        fail();
   end match;
 end MC21A1fixArrays;
 
@@ -1237,7 +1240,7 @@ algorithm
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.MC21A1fixArray failed!\n"});
       then
-        fail();        
+        fail();
   end match;
 end MC21A1fixArray;
 
@@ -1345,7 +1348,7 @@ algorithm
         true = intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);  
       then
-        {};         
+        {}; 
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         MC21AtraverseRowsUnmatched(rest,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
@@ -1387,7 +1390,7 @@ algorithm
         MC21AtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,visitedColums);
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
       then
-        MC21AtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);        
+        MC21AtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,inVisitedColums);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.MC21AtraverseRows failed\n"});
@@ -1456,7 +1459,7 @@ algorithm
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
-        lookahead = arrayCreate(neqns,0);        
+        lookahead = arrayCreate(neqns,0);
         unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (vec1,vec2,syst,shared,arg) = PF1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -1473,7 +1476,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);        
+        (syst,ishared,inArg);
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.PF failed\n");
@@ -1511,31 +1514,36 @@ algorithm
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str;
+      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1; 
-
+      array<Integer> mapIncRowEqn;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = PFaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
         (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = PF1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    else
+    case (_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+        // get from scalar eqns indexes the indexes in the equation array
+        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
+        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        unmatched1 = getUnassigned(nv, ass2, {});
+        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
+        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
         info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,""}, info);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
         fail();
   end matchcontinue;
@@ -1640,7 +1648,7 @@ algorithm
         true = intGt(ass1[c],-1);
         (i_1,unmatched) = PFaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched);
       then
-        (i_1,unmatched);        
+        (i_1,unmatched);
     case (_,c::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         b = PFphase({c},i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
@@ -1757,7 +1765,7 @@ algorithm
         true = intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);  
       then
-        true;         
+        true; 
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         PFtraverseRowsUnmatched(rest,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
@@ -1799,7 +1807,7 @@ algorithm
         PFtraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b);
     case (r::rest,_,_,_,_,_,_,_,_,_,_)
       then
-        PFtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);        
+        PFtraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PFtraverseRows failed\n"});
@@ -1867,7 +1875,7 @@ algorithm
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
-        lookahead = arrayCreate(neqns,0);        
+        lookahead = arrayCreate(neqns,0);
         unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (i,vec1,vec2,syst,shared,arg) = PFPlus1(0,unmatched,rowmarks,lookahead,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -1884,7 +1892,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);         
+        (syst,ishared,inArg); 
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.PFPlus failed\n");
@@ -1923,13 +1931,14 @@ algorithm
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str;
+      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1; 
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1;
+      array<Integer> mapIncRowEqn;
 
     case (_,{},_,_,_,_,_,_,_,_,_,_,_) 
       then 
@@ -1937,17 +1946,22 @@ algorithm
     case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = PFPlusaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{},false);
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
         (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (i_1,ass1_2,ass2_2,syst,shared,arg1) = PFPlus1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (i_1,ass1_2,ass2_2,syst,shared,arg1);
-    else
+    case (_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+        // get from scalar eqns indexes the indexes in the equation array
+        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
+        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        unmatched1 = getUnassigned(nv, ass2, {});
+        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
+        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
         info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,""}, info);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
         fail();
   end matchcontinue;
@@ -1996,7 +2010,7 @@ algorithm
         true = intGt(ass1[c],-1);
         (i_1,unmatched) = PFPlusaugmentmatching(i,rest,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,previousUnmatched,unMatched,reverseRows);
       then
-        (i_1,unmatched);        
+        (i_1,unmatched);
     case (_,c::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         b = PFPlusphase({c},i,c,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
@@ -2123,7 +2137,7 @@ algorithm
         true = intLt(ass2[r],0);
         DFSBreasign(stack,r,ass1,ass2);  
       then
-        true;         
+        true; 
     case (_::rest,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         PFPlustraverseRowsUnmatched(rest,rows1,stack,i,c,l,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
@@ -2166,7 +2180,7 @@ algorithm
         PFPlustraverseRows1(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,b,reverseRows);
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       then
-        PFPlustraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);        
+        PFPlustraverseRows(rest,stack,i,nv,ne,m,mT,rowmarks,lookahead,ass1,ass2,reverseRows);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PFPlustraverseRows failed\n"});
@@ -2230,7 +2244,7 @@ algorithm
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
-        true = intGt(neqns,0);        
+        true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
@@ -2253,7 +2267,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);         
+        (syst,ishared,inArg); 
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.HK failed\n");
@@ -2292,31 +2306,36 @@ algorithm
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str;
+      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1; 
-
+      array<Integer> mapIncRowEqn;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = HKphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = HK1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    else
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+        // get from scalar eqns indexes the indexes in the equation array
+        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
+        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        unmatched1 = getUnassigned(nv, ass2, {});
+        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
+        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
         info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,""}, info);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
         fail();
   end matchcontinue;
@@ -2454,7 +2473,7 @@ algorithm
       equation
         true = intGt(ass1[c],0);
       then
-        HKgetUnmatched(rest,ass1,inUnmatched);        
+        HKgetUnmatched(rest,ass1,inUnmatched);
     case (c::rest,_,_)
       then
         HKgetUnmatched(rest,ass1,c::inUnmatched); 
@@ -2491,7 +2510,7 @@ algorithm
       equation
         (rows,ll) = HKBFSBphase({c},i,0,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
       then
-        HKBFS(rest,nv,ne,m,mT,rowmarks,i,level,ll,ass1,ass2,rows);        
+        HKBFS(rest,nv,ne,m,mT,rowmarks,i,level,ll,ass1,ass2,rows);
     else
       equation
         print("Matching.HKBFS failed in Phase " +& intString(i) +& "\n");
@@ -2540,7 +2559,7 @@ algorithm
       equation
         (rows,ll) = HKBFSBphase(queue1,i,l+1,lowestL,nv,ne,m,mT,rowmarks,level,ass1,ass2,inRows,{});
       then 
-        (rows,ll);        
+        (rows,ll);
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // traverse all adiacent rows
@@ -2772,18 +2791,18 @@ algorithm
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is in graph
-        true = intEq(level[c],l);        
+        true = intEq(level[c],l);
         // collum is unvisited
         true = intLt(collummarks[c],i);
         // collum is unmatched
         true = intLt(ass1[c],0);
         HKDFSreasign(stack,c,ass1,ass2);
       then
-        true;        
+        true;
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is in graph
-        true = intEq(level[c],l);        
+        true = intEq(level[c],l);
         // collum is unvisited
         true = intLt(collummarks[c],i);
         // collum is matched
@@ -2796,7 +2815,7 @@ algorithm
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is in graph
-        true = intEq(level[c],l);        
+        true = intEq(level[c],l);
         // collum is visited
         false = intLt(collummarks[c],i);
       then
@@ -2890,7 +2909,7 @@ algorithm
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
-        true = intGt(neqns,0);        
+        true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
@@ -2952,31 +2971,36 @@ algorithm
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str;
+      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1; 
-
+      array<Integer> mapIncRowEqn;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
     case (_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = HKDWphase(i,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = HK2(meqns,unmatched1,{},rowmarks,collummarks,level,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = HKDW1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    else
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+        // get from scalar eqns indexes the indexes in the equation array
+        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
+        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        unmatched1 = getUnassigned(nv, ass2, {});
+        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
+        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
         info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,""}, info);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
         fail();
   end matchcontinue;
@@ -3143,7 +3167,7 @@ algorithm
         true = intLt(ass1[c],0);
         HKDFSreasign(stack,c,ass1,ass2);
       then
-        true;        
+        true;
     case (c::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is unvisited
@@ -3223,7 +3247,7 @@ algorithm
         neqns = BackendDAEUtil.systemSize(isyst);
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
-        true = intGt(neqns,0);        
+        true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
@@ -3248,7 +3272,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);         
+        (syst,ishared,inArg); 
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.ABMP failed\n");
@@ -3289,14 +3313,14 @@ algorithm
       Integer nv_1,ne_1,i_1,lim;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str;
+      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1,rlevel1; 
-
+      array<Integer> mapIncRowEqn;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
@@ -3305,17 +3329,22 @@ algorithm
         lim = realInt(realMul(0.1,realSqrt(intReal(arrayLength(ass1)))));
         unmatched1 = ABMPphase(unmatched,i,nv,ne,m,mt,rowmarks,rlevel,colptrs,lim,ass1,ass2);
         (i_1,unmatched1) = HKphase(i+1,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
         (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = ABMP2(meqns,unmatched1,{},rowmarks,collummarks,level,rlevel,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = ABMP1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,rlevel1,colptrs,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    else
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+        // get from scalar eqns indexes the indexes in the equation array
+        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
+        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        unmatched1 = getUnassigned(nv, ass2, {});
+        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
+        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
         info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,""}, info);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
         fail();
   end matchcontinue;
@@ -3490,7 +3519,7 @@ algorithm
       equation
         true = intGt(50*L,listLength(U));
       then
-       U;       
+       U;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       // next round width updated level
       then
@@ -3625,7 +3654,7 @@ algorithm
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is unvisited
-        false = intEq(rowmarks[r],i);        
+        false = intEq(rowmarks[r],i);
         // row is matched
         rc = ass2[r];
         false = intLt(rc,0);
@@ -3636,10 +3665,10 @@ algorithm
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is visited
-        true = intEq(rowmarks[r],i);        
+        true = intEq(rowmarks[r],i);
         (queue1,unmatched) = ABMPBFStraverseRows(rest,i,L,nv,ne,m,mT,rowmarks,level,ass1,ass2,queue,unMatched);
       then
-        (queue1,unmatched);        
+        (queue1,unmatched);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPBFStraverseRows failed\n"});
@@ -3674,7 +3703,7 @@ algorithm
     case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = intLt(i,ne);
-      then ();       
+      then ();
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // search augmenting paths
@@ -3731,7 +3760,7 @@ algorithm
         false = intEq(L,level[r1]);
         l = level[r2];
         ABMPDFS(r2::unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});      
-      then ();          
+      then ();  
     case (true,_,r1::_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = intGt(50*L,listLength(unmatchedRows)+listLength(unMatched));
@@ -3746,7 +3775,7 @@ algorithm
         false = intEq(L,level[r1]);
         l = level[r];
         ABMPDFS(unmatchedRows,i,l,nv,ne,m,mT,level,colptrs,ass1,ass2,{});      
-      then ();                        
+      then ();         
     case (_,_,r1::_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = intEq(L,level[r1]);
@@ -3848,7 +3877,7 @@ algorithm
         _ = arrayUpdate(colptrs,r,counter);
         HKDFSreasign(stack,c,ass1,ass2);
       then
-        (i,true);        
+        (i,true);
     case (c::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // collum is unvisited
@@ -3865,7 +3894,7 @@ algorithm
       equation
         (i_1,b) = ABMPDFStraverseCollums(rest,counter+1,stack,r,i,desL,nv,ne,m,mT,level,colptrs,ass1,ass2);
       then
-        (i_1,b);        
+        (i_1,b);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.ABMPDFSBtraverseCollums failed\n"});
@@ -3947,7 +3976,7 @@ algorithm
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         l_label = arrayCreate(neqns,-1);
-        r_label = arrayCreate(nvars,-1);       
+        r_label = arrayCreate(nvars,-1);
         unmatched = cheapmatchingalgorithm(nvars,neqns,m,mt,vec1,vec2,true);
         (vec1,vec2,syst,shared,arg) = PR_FIFO_FAIR1(unmatched,l_label,r_label,isyst,ishared,nvars,neqns,vec1,vec2,inMatchingOptions,sssHandler,inArg);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec2,vec1,{})); 
@@ -3964,7 +3993,7 @@ algorithm
         vec2 = listArray({});
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(vec2,vec1,{})); 
       then
-        (syst,ishared,inArg);          
+        (syst,ishared,inArg);  
     else
       equation
         Debug.fprint(Flags.FAILTRACE, "- Matching.PR_FIFO_FAIR failed\n");
@@ -4001,14 +4030,14 @@ algorithm
       Integer nv_1,ne_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str;
+      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
       DAE.ElementSource source;
       Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,l_label1,r_label1; 
-
+      array<Integer> mapIncRowEqn;
     case ({},_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
@@ -4017,17 +4046,22 @@ algorithm
         PR_Global_Relabel(l_label,r_label,nv,ne,m,mt,ass1,ass2);
         PR_FIFO_FAIRphase(0,unmatched,nv+ne,-1,nv,ne,m,mt,l_label,r_label,ass1,ass2,{});
         unmatched1 = getUnassigned(ne, ass1, {});
-        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
+        meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
         (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PR_FIFO_FAIR2(meqns,unmatched1,{},l_label,r_label,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = PR_FIFO_FAIR1(unmatched1,l_label1,r_label1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    else
+    case (_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+        // get from scalar eqns indexes the indexes in the equation array
+        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
+        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        unmatched1 = getUnassigned(nv, ass2, {});
+        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
+        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
         info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,""}, info);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
         fail();
   end matchcontinue;
@@ -4131,7 +4165,7 @@ algorithm
         PR_Global_Relabel_init_l_label(i+1,ne,max,l_label);
       then
         ();
-  end matchcontinue;          
+  end matchcontinue;  
 end PR_Global_Relabel_init_l_label;
 
 protected function PR_Global_Relabel_init_r_label
@@ -4163,7 +4197,7 @@ algorithm
         _ = arrayUpdate(r_label,i,max);
       then
         PR_Global_Relabel_init_r_label(i+1,nv,max,r_label,ass2,inQueue);
-  end matchcontinue;          
+  end matchcontinue;  
 end PR_Global_Relabel_init_r_label;
 
 protected function PR_Global_Relabel1
@@ -4410,12 +4444,12 @@ algorithm
         false = intEq(r_label[minvertex],l_label[max_vertex]-1);
         (rel,minlabel,minvertex) = PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,minvertex,minlabel,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
-        (rel,minlabel,minvertex);          
+        (rel,minlabel,minvertex);  
     case (r::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         (rel,minlabel,minvertex) = PR_FIFO_FAIRphase_traverseRows(rest,relabels,max_vertex,min_vertex,min_label,max,nv,ne,m,mT,l_label,r_label,ass1,ass2);
       then
-        (rel,minlabel,minvertex);          
+        (rel,minlabel,minvertex);  
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"Matching.PR_FIFO_FAIRphase_traverseRows failed\n"});
@@ -4468,7 +4502,7 @@ algorithm
         next_vertex::inQueue;
     else 
       then
-        inQueue;        
+        inQueue;
   end matchcontinue;
 end PR_FIFO_FAIRrelabel;
 
@@ -4573,9 +4607,9 @@ algorithm
         // row is unmatched -> return
         true = intLt(ass2[r],0); 
         _ = arrayUpdate(ass1,c,r);
-        _ = arrayUpdate(ass2,r,c);        
+        _ = arrayUpdate(ass2,r,c);
       then
-        ();         
+        (); 
   end match;
 end matchSingleVars1;
 
@@ -4638,9 +4672,9 @@ algorithm
         // row is unmatched -> return
         true = intLt(ass2[r],0); 
         _ = arrayUpdate(ass1,c,r);
-        _ = arrayUpdate(ass2,r,c);        
+        _ = arrayUpdate(ass2,r,c);
       then
-        ();         
+        (); 
     case (_::rest,_,_,_) 
       equation
         cheapmatching1(rest,c,ass1,ass2);
@@ -4703,7 +4737,7 @@ algorithm
           ks_rand_match(onerows,onecolums,row_degrees,col_degrees,mT,m,ass2,ass1);
           c = randarr[i];
           b = intLt(ass1[c],0) and intGt(col_degrees[c],0);
-          (onecolums1,onerows1) = ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);           
+          (onecolums1,onerows1) = ks_rand_cheapmatching2(b,c,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);   
           ks_rand_cheapmatching1(i+1,ne,onecolums1,onerows1,col_degrees,row_degrees,randarr,m,mT,ass1,ass2);
         then
           ();
@@ -4768,14 +4802,14 @@ algorithm
           true = intEq(e_id,0);
           _ = arrayUpdate(ass1,c,r);
           _ = arrayUpdate(ass2,r,c); 
-          stack = ks_rand_match_degree(rest,row_degrees,ass2,onerows);        
+          stack = ks_rand_match_degree(rest,row_degrees,ass2,onerows);
         then
           (stack,r); 
       case (_,r::rest,_,_,_,_,_,_)
         equation
            true = intLt(ass2[r],0);
           _ = arrayUpdate(row_degrees,r,row_degrees[r]-1);
-          stack = List.consOnTrue(intEq(row_degrees[r],1),r,onerows);         
+          stack = List.consOnTrue(intEq(row_degrees[r],1),r,onerows); 
          (statck1,r_1) = ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,stack,r); 
         then
           (statck1,r_1);
@@ -4783,7 +4817,7 @@ algorithm
         equation
          (statck1,r_1) = ks_rand_cheapmatching3(e_id-1,rest,row_degrees,c,ass1,ass2,onerows,r); 
         then
-          (statck1,r_1);          
+          (statck1,r_1);  
     end matchcontinue;
 end ks_rand_cheapmatching3;  
   
@@ -4862,7 +4896,7 @@ algorithm
         z = realInt(realMod(System.realRand(),intReal(n)))+1;
         tmp = randarr[n]; 
         _ = arrayUpdate(randarr,n,randarr[z]);
-        _ = arrayUpdate(randarr,z,tmp);        
+        _ = arrayUpdate(randarr,z,tmp);
         setrandArray(n-1,randarr);
      then
        ();
@@ -4908,12 +4942,12 @@ algorithm
         stack = ks_rand_match1(e,lst,rest,degrees2,degrees1,m1,ass2,ass1);
         ks_rand_match(stack,{},degrees2,degrees1,m2,m1,ass2,ass1);
       then
-        ();        
+        ();
     case ({},_::rest,_,_,_,_,_,_)
       equation
         ks_rand_match(rest,{},degrees2,degrees1,m2,m1,ass2,ass1);
       then
-        ();                
+        (); 
     case (e::rest,_,_,_,_,_,_,_)
       equation
         true = intEq(degrees1[e],1);
@@ -4927,7 +4961,7 @@ algorithm
       equation
         ks_rand_match(stack2,rest,degrees2,degrees1,m2,m1,ass2,ass1);
       then
-        ();        
+        ();
   end matchcontinue;  
 end ks_rand_match;
 
@@ -4954,7 +4988,7 @@ algorithm
           true = intLt(ass2[e],0);
           lst = List.select(incidence[e], Util.intPositive);
           _ = arrayUpdate(ass1,i,e);
-          _ = arrayUpdate(ass2,e,i);          
+          _ = arrayUpdate(ass2,e,i);  
         then
           ks_rand_match_degree(lst,degrees1,ass1,stack);
       case (_,_::rest,_,_,_,_,_,_)
@@ -5018,7 +5052,7 @@ algorithm
     case (_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);        
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5122,7 +5156,7 @@ algorithm
     case (_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);       
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5174,7 +5208,7 @@ algorithm
     case (_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);       
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5278,7 +5312,7 @@ algorithm
     case (_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);       
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5330,7 +5364,7 @@ algorithm
     case (_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);       
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5382,7 +5416,7 @@ algorithm
     case (_,_,_,_,_)
       equation
         neqns = BackendDAEUtil.systemSize(isyst);
-        nvars = BackendVariable.daenumVariables(isyst);       
+        nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
         checkSystemForMatching(nvars,neqns,inMatchingOptions);
@@ -5502,7 +5536,7 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3;  
-
+      array<Integer> mapIncRowEqn;
     case ({},true,_,_,_,syst,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,syst,ishared,inArg);
@@ -5512,7 +5546,7 @@ algorithm
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
         BackendDAEEXT.getAssignment(ass1,ass2);
         unmatched1 = getUnassigned(ne, ass1, {});
-        meqns1 = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2);
+        meqns1 = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
         (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns1,true,algIndx,-1,0,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
@@ -5529,11 +5563,16 @@ algorithm
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
-    else
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
-        eqn_str = "";
-        var_str = "";
-        source = DAE.emptyElementSource;
+        // get from scalar eqns indexes the indexes in the equation array
+        unmatched1 = getUnassigned(ne, ass1, {});
+        unmatched1 = List.map1r(unmatched1,arrayGet,mapIncRowEqn);
+        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        unmatched1 = getUnassigned(nv, ass2, {});
+        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
+        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
         info = DAEUtil.getElementSourceFileInfo(source);
         Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
       then
@@ -5556,7 +5595,7 @@ algorithm
     else
       equation
         lst = List.select(m[i], Util.intPositive);
-        l = listLength(lst);           
+        l = listLength(lst);   
       then 
         countincidenceMatrixEntries(i-1,m,inCount + l);
   end match;
@@ -5683,16 +5722,20 @@ protected function getEqnsforIndexReduction
   input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<list<Integer>> eqns;
 algorithm
-  eqns := match(U,neqns,m,mT,ass1,ass2)
-    local array<Boolean> colummarks;
-    case({},_,_,_,_,_) then {};
-    else
+  eqns := match(U,neqns,m,mT,ass1,ass2,inArg)
+    local 
+      array<Boolean> colummarks;
+      array<list<Integer>> mapEqnIncRow;
+      array<Integer> mapIncRowEqn;      
+    case({},_,_,_,_,_,_) then {};
+    case(_,_,_,_,_,_,(_,_,mapEqnIncRow,mapIncRowEqn,_))
       equation
         colummarks = arrayCreate(neqns,false);
       then
-        getEqnsforIndexReduction1(U,m,mT,colummarks,ass1,ass2,{});
+        getEqnsforIndexReduction1(U,m,mT,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,{});
     end match;
 end getEqnsforIndexReduction;
 
@@ -5705,25 +5748,30 @@ protected function getEqnsforIndexReduction1
   input array<Boolean> colummarks;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
+  input array<list<Integer>> mapEqnIncRow "eqn indx -> skalar Eqn indexes";
+  input array<Integer> mapIncRowEqn "scalar eqn index -> eqn indx";
   input list<list<Integer>> inEqns;
   output list<list<Integer>> outEqns;
 algorithm
-  outEqns:= matchcontinue (U,m,mT,colummarks,ass1,ass2,inEqns)
+  outEqns:= matchcontinue (U,m,mT,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inEqns)
     local 
       list<Integer> rest,eqns;
-      Integer e;
-    case ({},_,_,_,_,_,_) then listReverse(inEqns);
-    case (e::rest,_,_,_,_,_,_)
+      Integer e,e1;
+    case ({},_,_,_,_,_,_,_,_) then listReverse(inEqns);
+    case (e::rest,_,_,_,_,_,_,_,_)
       equation
         // row is not visited
         false = colummarks[e];
-        _= arrayUpdate(colummarks,e,true);
-        eqns = getEqnsforIndexReductionphase({e},m,mT,colummarks,ass1,ass2,{e});
+        // if it is a multi dim equation take all scalare equations
+        e1 = mapIncRowEqn[e];
+        eqns = mapEqnIncRow[e1];
+        _ = List.fold1r(eqns,arrayUpdate,true,colummarks);
+        eqns = getEqnsforIndexReductionphase(eqns,m,mT,colummarks,ass1,ass2,eqns);
       then
-        getEqnsforIndexReduction1(rest,m,mT,colummarks,ass1,ass2,eqns::inEqns);
-    case (_::rest,_,_,_,_,_,_)
+        getEqnsforIndexReduction1(rest,m,mT,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,eqns::inEqns);
+    case (_::rest,_,_,_,_,_,_,_,_)
       then
-        getEqnsforIndexReduction1(rest,m,mT,colummarks,ass1,ass2,inEqns);        
+        getEqnsforIndexReduction1(rest,m,mT,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inEqns);
   end matchcontinue;
 end getEqnsforIndexReduction1;
 
@@ -6127,16 +6175,16 @@ algorithm
         System.realtimeTick(BackendDAE.RT_PROFILER0);
         testMatchingAlgorithm(10,matchingAlgorithm,isyst,ishared,inMatchingOptions);
         t = System.realtimeTock(BackendDAE.RT_PROFILER0);
-        print(str +& realString(realDiv(t,10.0)) +& "\n");       
+        print(str +& realString(realDiv(t,10.0)) +& "\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
         ();
     case ((str,matchingAlgorithm)::rest,_,_,_)
       equation
-        print(str +& "failed!\n");       
+        print(str +& "failed!\n");
         testMatchingAlgorithms1(rest,isyst,ishared,inMatchingOptions);
       then
-        ();        
+        ();
   end matchcontinue;
 end testMatchingAlgorithms1;
 
@@ -6213,16 +6261,16 @@ algorithm
         System.realtimeTick(BackendDAE.RT_PROFILER0);
         testExternMatchingAlgorithm(10,matchingAlgorithm,cheapId,nv,ne);
         t = System.realtimeTock(BackendDAE.RT_PROFILER0);
-        print(str +& realString(realDiv(t,10.0)) +& "\n");       
+        print(str +& realString(realDiv(t,10.0)) +& "\n");
         testExternMatchingAlgorithms1(rest,cheapId,nv,ne);
       then
         ();
     case ((str,matchingAlgorithm)::rest,_,_,_)
       equation
-        print(str +& "failed!\n");       
+        print(str +& "failed!\n");
         testExternMatchingAlgorithms1(rest,cheapId,nv,ne);
       then
-        ();        
+        ();
   end matchcontinue;
 end testExternMatchingAlgorithms1;
 
@@ -6277,7 +6325,7 @@ algorithm
        (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.NORMAL());
      then 
        syst;
-  end match;       
+  end match;
 end randSortSystem;
 
 protected function randSortSystem1
