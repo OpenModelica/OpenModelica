@@ -241,7 +241,7 @@ algorithm
         // transform to nonscalar 
         ass1 = BackendDAETransform.varAssignmentNonScalar(1,size,ass1,mapIncRowEqn,{});
         ass22 = BackendDAETransform.eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
-        eorphans = List.unique(List.map1r(eorphans,arrayGet,mapIncRowEqn));
+        eorphans = List.uniqueIntN(List.map1r(eorphans,arrayGet,mapIncRowEqn),arrayLength(mapIncRowEqn));
         (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE());
         //  BackendDump.dumpIncidenceMatrix(m);
         //  BackendDump.dumpIncidenceMatrixT(mt);
@@ -585,7 +585,7 @@ algorithm
         elst = List.select1(List.flatten(List.map1r(rlst,arrayGet,mt)),intGt,0);
         //  print("Search for " +& intString(o) +& " Parnters in: " +& stringDelimitList(List.map(elst,intString),", ") +& "\n");
         partner = List.select1(elst,isResOrphan,ass2);
-        partner = List.unique(List.removeOnTrue(o, intEq, partner));
+        partner = List.uniqueIntN(List.removeOnTrue(o, intEq, partner),arrayLength(colummarks));
         List.map2_0(partner,doMark,colummarks,mark);
         //  print("Found for " +& intString(o) +& " Parnters: " +& stringDelimitList(List.map(partner,intString),", ") +& "\n");
         //  BackendDump.debuglst((rlst,intString,", ","\n"));

@@ -2249,54 +2249,59 @@ public function dumpMarkedEqns
   input BackendDAE.EqSystem syst;
   input list<Integer> inIntegerLst;
   output String outString;
+protected
+  BackendDAE.EquationArray eqns;
+  list<Integer> sortedeqns;
 algorithm
-  outString := match (syst,inIntegerLst)
-    local
-      String s1,s2,s3,res;
-      Integer e_1,e;
-      BackendDAE.Equation eqn;
-      BackendDAE.EquationArray eqns;
-      list<Integer> es;
-    case (_,{}) then "";
-    case (BackendDAE.EQSYSTEM(orderedEqs = eqns),(e :: es))
-      equation
-        s1 = dumpMarkedEqns(syst, es);
-        e_1 = e - 1;
-        eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        s2 = equationStr(eqn);
-        s3 = intString(e);
-        res = stringAppendList({s3,": ",s2,";\n",s1});
-      then
-        res;
-  end match;
+  BackendDAE.EQSYSTEM(orderedEqs = eqns) := syst;
+  outString := List.fold1(inIntegerLst,dumpMarkedEqns1,eqns,"");
 end dumpMarkedEqns;
+
+protected function dumpMarkedEqns1
+  input Integer e;
+  input BackendDAE.EquationArray eqns;
+  input String inS;
+  output String outS;
+protected
+  String s1,s2,s3;
+  Integer e_1;
+  BackendDAE.Equation eqn;   
+algorithm
+  e_1 := e - 1;
+  eqn := BackendDAEUtil.equationNth(eqns, e_1);
+  s2 := equationStr(eqn);
+  s3 := intString(e);
+  outS := stringAppendList({inS,s3,": ",s2,";\n"});  
+end dumpMarkedEqns1;
 
 public function dumpMarkedVars
 "Dumps only the variable names given as list of indexes to a string."
   input BackendDAE.EqSystem syst;
   input list<Integer> inIntegerLst;
   output String outString;
+protected
+  BackendDAE.Variables vars;
+  list<String> slst;
 algorithm
-  outString:=
-  match (syst,inIntegerLst)
-    local
-      String s1,s2,res,s3;
-      Integer v;
-      DAE.ComponentRef cr;
-      BackendDAE.Variables vars;
-      list<Integer> vs;
-    case (_,{}) then "";
-    case (BackendDAE.EQSYSTEM(orderedVars = vars),(v :: vs))
-      equation
-        s1 = dumpMarkedVars(syst, vs);
-        BackendDAE.VAR(varName = cr) = BackendVariable.getVarAt(vars, v);
-        s2 = ComponentReference.printComponentRefStr(cr);
-        s3 = intString(v);
-        res = stringAppendList({s2,"(",s3,"), ",s1});
-      then
-        res;
-  end match;
+  BackendDAE.EQSYSTEM(orderedVars = vars) := syst;
+  slst := List.map1(inIntegerLst,dumpMarkedVars1,vars);
+  outString := stringDelimitList(slst,", ");
 end dumpMarkedVars;
+
+protected function dumpMarkedVars1
+"Dumps only the variable names given as list of indexes to a string."
+  input Integer v;
+  input BackendDAE.Variables vars;
+  output String outS;
+protected
+  String s1,s2,s3;
+  DAE.ComponentRef cr;  
+algorithm
+  BackendDAE.VAR(varName = cr) := BackendVariable.getVarAt(vars, v);
+  s2 := ComponentReference.printComponentRefStr(cr);
+  s3 := intString(v);
+  outS := stringAppendList({s2,"(",s3,")"});
+end dumpMarkedVars1;
 
 public function dumpComponentsGraphStr
 "Dumps the assignment graph used to determine strong
