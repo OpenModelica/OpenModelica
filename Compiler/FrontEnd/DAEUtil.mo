@@ -406,7 +406,7 @@ algorithm
       list<DAE.Element> elements;
     case (DAE.DAE(elements), _)
       equation
-        elements = removeVariablesFromElements(elements, vars);
+        elements = removeVariablesFromElements(elements, vars, {});
       then
         DAE.DAE(elements);
   end matchcontinue;
@@ -417,52 +417,42 @@ protected function removeVariablesFromElements
   remove the variables that match for the element list"
   input list<DAE.Element> inElements;
   input list<DAE.ComponentRef> variableNames;
+  input list<DAE.Element> inAcc;
   output list<DAE.Element> outElements;
 algorithm
-  outElements := matchcontinue(inElements,variableNames)
+  outElements := match (inElements,variableNames,inAcc)
     local
       DAE.ComponentRef cr;
       list<DAE.Element> rest, els, elist;
       DAE.Element e,v; String id;
       DAE.ElementSource source "the origin of the element";
       Option<SCode.Comment> cmt;
+      Boolean isEmpty;
 
     // empty case
-    case({},_) then {};
+    case({},_,_) then listReverse(inAcc);
 
     // variable present, remove it
-    case(DAE.VAR(componentRef = cr)::rest, _)
+    case((v as DAE.VAR(componentRef = cr))::rest, _, _)
       equation
         // variable is in the list! jump over it
-        _::_ = List.select1(variableNames, ComponentReference.crefEqual, cr);
-        els = removeVariablesFromElements(rest, variableNames);
-      then 
-        els;
-
-    // variable not present, keep it        
-    case((v as DAE.VAR(componentRef = cr))::rest, _)
-      equation
-        // variable NOT in the list! jump over it
-        {} = List.select1(variableNames, ComponentReference.crefEqual, cr);
-        els = removeVariablesFromElements(rest, variableNames);
-      then 
-        v::els;
+        isEmpty = List.isEmpty(List.select1(variableNames, ComponentReference.crefEqual, cr));
+        els = removeVariablesFromElements(rest, variableNames, List.consOnTrue(isEmpty, v, inAcc));
+      then els;
 
     // handle components
-    case(DAE.COMP(id,elist,source,cmt)::rest, _)
+    case(DAE.COMP(id,elist,source,cmt)::rest, _, _)
       equation
-        elist = removeVariablesFromElements(elist, variableNames);
-        els = removeVariablesFromElements(rest, variableNames);
-      then 
-        DAE.COMP(id,elist,source,cmt)::els;
+        elist = removeVariablesFromElements(elist, variableNames, {});
+        els = removeVariablesFromElements(rest, variableNames, DAE.COMP(id,elist,source,cmt)::inAcc);
+      then els;
 
     // anything else, just keep it
-    case(v::rest, _)
+    case(v::rest, _, _)
       equation
-        els = removeVariablesFromElements(rest, variableNames);
-      then 
-        v::els;
-  end matchcontinue;
+        els = removeVariablesFromElements(rest, variableNames, v::inAcc);
+      then els;
+  end match;
 end removeVariablesFromElements;
 
 protected function removeVariable "Remove the variable from the DAE"

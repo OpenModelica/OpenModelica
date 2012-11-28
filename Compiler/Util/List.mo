@@ -2018,7 +2018,7 @@ public function setDifferenceOnTrue
     output Boolean outIsEqual;
   end CompFunc;
 algorithm
-  outDifference := matchcontinue(inList1, inList2, inCompFunc)
+  outDifference := match (inList1, inList2, inCompFunc)
     local
       ElementType e;
       list<ElementType> rest, rest1;
@@ -2034,13 +2034,7 @@ algorithm
       then
         setDifferenceOnTrue(rest1, rest, inCompFunc);
 
-    else
-      equation
-        print("- List.setDifferenceOnTrue failed\n");
-      then
-        fail();
-
-  end matchcontinue;
+  end match;
 end setDifferenceOnTrue;
 
 public function setDifference

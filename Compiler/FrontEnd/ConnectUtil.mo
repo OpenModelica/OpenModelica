@@ -435,7 +435,7 @@ protected function getExpandableVariables
   input list<DAE.ComponentRef> inAccPotential;
   output list<DAE.ComponentRef> outPotential;
 algorithm
-  outPotential := matchcontinue(inVariables, inAccPotential)
+  outPotential := match (inVariables, inAccPotential)
     local
       list<DAE.Element> rest_vars;
       DAE.ComponentRef name;
@@ -445,8 +445,7 @@ algorithm
 
     case (DAE.VAR(componentRef = name) :: rest_vars, _)
       equation
-        true = isExpandable(name);
-        potential = getExpandableVariables(rest_vars, name :: inAccPotential);
+        potential = getExpandableVariables(rest_vars, List.consOnTrue(isExpandable(name), name, inAccPotential));
       then
         potential;
 
@@ -456,7 +455,7 @@ algorithm
       then
         potential;
 
-  end matchcontinue;
+  end match;
 end getExpandableVariables;
 
 protected function getStreamAndFlowVariables
@@ -2066,7 +2065,7 @@ protected function getOnlyExpandableConnectedCrefs
   input list<DAE.ComponentRef> inAcc;
   output list<DAE.ComponentRef> outUsefulConnectedExpandable;
 algorithm
-  outUsefulConnectedExpandable := matchcontinue(inSets, inAcc)
+  outUsefulConnectedExpandable := match (inSets, inAcc)
     local
       list<DAE.ComponentRef> set, acc;
       list<list<DAE.ComponentRef>> rest, sets;
@@ -2075,21 +2074,13 @@ algorithm
     
     case (set::rest, _)
       equation
-        true = allCrefsAreExpandable(set);
         // print("OnlyExp Set:\n\t" +& stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") +& "\n");        
-        acc = listAppend(set, inAcc);
+        acc = Debug.bcallret2(allCrefsAreExpandable(set), listAppend, set, inAcc, inAcc);
         acc = getOnlyExpandableConnectedCrefs(rest, acc);
       then
         acc;
-    
-    case (set::rest, _)
-      equation
-        // print("NotOnlyExp Set:\n\t" +& stringDelimitList(List.map(set, ComponentReference.printComponentRefStr), "\n\t") +& "\n");
-        acc = getOnlyExpandableConnectedCrefs(rest, inAcc);
-      then
-        acc;
   
-  end matchcontinue;
+  end match;
 end getOnlyExpandableConnectedCrefs;
 
 public function allCrefsAreExpandable
@@ -2100,17 +2091,14 @@ algorithm
     local 
       list<DAE.ComponentRef> rest;
       DAE.ComponentRef name;
+      Boolean b;
     
     case ({}) then true;
     
     case (name::rest)
       equation
-        true = isExpandable(name);
-        true = allCrefsAreExpandable(rest); 
-      then
-        true;
-    
-    else false;    
+        b = Debug.bcallret1(isExpandable(name), allCrefsAreExpandable, rest, false);
+      then b;
     
   end matchcontinue;
 end allCrefsAreExpandable;
