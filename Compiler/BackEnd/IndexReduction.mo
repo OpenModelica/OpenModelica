@@ -74,6 +74,7 @@ protected import Matching;
 protected import SCode;
 protected import Util;
 protected import Values;
+protected import ValuesUtil;
 
 /*****************************************
  Pantelides index reduction method .
@@ -138,6 +139,7 @@ algorithm
         fail();
     case (_,_,_,_,_,_,_)
       equation
+        ErrorExt.delCheckpoint("Pantelites");
         Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReduction failed!"});
       then
         fail();
@@ -961,8 +963,142 @@ algorithm
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
       then
         (syst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
+/*
+    case (false,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
+      equation
+        varlst = BackendEquation.equationsLstVars(notDiffedEquations,v);
+        varlst = List.select(varlst,BackendVariable.isStateVar);
+        Debug.fcall(Flags.BLT_DUMP, print, "state vars of undiffed Eqns\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
+                
+      then
+        fail();
+*/
+
+    // if all of these does not work try to replace final parameter
+    case (_,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
+      equation
+        ((eqns,eqnslst as _::_,_)) = List.fold1(inEqns,replaceFinalVars,BackendVariable.daeKnVars(ishared),(eqns,{},BackendVarTransform.emptyReplacements()));
+        // unassign changed equations and assigned vars
+        eqnslst1 = List.flatten(List.map1r(eqnslst,arrayGet,imapEqnIncRow));
+        ilst = List.map1r(eqnslst1,arrayGet,inAss2);
+        ilst = List.select1(ilst,intGt,0);
+        ass2 = List.fold1r(eqnslst1,arrayUpdate,-1,inAss2);
+        ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
+        // update IncidenceMatrix
+        Debug.fcall(Flags.BLT_DUMP, print, "Replaced final Parameter in Eqns\n");
+        syst = BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching);
+        Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst,intString," ","\n"));
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst, imapEqnIncRow, imapIncRowEqn);
+      then
+        (syst,ishared,ass1,ass2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
   end matchcontinue;
 end handleundifferntiableMSS;
+
+protected function replaceFinalVars
+  input Integer e;
+  input BackendDAE.Variables vars;
+  input tuple<BackendDAE.EquationArray,list<Integer>,BackendVarTransform.VariableReplacements> inTpl;
+  output tuple<BackendDAE.EquationArray,list<Integer>,BackendVarTransform.VariableReplacements> outTpl;
+protected
+  BackendDAE.EquationArray eqns;
+  list<Integer> changedEqns;
+  BackendDAE.Equation eqn;
+  Integer e1;
+  Boolean b;
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  (eqns,changedEqns,repl) := inTpl;
+  // get the equation
+  e1 := e-1;
+  eqn := BackendDAEUtil.equationNth(eqns, e1);
+  // reaplace final vars
+  (eqn,(_,b,repl)) := BackendEquation.traverseBackendDAEExpsEqn(eqn,replaceFinalVarsEqn,(vars,false,repl));
+  // if replaced set eqn
+  eqns := Debug.bcallret3(b,BackendEquation.equationSetnth,eqns,e1,eqn,eqns);
+  changedEqns := List.consOnTrue(b,e,changedEqns);
+  outTpl := (eqns,changedEqns,repl);
+end replaceFinalVars;
+
+protected function replaceFinalVarsEqn
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> outTpl;
+protected
+  DAE.Exp e;
+  tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements> tpl;
+  BackendDAE.Variables vars;
+  Boolean b;
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  (e,tpl) := inTpl;
+  ((e,(vars,b,repl))) := Expression.traverseExp(e,replaceFinalVarsExp,tpl);
+  (e,_) := ExpressionSimplify.condsimplify(b,e);
+  outTpl := (e,(vars,b,repl));
+end replaceFinalVarsEqn;
+
+protected function replaceFinalVarsExp "
+Author: Frenkel TUD 2012-11
+replace final parameter."
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> inExp;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,Boolean,BackendVarTransform.VariableReplacements>> outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      BackendDAE.Variables vars;
+      DAE.ComponentRef cr;
+      list<BackendDAE.Var> vlst;
+      DAE.Exp e;
+      BackendVarTransform.VariableReplacements repl;
+    
+    case((e as DAE.CREF(componentRef=cr), (vars,_,repl)))
+      equation
+        (vlst as _::_,_) = BackendVariable.getVar(cr,vars);
+        ((repl,true)) = List.fold(vlst,replaceFinalVarsGetExp,(repl,false));
+        (e,true) = BackendVarTransform.replaceExp(e,repl,NONE());
+      then
+        ((e, (vars,true,repl) ));
+    case _ then inExp;
+  end matchcontinue;
+end replaceFinalVarsExp;
+
+protected function replaceFinalVarsGetExp
+"autor: Frenkel TUD 2012-11"
+ input BackendDAE.Var inVar;
+ input tuple<BackendVarTransform.VariableReplacements,Boolean> iTpl;
+ output tuple<BackendVarTransform.VariableReplacements,Boolean> oTpl;
+algorithm
+  oTpl:=
+  matchcontinue (inVar,iTpl)
+    local
+      BackendVarTransform.VariableReplacements repl;
+      DAE.ComponentRef cr;
+      Option< .DAE.VariableAttributes> values;
+      DAE.Exp exp;
+      Values.Value bindValue;
+    case (BackendDAE.VAR(varName=cr,bindExp=SOME(exp)),(repl,_))
+      equation
+        true = BackendVariable.isFinalVar(inVar);
+        repl = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
+    then
+      ((repl,true));
+    case (BackendDAE.VAR(varName=cr,bindExp=NONE(),bindValue=SOME(bindValue)),(repl,_))
+      equation
+        true = BackendVariable.isFinalVar(inVar);
+        exp = ValuesUtil.valueExp(bindValue);
+        repl = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
+    then
+      ((repl,true));
+    case (BackendDAE.VAR(varName=cr,bindExp=NONE(),values=values),(repl,_))
+      equation
+        true = BackendVariable.isFinalVar(inVar);
+        exp = DAEUtil.getStartAttrFail(values);
+        repl = BackendVarTransform.addReplacement(repl,cr,exp,NONE());
+    then
+      ((repl,true)); 
+    else then iTpl;
+  end matchcontinue;
+end replaceFinalVarsGetExp;
 
 protected function selectAliasState
 "function selectAliasState

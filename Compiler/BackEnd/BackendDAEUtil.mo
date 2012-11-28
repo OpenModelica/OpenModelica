@@ -4400,7 +4400,7 @@ public function updateIncidenceMatrixScalar
   outputs: (IncidenceMatrix, IncidenceMatrixT)"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
-  input list<Integer> inIntegerLst;
+  input list<Integer> inIntegerLst "numbers of equations in equationarray";
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
   output BackendDAE.EqSystem osyst;
@@ -4419,7 +4419,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;      
 
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),_,eqns,_,_)
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),_,_,_,_)
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
@@ -4435,7 +4435,7 @@ algorithm
         // fill the extended parts first
         (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(oldsize+1,newsize,oldsize1,vars,daeeqns,m,mt,mapEqnIncRow,mapIncRowEqn,inIndxType);
         // update the old 
-        eqns = List.removeOnTrue(oldsize, intLt, eqns);
+        eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
         (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m,mt,eqns,mapEqnIncRow,mapIncRowEqn,inIndxType);
       then
         (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),mapEqnIncRow,mapIncRowEqn);

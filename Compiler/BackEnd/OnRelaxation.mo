@@ -1612,8 +1612,8 @@ protected
   list<list<Integer>> comps,linkslst;
 algorithm
   // get strong connected parts  
-  size := listLength(vorphans);
   map := listArray(vorphans);
+  size := arrayLength(map);
   //  print("map\n");
   //  BackendDump.dumpMatching(map);
   invmap := arrayCreate(arrayLength(vorphansarray),0);
