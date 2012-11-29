@@ -53,6 +53,7 @@ AC_SUBST(OMNOTEBOOK)
 AC_SUBST(FPMATHFORTRAN)
 AC_SUBST(OMOPTIM_CC)
 AC_SUBST(OMOPTIM_CXX)
+AC_SUBST(LIBGC)
 
 FINAL_MESSAGES="\nConfigured OpenModelica successfully using the following options:"
 
@@ -622,8 +623,10 @@ fi
 
 if test "Darwin" = `uname`; then
   EXE=".app"
+  LIBGC="libgc.a"
 else
   EXE=""
+  LIBGC="libgc.so libgc.so.1 libgc.so.1.0.3"
 fi
 
 if test "Darwin" != `uname`; then

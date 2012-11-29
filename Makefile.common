@@ -71,6 +71,10 @@ libgc-dev: /usr/include/gc/new_gc_alloc.h
 libgc-dev: /usr/include/gc/weakpointer.h
 
 boehm-gc: mkbuilddirs boehm-gc-lib build/include/omc/gc.h build/include/omc/gc_config_macros.h build/include/omc/gc_version.h
+build/lib/omc/libgc.a: 3rdParty/gc-7.2/.libs/libgc.a mkbuilddirs
+	cp -p $< $@
+3rdParty/gc-7.2/.libs/libgc.a: 3rdParty/gc-7.2/Makefile
+	$(MAKE) -C 3rdParty/gc-7.2/
 build/include/omc/gc.h: 3rdParty/gc-7.2/include/gc.h mkbuilddirs
 	cp -pP $< $@
 build/include/omc/gc_config_macros.h: 3rdParty/gc-7.2/include/gc_config_macros.h mkbuilddirs
