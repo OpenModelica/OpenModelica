@@ -40,20 +40,20 @@ public function initializeFMIImport
   input String inWorkingDirectory;
   input Integer inFMILogLevel;
   output Boolean result;
-  output Integer outFMIContext;
-  output Integer outFMIInstance;
+  output Option<Integer> outFMIContext "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
+  output Option<Integer> outFMIInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
   output FMI.Info outFMIInfo;
   output FMI.ExperimentAnnotation outExperimentAnnotation;
-  output Integer outModelVariablesInstance;
+  output Option<Integer> outModelVariablesInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
   output list<FMI.ModelVariables> outModelVariablesList;
   external "C" result=FMIImpl__initializeFMIImport(inFileName, inWorkingDirectory, inFMILogLevel, outFMIContext, outFMIInstance, outFMIInfo, outExperimentAnnotation,
   outModelVariablesInstance, outModelVariablesList) annotation(Library = {"omcruntime","fmilib"});
 end initializeFMIImport;
 
 public function releaseFMIImport
-  input Integer inFMIModelVariablesInstance;
-  input Integer inFMIInstance;
-  input Integer inFMIContext;
+  input Option<Integer> inFMIModelVariablesInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
+  input Option<Integer> inFMIInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
+  input Option<Integer> inFMIContext "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
   external "C" FMIImpl__releaseFMIImport(inFMIModelVariablesInstance, inFMIInstance, inFMIContext) annotation(Library = {"omcruntime","fmilib"});
 end releaseFMIImport;
 

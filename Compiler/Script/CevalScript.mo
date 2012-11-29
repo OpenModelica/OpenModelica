@@ -1505,7 +1505,7 @@ algorithm
         true = System.regularFileExists(filename);
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
         /* Initialize FMI objects */
-        (b, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel);
+        (b, SOME(fmiContext), SOME(fmiInstance), fmiInfo, fmiExperimentAnnotation, SOME(fmiModelVariablesInstance), fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel);
         true = b; /* if something goes wrong while initializing */
         fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
         s1 = System.tolower(System.platform());
@@ -1518,7 +1518,7 @@ algorithm
         filename_1 = Util.if_(b1,stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}),stringAppendList({str1,"_",str2,"_FMU.mo"}));
         System.writeFile(outputFile, str);
         /* Release FMI objects */
-        FMIExt.releaseFMIImport(fmiModelVariablesInstance, fmiInstance, fmiContext);
+        FMIExt.releaseFMIImport(SOME(fmiModelVariablesInstance), SOME(fmiInstance), SOME(fmiContext));
       then
         (cache,Values.STRING(filename_1),st);
         

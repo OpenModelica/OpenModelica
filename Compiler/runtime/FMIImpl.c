@@ -242,7 +242,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     callback_functions.freeMemory = free;
   }
   fmi_import_context_t* context = fmi_import_allocate_context(&callbacks);
-  *fmiContext = context;
+  *fmiContext = mk_some(context);
   // extract the fmu file and read the version
   fmi_version_enu_t version;
   version = fmi_import_get_fmi_version(context, file_name, working_directory);
@@ -260,7 +260,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Error parsing the modelDescription.xml file."), NULL, 0);
     return 0;
   }
-  *fmiInstance = fmi;
+  *fmiInstance = mk_some(fmi);
   // Load the binary (dll/so)
   jm_status_enu_t status;
   status = fmi1_import_create_dllfmu(fmi, callback_functions, 0);
@@ -315,7 +315,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   *experimentAnnotation = FMI__EXPERIMENTANNOTATION(mk_rcon(experimentStartTime), mk_rcon(experimentStopTime), mk_rcon(experimentTolerance));
   /* Read the model variables from the FMU's modelDescription.xml file and create a list of it. */
   fmi1_import_variable_list_t* model_variables_list = fmi1_import_get_variable_list(fmi);
-  *modelVariablesInstance = model_variables_list;
+  *modelVariablesInstance = mk_some(model_variables_list);
   size_t model_variables_list_size = fmi1_import_get_variable_list_size(model_variables_list);
   /* get model variables value reference list */
   const fmi1_value_reference_t* model_variables_value_reference_list = fmi1_import_get_value_referece_list(model_variables_list);
@@ -375,8 +375,11 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
  * Releases all the instances of FMI Import.
  * From FMIL docs; Free a variable list. Note that variable lists are allocated dynamically and must be freed when not needed any longer.
  */
-void FMIImpl__releaseFMIImport(intptr_t fmiModeVariablesInstance, intptr_t fmiInstance, intptr_t fmiContext)
+void FMIImpl__releaseFMIImport(void *ptr1, void *ptr2, void *ptr3)
 {
+  intptr_t fmiModeVariablesInstance = RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr1),1));
+  intptr_t fmiInstance = RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr2),1));
+  intptr_t fmiContext = RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr3),1));
   free((fmi1_import_variable_list_t*)fmiModeVariablesInstance);
   fmi1_import_t* fmi = (fmi1_import_t*)fmiInstance;
   fmi1_import_destroy_dllfmu(fmi);
