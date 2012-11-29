@@ -9699,6 +9699,36 @@ algorithm
   end match;
 end collectInitialVars;
 
+protected function generateInactiveWhenEquationForInitialization "function generateInactiveWhenEquationForInitialization
+  author: lochel
+  This function ... I guess the function name says it all!"
+  input .DAE.ComponentRef inCRef;
+  input .DAE.ElementSource inSource;
+  output BackendDAE.Equation outEqn;
+protected
+  .DAE.Type identType;
+  .DAE.ComponentRef preCR;
+algorithm
+  identType := ComponentReference.crefType(inCRef);
+  preCR := ComponentReference.crefPrefixPre(inCRef);
+  outEqn := BackendDAE.EQUATION(DAE.CREF(inCRef, identType), DAE.CREF(preCR, identType), inSource);
+end generateInactiveWhenEquationForInitialization;
+
+protected function generateInactiveWhenAlgStatementForInitialization "function generateInactiveWhenAlgStatementForInitialization
+  author: lochel
+  This function ... I guess the function name says it all!"
+  input .DAE.ComponentRef inCRef;
+  input .DAE.ElementSource inSource;
+  output .DAE.Statement outAlgStatement;
+protected
+  .DAE.Type identType;
+  .DAE.ComponentRef preCR;
+algorithm
+  identType := ComponentReference.crefType(inCRef);
+  preCR := ComponentReference.crefPrefixPre(inCRef);
+  outAlgStatement := DAE.STMT_ASSIGN(identType, DAE.CREF(inCRef, identType), DAE.CREF(preCR, identType), inSource);
+end generateInactiveWhenAlgStatementForInitialization;
+
 protected function generateInitialWhenEqn "public function generateInitialWhenEqn
   author: lochel
   This function generates out of a given when-equation, a equation for the initialization-problem."
@@ -9713,7 +9743,11 @@ algorithm
       .DAE.ElementSource source "origin of equation";
       BackendDAE.Equation eqn;
       .DAE.Type identType;
-      .DAE.ComponentRef preCR;
+      String errorMessage;
+      .DAE.Algorithm alg;
+      list< .DAE.ComponentRef> crefLst;
+      list< .DAE.Statement> algStmts;
+      Integer size;
       
     // active when equation during initialization
     case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
@@ -9724,10 +9758,31 @@ algorithm
     
     // inactive when equation during initialization
     case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
-      identType = ComponentReference.crefType(left);
-      preCR = ComponentReference.crefPrefixPre(left);
-      eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), DAE.CREF(preCR, identType), source);
+      false = Expression.containsInitialCall(condition, false);
+      eqn = generateInactiveWhenEquationForInitialization(left, source);
     then eqn;
+    
+    // active when equation during initialization
+    case BackendDAE.ALGORITHM(alg=(alg as DAE.ALGORITHM_STMTS(statementLst={DAE.STMT_WHEN(exp=condition, statementLst=algStmts, source=source)}))) equation
+      true = Expression.containsInitialCall(condition, false);
+      crefLst = CheckModel.algorithmOutputs(alg);
+      size = listLength(crefLst);
+      eqn = BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(algStmts), source);
+    then eqn;
+    
+    // inactive when equation during initialization
+    case BackendDAE.ALGORITHM(alg=(alg as DAE.ALGORITHM_STMTS(statementLst={DAE.STMT_WHEN(exp=condition, source=source)}))) equation
+      false = Expression.containsInitialCall(condition, false);
+      crefLst = CheckModel.algorithmOutputs(alg);
+      size = listLength(crefLst);
+      algStmts = List.map1(crefLst, generateInactiveWhenAlgStatementForInitialization, source);
+      eqn = BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(algStmts), source);
+    then eqn;
+    
+    case eqn equation
+      errorMessage = "./Compiler/BackEnd/BackendDAEUtil.mo: function generateInitialWhenEqn failed for:\n" +& BackendDump.equationStr(eqn);
+      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+    then fail();
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function generateInitialWhenEqn failed"});
@@ -9742,7 +9797,7 @@ protected
   BackendDAE.Equation eqn, eqn1;
   BackendDAE.EquationArray eqns, reeqns;
   Integer size;
-  Boolean b, isWhenEquation;
+  Boolean b, isWhen;
 algorithm
   (eqn, (eqns, reeqns)) := inTpl;
   
@@ -9750,8 +9805,12 @@ algorithm
   (eqn1, _) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceDerPreCref, 0);
   
   // traverse when equations
-  isWhenEquation := BackendEquation.isWhenEquation(eqn);
-  eqn1 := Debug.bcallret1(isWhenEquation, generateInitialWhenEqn, eqn1, eqn1);
+  isWhen := BackendEquation.isWhenEquation(eqn);
+  eqn1 := Debug.bcallret1(isWhen, generateInitialWhenEqn, eqn1, eqn1);
+  
+  // traverse when algorithms
+  isWhen := BackendEquation.isWhenAlgorithm(eqn);
+  eqn1 := Debug.bcallret1(isWhen, generateInitialWhenEqn, eqn1, eqn1);
   
   // add it, if size is zero (terminate,assert,noretcall) move to removed equations
   size := BackendEquation.equationSize(eqn1);

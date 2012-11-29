@@ -2341,6 +2341,18 @@ algorithm
   end match;
 end isWhenEquation;
 
+public function isWhenAlgorithm "public function isWhenAlgorithm
+  author: lochel
+  This function checks whether a given BackendDAE.Equation is a when-algorithm or not."
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := matchcontinue(inEqn)
+    case BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst={DAE.STMT_WHEN(source=_)})) then true;
+    else then false;
+  end matchcontinue;
+end isWhenAlgorithm;
+
 public function isArrayEquation
   input BackendDAE.Equation inEqn;
   output Boolean b;

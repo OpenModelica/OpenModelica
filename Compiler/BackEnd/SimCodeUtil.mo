@@ -1857,150 +1857,148 @@ algorithm
       list<SimCode.SimVar> tempvars;
       
       SimCode.JacobianMatrix jacG;
-    case (dlow,class_,_,fileDir,_,_,_,_,_,_,_,_)
-      equation
-        System.tmpTickReset(0);
-        ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
-         //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
-        cname = Absyn.pathStringNoQual(class_);
-        
-        // generate initalsystem before replacing pre(alias)!
-        (_, initDAE) = BackendDAEUtil.solveInitialSystem(dlow);
-        
-        // replace pre(alias) in time-equations
-        dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
+      
+    case (dlow,class_,_,fileDir,_,_,_,_,_,_,_,_) equation
+      System.tmpTickReset(0);
+      ifcpp = stringEqual(Config.simCodeTarget(),"Cpp");
+      //Debug.fcall(Flags.CPP_VAR,print, "is that Cpp? : " +& Dump.printBoolStr(ifcpp) +& "\n");
+      cname = Absyn.pathStringNoQual(class_);
+      
+      // generate initalsystem before replacing pre(alias)!
+      (_, initDAE) = BackendDAEUtil.solveInitialSystem(dlow);
+      
+      // replace pre(alias) in time-equations
+      dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
-        // check if the Sytems has states
-        dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
-        
-        (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
-        BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
-                                                          constraints = constrsarr,
-                                                          classAttrs = clsattrsarra,
-                                                          functionTree = functionTree,
-                                                          symjacs = symJacs)) = dlow2;
-        
-        extObjInfo = createExtObjInfo(shared);
-        
-        whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
-        zeroCrossings = Util.if_(ifcpp,getRelations(dlow2),getZeroCrossings(dlow2));
-        relations = getRelations(dlow2);
-        sampleZC = getSamples(dlow2);
-        zeroCrossings = Util.if_(ifcpp,listAppend(zeroCrossings,sampleZC),zeroCrossings);
-        (sampleConditions, helpVarInfo) = prepareSampleConditions(sampleZC,helpVarInfo,{});
-        zeroCrossings = updateSamplesConditionsinZC(zeroCrossings,helpVarInfo,sampleConditions,{});
-        (uniqueEqIndex,sampleEquations) = createSampleEquations(sampleEqns,1,{});
-        n_h = listLength(helpVarInfo);
-        
-        // initialization stuff
-        (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, {}, helpVarInfo);
-        (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
- 
-        // expandAlgorithmsbyInitStmts
-        dlow2 = BackendDAEUtil.expandAlgorithmsbyInitStmts(dlow2);
-        BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
-                                                          constraints = constrsarr,
-                                                          classAttrs = clsattrsarra,
-                                                          functionTree = functionTree,
-                                                          symjacs = symJacs)) = dlow2;        
-        
-        // Add model info
-        modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir,ifcpp);
-        
-        // equation generation for euler, dassl2, rungekutta
-        (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},tempvars);
-        
-        modelInfo = addTempVars(tempvars,modelInfo);
-        
-        odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
+      // check if the Sytems has states
+      dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
+      
+      (helpVarInfo, dlow2, sampleEqns) = generateHelpVarInfo(dlow);
+      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
+                                                        constraints=constrsarr,
+                                                        classAttrs=clsattrsarra,
+                                                        functionTree=functionTree,
+                                                        symjacs=symJacs)) = dlow2;
+      
+      extObjInfo = createExtObjInfo(shared);
+      
+      whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
+      zeroCrossings = Util.if_(ifcpp,getRelations(dlow2),getZeroCrossings(dlow2));
+      relations = getRelations(dlow2);
+      sampleZC = getSamples(dlow2);
+      zeroCrossings = Util.if_(ifcpp,listAppend(zeroCrossings,sampleZC),zeroCrossings);
+      (sampleConditions, helpVarInfo) = prepareSampleConditions(sampleZC,helpVarInfo,{});
+      zeroCrossings = updateSamplesConditionsinZC(zeroCrossings,helpVarInfo,sampleConditions,{});
+      (uniqueEqIndex,sampleEquations) = createSampleEquations(sampleEqns,1,{});
+      n_h = listLength(helpVarInfo);
+      
+      // initialization stuff
+      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, {}, helpVarInfo);
+      (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
 
-        // Assertions and crap
-        // create parameter equations
-        ((uniqueEqIndex, startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createStartValueEquations, (uniqueEqIndex, {}));
-        ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
-        (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization);
-        ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
-        
-        ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow2, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
-        discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2, extractDiscreteModelVars, {});
-        makefileParams = createMakefileParams(includeDirs, libs);
-        (delayedExps, maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
-        
-        //append removed equation to all equations, since these are actually 
-        //just the algorithms without outputs
-        algebraicEquations = listAppend(algebraicEquations,removedEquations);
-        allEquations = listAppend(allEquations,removedEquations);
-        
-        // update indexNonLinear in SES_NONLINEAR and count
-        (initialEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(initialEquations, 0, 0);
-        (parameterEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(parameterEquations, numberofEqns, numberofNonLinearSys);
-        (allEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys);
-                
-        // replace div operator with div operator with check of Division by zero
-        allEquations = List.map(allEquations,addDivExpErrorMsgtoSimEqSystem);
-        odeEquations = List.mapList(odeEquations,addDivExpErrorMsgtoSimEqSystem);
-        algebraicEquations = List.map(algebraicEquations,addDivExpErrorMsgtoSimEqSystem);
-        residuals = List.map(residuals, addDivExpErrorMsgtoSimEqSystem);
-        startValueEquations = List.map(startValueEquations,addDivExpErrorMsgtoSimEqSystem);
-        parameterEquations = List.map(parameterEquations,addDivExpErrorMsgtoSimEqSystem);
-        removedEquations = List.map(removedEquations,addDivExpErrorMsgtoSimEqSystem);
+      // expandAlgorithmsbyInitStmts
+      dlow2 = BackendDAEUtil.expandAlgorithmsbyInitStmts(dlow2);
+      BackendDAE.DAE(systs, shared as BackendDAE.SHARED(removedEqs=removedEqs, 
+                                                        constraints=constrsarr,
+                                                        classAttrs=clsattrsarra,
+                                                        functionTree=functionTree,
+                                                        symjacs=symJacs)) = dlow2;        
+      
+      // Add model info
+      modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir, ifcpp);
+      
+      // equation generation for euler, dassl2, rungekutta
+      (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},tempvars);
+      
+      modelInfo = addTempVars(tempvars,modelInfo);
+      
+      odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
 
-        modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
-        
-        // generate jacobian or linear model matrices
-        LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
-        LinearMatrices = jacG::LinearMatrices;
-        
-        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
-        crefToSimVarHT = createCrefToSimVarHT(modelInfo);
-        Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
-        
-        constraints = arrayList(constrsarr);
-        classAttributes = arrayList(clsattrsarra);
-        
-        simCode = SimCode.SIMCODE(modelInfo,  
-          {}, // Set by the traversal below... 
-          recordDecls,
-          externalFunctionIncludes,
-          allEquations,
-          odeEquations,
-          algebraicEquations,
-          residuals,
-          useSymbolicInitialization,
-          initialEquations,
-          startValueEquations,
-          parameterEquations,
-          removedEquations,
-          algorithmAndEquationAsserts,
-          constraints,
-          classAttributes,
-          zeroCrossings,
-          relations,
-          sampleConditions,
-          sampleEquations,
-          helpVarInfo,
-          whenClauses,
-          discreteModelVars,
-          extObjInfo,
-          makefileParams,
-          SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
-          LinearMatrices,
-          simSettingsOpt,
-          filenamePrefix,
-          crefToSimVarHT);
-        (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
-        simCode = setSimCodeLiterals(simCode,listReverse(lits));
-        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
-        // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
-        // simCode = collectAllFiles(simCode);
-        Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
-      then
-        simCode;
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]"});
-      then
-        fail();
+      // Assertions and crap
+      // create parameter equations
+      ((uniqueEqIndex, startValueEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createStartValueEquations, (uniqueEqIndex, {}));
+      ((uniqueEqIndex, parameterEquations)) = BackendDAEUtil.foldEqSystem(dlow2, createVarNominalAssertFromVars, (uniqueEqIndex, {}));
+      (uniqueEqIndex, parameterEquations) = createParameterEquations(shared, uniqueEqIndex, parameterEquations, useSymbolicInitialization);
+      ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
+      
+      ((uniqueEqIndex, algorithmAndEquationAsserts)) = BackendDAEUtil.foldEqSystem(dlow2, createAlgorithmAndEquationAsserts, (uniqueEqIndex, {}));
+      discreteModelVars = BackendDAEUtil.foldEqSystem(dlow2, extractDiscreteModelVars, {});
+      makefileParams = createMakefileParams(includeDirs, libs);
+      (delayedExps, maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
+      
+      //append removed equation to all equations, since these are actually 
+      //just the algorithms without outputs
+      algebraicEquations = listAppend(algebraicEquations,removedEquations);
+      allEquations = listAppend(allEquations,removedEquations);
+      
+      // update indexNonLinear in SES_NONLINEAR and count
+      (initialEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(initialEquations, 0, 0);
+      (parameterEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(parameterEquations, numberofEqns, numberofNonLinearSys);
+      (allEquations, numberofEqns, numberofNonLinearSys) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys);
+              
+      // replace div operator with div operator with check of Division by zero
+      allEquations = List.map(allEquations,addDivExpErrorMsgtoSimEqSystem);
+      odeEquations = List.mapList(odeEquations,addDivExpErrorMsgtoSimEqSystem);
+      algebraicEquations = List.map(algebraicEquations,addDivExpErrorMsgtoSimEqSystem);
+      residuals = List.map(residuals, addDivExpErrorMsgtoSimEqSystem);
+      startValueEquations = List.map(startValueEquations,addDivExpErrorMsgtoSimEqSystem);
+      parameterEquations = List.map(parameterEquations,addDivExpErrorMsgtoSimEqSystem);
+      removedEquations = List.map(removedEquations,addDivExpErrorMsgtoSimEqSystem);
+
+      modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
+      
+      // generate jacobian or linear model matrices
+      LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
+      LinearMatrices = jacG::LinearMatrices;
+      
+      Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable: " +& realString(clock()) +& "\n" );
+      crefToSimVarHT = createCrefToSimVarHT(modelInfo);
+      Debug.fcall(Flags.EXEC_HASH,print, "*** SimCode -> generate cref2simVar hastable done!: " +& realString(clock()) +& "\n" );
+      
+      constraints = arrayList(constrsarr);
+      classAttributes = arrayList(clsattrsarra);
+      
+      simCode = SimCode.SIMCODE(modelInfo,  
+                                {}, // Set by the traversal below... 
+                                recordDecls,
+                                externalFunctionIncludes,
+                                allEquations,
+                                odeEquations,
+                                algebraicEquations,
+                                residuals,
+                                useSymbolicInitialization,
+                                initialEquations,
+                                startValueEquations,
+                                parameterEquations,
+                                removedEquations,
+                                algorithmAndEquationAsserts,
+                                constraints,
+                                classAttributes,
+                                zeroCrossings,
+                                relations,
+                                sampleConditions,
+                                sampleEquations,
+                                helpVarInfo,
+                                whenClauses,
+                                discreteModelVars,
+                                extObjInfo,
+                                makefileParams,
+                                SimCode.DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+                                LinearMatrices,
+                                simSettingsOpt,
+                                filenamePrefix,
+                                crefToSimVarHT);
+      (simCode,(_,_,lits)) = traverseExpsSimCode(simCode,findLiteralsHelper,literals);
+      simCode = setSimCodeLiterals(simCode,listReverse(lits));
+      Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files started: " +& realString(clock()) +& "\n" );
+      // adrpo: collect all the files from Absyn.Info and DAE.ElementSource
+      // simCode = collectAllFiles(simCode);
+      Debug.fcall(Flags.EXEC_FILES,print, "*** SimCode -> collect all files done!: " +& realString(clock()) +& "\n" );
+    then simCode;
+      
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSimCode failed [Transformation from optimised DAE to simulation code structure failed]"});
+    then fail();
   end matchcontinue;
 end createSimCode;
 
@@ -6309,53 +6307,52 @@ algorithm
       Integer uniqueEqIndex;
       
     case ((BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))}, shared=shared),
-          name, diffVars, diffedVars, alldiffedVars),
-          BackendDAE.DAE(eqs=systs),
-          uniqueEqIndex) equation
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-        (columnEquations, _, uniqueEqIndex,_) = createEquations(false, false, false, false, true, syst, shared, comps, {}, uniqueEqIndex,{});
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
-        
-        
-        origVarslst = BackendVariable.equationSystemsVarsLst(systs,{});
-        origVars = BackendDAEUtil.listVar1(origVarslst);
+           name, diffVars, diffedVars, alldiffedVars),
+          BackendDAE.DAE(eqs=systs), uniqueEqIndex) equation
+      Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+      (columnEquations, _, uniqueEqIndex,_) = createEquations(false, false, false, false, true, syst, shared, comps, {}, uniqueEqIndex,{});
+      Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> created all SimCode equations for Matrix " +& name +&  " time: " +& realString(clock()) +& "\n");
+      
+      
+      origVarslst = BackendVariable.equationSystemsVarsLst(systs,{});
+      origVars = BackendDAEUtil.listVar1(origVarslst);
 
-        // create SimCode.SimVars from jacobian vars
-        vars = BackendVariable.daeVars(syst);
-        knvars = BackendVariable.daeKnVars(shared);
-        empty = BackendDAEUtil.emptyVars();
-        
-        v = BackendDAEUtil.listVar1(diffedVars);
+      // create SimCode.SimVars from jacobian vars
+      vars = BackendVariable.daeVars(syst);
+      knvars = BackendVariable.daeKnVars(shared);
+      empty = BackendDAEUtil.emptyVars();
+      
+      v = BackendDAEUtil.listVar1(diffedVars);
 
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-        s =  intString(listLength(diffedVars));
-        comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
-        seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
-        //comref_seedVars = List.map(seedlst, BackendVariable.varCref);
-                
-        ((seedVars,_)) = List.fold(diffVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
-        seedVars = sortSimVars1(seedVars);
-        ((indexVars,_)) = List.fold(diffedVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
-        indexVars = sortSimVars1(indexVars);
+      Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> create all SimCode vars for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+      s =  intString(listLength(diffedVars));
+      comref_vars = List.map(listReverse(diffVars), BackendVariable.varCref);
+      seedlst = List.map1(comref_vars, BackendDAEOptimize.createSeedVars, (name,false));
+      //comref_seedVars = List.map(seedlst, BackendVariable.varCref);
+              
+      ((seedVars,_)) = List.fold(diffVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+      seedVars = sortSimVars1(seedVars);
+      ((indexVars,_)) = List.fold(diffedVars,traversingdlowvarToSimvarFold,({},BackendDAEUtil.emptyVars()));
+      indexVars = sortSimVars1(indexVars);
 
-        dummyVarName = ("dummyVar" +& name);
-        x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
-        columnVars = creatallDiffedVars(alldiffedVars, x, v, 0, (name,false),{});
-        ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
-        columnVars = listAppend(columnVars,columnVarsKn);
-        columnVars = listReverse(columnVars);
-        Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
-        
-        // generate sparse pattern
-        ((sparsepattern,(_,_)),colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
-        
-        maxColor = listLength(colsColors);
-                      
-        jacobian = (({((columnEquations,columnVars,s))},seedVars,name,(sparsepattern,(seedVars,columnVars)),colsColors,maxColor));
+      dummyVarName = ("dummyVar" +& name);
+      x = DAE.CREF_IDENT(dummyVarName,DAE.T_REAL_DEFAULT,{});
+      columnVars = creatallDiffedVars(alldiffedVars, x, v, 0, (name,false),{});
+      ((columnVarsKn,_)) =  BackendVariable.traverseBackendDAEVars(knvars,traversingdlowvarToSimvar,({},empty));
+      columnVars = listAppend(columnVars,columnVarsKn);
+      columnVars = listReverse(columnVars);
+      Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
+      
+      // generate sparse pattern
+      ((sparsepattern,(_,_)),colsColors) = BackendDAEOptimize.generateSparsePattern(inBackendDAE, diffVars, diffedVars);
+      
+      maxColor = listLength(colsColors);
+                    
+      jacobian = (({((columnEquations,columnVars,s))},seedVars,name,(sparsepattern,(seedVars,columnVars)),colsColors,maxColor));
     then (jacobian, uniqueEqIndex);
        
     else equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: createInitSymbolicJacobianssSimCode failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: createInitSymbolicJacobianssSimCode failed"});
     then fail();
   end matchcontinue;
 end createInitSymbolicJacobianssSimCode;
@@ -6387,7 +6384,7 @@ algorithm
     then (jacG, inIniqueEqIndex);
         
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCode.mo: createInitialMatrices failed"});
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: createInitialMatrices failed"});
     then fail();
   end matchcontinue;
 end createInitialMatrices;
