@@ -623,10 +623,10 @@ fi
 
 if test "Darwin" = `uname`; then
   EXE=".app"
-  LIBGC="libgc.a"
+  LIBGC="build/lib/omc/libgc.a"
 else
   EXE=""
-  LIBGC="libgc.so libgc.so.1 libgc.so.1.0.3"
+  LIBGC="build/lib/omc/libgc.so build/lib/omc/libgc.so.1 build/lib/omc/libgc.so.1.0.3"
 fi
 
 if test "Darwin" != `uname`; then
