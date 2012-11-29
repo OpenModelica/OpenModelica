@@ -1412,13 +1412,13 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
         </opt:IntervalFinalTime>
         >>
       let timePointIndex = match startTimeE case SOME(exp) then
-      	<<
-      	<opt:Index><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Index>
-      	>>
+       <<
+       <opt:Index><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Index>
+       >>
       let timePointValue = match finalTimeE case SOME(exp) then
-      	<<
-      	<opt:Value><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Value>
-      	>>
+       <<
+       <opt:Value><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Value>
+       >>
       let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then constraintsXml(constraints)              
         <<
         <opt:Optimization>
@@ -1427,8 +1427,8 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
           <%startTime%>
           <%finalTime%>
           <opt:TimePoints>
-          	<%timePointIndex%>
-          	<%timePointValue%>
+           <%timePointIndex%>
+           <%timePointValue%>
           </opt:TimePoints>
           <opt:pathConstraints>
               <%constraints%>
@@ -3417,11 +3417,11 @@ end daeExpCallXml;
 template builtinFunctionNameXml(Path path)
 ::=
   match path
-	case IDENT(name="DIVISION") then 'Div'
-	case IDENT(name="ADDITION") then 'Add'
-	case IDENT(name="SUBTRACTION") then 'Sub'
-	case IDENT(name="POWER") then 'Pow'
-	else "Builtin Function is not yet implemented "
+ case IDENT(name="DIVISION") then 'Div'
+ case IDENT(name="ADDITION") then 'Add'
+ case IDENT(name="SUBTRACTION") then 'Sub'
+ case IDENT(name="POWER") then 'Pow'
+ else "Builtin Function is not yet implemented "
 end builtinFunctionNameXml;
 
 template daeExpTailCallXml(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &varDecls)
