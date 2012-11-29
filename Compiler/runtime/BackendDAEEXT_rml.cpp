@@ -46,7 +46,6 @@
 
 
 extern "C" {
-#include "matchmaker.h"
 #include "rml.h"
 }
 
@@ -252,13 +251,6 @@ RML_BEGIN_LABEL(BackendDAEEXT__getV)
 }
 RML_END_LABEL
 
-unsigned int n=0;
-unsigned int m=0;
-int* match=NULL;
-int* row_match=NULL;
-int* col_ptrs=NULL;
-int* col_ids=NULL;
-
 RML_BEGIN_LABEL(BackendDAEEXT__setIncidenceMatrix)
 {
   int i=0;
@@ -292,69 +284,13 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(BackendDAEEXT__matching)
 {
-  int i=0;
   int nvars = RML_UNTAGFIXNUM(rmlA0);
   int neqns = RML_UNTAGFIXNUM(rmlA1);
   int matchingID = RML_UNTAGFIXNUM(rmlA2);
   int cheapID = RML_UNTAGFIXNUM(rmlA3);
   double relabel_period = RML_UNTAGFIXNUM(rmlA4);
   int clear_match = RML_UNTAGFIXNUM(rmlA5);
-
-  if (clear_match==0){
-    if (neqns>n) {
-      int* tmp = (int*) malloc(neqns * sizeof(int));
-      if(match)
-      {
-        memcpy(tmp,match,n*sizeof(int));
-        free(match);
-        match = tmp;
-    for (i = n; i < neqns; i++) {
-      match[i] = -1;
-    }
-      } else {
-         match = (int*) malloc(neqns * sizeof(int));
-         memset(match,-1,neqns * sizeof(int));
-      }
-      n = neqns;
-    }
-    if (nvars>m) {
-      int* tmp = (int*) malloc(nvars * sizeof(int));
-      if(row_match)
-      {
-        memcpy(tmp,row_match,m*sizeof(int));
-        free(row_match);
-        row_match = tmp;
-    for (i = m; i < nvars; i++) {
-      row_match[i] = -1;
-    }
-      } else {
-        row_match = (int*) malloc(nvars * sizeof(int));
-         memset(row_match,-1,nvars * sizeof(int));
-      }
-      m = nvars;
-    }
-  }
-  else {
-  if (neqns>n) {
-      if (match) free(match);
-      match = (int*) malloc(neqns * sizeof(int));
-      memset(match,-1,neqns * sizeof(int));
-  } else {
-      memset(match,-1,n * sizeof(int));
-  }
-    n = neqns;
-    if (nvars>m) {
-      if (row_match) free(row_match);
-      row_match = (int*) malloc(nvars * sizeof(int));
-      memset(row_match,-1,nvars * sizeof(int));
-    } else {
-      memset(row_match,-1,m * sizeof(int));
-    }
-    m = nvars;
-  }
-  if ((match != NULL) && (row_match != NULL)) {
-    matching(col_ptrs,col_ids,match,row_match,neqns,nvars,matchingID,cheapID,relabel_period,clear_match);
-  }
+  BackendDAEExtImpl__matching(nvars, neqns, matchingID, cheapID, relabel_period, clear_match);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

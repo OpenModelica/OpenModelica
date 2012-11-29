@@ -62,6 +62,14 @@ static std::vector<int> f;
 using namespace std;
 
 extern "C" {
+#include "matchmaker.h"
+
+static unsigned int n=0;
+static unsigned int m=0;
+static int* match=NULL;
+static int* row_match=NULL;
+static int* col_ptrs=NULL;
+static int* col_ids=NULL;
 
 void BackendDAEEXTImpl__initMarks(int nvars, int neqns)
 {
@@ -219,6 +227,66 @@ int BackendDAEEXTImpl__getV(int i)
 {
   assert(i <= v.size());
   return v[i-1];
+}
+
+void BackendDAEExtImpl__matching(int nvars, int neqns, int matchingID, int cheapID, double relabel_period, int clear_match)
+{
+  int i=0;
+  if (clear_match==0){
+    if (neqns>n) {
+      int* tmp = (int*) malloc(neqns * sizeof(int));
+      if(match)
+      {
+        memcpy(tmp,match,n*sizeof(int));
+        free(match);
+        match = tmp;
+    for (i = n; i < neqns; i++) {
+      match[i] = -1;
+    }
+      } else {
+         match = (int*) malloc(neqns * sizeof(int));
+         memset(match,-1,neqns * sizeof(int));
+      }
+      n = neqns;
+    }
+    if (nvars>m) {
+      int* tmp = (int*) malloc(nvars * sizeof(int));
+      if(row_match)
+      {
+        memcpy(tmp,row_match,m*sizeof(int));
+        free(row_match);
+        row_match = tmp;
+    for (i = m; i < nvars; i++) {
+      row_match[i] = -1;
+    }
+      } else {
+        row_match = (int*) malloc(nvars * sizeof(int));
+         memset(row_match,-1,nvars * sizeof(int));
+      }
+      m = nvars;
+    }
+  }
+  else {
+  if (neqns>n) {
+      if (match) free(match);
+      match = (int*) malloc(neqns * sizeof(int));
+      memset(match,-1,neqns * sizeof(int));
+  } else {
+      memset(match,-1,n * sizeof(int));
+  }
+    n = neqns;
+    if (nvars>m) {
+      if (row_match) free(row_match);
+      row_match = (int*) malloc(nvars * sizeof(int));
+      memset(row_match,-1,nvars * sizeof(int));
+    } else {
+      memset(row_match,-1,m * sizeof(int));
+    }
+    m = nvars;
+  }
+  if ((match != NULL) && (row_match != NULL)) {
+    matching(col_ptrs,col_ids,match,row_match,neqns,nvars,matchingID,cheapID,relabel_period,clear_match);
+  }
 }
 
 }

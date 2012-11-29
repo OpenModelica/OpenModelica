@@ -47,10 +47,6 @@
 #include <stdlib.h>
 
 extern "C" {
-#include "matchmaker.h"
-}
-
-extern "C" {
 
 extern int BackendDAEEXT_getVMark(int _inInteger)
 {
@@ -113,13 +109,6 @@ extern void BackendDAEEXT_vMark(int _inInteger)
   BackendDAEEXTImpl__vMark(_inInteger);
 }
 
-unsigned int n=0;
-unsigned int m=0;
-int* match=NULL;
-int* row_match=NULL;
-int* col_ptrs=NULL;
-int* col_ids=NULL;
-
 extern void BackendDAEEXT_setIncidenceMatrix(modelica_integer nvars, modelica_integer neqns, modelica_integer nz, modelica_metatype incidencematrix)
 {
   int i=0;
@@ -149,63 +138,7 @@ extern void BackendDAEEXT_setIncidenceMatrix(modelica_integer nvars, modelica_in
 extern void BackendDAEEXT_matching(modelica_integer nv, modelica_integer ne, modelica_integer matchingID, modelica_integer cheapID, modelica_real relabel_period, modelica_integer clear_match)
 {
   int i=0;
-  if (clear_match==0){
-    if (ne>n) {
-      int* tmp = (int*) malloc(ne * sizeof(int));
-      if(match)
-      {
-        memcpy(tmp,match,n*sizeof(int));
-        free(match);
-        match = tmp;
-    for (i = n; i < ne; i++) {
-      match[i] = -1;
-    }
-      }
-      else {
-         match = (int*) malloc(ne * sizeof(int));
-         memset(match,-1,ne * sizeof(int));
-      }
-      n = ne;
-    }
-    if (nv>m) {
-      int* tmp = (int*) malloc(nv * sizeof(int));
-      if(row_match)
-      {
-        memcpy(tmp,row_match,m*sizeof(int));
-        free(row_match);
-        row_match = tmp;
-    for (i = m; i < nv; i++) {
-      row_match[i] = -1;
-    }
-      }
-      else {
-        row_match = (int*) malloc(nv * sizeof(int));
-        memset(row_match,-1,nv * sizeof(int));
-      }
-      m = nv;
-    }
-  }
-  else {
-  if (ne>n) {
-      if (match) free(match);
-      match = (int*) malloc(ne * sizeof(int));
-      memset(match,-1,ne * sizeof(int));
-  } else {
-      memset(match,-1,n * sizeof(int));
-  }
-    n = ne;
-    if (nv>m) {
-      if (row_match) free(row_match);
-      row_match = (int*) malloc(nv * sizeof(int));
-      memset(row_match,-1,nv * sizeof(int));
-    } else {
-      memset(row_match,-1,m * sizeof(int));
-    }
-    m = nv;
-  }
-  if ((match != NULL) && (row_match != NULL)) {
-    matching(col_ptrs,col_ids,match,row_match,nv,ne,matchingID,cheapID,relabel_period,clear_match);
-  }
+  BackendDAEExtImpl__matching(nv, ne, matchingID, cheapID, relabel_period, clear_match);
 }
 
 extern void BackendDAEEXT_getAssignment(modelica_metatype ass1, modelica_metatype ass2)
