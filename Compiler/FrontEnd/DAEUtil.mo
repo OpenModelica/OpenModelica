@@ -844,6 +844,33 @@ algorithm
   end match;
 end setVariableAttributes;
 
+public function setStateSelect "
+  sets the stateselect attribute. If NONE(), assumes Real attributes."
+  input Option<DAE.VariableAttributes> attr;
+  input DAE.StateSelect s;
+  output Option<DAE.VariableAttributes> outAttr;
+algorithm
+  outAttr:=
+  match (attr,s)
+    local
+      Option<DAE.Exp> q,u,du,f,n,so,start;
+      tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
+      Option<DAE.Uncertainty> unc;
+      Option<DAE.Distribution> distOpt;
+      Option<DAE.Exp> eb;
+      Option<Boolean> ip,fn;
+      
+    case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,start,f,n,_,unc,distOpt,eb,ip,fn,so)),_)
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,start,f,n,SOME(s),unc,distOpt,eb,ip,fn,so));
+    case (SOME(DAE.VAR_ATTR_INT(quantity =_)),_) then fail();
+    case (SOME(DAE.VAR_ATTR_BOOL(quantity =_)),_) then fail();
+    case (SOME(DAE.VAR_ATTR_STRING(quantity =_)),_) then fail();
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(quantity =_)),_) then fail();
+    case (NONE(),_)
+      then SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),SOME(s),NONE(),NONE(),NONE(),NONE(),NONE(),NONE()));
+  end match;
+end setStateSelect;
+
 public function setStartAttr "
   sets the start attribute. If NONE(), assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;

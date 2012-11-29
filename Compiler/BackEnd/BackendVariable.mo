@@ -113,7 +113,6 @@ algorithm
       Option<DAE.VariableAttributes> oattr;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
-      Boolean fixed;
 
     case (BackendDAE.VAR(varName = a,
               varKind = b,
@@ -126,9 +125,9 @@ algorithm
               source = source,
               values = SOME(attr),
               comment = s,
-              connectorType = ct),fixed)
+              connectorType = ct),_)
       equation
-        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
+        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(inBoolean)));
       then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
 
     case (BackendDAE.VAR(varName = a,
@@ -142,10 +141,10 @@ algorithm
               source = source,
               values = NONE(),
               comment = s,
-              connectorType = ct),fixed)
+              connectorType = ct),_)
       equation
         attr = getVariableAttributefromType(d);
-        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(fixed)));
+        oattr = DAEUtil.setFixedAttr(SOME(attr),SOME(DAE.BCONST(inBoolean)));
       then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
 
 
@@ -163,13 +162,12 @@ algorithm
   outBoolean := matchcontinue(inVar)
     local
       Boolean fixed;
-      BackendDAE.Var v;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_REAL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_INT(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
     case (BackendDAE.VAR(values = SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(DAE.BCONST(fixed)))))) then fixed;
-    case (v) equation /* params are by default fixed */
-      BackendDAE.PARAM() = varKind(v);
+    case (_) equation /* params are by default fixed */
+      BackendDAE.PARAM() = varKind(inVar);
     then true;
 /*  See Modelica Spec 3.2 page 88: 
     For constants and parameters, the attribute fixed is by default true. For other variables
@@ -533,6 +531,68 @@ algorithm
     case (_) then DAE.DEFAULT();
   end matchcontinue;
 end varStateSelect;
+
+public function setVarStateSelect
+"function setVarStateSelect
+  author: Frenkel TUD
+  sets the state select attribute of a variable."
+  input BackendDAE.Var inVar;
+  input DAE.StateSelect stateSelect;
+  output BackendDAE.Var outVar;
+algorithm
+  outVar := match (inVar,stateSelect)
+    local
+      DAE.ComponentRef a;
+      BackendDAE.VarKind b;
+      DAE.VarDirection c;
+      DAE.VarParallelism prl;
+      BackendDAE.Type d;
+      Option<DAE.Exp> e;
+      Option<Values.Value> f;
+      list<DAE.Subscript> g;
+      DAE.ElementSource source;
+      DAE.VariableAttributes attr;
+      Option<DAE.VariableAttributes> oattr;
+      Option<SCode.Comment> s;
+      DAE.ConnectorType ct;
+      Boolean fixed;
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = SOME(attr),
+              comment = s,
+              connectorType = ct),_)
+      equation
+        oattr = DAEUtil.setStateSelect(SOME(attr),stateSelect);
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
+
+    case (BackendDAE.VAR(varName = a,
+              varKind = b,
+              varDirection = c,
+              varParallelism = prl,
+              varType = d,
+              bindExp = e,
+              bindValue = f,
+              arryDim = g,
+              source = source,
+              values = NONE(),
+              comment = s,
+              connectorType = ct),_)
+      equation
+        attr = getVariableAttributefromType(d);
+        oattr = DAEUtil.setStateSelect(SOME(attr),stateSelect);
+      then BackendDAE.VAR(a,b,c,prl,d,e,f,g,source,oattr,s,ct);
+
+
+  end match;
+end setVarStateSelect;
 
 public function getVariableAttributefromType
   input DAE.Type inType;

@@ -931,7 +931,7 @@ algorithm
   (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn):=
   matchcontinue (b,statesWithUnusedDer,notDiffedEquations,inDiffEqns,inOrgEqns,inEqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn)
     local
-      Integer eqnss,eqnss1;
+      Integer eqnss,eqnss1,i;
       BackendDAE.EquationArray eqns_1,eqns;
       list<Integer> es,ilst,eqnslst,eqnslst1,changedEqns,ilst1;
       BackendDAE.Variables v,v1;
@@ -946,6 +946,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Boolean> barray;
       list<BackendDAE.Var> varlst;
+      BackendDAE.Var var;
     // if size of unmatched eqns is equal to size of states without used derivative change all to algebraic
     case (true,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
       equation
@@ -963,18 +964,20 @@ algorithm
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
       then
         (syst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
-/*
+
+/* Debugging case
     case (false,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
       equation
         varlst = BackendEquation.equationsLstVars(notDiffedEquations,v);
         varlst = List.select(varlst,BackendVariable.isStateVar);
         Debug.fcall(Flags.BLT_DUMP, print, "state vars of undiffed Eqns\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
-                
+        
+        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAss1,inAss2,{})); 
+        dumpSystemGraphML(syst,ishared,NONE(),"test.graphml");      
       then
         fail();
 */
-
     // if all of these does not work try to replace final parameter
     case (_,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
       equation
@@ -993,6 +996,26 @@ algorithm
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst, imapEqnIncRow, imapIncRowEqn);
       then
         (syst,ishared,ass1,ass2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
+        
+    // if size of unmatched eqns is not equal to size of states without used derivative change first to algebraic 
+    // until I have a better sulution
+    case (false,i::_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
+      equation
+        // change varKind
+        var = BackendVariable.getVarAt(v,i);
+        varlst = {var};
+        Debug.fcall(Flags.BLT_DUMP, print, "Change varKind to algebraic for\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
+        varlst = BackendVariable.setVarsKind(varlst,BackendDAE.DUMMY_STATE());
+        v1 = BackendVariable.addVars(varlst,v);
+        // update IncidenceMatrix
+        eqnslst1 = BackendDAETransform.collectVarEqns({i},{},mt,arrayLength(mt));
+        syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching);
+        Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," ","\n"));
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
+      then
+        (syst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
   end matchcontinue;
 end handleundifferntiableMSS;
 
@@ -4939,7 +4962,7 @@ algorithm
       BackendDAE.Type b;
       Option<DAE.Exp> c;
       Option<Values.Value> d;
-      Integer g;
+      Integer g,si1,si2;
       DAE.ComponentRef dummyder,cr;
       DAE.ElementSource source;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -4957,19 +4980,26 @@ algorithm
       BackendDAE.StateOrder so,so1;
       Option<DAE.Uncertainty> unc;
       Option<DAE.Distribution> distribution;
-      BackendDAE.Var v;
-      Boolean nostate;
+      BackendDAE.Var v,v1;
+      Boolean nostate,lessstateselect;
       array<Integer> mapIncRowEqn;
       BackendDAE.IncidenceMatrixT mt;
       list<BackendDAE.Var> varlst;
-
+      DAE.StateSelect s1,s2;
      case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
         dummyder = BackendDAETransform.getStateOrder(cr,so);
-        (v::_,i::_) = BackendVariable.getVar(dummyder,vars);
+        (v::{},i::_) = BackendVariable.getVar(dummyder,vars);
+        //(v1::{},i::_) = BackendVariable.getVar(cr,vars);
         nostate = not BackendVariable.isStateVar(v);
         v = Debug.bcallret2(nostate,BackendVariable.setVarKind,v, BackendDAE.STATE(), v);
-        vars_1 = Debug.bcallret2(nostate, BackendVariable.addVar,v, vars,vars);
+        //s1 = BackendVariable.varStateSelect(v);
+        //s2 = BackendVariable.varStateSelect(v1);
+        //si1 = BackendVariable.stateSelectToInteger(s1);
+        //si2 = BackendVariable.stateSelectToInteger(s2);
+        //lessstateselect = intLt(si1,si2);
+        //v = Debug.bcallret2(lessstateselect,BackendVariable.setVarStateSelect,v,s2,v);
+        vars_1 = Debug.bcallret2(nostate /*or lessstateselect*/, BackendVariable.addVar,v, vars,vars);
         e = Expression.crefExp(dummyder);
         ilst = List.consOnTrue(nostate, i, ilst);
       then
@@ -4977,7 +5007,7 @@ algorithm
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,eqns,so,ilst,eindx,mapIncRowEqn,mt)))
       equation
-        ((BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),i::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: {}),i::_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         // do not use the normal derivative prefix for the name
         //dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.makeCrefQual("$_DER",DAE.T_REAL_DEFAULT,{},cr);
@@ -5269,6 +5299,7 @@ protected
 algorithm
   (id,m,graph) := inTpl;
   vars := List.select(m[e], Util.intPositive);
+  vars := m[e];
   ((id,graph)) := List.fold1(vars,addEdgeGraph,e,(id,graph));     
   outTpl := (id,m,graph);  
 end addEdgesGraph;
@@ -5311,16 +5342,19 @@ algorithm
 end addEqnGraphMatch;
 
 protected function addEdgeGraph
-  input Integer v;
+  input Integer V;
   input Integer e;
   input tuple<Integer,GraphML.Graph> inTpl;
   output tuple<Integer,GraphML.Graph> outTpl;
 protected
-  Integer id;
+  Integer id,v;
   GraphML.Graph graph;
+  GraphML.LineType ln;
 algorithm
   (id,graph) := inTpl;
-  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,GraphML.LINE(),NONE(),(NONE(),NONE()),graph);
+  v := intAbs(V);
+  ln := Util.if_(intGt(V,0),GraphML.LINE(),GraphML.DASHED());
+  graph := GraphML.addEgde("e" +& intString(id),"n" +& intString(e),"v" +& intString(v),GraphML.COLOR_BLACK,ln,NONE(),(NONE(),NONE()),graph);
   outTpl := ((id+1,graph));
 end addEdgeGraph;
 
