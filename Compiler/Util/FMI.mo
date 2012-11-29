@@ -69,6 +69,7 @@ public uniontype ModelVariables
     Real startValue;
     Boolean isFixed;
     Real valueReference;
+    String placementAnnotation;
   end REALVARIABLE;
   
   record INTEGERVARIABLE
@@ -82,6 +83,7 @@ public uniontype ModelVariables
     Integer startValue;
     Boolean isFixed;
     Real valueReference;
+    String placementAnnotation;
   end INTEGERVARIABLE;
   
   record BOOLEANVARIABLE
@@ -95,6 +97,7 @@ public uniontype ModelVariables
     Boolean startValue;
     Boolean isFixed;
     Real valueReference;
+    String placementAnnotation;
   end BOOLEANVARIABLE;
   
   record STRINGVARIABLE
@@ -108,6 +111,7 @@ public uniontype ModelVariables
     String startValue;
     Boolean isFixed;
     Real valueReference;
+    String placementAnnotation;
   end STRINGVARIABLE;
   
   record ENUMERATIONVARIABLE
@@ -121,6 +125,7 @@ public uniontype ModelVariables
     Integer startValue;
     Boolean isFixed;
     Real valueReference;
+    String placementAnnotation;
   end ENUMERATIONVARIABLE;
 end ModelVariables;
 

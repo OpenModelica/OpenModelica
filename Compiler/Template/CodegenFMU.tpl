@@ -1141,7 +1141,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringStartVariablesNames = dumpStartStringVariablesName(fmiModelVariablesList)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
-  public
     constant String fmuFile = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     constant Integer fmiLogLevel = <%fmiLogLevel%>;
@@ -1214,6 +1213,17 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       fmi_status := fmiFunctions.fmiTerminate(fmi);
     end when;
     annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
+    annotation (Icon(graphics={
+        Rectangle(
+          extent={{-100,100},{100,-100}},
+          lineColor={0,0,0},
+          fillColor={240,240,240},
+          fillPattern=FillPattern.Solid,
+          lineThickness=0.5),
+        Text(
+          extent={{-100,20},{100,-20}},
+          lineColor={0,0,0},
+          textString="%name")}));
   protected
     <%dumpFMICommonObjects(platform)%>
     
@@ -1351,7 +1361,6 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   let stringStartVariablesNames = dumpStartStringVariablesName(fmiModelVariablesList)
   <<
   model <%fmiInfo.fmiModelIdentifier%>_<%getFMIType(fmiInfo)%>_FMU<%if stringEq(fmiInfo.fmiDescription, "") then "" else " \""+fmiInfo.fmiDescription+"\""%>
-  public
     constant String fmuFile = "<%fmuFileName%>";
     constant String fmuWorkingDir = "<%fmuWorkingDirectory%>";
     constant Integer fmiLogLevel = <%fmiLogLevel%>;
@@ -1386,6 +1395,17 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
       fmiFunctions.fmiTerminateSlave(fmi);
     end when;
     annotation(experiment(StartTime=<%fmiExperimentAnnotation.fmiExperimentStartTime%>, StopTime=<%fmiExperimentAnnotation.fmiExperimentStopTime%>, Tolerance=<%fmiExperimentAnnotation.fmiExperimentTolerance%>));
+    annotation (Icon(graphics={
+        Rectangle(
+          extent={{-100,100},{100,-100}},
+          lineColor={0,0,0},
+          fillColor={240,240,240},
+          fillPattern=FillPattern.Solid,
+          lineThickness=0.5),
+        Text(
+          extent={{-100,20},{100,-20}},
+          lineColor={0,0,0},
+          textString="%name")}));
   protected
     <%dumpFMICommonObjects(platform)%>
     
@@ -1558,23 +1578,23 @@ template dumpFMIModelVariable(ModelVariables fmiModelVariable)
 match fmiModelVariable
 case REALVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausality(causality)%><%baseType%> <%name%><%dumpFMIRealModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIRealModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 case INTEGERVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausality(causality)%><%baseType%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 case BOOLEANVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausality(causality)%><%baseType%> <%name%><%dumpFMIBooleanModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIBooleanModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 case STRINGVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausality(causality)%><%baseType%> <%name%><%dumpFMIStringModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIStringModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 case ENUMERATIONVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausality(causality)%><%baseType%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 end dumpFMIModelVariable;
 
@@ -1584,6 +1604,17 @@ template dumpFMIModelVariableVariability(String variability)
   <%if stringEq(variability, "") then "" else variability+" "%>
   >>
 end dumpFMIModelVariableVariability;
+
+template dumpFMIModelVariableCausalityAndBaseType(String causality, String baseType)
+::=
+  if boolAnd(stringEq(causality, "input"),stringEq(baseType, "Real")) then "Modelica.Blocks.Interfaces.RealInput"
+  else if boolAnd(stringEq(causality, "input"),stringEq(baseType, "Integer")) then "Modelica.Blocks.Interfaces.IntegerInput"
+  else if boolAnd(stringEq(causality, "input"),stringEq(baseType, "Boolean")) then "Modelica.Blocks.Interfaces.BooleanInput"
+  else if boolAnd(stringEq(causality, "output"),stringEq(baseType, "Real")) then "Modelica.Blocks.Interfaces.RealOutput"
+  else if boolAnd(stringEq(causality, "output"),stringEq(baseType, "Integer")) then "Modelica.Blocks.Interfaces.IntegerOutput"
+  else if boolAnd(stringEq(causality, "output"),stringEq(baseType, "Boolean")) then "Modelica.Blocks.Interfaces.BooleanOutput"
+  else if stringEq(causality, "") then baseType else causality+" "+baseType
+end dumpFMIModelVariableCausalityAndBaseType;
 
 template dumpFMIModelVariableCausality(String causality)
 ::=
@@ -1626,6 +1657,13 @@ template dumpFMIModelVariableDescription(String description)
   <%if stringEq(description, "") then "" else " \""+description+"\""%>
   >>
 end dumpFMIModelVariableDescription;
+
+template dumpFMIModelVariablePlacementAnnotation(String placementAnnotation)
+::=
+  <<
+  <%if stringEq(placementAnnotation, "") then "" else " "+placementAnnotation%>
+  >>
+end dumpFMIModelVariablePlacementAnnotation;
 
 template dumpRealVariablesVR(list<ModelVariables> fmiModelVariablesList)
  "Generates the Model Variables value reference arrays."
