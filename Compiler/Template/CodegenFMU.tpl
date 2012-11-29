@@ -1148,7 +1148,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
     fmiImportContext context = fmiImportContext(fmiLogLevel);
     fmiEventInfo eventInfo;
-    <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
+    <%dumpFMIModelVariablesList(fmiModelVariablesList, generateInputConnectors, generateOutputConnectors)%>
     constant Integer numberOfContinuousStates = <%listLength(fmiInfo.fmiNumberOfContinuousStates)%>;
     Real fmi_x[numberOfContinuousStates] "States";
     Real fmi_x_new[numberOfContinuousStates] "New States";
@@ -1372,7 +1372,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     constant Real communicationStepSize = 0.005;
     fmiImportInstance fmi = fmiImportInstance(context, fmuWorkingDir);
     fmiImportContext context = fmiImportContext(fmiLogLevel);
-    <%dumpFMIModelVariablesList(fmiModelVariablesList)%>
+    <%dumpFMIModelVariablesList(fmiModelVariablesList, generateInputConnectors, generateOutputConnectors)%>
     constant Boolean stopTimeDefined = false;
     Real flowControl;
     Boolean initializationDone(start=false);
@@ -1565,36 +1565,36 @@ template dumpFMICommonFunctions(String platform)
   >>
 end dumpFMICommonFunctions;
 
-template dumpFMIModelVariablesList(list<ModelVariables> fmiModelVariablesList)
+template dumpFMIModelVariablesList(list<ModelVariables> fmiModelVariablesList, Boolean generateInputConnectors, Boolean generateOutputConnectors)
  "Generates the Model Variables code."
 ::=
   <<
-  <%fmiModelVariablesList |> fmiModelVariable => dumpFMIModelVariable(fmiModelVariable) ;separator="\n"%>
+  <%fmiModelVariablesList |> fmiModelVariable => dumpFMIModelVariable(fmiModelVariable, generateInputConnectors, generateOutputConnectors) ;separator="\n"%>
   >>
 end dumpFMIModelVariablesList;
 
-template dumpFMIModelVariable(ModelVariables fmiModelVariable)
+template dumpFMIModelVariable(ModelVariables fmiModelVariable, Boolean generateInputConnectors, Boolean generateOutputConnectors)
 ::=
 match fmiModelVariable
 case REALVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIRealModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIRealModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 case INTEGERVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 case BOOLEANVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIBooleanModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIBooleanModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 case STRINGVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIStringModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIStringModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 case ENUMERATIONVARIABLE(__) then
   <<
-  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality,baseType)%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
+  <%dumpFMIModelVariableVariability(variability)%><%dumpFMIModelVariableCausalityAndBaseType(causality, baseType, generateInputConnectors, generateOutputConnectors)%> <%name%><%dumpFMIIntegerModelVariableStartValue(hasStartValue, startValue, isFixed)%><%dumpFMIModelVariableDescription(description)%><%dumpFMIModelVariablePlacementAnnotation(placementAnnotation)%>;
   >>
 end dumpFMIModelVariable;
 
@@ -1605,14 +1605,14 @@ template dumpFMIModelVariableVariability(String variability)
   >>
 end dumpFMIModelVariableVariability;
 
-template dumpFMIModelVariableCausalityAndBaseType(String causality, String baseType)
+template dumpFMIModelVariableCausalityAndBaseType(String causality, String baseType, Boolean generateInputConnectors, Boolean generateOutputConnectors)
 ::=
-  if boolAnd(stringEq(causality, "input"),stringEq(baseType, "Real")) then "Modelica.Blocks.Interfaces.RealInput"
-  else if boolAnd(stringEq(causality, "input"),stringEq(baseType, "Integer")) then "Modelica.Blocks.Interfaces.IntegerInput"
-  else if boolAnd(stringEq(causality, "input"),stringEq(baseType, "Boolean")) then "Modelica.Blocks.Interfaces.BooleanInput"
-  else if boolAnd(stringEq(causality, "output"),stringEq(baseType, "Real")) then "Modelica.Blocks.Interfaces.RealOutput"
-  else if boolAnd(stringEq(causality, "output"),stringEq(baseType, "Integer")) then "Modelica.Blocks.Interfaces.IntegerOutput"
-  else if boolAnd(stringEq(causality, "output"),stringEq(baseType, "Boolean")) then "Modelica.Blocks.Interfaces.BooleanOutput"
+  if boolAnd(generateInputConnectors, boolAnd(stringEq(causality, "input"),stringEq(baseType, "Real"))) then "Modelica.Blocks.Interfaces.RealInput"
+  else if boolAnd(generateInputConnectors, boolAnd(stringEq(causality, "input"),stringEq(baseType, "Integer"))) then "Modelica.Blocks.Interfaces.IntegerInput"
+  else if boolAnd(generateInputConnectors, boolAnd(stringEq(causality, "input"),stringEq(baseType, "Boolean"))) then "Modelica.Blocks.Interfaces.BooleanInput"
+  else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Real"))) then "Modelica.Blocks.Interfaces.RealOutput"
+  else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Integer"))) then "Modelica.Blocks.Interfaces.IntegerOutput"
+  else if boolAnd(generateOutputConnectors, boolAnd(stringEq(causality, "output"),stringEq(baseType, "Boolean"))) then "Modelica.Blocks.Interfaces.BooleanOutput"
   else if stringEq(causality, "") then baseType else causality+" "+baseType
 end dumpFMIModelVariableCausalityAndBaseType;
 

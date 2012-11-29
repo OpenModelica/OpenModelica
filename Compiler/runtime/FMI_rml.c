@@ -47,8 +47,8 @@ RML_BEGIN_LABEL(FMIExt__initializeFMIImport)
   void* experimentAnnotation;
   void* modelVariablesInstance;
   void* modelVariablesList;
-  rmlA0 = FMIImpl__initializeFMIImport(filename, workingDirectory, RML_UNTAGFIXNUM(rmlA2), &fmiContext, &fmiInstance, &fmiInfo, &experimentAnnotation,
-      &modelVariablesInstance, &modelVariablesList) ? RML_TRUE : RML_FALSE;
+  rmlA0 = FMIImpl__initializeFMIImport(filename, workingDirectory, RML_UNTAGFIXNUM(rmlA2), RML_UNTAGFIXNUM(rmlA3), RML_UNTAGFIXNUM(rmlA4), &fmiContext, &fmiInstance,
+      &fmiInfo, &experimentAnnotation, &modelVariablesInstance, &modelVariablesList) ? RML_TRUE : RML_FALSE;
   rmlA1 = (void*) fmiContext;
   rmlA2 = (void*) fmiInstance;
   rmlA3 = fmiInfo;

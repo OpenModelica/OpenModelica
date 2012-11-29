@@ -1904,6 +1904,8 @@ function importFMU "Imports the Functional Mockup Unit
   input Integer loglevel := 3 "loglevel_nothing=0;loglevel_fatal=1;loglevel_error=2;loglevel_warning=3;loglevel_info=4;loglevel_verbose=5;loglevel_debug=6";
   input Boolean fullPath := false "When true the full output path is returned otherwise only the file name.";
   input Boolean debugLogging := false "When true the FMU's debug output is printed.";
+  input Boolean generateInputConnectors := true "When true creates the input connector pins.";
+  input Boolean generateOutputConnectors := true "When true creates the output connector pins.";
   output String generatedFileName "Returns the full path of the generated file.";
 external "builtin";
 annotation(preferredView="text");

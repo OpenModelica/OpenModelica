@@ -110,7 +110,7 @@ extern struct record_description FMI_ModelVariables_ENUMERATIONVARIABLE__desc;
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef FMI_FmiImport_FMIIMPORT__desc_added
 #define FMI_FmiImport_FMIIMPORT__desc_added
-ADD_METARECORD_DEFINTIONS const char* FMI_FmiImport_FMIIMPORT__desc__fields[11] = {"platform","fmuFileName","fmuWorkingDirectory","fmiLogLevel","fmiDebugOutput","fmiContext","fmiInstance","fmiInfo","fmiExperimentAnnotation","fmiModelVariablesInstance","fmiModelVariablesList"};
+ADD_METARECORD_DEFINTIONS const char* FMI_FmiImport_FMIIMPORT__desc__fields[13] = {"platform","fmuFileName","fmuWorkingDirectory","fmiLogLevel","fmiDebugOutput","fmiContext","fmiInstance","fmiInfo","fmiExperimentAnnotation","fmiModelVariablesInstance","fmiModelVariablesList","generateInputConnectors","generateOutputConnectors"};
 ADD_METARECORD_DEFINTIONS struct record_description FMI_FmiImport_FMIIMPORT__desc = {
   "FMI_FmiImport_FMIIMPORT",
   "FMI.FmiImport.FMIIMPORT",
@@ -120,8 +120,8 @@ ADD_METARECORD_DEFINTIONS struct record_description FMI_FmiImport_FMIIMPORT__des
 #else /* Only use the file as a header */
 extern struct record_description FMI_FmiImport_FMIIMPORT__desc;
 #endif
-#define FMI__FMIIMPORT_3dBOX11 3
-#define FMI__FMIIMPORT(platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList) (mmc_mk_box(12, 3,&FMI_FmiImport_FMIIMPORT__desc,platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList))
+#define FMI__FMIIMPORT_3dBOX13 3
+#define FMI__FMIIMPORT(platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList,generateInputConnectors,generateOutputConnectors) (mmc_mk_box(14, 3,&FMI_FmiImport_FMIIMPORT__desc,platform,fmuFileName,fmuWorkingDirectory,fmiLogLevel,fmiDebugOutput,fmiContext,fmiInstance,fmiInfo,fmiExperimentAnnotation,fmiModelVariablesInstance,fmiModelVariablesList,generateInputConnectors,generateOutputConnectors))
 #ifdef ADD_METARECORD_DEFINTIONS
 #ifndef Util_ReplacePattern_REPLACEPATTERN__desc_added
 #define Util_ReplacePattern_REPLACEPATTERN__desc_added

@@ -142,6 +142,8 @@ public uniontype FmiImport
     ExperimentAnnotation fmiExperimentAnnotation;
     Integer fmiModelVariablesInstance;
     list<ModelVariables> fmiModelVariablesList;
+    Boolean generateInputConnectors;
+    Boolean generateOutputConnectors;
   end FMIIMPORT;
 end FmiImport;
 

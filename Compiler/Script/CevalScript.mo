@@ -841,7 +841,7 @@ algorithm
       String strlinearizeTime;
       Real timeTotal,timeSimulation,timeStamp,val,x1,x2,y1,y2,r, linearizeTime;
       Interactive.Statements istmts; 
-      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected;
+      Boolean have_corba, bval, anyCode, b, b1, b2, externalWindow, legend, grid, logX, logY,  gcc_res, omcfound, rm_res, touch_res, uname_res, extended, insensitive,ifcpp, sort, builtin, showProtected, inputConnectors, outputConnectors;
       Env.Cache cache;
       list<Interactive.LoadedFile> lf;
       AbsynDep.Depends aDep;
@@ -1499,18 +1499,17 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
         
-    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)},st,_)
       equation
         Error.clearMessages() "Clear messages";
         true = System.regularFileExists(filename);
         workdir = Util.if_(System.directoryExists(workdir), workdir, System.pwd());
         /* Initialize FMI objects */
-        (b, SOME(fmiContext), SOME(fmiInstance), fmiInfo, fmiExperimentAnnotation, SOME(fmiModelVariablesInstance), fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel);
+        (b, SOME(fmiContext), SOME(fmiInstance), fmiInfo, fmiExperimentAnnotation, SOME(fmiModelVariablesInstance), fmiModelVariablesList) = FMIExt.initializeFMIImport(filename, workdir, fmiLogLevel, inputConnectors, outputConnectors);
         true = b; /* if something goes wrong while initializing */
         fmiModelVariablesList1 = listReverse(fmiModelVariablesList);
         s1 = System.tolower(System.platform());
-        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo,
-                                                                        fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList1));
+        str = Tpl.tplString(CodegenFMU.importFMUModelica, FMI.FMIIMPORT(s1, filename, workdir, fmiLogLevel, b2, fmiContext, fmiInstance, fmiInfo, fmiExperimentAnnotation, fmiModelVariablesInstance, fmiModelVariablesList1, inputConnectors, outputConnectors));
         pd = System.pathDelimiter();
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str2 = FMI.getFMIType(fmiInfo);

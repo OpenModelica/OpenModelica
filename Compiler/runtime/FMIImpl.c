@@ -214,8 +214,8 @@ void* getModelVariableStartValue(fmi1_import_variable_t* variable, int hasStartV
  * Reads the experiment annotation.
  * Reads the model variables.
  */
-int FMIImpl__initializeFMIImport(const char* file_name, const char* working_directory, int fmi_log_level, void** fmiContext, void** fmiInstance,
-    void** fmiInfo, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList)
+int FMIImpl__initializeFMIImport(const char* file_name, const char* working_directory, int fmi_log_level, int input_connectors, int output_connectors,
+    void** fmiContext, void** fmiInstance, void** fmiInfo, void** experimentAnnotation, void** modelVariablesInstance, void** modelVariablesList)
 {
   *fmiContext = NULL;
   *fmiInstance = NULL;
@@ -321,8 +321,6 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   const fmi1_value_reference_t* model_variables_value_reference_list = fmi1_import_get_value_referece_list(model_variables_list);
   i = 0;
   *modelVariablesList = mk_nil();
-  int realCount, integerCount, booleanCount, stringCount, enumerationCount;
-  realCount = integerCount = booleanCount = stringCount = enumerationCount = 0;
   int xInputPlacement = -120;
   int yInputPlacement = 60;
   int xOutputPlacement = 100;
@@ -348,13 +346,13 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     void* variable_is_fixed = mk_bcon(fmi1_import_get_variable_is_fixed(model_variable));
     void* variable_value_reference = mk_rcon((double)model_variables_value_reference_list[i]);
     void* variable_placement_annotation = mk_scon("");
-    if (strcmp(causality,"input") == 0) {
+    if ((strcmp(causality,"input") == 0) && input_connectors) {
       char* placementAnnotation = (char*) malloc((strlen(placementAnnotationFormat)+8)*sizeof(char));
       sprintf(placementAnnotation, placementAnnotationFormat, xInputPlacement, yInputPlacement, xInputPlacement+20, yInputPlacement+20);
       variable_placement_annotation = mk_scon(placementAnnotation);
       yInputPlacement -= 25;
       free(placementAnnotation);
-    } else if (strcmp(causality,"output") == 0) {
+    } else if ((strcmp(causality,"output") == 0) && output_connectors) {
       char* placementAnnotation = (char*) malloc((strlen(placementAnnotationFormat)+8)*sizeof(char));
       sprintf(placementAnnotation, placementAnnotationFormat, xOutputPlacement, yOutputPlacement, xOutputPlacement+20, yOutputPlacement+20);
       variable_placement_annotation = mk_scon(placementAnnotation);

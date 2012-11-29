@@ -2731,6 +2731,8 @@ package FMI
       ExperimentAnnotation fmiExperimentAnnotation;
       Integer fmiModelVariablesInstance;
       list<ModelVariables> fmiModelVariablesList;
+      Boolean generateInputConnectors;
+      Boolean generateOutputConnectors;
     end FMIIMPORT;
   end FmiImport;
   
