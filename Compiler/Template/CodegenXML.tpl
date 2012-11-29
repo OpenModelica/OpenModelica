@@ -229,7 +229,7 @@ template variableCategoryXml(VarKind varKind)
   case DUMMY_STATE(__) then "algebraic" 
   case DISCRETE(__)    then "algebraic"
   case PARAM(__)       then "parameter" 
-  case CONST(__)       then "IndependentConstant"
+  case CONST(__)       then "independentConstant"
   else error(sourceInfo(), "Unexpected simVarTypeName varKind")
 end variableCategoryXml;
 
@@ -1411,6 +1411,14 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
           <opt:Value><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Value>
         </opt:IntervalFinalTime>
         >>
+      let timePointIndex = match startTimeE case SOME(exp) then
+      	<<
+      	<opt:Index><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Index>
+      	>>
+      let timePointValue = match finalTimeE case SOME(exp) then
+      	<<
+      	<opt:Value><%daeExpValueXml(exp, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)%></opt:Value>
+      	>>
       let constraints = match simCode case SIMCODE(modelInfo = MODELINFO(__)) then constraintsXml(constraints)              
         <<
         <opt:Optimization>
@@ -1418,6 +1426,10 @@ template classAttributesXml(ClassAttributes classAttribute, SimCode simCode)
           <%objectiveIntegrand%>
           <%startTime%>
           <%finalTime%>
+          <opt:TimePoints>
+          	<%timePointIndex%>
+          	<%timePointValue%>
+          </opt:TimePoints>
           <opt:pathConstraints>
               <%constraints%>
           </opt:pathConstraints>          
@@ -3357,7 +3369,8 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
 
   case exp as CALL(attr=attr as CALL_ATTR(__)) then
     let argStr = (expLst |> exp => '<%daeExpXml(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)%>' ;separator="\n")
-    let builtinName ='<%dotPathXml(path)%>'
+    //let builtinName ='<%dotPathXml(path)%>'
+    let builtinFunctionName ='<%builtinFunctionNameXml(path)%>'
     let funName = '<%underscorePathXml(path)%>'
     let retType = if attr.builtin then (match attr.ty case T_NORETCALL(__) then ""
       else expTypeModelicaXml(attr.ty))
@@ -3372,9 +3385,9 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
       case CALL(attr=CALL_ATTR(tuple_=false)) then
         if attr.builtin then 
           <<
-          <exp:<%builtinName%>>
+          <exp:<%builtinFunctionName%>>
             <%argStr%>  
-          </exp:<%builtinName%>>
+          </exp:<%builtinFunctionName%>>
           >>
         else 
           <<
@@ -3400,6 +3413,16 @@ template daeExpCallXml(Exp call, Context context, Text &preExp /*BUFP*/,
         </exp:FunctionCall>
         >>
 end daeExpCallXml;
+
+template builtinFunctionNameXml(Path path)
+::=
+  match path
+	case IDENT(name="DIVISION") then 'Div'
+	case IDENT(name="ADDITION") then 'Add'
+	case IDENT(name="SUBTRACTION") then 'Sub'
+	case IDENT(name="POWER") then 'Pow'
+	else "Builtin Function is not yet implemented "
+end builtinFunctionNameXml;
 
 template daeExpTailCallXml(list<DAE.Exp> es, list<String> vs, Context context, Text &preExp, Text &varDecls)
 ::=
