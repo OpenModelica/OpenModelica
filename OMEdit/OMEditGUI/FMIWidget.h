@@ -61,6 +61,8 @@ private:
   QLabel *mpLogLevelLabel;
   QComboBox *mpLogLevelComboBox;
   QCheckBox *mpDebugLoggingCheckBox;
+  QCheckBox *mpGenerateIntputConnectors;
+  QCheckBox *mpGenerateOutputConnectors;
   QLabel *mpOutputDirectoryNoteLabel;
   QPushButton *mpImportButton;
 private slots:
