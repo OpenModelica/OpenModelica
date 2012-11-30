@@ -13,7 +13,8 @@ match exp
     let str = escapedString(string,false)
     '<%stringDelimiter%><%str%><%stringDelimiter%>'
   case BCONST(__) then bool
-  case ENUM_LITERAL(__) then AbsynDumpTpl.dumpPath(name)
+  case ENUM_LITERAL(__) then
+    if typeinfo() then '/* <%index%> */' + AbsynDumpTpl.dumpPath(name)
   case CREF(__) then dumpCref(componentRef)
   case e as BINARY(__) then
     let lhs_str = dumpOperand(exp1, e, true)
