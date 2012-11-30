@@ -5892,7 +5892,7 @@ algorithm
         mrc = colummarks[rc];
         false = intEq(mrc,mark);
         b = intGt(colummarks[rc],0);
-        Debug.bcall3(b,mergeSubsets,mark,mrc,inSubsets);
+        Debug.bcall4(b,mergeSubsets,mark,mrc,inSubsets,colummarks);
         false = b;
         // if it is a multi dim equation take all scalare equations
         e = mapIncRowEqn[rc];
@@ -5914,12 +5914,14 @@ protected function mergeSubsets
   input Integer mark;
   input Integer markColum;
   input array<list<Integer>> inSubsets;
+  input array<Integer> colummarks;
 protected
   list<Integer> eqns;
 algorithm
   eqns := inSubsets[markColum];
   _ := Util.arrayListAppend(mark,eqns,inSubsets);
   _ := arrayUpdate(inSubsets,markColum,{});
+  _ := List.fold1r(eqns,arrayUpdate,mark,colummarks);
 end mergeSubsets;
 
 protected function reduceIndexifNecessary
