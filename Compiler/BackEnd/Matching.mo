@@ -5727,17 +5727,55 @@ protected function getEqnsforIndexReduction
 algorithm
   eqns := match(U,neqns,m,mT,ass1,ass2,inArg)
     local 
-      array<Boolean> colummarks;
-      array<list<Integer>> mapEqnIncRow;
+      Integer lengthU;
+      array<Integer> colummarks;
+      array<list<Integer>> mapEqnIncRow,subsets;
       array<Integer> mapIncRowEqn;      
     case({},_,_,_,_,_,_) then {};
     case(_,_,_,_,_,_,(_,_,mapEqnIncRow,mapIncRowEqn,_))
       equation
-        colummarks = arrayCreate(neqns,false);
+        colummarks = arrayCreate(neqns,-1);
+        lengthU = listLength(U);
+        subsets = arrayCreate(lengthU,{}) "maximal number of subsets is each unassigned eqn has its own";
+        subsets = getEqnsforIndexReduction1(U,m,mT,1,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,subsets);
+        // remove empty subsets
       then
-        getEqnsforIndexReduction1(U,m,mT,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,{});
-    end match;
+        removeEmptySubsets(1,lengthU,subsets,{});
+  end match;
 end getEqnsforIndexReduction;
+
+protected function removeEmptySubsets
+  input Integer index;
+  input Integer length;
+  input array<list<Integer>> subsets;
+  input list<list<Integer>> iAcc;
+  output list<list<Integer>> oAcc;
+algorithm
+  oAcc := matchcontinue(index,length,subsets,iAcc)
+    local
+      list<Integer> eqns;
+      list<list<Integer>> acc;
+    case (_,_,_,_)
+      equation
+        true = intLe(index,length);
+        eqns = subsets[index];
+        acc = appendNonEmpty(eqns,iAcc);
+      then
+        removeEmptySubsets(index+1,length,subsets,acc);
+    else then iAcc;        
+  end matchcontinue;
+end removeEmptySubsets;
+
+protected function appendNonEmpty
+  input list<Integer> eqns;
+  input list<list<Integer>> iAcc;
+  output list<list<Integer>> oAcc;
+algorithm
+  oAcc := match(eqns,iAcc)
+    case ({},_) then iAcc;
+    else then eqns::iAcc;
+  end match;  
+end appendNonEmpty;
 
 protected function getEqnsforIndexReduction1
 "function getEqnsforIndexReduction1, helper for getEqnsforIndexReduction
@@ -5745,33 +5783,37 @@ protected function getEqnsforIndexReduction1
   input list<Integer> U;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
   input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
-  input array<Boolean> colummarks;
+  input Integer mark;
+  input array<Integer> colummarks;
   input array<Integer> ass1 "ass[eqnindx]=varindx";
   input array<Integer> ass2 "ass[varindx]=eqnindx";
   input array<list<Integer>> mapEqnIncRow "eqn indx -> skalar Eqn indexes";
   input array<Integer> mapIncRowEqn "scalar eqn index -> eqn indx";
-  input list<list<Integer>> inEqns;
-  output list<list<Integer>> outEqns;
+  input array<list<Integer>> inSubsets;
+  output array<list<Integer>> outSubsets;
 algorithm
-  outEqns:= matchcontinue (U,m,mT,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inEqns)
+  outSubsets:= matchcontinue (U,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets)
     local 
       list<Integer> rest,eqns;
       Integer e,e1;
-    case ({},_,_,_,_,_,_,_,_) then listReverse(inEqns);
-    case (e::rest,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_) then inSubsets;
+    case (e::rest,_,_,_,_,_,_,_,_,_)
       equation
         // row is not visited
-        false = colummarks[e];
+        false = intGt(colummarks[e],0);
         // if it is a multi dim equation take all scalare equations
         e1 = mapIncRowEqn[e];
         eqns = mapEqnIncRow[e1];
-        _ = List.fold1r(eqns,arrayUpdate,true,colummarks);
-        eqns = getEqnsforIndexReductionphase(eqns,m,mT,colummarks,ass1,ass2,eqns);
+        _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
+        //  print("Seach for unassigned Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
+        eqns = getEqnsforIndexReductionphase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
+        //  print("Found Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");
+        _ = Util.arrayListAppend(mark,eqns,inSubsets);
       then
-        getEqnsforIndexReduction1(rest,m,mT,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,eqns::inEqns);
-    case (_::rest,_,_,_,_,_,_,_,_)
+        getEqnsforIndexReduction1(rest,m,mT,mark+1,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets);
+    case (_::rest,_,_,_,_,_,_,_,_,_)
       then
-        getEqnsforIndexReduction1(rest,m,mT,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inEqns);
+        getEqnsforIndexReduction1(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets);
   end matchcontinue;
 end getEqnsforIndexReduction1;
 
@@ -5782,25 +5824,30 @@ protected function getEqnsforIndexReductionphase
   input list<Integer> elst;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
-  input array<Boolean> colummarks;
+  input Integer mark;
+  input array<Integer> colummarks;
   input array<Integer> ass1;
   input array<Integer> ass2;
+  input array<list<Integer>> mapEqnIncRow "eqn indx -> skalar Eqn indexes";
+  input array<Integer> mapIncRowEqn "scalar eqn index -> eqn indx";
+  input array<list<Integer>> inSubsets;
   input list<Integer> inEqns;
   output list<Integer> outEqns;
 algorithm
   outEqns :=
-  match (elst,m,mT,colummarks,ass1,ass2,inEqns)
+  match (elst,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns)
     local
       Integer e;
       list<Integer> rows,rest,eqns;
-    case ({},_,_,_,_,_,_) then inEqns;
-    case (e::rest,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_) then inEqns;
+    case (e::rest,_,_,_,_,_,_,_,_,_,_)
       equation
         // traverse all adiacent rows
         rows = List.select(m[e], Util.intPositive);
-        eqns = getEqnsforIndexReductiontraverseRows(rows,{},m,mT,colummarks,ass1,ass2,inEqns);
+        //  print("search in Rows " +& stringDelimitList(List.map(rows,intString),", ") +& " from " +& intString(e) +& "\n");
+        eqns = getEqnsforIndexReductiontraverseRows(rows,{},m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
       then
-        getEqnsforIndexReductionphase(rest,m,mT,colummarks,ass1,ass2,eqns);
+        getEqnsforIndexReductionphase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,eqns);
     else
       then
         fail();
@@ -5815,72 +5862,65 @@ protected function getEqnsforIndexReductiontraverseRows
   input list<Integer> nextColums;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
-  input array<Boolean> colummarks;
+  input Integer mark;
+  input array<Integer> colummarks;
   input array<Integer> ass1;
   input array<Integer> ass2;
+  input array<list<Integer>> mapEqnIncRow "eqn indx -> skalar Eqn indexes";
+  input array<Integer> mapIncRowEqn "scalar eqn index -> eqn indx";
+  input array<list<Integer>> inSubsets;
   input list<Integer> inEqns;
   output list<Integer> outEqns;
 algorithm
   outEqns:=
-  matchcontinue (rows,nextColums,m,mT,colummarks,ass1,ass2,inEqns)
+  matchcontinue (rows,nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns)
     local
-      list<Integer> rest,queue,nextqueue; 
-      Integer rc,r;    
-    case ({},{},_,_,_,_,_,_) then inEqns;
-    case ({},_,_,_,_,_,_,_) 
+      list<Integer> rest,queue,nextqueue,eqns; 
+      Integer rc,r,e,mrc;
+      Boolean b;
+    case ({},{},_,_,_,_,_,_,_,_,_,_) then inEqns;
+    case ({},_,_,_,_,_,_,_,_,_,_,_)
       then 
-        getEqnsforIndexReductionphase(nextColums,m,mT,colummarks,ass1,ass2,inEqns);
-    case (r::rest,_,_,_,_,_,_,_)
+        getEqnsforIndexReductionphase(nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
+    case (r::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         // row is matched
+        // print("check Row " +& intString(r) +& "\n");
         rc = ass2[r];
+        // print("check Colum " +& intString(rc) +& "\n");
         true = intGt(rc,0);
-        false = colummarks[rc];
-        _= arrayUpdate(colummarks,rc,true);
-        (nextqueue,queue) = getEqnsforIndexReductiontraverseColums(mT[r],colummarks,ass1,rc::nextColums,rc::inEqns);
+        mrc = colummarks[rc];
+        false = intEq(mrc,mark);
+        b = intGt(colummarks[rc],0);
+        Debug.bcall3(b,mergeSubsets,mark,mrc,inSubsets);
+        false = b;
+        // if it is a multi dim equation take all scalare equations
+        e = mapIncRowEqn[rc];
+        eqns = mapEqnIncRow[e];
+        _ = List.fold1r(eqns,arrayUpdate,mark,colummarks);
+        //  print("add to nextQueue and Queue " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");        
+        nextqueue = listAppend(nextColums,eqns);
+        queue = listAppend(inEqns,eqns);
+        //(nextqueue,queue) = getEqnsforIndexReductiontraverseColums(mT[r],colummarks,ass1,rc::nextColums,rc::inEqns);
       then
-        getEqnsforIndexReductiontraverseRows(rest,nextqueue,m,mT,colummarks,ass1,ass2,queue);
-    case (_::rest,_,_,_,_,_,_,_)
+        getEqnsforIndexReductiontraverseRows(rest,nextqueue,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,queue);
+    case (_::rest,_,_,_,_,_,_,_,_,_,_,_)
       then
-        getEqnsforIndexReductiontraverseRows(rest,nextColums,m,mT,colummarks,ass1,ass2,inEqns);
+        getEqnsforIndexReductiontraverseRows(rest,nextColums,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubsets,inEqns);
   end matchcontinue;
 end getEqnsforIndexReductiontraverseRows;
 
-protected function getEqnsforIndexReductiontraverseColums
-"function getEqnsforIndexReductiontraverseColums
-  helper for getEqnsforIndexReduction
-  autor: Frenkel TUD 2012-04"
-  input list<Integer> collums;
-  input array<Boolean> colummarks;
-  input array<Integer> ass1;
-  input list<Integer> inNextColums;
-  input list<Integer> inEqns;
-  output list<Integer> outNextColums;
-  output list<Integer> outEqns;
+protected function mergeSubsets
+  input Integer mark;
+  input Integer markColum;
+  input array<list<Integer>> inSubsets;
+protected
+  list<Integer> eqns;
 algorithm
-  (outNextColums,outEqns):=
-  matchcontinue (collums,colummarks,ass1,inNextColums,inEqns)
-    local
-      list<Integer> rest,queue,nextqueue; 
-      Integer c,r;    
-    case ({},_,_,_,_) then (inNextColums,inEqns);
-    case (c::rest,_,_,_,_) 
-      equation
-        // colum is unmatched
-        r = ass1[c];
-        false = intGt(r,0);
-        false = colummarks[c];
-        _= arrayUpdate(colummarks,c,true);
-        (nextqueue,queue) = getEqnsforIndexReductiontraverseColums(rest,colummarks,ass1,c::inNextColums,c::inEqns);
-      then
-        (nextqueue,queue);
-    case (_::rest,_,_,_,_)
-      equation
-        (nextqueue,queue) = getEqnsforIndexReductiontraverseColums(rest,colummarks,ass1,inNextColums,inEqns);
-      then
-        (nextqueue,queue);
-  end matchcontinue;
-end getEqnsforIndexReductiontraverseColums;
+  eqns := inSubsets[markColum];
+  _ := Util.arrayListAppend(mark,eqns,inSubsets);
+  _ := arrayUpdate(inSubsets,markColum,{});
+end mergeSubsets;
 
 protected function reduceIndexifNecessary
 "function: reduceIndexifNecessary, calls sssHandler if system need index reduction
