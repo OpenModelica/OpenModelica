@@ -325,7 +325,6 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   int yInputPlacement = 60;
   int xOutputPlacement = 100;
   int yOutputPlacement = 60;
-  const char* placementAnnotationFormat = "annotation(Placement(transformation(extent={{%d,%d},{%d,%d}})))";
   for (; i < model_variables_list_size ; i++) {
     fmi1_import_variable_t* model_variable = fmi1_import_get_variable(model_variables_list, i);
     void* variable_instance = mk_icon((intptr_t)model_variable);
@@ -346,18 +345,22 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     void* variable_is_fixed = mk_bcon(fmi1_import_get_variable_is_fixed(model_variable));
     void* variable_value_reference = mk_rcon((double)model_variables_value_reference_list[i]);
     void* variable_placement_annotation = mk_scon("");
+    void* variable_x1_placement = mk_icon(0);
+    void* variable_x2_placement = mk_icon(0);
+    void* variable_y1_placement = mk_icon(0);
+    void* variable_y2_placement = mk_icon(0);
     if ((strcmp(causality,"input") == 0) && input_connectors) {
-      char* placementAnnotation = (char*) malloc((strlen(placementAnnotationFormat)+8)*sizeof(char));
-      sprintf(placementAnnotation, placementAnnotationFormat, xInputPlacement, yInputPlacement, xInputPlacement+20, yInputPlacement+20);
-      variable_placement_annotation = mk_scon(placementAnnotation);
+      variable_x1_placement = mk_icon(xInputPlacement);
+      variable_x2_placement = mk_icon(xInputPlacement+20);
+      variable_y1_placement = mk_icon(yInputPlacement);
+      variable_y2_placement = mk_icon(yInputPlacement+20);
       yInputPlacement -= 25;
-      free(placementAnnotation);
     } else if ((strcmp(causality,"output") == 0) && output_connectors) {
-      char* placementAnnotation = (char*) malloc((strlen(placementAnnotationFormat)+8)*sizeof(char));
-      sprintf(placementAnnotation, placementAnnotationFormat, xOutputPlacement, yOutputPlacement, xOutputPlacement+20, yOutputPlacement+20);
-      variable_placement_annotation = mk_scon(placementAnnotation);
+      variable_x1_placement = mk_icon(xOutputPlacement);
+      variable_x2_placement = mk_icon(xOutputPlacement+20);
+      variable_y1_placement = mk_icon(yOutputPlacement);
+      variable_y2_placement = mk_icon(yOutputPlacement+20);
       yOutputPlacement -= 25;
-      free(placementAnnotation);
     }
     //fprintf(stderr, "%s Variable name = %s, valueReference = %d\n", getModelVariableBaseType(model_variable), getModelVariableName(model_variable), model_variables_value_reference_list[i]);fflush(NULL);
     void* variable;
@@ -365,23 +368,23 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     switch (type) {
       case fmi1_base_type_real:
         variable = FMI__REALVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
-            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_placement_annotation);
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_x1_placement, variable_x2_placement, variable_y1_placement, variable_y2_placement);
         break;
       case fmi1_base_type_int:
         variable = FMI__INTEGERVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
-            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_placement_annotation);
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_x1_placement, variable_x2_placement, variable_y1_placement, variable_y2_placement);
         break;
       case fmi1_base_type_bool:
         variable = FMI__BOOLEANVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
-            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_placement_annotation);
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_x1_placement, variable_x2_placement, variable_y1_placement, variable_y2_placement);
         break;
       case fmi1_base_type_str:
         variable = FMI__STRINGVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
-            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_placement_annotation);
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_x1_placement, variable_x2_placement, variable_y1_placement, variable_y2_placement);
         break;
       case fmi1_base_type_enum:
         variable = FMI__ENUMERATIONVARIABLE(variable_instance, variable_name, variable_description, variable_base_type, variable_variability, variable_causality,
-            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_placement_annotation);
+            variable_has_start_value, variable_start_value, variable_is_fixed, variable_value_reference, variable_x1_placement, variable_x2_placement, variable_y1_placement, variable_y2_placement);
         break;
     }
     *modelVariablesList = mk_cons(variable, *modelVariablesList);

@@ -2658,7 +2658,10 @@ package FMI
       Real startValue;
       Boolean isFixed;
       Real valueReference;
-      String placementAnnotation;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
     end REALVARIABLE;
   
     record INTEGERVARIABLE
@@ -2672,7 +2675,10 @@ package FMI
       Integer startValue;
       Boolean isFixed;
       Real valueReference;
-      String placementAnnotation;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
     end INTEGERVARIABLE;
   
     record BOOLEANVARIABLE
@@ -2686,7 +2692,10 @@ package FMI
       Boolean startValue;
       Boolean isFixed;
       Real valueReference;
-      String placementAnnotation;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
     end BOOLEANVARIABLE;
   
     record STRINGVARIABLE
@@ -2700,7 +2709,10 @@ package FMI
       String startValue;
       Boolean isFixed;
       Real valueReference;
-      String placementAnnotation;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
     end STRINGVARIABLE;
   
     record ENUMERATIONVARIABLE
@@ -2714,7 +2726,10 @@ package FMI
       Integer startValue;
       Boolean isFixed;
       Real valueReference;
-      String placementAnnotation;
+      Integer x1Placement;
+      Integer x2Placement;
+      Integer y1Placement;
+      Integer y2Placement;
     end ENUMERATIONVARIABLE;
   end ModelVariables;
 
