@@ -621,7 +621,7 @@ algorithm
     // All operators expect Numeric types except Addition.
     case(_,_,_,_,_)
       equation
-        false = CheckValidNumericTypesForOp(inType1,inType1,inOp,true);  
+        false = checkValidNumericTypesForOp(inType1,inType1,inOp,true);  
       then
         fail(); 
         
@@ -1130,7 +1130,7 @@ algorithm
         
 end matchTypeBothWays;
 
-protected function CheckValidNumericTypesForOp
+protected function checkValidNumericTypesForOp
 "Helper function for Check*Operator functions.
 Checks if both operands are Numeric types for all operators except Addition.
 Which cn also work on Strings and maybe Bools??.
@@ -1169,7 +1169,7 @@ algorithm
       
   end matchcontinue;
         
-end CheckValidNumericTypesForOp;
+end checkValidNumericTypesForOp;
 
 public function getArrayNumberOfDimensions 
   input DAE.Type inType;
