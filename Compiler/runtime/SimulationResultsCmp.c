@@ -600,6 +600,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   char **cmpdiffvars=NULL;
   unsigned int vardiffindx=0;
   unsigned int ncmpvars = 0;
+  unsigned int ngetfailedvars = 0;
   void *allvars,*cmpvar,*res;
   unsigned int i,size,size_ref,len,oldlen,j,k;
   char *var,*var1,*var2;
@@ -703,6 +704,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
       if (dataref.n==0) {
         fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,reffilename);
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get Data of Var failed!\n"), msg, 0);
+        ngetfailedvars++;
         continue;
       }
     }
@@ -716,6 +718,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
         if (data.data) free(data.data);
         fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,filename);
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get Data of Var failed!\n"), msg, 0);
+        ngetfailedvars++;
         continue;
       }
     }
@@ -731,7 +734,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
     c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Cannot write result file!\n"), msg, 0);
   }
 
-  if (ddf.n > 0){
+  if ((ddf.n > 0) || (ngetfailedvars > 0)){
     /* fprintf(stderr, "diff: %d\n",ddf.n); */
     /* for (i=0;i<vardiffindx;i++)
     fprintf(stderr, "diffVar: %s\n",cmpdiffvars[i]); */
