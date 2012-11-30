@@ -325,6 +325,33 @@ algorithm
   end match;
 end isSimpleType;
 
+public function isSimpleNumericType
+  "Returns true for simple numeric builtin types, Integer and Real"
+  input Type inType;
+  output Boolean b;
+algorithm
+  b := match (inType)
+    case (DAE.T_REAL(varLst = _)) then true;
+    case (DAE.T_INTEGER(varLst = _)) then true;
+    else false;
+  end match;
+end isSimpleNumericType;
+
+public function isNumericType "function: isSimpleNumericArray
+  This function checks if the element type is Numeric type or array of Numeric type."
+  input Type inType;
+  output Boolean outBool;
+algorithm
+  outBool := match (inType)
+    local Type ty;
+    
+    case (DAE.T_ARRAY(ty = ty)) then isNumericType(ty);
+    case (DAE.T_SUBTYPE_BASIC(complexType = ty)) then isNumericType(ty);
+    else isSimpleNumericType(inType);
+    
+  end match;
+end isNumericType;
+
 public function isConnector
   "Returns true if the given type is a connector type, otherwise false."
   input Type inType;

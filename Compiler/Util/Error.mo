@@ -689,6 +689,8 @@ public constant Message REDUCTION_TYPE_ERROR = MESSAGE(5030, TRANSLATION(), ERRO
   Util.gettext("Reductions require the types of the %s and %s to be %s, but got: %s and %s."));
 public constant Message UNSUPPORTED_REDUCTION_TYPE = MESSAGE(5031, TRANSLATION(), ERROR(),
   Util.gettext("Expected a reduction function with type signature ('A,'B) => 'B, but got %s."));
+public constant Message FOUND_NON_NUMERIC_TYPES = MESSAGE(5032, TRANSLATION(), ERROR(),
+  Util.gettext("Operator %s expects numeric types as operands, but got '%s and %s'."));
 public constant Message COMPILER_ERROR = MESSAGE(5999, TRANSLATION(), ERROR(),
   Util.notrans("%s"));
 public constant Message COMPILER_WARNING = MESSAGE(6000, TRANSLATION(), WARNING(),

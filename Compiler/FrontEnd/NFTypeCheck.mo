@@ -617,6 +617,13 @@ algorithm
       DAE.Operator newop;
       DAE.TypeSource typsrc;
       
+     
+    // All operators expect Numeric types except Addition.
+    case(_,_,_,_,_)
+      equation
+        false = CheckValidNumericTypesForOp(inType1,inType1,inOp,true);  
+      then
+        fail(); 
         
     // Check division operations. 
     // They reslut in T_REAL regardless of the operand types.
@@ -638,14 +645,17 @@ algorithm
     // Check exponentiations. 
     // They reslut in T_REAL regardless of the operand types.
     // According to spec operands should be promoted to real before expon.
-    // to fit with ANSI C ???. Anyways we don't have to worry about that here since the C 
-    // compiler will take care of it.
+    // to fit with ANSI C ???.
     case(_,_,DAE.POW(_),_,_) 
       equation
         true = Types.isSimpleType(inType1);
         true = Types.isSimpleType(inType2);
+                
+        // Try converting both to REAL type.
+        (exp1,ty1) = Types.matchType(inExp1,inType1,DAE.T_REAL_DEFAULT,true);
+        (exp2,ty2) = Types.matchType(inExp2,inType2,DAE.T_REAL_DEFAULT,true);
         
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+        // (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
         
         typsrc = Types.getTypeSource(ty1);
         ty = DAE.T_REAL({},typsrc);
@@ -655,13 +665,42 @@ algorithm
       then 
         (exp,ty);
         
-    // All other operations on Scalars.   
-    // Check if the operands (match/can be converted to match) the other.   
-    case(_,_,_,_,_) 
+    // Addition operations on Scalars.   
+    // Check if the operands (match/can be converted to match) the other. 
+    case(_,_,DAE.ADD(_),_,_) 
       equation
         true = Types.isSimpleType(inType1);
         true = Types.isSimpleType(inType2);
         
+        (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+        newop = Expression.setOpType(inOp, ty);
+               
+        exp = DAE.BINARY(exp1, newop, exp2);
+      then 
+        (exp,ty);
+        
+    // Subtraction operations on Scalars.   
+    // Check if the operands (match/can be converted to match) the other. 
+    case(_,_,DAE.SUB(_),_,_) 
+      equation
+        true = Types.isSimpleType(inType1);
+        true = Types.isSimpleType(inType2);
+                
+        (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
+        newop = Expression.setOpType(inOp, ty);
+               
+        exp = DAE.BINARY(exp1, newop, exp2);
+      then 
+        (exp,ty);
+        
+    // Multiplication operations on Scalars.   
+    // Check if the operands (match/can be converted to match) the other. 
+    // Requires Numeric Operands. 
+    case(_,_,DAE.MUL(_),_,_) 
+      equation
+        true = Types.isSimpleType(inType1);
+        true = Types.isSimpleType(inType2);
+                
         (exp1,exp2,ty) = matchTypeBothWays(inExp1,inType1,inExp2,inType2);
         newop = Expression.setOpType(inOp, ty);
                
@@ -1090,6 +1129,47 @@ algorithm
   end matchcontinue;
         
 end matchTypeBothWays;
+
+protected function CheckValidNumericTypesForOp
+"Helper function for Check*Operator functions.
+Checks if both operands are Numeric types for all operators except Addition.
+Which cn also work on Strings and maybe Bools??.
+Written separatly because it needs to print an error."
+  input DAE.Type inType1;
+  input DAE.Type inType2;
+  input DAE.Operator inOp;
+  input Boolean printError;
+  output Boolean isValid;
+algorithm
+  isValid := matchcontinue(inType1,inType2,inOp,printError)
+    local
+      String t1Str,t2Str,s2,s1;
+      
+    case(_,_,DAE.ADD(_),_) then true;
+        
+    case(_,_,_,_)
+      equation
+        true = Types.isNumericType(inType1);
+        true = Types.isNumericType(inType2);
+      then true;
+    
+    // If printing error messages. print and fail.    
+    case(_,_,_,true)
+      equation
+        t1Str = Types.unparseType(inType1);
+        t2Str = Types.unparseType(inType2);
+        s2 = DAEDump.dumpOperatorString(inOp);
+        Error.addSourceMessage(Error.FOUND_NON_NUMERIC_TYPES, {s2,t1Str,t2Str}, Absyn.dummyInfo);
+        Debug.fprintln(Flags.FAILTRACE, "- NFTypeCheck.bothTypesSimpleNumeric failed with type mismatch: " +& t1Str +& " tys: " +& t2Str);
+      then 
+        false;
+    
+    // If no error messages wanted just return false.    
+    case(_,_,_,false) then false;
+      
+  end matchcontinue;
+        
+end CheckValidNumericTypesForOp;
 
 public function getArrayNumberOfDimensions 
   input DAE.Type inType;
