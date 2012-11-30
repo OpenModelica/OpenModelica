@@ -972,6 +972,21 @@ algorithm
   out := arrayUpdate(arr,index,element::l);
 end arrayCons;
 
+public function arrayListAppend
+"function for listAppend an list on an array of list"
+  input Integer index;
+  input list<Type_a> elements;
+  input array<list<Type_a>> arr;
+  output array<list<Type_a>> out;
+replaceable type Type_a subtypeof Any;
+protected
+  list<Type_a> l;
+algorithm
+  l := arr[index];
+  l := listAppend(l,elements);
+  out := arrayUpdate(arr,index,l);
+end arrayListAppend;
+
 public function arrayCopy "function: arrayCopy
   copies all values in src array into dest array.
   The function fails if all elements can not be fit into dest array."

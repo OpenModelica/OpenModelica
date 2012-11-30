@@ -451,6 +451,7 @@ algorithm
       then iht;
     case(DAE.STMT_NORETCALL(exp = _),_) then iht;
     case(DAE.STMT_RETURN(_),_) then iht;
+    case(DAE.STMT_BREAK(_),_) then iht;
     // MetaModelica extension. KS  
     case(DAE.STMT_FAILURE(body = stmts),_)
       equation
