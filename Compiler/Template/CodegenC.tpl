@@ -6635,17 +6635,14 @@ case IFEXP(__) then
       let resVar = tempDeclTuple(typeof(exp), &varDecls /*BUFD*/)
       let &preExp +=  
       <<
-      /* if exp of type <%unparseType(typeof(exp))%> */
       <%condVar%> = (modelica_boolean)<%condExp%>;
       if (<%condVar%>) {
         <%preExpThen%>
-        /* exp <%printExpStr(expThen)%> has type <%unparseType(typeof(expThen))%> */
         <%if eThen then resultVarAssignment(typeof(exp),resVar,eThen)%>
       } else {
         <%preExpElse%>
         <%if eElse then resultVarAssignment(typeof(exp),resVar,eElse)%>
       }<%\n%>
-      /* end exp of type <%unparseType(typeof(exp))%> => <%resVar%> */
       >>
       resVar)
 end daeExpIf;

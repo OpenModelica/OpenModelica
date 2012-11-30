@@ -37,7 +37,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_doc)/omc/testmodels
 	mkdir -p $(builddir_man)/man1/
 
-release: omc 
+release: omc omc-diff
 
 install-python:
 	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))
@@ -110,6 +110,8 @@ runtimeCPP:
 runtimeCPPinstall: 
 	$(MAKE) -C SimulationRuntime/cpp/ -f $(defaultMakefileTarget) install
 
+omc-diff: 
+	$(MAKE) -C testsuite/ -f Makefile omc-diff
 
 testlibrariemsl31cpp:
 	(cd testsuite/cppruntime/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-cpp-trace.txt 2>&1)
