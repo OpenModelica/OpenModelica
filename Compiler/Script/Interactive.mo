@@ -19811,7 +19811,7 @@ algorithm
       equation
         acc = pp::acc;
         cdef = getPathedClassInProgram(pp, p);
-        strlst = getClassnamesInClassList(pp, p, cdef,b);
+        strlst = getClassnamesInClassList(pp, p, cdef, b);
         result_path_lst = List.map(List.map1(strlst, joinPaths, pp),Util.makeOption);
         (_,acc) = List.map2Fold(result_path_lst, getClassNamesRecursive, p, b, acc);
       then (inPath,acc);
@@ -20016,9 +20016,7 @@ algorithm
     case (p_class,p)
       equation
         cdef = getPathedClassInProgram(p_class, p);
-        env = getClassEnv(p, p_class);
         exts = getExtendsElementspecInClass(cdef);
-        exts = List.map1(exts, makeExtendsFullyQualified, env);
         paths = List.map(exts, getBaseClassNameFromExtends);
       then
         paths;

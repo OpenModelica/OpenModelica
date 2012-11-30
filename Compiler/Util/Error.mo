@@ -628,7 +628,9 @@ public constant Message DERIVATIVE_INPUT = MESSAGE(527, TRANSLATION(), ERROR(),
   Util.gettext("The model requires derivatives of some inputs as listed below:\n%s"));
 public constant Message UTF8_COMMAND_LINE_ARGS = MESSAGE(528, TRANSLATION(), ERROR(),
   Util.gettext("The compiler was sent command-line arguments that were not UTF-8 encoded and will abort the current execution."));
-
+public constant Message PACKAGE_ORDER_FILE_NOT_COMPLETE = MESSAGE(529, GRAMMAR(), WARNING(),
+  Util.gettext("The package.order file does not list all .mo files and directories (containing package.mo) present in its directory.\nMissing names are:\n\t%s"));
+  
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
 public constant Message META_POLYMORPHIC = MESSAGE(5002, TRANSLATION(), ERROR(),

@@ -3045,6 +3045,14 @@ algorithm
   end matchcontinue;
 end pathSuffixOf;
 
+public function pathSuffixOfr "returns true if suffix_path is a suffix of path"
+  input Path path;
+  input Path suffix_path;  
+  output Boolean res;
+algorithm
+  res := pathSuffixOf(suffix_path, path);
+end pathSuffixOfr;
+
 public function pathToStringList
   input Path path;
   output list<String> outPaths;

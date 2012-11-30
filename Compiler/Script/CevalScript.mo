@@ -1999,7 +1999,7 @@ algorithm
            Values.CODE(Absyn.C_TYPENAME(baseClassPath))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
         paths = Interactive.getAllInheritedClasses(classpath, p);
-        b = List.applyAndFold1(paths, boolOr, Absyn.pathEqual, baseClassPath, false);
+        b = List.applyAndFold1(paths, boolOr, Absyn.pathSuffixOfr, baseClassPath, false);
       then
         (cache,Values.BOOL(b),st);
 

@@ -400,10 +400,12 @@ protected function getPackageContentNames
 algorithm
   (po) := matchcontinue (cl,filename,mp,numError)
     local
-      String contents, duplicatesStr;
-      list<String> duplicates, namesToFind,    mofiles, subdirs;
+      String contents, duplicatesStr, differencesStr;
+      list<String> duplicates, namesToFind, mofiles, subdirs, differences;
       list<Absyn.ClassPart> cp;
       Absyn.Info info;
+      list<PackageOrder> po1, po2;
+
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
       equation
         true = System.regularFileExists(filename);
@@ -413,9 +415,27 @@ algorithm
         duplicates = List.sortedFilterDuplicates(List.sort(namesToFind,Util.strcmpBool),stringEq);
         duplicatesStr = stringDelimitList(duplicates, ", ");
         Error.assertionOrAddSourceMessage(List.isEmpty(duplicates),Error.PACKAGE_ORDER_DUPLICATES,{duplicatesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
-        po = getPackageContentNamesinParts(namesToFind,cp,{});
-        List.map2_0(po,checkPackageOrderFilesExist,mp,info);
-      then po;
+        
+        // get all the .mo files in the directory!
+        mofiles = List.map(System.moFiles(mp), Util.removeLast3Char);
+        // get all the subdirs containing package.mo
+        subdirs = System.subDirectories(mp);
+        subdirs = List.filter1OnTrue(subdirs, existPackage, mp);
+        // build a list
+        mofiles = listAppend(subdirs,mofiles);
+        // check if all are present in the package.order
+        differences = List.setDifference(mofiles, namesToFind);
+        // issue a warning if not all are present        
+        differencesStr = stringDelimitList(differences, "\n\t");        
+        Error.assertionOrAddSourceMessage(List.isEmpty(differences),Error.PACKAGE_ORDER_FILE_NOT_COMPLETE,{differencesStr},Absyn.INFO(filename,true,0,0,0,0,Absyn.dummyTimeStamp));
+        po1 = getPackageContentNamesinParts(namesToFind,cp,{});
+        List.map2_0(po1,checkPackageOrderFilesExist,mp,info);
+        
+        po2 = List.map(differences, makeClassLoad);
+        
+        po = List.appendNoCopy(po2, po1);
+      then 
+        po;
 
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=cp),info=info),_,_,_)
       equation
