@@ -9126,7 +9126,7 @@ algorithm
                                                  {}));
 
       // some debug prints
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "initial system\n");
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n##################\n# initial system #\n##################\n\n");
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, initdae);
       
       // now let's solve the system!
@@ -9181,7 +9181,8 @@ algorithm
       
       // simplify system
       (isyst,Util.SUCCESS()) = pastoptimiseDAE(isyst, pastOptModules, matchingAlgorithm, daeHandler);
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "Solved Initial System:\n");
+      
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n#########################\n# solved initial system #\n#########################\n\n");
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, isyst);
     then isyst;
     
@@ -9762,23 +9763,6 @@ algorithm
       eqn = generateInactiveWhenEquationForInitialization(left, source);
     then eqn;
     
-    // active when equation during initialization
-    case BackendDAE.ALGORITHM(alg=(alg as DAE.ALGORITHM_STMTS(statementLst={DAE.STMT_WHEN(exp=condition, statementLst=algStmts, source=source)}))) equation
-      true = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmOutputs(alg);
-      size = listLength(crefLst);
-      eqn = BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(algStmts), source);
-    then eqn;
-    
-    // inactive when equation during initialization
-    case BackendDAE.ALGORITHM(alg=(alg as DAE.ALGORITHM_STMTS(statementLst={DAE.STMT_WHEN(exp=condition, source=source)}))) equation
-      false = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmOutputs(alg);
-      size = listLength(crefLst);
-      algStmts = List.map1(crefLst, generateInactiveWhenAlgStatementForInitialization, source);
-      eqn = BackendDAE.ALGORITHM(size, DAE.ALGORITHM_STMTS(algStmts), source);
-    then eqn;
-    
     case eqn equation
       errorMessage = "./Compiler/BackEnd/BackendDAEUtil.mo: function generateInitialWhenEqn failed for:\n" +& BackendDump.equationStr(eqn);
       Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
@@ -9790,6 +9774,76 @@ algorithm
   end matchcontinue;
 end generateInitialWhenEqn;
 
+protected function generateInitialWhenAlg "public function generateInitialWhenAlg
+  author: lochel
+  This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
+  input BackendDAE.Equation inEqn;
+  output BackendDAE.Equation outEqn;
+protected
+  Integer size;
+  .DAE.Algorithm alg;
+  .DAE.ElementSource source;
+  list< .DAE.Statement> stmts;
+algorithm
+  BackendDAE.ALGORITHM(size=size, alg=alg, source=source) := inEqn;
+  DAE.ALGORITHM_STMTS(statementLst=stmts) := alg;
+  stmts := generateInitialWhenAlg1(stmts);
+  alg := DAE.ALGORITHM_STMTS(stmts);
+  outEqn := BackendDAE.ALGORITHM(size, alg, source);
+end generateInitialWhenAlg;
+
+protected function generateInitialWhenAlg1 "public function generateInitialWhenAlg1
+  author: lochel
+  This function generates out of a given when-algorithm, a algorithm for the initialization-problem."
+  input list< .DAE.Statement> inStmts;
+  output list< .DAE.Statement> outStmts;
+algorithm
+  outStmts := matchcontinue(inStmts)
+    local
+      .DAE.Exp condition        "The when-condition" ;
+      .DAE.ComponentRef left    "Left hand side of equation" ;
+      .DAE.Exp right            "Right hand side of equation" ;
+      BackendDAE.Equation eqn;
+      .DAE.Type identType;
+      String errorMessage;
+      list< .DAE.ComponentRef> crefLst;
+      .DAE.Statement stmt;
+      list< .DAE.Statement> stmts, rest;
+      Integer size "size of equation" ;
+      .DAE.Algorithm alg;
+      .DAE.ElementSource source "origin of when-stmt";
+      .DAE.ElementSource algSource "origin of algorithm";
+      
+    case {} then {};
+    
+    // active when equation during initialization
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts)::rest equation
+      true = Expression.containsInitialCall(condition, false);
+      rest = generateInitialWhenAlg1(rest);
+      stmts = listAppend(stmts, rest);
+    then stmts;
+    
+    // inactive when equation during initialization
+    case DAE.STMT_WHEN(exp=condition, statementLst=stmts, source=source)::rest equation
+      false = Expression.containsInitialCall(condition, false);
+      crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+      stmts = List.map1(crefLst, generateInactiveWhenAlgStatementForInitialization, source);
+      rest = generateInitialWhenAlg1(rest);
+      stmts = listAppend(stmts, rest);
+    then stmts;
+    
+    // no when equation
+    case stmt::rest equation
+      // false = isWhenStmt(stmt);
+      rest = generateInitialWhenAlg1(rest);
+    then stmt::rest;
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function generateInitialWhenAlg1 failed"});
+    then fail();
+  end matchcontinue;
+end generateInitialWhenAlg1;
+
 protected function collectInitialEqns
   input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> outTpl;
@@ -9797,7 +9851,7 @@ protected
   BackendDAE.Equation eqn, eqn1;
   BackendDAE.EquationArray eqns, reeqns;
   Integer size;
-  Boolean b, isWhen;
+  Boolean b, isAlg, isWhen;
 algorithm
   (eqn, (eqns, reeqns)) := inTpl;
   
@@ -9809,8 +9863,8 @@ algorithm
   eqn1 := Debug.bcallret1(isWhen, generateInitialWhenEqn, eqn1, eqn1);
   
   // traverse when algorithms
-  isWhen := BackendEquation.isWhenAlgorithm(eqn);
-  eqn1 := Debug.bcallret1(isWhen, generateInitialWhenEqn, eqn1, eqn1);
+  isAlg := BackendEquation.isAlgorithm(eqn);
+  eqn1 := Debug.bcallret1(isAlg, generateInitialWhenAlg, eqn1, eqn1);
   
   // add it, if size is zero (terminate,assert,noretcall) move to removed equations
   size := BackendEquation.equationSize(eqn1);

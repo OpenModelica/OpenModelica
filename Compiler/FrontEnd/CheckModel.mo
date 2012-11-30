@@ -350,8 +350,7 @@ algorithm
   end match;
 end topLevelInput;
 
-public function algorithmOutputs
-"function: algorithmOutputs
+public function algorithmOutputs "function: algorithmOutputs
   This function finds the the outputs of an algorithm.
   An input is all values that are reffered on the right hand side of any
   statement in the algorithm and an output is a variables belonging to the
@@ -360,17 +359,29 @@ public function algorithmOutputs
   input DAE.Algorithm inAlgorithm;
   output list<DAE.ComponentRef> outCrefLst;
 protected
-  list<DAE.Statement> ss;
-  HashSet.HashSet hs;
+  list<DAE.Statement> stmts;
 algorithm
-  DAE.ALGORITHM_STMTS(statementLst = ss) := inAlgorithm;
-  hs := HashSet.emptyHashSet();
-  hs := List.fold(ss,statementOutputs,hs);
-  outCrefLst := BaseHashSet.hashSetList(hs);
+  DAE.ALGORITHM_STMTS(statementLst=stmts) := inAlgorithm;
+  outCrefLst := algorithmStatementListOutputs(stmts);
 end algorithmOutputs;
 
-protected function statementOutputs
-"function: statementOutputs
+public function algorithmStatementListOutputs "function: algorithmStatementListOutputs
+  This function finds the the outputs of an algorithm.
+  An input is all values that are reffered on the right hand side of any
+  statement in the algorithm and an output is a variables belonging to the
+  variables that are assigned a value in the algorithm. If a variable is an 
+  input and an output it will be treated as an output."
+  input list<DAE.Statement> inStmts;
+  output list<DAE.ComponentRef> outCrefLst;
+protected
+  HashSet.HashSet hs;
+algorithm
+  hs := HashSet.emptyHashSet();
+  hs := List.fold(inStmts, statementOutputs, hs);
+  outCrefLst := BaseHashSet.hashSetList(hs);
+end algorithmStatementListOutputs;
+
+protected function statementOutputs "function: statementOutputs
   Helper relation to algorithmOutputs"
   input DAE.Statement inStatement;
   input  HashSet.HashSet iht;
