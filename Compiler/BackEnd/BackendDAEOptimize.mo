@@ -1871,9 +1871,9 @@ algorithm
     case ({var,var2},BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
         // variable time not there and no parameter(fixed=false)
-        knvars = BackendVariable.daeKnVars(shared);
-        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
-        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        //knvars = BackendVariable.daeKnVars(shared);
+        //((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        //((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -1882,10 +1882,10 @@ algorithm
       then (cr,k,es,syst,shared,eqTy);        
     case ({var2,var},BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
-       // variable time not there and no parameter(fixed=false)
-        knvars = BackendVariable.daeKnVars(shared);
-        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
-        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        // variable time not there and no parameter(fixed=false)
+        //knvars = BackendVariable.daeKnVars(shared);
+        //((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        //((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -3265,9 +3265,9 @@ protected function toplevelInputOrUnfixed
 protected
   Boolean b1,b2;
 algorithm
-  b1 := BackendVariable.isVarOnTopLevelAndInput(inVar);
-  b2 := BackendVariable.varFixed(inVar);
-  b := b1 or (not b2);  
+  b := BackendVariable.isVarOnTopLevelAndInput(inVar);
+  //b2 := BackendVariable.varFixed(inVar);
+  //b := b1 or (not b2);  
 end toplevelInputOrUnfixed;
 
 protected function traversingTimeEqnsFinder "
