@@ -4515,14 +4515,18 @@ algorithm
       list<DAE.Element> localDecls;
       DAE.MatchType matchType;
       list<DAE.MatchCase> cases;
+      ComponentRef cr,cr_1;
     
     case (e as DAE.ICONST(_),rel,ext_arg) then ((e,ext_arg));
     case (e as DAE.RCONST(_),rel,ext_arg) then ((e,ext_arg));
     case (e as DAE.SCONST(_),rel,ext_arg) then ((e,ext_arg));
     case (e as DAE.BCONST(_),rel,ext_arg) then ((e,ext_arg));
     case (e as DAE.ENUM_LITERAL(name=_),rel,ext_arg) then ((e,ext_arg));
-    case (e as DAE.CREF(ty=_),rel,ext_arg) then ((e,ext_arg));
-    
+    case (e as DAE.CREF(cr,tp),rel,ext_arg)
+      equation
+        (cr_1,ext_arg_1) = traverseExpTopDownCrefHelper(cr,rel,ext_arg);
+        e = Util.if_(referenceEq(cr,cr_1),e,DAE.CREF(cr_1,tp));
+      then ((e,ext_arg_1));    
     // unary
     case (e as DAE.UNARY(operator = op,exp = e1),rel,ext_arg)
       equation

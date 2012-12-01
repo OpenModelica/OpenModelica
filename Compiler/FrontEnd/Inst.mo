@@ -18183,9 +18183,8 @@ algorithm
       list<DAE.Element> localDecls;
       list<DAE.MatchCase> cases;
     case ((exp as DAE.SIZE(exp=_),arg)) then ((exp,false,arg));
-    case ((exp as DAE.CREF(componentRef=cr),arg))
+    case ((exp as DAE.CREF(componentRef=cr),(unbound,info)))
       equation
-        (_,(unbound,info)) = Expression.traverseExpTopDownCrefHelper(cr,findUnboundVariableUse,arg);
         b = listMember(ComponentReference.crefFirstIdent(cr),unbound);
         str = ComponentReference.crefFirstIdent(cr);
         Error.assertionOrAddSourceMessage(not b, Error.WARNING_DEF_USE, {str}, info);
