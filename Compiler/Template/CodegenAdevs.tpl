@@ -482,9 +482,17 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       // Switch the state event variables
       for (int i = 0; i < numZeroCrossings(); i++)
          if (state_event[i]) zc[i] = !zc[i];
+      for (int i = 0; i < numTimeEvents(); i++)
+      {
+          assert(samples[i] != NULL);
+          samples[i]->setEnabled(true);
+      }
       calc_vars(q);
       for (int i = 0; i < numTimeEvents(); i++)
+      {
           samples[i]->update(timeValue,epsilon);
+          samples[i]->setEnabled(false);
+      } 
       save_vars(); // save the new state of the model
       // Reinitialize state variables that need to be reinitialized
       <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
@@ -670,8 +678,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       }
       // Calculate the odes
       <%allEqns(allEquations,whenClauses)%>
-      if (atEvent)
-      newEvents = check_for_new_events();
+      if (atEvent) newEvents = check_for_new_events();
       if (reInit || newEvents) 
       {
           save_vars();
