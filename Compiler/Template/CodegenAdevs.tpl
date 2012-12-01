@@ -288,7 +288,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
            samples = new AdevsSampleData*[numZeroCrossings()];
            for (int i = 0; i < numTimeEvents(); i++)
                samples[i] = NULL;
-	   } 
+     } 
    }
     
    <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>() 
@@ -301,7 +301,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
            for (int i = 0; i < numTimeEvents(); i++)
                if (samples[i] != NULL) delete samples[i];
            delete [] samples;
-	   }
+     }
    }
 
    <%makeExtraResiduals(allEquations,lastIdentOfPath(modelInfo.name))%>
