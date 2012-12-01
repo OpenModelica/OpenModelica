@@ -1217,13 +1217,14 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.Var var;
       list<Integer> ilst,vlst;
+      list<BackendDAE.Var> varlst;
     
     case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars,b1,b2,ilst)))
       then ((e,false,(true,vars,knvars,b1,b2,ilst)));       
     case((e as DAE.CREF(cr,_), (_,vars,knvars,b1,b2,ilst)))
       equation
-        (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
-        true = BackendVariable.isVarOnTopLevelAndInput(var);
+        (varlst,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        false = List.mapAllValueBool(varlst,toplevelInputOrUnfixed,false);
       then ((e,false,(true,vars,knvars,b1,b2,ilst)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
@@ -1869,6 +1870,10 @@ algorithm
       then (cr,k,es,syst,shared,eqTy);
     case ({var,var2},BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
+        // variable time not there and no parameter(fixed=false)
+        knvars = BackendVariable.daeKnVars(shared);
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -1877,6 +1882,10 @@ algorithm
       then (cr,k,es,syst,shared,eqTy);        
     case ({var2,var},BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
+       // variable time not there and no parameter(fixed=false)
+        knvars = BackendVariable.daeKnVars(shared);
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e1, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
+        ((_,(false,_,_,_,_))) = Expression.traverseExpTopDown(e2, traversingTimeEqnsFinder, (false,vars,knvars,false,false));
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -3250,6 +3259,17 @@ algorithm
   end matchcontinue;
 end traverseIncidenceMatrixList;
 
+protected function toplevelInputOrUnfixed
+  input BackendDAE.Var inVar;
+  output Boolean b;
+protected
+  Boolean b1,b2;
+algorithm
+  b1 := BackendVariable.isVarOnTopLevelAndInput(inVar);
+  b2 := BackendVariable.varFixed(inVar);
+  b := b1 or (not b2);  
+end toplevelInputOrUnfixed;
+
 protected function traversingTimeEqnsFinder "
 Author: Frenkel 2010-12"
   input tuple<DAE.Exp, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean> > inExp;
@@ -3262,14 +3282,15 @@ algorithm
       BackendDAE.Variables vars,knvars;
       DAE.ComponentRef cr;
       BackendDAE.Var var;
+      list<BackendDAE.Var> vlst;
     
     case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), (_,vars,knvars,b1,b2)))
       then ((e,false,(true,vars,knvars,b1,b2)));       
-
+    // inputs not constant and parameter(fixed=false) are constant but evaluated after konstant variables are evaluted
     case((e as DAE.CREF(cr,_), (_,vars,knvars,b1,b2)))
       equation
-        (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
-        true = BackendVariable.isVarOnTopLevelAndInput(var);
+        (vlst,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        false = List.mapAllValueBool(vlst,toplevelInputOrUnfixed,false);
       then ((e,false,(true,vars,knvars,b1,b2)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2)));
     case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2))) then ((e,false,(true,vars,knvars,b1,b2)));
@@ -3280,7 +3301,7 @@ algorithm
     // and they are all time-depending  
     case((e as DAE.CREF(cr,_), (_,vars,knvars,true,b2)))
       equation
-        (var::_,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
+        (var::_,_::_)= BackendVariable.getVar(cr, knvars);
         DAE.INPUT() = BackendVariable.getVarDirection(var);
       then ((e,false,(true,vars,knvars,true,b2)));  
     // unkown var
