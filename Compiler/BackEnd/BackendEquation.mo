@@ -1551,6 +1551,73 @@ algorithm
   end matchcontinue;
 end equationRemove;
 
+public function compressEquations
+" function: compressEquations
+  autor: Frenkel TUD 2012-11
+  Closes the gabs "
+  input BackendDAE.EquationArray inEquationArray;
+  output BackendDAE.EquationArray outEquationArray;
+algorithm
+  outEquationArray := matchcontinue(inEquationArray)
+    local
+      Integer size,numberOfElement,arrSize;
+      array<Option<BackendDAE.Equation>> equOptArr;
+    case BackendDAE.EQUATION_ARRAY(size=size,numberOfElement=numberOfElement,arrSize=arrSize,equOptArr=equOptArr)
+      equation
+        numberOfElement = compressEquations1(1,1,numberOfElement,equOptArr);
+      then
+        BackendDAE.EQUATION_ARRAY(size,numberOfElement,arrSize,equOptArr);
+    else
+      equation
+        print("BackendEquation.compressEquations failed\n");
+      then
+        fail();     
+  end matchcontinue;
+end compressEquations;
+
+protected function compressEquations1
+" function: compressEquations1
+  autor: Frenkel TUD 2012-11"
+  input Integer index;
+  input Integer insertindex;
+  input Integer numberOfElement;
+  input array<Option<BackendDAE.Equation>> equOptArr;
+  output Integer newnumberOfElement;
+algorithm
+  newnumberOfElement := matchcontinue(index,insertindex,numberOfElement,equOptArr)
+    local
+      BackendDAE.Equation eqn;
+    // found element
+    case(_,_,_,_)
+      equation
+        true = intLe(index,numberOfElement);
+        SOME(eqn) = equOptArr[index];
+        // insert on new pos
+        _ = arrayUpdate(equOptArr,insertindex,SOME(eqn));
+      then
+        compressEquations1(index+1,insertindex+1,numberOfElement,equOptArr);
+    // found non element
+    case(_,_,_,_)
+      equation
+        true = intLe(index,numberOfElement);
+        NONE() = equOptArr[index];
+      then
+        compressEquations1(index+1,insertindex,numberOfElement,equOptArr);
+    // at the end
+    case(_,_,_,_)
+      equation
+        false = intLe(index,numberOfElement);
+      then
+        insertindex-1;
+    else
+      equation
+        print("BackendEquation.compressEquations1 failed\n");
+      then
+        fail();
+  end matchcontinue;
+end compressEquations1;
+
+
 public function equationToScalarResidualForm "function: equationToScalarResidualForm
   author: Frenkel TUD 2012-06
   This function transforms an equation to its scalar residual form.
@@ -1892,6 +1959,13 @@ public function daeEqns
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs = eqnarr) := syst;
 end daeEqns;
+
+public function daeInitialEqns
+  input BackendDAE.Shared shared;
+  output BackendDAE.EquationArray eqnarr;
+algorithm
+  BackendDAE.SHARED(initialEqs = eqnarr) := shared;
+end daeInitialEqns;
 
 public function aliasEquation
 "function aliasEquation
