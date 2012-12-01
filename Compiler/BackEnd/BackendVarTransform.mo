@@ -1795,8 +1795,8 @@ algorithm
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_1);
         (e2_2,b2) = ExpressionSimplify.simplify(e2_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e2_1,e2_2);
-        es = validLhsArrayAssignSTMT(cr,e1_1,e2_2,type_,source,inAcc);
-        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,es,true);
+        es_1 = validLhsArrayAssignSTMT(cr,e1_1,e2_2,type_,source,inAcc);
+        (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,es_1,true);
       then
         ( es_1,b);
     
