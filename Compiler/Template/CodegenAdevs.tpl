@@ -108,7 +108,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
           * These methods may be overridden by any derived class.
           */
          virtual void extra_state_event_funcs(double* z){}
-         double time_event_func(const double* q) { return DBL_MAX; }
+         double time_event_func(const double* q);
          void internal_event(double* q, const bool* state_event);
          void external_event(double* q, double e,
              const adevs::Bag<OMC_ADEVS_IO_TYPE>& xb){}
@@ -121,6 +121,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
           * These methods are used to access variables and
           * parameters in the modelica model by name.
           */
+         double getEventEpsilon() const { return epsilon; }
          <%makeGetAccessors(modelInfo)%>
 
          /// These methods are for solving non-linear algebraic eqns
@@ -157,6 +158,10 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          bool initial() const { return atInit; }
 
          void calc_vars(const double* q = NULL, bool doReinit = false);
+
+         AdevsSampleData** samples;
+         int numTimeEvents() { return <%vi.numTimeEvents%>; }
+         bool sample(double tStart, double tInterval, int index);
 
       protected:
          /**
@@ -267,7 +272,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
       epsilon(eventHys),
       helpVars(NULL),
       helpVars_saved(NULL),
-      zc(NULL)
+      zc(NULL),
+      samples(NULL)
    {
        timeValue = 0.0;
        if (numHelpVars() > 0)
@@ -277,6 +283,12 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
        }
        if (numZeroCrossings() > 0)
            zc = new int[numZeroCrossings()];
+       if (numTimeEvents() > 0)
+       {
+           samples = new AdevsSampleData*[numZeroCrossings()];
+           for (int i = 0; i < numTimeEvents(); i++)
+               samples[i] = NULL;
+	   } 
    }
     
    <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>() 
@@ -284,6 +296,12 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
         if (helpVars != NULL) delete [] helpVars;
         if (helpVars_saved != NULL) delete [] helpVars_saved;
         if (zc != NULL) delete [] zc;
+        if (samples != NULL)
+        {
+           for (int i = 0; i < numTimeEvents(); i++)
+               if (samples[i] != NULL) delete samples[i];
+           delete [] samples;
+	   }
    }
 
    <%makeExtraResiduals(allEquations,lastIdentOfPath(modelInfo.name))%>
@@ -302,7 +320,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 
    <%makeDerFuncCalculator(simCode)%>
    
-   <%makeStateEventFunc(simCode)%>
+   <%makeEventFunc(simCode)%>
 
    >>
 end simulationCppFile;
@@ -404,7 +422,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   >>
 end makeExtraFunctionsAndRecords;
 
-template makeStateEventFunc(SimCode simCode)
+template makeEventFunc(SimCode simCode)
 ::=
 match simCode
 case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
@@ -440,6 +458,24 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       restore_vars();
   }
 
+  bool <%lastIdentOfPath(modelInfo.name)%>::sample(double tStart, double tInterval, int index)
+  {
+      if (samples[index] == NULL)
+          samples[index] = new AdevsSampleData(tStart,tInterval);
+      return samples[index]->atEvent(timeValue,epsilon);
+  }
+
+  double <%lastIdentOfPath(modelInfo.name)%>::time_event_func(const double* q)
+  {
+      double ttgMin = adevs_inf<double>();
+      for (int i = 0; i < numTimeEvents(); i++)
+      {
+          double ttg = samples[i]->timeToEvent(timeValue);
+          if (ttg < ttgMin) ttgMin = ttg;
+      }
+      return ttgMin;
+  }
+
   void <%lastIdentOfPath(modelInfo.name)%>::internal_event(double* q, const bool* state_event)
   {
       atEvent = true;
@@ -447,6 +483,8 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
       for (int i = 0; i < numZeroCrossings(); i++)
          if (state_event[i]) zc[i] = !zc[i];
       calc_vars(q);
+      for (int i = 0; i < numTimeEvents(); i++)
+          samples[i]->update(timeValue,epsilon);
       save_vars(); // save the new state of the model
       // Reinitialize state variables that need to be reinitialized
       <%(vars.stateVars |> SIMVAR(__) => 'q[<%index%>]=<%cref(name)%>;') ;separator="\n"%>
@@ -454,7 +492,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   }
 
   >>
-end makeStateEventFunc;
+end makeEventFunc;
 
 template zeroCrossingEqns(list<ZeroCrossing> zeroCrossings)
   "Generates function in simulation file."
