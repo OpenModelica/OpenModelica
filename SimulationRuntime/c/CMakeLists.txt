@@ -19,6 +19,7 @@ ENDIF(NOT OMDEV)
 
 INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
 link_directories(${OMDEV}/lib/expat-win32-msvc)
+link_directories(${OMDEV}/lib/lapack-win32-msvc)
 
 # SUNDIALS Header
 FIND_PATH(SUNDIALS_INCLUDE_DIR sundials/sundials_config.h /usr/include /usr/local/include $ENV{INCLUDE} ${OMDEV}/lib/3rdParty/Sundials/include)
@@ -141,6 +142,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
 
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/expat-win32-msvc)
+  link_directories(${OMDEV}/lib/lapack-win32-msvc)
   
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.c
@@ -161,7 +163,7 @@ MACRO(BUILDMODEL model mo dir Flags CSRC)
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization lapack_win32_MT)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -220,18 +222,46 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
 
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/expat-win32-msvc)  
+  link_directories(${OMDEV}/lib/lapack-win32-msvc)
   
-  # custom command to copy xml file
+  # custom command to copy expat.dll file
   SET(expat_CODE   ${OMDEV}/lib/expat-win32-msvc/libexpat.dll)
   STRING(REGEX REPLACE "/" "\\\\" expat_CODE_NEU ${expat_CODE})
   SET(expat_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/libexpat.dll)
   STRING(REGEX REPLACE "/" "\\\\" expat_OUTPUT_NEU ${expat_OUTPUT})
-  ADD_CUSTOM_COMMAND(OUTPUT ${expat_OUTPUT}
+
+    ADD_CUSTOM_COMMAND(OUTPUT ${expat_OUTPUT} 
                      COMMAND ${COPY} ${expat_CODE_NEU} ${expat_OUTPUT_NEU}
                      WORKING_DIRECTORY ${dir}
                      COMMENT "copy file ${expat_CODE_NEU} to ${expat_OUTPUT_NEU}")
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(expat${model} ALL DEPENDS ${expat_OUTPUT})  
+
+  
+  SET(lapack_CODE   ${OMDEV}/lib/lapack-win32-msvc/lapack_win32_MT.dll)
+  STRING(REGEX REPLACE "/" "\\\\" lapack_CODE_NEU ${lapack_CODE})
+  SET(lapack_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/lapack_win32_MT.dll)
+  STRING(REGEX REPLACE "/" "\\\\" lapack_OUTPUT_NEU ${lapack_OUTPUT})
+
+  ADD_CUSTOM_COMMAND(OUTPUT ${lapack_OUTPUT} ${blas_OUTPUT} ${lapack_OUTPUT}
+                     COMMAND ${COPY} ${lapack_CODE_NEU} ${lapack_OUTPUT_NEU}
+                     WORKING_DIRECTORY ${dir}
+                     COMMENT "copy file ${lapack_CODE_NEU} to ${lapack_OUTPUT_NEU}")
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(lapack${model} ALL DEPENDS ${lapack_OUTPUT})  
+  
+  
+  SET(blas_CODE   ${OMDEV}/lib/lapack-win32-msvc/blas_win32_MT.dll)
+  STRING(REGEX REPLACE "/" "\\\\" blas_CODE_NEU ${blas_CODE})
+  SET(blas_OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/RelWithDebInfo/blas_win32_MT.dll)
+  STRING(REGEX REPLACE "/" "\\\\" blas_OUTPUT_NEU ${blas_OUTPUT})
+
+  ADD_CUSTOM_COMMAND(OUTPUT ${blas_OUTPUT} ${blas_OUTPUT} ${lapack_OUTPUT}
+                     COMMAND ${COPY} ${blas_CODE_NEU} ${blas_OUTPUT_NEU}
+                     WORKING_DIRECTORY ${dir}
+                     COMMENT "copy file ${blas_CODE_NEU} to ${blas_OUTPUT_NEU}")
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(blas${model} ALL DEPENDS ${blas_OUTPUT})  
   
   SET(OMC_MODELNAME ${model})  
   # generate model.mos 
@@ -257,7 +287,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   ADD_DEFINITIONS(/TP)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
   ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta f2c ModelicaExternalC libexpat initialization ${SUNDIALS_LIBRARIES})
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta f2c ModelicaExternalC libexpat initialization lapack_win32_MT ${SUNDIALS_LIBRARIES})
 
   # custom command to copy xml file
   SET(XML_CODE   ${dir}/${model}_init.xml)
@@ -272,7 +302,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   ADD_CUSTOM_TARGET(${model}cp_xml ALL DEPENDS ${XML_OUTPUT})
 
   # Dependencies
-  ADD_DEPENDENCIES(${model}cp_xml ${model}codegen expat)
+  ADD_DEPENDENCIES(${model}cp_xml ${model}codegen expat${model} lapack${model} blas${model})
   ADD_DEPENDENCIES(${model} ${model}cp_xml)
   
 #ENDFOREACH(model ${model_sources})
@@ -324,6 +354,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
 
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/expat-win32-msvc)  
+  link_directories(${OMDEV}/lib/lapack-win32-msvc)
   
   SET(OMC_MODELNAME ${model})  
   SET(OMC_MODELDIR ${dir})  
@@ -353,7 +384,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
 				   ${OMCTRUNCHOME}/SimulationRuntime/fmi/export/fmiModelTypes.h)
   
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization)
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver f2c meta ModelicaExternalC libexpat initialization lapack_win32_MT)
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)
@@ -411,6 +442,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
 
   INCLUDE_DIRECTORIES(${OMDEV}/lib/expat-win32-msvc)
   link_directories(${OMDEV}/lib/expat-win32-msvc)  
+  link_directories(${OMDEV}/lib/lapack-win32-msvc)
  
   STRING(REPLACE "." "_" FMU_MODELNAME ${model})
   # generate model.mos 
@@ -439,7 +471,7 @@ ENDIF(SUNDIALS_INCLUDE_DIR AND
   ADD_DEFINITIONS(/TP ${FMU_MODELNAME}.c)
   set_source_files_properties(${OMC_OUTPUT} PROPERTIES LANGUAGE CXX)
   ADD_LIBRARY(${model} SHARED ${OMC_OUTPUT} ${CSRC} ${OMC_FMU_CODE})
-  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta f2c ModelicaExternalC libexpat initialization ${SUNDIALS_LIBRARIES})
+  TARGET_LINK_LIBRARIES(${model} simulation util math-support results solver meta f2c ModelicaExternalC libexpat initialization lapack_win32_MT ${SUNDIALS_LIBRARIES})
 
   # Dependencies
   ADD_DEPENDENCIES(${model} ${model}codegen)

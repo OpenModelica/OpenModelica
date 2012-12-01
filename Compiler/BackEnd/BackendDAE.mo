@@ -86,7 +86,7 @@ end BackendDAEType;
 public
 uniontype VarKind "- Variabile kind"
   record VARIABLE end VARIABLE;
-  record STATE end STATE;
+  record STATE end STATE; // we should also save information if it is a state with used derivative and the how often this states was differentiated
   record STATE_DER end STATE_DER;
   record DUMMY_DER end DUMMY_DER;
   record DUMMY_STATE end DUMMY_STATE;

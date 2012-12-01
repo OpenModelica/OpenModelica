@@ -118,6 +118,8 @@ algorithm
         //  BackendDump.dumpEqSystem(isyst);
         //  BackendDump.dumpMatching(inAssignments1);
         //  BackendDump.dumpMatching(inAssignments2);
+        //  syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{})); 
+        //  dumpSystemGraphML(syst,ishared,NONE(),"ConstrainRevoluteJoint.graphml");
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
         (b,eqns_1,unassignedStates,unassignedEqns,discEqns) = minimalStructurallySingularSystem(eqns,isyst,inAssignments1,inAssignments2);
         size = BackendDAEUtil.systemSize(isyst);
@@ -274,7 +276,7 @@ algorithm
         // do not differentiate self generated equations $_DER.x = der(x) 
         eqns1 = List.select1(eqns1,intLe,noofeqns);
         Debug.fcall(Flags.BLT_DUMP, print, "marked equations: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns1,intString," ","\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns,intString," ","\n"));
         eqnstr = Debug.bcallret2(Flags.isSet(Flags.BLT_DUMP),BackendDump.dumpMarkedEqns,isyst, eqns1,"");
         Debug.fcall(Flags.BLT_DUMP, print, eqnstr);
         // diff Alias does not yet work proper
@@ -303,6 +305,7 @@ algorithm
       equation
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states.\nmarked equations:\n");
         // get from scalar eqns indexes the indexes in the equation array
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns,intString," ","\n"));
         eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
         eqns1 = List.uniqueIntN(eqns1,arrayLength(mapIncRowEqn));        
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
@@ -427,6 +430,7 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,_) then (true,inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc);
     case (ilst::rest,_,_,_,_,_,_,_,_,_,_)
       equation
+        //  print("Eqns " +& stringDelimitList(List.map(ilst,intString),", ") +& "\n");
         ((unassignedEqns,eqnsLst,discEqns)) = List.fold2(ilst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},inDiscEqnsAcc));
         //  print("unassignedEqns " +& stringDelimitList(List.map(unassignedEqns,intString),", ") +& "\n");
         stateIndxs = List.fold2(ilst,statesInEquations,(m,statemark,mark),inAssignments1,{});
@@ -761,7 +765,7 @@ algorithm
       then
         (syst,ishared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn);
     // not all equations are differentiated
-    case (_::_,_,_,_,_,_,BackendDAE.EQSYSTEM(mT = SOME(mt)),_,_,_,_,_,_,_)
+    case (_::_,_,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=v,mT = SOME(mt)),_,_,_,_,_,_,_)
       equation
         Debug.fcall(Flags.BLT_DUMP,print,"notDiffedEquations:\n");
         Debug.fcall(Flags.BLT_DUMP,BackendDump.dumpEqns,notDiffedEquations);
@@ -774,6 +778,8 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP,print,"unassignedStates:\n");
         Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(unassignedStates,intString,", ","\n"));
         ilst = List.fold1(unassignedStates,statesWithUnusedDerivative,mt,{});
+        // check also initial equations (this could be done alse once before
+        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
         Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
         Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(ilst,intString,", ","\n"));
         (syst,shared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn) =
@@ -782,6 +788,39 @@ algorithm
         (syst,shared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn);
   end matchcontinue;
 end differentiateEqns;
+
+protected function searchDerivativesEqn "function searchDerivativesEqn
+  author: Frenkel TUD 2012-11"
+  input tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> itpl;
+  output tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> outTpl;
+protected
+  DAE.Exp e;
+  tuple<list<Integer>,BackendDAE.Variables> tpl;
+algorithm
+  (e,tpl) := itpl;
+  outTpl := Expression.traverseExp(e,searchDerivativesExp,tpl);
+end searchDerivativesEqn;
+
+protected function searchDerivativesExp "function searchDerivativesExp
+  author: Frenkel TUD 2012-11"
+  input tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> tpl;
+  output tuple<DAE.Exp,tuple<list<Integer>,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl := matchcontinue(tpl)
+    local
+      BackendDAE.Variables vars;
+      list<Integer> ilst,i1lst;
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+    case((e as DAE.CALL(path=Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef=cr)}),(ilst,vars)))
+      equation
+        (_,i1lst) = BackendVariable.getVar(cr,vars);
+        ilst = List.fold1(i1lst,List.removeOnTrue, intEq, ilst);
+      then 
+        ((e,(ilst,vars)));
+    case _ then tpl;
+  end matchcontinue;
+end searchDerivativesExp;
 
 protected function differentiateEqnsLst
 "function: differentiateEqnsLst
@@ -947,6 +986,25 @@ algorithm
       array<Boolean> barray;
       list<BackendDAE.Var> varlst;
       BackendDAE.Var var;
+    // 1th try to replace final parameter
+    case (_,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
+      equation
+        ((eqns,eqnslst as _::_,_)) = List.fold1(inEqns,replaceFinalVars,BackendVariable.daeKnVars(ishared),(eqns,{},BackendVarTransform.emptyReplacements()));
+        // unassign changed equations and assigned vars
+        eqnslst1 = List.flatten(List.map1r(eqnslst,arrayGet,imapEqnIncRow));
+        ilst = List.map1r(eqnslst1,arrayGet,inAss2);
+        ilst = List.select1(ilst,intGt,0);
+        ass2 = List.fold1r(eqnslst1,arrayUpdate,-1,inAss2);
+        ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
+        // update IncidenceMatrix
+        Debug.fcall(Flags.BLT_DUMP, print, "Replaced final Parameter in Eqns\n");
+        syst = BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching);
+        Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst,intString," ","\n"));
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst, imapEqnIncRow, imapIncRowEqn);
+      then
+        (syst,ishared,ass1,ass2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
+              
     // if size of unmatched eqns is equal to size of states without used derivative change all to algebraic
     case (true,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
       equation
@@ -954,7 +1012,7 @@ algorithm
         varlst = List.map1r(statesWithUnusedDer,BackendVariable.getVarAt,v);
         Debug.fcall(Flags.BLT_DUMP, print, "Change varKind to algebraic for\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
-        varlst = BackendVariable.setVarsKind(varlst,BackendDAE.DUMMY_STATE());
+        varlst = BackendVariable.setVarsKind(varlst,BackendDAE.VARIABLE());
         v1 = BackendVariable.addVars(varlst,v);
         // update IncidenceMatrix
         eqnslst1 = BackendDAETransform.collectVarEqns(statesWithUnusedDer,{},mt,arrayLength(mt));
@@ -978,36 +1036,21 @@ algorithm
       then
         fail();
 */
-    // if all of these does not work try to replace final parameter
-    case (_,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
-      equation
-        ((eqns,eqnslst as _::_,_)) = List.fold1(inEqns,replaceFinalVars,BackendVariable.daeKnVars(ishared),(eqns,{},BackendVarTransform.emptyReplacements()));
-        // unassign changed equations and assigned vars
-        eqnslst1 = List.flatten(List.map1r(eqnslst,arrayGet,imapEqnIncRow));
-        ilst = List.map1r(eqnslst1,arrayGet,inAss2);
-        ilst = List.select1(ilst,intGt,0);
-        ass2 = List.fold1r(eqnslst1,arrayUpdate,-1,inAss2);
-        ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
-        // update IncidenceMatrix
-        Debug.fcall(Flags.BLT_DUMP, print, "Replaced final Parameter in Eqns\n");
-        syst = BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching);
-        Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst,intString," ","\n"));
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst, imapEqnIncRow, imapIncRowEqn);
-      then
-        (syst,ishared,ass1,ass2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
         
     // if size of unmatched eqns is not equal to size of states without used derivative change first to algebraic 
     // until I have a better sulution
-    case (false,i::_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
+    case (false,i::ilst,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
       equation
         // change varKind
         var = BackendVariable.getVarAt(v,i);
         varlst = {var};
         Debug.fcall(Flags.BLT_DUMP, print, "Change varKind to algebraic for\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
-        varlst = BackendVariable.setVarsKind(varlst,BackendDAE.DUMMY_STATE());
+        varlst = BackendVariable.setVarsKind(varlst,BackendDAE.VARIABLE());
         v1 = BackendVariable.addVars(varlst,v);
+        varlst = List.map1r(ilst,BackendVariable.getVarAt,v);
+        Debug.fcall(Flags.BLT_DUMP, print, "Other Candidates are\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
         // update IncidenceMatrix
         eqnslst1 = BackendDAETransform.collectVarEqns({i},{},mt,arrayLength(mt));
         syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching);
@@ -1016,6 +1059,14 @@ algorithm
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
       then
         (syst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
+        
+    case (false,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
+      equation
+        varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,v);
+        Debug.fcall(Flags.BLT_DUMP, print, "unassignedStates\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
+      then
+        fail();   
   end matchcontinue;
 end handleundifferntiableMSS;
 
@@ -5059,6 +5110,13 @@ algorithm
         (outVars,outChangedVars) = changeDerVariablestoStates1(rest,ilst,vars,i::inChangedVars);
       then
         (outVars,outChangedVars);
+    case ((v as BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()))::rest,i::ilst,_,_)
+      equation
+        v = BackendVariable.setVarKind(v,BackendDAE.STATE());
+        vars = BackendVariable.addVar(v,inVars);
+        (outVars,outChangedVars) = changeDerVariablestoStates1(rest,ilst,vars,i::inChangedVars);
+      then
+        (outVars,outChangedVars);
     case ((v as BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()))::rest,i::ilst,_,_)
       equation
         v = BackendVariable.setVarKind(v,BackendDAE.STATE());
@@ -5155,12 +5213,12 @@ algorithm
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
         //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL());
-        mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
-        //(_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
+        //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
+        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
         graph = GraphML.getGraph("G",false);  
         ((_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(1,graph));
-        neqns = BackendDAEUtil.equationArraySize(eqns);
-        //neqns = BackendDAEUtil.equationSize(eqns);
+        //neqns = BackendDAEUtil.equationArraySize(eqns);
+        neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
         graph = List.fold2(eqnsids,addEqnGraph,eqns,mapIncRowEqn,graph);
         ((_,_,graph)) = List.fold(eqnsids,addEdgesGraph,(1,m,graph));
