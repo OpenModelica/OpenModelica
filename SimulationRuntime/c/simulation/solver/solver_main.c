@@ -349,6 +349,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     /******** Emit this time step ********/
     storePreValues(data);
     storeOldValues(data);
+
     saveZeroCrossings(data);
 
     if (fmt) {

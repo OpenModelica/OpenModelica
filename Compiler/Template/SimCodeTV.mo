@@ -2310,6 +2310,11 @@ package Expression
     output Boolean outBoolean;
   end isHalf;
 
+  function isRealType
+    input DAE.Type inType;
+    output Boolean b;
+  end isRealType;
+ 
   function realExpIntLit
     input DAE.Exp exp;
     output Option<Integer> oi;

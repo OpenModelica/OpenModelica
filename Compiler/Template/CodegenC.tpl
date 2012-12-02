@@ -6534,39 +6534,75 @@ case rel as RELATION(__) then
       let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
-      match rel.operator
-      case LESS(__) then
-        let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>} else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Less,<);<%\n%>}<%\n%>'
-        res
-      case LESSEQ(__) then
-        let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>} else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,LessEq,<=);<%\n%>}<%\n%>'
-        res
-      case GREATER(__) then
-        let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>} else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,Greater,>);<%\n%>}<%\n%>'
-        res
-      case GREATEREQ(__) then
-        let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%>  SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>} else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%>,GreaterEq,>=);<%\n%>}<%\n%>'
-        res
-      end match
+      if intEq(rel.index,-1) then
+        match rel.operator
+        case LESS(__) then
+          let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
+          res
+        end match
+      else
+        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        let hysteresisfunction = if isReal then 'RELATIONHYSTERESIS' else 'RELATION'
+        match rel.operator
+        case LESS(__) then
+          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%>, Less);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%>, LessEq);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%>, Greater);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%>, GreaterEq);<%\n%>'
+          res
+        end match
     case SOME((exp,i,j)) then   
       let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let iterator = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
-      match rel.operator
-      case LESS(__) then
-        let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>  } else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Less,<);<%\n%>}<%\n%>'
-        res
-      case LESSEQ(__) then
-        let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>  } else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,LessEq,<=);<%\n%>}<%\n%>'
-        res
-      case GREATER(__) then
-        let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>  } else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,Greater,>);<%\n%>}<%\n%>'
-        res
-      case GREATEREQ(__) then
-        let &preExp += 'if (data->simulationInfo.discreteCall == 1) {<%\n%> SAVEZEROCROSS(<%res%>, <%e1%>, <%e2%>,<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>  } else {<%\n%>  RELATIONTOZC(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>,GreaterEq,>=);<%\n%>}<%\n%>'
-        res
-      end match
+      if intEq(rel.index,-1) then
+        match rel.operator
+        case LESS(__) then
+          let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
+          res
+        end match
+      else
+        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        let hysteresisfunction = if isReal then 'RELATIONHYSTERESIS' else 'RELATION'
+        match rel.operator
+        case LESS(__) then
+          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, Less);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, LessEq);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, Greater);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += '<%hysteresisfunction%>(<%res%>, <%e1%>, <%e2%>, <%rel.index%> + (<%iterator%> - <%i%>)/<%j%>, GreaterEq);<%\n%>'
+          res
+        end match
     end match
   case ZEROCROSSINGS_CONTEXT(__) then
     match rel.optionExpisASUB
@@ -6574,40 +6610,58 @@ case rel as RELATION(__) then
       let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
-      let res1 = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
-      match rel.operator
-      case LESS(__) then
-        let &preExp += '<%res%> =' + (if intEq(rel.index,-1) then 'Less(<%e1%>, <%e2%>);' else 'LessZC(<%e1%>, <%e2%>, data->simulationInfo.backupRelations[<%rel.index%>]);')
-        res
-      case LESSEQ(__) then
-        let &preExp += '<%res%> =' + (if intEq(rel.index,-1) then 'LessEq(<%e1%>, <%e2%>);' else 'LessEqZC(<%e1%>, <%e2%>, data->simulationInfo.backupRelations[<%rel.index%>]);')
-        res
-      case GREATER(__) then
-        let &preExp += '<%res%> =' + (if intEq(rel.index,-1) then 'Greater(<%e1%>, <%e2%>);' else 'GreaterZC(<%e1%>, <%e2%>, data->simulationInfo.backupRelations[<%rel.index%>]);')
-        res          
-      case GREATEREQ(__) then
-        let &preExp += '<%res%> =' + (if intEq(rel.index,-1) then 'GreaterEq(<%e1%>, <%e2%>);' else 'GreaterEqZC(<%e1%>, <%e2%>, data->simulationInfo.backupRelations[<%rel.index%>]);')
-        res          
-      end match
+      if intEq(rel.index,-1) then      
+        match rel.operator
+        case LESS(__) then
+          let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case LESSEQ(__) then
+          let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case GREATER(__) then
+          let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
+          res
+        end match
+      else
+        let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
+        match rel.operator
+        case LESS(__) then
+          let hysteresisfunction = if isReal then 'LessZC(<%e1%>,<%e2%>, data->simulationInfo.backupRelations[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
+          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
+          res
+        case LESSEQ(__) then
+          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>,<%e2%>, data->simulationInfo.backupRelations[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
+          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
+          res
+        case GREATER(__) then
+          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>,<%e2%>, data->simulationInfo.backupRelations[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
+          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
+          res
+        case GREATEREQ(__) then
+          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>,<%e2%>, data->simulationInfo.backupRelations[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
+          let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
+          res
+        end match      
     case SOME((exp,i,j)) then   
       let e1 = daeExp(rel.exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let e2 = daeExp(rel.exp2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-      let iterator = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let res = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
-      let res1 = tempDecl("modelica_boolean", &varDecls /*BUFC*/)
       match rel.operator
       case LESS(__) then
-        let &preExp += '<%res%> =' + (if intEq(rel.index,-1) then 'Less(<%e1%>, <%e2%>);' else 'LessZC(<%e1%>, <%e2%>, data->simulationInfo.backupRelations[<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>]);')
+        let &preExp += '<%res%> = Less(<%e1%>,<%e2%>);<%\n%>'
         res
       case LESSEQ(__) then
-        let &preExp += '<%res%> =' + (if intEq(rel.index,-1) then 'LessEq(<%e1%>, <%e2%>);' else 'LessEqZC(<%e1%>, <%e2%>, data->simulationInfo.backupRelations[<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>]);')
+        let &preExp += '<%res%> = LessEq(<%e1%>,<%e2%>);<%\n%>'
         res
       case GREATER(__) then
-        let &preExp += '<%res%> =' + (if intEq(rel.index,-1) then 'GreaterZC(<%e1%>, <%e2%>, data->simulationInfo.backupRelations[<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>]);')
-        res          
+        let &preExp += '<%res%> = Greater(<%e1%>,<%e2%>);<%\n%>'
+        res
       case GREATEREQ(__) then
-        let &preExp += '<%res%> =' + (if intEq(rel.index,-1) then 'GreaterEqZC(<%e1%>, <%e2%>, data->simulationInfo.backupRelations[<%rel.index%> + (<%iterator%> - <%i%>)/<%j%>]);')
-        res          
+        let &preExp += '<%res%> = GreaterEq(<%e1%>,<%e2%>);<%\n%>'
+        res
       end match
     end match 
   end match  

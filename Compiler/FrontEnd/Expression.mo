@@ -7826,6 +7826,17 @@ algorithm
   end match;
 end isRecordType;
 
+public function isRealType
+ "Return true if the type is Real."
+  input DAE.Type inType;
+  output Boolean b;
+algorithm 
+  b := match(inType)
+    case (DAE.T_REAL(source = _)) then true;
+    else false;
+  end match;
+end isRealType; 
+
 public function dimensionsEqual
   "Returns whether two dimensions are equal or not."
   input DAE.Dimension dim1;

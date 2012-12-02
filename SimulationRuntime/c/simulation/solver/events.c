@@ -501,6 +501,13 @@ int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime)
   /* update the whole system */
   updateDiscreteSystem(data);
 
+  /* update relations after an event */
+  /*
+  storePreValues(data);
+  function_updateRelations(data, 0);
+  storeRelations(data);
+  */
+
   saveZeroCrossingsAfterEvent(data);
 
   return 0;
@@ -532,6 +539,13 @@ int handleSampleEvent(DATA* data)
 
   deactivateSampleEventsandEquations(data);
   INFO1(LOG_EVENTS, "event Handling for Sample : %f done!", data->localData[0]->timeValue);
+
+  /* update relations after an event */
+  /*
+  storePreValues(data);
+  function_updateRelations(data, 0);
+  storeRelations(data);
+  */
 
   saveZeroCrossingsAfterEvent(data);
 

@@ -40,17 +40,23 @@ extern "C" {
   gout[ind] = exp; \
 }
 
-#define RELATIONTOZC(res,exp1,exp2,index,op_w,op) { \
-  if (index == -1){ \
-    res = (op_w((exp1),(exp2)));\
-  }else{ \
+#define RELATION(res,exp1,exp2,index,op_w) { \
+  if (data->simulationInfo.discreteCall == 0){ \
     res = data->simulationInfo.backupRelationsPre[index]; \
-  } \
+  } else{ \
+    if (data->simulationInfo.solveContinuous){ \
+      res = data->simulationInfo.backupRelationsPre[index]; \
+      data->simulationInfo.backupRelations[index] = ((op_w)((exp1),(exp2))); \
+    } else { \
+      res = ((op_w)((exp1),(exp2))); \
+      data->simulationInfo.backupRelations[index] = res; \
+    }\
+  }\
 }
 
-#define SAVEZEROCROSS(res,exp1,exp2,index,op_w,op) { \
-  if (index == -1){ \
-    res = (op_w((exp1),(exp2)));\
+#define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) { \
+  if (data->simulationInfo.discreteCall == 0){ \
+    res = data->simulationInfo.backupRelationsPre[index]; \
   } else{ \
     if (data->simulationInfo.solveContinuous){ \
       res = data->simulationInfo.backupRelationsPre[index]; \
@@ -61,6 +67,7 @@ extern "C" {
     }\
   }\
 }
+
 
 void initializeDataStruc(DATA *data);
 
