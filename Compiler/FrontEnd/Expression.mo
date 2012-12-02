@@ -1718,6 +1718,7 @@ algorithm
     case DAE.DIM_INTEGER(integer = i) then i;
     case DAE.DIM_ENUM(size = i) then i;
     case DAE.DIM_EXP(exp = DAE.ICONST(integer = i)) then i;
+    case DAE.DIM_EXP(exp = DAE.ENUM_LITERAL(index = i)) then i;
   end match;
 end dimensionSize;
 
@@ -7939,6 +7940,7 @@ algorithm
   known := matchcontinue(dim)
     case DAE.DIM_UNKNOWN() then false;
     case DAE.DIM_EXP(exp = DAE.ICONST(integer = _)) then true;
+    case DAE.DIM_EXP(exp = DAE.ENUM_LITERAL(index = _)) then true;
     case DAE.DIM_EXP(exp = _) then false;
     case _ then true;
   end matchcontinue;

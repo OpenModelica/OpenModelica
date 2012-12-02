@@ -9718,7 +9718,7 @@ algorithm
         // attr = DAEUtil.setAttrVariability(attr, variability);        
         // get the binding if is a constant
         (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
-        const = constCref;
+        const = Types.constAnd(constCref, constSubs); // constCref
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
         (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
@@ -9737,7 +9737,7 @@ algorithm
         // attr = DAEUtil.setAttrVariability(attr, variability);        
         // get the binding if is a constant
         (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
-        const = constCref;
+        const = Types.constAnd(constCref, constSubs); // constCref
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
         (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
@@ -11438,9 +11438,9 @@ algorithm
       equation
         (cache, dsub, const, prop) = elabSubscript(inCache, inEnv, asub, inImpl,
           inPrefix, inInfo);
+        const = Types.constAnd(const, inConst);          
         (cache, dsub) = elabSubscriptsDims3(cache, inEnv, dsub, dim,
           const, prop, inImpl, inInfo);
-        const = Types.constAnd(const, inConst);
         elabed_subs = dsub :: inElabSubscripts;
         (cache, elabed_subs, const) = elabSubscriptsDims2(cache, inEnv,
           rest_asub, rest_dims, inImpl, inPrefix, inInfo, const, elabed_subs);
@@ -11494,12 +11494,19 @@ algorithm
       then
         (inCache, inSubscript);
 
-    // If the subscript contains a param or const then it should be evaluated to
+    // Keep parameters as they are
+    case (_, _, _, _, _, _, _, _)
+      equation
+        true = Types.isParameter(inConst);
+      then
+        (inCache, inSubscript);
+
+    // If the subscript contains a const then it should be evaluated to
     // the value.
     case (_, _, _, _, _, _, _, _)
       equation
         int_dim = Expression.dimensionSize(inDimension);
-        true = Types.isParameterOrConstant(inConst);
+        true = Types.isConstant(inConst); // Types.isParameterOrConstant(inConst);
         (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
           int_dim, inImpl, Ceval.MSG(inInfo));
       then
@@ -11507,7 +11514,7 @@ algorithm
 
     case (_, _, _, DAE.DIM_EXP(exp=e), _, _, _, _)
       equation
-        true = Types.isParameterOrConstant(inConst);
+        true = Types.isConstant(inConst); // Types.isParameterOrConstant(inConst);
         (cache, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Ceval.MSG(inInfo)); 
         (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
           int_dim, inImpl, Ceval.MSG(inInfo));
@@ -11527,7 +11534,7 @@ algorithm
     case (_, _, _, _, _, _, _, _)
       equation
         true = Expression.dimensionKnown(inDimension);
-        false = Types.isParameterOrConstant(inConst);
+        false = Types.isConstant(inConst);
       then
         (inCache, inSubscript);
 
