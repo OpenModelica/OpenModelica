@@ -3254,12 +3254,9 @@ end traverseIncidenceMatrixList;
 protected function toplevelInputOrUnfixed
   input BackendDAE.Var inVar;
   output Boolean b;
-protected
-  Boolean b1,b2;
 algorithm
-  b := BackendVariable.isVarOnTopLevelAndInput(inVar);
-  //b2 := BackendVariable.varFixed(inVar);
-  //b := b1 or (not b2);  
+  b := BackendVariable.isVarOnTopLevelAndInput(inVar) or 
+       BackendVariable.isParam(inVar) and not BackendVariable.varFixed(inVar);
 end toplevelInputOrUnfixed;
 
 protected function traversingTimeEqnsFinder "
