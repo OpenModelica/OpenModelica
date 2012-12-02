@@ -10300,14 +10300,26 @@ algorithm
       then
         (cache,e,DAE.C_VAR(),attr);
 
+    // a constant with parameter subscript
+    case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),DAE.C_PARAM(),_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
+      equation
+        cr2 = ComponentReference.crefStripLastSubs(cr);
+        subsc = ComponentReference.crefLastSubs(cr);
+        (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info));
+        e = ValuesUtil.valueExp(v);
+        e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+      then
+        (cache,e,DAE.C_PARAM(),attr);
+
     // a constant -> evaluate binding
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         true = Types.equivtypes(tt,idTp);
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
+        const = Types.constAnd(DAE.C_CONST(), constSubs);
       then
-        (cache,e,DAE.C_CONST(),attr);
+        (cache,e,const,attr);
     
     // a constant, couldn't evaluate binding, replace with it!
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
@@ -10317,9 +10329,11 @@ algorithm
         // constant binding
         DAE.EQBOUND(exp = e, constant_ = DAE.C_CONST()) = binding;
         // adrpo: todo -> subscript the binding expression
-        // subsc = ComponentReference.crefLastSubs(cr);
+        subsc = ComponentReference.crefLastSubs(cr);
+        e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+        const = Types.constAnd(DAE.C_CONST(), constSubs);
       then
-        (cache,e,DAE.C_CONST(),attr);
+        (cache,e,const,attr);
         
     // a constant, couldn't evaluate binding, replace with it!
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
@@ -10329,8 +10343,11 @@ algorithm
         // constant binding
         DAE.VALBOUND(valBound = v) = binding;
         e = ValuesUtil.valueExp(v);
+        subsc = ComponentReference.crefLastSubs(cr);
+        e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+        const = Types.constAnd(DAE.C_CONST(), constSubs);
       then
-        (cache,e,DAE.C_CONST(),attr);
+        (cache,e,const,attr);
     
     // a constant with some for iterator constness -> don't constant evaluate
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,SOME(_),tt,_,doVect,_,_,_,_)
