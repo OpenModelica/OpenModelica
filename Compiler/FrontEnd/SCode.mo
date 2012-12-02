@@ -3543,23 +3543,23 @@ end propagateConnectorType;
 
 protected function propagateParallelism
 "Helper function for mergeAttributes"
-  input Parallelism p1;
-  input Parallelism p2;
-  output Parallelism p;
-algorithm 
-  p := matchcontinue(p1,p2)
-    case(_,NON_PARALLEL()) 
-      then p1;
-    case(_,_) 
+  input Parallelism inParallelism1;
+  input Parallelism inParallelism2;
+  output Parallelism outParallelism;
+algorithm
+  outParallelism := match(inParallelism1, inParallelism2)
+    case (_, NON_PARALLEL()) then inParallelism1;
+    case (NON_PARALLEL(), _) then inParallelism2;
+    case(_,_)
       equation
-        true = parallelismEqual(p1,p2);
-      then p1;
-    case(_,_) 
+        equality(inParallelism1 = inParallelism2);
+      then inParallelism1;
+    case(_,_)
       equation
         print(" failure in propagateParallelism, Parallelism mismatch.");
-      then 
+      then
         fail();
-  end matchcontinue;
+  end match;
 end propagateParallelism;
 
 protected function propagateVariability 

@@ -3074,7 +3074,7 @@ template functionHeaderParallelImpl(String fname, list<Variable> fargs, list<Var
       %>
     } <%fname%>_rettype;
   
-  <%fname%>_rettype _<%fname%>(<%fargsStr%>);
+  <%fname%>_rettype omc_<%fname%>(<%fargsStr%>);
     
     >> 
 end functionHeaderParallelImpl;

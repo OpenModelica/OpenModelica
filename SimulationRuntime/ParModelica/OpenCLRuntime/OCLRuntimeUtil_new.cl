@@ -56,10 +56,10 @@
 #endif
 
 #ifdef PRINTF_AVAILABLE
-  #define MODELICA_ASSERT(i,s) (printf("Assertion: %s\n File %s, Line %d\n", s, __LINE__, i))
+  #define omc_assert(i,s) (printf("Assertion: %s\n File %s, Line %d\n", s, __LINE__, i))
   #define printline() printf("At line %d\n", __LINE__)
 #else
-  #define MODELICA_ASSERT(i,s)
+  #define omc_assert(i,s)
   #define printline()
 #endif
 
