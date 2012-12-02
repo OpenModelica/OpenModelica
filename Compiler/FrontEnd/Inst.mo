@@ -5007,11 +5007,19 @@ algorithm
     
     case ({}) then {};
 
+    // constants
     case ((el as SCode.COMPONENT(attributes=attr, comment =  cmt))::els)
      equation
         true = SCode.isConstant(SCode.attrVariability(attr)); // or SCode.getEvaluateAnnotation(cmt);
         els1 = constantEls(els);
     then (el::els1);
+
+    /*/ final parameters
+    case ((el as SCode.COMPONENT(prefixes = SCode.PREFIXES(finalPrefix = SCode.FINAL()), attributes=attr))::els)
+     equation
+        true = SCode.isParameterOrConst(SCode.attrVariability(attr));
+        els1 = constantEls(els);
+    then (el::els1);*/
 
     case (_::els)
       equation

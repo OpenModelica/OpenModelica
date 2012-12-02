@@ -9718,7 +9718,7 @@ algorithm
         // attr = DAEUtil.setAttrVariability(attr, variability);        
         // get the binding if is a constant
         (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
-        const = Types.constAnd(constCref, constSubs); // constCref
+        const = constCref; // Types.constAnd(constCref, constSubs);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
         (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
@@ -9737,7 +9737,7 @@ algorithm
         // attr = DAEUtil.setAttrVariability(attr, variability);        
         // get the binding if is a constant
         (cache,exp,constCref,attr) = elabCref2(cache, env, c_1, attr, constSubs, forIteratorConstOpt, t, binding, doVect, splicedExpData, pre, evalCref, info);
-        const = Types.constAnd(constCref, constSubs); // constCref
+        const = constCref; // Types.constAnd(constCref, constSubs);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre,info);
         t = fixEnumerationType(t);
         (exp,const) = evaluateEmptyVariable(hasZeroSizeDim and evalCref,exp,t,const);
@@ -10329,9 +10329,9 @@ algorithm
         // constant binding
         DAE.EQBOUND(exp = e, constant_ = DAE.C_CONST()) = binding;
         // adrpo: todo -> subscript the binding expression
-        subsc = ComponentReference.crefLastSubs(cr);
-        e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
-        const = Types.constAnd(DAE.C_CONST(), constSubs);
+        // subsc = ComponentReference.crefLastSubs(cr);
+        // e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+        const = DAE.C_CONST(); // const = Types.constAnd(DAE.C_CONST(), constSubs);
       then
         (cache,e,const,attr);
         
@@ -10343,9 +10343,11 @@ algorithm
         // constant binding
         DAE.VALBOUND(valBound = v) = binding;
         e = ValuesUtil.valueExp(v);
-        subsc = ComponentReference.crefLastSubs(cr);
-        e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
-        const = Types.constAnd(DAE.C_CONST(), constSubs);
+        // adrpo: todo -> subscript the binding expression
+        // subsc = ComponentReference.crefLastSubs(cr);
+        // e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+        // const = Types.constAnd(DAE.C_CONST(), constSubs);
+        const = DAE.C_CONST();
       then
         (cache,e,const,attr);
     
@@ -11494,19 +11496,21 @@ algorithm
       then
         (inCache, inSubscript);
 
-    // Keep parameters as they are
+    /*/ Keep parameters as they are: 
+    // adrpo 2012-12-02 this does not work as we need to evaluate final parameters!
+    //                  and we have now way yet of knowing which ones those are
     case (_, _, _, _, _, _, _, _)
       equation
         true = Types.isParameter(inConst);
       then
-        (inCache, inSubscript);
+        (inCache, inSubscript);*/
 
     // If the subscript contains a const then it should be evaluated to
     // the value.
     case (_, _, _, _, _, _, _, _)
       equation
         int_dim = Expression.dimensionSize(inDimension);
-        true = Types.isConstant(inConst); // Types.isParameterOrConstant(inConst);
+        true = Types.isParameterOrConstant(inConst);
         (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
           int_dim, inImpl, Ceval.MSG(inInfo));
       then
@@ -11514,7 +11518,7 @@ algorithm
 
     case (_, _, _, DAE.DIM_EXP(exp=e), _, _, _, _)
       equation
-        true = Types.isConstant(inConst); // Types.isParameterOrConstant(inConst);
+        true = Types.isParameterOrConstant(inConst);
         (cache, Values.INTEGER(integer=int_dim), _) = Ceval.ceval(inCache,inEnv,e,true,NONE(),Ceval.MSG(inInfo)); 
         (cache, sub) = Ceval.cevalSubscript(inCache, inEnv, inSubscript,
           int_dim, inImpl, Ceval.MSG(inInfo));
@@ -11534,7 +11538,7 @@ algorithm
     case (_, _, _, _, _, _, _, _)
       equation
         true = Expression.dimensionKnown(inDimension);
-        false = Types.isConstant(inConst);
+        false = Types.isParameterOrConstant(inConst);
       then
         (inCache, inSubscript);
 
