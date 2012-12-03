@@ -2711,7 +2711,7 @@ algorithm
       Absyn.Path p;
     case (CACHE(envCache,initialEnv,functions,(ht,crs::st),p),SCode.PARAM(),_)
       equation
-        str = ComponentReference.printComponentRefStr(cr);
+        // str = ComponentReference.printComponentRefStr(cr);
       then CACHE(envCache,initialEnv,functions,(ht,(cr::crs)::st),p);
     else cache;
   end match;
