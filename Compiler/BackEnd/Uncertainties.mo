@@ -751,7 +751,7 @@ end matchcontinue;
 end getEquationsForKnownsSystem;
 
 protected function printVarReduction
-  input list<list<Integer>,list<Integer>> elems;
+  input list<tuple<list<Integer>,list<Integer>>> elems;
 algorithm
   print("Reduced variables:\n");
   print(stringDelimitList(List.map(elems,printVarReduction2),"\n"));
@@ -768,13 +768,13 @@ algorithm
 end printVarReduction2;
 
 protected function pickReductionCandidates
-  input list<list<Integer>,list<Integer>> elems;
+  input list<tuple<list<Integer>,list<Integer>>> elems;
   output list<list<Integer>> elemsOut;
 algorithm
 elemsOut:=matchcontinue(elems)
   local
     list<Integer> occurrence,vars;
-    list<list<Integer>,list<Integer>> tail;
+    list<tuple<list<Integer>,list<Integer>>> tail;
     list<list<Integer>> newElems;
   case({}) then {};
   case((occurrence,vars)::tail)
@@ -796,11 +796,11 @@ protected
   Integer neq,nvar;
   list<Integer> variables;
   list<list<Integer>> occurrences,candidates;
-  list<list<Integer>,list<Integer>> reducedVars; 
+  list<tuple<list<Integer>,list<Integer>>> reducedVars; 
   ExtIncidenceMatrix newM;
 algorithm
   mOut:=matchcontinue(m,knowns)
-    case(m,knowns)
+    case(_,_)
     equation
       neq = listLength(getEquationsNumber(m));
       variables = getVariables(m);
@@ -808,7 +808,7 @@ algorithm
       true =  neq>=nvar; // The system is squared or overdetermined, do nothing
     then
       m;
-    case(m,knowns)
+    case(_,_)
     equation
       neq = listLength(getEquationsNumber(m));
       variables = getVariables(m);
@@ -836,20 +836,20 @@ algorithm
       Integer temp; 
       list<list<Integer>> candidatesTail;
       ExtIncidenceMatrix newM;
-    case(m,{},count)
+    case(_,{},_)
       equation
         true=count>0;
         print("Warning: The system of equations is under-determined. The results may be incorrect.\n");
         then
           m;
-    case(m,{},count)
+    case(_,{},_)
         then
           m;  
-    case(m,_,count)
+    case(_,_,_)
       equation
         true=intEq(count,0);
       then m;           
-    case(m,candidate::candidatesTail,count)
+    case(_,candidate::candidatesTail,_)
       equation
         true=count>0;
         temp = listGet(candidate,1);
@@ -864,17 +864,17 @@ end reduceVariablesInMatrix;
 protected function findReductionCantidates
   input list<Integer> variables;
   input list<list<Integer>> occurrences;
-  input list<list<Integer>,list<Integer>> acc;
-  output list<list<Integer>,list<Integer>> out;
+  input list<tuple<list<Integer>,list<Integer>>> acc;
+  output list<tuple<list<Integer>,list<Integer>>> out;
 algorithm
 out:=matchcontinue(variables,occurrences,acc)
   local 
     Integer var; 
     list<Integer> occurrence,varTail;
     list<list<Integer>> occurrenceTail;
-    list<list<Integer>,list<Integer>> newAcc;
-  case({},{},acc) then acc;
-  case(var::varTail,occurrence::occurrenceTail,acc)
+    list<tuple<list<Integer>,list<Integer>>> newAcc;
+  case({},{},_) then acc;
+  case(var::varTail,occurrence::occurrenceTail,_)
     equation
       newAcc=findReductionCantidates2(var,occurrence,acc);
     then
@@ -885,12 +885,12 @@ end findReductionCantidates;
 protected function findReductionCantidates2
   input Integer var;
   input list<Integer> occurrence;
-  input list<list<Integer>,list<Integer>> acc;
-  output list<list<Integer>,list<Integer>> accOut;
+  input list<tuple<list<Integer>,list<Integer>>> acc;
+  output list<tuple<list<Integer>,list<Integer>>> accOut;
 algorithm
 accOut:=matchcontinue(var,occurrence,acc)
   local
-    list<list<Integer>,list<Integer>> newAcc,tail;
+    list<tuple<list<Integer>,list<Integer>>> newAcc,tail;
     list<Integer> elemOccurrences,vars;
     tuple<list<Integer>,list<Integer>> elem;
   case(_,_,{}) 
@@ -898,7 +898,7 @@ accOut:=matchcontinue(var,occurrence,acc)
       newAcc = {(occurrence,{var})};
     then
      newAcc;
-  case(var,occurrence,(elemOccurrences,vars)::tail) 
+  case(_,_,(elemOccurrences,vars)::tail) 
     equation
       true = intEq(listLength(occurrence),listLength(elemOccurrences));
       true = containsAll(occurrence,elemOccurrences);
@@ -906,7 +906,7 @@ accOut:=matchcontinue(var,occurrence,acc)
       newAcc = elem::tail;
     then
       newAcc;
-  case(var,occurrence,(elemOccurrences,vars)::tail) 
+  case(_,_,(elemOccurrences,vars)::tail) 
     equation
       newAcc = findReductionCantidates2(var,occurrence,tail);
     then

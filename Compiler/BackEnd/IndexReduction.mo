@@ -76,6 +76,7 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 
+
 /*****************************************
  Pantelides index reduction method .
  see: 
@@ -119,7 +120,7 @@ algorithm
         //  BackendDump.dumpMatching(inAssignments1);
         //  BackendDump.dumpMatching(inAssignments2);
         //  syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{})); 
-        //  dumpSystemGraphML(syst,ishared,NONE(),"ConstrainRevoluteJoint.graphml");
+        //  dumpSystemGraphML(syst,ishared,NONE(),"ConstrainRevoluteJoint" +& intString(listLength(List.flatten(eqns))) +& ".graphml");
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
         (b,eqns_1,unassignedStates,unassignedEqns,discEqns) = minimalStructurallySingularSystem(eqns,isyst,inAssignments1,inAssignments2);
         size = BackendDAEUtil.systemSize(isyst);
@@ -778,6 +779,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP,print,"unassignedStates:\n");
         Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(unassignedStates,intString,", ","\n"));
         ilst = List.fold1(unassignedStates,statesWithUnusedDerivative,mt,{});
+        ilst = List.select1(ilst,isStateonIndex,v);
         // check also initial equations (this could be done alse once before
         ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
         Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
@@ -937,6 +939,17 @@ algorithm
         iAcc;
   end matchcontinue;
 end statesWithUnusedDerivative;
+
+protected function isStateonIndex
+  input Integer index;
+  input BackendDAE.Variables vars;
+  output Boolean b;
+protected
+  BackendDAE.Var v;
+algorithm
+  v := BackendVariable.getVarAt(vars,index);
+  b := BackendVariable.isStateVar(v);
+end isStateonIndex;
 
 protected function handleundifferntiableMSS
 "function: handleundifferntiableMSS
