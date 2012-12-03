@@ -799,7 +799,7 @@ algorithm
       list<DAE.Exp> expl_1,expl;
       Absyn.Path path;
       Boolean c,c1,c2,c3;
-      Integer b;
+      Integer b,i;
       Absyn.CodeNode a;
       list<list<DAE.Exp>> bexpl_1,bexpl;
       Integer index_;
@@ -895,6 +895,12 @@ algorithm
         (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
       then
         (DAE.CALL(path,expl_1,attr),true);
+    case ((e as DAE.PARTEVALFUNCTION(path = path,expList = expl,ty = tp)),repl,cond)
+      equation
+        true = replaceExpCond(cond, e);
+        (expl_1,true) = replaceExpList(expl, repl, cond, {}, false);
+      then
+        (DAE.PARTEVALFUNCTION(path,expl_1,tp),true);
     case ((e as DAE.ARRAY(ty = tp,scalar = c,array = expl)),repl,cond)
       equation
         true = replaceExpCond(cond, e);
@@ -943,12 +949,12 @@ algorithm
         (expl,true) = replaceExpList(expl, repl, cond, {}, c1);
       then
         (Expression.makeASUB(e1_1,expl),true);
-    case ((e as DAE.SIZE(exp = e1,sz = NONE())),repl,cond)
+    case ((e as DAE.TSUB(exp = e1,ix = i, ty = tp)),repl,cond)
       equation
-        true = replaceExpCond(cond, e);
+        true = replaceExpCond(cond, e1);
         (e1_1,true) = replaceExp(e1, repl, cond);
       then
-        (DAE.SIZE(e1_1,NONE()),true);
+        (DAE.TSUB(e1_1,i,tp),true);
     case ((e as DAE.SIZE(exp = e1,sz = SOME(e2))),repl,cond)
       equation
         true = replaceExpCond(cond, e);
