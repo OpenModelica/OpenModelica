@@ -4280,6 +4280,13 @@ algorithm
     case(_,_)
       equation
         ty = Expression.typeof(iExp1);
+        true = Types.isEnumeration(ty);
+        res = Expression.expSub(iExp1,iExp2);
+      then
+        res;        
+    case(_,_)
+      equation
+        ty = Expression.typeof(iExp1);
         true = Types.isBooleanOrSubTypeBoolean(ty);
         res = DAE.LUNARY(DAE.NOT(ty),DAE.RELATION(iExp1,DAE.EQUAL(ty),iExp2,-1,NONE()));
       then

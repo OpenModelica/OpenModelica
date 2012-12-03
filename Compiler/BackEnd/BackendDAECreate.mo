@@ -316,6 +316,13 @@ algorithm
       then
         (inVars,inKnVars,inExVars,eqns,inREqnsLst,inIEqnsLst,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
 
+    // a initial solved equation 
+    case (DAE.INITIALDEFINE(componentRef = _),_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        ieqns = lowerEqn(inElement,functionTree,inIEqnsLst);
+      then
+        (inVars,inKnVars,inExVars,inEqnsLst,inREqnsLst,ieqns,inConstraintLst,inClassAttributeLst,inWhenClauseLst,inExtObjClasses,iAliaseqns);
+
     // complex equations
     case (DAE.COMPLEX_EQUATION(lhs = _),_,_,_,_,_,_,_,_,_,_,_,_)
       equation

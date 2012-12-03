@@ -2782,7 +2782,13 @@ algorithm
         b = DAEUtil.expTypeArray(tp) "  array_elt_type(tp) => tp\'" ;
         op = Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
       then
-        DAE.BINARY(e1,op,e2);           
+        DAE.BINARY(e1,op,e2);
+    case (_,_)
+      equation
+        tp = typeof(e1);
+        true = Types.isEnumeration(tp);
+      then
+        DAE.BINARY(e1,DAE.ADD(tp),e2);        
   end matchcontinue; 
 end expAdd;
 
@@ -2847,7 +2853,13 @@ algorithm
         b = DAEUtil.expTypeArray(tp);
         op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
       then
-        DAE.BINARY(e1,op,e2);            
+        DAE.BINARY(e1,op,e2);
+    case (_,_)
+      equation
+        tp = typeof(e1);
+        true = Types.isEnumeration(tp);
+      then
+        DAE.BINARY(e1,DAE.SUB(tp),e2);        
   end matchcontinue;  
 end expSub;
 
