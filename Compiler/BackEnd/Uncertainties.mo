@@ -950,13 +950,13 @@ algorithm
       list<Integer> ret,vars;
       Integer eq;
       case({},_) then {};
-      case((eq,vars)::tail,var)
+      case((eq,vars)::tail,_)
         equation
           true = containsAny(vars,{var});
           ret = occurrencesOfVariable(tail,var);
         then
           eq::ret;
-      case((eq,vars)::tail,var)
+      case((eq,vars)::tail,_)
         equation
           ret = occurrencesOfVariable(tail,var);
         then
