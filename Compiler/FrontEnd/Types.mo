@@ -1470,22 +1470,7 @@ algorithm
         true = subtypeTypelist(type_list1, type_list2, requireRecordNamesEqual);
       then
         true;
-    
-    // check of tuple vs. type: i.e. abs(fcallReturningTuple)
-    // we try subtype of the first tuple element with the other type!
-    case (DAE.T_TUPLE(tupleType = tp1::_), tp2, _)
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        true = subtype2(tp1, tp2, requireRecordNamesEqual);
-      then
-        true;
-    case (tp1, DAE.T_TUPLE(tupleType = tp2::_), _)
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        true = subtype2(tp1, tp2, requireRecordNamesEqual);
-      then
-        true;
-    
+        
     // Part of MetaModelica extension. KS
     case (DAE.T_METALIST(listType = t1),DAE.T_METALIST(listType = t2),_) then subtype(t1,t2);
     case (DAE.T_METAARRAY(ty = t1),DAE.T_METAARRAY(ty = t2),_) then subtype(t1,t2);
@@ -4123,11 +4108,11 @@ algorithm
   end matchcontinue;
 end unflattenArrayType2;
 
-protected function typeConvert "function: typeConvert
+protected function typeConvert 
+"function: typeConvert
   This functions converts the expression in the first argument to
   the type specified in the third argument.  The current type of the
   expression is given in the second argument.
-
   If no type conversion is possible, this function fails."
   input DAE.Exp inExp1;
   input Type actual;
@@ -4164,6 +4149,18 @@ algorithm
       list<Var> els1,els2;
       ClassInf.State st1,st2;
       Absyn.Path p1,p2;
+    
+    // if we expect notTuple and we get Tuple do DAE.TSUB(e, 1)
+    // we try subtype of the first tuple element with the other type!
+    case (e, DAE.T_TUPLE(tupleType = ty1::_), ty2, _)
+      equation
+        false = Config.acceptMetaModelicaGrammar();
+        false = isTuple(ty2);
+        true = subtype(ty1, ty2);
+        e = DAE.TSUB(e, 1, ty2);
+        ty = ty2;
+      then
+        (e, ty);
     
     // try dims as list T_ARRAY(a::b::c)
     case (e,
