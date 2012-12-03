@@ -314,8 +314,8 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
     for(i=0;i<5;++i)
       fputc(emptyString[i],d1);
     fclose(d1);
+    fp1 = fopen(fileName1, "r");
   }
-  fp1 = fopen(fileName1, "r");
   fp2 = fopen(fileName2, "r");
   if(!fp2){
       //printf("Error opening the file(#2): %s\n",fileName2);

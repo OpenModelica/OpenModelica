@@ -55,6 +55,7 @@ typedef struct {
 typedef struct {
   DiffData *data;
   unsigned int n;
+  unsigned int n_max;
 } DiffDataField;
 
 #define DOUBLEEQUAL_TOTAL 0.0000000001
@@ -98,9 +99,8 @@ static inline void fixCommaInName(char **str, size_t len)
   if (nc > 0) {
 
     newvar = (char*) malloc(len+nc+1);
-    memset(newvar,0,len+nc+1);
     k = 0;
-    for (j=0;j<len+nc+1;j++) {
+    for (j=0;j<len;j++) {
       newvar[k] = (*str)[j];
       k +=1;
       if ((*str)[j] ==',' ) {
@@ -108,6 +108,7 @@ static inline void fixCommaInName(char **str, size_t len)
         k +=1;
       }
     }
+    newvar[k] = 0;
     free(*str);
     *str = newvar;
   }
@@ -241,7 +242,6 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
 {
   unsigned int i,j,k,j_event;
   double t,tr,d,dr,err,d_left,d_right,dr_left,dr_right,t_event;
-  DiffData *diffdatafild;
   char increased = 0;
   char interpolate = 0;
   char isdifferent = 0;
@@ -310,18 +310,13 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
          fprintf(stderr, "left value: %.6g  %d %.6g\n",t,i,d_left);
 #endif
         /* right value */
-        char te = 0;
         if (i+1<data->n) {
           if (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
-            te = 1;
-          }
-        }
-        while(te==1){
-          i +=1;
-          te = 0;
-          if (i+1<data->n) {
-            if (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
-              te = 1;
+            while(i+2<data->n){
+              i +=1;
+              if (!AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
+                break;
+              }
             }
           }
         }
@@ -337,23 +332,18 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
         t_event = (t_event > time->data[i+1])?time->data[i+1]:t_event;
         j_event = j;
         while(tr < t_event) {
-          te = 0;
           if (j+1<reftime->n) {
             if (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
-              te = 1;
               dr_left = refdata->data[j];
 #ifdef DEBUGOUTPUT
                fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
 #endif
               refevent = 1;
-            }
-          }
-          while(te==1){
-            j +=1;
-            te = 0;
-            if (j+1<reftime->n) {
-              if (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
-                te = 1;
+              while(j+2<reftime->n){
+                j +=1;
+                if (!AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
+                  break;
+                }
               }
             }
           }
@@ -396,23 +386,18 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
           refevent = 0;
           t_event = t - t*reltol*0.1;
           while(tr > t_event) {
-            te = 0;
             if (j-1>0) {
               if (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
-                te = 1;
                 dr_right = refdata->data[j];
 #ifdef DEBUGOUTPUT
                  fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
 #endif
                 refevent = 1;
-              }
-            }
-            while(te==1){
-              j -=1;
-              te = 0;
-              if (j-1>0) {
-                if (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
-                  te = 1;
+                while(j>2){
+                  j -=1;
+                  if (!AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
+                    break;
+                  }
                 }
               }
             }
@@ -471,20 +456,15 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
       unsigned int jj = j;
       /* look for interpolation partner */
       if (tr > t) {
-        if (j-1>0) {
-          char te=0;
+        if (j-1 > 0) {
           jj = j-1;
           increased = 0;
           if (reftime->data[jj] == tr){
-            te = 1;
             increased = 1;
-          }
-          while(te==1){
-            jj -= 1;
-            te = 0;
-            if (jj>0) {
-              if (reftime->data[jj] == tr) {
-                te = 1;
+            while (jj-1>0) {
+              jj -= 1;
+              if (reftime->data[jj] != tr) {
+                break;
               }
             }
           }
@@ -501,19 +481,14 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
       }
       else {
         if (j+1<reftime->n) {
-          char te=0;
           jj = j+1;
           increased = 0;
           if (reftime->data[jj] == tr){
-            te = 1;
             increased = 1;
-          }
-          while(te==1){
-            jj += 1;
-            te = 0;
-            if (jj>0) {
-              if (reftime->data[jj] == tr) {
-                te = 1;
+            while((jj+2) < reftime->n){
+              jj += 1;
+              if (reftime->data[jj] != tr) {
+                break;
               }
             }
           }
@@ -549,18 +524,23 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
       }
 
       isdifferent = 1;
-      diffdatafild = (DiffData*) malloc(sizeof(DiffData)*(ddf->n+1));
-      for (k=0;k<ddf->n;k++)
-        diffdatafild[k] = ddf->data[k];
-      diffdatafild[ddf->n].name = varname;
-      diffdatafild[ddf->n].data = d;
-      diffdatafild[ddf->n].dataref = dr;
-      diffdatafild[ddf->n].time = t;
-      diffdatafild[ddf->n].timeref = tr;
-      diffdatafild[ddf->n].interpolate = interpolate?'1':'0';
+      if (ddf->n >= ddf->n_max) {
+        DiffData *diffdatafild;
+        ddf->n_max += 10;
+        diffdatafild = (DiffData*) malloc(sizeof(DiffData)*(ddf->n_max));
+        for (k=0;k<ddf->n;k++) {
+          diffdatafild[k] = ddf->data[k];
+        }
+        if(ddf->data) free(ddf->data);
+        ddf->data = diffdatafild;
+      }
+      ddf->data[ddf->n].name = varname;
+      ddf->data[ddf->n].data = d;
+      ddf->data[ddf->n].dataref = dr;
+      ddf->data[ddf->n].time = t;
+      ddf->data[ddf->n].timeref = tr;
+      ddf->data[ddf->n].interpolate = interpolate?'1':'0';
       ddf->n +=1;
-      if(ddf->data) free(ddf->data);
-      ddf->data = diffdatafild;
     }
   }
   if (isdifferent)
@@ -609,6 +589,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   const char *msg[2] = {"",""};
   ddf.data=NULL;
   ddf.n=0;
+  ddf.n_max=0;
   oldlen = 0;
   len = 1;
 
@@ -683,7 +664,6 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
       var1 = (char*) malloc(len+1);
       oldlen = len;
     }
-    memset(var1,0,len);
     k = 0;
     for (j=0;j<len;j++) {
       if (var[j] !='\"' ) {
@@ -691,6 +671,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
         k +=1;
       }
     }
+    var1[k] = 0;
     /* fprintf(stderr, "compare var: %s\n",var); */
     /* check if in ref_file */
     dataref = getData(var1,reffilename,size_ref,&simresglob_ref);
@@ -750,7 +731,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   if (var1) free(var1);
   if (var2) free(var2);
   if (ddf.data) free(ddf.data);
-  if(cmpvars) free(cmpvars);
+  if (cmpvars) free(cmpvars);
   if (time.data) free(time.data);
   if (timeref.data) free(timeref.data);
   if (cmpdiffvars) free(cmpdiffvars);
