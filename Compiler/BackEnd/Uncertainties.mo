@@ -915,14 +915,14 @@ end matchcontinue;
 end findReductionCantidates2;
 
 protected function eliminateOutputVariables
-  input ExtIncidenceMatrix m;
+  input ExtIncidenceMatrix mIn;
   input list<Integer> outputs;
   output ExtIncidenceMatrix mOut;
 algorithm
-mOut:=matchcontinue(m,outputs)
+mOut:=matchcontinue(mIn,outputs)
   local Integer var; list<Integer> tail;
   list<Integer> o;
-  ExtIncidenceMatrix newM;
+  ExtIncidenceMatrix newM,m;
   case(m,{})
     then m;
   case(m,var::tail)
