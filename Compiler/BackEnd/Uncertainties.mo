@@ -78,7 +78,7 @@ algorithm
       list<BackendDAE.EqSystem> eqsyslist; 
       BackendDAE.Variables allVars,knownVariables,unknownVariables,sharedVars;
       BackendDAE.EquationArray allEqs;
-      list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked,othervars; 
+      list<Integer> variables,knowns,unknowns,directlyLinked,indirectlyLinked,outputvars; 
       BackendDAE.Shared shared;
       
       BackendDAE.EqSystem currentSystem,newSystem;
@@ -101,6 +101,7 @@ algorithm
 
     case (cache,env,_,(st as Interactive.SYMBOLTABLE(ast = p)),outputFile,_)
       equation
+        //print("Initiating\n");   
         stepsDumpStrings={};     
         (dae,cache,env) = flattenModel(className,p,cache);
 
@@ -130,7 +131,7 @@ algorithm
         directlyLinked = getRelatedVariables(mExt,knowns);
         indirectlyLinked = List.setDifference(getRelatedVariables(mExt,directlyLinked),knowns);
         unknowns = listAppend(directlyLinked,indirectlyLinked);
-        othervars = List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
+        outputvars = List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
 
 
         text = getMathematicaText("== Initial system ==");
@@ -141,7 +142,7 @@ algorithm
         stepsDump=variablesToMathematicaGrid(List.intRange(BackendVariable.varsSize(allVars)),allVars);                 
         text = getMathematicaText("Variables");
         stepsDumpStrings=stepsDump::text::stepsDumpStrings;
-        
+        //print("Checkpoint 1\n");
         // First try to eliminate all the unknown variables
         dlow_1 = eliminateVariablesDAE(unknowns,dlow_1);
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
@@ -165,15 +166,23 @@ algorithm
         approximatedEquations_one = getEquationsWithApproximatedAnnotation(dlow_1);
         approximatedEquations = List.map1(approximatedEquations_one,intAdd,-1);
         
-        //mExt=removeEquations(mExt,approximatedEquations_one);
+        mExt=removeEquations(mExt,approximatedEquations_one);
         
+        stepsDump=equationsToMathematicaGrid(approximatedEquations_one,allEqs,allVars,sharedVars,mapIncRowEqn);
+        text = getMathematicaText("Approximated equations to be removed");
+        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+
+        stepsDump=equationsToMathematicaGrid(getEquationsNumber(mExt),allEqs,allVars,sharedVars,mapIncRowEqn);
+        text = getMathematicaText("After eliminating approximated equations");
+        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+
         // get the variable indices after the elimination
         variables = List.intRange(BackendVariable.varsSize(allVars));       
         (knowns,distributions) = getUncertainRefineVariableIndexes(allVars,variables); 
         directlyLinked = getRelatedVariables(mExt,knowns);
         indirectlyLinked = List.setDifference(getRelatedVariables(mExt,directlyLinked),knowns);
         unknowns = listAppend(directlyLinked,indirectlyLinked); 
-        othervars = List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
+        outputvars = List.setDifference(List.intRange(BackendVariable.varsSize(allVars)),listAppend(unknowns,knowns));
 
 
         stepsDump=variablesToMathematicaGrid(knowns,allVars);                 
@@ -185,10 +194,16 @@ algorithm
         stepsDump=variablesToMathematicaGrid(indirectlyLinked,allVars);                 
         text = getMathematicaText("Indirectly linked variables");
         stepsDumpStrings=stepsDump::text::stepsDumpStrings;
-        stepsDump=variablesToMathematicaGrid(othervars,allVars);                 
-        text = getMathematicaText("Other variables");
+        stepsDump=variablesToMathematicaGrid(outputvars,allVars);                 
+        text = getMathematicaText("Output variables");
         stepsDumpStrings=stepsDump::text::stepsDumpStrings;
         
+        mExt=eliminateOutputVariables(mExt,outputvars);
+
+        stepsDump=equationsToMathematicaGrid(getEquationsNumber(mExt),allEqs,allVars,sharedVars,mapIncRowEqn);
+        text = getMathematicaText("After eliminating output variables");
+        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
+
         (setS,unknownsVarsMatch,unknownsEqsMatch)=getEquationsForUnknownsSystem(mExt,knowns,unknowns);
 
         stepsDump=unknowsMatchingToMathematicaGrid(unknownsVarsMatch,unknownsEqsMatch,allEqs,allVars,sharedVars,mapIncRowEqn);
@@ -206,13 +221,6 @@ algorithm
         
         stepsDumpStrings=listAppend(stepsDumpStrings2,stepsDumpStrings);
 
-        stepsDump=equationsToMathematicaGrid(approximatedEquations_one,allEqs,allVars,sharedVars,mapIncRowEqn);
-        text = getMathematicaText("Approximated equations to be removed");
-        stepsDumpStrings=stepsDump::text::stepsDumpStrings;
-
-        setC = List.setDifference(setC,approximatedEquations_one);
-
-        mExt=removeEquations(mExt,List.setDifference(getEquationsNumber(mExt),setC));
 
         stepsDump=equationsToMathematicaGrid(setC,allEqs,allVars,sharedVars,mapIncRowEqn);
         text = getMathematicaText("Final Equations");
@@ -702,11 +710,13 @@ algorithm
         knownsSystemComp=sortEquations(knownsSystem,knowns);
         knownsSystemComp=removeVarsNotInSet(knownsSystemComp,knowns,{});
 
+        knownsSystemComp=reduceVariables(knownsSystemComp,knowns);
         //dumpExtIncidenceMatrix(knownsSystemComp);
 
         (xEqMap,xVarMap,mx)=prepareForMatching(knownsSystemComp);
         nxVarMap = listLength(xVarMap);
         nxEqMap = listLength(xEqMap);
+        //print("Final matching of "+&intString(nxEqMap)+&" equations and "+&intString(nxVarMap)+&" variables \n");
         Matching.matchingExternalsetIncidenceMatrix(nxVarMap,nxEqMap,mx);
         
 
@@ -739,6 +749,220 @@ algorithm
       then (setC,dumpList);  
 end matchcontinue;
 end getEquationsForKnownsSystem;
+
+protected function printVarReduction
+  input list<list<Integer>,list<Integer>> elems;
+algorithm
+  print("Reduced variables:\n");
+  print(stringDelimitList(List.map(elems,printVarReduction2),"\n"));
+end printVarReduction;
+
+protected function printVarReduction2
+  input tuple<list<Integer>,list<Integer>> elem;
+  output String out;
+  protected
+  list<Integer> occurrences,vars;
+algorithm
+  (occurrences,vars) := elem;
+  out:= "("+&stringDelimitList(List.map(vars,intString),",")+&") ("+&stringDelimitList(List.map(occurrences,intString),",")+&")";
+end printVarReduction2;
+
+protected function pickReductionCandidates
+  input list<list<Integer>,list<Integer>> elems;
+  output list<list<Integer>> elemsOut;
+algorithm
+elemsOut:=matchcontinue(elems)
+  local
+    list<Integer> occurrence,vars;
+    list<list<Integer>,list<Integer>> tail;
+    list<list<Integer>> newElems;
+  case({}) then {};
+  case((occurrence,vars)::tail)
+    equation
+      true = listLength(vars)>1 and listLength(occurrence)>1;
+      newElems = pickReductionCandidates(tail);
+    then
+      vars::newElems;
+  case(_::tail)
+     then pickReductionCandidates(tail);    
+end matchcontinue;
+end pickReductionCandidates;
+
+protected function reduceVariables
+  input ExtIncidenceMatrix m;
+  input list<Integer> knowns;
+  output ExtIncidenceMatrix mOut;
+protected
+  Integer neq,nvar;
+  list<Integer> variables;
+  list<list<Integer>> occurrences,candidates;
+  list<list<Integer>,list<Integer>> reducedVars; 
+  ExtIncidenceMatrix newM;
+algorithm
+  mOut:=matchcontinue(m,knowns)
+    case(m,knowns)
+    equation
+      neq = listLength(getEquationsNumber(m));
+      variables = getVariables(m);
+      nvar = listLength(variables); 
+      true =  neq>=nvar; // The system is squared or overdetermined, do nothing
+    then
+      m;
+    case(m,knowns)
+    equation
+      neq = listLength(getEquationsNumber(m));
+      variables = getVariables(m);
+      nvar = listLength(variables); 
+      true =  neq<nvar;
+      occurrences = List.map1r(knowns,occurrencesOfVariable,m);
+      reducedVars = findReductionCantidates(variables,occurrences,{});
+      candidates = pickReductionCandidates(reducedVars);
+      //printVarReduction(reducedVars);
+      newM=reduceVariablesInMatrix(m,candidates,nvar-neq);
+    then
+      newM;
+  end matchcontinue;
+end reduceVariables;
+
+protected function reduceVariablesInMatrix
+  input ExtIncidenceMatrix m;
+  input list<list<Integer>> candidates;
+  input Integer count; 
+  output ExtIncidenceMatrix mOut;
+algorithm
+  mOut:=matchcontinue(m,candidates,count)
+    local
+      list<Integer> candidate,variables;
+      Integer temp; 
+      list<list<Integer>> candidatesTail;
+      ExtIncidenceMatrix newM;
+    case(m,{},count)
+      equation
+        true=count>0;
+        print("Warning: The system of equations is under-determined. The results may be incorrect.\n");
+        then
+          m;
+    case(m,{},count)
+        then
+          m;  
+    case(m,_,count)
+      equation
+        true=intEq(count,0);
+      then m;           
+    case(m,candidate::candidatesTail,count)
+      equation
+        true=count>0;
+        temp = listGet(candidate,1);
+        //print("Eliminating "+&intString(temp)+&"\n");
+        variables=List.setDifference(getVariables(m),{temp});
+        newM = removeVarsNotInSet(m,variables,{});
+        newM = reduceVariablesInMatrix(newM,candidatesTail,count-1);
+      then newM;
+  end matchcontinue;
+end reduceVariablesInMatrix;
+
+protected function findReductionCantidates
+  input list<Integer> variables;
+  input list<list<Integer>> occurrences;
+  input list<list<Integer>,list<Integer>> acc;
+  output list<list<Integer>,list<Integer>> out;
+algorithm
+out:=matchcontinue(variables,occurrences,acc)
+  local 
+    Integer var; 
+    list<Integer> occurrence,varTail;
+    list<list<Integer>> occurrenceTail;
+    list<list<Integer>,list<Integer>> newAcc;
+  case({},{},acc) then acc;
+  case(var::varTail,occurrence::occurrenceTail,acc)
+    equation
+      newAcc=findReductionCantidates2(var,occurrence,acc);
+    then
+      findReductionCantidates(varTail,occurrenceTail,newAcc);
+end matchcontinue;
+end findReductionCantidates;
+
+protected function findReductionCantidates2
+  input Integer var;
+  input list<Integer> occurrence;
+  input list<list<Integer>,list<Integer>> acc;
+  output list<list<Integer>,list<Integer>> accOut;
+algorithm
+accOut:=matchcontinue(var,occurrence,acc)
+  local
+    list<list<Integer>,list<Integer>> newAcc,tail;
+    list<Integer> elemOccurrences,vars;
+    tuple<list<Integer>,list<Integer>> elem;
+  case(_,_,{}) 
+    equation
+      newAcc = {(occurrence,{var})};
+    then
+     newAcc;
+  case(var,occurrence,(elemOccurrences,vars)::tail) 
+    equation
+      true = intEq(listLength(occurrence),listLength(elemOccurrences));
+      true = containsAll(occurrence,elemOccurrences);
+      elem = (elemOccurrences,listAppend(vars,{var}));
+      newAcc = elem::tail;
+    then
+      newAcc;
+  case(var,occurrence,(elemOccurrences,vars)::tail) 
+    equation
+      newAcc = findReductionCantidates2(var,occurrence,tail);
+    then
+      (elemOccurrences,vars)::newAcc;
+end matchcontinue;
+end findReductionCantidates2;
+
+protected function eliminateOutputVariables
+  input ExtIncidenceMatrix m;
+  input list<Integer> outputs;
+  output ExtIncidenceMatrix mOut;
+algorithm
+mOut:=matchcontinue(m,outputs)
+  local Integer var; list<Integer> tail;
+  list<Integer> o;
+  ExtIncidenceMatrix newM;
+  case(m,{})
+    then m;
+  case(m,var::tail)
+    equation
+      o=occurrencesOfVariable(m,var);
+      true=intEq(listLength(o),1);
+      newM=removeEquations(m,o);
+      newM=eliminateOutputVariables(newM,tail);
+    then newM;
+  case(m,var::tail)
+    equation
+      newM=eliminateOutputVariables(m,tail);
+    then newM;
+end matchcontinue;
+end eliminateOutputVariables;
+
+protected function occurrencesOfVariable
+  input ExtIncidenceMatrix m;
+  input Integer var;
+  output list<Integer> out;
+algorithm
+  out:=matchcontinue(m,var)
+    local
+      ExtIncidenceMatrix tail;
+      list<Integer> ret,vars;
+      Integer eq;
+      case({},_) then {};
+      case((eq,vars)::tail,var)
+        equation
+          true = containsAny(vars,{var});
+          ret = occurrencesOfVariable(tail,var);
+        then
+          eq::ret;
+      case((eq,vars)::tail,var)
+        equation
+          ret = occurrencesOfVariable(tail,var);
+        then
+          ret;
+  end matchcontinue;
+end occurrencesOfVariable;
 
 protected function getEquationsNumber
   input ExtIncidenceMatrix m;
@@ -1241,6 +1465,17 @@ algorithm
   out:=listLength(m3)>0;
 end containsAny;
 
+protected function containsAll
+  input list<Integer> m1;
+  input list<Integer> m2;
+  output Boolean out;
+  protected list<Integer> m3;
+algorithm
+  m3:=List.intersectionOnTrue(m1,m2,intEq);
+  out:=intEq(listLength(m3),listLength(m2));
+end containsAll;
+
+
 public function getUncertainRefineVariableIndexes
 "
   author: Daniel Hedberg, 2011-01
@@ -1420,7 +1655,7 @@ algorithm
       equation
         c2 = ComponentReference.crefStripLastSubs(c1);
         _ = BaseHashTable.get(c2,dubRef);
-        _ = BaseHashTable.get(c2,ht);// if we have one occurance, most likely it will be more.
+        _ = BaseHashTable.get(c2,ht);// if we have one occurrence, most likely it will be more.
         ht = findArraysPartiallyIndexed2(expl1,dubRef,ht);
       then ht;
     
