@@ -833,6 +833,18 @@ package Internal "Contains internal implementations, e.g. overloaded builtin fun
     output Real[3,3] y;
     external "builtin" skew(x,y);
   end skewReal;
+
+  package Architecture
+    function numBits
+      output Integer numBit;
+      external "builtin";
+    end numBits;
+    function integerMax
+      output Integer max;
+      external "builtin";
+    end integerMax;
+  end Architecture;
+
 annotation(preferredView="text");
 end Internal;
 

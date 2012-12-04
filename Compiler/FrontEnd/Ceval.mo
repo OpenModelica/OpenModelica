@@ -1069,6 +1069,8 @@ algorithm
     case "listHead" equation true = Config.acceptMetaModelicaGrammar(); then cevalListFirst;
     case "listRest" equation true = Config.acceptMetaModelicaGrammar(); then cevalListRest;
     case "anyString" equation true = Config.acceptMetaModelicaGrammar(); then cevalAnyString;
+    case "numBits" then cevalNumBits;
+    case "integerMax" then cevalIntegerMax;
 
     //case "semiLinear" then cevalBuiltinSemiLinear;
     //case "delay" then cevalBuiltinDelay;
@@ -2637,6 +2639,50 @@ algorithm
         (cache,Values.STRING(s),st);
   end match;
 end cevalAnyString;
+
+protected function cevalNumBits
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.SymbolTable> inST;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outST;
+algorithm
+  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg)
+    local
+      Integer i;
+    case (_,_,{},_,_,_)
+      equation
+         i = System.numBits();
+      then
+        (inCache,Values.INTEGER(i),inST);
+  end match;
+end cevalNumBits;
+
+protected function cevalIntegerMax
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.SymbolTable> inST;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.SymbolTable> outST;
+algorithm
+  (outCache,outValue,outST) := match (inCache,inEnv,inExpExpLst,inBoolean,inST,inMsg)
+    local
+      Integer i;
+    case (_,_,{},_,_,_)
+      equation
+         i = System.integerMax();
+      then
+        (inCache,Values.INTEGER(i),inST);
+  end match;
+end cevalIntegerMax;
 
 protected function cevalListFirst
   input Env.Cache inCache;

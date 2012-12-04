@@ -2121,3 +2121,17 @@ RML_BEGIN_LABEL(System__anyStringCode)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
+
+RML_BEGIN_LABEL(System__numBits)
+{
+  rmlA0 = mk_icon(8*sizeof(void*));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__integerMax)
+{
+  rmlA0 = mk_icon((1L << ((8*sizeof(void*))-2))-1);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
