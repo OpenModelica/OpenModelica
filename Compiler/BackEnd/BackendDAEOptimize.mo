@@ -338,7 +338,7 @@ protected
   Integer size;
 algorithm
   size := BackendDAEUtil.daeSize(dae);
-  size := intMin(BaseHashTable.defaultBucketSize,realInt(realMul(intReal(size),0.7)));
+  size := intMax(BaseHashTable.defaultBucketSize,realInt(realMul(intReal(size),0.7)));
   repl := BackendVarTransform.emptyReplacementsSized(size);
   (odae,(repl1,b)) := BackendDAEUtil.mapEqSystemAndFold(dae,removeSimpleEquationsFast1,(repl,false));
   odae := removeSimpleEquationsShared(b,odae,repl1);
