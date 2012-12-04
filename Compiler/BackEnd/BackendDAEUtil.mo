@@ -2063,6 +2063,22 @@ algorithm
   end matchcontinue;
 end equationNth;
 
+public function daeSize
+"function: daeSize
+  author: Frenkel TUD
+  Returns the size of the dae system, wich corsopndens to the number of variables."
+  input BackendDAE.BackendDAE dae;
+  output Integer size;
+protected
+  list<BackendDAE.EqSystem> systs;
+  list<Integer> sizes;
+algorithm
+  BackendDAE.DAE(eqs=systs) := dae;
+  sizes := List.map(systs,systemSize);
+  size := List.fold(sizes,intAdd,0);
+end daeSize;
+
+
 public function systemSize 
 "function: equationSize
   author: Frenkel TUD
@@ -4704,7 +4720,10 @@ algorithm
   end match;
 end getIncidenceMatrixfromOption;
     
-public function getIncidenceMatrix "function getIncidenceMatrix"
+public function getIncidenceMatrix 
+"function getIncidenceMatrix
+  this function returns the incidence matrix,
+  if the system contains multi"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
   output BackendDAE.EqSystem osyst;
@@ -8797,6 +8816,18 @@ algorithm
   print("Time all-t1-t2: "); print(realString(realSub(realSub(tg,t1),t2))); print("\n");
 end profilerresults;
 
+public function profilertime1
+  output Real t1;
+algorithm
+  t1 := getGlobalRoot(Global.profilerTime1Index);
+end profilertime1;
+
+public function profilertime2
+  output Real t2;
+algorithm
+  t2 := getGlobalRoot(Global.profilerTime2Index);
+end profilertime2;
+
 public function profilerstart1
 algorithm
    System.realtimeTick(BackendDAE.RT_PROFILER1);
@@ -8824,6 +8855,23 @@ algorithm
    setGlobalRoot(Global.profilerTime2Index, 
      realAdd(getGlobalRoot(Global.profilerTime2Index),t));
 end profilerstop2;
+
+public function profilerreset1
+algorithm
+  setGlobalRoot(Global.profilerTime1Index, 0.0);
+end profilerreset1;
+
+public function profilerreset2
+algorithm
+  setGlobalRoot(Global.profilerTime2Index, 0.0);
+end profilerreset2;
+
+public function profilertock1
+  output Real t;
+algorithm
+   t := System.realtimeTock(BackendDAE.RT_PROFILER1);
+end profilertock1;
+
 
 /*************************************************
  * traverse BackendDAE equation systems

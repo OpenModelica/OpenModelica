@@ -46,6 +46,7 @@ public import HashTable3;
 
 protected import Absyn;
 protected import BaseHashTable;
+protected import BaseHashSet;
 protected import BackendDAEUtil;
 protected import ClassInf;
 protected import ComponentReference;
@@ -55,6 +56,7 @@ protected import Expression;
 protected import ExpressionDump;
 protected import ExpressionSimplify;
 protected import Flags;
+protected import HashSet;
 protected import List;
 protected import Util;
 
@@ -177,7 +179,7 @@ algorithm
      //   fail();
      
     case (_,src,dst,_)
-      equation        
+      equation
         (REPLACEMENTS(ht,invHt,eht,iv,derConst),src_1,dst_1) = makeTransitive(repl, src, dst, inFuncTypeExpExpToBooleanOption);
         /*s1 = ComponentReference.printComponentRefStr(src);
         s2 = ExpressionDump.printExpStr(dst);
@@ -233,7 +235,7 @@ algorithm
         REPLACEMENTS(ht_1,invHt_1,eht_1,iv,derConst);
     case (_,_,_)
       equation
-        print("-add_replacement failed\n");
+        print("-add_replacement failed for " +& ComponentReference.printComponentRefStr(inSrc) +& " = " +& ExpressionDump.printExpStr(inDst) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -254,14 +256,37 @@ algorithm
   match (invHt,src,dst)
     local
       HashTable3.HashTable invHt_1;
+      HashSet.HashSet set;
       list<DAE.ComponentRef> dests;
     case (_,_,_) equation
-      dests = Expression.extractCrefsFromExp(dst);
+      ((_,set)) = Expression.traverseExpTopDown(dst, traversingCrefFinder, HashSet.emptyHashSet());
+      dests = BaseHashSet.hashSetList(set);
       invHt_1 = List.fold1r(dests,addReplacementInv2,src,invHt);
       then
         invHt_1;
   end match;
 end addReplacementInv;
+
+protected function traversingCrefFinder "
+Author: Frenkel 2012-12"
+  input tuple<DAE.Exp, HashSet.HashSet > inExp;
+  output tuple<DAE.Exp, Boolean, HashSet.HashSet > outExp;
+algorithm 
+  outExp := matchcontinue(inExp)
+    local
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+      HashSet.HashSet set;
+    case((e as DAE.CREF(DAE.CREF_IDENT(ident = "time",subscriptLst = {}),_), set))
+      then ((e,false,set));       
+    case((e as DAE.CREF(componentRef = cr), set))
+      equation
+        set = BaseHashSet.add(cr,set);
+      then ((e,false,set));  
+    case((e,set)) then ((e,true,set));
+  end matchcontinue;
+end traversingCrefFinder;
+
 
 protected function addReplacementInv2 "function: addReplacementInv2
 
@@ -291,7 +316,7 @@ algorithm
     case (_,_,_)
       equation
         srcs = BaseHashTable.get(dst,invHt) "previous elt for dst -> src, append.." ;
-        srcs = List.union({},src::srcs);
+        srcs = src::srcs;
         invHt_1 = BaseHashTable.add((dst, srcs),invHt);
       then
         invHt_1;
@@ -368,10 +393,10 @@ algorithm
       equation
         lst = BaseHashTable.get(src, invHt);
         singleRepl = addReplacementNoTransitive(emptyReplacementsSized(53),src,dst);
-        repl_1 = makeTransitive12(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption);
+        repl_1 = makeTransitive12(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption,HashSet.emptyHashSet());
       then
         (repl_1,src,dst);
-    case (_,_,_,_) then (repl,src,dst);
+    else then (repl,src,dst);
   end matchcontinue;
 end makeTransitive1;
 
@@ -382,28 +407,35 @@ in singleRepl."
   input VariableReplacements repl;
   input VariableReplacements singleRepl "contain one replacement rule: the rule to be added";
   input Option<FuncTypeExp_ExpToBoolean> inFuncTypeExpExpToBooleanOption;
+  input HashSet.HashSet inSet "to avoid touble work";
   output VariableReplacements outRepl;
   partial function FuncTypeExp_ExpToBoolean
     input DAE.Exp inExp;
     output Boolean outBoolean;
   end FuncTypeExp_ExpToBoolean;    
 algorithm
-  outRepl := match(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption)
+  outRepl := matchcontinue(lst,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet)
     local
       DAE.Exp crDst;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crs;
-      VariableReplacements repl1,repl2;
+      VariableReplacements repl1;
       HashTable2.HashTable ht;
-    case({},_,_,_) then repl;
-    case(cr::crs,REPLACEMENTS(hashTable=ht),_,_)
+      HashSet.HashSet set;
+    case({},_,_,_,_) then repl;
+    case(cr::crs,REPLACEMENTS(hashTable=ht),_,_,_)
       equation
+        false = BaseHashSet.has(cr,inSet);
+        set = BaseHashSet.add(cr,inSet);
         crDst = BaseHashTable.get(cr,ht);
         (crDst,_) = replaceExp(crDst,singleRepl,inFuncTypeExpExpToBooleanOption);
         repl1 = addReplacementNoTransitive(repl,cr,crDst) "add updated old rule";
-        repl2 = makeTransitive12(crs,repl1,singleRepl,inFuncTypeExpExpToBooleanOption);
-      then repl2;
-  end match;
+      then 
+        makeTransitive12(crs,repl1,singleRepl,inFuncTypeExpExpToBooleanOption,set);
+    case(_::crs,_,_,_,_)
+      then 
+        makeTransitive12(crs,repl,singleRepl,inFuncTypeExpExpToBooleanOption,inSet);
+  end matchcontinue;
 end makeTransitive12;
 
 protected function makeTransitive2 "function: makeTransitive2

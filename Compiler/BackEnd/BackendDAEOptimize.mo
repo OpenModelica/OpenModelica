@@ -335,8 +335,11 @@ public function removeSimpleEquationsFast
 protected
   BackendVarTransform.VariableReplacements repl,repl1;
   Boolean b;
+  Integer size;
 algorithm
-  repl := BackendVarTransform.emptyReplacements();
+  size := BackendDAEUtil.daeSize(dae);
+  size := intMin(BaseHashTable.defaultBucketSize,realInt(realMul(intReal(size),0.7)));
+  repl := BackendVarTransform.emptyReplacementsSized(size);
   (odae,(repl1,b)) := BackendDAEUtil.mapEqSystemAndFold(dae,removeSimpleEquationsFast1,(repl,false));
   odae := removeSimpleEquationsShared(b,odae,repl1);
 end removeSimpleEquationsFast;
@@ -1478,7 +1481,7 @@ algorithm
         (ordvars1,v) = BackendVariable.removeVar(i,ordvars);
         shared = BackendVariable.addKnVarDAE(v, ishared);
         // update Replacements
-        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));        
+        repl_1 = BackendVarTransform.addReplacement(repl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
       then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching),shared,repl_1,iEqns);
     // a = b alias
     case (1,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,matching=matching),_,_,_)

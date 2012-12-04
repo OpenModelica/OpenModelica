@@ -1471,24 +1471,7 @@ algorithm
       HashTableCG.HashTable checkcr;
       list<DAE.Statement> stmts;
       VarTransform.VariableReplacements repl;
-/*    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
-      equation
-        false = Config.acceptMetaModelicaGrammar();
-        true = checkInlineType(inlineType,fns);
-        fn = getFunctionBody(p,fns);  
-        crefs = List.map(fn,getInputCrefs);
-        crefs = List.select(crefs,removeWilds);
-        argmap = List.threadTuple(crefs,args);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        newExp::{} = getRhsExp1(fn);
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
-        // compare types
-        true = checkExpsTypeEquiv(e1, newExp);
-        // for inlinecalls in functions
-        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
-      then
-        ((newExp1,(fns,true)));
-*/    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
+    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         false = Config.acceptMetaModelicaGrammar();
         true = checkInlineType(inlineType,fns);
@@ -1823,43 +1806,6 @@ algorithm
         res;
   end matchcontinue;
 end getRhsExp;
-
-protected function getRhsExp1
-"function: getRhsExp1
-  returns the right hand side of an assignment from a function"
-  input list<DAE.Element> inElementList;
-  output list<DAE.Exp> outExps;
-algorithm
-  outExps := matchcontinue(inElementList)
-    local
-      list<DAE.Element> cdr;
-      DAE.Exp exp;
-      list<DAE.Exp> res;
-    case({})
-      then
-        {};
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=exp)})) :: cdr)
-      equation
-        res = getRhsExp1(cdr);
-      then
-        exp::res;
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exp=exp)})) :: cdr)
-      equation
-        res = getRhsExp1(cdr);
-      then
-        exp::res;
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(exp=exp)})) :: cdr)
-      equation
-        res = getRhsExp1(cdr);
-      then
-        exp::res;
-    case(_ :: cdr)
-      equation
-        res = getRhsExp1(cdr);
-      then
-        res;
-  end matchcontinue;
-end getRhsExp1;
 
 protected function replaceArgs
 "function: replaceArgs
