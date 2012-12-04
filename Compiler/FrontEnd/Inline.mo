@@ -1471,7 +1471,7 @@ algorithm
       HashTableCG.HashTable checkcr;
       list<DAE.Statement> stmts;
       VarTransform.VariableReplacements repl;
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
+/*    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         false = Config.acceptMetaModelicaGrammar();
         true = checkInlineType(inlineType,fns);
@@ -1488,7 +1488,7 @@ algorithm
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
       then
         ((newExp1,(fns,true)));
-    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
+*/    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         false = Config.acceptMetaModelicaGrammar();
         true = checkInlineType(inlineType,fns);
