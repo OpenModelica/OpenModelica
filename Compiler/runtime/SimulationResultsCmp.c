@@ -86,7 +86,7 @@ static inline void fixDerInName(char *str, size_t len)
 
 static inline void fixCommaInName(char **str, size_t len)
 {
-  size_t i,nc;
+  size_t nc;
   unsigned int j,k;
   char* newvar;
   if (len < 2) return;
@@ -171,10 +171,7 @@ DataField getData(const char *varname,const char *filename, unsigned int size, S
 {
   DataField res;
   void *cmpvar,*dataset,*lst,*datasetBackup;
-  double *newvars;
-  double d;
   unsigned int i;
-  unsigned int ncmpvars = 0;
   res.n = 0;
   res.data = NULL;
 
@@ -311,13 +308,9 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
 #endif
         /* right value */
         if (i+1<data->n) {
-          if (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
-            while(i+2<data->n){
-              i +=1;
-              if (!AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
-                break;
-              }
-            }
+          while (AlmostEqualRelativeAndAbs(t,time->data[i+1])) {
+            i +=1;
+            if (i+1>=data->n) break;
           }
         }
         t = time->data[i];
@@ -336,15 +329,14 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
             if (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
               dr_left = refdata->data[j];
 #ifdef DEBUGOUTPUT
-               fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
+              fprintf(stderr, "ref left value: %.6g  %d %.6g\n",tr,j,dr_left);
 #endif
               refevent = 1;
-              while(j+2<reftime->n){
+
+              do {
                 j +=1;
-                if (!AlmostEqualRelativeAndAbs(tr,reftime->data[j+1])) {
-                  break;
-                }
-              }
+                if (j+1>=reftime->n) break;
+              } while (AlmostEqualRelativeAndAbs(tr,reftime->data[j+1]));
             }
           }
           if (refevent == 0) {
@@ -390,15 +382,14 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
               if (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
                 dr_right = refdata->data[j];
 #ifdef DEBUGOUTPUT
-                 fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
+                fprintf(stderr, "ref right value: %.6g  %d %.6g\n",tr,j,dr_right);
 #endif
                 refevent = 1;
-                while(j>2){
+
+                do {
                   j -=1;
-                  if (!AlmostEqualRelativeAndAbs(tr,reftime->data[j-1])) {
-                    break;
-                  }
-                }
+                  if (j-1<=0) break;
+                } while (AlmostEqualRelativeAndAbs(tr,reftime->data[j-1]));
               }
             }
             if (refevent == 0) {
@@ -461,12 +452,10 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
           increased = 0;
           if (reftime->data[jj] == tr){
             increased = 1;
-            while (jj-1>0) {
+            do {
               jj -= 1;
-              if (reftime->data[jj] != tr) {
-                break;
-              }
-            }
+              if (jj<=0) break;
+            } while (reftime->data[jj] == tr);
           }
         }
 #ifdef DEBUGOUTPUT
@@ -485,12 +474,10 @@ unsigned int cmpData(char* varname, DataField *time, DataField *reftime, DataFie
           increased = 0;
           if (reftime->data[jj] == tr){
             increased = 1;
-            while((jj+2) < reftime->n){
+            do {
               jj += 1;
-              if (reftime->data[jj] != tr) {
-                break;
-              }
-            }
+              if (jj>=reftime->n) break;
+            } while (reftime->data[jj] == tr);
           }
         }
 #ifdef DEBUGOUTPUT
@@ -581,7 +568,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   unsigned int vardiffindx=0;
   unsigned int ncmpvars = 0;
   unsigned int ngetfailedvars = 0;
-  void *allvars,*cmpvar,*res;
+  void *allvars,*res;
   unsigned int i,size,size_ref,len,oldlen,j,k;
   char *var,*var1,*var2;
   DataField time,timeref,data,dataref;
