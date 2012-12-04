@@ -1617,8 +1617,7 @@ algorithm
   outVarNo := inVarNo + 1;
 end dumpVar;
 
-protected function varString
-"function: varString
+public function varString "function varString
   Helper function to dumpVars."
   input BackendDAE.Var inVar;
   output String outStr;

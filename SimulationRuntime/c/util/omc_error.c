@@ -130,7 +130,7 @@ void Message(int type, int stream, char *msg, int subline)
 {
   int i;
 
-  if(!useStream[stream])
+  if((type != LOG_TYPE_ERROR) && !useStream[stream])
     return;
 
   printf("%-13s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_DESC[stream]);

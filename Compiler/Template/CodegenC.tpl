@@ -989,9 +989,9 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
     ;separator="\n")  
   let info = match useSymbolicInitialization
          case true then
-           'INFO(LOG_INIT, "symbolic initialization is generated");'
+           'INFO(LOG_INIT, "The symbolic initialization was generated.");'
          else
-           'INFO(LOG_INIT, "symbolic initialization is not generated");'
+           'ERROR0(LOG_INIT, "The symbolic initialization was not generated.");'
   let useSymbolicInitializationToInt = match useSymbolicInitialization
          case true then
            '1'
