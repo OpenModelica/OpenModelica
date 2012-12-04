@@ -302,26 +302,20 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
 {
   char *fileName1 = RML_STRINGDATA(rmlA0);
   char *fileName2 = RML_STRINGDATA(rmlA1);
-  char emptyString[5] = "empty";
-  int res=1,i;
-  FILE *fp1,*fp2,*d1;
-  long fileSize1,fileSize2;
-  fp1 = fopen(fileName1, "r");
+  int res=1, i;
+  FILE *fp1, *fp2;
+  long fileSize1, fileSize2;
 
-  if(!fp1){
-    //printf("Error opening the file: %s, creating it\n",fileName1);
-    d1 = fopen(fileName1,"w+");
-    for(i=0;i<5;++i)
-      fputc(emptyString[i],d1);
-    fclose(d1);
-  }
   fp1 = fopen(fileName1, "r");
   fp2 = fopen(fileName2, "r");
-  if(!fp2){
-      //printf("Error opening the file(#2): %s\n",fileName2);
-     rmlA0 = RML_FALSE;
-      RML_TAILCALLK(rmlSC);
-    }
+
+  /* adrpo: fail the function if we cannot open one of the files */
+  if((fp1 == NULL) || (fp2 == NULL))
+  {
+    fclose(fp1);
+    fclose(fp2);
+    RML_TAILCALLK(rmlFC);
+  }
 
   fseek(fp1 , 0 , SEEK_END);
   fileSize1 = ftell(fp1);
@@ -329,6 +323,7 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
   fseek(fp2 , 0 , SEEK_END);
   fileSize2 = ftell(fp2);
   rewind(fp2);
+
   if(fileSize1 != fileSize2)
     res=-1;
   else
@@ -336,7 +331,8 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
       if(fgetc(fp1) != fgetc(fp2))
         res=-1;
   fclose(fp1);fclose(fp2);
-  rmlA0 = res!=-1 ? RML_TRUE:RML_FALSE; //mk_bcon(res);
+
+  rmlA0 = res != -1 ? RML_TRUE : RML_FALSE;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

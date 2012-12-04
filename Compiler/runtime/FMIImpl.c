@@ -280,7 +280,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   const char* guid = fmi1_import_get_GUID(fmi);
   /* Read the FMI description from FMU's modelDescription.xml file. */
   const char* description = fmi1_import_get_description(fmi);
-  description = (description && omc__escapedStringLength(description,0) > strlen(description)) ? omc__escapedString(description,0) : "";
+  description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : "";
   /* Read the FMI generation tool from FMU's modelDescription.xml file. */
   const char* generationTool = fmi1_import_get_generation_tool(fmi);
   /* Read the FMI generation date and time from FMU's modelDescription.xml file. */
@@ -332,7 +332,7 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
     void* variable_name = mk_scon(name);
     free(name);
     const char* description = fmi1_import_get_variable_description(model_variable);
-    description = (description && omc__escapedStringLength(description,0) > strlen(description)) ? omc__escapedString(description,0) : "";
+    description = ((description != NULL) && (omc__escapedStringLength(description,0) > strlen(description))) ? (const char*)omc__escapedString(description,0) : "";
     void* variable_description = mk_scon(description);
     const char* base_type = getModelVariableBaseType(model_variable);
     void* variable_base_type = mk_scon(base_type);
@@ -399,9 +399,9 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
  */
 void FMIImpl__releaseFMIImport(void *ptr1, void *ptr2, void *ptr3)
 {
-  intptr_t fmiModeVariablesInstance = RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr1),1));
-  intptr_t fmiInstance = RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr2),1));
-  intptr_t fmiContext = RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr3),1));
+  intptr_t fmiModeVariablesInstance = (intptr_t)RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr1),1));
+  intptr_t fmiInstance = (intptr_t)RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr2),1));
+  intptr_t fmiContext = (intptr_t)RML_FETCH(RML_OFFSET(RML_UNTAGPTR(ptr3),1));
   free((fmi1_import_variable_list_t*)fmiModeVariablesInstance);
   fmi1_import_t* fmi = (fmi1_import_t*)fmiInstance;
   fmi1_import_destroy_dllfmu(fmi);
