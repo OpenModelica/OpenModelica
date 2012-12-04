@@ -1052,6 +1052,12 @@ double InterpolationTable_interpolate(InterpolationTable *tpl, double time, size
 
   if (!tpl->data) return 0.0;
 
+  /* adrpo: if we have only one row [0, 0.7] return the value column */
+  if (lastIdx == 1)
+  {
+    return InterpolationTable_getElt(tpl,0,col);
+  }
+
   /* substract time offset */
   if (time < InterpolationTable_minTime(tpl))
     return InterpolationTable_extrapolate(tpl,time,col,time <= InterpolationTable_minTime(tpl));
@@ -1096,11 +1102,11 @@ double InterpolationTable_extrapolate(InterpolationTable *tpl, double time, size
   switch(tpl->expoType) {
   case 1:
     /* hold last/first value */
-    return InterpolationTable_getElt(tpl,(beforeData ? 0 :tpl->rows-1),col);
+    return InterpolationTable_getElt(tpl,(beforeData ? 0 : tpl->rows-1),col);
   case 2:
     /* extrapolate through first/last two values */
     lastIdx = (tpl->colWise ? tpl->cols : tpl->rows) - 2;
-    return InterpolationTable_interpolateLin(tpl,time,(beforeData?0:lastIdx),col);
+    return InterpolationTable_interpolateLin(tpl,time,(beforeData ? 0 : lastIdx),col);
   case 3:
     /* periodically repeat signal */
     time = tpl->startTime + (time - InterpolationTable_maxTime(tpl)*floor(time/InterpolationTable_maxTime(tpl)));
@@ -1124,13 +1130,23 @@ double InterpolationTable_interpolateLin(InterpolationTable *tpl, double time, s
 
 const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size_t col)
 {
-  ASSERT6(row < tpl->rows && col < tpl->cols, "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] aut of range!", tpl->tablename, tpl->filename, (unsigned long)tpl->rows, (unsigned long)tpl->cols, (unsigned long)row, (unsigned long)col);
+  /* is this really correct? doesn't it depends on tpl>colWise? */
+  ASSERT6(
+      row < tpl->rows && col < tpl->cols,
+      "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] aut of range!",
+      tpl->tablename, tpl->filename,
+      (unsigned long)tpl->rows, (unsigned long)tpl->cols,
+      (unsigned long)row, (unsigned long)col);
+
   return tpl->data[tpl->colWise ? col*tpl->rows+row : row*tpl->cols+col];
 }
 void InterpolationTable_checkValidityOfData(InterpolationTable *tpl)
 {
   size_t i = 0;
   size_t maxSize = tpl->colWise ? tpl->cols : tpl->rows;
+  /* if we have only one row or column, return */
+  if (maxSize == 1) return;
+  /* else check the validity */
   for(i = 1; i < maxSize; ++i)
     if (InterpolationTable_getElt(tpl,i-1,0) > InterpolationTable_getElt(tpl,i,0))
       THROW2("TimeTable: Column with time variable not monotonous: %g >= %g.", InterpolationTable_getElt(tpl,i-1,0),InterpolationTable_getElt(tpl,i,0));
