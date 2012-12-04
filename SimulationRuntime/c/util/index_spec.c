@@ -135,13 +135,10 @@ void print_size_array(int size, const size_t* arr)
 {
   int i;
   printf("{");
-  for(i = 0; i < size; ++i) {
-    printf("%d", (int) arr[i]);
-    if (i != (size - 1)) {
-        printf(",");
-    }
+  for(i = 0; i < size-1; ++i) {
+    printf("%d,", (int) arr[i]);
   }
-  printf("}\n");
+  printf("%d}\n", (int) arr[i]);
 }
 
 /* Calculates the next index for copying subscripted array.
@@ -180,11 +177,11 @@ void print_index_spec(const index_spec_t* spec)
                 break;
             case 'A':
                 printf("{");
-                for (k = 0; k < spec->dim_size[i]; ++k) {
-                    printf("%d", (int) spec->index[i][k]);
-                    if (k != (spec->dim_size[i] - 1)) {
-                        printf(",");
-                    }
+                for (k = 0; k < spec->dim_size[i]-1; ++k) {
+                    printf("%d,", (int) spec->index[i][k]);
+                }
+                if (0 < spec->dim_size[i]) {
+                    printf("%d", (int) spec->index[i][0]);
                 }
                 printf("}");
                 break;

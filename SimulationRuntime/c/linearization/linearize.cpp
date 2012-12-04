@@ -41,23 +41,25 @@ using namespace std;
 
 string array2string(double* array, int row, int col){
 
-    int i=0;
-    int j=0;
-    ostringstream retVal(ostringstream::out);
-    retVal.precision(16);
-    int k=0;
-    for (i=0;i<row;i++){
-        for (j=0;j<col;j++){
-            k = i + j * row;
-            if (j+1==col)
-                retVal << array[k];
-            else
-                retVal << array[k] << ",";
-        }
-        if (!((i+1) == row) && !(col == 0))
-            retVal << ";";
+  int i=0;
+  int j=0;
+  ostringstream retVal(ostringstream::out);
+  retVal.precision(16);
+  int k;
+  for (i=0;i<row;i++){
+    k = i;
+    for (j=0;j<col-1;j++){
+      retVal << array[k] << ",";
+      k += row;
     }
-    return retVal.str();
+    if (col > 0) {
+      retVal << array[k];
+    }
+    if (!((i+1) == row) && !(col == 0)) {
+      retVal << ";";
+    }
+  }
+  return retVal.str();
 }
 
 int functionJacA(DATA* data, double* jac){
@@ -94,8 +96,9 @@ int functionJacA(DATA* data, double* jac){
     INFO(LOG_JAC,"Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
     {
-      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
+      for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++) {
         printf("% .5e ",jac[i+j*data->simulationInfo.analyticJacobians[index].sizeCols]);
+      }
       printf("\n");
     }
   }

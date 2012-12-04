@@ -123,13 +123,13 @@ void setTermMsg(const char *msg)
   size_t length = strlen(msg);
   if (length > 0) {
       if (TermMsg == NULL) {
-        TermMsg = (char*)calloc(length+1,sizeof(char));
+        TermMsg = (char*)malloc((length+1)*sizeof(char));
       } else {
           if (strlen(msg) > strlen(TermMsg)) {
             if (TermMsg != NULL) {
                   free(TermMsg);
             }
-            TermMsg = (char*)calloc(length+1,sizeof(char));
+            TermMsg = (char*)malloc((length+1)*sizeof(char));
           }
       }
       for (i=0;i<length;i++)

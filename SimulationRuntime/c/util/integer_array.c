@@ -264,12 +264,12 @@ void print_integer_array(const integer_array_t * source)
 
     data = (modelica_integer *) source->data;
     if (source->ndims == 1) {
-        for (i = 0; i < source->dim_size[0]; ++i) {
-            printf("%ld",*data);
+        for (i = 1; i < source->dim_size[0]; ++i) {
+            printf("%ld, ",*data);
             ++data;
-            if ((i + 1) < source->dim_size[0]) {
-                printf(", ");
-            }
+        }
+        if (0 < source->dim_size[0]) {
+            printf("%ld",*data);
         }
     } else if (source->ndims > 1) {
         n = base_array_nr_of_elements(source) /
@@ -277,11 +277,11 @@ void print_integer_array(const integer_array_t * source)
         for (k = 0; k < n; ++k) {
             for (i = 0; i < source->dim_size[1]; ++i) {
                 for (j = 0; j < source->dim_size[0]; ++j) {
-                    printf("%ld",*data);
+                    printf("%ld, ",*data);
                     ++data;
-                    if ((j + 1) < source->dim_size[0]) {
-                        printf(", ");
-                    }
+                }
+                if (0 < source->dim_size[0]) {
+                    printf("%ld",*data);
                 }
                 printf("\n");
             }
@@ -1385,8 +1385,7 @@ void fill_alloc_integer_array(integer_array_t* dest, modelica_integer value, int
     va_end(ap);
     dest->data = integer_alloc(0,elements);
 
-    for(i = 0; i < elements; ++i)
-    {
+    for(i = 0; i < elements; ++i) {
         integer_set(dest, i, value);
     }
 }

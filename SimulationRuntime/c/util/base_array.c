@@ -187,13 +187,15 @@ int index_spec_fit_base_array(const index_spec_t *s, const base_array_t *a)
             }
         }
 
-        for (j = 0; j < s->dim_size[i]; ++j) {
-            if ((s->index[i] != NULL) && ((s->index[i][j] <= 0) ||
-                                (s->index[i][j] > a->dim_size[i]))) {
-                fprintf(stderr,
-                        "array s->index[%d][%d] == %d incorrect, a->dim_size[%d] == %d\n",
-                        i, j, (int) s->index[i][j], i, (int) a->dim_size[i]); fflush(stderr);
-                return 0;
+        if (s->index[i] != NULL)
+        {
+            for (j = 0; j < s->dim_size[i]; ++j) {
+                if ((s->index[i][j] <= 0) || (s->index[i][j] > a->dim_size[i])) {
+                    fprintf(stderr,
+                            "array s->index[%d][%d] == %d incorrect, a->dim_size[%d] == %d\n",
+                            i, j, (int) s->index[i][j], i, (int) a->dim_size[i]); fflush(stderr);
+                    return 0;
+                }
             }
         }
     }

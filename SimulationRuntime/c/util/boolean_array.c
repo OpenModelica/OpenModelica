@@ -204,12 +204,12 @@ void print_boolean_array(const boolean_array_t *source)
 
     data = (modelica_boolean *) source->data;
     if (source->ndims == 1) {
-        for (i = 0; i < source->dim_size[0]; ++i) {
-            printf("%c", (*data) ? 'T' : 'F');
+        for (i = 1; i < source->dim_size[0]; ++i) {
+            printf("%c, ", (*data) ? 'T' : 'F');
             ++data;
-            if ((i + 1) < source->dim_size[0]) {
-                printf(", ");
-            }
+        }
+        if (0 < source->dim_size[0]) {
+            printf("%c", (*data) ? 'T' : 'F');
         }
     } else if (source->ndims > 1) {
         n = base_array_nr_of_elements(source) /
@@ -217,11 +217,11 @@ void print_boolean_array(const boolean_array_t *source)
         for (k = 0; k < n; ++k) {
             for (i = 0; i < source->dim_size[1]; ++i) {
                 for (j = 0; j < source->dim_size[0]; ++j) {
-                    printf("%c",(*data) ? 'T' : 'F');
+                    printf("%c, ",(*data) ? 'T' : 'F');
                     ++data;
-                    if ((j + 1) < source->dim_size[0]) {
-                        printf(", ");
-                    }
+                }
+                if (0 < source->dim_size[0]) {
+                    printf("%c",(*data) ? 'T' : 'F');
                 }
                 printf("\n");
             }

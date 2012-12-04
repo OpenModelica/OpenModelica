@@ -181,12 +181,12 @@ void print_string_array(const string_array_t *source)
 
     data = (modelica_string_t *) source->data;
     if (source->ndims == 1) {
-        for (i = 0; i < source->dim_size[0]; ++i) {
-            printf("%s", (*data));
+        for (i = 1; i < source->dim_size[0]; ++i) {
+            printf("%s, ", (*data));
             ++data;
-            if ((i + 1) < source->dim_size[0]) {
-                printf(", ");
-            }
+        }
+        if (0 < source->dim_size[0]) {
+            printf("%s", (*data));
         }
     } else if (source->ndims > 1) {
         n = base_array_nr_of_elements(source) /
@@ -194,11 +194,11 @@ void print_string_array(const string_array_t *source)
         for (k = 0; k < n; ++k) {
             for (i = 0; i < source->dim_size[1]; ++i) {
                 for (j = 0; j < source->dim_size[0]; ++j) {
-                    printf("%s", (*data));
+                    printf("%s, ", (*data));
                     ++data;
-                    if ((j + 1) < source->dim_size[0]) {
-                        printf(", ");
-                    }
+                }
+                if (0 < source->dim_size[0]) {
+                    printf("%s", (*data));
                 }
                 printf("\n");
             }
