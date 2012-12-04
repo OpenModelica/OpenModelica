@@ -68,6 +68,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import List;
 protected import Types;
+protected import VarTransform;
 
 
 public function inlineCalls
@@ -1462,11 +1463,14 @@ algorithm
       list<DAE.Element> fn;
       Absyn.Path p;
       list<DAE.Exp> args;
+      DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
       HashTableCG.HashTable checkcr;
+      list<DAE.Statement> stmts;
+      VarTransform.VariableReplacements repl;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         false = Config.acceptMetaModelicaGrammar();
@@ -1484,9 +1488,120 @@ algorithm
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
       then
         ((newExp1,(fns,true)));
+    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
+      equation
+        false = Config.acceptMetaModelicaGrammar();
+        true = checkInlineType(inlineType,fns);
+        fn = getFunctionBody(p,fns);  
+        // get inputs, body and outpout
+        (crefs,{cr},stmts) = getFunctionInputsOutputBody(fn,{},{},{});
+        // merge statements to one line 
+        repl = mergeFunctionBody(stmts,VarTransform.emptyReplacements());
+        newExp = VarTransform.getReplacement(repl,cr);
+        argmap = List.threadTuple(crefs,args);
+        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+        // compare types
+        true = checkExpsTypeEquiv(e1, newExp);
+        // for inlinecalls in functions
+        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
+      then
+        ((newExp1,(fns,true)));        
     else inTuple;
   end matchcontinue;
 end forceInlineCall;
+
+protected function mergeFunctionBody
+  input list<DAE.Statement> iStmts;
+  input VarTransform.VariableReplacements iRepl;
+  output VarTransform.VariableReplacements oRepl;
+algorithm
+  oRepl := match(iStmts,iRepl)
+    local
+      list<DAE.Statement> stmts;
+      VarTransform.VariableReplacements repl;
+      DAE.ComponentRef cr;
+      DAE.Exp exp;
+      list<DAE.Exp> explst;
+    case ({},_) then iRepl;
+    case (DAE.STMT_ASSIGN(exp1 = DAE.CREF(componentRef = cr), exp = exp)::stmts,_)
+      equation
+        (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
+        repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
+      then
+        mergeFunctionBody(stmts,repl);
+    case (DAE.STMT_ASSIGN_ARR(componentRef = cr, exp = exp)::stmts,_)
+      equation
+        (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
+        repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
+      then
+        mergeFunctionBody(stmts,repl);
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst = explst, exp = exp)::stmts,_)
+      equation
+        (exp,_) = VarTransform.replaceExp(exp,iRepl,NONE());
+        repl = addTplAssignToRepl(explst,1,exp,iRepl);
+      then
+        mergeFunctionBody(stmts,repl);
+  end match;
+end mergeFunctionBody;
+
+protected function addTplAssignToRepl
+  input list<DAE.Exp> explst;
+  input Integer indx;
+  input DAE.Exp iExp;
+  input VarTransform.VariableReplacements iRepl;
+  output VarTransform.VariableReplacements oRepl;
+algorithm
+  oRepl := match(explst,indx,iExp,iRepl)
+    local
+      VarTransform.VariableReplacements repl;
+      DAE.ComponentRef cr;
+      DAE.Exp exp;
+      list<DAE.Exp> rest;
+      DAE.Type tp;
+    case ({},_,_,_) then iRepl;
+    case (DAE.CREF(componentRef = cr,ty=tp)::rest,_,_,_)
+      equation
+        exp = DAE.TSUB(iExp,indx,tp);
+        repl = VarTransform.addReplacementNoTransitive(iRepl,cr,exp);
+      then
+        addTplAssignToRepl(rest,indx+1,iExp,repl);
+  end match;
+end addTplAssignToRepl;
+
+protected function getFunctionInputsOutputBody
+  input list<DAE.Element> fn;
+  input list<DAE.ComponentRef> iInputs;
+  input list<DAE.ComponentRef> iOutput;
+  input list<DAE.Statement> iBody;
+  output list<DAE.ComponentRef> oInputs;
+  output list<DAE.ComponentRef> oOutput;
+  output list<DAE.Statement> oBody;
+algorithm
+  (oInputs,oOutput,oBody) := match(fn,iInputs,iOutput,iBody)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.Statement> st;
+      list<DAE.Element> rest;
+    case ({},_,_,_) then (listReverse(iInputs),listReverse(iOutput),iBody);
+    case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_)
+      equation
+         (oInputs,oOutput,oBody) = getFunctionInputsOutputBody(rest,cr::iInputs,iOutput,iBody);
+      then 
+        (oInputs,oOutput,oBody);
+    case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT())::rest,_,_,_)
+      equation
+        (oInputs,oOutput,oBody) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody);
+      then 
+        (oInputs,oOutput,oBody);
+    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))::rest,_,_,_)
+      equation
+        st = listAppend(iBody,st);
+        (oInputs,oOutput,oBody) = getFunctionInputsOutputBody(rest,iInputs,iOutput,st);
+      then 
+        (oInputs,oOutput,oBody);
+  end match;
+end getFunctionInputsOutputBody;
 
 protected function checkInlineType "
 Author: Frenkel TUD, 2010-05"
