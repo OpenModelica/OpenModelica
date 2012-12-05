@@ -63,7 +63,7 @@ FFlatten.mo \
 FFlattenImports.mo \
 FFlattenRedeclare.mo \
 FLookup.mo \
-FScodeCheck.mo \
+FSCodeCheck.mo \
 Graphviz.mo \
 Inline.mo \
 InnerOuter.mo \
