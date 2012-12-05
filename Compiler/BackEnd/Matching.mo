@@ -6362,8 +6362,8 @@ algorithm
        setrandArray(ne,randarr);
        randarr1 = listArray(List.intRange(nv));
        setrandArray(nv,randarr1);
-       eqns1 = randSortSystem1(ne,-1,randarr,eqns,BackendDAEUtil.listEquation({}),BackendDAEUtil.equationNth,BackendEquation.equationAdd);
-       vars1 = randSortSystem1(nv,0,randarr1,vars,BackendDAEUtil.emptyVars(),BackendVariable.getVarAt,BackendVariable.addVar);
+       eqns1 = randSortSystem1(ne,-1,randarr,eqns,BackendEquation.listEquation({}),BackendDAEUtil.equationNth,BackendEquation.equationAdd);
+       vars1 = randSortSystem1(nv,0,randarr1,vars,BackendVariable.emptyVars(),BackendVariable.getVarAt,BackendVariable.addVar);
        (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.NORMAL());
      then 
        syst;

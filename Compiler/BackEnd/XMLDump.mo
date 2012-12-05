@@ -990,8 +990,8 @@ algorithm
                  _,ieqns,reqns,constrs,clsAttrs,_,_,funcs,BackendDAE.EVENT_INFO(zeroCrossingLst = zc),extObjCls,btp,symjacs)),addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
-        knvars  = BackendDAEUtil.varList(vars_knownVars);
-        extvars = BackendDAEUtil.varList(vars_externalObject);
+        knvars  = BackendVariable.varList(vars_knownVars);
+        extvars = BackendVariable.varList(vars_externalObject);
 
         Print.printBuf(HEADER);
         dumpStrOpenTag(DAE_OPEN);
@@ -1006,9 +1006,9 @@ algorithm
         dumpStrCloseTag(VARIABLES);
         eqnsl = List.fold(systs,getOrderedEqs,{});
         dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
-        reqnsl = BackendDAEUtil.equationList(reqns);
+        reqnsl = BackendEquation.equationList(reqns);
         dumpEqns(reqnsl,stringAppend(SIMPLE,EQUATIONS_),addMML,dumpRes);
-        ieqnsl = BackendDAEUtil.equationList(ieqns);
+        ieqnsl = BackendEquation.equationList(ieqns);
         dumpEqns(ieqnsl,stringAppend(INITIAL,EQUATIONS_),addMML,dumpRes);
         dumpZeroCrossing(zc,stringAppend(ZERO_CROSSING,LIST_),addMML);
 
@@ -1034,7 +1034,7 @@ protected function getOrderedVars
 protected
   list<BackendDAE.Var> vars;
 algorithm
-  vars := BackendDAEUtil.varList(BackendVariable.daeVars(syst));
+  vars := BackendVariable.varList(BackendVariable.daeVars(syst));
   outVars := listAppend(inVars,vars);
 end getOrderedVars;
 
@@ -1047,7 +1047,7 @@ protected
   array<list<BackendDAE.CrefIndex>> crefIdxLstArr_orderedVars;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars_orderedVars as BackendDAE.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars)) := syst;
-  vars := BackendDAEUtil.varList(vars_orderedVars);
+  vars := BackendVariable.varList(vars_orderedVars);
   dumpVars(vars,crefIdxLstArr_orderedVars,stringAppend(ORDERED,VARIABLES_),addMML);
 end dumpOrderedVars;
 
@@ -1058,7 +1058,7 @@ protected function getOrderedEqs
 protected
   list<BackendDAE.Equation> eqnsl;
 algorithm
-  eqnsl := BackendDAEUtil.equationList(BackendEquation.daeEqns(syst));
+  eqnsl := BackendEquation.equationList(BackendEquation.daeEqns(syst));
   outEqns := listAppend(inEqns,eqnsl);
 end getOrderedEqs;
 
@@ -1071,7 +1071,7 @@ protected
   list<BackendDAE.Equation> eqnsl;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=eqns) := syst;
-  eqnsl := BackendDAEUtil.equationList(eqns);
+  eqnsl := BackendEquation.equationList(eqns);
   dumpEqns(eqnsl,EQUATIONS,addMML,dumpRes);
 end dumpOrderedEqs;
 

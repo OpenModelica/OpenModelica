@@ -39,26 +39,26 @@ encapsulated package OpenTURNS "
   "
 
 public 
+import Absyn;
 import BackendDAE;
 import DAE;
-import Absyn;
 import Env;
 
 protected
+import BackendDAEOptimize;
+import BackendDAEUtil;
+import BackendEquation;
+import BackendVariable;
 import CevalScript;
+import ComponentReference;
+import Expression;
+import ExpressionDump;
+import Interactive;
+import List;
+import Settings;
 import SimCode;
 import SimCodeUtil;
-import Interactive;
 import System;
-import Settings;
-//import BackendDump;
-import BackendDAEUtil;
-import List;
-import BackendVariable;
-import ExpressionDump;
-import ComponentReference;
-import BackendDAEOptimize;
-import Expression;
 import Util;
 
 // important constants!
@@ -523,8 +523,8 @@ protected function stripCorrelationEqns "help function "
 protected
   list<BackendDAE.Equation> eqnLst;
 algorithm
-  (_,eqnLst) := List.splitOnTrue(BackendDAEUtil.equationList(eqns),equationIsCorrelationBinding);
-  outEqns := BackendDAEUtil.listEquation(eqnLst);
+  (_,eqnLst) := List.splitOnTrue(BackendEquation.equationList(eqns),equationIsCorrelationBinding);
+  outEqns := BackendEquation.listEquation(eqnLst);
 end stripCorrelationEqns;
 
 protected function equationIsCorrelationBinding "help function"
@@ -546,8 +546,8 @@ protected function stripCorrelationVars " help function  "
 protected
   list<BackendDAE.Var> varLst;
 algorithm
-  (_,varLst) := List.splitOnTrue(BackendDAEUtil.varList(vars),isCorrelationVar);
-  outVars := BackendDAEUtil.listVar1(varLst); 
+  (_,varLst) := List.splitOnTrue(BackendVariable.varList(vars),isCorrelationVar);
+  outVars := BackendVariable.listVar1(varLst); 
 end stripCorrelationVars;
 
 protected function isCorrelationVar "help function"

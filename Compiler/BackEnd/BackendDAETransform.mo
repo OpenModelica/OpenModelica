@@ -1118,8 +1118,8 @@ algorithm
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         // States are solved for der(x) not x.
         var_lst_1 = List.map(var_lst, transformXToXd);
-        vars_1 = BackendDAEUtil.listVar1(var_lst_1);
-        eqns_1 = BackendDAEUtil.listEquation(eqn_lst);
+        vars_1 = BackendVariable.listVar1(var_lst_1);
+        eqns_1 = BackendEquation.listEquation(eqn_lst);
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
@@ -2422,13 +2422,13 @@ algorithm
 
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs = eqns,m=SOME(m),mT=SOME(mt)),_,_)
       equation
-        varCrefs = List.map(BackendDAEUtil.varList(vars),BackendVariable.varCref);
+        varCrefs = List.map(BackendVariable.varList(vars),BackendVariable.varCref);
         varIndices = List.intRange(listLength(varCrefs));
         prioTuples = calculateVarPriorities(varCrefs,varIndices,vars,eqns,m,mt,mapIncRowEqn,so,{});
         prioTuples = List.sort(prioTuples,sortprioTuples);
         varIndices = List.map(prioTuples,Util.tuple32);
         vlst = List.map1r(varIndices,BackendVariable.getVarAt,vars);
-        states = BackendDAEUtil.listVar1(vlst);
+        states = BackendVariable.listVar1(vlst);
       then states;
 
     else

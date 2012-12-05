@@ -30,7 +30,7 @@
  */
 
 encapsulated package BackendVariable
-" file:        BackendVariable.mo
+" file:        mo
   package:     BackendVariable
   description: BackendVariables contains the function that deals with the datytypes
                BackendDAE.VAR BackendDAE.Variables and BackendVariablesArray.
@@ -46,6 +46,7 @@ public import Values;
 protected import Absyn;
 protected import BackendDAEUtil;
 protected import BaseHashSet;
+protected import BaseHashTable;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
@@ -608,7 +609,7 @@ algorithm
     else
       equation
         // repord a warning on failtrace
-        Debug.fprint(Flags.FAILTRACE,"BackendVariable.getVariableAttributefromType called with unsopported Type!\n");
+        Debug.fprint(Flags.FAILTRACE,"getVariableAttributefromType called with unsopported Type!\n");
       then
         DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE());
   end match;
@@ -2129,6 +2130,55 @@ end getAlias1;
  * =======================================================
  */
 
+protected function vararrayList
+"function: vararrayList
+  Transforms a VariableArray to a Var list"
+  input BackendDAE.VariableArray inVariableArray;
+  output list<BackendDAE.Var> outVarLst;
+algorithm
+  outVarLst:=
+  matchcontinue (inVariableArray)
+    local
+      array<Option<BackendDAE.Var>> arr;
+      BackendDAE.Var elt;
+      Integer n,size;
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 0,varOptArr = arr)) then {};
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = 1,varOptArr = arr))
+      equation
+        SOME(elt) = arr[1];
+      then
+        {elt};
+    case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr))
+      then
+        vararrayList2(arr, n, {});
+  end matchcontinue;
+end vararrayList;
+
+protected function vararrayList2
+"function: vararrayList2
+  Helper function to vararrayList"
+  input array<Option<BackendDAE.Var>> arr;
+  input Integer pos;
+  input list<BackendDAE.Var> inVarLst;
+  output list<BackendDAE.Var> outVarLst;
+algorithm
+  outVarLst:=
+  matchcontinue (arr,pos,inVarLst)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> res;
+    case (_,0,_) then inVarLst;
+    case (_,_,_)
+      equation
+        SOME(v) = arr[pos];
+      then
+        vararrayList2(arr,pos-1,v::inVarLst);
+    case (_,_,_)
+      then
+        vararrayList2(arr,pos-1,inVarLst);
+  end matchcontinue;
+end vararrayList2;
+
 public function copyVariables
   input BackendDAE.Variables inVarArray;
   output BackendDAE.Variables outVarArray;
@@ -2214,13 +2264,13 @@ algorithm
         BackendDAE.VARIABLE_ARRAY(n_1,newsize,arr_2);
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
-        print("- BackendVariable.vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& " arraysize: " +& intString(arrayLength(arr)) +& "\n");
+        print("- vararrayAdd failed\nn: " +& intString(n) +& ", size: " +& intString(size) +& " arraysize: " +& intString(arrayLength(arr)) +& "\n");
         Debug.execStat("vararrayAdd",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then
         fail();
     case (_,_)
       equation
-        print("- BackendVariable.vararrayAdd failed!\n");
+        print("- vararrayAdd failed!\n");
       then
         fail();
   end matchcontinue;
@@ -2252,7 +2302,7 @@ algorithm
 
     case (_,_,_)
       equation
-        print("- BackendVariable.vararraySetnth failed\n");
+        print("- vararraySetnth failed\n");
       then
         fail();
   end matchcontinue;
@@ -2283,7 +2333,7 @@ algorithm
       equation
         (pos < n) = true;
         NONE() = arr[pos + 1];
-        print("- BackendVariable.vararrayNth has NONE!!!\n");
+        print("- vararrayNth has NONE!!!\n");
       then
         fail();
   end matchcontinue;
@@ -2296,6 +2346,79 @@ end vararrayNth;
  *
  * =======================================================
  */
+ 
+public function emptyVars "function emptyVars
+  author: PA
+  Returns a Variable datastructure that is empty.
+  Using the bucketsize 10000 and array size 1000."
+  output BackendDAE.Variables outVariables;
+protected
+  array<list<BackendDAE.CrefIndex>> arr;
+  list<Option<BackendDAE.Var>> lst;
+  array<Option<BackendDAE.Var>> emptyarr;
+  Integer bucketSize, arrSize;
+algorithm
+  bucketSize := BaseHashTable.bigBucketSize;
+  arrSize := bucketSize; // BaseHashTable.bucketToValuesSize(bucketSize);
+  arr := arrayCreate(bucketSize, {});
+  emptyarr := arrayCreate(arrSize, NONE());
+  outVariables := BackendDAE.VARIABLES(arr,BackendDAE.VARIABLE_ARRAY(0, arrSize, emptyarr), bucketSize, 0);
+end emptyVars;
+
+public function varList
+"function: varList
+  Takes BackendDAE.Variables and returns a list of \'Var\', useful for e.g. dumping."
+  input BackendDAE.Variables inVariables;
+  output list<BackendDAE.Var> outVarLst;
+algorithm
+  outVarLst := match(inVariables)
+    local
+      list<BackendDAE.Var> varlst;
+      BackendDAE.VariableArray vararr;
+    
+    case (BackendDAE.VARIABLES(varArr = vararr)) equation
+      varlst = vararrayList(vararr);
+    then varlst;
+  end match;
+end varList;
+
+public function listVar
+"function: listVar
+  author: PA
+  Takes Var list and creates a BackendDAE.Variables structure, see also var_list."
+  input list<BackendDAE.Var> inVarLst;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := match (inVarLst)
+    local
+      BackendDAE.Variables res,vars;
+      BackendDAE.Var v;
+      list<BackendDAE.Var> vs;
+    
+    case ({})
+      equation
+        res = emptyVars();
+      then
+        res;
+    
+    case ((v :: vs))
+      equation
+        vars = listVar(vs);
+      then
+        addVar(v, vars);
+  end match;
+end listVar;
+
+public function listVar1
+"function: listVar
+  author: Frenkel TUD 2012-05
+  ToDo: replace all listVar calls with this function, tailrecursive implementation
+  Takes BackendDAE.Var list and creates a BackendDAE.Variables structure, see also var_list."
+  input list<BackendDAE.Var> inVarLst;
+  output BackendDAE.Variables outVariables;
+algorithm
+  outVariables := List.fold(inVarLst,addVar,emptyVars());
+end listVar1;
 
 public function equationSystemsVarsLst
   input BackendDAE.EqSystems systs;
@@ -2310,7 +2433,7 @@ algorithm
       case ({},_) then inVars;
       case (BackendDAE.EQSYSTEM(orderedVars = v)::rest,_)
         equation
-          vars = BackendDAEUtil.varList(v);
+          vars = varList(v);
           vars1 = listAppend(inVars,vars);
         then
           equationSystemsVarsLst(rest,vars1);
@@ -2456,8 +2579,7 @@ algorithm
   end matchcontinue;
 end isTopLevelInputOrOutput;
 
-public function deleteCrefs
-"function: deleteCrefs
+public function deleteCrefs "function deleteCrefs
   author: wbraun
   Deletes a list of DAE.ComponentRef from BackendDAE.Variables"
   input list<DAE.ComponentRef> varlst;
@@ -2467,8 +2589,7 @@ algorithm
   vars_1 := List.fold(varlst, deleteVar, vars);
 end deleteCrefs;
 
-public function deleteVars
-"function: deleteVars
+public function deleteVars "function deleteVars
   author: Frenkel TUD 2011-04
   Deletes variables from Variables. This is an expensive operation
   since we need to create a new binary tree with new indexes as well
@@ -2484,7 +2605,7 @@ algorithm
       equation
         true = intGt(varsSize(inDelVars),0);
         newvars = traverseBackendDAEVars(inDelVars,deleteVars1,inVariables);
-        newvars = BackendDAEUtil.listVar1(BackendDAEUtil.varList(newvars));
+        newvars = listVar1(varList(newvars));
       then
         newvars;
     else
@@ -2519,18 +2640,17 @@ public function deleteVar
   input BackendDAE.Variables inVariables;
   output BackendDAE.Variables outVariables;
 algorithm
-  outVariables := match (inComponentRef,inVariables)
+  outVariables := match(inComponentRef,inVariables)
     local
       BackendDAE.Variables vars;
       DAE.ComponentRef cr;
       list<Integer> ilst;
-    case (cr,_)
-      equation
-        (_,ilst) = getVar(cr,inVariables);
-        (vars,_) = removeVars(ilst,inVariables,{});
-        vars = BackendDAEUtil.listVar1(BackendDAEUtil.varList(vars));
-      then
-        vars;
+      
+    case (cr,_) equation
+      (_,ilst) = getVar(cr,inVariables);
+      (vars,_) = removeVars(ilst,inVariables,{});
+      vars = listVar1(varList(vars));
+    then vars;
   end match;
 end deleteVar;
 
@@ -2648,7 +2768,7 @@ algorithm
         (BackendDAE.VARIABLES(hashvec_1,varr1,bsize,n),v);
     case (pos,_)
       equation
-        print("- BackendVariable.removeVar failed for var ");
+        print("- removeVar failed for var ");
         print(intString(pos));
         print("\n");
       then
@@ -2680,7 +2800,7 @@ algorithm
         (v,BackendDAE.VARIABLE_ARRAY(n,size,arr_1));
     case (BackendDAE.VARIABLE_ARRAY(numberOfElements = n,arrSize = size,varOptArr = arr),_)
       equation
-        print("- BackendVariable.removeVar1 failed\n Pos " +& intString(inInteger) +& " numberOfElements " +& intString(n) +& " size " +& intString(size) +& " arraySize " +& intString(arrayLength(arr)) +& "\n");
+        print("- removeVar1 failed\n Pos " +& intString(inInteger) +& " numberOfElements " +& intString(n) +& " size " +& intString(size) +& " arraySize " +& intString(arrayLength(arr)) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -2725,7 +2845,7 @@ algorithm
         BackendDAE.VARIABLES(crefIdxLstArr, varArr, bucketSize, nvars1);
     else
       equation
-        print("BackendVariable.compressVariables failed\n");
+        print("compressVariables failed\n");
       then
         fail();     
   end matchcontinue;
@@ -2777,7 +2897,7 @@ algorithm
         insertindex-1;
     else
       equation
-        print("BackendVariable.compressVariables1 failed\n");
+        print("compressVariables1 failed\n");
       then
         fail();
   end matchcontinue;
@@ -2938,7 +3058,7 @@ algorithm
 
     case (_,_)
       equation
-        print("- BackendVariable.addVar failed\n");
+        print("- addVar failed\n");
       then
         fail();
   end matchcontinue;
@@ -2976,7 +3096,7 @@ algorithm
 
     case (_,_)
       equation
-        print("- BackendVariable.addNewVar failed\n");
+        print("- addNewVar failed\n");
       then
         fail();
   end matchcontinue;
@@ -3032,7 +3152,7 @@ algorithm
 
     case (_,_)
       equation
-        print("- BackendVariable.expandVars failed\n");
+        print("- expandVars failed\n");
       then
         fail();
   end matchcontinue;
@@ -3329,13 +3449,13 @@ algorithm
       equation
         // to avoid side effects from arrays copy first
         vars1 = copyVariables(vars1);
-        varlst = BackendDAEUtil.varList(vars2);
+        varlst = varList(vars2);
         vars1_1 = List.fold(varlst, addVar, vars1);
       then
         vars1_1;
     case (_,_)
       equation
-        print("- BackendVariable.mergeVariables failed\n");
+        print("- mergeVariables failed\n");
       then
         fail();
   end matchcontinue;
@@ -3369,7 +3489,7 @@ algorithm
         ext_arg_1;
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVars failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVars failed");
       then
         fail();
   end matchcontinue;
@@ -3403,7 +3523,7 @@ algorithm
         ext_arg_1;
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVarsWithStop failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithStop failed");
       then
         fail();
   end matchcontinue;
@@ -3435,7 +3555,7 @@ algorithm
         ext_arg;
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVar failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
       then
         fail();
   end matchcontinue;
@@ -3469,7 +3589,7 @@ algorithm
         (b,ext_arg);
     else
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVarWithStop failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarWithStop failed");
       then
         fail();
   end matchcontinue;
@@ -3505,7 +3625,7 @@ algorithm
         (BackendDAE.VARIABLES(crefIdxLstArr,BackendDAE.VARIABLE_ARRAY(numberOfElements,arrSize,varOptArr1),bucketSize,numberOfVars),ext_arg_1);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVarsWithUpdate failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVarsWithUpdate failed");
       then
         fail();
   end matchcontinue;
@@ -3540,7 +3660,7 @@ algorithm
         (ovar,ext_arg);
     case (_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- BackendVariable.traverseBackendDAEVar failed");
+        Debug.fprintln(Flags.FAILTRACE, "- traverseBackendDAEVar failed");
       then
         fail();
   end matchcontinue;

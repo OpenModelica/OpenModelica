@@ -98,7 +98,7 @@ algorithm
     
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedEqs = eqns)::{}, shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(whenClauseLst = wcLst))))
       equation
-        eqnsl = BackendDAEUtil.equationList(eqns);
+        eqnsl = BackendEquation.equationList(eqns);
         ls1 = List.map1(eqnsl, equationStr, wcLst);
         s1 = stringDelimitList(ls1, ",");
         s = "EqStr = {" +& s1 +& "};";
@@ -263,7 +263,7 @@ algorithm
       BackendDAE.Variables vars1;
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars1)::{}))
       equation
-        vars = BackendDAEUtil.varList(vars1);
+        vars = BackendVariable.varList(vars1);
         s = dumpVars(vars);
         s = "VL = {" +& s +& "};";
       then
@@ -397,7 +397,7 @@ algorithm
       BackendDAE.EquationArray eqns;
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns)::{}))
       equation
-        eqnsl = BackendDAEUtil.equationList(eqns);
+        eqnsl = BackendEquation.equationList(eqns);
         lstlst = incidenceMatrix2(vars, eqnsl);
         arr = listArray(lstlst);
       then

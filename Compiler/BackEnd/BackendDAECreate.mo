@@ -108,18 +108,18 @@ algorithm
   Debug.execStat("Enter Backend",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
   (DAE.DAE(elems),functionTree) := processDelayExpressions(lst,functionTree);
-  vars := BackendDAEUtil.emptyVars();
-  knvars := BackendDAEUtil.emptyVars();
-  extVars := BackendDAEUtil.emptyVars();
+  vars := BackendVariable.emptyVars();
+  knvars := BackendVariable.emptyVars();
+  extVars := BackendVariable.emptyVars();
   (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns) := lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {});
   whenclauses_1 := listReverse(whenclauses);
-  aliasVars := BackendDAEUtil.emptyVars();
+  aliasVars := BackendVariable.emptyVars();
   // handle alias equations
   (vars,knvars,extVars,aliasVars,eqns,reqns,ieqns,whenclauses_1) := handleAliasEquations(aliaseqns,vars,knvars,extVars,aliasVars,eqns,reqns,ieqns,whenclauses_1);
   vars_1 := detectImplicitDiscrete(vars,knvars,eqns);
-  eqnarr := BackendDAEUtil.listEquation(eqns);
-  reqnarr := BackendDAEUtil.listEquation(reqns);
-  ieqnarr := BackendDAEUtil.listEquation(ieqns);
+  eqnarr := BackendEquation.listEquation(eqns);
+  reqnarr := BackendEquation.listEquation(reqns);
+  ieqnarr := BackendEquation.listEquation(ieqns);
   constrarra := listArray(constrs);
   clsattrsarra := listArray(clsAttrs);
   einfo := BackendDAE.EVENT_INFO(whenclauses_1, {}, {}, {}, 0, 0);
@@ -3282,13 +3282,13 @@ algorithm
           sampleLst=sampleLst,whenClauseLst=whenclauses,relationsNumber=countRelations,
           numberMathEvents=countMathFunctions),eoc,btp,symjacs))),_)
       equation
-        vars = BackendDAEUtil.listVar1(allvars);
-        eqs_lst = BackendDAEUtil.equationList(remeqns);
+        vars = BackendVariable.listVar1(allvars);
+        eqs_lst = BackendEquation.equationList(remeqns);
         (zero_crossings,eqs_lst1,whenclauses,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, whenclauses, 0, countRelations, countMathFunctions, zero_crossings, relationsLst, sampleLst);
-        remeqns = BackendDAEUtil.listEquation(eqs_lst1);
-        eqs_lst = BackendDAEUtil.equationList(inieqns);
+        remeqns = BackendEquation.listEquation(eqs_lst1);
+        eqs_lst = BackendEquation.equationList(inieqns);
         (zero_crossings,eqs_lst1,_,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, countMathFunctions, zero_crossings, relationsLst, sampleLst);
-        inieqns = BackendDAEUtil.listEquation(eqs_lst1);
+        inieqns = BackendEquation.listEquation(eqs_lst1);
         Debug.fcall(Flags.RELIDX,print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
         einfo1 = BackendDAE.EVENT_INFO(whenclauses,zero_crossings,sampleLst,relationsLst,countRelations, countMathFunctions);
       then
@@ -3333,13 +3333,13 @@ algorithm
           relationsNumber=countRelations,numberMathEvents=countMathFunctions),
           eoc,btp,symjacs),allvars))
       equation
-        eqs_lst = BackendDAEUtil.equationList(eqns);
+        eqs_lst = BackendEquation.equationList(eqns);
         (zero_crossings,eqs_lst1,_,countRelations, countMathFunctions, relations, sampleLst) = findZeroCrossings2(vars, knvars, eqs_lst, 0, {}, 0, countRelations, countMathFunctions, zero_crossings, relations, sampleLst);
         Debug.fcall(Flags.RELIDX,print, "findZeroCrossings1 number of relations : " +& intString(countRelations) +& "\n");
         Debug.fcall(Flags.RELIDX,print, "findZeroCrossings1 sample index: " +& intString(listLength(sampleLst)) +& "\n");
-        eqns1 = BackendDAEUtil.listEquation(eqs_lst1);
+        eqns1 = BackendEquation.listEquation(eqs_lst1);
         einfo1 = BackendDAE.EVENT_INFO(whenclauses, zero_crossings, sampleLst, relations, countRelations, countMathFunctions);
-        allvars = listAppend(allvars,BackendDAEUtil.varList(vars));
+        allvars = listAppend(allvars,BackendVariable.varList(vars));
       then
         (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),(BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo1,eoc,btp,symjacs),allvars));
   end match;

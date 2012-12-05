@@ -645,7 +645,7 @@ protected
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching) := inEqSystem;
   print("Variables (");
-  vars := BackendDAEUtil.varList(vars1);
+  vars := BackendVariable.varList(vars1);
   varlen := listLength(vars);
   varlen_str := intString(varlen);
   print(varlen_str);
@@ -654,7 +654,7 @@ algorithm
   dumpVars(vars);
   print("\n");        
   print("\nEquations (");
-  eqnsl := BackendDAEUtil.equationList(eqns);
+  eqnsl := BackendEquation.equationList(eqns);
   eqnlen := listLength(eqnsl);
   eqnlen_str := intString(eqnlen);
   print(eqnlen_str);
@@ -701,7 +701,7 @@ algorithm
         print("\n\n");
         
         print("Known Variables (constants) (");
-        knvars = BackendDAEUtil.varList(vars2);
+        knvars = BackendVariable.varList(vars2);
         varlen = listLength(knvars);
         varlen_str = intString(varlen);
         print(varlen_str);
@@ -709,7 +709,7 @@ algorithm
         print("=============================\n");
         dumpVars(knvars);
         print("External Objects (");
-        extvars = BackendDAEUtil.varList(vars3);
+        extvars = BackendVariable.varList(vars3);
         varlen = listLength(extvars);
         varlen_str = intString(varlen);
         print(varlen_str);
@@ -728,7 +728,7 @@ algorithm
         dumpAliasVariables(av);
         
         print("Simple Equations (");
-        reqnsl = BackendDAEUtil.equationList(reqns);
+        reqnsl = BackendEquation.equationList(reqns);
         eqnlen = listLength(reqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
@@ -740,7 +740,7 @@ algorithm
         print("=========\n");
         dumpEqns(reqnsl);
         print("Initial Equations (");
-        ieqnsl = BackendDAEUtil.equationList(ieqns);
+        ieqnsl = BackendEquation.equationList(ieqns);
         eqnlen = listLength(ieqnsl);
         eqnlen_str = intString(eqnlen);
         print(eqnlen_str);
@@ -797,11 +797,11 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching) := inEqSystem;
   (doc,i) := inTpl;
   prefixId := inPrefixIdstr +& "_" +& intString(i);
-  vars := BackendDAEUtil.varList(vars1);
+  vars := BackendVariable.varList(vars1);
   varlen_str := "Variables (" +& intString(listLength(vars)) +& ")";
   tags := DumpHTML.addHeadingTag(2,varlen_str,{});
   tags := dumpVarsHTML(vars,prefixId,tags);
-  eqnsl := BackendDAEUtil.equationList(eqns);
+  eqnsl := BackendEquation.equationList(eqns);
   eqnlen_str := "Equations (" +& intString(listLength(eqnsl)) +& "," +& intString(BackendDAEUtil.equationSize(eqns)) +& ")";
   tags := DumpHTML.addHeadingTag(2,eqnlen_str,tags);
   tags := dumpEqnsHTML(eqnsl,prefixId,tags);
@@ -1348,7 +1348,7 @@ public function dumpEqnsArray
   Helper function to dump."
   input BackendDAE.EquationArray eqns;
 algorithm
-  _ := List.fold(BackendDAEUtil.equationList(eqns),dumpEqns2,1);
+  _ := List.fold(BackendEquation.equationList(eqns),dumpEqns2,1);
 end dumpEqnsArray;
 
 public function dumpEqns
@@ -1592,7 +1592,7 @@ public function dumpVarsArray
   Helper function to dump."
   input BackendDAE.Variables vars;
 algorithm
-  _ := List.fold(BackendDAEUtil.varList(vars),dumpVar,1);
+  _ := List.fold(BackendVariable.varList(vars),dumpVar,1);
 end dumpVarsArray;
 
 public function dumpVars
@@ -2438,7 +2438,7 @@ protected
 algorithm
   l := BackendVariable.varsSize(inAliasVars);
   sl := intString(l);
-  vars := BackendDAEUtil.varList(inAliasVars);
+  vars := BackendVariable.varList(inAliasVars);
   print("AliasVariables: ");
   print(sl);
   print("\n===============\n");

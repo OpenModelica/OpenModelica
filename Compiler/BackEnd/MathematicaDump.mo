@@ -693,7 +693,7 @@ algorithm
       list<BackendDAE.Var> varLst;
     case _      
       equation
-        varLst = BackendDAEUtil.varList(vars); 
+        varLst = BackendVariable.varList(vars); 
         varLst = listReverse(varLst); //So the order is the same as for generated c-code.
         states = List.map2(varLst,printMmaVarStr,true,vars);
         algs = List.map2(varLst,printMmaVarStr,false,vars);
@@ -716,27 +716,27 @@ algorithm
     case (BackendDAE.VAR(varName=DAE.CREF_IDENT("$dummy",DAE.T_UNKNOWN(_),{})),_,_) then "";
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE()),true,_) 
       equation
-        nameStr = printComponentRefMmaStr(name,allVars,BackendDAEUtil.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;
     //case (BackendDAE.VAR(varName=name,varKind=BackendDAE.DYN_STATE()),true,allVars) 
     // equation
-    //    nameStr = printComponentRefMmaStr(name,allVars,BackendDAEUtil.emptyVars());
+    //    nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
     //  then nameStr;
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.VARIABLE()),false,_)
       equation  
-        nameStr = printComponentRefMmaStr(name,allVars,BackendDAEUtil.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.DUMMY_DER()),false,_)
       equation  
-        nameStr = printComponentRefMmaStr(name,allVars,BackendDAEUtil.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.DUMMY_STATE()),false,_)
       equation  
-        nameStr = printComponentRefMmaStr(name,allVars,BackendDAEUtil.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;        
     case (BackendDAE.VAR(varName=name,varKind=BackendDAE.DISCRETE()),false,_)
       equation  
-        nameStr = printComponentRefMmaStr(name,allVars,BackendDAEUtil.emptyVars());
+        nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;                
     case(_,_,_) then "";
   end matchcontinue;
@@ -756,7 +756,7 @@ algorithm
     case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(ident,_,{})),varDirection = DAE.OUTPUT())) 
       equation
         true=BackendVariable.isVarOnTopLevelAndOutput(v);
-      str = printComponentRefMmaStr(name,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());      
+      str = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());      
       then str;
     case(_) then "";
   end matchcontinue;
@@ -776,7 +776,7 @@ algorithm
     case(v as BackendDAE.VAR(varName=name as (DAE.CREF_IDENT(ident,_,{})),varDirection = DAE.INPUT())) 
       equation
       true=BackendVariable.isVarOnTopLevelAndInput(v);
-      str = printComponentRefMmaStr(name,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());      
+      str = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());      
       then str;
     case(_) then "";
   end matchcontinue;
@@ -795,7 +795,7 @@ algorithm
     local
       list<BackendDAE.Var> varLst;
     case(knvars) equation
-      varLst = BackendDAEUtil.varList(knvars);
+      varLst = BackendVariable.varList(knvars);
       params = List.map(varLst,printMmaParamStr);
       inputs = List.map(varLst,printMmaInputStr);
      then (params, inputs);
@@ -814,27 +814,27 @@ algorithm
       Option<DAE.VariableAttributes> val;
     case(BackendDAE.VAR(varName=name,varKind=BackendDAE.PARAM(),bindExp=SOME(exp))) 
       equation
-      expStr  = printExpMmaStr(exp,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars()); // parameters can not depend on variables. Thus, safe to send empty variables.
-      paramStr = printComponentRefMmaStr(name,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
+      expStr  = printExpMmaStr(exp,BackendVariable.emptyVars(),BackendVariable.emptyVars()); // parameters can not depend on variables. Thus, safe to send empty variables.
+      paramStr = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());
       str = stringAppendList({paramStr,"->",expStr});
       then str;
     case(BackendDAE.VAR(varName=name,varKind=BackendDAE.PARAM(),bindExp=NONE(),values=val)) 
       equation
       SOME(exp) = getStartAttribute(val);
-      expStr  = printExpMmaStr(exp,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars()); // parameters can not depend on variables. Thus, safe to send empty variables.
-      paramStr = printComponentRefMmaStr(name,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
+      expStr  = printExpMmaStr(exp,BackendVariable.emptyVars(),BackendVariable.emptyVars()); // parameters can not depend on variables. Thus, safe to send empty variables.
+      paramStr = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());
       str = stringAppendList({paramStr,"->",expStr});
       then str;
     case(BackendDAE.VAR(varName=name,varKind=BackendDAE.PARAM(),bindExp=NONE(),values=val)) 
       equation
       NONE() = getStartAttribute(val);
-      expStr  = printExpMmaStr(DAE.ICONST(0),BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars()); // parameters can not depend on variables. Thus, safe to send empty variables.
-      paramStr = printComponentRefMmaStr(name,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
+      expStr  = printExpMmaStr(DAE.ICONST(0),BackendVariable.emptyVars(),BackendVariable.emptyVars()); // parameters can not depend on variables. Thus, safe to send empty variables.
+      paramStr = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());
       str = stringAppendList({paramStr,"->",expStr});
       then str;
     case(BackendDAE.VAR(varName=name,varKind=BackendDAE.PARAM())) 
       equation
-      paramStr = printComponentRefMmaStr(name,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
+      paramStr = printComponentRefMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());
       then paramStr;            
     case(_) then "";
   end matchcontinue;

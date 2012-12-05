@@ -62,6 +62,84 @@ protected import HashTable;
 protected import List;
 protected import Util;
 
+public function listEquation "function listEquation
+  author: PA
+  Transform the a list of Equations into an expandable BackendDAE.Equation array."
+  input list<BackendDAE.Equation> inEquationList;
+  output BackendDAE.EquationArray outEquationArray;
+protected
+  Integer len, size, arrsize;
+  Real rlen, rlen_1;
+  array<Option<BackendDAE.Equation>> optarr, eqnarr, newarr;
+  list<Option<BackendDAE.Equation>> eqn_optlst;
+algorithm
+  len := listLength(inEquationList);
+  rlen := intReal(len);
+  rlen_1 := rlen *. 1.4;
+  arrsize := realInt(rlen_1);
+  optarr := arrayCreate(arrsize, NONE());
+  eqn_optlst := List.map(inEquationList, Util.makeOption);
+  eqnarr := listArray(eqn_optlst);
+  newarr := Util.arrayCopy(eqnarr, optarr);
+  size := equationLstSize(inEquationList);
+  outEquationArray := BackendDAE.EQUATION_ARRAY(size,len,arrsize,newarr);
+end listEquation;
+
+
+public function equationList "function equationList
+  author: PA
+  Transform the expandable BackendDAE.Equation array to a list of Equations."
+  input BackendDAE.EquationArray inEquationArray;
+  output list<BackendDAE.Equation> outEquationLst;
+algorithm
+  outEquationLst := matchcontinue(inEquationArray)
+    local
+      array<Option<BackendDAE.Equation>> arr;
+      BackendDAE.Equation elt;
+      Integer n,size;
+      list<BackendDAE.Equation> lst;
+    
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = 0,equOptArr = arr)) then {};
+    
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = 1,equOptArr = arr)) equation
+      SOME(elt) = arr[1];
+    then {elt};
+    
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr)) equation
+      lst = equationList2(arr, n, {});
+    then lst;
+    
+    case (_) equation
+      print("- BackendDAEUtil.equationList failed\n");
+    then fail();
+  end matchcontinue;
+end equationList;
+
+protected function equationList2 "function equationList2
+  author: PA
+  Helper function to equationList
+  inputs:  (Equation option array, int /* pos */, int /* lastpos */)
+  outputs: BackendDAE.Equation list"
+  input array<Option<BackendDAE.Equation>> arr;
+  input Integer pos;
+  input list<BackendDAE.Equation> iAcc;
+  output list<BackendDAE.Equation> outEquationLst;
+algorithm
+  outEquationLst := matchcontinue(arr, pos, iAcc)
+    local
+      BackendDAE.Equation e;
+      
+    case (_,0,_) then iAcc;    
+    
+    case (_,_,_) equation
+      SOME(e) = arr[pos];
+    then equationList2(arr,pos-1,e::iAcc);
+    
+    case (_,_,_)
+    then equationList2(arr,pos-1,iAcc);
+  end matchcontinue;
+end equationList2;
+
 public function getWhenEquationExpr
 "function: getWhenEquationExpr
   Get the left and right hand parts from an equation appearing in a when clause"
@@ -1482,7 +1560,7 @@ algorithm
         equOptArr = List.fold1r(inIntLst,arrayUpdate,NONE(),equOptArr);
         eqnlst = equationDelete1(arrSize,equOptArr,{});
       then
-        BackendDAEUtil.listEquation(eqnlst);
+        listEquation(eqnlst);
     else        
       equation
         Debug.fprintln(Flags.FAILTRACE, "- BackendDAE.equationDelete failed");

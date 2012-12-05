@@ -148,8 +148,8 @@ algorithm
       BackendDAE.Variables v,kn;
   case (dae as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = v)::{},shared=BackendDAE.SHARED(knownVars = kn)))
     equation
-      orderedVarsList = BackendDAEUtil.varList(v);
-      knownVarsList = BackendDAEUtil.varList(kn);
+      orderedVarsList = BackendVariable.varList(v);
+      knownVarsList = BackendVariable.varList(kn);
       allVarsList = listAppend(orderedVarsList, knownVarsList);
       stateVarsList = BackendVariable.getAllStateVarFromVariables(v);
   then

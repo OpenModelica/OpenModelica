@@ -235,10 +235,10 @@ algorithm
         setC_eq=List.map1r(setC,BackendDAEUtil.equationNth,allEqs);
         setS_eq=List.map1r(setS,BackendDAEUtil.equationNth,allEqs);
         
-       //eqnLst = BackendDAEUtil.equationList(eqns);
+       //eqnLst = BackendEquation.equationList(eqns);
         
-        knownVariables = BackendDAEUtil.listVar(List.map1r(knowns,BackendVariable.getVarAt,allVars));
-        unknownVariables = BackendDAEUtil.listVar(List.map1r(unknowns,BackendVariable.getVarAt,allVars));
+        knownVariables = BackendVariable.listVar(List.map1r(knowns,BackendVariable.getVarAt,allVars));
+        unknownVariables = BackendVariable.listVar(List.map1r(unknowns,BackendVariable.getVarAt,allVars));
 
         //print("* Uncertainty equations extracted: \n");
         //BackendDump.dumpEqns(setC_eq);
@@ -449,9 +449,9 @@ local
   String e1,e2,e3,s,s1;
 case(SOME(DAE.DISTRIBUTION(name,params,paramNames)))
   equation
-    e1=MathematicaDump.printExpMmaStr(name,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
-    e2=MathematicaDump.printExpMmaStr(params,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
-    e3=MathematicaDump.printExpMmaStr(paramNames,BackendDAEUtil.emptyVars(),BackendDAEUtil.emptyVars());
+    e1=MathematicaDump.printExpMmaStr(name,BackendVariable.emptyVars(),BackendVariable.emptyVars());
+    e2=MathematicaDump.printExpMmaStr(params,BackendVariable.emptyVars(),BackendVariable.emptyVars());
+    e3=MathematicaDump.printExpMmaStr(paramNames,BackendVariable.emptyVars(),BackendVariable.emptyVars());
     s1=stringDelimitList({e1,e2,e3},",");
     s=stringAppendList({"{",s1,"}"});
   then s;
@@ -477,7 +477,7 @@ algorithm
        list<Integer> ret;
     case(BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=orderedEqs)::_,_))
       equation
-        ret=getEquationsWithApproximatedAnnotation2(BackendDAEUtil.equationList(orderedEqs),1);
+        ret=getEquationsWithApproximatedAnnotation2(BackendEquation.equationList(orderedEqs),1);
       then
         ret;
     case(_)
@@ -1542,8 +1542,8 @@ algorithm
       BackendVarTransform.VariableReplacements repl;
 
     case(_,dae as BackendDAE.DAE((syst as BackendDAE.EQSYSTEM(orderedEqs=eqns,orderedVars=vars))::_,(shared as BackendDAE.SHARED(knownVars=kvars,initialEqs=ieqns)))) equation
-      ieqnLst = BackendDAEUtil.equationList(ieqns);
-      eqnLst = BackendDAEUtil.equationList(eqns);
+      ieqnLst = BackendEquation.equationList(ieqns);
+      eqnLst = BackendEquation.equationList(eqns);
       crefDouble = findArraysPartiallyIndexed(eqnLst);      
       //print("partially indexed crs:"+&Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+&"\n");
       repl = BackendVarTransform.emptyReplacements();
@@ -1552,7 +1552,7 @@ algorithm
       (eqnLst,seqns,movedvars_1,repl) = eliminateVariablesDAE2(eqnLst,1,vars,kvars,HashTable.emptyHashTable(),repl,crefDouble,m,elimVarIndexList,false);
       //Debug.fcall("dumprepl",BackendVarTransform.dumpReplacements,repl);
 
-      dae = setDaeEqns(dae,BackendDAEUtil.listEquation(eqnLst),false);
+      dae = setDaeEqns(dae,BackendEquation.listEquation(eqnLst),false);
       //dae = setDaeSimpleEqns(dae,listEquation(listAppend(equationList(reqns),seqns)));
       dae = replaceDAElow(dae,repl,NONE(),false);  
       (vars_1,kvars_1) = moveVariables(BackendVariable.daeVars(syst),BackendVariable.daeKnVars(shared),movedvars_1); 
@@ -1986,10 +1986,10 @@ algorithm
                                    removedEqs=removedEqs,constraints=constraints,classAttrs=classAttrs,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),_,_,_) 
     equation
-       orderedVars = BackendDAEUtil.listVar1(replaceVars(BackendDAEUtil.varList(orderedVars),repl,func,replaceVariables));
-       eqnslst = BackendDAEUtil.equationList(orderedEqs);
+       orderedVars = BackendVariable.listVar1(replaceVars(BackendVariable.varList(orderedVars),repl,func,replaceVariables));
+       eqnslst = BackendEquation.equationList(orderedEqs);
        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst,repl,NONE());
-       orderedEqs = Debug.bcallret1(b,BackendDAEUtil.listEquation,eqnslst,orderedEqs);
+       orderedEqs = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,orderedEqs);
        syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
@@ -2169,11 +2169,11 @@ algorithm
       HashTable.HashTable mvars;
     case (vars1,vars2,mvars)
       equation 
-        lst1 = BackendDAEUtil.varList(vars1);
-        lst2 = BackendDAEUtil.varList(vars2);
+        lst1 = BackendVariable.varList(vars1);
+        lst2 = BackendVariable.varList(vars2);
         (lst1_1,lst2_1) = moveVariables2(lst1, lst2, mvars);
-        v1 = BackendDAEUtil.emptyVars();
-        v2 = BackendDAEUtil.emptyVars();
+        v1 = BackendVariable.emptyVars();
+        v2 = BackendVariable.emptyVars();
         //vars = addVarsNoUpdCheck(lst1_1, v1);
         vars = BackendVariable.addVars(lst1_1, v1);
         //knvars = addVarsNoUpdCheck(lst2_1, v2);

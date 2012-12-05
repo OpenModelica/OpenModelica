@@ -149,9 +149,9 @@ algorithm
         ass1 = arrayCreate(size,-1);
         ass2 = arrayCreate(size,-1);
         eqn_lst = BackendEquation.getEqns(eindex,BackendEquation.daeEqns(isyst));  
-        eqns = BackendDAEUtil.listEquation(eqn_lst);      
+        eqns = BackendEquation.listEquation(eqn_lst);      
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
-        vars = BackendDAEUtil.listVar1(var_lst);
+        vars = BackendVariable.listVar1(var_lst);
 
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE());
@@ -314,7 +314,7 @@ algorithm
         //  _ = List.fold1(arrayList(vec2),transposeOrphanVec,vec3,1);
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,SOME(vec3),"System.graphml");
 
-        ((_,_,_,eqns,vars)) = Util.arrayFold(vec2,getEqnsinOrder,(eqns,vars,ass22,BackendDAEUtil.listEquation({}),BackendDAEUtil.emptyVars()));
+        ((_,_,_,eqns,vars)) = Util.arrayFold(vec2,getEqnsinOrder,(eqns,vars,ass22,BackendEquation.listEquation({}),BackendVariable.emptyVars()));
         
         // replace evaluated parametes
         //_ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, replaceFinalParameter, BackendVariable.daeKnVars(shared));
@@ -335,15 +335,15 @@ algorithm
         //  print("Jacobian as Matrix:\n");
         //  dumpMatrix(1,size,matrix);
         ht = HashTable4.emptyHashTable();
-        (tvars,teqns) = gaussElimination(1,size,matrix,BackendDAEUtil.emptyVars(),BackendDAEUtil.listEquation({}),(1,1));
+        (tvars,teqns) = gaussElimination(1,size,matrix,BackendVariable.emptyVars(),BackendEquation.listEquation({}),(1,1));
         //  dumpMatrix(1,size,matrix);
         //  subsyst = BackendDAE.EQSYSTEM(tvars,teqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         //  BackendDump.dumpEqSystem(subsyst);
-        eqn_lst = BackendDAEUtil.equationList(teqns);  
-        var_lst = BackendDAEUtil.varList(tvars);      
+        eqn_lst = BackendEquation.equationList(teqns);  
+        var_lst = BackendVariable.varList(tvars);      
         syst = List.fold(eqn_lst,BackendEquation.equationAddDAE,isyst);
         syst = List.fold(var_lst,BackendVariable.addVarDAE,syst);
-        crefexplst = List.map(BackendDAEUtil.varList(vars),makeCrefExps);
+        crefexplst = List.map(BackendVariable.varList(vars),makeCrefExps);
         crefexps = listArray(crefexplst);
         neweqns = makeGausElimination(1,size,matrix,crefexps,{});
         syst = replaceEquationsAddNew(eindex,neweqns,syst);

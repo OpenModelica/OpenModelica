@@ -86,8 +86,8 @@ algorithm
         TaskGraphExt.setExecCost(starttask, 1.0);
         TaskGraphExt.setExecCost(starttask, 1.0);
         TaskGraphExt.registerStartStop(starttask, endtask);
-        vars = BackendDAEUtil.varList(vararr);
-        knvars = BackendDAEUtil.varList(knvararr);
+        vars = BackendVariable.varList(vararr);
+        knvars = BackendVariable.varList(knvararr);
         List.map1_0(vars,addVariable, starttask);
         List.map1_0(knvars,addVariable, starttask);
         cref_ = ComponentReference.makeCrefIdent("sim_time",DAE.T_REAL_DEFAULT,{});
@@ -121,8 +121,8 @@ algorithm
       BackendDAE.Variables vararr,kvararr;
     case (BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = vararr)::{},shared=BackendDAE.SHARED(knownVars = kvararr)))
       equation
-        vars = BackendDAEUtil.varList(vararr);
-        kvars = BackendDAEUtil.varList(kvararr);
+        vars = BackendVariable.varList(vararr);
+        kvars = BackendVariable.varList(kvararr);
         buildInits2(vars,1);
         buildInits2(kvars,1);
       then

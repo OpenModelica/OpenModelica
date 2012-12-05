@@ -1480,7 +1480,7 @@ algorithm
         comps = BackendDAETransform.tarjanAlgorithm(m,mt,ass1,ass2);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpComponentsOLD,comps);
         
-        varlst = List.filter(BackendDAEUtil.varList(v), stateVar);
+        varlst = List.filter(BackendVariable.varList(v), stateVar);
         varlst = List.filter(varlst, notVarStateSelectAlways);
         freestatevars = listLength(varlst);
         orgeqnscount = countOrgEqns(orgEqnsLst,0);
@@ -1724,7 +1724,7 @@ protected function lowerOrderDerivatives
   input BackendDAE.StateOrder so;
   output BackendDAE.Variables outVars;
 algorithm
-  ((_,_,outVars)) := BackendVariable.traverseBackendDAEVars(derv,traversinglowerOrderDerivativesFinder,(so,v,BackendDAEUtil.emptyVars()));        
+  ((_,_,outVars)) := BackendVariable.traverseBackendDAEVars(derv,traversinglowerOrderDerivativesFinder,(so,v,BackendVariable.emptyVars()));        
 end lowerOrderDerivatives;
 
 protected function traversinglowerOrderDerivativesFinder
@@ -1776,7 +1776,7 @@ protected function higerOrderDerivatives
   output BackendDAE.Variables outVars;
   output list<DAE.ComponentRef> outDummyStates;
 algorithm
-  ((_,_,outVars,outDummyStates)) := BackendVariable.traverseBackendDAEVars(v,traversinghigerOrderDerivativesFinder,(so,vAll,BackendDAEUtil.emptyVars(),inDummyStates));        
+  ((_,_,outVars,outDummyStates)) := BackendVariable.traverseBackendDAEVars(v,traversinghigerOrderDerivativesFinder,(so,vAll,BackendVariable.emptyVars(),inDummyStates));        
 end higerOrderDerivatives;
 
 protected function traversinghigerOrderDerivativesFinder
@@ -1853,7 +1853,7 @@ algorithm
       equation
         // get highest order derivatives
         varlst = highestOrderDerivatives(BackendVariable.daeVars(isyst),so);
-        hov = BackendDAEUtil.listVar1(varlst);
+        hov = BackendVariable.listVar1(varlst);
         Debug.fcall(Flags.BLT_DUMP, print, "highest Order Derivatives:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, hov);        
         (dummystates,syst,shared) = processComps1(inComps,isyst,ishared,vec2,inArg,hov,inDummyStates);
@@ -1905,8 +1905,8 @@ algorithm
         freeStates = listLength(varlst);
         (dummvars,dummyStates,syst,shared) = processComps2New(freeStates,varlst,neqns,eqnslst,ilst,inComps,isyst,ishared,vec2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),hov,inDummyStates);
         // get derivatives one order less
-        lov1 = lowerOrderDerivatives(BackendDAEUtil.listVar1(dummvars),BackendVariable.daeVars(isyst),so);
-        lov = BackendDAEUtil.varList(lov1);
+        lov1 = lowerOrderDerivatives(BackendVariable.listVar1(dummvars),BackendVariable.daeVars(isyst),so);
+        lov = BackendVariable.varList(lov1);
         // next level
         (dummyStates,syst,shared) = processComps1New(inComps,syst,shared,vec2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),lov,dummyStates);
       then
@@ -1966,11 +1966,11 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "try to select dummy vars with natural matching\n");
         
         // sort vars with heuristic
-        vars = BackendDAEUtil.listVar1(varlst);
+        vars = BackendVariable.listVar1(varlst);
         vars = sortStateCandidatesVars(vars,BackendVariable.daeVars(isyst),so);
         (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKind,BackendDAE.VARIABLE());
         
-        eqns = BackendDAEUtil.listEquation(eqnslst);
+        eqns = BackendEquation.listEquation(eqnslst);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         
         (me,meT,mapEqnIncRow1,mapIncRowEqn1) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,ishared);
@@ -2160,7 +2160,7 @@ algorithm
     case (comp::rest,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_)
       equation
         // get vars
-        cv = List.fold2(comp,getCompVars,vec2,(BackendVariable.daeVars(isyst),hov,so),BackendDAEUtil.emptyVars());
+        cv = List.fold2(comp,getCompVars,vec2,(BackendVariable.daeVars(isyst),hov,so),BackendVariable.emptyVars());
         // get equations 
         comp = List.uniqueIntN(List.map1r(comp,arrayGet,mapIncRowEqn),arrayLength(mapEqnIncRow));
         comp = List.sort(comp,intGt);
@@ -2342,8 +2342,8 @@ algorithm
         (orgeqns,eqnslst,eqnindxlst) = getOrgEqn(orgEqnsLst,{},{},{});
         // inline array eqns
         (eqnslst,_) = BackendDAEOptimize.getScalarArrayEqns(eqnslst,{},false);
-        eqns = BackendDAEUtil.listEquation(eqnslst);
-        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov,inDummyStates,isyst,ishared,so,BackendDAEUtil.emptyVars());
+        eqns = BackendEquation.listEquation(eqnslst);
+        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(cvars,BackendVariable.numVariables(cvars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov,inDummyStates,isyst,ishared,so,BackendVariable.emptyVars());
         // get derivatives one order less
         lov = lowerOrderDerivatives(lov,BackendVariable.daeVars(isyst),so);
         // call again with original equations of derived equations 
@@ -2389,7 +2389,7 @@ algorithm
       list<Integer> eqnindxlst;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;      
-    case ({},_,_,_,_,_,_,_) then (hov1,inDummyStates,BackendDAEUtil.emptyVars(),isyst,ishared);
+    case ({},_,_,_,_,_,_,_) then (hov1,inDummyStates,BackendVariable.emptyVars(),isyst,ishared);
     case (_,_,_,_,_,_,_,_)
       equation
         (orgeqns,eqnslst,eqnindxlst) = getOrgEqn(orgEqnsLst,{},{},{});
@@ -2403,8 +2403,8 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print,"Vars:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray,vars);
         // select dummy derivatives
-        eqns = BackendDAEUtil.listEquation(eqnslst);
-        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(vars,BackendVariable.numVariables(vars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov_1,dummyStates,syst,shared,so,BackendDAEUtil.emptyVars());
+        eqns = BackendEquation.listEquation(eqnslst);
+        (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(vars,BackendVariable.numVariables(vars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov_1,dummyStates,syst,shared,so,BackendVariable.emptyVars());
         // get derivatives 
         (lov,dummyStates) = higerOrderDerivatives(lov,BackendVariable.daeVars(isyst),so,dummyStates);
         Debug.fcall(Flags.BLT_DUMP, print,"HigerOrderVars:\n");
@@ -2513,7 +2513,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "equal var and eqn size\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
-        varlst = BackendDAEUtil.varList(vars);
+        varlst = BackendVariable.varList(vars);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
         (hov1,lov,dummystates) = selectDummyStateVars(varlst,vars,hov,inLov,inDummyStates);
@@ -2524,7 +2524,7 @@ algorithm
         // try to select dummy vars
         true = intGt(varSize,1);
         false = intGt(eqnsSize,varSize);
-        varlst = BackendDAEUtil.varList(vars);
+        varlst = BackendVariable.varList(vars);
         varlst = List.filter(varlst, notVarStateSelectAlways);
         dummyvarssize = listLength(varlst);
         true = intEq(eqnsSize,dummyvarssize);
@@ -2565,7 +2565,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "try to select dummy vars heuristic based\n");
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.NORMAL());
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst);
-        varlst = BackendDAEUtil.varList(vars);
+        varlst = BackendVariable.varList(vars);
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,varSize));
         states = BackendDAETransform.sortStateCandidates(states,syst,so);
@@ -2614,7 +2614,7 @@ algorithm
         prioTuples = List.sort(prioTuples,sortprioTuples);
         varIndices = List.map(prioTuples,Util.tuple32);
         vlst = List.map1r(varIndices,BackendVariable.getVarAt,inVars);
-        vars = BackendDAEUtil.listVar1(vlst);
+        vars = BackendVariable.listVar1(vlst);
       then vars;
 
     else
@@ -3061,8 +3061,8 @@ algorithm
          
         // generatate jacobian
         ilst = List.map(states,Util.tuple22);
-        v = BackendDAEUtil.listVar1(List.map1r(ilst,BackendVariable.getVarAt,vars));
-        eqns1 = BackendDAEUtil.listEquation(eqnslst);
+        v = BackendVariable.listVar1(List.map1r(ilst,BackendVariable.getVarAt,vars));
+        eqns1 = BackendEquation.listEquation(eqnslst);
         syst = BackendDAE.EQSYSTEM(v,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING());
           BackendDump.dumpEqSystem(syst);
         (m,_) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
