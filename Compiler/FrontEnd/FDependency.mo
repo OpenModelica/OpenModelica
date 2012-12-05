@@ -43,8 +43,6 @@ public import Absyn;
 public import SCode;
 public import Env;
 
-public type Env = Env.Env;
-
 protected import Debug;
 protected import Error;
 protected import Flags;
@@ -77,10 +75,10 @@ public function analyse
   used or not. Finally it collects the used elements and builds a new program
   and environment that only contains those elements."
   input Absyn.Path inClassName;
-  input Env inEnv;
+  input Env.Env inEnv;
   input SCode.Program inProgram;
   output SCode.Program outProgram;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   analyseClass(inClassName, inEnv, Absyn.dummyInfo);
   analyseClassExtends(inEnv);
@@ -92,13 +90,13 @@ protected function analyseClass
   "Analyses a class by looking up the class, marking it as used and recursively
   analysing it's contents."
   input Absyn.Path inClassName;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := matchcontinue(inClassName, inEnv, inInfo)
     local
       Item item;
-      Env env;
+      Env.Env env;
 
     case (_, _, _)
       equation
@@ -126,16 +124,16 @@ protected function lookupClass
   directly is because we need to look up each part of the class path and mark
   them as used."
   input Absyn.Path inPath;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
   input Option<Error.Message> inErrorType;
   output Item outItem;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   (outItem, outEnv) := matchcontinue(inPath, inEnv, inInfo, inErrorType)
     local
       Item item;
-      Env env;
+      Env.Env env;
       String name_str, env_str;
       Error.Message error_id;
 
@@ -159,16 +157,16 @@ end lookupClass;
 protected function lookupClass2
   "Help function to lookupClass, does the actual look up."
   input Absyn.Path inPath;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
   input Option<Error.Message> inErrorType;
   output Item outItem;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   (outItem, outEnv) := match(inPath, inEnv, inInfo, inErrorType)
     local
       Item item;
-      Env env;
+      Env.Env env;
       String id;
       Absyn.Path rest_path;
 
@@ -210,17 +208,17 @@ end lookupClass2;
 protected function lookupNameInItem
   input Absyn.Path inName;
   input Item inItem;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Option<Error.Message> inErrorType;
   output Item outItem;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   (outItem, outEnv) := match(inName, inItem, inEnv, inErrorType)
     local
       Absyn.Path type_path;
       SCode.Mod mods;
       Absyn.Info info;
-      Env env, type_env;
+      Env.Env env, type_env;
       Env.Frame class_env;
       list<Env.Redeclaration> redeclares;
       Item item;
@@ -273,13 +271,13 @@ end checkItemIsClass;
 protected function analyseItem
   "Analyses an item."
   input Item inItem;
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := matchcontinue(inItem, inEnv)
     local
       SCode.ClassDef cdef;
       Env.Frame cls_env;
-      Env env;
+      Env.Env env;
       Absyn.Info info;
       SCode.Restriction res;
       SCode.Element cls;
@@ -332,7 +330,7 @@ end analyseItem;
 protected function markItemAsUsed
   "Marks an item and it's environment as used."
   input Item inItem;
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := match(inItem, inEnv)
     local
@@ -380,12 +378,12 @@ protected function markEnvAsUsed
   "Marks an environment as used. This is done by marking each frame as used, and
   for each frame we also analyse the class it represents to make sure we don't
   miss anything in the enclosing scopes of an item."
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := matchcontinue(inEnv)
     local
       Util.StatefulBoolean is_used;
-      Env rest_env;
+      Env.Env rest_env;
       Env.Frame f;
 
     case ((f as Env.FRAME(isUsed = SOME(is_used))) :: rest_env)
@@ -405,7 +403,7 @@ protected function markEnvAsUsed2
   "Helper function to markEnvAsUsed. Checks if the given frame belongs to a
   class, and if that's the case calls analyseClass on that class."
   input Env.Frame inFrame;
-  input FEnv.Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := match(inFrame, inEnv)
     local
@@ -425,7 +423,7 @@ protected function analyseClassDef
   "Analyses the contents of a class definition."
   input SCode.ClassDef inClassDef;
   input SCode.Restriction inRestriction;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Boolean inInModifierScope;
   input Absyn.Info inInfo;
 algorithm
@@ -440,7 +438,7 @@ algorithm
       Option<SCode.Comment> cmt;
       list<SCode.Annotation> annl;
       Option<SCode.ExternalDecl> ext_decl;
-      Env ty_env, env;
+      Env.Env ty_env, env;
       Item ty_item;
       SCode.Attributes attr;
       list<Absyn.Path> paths;
@@ -510,7 +508,7 @@ end analyseClassDef;
 protected function isExternalObject
   "Checks if a class definition is an external object."
   input list<SCode.Element> inElements;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 protected
   list<SCode.Element> el;
@@ -540,7 +538,7 @@ protected function checkExternalObject
   "Checks that an external object is valid, i.e. has exactly one constructor and
   one destructor."
   input list<String> inElements;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inElements, inEnv, inInfo)
@@ -625,7 +623,7 @@ end checkExternalObject2;
 protected function analyseMetaType
   "If a metarecord is analysed we need to also analyse it's parent uniontype."
   input SCode.Restriction inRestriction;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inRestriction, inEnv, inInfo)
@@ -646,7 +644,7 @@ protected function analyseRedeclaredClass
   "If a class is a redeclaration of an inherited class we need to also analyse
   the inherited class."
   input SCode.Element inClass;
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := matchcontinue(inClass, inEnv)
     local
@@ -670,13 +668,13 @@ end analyseRedeclaredClass;
         
 protected function analyseRedeclaredClass2
   input Item inItem;
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := matchcontinue(inItem, inEnv)
     local
       String name;
       Item item;
-      Env env;
+      Env.Env env;
       SCode.Element cls;
       Absyn.Info info;
 
@@ -701,7 +699,7 @@ end analyseRedeclaredClass2;
         
 protected function analyseElements
   input list<SCode.Element> inElements;
-  input Env inEnv;
+  input Env.Env inEnv;
   input SCode.Restriction inClassRestriction;
 protected
   list<Extends> exts;
@@ -712,7 +710,7 @@ end analyseElements;
 
 protected function analyseElements2
   input list<SCode.Element> inElements;
-  input Env inEnv;
+  input Env.Env inEnv;
   input list<Extends> inExtends;
   input SCode.Restriction inClassRestriction;
 algorithm
@@ -737,7 +735,7 @@ end analyseElements2;
 protected function analyseElement
   "Analyses an element."
   input SCode.Element inElement;
-  input Env inEnv;
+  input Env.Env inEnv;
   input list<Extends> inExtends;
   input SCode.Restriction inClassRestriction;
   output list<Extends> outExtends;
@@ -751,7 +749,7 @@ algorithm
       SCode.Attributes attr;
       Option<Absyn.Exp> cond_exp;
       Item ty_item;
-      Env ty_env, env;
+      Env.Env ty_env, env;
       SCode.Ident name;
       SCode.Prefixes prefixes;
       SCode.Restriction res;
@@ -868,7 +866,7 @@ end analyseElement;
 protected function markAsUsedOnRestriction
   input SCode.Ident inName;
   input SCode.Restriction inRestriction;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := matchcontinue(inName, inRestriction, inEnv, inInfo)
@@ -903,11 +901,11 @@ end markAsUsedOnRestriction2;
 protected function analyseExtends
   "Analyses an extends-clause."
   input Absyn.Path inClassName;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 protected
   Item item;
-  Env env;
+  Env.Env env;
 algorithm
   (item, env) := lookupClass(inClassName, inEnv, inInfo, NONE());
   analyseItem(item, env);
@@ -916,7 +914,7 @@ end analyseExtends;
 protected function analyseAttributes
   "Analyses a components attributes (actually only the array dimensions)."
   input SCode.Attributes inAttributes;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 protected
   Absyn.ArrayDim ad;
@@ -928,8 +926,8 @@ end analyseAttributes;
 protected function analyseModifier
   "Analyses a modifier."
   input SCode.Mod inModifier;
-  input Env inEnv;
-  input Env inTypeEnv;
+  input Env.Env inEnv;
+  input Env.Env inTypeEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inModifier, inEnv, inTypeEnv, inInfo)
@@ -961,8 +959,8 @@ end analyseModifier;
 protected function analyseRedeclareModifier
   "Analyses a redeclaration modifier element."
   input SCode.Element inElement;
-  input Env inEnv;
-  input Env inTypeEnv;
+  input Env.Env inEnv;
+  input Env.Env inTypeEnv;
 algorithm
   _ := match(inElement, inEnv, inTypeEnv)
     local
@@ -993,14 +991,14 @@ end analyseRedeclareModifier;
 protected function analyseConstrainClass
   "Analyses a constrain class, i.e. given by constrainedby."
   input Option<SCode.ConstrainClass> inCC;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inCC, inEnv, inInfo)
     local
       Absyn.Path path;
       SCode.Mod mod;
-      Env env;
+      Env.Env env;
 
     case (SOME(SCode.CONSTRAINCLASS(constrainingClass = path, modifier = mod)), _, _)
       equation
@@ -1017,7 +1015,7 @@ end analyseConstrainClass;
 protected function analyseSubMod
   "Analyses a submodifier."
   input SCode.SubMod inSubMod;
-  input tuple<Env, Env> inEnv;
+  input tuple<Env.Env, Env.Env> inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inSubMod, inEnv, inInfo)
@@ -1025,7 +1023,7 @@ algorithm
       SCode.Ident ident;
       SCode.Mod m;
       list<SCode.Subscript> subs;
-      Env env,  ty_env;
+      Env.Env env, ty_env;
 
     case (SCode.NAMEMOD(ident = ident, A = m), (env, ty_env), _)
       equation
@@ -1043,13 +1041,13 @@ end analyseSubMod;
 
 protected function analyseNameMod
   input SCode.Ident inIdent;
-  input Env inEnv;
-  input Env inTypeEnv;
+  input Env.Env inEnv;
+  input Env.Env inTypeEnv;
   input SCode.Mod inMod;
   input Absyn.Info inInfo;
 protected
   Option<Item> item;
-  Option<Env> env;
+  Option<Env.Env> env;
 algorithm
   (item, env) := lookupNameMod(Absyn.IDENT(inIdent), inTypeEnv, inInfo);
   analyseNameMod2(inIdent, item, env, inEnv, inTypeEnv, inMod, inInfo);
@@ -1058,16 +1056,16 @@ end analyseNameMod;
 protected function analyseNameMod2
   input SCode.Ident inIdent;
   input Option<Item> inItem;
-  input Option<Env> inItemEnv;
-  input Env inEnv;
-  input Env inTypeEnv;
+  input Option<Env.Env> inItemEnv;
+  input Env.Env inEnv;
+  input Env.Env inTypeEnv;
   input SCode.Mod inModifier;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inIdent, inItem, inItemEnv, inEnv, inTypeEnv, inModifier, inInfo)
     local
       Item item;
-      Env env;
+      Env.Env env;
 
     case (_, SOME(item), SOME(env), _, _, _, _)
       equation
@@ -1088,15 +1086,15 @@ end analyseNameMod2;
 
 protected function lookupNameMod
   input Absyn.Path inPath;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
   output Option<Item> outItem;
-  output Option<Env> outEnv;
+  output Option<Env.Env> outEnv;
 algorithm
   (outItem, outEnv) := matchcontinue(inPath, inEnv, inInfo)
     local
       Item item;
-      Env env;
+      Env.Env env;
 
     case (_, _, _)
       equation
@@ -1112,7 +1110,7 @@ end lookupNameMod;
 protected function analyseSubscript
   "Analyses a subscript."
   input SCode.Subscript inSubscript;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inSubscript, inEnv, inInfo)
@@ -1132,7 +1130,7 @@ end analyseSubscript;
 protected function analyseModBinding
   "Analyses an optional modifier binding."
   input Option<tuple<Absyn.Exp, Boolean>> inBinding;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inBinding, inEnv, inInfo)
@@ -1152,7 +1150,7 @@ end analyseModBinding;
 protected function analyseTypeSpec
   "Analyses a type specificer."
   input Absyn.TypeSpec inTypeSpec;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inTypeSpec, inEnv, inInfo)
@@ -1184,7 +1182,7 @@ end analyseTypeSpec;
 protected function analyseExternalDecl
   "Analyses an external declaration."
   input Option<SCode.ExternalDecl> inExtDecl;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inExtDecl, inEnv, inInfo)
@@ -1207,7 +1205,7 @@ end analyseExternalDecl;
 protected function analyseComment
   "Analyses an optional comment."
   input Option<SCode.Comment> inComment;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inComment, inEnv, inInfo)
@@ -1228,7 +1226,7 @@ end analyseComment;
 protected function analyseAnnotation
   "Analyses an annotation."
   input SCode.Annotation inAnnotation;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inAnnotation, inEnv, inInfo)
@@ -1249,7 +1247,7 @@ end analyseAnnotation;
 protected function analyseAnnotationMod
   "Analyses an annotation modifier."
   input SCode.SubMod inMod;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := matchcontinue(inMod, inEnv, inInfo)
@@ -1282,11 +1280,11 @@ end analyseAnnotationMod;
 protected function analyseAnnotationName
   "Analyses an annotation name, such as Icon or Line."
   input SCode.Ident inName;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 protected
   Item item;
-  Env env;
+  Env.Env env;
 algorithm
   (item, _, env, _) := 
     FLookup.lookupNameSilent(Absyn.IDENT(inName), inEnv, inInfo);
@@ -1297,7 +1295,7 @@ end analyseAnnotationName;
 protected function analyseExp
   "Recursively analyses an expression."
   input Absyn.Exp inExp;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   (_, _) := Absyn.traverseExpBidir(inExp, (analyseExpTraverserEnter,
@@ -1307,7 +1305,7 @@ end analyseExp;
 protected function analyseOptExp
   "Recursively analyses an optional expression."
   input Option<Absyn.Exp> inExp;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := match(inExp, inEnv, inInfo)
@@ -1326,11 +1324,11 @@ end analyseOptExp;
 
 protected function analyseExpTraverserEnter
   "Traversal enter function for use in analyseExp."
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
+  input tuple<Absyn.Exp, tuple<Env.Env, Absyn.Info>> inTuple;
+  output tuple<Absyn.Exp, tuple<Env.Env, Absyn.Info>> outTuple;
 protected
   Absyn.Exp exp;
-  Env env;
+  Env.Env env;
   Absyn.Info info;
 algorithm
   (exp, (env, info)) := inTuple;
@@ -1341,16 +1339,16 @@ end analyseExpTraverserEnter;
 protected function analyseExp2
   "Helper function to analyseExp, does the actual work."
   input Absyn.Exp inExp;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   outEnv := match(inExp, inEnv, inInfo)
     local
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs args;
       Absyn.ForIterators iters;
-      Env env;
+      Env.Env env;
 
     case (Absyn.CREF(componentRef = cref), _, _)
       equation
@@ -1389,14 +1387,14 @@ end analyseExp2;
 protected function analyseCref
   "Analyses a component reference."
   input Absyn.ComponentRef inCref;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Absyn.Info inInfo;
 algorithm
   _ := matchcontinue(inCref, inEnv, inInfo)
     local
       Absyn.Path path;
       Item item;
-      Env env;
+      Env.Env env;
 
     case (Absyn.WILD(), _, _) then ();
       
@@ -1417,13 +1415,13 @@ end analyseCref;
 
 protected function analyseExpTraverserExit
   "Traversal exit function for use in analyseExp."
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
+  input tuple<Absyn.Exp, tuple<Env.Env, Absyn.Info>> inTuple;
+  output tuple<Absyn.Exp, tuple<Env.Env, Absyn.Info>> outTuple;
 algorithm
   outTuple := match(inTuple)
     local
       Absyn.Exp e;
-      Env env;
+      Env.Env env;
       Absyn.Info info;
 
     // Remove any scopes added by the enter function.
@@ -1445,7 +1443,7 @@ end analyseExpTraverserExit;
 protected function analyseEquation
   "Analyses an equation."
   input SCode.Equation inEquation;
-  input Env inEnv;
+  input Env.Env inEnv;
 protected
   SCode.EEquation equ;
 algorithm
@@ -1455,14 +1453,14 @@ end analyseEquation;
 
 protected function analyseEEquationTraverser
   "Traversal function for use in analyseEquation."
-  input tuple<SCode.EEquation, Env> inTuple;
-  output tuple<SCode.EEquation, Env> outTuple;
+  input tuple<SCode.EEquation, Env.Env> inTuple;
+  output tuple<SCode.EEquation, Env.Env> outTuple;
 algorithm
   outTuple := match(inTuple)
     local
       SCode.EEquation equ;
       SCode.Ident iter_name;
-      Env env;
+      Env.Env env;
       Absyn.Info info;
       Absyn.ComponentRef cref1;
 
@@ -1493,11 +1491,11 @@ end analyseEEquationTraverser;
 protected function traverseExp
   "Traversal function used by analyseEEquationTraverser and
   analyseStatementTraverser."
-  input tuple<Absyn.Exp, tuple<Env, Absyn.Info>> inTuple;
-  output tuple<Absyn.Exp, tuple<Env, Absyn.Info>> outTuple;
+  input tuple<Absyn.Exp, tuple<Env.Env, Absyn.Info>> inTuple;
+  output tuple<Absyn.Exp, tuple<Env.Env, Absyn.Info>> outTuple;
 protected
   Absyn.Exp exp;
-  Env env;
+  Env.Env env;
   Absyn.Info info;
 algorithm
   (exp, (env, info)) := inTuple;
@@ -1509,7 +1507,7 @@ end traverseExp;
 protected function analyseAlgorithm
   "Analyses an algorithm."
   input SCode.AlgorithmSection inAlgorithm;
-  input Env inEnv;
+  input Env.Env inEnv;
 protected
   list<SCode.Statement> stmts;
 algorithm
@@ -1520,7 +1518,7 @@ end analyseAlgorithm;
 protected function analyseStatement
   "Analyses a statement in an algorithm."
   input SCode.Statement inStatement;
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   (_, _) := SCode.traverseStatements(inStatement, 
     (analyseStatementTraverser, inEnv));
@@ -1528,12 +1526,12 @@ end analyseStatement;
 
 protected function analyseStatementTraverser
   "Traversal function used by analyseStatement."
-  input tuple<SCode.Statement, Env> inTuple;
-  output tuple<SCode.Statement, Env> outTuple;
+  input tuple<SCode.Statement, Env.Env> inTuple;
+  output tuple<SCode.Statement, Env.Env> outTuple;
 algorithm
   outTuple := match(inTuple)
     local
-      Env env;
+      Env.Env env;
       SCode.Statement stmt;
       Absyn.Info info;
       list<SCode.Statement> parforBody;
@@ -1579,7 +1577,7 @@ protected function analyseClassExtends
   base class. So we might get some extra dependencies that are actually not
   used, but it's still better then marking all class extends in the program as
   used."
-  input Env inEnv;
+  input Env.Env inEnv;
 protected
   AvlTree tree;
 algorithm
@@ -1591,7 +1589,7 @@ protected function analyseAvlTree
   "Helper function to analyseClassExtends. Goes through the nodes in an
   AvlTree."
   input Option<AvlTree> inTree;
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := match(inTree, inEnv)
     local
@@ -1614,13 +1612,13 @@ end analyseAvlTree;
 protected function analyseAvlValue
   "Helper function to analyseClassExtends. Analyses a value in the AvlTree."
   input AvlTreeValue inValue;
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := matchcontinue(inValue, inEnv)
     local
       String key_str;
       Env.Frame cls_env;
-      Env env;
+      Env.Env env;
       SCode.Element cls;
       Env.ClassType cls_ty;
       Util.StatefulBoolean is_used;
@@ -1651,7 +1649,7 @@ protected function analyseClassExtendsDef
   "Analyses a class extends definition."
   input SCode.Element inClass;
   input Env.ClassType inClassType;
-  input Env inEnv;
+  input Env.Env inEnv;
 algorithm
   _ := matchcontinue(inClass, inClassType, inEnv)
     local
@@ -1659,7 +1657,7 @@ algorithm
       Absyn.Info info;
       Absyn.Path bc;
       String cls_name;
-      Env env;
+      Env.Env env;
 
     case (SCode.CLASS(name = cls_name, classDef = 
           SCode.PARTS(elementLst = SCode.EXTENDS(baseClassPath = bc) :: _), 
@@ -1695,13 +1693,13 @@ protected function collectUsedProgram
   "Entry point for the second phase in the dependency analysis. Goes through the
    environment and collects the used elements in a new program and environment.
    Also returns a list of all global constants."
-  input Env inEnv;
+  input Env.Env inEnv;
   input SCode.Program inProgram;
   input Absyn.Path inClassName;
-  output Env outEnv;
+  output Env.Env outEnv;
   output SCode.Program outProgram;
 protected
-  Env env;
+  Env.Env env;
   AvlTree cls_and_vars;
 algorithm
   (_, env) := Builtin.initialEnv(Env.emptyCache());
@@ -1717,12 +1715,12 @@ protected function collectUsedProgram2
   traverse the environment and collect the used classes, which would have been a
   bit faster but would not have preserved the order of the program."
   input AvlTree clsAndVars;
-  input Env inEnv;
+  input Env.Env inEnv;
   input SCode.Program inProgram;
   input Absyn.Path inClassName;
-  input Env inAccumEnv;
+  input Env.Env inAccumEnv;
   output SCode.Program outProgram;
-  output Env outAccumEnv;
+  output Env.Env outAccumEnv;
 algorithm
   (outProgram, outAccumEnv) := 
   matchcontinue(clsAndVars, inEnv, inProgram, inClassName, inAccumEnv)
@@ -1731,7 +1729,7 @@ algorithm
       SCode.Element cls;
       SCode.Program rest_prog;
       String name;
-      Env env;
+      Env.Env env;
 
     // We're done!
     case (_, _, {}, _, _) then (inProgram, inAccumEnv);
@@ -1764,13 +1762,13 @@ protected function collectUsedClass
   "Checks if the given class is used in the program, and if that's the case it
   adds the class to the accumulated environment. Otherwise it just fails."
   input SCode.Element inClass;
-  input Env inEnv;
+  input Env.Env inEnv;
   input AvlTree inClsAndVars;
   input Absyn.Path inClassName;
-  input Env inAccumEnv;
+  input Env.Env inAccumEnv;
   input Absyn.Path inAccumPath;
   output SCode.Element outClass;
-  output Env outAccumEnv;
+  output Env.Env outAccumEnv;
 algorithm
   (outClass, outAccumEnv) := 
   match(inClass, inEnv, inClsAndVars, inClassName, inAccumEnv, inAccumPath)
@@ -1784,7 +1782,7 @@ algorithm
       Absyn.Info info;
       Item item, resolved_item;
       Env.Frame class_frame;
-      Env class_env, env, enclosing_env;
+      Env.Env class_env, env, enclosing_env;
       Option<SCode.ConstrainClass> cc;
       SCode.Element cls;
   
@@ -1873,7 +1871,7 @@ protected function updateItemEnv
   item's type."
   input Item inItem;
   input SCode.Element inClass;
-  input Env inEnv;
+  input Env.Env inEnv;
   output Item outItem;
 algorithm
   outItem := match(inItem, inClass, inEnv)
@@ -1889,12 +1887,12 @@ end updateItemEnv;
 protected function collectUsedClassDef
   "Collects the contents of a class definition."
   input SCode.ClassDef inClassDef;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Env.Frame inClassEnv;
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
   output SCode.ClassDef outClass;
-  output Env outEnv;
+  output Env.Env outEnv;
 algorithm
   (outClass, outEnv) := 
   match(inClassDef, inEnv, inClassEnv, inClassName, inAccumPath)
@@ -1908,7 +1906,7 @@ algorithm
       Option<SCode.Comment> cmt;
       SCode.Ident bc;
       SCode.Mod mods;
-      Env env;
+      Env.Env env;
       list<Absyn.NamedArg> clats;
 
     case (SCode.PARTS(el, neq, ieq, nal, ial, nco, clats, ext_decl, annl, cmt), _, _, _, _)
@@ -1937,12 +1935,12 @@ end collectUsedClassDef;
 protected function collectUsedElements
   "Collects a class definition's elements."
   input list<SCode.Element> inElements;
-  input Env inEnv;
+  input Env.Env inEnv;
   input Env.Frame inClassEnv;
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
   output list<SCode.Element> outUsedElements;
-  output Env outNewEnv;
+  output Env.Env outNewEnv;
 protected
   Env.Frame empty_class_env;
   AvlTree cls_and_vars;
@@ -1964,15 +1962,15 @@ protected function collectUsedElements2
   "Helper function to collectUsedElements2. Goes through the given list of
   elements and tries to collect them."
   input list<SCode.Element> inElements;
-  input Env inEnclosingEnv;
+  input Env.Env inEnclosingEnv;
   input AvlTree inClsAndVars;
   input list<SCode.Element> inAccumElements;
-  input Env inAccumEnv;
+  input Env.Env inAccumEnv;
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
   input Boolean inCollectConstants;
   output list<SCode.Element> outAccumElements;
-  output Env outAccumEnv;
+  output Env.Env outAccumEnv;
 algorithm
   (outAccumElements, outAccumEnv) := 
   matchcontinue(inElements, inEnclosingEnv, inClsAndVars, inAccumElements,
@@ -1980,7 +1978,7 @@ algorithm
     local
       SCode.Element el;
       list<SCode.Element> rest_el, accum_el;
-      Env accum_env;
+      Env.Env accum_env;
 
     // Tail recursive function, reverse the result list.
     case ({}, _, _, _, _, _, _, _) 
@@ -2010,14 +2008,14 @@ end collectUsedElements2;
 protected function collectUsedElement
   "Collects a class element."
   input SCode.Element inElement;
-  input Env inEnclosingEnv;
+  input Env.Env inEnclosingEnv;
   input AvlTree inClsAndVars;
-  input Env inAccumEnv;
+  input Env.Env inAccumEnv;
   input Absyn.Path inClassName;
   input Absyn.Path inAccumPath;
   input Boolean inCollectConstants;
   output SCode.Element outElement;
-  output Env outAccumEnv;
+  output Env.Env outAccumEnv;
 algorithm
   (outElement, outAccumEnv) := 
   match(inElement, inEnclosingEnv, inClsAndVars, inAccumEnv, inClassName,
@@ -2025,7 +2023,7 @@ algorithm
     local
       SCode.Ident name;
       SCode.Element cls;
-      Env env;
+      Env.Env env;
       Item item;
       Absyn.Path cls_path, const_path;
 
@@ -2067,9 +2065,9 @@ protected function removeUnusedRedeclares
   "An unused element might be redeclared, but it's still not actually used. This
    function removes such redeclares from extends clauses, so that it's safe to
    remove those elements."
-  input Env inEnv;
-  input Env inTotalEnv;
-  output Env outEnv;
+  input Env.Env inEnv;
+  input Env.Env inTotalEnv;
+  output Env.Env outEnv;
 protected
   Option<String> name;
   Option<ScopeType> st;
@@ -2084,7 +2082,7 @@ protected
   list<Env.Extends> bcl;
   list<SCode.Element> re;
   Option<SCode.Element> cei;
-  Env env;
+  Env.Env env;
 algorithm
   {Env.FRAME(name, st, ty, cv, tys, cs, du, Env.EXTENDS_TABLE(bcl, re, cei), 
     imps, is_used)} := inEnv;
@@ -2096,14 +2094,14 @@ end removeUnusedRedeclares;
 
 protected function removeUnusedRedeclares2
   input Env.Extends inExtends;
-  input Env inEnv;
+  input Env.Env inEnv;
   output Env.Extends outExtends;
 protected
   Absyn.Path bc;
   list<Env.Redeclaration> redeclares;
   Integer index;
   Absyn.Info info;
-  Env env;
+  Env.Env env;
 algorithm
   Env.EXTENDS(bc, redeclares, index, info) := inExtends;
   redeclares := List.filter1(redeclares, removeUnusedRedeclares3, inEnv);
@@ -2112,7 +2110,7 @@ end removeUnusedRedeclares2;
 
 protected function removeUnusedRedeclares3
   input Env.Redeclaration inRedeclare;
-  input Env inEnv;
+  input Env.Env inEnv;
 protected
   String name;
   Item item;
