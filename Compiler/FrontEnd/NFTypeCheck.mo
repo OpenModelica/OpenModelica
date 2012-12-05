@@ -47,6 +47,7 @@ public import NFInstSymbolTable;
 public import NFInstTypes;
 public import NFTyping;
 public import DAEDump;
+public import Util;
 
 public type Binding = NFInstTypes.Binding;
 public type Class = NFInstTypes.Class;
@@ -887,6 +888,33 @@ algorithm
       then 
         fail();
    
+   
+    // Multiplication involving an array and scalar is fine.
+    case(_,_,DAE.MUL(_),_,_) 
+      equation
+        isarr1 = Types.arrayType(inType1);
+        isarr2 = Types.arrayType(inType2);
+        
+        // If one of them is a Scalar.
+        false = isarr1 and isarr2;
+        
+        // Get the dims from the array operand
+        arrtp = Util.if_(isarr1,inType1,inType2);
+        DAE.T_ARRAY(_,dims,_) = arrtp;
+        
+        //match their scalar types
+        ty1 = Types.arrayElementType(inType1);
+        ty2 = Types.arrayElementType(inType2);
+        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+        
+        // Create the resulting array and exptype
+        ty = Types.liftArrayListDims(ty1,dims);
+        newop = DAE.MUL_ARRAY_SCALAR(ty);
+        exp = DAE.BINARY(exp1, newop, exp2);
+         
+      then 
+        (exp,ty); 
+        
     
     /********************************************************************/
     // Handling of Matrix/Vector operations.
@@ -1030,43 +1058,34 @@ algorithm
     // This include all Element wise binary oeprations!!!
     /********************************************************************/
     
-    // Lhs array, Rhs Scalar. {a, b, c} op s
-    // lift the scalar to array and match the type. 
-    // This is neccesary to make sure that Integer->Real conv. are made properly.
-    // i.e. with multi dim. casting (Not sure if it is really necessary though)
+    // Operations involving an array and a scalar
+    // If there is no specific handling for them
+    // (i.e. not handled by cases above.) we can assume
+    // that they return a value with same dims as the array operand.
     case(_,_,_,_,_) 
       equation
-        true = Types.arrayType(inType1);
-        false = Types.arrayType(inType2);
         
-        DAE.T_ARRAY(_,dims,_) = inType1;
-        arrtp = Types.liftArrayListDims(inType2,dims);
-
-        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,inType1,inExp2,arrtp);
-        newop = Expression.setOpType(inOp, ty1);
-        exp = DAE.BINARY(exp1, newop, exp2);
-         
+        isarr1 = Types.arrayType(inType1);
+        isarr2 = Types.arrayType(inType2);
+        
+        // If one of them is a Scalar.
+        false = isarr1 and isarr2;
+        
+        // Get the dims from the array operand
+        arrtp = Util.if_(isarr1,inType1,inType2);
+        DAE.T_ARRAY(_,dims,_) = arrtp;
+        
+        //match their scalar types
+        ty1 = Types.arrayElementType(inType1);
+        ty2 = Types.arrayElementType(inType2);
+        (exp1,exp2,ty1) = matchTypeBothWays(inExp1,ty1,inExp2,ty2);
+        
+        // Create the resulting array and exptype
+        ty = Types.liftArrayListDims(ty1,dims);
+        newop = Expression.setOpType(inOp, ty);
+        exp = DAE.BINARY(exp1, newop, exp2);     
       then 
-        (exp,ty1); 
-        
-    // Lhs Scalar, Rhs array. s op {a, b, c} 
-    // lift the scalar to array and match the type. 
-    // This is neccesary to make sure that Integer->Real conv. are made properly.
-    // i.e. with multi dim. casting (Not sure if it is really necessary though)
-    case(_,_,_,_,_) 
-      equation
-        false = Types.arrayType(inType1);
-        true = Types.arrayType(inType2);
-        
-        DAE.T_ARRAY(_,dims,_) = inType2;
-        arrtp = Types.liftArrayListDims(inType1,dims);
-
-        (exp1,exp2,ty2) = matchTypeBothWays(inExp1,arrtp,inExp2,inType2);
-        newop = Expression.setOpType(inOp, ty2);
-        exp = DAE.BINARY(exp1, newop, exp2);
-         
-      then 
-        (exp,ty2);
+        (exp,ty); 
         
     // Both operands are arrays
     case(_,_,_,_,_) 
