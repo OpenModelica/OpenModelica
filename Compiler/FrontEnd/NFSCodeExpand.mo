@@ -870,6 +870,13 @@ algorithm
         e2 = DAE.ASUB(e1, inEqSubscripts);
       then
         e2;
+    case (DAE.CAST(ty,e1), _, _)
+      equation
+        e1 = subscriptExp(e1, inEqSubscripts, inAllSubscripts);
+        ty = Types.arrayElementType(ty);
+        e1 = DAE.CAST(ty,e1);
+      then
+        e1;
 
     else inExp;
   end match;
