@@ -62,23 +62,26 @@ static int findTime(double time, RINGBUFFER *delayStruct)
   int end = ringBufferLength(delayStruct);
   double t;
 
+
+  INFO1(LOG_EVENTS, "findTime %e", time);
   do
   {
     int i = (start + end) / 2;
     t = ((TIME_AND_VALUE*)getRingData(delayStruct, i))->time;
+    INFO4(LOG_EVENTS, "time(%d, %d)[%d] = %e", start, end, i, t);
     if(t > time)
       end = i;
     else
       start = i;
   }while(t != time && end > start + 1);
+  INFO3(LOG_EVENTS, "return time[%d, %d] = %e", start, end, t);
   return (start);
 }
 
-void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time)
+void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
+  int i;
   TIME_AND_VALUE tpl;
-
-  INFO3(LOG_EVENTS, "storeDelayed[%d] %g:%g", exprNumber, time, exprValue);
 
   /* Allocate more space for expressions */
   ASSERT1(exprNumber < data->modelData.nDelayExpressions, "storeDelayedExpression: invalid expression number %d", exprNumber);
@@ -88,7 +91,16 @@ void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double
   tpl.time = time;
   tpl.value = exprValue;
   appendRingData(data->simulationInfo.delayStructure[exprNumber], &tpl);
+  INFO4(LOG_EVENTS, "storeDelayed[%d] %g:%g position=%d", exprNumber, time, exprValue,ringBufferLength(data->simulationInfo.delayStructure[exprNumber]));
+
+  /* dequeue not longer needed values */
+  i = findTime(time-delayMax+DBL_EPSILON,data->simulationInfo.delayStructure[exprNumber]);
+  if (i > 0){
+    dequeueNFirstRingDatas(data->simulationInfo.delayStructure[exprNumber], i-1);
+    INFO3(LOG_EVENTS, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, time-delayMax+DBL_EPSILON, delayTime);
+  }
 }
+
 
 double delayImpl(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax)
 {
@@ -149,11 +161,14 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
     /* find the row for the lower limit */
     if(timeStamp > ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time)
     {
+      INFO2(LOG_EVENTS, "delayImpl: find the row  %g = %g", timeStamp, ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time);
       /* delay between the last accepted time step and the current time */
       time0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->time;
       value0 = ((TIME_AND_VALUE*)getRingData(delayStruct, length - 1))->value;
       time1 = time;
       value1 = exprValue;
+      INFO2(LOG_EVENTS, "delayImpl: times %g and %g", time0, time1);
+      INFO2(LOG_EVENTS, "delayImpl: values %g and  %g", value0, value1);
     }
     else
     {
@@ -165,15 +180,10 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
       /* was it the last value? */
       if(i+1 == length)
       {
-        if(0 < i && delayMax == delayTime)
-          dequeueNFirstRingDatas(delayStruct, i-1);
-        INFO3(LOG_EVENTS, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, delayMax, delayTime);
         return value0;
       }
       time1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->time;
       value1 = ((TIME_AND_VALUE*)getRingData(delayStruct, i+1))->value;
-      if(0 < i && delayMax == delayTime)
-        dequeueNFirstRingDatas(delayStruct, i-1);
     }
     /* was it an exact match?*/
     if(time0 == timeStamp){
@@ -191,7 +201,6 @@ double delayImpl(DATA* data, int exprNumber, double exprValue, double time, doub
       double dt1 = timeStamp - time0;
       double retVal = (value0 * dt0 + value1 * dt1) / timedif;
       INFO3(LOG_EVENTS, "delayImpl: Linear interpolation of %g between %g and %g", timeStamp, time0, time1);
-
       INFO4(LOG_EVENTS, "delayImpl: Linear interpolation of %g value: %g and %g = %g", timeStamp, value0, value1, retVal);
       return retVal;
     }

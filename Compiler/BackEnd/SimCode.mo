@@ -117,7 +117,7 @@ end SimCode;
 // Delayed expressions type
 uniontype DelayedExpression
   record DELAYED_EXPRESSIONS
-    list<tuple<Integer, DAE.Exp>> delayedExps;
+    list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
     Integer maxDelayedIndex;
   end DELAYED_EXPRESSIONS;
 end DelayedExpression;

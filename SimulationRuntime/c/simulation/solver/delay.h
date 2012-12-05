@@ -58,7 +58,7 @@ extern "C" {
 
   void initDelay(DATA* data, double startTime);
   double delayImpl(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
-  void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time);
+  void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double time, double delayTime, double delayMax);
 
 #ifdef __cplusplus
 }

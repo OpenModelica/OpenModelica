@@ -1840,7 +1840,7 @@ algorithm
       list<DAE.ComponentRef> discreteModelVars;
       SimCode.ExtObjInfo extObjInfo;
       SimCode.MakefileParams makefileParams;
-      list<tuple<Integer, DAE.Exp>> delayedExps;
+      list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
       list<BackendDAE.Variables> orderedVars;
       BackendDAE.Variables knownVars,vars;
       list<BackendDAE.Var> varlst,varlst1,varlst2;
@@ -2522,7 +2522,7 @@ end findDelaySubExpressions;
 
 protected function extractDelayedExpressions
   input BackendDAE.BackendDAE dlow;
-  output list<tuple<Integer, DAE.Exp>> delayedExps;
+  output list<tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>>> delayedExps;
   output Integer maxDelayedExpIndex;
 algorithm
   (delayedExps,maxDelayedExpIndex) := matchcontinue(dlow)
@@ -2545,7 +2545,7 @@ end extractDelayedExpressions;
 
 function extractIdAndExpFromDelayExp
   input DAE.Exp delayCallExp;
-  output tuple<Integer, DAE.Exp> delayedExp;
+  output tuple<Integer, tuple<DAE.Exp, DAE.Exp, DAE.Exp>> delayedExp;
 algorithm
   delayedExp :=
   match (delayCallExp)
@@ -2553,7 +2553,7 @@ algorithm
       DAE.Exp  e, delay, delayMax;
       Integer i;
     case (DAE.CALL(path=Absyn.IDENT("delay"), expLst={DAE.ICONST(i),e,delay,delayMax}))
-    then ((i, e));
+    then ((i, (e, delay, delayMax)));
   end match;
 end extractIdAndExpFromDelayExp;
 

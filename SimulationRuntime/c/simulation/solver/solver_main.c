@@ -217,6 +217,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   saveZeroCrossings(data);
   storePreValues(data);
   storeOldValues(data);
+  function_storeDelayed(data);
   sim_result_emit(data);
   overwriteOldSimulationData(data);
 

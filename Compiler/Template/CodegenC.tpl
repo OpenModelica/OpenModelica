@@ -1048,13 +1048,15 @@ template functionStoreDelayed(DelayedExpression delayed)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, e) =>
+  let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
       let &preExp = buffer "" /*BUFD*/
       let eRes = daeExp(e, contextSimulationNonDiscrete,
                       &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let delayExp = daeExp(d, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
       <<
       <%preExp%>
-      storeDelayedExpression(data, <%id%>, <%eRes%>, time);<%\n%>
+      storeDelayedExpression(data, <%id%>, <%eRes%>, time, <%delayExp%>, <%delayExpMax%>);<%\n%>
       >>
     ))
   <<  
