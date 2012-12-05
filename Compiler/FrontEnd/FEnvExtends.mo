@@ -29,12 +29,12 @@
  *
  */
 
-encapsulated package NFEnvExtends
-" file:        NFEnvExtends.mo
-  package:     NFEnvExtends
+encapsulated package FEnvExtends
+" file:        FEnvExtends.mo
+  package:     FEnvExtends
   description: Utility functions for extends in the environment.
 
-  RCS: $Id: NFEnvExtends.mo 14085 2012-11-27 12:12:40Z adrpo $
+  RCS: $Id: FEnvExtends.mo 14085 2012-11-27 12:12:40Z adrpo $
 
   This package contains functions for handling extends in the environment.
   Extends are added to the environment while the environment is built, and we
@@ -73,24 +73,24 @@ encapsulated package NFEnvExtends
   To avoid qualifying an extends multiple times we store them in an array which
   is updated during the qualifying phase. Each extends is given a unique index
   for this purpose when it's added to the environment by
-  NFSCodeEnv.extendEnvWithExtends, which is used to index the array.
+  FEnv.extendEnvWithExtends, which is used to index the array.
 
   When errors are found in this phase, such as missing base classes, we want to
   only report errors for models which are actually used. We therefore delay the
   error messages until the extends are used. This is done by returning special
   error paths instead of the fully qualified paths, see checkExtendsPart for
-  details. When e.g. NFSCodeLookup.lookupBaseClassName encounters such a path it
+  details. When e.g. FLookup.lookupBaseClassName encounters such a path it
   uses printExtendsError to print the appropriate error.
 
   INSERT ELEMENT REDECLARES INTO EXTENDS:
   The update function goes through all the scopes and insert element redeclares
   into the appropriate extends with addElementRedeclarationsToEnv from
-  NFSCodeFlattenRedeclare. See the comment in SCodeFlattenRedeclare for more
+  FFlattenRedeclare. See the comment in SCodeFlattenRedeclare for more
   information about this.
 
   UPDATE CLASS EXTENDS:
   Class extends are handled by initially adding them to the environment with
-  NFSCodeEnv.extendEnvWithClassExtends. This function add the given class as a
+  FEnv.extendEnvWithClassExtends. This function add the given class as a
   normal class to the environment, and sets the class extends information field
   in the class's environment. This information is later used when the extends
   are updated with the update function, and updateClassExtends is called.
@@ -105,12 +105,12 @@ encapsulated package NFEnvExtends
   it. If the base class were to be replaced with this class it would mean that
   the class extends from itself, causing a loop. To avoid this an alias for the
   base class is added instead, and the base class itself is added with the
-  BASE_CLASS_SUFFIX defined in NFSCodeEnv. The alias can then be safely redeclared
+  BASE_CLASS_SUFFIX defined in FEnv. The alias can then be safely redeclared
   while preserving the base class for the class extends to extend from. It's
   somewhat difficault to only add aliases for classes that are used by class
   extends though, so an alias is currently added for all replaceable classes in
-  NFSCodeEnv.extendEnvWithClassDef for simplicity's sake. The function
-  NFSCodeLookup.resolveAlias is then used to resolve any alias items to the real
+  FEnv.extendEnvWithClassDef for simplicity's sake. The function
+  FLookup.resolveAlias is then used to resolve any alias items to the real
   items whenever an item is looked up in the environment.
 
   So a class extends on the form 'class extends X' is thus translated to
@@ -122,30 +122,36 @@ encapsulated package NFEnvExtends
 
 public import Absyn;
 public import SCode;
-public import NFSCodeEnv;
+public import Env;
 
 protected import Config;
 protected import Debug;
 protected import Error;
 protected import Flags;
 protected import List;
-protected import NFSCodeCheck;
+protected import FSCodeCheck;
 protected import SCodeDump;
-protected import NFSCodeFlattenRedeclare;
-protected import NFSCodeLookup;
+protected import FFlattenRedeclare;
+protected import FLookup;
 protected import System;
 protected import Util;
+protected import FEnv;
 
-public type Env = NFSCodeEnv.Env;
-
-protected type AvlTree = NFSCodeEnv.AvlTree;
-protected type AvlTreeValue = NFSCodeEnv.AvlTreeValue;
-protected type ClassType = NFSCodeEnv.ClassType;
-protected type Extends = NFSCodeEnv.Extends;
-protected type Frame = NFSCodeEnv.Frame;
-protected type FrameType = NFSCodeEnv.FrameType;
-protected type Import = Absyn.Import;
-protected type Item = NFSCodeEnv.Item;
+public type Item = Env.Item;
+public type Env = Env.Env;
+public type AvlTree = Env.AvlTree;
+public type AvlTreeValue = Env.AvlTreeValue;
+public type ImportTable = Env.ImportTable;
+public type ExtendsTable = Env.ExtendsTable;
+public type Frame = Env.Frame;
+public type Redeclaration = Env.Redeclaration;
+public type Extends = Env.Extends;
+public type ClassType = Env.ClassType;
+public type FrameType = Env.FrameType;
+public type CSetsType = Env.CSetsType;
+public type ScopeType = Env.ScopeType;
+public type Import = Env.Import;
+public type Ident = Env.Ident;
 
 protected type ExtendsTableArray = array<ExtendsWrapper>;
 
@@ -221,15 +227,15 @@ algorithm
 
     case (_)
       equation
-        ext_count = System.tmpTickIndex(NFSCodeEnv.extendsTickIndex);
+        ext_count = System.tmpTickIndex(Env.extendsTickIndex);
         ext_table = createExtendsTable(ext_count);
       then
-        qualify2(inEnv, NFSCodeEnv.USERDEFINED(), ext_table);
+        qualify2(inEnv, Env.USERDEFINED(), ext_table);
 
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFEnvExtends.qualify failed.");
+        Debug.traceln("- FEnvExtends.qualify failed.");
       then
         fail();
 
@@ -252,9 +258,9 @@ algorithm
   env := qualifyLocalScope(inEnv, inClassType, inExtendsTable);
   
   // Recurse down the tree.
-  NFSCodeEnv.FRAME(clsAndVars = tree) :: _ := env;
+  Env.FRAME(clsAndVars = tree) :: _ := env;
   SOME(tree) := qualify3(SOME(tree), env, inExtendsTable); 
-  outEnv := NFSCodeEnv.setEnvClsAndVars(tree, env);
+  outEnv := FEnv.setEnvClsAndVars(tree, env);
 end qualify2;
 
 protected function qualify3
@@ -278,24 +284,24 @@ algorithm
     // Empty leaf, do nothing.
     case (NONE(), _, _) then inTree;
 
-    case (SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE(
-        name, NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _, _)
+    case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(
+        name, Env.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _, _)
       equation
-        env = NFSCodeEnv.enterFrame(cls_env, inEnv);
+        env = FEnv.enterFrame(cls_env, inEnv);
         cls_env :: rest_env = qualify2(env, cls_ty, inExtendsTable);
         left = qualify3(left, rest_env, inExtendsTable);
         right = qualify3(right, rest_env, inExtendsTable);
-        item = NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty);
-        value = SOME(NFSCodeEnv.AVLTREEVALUE(name, item));
+        item = Env.CLASS(cls, {cls_env}, cls_ty);
+        value = SOME(Env.AVLTREEVALUE(name, item));
       then
-        SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right));
+        SOME(Env.AVLTREENODE(value, h, left, right));
 
-     case (SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right)), _, _)
+     case (SOME(Env.AVLTREENODE(value, h, left, right)), _, _)
        equation
          left = qualify3(left, inEnv, inExtendsTable);
          right = qualify3(right, inEnv, inExtendsTable);
        then
-         SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right));
+         SOME(Env.AVLTREENODE(value, h, left, right));
 
   end match;
 end qualify3;
@@ -310,9 +316,9 @@ protected
   list<SCode.Element> re;
   Option<SCode.Element> cei;
 algorithm
-  NFSCodeEnv.EXTENDS_TABLE(exts, re, cei) := NFSCodeEnv.getEnvExtendsTable(inEnv);
+  Env.EXTENDS_TABLE(exts, re, cei) := FEnv.getEnvExtendsTable(inEnv);
   exts := qualifyExtendsList(exts, inClassType, inEnv, inExtendsTable);
-  outEnv := NFSCodeEnv.setEnvExtendsTable(NFSCodeEnv.EXTENDS_TABLE(exts, re, cei), inEnv);
+  outEnv := FEnv.setEnvExtendsTable(Env.EXTENDS_TABLE(exts, re, cei), inEnv);
 end qualifyLocalScope;
 
 protected function qualifyExtendsList
@@ -329,7 +335,7 @@ algorithm
 
     // Skip the first extends in a class extends, since it's added by the
     // compiler itself and shouldn't be qualified.
-    case (ext :: extl, NFSCodeEnv.CLASS_EXTENDS(), _, _)
+    case (ext :: extl, Env.CLASS_EXTENDS(), _, _)
       equation
         extl = List.map2Reverse(extl, qualifyExtends, inEnv, inExtendsTable);
       then
@@ -359,9 +365,9 @@ algorithm
 
     // Check if the base class is a built in type such as Real, then we don't
     // need to do anything.
-    case (NFSCodeEnv.EXTENDS(baseClass = Absyn.IDENT(name = id)), _, _)
+    case (Env.EXTENDS(baseClass = Absyn.IDENT(name = id)), _, _)
       equation
-        _ = NFSCodeLookup.lookupBuiltinType(id);
+        FLookup.isBuiltinType(id);
       then
         inExtends;
 
@@ -371,10 +377,10 @@ algorithm
       then
         ext;
 
-    case (NFSCodeEnv.EXTENDS(baseClass = bc), _, _)
+    case (Env.EXTENDS(baseClass = bc), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFEnvExtends.qualifyExtends failed on " +&
+        Debug.traceln("- FEnvExtends.qualifyExtends failed on " +&
           Absyn.pathString(bc) +& "\n");
       then
         fail();
@@ -391,25 +397,25 @@ algorithm
   outExtends := matchcontinue(inExtends, inEnv, inExtendsTable)
     local
       Absyn.Path bc;
-      list<NFSCodeEnv.Redeclaration> rl;
+      list<FEnv.Redeclaration> rl;
       Integer index;
       Absyn.Info info;
       Extends ext;
       Env env;
 
-    case (NFSCodeEnv.EXTENDS(index = index), _, _)
+    case (Env.EXTENDS(index = index), _, _)
       then lookupQualifiedExtends(index, inExtendsTable);
 
-    case (NFSCodeEnv.EXTENDS(bc, rl, index, info), _, _)
+    case (Env.EXTENDS(bc, rl, index, info), _, _)
       equation
         addUnqualifiedToTable(inExtends, index, inExtendsTable);
-        env = NFSCodeEnv.removeExtendFromLocalScope(bc, inEnv);
+        env = FEnv.removeExtendFromLocalScope(bc, inEnv);
         bc = qualifyExtends3(bc, env, inExtendsTable, true, bc, info, NONE());
         /*********************************************************************/
         // TODO: Convert this check to the delayed error system.
         /*********************************************************************/
-        List.map2_0(rl, NFSCodeCheck.checkRedeclareModifier, bc, inEnv);
-        ext = NFSCodeEnv.EXTENDS(bc, rl, index, info); 
+        List.map2_0(rl, FSCodeCheck.checkRedeclareModifier, bc, inEnv);
+        ext = Env.EXTENDS(bc, rl, index, info); 
         updateQualifiedInTable(ext, index, inExtendsTable);
       then
         SOME(ext);
@@ -454,7 +460,7 @@ algorithm
 
     case (Absyn.FULLYQUALIFIED(path = rest_path), _, _, _, _, _, _)
       equation
-        env = NFSCodeEnv.getEnvTopScope(inEnv);
+        env = FEnv.getEnvTopScope(inEnv);
       then
         qualifyExtends3(rest_path, env, inExtendsTable, inIsFirst, rest_path,
           inInfo, NONE());
@@ -485,7 +491,7 @@ algorithm
     // get the whole path.
     case (_, _, _, _, true)
       equation
-        path = NFSCodeEnv.getEnvPath(inEnv);
+        path = FEnv.getEnvPath(inEnv);
         path = Absyn.joinPathsOptSuffix(path, inRestPath);
         path = Absyn.makeFullyQualified(path);
       then
@@ -539,11 +545,11 @@ algorithm
       equation
         ep = checkExtendsPart(inIsFirst, inFromExtends, inPartName, item,
           inFullPath, env, inOriginEnv);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
+        env = FEnv.mergeItemEnv(item, env);
       then
         (env, ep);
 
-    else (NFSCodeEnv.emptyEnv, 
+    else (Env.emptyEnv, 
           makeExtendsError(inFullPath, inPartName, BASECLASS_NOT_FOUND_ERROR));
   end match;
 end qualifyExtendsPart2;
@@ -595,7 +601,7 @@ algorithm
       then makeExtendsError(inBaseClass, inPartName, BASECLASS_INHERITED_ERROR);
 
     // Not inherited and not replaceable, ok!
-    case (_, _, _, NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
+    case (_, _, _, Env.CLASS(cls = SCode.CLASS(prefixes = SCode.PREFIXES(
         replaceablePrefix = SCode.NOT_REPLACEABLE()))), _, _, _)
       then NONE();
 
@@ -603,38 +609,38 @@ algorithm
     // definition, which is allowed to have a replaceable base class part. It
     // might also be a long definition equivalent to a short definition, but
     // we'll allow that too since they're equivalent.
-    case (_, _, _, NFSCodeEnv.CLASS(cls = _), _,
-        NFSCodeEnv.FRAME(clsAndVars = NFSCodeEnv.AVLTREENODE(value = NONE(),
+    case (_, _, _, Env.CLASS(cls = _), _,
+        Env.FRAME(clsAndVars = Env.AVLTREENODE(value = NONE(),
           left = NONE(), right = NONE())) :: _, _)
       equation
         // Also check that the parent class contains no extends. A short class
         // definition should contain exactly one extends, but it's removed in
         // the look up process.
-        {} = NFSCodeEnv.getEnvExtendsFromTable(inOriginEnv);
+        {} = FEnv.getEnvExtendsFromTable(inOriginEnv);
       then
         NONE();
 
     // If we're using Modelica 2.x or earlier we don't care, since replaceable
     // base classes weren't explicitly forbidden in older versions.
-    case (_, _, _, NFSCodeEnv.CLASS(cls = _), _, _, _)
+    case (_, _, _, Env.CLASS(cls = _), _, _, _)
       equation
         true = Config.languageStandardAtMost(Config.MODELICA_2_X());
       then
         NONE();
 
     // A replaceable base class part in any other circumstance is not allowed.
-    case (_, _, _, NFSCodeEnv.CLASS(cls = SCode.CLASS(prefixes =
+    case (_, _, _, Env.CLASS(cls = SCode.CLASS(prefixes =
         SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(cc = _)))), _, _, _)
       equation
-        part = NFSCodeEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
+        part = FEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
       then 
         makeExtendsError(inBaseClass, part, BASECLASS_REPLACEABLE_ERROR);
 
     // The base class part is actually not a class but a component, which is not
     // allowed either.
-    case (_, _, _, NFSCodeEnv.VAR(var = _), _, _, _)
+    case (_, _, _, Env.VAR(var = _), _, _, _)
       equation
-        part = NFSCodeEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
+        part = FEnv.mergePathWithEnvPath(inPartName, inFoundEnv);
       then
         makeExtendsError(inBaseClass, part, BASECLASS_IS_VAR_ERROR);
 
@@ -680,7 +686,7 @@ algorithm
         path = Absyn.QUALIFIED(name = err_str, path = bc)), _, _)
       equation
         (bc, part) = splitExtendsErrorPath(bc);
-        env = NFSCodeEnv.removeExtendFromLocalScope(inErrorPath, inEnv);
+        env = FEnv.removeExtendFromLocalScope(inErrorPath, inEnv);
         printExtendsError2(err_str, bc, part, env, inInfo);
       then
         ();
@@ -688,7 +694,7 @@ algorithm
     else
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.traceln("- NFEnvExtends.printExtendsError failed to print error " +&
+        Debug.traceln("- FEnvExtends.printExtendsError failed to print error " +&
           Absyn.pathString(inErrorPath));
       then
         fail();
@@ -716,7 +722,7 @@ algorithm
         true = stringEq(inError, BASECLASS_NOT_FOUND_ERROR);
 
         bc_str = Absyn.pathString(inBaseClass);
-        env_str = NFSCodeEnv.getEnvName(inEnv);
+        env_str = FEnv.getEnvName(inEnv);
         Error.addSourceMessage(Error.LOOKUP_BASECLASS_ERROR,
           {bc_str, env_str}, inInfo);
       then
@@ -728,7 +734,7 @@ algorithm
 
         bc_str = Absyn.pathString(inBaseClass);
         Error.addSourceMessage(Error.INHERITED_EXTENDS, {bc_str}, inInfo);
-        exts = NFSCodeEnv.getEnvExtendsFromTable(inEnv);
+        exts = FEnv.getEnvExtendsFromTable(inEnv);
         printInheritedExtendsError(part, exts, inEnv);
       then
         ();
@@ -737,8 +743,8 @@ algorithm
       equation
         true = stringEq(inError, BASECLASS_REPLACEABLE_ERROR);
 
-        (NFSCodeEnv.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) =
-          NFSCodeLookup.lookupFullyQualified(inPartPath, inEnv);
+        (Env.CLASS(cls = SCode.CLASS(name = part, info = info)), _, _) =
+          FLookup.lookupFullyQualified(inPartPath, inEnv);
         bc_str = Absyn.pathString(inBaseClass);
         msg = Util.if_(stringEq(bc_str, part),
           Error.REPLACEABLE_BASE_CLASS_SIMPLE,
@@ -752,8 +758,8 @@ algorithm
       equation
         true = stringEq(inError, BASECLASS_IS_VAR_ERROR);
 
-        (NFSCodeEnv.VAR(var = SCode.COMPONENT(name = part, info = info)), _, _) =
-          NFSCodeLookup.lookupFullyQualified(inPartPath, inEnv);
+        (Env.VAR(var = SCode.COMPONENT(name = part, info = info)), _, _) =
+          FLookup.lookupFullyQualified(inPartPath, inEnv);
         bc_str = Absyn.pathString(inBaseClass);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info);
         Error.addSourceMessage(Error.EXTEND_THROUGH_COMPONENT,
@@ -778,12 +784,12 @@ algorithm
       Absyn.Path bc;
       String bc_str;
 
-    case (_, (ext as NFSCodeEnv.EXTENDS(baseClass = bc, info = info2)) :: rest_ext, _)
+    case (_, (ext as Env.EXTENDS(baseClass = bc, info = info2)) :: rest_ext, _)
       equation
-        (SOME(item), _, _) = NFSCodeLookup.lookupInBaseClasses3(inName, ext,
-          inEnv, inEnv, NFSCodeLookup.IGNORE_REDECLARES(), {});
-        info1 = NFSCodeEnv.getItemInfo(item);
-        NFSCodeEnv.EXTENDS(baseClass = bc, info = info2) = ext;
+        (SOME(item), _, _) = FLookup.lookupInBaseClasses3(inName, ext,
+          inEnv, inEnv, FLookup.IGNORE_REDECLARES(), {});
+        info1 = FEnv.getItemInfo(item);
+        Env.EXTENDS(baseClass = bc, info = info2) = ext;
         bc = Absyn.makeNotFullyQualified(bc);
         bc_str = Absyn.pathString(bc);
         Error.addSourceMessage(Error.ERROR_FROM_HERE, {}, info1);
@@ -829,9 +835,9 @@ algorithm
       then
         (opt_item, opt_path, opt_env, fe);
 
-    case (_, NFSCodeEnv.FRAME(frameType = frame_type) :: env, _)
+    case (_, Env.FRAME(frameType = frame_type) :: env, _)
       equation
-        NFSCodeLookup.frameNotEncapsulated(frame_type);
+        FLookup.frameNotEncapsulated(frame_type);
         (opt_item, opt_path, opt_env, _) = lookupSimpleName(inName, env, inExtendsTable);
       then
         (opt_item, opt_path, opt_env, false);
@@ -863,27 +869,27 @@ algorithm
 
     case (_, _, _)
       equation
-        (item, env) = NFSCodeLookup.lookupInClass(inName, inEnv);
+        (item, env) = FLookup.lookupInClass(inName, inEnv);
       then
         (SOME(item), SOME(Absyn.IDENT(inName)), SOME(env), false);
 
-    case (_, NFSCodeEnv.FRAME(extendsTable = NFSCodeEnv.EXTENDS_TABLE(
+    case (_, Env.FRAME(extendsTable = Env.EXTENDS_TABLE(
         baseClasses = bcl as _ :: _)) :: _, _)
       equation
         (oitem, oenv) = lookupInBaseClasses(inName, bcl, inEnv, inExtendsTable);
       then
         (oitem, SOME(Absyn.IDENT(inName)), oenv, true);
 
-    case (_, NFSCodeEnv.FRAME(importTable =
-        NFSCodeEnv.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _, _)
+    case (_, Env.FRAME(importTable =
+        Env.IMPORT_TABLE(hidden = false, qualifiedImports = imps)) :: _, _)
       equation
         (oitem, opath, oenv) =
           lookupInQualifiedImports(inName, imps, inEnv, inExtendsTable);
       then
         (oitem, opath, oenv, false);
 
-    case (_, NFSCodeEnv.FRAME(importTable =
-        NFSCodeEnv.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _, _)
+    case (_, Env.FRAME(importTable =
+        Env.IMPORT_TABLE(hidden = false, unqualifiedImports = imps)) :: _, _)
       equation
         (oitem, opath, oenv) =
           lookupInUnqualifiedImports(inName, imps, inEnv, inExtendsTable);
@@ -916,7 +922,7 @@ algorithm
       equation
         // Unhide the imports, otherwise we might not be able to find the base
         // classes.
-        env = NFSCodeEnv.setImportTableHidden(inEnv, false);
+        env = FEnv.setImportTableHidden(inEnv, false);
         opt_ext = qualifyExtends2(ext, env, inExtendsTable);
         (opt_item, opt_env) =
           lookupInBaseClasses2(inName, opt_ext, env, inExtendsTable); 
@@ -951,13 +957,13 @@ algorithm
 
     case (_, NONE(), _, _) then (NONE(), NONE());
 
-    case (_, SOME(NFSCodeEnv.EXTENDS(baseClass = Absyn.FULLYQUALIFIED(bc))), _, _)
+    case (_, SOME(Env.EXTENDS(baseClass = Absyn.FULLYQUALIFIED(bc))), _, _)
       equation
         (item, env) = lookupFullyQualified(bc, inEnv, inExtendsTable);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
+        env = FEnv.mergeItemEnv(item, env);
         // Hide the imports to make sure we don't find any elements through
         // them, since imports are not inherited.
-        env = NFSCodeEnv.setImportTableHidden(env, true);
+        env = FEnv.setImportTableHidden(env, true);
         (opt_item, _, opt_env, _) = lookupInLocalScope(inName, env, inExtendsTable);
       then
         (opt_item, opt_env);
@@ -997,7 +1003,7 @@ algorithm
       equation
         true = stringEqual(inName, name);
         (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
-        path = NFSCodeEnv.prefixIdentWithEnv(inName, env);
+        path = FEnv.prefixIdentWithEnv(inName, env);
         path = Absyn.makeFullyQualified(path);
       then
         (SOME(item), SOME(path), SOME(env));
@@ -1033,9 +1039,9 @@ algorithm
     case (_, Absyn.UNQUAL_IMPORT(path = path) :: _, _, _)
       equation
         (item, env) = lookupFullyQualified(path, inEnv, inExtendsTable);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
+        env = FEnv.mergeItemEnv(item, env);
         (item, env) = lookupFullyQualified2(Absyn.IDENT(inName), env, inExtendsTable);
-        path = NFSCodeEnv.prefixIdentWithEnv(inName, env);
+        path = FEnv.prefixIdentWithEnv(inName, env);
         path = Absyn.makeFullyQualified(path);
       then
         (SOME(item), SOME(path), SOME(env));
@@ -1059,7 +1065,7 @@ protected function lookupFullyQualified
 protected
   Env env;
 algorithm
-  env := NFSCodeEnv.getEnvTopScope(inEnv);
+  env := FEnv.getEnvTopScope(inEnv);
   (outItem, outEnv) := lookupFullyQualified2(inName, env, inExtendsTable);
 end lookupFullyQualified;
   
@@ -1088,7 +1094,7 @@ algorithm
       equation
         (SOME(item), _, SOME(env), _) =
           lookupInLocalScope(name, inEnv, inExtendsTable);
-        env = NFSCodeEnv.mergeItemEnv(item, env);
+        env = FEnv.mergeItemEnv(item, env);
         (item, env) = lookupFullyQualified2(rest_path, env, inExtendsTable);
       then
         (item, env);
@@ -1126,7 +1132,7 @@ algorithm
 
     case (QUALIFIED_EXTENDS(ext = ext), _) then SOME(ext);
 
-    case (UNQUALIFIED_EXTENDS(ext = NFSCodeEnv.EXTENDS(baseClass = bc)), _)
+    case (UNQUALIFIED_EXTENDS(ext = Env.EXTENDS(baseClass = bc)), _)
       then NONE();
 
   end match;
@@ -1152,21 +1158,26 @@ protected function update2
   input Env inEnv;
   output Env outEnv;
 protected
-  Env env, rest_env;
   Option<String> name;
+  Option<ScopeType> st;
   FrameType ty;
-  AvlTree tree;
+  AvlTree cv;
+  AvlTree tys;
+  CSetsType cs;
+  list<SCode.Element> du;  
+  ExtendsTable exts;
+  ImportTable imps;
+  Option<Util.StatefulBoolean> iu;
+  Env env, rest_env;
   list<Extends> bcl;
   list<SCode.Element> re;
-  NFSCodeEnv.ImportTable imps;
-  Option<Util.StatefulBoolean> iu;
 algorithm
-  NFSCodeEnv.FRAME(name, ty, tree,
-    NFSCodeEnv.EXTENDS_TABLE(bcl, re, _), imps, iu) :: rest_env := inEnv;
-  SOME(tree) := update3(SOME(tree), inEnv);
-  env := NFSCodeEnv.FRAME(name, ty, tree,
-    NFSCodeEnv.EXTENDS_TABLE(bcl, {}, NONE()), imps, iu) :: rest_env;
-  outEnv := NFSCodeFlattenRedeclare.addElementRedeclarationsToEnv(re, env);
+  Env.FRAME(name, st, ty, cv, tys, cs, du,
+    Env.EXTENDS_TABLE(bcl, re, _), imps, iu) :: rest_env := inEnv;
+  SOME(cv) := update3(SOME(cv), inEnv);
+  env := Env.FRAME(name, st, ty, cv, tys, cs, du,
+    Env.EXTENDS_TABLE(bcl, {}, NONE()), imps, iu) :: rest_env;
+  outEnv := FFlattenRedeclare.addElementRedeclarationsToEnv(re, env);
 end update2;
 
 protected function update3
@@ -1182,17 +1193,17 @@ algorithm
       Env rest_env, env;
       SCode.Element cls;
       Frame cls_env;
-      Option<NFSCodeEnv.AvlTreeValue> value;
+      Option<Env.AvlTreeValue> value;
       Item item;
       ClassType cls_ty;
 
     case (NONE(), _) then inTree;
 
-    case (SOME(NFSCodeEnv.AVLTREENODE(SOME(NFSCodeEnv.AVLTREEVALUE(
-        name, NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _)
+    case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(
+        name, Env.CLASS(cls, {cls_env}, cls_ty))), h, left, right)), _)
       equation
         // Enter the class' frame and update the class extends in it.
-        env = NFSCodeEnv.enterFrame(cls_env, inEnv);
+        env = FEnv.enterFrame(cls_env, inEnv);
         (cls, env) = updateClassExtends(cls, env, cls_ty);
         // Call update2 on the class' environment to update the extends.
         cls_env :: rest_env = update2(env);
@@ -1200,18 +1211,18 @@ algorithm
         left = update3(left, rest_env);
         right = update3(right, rest_env);
         // Rebuild the class item with the updated information.
-        item = NFSCodeEnv.CLASS(cls, {cls_env}, cls_ty);
-        value = SOME(NFSCodeEnv.AVLTREEVALUE(name, item));
+        item = Env.CLASS(cls, {cls_env}, cls_ty);
+        value = SOME(Env.AVLTREEVALUE(name, item));
       then
-        SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right));
+        SOME(Env.AVLTREENODE(value, h, left, right));
 
-    case (SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right)), _)
+    case (SOME(Env.AVLTREENODE(value, h, left, right)), _)
       equation
         // Recurse into left and right branch of the tree.
         left = update3(left, inEnv);
         right = update3(right, inEnv);
       then
-        SOME(NFSCodeEnv.AVLTREENODE(value, h, left, right));
+        SOME(Env.AVLTREENODE(value, h, left, right));
 
   end match;
 end update3;
@@ -1231,9 +1242,9 @@ algorithm
       Absyn.Info info;
       SCode.Element cls, ext;
 
-    case (_, NFSCodeEnv.FRAME(name = SOME(name), 
-        extendsTable = NFSCodeEnv.EXTENDS_TABLE(classExtendsInfo = SOME(ext))) :: _,
-        NFSCodeEnv.CLASS_EXTENDS())
+    case (_, Env.FRAME(name = SOME(name), 
+        extendsTable = Env.EXTENDS_TABLE(classExtendsInfo = SOME(ext))) :: _,
+        Env.CLASS_EXTENDS())
       equation
         SCode.EXTENDS(modifications = mods, info = info) = ext;
         (cls, env) = updateClassExtends2(inClass, name, mods, info, inEnv);
@@ -1265,9 +1276,9 @@ algorithm
     case (_, _, _, _, cls_frame :: env)
       equation
         (path, item) = lookupClassExtendsBaseClass(inName, env, inInfo);
-        NFSCodeCheck.checkClassExtendsReplaceability(item, Absyn.dummyInfo);
+        FSCodeCheck.checkClassExtendsReplaceability(item, Absyn.dummyInfo);
         ext = SCode.EXTENDS(path, SCode.PUBLIC(), inMods, NONE(), inInfo);
-        {cls_frame} = NFSCodeEnv.extendEnvWithExtends(ext, {cls_frame});
+        {cls_frame} = FEnv.extendEnvWithExtends(ext, {cls_frame});
         cls = SCode.addElementToClass(ext, inClass);
       then
         (cls, cls_frame :: env);
@@ -1277,9 +1288,9 @@ end updateClassExtends2;
 
 protected function lookupClassExtendsBaseClass
   "This function takes the name of a base class and looks up that name suffixed
-   with the base class suffix defined in NFSCodeEnv. I.e. it looks up the real base
+   with the base class suffix defined in FEnv. I.e. it looks up the real base
    class of a class extends, and not the alias introduced when adding replaceable
-   classes to the environment in NFSCodeEnv.extendEnvWithClassDef. It returns the
+   classes to the environment in FEnv.extendEnvWithClassDef. It returns the
    path and the item for that base class."
   input String inName;
   input Env inEnv;
@@ -1297,10 +1308,10 @@ algorithm
     // Add the base class suffix to the name and try to look it up.
     case (_, _, _)
       equation
-        basename = inName +& NFSCodeEnv.BASE_CLASS_SUFFIX;
-        (item, _) = NFSCodeLookup.lookupInheritedName(basename, inEnv);
+        basename = inName +& Env.BASE_CLASS_SUFFIX;
+        (item, _) = FLookup.lookupInheritedName(basename, inEnv);
         // Use a special $ce qualified so that we can find the correct class
-        // with NFSCodeLookup.lookupBaseClassName.
+        // with FLookup.lookupBaseClassName.
         path = Absyn.QUALIFIED("$ce", Absyn.IDENT(basename));
       then
         (path, item);
@@ -1311,7 +1322,7 @@ algorithm
     // instead and return that result if found.
     case (_, _, _)
       equation
-        (item, _) = NFSCodeLookup.lookupInheritedName(inName, inEnv);
+        (item, _) = FLookup.lookupInheritedName(inName, inEnv);
         path = Absyn.IDENT(inName);
       then
         (path, item);
@@ -1370,21 +1381,21 @@ algorithm
         cls = SCode.CLASS(bc, prefixes, ep, pp, res, cdef, info);
 
         // Construct the class environment and add the new extends to it.
-        cls_env = NFSCodeEnv.makeClassEnvironment(cls, false);
+        cls_env = FEnv.makeClassEnvironment(cls, false);
         ext = SCode.EXTENDS(Absyn.IDENT(bc), SCode.PUBLIC(), mods, NONE(), info);
         cls_env = addClassExtendsInfoToEnv(ext, cls_env);
 
         // Finally add the class to the environment.
-        env = NFSCodeEnv.extendEnvWithItem(
-          NFSCodeEnv.newClassItem(cls, cls_env, NFSCodeEnv.CLASS_EXTENDS()), inEnv, bc);
+        env = FEnv.extendEnvWithItem(
+          FEnv.newClassItem(cls, cls_env, Env.CLASS_EXTENDS()), inEnv, bc);
       then env;
 
     case (_, _)
       equation
         info = SCode.elementInfo(inClassExtends);
         el_str = SCodeDump.printElementStr(inClassExtends);
-        env_str = NFSCodeEnv.getEnvName(inEnv);
-        err_msg = "NFSCodeFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +& 
+        env_str = FEnv.getEnvName(inEnv);
+        err_msg = "FFlattenRedeclare.extendEnvWithClassExtends failed on unknown element " +& 
           el_str +& " in " +& env_str;
         Error.addSourceMessage(Error.INTERNAL_ERROR, {err_msg}, info);
       then
@@ -1404,19 +1415,19 @@ algorithm
       list<Extends> bcl;
       list<SCode.Element> re;
       String estr;
-      NFSCodeEnv.ExtendsTable ext;
+      FEnv.ExtendsTable ext;
 
     case (_, _)
       equation
-        NFSCodeEnv.EXTENDS_TABLE(bcl, re, NONE()) = 
-          NFSCodeEnv.getEnvExtendsTable(inEnv);
-        ext = NFSCodeEnv.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
+        Env.EXTENDS_TABLE(bcl, re, NONE()) = 
+          FEnv.getEnvExtendsTable(inEnv);
+        ext = Env.EXTENDS_TABLE(bcl, re, SOME(inClassExtends));
       then
-        NFSCodeEnv.setEnvExtendsTable(ext, inEnv);
+        FEnv.setEnvExtendsTable(ext, inEnv);
 
     else
       equation
-        estr = "- NFEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +& 
+        estr = "- FEnvExtends.addClassExtendsInfoToEnv: Trying to overwrite " +& 
                "existing class extends information, this should not happen!.";
         Error.addMessage(Error.INTERNAL_ERROR, {estr});
       then
@@ -1425,4 +1436,4 @@ algorithm
   end matchcontinue;
 end addClassExtendsInfoToEnv;
 
-end NFEnvExtends;
+end FEnvExtends;

@@ -149,7 +149,7 @@ algorithm
 
         builtin_el = instBuiltinElements((constants, functions));
         
-        //print(NFInstDump.modelStr(name, cls)); print("\n");
+        // print(NFInstDump.modelStr(name, cls)); print("\n");
 
         /*********************************************************************/
         /* ----------------------------- TYPING ---------------------------- */

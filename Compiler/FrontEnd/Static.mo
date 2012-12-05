@@ -170,8 +170,10 @@ algorithm
       String name;
       list<String> names;
       Integer ix;
+    
     case (cache,_,{},_,impl,st,doVect,_,_) then (cache,{},{},st);
-      // Hack to make enumeration arrays elaborate a _lot_ faster
+    
+    // Hack to make enumeration arrays elaborate a _lot_ faster
     case (cache,env,(Absyn.CREF(cr as Absyn.CREF_FULLYQUALIFIED(componentRef=_)) :: rest),DAE.T_ENUMERATION(path=path2,names=names),impl,st,doVect,pre,_)
       equation
         path = Absyn.crefToPath(cr);
@@ -180,14 +182,16 @@ algorithm
         ix = List.position(name,names)+1;
         exp = DAE.ENUM_LITERAL(path,ix);
         p = DAE.PROP(ty,DAE.C_CONST());
-        (cache,exps,props,st_2) = elabExpList2(cache,env, rest, ty, impl, st,doVect,pre,info);
+        (cache,exps,props,st_2) = elabExpList2(cache, env, rest, ty, impl, st, doVect, pre, info);
       then (cache,exp :: exps,p :: props, st_2);
+    
     case (cache,env,(e :: rest),_,impl,st,doVect,pre,_)
       equation
-        (cache,exp,p,st_1) = elabExp(cache,env, e, impl, st,doVect,pre,info);
-        (cache,exps,props,st_2) = elabExpList2(cache,env, rest, Types.getPropType(p), impl, st_1,doVect,pre,info);
+        (cache,exp,p,st_1) = elabExp(cache, env, e, impl, st, doVect, pre, info);
+        (cache,exps,props,st_2) = elabExpList2(cache, env, rest, Types.getPropType(p), impl, st_1, doVect, pre, info);
       then
         (cache,(exp :: exps),(p :: props),st_2);
+  
   end matchcontinue;
 end elabExpList2;
 
@@ -7206,9 +7210,9 @@ algorithm
         fnPrefix = Absyn.stripLast(fn); // take the prefix: word
         fnIdent = Absyn.pathLastIdent(fn); // take the suffix: gravityAcceleration
         Absyn.IDENT(componentName) = fnPrefix; // see that is just a name TODO! this might be a path
-        (_, _, SOME((SCode.COMPONENT(
+        (_, _, SCode.COMPONENT(
           prefixes = SCode.PREFIXES(innerOuter=innerOuter), 
-          typeSpec = Absyn.TPATH(componentType, _)),_)), _) =
+          typeSpec = Absyn.TPATH(componentType, _)),_, _) =
           Lookup.lookupIdent(cache, env, componentName); // search for the component
         // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
         functionClassPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
@@ -7249,10 +7253,9 @@ algorithm
       then
         (cache,SOME((call_exp,prop_1)));
 
-    /* Record constructors, user defined or implicit */ // try the hard stuff first
+    // Record constructors, user defined or implicit, try the hard stuff first
     case (cache,env,fn,args,nargs,impl,_,st,pre,_)
       equation
-        
         // For unrolling errors if an overloaded 'constructor' matches later.
         ErrorExt.setCheckpoint("RecordConstructor");
         
@@ -7261,13 +7264,12 @@ algorithm
                 funcArg = fargs, 
                 funcResultType = outtype as DAE.T_COMPLEX(complexClassType = complexClassType as ClassInf.RECORD(path=_))),_)
           = Lookup.lookupType(cache,env, fn, NONE());
-//        print(" inst record: " +& name +& " \n");
+        // print(" inst record: " +& name +& " \n");
         (_,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
         
-        /*we might still have to look for overloaded constructors
-        if the defualt doesn't match*/
-        //Util.setStatefulBoolean(stopElab,true);
+        // we might still have to look for overloaded constructors if the defualt doesn't match
+        // Util.setStatefulBoolean(stopElab,true);
         
         lastId = Absyn.pathLastIdent(fn);
         fn = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
@@ -7304,14 +7306,14 @@ algorithm
         callExp = DAE.CALL(fn,args_2,DAE.CALL_ATTR(tp,false,false,DAE.NO_INLINE(),DAE.NO_TAIL()));
         
         // create a replacement for input variables -> their binding
-        //inputVarsRepl = createInputVariableReplacements(newslots2, VarTransform.emptyReplacements());
-        //print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
+        // inputVarsRepl = createInputVariableReplacements(newslots2, VarTransform.emptyReplacements());
+        // print("Repls: " +& VarTransform.dumpReplacementsStr(inputVarsRepl) +& "\n");
         // replace references to inputs in the arguments  
-        //callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
+        // callExp = VarTransform.replaceExp(callExp, inputVarsRepl, NONE());
         
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, newslots2, prop, info);
-        //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
-       /* Instantiate the function and add to dae function tree*/
+        // print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
+        // Instantiate the function and add to dae function tree
         (cache,status) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
         expProps = Util.if_(Util.isSuccess(status),SOME((call_exp,prop_1)),NONE());
         
@@ -7583,7 +7585,7 @@ algorithm
     // If we have a function call in an implicit scope type, then go 
     // up recursively to find the actuall scope and then check.
     // But parfor scope is a parallel type so is handled differently.
-    case(_,_,_, Env.FRAME(optName = SOME(scopeName))::restFrames, _) 
+    case(_,_,_, Env.FRAME(name = SOME(scopeName))::restFrames, _) 
       equation 
         true = listMember(scopeName, Env.implicitScopeNames);
         false = stringEq(scopeName, Env.parForScopeName);
@@ -7591,21 +7593,20 @@ algorithm
     
     // This two are common cases so keep them at the top.
     // normal(non parallel) function call in a normal scope (function and class scopes) is OK.
-    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(optType = SOME(Env.CLASS_SCOPE()))::_, _) 
+    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = SOME(Env.CLASS_SCOPE()))::_, _) 
       then true;
-    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(optType = SOME(Env.FUNCTION_SCOPE()))::_, _) 
+    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = SOME(Env.FUNCTION_SCOPE()))::_, _) 
       then true;
        
     // Normal function call in a prallel scope is error, if it is not a built-in function.  
-    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+    case(_,_,DAE.FP_NON_PARALLEL(), Env.FRAME(name = SOME(scopeName), scopeType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
         
         errorString = "\n" +& 
              "- Non-Parallel function '" +& Absyn.pathString(inFn) +& 
              "' can not be called from a parallel scope." +& "\n" +&
              "- Here called from :" +& scopeName +& "\n" +&
-             "- Please declare the function as parallel function." 
-             ;  
+             "- Please declare the function as parallel function.";  
         Error.addSourceMessage(Error.PARMODELICA_ERROR, 
           {errorString}, inInfo);
       then false;
@@ -7613,7 +7614,7 @@ algorithm
     
     // parallel function call in a parallel scope (kernel function, parallel function) is OK.
     // Except when it is calling itself, recurssion
-    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(name = SOME(scopeName), scopeType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
         // make sure the function is not calling itself
         // recurrsion is not allowed.
@@ -7621,7 +7622,7 @@ algorithm
       then true;
         
     // If the above case failed (parallel function recurssion) this will print the error message
-    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(name = SOME(scopeName), scopeType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
         // make sure the function is not calling itself
         // recurrsion is not allowed.
@@ -7631,34 +7632,32 @@ algorithm
              "' can not call itself. Recurrsion is not allowed for parallel functions currently." +& "\n" +&
              "- Parallel functions can only be called from: 'kernel' functions," +&
              " OTHER 'parallel' functions (no recurrsion) or from a body of a" +& 
-             " 'parfor' loop"
-             ;  
+             " 'parfor' loop";  
         Error.addSourceMessage(Error.PARMODELICA_ERROR, 
           {errorString}, inInfo);
       then false;
       
     // parallel function call in a parfor scope is OK.
-    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::_, _) 
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(), Env.FRAME(name = SOME(scopeName))::_, _) 
       equation
         true = stringEqual(scopeName, Env.parForScopeName);
       then true;
       
     //parallel function call in non parallel scope types is error.
-    case(_,_,DAE.FP_PARALLEL_FUNCTION(),Env.FRAME(optName = SOME(scopeName))::_,_) 
+    case(_,_,DAE.FP_PARALLEL_FUNCTION(),Env.FRAME(name = SOME(scopeName))::_,_) 
       equation
         errorString = "\n" +& 
              "- Parallel function '" +& Absyn.pathString(inFn) +& 
              "' can not be called from a non parallel scope '" +& scopeName +& "'.\n" +&
              "- Parallel functions can only be called from: 'kernel' functions," +&
              " other 'parallel' functions (no recurrsion) or from a body of a" +& 
-             " 'parfor' loop"
-             ;  
+             " 'parfor' loop";  
         Error.addSourceMessage(Error.PARMODELICA_ERROR, 
           {errorString}, inInfo);
       then false;
         
     // Kernel functions should not call themselves.
-    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::_, _) 
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(name = SOME(scopeName))::_, _) 
       equation
         // make sure the function is not calling itself
         // recurrsion is not allowed.
@@ -7666,28 +7665,26 @@ algorithm
         errorString = "\n" +& 
              "- Kernel function '" +& Absyn.pathString(inFn) +& 
              "' can not call itself. " +& "\n" +&
-             "- Recurrsion is not allowed for Kernel functions. "
-             ;  
+             "- Recurrsion is not allowed for Kernel functions. ";
         Error.addSourceMessage(Error.PARMODELICA_ERROR, 
           {errorString}, inInfo);
       then false;
      
     //kernel function call in a parallel scope (kernel function, parallel function) is Error.
-    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName), optType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(name = SOME(scopeName), scopeType = SOME(Env.PARALLEL_SCOPE()))::_, _) 
       equation
         errorString = "\n" +& 
              "- Kernel function '" +& Absyn.pathString(inFn) +& 
              "' can not be called from a parallel scope '" +& scopeName +& "'.\n" +&
              "- Kernel functions CAN NOT be called from: 'kernel' functions," +&
              " 'parallel' functions or from a body of a" +& 
-             " 'parfor' loop"
-             ;  
+             " 'parfor' loop";
         Error.addSourceMessage(Error.PARMODELICA_ERROR, 
           {errorString}, inInfo);
       then false;
         
     //kernel function call in a parfor loop is Error too (similar to above). just different error message.
-    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::_, _) 
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(name = SOME(scopeName))::_, _) 
       equation
         true = stringEqual(scopeName, Env.parForScopeName);
         errorString = "\n" +& 
@@ -7695,15 +7692,14 @@ algorithm
              "' can not be called from inside parallel for (parfor) loop body." +& "'.\n" +&
              "- Kernel functions CAN NOT be called from: 'kernel' functions," +&
              " 'parallel' functions or from a body of a" +& 
-             " 'parfor' loop"
-             ;  
+             " 'parfor' loop";  
         Error.addSourceMessage(Error.PARMODELICA_ERROR, 
           {errorString}, inInfo);
       then false;
         
     // Kernel function call in a non-parallel scope is OK.
     // Except when it is calling itself, recurssion
-    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optName = SOME(scopeName))::_, _) 
+    case(_,_,DAE.FP_KERNEL_FUNCTION(), Env.FRAME(name = SOME(scopeName))::_, _) 
       equation
         // make sure the function is not calling itself
         // recurrsion is not allowed.
@@ -7713,15 +7709,15 @@ algorithm
     case(_,_,_,_,_) then true;
         /*
     //Normal (non parallel) function call in a normal function scope is OK.
-    case(DAE.FP_NON_PARALLEL(), Env.FRAME(optType = Env.FUNCTION_SCOPE())) then();
+    case(DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = Env.FUNCTION_SCOPE())) then();
     //Normal (non parallel) function call in a normal class scope is OK.
-    case(DAE.FP_NON_PARALLEL(), Env.FRAME(optType = Env.CLASS_SCOPE())) then();
+    case(DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = Env.CLASS_SCOPE())) then();
     //Normal (non parallel) function call in a normal function scope is OK.
-    case(DAE.FP_NON_PARALLEL(), Env.FRAME(optType = Env.FUNCTION_SCOPE())) then();
+    case(DAE.FP_NON_PARALLEL(), Env.FRAME(scopeType = Env.FUNCTION_SCOPE())) then();
     //Normal (non parallel) function call in a normal class scope is OK.
-    case(DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optType = Env.CLASS_SCOPE())) then();
+    case(DAE.FP_KERNEL_FUNCTION(), Env.FRAME(scopeType = Env.CLASS_SCOPE())) then();
     //Normal (non parallel) function call in a normal function scope is OK.
-    case(DAE.FP_KERNEL_FUNCTION(), Env.FRAME(optType = Env.FUNCTION_SCOPE())) then();
+    case(DAE.FP_KERNEL_FUNCTION(), Env.FRAME(scopeType = Env.FUNCTION_SCOPE())) then();
     */
     
  end matchcontinue;
@@ -7937,11 +7933,11 @@ algorithm
     case (_, _, DAE.CREF(ty = DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = record_name))) :: rest_args, _)
       equation
         (cache,Util.SUCCESS()) = instantiateDaeFunction(inCache, inEnv, record_name, false,NONE(), false);
-        cache = instantiateImplicitRecordConstructors(cache, inEnv, rest_args,NONE());
+        cache = instantiateImplicitRecordConstructors(cache, inEnv, rest_args, NONE());
       then cache;
     case (_, _, _ :: rest_args, _)
       equation
-        cache = instantiateImplicitRecordConstructors(inCache, inEnv, rest_args,NONE());
+        cache = instantiateImplicitRecordConstructors(inCache, inEnv, rest_args, NONE());
       then cache;
   end matchcontinue;
 end instantiateImplicitRecordConstructors;
@@ -7951,8 +7947,7 @@ This is needed because when generating C-code all arguments must be present in t
 
 If in future C++ code is generated instead, this is not required, since C++ allows default values for arguments.
 Not true: Mutable default values still need to be constructed. C++ only helps
-if we also enforce all input args immutable.
-"
+if we also enforce all input args immutable."
   input Env.Cache inCache;
   input Env.Env env;
   input list<DAE.Exp> inArgs;
@@ -9122,7 +9117,7 @@ algorithm
     // no modifier in env
     case (cache, env, id, cls)
       equation
-        (_, _, SOME((_,DAE.NOMOD())), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
+        (_, _, _, DAE.NOMOD(), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
         print("here2");
         SCode.COMPONENT(modifications = SCode.MOD(binding = SOME((exp,_)))) = SCode.getElementNamed(id, cls);
       then
@@ -9131,12 +9126,13 @@ algorithm
     // some modifier in env, return that
     case (cache, env, id, cls)
       equation
-        (_, _, SOME((_,extendsMod)), _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
+        (_, _, _, extendsMod, _, _ ) = Lookup.lookupIdentLocal(cache, env, id);
         print("here3");
         scodeMod = Mod.unelabMod(extendsMod);
         SCode.MOD(binding = SOME((exp,_))) = scodeMod;
       then
         exp;
+  
   end matchcontinue;
 end getExpInModifierFomEnvOrClass;
 
@@ -9709,7 +9705,7 @@ algorithm
         (cache,SOME((expASUB,DAE.PROP(t, const),attr)));
 
     // a normal cref
-    case (cache,env,c,impl,doVect,pre,_,_) /* impl */
+    case (cache,env,c,impl,doVect,pre,_,_) 
       equation
         c = replaceEnd(c);
         (cache,c_1,constSubs,hasZeroSizeDim) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl, false, info);
@@ -9726,7 +9722,7 @@ algorithm
         (cache,SOME((exp,DAE.PROP(t, const),attr)));
         
     // a normal cref, fully-qualified and lookupVar failed in some weird way in the previous case
-    case (cache,env,Absyn.CREF_FULLYQUALIFIED(c),impl,doVect,pre,_,_) /* impl */
+    case (cache,env,Absyn.CREF_FULLYQUALIFIED(c),impl,doVect,pre,_,_) 
       equation
         c = replaceEnd(c);
         frame = Env.topFrame(env);

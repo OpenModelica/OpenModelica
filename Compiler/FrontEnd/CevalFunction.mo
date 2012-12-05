@@ -1605,7 +1605,18 @@ algorithm
         var = makeFunctionVariable(inName, ty, binding);
         (cache, record_env, st) = 
           makeRecordEnvironment(inType, inOptValue, cache, st);
-        env = Env.extendFrameV(inEnv, var, NONE(), Env.VAR_TYPED(), record_env);
+        env = Env.extendFrameV(
+                inEnv, 
+                var, 
+                SCode.COMPONENT(
+                  inName, 
+                  SCode.defaultPrefixes,
+                  SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                  Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
+                  NONE(), NONE(), Absyn.dummyInfo),
+                DAE.NOMOD(),
+                Env.VAR_TYPED(), 
+                record_env);
       then
         (cache, env, st);
 
@@ -1616,9 +1627,21 @@ algorithm
         (cache, ty, st) = 
           appendDimensions(inType, inOptValue, inDims, inCache, inEnv, inST);
         var = makeFunctionVariable(inName, ty, binding);
-        env = Env.extendFrameV(inEnv, var, NONE(), Env.VAR_TYPED(), {});
+        env = Env.extendFrameV(
+                inEnv, 
+                var, 
+                SCode.COMPONENT(
+                  inName, 
+                  SCode.defaultPrefixes,
+                  SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                  Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
+                  NONE(), NONE(), Absyn.dummyInfo),
+                DAE.NOMOD(), 
+                Env.VAR_TYPED(), 
+                {});
       then
         (cache, env, st);
+  
   end matchcontinue;
 end extendEnvWithVar;
 
@@ -1670,7 +1693,7 @@ algorithm
 
     case (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _),varLst = var_lst), _, _, st)
       equation
-        env = Env.newEnvironment();
+        env = Env.newEnvironment(NONE());
         vals = getRecordValues(inOptValue, inRecordType);
         ((cache, env, st)) = List.threadFold(var_lst, vals,
           extendEnvWithRecordVar, (inCache, env, st));
@@ -1879,7 +1902,7 @@ algorithm
     case (cr as DAE.CREF_IDENT(ident = id, subscriptLst = {}, identType = ety as
         DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = _))), _, _, _, st)
       equation
-        (_, var, _, inst_status, env) =
+        (_, var, _, _, inst_status, env) =
           Lookup.lookupIdentLocal(inCache, inEnv, id);
         (cache, env, st) = assignRecord(ety, inNewValue, inCache, env, st);
         var = updateRecordBinding(var, inNewValue);
@@ -1911,7 +1934,7 @@ algorithm
     case (cr as DAE.CREF_QUAL(ident = id, subscriptLst = {},
         componentRef = cr_rest), _, _, _, st)
       equation
-        (_, var, _, inst_status, env) =
+        (_, var, _, _, inst_status, env) =
           Lookup.lookupIdentLocal(inCache, inEnv, id);
         (cache, env, st) = assignVariable(cr_rest, inNewValue, inCache, env, st);
         comp_id = ComponentReference.crefFirstIdent(cr_rest);
@@ -2428,7 +2451,7 @@ algorithm
           DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = p),
                         varLst = vars), _)
       equation
-        (_, _, _, _, env) =
+        (_, _, _, _, _, env) =
           Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
         vals = List.map1(vars, getRecordComponentValue, env);
         var_names = List.map(vars, Types.getVarName);
@@ -2462,7 +2485,7 @@ algorithm
     // A non-record variable.
     case (DAE.TYPES_VAR(name = id, ty = ty), _)
       equation
-        (_, DAE.TYPES_VAR(binding = binding), _, _, _) =
+        (_, DAE.TYPES_VAR(binding = binding), _, _, _, _) =
           Lookup.lookupIdentLocal(Env.emptyCache(), inEnv, id);
         val = getBindingOrDefault(binding, ty);
       then

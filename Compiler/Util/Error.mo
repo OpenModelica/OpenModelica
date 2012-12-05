@@ -630,6 +630,8 @@ public constant Message UTF8_COMMAND_LINE_ARGS = MESSAGE(528, TRANSLATION(), ERR
   Util.gettext("The compiler was sent command-line arguments that were not UTF-8 encoded and will abort the current execution."));
 public constant Message PACKAGE_ORDER_FILE_NOT_COMPLETE = MESSAGE(529, GRAMMAR(), WARNING(),
   Util.gettext("The package.order file does not list all .mo files and directories (containing package.mo) present in its directory.\nMissing names are:\n\t%s"));
+public constant Message REINIT_IN_WHEN_INITIAL = MESSAGE(530, TRANSLATION(), ERROR(),
+  Util.gettext("Using reinit in when with condition initial() is not allowed. Use assignment or equality equation instead."));  
   
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));

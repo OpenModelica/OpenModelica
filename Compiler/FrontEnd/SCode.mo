@@ -4493,5 +4493,136 @@ algorithm
   outEq := EQUATION(inEEq);
 end makeEquation;
 
+public function getClassDef
+  input Element inClass;
+  output ClassDef outCdef;
+algorithm
+  outCdef := match(inClass)
+    case CLASS(classDef = outCdef) then outCdef;
+  end match;
+end getClassDef;
+
+public function equationsContainReinit
+"@author:
+ returns true if equations contains reinit"
+  input list<EEquation> inEqs;
+  output Boolean hasReinit;
+algorithm
+  hasReinit := matchcontinue(inEqs)
+    local Boolean b;
+    case (_) 
+      equation
+        b = List.applyAndFold(inEqs, boolOr, equationContainReinit, false);
+      then
+        b;
+  end matchcontinue; 
+end equationsContainReinit;
+
+public function equationContainReinit
+"@author:
+ returns true if equation contains reinit"
+  input EEquation inEq;
+  output Boolean hasReinit;
+algorithm
+  hasReinit := matchcontinue(inEq)
+    local
+      Boolean b;
+      list<EEquation> eqs;
+      list<list<EEquation>> eqs_lst;
+      list<tuple<Absyn.Exp, list<EEquation>>> tpl_el;
+
+    case EQ_REINIT(info = _) then true; 
+    case EQ_WHEN(eEquationLst = eqs, elseBranches = tpl_el)
+      equation
+        b = equationsContainReinit(eqs);
+        eqs_lst = List.map(tpl_el, Util.tuple22);
+        b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
+      then 
+        b;
+      
+    case EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)
+      equation
+        b = equationsContainReinit(eqs);
+        b = List.applyAndFold(eqs_lst, boolOr, equationsContainReinit, b);
+      then
+        b;
+    
+    case EQ_FOR(eEquationLst = eqs)
+      equation
+        b = equationsContainReinit(eqs);
+      then
+        b;
+    
+    else false;
+  
+  end matchcontinue;
+end equationContainReinit;
+
+public function algorithmsContainReinit
+"@author:
+ returns true if statements contains reinit"
+  input list<Statement> inAlgs;
+  output Boolean hasReinit;
+algorithm
+  hasReinit := matchcontinue(inAlgs)
+    local Boolean b;
+    case (_) 
+      equation
+        b = List.applyAndFold(inAlgs, boolOr, algorithmContainReinit, false);
+      then
+        b;
+  end matchcontinue; 
+end algorithmsContainReinit;
+
+public function algorithmContainReinit
+"@author:
+ returns true if statement contains reinit"
+  input Statement inAlg;
+  output Boolean hasReinit;
+algorithm
+  hasReinit := matchcontinue(inAlg)
+    local
+      Boolean b, b1, b2, b3;
+      list<Statement> algs, algs1, algs2;
+      list<list<Statement>> algs_lst;
+      list<tuple<Absyn.Exp, list<Statement>>> tpl_alg;
+
+    case ALG_NORETCALL(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "reinit"))) then true;
+    
+    case ALG_WHEN_A(branches = tpl_alg)
+      equation
+        algs_lst = List.map(tpl_alg, Util.tuple22);
+        b = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, false);
+      then 
+        b;
+      
+    case ALG_IF(trueBranch = algs1, elseIfBranch = tpl_alg, elseBranch = algs2)
+      equation
+        b1 = algorithmsContainReinit(algs1);
+        algs_lst = List.map(tpl_alg, Util.tuple22);
+        b2 = List.applyAndFold(algs_lst, boolOr, algorithmsContainReinit, b1);
+        b3 = algorithmsContainReinit(algs2);
+        b = boolOr(b1, boolOr(b2, b3));
+      then
+        b;
+    
+    case ALG_FOR(forBody = algs)
+      equation
+        b = algorithmsContainReinit(algs);
+      then
+        b;
+    
+    case ALG_WHILE(whileBody = algs)
+      equation
+        b = algorithmsContainReinit(algs);
+      then
+        b;    
+    
+    else false;
+  
+  end matchcontinue;
+end algorithmContainReinit;
+
+
 end SCode;
 

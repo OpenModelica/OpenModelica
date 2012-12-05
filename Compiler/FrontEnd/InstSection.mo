@@ -181,17 +181,19 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       
-    case (cache,env,ih,mods,pre,csets,ci_state,eq,impl,_,graph) /* impl */ 
+    case (cache,env,ih,mods,pre,csets,ci_state,eq,impl,_,graph) 
       equation 
         (cache,env,ih,dae,csets_1,ci_state_1,graph) = 
         instEquationCommon(cache,env,ih, mods, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl, graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
+    
     // failure
     case(cache,env,ih,mods,pre,csets,ci_state,eq,impl,_,graph) 
       equation
         Debug.fprint(Flags.FAILTRACE,"Inst.instEEquation failed for "+&SCodeDump.equationStr(eq)+&"\n");
     then fail();
+  
   end matchcontinue;
 end instEEquation;
 
@@ -245,6 +247,7 @@ algorithm
         Debug.fprint(Flags.FAILTRACE, "- instInitialEquation failed\n");
       then
         fail();
+  
   end matchcontinue;
 end instInitialEquation;
 
@@ -290,6 +293,7 @@ algorithm
         (cache,env,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache,env,ih, mods, pre, csets, ci_state, eq, SCode.INITIAL(), impl, graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
+  
   end match;
 end instEInitialEquation;
 
@@ -357,20 +361,23 @@ algorithm
     local
       String s;
       ClassInf.State state;
+    
     case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         state = ClassInf.trans(inState,ClassInf.FOUND_EQUATION());
         (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,state,inEEquation,inInitial,inBoolean,inGraph);
         (outDae,_,_) = DAEUtil.traverseDAE(outDae,DAEUtil.emptyFuncTree,Expression.traverseSubexpressionsHelper,(ExpressionSimplify.simplifyWork,(false,ExpressionSimplify.optionSimplifyOnly)));
       then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
+    
     case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         failure(_ = ClassInf.trans(inState,ClassInf.FOUND_EQUATION()));
         s = ClassInf.printStateStr(inState);
         Error.addSourceMessage(Error.EQUATION_TRANSITION_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
       then fail();
-        // We only want to print a generic error message if no other error message was printed
-        // Providing two error messages for the same error is confusing (but better than none) 
+    
+    // We only want to print a generic error message if no other error message was printed
+    // Providing two error messages for the same error is confusing (but better than none) 
     case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = errorCount == Error.getNumErrorMessages();
@@ -378,6 +385,7 @@ algorithm
         Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
       then
         fail();
+  
   end matchcontinue;
 end instEquationCommon2;
 
@@ -589,19 +597,19 @@ algorithm
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
 
-    // when equation statement, modelica 1.1 
-    //  When statements are instantiated by evaluating the conditional expression. 
+    // when equation statement 
+    // When statements are instantiated by evaluating the conditional expression. 
     case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph) 
       equation 
-        checkForNestedWhen(eq);
-        (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
+        checkWhenEquation(eq);
+        (cache,e_1,prop1,_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
         (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
+        (cache,env_1,ih,DAE.DAE(daeElts1),_,_,graph) = Inst.instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, el, impl, Inst.alwaysUnroll, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(daeElts1);
         (cache,env_2,ih,DAE.DAE(daeElts3 as (daeElt2 :: _)),_,ci_state_1,graph) = instEquationCommon(cache,env_1,ih, mod, pre, csets, ci_state, 
           SCode.EQ_WHEN(ee,eel,eex,NONE(),info), initial_, impl, graph);
@@ -617,7 +625,7 @@ algorithm
                         
     case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,elseBranches = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph)
       equation 
-        checkForNestedWhen(eq);
+        checkWhenEquation(eq);
         (cache,e_1,prop1,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
         (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -632,15 +640,7 @@ algorithm
         dae = DAE.DAE({DAE.WHEN_EQUATION(e_2,daeElts1,NONE(),source)});
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
-    
-    // Print error if when equations are nested.
-    case (_, env, _, _, _, _, _, eq as SCode.EQ_WHEN(info = info), _, _, _)
-      equation
-        failure(checkForNestedWhen(eq));
-        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
-      then
-        fail();
-        
+            
     // seems unnecessary to handle when equations that are initial for loops
     // The loop expression is evaluated to a constant array of integers, and then the loop is unrolled.   
 
@@ -2506,12 +2506,14 @@ algorithm
       DAE.CallAttributes attr;
       DAE.ElementSource source;
 
+    
+    // assign
     case (cache,env,ih,pre,_,SCode.ALG_ASSIGN(info = _),source,_,impl,_,_)
       equation
         (cache,stmts) = instAssignment(cache,env,ih,pre,inAlgorithm,source,initial_,impl,unrollForLoops,Error.getNumErrorMessages());
       then (cache,stmts);
 
-    /* If statement*/
+    // if statement
     case (cache,env,ih,pre,_,SCode.ALG_IF(boolExpr = e,trueBranch = tb,elseIfBranch = eib,elseBranch = fb,info = info),source,_,impl,_,_)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl,NONE(),true,pre,info);
@@ -2525,21 +2527,21 @@ algorithm
       then
         (cache,stmts);
         
-    /* For loop */
+    // for loop
     case (cache,env,ih,pre,_,SCode.ALG_FOR(index = iter, range = range,forBody = sl,info = info),source,_,impl,_,_)
       equation 
         (cache,stmts) = instForStatement(cache,env,ih,pre,ci_state,iter,range,sl,info,source,initial_,impl,unrollForLoops);
       then
         (cache,stmts);
         
-    /* ParFor loop */
+    // parfor loop 
     case (cache,env,ih,pre,_,SCode.ALG_PARFOR(index = iter, range = range,parforBody = sl,info = info),source,_,impl,_,_)
       equation 
         (cache,stmts) = instParForStatement(cache,env,ih,pre,ci_state,iter,range,sl,info,source,initial_,impl,unrollForLoops);
       then
         (cache,stmts);
         
-    /* While loop */
+    // while loop
     case (cache,env,ih,pre,_,SCode.ALG_WHILE(boolExpr = e,whileBody = sl, info = info),source,_,impl,_,_)
       equation 
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
@@ -2551,12 +2553,12 @@ algorithm
       then
         (cache,{stmt});
 
-    /* When clause without elsewhen */
+    // when clause without elsewhen
     case (cache,env,ih,pre,_,SCode.ALG_WHEN_A(branches = {(e,sl)}, info = info),source,_,impl,_,_)
       equation
-        failure(ClassInf.isFunction(ci_state));
-        false = containsWhenStatements(sl);
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        false = ClassInf.isFunction(ci_state);
+        checkWhenAlgorithm(inAlgorithm);        
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
@@ -2565,13 +2567,13 @@ algorithm
       then
         (cache,{stmt});
         
-    /* When clause with elsewhen branch */
+    // when clause with elsewhen branch
     case (cache,env,ih,pre,_,SCode.ALG_WHEN_A(branches = (e,sl)::(elseWhenRest as _::_), comment = comment, info = info),source,_,impl,_,_)
       equation
-        failure(ClassInf.isFunction(ci_state));
-        false = containsWhenStatements(sl);
+        false = ClassInf.isFunction(ci_state);
+        checkWhenAlgorithm(inAlgorithm);
         (cache,{stmt1}) = instStatement(cache,env,ih,pre,ci_state,SCode.ALG_WHEN_A(elseWhenRest,comment,info),source,initial_,impl,unrollForLoops);
-        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl,NONE(), true,pre,info);
+        (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE(), true, pre, info);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl, info);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         (cache,sl_1) = instStatements(cache, env, ih, pre, ci_state, sl, source, initial_, impl, unrollForLoops);
@@ -2580,15 +2582,7 @@ algorithm
       then
         (cache,{stmt});
 
-    // Check for nested when clauses, which are invalid.
-    case (_,env,ih,_,_,alg as SCode.ALG_WHEN_A(branches = (_,sl)::_, info = info),_,_,_,_,_)
-      equation
-        failure(ClassInf.isFunction(ci_state));
-        true = containsWhenStatements(sl);
-        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
-      then fail();
-
-    /* assert(cond,msg) */
+    // assert(cond,msg)
     case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})), info = info),source,_,impl,_,_)
       equation 
@@ -2602,7 +2596,8 @@ algorithm
         stmts = Algorithm.makeAssert(cond_2, msg_2, DAE.ASSERTIONLEVEL_ERROR, cprop, msgprop, DAE.PROP(DAE.T_ASSERTIONLEVEL,DAE.C_CONST()), source);
       then
         (cache,stmts);
-    /* assert(cond,msg,level) */
+    
+    // assert(cond,msg,level)
     case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg,level},argNames = {})), info = info),source,_,impl,_,_)
       equation 
@@ -2619,7 +2614,8 @@ algorithm
         stmts = Algorithm.makeAssert(cond_2, msg_2, level_2, cprop, msgprop, levelprop, source);
       then
         (cache,stmts);
-    /* assert(cond,msg,level) */
+    
+    // assert(cond,msg,level)
     case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {Absyn.NAMEDARG("level",level)})), info = info),source,_,impl,_,_)
       equation 
@@ -2627,7 +2623,7 @@ algorithm
       then
         (cache,stmts);
         
-    /* terminate(msg) */
+    // terminate(msg)
     case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "terminate"),
           functionArgs = Absyn.FUNCTIONARGS(args = {msg},argNames = {})), info = info),source,_,impl,_,_)
       equation 
@@ -2639,11 +2635,11 @@ algorithm
       then
         (cache,{stmt});
         
-    /* reinit(variable,value) */
+    // reinit(variable,value)
     case (cache,env,ih,pre,_,SCode.ALG_NORETCALL(exp=Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "reinit"),
           functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {})), info = info),source,_,impl,_,_)
       equation
-        failure(ClassInf.isFunction(ci_state));
+        false = ClassInf.isFunction(ci_state);
         (cache,var_1,varprop,_) = Static.elabExp(cache, env, var, impl,NONE(), true,pre,info);
         (cache, var_1, varprop) = Ceval.cevalIfConstant(cache, env, var_1, varprop, impl, info);
         (cache,var_2) = PrefixUtil.prefixExp(cache, env, ih, var_1, pre);
@@ -2655,7 +2651,7 @@ algorithm
       then
         (cache,{stmt});
 
-    /* generic NORETCALL */
+    // generic NORETCALL
     case (cache,env,ih,pre,_,(SCode.ALG_NORETCALL(exp = e, info = info)),source,_,impl,_,_)
       equation
         failure(Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "reinit")) = e);
@@ -2670,7 +2666,7 @@ algorithm
       then
         (cache,{stmt});
          
-    /* break */
+    /// break
     case (cache,env,ih,pre,_,SCode.ALG_BREAK(comment = comment, info = info),source,_,impl,_,_)
       equation 
         source = DAEUtil.addElementSourceFileInfo(source, info);
@@ -2678,7 +2674,7 @@ algorithm
       then
         (cache,{stmt});
         
-    /* return */
+    // return
     case (cache,env,ih,pre,ClassInf.FUNCTION(path=_),SCode.ALG_RETURN(comment = comment, info = info),source,_,impl,_,_)
       equation 
         source = DAEUtil.addElementSourceFileInfo(source, info);
@@ -2687,7 +2683,7 @@ algorithm
         (cache,{stmt});
         
     //------------------------------------------
-    // Part of MetaModelica extension.
+    // part of MetaModelica extension.
     //------------------------------------------
     case (cache,env,ih,pre,_,SCode.ALG_FAILURE(stmts = sl, comment = comment, info = info),source,_,impl,_,_)
       equation
@@ -2698,7 +2694,7 @@ algorithm
       then
         (cache,{stmt});
 
-    /* try */
+    // try
     case (cache,env,ih,pre,_,SCode.ALG_TRY(tryBody = sl, comment = comment, info = info),source,_,impl,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2708,7 +2704,7 @@ algorithm
       then
         (cache,{stmt});
         
-    /* catch */
+    // catch
     case (cache,env,ih,pre,_,SCode.ALG_CATCH(catchBody = sl, comment = comment, info = info),source,_,impl,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2718,7 +2714,7 @@ algorithm
       then
         (cache,{stmt});
 
-    /* throw */
+    // throw
     case (cache,env,ih,pre,_,SCode.ALG_THROW(comment = comment, info = info),source,_,impl,_,_)
       equation
         true = Config.acceptMetaModelicaGrammar();
@@ -2726,7 +2722,8 @@ algorithm
         stmt = DAE.STMT_THROW(source);
       then
         (cache,{stmt});
-        
+    
+    // error handling    
     case (cache,env,ih,pre,_,alg,_,_,impl,_,_)
       equation
         true = numErrorMessages == Error.getNumErrorMessages();
@@ -3406,9 +3403,20 @@ algorithm
         
         // add to the environment of the expandable 
         // connector the new virtual variable.
-        envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
-          ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), 
+        envExpandable = Env.extendFrameV(
+                          envExpandable,
+                          DAE.TYPES_VAR(componentName,
+                                        DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
+                                        ty2,DAE.UNBOUND(),
+                                        NONE()),
+                          SCode.COMPONENT(
+                            componentName, 
+                            SCode.defaultPrefixes,
+                            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                            Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
+                            NONE(), NONE(), Absyn.dummyInfo),
+                          DAE.NOMOD(),
+                          Env.VAR_TYPED(), 
           // add empty here to connect individual components!
           envComponentEmpty);
         // ******************************************************************************
@@ -3477,9 +3485,21 @@ algorithm
 
         // add to the environment of the expandable 
         // connector the new virtual variable.
-        envExpandable = Env.extendFrameV(envExpandable,
-          DAE.TYPES_VAR(componentName,DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
-            ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), envComponent);
+        envExpandable = Env.extendFrameV(
+                          envExpandable,
+                          DAE.TYPES_VAR(
+                            componentName,
+                            DAE.ATTR(ct2,prl2,vt2,Absyn.BIDIR(),io2,vis2),
+                            ty2,DAE.UNBOUND(),NONE()), 
+                          SCode.COMPONENT(
+                            componentName, 
+                            SCode.defaultPrefixes,
+                            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.BIDIR()),
+                            Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
+                            NONE(), NONE(), Absyn.dummyInfo),
+                          DAE.NOMOD(), 
+                          Env.VAR_TYPED(), 
+                          envComponent);
         // ******************************************************************************
         // here we need to update the correct environment.
         // walk the cref: c1_2 and update all the corresponding environments on the path:
@@ -4527,30 +4547,181 @@ algorithm
    end matchcontinue;
 end getVectorizedCref;
 
-protected function checkForNestedWhen
-  "Fails if a when equation contains nested when equations, which are not
-  allowed in Modelica."
+
+protected function checkWhenAlgorithm
+"@author: adrpo
+ checks when equation for:
+ - when alg in when alg is not allowed
+ - reinit in when with initial condition is not allowed 
+   when (initial()) then 
+     reinit(x, y); 
+   end when;
+"
+  input SCode.Statement inWhenAlgorithm;
+algorithm
+  _ := matchcontinue(inWhenAlgorithm)      
+    
+    // check for reinit
+    case (_)
+      equation
+        checkForReinitInWhenInitialAlg(inWhenAlgorithm);
+        checkForNestedWhenInStatements(inWhenAlgorithm);        
+      then 
+        ();
+        
+  end matchcontinue;
+end checkWhenAlgorithm;
+
+protected function checkForReinitInWhenInitialAlg
+"Fails if a when (initial()) alg contains 
+ reinit which is not allowed in Modelica."
+  input SCode.Statement inWhenAlgorithm;
+algorithm
+  _ := matchcontinue(inWhenAlgorithm)
+    local
+      Boolean b1, b2;      
+      Absyn.Exp exp;
+      Absyn.Info info;
+      list<SCode.Statement> algs;    
+    
+    // do not add an error
+    case SCode.ALG_WHEN_A(branches = (exp, algs)::_ , info = info)
+      equation
+        b1 = Absyn.expContainsInitial(exp);
+        b2 = SCode.algorithmsContainReinit(algs);
+        false = boolOr(b1, b2);
+      then
+        ();
+    
+    // add an error
+    case SCode.ALG_WHEN_A(branches = (exp, algs)::_ , info = info)
+      equation
+        true = Absyn.expContainsInitial(exp);
+        true = SCode.algorithmsContainReinit(algs);
+        Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
+      then
+        fail(); 
+    
+  end matchcontinue;
+end checkForReinitInWhenInitialAlg;
+
+protected function checkForNestedWhenInStatements
+  "Fails if a when alg contains nested when 
+   alg, which are not allowed in Modelica.
+   An error message is added when failing."
+  input SCode.Statement inWhenAlgorithm;
+algorithm
+  _ := matchcontinue(inWhenAlgorithm)
+    local
+      Absyn.Info info;
+      list<SCode.Statement> algs;
+      list<list<SCode.Statement>> algs_lst;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> tpl_el;
+        
+    // continue if when equations are not nested
+    case (SCode.ALG_WHEN_A(branches = (_,algs)::_, info = info))
+      equation
+        false = containsWhenStatements(algs);
+      then 
+        ();
+        
+    // add an error message for nested when
+    case (SCode.ALG_WHEN_A(branches = (_,algs)::_, info = info))
+      equation
+        true = containsWhenStatements(algs);
+        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
+      then
+        fail();
+  
+  end matchcontinue;
+end checkForNestedWhenInStatements;
+
+protected function checkWhenEquation
+"@author: adrpo
+ checks when equation for:
+ - when equation in when equation is not allowed
+ - reinit in when with initial condition is not allowed 
+   when (initial()) then 
+     reinit(x, y); 
+   end when;"
+  input SCode.EEquation inWhenEq;
+algorithm
+  _ := matchcontinue(inWhenEq)
+    case (_) 
+      equation 
+        checkForReinitInWhenInitialEq(inWhenEq);
+        checkForNestedWhenInEquation(inWhenEq); 
+      then 
+        ();
+  end matchcontinue;
+end checkWhenEquation;
+
+protected function checkForReinitInWhenInitialEq
+"Fails if a when (initial()) equation contains 
+ reinit which is not allowed in Modelica."
   input SCode.EEquation inWhenEq;
 algorithm
   _ := matchcontinue(inWhenEq)
     local
+      Boolean b1, b2;
+      Absyn.Exp exp;
+      Absyn.Info info;
       list<SCode.EEquation> el;
       list<list<SCode.EEquation>> el2;
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
-    case SCode.EQ_WHEN(eEquationLst = el, elseBranches = tpl_el)
+    
+    // add an error for when initial() then reinit() 
+    case SCode.EQ_WHEN(condition = exp, eEquationLst = el, elseBranches = tpl_el, info = info)
       equation
-        checkForNestedWhenInEqList(el);
-        el2 = List.map(tpl_el, Util.tuple22);
-        List.map_0(el2, checkForNestedWhenInEqList);
+        b1 = Absyn.expContainsInitial(exp);
+        b2 = SCode.equationsContainReinit(el);
+        false = boolOr(b1, b2);
       then
         ();
-    case _
+    
+    // add an error for when initial() then reinit() 
+    case SCode.EQ_WHEN(condition = exp, eEquationLst = el, elseBranches = tpl_el, info = info)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "- InstSection.checkForNestedWhen failed.");
+        true = Absyn.expContainsInitial(exp);
+        true = SCode.equationsContainReinit(el);
+        Error.addSourceMessage(Error.REINIT_IN_WHEN_INITIAL, {}, info);
       then
         fail();
+      
   end matchcontinue;
-end checkForNestedWhen;
+end checkForReinitInWhenInitialEq;
+
+protected function checkForNestedWhenInEquation
+  "Fails if a when equation contains nested when 
+   equations, which are not allowed in Modelica.
+   An error message is added when failing."
+  input SCode.EEquation inWhenEq;
+algorithm
+  _ := matchcontinue(inWhenEq)
+    local
+      Absyn.Info info;
+      list<SCode.EEquation> eqs;
+      list<list<SCode.EEquation>> eqs_lst;
+      list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
+    
+    // continue if when equations are not nested
+    case SCode.EQ_WHEN(eEquationLst = eqs, elseBranches = tpl_el)
+      equation
+        checkForNestedWhenInEqList(eqs);
+        eqs_lst = List.map(tpl_el, Util.tuple22);
+        List.map_0(eqs_lst, checkForNestedWhenInEqList);
+      then
+        ();
+    
+    // print error if when equations are nested.
+    case (SCode.EQ_WHEN(info = info))
+      equation
+        Error.addSourceMessage(Error.NESTED_WHEN, {}, info);
+      then
+        fail();
+  
+  end matchcontinue;
+end checkForNestedWhenInEquation;
 
 protected function checkForNestedWhenInEqList
   "Helper function to checkForNestedWhen. Searches for nested when equations in
@@ -4569,29 +4740,35 @@ algorithm
     local
       list<SCode.EEquation> eqs;
       list<list<SCode.EEquation>> eqs_lst;
+    
     case SCode.EQ_WHEN(info = _) then fail();
+    
     case SCode.EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)
       equation
         List.map_0(eqs_lst, checkForNestedWhenInEqList);
         checkForNestedWhenInEqList(eqs);
       then
         ();
+    
     case SCode.EQ_FOR(eEquationLst = eqs)
       equation
         checkForNestedWhenInEqList(eqs);
       then
         ();
+    
     case SCode.EQ_EQUALS(info = _) then ();
     case SCode.EQ_CONNECT(info = _) then ();
     case SCode.EQ_ASSERT(info = _) then ();
     case SCode.EQ_TERMINATE(info = _) then ();
     case SCode.EQ_REINIT(info = _) then ();
     case SCode.EQ_NORETCALL(info = _) then ();
+    
     case _
       equation
         Debug.fprintln(Flags.FAILTRACE, "- InstSection.checkForNestedWhenInEq failed.");
       then
         fail();
+  
   end matchcontinue;
 end checkForNestedWhenInEq;
 

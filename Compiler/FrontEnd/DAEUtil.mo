@@ -6615,5 +6615,17 @@ algorithm
 
   end matchcontinue;
 end getCommentsFromSource;
+
+public function mkEmptyVar
+  input String name;
+  output DAE.Var outVar;
+algorithm
+  outVar := DAE.TYPES_VAR(
+              name, 
+              DAE.dummyAttrVar,
+              DAE.T_UNKNOWN_DEFAULT,
+              DAE.UNBOUND(),
+              NONE());
+end mkEmptyVar;
   
 end DAEUtil;

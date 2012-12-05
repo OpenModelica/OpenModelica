@@ -1120,14 +1120,15 @@ protected import Error;
 public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
 
 public constant Info dummyInfo = INFO("",false,0,0,0,0,dummyTimeStamp);
+public constant TimeStamp newTimeStamp = TIMESTAMP(0.0,1.0); 
 
-public function getNewTimeStamp "Function: getNewTimeStamp
-generate a new timestamp with edittime>buildtime.
-"
+public function getNewTimeStamp 
+"function: getNewTimeStamp
+generate a new timestamp with edittime>buildtime."
 output TimeStamp ts;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  ts := TIMESTAMP(0.0,1.0);
+  ts := newTimeStamp;
 end getNewTimeStamp;
 
 public function setTimeStampBool ""
@@ -5819,5 +5820,56 @@ algorithm
           
   end matchcontinue;
 end pathSetLastIdent;
+
+public function expContainsInitial
+"@author:
+  returns true if expression contains initial()"
+  input Exp inExp;
+  output Boolean hasInitial;
+algorithm
+  hasInitial := matchcontinue(inExp)
+    local Boolean b;
+    case (_)
+      equation
+        ((_, b)) = traverseExp(inExp, isInitialTraverseHelper, false);
+      then
+        b;
+    else then false; 
+  end matchcontinue;
+end expContainsInitial;
+
+protected function isInitialTraverseHelper
+"@author:
+  returns true if expression is initial()"
+  input tuple<Exp, Boolean> inExpBooleanTpl;
+  output tuple<Exp, Boolean> outExpBooleanTpl;
+algorithm
+  outExpBooleanTpl := match(inExpBooleanTpl)
+    local Exp e; Boolean b;
+    
+    // make sure we don't have not initial()    
+    case ((UNARY(NOT(), e) , b)) then inExpBooleanTpl;
+    // we have initial
+    case ((e , b)) 
+      equation
+        b = isInitial(e);
+      then ((e, b));
+    else inExpBooleanTpl;
+  end match;
+end isInitialTraverseHelper;
+
+public function isInitial
+"@author:
+  returns true if expression is initial()"
+  input Exp inExp;
+  output Boolean hasReinit;
+algorithm
+  hasReinit := match(inExp)
+    local Exp e; Boolean b;
+    case (CALL(function_ = CREF_IDENT("initial", _))) then true;
+    case (CALL(function_ = CREF_FULLYQUALIFIED(CREF_IDENT("initial", _)))) then true;
+    else then false;
+  end match;
+end isInitial;
 
 end Absyn;

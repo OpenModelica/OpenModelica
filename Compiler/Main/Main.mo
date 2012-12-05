@@ -117,48 +117,6 @@ algorithm
   end matchcontinue;
 end serverLoop;
 
-protected function checkClassdef
-  input String inString;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inString)
-    local
-      list<String> clst,clst_1;
-      String str_1,str;
-      Boolean res;
-    case (str) /* Need to check for a whitespace after as well to get the keyword,
-  e.g typeOf function would be taken as a type definition otherwise */
-      equation
-        true = Util.strncmp(" ", str, 1);
-        clst = stringListStringChar(str);
-        clst_1 = listDelete(clst, 0);
-        str_1 = stringCharListString(clst_1);
-        res = checkClassdef(str_1);
-      then
-        res;
-    case str /* Need to check for a whitespace after as well to get the keyword,
-  e.g typeOf function would be taken as a type definition otherwise */
-      equation
-        false = Util.strncmp("end ", str, 4);
-        false = Util.strncmp("type ", str, 5);
-        false = Util.strncmp("class ", str, 6);
-        false = Util.strncmp("model ", str, 6);
-        false = Util.strncmp("block ", str, 6);
-        false = Util.strncmp("within ", str, 7);
-        false = Util.strncmp("record ", str, 7);
-        false = Util.strncmp("package ", str, 8);
-        false = Util.strncmp("partial ", str, 8);
-        false = Util.strncmp("function ", str, 9);
-        false = Util.strncmp("connector ", str, 10);
-        false = Util.strncmp("encapsulated ", str, 13);
-        false = Util.strncmp("optimization ", str, 13);
-      then
-        false;
-    case _ then true;
-  end matchcontinue;
-end checkClassdef;
-
 protected function makeDebugResult
   input Flags.DebugFlag inFlag;
   input String res;
@@ -199,12 +157,15 @@ algorithm
       list<Interactive.InstantiatedClass> b;
       Interactive.Statements exp;
       list<Interactive.LoadedFile> lf;
+    
     case (str,isymb)
       equation
         true = Util.strncmp("quit()", str, 6);
       then
         (false,"Ok\n",isymb);
-    case (str,isymb) /* Interactively evaluate an algorithm statement or expression */
+    
+    // Interactively evaluate an algorithm statement or expression
+    case (str,isymb)
       equation
         ErrorExt.setCheckpoint("parsestring");
         //debug_print("Command: don't typeCheck", str);
@@ -221,9 +182,9 @@ algorithm
         ErrorExt.delCheckpoint("parsestring");
       then
         (true,res,newisymb);
-    /* Add a class or function to the interactive symbol table.
-     * If it is a function, type check it.
-     */
+    
+    // Add a class or function to the interactive symbol table.
+    // If it is a function, type check it.
     case (str,
     (isymb as Interactive.SYMBOLTABLE(
       ast = iprog,depends=aDep,instClsLst = b,
@@ -231,7 +192,7 @@ algorithm
       loadedFiles = lf)))
       equation
         ErrorExt.rollBack("parsestring");
-        //debug_print("Command: typeCheck", str);
+        // debug_print("Command: typeCheck", str);
         Debug.fcall0(Flags.DUMP, Print.clearBuf);
         Debug.fcall0(Flags.DUMP_GRAPHVIZ, Print.clearBuf);
         Debug.fprint(Flags.DUMP, "\nTrying to parse class definition...\n");
@@ -241,17 +202,16 @@ algorithm
         newprog = Interactive.updateProgram(p_1, iprog);
         // not needed. the functions will be remove by examining
         // build times and files!
-        cf_1 = cf; // cf_1 = Interactive.removeCompiledFunctions(p, cf);
         Debug.fprint(Flags.DUMP, "\n--------------- Parsed program ---------------\n");
         Debug.fcall(Flags.DUMP_GRAPHVIZ, DumpGraphviz.dump, newprog);
         Debug.fcall(Flags.DUMP, Dump.dump, newprog);
         res_1 = makeClassDefResult(p_1) "return vector of toplevel classnames";
         res_1 = makeDebugResult(Flags.DUMP, res_1);
         res = makeDebugResult(Flags.DUMP_GRAPHVIZ, res_1);
-        isymb = Interactive.SYMBOLTABLE(newprog,aDep,NONE(),b,vars_1,cf_1,lf);
-        // Interactive.typeCheckFunction(p, isymb); // You need the new environment before you can check the added functions
+        isymb = Interactive.SYMBOLTABLE(newprog,aDep,NONE(),b,vars_1,cf,lf);
       then
         (true,res,isymb);
+    
     case (_,isymb)
       equation
         Print.printBuf("Error occured building AST\n");
@@ -260,17 +220,18 @@ algorithm
         str = stringAppend(str, Error.printMessagesStr());
       then
         (true,str,isymb);
+    
     case (str,isymb)
       equation
         _ = setStackOverflowSignal(false);
-
         Error.addMessage(Error.STACK_OVERFLOW,{str});
       then
         (true,"",isymb);
   end matchcontinue;
 end handleCommand;
 
-protected function makeClassDefResult "creates a list of classes of the program to be returned from evaluate"
+protected function makeClassDefResult 
+"creates a list of classes of the program to be returned from evaluate"
   input Absyn.Program p;
   output String res;
 algorithm
@@ -292,6 +253,7 @@ algorithm
         names = List.map(cls,Absyn.className);
         res = "{" +& stringDelimitList(List.map(names,Absyn.pathString),",") +& "}";
       then res;
+  
   end match;
 end makeClassDefResult;
 
@@ -320,6 +282,7 @@ algorithm
         true = stringEq(last, "mof");
       then
         ();
+  
   end matchcontinue;
 end isModelicaFile;
 

@@ -277,28 +277,9 @@ algorithm
         (cache,pattern) = elabPatternCall(cache,env,Absyn.crefToPath(fcr),fargs,utPath,info,lhs);
       then (cache,pattern);
 
-    /* unfortunately this doesn't seem to work very well right now.
-    // adrpo: top level input, case(inputX as exp) replace with exp 
-    case (cache,env,Absyn.AS(id,exp),ty2,info,_,true)
-      equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = DAE.ATTR(direction = direction)),_,_) = Lookup.lookupIdent(cache,env,id);
-        Static.checkAssignmentToInput(id, direction, info, allowTopLevelInputs);
-        (cache, pattern) = elabPattern(cache, env, exp, ty2, info, Static.bDisallowTopLevelInputs);
-      then (cache,pattern);
-    
-    // adrpo: top level input, case(inputX) replace with WILD
-    case (cache,env,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,info,_,true)
-      equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = DAE.ATTR(direction = direction)),_,_) = Lookup.lookupIdent(cache,env,id);
-        Static.checkAssignmentToInput(id, direction, info, allowTopLevelInputs);        
-        (cache, pattern) = elabPattern(cache, env, Absyn.CREF(Absyn.WILD()), ty2, info, Static.bDisallowTopLevelInputs);
-      then 
-        (cache,pattern);
-    */
-
     case (cache,_,Absyn.AS(id,exp),ty2,_,_)
       equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_) = Lookup.lookupIdent(cache,env,id);
+        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_) = Lookup.lookupIdent(cache,env,id);
         lhs = Absyn.CREF(Absyn.CREF_IDENT(id, {}));
         Static.checkAssignmentToInput(lhs, attr, env, Static.bDisallowTopLevelInputs, info);
         et = validPatternType(ty1,ty2,inLhs,info);
@@ -308,7 +289,7 @@ algorithm
 
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
       equation
-        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_) = Lookup.lookupIdent(cache,env,id);
+        (cache,DAE.TYPES_VAR(ty = ty1, attributes = attr),_,_,_) = Lookup.lookupIdent(cache,env,id);
         Static.checkAssignmentToInput(inLhs, attr, env, Static.bDisallowTopLevelInputs, info);
         et = validPatternType(ty1,ty2,inLhs,info);
         pattern = Util.if_(Types.isFunctionType(ty2), DAE.PAT_AS_FUNC_PTR(id,DAE.PAT_WILD()), DAE.PAT_AS(id,et,DAE.PAT_WILD()));
@@ -316,13 +297,13 @@ algorithm
 
     case (cache,_,Absyn.AS(id,exp),ty2,_,_)
       equation
-        failure((_,_,_,_) = Lookup.lookupIdent(cache,env,id));
+        failure((_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
     case (cache,_,Absyn.CREF(Absyn.CREF_IDENT(id,{})),ty2,_,_)
       equation
-        failure((_,_,_,_) = Lookup.lookupIdent(cache,env,id));
+        failure((_,_,_,_,_) = Lookup.lookupIdent(cache,env,id));
         Error.addSourceMessage(Error.LOOKUP_VARIABLE_ERROR,{id,""},info);
       then fail();
 
@@ -334,6 +315,7 @@ algorithm
         str = Dump.printExpStr(lhs) +& " of type " +& Types.unparseType(ty);
         Error.addSourceMessage(Error.META_INVALID_PATTERN, {str}, info);
       then fail();
+  
   end matchcontinue;
 end elabPattern2;
 

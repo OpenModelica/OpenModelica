@@ -86,6 +86,8 @@ public import ClassInf;
 public import DAE;
 public import HashTable;
 public import SCode;
+public import Util;
+
 // protected imports
 protected import BaseHashTable;
 protected import ComponentReference;
@@ -98,15 +100,33 @@ protected import ExpressionDump;
 protected import Flags;
 protected import List;
 protected import Print;
-protected import Util;
 protected import Types;
 protected import SCodeDump;
 protected import Mod;
 protected import Lookup;
+protected import FEnv;
 
 public type Ident = String " An identifier is just a string " ;
 public type Env = list<Frame> "an environment is a list of frames";
 public type StructuralParameters = tuple<HashTable.HashTable,list<list<DAE.ComponentRef>>>;
+public type Import = Absyn.Import;
+public type CSetsType = list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef>>;
+
+public constant Integer tmpTickIndex = 10;
+public constant Integer extendsTickIndex = 11;
+
+public constant Env emptyEnv = {};
+public constant String BASE_CLASS_SUFFIX = "$base";
+public constant ImportTable emptyImportTable = IMPORT_TABLE(false, {}, {});
+public constant ExtendsTable emptyExtendsTable = EXTENDS_TABLE({}, {}, NONE());
+
+public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
+public constant String forIterScopeName="$foriter loop scope$" "a unique scope used in for iterators";
+public constant String parForScopeName="$pafor loop scope$" "a unique scope used in parfor loops";
+public constant String parForIterScopeName="$parforiter loop scope$" "a unique scope used in parfor iterators";
+public constant String matchScopeName="$match scope$" "a unique scope used by match expressions";
+public constant String caseScopeName="$case scope$" "a unique scope used by match expressions; to be removed when local decls are deprecated";
+public constant list<String> implicitScopeNames={forScopeName,forIterScopeName,parForScopeName,parForIterScopeName,matchScopeName,caseScopeName};
 
 public uniontype Cache
   record CACHE
@@ -134,29 +154,86 @@ public uniontype CacheTree
   end CACHETREE;
 end CacheTree;
 
-type CSetsType = list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef>>;
-
 public uniontype ScopeType
   record FUNCTION_SCOPE end FUNCTION_SCOPE;
-  
   record CLASS_SCOPE end CLASS_SCOPE;
-  
   record PARALLEL_SCOPE end PARALLEL_SCOPE;
 end ScopeType;
+
+public uniontype ImportTable
+  record IMPORT_TABLE
+    // Imports should not be inherited, but removing them from the environment
+    // when doing lookup through extends causes problems for the lookup later
+    // on, because for example components may have types that depends on
+    // imports.  The hidden flag allows the lookup to 'hide' the imports
+    // temporarily, without actually removing them.
+    Boolean hidden "If true means that the imports are hidden.";
+    list<Import> qualifiedImports;
+    list<Import> unqualifiedImports;
+  end IMPORT_TABLE;
+end ImportTable;
+
+public uniontype Redeclaration
+  "This uniontype stores a redeclare modifier (which might be derived from an
+  element redeclare). The RAW_MODIFIER stores a 'raw' modifier, i.e. the raw
+  element stored in the SCode representation. These are processed when they are
+  used, i.e. when replacements are done, and converted into PROCESSED_MODIFIERs
+  which are environment items ready to be replaced in the environment."
+
+  record RAW_MODIFIER
+    SCode.Element modifier;
+  end RAW_MODIFIER;
+
+  record PROCESSED_MODIFIER
+    Item modifier;
+  end PROCESSED_MODIFIER;
+end Redeclaration;
+
+public uniontype Extends
+  record EXTENDS
+    Absyn.Path baseClass;
+    list<Redeclaration> redeclareModifiers;
+    Integer index;
+    Absyn.Info info;
+  end EXTENDS;
+end Extends;
+
+public uniontype ExtendsTable
+  record EXTENDS_TABLE
+    list<Extends> baseClasses;
+    list<SCode.Element> redeclaredElements;
+    Option<SCode.Element> classExtendsInfo;
+  end EXTENDS_TABLE;
+end ExtendsTable;
+
+public uniontype FrameType
+  record NORMAL_SCOPE end NORMAL_SCOPE;
+  record ENCAPSULATED_SCOPE end ENCAPSULATED_SCOPE;
+  record IMPLICIT_SCOPE "This scope contains one or more iterators; they are made unique by the following index (plus their name)" Integer iterIndex; end IMPLICIT_SCOPE;
+end FrameType;
 
 public
 uniontype Frame
   record FRAME
-    Option<Ident>       optName            "Optional class name";
-    Option<ScopeType>   optType            "Optional scope type";
+    Option<Ident>       name               "Optional class name";
+    Option<ScopeType>   scopeType          "Optional scope type";
+    FrameType           frameType          "Normal, Encapsulated, Implicit";
     AvlTree             clsAndVars         "List of uniquely named classes and variables";
     AvlTree             types              "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
-    list<Item>          imports            "list of unnamed items (imports)";
-    CSetsType           connectionSet      "current connection set crefs";
-    SCode.Encapsulated  encapsulatedPrefix "encapsulated prefix means that FRAME is created due to encapsulated class";
-    list<SCode.Element> defineUnits        "list of units defined in the frame";
+    CSetsType           connectionSet      "Current connection set crefs";
+    list<SCode.Element> defineUnits        "List of units defined in the frame";
+    ExtendsTable        extendsTable       "The Extends table containing all extends with their redeclares";
+    ImportTable         importTable        "The Import table";
+    Option<Util.StatefulBoolean> isUsed    "Used by FDependency.";    
   end FRAME;
 end Frame;
+
+public uniontype ClassType
+  record USERDEFINED end USERDEFINED;
+  record BUILTIN end BUILTIN;
+  record CLASS_EXTENDS end CLASS_EXTENDS;
+  record BASIC_TYPE end BASIC_TYPE;
+end ClassType;
 
 public uniontype InstStatus
 "Used to distinguish between different phases of the instantiation of a component
@@ -178,27 +255,36 @@ public
 uniontype Item
   record VAR
     DAE.Var instantiated "instantiated component" ;
-    Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated.";
+    SCode.Element var "declaration";
+    DAE.Mod mod "modification";
     InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
     Env env "The environment of the instantiated component. Contains e.g. all sub components";
+    Option<Util.StatefulBoolean> isUsed "Used by FDependency.";
   end VAR;
 
   record CLASS
-    SCode.Element cl;
+    SCode.Element cls;
     Env env;
+    ClassType classType;
   end CLASS;
 
   record TYPE
     list<DAE.Type> tys "list since several types with the same name can exist in the same scope (overloading)" ;
   end TYPE;
 
-  record IMPORT
-    Absyn.Import imp;
-  end IMPORT;
+  record ALIAS 
+    "An alias for another Item, see comment in SCodeFlattenRedeclare package."
+    String name;
+    Option<Absyn.Path> path;
+    Absyn.Info info;
+  end ALIAS;
+
+  record REDECLARED_ITEM
+    Item item;
+    Env declaredEnv;
+  end REDECLARED_ITEM;
 
 end Item;
-
-public constant Env emptyEnv={} "- Values" ;
 
 public function emptyCache
 "returns an empty cache"
@@ -217,45 +303,60 @@ algorithm
   cache := CACHE(envCache,NONE(),instFuncs,ht,Absyn.IDENT("##UNDEFINED##"));
 end emptyCache;
 
-public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
-public constant String forIterScopeName="$foriter loop scope$" "a unique scope used in for iterators";
-public constant String parForScopeName="$pafor loop scope$" "a unique scope used in parfor loops";
-public constant String parForIterScopeName="$parforiter loop scope$" "a unique scope used in parfor iterators";
-public constant String matchScopeName="$match scope$" "a unique scope used by match expressions";
-public constant String caseScopeName="$case scope$" "a unique scope used by match expressions; to be removed when local decls are deprecated";
-public constant list<String> implicitScopeNames={forScopeName,forIterScopeName,parForScopeName,parForIterScopeName,matchScopeName,caseScopeName};
-
 // functions for dealing with the environment
-
 public function newEnvironment
-  "Creates a new empty environment."
-  output Env newEnv;
+"Returns a new environment with only one frame."
+  input Option<SCode.Ident> inName;
+  output Env outEnv;
+protected
+  Frame new_frame;
 algorithm
-  newEnv := List.create(newFrame(SCode.NOT_ENCAPSULATED(),NONE(),NONE()));
+  new_frame := newFrame(inName, NONE(), NORMAL_SCOPE());
+  outEnv := {new_frame};
 end newEnvironment;
 
-protected function newFrame "function: newFrame
-  This function creates a new frame, which includes setting up the
-  hashtable for the frame."
-  input SCode.Encapsulated encapsulatedPrefix;
+public function newFrame 
+"function: newFrame
+  This function creates a new frame, which 
+  includes setting up the hashtable for the 
+  frame."
   input Option<Ident> inName;
-  input Option<ScopeType> inType;
+  input Option<ScopeType> inScopeType;
+  input FrameType inFrameType;  
   output Frame outFrame;
 protected
-  AvlTree httypes;
-  AvlTree ht;
-  DAE.ComponentRef cref_;
+  AvlTree tys;
+  AvlTree clsAndVars;
+  ExtendsTable exts;
+  ImportTable imps;
+  Util.StatefulBoolean is_used;
 algorithm
-  ht := avlTreeNew();
-  httypes := avlTreeNew();
-  cref_ := ComponentReference.makeCrefIdent("",DAE.T_UNKNOWN_DEFAULT,{});
-  outFrame := FRAME(inName,inType,ht,httypes,{},{({},cref_)},encapsulatedPrefix,{});
+  clsAndVars := avlTreeNew();
+  tys        := avlTreeNew();
+  exts       := newExtendsTable();
+  imps       := newImportTable();
+  is_used    := Util.makeStatefulBoolean(false);  
+  outFrame   := FRAME(inName,inScopeType,inFrameType,clsAndVars,tys,{},{},exts,imps,SOME(is_used));
 end newFrame;
 
-public function isTyped "
-Author BZ 2008-06
-This function checks wheter an InstStatus is typed or not.
-Currently used by Inst.updateComponentsInEnv."
+public function newImportTable
+"Creates a new import table."
+  output ImportTable outImports;
+algorithm
+  outImports := emptyImportTable;
+end newImportTable;
+
+public function newExtendsTable
+"Creates a new extends table."
+  output ExtendsTable outExtends;
+algorithm
+  outExtends := emptyExtendsTable;
+end newExtendsTable;
+
+public function isTyped 
+"author BZ 2008-06
+  This function checks wheter an InstStatus is typed or not.
+  Currently used by Inst.updateComponentsInEnv."
   input InstStatus is;
   output Boolean b;
 algorithm 
@@ -265,22 +366,36 @@ algorithm
   end matchcontinue;
 end isTyped;
 
-public function openScope "function: openScope
+public function openScope 
+"function: openScope
   Opening a new scope in the environment means adding a new frame on
   top of the stack of frames. If the scope is not the top scope a classname
   of the scope should be provided such that a name for the scope can be
   derived, see nameScope."
   input Env inEnv;
   input SCode.Encapsulated encapsulatedPrefix;
-  input Option<Ident> inIdentOption;
-  input Option<ScopeType> inTypeOption;
+  input Option<Ident> inIdent;
+  input Option<ScopeType> inScopeType;
   output Env outEnv;
 protected
   Frame f;
+  FrameType frameType;
 algorithm
-  f := newFrame(encapsulatedPrefix, inIdentOption, inTypeOption);
+  frameType := getFrameType(encapsulatedPrefix); 
+  f := newFrame(inIdent, inScopeType, frameType);
   outEnv := f :: inEnv;
 end openScope;
+
+protected function getFrameType
+  "Returns a new FrameType given if the frame should be encapsulated or not."
+  input SCode.Encapsulated encapsulatedPrefix;
+  output FrameType outType;
+algorithm
+  outType := match(encapsulatedPrefix)
+    case SCode.ENCAPSULATED() then ENCAPSULATED_SCOPE();
+    else then NORMAL_SCOPE();
+  end match;
+end getFrameType;
 
 public function inForLoopScope "returns true if environment has a frame that is a for loop"
   input Env env;
@@ -289,12 +404,13 @@ algorithm
   res := matchcontinue(env)
     local String name;
     
-    case(FRAME(optName = SOME(name))::_) 
+    case(FRAME(name = SOME(name))::_) 
       equation
         true = stringEq(name, forScopeName);
       then true;
     
     case(_) then false;
+  
   end matchcontinue;
 end inForLoopScope;
 
@@ -305,12 +421,12 @@ algorithm
   res := matchcontinue(env)
     local String name;
     
-    case(FRAME(optName = SOME(name))::_) 
+    case(FRAME(name = SOME(name))::_) 
       equation
         true = stringEq(name, forIterScopeName);
       then true;
         
-    case(FRAME(optName = SOME(name))::_) 
+    case(FRAME(name = SOME(name))::_) 
       equation
         true = stringEq(name, parForIterScopeName);
       then true;
@@ -325,7 +441,7 @@ public function stripForLoopScope "strips for loop scopes"
 algorithm
   outEnv := matchcontinue(inEnv)
     local String name; Env env;
-    case(FRAME(optName = SOME(name))::env) 
+    case(FRAME(name = SOME(name))::env) 
       equation
         true = stringEq(name, forScopeName);
         env = stripForLoopScope(env);
@@ -340,7 +456,7 @@ public function getScopeName "function: getScopeName
   output Ident name;
 algorithm
   name:= match (inEnv)
-    case ((FRAME(optName = SOME(name))::_)) then (name);
+    case ((FRAME(name = SOME(name))::_)) then (name);
   end match;
 end getScopeName;
 
@@ -355,13 +471,13 @@ algorithm
     // empty list 
     case ({}) then {};
     // frame with a name
-    case ((FRAME(optName = SOME(name))::inEnv))
+    case ((FRAME(name = SOME(name))::inEnv))
       equation
         names = getScopeNames(inEnv);
       then
         name::names;
     // frame without a name
-    case ((FRAME(optName = NONE())::inEnv))
+    case ((FRAME(name = NONE())::inEnv))
       equation
         names = getScopeNames(inEnv);
       then
@@ -369,32 +485,37 @@ algorithm
   end matchcontinue;
 end getScopeNames;
 
-public function updateEnvClasses "Updates the classes of the top frame on the env passed as argument to the environment
-passed as second argument"
-  input Env env;
-  input Env classEnv;
+public function updateEnvClasses 
+"updates the classes of the top frame on the env passed 
+ as argument to the environment passed as second argument"
+  input Env inEnv;
+  input Env inClassEnv;
   output Env outEnv;
 algorithm
-  outEnv := match(env,classEnv)
+  outEnv := match(inEnv, inClassEnv)
     local 
-      Option<Ident> optName;
+      Option<Ident> id;
       Option<ScopeType> st;
-      AvlTree clsAndVars, types ;
-      list<Item> imports;
-      list<Frame> fs;
-      CSetsType crefs;
-      SCode.Encapsulated enc;
-      list<SCode.Element> defineUnits;
+      FrameType ft;
+      AvlTree clsAndVars,tys;
+      CSetsType crs;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu;
+      Env fs;
 
-    case(FRAME(optName,st,clsAndVars,types,imports,crefs,enc,defineUnits)::fs,_)
+    case(FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, _)
       equation
-        clsAndVars = updateEnvClassesInTree(clsAndVars,classEnv);
+        clsAndVars = updateEnvClassesInTree(clsAndVars, inClassEnv);
       then 
-        FRAME(optName,st,clsAndVars,types,imports,crefs,enc,defineUnits)::fs;
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+  
   end match;
 end updateEnvClasses;
 
-protected function updateEnvClassesInTree "Help function to updateEnvClasses"
+protected function updateEnvClassesInTree 
+"Help function to updateEnvClasses"
   input AvlTree tree;
   input Env classEnv;
   output AvlTree outTree;
@@ -407,14 +528,15 @@ algorithm
       Env env;
       Item item;
       Integer h;
+      ClassType ct;
    
    // Classes
-   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env))),h,l,r),_) 
+   case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env,ct))),h,l,r),_) 
      equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);
      then 
-       AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,classEnv))),h,l,r);
+       AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,classEnv,ct))),h,l,r);
 
    // Other items
    case(AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r),_) 
@@ -451,7 +573,8 @@ algorithm
   end match;
 end updateEnvClassesInTreeOpt;
 
-public function extendFrameC "function: extendFrameC
+public function extendFrameC 
+"function: extendFrameC
   This function adds a class definition to the environment."
   input Env inEnv;
   input SCode.Element inClass;
@@ -459,31 +582,88 @@ public function extendFrameC "function: extendFrameC
 algorithm
   outEnv := matchcontinue (inEnv,inClass)
     local
-      AvlTree httypes;
-      AvlTree ht,ht_1;
-      Env env,fs;
       Option<Ident> id;
       Option<ScopeType> st;
-      list<AvlValue> imps;
+      FrameType ft;
+      AvlTree clsAndVars,tys;
       CSetsType crs;
-      SCode.Encapsulated encflag;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu;
+      Env fs, env;
       SCode.Element c;
       Ident n;
-      list<SCode.Element> defineUnits;
+      ClassType ct;
+      SCode.ClassDef cdef;      
 
-    case ((env as (FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs)),(c as SCode.CLASS(name = n)))
+    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, c as SCode.CLASS(name = n))
       equation
-        (ht_1) = avlTreeAdd(ht, n, CLASS(c,env));
+        cdef = SCode.getClassDef(c);
+        ct = getClassType(cdef);
+        clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,ct));
       then
-        (FRAME(id,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
     case (_,_)
       equation
-        print("- Env.extendFrameC FAILED\n");
+        n = SCode.elementName(inClass);
+        print("- Env.extendFrameC failed on element: " +& n +& "\n");
       then
         fail();
   end matchcontinue;
 end extendFrameC;
+
+public function extendFrameCBuiltin
+"function: extendFrameCBuiltin
+  This function adds a builtin class definition to the environment."
+  input Env inEnv;
+  input SCode.Element inClass;
+  output Env outEnv;
+algorithm
+  outEnv := extendFrameCClassType(inEnv,inClass,BUILTIN());
+end extendFrameCBuiltin;
+
+public function extendFrameCClassType
+"function: extendFrameCClassType
+  This function adds a class definition to the environment with the given class type."
+  input Env inEnv;
+  input SCode.Element inClass;
+  input ClassType inClassType;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue (inEnv,inClass,inClassType)
+    local
+      Option<Ident> id;
+      Option<ScopeType> st;
+      FrameType ft;
+      AvlTree clsAndVars,tys;
+      CSetsType crs;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu;
+      Env fs, env;
+      SCode.Element c;
+      Ident n;
+      ClassType ct;
+      SCode.ClassDef cdef;      
+
+    case (env as FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, c as SCode.CLASS(name = n), _)
+      equation
+        clsAndVars = avlTreeAdd(clsAndVars,n,CLASS(c,env,inClassType));
+      then
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+
+    case (_,_,_)
+      equation
+        n = SCode.elementName(inClass);
+        print("- Env.extendFrameCClassType failed on element: " +& n +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end extendFrameCClassType;
+
 
 public function updateFrameC "function: updateFrameC
   This function updates a component already added to the environment, but
@@ -496,141 +676,170 @@ public function updateFrameC "function: updateFrameC
 algorithm
   outEnv := matchcontinue (inEnv,inClass,inClassEnv)
     local
-      SCode.Encapsulated encflag;
-      AvlTree httypes;
-      AvlTree ht,ht_1;
-      Option<Ident> sid;
+      Option<Ident> id;
       Option<ScopeType> st;
-      list<AvlValue> imps;
-      Env fs, env, frames, classEnv, oldCE;
+      FrameType ft;
+      AvlTree clsAndVars,tys;
       CSetsType crs;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu;
+      Env fs, env, frames, classEnv, oldCE;
       SCode.Element e, oldE;
       Ident n;
-      list<SCode.Element> defineUnits;
+      ClassType oldCT,clsTy;
+      SCode.ClassDef cdef;
 
-    case (env,e,classEnv)
+    /*
+    case (env, e, classEnv)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "Updating class: " +& valueStr(CLASS(e, classEnv)) +& "\nIn env/cenv:" +& printEnvPathStr(env) +& "/" +& printEnvPathStr(classEnv)); 
       then 
-        fail();
+        fail();*/
 
     // empty case
-    case ({},_,_) then {};
     
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),e as SCode.CLASS(name = n),classEnv)
+    case ({}, _, _) then {};
+    
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs,
+          e as SCode.CLASS(name = n), classEnv)
       equation
-        CLASS(oldE,oldCE) = avlTreeGet(ht, n);
-        (ht_1) = avlTreeAdd(ht, n, CLASS(e, classEnv));
+        cdef = SCode.getClassDef(e);
+        clsTy = getClassType(cdef);
+        
+        CLASS(oldE,oldCE,oldCT) = avlTreeGet(clsAndVars, n);
+        
+        clsAndVars = avlTreeAdd(clsAndVars, n, CLASS(e, classEnv, clsTy));
       then
-        (FRAME(sid,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
     
     // Also check frames above, e.g. when variable is in base class
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),e,classEnv) 
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, e, classEnv) 
       equation
         frames = updateFrameC(fs, e, classEnv);
       then
-        (FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: frames);
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::frames;
     
-    case (_,e,classEnv)
+    case (_, e, classEnv)
       equation
-        print("- Env.updateFrameC failed\n");
-        print("  - class: ");
-        print(SCodeDump.unparseElementStr(e));
-        print("\n");
+        print("- Env.updateFrameC failed on class: " +& SCodeDump.unparseElementStr(e) +& "\n");
       then
         fail();
+  
   end matchcontinue;
 end updateFrameC;
 
-public function extendFrameClasses "function: extendFrameClasses
-  Adds all clases in a Program to the environment."
+public function extendFrameClasses 
+"function: extendFrameClasses
+  Adds all builtin clases in a Program to the environment."
   input Env inEnv;
   input SCode.Program inProgram;
   output Env outEnv;
 algorithm
-  outEnv := match (inEnv,inProgram)
+  outEnv := match (inEnv, inProgram)
     local
-      Env env,env_1,env_2;
+      Env env;
       SCode.Element c;
       list<SCode.Element> cs;
 
-    case (env,{}) then env;
+    case (env, {}) then env;
 
-    case (env,(c :: cs))
+    case (env, c :: cs)
       equation
-        env_1 = extendFrameC(env, c);
-        env_2 = extendFrameClasses(env_1, cs);
+        env = extendFrameCBuiltin(env, c);
+        env = extendFrameClasses(env, cs);
       then
-        env_2;
+        env;
+  
   end match;
 end extendFrameClasses;
 
-public function removeComponentsFromFrameV "function: removeComponentsFromFrameV
+public function getClassType
+  "Returns a class's type."
+  input SCode.ClassDef inClassDef;
+  output ClassType outType;
+algorithm
+  outType := match(inClassDef)
+    // A builtin class.
+    case (SCode.PARTS(externalDecl = SOME(SCode.EXTERNALDECL(
+        lang = SOME("builtin"))))) 
+      then BUILTIN();
+    // A user-defined class (i.e. not builtin).
+    else then USERDEFINED();
+  end match;
+end getClassType;
+
+public function removeComponentsFromFrameV 
+"function: removeComponentsFromFrameV
   This function removes all components from frame."
   input Env inEnv;
   output Env outEnv;
 algorithm
   outEnv := match (inEnv)
     local
-      AvlTree httypes;
-      AvlTree ht;
       Option<Ident> id;
       Option<ScopeType> st;
-      list<AvlValue> imps;
-      Env fs;
+      FrameType ft;
+      AvlTree clsAndVars,tys;
       CSetsType crs;
-      SCode.Encapsulated encflag;
-      list<SCode.Element> defineUnits;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu;
+      Env fs;
 
-    case ((FRAME(id,st,_,httypes,imps,crs,encflag,defineUnits) :: fs))
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs)
       equation
         // make an empty component env!
-        ht = avlTreeNew();
+        clsAndVars = avlTreeNew();
       then
-        (FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs);
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+  
   end match;
 end removeComponentsFromFrameV;
 
 public function extendFrameV "function: extendFrameV
   This function adds a component to the environment."
-  input Env inEnv1;
-  input DAE.Var inVar2;
-  input Option<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementTypesModOption3;
+  input Env inEnv;
+  input DAE.Var inVar;
+  input SCode.Element inVarEl;
+  input DAE.Mod inMod;
   input InstStatus instStatus;
-  input Env inEnv5;
+  input Env inCompEnv;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue (inEnv1,inVar2,inTplSCodeElementTypesModOption3,instStatus,inEnv5)
+  outEnv := matchcontinue (inEnv,inVar,inVarEl,inMod,instStatus,inCompEnv)
     local
-      AvlTree httypes;
-      AvlTree ht,ht_1;
       Option<Ident> id;
       Option<ScopeType> st;
-      list<AvlValue> imps;
-      Env fs,env,remember;
+      FrameType ft;
+      AvlTree clsAndVars, tys;
       CSetsType crs;
-      SCode.Encapsulated encflag;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu;
       InstStatus i;
       DAE.Var v;
       Ident n;
-      Option<tuple<SCode.Element, DAE.Mod>> c;
-      list<SCode.Element> defineUnits;
+      SCode.Element c;
+      Env fs,coenv,remember;
+      DAE.Mod m;
 
     // Environment of component
-    case ((FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs, v as DAE.TYPES_VAR(name = n),c,m,i,coenv)
       equation
-        //failure((_)= avlTreeGet(ht, n));
-        (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
+        clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,iu));
       then
-        (FRAME(id,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
 
     // Variable already added, perhaps from baseclass
-    case (remember as (FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),
-          (v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */
+    case (FRAME(clsAndVars  = clsAndVars)::fs,v as DAE.TYPES_VAR(name = n),c,m,i,coenv)
       equation
-        (_)= avlTreeGet(ht, n);
+        _ = avlTreeGet(clsAndVars, n);
       then
-        (remember);
+        inEnv;
   end matchcontinue;
 end extendFrameV;
 
@@ -638,52 +847,54 @@ public function updateFrameV "function: updateFrameV
   This function updates a component already added to the environment, but
   that prior to the update did not have any binding. I.e this function is
   called in the second stage of instantiation with declare before use."
-  input Env inEnv1;
-  input DAE.Var inVar2;
+  input Env inEnv;
+  input DAE.Var inVar;
   input InstStatus instStatus;
-  input Env inEnv4;
+  input Env inCompEnv;
   output Env outEnv;
 algorithm
-  outEnv := matchcontinue (inEnv1,inVar2,instStatus,inEnv4)
+  outEnv := matchcontinue (inEnv,inVar,instStatus,inCompEnv)
     local
-      SCode.Encapsulated encflag;
-      InstStatus i;
-      Option<tuple<SCode.Element, DAE.Mod>> c;
-      AvlTree httypes;
-      AvlTree ht,ht_1;
-      Option<Ident> sid;
+      Option<Ident> id;
       Option<ScopeType> st;
-      list<AvlValue> imps;
-      Env fs,env,frames;
+      FrameType ft;
+      AvlTree clsAndVars,tys,clsAndVars2;
       CSetsType crs;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu,iuf;
+      InstStatus i;
+      Env fs,coenv,frames;
       DAE.Var v;
-      Ident n,id;
-      list<SCode.Element> defineUnits;
+      Ident n;
       AvlValue var;
+      SCode.Element c;
+      DAE.Mod m;
 
-    case ({},_,i,_) then {};  /* fully instantiated env of component */
+    // fully instantiated env of component
+    case ({},_,i,_) then {};
     
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs, v as DAE.TYPES_VAR(name = n), i, coenv)
       equation
-        (var as VAR(_,c,_,_)) = avlTreeGet(ht, n);
+        (var as VAR(_,c,m,_,_,iu)) = avlTreeGet(clsAndVars, n);
         // Debug.fprintln(Flags.INST_TRACE, "Updating variable: " +& valueStr(VAR(v,c,i,env)) +& "\n In current env:" +& printEnvPathStr(inEnv1));
         // Debug.fprintln(Flags.INST_TRACE, "Previous variable: " +& valueStr(var) +& "\nIn current env:" +& printEnvPathStr(inEnv1));
-        (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
+        clsAndVars = avlTreeAdd(clsAndVars, n, VAR(v,c,m,i,coenv,iu));
       then
-        (FRAME(sid,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs;
     
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */
+    // Also check frames above, e.g. when variable is in base class
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::fs,v as DAE.TYPES_VAR(name = n), i, coenv) 
       equation
-        frames = updateFrameV(fs, v, i, env);
+        frames = updateFrameV(fs, v, i, coenv);
       then
-        (FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: frames);
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iuf)::frames;
     
-    case (_,(v as DAE.TYPES_VAR(name = id)),_,_)
+    case (_,v as DAE.TYPES_VAR(name = n),_,_)
       equation
-        print("- Env.updateFrameV failed\n");
-        print("  - variable: ");
-        print(Types.printVarStr(v));
-        print("\n");
+        print("- Env.updateFrameV failed on variable: " +& 
+              n +& "\n" +& Types.printVarStr(v) +& "\n");
       then
         fail();
   end matchcontinue;
@@ -702,82 +913,76 @@ public function extendFrameT "function: extendFrameT
 algorithm
   outEnv := matchcontinue (inEnv,inIdent,inType)
     local
-      list<DAE.Type> tps;
-      AvlTree httypes_1,httypes;
-      AvlTree ht;
-      Option<Ident> sid;
+      Option<Ident> id;
       Option<ScopeType> st;
-      list<AvlValue> imps;
-      Env fs;
+      FrameType ft;
+      AvlTree clsAndVars,tys;
       CSetsType crs;
-      SCode.Encapsulated encflag;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu;
+      Env fs;      
+      list<DAE.Type> tps;
       Ident n;
       DAE.Type t;
-      list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
+    // Other types with that name already exist, add this type as well
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs,n,t)
       equation
-        TYPE(tps) = avlTreeGet(httypes, n) "Other types with that name allready exist, add this type as well" ;
-        (httypes_1) = avlTreeAdd(httypes, n, TYPE((t :: tps)));
+        TYPE(tps) = avlTreeGet(tys, n);
+        tys = avlTreeReplace(tys, n, TYPE(t::tps));
       then
-        (FRAME(sid,st,ht,httypes_1,imps,crs,encflag,defineUnits) :: fs);
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
+    
+    // No other types exists
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs,n,t)
       equation
-        failure(TYPE(_) = avlTreeGet(httypes, n)) "No other types exists" ;
-        (httypes_1) = avlTreeAdd(httypes, n, TYPE({t}));
+        failure(TYPE(_) = avlTreeGet(tys, n));
+        tys = avlTreeAdd(tys, n, TYPE({t}));
       then
-        (FRAME(sid,st,ht,httypes_1,imps,crs,encflag,defineUnits) :: fs);
+        FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu)::fs;
   end matchcontinue;
 end extendFrameT;
 
-public function extendFrameI "function: extendFrameI
+public function extendFrameI 
+"function: extendFrameI
   Adds an import statement to the environment."
   input Env inEnv;
-  input Absyn.Import inImport;
+  input SCode.Element inImport;
   output Env outEnv;
 algorithm
   outEnv := matchcontinue (inEnv,inImport)
-    local
-      Option<Ident> sid;
-      Option<ScopeType> st;
-      AvlTree httypes;
-      AvlTree ht;
-      list<AvlValue> imps;
-      CSetsType crs;
-      SCode.Encapsulated encflag;
-      Absyn.Import imp;
-      Env fs,env;
-      list<SCode.Element> defineUnits;
-
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),imp)
+    local Env env;
+    case (_, _)
       equation
-        false = memberImportList(imps,imp);
-    then (FRAME(sid,st,ht,httypes,(IMPORT(imp) :: imps),crs,encflag,defineUnits) :: fs);
-
-    case (env,imp) then env;
+        env = FEnv.extendEnvWithImport(inImport, inEnv);
+      then 
+        env;
   end matchcontinue;
 end extendFrameI;
 
-public function extendFrameDefunit "
-  Adds a defineunit to the environment."
+public function extendFrameDefunit 
+"Adds a defineunit to the environment."
   input Env inEnv;
   input SCode.Element defunit;
   output Env outEnv;
 algorithm
   outEnv := match (inEnv,defunit)
     local
-      Option<Ident> sid;
+      Option<Ident> id;
       Option<ScopeType> st;
-      AvlTree httypes;
-      AvlTree ht;
-      list<AvlValue> imps;
+      FrameType ft;
+      AvlTree clsAndVars,tys;
       CSetsType crs;
-      SCode.Encapsulated encflag;
+      list<SCode.Element> du;
+      ExtendsTable et;
+      ImportTable it;
+      Option<Util.StatefulBoolean> iu;
       Env fs;
-      list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),_)
-    then (FRAME(sid,st,ht,httypes,imps,crs,encflag,defunit::defineUnits) :: fs);
+    case (FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu) :: fs, _)
+    then FRAME(id,st,ft,clsAndVars,tys,crs,defunit::du,et,it,iu) :: fs;
   end match;
 end extendFrameDefunit;
 
@@ -785,82 +990,39 @@ public function extendFrameForIterator
   "Adds a for loop iterator to the environment."
   input Env env;
   input String name;
-  input DAE.Type type_;
+  input DAE.Type ty;
   input DAE.Binding binding;
   input SCode.Variability variability;
   input Option<DAE.Const> constOfForIteratorRange;
-  output Env new_env;
+  output Env outEnv;
 algorithm
-  new_env := match(env, name, type_, binding, variability, constOfForIteratorRange)
+  outEnv := match(env, name, ty, binding, variability, constOfForIteratorRange)
     local
-      Env new_env_1;
+      Env new_env;
+    
     case (_, _, _, _,_,_)
       equation
-        new_env_1 = extendFrameV(env,
+        new_env = extendFrameV(
+          env,
           DAE.TYPES_VAR(
             name,
             DAE.ATTR(SCode.POTENTIAL(), SCode.NON_PARALLEL(), variability, Absyn.BIDIR(), Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
-            type_,
+            ty,
             binding,
             constOfForIteratorRange),
-          NONE(), VAR_UNTYPED(), {});
-      then new_env_1;
+          SCode.COMPONENT(
+            name, 
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.CONST(), Absyn.BIDIR()),
+            Absyn.TPATH(Absyn.IDENT(""), NONE()), SCode.NOMOD(),
+            NONE(), NONE(), Absyn.dummyInfo),
+          DAE.NOMOD(),
+          VAR_UNTYPED(), 
+          {});
+      then new_env;
+  
   end match;
 end extendFrameForIterator;
-
-protected function memberImportList "Returns true if import exist in imps"
-  input list<Item> imps;
-  input Absyn.Import imp;
-  output Boolean res "true if import exist in imps, false otherwise";
-algorithm
-  res := matchcontinue (imps,imp)
-    local
-      list<Item> ims;
-      Absyn.Import imp2;
-    
-    // first import in the list matches  
-    case (IMPORT(imp2)::ims,_)
-      equation
-        true = Absyn.importEqual(imp2, imp);
-      then true;
-    
-    // move to next  
-    case (_::ims,_) 
-      equation
-        res=memberImportList(ims,imp);
-      then res;
-    
-    // other alternatives 
-    case (_,_) then false;
-   end matchcontinue;
-end memberImportList;
-
-/*
-public function addBcFrame "function: addBcFrame
-  author: PA
-  Adds a baseclass frame to the environment from the baseclass environment
-  to the list of base classes of the top frame of the passed environment."
-  input Env inEnv1;
-  input Env inEnv2;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue (inEnv1,inEnv2)
-    local
-      Option<Ident> sid;
-      AvlTree tps;
-      AvlTree cls;
-      list<AvlValue> imps;
-      Env bc,fs;
-      CSetsType crefs;
-      Boolean enc;
-      Frame f;
-      list<SCode.Element> defineUnits;
-
-    case ((FRAME(sid,cls,tps,imps,bc,crefs,enc,defineUnits) :: fs),(f :: _))
-      then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc,defineUnits) :: fs);
-  end matchcontinue;
-end addBcFrame;
-*/
 
 public function topFrame "function: topFrame
   Returns the top frame."
@@ -880,31 +1042,13 @@ algorithm
   end match;
 end topFrame;
 
-/*
-public function enclosingScopeEnv "function: enclosingScopeEnv
-@author: adrpo
- Returns the environment with the current scope frame removed."
-  input Env inEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue (inEnv)
-    local
-      Env rest;
-    case ({}) then {};
-    case (_ :: rest)
-      then
-        rest;
-  end matchcontinue;
-end enclosingScopeEnv;
-*/
-
 public function getClassName
   input Env inEnv;
   output Ident name;
 algorithm
    name := match (inEnv)
      local Ident n;
-     case FRAME(optName = SOME(n))::_ then n;
+     case FRAME(name = SOME(n))::_ then n;
   end match;
 end getClassName;
 
@@ -916,7 +1060,7 @@ protected
   Ident id;
   Env rest;
 algorithm
-  FRAME(optName = SOME(id)) :: rest := inEnv;
+  FRAME(name = SOME(id)) :: rest := inEnv;
   outPath := getEnvName2(rest, Absyn.IDENT(id));
 end getEnvName;
    
@@ -930,7 +1074,7 @@ algorithm
       Ident id;
       Env rest;
 
-    case (FRAME(optName = SOME(id)) :: rest, _)
+    case (FRAME(name = SOME(id)) :: rest, _)
       then getEnvName2(rest, Absyn.QUALIFIED(id, inPath));
 
     else inPath;
@@ -972,18 +1116,18 @@ algorithm
       Ident id;
       Absyn.Path path,path_1;
       Env rest;
-    case ((FRAME(optName = SOME(id)) :: rest))
+    case ((FRAME(name = SOME(id)) :: rest))
       equation
         true = listMember(id,implicitScopeNames);
       then getEnvPathNoImplicitScope(rest);
-    case ((FRAME(optName = SOME(id)) :: rest))
+    case ((FRAME(name = SOME(id)) :: rest))
       equation
         false = listMember(id,implicitScopeNames);
         SOME(path) = getEnvPathNoImplicitScope(rest);
         path_1 = Absyn.joinPaths(path, Absyn.IDENT(id));
       then
         SOME(path_1);
-    case (FRAME(optName = SOME(id))::rest)
+    case (FRAME(name = SOME(id))::rest)
       equation
         false = listMember(id,implicitScopeNames);
         NONE() = getEnvPathNoImplicitScope(rest);
@@ -1025,51 +1169,6 @@ algorithm
     else ".";
   end matchcontinue;
 end getEnvNameStr;
-
-public function mergeEnvConnectionSet
-"@author: adrpo
- adds the connectionSet from the FromEnv to the ToEnv"
-  input Env inFromEnv;
-  input Env inToEnv;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue(inFromEnv, inToEnv)
-    local
-      Env env, forloopenv;
-      CSetsType clst, clst1, clst2;
-      Option<Ident> on;
-      Option<ScopeType> ot;
-      AvlTree cv;
-      AvlTree tys;
-      list<Item> i;
-      SCode.Encapsulated ep;
-      list<SCode.Element> du;      
-      
-    case (_, _)
-      equation
-        false = isTopScope(inFromEnv);
-        false = isTopScope(inToEnv);
-        FRAME(connectionSet = clst1)::_ = stripForLoopScope(inFromEnv);
-        (FRAME(on,ot,cv,tys,i,clst2,ep,du)::env, forloopenv) = Lookup.splitEnv(inToEnv);
-        clst = listAppend(clst2, clst1);
-        env = listAppend(forloopenv, FRAME(on,ot,cv,tys,i,clst,ep,du)::env);
-      then
-        env;
-    
-    /*
-    case (_, _)
-      equation
-        true = Flags.isSet(Flags.FAILTRACE);
-        print("Env.mergeEnvConnectionSet failed on:" +&
-              "\n\tinFromEnv: " +& getEnvNameStr(inFromEnv) +& 
-              "\n\tinToEnv: " +& getEnvNameStr(inToEnv) +& "\n");
-      then
-        fail();*/
-    
-    // never fail, return the ToEnv
-    else inToEnv; 
-  end matchcontinue;
-end mergeEnvConnectionSet;
 
 public function printEnvPathStr "function: printEnvPathStr
  Retrive the environment path as a string, see getEnvPath."
@@ -1172,24 +1271,28 @@ protected function printFrameStr "function: printFrameStr
 algorithm
   outString := match (inFrame)
     local
-      Ident s1,s2,s3,encflag_str,res,sid;
+      Ident s1,s2,s3,frmTyStr,res,sid;
       Option<Ident> optName;
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
       CSetsType crs;
-      SCode.Encapsulated encflag;
+      FrameType frameType;
 
-    case FRAME(optName = optName,clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
+    case FRAME(name = optName,
+               clsAndVars = ht,
+               types = httypes,
+               connectionSet = crs,
+               frameType = frameType)
       equation
         sid = Util.getOptionOrDefault(optName, "unnamed");
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
-        s3 = printImportsStr(imps);
-        encflag_str = SCodeDump.encapsulatedStr(encflag);
+        frmTyStr = printFrameTypeStr(frameType);
         res = stringAppendList(
-          "FRAME: " :: sid :: " (enc=" :: encflag_str ::
-          ") \nClasses and Vars:\n=============\n" :: s1 :: "\nTypes:\n======\n" :: s2 :: "\nImports:\n=======\n" :: s3 :: {});
+          "FRAME: " :: sid :: " (enc=" :: frmTyStr ::
+          ") \nClasses and Vars:\n=============\n" :: 
+          s1 :: "\nTypes:\n======\n" :: s2 :: "\n" :: {});
       then
         res;
   end match;
@@ -1202,42 +1305,47 @@ protected function printFrameVarsStr "function: printFrameVarsStr
 algorithm
   outString := matchcontinue (inFrame)
     local
-      Ident s1,encflag_str,res,sid;
+      Ident s1,frmTyStr,res,sid;
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
       CSetsType crs;
-      SCode.Encapsulated encflag;
+      FrameType frameType;
+      Option<Ident> optName;
 
-    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
+    case FRAME(name = optName,
+               frameType = frameType,
+               clsAndVars = ht,
+               types = httypes,
+               connectionSet = crs)
       equation
+        sid = Util.stringOption(optName); 
         s1 = printAvlTreeStr(ht);
-        encflag_str = SCodeDump.encapsulatedStr(encflag);
-        res = stringAppendList(
-          {"FRAME: ",sid," (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
+        frmTyStr = printFrameTypeStr(frameType);
+        res = stringAppendList({"FRAME: ",sid," (frmTy=",frmTyStr,
+                                ") \nclasses and vars:\n=============\n",
+                                s1,"\n\n\n"});
       then
         res;
-
-    case FRAME(optName = NONE(),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,encapsulatedPrefix = encflag)
-      equation
-        s1 = printAvlTreeStr(ht);
-        encflag_str = SCodeDump.encapsulatedStr(encflag);
-        res = stringAppendList(
-          {"FRAME: unnamed (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
-      then
-        res;
-
+    
     case _ then "";
     
   end matchcontinue;
 end printFrameVarsStr;
 
-protected function printImportsStr "function: printImportsStr
+protected function printFrameTypeStr
+  input FrameType inFrame;
+  output String outString;
+algorithm
+  outString := match(inFrame)
+    case NORMAL_SCOPE() then "Normal";
+    case ENCAPSULATED_SCOPE() then "Encapsulated";
+    case IMPLICIT_SCOPE(iterIndex=_) then "Implicit";
+  end match;
+end printFrameTypeStr;
 
-  Print import statements to a string.
-"
+protected function printImportsStr "function: printImportsStr
+  Print import statements to a string."
   input list<Item> inItemLst;
   output String outString;
 algorithm
@@ -1264,8 +1372,7 @@ algorithm
 end printImportsStr;
 
 protected function printFrameElementStr "function: printFrameElementStr
-  Print frame element to a string
-"
+  Print frame element to a string"
   input tuple<Ident, Item> inTplIdentItem;
   output String outString;
 algorithm
@@ -1284,7 +1391,7 @@ algorithm
       list<DAE.Type> lst;
       Absyn.Import imp;
 
-    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),declaration = SOME((elt,_)),instStatus = i,env = (compframe :: _))))
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp,binding = bind)),var = elt,instStatus = i,env = (compframe :: _))))
       equation
         s = SCodeDump.variabilityString(var);
         elt_str = SCodeDump.printElementStr(elt);
@@ -1298,7 +1405,7 @@ algorithm
       then
         res;
 
-    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp)),declaration = SOME((elt,_)),instStatus = i,env = {})))
+    case ((n,VAR(instantiated = (tv as DAE.TYPES_VAR(attributes = DAE.ATTR(variability = var),ty = tp)),var = elt,instStatus = i,env = {})))
       equation
         s = SCodeDump.variabilityString(var);
         elt_str = SCodeDump.printElementStr(elt);
@@ -1310,13 +1417,7 @@ algorithm
       then
         res;
 
-    case ((n,VAR(instantiated = DAE.TYPES_VAR(binding = bnd),declaration = NONE(),instStatus = i,env = env)))
-      equation
-        res = stringAppendList({"v:",n,"\n"});
-      then
-        res;
-
-    case ((n,CLASS(cl = _)))
+    case ((n,CLASS(cls = _)))
       equation
         res = stringAppendList({"c:",n,"\n"});
       then
@@ -1330,19 +1431,16 @@ algorithm
       then
         res;
 
-    case ((n,IMPORT(imp = imp)))
+    case ((n,_))
       equation
-        s = Dump.unparseImportStr(imp);
-        res = stringAppendList({"imp:",s,"\n"});
+        res = stringAppendList({"oth\n"});
       then
         res;
   end match;
 end printFrameElementStr;
 
 protected function isVarItem "function: isVarItem
-
-  Succeeds if item is a VAR.
-"
+  Succeeds if item is a VAR."
   input tuple<Type_a, Item> inTplTypeAItem;
   replaceable type Type_a subtypeof Any;
 algorithm
@@ -1358,7 +1456,7 @@ protected function isClassItem "function: isClassItem
   replaceable type Type_a subtypeof Any;
 algorithm
   _ := matchcontinue (inTplTypeAItem)
-    case ((_,CLASS(cl = _))) then ();
+    case ((_,CLASS(cls = _))) then ();
   end matchcontinue;
 end isClassItem;
 
@@ -1772,10 +1870,8 @@ algorithm
 end integer2Subscript;
 
 /* AVL impementation */
-public
-type AvlKey = String ;
-public
-type AvlValue = Item;
+public type AvlKey = String;
+public type AvlValue = Item;
 
 public function keyStr "prints a key to a string"
 input AvlKey k;
@@ -1784,21 +1880,14 @@ algorithm
   str := k;
 end keyStr;
 
-protected function printElementAndModOpt
-  input Option<tuple<SCode.Element, DAE.Mod>> elAndMod;
+protected function printElement
+  input SCode.Element el;
   output String str;
 algorithm
-  str := match(elAndMod)
-    local
-      DAE.Mod m;
-      SCode.Element e;
-      
-    case (NONE()) then "";
-    case (SOME((e,m))) 
-      then "[el:" +& SCodeDump.unparseElementStr(e) +& ", mod" +& Mod.printModStr(m) +& "], ";
-    
+  str := match(el)
+    case (_) then "[el:" +& SCodeDump.unparseElementStr(el) +& "], ";
   end match; 
-end printElementAndModOpt;
+end printElement;
 
 protected function printInstStatus
   input InstStatus instStatus;
@@ -1823,7 +1912,7 @@ algorithm
       SCode.Variability variability "variability";
       Absyn.Direction direction "direction";
       Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
-      Option<tuple<SCode.Element, DAE.Mod>> elAndmod;
+      SCode.Element el;
       InstStatus instStatus;
       String s1, s2, s3, s4, s5;
       DAE.Binding binding;
@@ -1832,7 +1921,7 @@ algorithm
       
       
     case(VAR(instantiated=DAE.TYPES_VAR(name=name,attributes=DAE.ATTR(ct, parallelism, variability, direction, innerOuter, _),ty=tp,binding=binding),
-             declaration = elAndmod, instStatus=instStatus, env = env)) 
+             var = el, instStatus=instStatus, env = env)) 
       equation
         s1 = SCodeDump.connectorTypeStr(ct);
         s1 = Util.if_(stringEq(s1, ""), "", s1 +& ", ");
@@ -1847,10 +1936,10 @@ algorithm
                 
         str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
         +& Types.printTypeStr(tp) +& ") binding: " +& Types.printBindingStr(binding) +& " attr: " +& s1 +& s2 +& s3 +& s4 +& s5 +&
-        printElementAndModOpt(elAndmod) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env); 
+        printElement(el) +& printInstStatus(instStatus) +& " env: " +& printEnvPathStr(env); 
       then str;
     
-    case(CLASS(cl= e as SCode.CLASS(name=name), env = env)) 
+    case(CLASS(cls = e as SCode.CLASS(name=name), env = env)) 
       equation
         str = "class: " +& SCodeDump.shortElementStr(e) +& " env: " +& printEnvPathStr(env);
       then str;
@@ -1860,10 +1949,6 @@ algorithm
         str = "type:   " +& Types.unparseType(tp);
       then str;
     
-    case(IMPORT(imp)) 
-      equation
-        str = "import: " +& Dump.unparseImportStr(imp);
-      then str;
   end match;
 end valueStr;
 
@@ -1938,27 +2023,41 @@ algorithm
       Integer h;
       AvlTree t_1,t;
       Option<AvlTreeValue> oval;
+      Absyn.Info info;
+    
+    /*/ Don't allow replacing of nodes.
+    case (_, 0, key, _)
+      equation
+        info = FEnv.getItemInfo(inValue);
+        Error.addSourceMessage(Error.DOUBLE_DECLARATION_OF_ELEMENTS,
+          {inKey}, info);
+      then
+        fail();*/
     
     // replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(key=rkey)),height=h,left = left,right = right),0,key,value)
       equation
         // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
         // checkValueReplacementCompatible(rval, value);
-      then AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right);
+      then 
+        AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right);
      
     // insert to right
     case (AVLTREENODE(value = oval,height=h,left = left,right = right),1,key,value)
       equation
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
-      then AVLTREENODE(oval,h,left,SOME(t_1));
+      then 
+        AVLTREENODE(oval,h,left,SOME(t_1));
         
     // insert to left subtree
     case (AVLTREENODE(value = oval,height=h,left = left ,right = right),-1,key,value)
       equation
         t = createEmptyAvlIfNone(left);
         t_1 = avlTreeAdd(t, key, value);
-      then AVLTREENODE(oval,h,SOME(t_1),right);
+      then 
+        AVLTREENODE(oval,h,SOME(t_1),right);
+  
   end match;
 end avlTreeAdd2;
 
@@ -1969,7 +2068,6 @@ protected function checkValueReplacementCompatible
   VAR<->VAR OK
   CLASS<->CLASS OK
   TYPE<->TYPE OK
-  IMPORT<->IMPORT OK
   All the other replacements will output a warning!"
   input AvlValue val1;
   input AvlValue val2;
@@ -1982,11 +2080,9 @@ algorithm
     // var can replace var
     case (VAR(instantiated = _), VAR(instantiated = _)) then ();
     // class can replace class
-    case (CLASS(cl = _),     CLASS(cl = _)) then ();
+    case (CLASS(cls = _),     CLASS(cls = _)) then ();
     // type can replace type
     case (TYPE(tys = _),       TYPE(tys = _)) then ();
-    // import can replace import
-    case (IMPORT(imp = _),   IMPORT(imp = _)) then ();
     // anything else is an error!
     case (val1, val2)
       equation
@@ -2011,8 +2107,8 @@ algorithm
       Env env;
     
     // var should not be replaced by class!
-    case (VAR(declaration = SOME((SCode.COMPONENT(name = n1, info = aInfo), _))), 
-          CLASS(cl = SCode.CLASS(name = n2, info = _), env = env))
+    case (VAR(var = SCode.COMPONENT(name = n1, info = aInfo)), 
+          CLASS(cls = SCode.CLASS(name = n2, info = _), env = env))
       equation
          n = printEnvPathStr(env);
          n2 = n +& "." +& n2;
@@ -2020,7 +2116,7 @@ algorithm
         (n1, n2, aInfo);
     
     // class should not be replaced by var!
-    case (CLASS(cl = _), VAR(instantiated = _))
+    case (CLASS(cls = _), VAR(instantiated = _))
       equation
         // call ourselfs reversed
         (n1, n2, aInfo) = getNamesAndInfoFromVal(val2, val1);
@@ -2393,7 +2489,7 @@ public function isTopScope "Returns true if we are in the top-most scope"
   output Boolean isTop;
 algorithm
   isTop := matchcontinue env
-    case {FRAME(optName = NONE())} then true;
+    case {FRAME(name = NONE())} then true;
     case _ then false;
   end matchcontinue;
 end isTopScope;
@@ -2515,8 +2611,8 @@ algorithm
     local
       list<Frame> fl;
     case ({}) then false;
-    case (FRAME(optType = SOME(FUNCTION_SCOPE())) :: _) then true;
-    case (FRAME(optType = SOME(CLASS_SCOPE())) :: _) then false;
+    case (FRAME(scopeType = SOME(FUNCTION_SCOPE())) :: _) then true;
+    case (FRAME(scopeType = SOME(CLASS_SCOPE())) :: _) then false;
     case (_ :: fl) then inFunctionScope(fl);
   end matchcontinue;
 end inFunctionScope;
@@ -2749,6 +2845,71 @@ algorithm
       then CACHE(envCache,ienv,ef,ht,p);
   end match;
 end setCacheClassName;
+
+public function avlTreeReplace
+  "Replaces the value of an already existing node in the tree with a new value."
+  input AvlTree inAvlTree;
+  input AvlKey inKey;
+  input AvlValue inValue;
+  output AvlTree outAvlTree;
+algorithm
+  outAvlTree := match(inAvlTree, inKey, inValue)
+    local
+      AvlKey key, rkey;
+      AvlValue value;
+
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(key = rkey))), key, value)
+      then avlTreeReplace2(inAvlTree, stringCompare(key, rkey), key, value);
+ 
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Env.avlTreeReplace failed"});
+      then fail();
+
+  end match;
+end avlTreeReplace;
+
+protected function avlTreeReplace2
+  "Helper function to avlTreeReplace."
+  input AvlTree inAvlTree;
+  input Integer inKeyComp;
+  input AvlKey inKey;
+  input AvlValue inValue;
+  output AvlTree outAvlTree;
+algorithm
+  outAvlTree := match(inAvlTree, inKeyComp, inKey, inValue)
+    local
+      AvlKey key;
+      AvlValue value;
+      Option<AvlTree> left, right;
+      Integer h;
+      AvlTree t;
+      Option<AvlTreeValue> oval;
+
+    // Replace this node.
+    case (AVLTREENODE(value = SOME(_), height = h, left = left, right = right),
+        0, key, value)
+      then AVLTREENODE(SOME(AVLTREEVALUE(key, value)), h, left, right);
+
+    // Insert into right subtree.
+    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
+        1, key, value)
+      equation
+        t = createEmptyAvlIfNone(right);
+        t = avlTreeReplace(t, key, value);
+      then  
+        AVLTREENODE(oval, h, left, SOME(t));
+
+    // Insert into left subtree.
+    case (AVLTREENODE(value = oval, height = h, left = left, right = right),
+        -1, key, value)
+      equation
+        t = createEmptyAvlIfNone(left);
+        t = avlTreeReplace(t, key, value);
+      then
+        AVLTREENODE(oval, h, SOME(t), right);
+  end match;
+end avlTreeReplace2;
 
 end Env;
 

@@ -655,15 +655,15 @@ algorithm
   end matchcontinue;
 end matchingState;
 
-public function isFunction "function: isFunction
-
-  Fails for states that are not FUNCTION.
-"
+public function isFunction 
+"function: isFunction
+  returns true if state is FUNCTION."
   input State inState;
+  output Boolean b;
 algorithm
-  _:=
-  match (inState)
-    case FUNCTION(path = _) then ();
+  b := match (inState)
+    case FUNCTION(path = _) then true;
+    else false;
   end match;
 end isFunction;
 

@@ -1468,27 +1468,29 @@ algorithm
   outFrame := matchcontinue(inFrame,inCr)
     local
       DAE.ComponentRef cr;
-      Frame f;
-      Option<Ident> optName "Optional class name" ;
+      Option<Env.Ident> id;
       Option<Env.ScopeType> st;
-      AvlTree clsAndVars "List of uniquely named classes and variables" ;
-      AvlTree types "List of types, which DOES NOT need to be uniquely named, eg. size may have several types" ;
-      list<Item> imports "list of unnamed items (imports)" ;
-      CSetsType connectionSet "current connection set crefs" ;
-      SCode.Encapsulated encapsulatedPrefix "encapsulated means that FRAME is created due to encapsulated class" ;
-      list<SCode.Element> defineUnits "list of units defined in the frame" ;
+      Env.FrameType ft;
+      Env.AvlTree clsAndVars,tys;
+      Env.CSetsType crs;
+      list<SCode.Element> du;
+      Env.ExtendsTable et;
+      Env.ImportTable it;
+      Option<Util.StatefulBoolean> iu;
+      Env.Env fs;
+      Env.Frame f;
 
-    case (f as Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, encapsulatedPrefix, defineUnits), cr)
+    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu), cr)
       equation
         SOME(clsAndVars) = switchInnerToOuterInAvlTree(SOME(clsAndVars), cr);
       then
-        Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, encapsulatedPrefix, defineUnits);
+        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu);
 
-    case (f as Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, encapsulatedPrefix, defineUnits), cr)
+    case (f as Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu), cr)
       equation
         // when above fails leave unchanged
       then
-        Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, encapsulatedPrefix, defineUnits);
+        Env.FRAME(id,st,ft,clsAndVars,tys,crs,du,et,it,iu);
 
   end matchcontinue;
 end switchInnerToOuterInFrame;
@@ -1537,15 +1539,16 @@ algorithm
   outItem := matchcontinue(inItem,inCr)
     local
       DAE.ComponentRef cr;
-      DAE.Ident name "name";
-      DAE.Attributes attributes "attributes";
-      SCode.Visibility visibility "protected/public";
-      DAE.Type type_ "type";
-      DAE.Binding binding "binding ; equation modification";
-      Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated.";
-      Env.InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
-      Env.Env env "The environment of the instantiated component. Contains e.g. all sub components";
-
+      DAE.Ident name;
+      DAE.Attributes attributes;
+      SCode.Visibility visibility;
+      DAE.Type ty;
+      DAE.Binding binding;
+      SCode.Element e;
+      DAE.Mod m;
+      Env.InstStatus instStatus;
+      Option<Util.StatefulBoolean> iu;
+      Env.Env env;
       SCode.ConnectorType ct;
       SCode.Parallelism parallelism "parallelism";
       SCode.Variability variability "variability" ;
@@ -1553,23 +1556,26 @@ algorithm
       Option<DAE.Const> cnstForRange;
     
     // inner
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env), cr)
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, iu), cr)
       equation
         DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER(), visibility) = attributes;
         attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // env = switchInnerToOuterInEnv(env, inCr);
-      then Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env);
+      then 
+        Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, iu);
     
     // inner outer
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env), cr)
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, iu), cr)
       equation
         DAE.ATTR(ct, parallelism, variability, direction, Absyn.INNER_OUTER(), visibility) = attributes;
         attributes = DAE.ATTR(ct, parallelism, variability, direction, Absyn.OUTER(), visibility);
         // env = switchInnerToOuterInEnv(env, inCr);
-      then Env.VAR(DAE.TYPES_VAR(name, attributes, type_, binding, cnstForRange), declaration, instStatus, env);
+      then 
+        Env.VAR(DAE.TYPES_VAR(name, attributes, ty, binding, cnstForRange), e, m, instStatus, env, iu);
 
     // leave unchanged
     case (_, _) then inItem;
+  
   end matchcontinue;
 end switchInnerToOuterInAvlTreeValue;
 

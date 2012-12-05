@@ -292,7 +292,6 @@ protected constant DAE.Var objectiveVar = DAE.TYPES_VAR("objective",
           DAE.ATTR(SCode.POTENTIAL(),SCode.NON_PARALLEL(),SCode.VAR(),Absyn.INPUT(),Absyn.NOT_INNER_OUTER(), SCode.PUBLIC()),
           DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `objective\' variable" ;
           
-          
 
 protected constant DAE.Type stringIntInt2string = 
           DAE.T_FUNCTION(
@@ -478,11 +477,51 @@ protected constant DAE.Type realrealreal2real =
             DAE.FUNCTION_ATTRIBUTES_BUILTIN,
             DAE.emptyTypeSource);
 
-public function variableIsBuiltin "Returns true if cref is a builtin variable.
-Currently only 'time' is a builtin variable.
-"
-input DAE.ComponentRef cref;
-output Boolean b;
+protected constant SCode.Element timeComp = 
+          SCode.COMPONENT(
+            "time", 
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            NONE(), NONE(), Absyn.dummyInfo);
+
+protected constant SCode.Element startTimeComp = 
+          SCode.COMPONENT(
+            "startTime", 
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            NONE(), NONE(), Absyn.dummyInfo);
+
+protected constant SCode.Element finalTimeComp = 
+          SCode.COMPONENT(
+            "finalTime", 
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            NONE(), NONE(), Absyn.dummyInfo);
+
+protected constant SCode.Element objectiveIntegrandComp = 
+          SCode.COMPONENT(
+            "objectiveIntegrand", 
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            NONE(), NONE(), Absyn.dummyInfo);
+          
+protected constant SCode.Element objectiveVarComp = 
+          SCode.COMPONENT(
+            "objectiveVar", 
+            SCode.defaultPrefixes,
+            SCode.ATTR({}, SCode.POTENTIAL(), SCode.NON_PARALLEL(), SCode.VAR(), Absyn.INPUT()),
+            Absyn.TPATH(Absyn.IDENT("Real"), NONE()), SCode.NOMOD(),
+            NONE(), NONE(), Absyn.dummyInfo);
+
+public function variableIsBuiltin 
+ "Returns true if cref is a builtin variable.
+  Currently only 'time' is a builtin variable."
+  input DAE.ComponentRef cref;
+  output Boolean b;
 algorithm
   b := match (cref)
     case(DAE.CREF_IDENT(ident="time")) then true;
@@ -557,7 +596,7 @@ val array_array2int
 "
   output list<Env.Frame> env;
 algorithm
-  env := Env.newEnvironment() "Debug.fprint (\"insttr\",\"Creating initial env.\\n\") &" ;
+  env := Env.newEnvironment(NONE());
   env := Env.extendFrameC(env, rlType);
   env := Env.extendFrameC(env, intType);
   env := Env.extendFrameC(env, strType);
@@ -572,8 +611,8 @@ algorithm
   env := Env.extendFrameC(env, uncertaintyType);
 end simpleInitialEnv;
 
-public function initialEnv "function: initialEnv
-
+public function initialEnv 
+"function: initialEnv
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in definitions to it.
@@ -583,8 +622,7 @@ public function initialEnv "function: initialEnv
   - fill
   - cat
     These operators are catched in the elabBuiltinHandler, along with all
-    others.
-"
+    others."
   input Env.Cache inCache;
   output Env.Cache outCache;
   output list<Env.Frame> env;
@@ -599,28 +637,70 @@ algorithm
     case (cache) equation
       env = Env.getCachedInitialEnv(cache);
     then (cache,env);
+    
     // if no cached version found create initial env.
     case (cache) equation
       env = Env.openScope(Env.emptyEnv, SCode.NOT_ENCAPSULATED(), NONE(), NONE());
-      env = Env.extendFrameC(env, rlType);
-      env = Env.extendFrameC(env, intType);
-      env = Env.extendFrameC(env, strType);
-      env = Env.extendFrameC(env, boolType);
-      env = Env.extendFrameC(env, enumType);
-      env = Env.extendFrameC(env, ExternalObjectType);
-      env = Env.extendFrameC(env, realType);
-      env = Env.extendFrameC(env, integerType);
-      env = Env.extendFrameC(env, stringType);
-      env = Env.extendFrameC(env, booleanType);
-      env = Env.extendFrameC(env, stateSelectType);
-      env = Env.extendFrameC(env, uncertaintyType);
-      env = Env.extendFrameV(env, timeVar, NONE(), Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
+      env = Env.extendFrameCBuiltin(env, rlType);
+      env = Env.extendFrameCBuiltin(env, intType);
+      env = Env.extendFrameCBuiltin(env, strType);
+      env = Env.extendFrameCBuiltin(env, boolType);
+      env = Env.extendFrameCBuiltin(env, enumType);
+      env = Env.extendFrameCBuiltin(env, ExternalObjectType);
+      env = Env.extendFrameCBuiltin(env, realType);
+      env = Env.extendFrameCBuiltin(env, integerType);
+      env = Env.extendFrameCBuiltin(env, stringType);
+      env = Env.extendFrameCBuiltin(env, booleanType);
+      env = Env.extendFrameCBuiltin(env, stateSelectType);
+      env = Env.extendFrameCBuiltin(env, uncertaintyType);
+      env = Env.extendFrameV(
+             env, 
+             timeVar,
+             timeComp,
+             DAE.NOMOD(), 
+             Env.VAR_UNTYPED(), 
+             {});
       
       //If Optimica add the startTime,finalTime,objectiveIntegrand and objective "builtin" variables.
-      env = Util.if_(Config.acceptOptimicaGrammar(), Env.extendFrameV(env, objectiveVar, NONE(), Env.VAR_UNTYPED(), {}), env);
-      env = Util.if_(Config.acceptOptimicaGrammar(), Env.extendFrameV(env, objectiveIntegrandVar, NONE(), Env.VAR_UNTYPED(), {}), env);
-      env = Util.if_(Config.acceptOptimicaGrammar(), Env.extendFrameV(env, startTimeVar, NONE(), Env.VAR_UNTYPED(), {}), env);
-      env = Util.if_(Config.acceptOptimicaGrammar(), Env.extendFrameV(env, finalTimeVar, NONE(), Env.VAR_UNTYPED(), {}), env);
+      env = Util.if_(Config.acceptOptimicaGrammar(), 
+                     Env.extendFrameV(
+                       env, 
+                       objectiveVar, 
+                       objectiveVarComp, 
+                       DAE.NOMOD(), 
+                       Env.VAR_UNTYPED(), 
+                       {}), 
+                     env);
+      
+      env = Util.if_(Config.acceptOptimicaGrammar(), 
+                     Env.extendFrameV(
+                       env, 
+                       objectiveIntegrandVar, 
+                       objectiveIntegrandComp, 
+                       DAE.NOMOD(), 
+                       Env.VAR_UNTYPED(), 
+                       {}), 
+                     env);
+      
+      env = Util.if_(Config.acceptOptimicaGrammar(), 
+                     Env.extendFrameV(
+                       env, 
+                       startTimeVar, 
+                       startTimeComp,
+                       DAE.NOMOD(), 
+                       Env.VAR_UNTYPED(), 
+                       {}), 
+                     env);
+      
+      env = Util.if_(Config.acceptOptimicaGrammar(), 
+                     Env.extendFrameV(
+                       env, 
+                       finalTimeVar, 
+                       finalTimeComp,
+                       DAE.NOMOD(), 
+                       Env.VAR_UNTYPED(), 
+                       {}), 
+                     env);
 
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
       env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);

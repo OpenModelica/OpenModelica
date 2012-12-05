@@ -52,16 +52,16 @@ encapsulated package AbsynDep
   getUsesTransitive(depends,class) -> avltree of used classes under transitive closure
 
   getUsedBy(depends,class) => avltree of classes that uses the class (e.g as component)
+  
 "
 
-  public uniontype Depends " dependency information (uses/usedBy) for classes"
-    record DEPENDS
-      AvlTree uses "the uses information, maps a class to the classes that are used in this class";
-      AvlTree usedBy "the usedby information, maps a class to the classes that uses this class(e.g. as a component)";
-      /*NOTE: the AvlTree is a "generic" datatype, defined at the bottom of the file */
-
-    end DEPENDS;
- end Depends;
+public uniontype Depends " dependency information (uses/usedBy) for classes"
+  record DEPENDS
+    AvlTree uses "the uses information, maps a class to the classes that are used in this class";
+    AvlTree usedBy "the usedby information, maps a class to the classes that uses this class(e.g. as a component)";
+    /*NOTE: the AvlTree is a "generic" datatype, defined at the bottom of the file */
+  end DEPENDS;
+end Depends;
 
 
 public import Absyn;
@@ -98,7 +98,6 @@ algorithm
     then ();
    end matchcontinue;
 end dumpAvlTreeKeys;
-
 
 protected function printKeyValueTupleStr "print key/value tuple as key -> value to string"
   input tuple<AvlKey,AvlValue> tpl;
