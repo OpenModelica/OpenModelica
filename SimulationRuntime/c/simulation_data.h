@@ -301,6 +301,7 @@
     long nZeroCrossings;
     long nSamples;
     long nRelations;
+    long nMathEvents;         /* number of math triggering functions e.g. cail, floor, integer */
     long nDelayExpressions;
     long nInitEquations;      /* number of initial equations */
     long nInitAlgorithms;     /* number of initial algorithms */
@@ -352,10 +353,11 @@
 
     modelica_real* zeroCrossings;
     modelica_real* zeroCrossingsPre;
-    modelica_boolean* backupRelations;
-    modelica_boolean* backupRelationsPre;
+    modelica_boolean* relations;
+    modelica_boolean* relationsPre;
     modelica_boolean* zeroCrossingEnabled;
-    long* zeroCrossingIndex;
+    modelica_real* mathEventsValuePre;
+    long* zeroCrossingIndex;               /* pointer for a list events at event instants */
 
     /* helpVars are the result when relations and samples */
     modelica_boolean* helpVars;

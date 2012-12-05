@@ -2017,7 +2017,7 @@ algorithm
       list<SimCode.SimVar> stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars;
       list<SimCode.Function> functions;
       list<String> labels;
-      Integer numHelpVars,numZeroCrossings,numTimeEvents,numRelations;
+      Integer numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents;
       Integer numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
       Integer numParams,numIntParams,numBoolParams,numOutVars,numInVars;
       Integer numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
@@ -2027,7 +2027,7 @@ algorithm
     case({},_) then modelInfo;
     case(_,SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels))
       equation
-        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
            numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder) = varInfo;
         SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
@@ -2041,7 +2041,7 @@ algorithm
         boolAlgVars = listReverse(boolAlgVars);
         stringAlgVars = listReverse(stringAlgVars);
 
-        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
            numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder);
         vars = SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
@@ -2144,7 +2144,7 @@ algorithm
       SimCode.SimVars vars;
       list<SimCode.Function> functions;
       list<String> labels;
-      Integer numHelpVars,numZeroCrossings,numTimeEvents,numRelations;
+      Integer numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents;
       Integer numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
       Integer numParams,numIntParams,numBoolParams,numOutVars,numInVars;
       Integer numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
@@ -2152,10 +2152,10 @@ algorithm
       Option<Integer> dimODE1stOrder,dimODE2ndOrder;
     case(SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels),_,_)
       equation
-        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,  
           numStringParamVars,numStringAliasVars,_,_,dimODE1stOrder,dimODE2ndOrder) = varInfo;
-        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,  
           numStringParamVars,numStringAliasVars,numEqns,numNonLinearSys,dimODE1stOrder,dimODE2ndOrder);
         then SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels);
@@ -5265,7 +5265,7 @@ algorithm
         evars = BackendDAEUtil.emptyVars();
         eeqns = BackendDAEUtil.listEquation({});
         cache = Env.emptyCache();
-        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,constrs,clsAttrs,cache,{},inFuncs,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.ALGEQSYSTEM(),{}));
+        subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,constrs,clsAttrs,cache,{},inFuncs,BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.ALGEQSYSTEM(),{}));
         (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         (subsystem_dae_2,v1_1,v2_1,comps_1,r,t) = BackendDAEOptimize.tearingSystem(subsystem_dae_1,v1,v2,comps);
         true = listLength(r) > 0;
@@ -6078,7 +6078,7 @@ algorithm
         funcs = DAEUtil.avlTreeNew();
         vars1 = BackendDAEUtil.listVar1(vars);
         syst = BackendDAE.EQSYSTEM(vars1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.ARRAYSYSTEM(),{});
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.ARRAYSYSTEM(),{});
         subsystem_dae = BackendDAE.DAE({syst},shared);
         (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
         (equations_,noDiscequations,uniqueEqIndex,tempvars) = createEquations(false, false, genDiscrete, false, false, syst, shared, comps, helpVarInfo, iuniqueEqIndex,itempvars);
@@ -6105,7 +6105,7 @@ algorithm
         funcs = DAEUtil.avlTreeNew();
         vars1 = BackendDAEUtil.listVar1(vars);
         syst = BackendDAE.EQSYSTEM(vars1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.ARRAYSYSTEM(),{});
+        shared = BackendDAE.SHARED(evars,evars,av,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.ARRAYSYSTEM(),{});
         subsystem_dae = BackendDAE.DAE({syst},shared);
         (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
         (equations_,noDiscequations,uniqueEqIndex,tempvars) = createEquations(false, false, genDiscrete, false, false, syst, shared, comps, helpVarInfo, iuniqueEqIndex,itempvars);
@@ -6709,7 +6709,7 @@ algorithm
         kn = BackendDAEUtil.listVar(lkn);
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(v,pe,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{},{},{},0),extObjClasses,BackendDAE.PARAMETERSYSTEM(),{});
+        shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{},{},{},0,0),extObjClasses,BackendDAE.PARAMETERSYSTEM(),{});
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
         paramdlow = BackendDAE.DAE({syst},shared);
         //mT = BackendDAEUtil.transposeMatrix(m);
@@ -7350,17 +7350,17 @@ algorithm
   matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2)
     local
-      Integer ng, ng_sam, ng_rel, numInitialResiduals;
+      Integer ng, ng_sam, ng_rel, ng_math, numInitialResiduals;
     case (_, _, _, _, _, _, _, _, _, _, _,
                  _, _, _, _, _, _, _, _, _,_,_)
       equation
-        (ng, ng_sam, ng_rel) = BackendDAEUtil.numberOfZeroCrossings(dlow);
+        (ng, ng_sam, ng_rel, ng_math) = BackendDAEUtil.numberOfZeroCrossings(dlow);
         ng = filterNg(ng);
         ng_sam = filterNg(ng_sam);
         ng_rel = filterNg(ng_rel);        
         numInitialResiduals = numInitialEquations+numInitialAlgorithms;
       then
-        SimCode.VARINFO(numHelpVars, ng, ng_sam, ng_rel, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+        SimCode.VARINFO(numHelpVars, ng, ng_sam, ng_rel, ng_math, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
           numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, SOME(dim_1),SOME(dim_2));
     case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation

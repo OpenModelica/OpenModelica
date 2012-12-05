@@ -2551,12 +2551,12 @@ algorithm
       BackendDAE.SymbolicJacobians symjacs;
       list<BackendDAE.WhenClause> whenClauseLst,whenClauseLst1;
       list<BackendDAE.ZeroCrossing> zeroCrossingLst, relationsLst,sampleLst;
-      Integer numberOfRealtions;
+      Integer numberOfRealtions,numMathFunctions;
       BackendDAE.BackendDAEType btp; 
       BackendDAE.EqSystems systs,systs1;  
       list<BackendDAE.Var> ordvarslst,varlst;
     case (false,_,_) then inDAE;
-    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfRealtions),eoc,btp,symjacs)),_)
+    case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfRealtions,numMathFunctions),eoc,btp,symjacs)),_)
       equation
         // replace moved vars in knvars,remeqns
         (aliasVars,(_,varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceAliasVarTraverser,(repl,{}));
@@ -2569,7 +2569,7 @@ algorithm
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendDAEUtil.listEquation(List.select(BackendDAEUtil.equationList(remeqns1),assertWithCondTrue));
       then 
-        BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRealtions),eoc,btp,symjacs));
+        BackendDAE.DAE(systs1,BackendDAE.SHARED(knvars1,exobj,aliasVars,inieqns,remeqns1,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst1,zeroCrossingLst,sampleLst,relationsLst,numberOfRealtions,numMathFunctions),eoc,btp,symjacs));
   end match;
 end removeSimpleEquationsShared;
 
@@ -5482,7 +5482,7 @@ algorithm
         emptyEqns = BackendDAEUtil.listEquation({});
         emptyVars = BackendDAEUtil.emptyVars();
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,emptyEqns,removedEqs,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0),{},BackendDAE.SIMULATION(),{});
+        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,emptyEqns,removedEqs,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.SIMULATION(),{});
         (m_new,mT_new) = BackendDAEUtil.incidenceMatrix(eqSystem,BackendDAE.NORMAL());
         match1 = arrayCreate(l,1);
         matching = BackendDAE.MATCHING(match1,match1,{});
@@ -8296,7 +8296,7 @@ algorithm
       constrs = listArray({});
       clsAttrs = listArray({});
       functions = DAEUtil.avlTreeNew();
-      jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, 0);
+      jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
       
       jacobian = BackendDAE.DAE({BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, constrs, clsAttrs, cache, env, functions, jacEventInfo, jacExtObjClasses,BackendDAE.JACOBIAN(),{}));
@@ -8337,7 +8337,7 @@ algorithm
       constrs = listArray({});
       clsAttrs = listArray({});
       functions = DAEUtil.avlTreeNew();
-      jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, 0);
+      jacEventInfo = BackendDAE.EVENT_INFO({}, {}, {}, {}, 0, 0);
       jacExtObjClasses = {};
       
       jacobian = BackendDAE.DAE(BackendDAE.EQSYSTEM(jacOrderedVars, jacOrderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING())::{}, BackendDAE.SHARED(jacKnownVars, jacExternalObjects, jacAliasVars, jacInitialEqs, jacRemovedEqs, constrs, clsAttrs, cache, env, functions, jacEventInfo, jacExtObjClasses, BackendDAE.JACOBIAN(),{}));

@@ -575,7 +575,7 @@ algorithm
                               cache, 
                               {},
                               funcTree,
-                              BackendDAE.EVENT_INFO({},{},{},{},0),
+                              BackendDAE.EVENT_INFO({},{},{},{},0, 0),
                               {},
                               inBDAEType,
                               {}
@@ -946,16 +946,19 @@ algorithm
   osysts := syst::isysts;
 end addDummyState;
 
+/* Actually obsolete code, should be removed 
+   but is used in modpar in Main.mo
+ */ 
 public function calculateSizes "function: calculateSizes
   author: PA
   Calculates the number of state variables, nx,
   the number of algebraic variables, ny
   and the number of parameters/constants, np.
   inputs:  BackendDAE
-  outputs: (int, /* nx */
-            int, /* ny */
-            int, /* np */
-            int  /* ng */
+  outputs: (int, // nx 
+            int, // ny 
+            int, // np 
+            int  // ng 
             int) next"
   input BackendDAE.BackendDAE inBackendDAE;
   output Integer outnx        "number of states";
@@ -997,27 +1000,6 @@ algorithm
         (nx_1,ny_1,np,numberOfRelations,nsam,next,ny_1_string, np_string, ny_1_int, np_int, ny_1_bool, np_bool);
   end match;
 end calculateSizes;
-
-public function numberOfZeroCrossings "function: numberOfZeroCrossings
-  author: Frenkel TUD"
-  input BackendDAE.BackendDAE inBackendDAE;
-  output Integer outng        "number of zerocrossings";
-  output Integer outng_sample "number of zerocrossings that are samples";
-  output Integer outng_rel    "number of relation in zerocrossings";  
-algorithm
-  (outng,outng_sample,outng_rel):=
-  match (inBackendDAE)
-    local
-      Integer ng,nsam, ngrel;
-      list<ZeroCrossing> zc, samples;
-    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc, sampleLst =samples, relationsNumber=ngrel))))
-      equation
-        ng = listLength(zc);
-        nsam = listLength(samples);
-      then
-        (ng,nsam,ngrel);
-  end match;
-end numberOfZeroCrossings;
 
 protected function calculateNumberZeroCrossings
   input list<ZeroCrossing> zcLst;
@@ -1151,11 +1133,11 @@ algorithm
       then
         ((var,(nx+1,ny,ny_string, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_STRING(source = _)),(nx,ny,ny_string, ny_int, ny_bool))) // A dummy state is an algebraic variable 
       then
         ((var,(nx,ny,ny_string+1, ny_int,ny_bool)));
         
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE(),varType=DAE.T_INTEGER(source = _)),(nx,ny,ny_string, ny_int, ny_bool))) // A dummy state is an algebraic variable
       then
         ((var,(nx,ny,ny_string, ny_int+1,ny_bool)));
     
@@ -1163,7 +1145,7 @@ algorithm
       then
         ((var,(nx,ny,ny_string, ny_int,ny_bool+1)));
         
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()),(nx,ny,ny_string, ny_int, ny_bool))) /* A dummy state is an algebraic variable */
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.DUMMY_STATE()),(nx,ny,ny_string, ny_int, ny_bool))) // A dummy state is an algebraic variable 
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
@@ -1186,6 +1168,29 @@ algorithm
     case _ then inTpl;
   end matchcontinue;
 end calculateVarSizes;
+
+
+public function numberOfZeroCrossings "function: numberOfZeroCrossings
+  author: Frenkel TUD"
+  input BackendDAE.BackendDAE inBackendDAE;
+  output Integer outng        "number of zerocrossings";
+  output Integer outng_sample "number of zerocrossings that are samples";
+  output Integer outng_rel    "number of relation in zerocrossings";
+  output Integer outng_math    "number of relation in zerocrossings";    
+algorithm
+  (outng,outng_sample,outng_rel,outng_math):=
+  match (inBackendDAE)
+    local
+      Integer ng,nsam, ngrel, ngmath;
+      list<ZeroCrossing> zc, samples;
+    case (BackendDAE.DAE(shared=BackendDAE.SHARED(eventInfo = BackendDAE.EVENT_INFO(zeroCrossingLst = zc, sampleLst =samples, relationsNumber=ngrel, numberMathEvents = ngmath))))
+      equation
+        ng = listLength(zc);
+        nsam = listLength(samples);
+      then
+        (ng,nsam,ngrel,ngmath);
+  end match;
+end numberOfZeroCrossings;
 
 protected function calculateValues "function: calculateValues
   author: PA
@@ -2782,14 +2787,14 @@ algorithm
       DAE.FunctionTree funcs;
       list<WhenClause> wclst,wclst1;
       list<ZeroCrossing> zc, rellst, smplLst;
-      Integer numberOfRelations;
+      Integer numberOfRelations, numberOfMathEventFunctions;
       ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
       BackendDAEType btp;
-    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zc,smplLst,rellst,numberOfRelations),eoc,btp,symjacs))
+    case (_,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs))
       equation
         wclst1 = listAppend(wclst,inWcLst);  
-      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst1,zc,smplLst,rellst,numberOfRelations),eoc,btp,symjacs);
+      then BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO(wclst1,zc,smplLst,rellst,numberOfRelations,numberOfMathEventFunctions),eoc,btp,symjacs);
   end match;
 end whenClauseAddDAE;
 
@@ -9170,7 +9175,7 @@ algorithm
                                                  cache,
                                                  env,
                                                  functionTree,
-                                                 BackendDAE.EVENT_INFO({},{},{},{},0),
+                                                 BackendDAE.EVENT_INFO({},{},{},{},0,0),
                                                  {},
                                                  BackendDAE.INITIALSYSTEM(),
                                                  {}));

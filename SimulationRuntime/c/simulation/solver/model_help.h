@@ -42,28 +42,28 @@ extern "C" {
 
 #define RELATION(res,exp1,exp2,index,op_w) { \
   if (data->simulationInfo.discreteCall == 0){ \
-    res = data->simulationInfo.backupRelationsPre[index]; \
+    res = data->simulationInfo.relationsPre[index]; \
   } else{ \
     if (data->simulationInfo.solveContinuous){ \
-      res = data->simulationInfo.backupRelationsPre[index]; \
-      data->simulationInfo.backupRelations[index] = ((op_w)((exp1),(exp2))); \
+      res = data->simulationInfo.relationsPre[index]; \
+      data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
     } else { \
       res = ((op_w)((exp1),(exp2))); \
-      data->simulationInfo.backupRelations[index] = res; \
+      data->simulationInfo.relations[index] = res; \
     }\
   }\
 }
 
 #define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) { \
   if (data->simulationInfo.discreteCall == 0){ \
-    res = data->simulationInfo.backupRelationsPre[index]; \
+    res = data->simulationInfo.relationsPre[index]; \
   } else{ \
     if (data->simulationInfo.solveContinuous){ \
-      res = data->simulationInfo.backupRelationsPre[index]; \
-      data->simulationInfo.backupRelations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.backupRelationsPre[index])); \
+      res = data->simulationInfo.relationsPre[index]; \
+      data->simulationInfo.relations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.relationsPre[index])); \
     } else { \
-      res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.backupRelationsPre[index])); \
-      data->simulationInfo.backupRelations[index] = res; \
+      res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.relationsPre[index])); \
+      data->simulationInfo.relations[index] = res; \
     }\
   }\
 }
@@ -103,6 +103,14 @@ void resetAllHelpVars(DATA* data);
 double getNextSampleTimeFMU(DATA *data);
 
 void storeOldValues(DATA *data);
+
+modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *data);
+modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data);
+modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data);
+modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data);
+modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data);
+modelica_integer _event_mod_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data);
+modelica_integer _event_rem_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data);
 
 /* functions used for relation which
  * are not used as zero-crossings

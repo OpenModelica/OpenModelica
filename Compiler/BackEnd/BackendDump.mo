@@ -504,7 +504,7 @@ algorithm
         str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
       then
         str2;
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT(name = "sample")),occurEquLst = eq,occurWhenLst = wc)
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT(name = _)),occurEquLst = eq,occurWhenLst = wc)
       equation
         eq_s_list = List.map(eq, intString);
         eq_s = stringDelimitList(eq_s_list, ",");
@@ -513,7 +513,7 @@ algorithm
         str = ExpressionDump.printExpStr(e);
         str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
       then
-        str2;        
+        str2;
         else then "";
   end match;
 end dumpZcStr;

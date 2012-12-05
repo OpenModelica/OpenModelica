@@ -289,7 +289,7 @@ void printRelations(DATA *data)
   INDENT(LOG_STDOUT);
   for(i=0; i<data->modelData.nRelations; i++)
   {
-    INFO5(LOG_STDOUT, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.backupRelations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.backupRelationsPre[i] ? 'T' : 'F');
+    INFO5(LOG_STDOUT, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
   }
   RELEASE(LOG_STDOUT);
 }
@@ -470,7 +470,7 @@ void storeRelations(DATA *data){
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
-  memcpy(sInfo->backupRelationsPre, sInfo->backupRelations, sizeof(modelica_boolean)*mData->nRelations);
+  memcpy(sInfo->relationsPre, sInfo->relations, sizeof(modelica_boolean)*mData->nRelations);
 }
 
 /*! \fn checkRelations
@@ -490,7 +490,7 @@ modelica_boolean checkRelations(DATA *data){
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
   for(i=0;i<mData->nRelations;++i){
-    if (sInfo->backupRelationsPre[i] != sInfo->backupRelations[i]){
+    if (sInfo->relationsPre[i] != sInfo->relations[i]){
       check = 1;
       break;
     }
@@ -514,6 +514,7 @@ void resetAllHelpVars(DATA *data)
   for(i=0; i<data->modelData.nHelpVars; i++)
   {
     data->simulationInfo.helpVars[i] = 0;
+    data->simulationInfo.helpVarsPre[i] = 0;
   }
 }
 
@@ -597,10 +598,11 @@ void initializeDataStruc(DATA *data)
 
   data->simulationInfo.zeroCrossings = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
-  data->simulationInfo.backupRelations = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
-  data->simulationInfo.backupRelationsPre = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
+  data->simulationInfo.relations = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
+  data->simulationInfo.relationsPre = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingEnabled = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingIndex = (long*) malloc(data->modelData.nZeroCrossings*sizeof(long));
+  data->simulationInfo.mathEventsValuePre = (modelica_real*) malloc(data->modelData.nMathEvents*sizeof(modelica_real));
   /* initialize zeroCrossingsIndex with corresponding index is used by events lists */
   for(i=0; i<data->modelData.nZeroCrossings; i++)
     data->simulationInfo.zeroCrossingIndex[i] = (long)i;
@@ -744,7 +746,7 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo.helpVarsPre);
   free(data->simulationInfo.zeroCrossings);
   free(data->simulationInfo.zeroCrossingsPre);
-  free(data->simulationInfo.backupRelations);
+  free(data->simulationInfo.relations);
   free(data->simulationInfo.zeroCrossingEnabled);
   free(data->simulationInfo.zeroCrossingIndex);
 
@@ -848,6 +850,117 @@ modelica_boolean Greater(double a, double b)
 modelica_boolean GreaterEq(double a, double b)
 {
   return a >= b;
+}
+
+
+/*! \fn _event_integer
+ *
+ *  \param [in] [x]
+ *  \param [in] [index]
+ *  \param [ref] [data]
+ *
+ * Returns the largest integer not greater than x.
+ */
+modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *data)
+{
+  modelica_real value;
+  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+    value = data->simulationInfo.mathEventsValuePre[index];
+  } else{
+    data->simulationInfo.mathEventsValuePre[index] = x;
+    value = data->simulationInfo.mathEventsValuePre[index];
+  }
+  return (modelica_integer)floor(value);
+}
+
+/*! \fn _event_floor
+ *
+ *  \param [in] [x]
+ *  \param [in] [index]
+ *  \param [ref] [data]
+ *
+ * Returns the largest integer not greater than x.
+ * Result and argument shall have type Real.
+ */
+modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data)
+{
+  modelica_real value;
+  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+    value = data->simulationInfo.mathEventsValuePre[index];
+  } else{
+    data->simulationInfo.mathEventsValuePre[index] = x;
+    value = data->simulationInfo.mathEventsValuePre[index];
+  }
+  return (modelica_real)floor(value);
+}
+
+/*! \fn _event_ceil
+ *
+ *  \param [in] [x]
+ *  \param [in] [index]
+ *  \param [ref] [data]
+ *
+ * Returns the smallest integer not less than x.
+ * Result and argument shall have type Real.
+ */
+modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
+{
+  modelica_real value;
+  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+    value = data->simulationInfo.mathEventsValuePre[index];
+  } else{
+    data->simulationInfo.mathEventsValuePre[index] = x;
+    value = data->simulationInfo.mathEventsValuePre[index];
+  }
+  return (modelica_real)ceil(value);
+}
+
+/*! \fn _event_div_integer
+ *
+ *  \param [in] [x1]
+ *  \param [in] [x2]
+ *  \param [in] [index]
+ *  \param [ref] [data]
+ *
+ * Returns the algebraic quotient x/y with any fractional part discarded.
+ */
+modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data)
+{
+  modelica_integer value1,value2;
+  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+    value1 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index];
+    value2 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index+1];
+  } else{
+    data->simulationInfo.mathEventsValuePre[index] = (modelica_real)x1;
+    data->simulationInfo.mathEventsValuePre[index+1] = (modelica_real)x2;
+    value1 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index];
+    value2 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index+1];
+  }
+  return ldiv(value1,value2).quot;
+}
+
+/*! \fn _event_div_real
+ *
+ *  \param [in] [x1]
+ *  \param [in] [x2]
+ *  \param [in] [index]
+ *  \param [ref] [data]
+ *
+ * Returns the algebraic quotient x/y with any fractional part discarded.
+ */
+modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data)
+{
+  modelica_real value1,value2;
+  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+    value1 = data->simulationInfo.mathEventsValuePre[index];
+    value2 = data->simulationInfo.mathEventsValuePre[index+1];
+  } else{
+    data->simulationInfo.mathEventsValuePre[index] = x1;
+    data->simulationInfo.mathEventsValuePre[index+1] = x2;
+    value1 = data->simulationInfo.mathEventsValuePre[index];
+    value2 = data->simulationInfo.mathEventsValuePre[index+1];
+  }
+  return trunc(value1/value2);
 }
 
 /*! \fn deInitializeDataStruc

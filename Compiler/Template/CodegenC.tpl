@@ -270,7 +270,8 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     
     data->modelData.nZeroCrossings = <%varInfo.numZeroCrossings%>;
     data->modelData.nSamples = <%varInfo.numTimeEvents%>;
-    data->modelData.nRelations = <%varInfo.numRelations%>;    
+    data->modelData.nRelations = <%varInfo.numRelations%>;
+    data->modelData.nMathEvents = <%varInfo.numMathEventFunctions%>;        
     data->modelData.nInitEquations = <%varInfo.numInitialEquations%>;
     data->modelData.nInitAlgorithms = <%varInfo.numInitialAlgorithms%>;
     data->modelData.nInitResiduals = <%varInfo.numInitialResiduals%>;    /* data->modelData.nInitEquations + data->modelData.nInitAlgorithms */
@@ -1423,7 +1424,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     <%preExp%>
     ZEROCROSSING(<%index1%>, (<%e1%>)?1:-1);
     >>
-case (exp1 as LUNARY(__)) then
+  case (exp1 as LUNARY(__)) then
     let &preExp = buffer "" /*BUFD*/
     let e1 = daeExp(exp1, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
@@ -1432,6 +1433,39 @@ case (exp1 as LUNARY(__)) then
     >>
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
     << >>
+  case CALL(path=IDENT(name="integer"), expLst={exp1, idx}) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let indx = daeExp(idx, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    ZEROCROSSING(<%index1%>, (floor(<%e1%>) != floor(data->simulationInfo.mathEventsValuePre[<%indx%>]))?1:-1);
+    >>
+  case CALL(path=IDENT(name="floor"), expLst={exp1, idx}) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let indx = daeExp(idx, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    ZEROCROSSING(<%index1%>, (floor(<%e1%>) != floor(data->simulationInfo.mathEventsValuePre[<%indx%>]))?1:-1);
+    >>
+  case CALL(path=IDENT(name="ceil"), expLst={exp1, idx}) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let indx = daeExp(idx, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    ZEROCROSSING(<%index1%>, (ceil(<%e1%>) != ceil(data->simulationInfo.mathEventsValuePre[<%indx%>]))?1:-1);
+    >>
+  case CALL(path=IDENT(name="div"), expLst={exp1, exp2, idx}) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(exp1, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let e2 = daeExp(exp2, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let indx = daeExp(idx, contextZeroCross, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+    <%preExp%>
+    ZEROCROSSING(<%index1%>, (trunc(<%e1%>/<%e2%>) != trunc(data->simulationInfo.mathEventsValuePre[<%indx%>]/data->simulationInfo.mathEventsValuePre[<%indx%>+1]))?1:-1);
+    >>
   else
     error(sourceInfo(), ' UNKNOWN ZERO CROSSING for <%index1%>')
 end zeroCrossingTpl;
@@ -1499,7 +1533,7 @@ template relationTpl(Integer index1, Exp relation, Context context, Text &varDec
     let res = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
     <%preExp%>
-    data->simulationInfo.backupRelations[<%index1%>] = <%res%>;
+    data->simulationInfo.relations[<%index1%>] = <%res%>;
     >>
   else
     <<
@@ -6629,19 +6663,19 @@ case rel as RELATION(__) then
         let isReal = if isRealType(typeof(rel.exp1)) then (if isRealType(typeof(rel.exp2)) then 'true' else '') else ''
         match rel.operator
         case LESS(__) then
-          let hysteresisfunction = if isReal then 'LessZC(<%e1%>,<%e2%>, data->simulationInfo.backupRelations[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'LessZC(<%e1%>,<%e2%>, data->simulationInfo.relations[<%rel.index%>])' else 'Less(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case LESSEQ(__) then
-          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>,<%e2%>, data->simulationInfo.backupRelations[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'LessEqZC(<%e1%>,<%e2%>, data->simulationInfo.relations[<%rel.index%>])' else 'LessEq(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case GREATER(__) then
-          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>,<%e2%>, data->simulationInfo.backupRelations[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'GreaterZC(<%e1%>,<%e2%>, data->simulationInfo.relations[<%rel.index%>])' else 'Greater(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         case GREATEREQ(__) then
-          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>,<%e2%>, data->simulationInfo.backupRelations[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
+          let hysteresisfunction = if isReal then 'GreaterEqZC(<%e1%>,<%e2%>, data->simulationInfo.relations[<%rel.index%>])' else 'GreaterEq(<%e1%>,<%e2%>)'
           let &preExp += '<%res%> = <%hysteresisfunction%>;<%\n%>'
           res
         end match      
@@ -6807,7 +6841,36 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
        let retPre = assertCommonVar(ass,createDAEString('Model error: Argument of sqrt(<%printExpStr(e1)%>) should be >= 0'), context, &varDecls, dummyInfo)
        let &preExp += '<%retPre%>'
        'sqrt(<%argStr%>)')
+
+  /* Beginn code generation of event triggering math functions */
+
+  case CALL(path=IDENT(name="div"), expLst={e1,e2, index}, attr=CALL_ATTR(ty = ty)) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    '_event_div_<%expTypeShort(ty)%>(<%var1%>, <%var2%>, <%constIndex%>, data)'
+
+  case CALL(path=IDENT(name="integer"), expLst={inExp,index}) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    '(_event_integer(<%exp%>, <%constIndex%>, data))'
+
+  case CALL(path=IDENT(name="floor"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    '((modelica_<%expTypeShort(ty)%>)_event_floor(<%exp%>, <%constIndex%>, data))'
+
+  case CALL(path=IDENT(name="ceil"), expLst={inExp,index}, attr=CALL_ATTR(ty = ty)) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let constIndex = daeExp(index, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    '((modelica_<%expTypeShort(ty)%>)_event_ceil(<%exp%>, <%constIndex%>, data))'
+    
+  /* end codegeneration of event triggering math functions */  
   
+  case CALL(path=IDENT(name="integer"), expLst={inExp}) then
+    let exp = daeExp(inExp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    '((modelica_integer)floor(<%exp%>))'
+
   case CALL(path=IDENT(name="div"), expLst={e1,e2}, attr=CALL_ATTR(ty = T_INTEGER(__))) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
@@ -6823,6 +6886,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'modelica_mod_<%expTypeShort(ty)%>(<%var1%>,<%var2%>)'
     
+  case CALL(path=IDENT(name="rem"), expLst={e1, e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    let typeStr = expTypeFromExpShort(e1)
+    'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
+
   case CALL(path=IDENT(name="max"), attr=CALL_ATTR(ty = ty), expLst={array}) then
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let arr_tp_str = '<%expTypeArray(ty)%>'
@@ -6887,13 +6956,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFD*/)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     '<%tvar%>'
-
-  case CALL(path=IDENT(name="rem"), expLst={e1, e2}) then
-    let var1 = daeExp(e1, context, &preExp, &varDecls)
-    let var2 = daeExp(e2, context, &preExp, &varDecls)
-    let typeStr = expTypeFromExpShort(e1)
-    'modelica_rem_<%typeStr%>(<%var1%>,<%var2%>)'
-  
+ 
   case CALL(path=IDENT(name="String"), expLst={s, format}) then
     let tvar = tempDecl("modelica_string", &varDecls /*BUFD*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -6929,10 +6992,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
     let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let &preExp += '<%tvar%> = delayImpl(data, <%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
     '<%tvar%>'
-  
-  case CALL(path=IDENT(name="integer"), expLst={toBeCasted}) then
-    let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    '((modelica_integer)<%castedVar%>)'
   
   case CALL(path=IDENT(name="Integer"), expLst={toBeCasted}) then
     let castedVar = daeExp(toBeCasted, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
