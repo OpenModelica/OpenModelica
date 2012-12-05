@@ -165,6 +165,7 @@ encapsulated package Initialization
         true = intGt(nEqns, nVars);
         
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "It was not possible to solve the over-determined initial system.");
+        Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "(" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
       then fail();
       
       // equal  
@@ -194,6 +195,7 @@ encapsulated package Initialization
         true = intLt(nEqns, nVars);
         
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "It was not possible to solve the under-determined initial system.");
+        Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "(" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
       then fail();
     end matchcontinue;
   end solveInitialSystem1;
