@@ -152,7 +152,7 @@ algorithm
  
      case (_,_,_)
       equation
-        msg = "- Derive.differentiateEquationTime failed for " +& BackendDump.equationStr(inEquation) +& "\n";
+        msg = "- Derive.differentiateEquationTime failed for " +& BackendDump.equationString(inEquation) +& "\n";
         source = BackendEquation.equationSource(inEquation);
         Error.addSourceMessage(Error.INTERNAL_ERROR, {msg}, DAEUtil.getElementSourceFileInfo(source));
       then

@@ -297,7 +297,7 @@ algorithm
         eqns1 = List.unique(eqns1);          
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dump, BackendDAE.DAE({syst},ishared));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
       then
         fail(); 
@@ -314,14 +314,14 @@ algorithm
         varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,BackendVariable.daeVars(isyst));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dump, BackendDAE.DAE({syst},ishared));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction1 failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
       then
         fail();
     case (_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dump, BackendDAE.DAE({syst},ishared));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
       then
         fail();         
     else
@@ -851,9 +851,9 @@ algorithm
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
-        // print( "differentiat equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n");
+        // print( "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
         eqn_1 = Derive.differentiateEquationTime(eqn, vars, ishared);
-        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn_1) +& "\n");
+        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
         (outNotDiffed,outDiffEqns,outOrgEqns) = differentiateEqnsLst(es,vars,eqns,ishared,inNotDiffed,eqn_1::inDiffEqns,eqn::inOrgEqns);
       then
         (outNotDiffed,outDiffEqns,outOrgEqns);
@@ -1259,7 +1259,7 @@ algorithm
         eqn = BackendDAEUtil.equationNth(inEqns,pos_1);
         (eqn1,_) = BackendDAETransform.traverseBackendDAEExpsEqn(eqn, replaceAliasStateExp,(inACr,inCrExp,indCrExp));
         eqns =  BackendEquation.equationSetnth(inEqns,pos_1,eqn1);
-        //  print("Replace in Eqn:\n" +& BackendDump.equationStr(eqn) +& "\nto\n" +& BackendDump.equationStr(eqn1) +& "\n");
+        //  print("Replace in Eqn:\n" +& BackendDump.equationString(eqn) +& "\nto\n" +& BackendDump.equationString(eqn1) +& "\n");
       then 
         replaceAliasState(rest,inCrExp,indCrExp,inACr,eqns);
     case ({},_,_,_,_) then inEqns;
@@ -3394,9 +3394,9 @@ algorithm
         exp = Expression.makeSum(explst);
         // explst = List.map2(explst,
         Debug.fcall(Flags.BLT_DUMP, print,"Constraint Equation:\n");
-        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.equationStr(eqn));
+        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.equationString(eqn));
         Debug.fcall(Flags.BLT_DUMP, print,"Constraint Equation with Set:\n");
-        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.equationStr(BackendDAE.EQUATION(exp,DAE.RCONST(0.0),source)));
+        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.equationString(BackendDAE.EQUATION(exp,DAE.RCONST(0.0),source)));
       then
         fail();
 */    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -5195,7 +5195,7 @@ protected
   BackendDAE.Equation a,b;
 algorithm
   (a,b) := inTpl;
-  print("High index problem, differentiated equation:\n" +& BackendDump.equationStr(a) +& "\nto\n" +& BackendDump.equationStr(b) +& "\n");
+  print("High index problem, differentiated equation:\n" +& BackendDump.equationString(a) +& "\nto\n" +& BackendDump.equationString(b) +& "\n");
 end debugdifferentiateEqns;
 
 /* 
@@ -5351,9 +5351,9 @@ protected
   String str;
 algorithm
   eqn := BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
-  str := BackendDump.equationStr(eqn);
+  str := BackendDump.equationString(eqn);
   //str := intString(inNode);
-  str := intString(inNode) +& ": " +& BackendDump.equationStr(eqn);
+  str := intString(inNode) +& ": " +& BackendDump.equationString(eqn);
   str := Util.xmlEscape(str);
   outGraph := GraphML.addNode("n" +& intString(inNode),str,GraphML.COLOR_GREEN,GraphML.RECTANGLE(),inGraph); 
 end addEqnGraph;
@@ -5396,7 +5396,7 @@ algorithm
         e = mapIncRowEqn[inNode];
         false = eqnsflag[e];
        eqn = BackendDAEUtil.equationNth(eqns, mapIncRowEqn[inNode]-1);
-       str = BackendDump.equationStr(eqn);
+       str = BackendDump.equationString(eqn);
        str = intString(e) +& ": " +&  str;
        //str = intString(inNode);
        str = Util.xmlEscape(str);

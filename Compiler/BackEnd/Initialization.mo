@@ -92,8 +92,13 @@ algorithm
       fixvars = BackendVariable.emptyVars();
       eqns = BackendEquation.listEquation({});
       reeqns = BackendEquation.listEquation({});
+      
       ((vars, fixvars)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars));
       ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (eqns, reeqns));
+      
+      Debug.fcall(Flags.TRACE_INITIAL_SYSTEM, print, "\ninitial equations (" +& intString(BackendDAEUtil.equationSize(eqns)) +& ")\n=================\n");
+      Debug.fcall(Flags.TRACE_INITIAL_SYSTEM, BackendDump.dumpEqnsArray, eqns);
+      
       ((vars, fixvars, eqns, reeqns)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns)));
       ((eqns, reeqns)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
       
@@ -128,7 +133,7 @@ algorithm
 
       // some debug prints
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n##################\n# initial system #\n##################\n\n");
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, initdae);
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae);
       
       // now let's solve the system!
       initdae = solveInitialSystem1(vars, eqns, inDAE, initdae);
@@ -164,8 +169,8 @@ algorithm
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intGt(nEqns, nVars);
       
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "It was not possible to solve the over-determined initial system.");
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "(" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "It was not possible to solve the over-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
+      Debug.fcall(Flags.TRACE_INITIAL_SYSTEM, print, "\nover-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)\n");
     then fail();
     
     // equal  
@@ -185,7 +190,7 @@ algorithm
       (isyst, Util.SUCCESS()) = BackendDAEUtil.pastoptimiseDAE(isyst, pastOptModules, matchingAlgorithm, daeHandler);
       
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n#########################\n# solved initial system #\n#########################\n\n");
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dump, isyst);
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, isyst);
     then isyst;
     
     // under-determined system  
@@ -194,8 +199,8 @@ algorithm
       nEqns = BackendDAEUtil.equationSize(inEqns);
       true = intLt(nEqns, nVars);
       
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "It was not possible to solve the under-determined initial system.");
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "(" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
+      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "It was not possible to solve the under-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)");
+      Debug.fcall(Flags.TRACE_INITIAL_SYSTEM, print, "\nunder-determined initial system (" +& intString(nEqns) +& " equations and " +& intString(nVars) +& " variables)\n");
     then fail();
   end matchcontinue;
 end solveInitialSystem1;
@@ -390,8 +395,8 @@ algorithm
       (dep, _) = sparsityPattern;
       someStates = collectIndependentVars(dep, {});
       
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "initial equations ($res1 ... $resN) with respect to states\n");
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.printSparsityPattern, sparsityPattern);
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\ninitial equations ($res1 ... $resN) with respect to states\n");
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpSparsityPattern, sparsityPattern);
       
       true = intEq(nVars-nEqns, listLength(someStates));  // fix only if it is definite
       
@@ -602,6 +607,7 @@ algorithm
     local
       BackendDAE.Var var;
       BackendDAE.Variables vars;
+      DAE.ComponentRef cr, preCR;
     
     // state
     case((var as BackendDAE.VAR(varKind=BackendDAE.STATE()), vars)) equation
@@ -838,7 +844,7 @@ algorithm
     then eqn;
     
     case eqn equation
-      errorMessage = "./Compiler/BackEnd/BackendDAEUtil.mo: function generateInitialWhenEqn failed for:\n" +& BackendDump.equationStr(eqn);
+      errorMessage = "./Compiler/BackEnd/BackendDAEUtil.mo: function generateInitialWhenEqn failed for:\n" +& BackendDump.equationString(eqn);
       Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
     then fail();
     

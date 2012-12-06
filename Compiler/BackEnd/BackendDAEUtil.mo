@@ -185,7 +185,7 @@ algorithm
     DAE.ElementSource source;
     case (eqn as BackendDAE.EQUATION(exp=e1,scalar=e2,source=source))
       equation
-        eqnstr = BackendDump.equationStr(eqn);
+        eqnstr = BackendDump.equationString(eqn);
         t1 = Expression.typeof(e1);
         t2 = Expression.typeof(e2);
         t1str = Types.unparseType(t1);
@@ -195,7 +195,7 @@ algorithm
       then ();
     case (eqn as BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e1,source=source))
       equation
-        eqnstr = BackendDump.equationStr(eqn);
+        eqnstr = BackendDump.equationString(eqn);
         t1 = Expression.typeof(e1);
         t2 = ComponentReference.crefLastType(cr);
         t1str = Types.unparseType(t1);
@@ -3542,7 +3542,7 @@ algorithm
     
     case (_,_,_,_)
       equation
-        eqnstr = BackendDump.equationStr(inEquation);
+        eqnstr = BackendDump.equationString(inEquation);
         print("- BackendDAE.incidenceRow failed for eqn: ");
         print(eqnstr);
         print("\n");
@@ -5138,7 +5138,7 @@ algorithm
             
     else
       equation
-        eqnstr = BackendDump.equationStr(inEquation);
+        eqnstr = BackendDump.equationString(inEquation);
         eqnstr = stringAppendList({"BackendDAE.adjacencyRowEnhancedd failed for eqn:\n",eqnstr,"\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{eqnstr});
       then
@@ -7878,7 +7878,7 @@ algorithm
   daeHandler := getIndexReductionMethod(strdaeHandler);
   
   Debug.fcall(Flags.DUMP_DAE_LOW, print, "dumpdaelow:\n");
-  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dump, inDAE);
+  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE);
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
@@ -7901,7 +7901,7 @@ algorithm
   //outSODE := expandAlgorithmsbyInitStmts(sode2);
   Debug.execStat("expandAlgorithmsbyInitStmts",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
-  Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dump, outSODE);
+  Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE);
   checkBackendDAEWithErrorMsg(outSODE);
@@ -7945,7 +7945,7 @@ algorithm
         dae = optModule(inDAE);
         Debug.execStat("preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae);
+        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dumpBackendDAE, dae);
         (dae1,status) = preoptimiseDAE(dae,rest);
       then (dae1,status);
     case (_,(optModule,moduleStr,b)::rest)
@@ -8170,7 +8170,7 @@ algorithm
         dae = optModule(inDAE);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dump, dae);
+        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dumpBackendDAE, dae);
         dae1 = reduceIndexDAE(dae,NONE(),matchingAlgorithm,daeHandler,false);
         (dae2,status) = pastoptimiseDAE(dae1,rest,matchingAlgorithm,daeHandler);
       then
@@ -8280,7 +8280,7 @@ algorithm
   daeHandler := getIndexReductionMethod(strdaeHandler);
   
   Debug.fcall(Flags.DUMP_DAE_LOW, print, "dumpdaelow:\n");
-  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dump, inDAE);
+  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE);
   // pre optimisation phase
   _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
@@ -8294,7 +8294,7 @@ algorithm
   _ := traverseBackendDAEExps(outSODE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
 
   Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
-  Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dump, outSODE);
+  Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE);
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE);
 end getSolvedSystemforJacobians;

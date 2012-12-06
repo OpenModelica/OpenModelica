@@ -3646,7 +3646,7 @@ algorithm
         varexp = Expression.crefExp(cr);
         varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
         failure((_,_) =ExpressionSolve.solve(e1, e2, varexp));
-        eqStr = BackendDump.equationStr(eqn);
+        eqStr = BackendDump.equationString(eqn);
         cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
         message = ComponentReference.printComponentRefStr(cr);
         Error.addMessage(Error.WARNING_JACOBIAN_EQUATION_SOLVE,{eqStr,message,message});
@@ -3852,7 +3852,7 @@ algorithm
         (index,simeqns);        
     case (eq::eqns,_,_)
       equation
-        eqstr = BackendDump.equationStr(eq);
+        eqstr = BackendDump.equationString(eq);
         Error.addCompilerWarning("sample call in equation: " +& eqstr +& "not supported, yet!");
         (index,simeqns) = createSampleEquations(eqns,iIndex,iSamEqns);
       then
@@ -4422,7 +4422,7 @@ algorithm
     then (eqSystemsRest, uniqueEqIndex+1, tempvars);
                 
     case (eq::_, _, _) equation
-      errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createNonlinearResidualEquations failed for equation: " +& BackendDump.equationStr(eq);
+      errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createNonlinearResidualEquations failed for equation: " +& BackendDump.equationString(eq);
       Error.addSourceMessage(Error.INTERNAL_ERROR, {errorMessage}, BackendEquation.equationInfo(eq));
     then fail();
   end matchcontinue;
@@ -4729,7 +4729,7 @@ algorithm
         (equations_,equations_,uniqueEqIndex,tempvars);        
     else
       equation
-        msg = "createOdeSystem failed for " +& BackendDump.printComponent(inComp);
+        msg = "createOdeSystem failed for " +& BackendDump.strongComponentString(inComp);
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
@@ -6716,11 +6716,11 @@ algorithm
         //mT = BackendDAEUtil.transposeMatrix(m);
         v1 = listArray(lv1);
         v2 = listArray(lv2);
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, print,"Param DAE:\n");
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dump,paramdlow);
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrix,m);
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrixT,mT);
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpMatching,v1);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, print, "Param DAE:\n");
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpBackendDAE, paramdlow);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrix, m);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrixT, mT);
+        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpMatching, v1);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(v1,v2,{}));
         (syst,comps) = BackendDAETransform.strongComponents(syst, shared);
         paramdlow = BackendDAE.DAE({syst},shared);
@@ -10370,8 +10370,8 @@ protected
   String se,se2,s,fileName;
   Integer lns;
 algorithm
-  se := ExpressionDump.printExp2Str(inExp,"\"",SOME((BackendDump.printComponentRefStrDIVISION,0)), SOME(BackendDump.printCallFunction2StrDIVISION));
-  se2 := ExpressionDump.printExp2Str(inDivisor,"\"",SOME((BackendDump.printComponentRefStrDIVISION,0)), SOME(BackendDump.printCallFunction2StrDIVISION));
+  se := ExpressionDump.printExp2Str(inExp,"\"",SOME((BackendDump.componentRef_DIVISION_String,0)), SOME(BackendDump.printCallFunction2StrDIVISION));
+  se2 := ExpressionDump.printExp2Str(inDivisor,"\"",SOME((BackendDump.componentRef_DIVISION_String,0)), SOME(BackendDump.printCallFunction2StrDIVISION));
   Absyn.INFO(fileName=fileName,lineNumberStart=lns) := DAEUtil.getElementSourceFileInfo(source);
   s := intString(lns);
   outString := stringAppendList({se," because ",se2," == 0: File: ",fileName," Line: ",s});
@@ -11434,7 +11434,7 @@ algorithm oeqns := matchcontinue(eqns, dlow)
         rec;
      case( (eq as BackendDAE.WHEN_EQUATION(whenEquation = BackendDAE.WHEN_EQ(condition=_))) ::rest , _)
      equation
-       str = BackendDump.equationStr(eq);
+       str = BackendDump.equationString(eq);
        Debug.fcall(Flags.CPP_VAR,print,"Found When eq " +& str +& "\n");
        rec = flattenEqns(rest,dlow);
        //rec = List.unionElt(eq,rec);

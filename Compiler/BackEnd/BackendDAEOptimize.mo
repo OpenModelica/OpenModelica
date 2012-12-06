@@ -708,7 +708,7 @@ algorithm
       equation 
         true = DAEUtil.expTypeComplex(ty);
         size = Expression.sizeOf(ty);
-        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)) +& "\n");
+        //  print("Add Equation:\n" +& BackendDump.equationString(BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)) +& "\n");
        then
         ((syst,shared,repl,BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source)::eqns,b));
     // array types to array equations  
@@ -717,7 +717,7 @@ algorithm
         true = DAEUtil.expTypeArray(ty);
         dims = Expression.arrayDimension(ty);
         ds = Expression.dimensionsSizes(dims);
-        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)) +& "\n");
+        //  print("Add Equation:\n" +& BackendDump.equationString(BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)) +& "\n");
       then
         ((syst,shared,repl,BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source)::eqns,b));
     // other types  
@@ -726,7 +726,7 @@ algorithm
         b1 = DAEUtil.expTypeComplex(ty);
         b2 = DAEUtil.expTypeArray(ty);
         false = b1 or b2;
-        //  print("Add Equation:\n" +& BackendDump.equationStr(BackendDAE.EQUATION(lhs,rhs,source)) +& "\n");
+        //  print("Add Equation:\n" +& BackendDump.equationString(BackendDAE.EQUATION(lhs,rhs,source)) +& "\n");
         //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
       then
         ((syst,shared,repl,BackendDAE.EQUATION(lhs,rhs,source)::eqns,b));
@@ -5296,7 +5296,7 @@ algorithm
         (r,t,_,dlow_1,m_1,mT_1,v1_1,v2_1,comps_2) = tearingSystem1(dlow,dlow1,m,mT,v1,v2,comps_1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpIncidenceMatrix, m_1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpIncidenceMatrixT, mT_1);
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dump, dlow_1);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpBackendDAE, dlow_1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching, v1_1);
         //Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponents, comps_2);
         Debug.fcall(Flags.TEARING_DUMP, print, "==========\n");
@@ -5505,7 +5505,7 @@ algorithm
         linearDAE = BackendDAE.DAE({eqSystem},shared);
         linearDAE1 = BackendDAEUtil.transformBackendDAE(linearDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
         print("\n---linearDAE1---\n");
-        BackendDump.dump(linearDAE1);
+        BackendDump.dumpBackendDAE(linearDAE1);
         BackendDAE.DAE({eqSystem},shared) = linearDAE1;
         BackendDAE.EQSYSTEM(variables,eqArray,_,_,matching) = eqSystem;
         BackendDAE.MATCHING(v1_new,v2_new,_) = matching;
@@ -7628,7 +7628,7 @@ algorithm
     then (equationList, variableList);
     
     case(currEquation::_, _,_,_) equation
-      errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function convertInitialResidualsIntoInitialEquations2 failed: " +& BackendDump.equationStr(currEquation);
+      errorMessage = "./Compiler/BackEnd/BackendDAEOptimize.mo: function convertInitialResidualsIntoInitialEquations2 failed: " +& BackendDump.equationString(currEquation);
       Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
     then fail();
     
@@ -8661,7 +8661,7 @@ algorithm
     then fail();
     
     case(currEquation, _, _, _, _, _, _, _, _, _, _) equation
-      dumpBuffer = "BackendDAEOptimize.derive failed: " +& BackendDump.equationStr(currEquation);
+      dumpBuffer = "BackendDAEOptimize.derive failed: " +& BackendDump.equationString(currEquation);
       Error.addMessage(Error.INTERNAL_ERROR, {dumpBuffer});
     then fail();
       
@@ -13375,7 +13375,7 @@ algorithm
     case ({}) then {};
     case ((eq as BackendDAE.ALGORITHM(source = source))::rest)
       equation
-        str = BackendDump.equationStr(eq);
+        str = BackendDump.equationString(eq);
         str = Util.stringReplaceChar(str,"\n","");
         Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},DAEUtil.getElementSourceFileInfo(source));
         exps = makeEquationLstToResidualExpLst(rest);
@@ -13497,7 +13497,7 @@ algorithm
     // failure
     case _
       equation
-        str = "- BackendDAEOptimize.makeEquationToResidualExp failed to transform equation: " +& BackendDump.equationStr(eq) +& " to residual form!";
+        str = "- BackendDAEOptimize.makeEquationToResidualExp failed to transform equation: " +& BackendDump.equationString(eq) +& " to residual form!";
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then fail();
   end matchcontinue;

@@ -1895,14 +1895,14 @@ algorithm
        
     case ((eqn as BackendDAE.COMPLEX_EQUATION(source=source),(v,explst,sources,funcs)))
       equation
-        str = BackendDump.equationStr(eqn);
+        str = BackendDump.equationString(eqn);
         str = "BackendEquation.equationToExp failed for complex equation: " +& str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},equationInfo(eqn));
       then fail();       
         
     case ((eqn,_))
       equation
-        str = BackendDump.equationStr(eqn);
+        str = BackendDump.equationString(eqn);
         str = "BackendEquation.equationToExp failed: " +& str;
         Error.addSourceMessage(Error.INTERNAL_ERROR,{str},equationInfo(eqn));
       then

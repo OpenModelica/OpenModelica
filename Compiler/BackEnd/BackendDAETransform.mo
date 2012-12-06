@@ -1137,7 +1137,7 @@ algorithm
         crlst = List.map(var_lst,BackendVariable.varCref);
         slst = List.map(crlst,ComponentReference.printComponentRefStr);
         msg = msg +& stringDelimitList(slst,"\n");
-        slst = List.map(eqn_lst,BackendDump.equationStr);
+        slst = List.map(eqn_lst,BackendDump.equationString);
         msg = msg +& "\n" +& stringDelimitList(slst,"\n");
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
@@ -2571,7 +2571,7 @@ algorithm
     case ({}) then ();
     case (orgeqn::rest)
       equation
-        print("  "); print(BackendDump.equationStr(orgeqn)); print("\n");         
+        print("  "); print(BackendDump.equationString(orgeqn)); print("\n");         
         dumpEqnsX1(rest);
       then
         ();
@@ -2622,7 +2622,7 @@ algorithm
       equation
         e_1 = e - 1;
         orgeqn = BackendDAEUtil.equationNth(eqns, e_1); 
-        print("  "); print(intString(l)); print("  ");  print(BackendDump.equationStr(orgeqn)); print("\n");         
+        print("  "); print(intString(l)); print("  ");  print(BackendDump.equationString(orgeqn)); print("\n");         
         dumpEqns1X1(rest,syst,shared);
       then
         ();
@@ -4303,10 +4303,10 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
 
         eqn_1 = Derive.differentiateEquationTime(eqn, v, shared);
-        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn) +& "\n");
-        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationStr(eqn_1) +& "\n to \n");
+        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
+        // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n to \n");
         (eqn_1,so) = traverseBackendDAEExpsEqn(eqn_1, replaceStateOrderExp,inStateOrd);
-        // print(BackendDump.equationStr(eqn_1) +& "\n");
+        // print(BackendDump.equationString(eqn_1) +& "\n");
         Debug.fcall(Flags.BLT_DUMP, debugdifferentiateEqns,(eqn,eqn_1));
         eqns_1 = BackendEquation.equationAdd(eqn_1,eqns);
         leneqns = BackendDAEUtil.equationArraySize(eqns_1);
@@ -4329,7 +4329,7 @@ protected
   BackendDAE.Equation a,b;
 algorithm
   (a,b) := inTpl;
-  print("High index problem, differentiated equation:\n" +& BackendDump.equationStr(a) +& "\nto\n" +& BackendDump.equationStr(b) +& "\n");
+  print("High index problem, differentiated equation:\n" +& BackendDump.equationString(a) +& "\nto\n" +& BackendDump.equationString(b) +& "\n");
 end debugdifferentiateEqns;
 
 end BackendDAETransform;
