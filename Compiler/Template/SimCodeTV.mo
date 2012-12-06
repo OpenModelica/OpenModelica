@@ -971,7 +971,7 @@ package DAE
     end ASUB;
     record TSUB
       Exp exp;
-      Integer index;
+      Integer ix;
       Type ty;
     end TSUB;
     record SIZE

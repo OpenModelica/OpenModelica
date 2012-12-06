@@ -2317,14 +2317,12 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
       let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
       'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
   <%preExp%>
   <%helpInits%>
   if (<%helpIf%>) {
-    <%preExp2%>
-    <%cref(left)%> = <%exp%>;
+    <%assign%>
   } else {
     <%cref(left)%> = $P$PRE<%cref(left)%>;
   }
@@ -2337,15 +2335,13 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
       let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
       'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
   <<
   <%preExp%>
   <%helpInits%>
   if (<%helpIf%>) {
-    <%preExp2%>
-    <%cref(left)%> = <%exp%>;
+    <%assign%>
   }
   <%elseWhen%>
   else {
@@ -2364,12 +2360,10 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
       let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
       'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
   else if (<%helpIf%>) {
-    <%preExp2%>
-    <%cref(left)%> = <%exp%>;
+    <%assign%>
   }
   >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
@@ -2378,17 +2372,65 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
       let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
       'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
-  let &preExp2 = buffer "" /*BUFD*/
-  let exp = daeExp(right, context, &preExp2 /*BUFC*/, &varDecls /*BUFD*/)
+  let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
   <<
   else if (<%helpIf%>) {
-    <%preExp2%>
-    <%cref(left)%> = <%exp%>;
+    <%assign%>
   }
   <%elseWhen%>
   >>  
 end equationElseWhen;
+
+template whenAssign(ComponentRef left, Type ty, Exp right, Context context,  Text &varDecls /*BUFP*/)
+ "Generates assignment for when."
+::=
+match ty
+  case T_ARRAY(__) then
+    let &preExp = buffer "" /*BUFD*/
+    let expPart = daeExp(right, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
+    let &helpInits = buffer "" /*BUFD*/
+    let helpIf = (conditions |> (e, hidx) =>
+      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
+     ;separator=" || ")C*/, &varDecls /*BUFD*/)
+    match expTypeFromExpShort(right)
+    case "boolean" then
+      let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)
+      //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+      <<
+      <%preExp%>
+      copy_boolean_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>
+      >>
+    case "integer" then
+      let tvar = tempDecl("integer_array", &varDecls /*BUFD*/)
+      //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+      <<
+      <%preExp%>
+      copy_integer_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,tvar,left)%>
+      >>
+    case "real" then
+      <<
+      <%preExp%>
+      copy_real_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,expPart,left)%>
+      >>
+    case "string" then
+      <<
+      <%preExp%>
+      copy_string_array_data_mem(&<%expPart%>, &<%cref(left)%>);<%inlineArray(context,expPart,left)%>
+      >>    
+    else 
+      error(sourceInfo(), 'No runtime support for this sort of array call: <%cref(left)%> = <%printExpStr(right)%>')
+    end match
+  else 
+    let &preExp = buffer "" /*BUFD*/
+    let exp = daeExp(right, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    <<
+      <%preExp%>
+      <%cref(left)%> = <%exp%>;
+   >>
+end whenAssign;
 
 template simulationFunctionsFile(String filePrefix, list<Function> functions, list<Exp> literals)
  "Generates the content of the C file for functions in the simulation case."
@@ -5964,7 +6006,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDecls 
   case e as RANGE(__)           then daeExpRange(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as CAST(__)            then daeExpCast(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as ASUB(__)            then daeExpAsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-  case e as TSUB(__)            then '<%daeExp(exp, context, &preExp, &varDecls)%>.c1'
+  case e as TSUB(__)            then daeExpTsub(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as SIZE(__)            then daeExpSize(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as REDUCTION(__)       then daeExpReduction(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   case e as TUPLE(__)           then daeExpTuple(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -7225,6 +7267,15 @@ case CAST(__) then
     '(<%expVar%>) /* could not cast, using the variable as it is */'
 end daeExpCast;
 
+template daeExpTsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
+                    Text &varDecls /*BUFP*/)
+ "Generates code for an tsub expression."
+::=
+  match inExp
+  case TSUB(__) then
+    let e = daeExp(exp, context, &preExp, &varDecls)
+    '<%e%>.c<%ix%>'
+end daeExpTsub;
 
 template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)
@@ -8121,6 +8172,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case c as MATRIX(__)
   case c as RANGE(__)
   case c as CAST(__)
+  case c as TSUB(__)
   case c as CREF(__)
   case c as CODE(__)     then expTypeFlag(c.ty, flag)
   case c as ASUB(__)     then expTypeFlag(typeof(c), flag)

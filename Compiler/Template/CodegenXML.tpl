@@ -2126,7 +2126,7 @@ template daeExpXml(Exp exp, Context context, Text &preExp /*BUFP*/, Text &varDec
   case e as RANGE(__)           then daeExpRangeXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
   case e as CAST(__)            then daeExpCastXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)  
   case e as ASUB(__)            then daeExpAsubXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
-  case e as TSUB(__)            then '<%daeExpXml(exp, context, &preExp, &varDecls)%>.targ1'  
+  case e as TSUB(__)            then '<%daeExpXml(exp, context, &preExp, &varDecls)%>.targ<%ix%>'  
   case e as SIZE(__)            then daeExpSizeXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
   case e as BOX(__)             then daeExpBoxXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
   case e as UNBOX(__)           then daeExpUnboxXml(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/) 
