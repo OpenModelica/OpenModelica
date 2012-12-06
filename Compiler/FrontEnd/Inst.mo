@@ -12037,7 +12037,10 @@ algorithm
 
     case (SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
       then DAE.AFTER_INDEX_RED_INLINE();
-
+    
+    case (SCode.NAMEMOD("InlineAfterIndexReduction",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: _)
+      then DAE.AFTER_INDEX_RED_INLINE();
+    
     case (SCode.NAMEMOD("__OpenModelica_EarlyInline",SCode.MOD(binding = SOME((Absyn.BOOL(true),_)))) :: cdr)
       equation
         DAE.NO_INLINE() = isInlineFunc4(cdr);
