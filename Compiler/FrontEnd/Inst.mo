@@ -8216,10 +8216,10 @@ algorithm
       DAE.ElementSource source;
       SCode.Variability vt;
 
-     // impl component environment dae elements for component Variables of userdefined type,
-     // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
-     // appear to be an array, they can. Therefore we need to collect
-      // the full dimensionality and call instVar2
+    // impl component environment dae elements for component Variables of userdefined type,
+    // e.g. Point p => Real p[3]; These must be handled separately since even if they do not
+    // appear to be an array, they can. Therefore we need to collect
+    // the full dimensionality and call instVar2
     case (cache,env,ih,store,ci_state,mod,pre,n,(cl as SCode.CLASS(name = id)),attr as SCode.ATTR(variability = vt),pf,dims,idxs,inst_dims,impl,comment,_,graph,csets)
       equation
         // Collect dimensions
@@ -8227,15 +8227,20 @@ algorithm
         p1 = PrefixUtil.prefixPath(p1,pre);
         str = Absyn.pathString(p1);
         Error.updateCurrentComponent(str,info);
-        (cache, dims as (_ :: _),cl,type_mods) = getUsertypeDimensions(cache, env, ih, mod, pre, cl, inst_dims, impl);
+        (cache, dims as (_ :: _),cl,type_mods) = getUsertypeDimensions(cache, env, ih, pre, cl, inst_dims, impl);
+        
+        //type_mods = Mod.addEachIfNeeded(type_mods, dims);
+        //mod = Mod.addEachIfNeeded(mod, inDimensionLst);
+        
+        dims = listAppend(inDimensionLst, dims);
         mod = Mod.merge(mod, type_mods, env, pre);
 
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets,ty,graph) = 
-          instVar2(cache,env,ih,store, ci_state, mod, pre, n, cl, attr,
+          instVar2(cache, env, ih, store, ci_state, mod, pre, n, cl, attr,
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        (cache,dae) = addArrayVarEquation(cache,env,ih,ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
+        (cache,dae) = addArrayVarEquation(cache, env, ih, ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
         cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
@@ -9155,7 +9160,6 @@ public function getUsertypeDimensions
   input Env.Cache inCache;
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
-  input DAE.Mod inMod;
   input Prefix.Prefix inPrefix;
   input SCode.Element inClass;
   input InstDims inInstDims;
@@ -9165,7 +9169,7 @@ public function getUsertypeDimensions
   output SCode.Element classToInstantiate;
   output DAE.Mod outMods "modifications from base classes";
 algorithm
-  (outCache,outDimensionLst,classToInstantiate,outMods) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims,inBoolean)
+  (outCache,outDimensionLst,classToInstantiate,outMods) := matchcontinue (inCache,inEnv,inIH,inPrefix,inClass,inInstDims,inBoolean)
     local
       SCode.Element cl;
       list<Env.Frame> cenv,env;
@@ -9187,19 +9191,19 @@ algorithm
       list<SCode.Element> els;
       SCode.Path path;
 
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Real"),_,_) then (cache,{},cl,DAE.NOMOD());  /* impl */
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Integer"),_,_) then (cache,{},cl,DAE.NOMOD());
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = "String"),_,_) then (cache,{},cl,DAE.NOMOD());
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = "Boolean"),_,_) then (cache,{},cl,DAE.NOMOD());
+    case (cache, _, _, _, cl as SCode.CLASS(name = "Real"), _, _) then (cache,{},cl,DAE.NOMOD());
+    case (cache, _, _, _, cl as SCode.CLASS(name = "Integer"), _, _) then (cache,{},cl,DAE.NOMOD());
+    case (cache, _, _, _, cl as SCode.CLASS(name = "String"), _, _) then (cache,{},cl,DAE.NOMOD());
+    case (cache, _, _, _, cl as SCode.CLASS(name = "Boolean"), _, _) then (cache,{},cl,DAE.NOMOD());
 
-    case (cache,_,_,_,_,cl as SCode.CLASS(restriction = SCode.R_RECORD(),
-                                        classDef = SCode.PARTS(elementLst = _)),_,_) then (cache,{},cl,DAE.NOMOD());
+    case (cache, _, _, _, cl as SCode.CLASS(restriction = SCode.R_RECORD(),
+                                        classDef = SCode.PARTS(elementLst = _)), _, _) then (cache,{},cl,DAE.NOMOD());
 
-    /*------------------------*/
-    /* MetaModelica extension */
-    case (cache,env,ih,_,pre,cl as SCode.CLASS(name = id, info=info,
-                                          classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(_),_,arrayDim = ad),
-                                                                   modifications = mod)),
+    //------------------------
+    // MetaModelica extension
+    case (cache, env, ih, pre, cl as SCode.CLASS(name = id, info=info,
+                                       classDef = SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT(_),_,arrayDim = ad),
+                                                                modifications = mod)),
           dims,impl)
       equation
         true=Config.acceptMetaModelicaGrammar();
@@ -9211,78 +9215,79 @@ algorithm
         (cache,dim1,cl,DAE.NOMOD());
 
     // Partial function definitions with no output - stefan
-    case (cache,env,ih,_,_,
+    case (cache, env, ih, _,
       cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()),
-                        partialPrefix = SCode.PARTIAL()),_,_) 
+                        partialPrefix = SCode.PARTIAL()), _, _) 
       then 
         (cache,{},cl,DAE.NOMOD());
 
-    case (cache,env,ih,_,_,
+    case (cache, env, ih, _, 
       SCode.CLASS(name = id,info=info,restriction = SCode.R_FUNCTION(SCode.FR_NORMAL_FUNCTION()),
                   partialPrefix = SCode.NOT_PARTIAL()),_,_)
       equation
         Error.addSourceMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, {id}, info);
       then fail();
 
-      // MetaModelica Uniontype. Added 2009-05-11 sjoelund
-    case (cache,env,ih,_,_,
-      cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) 
+    // MetaModelica Uniontype. Added 2009-05-11 sjoelund
+    case (cache, env, ih, _,
+      cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()), _, _) 
       then (cache,{},cl,DAE.NOMOD());
       /*----------------------*/
           
-    /* Derived classes with restriction type, e.g. type Point = Real[3]; */
-    case (cache,env,ih,mods,pre,
+    // Derived classes with restriction type, e.g. type Point = Real[3];
+    case (cache, env, ih, pre,
       SCode.CLASS(name = id,restriction = SCode.R_TYPE(),info=info,
-                             classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
-          dims,impl)
+                            classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
+          dims, impl)
       equation
-        (cache,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
+        (cache,cl,cenv) = Lookup.lookupClass(cache, env, cn, true);
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
         env = addEnumerationLiteralsToEnv(env, cl);
         
-        mod = chainRedeclares(mods, mod);
-        
         (cache,mod_1) = Mod.elabMod(cache, env, ih, pre, mod, impl, info);
-        mods_2 = Mod.merge(mods, mod_1, env, pre);
-        eq = Mod.modEquation(mods_2);
-        mods_3 = Mod.lookupCompModification(mods_2, id);
-        (cache,dim1,cl,type_mods) = getUsertypeDimensions(cache,cenv,ih, mods_3, pre, cl, dims, impl);
+        eq = Mod.modEquation(mod_1);
+        (cache,dim1,cl,type_mods) = getUsertypeDimensions(cache, cenv, ih, pre, cl, dims, impl);
+        (cache,dim2) = elabArraydim(cache, env, owncref, cn, ad_1, eq, impl, NONE(), true, false, pre, info, dims);
+        type_mods = Mod.addEachIfNeeded(type_mods, dim1);
+        // do not add each to mod_1, it should have it already!
+        // mod_1 = Mod.addEachIfNeeded(mod_1, dim2);
         type_mods = Mod.merge(mod_1, type_mods, env, pre);
-        (cache,dim2) = elabArraydim(cache,env, owncref, cn, ad_1, eq, impl,NONE(),true, false,pre,info,dims);
         res = listAppend(dim2, dim1);
       then
         (cache,res,cl,type_mods);
 
-    /* extended classes type Y = Real[3]; class X extends Y; */
-    case (cache,env,ih,mods,pre,
-      SCode.CLASS(name = id,restriction = _,
+    // extended classes type Y = Real[3]; class X extends Y;
+    case (cache, env, ih, pre,
+      SCode.CLASS(name = id, restriction = _,
                   classDef = SCode.PARTS(elementLst=els,
-                  normalEquationLst={},
-                  initialEquationLst={},
-                  normalAlgorithmLst={},
-                  initialAlgorithmLst={},
-                  externalDecl=_)),
-          dims,impl)
+                  normalEquationLst = {},
+                  initialEquationLst = {},
+                  normalAlgorithmLst = {},
+                  initialAlgorithmLst = {},
+                  externalDecl = _)),
+          dims, impl)
       equation
         (_,_,{SCode.EXTENDS(path, _, mod,_, info)},{}) = splitElts(els); // ONLY ONE extends!
         (cache,mod_1) = Mod.elabModForBasicType(cache, env, ih, pre, mod, impl, info);
-        mods_2 = Mod.merge(mods, mod_1, env, pre);
-        (cache,cl,cenv) = Lookup.lookupClass(cache,env, path, false);
-        (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,mods_2,pre,cl,{},impl);
-        type_mods = Mod.merge(mods_2, type_mods, env, pre);
+        (cache,cl,cenv) = Lookup.lookupClass(cache, env, path, false);
+        (cache,res,cl,type_mods) = getUsertypeDimensions(cache,env,ih,pre,cl,{},impl);
+        type_mods = Mod.addEachIfNeeded(type_mods, res);
+        type_mods = Mod.merge(mod_1, type_mods, env, pre);
       then
         (cache,res,cl,type_mods);
 
-    case (cache,_,_,_,_,cl as SCode.CLASS(name = _),_,_)
+    case (cache, _, _, _, cl as SCode.CLASS(name = _), _, _)
       then (cache,{},cl,DAE.NOMOD());
 
-    case (_,_,_,_,_,SCode.CLASS(name = id),_,_)
+    case (_, _, _, _, SCode.CLASS(name = id), _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         id = SCodeDump.printClassStr(inClass);
         Debug.traceln("Inst.getUsertypeDimensions failed: " +& id);
-      then fail();
+      then 
+        fail();
+  
   end matchcontinue;
 end getUsertypeDimensions;
 

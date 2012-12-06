@@ -3538,5 +3538,87 @@ algorithm outsubs := match(inSubs,componentName)
 end match;
 end removeModInSubs;
 
+public function addEachIfNeeded
+"This function adds each to the mods
+ if the dimensions are not empty."
+  input DAE.Mod inMod;
+  input DAE.Dimensions inDimensions;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue (inMod, inDimensions)
+    local
+      SCode.Final finalPrefix;
+      list<tuple<SCode.Element, DAE.Mod>> elist;
+      SCode.Each eachPrefix;
+      list<DAE.SubMod> subs;
+      Option<DAE.EqMod> eq;
+    
+    case (_, {}) then inMod;
+    case (DAE.NOMOD(), _) then DAE.NOMOD();    
+    
+    // do not apply if dimensions are more than 1 (only leafs)
+    case (_, _)
+      equation
+        true = listLength(inDimensions) > 1;
+      then 
+        inMod;
+    
+    case (DAE.REDECL(finalPrefix,eachPrefix,elist), _)
+      then
+        DAE.REDECL(finalPrefix,SCode.EACH(),elist);
+    
+    // do not each the subs of already each'ed mod
+    case (DAE.MOD(finalPrefix,SCode.EACH(),subs,eq), _)
+      then
+        DAE.MOD(finalPrefix,SCode.EACH(),subs,eq);
+
+    case (DAE.MOD(finalPrefix,eachPrefix,subs,eq), _)
+      equation
+        subs = addEachToSubsIfNeeded(subs, inDimensions);
+      then
+        DAE.MOD(finalPrefix,SCode.EACH(),subs,eq);
+    
+    case(_, _) 
+      equation 
+        print("Mod.addEachIfNeeded failed on: " +& printModStr(inMod) +& "\n"); 
+      then 
+        fail();
+    
+  end matchcontinue;
+end addEachIfNeeded;
+
+public function addEachToSubsIfNeeded
+  input list<DAE.SubMod> inSubMods;
+  input DAE.Dimensions inDimensions;
+  output list<DAE.SubMod> outSubMods;
+algorithm
+  outSubMods := matchcontinue(inSubMods, inDimensions)
+    local 
+      list<DAE.SubMod> rest;
+      DAE.Mod m;
+      String id;
+      list<Integer> idxs;
+    
+    case (_, {}) then inSubMods;
+    
+    case ({}, _) then {};
+    
+    case (DAE.NAMEMOD(id, m)::rest, _)
+      equation
+        m = addEachIfNeeded(m, inDimensions);
+        rest = addEachToSubsIfNeeded(rest, inDimensions);
+      then
+        DAE.NAMEMOD(id, m)::rest;
+    
+    case (DAE.IDXMOD(idxs, m)::rest, _)
+      equation
+        m = addEachIfNeeded(m, inDimensions);
+        rest = addEachToSubsIfNeeded(rest, inDimensions);
+      then
+        DAE.IDXMOD(idxs, m)::rest;
+  
+  end matchcontinue;
+end addEachToSubsIfNeeded;
+
 end Mod;
 
