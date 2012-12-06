@@ -1595,16 +1595,16 @@ protected
   BackendDAE.Var v1;
 algorithm
   BackendDAE.VAR(varName=cr) := v;
-	// add bindExp
-	v1 := BackendVariable.setBindExp(v,exp);
-	ops := DAEUtil.getSymbolicTransformations(source);
-	v1 := BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr,exp)::ops);
-	// State?
-	bs := BackendVariable.isStateVar(v);
-	v1 := Debug.bcallret2(bs,BackendVariable.setVarKind,v1,BackendDAE.DUMMY_STATE(),v1);
-	// remove from vars
-	(oVars,_) := BackendVariable.removeVar(i,iVars);
-	// store changed var
+  // add bindExp
+  v1 := BackendVariable.setBindExp(v,exp);
+  ops := DAEUtil.getSymbolicTransformations(source);
+  v1 := BackendVariable.mergeVariableOperations(v1,DAE.SOLVED(cr,exp)::ops);
+  // State?
+  bs := BackendVariable.isStateVar(v);
+  v1 := Debug.bcallret2(bs,BackendVariable.setVarKind,v1,BackendDAE.DUMMY_STATE(),v1);
+  // remove from vars
+  (oVars,_) := BackendVariable.removeVar(i,iVars);
+  // store changed var
   oshared := func(v1,ishared);
 end moveVarShared;
 
