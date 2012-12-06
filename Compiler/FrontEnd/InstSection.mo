@@ -4589,7 +4589,7 @@ algorithm
       equation
         b1 = Absyn.expContainsInitial(exp);
         b2 = SCode.algorithmsContainReinit(algs);
-        false = boolOr(b1, b2);
+        false = boolAnd(b1, b2);
       then
         ();
     
@@ -4675,7 +4675,7 @@ algorithm
       equation
         b1 = Absyn.expContainsInitial(exp);
         b2 = SCode.equationsContainReinit(el);
-        false = boolOr(b1, b2);
+        false = boolAnd(b1, b2);
       then
         ();
     
