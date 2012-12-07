@@ -87,8 +87,7 @@ INIT_DATA *initializeInitData(DATA *simData)
 
   if(initData->nVars == 0)
   {
-    free(initData);
-    return NULL;
+    return initData;
   }
 
   initData->vars = (double*)calloc(initData->nVars, sizeof(double));
@@ -112,7 +111,7 @@ INIT_DATA *initializeInitData(DATA *simData)
   /* setup initData */
   INFO(LOG_INIT, "initial problem:");
   INFO3(LOG_INIT, "| number of unfixed variables:  %ld (%ld states + %ld parameters)", initData->nVars, initData->nStates, initData->nParameters);
-  
+
   /* i: all states; j: all unfixed vars */
   for(i=0, j=0; i<simData->modelData.nStates; ++i)
   {
@@ -209,7 +208,7 @@ INIT_DATA *initializeInitData(DATA *simData)
    * for(i=0; i<data->modelData.nVariablesReal; ++i)
    *   if(data->modelData.realVarsData[i].attribute.useStart)
    *     INFO3(LOG_INIT, "| | [%ld] Real %s(start=%g)", ++j, data->modelData.realVarsData[i].info.name, data->modelData.realVarsData[i].attribute.start);
-   *  
+   *
    * * for real parameters *
    * for(i=0; i<data->modelData.nParametersReal; ++i)
    *   if(data->modelData.realParameterData[i].attribute.useStart && !data->modelData.realParameterData[i].attribute.fixed)

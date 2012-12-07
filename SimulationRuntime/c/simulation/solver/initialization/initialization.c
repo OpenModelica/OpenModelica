@@ -432,11 +432,12 @@ static int initialize(DATA *data, int optiMethod)
   INIT_DATA *initData = initializeInitData(data);
 
   /* no initial values to calculate */
-  if(initData == NULL)
+  if(initData->nVars == 0)
   {
     INFO(LOG_INIT, "no variables to initialize");
     /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
     initial_residual(data, initData->initialResiduals);
+    free(initData);
     return 0;
   }
 
@@ -513,9 +514,10 @@ static int initialize(DATA *data, int optiMethod)
     /* FIX */
     initData = initializeInitData(data);
     /* no initial values to calculate. (not possible to be here) */
-    if(initData == NULL)
+    if(initData->nVars == 0)
     {
       INFO(LOG_INIT, "no initial values to calculate");
+      free(initData);
       return 0;
     }
   }
