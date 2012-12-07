@@ -436,7 +436,8 @@ static int initialize(DATA *data, int optiMethod)
   {
     INFO(LOG_INIT, "no variables to initialize");
     /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
-    initial_residual(data, initData->initialResiduals);
+    if(data->modelData.nInitResiduals == 0)
+      initial_residual(data, initData->initialResiduals);
     free(initData);
     return 0;
   }
@@ -447,6 +448,7 @@ static int initialize(DATA *data, int optiMethod)
     INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
     /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
     initial_residual(data, initData->initialResiduals);
+    free(initData);
     return 0;
   }
 
