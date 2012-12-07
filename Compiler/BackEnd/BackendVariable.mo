@@ -697,7 +697,7 @@ algorithm
       Option<DAE.VariableAttributes> oattr1;
       Option<SCode.Comment> s;
       DAE.ConnectorType ct;
-
+    case (_,(NONE(),NONE())) then inVar;
     case (BackendDAE.VAR(varName = a,
               varKind = b,
               varDirection = c,

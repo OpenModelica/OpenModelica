@@ -62,16 +62,15 @@ protected import BaseHashSet;
 protected import ComponentReference;
 protected import DAEUtil;
 protected import Debug;
+protected import Error;
 protected import Expression;
 protected import ExpressionDump;
-protected import ExpressionSolve;
 protected import ExpressionSimplify;
-protected import Error;
+protected import ExpressionSolve;
 protected import Flags;
 protected import HashSet;
 protected import List;
 protected import Util;
-
 
 protected
 uniontype SimpleContainer 
@@ -2191,6 +2190,8 @@ algorithm
       BackendDAE.Var v;
       BackendDAE.Variables knVars;
       Option<tuple<Option<DAE.Exp>,DAE.ComponentRef>> tpl;
+    // default value
+    case (_,_,(_,{}),_) then inVar;
     // fixed true only one start value -> nothing changed
     case (_,true,(_,{(start,_)}),_)
       equation
