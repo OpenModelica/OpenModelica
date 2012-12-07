@@ -160,8 +160,13 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
          void calc_vars(const double* q = NULL, bool doReinit = false);
 
          AdevsSampleData** samples;
-         int numTimeEvents() { return <%vi.numTimeEvents%>; }
+         int numTimeEvents() const { return <%vi.numTimeEvents%>; }
          bool sample(double tStart, double tInterval, int index);
+
+         AdevsDelayData** delays;
+         int numDelays() const { return <%match simCode.delayedExps case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>; }
+         double calcDelay(int index, double expr, double t, double delay);
+         void saveDelay(int index, double expr, double t, double maxdelay);
 
       protected:
          /**
@@ -273,7 +278,8 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
       helpVars(NULL),
       helpVars_saved(NULL),
       zc(NULL),
-      samples(NULL)
+      samples(NULL),
+      delays(NULL)
    {
        timeValue = 0.0;
        if (numHelpVars() > 0)
@@ -285,10 +291,16 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
            zc = new int[numZeroCrossings()];
        if (numTimeEvents() > 0)
        {
-           samples = new AdevsSampleData*[numZeroCrossings()];
+           samples = new AdevsSampleData*[numTimeEvents()];
            for (int i = 0; i < numTimeEvents(); i++)
                samples[i] = NULL;
-     } 
+       } 
+       if (numDelays() > 0)
+       {
+           delays = new AdevsDelayData*[numDelays()];
+           for (int i = 0; i < numDelays(); i++)
+               delays[i] = NULL;
+       }
    }
     
    <%lastIdentOfPath(modelInfo.name)%>::~<%lastIdentOfPath(modelInfo.name)%>() 
@@ -301,7 +313,13 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
            for (int i = 0; i < numTimeEvents(); i++)
                if (samples[i] != NULL) delete samples[i];
            delete [] samples;
-     }
+        }
+        if (delays != NULL)
+        {
+           for (int i = 0; i < numDelays(); i++)
+               if (delays[i] != NULL) delete delays[i];
+           delete [] delays;
+        }
    }
 
    <%makeExtraResiduals(allEquations,lastIdentOfPath(modelInfo.name))%>
@@ -314,7 +332,7 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
 
    <%makePostStep(simCode)%>
 
-   <%makeSaveMemberVariables(modelInfo)%>
+   <%makeSaveMemberVariables(simCode)%>
 
    <%makeRestoreMemberVariables(modelInfo)%>
 
@@ -322,6 +340,18 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__))) then
    
    <%makeEventFunc(simCode)%>
 
+   double <%lastIdentOfPath(modelInfo.name)%>::calcDelay(int index, double expr, double t, double delay)
+   {
+       if (delays[index] == NULL || !delays[index]->isEnabled()) return expr;
+       else return delays[index]->sample(t-delay);
+   }
+
+   void <%lastIdentOfPath(modelInfo.name)%>::saveDelay(int index, double expr, double t, double max_delay)
+    {
+        if (delays[index] == NULL)
+            delays[index] = new AdevsDelayData(max_delay);
+        delays[index]->insert(t,expr);
+    }
    >>
 end simulationCppFile;
 
@@ -513,12 +543,12 @@ template zeroCrossingEqns(list<ZeroCrossing> zeroCrossings)
   >>
 end zeroCrossingEqns;
 
-template makeSaveMemberVariables(ModelInfo modelInfo)
+template makeSaveMemberVariables(SimCode simCode)
 ::=
-match modelInfo
-case MODELINFO(vars = SIMVARS(__)) then
+match simCode
+case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    <<
-   void <%lastIdentOfPath(name)%>::save_vars()
+   void <%lastIdentOfPath(modelInfo.name)%>::save_vars()
    {
        for (int i = 0; i < numHelpVars(); i++)
            helpVars_saved[i] = helpVars[i];
@@ -528,9 +558,31 @@ case MODELINFO(vars = SIMVARS(__)) then
        <%(vars.algVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
        <%(vars.intAlgVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
        <%(vars.boolAlgVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+       <%makeSaveDelays(delayedExps)%>
    }
    >>
 end makeSaveMemberVariables;
+
+template makeSaveDelays(DelayedExpression delayed)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, (e, d, delayMax)) =>
+      let &preExp = buffer "" /*BUFD*/
+      let eRes = daeExp(e, contextSimulationNonDiscrete,
+                      &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let delayExp = daeExp(d, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      let delayExpMax = daeExp(delayMax, contextSimulationNonDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      <<
+      <%preExp%>
+      saveDelay(<%id%>, <%eRes%>, timeValue, <%delayExpMax%>);<%\n%>
+      >>
+    ))
+  <<  
+  <%varDecls%>
+  <%storePart%>
+  >>
+end makeSaveDelays;
 
 template makeRestoreMemberVariables(ModelInfo modelInfo)
 ::=
@@ -3972,8 +4024,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let tvar = tempDecl("modelica_real", &varDecls /*BUFD*/)
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-    let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, timeValue, <%var2%>, <%var3%>);<%\n%>'
+    let &preExp += '<%tvar%> = calcDelay(<%index%>, <%var1%>, timeValue, <%var2%>);<%\n%>'
     '<%tvar%>'
   
   case CALL(path=IDENT(name="integer"),
