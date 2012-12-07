@@ -503,6 +503,11 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
           double ttg = samples[i]->timeToEvent(timeValue);
           if (ttg < ttgMin) ttgMin = ttg;
       }
+      for (int i = 0; i < numDelays(); i++)
+      {
+          double ttg = delays[i]->getMaxDelay();
+          if (ttg < ttgMin) ttgMin = ttg;
+      }
       return ttgMin;
   }
 
