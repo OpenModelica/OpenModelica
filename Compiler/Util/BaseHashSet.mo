@@ -283,6 +283,10 @@ public function has
   output Boolean b;
 algorithm
   b:= matchcontinue(key,hashSet)
+    // empty set containg nothing
+    case (_,(_,(0,_,_),_,_,_))
+      then
+        false;  
     case(_,_)
       equation
         _ = get(key,hashSet);
