@@ -4417,9 +4417,9 @@ algorithm
       eqSystlst = SimCode.SES_ALGORITHM(uniqueEqIndex,algStatements)::eqSystlst;
       //Tpl.tplPrint(SimCodeDump.dumpEqs, eqSystlst);
       
-      (eqSystemsRest, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(rest, uniqueEqIndex, tempvars);
+      (eqSystemsRest, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(rest, uniqueEqIndex+1, tempvars);
       eqSystemsRest = listAppend(eqSystlst, eqSystemsRest);
-    then (eqSystemsRest, uniqueEqIndex+1, tempvars);
+    then (eqSystemsRest, uniqueEqIndex, tempvars);
                 
     case (eq::_, _, _) equation
       errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createNonlinearResidualEquations failed for equation: " +& BackendDump.equationString(eq);

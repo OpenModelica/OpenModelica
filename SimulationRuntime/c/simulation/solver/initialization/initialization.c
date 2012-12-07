@@ -258,7 +258,7 @@ void dumpInitialization(INIT_DATA *initData)
 void dumpInitialSolution(DATA *simData)
 {
   long i, j;
-  
+
   /* i: all states; j: all unfixed vars */
   INFO(LOG_SOTI, "unfixed states");
   INDENT(LOG_SOTI);
@@ -435,6 +435,8 @@ static int initialize(DATA *data, int optiMethod)
   if(initData == NULL)
   {
     INFO(LOG_INIT, "no variables to initialize");
+    /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
+    initial_residual(data, initData->initialResiduals);
     return 0;
   }
 
@@ -442,6 +444,8 @@ static int initialize(DATA *data, int optiMethod)
   if(data->modelData.nInitResiduals == 0)
   {
     INFO(LOG_INIT, "no initial residuals (neither initial equations nor initial algorithms)");
+    /* call initial_residual to execute algorithms with no counted outputs, for examples external objects as used in modelica3d */
+    initial_residual(data, initData->initialResiduals);
     return 0;
   }
 
@@ -896,7 +900,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   int i;
 
   INFO(LOG_INIT, "### START INITIALIZATION ###");
-  
+
   /* import start values from extern mat-file */
   if(pInitFile && strcmp(pInitFile, ""))
   {
