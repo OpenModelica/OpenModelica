@@ -5373,6 +5373,15 @@ case UNARY(exp = e as CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=R
   ; separator="\n"    
   %>
   >>
+case LUNARY(operator=NOT(__),exp = e as CREF(ty= DAE.T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
+  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  <<
+  <%preExp%>
+  <% varLst |> var as TYPES_VAR(__) hasindex i1 fromindex 0 =>
+    '<%lhsStr%>$P<%var.name%> = !<%rhsStr%>.<%var.name%>;'
+  ; separator="\n"    
+  %>
+  >>  
 case CALL(path=path,expLst=expLst,attr=CALL_ATTR(ty= T_COMPLEX(varLst = varLst, complexClassType=RECORD(__)))) then
   let &preExp = buffer ""
   <<
@@ -5388,10 +5397,15 @@ case CREF(__) then
   <<
   <%lhsStr%> = <%rhsStr%>;
   >>   
-case UNARY(exp = e as CREF(__)) then
+case UNARY(operator=UMINUS(__),exp = e as CREF(__)) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
   <%lhsStr%> = -<%rhsStr%>;
+  >>
+case LUNARY(operator=NOT(__),exp = e as CREF(__)) then
+  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+  <<
+  <%lhsStr%> = !<%rhsStr%>;
   >>
 case ARRAY(array = {}) then
   <<

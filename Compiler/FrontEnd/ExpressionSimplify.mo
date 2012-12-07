@@ -4214,6 +4214,11 @@ algorithm
         b1 = not b1;
       then 
         DAE.BCONST(b1);
+
+    // not(not(exp)) -> exp
+    case(DAE.NOT(_),DAE.LUNARY(DAE.NOT(_),e1)) 
+      then 
+        e1;
     
     // -x => 0 - x
     case (DAE.UMINUS(ty = ty),DAE.ICONST(integer = i))

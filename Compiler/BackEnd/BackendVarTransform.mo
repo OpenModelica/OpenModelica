@@ -1538,6 +1538,7 @@ algorithm
       String msg;
     case(DAE.CREF(componentRef=cr),_,_) then (cr,inRhs);
     case(DAE.UNARY(operator=op,exp=DAE.CREF(componentRef=cr)),_,_) then (cr,DAE.UNARY(op,inRhs));
+    case(DAE.LUNARY(operator=op,exp=DAE.CREF(componentRef=cr)),_,_) then (cr,DAE.LUNARY(op,inRhs));
     else
       equation
         msg = "BackendVarTransform: failed to replace left hand side of when equation " +& 
@@ -1805,6 +1806,7 @@ algorithm
         true = b1 or b2;
         (e1_2,_) = ExpressionSimplify.simplify(e1_1);
         (e2_2,_) = ExpressionSimplify.simplify(e2_1);
+        (e1_2,e2_2) = moveNegateRhs(e1_2,e2_2);
         source = DAEUtil.addSymbolicTransformationSubstitution(b1,source,e1,e1_2);
         source = DAEUtil.addSymbolicTransformationSubstitution(b2,source,e2,e2_2);
         (es_1,b) = replaceStatementLst(es, repl,inFuncTypeExpExpToBooleanOption,DAE.STMT_ASSIGN(type_,e1_2,e2_2,source)::inAcc,true);
@@ -1996,6 +1998,23 @@ algorithm
         (es_1,b1);
   end matchcontinue;
 end replaceStatementLst;
+
+protected function moveNegateRhs
+  input DAE.Exp inLhs;
+  input DAE.Exp inRhs;
+  output DAE.Exp outLhs;
+  output DAE.Exp outRhs;
+algorithm
+  (outLhs,outRhs) := match(inLhs,inRhs)
+    local
+      DAE.Exp e;
+      DAE.Type ty;
+    case (DAE.LUNARY(DAE.NOT(ty),e),_) then (e,DAE.LUNARY(DAE.NOT(ty),inRhs));
+    case (DAE.UNARY(DAE.UMINUS(ty),e),_) then (e,DAE.UNARY(DAE.UMINUS(ty),inRhs));
+    case (DAE.UNARY(DAE.UMINUS_ARR(ty),e),_) then (e,DAE.UNARY(DAE.UMINUS_ARR(ty),inRhs));
+    case (_,_) then (inLhs,inRhs);
+  end match;
+end moveNegateRhs;
 
 protected function validLhsArrayAssignSTMT "
 function: validLhsArrayAssignSTMT

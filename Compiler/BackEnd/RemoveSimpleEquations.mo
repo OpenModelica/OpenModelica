@@ -857,6 +857,19 @@ algorithm
       BackendDAE.Variables vars,knvars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
+    // a = const
+    // wbraun:
+    // speacial case for Jacobains, since there are all known variablen
+    // time depending input variables
+    case (_,_,_,_,(vars,BackendDAE.SHARED(knownVars=knvars,backendDAEType = BackendDAE.JACOBIAN()),_,_,_,_,_))
+      equation
+        // collect vars and check if variable time not there
+        ((_,(false,_,_,_,_,ilst))) = Expression.traverseExpTopDown(lhs, traversingTimeVarsFinder, (false,vars,knvars,true,false,{}));
+        ((_,(false,_,_,_,_,ilst))) = Expression.traverseExpTopDown(rhs, traversingTimeVarsFinder, (false,vars,knvars,true,false,ilst));
+        ilst = List.uniqueIntN(ilst,BackendVariable.varsSize(vars));
+        vlst = List.map1r(ilst,BackendVariable.getVarAt,vars);
+      then
+        solveTimeIndependentAcausal(vlst,ilst,lhs,rhs,source,inTpl);
     case (_,_,_,_,(vars,BackendDAE.SHARED(knownVars=knvars),_,_,_,_,_))
       equation
         // collect vars and check if variable time not there
@@ -892,6 +905,15 @@ algorithm
       BackendDAE.Variables vars,knvars;
       list<Integer> ilst;
       list<BackendDAE.Var> vlst;
+    case (_,_,_,(vars,BackendDAE.SHARED(knownVars=knvars,backendDAEType = BackendDAE.JACOBIAN()),_,_,_,_,_))
+      equation
+        // collect vars and check if variable time not there
+        ((_,(false,_,_,_,_,ilst))) = Expression.traverseExpTopDown(exp, traversingTimeVarsFinder, (false,vars,knvars,true,false,{}));
+        ilst = List.uniqueIntN(ilst,BackendVariable.varsSize(vars));
+        vlst = List.map1r(ilst,BackendVariable.getVarAt,vars);
+      then
+        // shoulde be ok since solve checks only for iszero
+        solveTimeIndependentAcausal(vlst,ilst,exp,DAE.RCONST(0.0),source,inTpl);    
     case (_,_,_,(vars,BackendDAE.SHARED(knownVars=knvars),_,_,_,_,_))
       equation
         // collect vars and check if variable time not there
