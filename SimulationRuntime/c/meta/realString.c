@@ -251,9 +251,9 @@ modelica_string realString(modelica_real r)
     return MMC_REFSTRINGLIT(_OMC_LIT_POS_INF);
   else if (isnan(r))
     return MMC_REFSTRINGLIT(_OMC_LIT_NAN);
-#if defined(__MINGW32__) || defined(_MSC_VER)
+#if defined(_MSC_VER)
   return _old_realString(r);
-#else /* Linux seems to know how to handle this */
+#else /* Linux and MinGW seems to know how to handle this */
   return dtostr(r);
 #endif
 }

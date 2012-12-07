@@ -285,7 +285,7 @@
     modelica_string_t modelDir;
     modelica_string_t modelGUID;
 
-    long nStates;
+    fortran_integer nStates;
     long nVariablesReal; /* all Real Variables of the model (states,statesderivatives,algebraics) */
     long nVariablesInteger;
     long nVariablesBoolean;
@@ -320,7 +320,7 @@
     long nJacobians;
   }MODEL_DATA;
 
-  typedef struct SIMULTAION_INFO
+  typedef struct SIMULATION_INFO
   {
     modelica_real startTime;
     modelica_real stopTime;

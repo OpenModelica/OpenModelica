@@ -48,15 +48,15 @@ extern "C" {
 #endif
 
 extern
-void * _omc_hybrj_(void(*) (int*, double*, double*, double *, int*, int*, void* data),
-      int *n,double*x,double*fvec,double*fjac,int *ldfjac,double*xtol,int* maxfev,
+void * _omc_hybrj_(void(*) (integer*, double*, double*, double *, int*, int*, void* data),
+      integer *n,double*x,double*fvec,double*fjac,int *ldfjac,double*xtol,int* maxfev,
       double* diag,int *mode,double*factor,int *nprint,int*info,int*nfev,int*njev,
       double* r,int *lr,double*qtf,double*wa1,double*wa2,
       double* wa3,double* wa4, void* userdata);
 
 extern
-void _omc_hybrd_(void (*) (int*, double *, double*, int*, void*),
-      int* n, double* x ,double* fvec, double* xtol,
+void _omc_hybrd_(void (*) (integer*, double *, double*, int*, void*),
+      integer* n, double* x ,double* fvec, double* xtol,
       int* maxfev, int* ml, int* mu, double* epsfcn, double* diag,
       int* mode, double* factor, int* nprint, int* info, int* nfev,
       double* fjac, double* fjacobian, int* ldfjac, double* r__,
@@ -75,7 +75,7 @@ typedef struct DATA_HYBRD
   double* xScalefactors;
   double* fvecScaled;
 
-  int n;
+  integer n;
   double* x;
   double* fvec;
   double xtol;

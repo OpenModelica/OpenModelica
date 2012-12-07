@@ -122,7 +122,7 @@ int freeHybrdData(void **voiddata){
  *
  *
  */
-void wrapper_fvec_hybrd(int* n, double* x, double* f, int* iflag, void* data){
+void wrapper_fvec_hybrd(integer* n, double* x, double* f, int* iflag, void* data){
 
   int i,currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
@@ -376,7 +376,6 @@ int solveHybrd(DATA *data, int sysNumber) {
 
     /* Scaling residual vector */
     {
-      double tmp;
       int i,j,l=0;
       for(i=0;i<solverData->n;i++){
         solverData->resScaling[i] = 1e-16;

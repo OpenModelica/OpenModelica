@@ -303,7 +303,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
 
     if (dasslData->dasslMethod ==  DASSL_SYMJAC)
     {
-      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+      DDASRT(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
@@ -312,7 +312,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
     else if (dasslData->dasslMethod ==  DASSL_NUMJAC)
     { 
-      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+      DDASRT(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
@@ -321,7 +321,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
     else if (dasslData->dasslMethod ==  DASSL_COLOREDSYMJAC)
     {
-      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+      DDASRT(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
@@ -330,7 +330,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
     else if (dasslData->dasslMethod ==  DASSL_INTERNALNUMJAC)
     {
-      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+      DDASRT(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
@@ -339,7 +339,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
     else if (dasslData->dasslMethod ==  DASSL_TEST)
     {
-      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+      DDASRT(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
@@ -348,7 +348,7 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
     }
     else if (dasslData->dasslMethod ==  DASSL_WORT)
     {
-      DDASRT(functionODE_residual, (fortran_integer*) &mData->nStates,
+      DDASRT(functionODE_residual, &mData->nStates,
           &solverInfo->currentTime, sData->realVars, stateDer, &tout,
           dasslData->info, dasslData->rtol, dasslData->atol, &dasslData->idid,
           dasslData->rwork, &dasslData->lrw, dasslData->iwork, &dasslData->liw,
@@ -396,16 +396,16 @@ int dasrt_step(DATA* simData, SOLVER_INFO* solverInfo)
   if(DEBUG_STREAM(LOG_SOLVER))
   {
     INFO(LOG_SOLVER, "| DDASRT | dassl call staistics: ");
-    INFO1(LOG_SOLVER, "          | value of idid: %d", dasslData->idid);
+    INFO1(LOG_SOLVER, "          | value of idid: %ld", dasslData->idid);
     INFO1(LOG_SOLVER, "          | current time value: %0.4g", solverInfo->currentTime);
     INFO1(LOG_SOLVER, "          | current integration time value: %0.4g", dasslData->rwork[3]);
     INFO1(LOG_SOLVER, "          | step size H to be attempted on next step: %0.4g", dasslData->rwork[2]);
     INFO1(LOG_SOLVER, "          | step size used on last successful step: %0.4g", dasslData->rwork[6]);
-    INFO1(LOG_SOLVER, "          | number of steps taken so far: %d", dasslData->iwork[10]);
-    INFO1(LOG_SOLVER, "          | number of calls of functionODE() : %d", dasslData->iwork[11]);
-    INFO1(LOG_SOLVER, "          | number of calculation of jacobian : %d", dasslData->iwork[12]);
-    INFO1(LOG_SOLVER, "          | total number of convergence test failures: %d", dasslData->iwork[13]);
-    INFO1(LOG_SOLVER, "          | total number of error test failures: %d", dasslData->iwork[14]);
+    INFO1(LOG_SOLVER, "          | number of steps taken so far: %ld", dasslData->iwork[10]);
+    INFO1(LOG_SOLVER, "          | number of calls of functionODE() : %ld", dasslData->iwork[11]);
+    INFO1(LOG_SOLVER, "          | number of calculation of jacobian : %ld", dasslData->iwork[12]);
+    INFO1(LOG_SOLVER, "          | total number of convergence test failures: %ld", dasslData->iwork[13]);
+    INFO1(LOG_SOLVER, "          | total number of error test failures: %ld", dasslData->iwork[14]);
   }
   /* save dassl stats */
   for (ui = 0; ui < numStatistics; ui++)
@@ -726,7 +726,7 @@ jacA_num(DATA* data, double *t, double *y, double *yprime, double *delta, double
   double delta_h = dasslData->sqrteps;
   double delta_hh,delta_hhh, deltaInv;
   double ysave;
-  int ires;
+  integer ires;
   int i,j;
 
   for (i = data->modelData.nStates-1; i >=0 ; i--) {
@@ -811,7 +811,7 @@ jacA_numColored(DATA* data, double *t, double *y, double *yprime, double *delta,
   DASSL_DATA* dasslData = (DASSL_DATA*)(void*)((double**)rpar)[1];
   double delta_h = dasslData->sqrteps;
   double delta_hhh;
-  int ires;
+  integer ires;
   double* delta_hh = dasslData->delta_hh;
   double* ysave = dasslData->ysave;
 
