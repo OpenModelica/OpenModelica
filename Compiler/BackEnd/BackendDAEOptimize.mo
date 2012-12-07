@@ -6073,12 +6073,11 @@ algorithm
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crlst;
       BackendDAE.Variables ordvars;
-      BackendDAE.VariableArray varr;
     case (m,v1,v2,{},dlow) then ({},{});
-    case (m,v1,v2,c::comp,dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = ordvars as BackendDAE.VARIABLES(varArr=varr))::{}))
+    case (m,v1,v2,c::comp,dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = ordvars)::{}))
       equation
         v = v2[c];
-        BackendDAE.VAR(varName = cr) = BackendVariable.vararrayNth(varr, v-1);
+        BackendDAE.VAR(varName = cr) = BackendVariable.getVarAt(ordvars, v);
         (varlst,crlst) = getTearingVars(m,v1,v2,comp,dlow);
       then
         (v::varlst,cr::crlst);
@@ -6218,7 +6217,6 @@ algorithm
       list<Integer> residualeqns,residualeqns_1,tearingvars,tearingvars_1,tearingeqns,tearingeqns_1;
       DAE.ComponentRef cr,crt;
       list<DAE.ComponentRef> crlst;
-      BackendDAE.VariableArray varr;
 
       BackendDAE.Variables ordvars,vars_1,ordvars1;
       BackendDAE.EquationArray eqns, eqns_1, eqns_2,eqns1,eqns1_1;
@@ -6245,13 +6243,13 @@ algorithm
         true = residualeqn > 0;
         // copy dlow
         dlowc = BackendDAEUtil.copyBackendDAE(dlow);
-        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),eqns,_,_,_)::{},shared) = dlowc;
+        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,_,_,_)::{},shared) = dlowc;
         BackendDAE.EQUATION_ARRAY(_,_,_,equOptArr) = eqns;
         dlowc1 = BackendDAEUtil.copyBackendDAE(dlow1);
         BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(ordvars1,eqns1,_,_,_)::{}) = dlowc1;
         BackendDAE.EQUATION_ARRAY(_,_,_,equOptArr1) = eqns1;
         // add Tearing Var
-        var = BackendVariable.vararrayNth(varr, tearingvar-1);
+        var = BackendVariable.getVarAt(ordvars, tearingvar);
         cr = BackendVariable.varCref(var);
         crt = ComponentReference.prependStringCref("tearingresidual_",cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,
@@ -6310,11 +6308,11 @@ algorithm
         true = residualeqn > 0;
         // copy dlow
         dlowc = BackendDAEUtil.copyBackendDAE(dlow);
-        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars as BackendDAE.VARIABLES(varArr=varr),eqns,_,_,_)::{},shared) = dlowc;
+        BackendDAE.DAE(BackendDAE.EQSYSTEM(ordvars,eqns,_,_,_)::{},shared) = dlowc;
         dlowc1 = BackendDAEUtil.copyBackendDAE(dlow1);
         BackendDAE.DAE(eqs = BackendDAE.EQSYSTEM(ordvars1,eqns1,_,_,_)::{}) = dlowc1;
         // add Tearing Var
-        var = BackendVariable.vararrayNth(varr, tearingvar-1);
+        var = BackendVariable.getVarAt(ordvars, tearingvar);
         cr = BackendVariable.varCref(var);
         crt = ComponentReference.prependStringCref("tearingresidual_",cr);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(crt, BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,
@@ -6365,7 +6363,7 @@ algorithm
         comp_2 = List.select1(cmops_flat,listMember,comp);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
-    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
+    case (dlow,dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
       equation
         true = (listLength(residualeqns)<>0);  //there exist alreay chosen residual equations
        tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
@@ -6376,7 +6374,7 @@ algorithm
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,eqs,residualeqn::exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
-    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
+    case (dlow,dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
       equation
         true = (listLength(residualeqns)==0);  //until now no residual equations have been used
         tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
@@ -6387,7 +6385,7 @@ algorithm
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,eqs,residualeqn::exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
-    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,_)
+    case (dlow,dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,_)
       equation
         true = (listLength(residualeqns)<>0);  //there exist alreay chosen residual equations
         tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);
@@ -6398,7 +6396,7 @@ algorithm
         Debug.fcall(Flags.TEARING_DUMP, print, "Select Tearing BackendDAE.Var failed\n");
       then
         fail();
-    case (dlow as BackendDAE.DAE(eqs=BackendDAE.EQSYSTEM(orderedVars = BackendDAE.VARIABLES(varArr=varr))::{}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,_)
+    case (dlow,dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,_)
       equation
         true = (listLength(residualeqns)==0);  //until now no residual equations have been used
         tupl = residualEquation(m,mT,eqs,comp,0.0,0,exclude,tearingvar);

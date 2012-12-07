@@ -650,8 +650,10 @@ template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
       state mem_state;
       mem_state = get_memory_state();
       /* data->simulationInfo.extObjs = NULL; */
+      INFO(LOG_DEBUG, "call external Object Constructors");
       <%ctorCalls%>
       <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
+      INFO(LOG_DEBUG, "call external Object Constructors finished");
     }
     >>
   end match

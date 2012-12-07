@@ -2308,7 +2308,7 @@ algorithm
   end matchcontinue;
 end vararraySetnth;
 
-public function vararrayNth
+protected function vararrayNth
 "function: vararrayNth
  author: PA
  Retrieve the n:th BackendDAE.Var from BackendDAE.VariableArray, index from 0..n-1.
@@ -2333,7 +2333,7 @@ algorithm
       equation
         (pos < n) = true;
         NONE() = arr[pos + 1];
-        print("- vararrayNth has NONE!!!\n");
+        print("- vararrayNth " +& intString(pos +1 ) +& " has NONE!!!\n");
       then
         fail();
   end matchcontinue;
@@ -3169,23 +3169,37 @@ public function getVarAt
 algorithm
   outVar := matchcontinue (inVariables,inInteger)
     local
-      Integer pos,n;
+      Integer pos;
       BackendDAE.Var v;
       BackendDAE.VariableArray vararr;
-    case (BackendDAE.VARIABLES(varArr = vararr),n)
+    case (BackendDAE.VARIABLES(varArr = vararr),_)
       equation
-        pos = n - 1;
+        pos = inInteger - 1;
         v = vararrayNth(vararr, pos);
       then
         v;
-    case (BackendDAE.VARIABLES(varArr = vararr),n)
+    case (BackendDAE.VARIABLES(varArr = vararr),_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "getVarAt failed to get the variable at index:" +& intString(n));
+        Debug.fprintln(Flags.FAILTRACE, "getVarAt failed to get the variable at index:" +& intString(inInteger));
       then
         fail();
   end matchcontinue;
 end getVarAt;
+
+public function getVarSharedAt
+"function: getVarSharedAt
+  author: Frenkel TUD 2012-12
+  return a Variable."
+  input Integer inInteger;
+  input BackendDAE.Shared shared;
+  output BackendDAE.Var outVar;
+protected
+  BackendDAE.Variables vars;
+algorithm
+  BackendDAE.SHARED(knownVars=vars) := shared;
+  outVar := getVarAt(vars,inInteger);
+end getVarSharedAt;
 
 public function getVarDAE
 "function: getVarDAE
@@ -4112,7 +4126,7 @@ algorithm
   end matchcontinue;
 end getNonZeroStart;
 
-protected function startOriginToValue
+public function startOriginToValue
   input Option<DAE.Exp> startOrigin;
   output Integer i;
 algorithm
