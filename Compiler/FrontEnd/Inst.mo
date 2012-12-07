@@ -15310,7 +15310,7 @@ protected function sortInnerFirstTplLstElementMod
 algorithm
   outTplLstElementMod := matchcontinue(inTplLstElementMod)
     local
-      list<tuple<SCode.Element, DAE.Mod>> innerElts, innerouterElts, otherElts, sorted;
+      list<tuple<SCode.Element, DAE.Mod>> innerElts, innerouterElts, otherElts, sorted, innerModelicaServices, innerModelica, innerOthers;
 
     // no sorting if we don't have any inner/outer in the model
     case _ 
@@ -15325,9 +15325,12 @@ algorithm
         // split into inner, inner outer and other elements
         (innerElts, innerouterElts, otherElts) = splitInnerAndOtherTplLstElementMod(inTplLstElementMod);
         // sort the inners to put Modelica types first!  
-        innerElts = sortInnerPutModelicaFirst(innerElts, {});
+        (innerModelicaServices, innerModelica, innerOthers) = splitInners(innerElts, {}, {}, {});
+        
+        sorted = listAppend(innerModelicaServices, innerModelica);
+        sorted = listAppend(sorted, innerOthers);
         // put the inner elements first
-        sorted = listAppend(innerElts, innerouterElts);
+        sorted = listAppend(sorted, innerouterElts);
         // put the innerouter elements second
         sorted = listAppend(sorted, otherElts);
       then 
@@ -15335,41 +15338,57 @@ algorithm
   end matchcontinue;
 end sortInnerFirstTplLstElementMod;
 
-protected function sortInnerPutModelicaFirst
+protected function splitInners
 "@author: adrpo
-  This function will move all the *inner* Modelica.*
-  elements first in the given list of elements"
+  This function will sort inner into 3 lists:
+  *inner* ModelicaServices.* 
+  *inner* Modelica.*
+  *inner* Other.*"
   input list<tuple<SCode.Element, DAE.Mod>> inTplLstElementMod;
-  input list<tuple<SCode.Element, DAE.Mod>> inAcc;
-  output list<tuple<SCode.Element, DAE.Mod>> outTplLstElementMod;
+  input list<tuple<SCode.Element, DAE.Mod>> inAcc1;
+  input list<tuple<SCode.Element, DAE.Mod>> inAcc2;
+  input list<tuple<SCode.Element, DAE.Mod>> inAcc3;
+  output list<tuple<SCode.Element, DAE.Mod>> outModelicaServices;
+  output list<tuple<SCode.Element, DAE.Mod>> outModelica;
+  output list<tuple<SCode.Element, DAE.Mod>> outOthers;
 algorithm
-  outTplLstElementMod := matchcontinue(inTplLstElementMod, inAcc)
+  (outModelicaServices, outModelica, outOthers) := 
+  matchcontinue(inTplLstElementMod, inAcc1, inAcc2, inAcc3)
     local
-      list<tuple<SCode.Element, DAE.Mod>> rest, acc;
+      list<tuple<SCode.Element, DAE.Mod>> rest, acc1, acc2, acc3;
       SCode.Element e;
       DAE.Mod m;
       tuple<SCode.Element, DAE.Mod> em;
       Absyn.Path p;
 
-    case ({}, _)
-      then listReverse(inAcc);
+    case ({}, _, _, _)
+      then (listReverse(inAcc1), listReverse(inAcc2), listReverse(inAcc3));
 
-    case (em::rest, _)
+    case (em::rest, _, _, _)
+      equation
+        e = Util.tuple21(em);
+        Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
+        true = stringEq("ModelicaServices", Absyn.pathFirstIdent(p));
+        (acc1, acc2, acc3) = splitInners(rest, em::inAcc1, inAcc2, inAcc3);
+      then
+        (acc1, acc2, acc3);
+    
+    case (em::rest, _, _, _)
       equation
         e = Util.tuple21(em);
         Absyn.TPATH(p, _) = SCode.getComponentTypeSpec(e);
         true = stringEq("Modelica", Absyn.pathFirstIdent(p));
-        acc = sortInnerPutModelicaFirst(rest, listAppend(inAcc, {em}));
+        (acc1, acc2, acc3) = splitInners(rest, inAcc1, em::inAcc2, inAcc3);
       then
-        acc;
-    
-    case ((em as (e, m))::rest, _)
+        (acc1, acc2, acc3);
+        
+    case ((em as (e, m))::rest, _, _, _)
       equation
-        acc = sortInnerPutModelicaFirst(rest, em::inAcc);
+        (acc1, acc2, acc3) = splitInners(rest, inAcc1, inAcc2, em::inAcc3);
       then
-        acc;
+        (acc1, acc2, acc3);
   end matchcontinue;
-end sortInnerPutModelicaFirst;
+end splitInners;
 
 public function splitInnerAndOtherTplLstElementMod 
 "@author: adrpo
