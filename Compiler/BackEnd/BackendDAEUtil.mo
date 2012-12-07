@@ -82,6 +82,7 @@ protected import Inline;
 protected import List;
 protected import Matching;
 protected import OnRelaxation;
+protected import RemoveSimpleEquations;
 protected import SCode;
 protected import System;
 protected import Types;
@@ -8453,7 +8454,8 @@ protected
   list<String> strPreOptModules;
 algorithm
   allPreOptModules := {
-          (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquations",false),
+//          (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquations",false),
+          (RemoveSimpleEquations.fastAcausal,"removeSimpleEquations",false),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
           (BackendDAEOptimize.evaluateFinalParameters,"evaluateFinalParameters",false),
           (BackendDAEOptimize.evaluateParameters,"evaluateParameters",false),
