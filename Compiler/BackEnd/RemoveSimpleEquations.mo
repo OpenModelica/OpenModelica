@@ -2252,13 +2252,13 @@ protected function handleVarSetAttributes
 algorithm
   oVars := matchcontinue(iAttributes,inVar,i,iVars,ishared)
     local
-		  Boolean fixedset;
-		  Option<DAE.Exp> nominalset;
-		  tuple<Option<DAE.Exp>,Option<DAE.Exp>> minmaxset;
-		  Integer nNominal;
-		  tuple<Integer,list<tuple<Option<DAE.Exp>,DAE.ComponentRef>>> startvalues;
-		  BackendDAE.Var v;
-		  BackendDAE.Variables vars;
+      Boolean fixedset;
+      Option<DAE.Exp> nominalset;
+      tuple<Option<DAE.Exp>,Option<DAE.Exp>> minmaxset;
+      Integer nNominal;
+      tuple<Integer,list<tuple<Option<DAE.Exp>,DAE.ComponentRef>>> startvalues;
+      BackendDAE.Var v;
+      BackendDAE.Variables vars;
     case((fixedset,startvalues,nominalset,nNominal,minmaxset),_,_,_,_)
       equation
         // start and fixed
