@@ -10579,8 +10579,8 @@ algorithm
   // run tarjan to get order of other equations
   m1 := arrayCreate(size,{});
   mt1 := arrayCreate(size,{});
-  m1 := getOtherEqSysIncidenceMatrix(m,size,1,residual,tvars,m1);
-  mt1 := getOtherEqSysIncidenceMatrix(mt,size,1,tvars,residual,mt1);
+  m1 := getOtherEqSysIncidenceMatrix(m,size,1,ass2,ass1,m1);
+  mt1 := getOtherEqSysIncidenceMatrix(mt,size,1,ass1,ass2,mt1);
   //  subsyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m1),SOME(mt1),BackendDAE.MATCHING(ass1,ass2,{}));
   //  BackendDump.dumpEqSystem(subsyst);
   number := arrayCreate(size,0);
@@ -10764,8 +10764,8 @@ protected function getOtherEqSysIncidenceMatrix "function getOtherEqSysIncidence
   input BackendDAE.IncidenceMatrix m;
   input Integer size;
   input Integer index;
-  input list<Integer> skip;
-  input list<Integer> rowskip;
+  input array<Integer> skip;
+  input array<Integer> rowskip;
   input BackendDAE.IncidenceMatrix mnew;
   output BackendDAE.IncidenceMatrix outMNew;
 algorithm
@@ -10779,9 +10779,9 @@ algorithm
         mnew;
     case (_,_,_,_,_,_)
       equation
-        false = listMember(index,skip);
+        true = intGt(skip[index],0);
         row = List.select(m[index], Util.intPositive);
-        row = List.setDifferenceIntN(row, rowskip, size);
+        row = List.select1r(row,isAssigned,rowskip);
         _ = arrayUpdate(mnew,index,row);
       then
         getOtherEqSysIncidenceMatrix(m,size,index+1,skip,rowskip,mnew);
