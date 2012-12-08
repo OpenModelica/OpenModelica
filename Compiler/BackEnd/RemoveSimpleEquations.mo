@@ -1659,13 +1659,13 @@ algorithm
        replacable = replaceableAlias(v,unreplacable);
        // set fixed=true if replacable
        v = Debug.bcallret2(replacable,BackendVariable.setVarFixed,v,true,v);
-       (vars,shared,_) = optMoveVarShared(replacable,v,i,source,exp,BackendVariable.addKnVarDAE,iVars,ishared);
+       (vars,shared,_,eqnslst) = optMoveVarShared(replacable,v,i,source,exp,BackendVariable.addKnVarDAE,iMT,iVars,ishared,iEqnslst);
        constExp = Expression.isConst(exp);
        // add to replacements if constant
        repl = Debug.bcallret4(replacable and constExp, BackendVarTransform.addReplacement,iRepl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator),iRepl);
        exp = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v,false,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
-       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(List.removeOnTrue(r,intEq,iMT[i]),i,exp,NONE(),false,true,mark,simpleeqnsarr,iMT,unreplacable,vars,iEqnslst,shared,repl,vsattr);
+       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(List.removeOnTrue(r,intEq,iMT[i]),i,exp,NONE(),false,true,mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
      then
        (vars,eqnslst,shared,repl);
    // variable set
@@ -1757,24 +1757,35 @@ protected function optMoveVarShared
   input DAE.ElementSource source;
   input DAE.Exp exp;
   input FuncMoveVarShared func;
+  input array<list<Integer>> iMT;
   input BackendDAE.Variables iVars;
   input BackendDAE.Shared ishared;
+  input list<BackendDAE.Equation> iEqnslst;
   output BackendDAE.Variables oVars;
   output BackendDAE.Shared oshared;
   output Boolean bs;
+  output list<BackendDAE.Equation> oEqnslst;
   partial function FuncMoveVarShared
     input BackendDAE.Var v;
     input BackendDAE.Shared ishared;
     output BackendDAE.Shared oshared;
   end FuncMoveVarShared;  
 algorithm
-  (oVars,oshared,bs) := match(replacable,v,i,source,exp,func,iVars,ishared)
-    case(true,_,_,_,_,_,_,_)
+  (oVars,oshared,bs,oEqnslst) := match(replacable,v,i,source,exp,func,iMT,iVars,ishared,iEqnslst)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp crexp;
+    case(true,_,_,_,_,_,_,_,_,_)
       equation
         (oVars,oshared,bs) = moveVarShared(v,i,source,exp,func,iVars,ishared);
       then
-        (oVars,oshared,bs);
-    case(false,_,_,_,_,_,_,_) then (iVars,ishared,false);
+        (oVars,oshared,bs,iEqnslst);
+    case(false,BackendDAE.VAR(varName=cr),_,_,_,_,_,_,_,_)
+     equation
+       crexp = Expression.crefExp(cr);
+       ((oVars,oshared,oEqnslst,_,_,_,_)) = generateEquation(crexp,exp,Expression.typeof(exp),source,(iVars,ishared,iEqnslst,{},-1,iMT,false));
+     then
+       (oVars,oshared,false,oEqnslst);      
   end match;
 end optMoveVarShared;
 
