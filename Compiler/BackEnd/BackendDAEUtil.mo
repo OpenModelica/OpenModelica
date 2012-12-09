@@ -8454,8 +8454,8 @@ protected
   list<String> strPreOptModules;
 algorithm
   allPreOptModules := {
-          (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquations",false),
-//          (RemoveSimpleEquations.fastAcausal,"removeSimpleEquations",false),
+//          (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquations",false),
+          (RemoveSimpleEquations.fastAcausal,"removeSimpleEquations",false),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
           (BackendDAEOptimize.evaluateFinalParameters,"evaluateFinalParameters",false),
           (BackendDAEOptimize.evaluateParameters,"evaluateParameters",false),

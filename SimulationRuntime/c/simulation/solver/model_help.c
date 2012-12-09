@@ -1027,7 +1027,15 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
     value1 = data->simulationInfo.mathEventsValuePre[index];
     value2 = data->simulationInfo.mathEventsValuePre[index+1];
   }
+#if defined(_MSC_VER)
+  {
+    modelica_real rtmp = value1/value2;
+    modelica_integer tmp = (modelica_integer)(rtmp);
+    return (modelica_real)tmp;
+  };
+#else
   return trunc(value1/value2);
+#endif 
 }
 
 /*! \fn deInitializeDataStruc
