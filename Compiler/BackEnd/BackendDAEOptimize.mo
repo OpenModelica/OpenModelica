@@ -1786,6 +1786,7 @@ algorithm
       DAE.ElementSource source;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
+      DAE.Type t1,t2;
       
     // a = const
     // wbraun:
@@ -1874,6 +1875,10 @@ algorithm
       then (cr,k,es,syst,shared,eqTy);
     case ({var,var2},BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
+        // check if types equal
+        BackendDAE.VAR(varType=t1) = var;
+        BackendDAE.VAR(varType=t2) = var2;
+        true = Types.equivtypes(t1, t2);
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
@@ -1882,10 +1887,14 @@ algorithm
       then (cr,k,es,syst,shared,eqTy);        
     case ({var2,var},BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),shared)
       equation
+        // check if types equal
+        BackendDAE.VAR(varType=t1) = var2;
+        BackendDAE.VAR(varType=t2) = var;
+        true = Types.equivtypes(t1, t2);
         cr = BackendVariable.varCref(var);
         cre = Expression.crefExp(cr);
         (es,{}) = ExpressionSolve.solve(e1,e2,cre);
-        (_,j::_) = BackendVariable.getVar(cr, vars);       
+        (_,j::_) = BackendVariable.getVar(cr, vars);
         (cr,k,es,syst,shared,eqTy)= simpleEquation1(BackendDAE.EQUATION(cre,es,source),var,j,cr,es,source,syst,shared);      
       then (cr,k,es,syst,shared,eqTy);         
   end matchcontinue;

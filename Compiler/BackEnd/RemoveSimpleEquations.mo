@@ -141,7 +141,7 @@ algorithm
   repl := BackendVarTransform.emptyReplacementsSized(size);
   // check for unreplacable crefs
   unreplacable := HashSet.emptyHashSet();
-  //unreplacable := BackendDAEUtil.traverseBackendDAEExps(dae,traverserUnreplacable,HashSet.emptyHashSet());
+  unreplacable := BackendDAEUtil.traverseBackendDAEExps(dae,traverserUnreplacable,unreplacable);
   Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
   Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
   // traverse all systems and remove simple equations 
