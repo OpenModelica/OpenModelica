@@ -49,6 +49,7 @@ public import Env;
 public import HashTable2;
 //public import IndexReduction;
 
+protected import BackendDAEEXT;
 protected import BackendDAETransform;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -10498,7 +10499,7 @@ algorithm
         (acc,b);
   end matchcontinue;  
 end tearingSystemNew1;
- 
+
 protected function tearingSystemNew1_1 "function tearingSystemNew1
   author: Frenkel TUD 2012-05"
   input BackendDAE.EqSystem isyst;
@@ -10590,11 +10591,217 @@ algorithm
   Debug.fcall(Flags.TEARING_DUMP, print, "OtherEquationsOrder:\n"); 
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponentsOLD,othercomps); 
   Debug.fcall(Flags.TEARING_DUMP, print, "\n");
+  // calculate influence of tearing vars in residual equations 
+  mt1 := arrayCreate(size,{});
+  mark := getDependensOtherVars(othercomps,ass1,ass2,m,mt1,columark,mark);
+  (residual,mark) := sortResidualDepentOnTVars(residual,tvars,ass1,m,mt1,columark,mark);
   // handle system in case of liniear and other cases 
   //(osyst,oshared,outRunMatching) := tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
   (ocomp,outRunMatching) := tearingSystemNew4_1(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark);
   Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(outRunMatching,"Ok system torn\n","System not torn\n"));
 end tearingSystemNew1_1;
+
+protected function sortResidualDepentOnTVars
+  input list<Integer> iResiduals;
+  input list<Integer> iTVars;
+  input array<Integer> ass1;
+  input BackendDAE.IncidenceMatrix m;
+  input array<list<Integer>> mT;
+  input array<Integer> visited;
+  input Integer iMark;
+  output list<Integer> oResiduals;
+  output Integer oMark;
+protected
+  Integer size;
+  list<list<Integer>> maplst;
+  array<list<Integer>> map;
+  array<Integer> eqnLocalGlobal,varGlobalLocal,v1,v2;
+algorithm
+  // eqn - local - Global indices
+  eqnLocalGlobal := listArray(iResiduals);
+  // var - global local indices
+  varGlobalLocal := arrayCreate(arrayLength(m),-1);
+  varGlobalLocal := getGlobalLocal(iTVars,1,varGlobalLocal);
+  // generate list of map[residual]=tvars
+  // change indices in map to local
+  (oMark,maplst) := tVarsofResidualEqns(iResiduals,m,ass1,mT,varGlobalLocal,visited,iMark,{});
+  map := listArray(maplst);
+  // get for each residual a tvar
+  size := arrayLength(map);
+  Matching.matchingExternalsetIncidenceMatrix(size,size,map);
+  BackendDAEEXT.matching(size,size,5,-1,1.0,1);
+  v1 := arrayCreate(size,-1);
+  v2 := arrayCreate(size,-1);
+  BackendDAEEXT.getAssignment(v2,v1);
+  //  BackendDump.dumpIncidenceMatrix(map);
+  //  BackendDump.dumpMatching(v1);
+  //  BackendDump.dumpMatching(v2);
+  // sort residuals depent on matching to tvars
+  oResiduals := getTVarResiduals(size,v1,eqnLocalGlobal,{});
+  //  print("iResiduals " +& stringDelimitList(List.map(iResiduals,intString),"\n") +& "\n");
+  //  print("oResiduals " +& stringDelimitList(List.map(oResiduals,intString),"\n") +& "\n");
+end sortResidualDepentOnTVars;
+
+protected function getTVarResiduals
+  input Integer index;
+  input array<Integer> v1;
+  input array<Integer> eqnLocalGlobal;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := match(index,v1,eqnLocalGlobal,iAcc)
+    local
+      Integer e;
+    case (0,_,_,_) then iAcc;
+    case (_,_,_,_)
+      equation
+        e = v1[index];
+        e = eqnLocalGlobal[e];
+      then
+        getTVarResiduals(index-1,v1,eqnLocalGlobal,e::iAcc);
+  end match;
+end getTVarResiduals;
+
+protected function getGlobalLocal
+  input list<Integer> iTVars;
+  input Integer index;
+  input array<Integer> iVarGlobalLocal;
+  output array<Integer> oVarGlobalLocal;
+algorithm
+oVarGlobalLocal := 
+  match(iTVars,index,iVarGlobalLocal)
+    local
+      Integer i;
+      list<Integer> tvars;
+    case ({},_,_) then iVarGlobalLocal;
+    case (i::tvars,_,_)
+      equation
+        _= arrayUpdate(iVarGlobalLocal,i,index);
+      then
+        getGlobalLocal(tvars,index+1,iVarGlobalLocal);
+  end match;
+end getGlobalLocal;
+
+protected function tVarsofResidualEqns
+  input list<Integer> iEqns;
+  input BackendDAE.IncidenceMatrix m;
+  input array<Integer> ass1;
+  input array<list<Integer>> mT;
+  input array<Integer> varGlobalLocal;
+  input array<Integer> visited;
+  input Integer iMark;
+  input list<list<Integer>> iAcc;
+  output Integer oMark;
+  output list<list<Integer>> oAcc;
+algorithm
+  (oMark,oAcc) := match(iEqns,m,ass1,mT,varGlobalLocal,visited,iMark,iAcc)
+    local
+      Integer e;
+      list<Integer> eqns,vars,tvars;
+    case ({},_,_,_,_,_,_,_) then (iMark,listReverse(iAcc));
+    case (e::eqns,_,_,_,_,_,_,_)
+      equation
+        vars = List.select(m[e], Util.intPositive);
+        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,{});
+        // change indices to local
+        tvars = List.map1r(tvars,arrayGet,varGlobalLocal);
+        (oMark,oAcc) = tVarsofResidualEqns(eqns,m,ass1,mT,varGlobalLocal,visited,iMark+1,tvars::iAcc);
+      then
+        (oMark,oAcc);
+  end match;
+end tVarsofResidualEqns;
+
+protected function getDependensOtherVars
+  input list<list<Integer>> iComps;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input BackendDAE.IncidenceMatrix m;
+  input array<list<Integer>> mT;
+  input array<Integer> visited;
+  input Integer iMark;
+  output Integer oMark;
+algorithm
+  oMark := match(iComps,ass1,ass2,m,mT,visited,iMark)
+    local
+      Integer c,v;
+      list<Integer> comp,tvars,vars;
+      list<list<Integer>> comps;
+    case ({},_,_,_,_,_,_) then iMark;
+    case ({c}::comps,_,_,_,_,_,_)
+      equation
+        // get var of eqn
+        v = ass2[c];
+        // get TVars of Eqn
+        vars = List.select(m[c], Util.intPositive);
+        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,{});
+        // update map
+        _ = arrayUpdate(mT,v,tvars);
+      then
+        getDependensOtherVars(comps,ass1,ass2,m,mT,visited,iMark+1);
+    case (comp::comps,_,_,_,_,_,_)
+      equation
+        // get var of eqns
+        vars = List.map1r(comp,arrayGet,ass2);
+        // get TVars of Eqns
+        tvars = tVarsofEqns(comp,m,ass1,mT,visited,iMark,{});
+        // update map
+        _ = List.fold1r(vars,arrayUpdate,tvars,mT);
+      then
+        getDependensOtherVars(comps,ass1,ass2,m,mT,visited,iMark+1);
+  end match; 
+end getDependensOtherVars;
+
+protected function tVarsofEqns
+  input list<Integer> iEqns;
+  input BackendDAE.IncidenceMatrix m;
+  input array<Integer> ass1;
+  input array<list<Integer>> mT;
+  input array<Integer> visited;
+  input Integer iMark;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := match(iEqns,m,ass1,mT,visited,iMark,iAcc)
+    local
+      Integer e;
+      list<Integer> eqns,vars,tvars;
+    case ({},_,_,_,_,_,_) then iAcc;
+    case (e::eqns,_,_,_,_,_,_)
+      equation
+        vars = List.select(m[e], Util.intPositive);
+        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,iAcc);
+      then
+        tVarsofEqns(eqns,m,ass1,mT,visited,iMark,tvars);
+  end match;
+end tVarsofEqns;
+
+protected function tVarsofEqn
+  input list<Integer> iVars;
+  input array<Integer> ass1;
+  input array<list<Integer>> mT;
+  input array<Integer> visited;
+  input Integer iMark;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := matchcontinue(iVars,ass1,mT,visited,iMark,iAcc)
+    local
+      Integer v;
+      list<Integer> vars,tvars;
+    case ({},_,_,_,_,_) then iAcc;
+    case (v::vars,_,_,_,_,_)
+      equation
+        true = intLt(ass1[v],0);
+        tvars = uniqueIntLst(v,iMark,visited,iAcc);
+      then
+        tVarsofEqn(vars,ass1,mT,visited,iMark,tvars);
+    case (v::vars,_,_,_,_,_)
+      equation
+        tvars = List.fold2(mT[v],uniqueIntLst,iMark,visited,iAcc);
+      then
+        tVarsofEqn(vars,ass1,mT,visited,iMark,tvars);
+  end matchcontinue;
+end tVarsofEqn;
 
 protected function getUnsolvableVars
 "function getUnsolvableVars
@@ -11590,11 +11797,11 @@ protected function tearingSystemNew4_1 "function tearingSystemNew4
   input array<Integer> ass2;
   input list<list<Integer>> othercomps;
   input list<Integer> eindex;
-  input list<Integer> vindx;   
+  input list<Integer> vindx;
   input array<list<Integer>> mapEqnIncRow;
   input array<Integer> mapIncRowEqn;
   input array<Integer> columark;
-  input Integer mark;  
+  input Integer mark;
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 algorithm
