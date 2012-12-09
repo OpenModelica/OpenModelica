@@ -10515,7 +10515,7 @@ protected
   BackendDAE.EqSystem syst,subsyst;
   BackendDAE.Shared shared;   
   array<Integer> ass1,ass2,columark,number,lowlink;
-  Integer size,tornsize;
+  Integer size,tornsize,mark;
   list<BackendDAE.Equation> eqn_lst; 
   list<BackendDAE.Var> var_lst;    
   BackendDAE.Variables vars;
@@ -10525,7 +10525,7 @@ protected
   BackendDAE.AdjacencyMatrixEnhanced me;
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   array<list<Integer>> mapEqnIncRow;
-  array<Integer> mapIncRowEqn;      
+  array<Integer> mapIncRowEqn;
 algorithm
   // generate Subsystem to get the incidence matrix
   size := listLength(vindx);
@@ -10563,7 +10563,7 @@ algorithm
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(unsolvables,intString,", ","\n"));
      
   columark := arrayCreate(size,-1);
-  tvars := tearingSystemNew2(unsolvables,me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,1,{});
+  (tvars,mark) := tearingSystemNew2(unsolvables,me,meT,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,1,{});
   ass1 := List.fold(tvars,unassignTVars,ass1);
   // unmatched equations are residual equations
   residual := Matching.getUnassigned(size,ass2,{});
@@ -10592,7 +10592,7 @@ algorithm
   Debug.fcall(Flags.TEARING_DUMP, print, "\n");
   // handle system in case of liniear and other cases 
   //(osyst,oshared,outRunMatching) := tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
-  (ocomp,outRunMatching) := tearingSystemNew4_1(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
+  (ocomp,outRunMatching) := tearingSystemNew4_1(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark);
   Debug.fcall(Flags.TEARING_DUMP, print,Util.if_(outRunMatching,"Ok system torn\n","System not torn\n"));
 end tearingSystemNew1_1;
 
@@ -11240,8 +11240,9 @@ protected function tearingSystemNew2 "function tearingSystemNew2
   input Integer mark;
   input list<Integer> inTVars;
   output list<Integer> outTVars;
+  output Integer oMark;
 algorithm
-  outTVars := matchcontinue(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  (outTVars,oMark) := matchcontinue(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local 
       Integer tvar;
       list<Integer> unassigned,rest;
@@ -11269,8 +11270,9 @@ algorithm
 
         // check for unassigned vars, if there some rerun 
         unassigned = Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) = tearingSystemNew3(unassigned,{},m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
-        tearingSystemNew3(unassigned,{},m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        (outTVars,oMark);
     case (tvar::rest,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         //  print("Selected Var " +& intString(tvar) +& " as TearingVar\n");
@@ -11291,8 +11293,9 @@ algorithm
         */
         // check for unassigned vars, if there some rerun 
         unassigned = Matching.getUnassigned(size,ass1,{});
+        (outTVars,oMark) = tearingSystemNew3(unassigned,rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
       then
-        tearingSystemNew3(unassigned,rest,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark+1,tvar::inTVars);
+        (outTVars,oMark);
     else
       equation
         print("BackendDAEOptimize.tearingSystemNew2 failed!");
@@ -11355,11 +11358,16 @@ protected function tearingSystemNew3 "function tearingSystemNew3
   input Integer mark;
   input list<Integer> inTVars;
   output list<Integer> outTVars;
+  output Integer oMark;
 algorithm
-  outTVars := match(unassigend,unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
+  (outTVars,oMark) := match(unassigend,unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars)
     local 
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then inTVars;
-    else then tearingSystemNew2(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (inTVars,mark);
+    else 
+      equation
+        (outTVars,oMark) = tearingSystemNew2(unsolvables,m,mt,mapEqnIncRow,mapIncRowEqn,size,vars,ishared,ass1,ass2,columark,mark,inTVars);
+      then
+        (outTVars,oMark);
   end match; 
 end tearingSystemNew3;
 
@@ -11584,36 +11592,58 @@ protected function tearingSystemNew4_1 "function tearingSystemNew4
   input list<Integer> eindex;
   input list<Integer> vindx;   
   input array<list<Integer>> mapEqnIncRow;
-  input array<Integer> mapIncRowEqn; 
+  input array<Integer> mapIncRowEqn;
+  input array<Integer> columark;
+  input Integer mark;  
   output BackendDAE.StrongComponent ocomp;
   output Boolean outRunMatching;
 algorithm
   (ocomp,outRunMatching):=
-    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn)
+    matchcontinue (jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark)
     local
       list<Integer> ores,residual1,ovars;
       list<tuple<Integer,list<Integer>>> eqnvartpllst;
       array<Integer> eindxarr,varindxarr;
       Boolean linear;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fcall(Flags.TEARING_DUMP, print,"handle torn System\n");
         // map indexes back
         residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
-        residual1 = List.unique(residual1);
+        residual1 = List.fold2(residual1,uniqueIntLst,mark,columark,{});
         eindxarr = listArray(eindex);
         ores = List.map1r(residual1,arrayGet,eindxarr);
         varindxarr = listArray(vindx);
         ovars = List.map1r(tvars,arrayGet,varindxarr);
-        eqnvartpllst = tearingSystemNew4_2(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,{});
+        eqnvartpllst = tearingSystemNew4_2(othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,{});
         linear = getLinearfromJacType(jacType);
       then
         (BackendDAE.TORNSYSTEM(ovars, ores, eqnvartpllst, linear),true);           
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       then
         (BackendDAE.TORNSYSTEM({}, {}, {}, false),false);        
   end matchcontinue;  
 end tearingSystemNew4_1;
+
+protected function uniqueIntLst
+  input Integer c;
+  input Integer mark;
+  input array<Integer> markarray;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+algorithm
+  oAcc := matchcontinue(c,mark,markarray,iAcc)
+    case(_,_,_,_)
+      equation
+        false = intEq(mark,markarray[c]);
+        _ = arrayUpdate(markarray,c,mark);
+      then
+        c::iAcc;
+    else
+      then
+        iAcc;
+  end matchcontinue;
+end uniqueIntLst;
 
 protected function tearingSystemNew4_2
   input list<list<Integer>> othercomps;
@@ -11621,33 +11651,35 @@ protected function tearingSystemNew4_2
   input array<Integer> mapIncRowEqn;
   input array<Integer> eindxarr;
   input array<Integer> varindxarr;
+  input array<Integer> columark;
+  input Integer mark;  
   input list<tuple<Integer,list<Integer>>> iAcc;
   output list<tuple<Integer,list<Integer>>> oEqnVarTplLst;
 algorithm
   oEqnVarTplLst :=
-  match (othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,iAcc)
+  match (othercomps,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,iAcc)
     local
       list<list<Integer>> rest;
       Integer e,v,c;
       list<Integer> vlst,clst,elst;
-    case ({},_,_,_,_,_) then listReverse(iAcc);
-    case ({c}::rest,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_) then listReverse(iAcc);
+    case ({c}::rest,_,_,_,_,_,_,_)
       equation
         e = mapIncRowEqn[c];
         e = eindxarr[e];
         v = ass2[c];
         v = varindxarr[v];
       then
-        tearingSystemNew4_2(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,(e,{v})::iAcc);
-    case (clst::rest,_,_,_,_,_)
+        tearingSystemNew4_2(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,{v})::iAcc);
+    case (clst::rest,_,_,_,_,_,_,_)
       equation
         elst = List.map1r(clst,arrayGet,mapIncRowEqn);
-        e::{} = List.unique(elst);  
+        e::{} = List.fold2(elst,uniqueIntLst,mark,columark,{});
         e = eindxarr[e];
         vlst = List.map1r(clst,arrayGet,ass2);
         vlst = List.map1r(vlst,arrayGet,varindxarr);
       then
-        tearingSystemNew4_2(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,(e,vlst)::iAcc);
+        tearingSystemNew4_2(rest,ass2,mapIncRowEqn,eindxarr,varindxarr,columark,mark,(e,vlst)::iAcc);
   end match;
 end tearingSystemNew4_2;
 

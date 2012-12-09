@@ -1079,22 +1079,22 @@ algorithm
 
     case (compelem::{},BackendDAE.ALGORITHM(size = _)::{},var_varindx_lst,_,_,_,_,false)
       equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);        
+        varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEALGORITHM(compelem,varindxs);
     case (compelem::{},BackendDAE.ARRAY_EQUATION(dimSize = _)::{},var_varindx_lst,_,_,_,_,false)
       equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);        
+        varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEARRAY(compelem,varindxs);
     case (compelem::{},BackendDAE.COMPLEX_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
       equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);        
+        varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLECOMPLEXEQUATION(compelem,varindxs);
     case (compelem::{},BackendDAE.WHEN_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
       equation
-        varindxs = List.map(var_varindx_lst,Util.tuple22);        
+        varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEWHENEQUATION(compelem,varindxs);                
     case (compelem::{},_,(_,v)::{},_,_,_,ass2,false)
