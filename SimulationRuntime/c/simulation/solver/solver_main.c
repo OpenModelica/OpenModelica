@@ -207,6 +207,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
   }
   storePreValues(data);
+  storeRelations(data);
 
   /*determined discrete system */
   if(checkForNewEvent(data, solverInfo.eventLst)){
@@ -214,10 +215,13 @@ int solver_main(DATA* data, const char* init_initMethod,
   }else{
     updateDiscreteSystem(data);
   }
-  saveZeroCrossings(data);
   storePreValues(data);
   storeOldValues(data);
   function_storeDelayed(data);
+  function_updateRelations(data,1);
+  storeRelations(data);
+  updateHysteresis(data);
+  saveZeroCrossings(data);
   sim_result_emit(data);
   overwriteOldSimulationData(data);
 
@@ -299,7 +303,9 @@ int solver_main(DATA* data, const char* init_initMethod,
     retValIntegrator = solver_main_step(flag, data, &solverInfo);
     updateContinuousSystem(data);
     saveZeroCrossings(data);
+
     RELEASE(LOG_SOLVER);
+
 
 
     /******** Event handling ********/
@@ -314,13 +320,22 @@ int solver_main(DATA* data, const char* init_initMethod,
       }else{
         sim_result_emit(data);
       }
+
     }
 
     if (checkStateorSampleEvent(data, solverInfo.eventLst, &(solverInfo.currentTime))){
+      if (DEBUG_STREAM(LOG_DEBUG))
+        printAllVars(data, 0);
+
+      if (DEBUG_STREAM(LOG_EVENTS))
+        printHysteresisRelations(data);
 
       handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
 
       INFO1(LOG_SOLVER," ### State event occurs at time: %.5f", solverInfo.currentTime);
+
+      if (DEBUG_STREAM(LOG_EVENTS))
+        printHysteresisRelations(data);
 
       solverInfo.stateEvents++;
       solverInfo.didEventStep = 1;
@@ -330,6 +345,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     } else if (simInfo->sampleActivated) {
 
       handleSampleEvent(data);
+
       INFO1(LOG_SOLVER," ### Sample event occurs at time: %.5f", solverInfo.currentTime);
 
       solverInfo.sampleEvents++;
@@ -341,6 +357,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     } else {
       solverInfo.laststep = solverInfo.currentTime;
       solverInfo.didEventStep = 0;
+
     }
     if (measure_time_flag)
       rt_accumulate(SIM_TIMER_EVENT);
@@ -350,8 +367,8 @@ int solver_main(DATA* data, const char* init_initMethod,
     /******** Emit this time step ********/
     storePreValues(data);
     storeOldValues(data);
-
     saveZeroCrossings(data);
+
 
     if (fmt) {
       int flag = 1;

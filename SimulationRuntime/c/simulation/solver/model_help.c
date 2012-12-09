@@ -58,6 +58,9 @@ void updateDiscreteSystem(DATA *data)
   modelica_boolean relationChanged = 0;
   data->simulationInfo.needToIterate = 0;
 
+  function_updateRelations(data, 1);
+  storeRelations(data);
+  updateHysteresis(data);
   if (DEBUG_STREAM(LOG_EVENTS))
     printRelations(data);
 
@@ -92,6 +95,7 @@ void updateDiscreteSystem(DATA *data)
     relationChanged = checkRelations(data);
     discreteChanged = checkForDiscreteChanges(data);
   }
+  updateHysteresis(data);
 }
 
 
@@ -205,6 +209,8 @@ void printAllVars(DATA *data, int ringSegment)
   {
     INFO3(LOG_STDOUT, "%ld: %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
   }
+  RELEASE(LOG_STDOUT);
+
   RELEASE(LOG_STDOUT);
 }
 
@@ -518,6 +524,66 @@ void resetAllHelpVars(DATA *data)
   }
 }
 
+/*! \fn printHysteresisRelations
+ *
+ *
+ *  \param [out] [data]
+ *
+ *  \author wbraun
+ */
+void printHysteresisRelations(DATA *data)
+{
+  long i;
+
+  INFO(LOG_STDOUT, "Status of hysteresisEnabled:");
+  INDENT(LOG_STDOUT);
+  for(i=0; i<data->modelData.nRelations; i++)
+  {
+    INFO5(LOG_STDOUT, "[%ld] %s = %c | relation(%s) = %c", i, relationDescription[i], data->simulationInfo.hysteresisEnabled[i]>0 ? 'T' : 'F', relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F');
+  }
+  RELEASE(LOG_STDOUT);
+}
+
+/*! \fn activateHysteresis
+ *
+ *
+ *  \param [out] [data]
+ *
+ *  \author wbraun
+ */
+void activateHysteresis(DATA* data){
+
+  int i;
+
+  MODEL_DATA      *mData = &(data->modelData);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+
+  for(i=0;i<mData->nRelations;++i){
+    sInfo->hysteresisEnabled[i] = sInfo->relations[i]?0:1;
+  }
+}
+
+/*! \fn updateHysteresis
+ *
+ *
+ *  \param [out] [data]
+ *
+ *  \author wbraun
+ */
+void updateHysteresis(DATA* data){
+
+  int i;
+
+  MODEL_DATA      *mData = &(data->modelData);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+
+  for(i=0;i<mData->nRelations;++i){
+    sInfo->hysteresisEnabled[i] = sInfo->relations[i]?1:0;
+  }
+}
+
+
+
 /*! \fn getNextSampleTimeFMU
  *
  *  function return next sample time.
@@ -600,7 +666,7 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.zeroCrossingsPre = (modelica_real*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_real));
   data->simulationInfo.relations = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
   data->simulationInfo.relationsPre = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
-  data->simulationInfo.zeroCrossingEnabled = (modelica_boolean*) calloc(data->modelData.nZeroCrossings, sizeof(modelica_boolean));
+  data->simulationInfo.hysteresisEnabled = (modelica_boolean*) calloc(data->modelData.nRelations, sizeof(modelica_boolean));
   data->simulationInfo.zeroCrossingIndex = (long*) malloc(data->modelData.nZeroCrossings*sizeof(long));
   data->simulationInfo.mathEventsValuePre = (modelica_real*) malloc(data->modelData.nMathEvents*sizeof(modelica_real));
   /* initialize zeroCrossingsIndex with corresponding index is used by events lists */
@@ -747,7 +813,8 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo.zeroCrossings);
   free(data->simulationInfo.zeroCrossingsPre);
   free(data->simulationInfo.relations);
-  free(data->simulationInfo.zeroCrossingEnabled);
+  free(data->simulationInfo.relationsPre);
+  free(data->simulationInfo.hysteresisEnabled);
   free(data->simulationInfo.zeroCrossingIndex);
 
   /* free buffer for old state variables */
@@ -805,10 +872,10 @@ static const double tolZC = 1e-10;
 modelica_boolean LessZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
-  double eps = (direction) ? tolZC*fabs(b)+tolZC: tolZC*fabs(a)+tolZC;
-  INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)",a, b, (a < b)?'t':'f' , direction?'t':'f');
+  double eps = (direction)? tolZC*fabs(b)+tolZC : tolZC*fabs(a)+tolZC;
+  /*INFO4(LOG_EVENTS, "Relation LESS:  %.20e < %.20e = %c (%c)",a, b, (a < b)?'t':'f' , direction?'t':'f');*/
   retVal = (direction)? (a < b + eps):(a + eps < b);
-  INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');
+  /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');*/
   return retVal;
 }
 
@@ -820,10 +887,10 @@ modelica_boolean LessEqZC(double a, double b, modelica_boolean direction)
 modelica_boolean GreaterZC(double a, double b, modelica_boolean direction)
 {
   modelica_boolean retVal;
-  double eps = (direction) ? tolZC*fabs(a)+tolZC: tolZC*fabs(b)+tolZC;
-  INFO4(LOG_EVENTS, "Relation GREATER:  %.20e > %.20e = %c (%c)",a, b, (a > b)?'t':'f' , direction?'t':'f');
+  double eps = (direction)? tolZC*fabs(a)+tolZC : tolZC*fabs(b)+tolZC;
+  /*INFO4(LOG_EVENTS, "Relation GREATER:  %.20e > %.20e = %c (%c)",a, b, (a > b)?'t':'f' , direction?'t':'f');*/
   retVal = (direction)? (a + eps > b ):(a  > b + eps);
-  INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');
+  /*INFO1(LOG_EVENTS, "Result := %c", retVal?'t':'f');*/
   return retVal;
 }
 

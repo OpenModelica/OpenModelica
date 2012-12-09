@@ -487,26 +487,12 @@ int handleStateEvent(DATA* data, LIST* eventLst, double *eventTime)
     if (listNextNode(it) != NULL) {
       INFO(LOG_EVENTS, ", ");
     }
-
-    /* switch the direction of ZeroCrossing */
-    if (data->simulationInfo.zeroCrossingEnabled[event_id] == -1) {
-      data->simulationInfo.zeroCrossingEnabled[event_id] = 1;
-    } else if (data->simulationInfo.zeroCrossingEnabled[event_id] == 1) {
-      data->simulationInfo.zeroCrossingEnabled[event_id] = -1;
-    }
   }
   listClear(eventLst);
   INFO(LOG_EVENTS, "\n");
 
   /* update the whole system */
   updateDiscreteSystem(data);
-
-  /* update relations after an event */
-  /*
-  storePreValues(data);
-  function_updateRelations(data, 0);
-  storeRelations(data);
-  */
 
   saveZeroCrossingsAfterEvent(data);
 
@@ -539,13 +525,6 @@ int handleSampleEvent(DATA* data)
 
   deactivateSampleEventsandEquations(data);
   INFO1(LOG_EVENTS, "event Handling for Sample : %f done!", data->localData[0]->timeValue);
-
-  /* update relations after an event */
-  /*
-  storePreValues(data);
-  function_updateRelations(data, 0);
-  storeRelations(data);
-  */
 
   saveZeroCrossingsAfterEvent(data);
 

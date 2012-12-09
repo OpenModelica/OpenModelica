@@ -4376,18 +4376,20 @@ algorithm
         
     case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE(),helpVarIndices=li, source = source)) :: xs),_, extraArg, _)
       equation
-        ((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);
+        /* wbraun: statemenents inside when equations can't contain zero-crossings*/
+        /*((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);*/
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
-      then ((DAE.STMT_WHEN(e_1,stmts2,NONE(),li,source) :: xs_1,extraArg));
+      then ((DAE.STMT_WHEN(e_1,stmts,NONE(),li,source) :: xs_1,extraArg));
         
     case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),_, extraArg, _)
       equation
         (({ew_1}, extraArg)) = traverseStmtsExps({ew},func, extraArg, knvars);
-        ((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);
+        /* wbraun: statemenents inside when equations can't contain zero-crossings*/
+        /*((stmts2, extraArg)) = traverseStmtsExps(stmts,func, extraArg, knvars);*/
         ((e_1,extraArg)) = Expression.traverseExpTopDown(e, func, extraArg);
         ((xs_1, extraArg)) = traverseStmtsExps(xs, func, extraArg, knvars);
-      then ((DAE.STMT_WHEN(e_1,stmts2,SOME(ew),li,source) :: xs_1,extraArg));
+      then ((DAE.STMT_WHEN(e_1,stmts,SOME(ew_1),li,source) :: xs_1,extraArg));
         
     case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, source = source)) :: xs),_, extraArg, _)
       equation

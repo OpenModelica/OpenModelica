@@ -56,14 +56,24 @@ extern "C" {
 
 #define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) { \
   if (data->simulationInfo.discreteCall == 0){ \
-    res = data->simulationInfo.relationsPre[index]; \
-  } else{ \
-    if (data->simulationInfo.solveContinuous){ \
       res = data->simulationInfo.relationsPre[index]; \
-      data->simulationInfo.relations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.relationsPre[index])); \
+  } else{ \
+    if (data->simulationInfo.initial){\
+      if (data->simulationInfo.solveContinuous){ \
+        res = data->simulationInfo.relationsPre[index]; \
+        data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
+      } else { \
+        res = ((op_w)((exp1),(exp2))); \
+        data->simulationInfo.relations[index] = res; \
+      }\
     } else { \
-      res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.relationsPre[index])); \
-      data->simulationInfo.relations[index] = res; \
+      if (data->simulationInfo.solveContinuous){ \
+        res = data->simulationInfo.relationsPre[index]; \
+        data->simulationInfo.relations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
+      } else { \
+        res = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
+        data->simulationInfo.relations[index] = res; \
+      }\
     }\
   }\
 }
@@ -99,6 +109,9 @@ void storeRelations(DATA *data);
 modelica_boolean checkRelations(DATA *data);
 
 void resetAllHelpVars(DATA* data);
+void printHysteresisRelations(DATA *data);
+void activateHysteresis(DATA* data);
+void updateHysteresis(DATA* data);
 
 double getNextSampleTimeFMU(DATA *data);
 

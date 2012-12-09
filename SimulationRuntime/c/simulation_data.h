@@ -355,7 +355,7 @@
     modelica_real* zeroCrossingsPre;
     modelica_boolean* relations;
     modelica_boolean* relationsPre;
-    modelica_boolean* zeroCrossingEnabled;
+    modelica_boolean* hysteresisEnabled;
     modelica_real* mathEventsValuePre;
     long* zeroCrossingIndex;               /* pointer for a list events at event instants */
 
