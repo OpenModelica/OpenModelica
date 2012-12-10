@@ -1253,7 +1253,7 @@ algorithm
     case (var as BackendDAE.VAR(bindValue = SOME(_)), _, _, _)
       equation
         print("*** Not Ceval.eval var: ");
-        BackendDump.dumpVars({var});
+        BackendDump.printVar(var);
         print("\n");
       then
         var;      
@@ -3799,7 +3799,10 @@ algorithm
         res = incidenceRowExp1(varslst,p,pa,false);
       then
         ((e,false,(vars,res)));
-        
+
+    // lochel: internally generated call start(v) depends not on v
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "$_start")), (vars, pa))) then ((e, false, (vars, pa)));
+    
     /* pre(v) is considered a known variable */
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,pa)))) then ((e,false,(vars,pa)));
     

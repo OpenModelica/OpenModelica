@@ -1144,8 +1144,7 @@ algorithm
         fail();
     else
       equation
-        msg = "BackendDAETransform.analyseStrongComponentBlock failed";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAETransform.mo: function analyseStrongComponentBlock failed"});
       then
         fail();          
   end matchcontinue;  
@@ -1494,7 +1493,7 @@ algorithm
     then (contEqnLst,contVarLst,discEqnLst,discVarLst,indxcontEqnLst,indxcontVarLst,indxdiscEqnLst,indxdiscVarLst);
     case (_,_,_,_) 
       equation
-        BackendDump.dumpVars(varLst);        
+        BackendDump.printVarList(varLst);        
         BackendDump.dumpEqns(eqnLst);      
     then fail();
   end matchcontinue;  

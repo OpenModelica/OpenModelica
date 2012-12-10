@@ -312,7 +312,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
         Debug.fcall(Flags.BLT_DUMP, print, "unassgined states:\n");
         varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,BackendVariable.daeVars(isyst));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList,varlst);
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction1 failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
@@ -1024,7 +1024,7 @@ algorithm
         // change varKind
         varlst = List.map1r(statesWithUnusedDer,BackendVariable.getVarAt,v);
         Debug.fcall(Flags.BLT_DUMP, print, "Change varKind to algebraic for\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
         varlst = BackendVariable.setVarsKind(varlst,BackendDAE.VARIABLE());
         v1 = BackendVariable.addVars(varlst,v);
         // update IncidenceMatrix
@@ -1042,7 +1042,7 @@ algorithm
         varlst = BackendEquation.equationsLstVars(notDiffedEquations,v);
         varlst = List.select(varlst,BackendVariable.isStateVar);
         Debug.fcall(Flags.BLT_DUMP, print, "state vars of undiffed Eqns\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
         
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAss1,inAss2,{})); 
         dumpSystemGraphML(syst,ishared,NONE(),"test.graphml");      
@@ -1058,12 +1058,12 @@ algorithm
         var = BackendVariable.getVarAt(v,i);
         varlst = {var};
         Debug.fcall(Flags.BLT_DUMP, print, "Change varKind to algebraic for\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
         varlst = BackendVariable.setVarsKind(varlst,BackendDAE.VARIABLE());
         v1 = BackendVariable.addVars(varlst,v);
         varlst = List.map1r(ilst,BackendVariable.getVarAt,v);
         Debug.fcall(Flags.BLT_DUMP, print, "Other Candidates are\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
         // update IncidenceMatrix
         eqnslst1 = BackendDAETransform.collectVarEqns({i},{},mt,arrayLength(mt));
         syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching);
@@ -1077,7 +1077,7 @@ algorithm
       equation
         varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,v);
         Debug.fcall(Flags.BLT_DUMP, print, "unassignedStates\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
       then
         fail();   
   end matchcontinue;
@@ -1844,7 +1844,7 @@ algorithm
         // get highest order derivatives
         varlst = highestOrderDerivatives(BackendVariable.daeVars(isyst),so);
         Debug.fcall(Flags.BLT_DUMP, print, "highest Order Derivatives:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars, varlst);       
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);       
         (dummystates,syst,shared) = processComps1New(inComps,isyst,ishared,vec2,inArg,varlst,inDummyStates);
       then
         (dummystates,syst,shared);       
@@ -1855,7 +1855,7 @@ algorithm
         varlst = highestOrderDerivatives(BackendVariable.daeVars(isyst),so);
         hov = BackendVariable.listVar1(varlst);
         Debug.fcall(Flags.BLT_DUMP, print, "highest Order Derivatives:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, hov);        
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, hov);        
         (dummystates,syst,shared) = processComps1(inComps,isyst,ishared,vec2,inArg,hov,inDummyStates);
       then
         (dummystates,syst,shared);
@@ -2401,14 +2401,14 @@ algorithm
         crlst = BackendVariable.getAllCrefFromVariables(vars);
         vars = BackendVariable.deleteCrefs(crlst,cvars);
         Debug.fcall(Flags.BLT_DUMP, print,"Vars:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray,vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables,vars);
         // select dummy derivatives
         eqns = BackendEquation.listEquation(eqnslst);
         (hov_1,dummyStates,lov,syst,shared) = selectDummyDerivatives(vars,BackendVariable.numVariables(vars),eqns,BackendDAEUtil.equationSize(eqns),eqnindxlst,hov_1,dummyStates,syst,shared,so,BackendVariable.emptyVars());
         // get derivatives 
         (lov,dummyStates) = higerOrderDerivatives(lov,BackendVariable.daeVars(isyst),so,dummyStates);
         Debug.fcall(Flags.BLT_DUMP, print,"HigerOrderVars:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray,lov);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables,lov);
       then
         (hov_1,dummyStates,lov,syst,shared); 
   end matchcontinue;
@@ -2496,7 +2496,7 @@ algorithm
       equation
         // if there is only one var select it because there is no choice
         Debug.fcall(Flags.BLT_DUMP, print, "single var and eqn\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, vars);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
         v = BackendVariable.getVarAt(vars,1);
         cr = BackendVariable.varCref(v);
@@ -2511,11 +2511,11 @@ algorithm
         true = intGt(varSize,1);
         true = intEq(eqnsSize,varSize);
         Debug.fcall(Flags.BLT_DUMP, print, "equal var and eqn size\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, vars);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
         varlst = BackendVariable.varList(vars);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList,varlst);
         (hov1,lov,dummystates) = selectDummyStateVars(varlst,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared); 
@@ -2529,12 +2529,12 @@ algorithm
         dummyvarssize = listLength(varlst);
         true = intEq(eqnsSize,dummyvarssize);
         Debug.fcall(Flags.BLT_DUMP, print, "select dummy vars from stateselection\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, vars);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,dummyvarssize));
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVars,varlst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList,varlst);
         (hov1,lov,dummystates) = selectDummyStateVars(varlst,vars,hov,inLov,inDummyStates);
       then
         (hov1,dummystates,lov,isyst,ishared); 
@@ -2582,7 +2582,7 @@ algorithm
         true = intGt(varSize,1);
         true = intGt(eqnsSize,varSize);
         print("Structural singular system:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpVarsArray, vars);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, vars);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
       then
         fail();
@@ -2689,10 +2689,10 @@ algorithm
   prio4 := varStateSelectHeuristicPrio4(v,so,vars);
   prio5 := varStateSelectHeuristicPrio5(v);
   prio:= prio1 +. prio2 +. prio3 +. prio4 +. prio5;
-  dumpvarStateSelectHeuristicPrio(prio1,prio2,prio3,prio4,prio5);
+  printVarListtateSelectHeuristicPrio(prio1,prio2,prio3,prio4,prio5);
 end varStateSelectHeuristicPrio;
 
-protected function dumpvarStateSelectHeuristicPrio
+protected function printVarListtateSelectHeuristicPrio
   input Real Prio1;
   input Real Prio2;
   input Real Prio3;
@@ -2712,7 +2712,7 @@ algorithm
         ();
     else then ();        
   end matchcontinue;
-end dumpvarStateSelectHeuristicPrio;
+end printVarListtateSelectHeuristicPrio;
 
 protected function varStateSelectHeuristicPrio5
 "function varStateSelectHeuristicPrio5

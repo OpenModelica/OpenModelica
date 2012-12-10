@@ -7051,7 +7051,7 @@ algorithm
         
         // Debug dumping
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpVars,BackendVariable.varList(varswithDiffs));
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.printVarList,BackendVariable.varList(varswithDiffs));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpEqns,BackendEquation.equationList(orderedEqns));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrix,adjMatrix);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrixT,adjMatrixT);
@@ -11965,7 +11965,7 @@ algorithm
         eqnmark = arrayCreate(arrayLength(ass2),false);
         (g0,othercomps1) = getOtherEquationsPointZero(othercomps,vars,eqns,repl,eqnmark,mapIncRowEqn,{},{});
         Debug.fcall(Flags.TEARING_DUMP, print,"k0:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpVars,k0);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.printVarList,k0);
         Debug.fcall(Flags.TEARING_DUMP, print,"g0:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,g0);
         // replace tearing vars with zero and other wars with temp variables to get residual equations for point zero (h(z0,k0)=h0)
@@ -12000,7 +12000,7 @@ algorithm
         pdcr_lst = BackendEquation.equationUnknownCrefs(g,BackendVariable.daeVars(isyst),kvars);
         pdvarlst = List.map(pdcr_lst,makePardialDerVar);
         Debug.fcall(Flags.TEARING_DUMP, print,"PartialDerivatives:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpVars,pdvarlst);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.printVarList,pdvarlst);
         Debug.fcall(Flags.TEARING_DUMP, print,"dh/dz extra:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,g);
         tvarexps = List.map2(tvars,getTVarCrefExps,vars,ishared);

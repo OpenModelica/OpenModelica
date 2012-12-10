@@ -6456,7 +6456,7 @@ algorithm
     case (_, _, _, _, _) equation
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars);
-      Debug.fcall(Flags.SOLVE_INITIAL_SYSTEM, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.\n");
+      Debug.fcall(Flags.SOLVE_INITIAL_SYSTEM, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
     then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation
@@ -7383,7 +7383,6 @@ algorithm
       BackendDAE.Variables extvars;
       BackendDAE.EquationArray ie;
       BackendDAE.Variables aliasVars;
-      list<DAE.ComponentRef> initCrefs;
       BackendDAE.EqSystems systs;
     case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(
       knownVars = knvars, initialEqs=ie,
@@ -7403,9 +7402,6 @@ algorithm
         /* Index of algebraic and parameters need 
          to fix due to separation of int Vars*/
         varsOut = fixIndex(varsOut);
-        /* fix the initial thing */
-        initCrefs = BackendEquation.getAllCrefFromEquations(ie);
-        varsOut = fixInitialThing(varsOut, initCrefs);
       then
         varsOut;
      
@@ -8220,98 +8216,6 @@ algorithm
       then res;
   end match;
 end varIndexComparer;
-
-protected function fixInitialThing
-  input SimCode.SimVars simvarsIn;
-  input list<DAE.ComponentRef> initCrefs;
-  output SimCode.SimVars simvarsOut;
-algorithm
-  simvarsOut :=
-  matchcontinue (simvarsIn, initCrefs)
-    local
-      list<SimCode.SimVar> stateVars;
-      list<SimCode.SimVar> derivativeVars;
-      list<SimCode.SimVar> algVars;
-      list<SimCode.SimVar> intAlgVars;
-      list<SimCode.SimVar> boolAlgVars;
-      list<SimCode.SimVar> inputVars;
-      list<SimCode.SimVar> outputVars;
-      list<SimCode.SimVar> aliasVars;
-      list<SimCode.SimVar> intAliasVars;
-      list<SimCode.SimVar> boolAliasVars;
-      list<SimCode.SimVar> paramVars;
-      list<SimCode.SimVar> intParamVars;
-      list<SimCode.SimVar> boolParamVars;
-      list<SimCode.SimVar> stringAlgVars;
-      list<SimCode.SimVar> stringParamVars;
-      list<SimCode.SimVar> stringAliasVars;
-      list<SimCode.SimVar> extObjVars;
-      list<SimCode.SimVar> constVars;
-      list<SimCode.SimVar> intConstVars;
-      list<SimCode.SimVar> boolConstVars;
-      list<SimCode.SimVar> stringConstVars;
-      /* no initial equations so nothing to do */
-    case (_, {}) then simvarsIn;
-    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
-      outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
-      stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars), _)
-      equation
-        true = List.mapAllValueBool(stateVars, simvarFixed,true);
-        stateVars = List.map1(stateVars, nonFixifyIfHasInit, initCrefs);
-      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
-        outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
-        stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars);
-      /* not all were fixed so nothing to do */
-    else simvarsIn;
-  end matchcontinue;
-end fixInitialThing;
-
-protected function simvarFixed
-  input SimCode.SimVar simvar;
-  output Boolean fixed_;
-algorithm
-  fixed_ :=
-  match (simvar)
-    case (SimCode.SIMVAR(isFixed=fixed_)) then fixed_;
-    case (_) then fail();
-  end match;
-end simvarFixed;
-
-protected function nonFixifyIfHasInit
-  input SimCode.SimVar simvarIn;
-  input list<DAE.ComponentRef> initCrefs;
-  output SimCode.SimVar simvarOut;
-algorithm
-  simvarOut :=
-  matchcontinue (simvarIn, initCrefs)
-    local
-      DAE.ComponentRef name;
-      BackendDAE.VarKind kind;
-      String comment, unit, displayUnit;
-      Integer index;
-      Option<DAE.Exp> minVal, maxVal;
-      Option<DAE.Exp> initVal, nomVal;
-      Boolean isFixed;
-      DAE.Type type_;
-      Boolean isDiscrete;
-      Option<DAE.ComponentRef> arrayCref;
-      SimCode.AliasVariable aliasvar;
-      String varNameStr;
-      DAE.ElementSource source;
-      Absyn.Info info;
-      SimCode.Causality causality;
-      list<String> numArrayElement;
-    case (SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, isFixed, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement), _)
-      equation
-        (_ :: _) = List.select1(initCrefs, ComponentReference.crefEqualNoStringCompare, name);
-        varNameStr = ComponentReference.printComponentRefStr(name);
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr}, info);
-      then SimCode.SIMVAR(name, kind, comment, unit, displayUnit, index, minVal, maxVal, initVal, nomVal, false, type_, isDiscrete, arrayCref, aliasvar, source, causality,NONE(),numArrayElement);
-    case (_, _) then simvarIn;
-  end matchcontinue;
-end nonFixifyIfHasInit;
-
 
 protected function createCrefToSimVarHT
   input SimCode.ModelInfo modelInfo;

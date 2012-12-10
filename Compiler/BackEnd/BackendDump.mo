@@ -77,12 +77,38 @@ protected import Util;
 // These are functions, that print directly to the standard-stream.
 // =============================================================================
 
+public function printVariables "function printVariables
+  Helper function to dump."
+  input BackendDAE.Variables vars;
+algorithm
+  _ := List.fold(BackendVariable.varList(vars), printVars1, 1);
+end printVariables;
+
+public function printVarList "function printVarList
+  Helper function to dump."
+  input list<BackendDAE.Var> vars;
+algorithm
+  _ := List.fold(vars, printVars1, 1);
+end printVarList;
+
 public function printVar "function printVar
   "
   input BackendDAE.Var inVar;
 algorithm
   print(varString(inVar) +& "\n");
 end printVar;
+
+protected function printVars1 "function printVars1 
+  Helper function to printVariables and printVarList"
+  input BackendDAE.Var inVar;
+  input Integer inVarNo;
+  output Integer outVarNo;
+algorithm
+  print(intString(inVarNo));
+  print(": ");
+  printVar(inVar);
+  outVarNo := inVarNo + 1;
+end printVars1;
 
 public function printEquation "function printEquation
   author: PA
@@ -166,6 +192,15 @@ end printEquationNo;
 // there output (e.g. with some kind of headings).
 // =============================================================================
 
+public function dumpVariables "function dumpVariables"
+  input BackendDAE.Variables inVars;
+  input String heading;
+algorithm
+  print("\n" +& heading +& "\n========================================\n");
+  printVariables(inVars);
+  print("\n");
+end dumpVariables;
+
 public function dumpBackendDAE "function dumpBackendDAE
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
@@ -220,7 +255,7 @@ algorithm
   print(varlen_str);
   print(")\n");
   print("=========\n");
-  dumpVars(vars);
+  printVarList(vars);
   print("\n");        
   print("\nEquations (");
   eqnsl := BackendEquation.equationList(eqns);
@@ -275,7 +310,7 @@ algorithm
         print(varlen_str);
         print(")\n");
         print("=============================\n");
-        dumpVars(knvars);
+        printVarList(knvars);
         print("External Objects (");
         extvars = BackendVariable.varList(vars3);
         varlen = listLength(extvars);
@@ -283,7 +318,7 @@ algorithm
         print(varlen_str);
         print(")\n");
         print("=============================\n");
-        dumpVars(extvars);
+        printVarList(extvars);
 
         print("Classes of External Objects (");
         varlen = listLength(extObjCls);
@@ -531,7 +566,7 @@ public function dumpBackendDAEVarList
   input String header;
 algorithm
    print(header +& "\n");
-   dumpVars(inBackendDAEVarList);
+   printVarList(inBackendDAEVarList);
    print("===================\n");
 end dumpBackendDAEVarList;
 
@@ -604,7 +639,7 @@ algorithm
       equation
         print("SingleEquation: " +& intString(e) +& "\n");
         var = BackendVariable.getVarAt(vars,v);
-        dumpVars({var});
+        printVarList({var});
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
         dumpEqns({eqn}); 
         dumpEqnsSolved2(rest,eqns,vars);
@@ -614,7 +649,7 @@ algorithm
       equation
         print("Mixed EquationSystem:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        dumpVars(varlst);
+        printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
         dumpEqns(eqnlst);        
         dumpEqnsSolved2({comp},eqns,vars);
@@ -625,7 +660,7 @@ algorithm
       equation
         print("Equationsystem " +& jacobianTypeStr(jacType) +& ":\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        dumpVars(varlst);
+        printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
         dumpEqns(eqnlst);
         dumpEqnsSolved2(rest,eqns,vars);
@@ -635,7 +670,7 @@ algorithm
       equation
         print("ArrayEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        dumpVars(varlst);
+        printVarList(varlst);
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
         dumpEqns({eqn}); 
         dumpEqnsSolved2(rest,eqns,vars);
@@ -645,7 +680,7 @@ algorithm
       equation
         print("Algorithm:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        dumpVars(varlst);
+        printVarList(varlst);
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
         dumpEqns({eqn});  
         dumpEqnsSolved2(rest,eqns,vars);
@@ -655,7 +690,7 @@ algorithm
       equation
         print("ComplexEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        dumpVars(varlst);
+        printVarList(varlst);
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
         dumpEqns({eqn});    
         dumpEqnsSolved2(rest,eqns,vars);
@@ -665,7 +700,7 @@ algorithm
       equation
         print("WhenEquation:\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        dumpVars(varlst);
+        printVarList(varlst);
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
         dumpEqns({eqn});    
         dumpEqnsSolved2(rest,eqns,vars);
@@ -678,9 +713,9 @@ algorithm
         vlst1 = List.flatten(List.map(eqnsvartpllst,Util.tuple22));
         elst1 = List.map(eqnsvartpllst,Util.tuple21);
         varlst = List.map1r(vlst1, BackendVariable.getVarAt, vars);
-        dumpVars(varlst);
+        printVarList(varlst);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
-        dumpVars(varlst);
+        printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst1,eqns); 
         dumpEqns(eqnlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
@@ -1766,7 +1801,7 @@ algorithm
   vars := BackendVariable.varList(vars1);
   varlen_str := "Variables (" +& intString(listLength(vars)) +& ")";
   tags := DumpHTML.addHeadingTag(2,varlen_str,{});
-  tags := dumpVarsHTML(vars,prefixId,tags);
+  tags := printVarListHTML(vars,prefixId,tags);
   eqnsl := BackendEquation.equationList(eqns);
   eqnlen_str := "Equations (" +& intString(listLength(eqnsl)) +& "," +& intString(BackendDAEUtil.equationSize(eqns)) +& ")";
   tags := DumpHTML.addHeadingTag(2,eqnlen_str,tags);
@@ -1781,9 +1816,9 @@ algorithm
   outTpl := (doc,i+1);
 end dumpEqSystemHTML;
 
-protected function dumpVarsHTML
-"function: dumpVarsHTML
-  Helper function to dumpVars."
+protected function printVarListHTML
+"function: printVarListHTML
+  Helper function to printVarList."
   input list<BackendDAE.Var> vars;
   input String prefixId;
   input DumpHTML.Tags inTags;
@@ -1794,11 +1829,11 @@ algorithm
   ((tags,_)) := List.fold1(vars,dumpVarHTML,prefixId,({},1));
   outTags := DumpHTML.addHyperLinkTag("javascript:toggle('" +& prefixId +& "variables')","Variablen einblenden","Variablen ein/ausblenden",inTags);
   outTags := DumpHTML.addDivisionTag(prefixId +& "variables",{("background","#FFFFCC"),("display","none")},tags,outTags);
-end dumpVarsHTML;
+end printVarListHTML;
 
 protected function dumpVarHTML
 "function: dumpVar
-  Helper function to dumpVars."
+  Helper function to printVarList."
   input BackendDAE.Var inVar;
   input String prefixId;
   input tuple<DumpHTML.Tags,Integer> inTpl;
@@ -1818,8 +1853,8 @@ algorithm
 end dumpVarHTML;
 
 protected function dumpEqnsHTML
-"function: dumpVarsHTML
-  Helper function to dumpVars."
+"function: printVarListHTML
+  Helper function to printVarList."
   input list<BackendDAE.Equation> eqns;
   input String prefixId;
   input DumpHTML.Tags inTags;
@@ -2196,36 +2231,8 @@ algorithm
   end match;
 end dumpExtObjCls;
 
-public function dumpVarsArray "function dumpVarsArray
-  Helper function to dump."
-  input BackendDAE.Variables vars;
-algorithm
-  _ := List.fold(BackendVariable.varList(vars), dumpVar, 1);
-end dumpVarsArray;
-
-public function dumpVars
-"function: dumpVars
-  Helper function to dump."
-  input list<BackendDAE.Var> vars;
-algorithm
-  _ := List.fold(vars,dumpVar,1);
-end dumpVars;
-
-protected function dumpVar "function dumpVar 
-  Helper function to dumpVars."
-  input BackendDAE.Var inVar;
-  input Integer inVarNo;
-  output Integer outVarNo;
-algorithm
-  print(intString(inVarNo));
-  print(": ");
-  print(varString(inVar));
-  print("\n");
-  outVarNo := inVarNo + 1;
-end dumpVar;
-
 public function varString "function varString
-  Helper function to dumpVars."
+  Helper function to printVarList."
   input BackendDAE.Var inVar;
   output String outStr;
 protected
@@ -3049,7 +3056,7 @@ algorithm
   print("AliasVariables: ");
   print(sl);
   print("\n===============\n");
-  dumpVars(vars);
+  printVarList(vars);
   print("\n");
 end dumpAliasVariables;
 

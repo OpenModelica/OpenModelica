@@ -75,9 +75,7 @@ algorithm
   dae := inlineWhenForInitialization(inDAE);
   
   initVars := selectInitializationVariablesDAE(dae);
-  Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\nselected initialization variables\n=================================\n");
-  Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVarsArray, initVars);
-  Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n");
+  Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
 
   outInitDAE := solveInitialSystem1(dae, initVars);
 end solveInitialSystem;
@@ -511,8 +509,7 @@ protected
   BackendDAE.IncidenceMatrix m, mt;
 algorithm
   (system, m, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL());
-  // fallback - should be removed soon
-  system := analyzeInitialSystem1(system, mt, 1);                 // fix discrete vars to get rid of unneeded pre-vars
+  // system := analyzeInitialSystem1(system, mt, 1);                 // fix discrete vars to get rid of unneeded pre-vars
   system := analyzeInitialSystem2(system, inDAE, inInitVars);     // fix unbalanced initial system if it is definite
   (outSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(system, BackendDAE.NORMAL());
 end analyzeInitialSystem;
@@ -676,25 +673,6 @@ algorithm
       eqns = addStartValueEquations(states, eqns);
     then (true, inVars, eqns);
     
-    // fallback - should be removed soon
-    // fix all states
-    case(_, _, eqns, _) equation
-      (dae, outputs) = BackendDAEOptimize.generateInitialMatricesDAE(inDAE);
-            
-      BackendDAE.DAE(eqs=systs) = inDAE;
-      ivars = BackendVariable.emptyVars();
-      ivars = List.fold(systs, collectUnfixedStatesFromSystem, ivars);
-      states = BackendVariable.varList(ivars);
-
-      nStates = BackendVariable.varsSize(ivars);
-      nVars = BackendVariable.varsSize(inVars);
-      nEqns = BackendDAEUtil.equationSize(eqns);
-      true = intEq(nVars, nEqns+nStates);
-      
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " states:");
-      eqns = addStartValueEquations(states, eqns);
-    then (true, inVars, eqns);
-    
     // fix a subset of unfixed variables
     case(_, _, eqns, _) equation
       (dae, outputs) = BackendDAEOptimize.generateInitialMatricesDAE(inDAE);
@@ -720,72 +698,11 @@ algorithm
       eqns = addStartValueEquations1(someStates, eqns);
     then (true, inVars, eqns);
     
-    // fallback - should be removed soon
-    // fix a subset of unfixed states
-    case(_, _, eqns, _) equation
-      (dae, outputs) = BackendDAEOptimize.generateInitialMatricesDAE(inDAE);
-      
-      BackendDAE.DAE(eqs=systs) = inDAE;
-      ivars = BackendVariable.emptyVars();
-      ivars = List.fold(systs, collectUnfixedStatesFromSystem, ivars);
-      states = BackendVariable.varList(ivars);
-
-      nVars = BackendVariable.varsSize(inVars);
-      nEqns = BackendDAEUtil.equationSize(eqns);
-      true = intLt(nEqns, nVars);
-      
-      (sparsityPattern, _) = BackendDAEOptimize.generateSparsePattern(dae, states, outputs);
-      (dep, _) = sparsityPattern;
-      someStates = collectIndependentVars(dep, {});
-      
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\ninitial equations ($res1 ... $resN) with respect to states\n");
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpSparsityPattern, sparsityPattern);
-      
-      true = intEq(nVars-nEqns, listLength(someStates));  // fix only if it is definite
-      
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
-      eqns = addStartValueEquations1(someStates, eqns);
-    then (true, inVars, eqns);
-    
     else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"It is not possible to determine unique which additional conditions can be added to the initial system by auto-fixed variables."});
+      Error.addMessage(Error.INTERNAL_ERROR, {"It is not possible to determine unique which additional initial conditions should be added by auto-fixed variables."});
     then (false, inVars, inEqns);
   end matchcontinue;
 end fixUnderDeterminedInitialSystem;
-
-// fallback - should be removed soon
-protected function collectUnfixedStatesFromSystem
-  input BackendDAE.EqSystem isyst;
-  input BackendDAE.Variables inVars;
-  output BackendDAE.Variables outVars;
-protected
-  BackendDAE.Variables vars;
-algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars) := isyst;
-  outVars := BackendVariable.traverseBackendDAEVars(vars, collectUnfixedStates, inVars);
-end collectUnfixedStatesFromSystem;
-
-// fallback - should be removed soon
-protected function collectUnfixedStates
-  input tuple<BackendDAE.Var, BackendDAE.Variables> inTpl;
-  output tuple<BackendDAE.Var, BackendDAE.Variables> outTpl;
-algorithm
-  outTpl := matchcontinue(inTpl)
-    local
-      BackendDAE.Var var;
-      BackendDAE.Variables vars;
-      DAE.ComponentRef cr, preCR;
-    
-    // state
-    case((var as BackendDAE.VAR(varKind=BackendDAE.STATE()), vars)) equation
-      false = BackendVariable.varFixed(var);
-      vars = BackendVariable.addVar(var, vars);
-    then ((var, vars));
-    
-    else
-    then inTpl;
-  end matchcontinue;
-end collectUnfixedStates;
 
 protected function collectIndependentVars "protected function collectIndependentVars
   author lochel"
