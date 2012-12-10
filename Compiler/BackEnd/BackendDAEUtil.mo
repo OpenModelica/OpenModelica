@@ -8435,8 +8435,8 @@ protected
   list<String> strPreOptModules;
 algorithm
   allPreOptModules := {
-//          (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquations",false),
           (RemoveSimpleEquations.fastAcausal,"removeSimpleEquations",false),
+          (RemoveSimpleEquations.allAcausal,"removeAllSimpleEquations",false),
           (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
           (BackendDAEOptimize.evaluateFinalParameters,"evaluateFinalParameters",false),
           (BackendDAEOptimize.evaluateParameters,"evaluateParameters",false),
@@ -8474,8 +8474,8 @@ protected
   list<String> strPastOptModules;
 algorithm
   allPastOptModules := {(BackendDAEOptimize.lateInlineFunction,"lateInlineFunction",false),
-  (BackendDAEOptimize.removeSimpleEquationsPast,"removeSimpleEquations",false),
-  (BackendDAEOptimize.removeSimpleEquationsFast,"removeSimpleEquationsFast",false),
+  (RemoveSimpleEquations.causal,"removeSimpleEquations",false),
+  (RemoveSimpleEquations.fastAcausal,"removeSimpleEquationsFast",false),
   (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
   (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
   (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
