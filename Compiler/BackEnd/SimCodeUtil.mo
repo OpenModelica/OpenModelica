@@ -6441,7 +6441,7 @@ algorithm
       // generate equations from the removed equations
       ((uniqueEqIndex, removedEquations)) = BackendEquation.traverseBackendDAEEqns(removedEqs, traversedlowEqToSimEqSystem, (uniqueEqIndex, {}));
       allEquations = listAppend(allEquations, removedEquations);
-      // generate equations from the knvown unfixed variables
+      // generate equations from the known unfixed variables
       ((uniqueEqIndex, knvarseqns)) = BackendVariable.traverseBackendDAEVars(knvars, traverseKnVarsToSimEqSystem, (uniqueEqIndex, {}));
       allEquations = listAppend(allEquations, knvarseqns);
       // generate equations from the alias variables

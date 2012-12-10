@@ -371,7 +371,7 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,_))
       equation
         // ({BackendDAE.VAR(varKind = BackendDAE.STATE())},_) = BackendVariable.getVar(cr, timevars);
-      then DAE.CALL(Absyn.IDENT("der"),{e},DAE.callAttrBuiltinReal);
+      then DAE.CALL(Absyn.IDENT("der"),{e},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL()));
 
     // der(sign(x)) -> 0
     case (DAE.CALL(path = Absyn.IDENT("sign"),expLst = {e}),_)
