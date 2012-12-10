@@ -6476,6 +6476,8 @@ case BINARY(__) then
   case MUL_SCALAR_PRODUCT(__) then
     let type = match ty case T_ARRAY(ty=T_INTEGER(__)) then "integer_scalar" 
                         case T_ARRAY(ty=T_ENUMERATION(__)) then "integer_scalar"
+                        case T_INTEGER(__) then "integer_scalar"
+                        case T_ENUMERATION(__) then "integer_scalar"
                         else "real_scalar"
     'mul_<%type%>_product(&<%e1%>, &<%e2%>)'
   case MUL_MATRIX_PRODUCT(__) then
