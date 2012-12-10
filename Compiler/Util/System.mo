@@ -984,9 +984,4 @@ public function numBits
   external "C" n=architecture_numbits() annotation(Include="#define architecture_numbits() (8*sizeof(void*))");
 end numBits;
 
-public function integerMax
-  output Integer n;
-  external "C" n=architecture_intmax() annotation(Include="#define architecture_intmax() ((1L << (8*sizeof(void*)-2))-1)");
-end integerMax;
-
 end System;

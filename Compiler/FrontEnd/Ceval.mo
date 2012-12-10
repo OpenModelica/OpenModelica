@@ -2678,7 +2678,7 @@ algorithm
       Integer i;
     case (_,_,{},_,_,_)
       equation
-         i = System.integerMax();
+         i = System.intMaxLit();
       then
         (inCache,Values.INTEGER(i),inST);
   end match;
