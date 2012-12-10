@@ -87,7 +87,7 @@ fi
 
 if test "Darwin" != `uname`; then
 
-if test "`uname -m`" = "x86_64"; then
+if test "`getconf LONG_BIT`" = "64"; then
 
 AC_MSG_CHECKING([x86_64 CFLAGS])
 
@@ -102,7 +102,7 @@ fi
 
 fi
 
-if test "`uname -m | sed s/i./ix/`" = "ix86"; then
+if test "`getconf LONG_BIT`" = "32"; then
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
 
 CFLAGS_BEFORE=$CFLAGS
