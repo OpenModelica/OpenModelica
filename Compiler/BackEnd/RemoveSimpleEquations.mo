@@ -3055,10 +3055,10 @@ algorithm
   outTpl := match (b,iEqnslst,iVars,ishared,iRepl,iUnreplacable,iMT,iGlobalEqnslst,globalFoundSimple)
     local
       Boolean b1;
-		  list<BackendDAE.Equation> eqnslst;
-		  list<SimpleContainer> simpleeqnslst;
-		  BackendDAE.Variables vars;
-		  BackendDAE.Shared shared;
+      list<BackendDAE.Equation> eqnslst;
+      list<SimpleContainer> simpleeqnslst;
+      BackendDAE.Variables vars;
+      BackendDAE.Shared shared;
     case(false,{},_,_,_,_,_,_,_) then ((iVars,ishared,iRepl,iUnreplacable,iMT,iGlobalEqnslst,globalFoundSimple));
     case(false,_,_,_,_,_,_,_,_) then ((iVars,ishared,iRepl,iUnreplacable,iMT,listAppend(iEqnslst,iGlobalEqnslst),globalFoundSimple));
     case(true,_,_,_,_,_,_,_,_)
@@ -3068,7 +3068,6 @@ algorithm
         allCausalFinder1(b1,false,simpleeqnslst,eqnslst,vars,shared,iRepl,iUnreplacable,iMT,iGlobalEqnslst,globalFoundSimple);
   end match;
 end allCausalFinder2;
-
 
 /*
  * allAcausal
