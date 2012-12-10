@@ -1448,7 +1448,7 @@ public function getProtectedVars "
   input list<DAE.Element> vl;
   output list<DAE.Element> vl_1;
 algorithm
-  vl_1 := getMatchingElements(vl, isProtectedVar);
+  vl_1 := getMatchingElements(vl, assertProtectedVar);
 end getProtectedVars;
 
 public function getBidirVars "function get_output_vars
@@ -1514,12 +1514,23 @@ algorithm
   end match;
 end isOutputVar;
 
-public function isProtectedVar
+public function assertProtectedVar
 "Succeeds if Element is a protected variable."
   input DAE.Element inElement;
 algorithm
   _ := match (inElement)
     case DAE.VAR(protection=DAE.PROTECTED()) then ();
+  end match;
+end assertProtectedVar;
+
+public function isProtectedVar
+"Succeeds if Element is a protected variable."
+  input DAE.Element inElement;
+  output Boolean b;
+algorithm
+  b := match (inElement)
+    case DAE.VAR(protection=DAE.PROTECTED()) then true;
+    else false;
   end match;
 end isProtectedVar;
 

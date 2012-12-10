@@ -1425,12 +1425,13 @@ algorithm
         crefs = List.map(fn,getInputCrefs);
         crefs = List.select(crefs,removeWilds);
         argmap = List.threadTuple(crefs,args);
+        false = List.exist(fn,DAEUtil.isProtectedVar);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         newExp = getRhsExp(fn);
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
         // add noEvent to avoid events as usually for functions
-        // MSL3.3 GenerateEvents
+        // MSL 3.2.1 need GenerateEvents to disable this
         newExp = Expression.addNoEventToRelationsAndConds(newExp);
         ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
