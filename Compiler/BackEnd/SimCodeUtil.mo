@@ -1866,7 +1866,7 @@ algorithm
       cname = Absyn.pathStringNoQual(class_);
       
       // generate initalsystem before replacing pre(alias)!
-      (_, initDAE) = Initialization.solveInitialSystem(dlow);
+      initDAE = Initialization.solveInitialSystem(dlow);
       
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
@@ -4685,7 +4685,7 @@ algorithm
         vars_1 = BackendVariable.listVar1(var_lst_1);
         eqns_1 = BackendEquation.listEquation(eqn_lst);
         ave = BackendVariable.emptyVars();
-        eeqns = BackendEquation.listEquation({});
+        eeqns = BackendEquation.emptyEqns();
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(knvars,exvars,ave,eeqns,eeqns,constrs,clsAttrs,cache,env,funcs,ev,eoc,BackendDAE.ALGEQSYSTEM(),{});
@@ -5264,7 +5264,7 @@ algorithm
         true = Flags.isSet(Flags.RELAXATION);
         ave = BackendVariable.emptyVars();
         evars = BackendVariable.emptyVars();
-        eeqns = BackendEquation.listEquation({});
+        eeqns = BackendEquation.emptyEqns();
         cache = Env.emptyCache();
         subsystem_dae = BackendDAE.DAE(BackendDAE.EQSYSTEM(v,eqn,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},BackendDAE.SHARED(evars,evars,ave,eeqns,eeqns,constrs,clsAttrs,cache,{},inFuncs,BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.ALGEQSYSTEM(),{}));
         (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1,v2,comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
@@ -6071,7 +6071,7 @@ algorithm
         re = List.map1(ealst,BackendEquation.generateEQUATION,source);
         eqns_1 = BackendEquation.listEquation(re);
         av = BackendVariable.emptyVars();
-        eeqns = BackendEquation.listEquation({});
+        eeqns = BackendEquation.emptyEqns();
         evars = BackendVariable.listVar1({});
         constrs = listArray({});
         clsAttrs = listArray({});
@@ -6098,7 +6098,7 @@ algorithm
         re = List.map1(ealst,BackendEquation.generateEQUATION,source);
         eqns_1 = BackendEquation.listEquation(re);
         av = BackendVariable.emptyVars();
-        eeqns = BackendEquation.listEquation({});
+        eeqns = BackendEquation.emptyEqns();
         evars = BackendVariable.listVar1({});
         constrs = listArray({});
         clsAttrs = listArray({});
@@ -6703,7 +6703,7 @@ algorithm
         ((parameterEquationsTmp,lv,lkn,lv1,lv2,_)) = BackendVariable.traverseBackendDAEVars(knvars,createInitialParamAssignments,({},{},{},{},{},1));
         
         // sort the equations
-        emptyeqns = BackendEquation.listEquation({});
+        emptyeqns = BackendEquation.emptyEqns();
         pe = BackendEquation.listEquation(parameterEquationsTmp);
         alisvars = BackendVariable.emptyVars();
         v = BackendVariable.listVar(lv);

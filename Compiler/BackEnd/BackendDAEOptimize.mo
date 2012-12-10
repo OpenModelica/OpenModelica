@@ -5496,7 +5496,7 @@ algorithm
         knownVars = BackendVariable.mergeVariables(knownVars,vars1);  //?????
         tVariables = BackendVariable.listVar(var_lst);
         knownVars = BackendVariable.mergeVariables(knownVars,tVariables);
-        emptyEqns = BackendEquation.listEquation({});
+        emptyEqns = BackendEquation.emptyEqns();
         emptyVars = BackendVariable.emptyVars();
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,NONE(),NONE(),BackendDAE.NO_MATCHING());
         shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,emptyEqns,removedEqs,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.SIMULATION(),{});
@@ -8006,7 +8006,7 @@ algorithm
         /*
         (blt_states, _) = BackendDAEUtil.generateStatePartition(syst);
         
-        newEqns = BackendEquation.listEquation({});
+        newEqns = BackendEquation.emptyEqns();
         newVars = BackendVariable.emptyVars();
         (newEqns, newVars) = BackendDAEUtil.splitoutEquationAndVars(blt_states,e,v,newEqns,newVars);
         backendDAE2 = BackendDAE.DAE(BackendDAE.EQSYSTEM(newVars,newEqns,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
@@ -8305,9 +8305,9 @@ algorithm
       jacKnownVars = BackendVariable.emptyVars();
       jacExternalObjects = BackendVariable.emptyVars();
       jacAliasVars =  BackendVariable.emptyVars();
-      jacOrderedEqs = BackendEquation.listEquation({});
-      jacRemovedEqs = BackendEquation.listEquation({});
-      jacInitialEqs = BackendEquation.listEquation({});
+      jacOrderedEqs = BackendEquation.emptyEqns();
+      jacRemovedEqs = BackendEquation.emptyEqns();
+      jacInitialEqs = BackendEquation.emptyEqns();
       constrs = listArray({});
       clsAttrs = listArray({});
       functions = DAEUtil.avlTreeNew();
@@ -8347,8 +8347,8 @@ algorithm
       jacExternalObjects = BackendVariable.emptyVars();
       jacAliasVars =  BackendVariable.emptyVars();
       jacOrderedEqs = BackendEquation.listEquation(derivedEquations);
-      jacRemovedEqs = BackendEquation.listEquation({});
-      jacInitialEqs = BackendEquation.listEquation({});
+      jacRemovedEqs = BackendEquation.emptyEqns();
+      jacInitialEqs = BackendEquation.emptyEqns();
       constrs = listArray({});
       clsAttrs = listArray({});
       functions = DAEUtil.avlTreeNew();

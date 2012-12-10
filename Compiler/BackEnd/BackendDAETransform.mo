@@ -1041,7 +1041,7 @@ algorithm
   end match;  
 end analyseStrongComponent;
 
-protected function analyseStrongComponentBlock"function: analyseStrongComponentBlock
+protected function analyseStrongComponentBlock "function: analyseStrongComponentBlock
   author: Frenkel TUD 2011-05 
   helper for analyseStrongComponent."
   input list<Integer> inComp;  

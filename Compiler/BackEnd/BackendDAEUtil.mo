@@ -551,7 +551,7 @@ protected
   DAE.FunctionTree funcTree;
 algorithm
   emptyvars :=  BackendVariable.emptyVars();
-  emptyEqns := BackendEquation.listEquation({});
+  emptyEqns := BackendEquation.emptyEqns();
   emptyAliasVars := BackendVariable.emptyVars();
   constrs := listArray({});
   clsAttrs := listArray({});
@@ -3182,35 +3182,31 @@ public function incidenceMatrix
   Calculates the incidence matrix, i.e. which variables are present in each equation.
   You can ask for absolute indexes or normal (negative for der) via the IndexType.
     wbraun: beware dim(IncidenceMatrix) != dim(IncidenceMatrixT) due to array equations. "
-  input BackendDAE.EqSystem syst;
+  input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndexType;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
-  (outIncidenceMatrix,outIncidenceMatrixT) := matchcontinue (syst, inIndexType)
+  (outIncidenceMatrix, outIncidenceMatrixT) := matchcontinue(inEqSystem, inIndexType)
     local
       BackendDAE.IncidenceMatrix arr;
       BackendDAE.IncidenceMatrixT arrT;
       BackendDAE.Variables vars;
       EquationArray eqns;
-      Integer numberOfEqs,numberofVars;
-    
-    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), _)
-      equation
-        // get the size
-        numberOfEqs = equationArraySize(eqns);
-        numberofVars = BackendVariable.varsSize(vars);
-        // create the array to hold the incidence matrix
-        arrT = arrayCreate(numberofVars, {});
-        (arr,arrT) = incidenceMatrixDispatch(vars, eqns, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType);
-      then
-        (arr,arrT);
-    
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"BackendDAEUtil.incidenceMatrix failed"});
-      then
-        fail();
+      Integer numberOfEqs, numberofVars;
+
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _) equation
+      // get the size
+      numberOfEqs = equationArraySize(eqns);
+      numberofVars = BackendVariable.varsSize(vars);
+      // create the array to hold the incidence matrix
+      arrT = arrayCreate(numberofVars, {});
+      (arr, arrT) = incidenceMatrixDispatch(vars, eqns, {}, arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType);
+    then (arr,arrT);
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEUtil.mo: function incidenceMatrix failed"});
+    then fail();
   end matchcontinue;
 end incidenceMatrix;
 
@@ -3289,8 +3285,7 @@ protected function incidenceMatrixDispatch
   output BackendDAE.IncidenceMatrix outIncidenceArray;
   output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
 algorithm
-  (outIncidenceArray,outIncidenceArrayT) := 
-    match (vars, inEqsArr, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType)
+  (outIncidenceArray, outIncidenceArrayT) := match(vars, inEqsArr, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType)
     local
       list<Integer> row;
       BackendDAE.Equation e;
@@ -3299,31 +3294,22 @@ algorithm
       Integer i1;
     
     // i = n (we reach the end)
-    case (_, _, iArr, iArrT, _, _, false, _) then (listArray(listReverse(iArr)),iArrT);
+    case (_, _, iArr, iArrT, _, _, false, _)
+    then (listArray(listReverse(iArr)), iArrT);
     
     // i < n 
-    case (_, _, iArr, iArrT, _, _, true, _)
-      equation
-        // get the equation
-        e = equationNth(inEqsArr, index);
-        // compute the row
-        (row,_) = incidenceRow(e, vars, inIndexType, {});
-        i1 = index+1;       
-        // put it in the arrays
-        iArr = row::iArr;
-        iArrT = fillincidenceMatrixT(row,{i1},iArrT);
-        // next equation
-        (outIncidenceArray,iArrT) = incidenceMatrixDispatch(vars, inEqsArr, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType);
-      then
-        (outIncidenceArray,iArrT);
-    
-    /* Unreachable due to tail recursion, which we really need
-    case (vars, eqArr, wc, iArr, iArrT, i, n, inIndexType)
-      equation
-        print("- BackendDAEUtil.incidenceMatrixDispatch failed\n");
-      then
-        fail();
-    */
+    case (_, _, iArr, iArrT, _, _, true, _) equation
+      // get the equation
+      e = equationNth(inEqsArr, index);
+      // compute the row
+      (row, _) = incidenceRow(e, vars, inIndexType, {});
+      i1 = index+1;       
+      // put it in the arrays
+      iArr = row::iArr;
+      iArrT = fillincidenceMatrixT(row, {i1}, iArrT);
+      // next equation
+      (outIncidenceArray, iArrT) = incidenceMatrixDispatch(vars, inEqsArr, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType);
+    then (outIncidenceArray,iArrT);
   end match;
 end incidenceMatrixDispatch;
 
@@ -3704,8 +3690,7 @@ algorithm
   end match;
 end incidenceRow1;
 
-public function incidenceRowExp
-"function: incidenceRowExp
+public function incidenceRowExp "function: incidenceRowExp
   author: PA
   Helper function to incidenceRow, investigates expressions for
   variables, returning variable indexes."
@@ -3829,8 +3814,8 @@ algorithm
 end traversingincidenceRowExpSolvableFinder;
 
 public function traversingincidenceRowExpFinder "
-Author: Frenkel TUD 2010-11
-Helper for statesAndVarsExp"
+  author: Frenkel TUD 2010-11
+  Helper for statesAndVarsExp"
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>>> inTpl;
   output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<Integer>>> outTpl;
 algorithm
@@ -3864,6 +3849,10 @@ algorithm
         res = incidenceRowExp1(varslst,p,pa,false);
       then
         ((e,false,(vars,res)));
+    
+    // lochel: internally generated call start(v) depends not on v
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "$_start")), (vars, pa))) then ((e, false, (vars, pa)));
+        
     /* pre(v) is considered a known variable */
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa)))) then ((e,false,(vars,pa)));
     
@@ -4517,30 +4506,22 @@ algorithm
   end match;
 end getIncidenceMatrixfromOption;
     
-public function getIncidenceMatrix 
-"function getIncidenceMatrix
+public function getIncidenceMatrix "function getIncidenceMatrix
   this function returns the incidence matrix,
   if the system contains multi"
-  input BackendDAE.EqSystem syst;
+  input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndxType;
-  output BackendDAE.EqSystem osyst;
+  output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
+protected
+  BackendDAE.Variables v;
+  EquationArray eq;
+  BackendDAE.Matching matching;
 algorithm
-  (osyst,outM,outMT):=
-  match (syst,inIndxType)
-    local  
-      BackendDAE.IncidenceMatrix m,mT;
-      BackendDAE.Variables v;
-      EquationArray eq;
-      BackendDAE.Matching matching;
-      BackendDAE.IndexType it;
-    case(BackendDAE.EQSYSTEM(v,eq,_,_,matching),it)
-      equation
-        (m,mT) = incidenceMatrix(syst, it);
-      then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
-  end match;
+  BackendDAE.EQSYSTEM(v, eq, _, _, matching) := inEqSystem;
+  (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType);
+  outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching);
 end getIncidenceMatrix;    
     
 public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"

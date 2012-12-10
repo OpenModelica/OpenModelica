@@ -85,6 +85,11 @@ algorithm
   outEquationArray := BackendDAE.EQUATION_ARRAY(size,len,arrsize,newarr);
 end listEquation;
 
+public function emptyEqns
+  output BackendDAE.EquationArray eqns;
+algorithm
+  eqns := listEquation({});
+end emptyEqns;
 
 public function equationList "function equationList
   author: PA
