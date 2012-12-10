@@ -1637,9 +1637,10 @@ algorithm
        expcr = Expression.crefExp(cr);
        pv = BackendVariable.getVarSharedAt(i2,ishared);
        vsattr = addVarSetAttributes(pv,false,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
+       vsattr = addVarSetAttributes(v,negate,mark,simpleeqnsarr,vsattr);
        rows = List.removeOnTrue(r,intEq,iMT[i]);
        _ = arrayUpdate(iMT,i,{});
-       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp,SOME(expcr),negate,true,mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
+       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp1,SOME(expcr),negate,true,mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
      then
        (vars,eqnslst,shared,repl);
    // time set
@@ -1655,10 +1656,10 @@ algorithm
        replacable = replaceableAlias(v,unreplacable);
        (vars,eqnslst,shared,repl) = handleSetVar(replacable,v,i,source,exp1,iMT,iVars,iEqnslst,ishared,iRepl);
        expcr = Expression.crefExp(cr);
-       vsattr = EMPTYVARSETATTRIBUTES;
+       vsattr = addVarSetAttributes(v,negate,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r,intEq,iMT[i]);
        _ = arrayUpdate(iMT,i,{});
-       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp,SOME(expcr),negate,false,mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
+       (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp1,SOME(expcr),negate,false,mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
      then
        (vars,eqnslst,shared,repl);
    // constant set
@@ -1944,11 +1945,12 @@ algorithm
         // negate if necessary
         globalnegate1 = Util.if_(negate,not globalnegate,globalnegate);
         exp1 = Debug.bcallret1(globalnegate1,Expression.negate,exp,exp);
-        crexp = Debug.bcallret1(negate,Expression.negate,crexp,crexp);
         // replace alias with selected variable if replacable
         source = Debug.bcallret3(replacable,addSubstitutionOption,optExp,crexp,source,source);
         (vars,eqnslst,shared,repl) = handleSetVar(replacable,v,i,source,exp1,iMT,iVars,iEqnslst,ishared,iRepl);
-        vsattr = addVarSetAttributes(v,globalnegate,mark,simpleeqnsarr,iAttributes);
+        vsattr = addVarSetAttributes(v,globalnegate1,mark,simpleeqnsarr,iAttributes);
+        // negate if necessary
+        crexp = Debug.bcallret1(negate,Expression.negate,crexp,crexp);
         rows = List.removeOnTrue(r,intEq,iMT[i]);
         _ = arrayUpdate(iMT,i,{});
         (vars,eqnslst,shared,repl,vsattr) = traverseAliasTree(rows,i,exp,SOME(crexp),globalnegate1,replaceState,mark,simpleeqnsarr,iMT,unreplacable,vars,eqnslst,shared,repl,vsattr);
