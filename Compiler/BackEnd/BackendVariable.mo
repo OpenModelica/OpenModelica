@@ -3277,7 +3277,8 @@ algorithm
       Integer indx;
       list<Integer> indxs;
       list<BackendDAE.Var> vLst;
-      list<DAE.ComponentRef> crlst;    
+      list<DAE.ComponentRef> crlst;
+      DAE.ComponentRef cr1;    
     case (_,_)
       equation
         (v,indx) = getVar2(cr, inVariables) "if scalar found, return it" ;
@@ -3289,6 +3290,15 @@ algorithm
         (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
       then
         (vLst,indxs);
+    // try again check if variable indexes used
+    case (_,_)
+      equation
+        // replace variables with WHOLEDIM()
+        (cr1,true) = replaceVarWithWholeDim(cr, false);
+        crlst = ComponentReference.expandCref(cr1,true);
+        (vLst as _::_,indxs) = getVarLst(crlst,inVariables,{},{});
+      then
+        (vLst,indxs);        
     /* failure
     case (cr,vars)
       equation
@@ -3298,6 +3308,90 @@ algorithm
     */
   end matchcontinue;
 end getVar;
+
+protected function replaceVarWithWholeDim
+  "Helper function to traverseExp. Traverses any expressions in a
+  component reference (i.e. in it's subscripts)."
+  input DAE.ComponentRef inCref;
+  input Boolean iPerformed;
+  output DAE.ComponentRef outCref;
+  output Boolean oPerformed;
+algorithm
+  (outCref, oPerformed) := match(inCref, iPerformed)
+    local
+      DAE.Ident name;
+      DAE.ComponentRef cr,cr_1;
+      DAE.Type ty;
+      list<DAE.Subscript> subs,subs_1;
+      Boolean b;
+
+    case (DAE.CREF_QUAL(ident = name, identType = ty, subscriptLst = subs, componentRef = cr), _)
+      equation
+        (subs_1, b) = replaceVarWithWholeDimSubs(subs, iPerformed);
+        (cr_1, b) = replaceVarWithWholeDim(cr, b);
+      then
+        (DAE.CREF_QUAL(name, ty, subs_1, cr_1), b);
+
+    case (DAE.CREF_IDENT(ident = name, identType = ty, subscriptLst = subs), _)
+      equation
+        (subs_1, b) = replaceVarWithWholeDimSubs(subs, iPerformed);
+      then
+        (DAE.CREF_IDENT(name, ty, subs_1), b);
+
+    case (DAE.CREF_ITER(ident = _), _) then (inCref, iPerformed);
+    case (DAE.OPTIMICA_ATTR_INST_CREF(componentRef = _), _) then (inCref, iPerformed);
+    case (DAE.WILD(), _) then (inCref, iPerformed);
+    
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendVariable.replaceVarWithWholeDim: Unknown cref"});
+      then fail();
+  end match;
+end replaceVarWithWholeDim;
+
+protected function replaceVarWithWholeDimSubs
+  input list<DAE.Subscript> inSubscript;
+  input Boolean iPerformed;
+  output list<DAE.Subscript> outSubscript;
+  output Boolean oPerformed;
+algorithm
+  (outSubscript, oPerformed) := match(inSubscript, iPerformed)
+    local
+      DAE.Exp sub_exp,sub_exp_1;
+      list<DAE.Subscript> rest,res;
+      Boolean b,const;
+
+    case ({}, _) then (inSubscript,iPerformed);
+    case (DAE.WHOLEDIM()::rest, _)
+      equation
+        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+      then (DAE.WHOLEDIM()::rest, b);
+
+    case (DAE.SLICE(exp = sub_exp)::rest, _)
+      equation
+        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+        const = Expression.isConst(sub_exp);
+        res = Util.if_(const,DAE.SLICE(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+      then
+        (res, b or not const);
+
+    case (DAE.INDEX(exp = sub_exp)::rest, _)
+      equation
+        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+        const = Expression.isConst(sub_exp);
+        res = Util.if_(const,DAE.INDEX(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+      then
+        (res, b or not const);
+
+    case (DAE.WHOLE_NONEXP(exp = sub_exp)::rest, _)
+      equation
+        (res,b) = replaceVarWithWholeDimSubs(rest,iPerformed);
+        const = Expression.isConst(sub_exp);
+        res = Util.if_(const,DAE.WHOLE_NONEXP(sub_exp)::rest,DAE.WHOLEDIM()::rest);
+      then
+        (res, b or not const);
+  end match;
+end replaceVarWithWholeDimSubs;
 
 public function getVarLst
   input list<DAE.ComponentRef> inComponentRefLst;

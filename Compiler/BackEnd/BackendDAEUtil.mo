@@ -3833,12 +3833,14 @@ algorithm
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = incidenceRowExp1(varslst,p,pa,true);
       then
-        ((e,false,(vars,res)));
+        ((e,true,(vars,res)));
     
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = incidenceRowExp1(varslst,p,pa,false);
+        /* check also indizes of cr */
+        (_,(_,res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars,res));
       then
         ((e,false,(vars,res)));
     
@@ -3847,6 +3849,8 @@ algorithm
         cr = ComponentReference.crefPrefixDer(cr);
         (varslst,p) = BackendVariable.getVar(cr, vars);
         res = incidenceRowExp1(varslst,p,pa,false);
+        /* check also indizes of cr */
+        (_,(_,res)) = Expression.traverseExpTopDownCrefHelper(cr, traversingincidenceRowExpFinder, (vars,res));        
       then
         ((e,false,(vars,res)));
     
