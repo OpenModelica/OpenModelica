@@ -779,18 +779,18 @@ algorithm
 */    // not all equations are differentiated
     case (_::_,_,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=v,mT = SOME(mt)),_,_,_,_,_,_,_,_)
       equation
-        Debug.fcall(Flags.BLT_DUMP,print,"notDiffedEquations:\n");
-        Debug.fcall(Flags.BLT_DUMP,BackendDump.dumpEqns,notDiffedEquations);
-        Debug.fcall(Flags.BLT_DUMP,print,"inOrgEqns:\n");
-        Debug.fcall(Flags.BLT_DUMP,BackendDump.dumpEqns,inOrgEqns);
-        Debug.fcall(Flags.BLT_DUMP,print,"inDiffEqns:\n");
-        Debug.fcall(Flags.BLT_DUMP,BackendDump.dumpEqns,inDiffEqns);
-        Debug.fcall(Flags.BLT_DUMP,print,"unassignedEqns:\n");
-        Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(unassignedEqns,intString,", ","\n"));
-        Debug.fcall(Flags.BLT_DUMP,print,"unassignedStates:\n");
-        Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(unassignedStates,intString,", ","\n"));
-        ilst = List.fold1(unassignedStates,statesWithUnusedDerivative,mt,{});
-        ilst = List.select1(ilst,isStateonIndex,v);
+        Debug.fcall(Flags.BLT_DUMP, print, "notDiffedEquations:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, notDiffedEquations);
+        Debug.fcall(Flags.BLT_DUMP, print, "inOrgEqns:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, inOrgEqns);
+        Debug.fcall(Flags.BLT_DUMP, print, "inDiffEqns:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, inDiffEqns);
+        Debug.fcall(Flags.BLT_DUMP, print, "unassignedEqns:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (unassignedEqns, intString, ", ", "\n"));
+        Debug.fcall(Flags.BLT_DUMP, print, "unassignedStates:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (unassignedStates,intString, ", ", "\n"));
+        ilst = List.fold1(unassignedStates, statesWithUnusedDerivative, mt, {});
+        ilst = List.select1(ilst, isStateonIndex, v);
         // check also initial equations (this could be done alse once before
         ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
         Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
@@ -2510,7 +2510,7 @@ algorithm
         // if there is only one var select it because there is no choice
         Debug.fcall(Flags.BLT_DUMP, print, "single var and eqn\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, vars);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationArray, eqns);
         v = BackendVariable.getVarAt(vars,1);
         cr = BackendVariable.varCref(v);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStr, ("Select ",cr," as dummyState\n"));
@@ -2525,7 +2525,7 @@ algorithm
         true = intEq(eqnsSize,varSize);
         Debug.fcall(Flags.BLT_DUMP, print, "equal var and eqn size\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, vars);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationArray, eqns);
         varlst = BackendVariable.varList(vars);
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList,varlst);
@@ -2543,7 +2543,7 @@ algorithm
         true = intEq(eqnsSize,dummyvarssize);
         Debug.fcall(Flags.BLT_DUMP, print, "select dummy vars from stateselection\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, vars);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationArray, eqns);
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,dummyvarssize));
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
@@ -2596,7 +2596,7 @@ algorithm
         true = intGt(eqnsSize,varSize);
         print("Structural singular system:\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, vars);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqnsArray, eqns);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationArray, eqns);
       then
         fail();
   end matchcontinue;
@@ -3120,7 +3120,7 @@ algorithm
         (selecteqns,dselecteqns,wclst,varlst) = generateSelectEquationsMulti(determinants,1,set,Expression.crefExp(set),crconexp,contstartExp,vars,rang,{},{},{},varlst,{});
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
         varlst = vcont::varlst;
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqns,selecteqns);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.dumpWcStr,"\n","\n")));
         // add Equations and vars
         size = BackendDAEUtil.systemSize(isyst);
@@ -3186,7 +3186,7 @@ algorithm
         (selecteqns,dselecteqns,wclst,varlst) = generateSelectEquationsMulti(determinants,1,set,Expression.crefExp(set),crconexp,contstartExp,vars,rang,{},{},{},varlst,{});
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
         varlst = vcont::varlst;
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqns,selecteqns);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.dumpWcStr,"\n","\n")));
         // add Equations and vars
         size = BackendDAEUtil.systemSize(isyst);
@@ -3447,7 +3447,7 @@ algorithm
         (selecteqns,dselecteqns,wclst,varlst) = generateSelectEquations(1,crset,crconexp,List.map(crstates,Expression.crefExp),contstartExp,varlst,List.map(statesvars,BackendVariable.varStartValue),{},{},{},{});
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
         varlst = vcont::varlst;
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqns,selecteqns);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.dumpWcStr,"\n","\n")));
         // add Equations and vars
         size = BackendDAEUtil.systemSize(isyst);

@@ -118,6 +118,30 @@ algorithm
   print(equationString(inEquation) +& "\n");
 end printEquation;
 
+public function printEquationArray "function printEquationArray
+  Helper function to dump."
+  input BackendDAE.EquationArray eqns;
+algorithm
+  _ := List.fold(BackendEquation.equationList(eqns), printEquationList2, 1);
+end printEquationArray;
+
+public function printEquationList "function printEquationList
+  Helper function to dump."
+  input list<BackendDAE.Equation> eqns;
+algorithm
+  _ := List.fold(eqns, printEquationList2, 1);
+end printEquationList;
+
+protected function printEquationList2 "function printEquationList2
+  Helper function to printEquationList"
+  input BackendDAE.Equation inEquation;
+  input Integer inInteger;
+  output Integer oInteger;
+algorithm
+  print(intString(inInteger) +& " (" +& intString(BackendEquation.equationSize(inEquation)) +& "): " +& equationString(inEquation) +& "\n");
+  oInteger := inInteger + 1;
+end printEquationList2;
+
 protected function printSparsityPattern "function printSparsityPattern
   author lochel"
   input list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> inPattern;
@@ -201,6 +225,15 @@ algorithm
   print("\n");
 end dumpVariables;
 
+public function dumpEquationArray "function dumpEquationArray"
+  input BackendDAE.EquationArray inEqns;
+  input String heading;
+algorithm
+  print("\n" +& heading +& " (" +& intString(BackendDAEUtil.equationSize(inEqns)) +& ")\n========================================\n");
+  printEquationArray(inEqns);
+  print("\n");
+end dumpEquationArray;
+
 public function dumpBackendDAE "function dumpBackendDAE
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
@@ -267,7 +300,7 @@ algorithm
   print(intString(eqnssize));
   print(")\n");
   print("=========\n");
-  dumpEqns(eqnsl);
+  printEquationList(eqnsl);
   print("\n");
   dumpOption(m,dumpIncidenceMatrix);
   dumpOption(mT,dumpIncidenceMatrixT);
@@ -341,7 +374,7 @@ algorithm
         print(")\n");        
         print(")\n");
         print("=========\n");
-        dumpEqns(reqnsl);
+        printEquationList(reqnsl);
         print("Initial Equations (");
         ieqnsl = BackendEquation.equationList(ieqns);
         eqnlen = listLength(ieqnsl);
@@ -353,7 +386,7 @@ algorithm
         print(")\n");        
         print(")\n");
         print("=========\n");
-        dumpEqns(ieqnsl);
+        printEquationList(ieqnsl);
         print("Zero Crossings (numberOfRelations = " +& intString(numberOfRelations) +&") : \n");
         print("===============\n");
         s = dumpZcStr1(zc);
@@ -641,7 +674,7 @@ algorithm
         var = BackendVariable.getVarAt(vars,v);
         printVarList({var});
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
-        dumpEqns({eqn}); 
+        printEquationList({eqn}); 
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
@@ -651,7 +684,7 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
-        dumpEqns(eqnlst);        
+        printEquationList(eqnlst);        
         dumpEqnsSolved2({comp},eqns,vars);
         dumpEqnsSolved2(rest,eqns,vars);
       then 
@@ -662,7 +695,7 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
-        dumpEqns(eqnlst);
+        printEquationList(eqnlst);
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
@@ -672,7 +705,7 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
-        dumpEqns({eqn}); 
+        printEquationList({eqn}); 
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
@@ -682,7 +715,7 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
-        dumpEqns({eqn});  
+        printEquationList({eqn});  
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();  
@@ -692,7 +725,7 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
-        dumpEqns({eqn});    
+        printEquationList({eqn});    
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
@@ -702,7 +735,7 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqn = BackendDAEUtil.equationNth(eqns,e-1);
-        dumpEqns({eqn});    
+        printEquationList({eqn});    
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();        
@@ -717,9 +750,9 @@ algorithm
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst1,eqns); 
-        dumpEqns(eqnlst);
+        printEquationList(eqnlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
-        dumpEqns(eqnlst);
+        printEquationList(eqnlst);
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         (); 
@@ -737,30 +770,6 @@ algorithm
         ();
   end matchcontinue;  
 end dumpEqnsSolved2;
-
-public function dumpEqnsArray "function dumpEqnsArray
-  Helper function to dump."
-  input BackendDAE.EquationArray eqns;
-algorithm
-  _ := List.fold(BackendEquation.equationList(eqns), dumpEqns2, 1);
-end dumpEqnsArray;
-
-public function dumpEqns "function dumpEqns
-  Helper function to dump."
-  input list<BackendDAE.Equation> eqns;
-algorithm
-  _ := List.fold(eqns, dumpEqns2, 1);
-end dumpEqns;
-
-protected function dumpEqns2 "function dumpEqns2
-  Helper function to dumpEqns"
-  input BackendDAE.Equation inEquation;
-  input Integer inInteger;
-  output Integer oInteger;
-algorithm
-  print(intString(inInteger) +& " (" +& intString(BackendEquation.equationSize(inEquation)) +& "): " +& equationString(inEquation) +& "\n");
-  oInteger := inInteger + 1;
-end dumpEqns2;
 
 public function dumpComponentsAdvanced "function dumpComponentsAdvanced
   author: Frenkel TUD
@@ -2131,7 +2140,7 @@ algorithm
 end jacobianTypeStr;
 
 public function dumpEqnsStr
-"function: dumpEqns
+"function: printEquationList
   Helper function to dump."
   input list<BackendDAE.Equation> eqns;
   output String str;

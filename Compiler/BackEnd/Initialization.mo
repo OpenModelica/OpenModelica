@@ -74,7 +74,7 @@ protected
 algorithm
   dae := inlineWhenForInitialization(inDAE);
   
-  Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n##################\n# inlineWhenForInitialization #\n##################\n\n");
+  Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\ninlineWhenForInitialization\n########################################\n\n");
   Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae);
   
   initVars := selectInitializationVariablesDAE(dae);
@@ -391,9 +391,7 @@ algorithm
       ((vars, fixvars)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars));
       ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (eqns, reeqns));
       
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "initial equations (" +& intString(BackendDAEUtil.equationSize(eqns)) +& ")\n=================\n");
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpEqnsArray, eqns);
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n");
+      Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpEquationArray, eqns, "initial equations");
       
       ((vars, fixvars, eqns, reeqns)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns)));
       ((eqns, reeqns)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
@@ -428,7 +426,7 @@ algorithm
                                                  {}));
 
       // some debug prints
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n##################\n# initial system #\n##################\n\n");
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\ninitial system\n########################################\n\n");
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae);
       
       // now let's solve the system!
@@ -484,7 +482,7 @@ algorithm
       // simplify system
       (isyst, Util.SUCCESS()) = BackendDAEUtil.pastoptimiseDAE(isyst, pastOptModules, matchingAlgorithm, daeHandler);
       
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\n#########################\n# solved initial system #\n#########################\n\n");
+      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\nsolved initial system\n########################################\n\n");
       Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, isyst);
     then isyst;
     

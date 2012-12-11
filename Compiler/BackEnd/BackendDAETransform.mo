@@ -1494,7 +1494,7 @@ algorithm
     case (_,_,_,_) 
       equation
         BackendDump.printVarList(varLst);        
-        BackendDump.dumpEqns(eqnLst);      
+        BackendDump.printEquationList(eqnLst);      
     then fail();
   end matchcontinue;  
 end splitMixedEquations;

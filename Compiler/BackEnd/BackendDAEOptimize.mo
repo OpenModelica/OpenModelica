@@ -415,7 +415,7 @@ protected
 algorithm
   (_,_,repl,_,_) := inTpl;
   (eqns,_) := BackendVarTransform.replaceEquations({eqn},repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-  // print("Check Equations:\n"); BackendDump.dumpEqns(eqns);
+  // print("Check Equations:\n"); BackendDump.printEquationList(eqns);
   outTpl := List.fold(eqns,removeSimpleEquationsFastFinder1,inTpl);
 end removeSimpleEquationsFastFinder;
 
@@ -4490,10 +4490,10 @@ algorithm
       equation
         pos_1 = pos-1;
         eqn = BackendDAEUtil.equationNth(inEqns,pos_1);
-        //BackendDump.dumpEqns({eqn});
+        //BackendDump.printEquationList({eqn});
         //BackendDump.debugStrExpStrExpStr(("Repalce ",inExp," with ",inECr,"\n"));
         (eqn1,(_,_,i)) = BackendDAETransform.traverseBackendDAEExpsEqnWithSymbolicOperation(eqn, replaceExp, (inECr,inExp,0));
-        //BackendDump.dumpEqns({eqn1});
+        //BackendDump.printEquationList({eqn1});
         //print("i="); print(intString(i)); print("\n");
         true = intGt(i,0);
         eqns =  BackendEquation.equationSetnth(inEqns,pos_1,eqn1);
@@ -7052,7 +7052,7 @@ algorithm
         // Debug dumping
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.printVarList,BackendVariable.varList(varswithDiffs));
-        Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpEqns,BackendEquation.equationList(orderedEqns));
+        Debug.fcall(Flags.JAC_DUMP2,BackendDump.printEquationList,BackendEquation.equationList(orderedEqns));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrix,adjMatrix);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrixT,adjMatrixT);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpComponents, comps);
@@ -8565,13 +8565,13 @@ algorithm
     case(currEquation::restEquations,_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _, _)
       equation
       //Debug.fcall(Flags.JAC_DUMP_EQN, print, "Derive Equation! Left on Stack: " +& intString(listLength(restEquations)) +& "\n");
-      //Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.dumpEqns, {currEquation});
+      //Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.printEquationList, {currEquation});
       //Debug.fcall(Flags.JAC_DUMP_EQN, print, "\n");
       //dummycref = ComponentReference.makeCrefIdent("$pDERdummy", DAE.T_REAL_DEFAULT, {});
       //Debug.fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> derive one equation: " +& realString(clock()) +& "\n" );
       (solvedfor,ass2_1) = List.split(ass2, BackendEquation.equationSize(currEquation));
       currDerivedEquations = derive(currEquation, solvedfor, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
-      //Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.dumpEqns, currDerivedEquations);
+      //Debug.fcall(Flags.JAC_DUMP_EQN, BackendDump.printEquationList, currDerivedEquations);
       //Debug.fcall(Flags.JAC_DUMP_EQN, print, "\n");
       //Debug.fcall(Flags.JAC_DUMP_EQN,print, "*** analytical Jacobians -> created other equations from that: " +& realString(clock()) +& "\n" );
      then
@@ -11967,13 +11967,13 @@ algorithm
         Debug.fcall(Flags.TEARING_DUMP, print,"k0:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.printVarList,k0);
         Debug.fcall(Flags.TEARING_DUMP, print,"g0:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,g0);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEquationList,g0);
         // replace tearing vars with zero and other wars with temp variables to get residual equations for point zero (h(z0,k0)=h0)
         residual1 = List.map1r(residual,arrayGet,mapIncRowEqn);
         residual1 = List.unique(residual1);
         h0 = List.map3(residual1,getEquationsPointZero,eqns,repl,vars);
         Debug.fcall(Flags.TEARING_DUMP, print,"h0:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,h0);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEquationList,h0);
         // calculate dh/dz = derivedEquations 
         tvarcrefs = List.map1(tvars,getTVarCrefs,vars);
         // Prepare all needed variables
@@ -12002,15 +12002,15 @@ algorithm
         Debug.fcall(Flags.TEARING_DUMP, print,"PartialDerivatives:\n");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.printVarList,pdvarlst);
         Debug.fcall(Flags.TEARING_DUMP, print,"dh/dz extra:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,g);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEquationList,g);
         tvarexps = List.map2(tvars,getTVarCrefExps,vars,ishared);
         Debug.fcall(Flags.TEARING_DUMP, print,"TVars: ");
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.debuglst,(tvarexps,ExpressionDump.printExpStr,", ","\n")); 
         //  print("dh/dz:\n");
-        //  BackendDump.dumpEqns(List.flatten(hlst));
+        //  BackendDump.printEquationList(List.flatten(hlst));
         h = generateHEquations(hlst,tvarexps,h0,{});
         Debug.fcall(Flags.TEARING_DUMP, print,"dh/dz*z=-h0:\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqns,h);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEquationList,h);
         // check if all tearing vars part of the system
         vlst = List.map1r(tvars,BackendVariable.getVarAt,vars);
         vlst1 = BackendEquation.equationsLstVars(eqnslst, BackendVariable.listVar1(vlst));

@@ -4711,7 +4711,7 @@ algorithm
         //print("\ncreateOdeSystem -> Cont sys: ...\n");
         // extract the variables and equations of the block.
         (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
-        //BackendDump.dumpEqns(eqn_lst);
+        //BackendDump.printEquationList(eqn_lst);
         //BackendDump.dumpVars(var_lst);
         (jac,jac_tp) = updateJacobian(jac,jac_tp,var_lst,eqn_lst,ishared);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
@@ -5021,7 +5021,7 @@ algorithm
     else
       equation
         print("SimCodeUtil.createTornSystemOtherEqns1 failed for\n");
-        BackendDump.dumpEqns({eqn});
+        BackendDump.printEquationList({eqn});
         print("Eqn: " +& intString(eqnindx) +& " Vars: " +& stringDelimitList(List.map(varindx,intString),", ") +& "\n");
       then
         fail();
@@ -6457,6 +6457,7 @@ algorithm
       (initialEqs_lst, numberOfInitialEquations, numberOfInitialAlgorithms) = BackendDAEOptimize.collectInitialEquations(inDAE);
       (residual_equations, uniqueEqIndex, tempvars) = createNonlinearResidualEquations(initialEqs_lst, iuniqueEqIndex, itempvars);
       Debug.fcall(Flags.SOLVE_INITIAL_SYSTEM, Error.addCompilerWarning, "No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
+      //Error.addCompilerWarning("No system for the symbolic initialization was generated. A method using numerical algorithms will be used instead.");
     then (residual_equations, {}, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, false);
 
     else equation
