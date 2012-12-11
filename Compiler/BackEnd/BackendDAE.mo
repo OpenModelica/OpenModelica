@@ -265,27 +265,26 @@ end BackendDAE;
 
 uniontype Shared "Data shared for all equation-systems"
   record SHARED
-    Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
-    Variables externalObjects "External object variables";
-    Variables aliasVars "Data originating from removed simple equations needed to build 
-variables' lookup table (in C output).
+    Variables knownVars                     "knownVars ; Known variables, i.e. constants and parameters" ;
+    Variables externalObjects               "External object variables";
+    Variables aliasVars                     "Data originating from removed simple equations needed to build 
+                                             variables' lookup table (in C output).
 
-In that way, double buffering of variables in pre()-buffer, extrapolation 
-buffer and results caching, etc., is avoided, but in C-code output all the 
-data about variables' names, comments, units, etc. is preserved as well as 
-pinter to their values (trajectories).
-";
-    EquationArray initialEqs "initialEqs ; Initial equations" ;
-    EquationArray removedEqs "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
-    array< .DAE.Constraint> constraints "constraints (Optimica extension)";
+                                             In that way, double buffering of variables in pre()-buffer, extrapolation 
+                                             buffer and results caching, etc., is avoided, but in C-code output all the 
+                                             data about variables' names, comments, units, etc. is preserved as well as 
+                                             pinter to their values (trajectories).";
+    EquationArray initialEqs                "initialEqs ; Initial equations" ;
+    EquationArray removedEqs                "these are equations that cannot solve for a variable. for example assertions, external function calls, algorithm sections without effect" ;
+    array< .DAE.Constraint> constraints     "constraints (Optimica extension)";
     array< .DAE.ClassAttributes> classAttrs "class attributes (Optimica extension)";
-    .Env.Cache cache;
-    .Env.Env env;
-    .DAE.FunctionTree functionTree "functions for Backend";
-    EventInfo eventInfo "eventInfo" ;
-    ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
-    BackendDAEType backendDAEType "indicate for what the BackendDAE is used";
-    SymbolicJacobians symjacs "Symbolic Jacobians";   
+    Env.Cache cache;
+    Env.Env env;
+    .DAE.FunctionTree functionTree          "functions for Backend";
+    EventInfo eventInfo                     "eventInfo" ;
+    ExternalObjectClasses extObjClasses     "classes of external objects, contains constructor & destructor";
+    BackendDAEType backendDAEType           "indicate for what the BackendDAE is used";
+    SymbolicJacobians symjacs               "Symbolic Jacobians";   
   end SHARED;
 end Shared;
 

@@ -95,7 +95,7 @@ void storeDelayedExpression(DATA* data, int exprNumber, double exprValue, double
 
   /* dequeue not longer needed values */
   i = findTime(time-delayMax+DBL_EPSILON,data->simulationInfo.delayStructure[exprNumber]);
-  if (i > 0){
+  if(i > 0){
     dequeueNFirstRingDatas(data->simulationInfo.delayStructure[exprNumber], i-1);
     INFO3(LOG_EVENTS, "delayImpl: dequeueNFirstRingDatas[%d] %g = %g", i, time-delayMax+DBL_EPSILON, delayTime);
   }

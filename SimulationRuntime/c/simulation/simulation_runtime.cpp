@@ -121,18 +121,18 @@ void setTermMsg(const char *msg)
 {
   size_t i;
   size_t length = strlen(msg);
-  if (length > 0) {
-      if (TermMsg == NULL) {
+  if(length > 0) {
+      if(TermMsg == NULL) {
         TermMsg = (char*)malloc((length+1)*sizeof(char));
       } else {
-          if (strlen(msg) > strlen(TermMsg)) {
-            if (TermMsg != NULL) {
+          if(strlen(msg) > strlen(TermMsg)) {
+            if(TermMsg != NULL) {
                   free(TermMsg);
             }
             TermMsg = (char*)malloc((length+1)*sizeof(char));
           }
       }
-      for (i=0;i<length;i++)
+      for(i=0;i<length;i++)
         TermMsg[i] = msg[i];
       /* set the terminating 0 */
       TermMsg[i] = '\0';
@@ -182,7 +182,7 @@ void setGlobalVerboseLevel(int argc, char**argv)
     useStream[LOG_SOTI] = 1;
 
   /* print states if LOG_SOLVER if active */
-  if (useStream[LOG_SOLVER] == 1)
+  if(useStream[LOG_SOLVER] == 1)
     useStream[LOG_STATS] = 1;
 
   delete flags;
@@ -236,36 +236,36 @@ void initializeOutputFilter(MODEL_DATA *modelData, modelica_string variableFilte
   int rc;
   string tmp = ("^(" + varfilter + ")$");
   const char *filter = tmp.c_str(); // C++ strings are horrible to work with...
-  if (modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name,"$dummy")) {
+  if(modelData->nStates > 0 && 0 == strcmp(modelData->realVarsData[0].info.name,"$dummy")) {
     modelData->realVarsData[0].filterOutput = 1;
     modelData->realVarsData[modelData->nStates].filterOutput = 1;
   }
-  if (0 == strcmp(filter, ".*")) // This matches all variables, so we don't need to do anything
+  if(0 == strcmp(filter, ".*")) // This matches all variables, so we don't need to do anything
     return;
 
   rc = regcomp(&myregex, filter, flags);
-  if (rc) {
+  if(rc) {
     char err_buf[2048] = {0};
     regerror(rc, &myregex, err_buf, 2048);
     std::cerr << "Failed to compile regular expression: " << filter << " with error: " << err_buf << ". Defaulting to outputting all variables." << std::endl;
     return;
   }
   /* new imple */
-  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
     modelData->realVarsData[i].filterOutput = regexec(&myregex, modelData->realVarsData[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
+  for(int i = 0; i < modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput)
     modelData->realAlias[i].filterOutput = regexec(&myregex, modelData->realAlias[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
     modelData->integerVarsData[i].filterOutput = regexec(&myregex, modelData->integerVarsData[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput)
+  for(int i = 0; i < modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput)
     modelData->integerAlias[i].filterOutput = regexec(&myregex, modelData->integerAlias[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput)
     modelData->booleanVarsData[i].filterOutput = regexec(&myregex, modelData->booleanVarsData[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nAliasBoolean; i++) if (!modelData->booleanAlias[i].filterOutput)
+  for(int i = 0; i < modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput)
     modelData->booleanAlias[i].filterOutput = regexec(&myregex, modelData->booleanAlias[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nVariablesString; i++) if (!modelData->stringVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesString; i++) if(!modelData->stringVarsData[i].filterOutput)
     modelData->stringVarsData[i].filterOutput = regexec(&myregex, modelData->stringVarsData[i].info.name, 0, NULL, 0) != 0;
-  for (int i = 0; i < modelData->nAliasString; i++) if (!modelData->stringAlias[i].filterOutput)
+  for(int i = 0; i < modelData->nAliasString; i++) if(!modelData->stringAlias[i].filterOutput)
     modelData->stringAlias[i].filterOutput = regexec(&myregex, modelData->stringAlias[i].info.name, 0, NULL, 0) != 0;
   regfree(&myregex);
 #endif
@@ -356,7 +356,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
     init_time = atof(init_time_string.c_str());
   }
 
-  if (flagSet("output", argc, argv))
+  if(flagSet("output", argc, argv))
   {
     outputVariablesAtEnd = *getFlagValue("output", argc, argv);
   }
@@ -376,7 +376,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
    * was not activated while compiling, it was
    * just used for measure simulation time for LOG_STATS.
    */
-  if (measureSimTime){
+  if(measureSimTime){
     measure_time_flag = 0;
   }
 
@@ -411,13 +411,13 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   const char* outVars = (outputVariablesAtEnd[0] == '\0') ? NULL : outputVariablesAtEnd.c_str();
 
   long maxSteps = 4 * simData->simulationInfo.numSteps;
-  if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
+  if(isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty", simData->simulationInfo.outputFormat)) {
     sim_result = new simulation_result_empty(result_file_cstr.c_str(), maxSteps, simData);
-  } else if (0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("csv", simData->simulationInfo.outputFormat)) {
     sim_result = new simulation_result_csv(result_file_cstr.c_str(), maxSteps, simData);
-  } else if (0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("mat", simData->simulationInfo.outputFormat)) {
     sim_result = new simulation_result_mat(result_file_cstr.c_str(), simData->simulationInfo.startTime, simData->simulationInfo.stopTime, simData);
-  } else if (0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
+  } else if(0 == strcmp("plt", simData->simulationInfo.outputFormat)) {
     sim_result = new simulation_result_plt(result_file_cstr.c_str(), maxSteps, simData);
   } else {
     cerr << "Unknown output format: " << simData->simulationInfo.outputFormat << endl;
@@ -425,16 +425,16 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
   }
   INFO2(LOG_SOLVER,"Allocated simulation result data storage for method '%s' and file='%s'", sim_result->result_type(), result_file_cstr.c_str());
 
-  if (simData->simulationInfo.solverMethod == std::string("")) {
+  if(simData->simulationInfo.solverMethod == std::string("")) {
     INFO(LOG_SOLVER, " | No solver is set, using dassl.");
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
-  } else if (simData->simulationInfo.solverMethod == std::string("euler")) {
+  } else if(simData->simulationInfo.solverMethod == std::string("euler")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 1, outVars);
-  } else if (simData->simulationInfo.solverMethod == std::string("rungekutta")) {
+  } else if(simData->simulationInfo.solverMethod == std::string("rungekutta")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 2, outVars);
-  } else if (simData->simulationInfo.solverMethod == std::string("dassl") ||
+  } else if(simData->simulationInfo.solverMethod == std::string("dassl") ||
               simData->simulationInfo.solverMethod == std::string("dasslwort")  ||
               simData->simulationInfo.solverMethod == std::string("dassltest")  ||
               simData->simulationInfo.solverMethod == std::string("dasslSymJac") ||
@@ -444,16 +444,16 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
 
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 3, outVars);
-  } else if (simData->simulationInfo.solverMethod == std::string("inline-euler")) {
-    if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
+  } else if(simData->simulationInfo.solverMethod == std::string("inline-euler")) {
+    if(!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER.", simData->simulationInfo.solverMethod);
       retVal = 1;
     } else {
       INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
       retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
-  } else if (simData->simulationInfo.solverMethod == std::string("inline-rungekutta")) {
-    if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
+  } else if(simData->simulationInfo.solverMethod == std::string("inline-rungekutta")) {
+    if(!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
       INFO1(LOG_SOLVER, " | Recognized solver: %s, but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK.", simData->simulationInfo.solverMethod);
       retVal = 1;
     } else {
@@ -461,7 +461,7 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
       retVal = solver_main(simData, init_initMethod.c_str(), init_optiMethod.c_str(), init_file.c_str(), init_time, 4, outVars);
     }
 #ifdef _OMC_QSS_LIB
-  } else if (simData->simulationInfo.solverMethod == std::string("qss")) {
+  } else if(simData->simulationInfo.solverMethod == std::string("qss")) {
     INFO1(LOG_SOLVER, " | Recognized solver: %s.", simData->simulationInfo.solverMethod);
     retVal = qss_main(argc, argv, simData->simulationInfo.startTime,
                       simData->simulationInfo.stopTime, simData->simulationInfo.stepSize,
@@ -556,14 +556,14 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 #ifndef NO_INTERACTIVE_DEPENDENCY
   interactiveSimulation = flagSet("interactive", argc, argv);
   /*
-  if (interactiveSimulation && flagSet("port", argc, argv)) {
+  if(interactiveSimulation && flagSet("port", argc, argv)) {
     cout << "userPort" << endl;
     string *portvalue = (string*) getFlagValue("port", argc, argv);
     std::istringstream stream(*portvalue);
     int userPort;
     stream >> userPort;
     setPortOfControlServer(userPort);
-  } else if (!interactiveSimulation && flagSet("port", argc, argv)) {
+  } else if(!interactiveSimulation && flagSet("port", argc, argv)) {
   */
   if(!interactiveSimulation && flagSet("port", argc, argv))
   {
@@ -607,7 +607,7 @@ void SimulationRuntime_printStatus(int sig)
 void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*/)
 {
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  if (sim_communication_port_open) {
+  if(sim_communication_port_open) {
     std::stringstream s;
     s << (int)(completionPercent*10000) << " " << phase << endl;
     std::string str(s.str());
@@ -640,7 +640,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 #endif
 
     /*
-     * if (interactiveSimulation)
+     * if(interactiveSimulation)
      * {
      *   cout << "startInteractiveSimulation: " << version << endl;
      *   retVal = startInteractiveSimulation(argc, argv);
@@ -663,7 +663,7 @@ int _main_SimulationRuntime(int argc, char**argv, DATA *data)
   }
 
 #ifndef NO_INTERACTIVE_DEPENDENCY
-  if (sim_communication_port_open) {
+  if(sim_communication_port_open) {
     sim_communication_port.close();
   }
 #endif
@@ -708,7 +708,7 @@ static void omc_throw_simulation()
 {
   terminationAssert = 1;
   setTermMsg("Assertion triggered by external C function");
-  set_struct(FILE_INFO,TermInfo,omc_dummyFileInfo);
+  set_struct(FILE_INFO, TermInfo, omc_dummyFileInfo);
 }
 
 void (*omc_assert)(const char *msg, FILE_INFO info) = omc_assert_simulation;

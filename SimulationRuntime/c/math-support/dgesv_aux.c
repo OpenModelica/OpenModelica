@@ -104,16 +104,16 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 
     /* Function Body */
     *info = 0;
-    if (*n < 0) {
+    if(*n < 0) {
   *info = -1;
-    } else if (*nrhs < 0) {
+    } else if(*nrhs < 0) {
   *info = -2;
-    } else if (*lda < max(1,*n)) {
+    } else if(*lda < max(1,*n)) {
   *info = -4;
-    } else if (*ldb < max(1,*n)) {
+    } else if(*ldb < max(1,*n)) {
   *info = -7;
     }
-    if (*info != 0) {
+    if(*info != 0) {
   i__1 = -(*info);
   _omc_internal_xerbla_("DGESV ", &i__1);
   return 0;
@@ -122,7 +122,7 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 /*     Compute the LU factorization of A. */
 
     _omc_internal_dgetrf_(n, n, &a[a_offset], lda, &ipiv[1], info);
-    if (*info == 0) {
+    if(*info == 0) {
 
 /*        Solve the system A*X = B, overwriting B with X. */
 
@@ -220,19 +220,19 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     /* Function Body */
     *info = 0;
     notran = _omc_internal_lsame_(trans, "N");
-    if (! notran && ! _omc_internal_lsame_(trans, "T") && ! _omc_internal_lsame_(
+    if(! notran && ! _omc_internal_lsame_(trans, "T") && ! _omc_internal_lsame_(
       trans, "C")) {
   *info = -1;
-    } else if (*n < 0) {
+    } else if(*n < 0) {
   *info = -2;
-    } else if (*nrhs < 0) {
+    } else if(*nrhs < 0) {
   *info = -3;
-    } else if (*lda < max(1,*n)) {
+    } else if(*lda < max(1,*n)) {
   *info = -5;
-    } else if (*ldb < max(1,*n)) {
+    } else if(*ldb < max(1,*n)) {
   *info = -8;
     }
-    if (*info != 0) {
+    if(*info != 0) {
   i__1 = -(*info);
   _omc_internal_xerbla_("DGETRS", &i__1);
   return 0;
@@ -240,11 +240,11 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 
 /*     Quick return if possible */
 
-    if (*n == 0 || *nrhs == 0) {
+    if(*n == 0 || *nrhs == 0) {
   return 0;
     }
 
-    if (notran) {
+    if(notran) {
 
 /*        Solve A * X = B.
 
@@ -395,7 +395,7 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     b -= b_offset;
     /* Function Body */
     lside = _omc_internal_lsame_(side, "L");
-    if (lside) {
+    if(lside) {
   nrowa = *m;
     } else {
   nrowa = *n;
@@ -403,39 +403,39 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     nounit = _omc_internal_lsame_(diag, "N");
     upper = _omc_internal_lsame_(uplo, "U");
     info = 0;
-    if (! lside && ! _omc_internal_lsame_(side, "R")) {
+    if(! lside && ! _omc_internal_lsame_(side, "R")) {
   info = 1;
-    } else if (! upper && ! _omc_internal_lsame_(uplo, "L")) {
+    } else if(! upper && ! _omc_internal_lsame_(uplo, "L")) {
   info = 2;
-    } else if (! _omc_internal_lsame_(transa, "N") && ! _omc_internal_lsame_(transa,
+    } else if(! _omc_internal_lsame_(transa, "N") && ! _omc_internal_lsame_(transa,
        "T") && ! _omc_internal_lsame_(transa, "C")) {
   info = 3;
-    } else if (! _omc_internal_lsame_(diag, "U") && ! _omc_internal_lsame_(diag,
+    } else if(! _omc_internal_lsame_(diag, "U") && ! _omc_internal_lsame_(diag,
       "N")) {
   info = 4;
-    } else if (*m < 0) {
+    } else if(*m < 0) {
   info = 5;
-    } else if (*n < 0) {
+    } else if(*n < 0) {
   info = 6;
-    } else if (*lda < max(1,nrowa)) {
+    } else if(*lda < max(1,nrowa)) {
   info = 9;
-    } else if (*ldb < max(1,*m)) {
+    } else if(*ldb < max(1,*m)) {
   info = 11;
     }
-    if (info != 0) {
+    if(info != 0) {
   _omc_internal_xerbla_("DTRSM ", &info);
   return 0;
     }
 /*     Quick return if possible. */
-    if (*n == 0) {
+    if(*n == 0) {
   return 0;
     }
 /*     And when  alpha.eq.zero. */
-    if (*alpha == 0.) {
+    if(*alpha == 0.) {
   i__1 = *n;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       i__2 = *m;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
     b_ref(i__, j) = 0.;
 /* L10: */
       }
@@ -444,26 +444,26 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
   return 0;
     }
 /*     Start the operations. */
-    if (lside) {
-  if (_omc_internal_lsame_(transa, "N")) {
+    if(lside) {
+  if(_omc_internal_lsame_(transa, "N")) {
 /*           Form  B := alpha*inv( A )*B. */
-      if (upper) {
+      if(upper) {
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
-        if (*alpha != 1.) {
+    for(j = 1; j <= i__1; ++j) {
+        if(*alpha != 1.) {
       i__2 = *m;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
           b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L30: */
       }
         }
-        for (k = *m; k >= 1; --k) {
-      if (b_ref(k, j) != 0.) {
-          if (nounit) {
+        for(k = *m; k >= 1; --k) {
+      if(b_ref(k, j) != 0.) {
+          if(nounit) {
         b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
           }
           i__2 = k - 1;
-          for (i__ = 1; i__ <= i__2; ++i__) {
+          for(i__ = 1; i__ <= i__2; ++i__) {
         b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
           a_ref(i__, k);
 /* L40: */
@@ -475,22 +475,22 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     }
       } else {
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
-        if (*alpha != 1.) {
+    for(j = 1; j <= i__1; ++j) {
+        if(*alpha != 1.) {
       i__2 = *m;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
           b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L70: */
       }
         }
         i__2 = *m;
-        for (k = 1; k <= i__2; ++k) {
-      if (b_ref(k, j) != 0.) {
-          if (nounit) {
+        for(k = 1; k <= i__2; ++k) {
+      if(b_ref(k, j) != 0.) {
+          if(nounit) {
         b_ref(k, j) = b_ref(k, j) / a_ref(k, k);
           }
           i__3 = *m;
-          for (i__ = k + 1; i__ <= i__3; ++i__) {
+          for(i__ = k + 1; i__ <= i__3; ++i__) {
         b_ref(i__, j) = b_ref(i__, j) - b_ref(k, j) *
           a_ref(i__, k);
 /* L80: */
@@ -503,18 +503,18 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
   } else {
 /*           Form  B := alpha*inv( A' )*B. */
-      if (upper) {
+      if(upper) {
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
         i__2 = *m;
-        for (i__ = 1; i__ <= i__2; ++i__) {
+        for(i__ = 1; i__ <= i__2; ++i__) {
       temp = *alpha * b_ref(i__, j);
       i__3 = i__ - 1;
-      for (k = 1; k <= i__3; ++k) {
+      for(k = 1; k <= i__3; ++k) {
           temp -= a_ref(k, i__) * b_ref(k, j);
 /* L110: */
       }
-      if (nounit) {
+      if(nounit) {
           temp /= a_ref(i__, i__);
       }
       b_ref(i__, j) = temp;
@@ -524,15 +524,15 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     }
       } else {
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
-        for (i__ = *m; i__ >= 1; --i__) {
+    for(j = 1; j <= i__1; ++j) {
+        for(i__ = *m; i__ >= 1; --i__) {
       temp = *alpha * b_ref(i__, j);
       i__2 = *m;
-      for (k = i__ + 1; k <= i__2; ++k) {
+      for(k = i__ + 1; k <= i__2; ++k) {
           temp -= a_ref(k, i__) * b_ref(k, j);
 /* L140: */
       }
-      if (nounit) {
+      if(nounit) {
           temp /= a_ref(i__, i__);
       }
       b_ref(i__, j) = temp;
@@ -543,23 +543,23 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
   }
     } else {
-  if (_omc_internal_lsame_(transa, "N")) {
+  if(_omc_internal_lsame_(transa, "N")) {
 /*           Form  B := alpha*B*inv( A ). */
-      if (upper) {
+      if(upper) {
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
-        if (*alpha != 1.) {
+    for(j = 1; j <= i__1; ++j) {
+        if(*alpha != 1.) {
       i__2 = *m;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
           b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L170: */
       }
         }
         i__2 = j - 1;
-        for (k = 1; k <= i__2; ++k) {
-      if (a_ref(k, j) != 0.) {
+        for(k = 1; k <= i__2; ++k) {
+      if(a_ref(k, j) != 0.) {
           i__3 = *m;
-          for (i__ = 1; i__ <= i__3; ++i__) {
+          for(i__ = 1; i__ <= i__3; ++i__) {
         b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
           b_ref(i__, k);
 /* L180: */
@@ -567,10 +567,10 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
 /* L190: */
         }
-        if (nounit) {
+        if(nounit) {
       temp = 1. / a_ref(j, j);
       i__2 = *m;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
           b_ref(i__, j) = temp * b_ref(i__, j);
 /* L200: */
       }
@@ -578,19 +578,19 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 /* L210: */
     }
       } else {
-    for (j = *n; j >= 1; --j) {
-        if (*alpha != 1.) {
+    for(j = *n; j >= 1; --j) {
+        if(*alpha != 1.) {
       i__1 = *m;
-      for (i__ = 1; i__ <= i__1; ++i__) {
+      for(i__ = 1; i__ <= i__1; ++i__) {
           b_ref(i__, j) = *alpha * b_ref(i__, j);
 /* L220: */
       }
         }
         i__1 = *n;
-        for (k = j + 1; k <= i__1; ++k) {
-      if (a_ref(k, j) != 0.) {
+        for(k = j + 1; k <= i__1; ++k) {
+      if(a_ref(k, j) != 0.) {
           i__2 = *m;
-          for (i__ = 1; i__ <= i__2; ++i__) {
+          for(i__ = 1; i__ <= i__2; ++i__) {
         b_ref(i__, j) = b_ref(i__, j) - a_ref(k, j) *
           b_ref(i__, k);
 /* L230: */
@@ -598,10 +598,10 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
 /* L240: */
         }
-        if (nounit) {
+        if(nounit) {
       temp = 1. / a_ref(j, j);
       i__1 = *m;
-      for (i__ = 1; i__ <= i__1; ++i__) {
+      for(i__ = 1; i__ <= i__1; ++i__) {
           b_ref(i__, j) = temp * b_ref(i__, j);
 /* L250: */
       }
@@ -611,22 +611,22 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
   } else {
 /*           Form  B := alpha*B*inv( A' ). */
-      if (upper) {
-    for (k = *n; k >= 1; --k) {
-        if (nounit) {
+      if(upper) {
+    for(k = *n; k >= 1; --k) {
+        if(nounit) {
       temp = 1. / a_ref(k, k);
       i__1 = *m;
-      for (i__ = 1; i__ <= i__1; ++i__) {
+      for(i__ = 1; i__ <= i__1; ++i__) {
           b_ref(i__, k) = temp * b_ref(i__, k);
 /* L270: */
       }
         }
         i__1 = k - 1;
-        for (j = 1; j <= i__1; ++j) {
-      if (a_ref(j, k) != 0.) {
+        for(j = 1; j <= i__1; ++j) {
+      if(a_ref(j, k) != 0.) {
           temp = a_ref(j, k);
           i__2 = *m;
-          for (i__ = 1; i__ <= i__2; ++i__) {
+          for(i__ = 1; i__ <= i__2; ++i__) {
         b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
           i__, k);
 /* L280: */
@@ -634,9 +634,9 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
 /* L290: */
         }
-        if (*alpha != 1.) {
+        if(*alpha != 1.) {
       i__1 = *m;
-      for (i__ = 1; i__ <= i__1; ++i__) {
+      for(i__ = 1; i__ <= i__1; ++i__) {
           b_ref(i__, k) = *alpha * b_ref(i__, k);
 /* L300: */
       }
@@ -645,21 +645,21 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     }
       } else {
     i__1 = *n;
-    for (k = 1; k <= i__1; ++k) {
-        if (nounit) {
+    for(k = 1; k <= i__1; ++k) {
+        if(nounit) {
       temp = 1. / a_ref(k, k);
       i__2 = *m;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
           b_ref(i__, k) = temp * b_ref(i__, k);
 /* L320: */
       }
         }
         i__2 = *n;
-        for (j = k + 1; j <= i__2; ++j) {
-      if (a_ref(j, k) != 0.) {
+        for(j = k + 1; j <= i__2; ++j) {
+      if(a_ref(j, k) != 0.) {
           temp = a_ref(j, k);
           i__3 = *m;
-          for (i__ = 1; i__ <= i__3; ++i__) {
+          for(i__ = 1; i__ <= i__3; ++i__) {
         b_ref(i__, j) = b_ref(i__, j) - temp * b_ref(
           i__, k);
 /* L330: */
@@ -667,9 +667,9 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
 /* L340: */
         }
-        if (*alpha != 1.) {
+        if(*alpha != 1.) {
       i__2 = *m;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
           b_ref(i__, k) = *alpha * b_ref(i__, k);
 /* L350: */
       }
@@ -767,14 +767,14 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 
     /* Function Body */
     *info = 0;
-    if (*m < 0) {
+    if(*m < 0) {
   *info = -1;
-    } else if (*n < 0) {
+    } else if(*n < 0) {
   *info = -2;
-    } else if (*lda < max(1,*m)) {
+    } else if(*lda < max(1,*m)) {
   *info = -4;
     }
-    if (*info != 0) {
+    if(*info != 0) {
   i__1 = -(*info);
   _omc_internal_xerbla_("DGETRF", &i__1);
   return 0;
@@ -782,7 +782,7 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 
 /*     Quick return if possible */
 
-    if (*m == 0 || *n == 0) {
+    if(*m == 0 || *n == 0) {
   return 0;
     }
 
@@ -790,7 +790,7 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 
     nb = _omc_internal_ilaenv_(&c__1, "DGETRF", " ", m, n, &c_n1, &c_n1, (ftnlen)6, (ftnlen)
       1);
-    if (nb <= 1 || nb >= min(*m,*n)) {
+    if(nb <= 1 || nb >= min(*m,*n)) {
 
 /*        Use unblocked code. */
 
@@ -801,7 +801,7 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 
   i__1 = min(*m,*n);
   i__2 = nb;
-  for (j = 1; i__2 < 0 ? j >= i__1 : j <= i__1; j += i__2) {
+  for(j = 1; i__2 < 0 ? j >= i__1 : j <= i__1; j += i__2) {
 /* Computing MIN */
       i__3 = min(*m,*n) - j + 1;
       jb = min(i__3,nb);
@@ -814,13 +814,13 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 
 /*           Adjust INFO and the pivot indices. */
 
-      if (*info == 0 && iinfo > 0) {
+      if(*info == 0 && iinfo > 0) {
     *info = iinfo + j - 1;
       }
 /* Computing MIN */
       i__4 = *m, i__5 = j + jb - 1;
       i__3 = min(i__4,i__5);
-      for (i__ = j; i__ <= i__3; ++i__) {
+      for(i__ = j; i__ <= i__3; ++i__) {
     ipiv[i__] = j - 1 + ipiv[i__];
 /* L10: */
       }
@@ -831,7 +831,7 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       i__4 = j + jb - 1;
       _omc_internal_dlaswp_(&i__3, &a[a_offset], lda, &j, &i__4, &ipiv[1], &c__1);
 
-      if (j + jb <= *n) {
+      if(j + jb <= *n) {
 
 /*              Apply interchanges to columns J+JB:N. */
 
@@ -845,7 +845,7 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     i__3 = *n - j - jb + 1;
     _omc_internal_dtrsm_("Left", "Lower", "No transpose", "Unit", &jb, &i__3, &
       c_b16, &a_ref(j, j), lda, &a_ref(j, j + jb), lda);
-    if (j + jb <= *m) {
+    if(j + jb <= *m) {
 
 /*                 Update trailing submatrix. */
 
@@ -1043,54 +1043,54 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     /* Function Body */
     nota = _omc_internal_lsame_(transa, "N");
     notb = _omc_internal_lsame_(transb, "N");
-    if (nota) {
+    if(nota) {
   nrowa = *m;
   ncola = *k;
     } else {
   nrowa = *k;
   ncola = *m;
     }
-    if (notb) {
+    if(notb) {
   nrowb = *k;
     } else {
   nrowb = *n;
     }
 /*     Test the input parameters. */
     info = 0;
-    if (! nota && ! _omc_internal_lsame_(transa, "C") && ! _omc_internal_lsame_(
+    if(! nota && ! _omc_internal_lsame_(transa, "C") && ! _omc_internal_lsame_(
       transa, "T")) {
   info = 1;
-    } else if (! notb && ! _omc_internal_lsame_(transb, "C") && !
+    } else if(! notb && ! _omc_internal_lsame_(transb, "C") && !
       _omc_internal_lsame_(transb, "T")) {
   info = 2;
-    } else if (*m < 0) {
+    } else if(*m < 0) {
   info = 3;
-    } else if (*n < 0) {
+    } else if(*n < 0) {
   info = 4;
-    } else if (*k < 0) {
+    } else if(*k < 0) {
   info = 5;
-    } else if (*lda < max(1,nrowa)) {
+    } else if(*lda < max(1,nrowa)) {
   info = 8;
-    } else if (*ldb < max(1,nrowb)) {
+    } else if(*ldb < max(1,nrowb)) {
   info = 10;
-    } else if (*ldc < max(1,*m)) {
+    } else if(*ldc < max(1,*m)) {
   info = 13;
     }
-    if (info != 0) {
+    if(info != 0) {
   _omc_internal_xerbla_("DGEMM ", &info);
   return 0;
     }
 /*     Quick return if possible. */
-    if (*m == 0 || *n == 0 || ((*alpha == 0. || *k == 0) && *beta == 1.)) {
+    if(*m == 0 || *n == 0 || ((*alpha == 0. || *k == 0) && *beta == 1.)) {
   return 0;
     }
 /*     And if  alpha.eq.zero. */
-    if (*alpha == 0.) {
-  if (*beta == 0.) {
+    if(*alpha == 0.) {
+  if(*beta == 0.) {
       i__1 = *n;
-      for (j = 1; j <= i__1; ++j) {
+      for(j = 1; j <= i__1; ++j) {
     i__2 = *m;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
         c___ref(i__, j) = 0.;
 /* L10: */
     }
@@ -1098,9 +1098,9 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
   } else {
       i__1 = *n;
-      for (j = 1; j <= i__1; ++j) {
+      for(j = 1; j <= i__1; ++j) {
     i__2 = *m;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
         c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L30: */
     }
@@ -1110,30 +1110,30 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
   return 0;
     }
 /*     Start the operations. */
-    if (notb) {
-  if (nota) {
+    if(notb) {
+  if(nota) {
 /*           Form  C := alpha*A*B + beta*C. */
       i__1 = *n;
-      for (j = 1; j <= i__1; ++j) {
-    if (*beta == 0.) {
+      for(j = 1; j <= i__1; ++j) {
+    if(*beta == 0.) {
         i__2 = *m;
-        for (i__ = 1; i__ <= i__2; ++i__) {
+        for(i__ = 1; i__ <= i__2; ++i__) {
       c___ref(i__, j) = 0.;
 /* L50: */
         }
-    } else if (*beta != 1.) {
+    } else if(*beta != 1.) {
         i__2 = *m;
-        for (i__ = 1; i__ <= i__2; ++i__) {
+        for(i__ = 1; i__ <= i__2; ++i__) {
       c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L60: */
         }
     }
     i__2 = *k;
-    for (l = 1; l <= i__2; ++l) {
-        if (b_ref(l, j) != 0.) {
+    for(l = 1; l <= i__2; ++l) {
+        if(b_ref(l, j) != 0.) {
       temp = *alpha * b_ref(l, j);
       i__3 = *m;
-      for (i__ = 1; i__ <= i__3; ++i__) {
+      for(i__ = 1; i__ <= i__3; ++i__) {
           c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
             i__, l);
 /* L70: */
@@ -1146,16 +1146,16 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
   } else {
 /*           Form  C := alpha*A'*B + beta*C */
       i__1 = *n;
-      for (j = 1; j <= i__1; ++j) {
+      for(j = 1; j <= i__1; ++j) {
     i__2 = *m;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
         temp = 0.;
         i__3 = *k;
-        for (l = 1; l <= i__3; ++l) {
+        for(l = 1; l <= i__3; ++l) {
       temp += a_ref(l, i__) * b_ref(l, j);
 /* L100: */
         }
-        if (*beta == 0.) {
+        if(*beta == 0.) {
       c___ref(i__, j) = *alpha * temp;
         } else {
       c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
@@ -1167,29 +1167,29 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
       }
   }
     } else {
-  if (nota) {
+  if(nota) {
 /*           Form  C := alpha*A*B' + beta*C */
       i__1 = *n;
-      for (j = 1; j <= i__1; ++j) {
-    if (*beta == 0.) {
+      for(j = 1; j <= i__1; ++j) {
+    if(*beta == 0.) {
         i__2 = *m;
-        for (i__ = 1; i__ <= i__2; ++i__) {
+        for(i__ = 1; i__ <= i__2; ++i__) {
       c___ref(i__, j) = 0.;
 /* L130: */
         }
-    } else if (*beta != 1.) {
+    } else if(*beta != 1.) {
         i__2 = *m;
-        for (i__ = 1; i__ <= i__2; ++i__) {
+        for(i__ = 1; i__ <= i__2; ++i__) {
       c___ref(i__, j) = *beta * c___ref(i__, j);
 /* L140: */
         }
     }
     i__2 = *k;
-    for (l = 1; l <= i__2; ++l) {
-        if (b_ref(j, l) != 0.) {
+    for(l = 1; l <= i__2; ++l) {
+        if(b_ref(j, l) != 0.) {
       temp = *alpha * b_ref(j, l);
       i__3 = *m;
-      for (i__ = 1; i__ <= i__3; ++i__) {
+      for(i__ = 1; i__ <= i__3; ++i__) {
           c___ref(i__, j) = c___ref(i__, j) + temp * a_ref(
             i__, l);
 /* L150: */
@@ -1202,16 +1202,16 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
   } else {
 /*           Form  C := alpha*A'*B' + beta*C */
       i__1 = *n;
-      for (j = 1; j <= i__1; ++j) {
+      for(j = 1; j <= i__1; ++j) {
     i__2 = *m;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
         temp = 0.;
         i__3 = *k;
-        for (l = 1; l <= i__3; ++l) {
+        for(l = 1; l <= i__3; ++l) {
       temp += a_ref(l, i__) * b_ref(j, l);
 /* L180: */
         }
-        if (*beta == 0.) {
+        if(*beta == 0.) {
       c___ref(i__, j) = *alpha * temp;
         } else {
       c___ref(i__, j) = *alpha * temp + *beta * c___ref(i__,
@@ -1301,12 +1301,12 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     --ipiv;
 
     /* Function Body */
-    if (*incx > 0) {
+    if(*incx > 0) {
   ix0 = *k1;
   i1 = *k1;
   i2 = *k2;
   inc = 1;
-    } else if (*incx < 0) {
+    } else if(*incx < 0) {
   ix0 = (1 - *k2) * *incx + 1;
   i1 = *k2;
   i2 = *k1;
@@ -1316,18 +1316,18 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
     }
 
     n32 = *n / 32 << 5;
-    if (n32 != 0) {
+    if(n32 != 0) {
   i__1 = n32;
-  for (j = 1; j <= i__1; j += 32) {
+  for(j = 1; j <= i__1; j += 32) {
       ix = ix0;
       i__2 = i2;
       i__3 = inc;
-      for (i__ = i1; i__3 < 0 ? i__ >= i__2 : i__ <= i__2; i__ += i__3)
+      for(i__ = i1; i__3 < 0 ? i__ >= i__2 : i__ <= i__2; i__ += i__3)
         {
     ip = ipiv[ix];
-    if (ip != i__) {
+    if(ip != i__) {
         i__4 = j + 31;
-        for (k = j; k <= i__4; ++k) {
+        for(k = j; k <= i__4; ++k) {
       temp = a_ref(i__, k);
       a_ref(i__, k) = a_ref(ip, k);
       a_ref(ip, k) = temp;
@@ -1340,16 +1340,16 @@ int _omc_internal_dger_(integer *, integer *, doublereal *, doublereal *, intege
 /* L30: */
   }
     }
-    if (n32 != *n) {
+    if(n32 != *n) {
   ++n32;
   ix = ix0;
   i__1 = i2;
   i__3 = inc;
-  for (i__ = i1; i__3 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__3) {
+  for(i__ = i1; i__3 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__3) {
       ip = ipiv[ix];
-      if (ip != i__) {
+      if(ip != i__) {
     i__2 = *n;
-    for (k = n32; k <= i__2; ++k) {
+    for(k = n32; k <= i__2; ++k) {
         temp = a_ref(i__, k);
         a_ref(i__, k) = a_ref(ip, k);
         a_ref(ip, k) = temp;
@@ -1403,7 +1403,7 @@ logical _omc_internal_lsame_(char *ca, char *cb)
 
 
     ret_val = *(unsigned char *)ca == *(unsigned char *)cb;
-    if (ret_val) {
+    if(ret_val) {
   return ret_val;
     }
 
@@ -1419,44 +1419,44 @@ logical _omc_internal_lsame_(char *ca, char *cb)
     inta = *(unsigned char *)ca;
     intb = *(unsigned char *)cb;
 
-    if (zcode == 90 || zcode == 122) {
+    if(zcode == 90 || zcode == 122) {
 
 /*        ASCII is assumed - ZCODE is the ASCII code of either lower o
 r
           upper case 'Z'. */
 
-  if (inta >= 97 && inta <= 122) {
+  if(inta >= 97 && inta <= 122) {
       inta += -32;
   }
-  if (intb >= 97 && intb <= 122) {
+  if(intb >= 97 && intb <= 122) {
       intb += -32;
   }
 
-    } else if (zcode == 233 || zcode == 169) {
+    } else if(zcode == 233 || zcode == 169) {
 
 /*        EBCDIC is assumed - ZCODE is the EBCDIC code of either lower
  or
           upper case 'Z'. */
 
-  if ((inta >= 129 && inta <= 137) || (inta >= 145 && inta <= 153) || (inta
+  if((inta >= 129 && inta <= 137) || (inta >= 145 && inta <= 153) || (inta
     >= 162 && inta <= 169)) {
       inta += 64;
   }
-  if ((intb >= 129 && intb <= 137) || (intb >= 145 && intb <= 153) || (intb
+  if((intb >= 129 && intb <= 137) || (intb >= 145 && intb <= 153) || (intb
     >= 162 && intb <= 169)) {
       intb += 64;
   }
 
-    } else if (zcode == 218 || zcode == 250) {
+    } else if(zcode == 218 || zcode == 250) {
 
 /*        ASCII is assumed, on Prime machines - ZCODE is the ASCII cod
 e
           plus 128 of either lower or upper case 'Z'. */
 
-  if (inta >= 225 && inta <= 250) {
+  if(inta >= 225 && inta <= 250) {
       inta += -32;
   }
-  if (intb >= 225 && intb <= 250) {
+  if(intb >= 225 && intb <= 250) {
       intb += -32;
   }
     }
@@ -1618,31 +1618,31 @@ L100:
     s_copy(subnam, name__, (ftnlen)6, name_len);
     ic = *(unsigned char *)subnam;
     iz = 'Z';
-    if (iz == 90 || iz == 122) {
+    if(iz == 90 || iz == 122) {
 
 /*        ASCII character set */
 
-  if (ic >= 97 && ic <= 122) {
+  if(ic >= 97 && ic <= 122) {
       *(unsigned char *)subnam = (char) (ic - 32);
-      for (i__ = 2; i__ <= 6; ++i__) {
+      for(i__ = 2; i__ <= 6; ++i__) {
     ic = *(unsigned char *)&subnam[i__ - 1];
-    if (ic >= 97 && ic <= 122) {
+    if(ic >= 97 && ic <= 122) {
         *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
     }
 /* L10: */
       }
   }
 
-    } else if (iz == 233 || iz == 169) {
+    } else if(iz == 233 || iz == 169) {
 
 /*        EBCDIC character set */
 
-  if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >= 162 &&
+  if((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >= 162 &&
     ic <= 169)) {
       *(unsigned char *)subnam = (char) (ic + 64);
-      for (i__ = 2; i__ <= 6; ++i__) {
+      for(i__ = 2; i__ <= 6; ++i__) {
     ic = *(unsigned char *)&subnam[i__ - 1];
-    if ((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >=
+    if((ic >= 129 && ic <= 137) || (ic >= 145 && ic <= 153) || (ic >=
       162 && ic <= 169)) {
         *(unsigned char *)&subnam[i__ - 1] = (char) (ic + 64);
     }
@@ -1650,15 +1650,15 @@ L100:
       }
   }
 
-    } else if (iz == 218 || iz == 250) {
+    } else if(iz == 218 || iz == 250) {
 
 /*        Prime machines:  ASCII+128 */
 
-  if (ic >= 225 && ic <= 250) {
+  if(ic >= 225 && ic <= 250) {
       *(unsigned char *)subnam = (char) (ic - 32);
-      for (i__ = 2; i__ <= 6; ++i__) {
+      for(i__ = 2; i__ <= 6; ++i__) {
     ic = *(unsigned char *)&subnam[i__ - 1];
-    if (ic >= 225 && ic <= 250) {
+    if(ic >= 225 && ic <= 250) {
         *(unsigned char *)&subnam[i__ - 1] = (char) (ic - 32);
     }
 /* L30: */
@@ -1669,7 +1669,7 @@ L100:
     *(unsigned char *)c1 = *(unsigned char *)subnam;
     sname = *(unsigned char *)c1 == 'S' || *(unsigned char *)c1 == 'D';
     cname = *(unsigned char *)c1 == 'C' || *(unsigned char *)c1 == 'Z';
-    if (! (cname || sname)) {
+    if(! (cname || sname)) {
   return ret_val;
     }
     s_copy(c2, subnam + 1, (ftnlen)2, (ftnlen)2);
@@ -1692,72 +1692,72 @@ L110:
 
     nb = 1;
 
-    if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+    if(s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nb = 64;
       } else {
     nb = 64;
       }
-  } else if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3,
+  } else if(s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3,
     "RQF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)
     3, (ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3)
     == 0) {
-      if (sname) {
+      if(sname) {
     nb = 32;
       } else {
     nb = 32;
       }
-  } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+  } else if(s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nb = 32;
       } else {
     nb = 32;
       }
-  } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+  } else if(s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nb = 32;
       } else {
     nb = 32;
       }
-  } else if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+  } else if(s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nb = 64;
       } else {
     nb = 64;
       }
   }
-    } else if (s_cmp(c2, "PO", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+    } else if(s_cmp(c2, "PO", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nb = 64;
       } else {
     nb = 64;
       }
   }
-    } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+    } else if(s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nb = 64;
       } else {
     nb = 64;
       }
-  } else if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+  } else if(sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
       nb = 32;
-  } else if (sname && s_cmp(c3, "GST", (ftnlen)3, (ftnlen)3) == 0) {
+  } else if(sname && s_cmp(c3, "GST", (ftnlen)3, (ftnlen)3) == 0) {
       nb = 64;
   }
-    } else if (cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+    } else if(cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
       nb = 64;
-  } else if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+  } else if(s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
       nb = 32;
-  } else if (s_cmp(c3, "GST", (ftnlen)3, (ftnlen)3) == 0) {
+  } else if(s_cmp(c3, "GST", (ftnlen)3, (ftnlen)3) == 0) {
       nb = 64;
   }
-    } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
-  if (*(unsigned char *)c3 == 'G') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+    } else if(sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
+  if(*(unsigned char *)c3 == 'G') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
         (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
         ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
          0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1765,28 +1765,8 @@ L110:
         ftnlen)2, (ftnlen)2) == 0) {
     nb = 32;
       }
-  } else if (*(unsigned char *)c3 == 'M') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-        ftnlen)2, (ftnlen)2) == 0) {
-    nb = 32;
-      }
-  }
-    } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
-  if (*(unsigned char *)c3 == 'G') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
-        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
-        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
-         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
-        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
-        ftnlen)2, (ftnlen)2) == 0) {
-    nb = 32;
-      }
-  } else if (*(unsigned char *)c3 == 'M') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  } else if(*(unsigned char *)c3 == 'M') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
         (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
         ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
          0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1795,56 +1775,76 @@ L110:
     nb = 32;
       }
   }
-    } else if (s_cmp(c2, "GB", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
-    if (*n4 <= 64) {
+    } else if(cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
+  if(*(unsigned char *)c3 == 'G') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nb = 32;
+      }
+  } else if(*(unsigned char *)c3 == 'M') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+        (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
+        ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
+         0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
+        c4, "TR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "BR", (
+        ftnlen)2, (ftnlen)2) == 0) {
+    nb = 32;
+      }
+  }
+    } else if(s_cmp(c2, "GB", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
+    if(*n4 <= 64) {
         nb = 1;
     } else {
         nb = 32;
     }
       } else {
-    if (*n4 <= 64) {
+    if(*n4 <= 64) {
         nb = 1;
     } else {
         nb = 32;
     }
       }
   }
-    } else if (s_cmp(c2, "PB", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
-    if (*n2 <= 64) {
+    } else if(s_cmp(c2, "PB", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
+    if(*n2 <= 64) {
         nb = 1;
     } else {
         nb = 32;
     }
       } else {
-    if (*n2 <= 64) {
+    if(*n2 <= 64) {
         nb = 1;
     } else {
         nb = 32;
     }
       }
   }
-    } else if (s_cmp(c2, "TR", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+    } else if(s_cmp(c2, "TR", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nb = 64;
       } else {
     nb = 64;
       }
   }
-    } else if (s_cmp(c2, "LA", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "UUM", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+    } else if(s_cmp(c2, "LA", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "UUM", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nb = 64;
       } else {
     nb = 64;
       }
   }
-    } else if (sname && s_cmp(c2, "ST", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "EBZ", (ftnlen)3, (ftnlen)3) == 0) {
+    } else if(sname && s_cmp(c2, "ST", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "EBZ", (ftnlen)3, (ftnlen)3) == 0) {
       nb = 1;
   }
     }
@@ -1856,52 +1856,52 @@ L200:
 /*     ISPEC = 2:  minimum block size */
 
     nbmin = 2;
-    if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
+    if(s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
     ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
     ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
      {
-      if (sname) {
+      if(sname) {
     nbmin = 2;
       } else {
     nbmin = 2;
       }
-  } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+  } else if(s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nbmin = 2;
       } else {
     nbmin = 2;
       }
-  } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+  } else if(s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nbmin = 2;
       } else {
     nbmin = 2;
       }
-  } else if (s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+  } else if(s_cmp(c3, "TRI", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nbmin = 2;
       } else {
     nbmin = 2;
       }
   }
-    } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+    } else if(s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRF", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nbmin = 8;
       } else {
     nbmin = 8;
       }
-  } else if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+  } else if(sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
       nbmin = 2;
   }
-    } else if (cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+    } else if(cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
       nbmin = 2;
   }
-    } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
-  if (*(unsigned char *)c3 == 'G') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+    } else if(sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
+  if(*(unsigned char *)c3 == 'G') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
         (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
         ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
          0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1909,8 +1909,8 @@ L200:
         ftnlen)2, (ftnlen)2) == 0) {
     nbmin = 2;
       }
-  } else if (*(unsigned char *)c3 == 'M') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  } else if(*(unsigned char *)c3 == 'M') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
         (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
         ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
          0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1919,9 +1919,9 @@ L200:
     nbmin = 2;
       }
   }
-    } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
-  if (*(unsigned char *)c3 == 'G') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+    } else if(cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
+  if(*(unsigned char *)c3 == 'G') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
         (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
         ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
          0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1929,8 +1929,8 @@ L200:
         ftnlen)2, (ftnlen)2) == 0) {
     nbmin = 2;
       }
-  } else if (*(unsigned char *)c3 == 'M') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+  } else if(*(unsigned char *)c3 == 'M') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
         (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
         ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
          0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1948,40 +1948,40 @@ L300:
 /*     ISPEC = 3:  crossover point */
 
     nx = 0;
-    if (s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
+    if(s_cmp(c2, "GE", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "QRF", (ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "RQF", (
     ftnlen)3, (ftnlen)3) == 0 || s_cmp(c3, "LQF", (ftnlen)3, (
     ftnlen)3) == 0 || s_cmp(c3, "QLF", (ftnlen)3, (ftnlen)3) == 0)
      {
-      if (sname) {
+      if(sname) {
     nx = 128;
       } else {
     nx = 128;
       }
-  } else if (s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+  } else if(s_cmp(c3, "HRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nx = 128;
       } else {
     nx = 128;
       }
-  } else if (s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
-      if (sname) {
+  } else if(s_cmp(c3, "BRD", (ftnlen)3, (ftnlen)3) == 0) {
+      if(sname) {
     nx = 128;
       } else {
     nx = 128;
       }
   }
-    } else if (s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
-  if (sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+    } else if(s_cmp(c2, "SY", (ftnlen)2, (ftnlen)2) == 0) {
+  if(sname && s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
       nx = 32;
   }
-    } else if (cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
-  if (s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
+    } else if(cname && s_cmp(c2, "HE", (ftnlen)2, (ftnlen)2) == 0) {
+  if(s_cmp(c3, "TRD", (ftnlen)3, (ftnlen)3) == 0) {
       nx = 32;
   }
-    } else if (sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
-  if (*(unsigned char *)c3 == 'G') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+    } else if(sname && s_cmp(c2, "OR", (ftnlen)2, (ftnlen)2) == 0) {
+  if(*(unsigned char *)c3 == 'G') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
         (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
         ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
          0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -1990,9 +1990,9 @@ L300:
     nx = 128;
       }
   }
-    } else if (cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
-  if (*(unsigned char *)c3 == 'G') {
-      if (s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
+    } else if(cname && s_cmp(c2, "UN", (ftnlen)2, (ftnlen)2) == 0) {
+  if(*(unsigned char *)c3 == 'G') {
+      if(s_cmp(c4, "QR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "RQ",
         (ftnlen)2, (ftnlen)2) == 0 || s_cmp(c4, "LQ", (ftnlen)2, (
         ftnlen)2) == 0 || s_cmp(c4, "QL", (ftnlen)2, (ftnlen)2) ==
          0 || s_cmp(c4, "HR", (ftnlen)2, (ftnlen)2) == 0 || s_cmp(
@@ -2055,7 +2055,7 @@ L1000:
 
        ILAENV = 0 */
     ret_val = 1;
-    if (ret_val == 1) {
+    if(ret_val == 1) {
   ret_val = _omc_internal_ieeeck_(&c__0, &c_b162, &c_b163);
     }
     return ret_val;
@@ -2066,7 +2066,7 @@ L1100:
 
        ILAENV = 0 */
     ret_val = 1;
-    if (ret_val == 1) {
+    if(ret_val == 1) {
   ret_val = _omc_internal_ieeeck_(&c__1, &c_b162, &c_b163);
     }
     return ret_val;
@@ -2121,49 +2121,49 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
     ret_val = 1;
 
     posinf = *one / *zero;
-    if (posinf <= *one) {
+    if(posinf <= *one) {
   ret_val = 0;
   return ret_val;
     }
 
     neginf = -(*one) / *zero;
-    if (neginf >= *zero) {
+    if(neginf >= *zero) {
   ret_val = 0;
   return ret_val;
     }
 
     negzro = *one / (neginf + *one);
-    if (negzro != *zero) {
+    if(negzro != *zero) {
   ret_val = 0;
   return ret_val;
     }
 
     neginf = *one / negzro;
-    if (neginf >= *zero) {
+    if(neginf >= *zero) {
   ret_val = 0;
   return ret_val;
     }
 
     newzro = negzro + *zero;
-    if (newzro != *zero) {
+    if(newzro != *zero) {
   ret_val = 0;
   return ret_val;
     }
 
     posinf = *one / newzro;
-    if (posinf <= *one) {
+    if(posinf <= *one) {
   ret_val = 0;
   return ret_val;
     }
 
     neginf *= posinf;
-    if (neginf >= *zero) {
+    if(neginf >= *zero) {
   ret_val = 0;
   return ret_val;
     }
 
     posinf *= posinf;
-    if (posinf <= *one) {
+    if(posinf <= *one) {
   ret_val = 0;
   return ret_val;
     }
@@ -2173,7 +2173,7 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
 
 /*     Return if we were only asked to check infinity arithmetic */
 
-    if (*ispec == 0) {
+    if(*ispec == 0) {
   return ret_val;
     }
 
@@ -2189,32 +2189,32 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
 
     nan6 = nan5 * 0.f;
 
-    if (nan1 == nan1) {
+    if(nan1 == nan1) {
   ret_val = 0;
   return ret_val;
     }
 
-    if (nan2 == nan2) {
+    if(nan2 == nan2) {
   ret_val = 0;
   return ret_val;
     }
 
-    if (nan3 == nan3) {
+    if(nan3 == nan3) {
   ret_val = 0;
   return ret_val;
     }
 
-    if (nan4 == nan4) {
+    if(nan4 == nan4) {
   ret_val = 0;
   return ret_val;
     }
 
-    if (nan5 == nan5) {
+    if(nan5 == nan5) {
   ret_val = 0;
   return ret_val;
     }
 
-    if (nan6 == nan6) {
+    if(nan6 == nan6) {
   ret_val = 0;
   return ret_val;
     }
@@ -2300,14 +2300,14 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
 
     /* Function Body */
     *info = 0;
-    if (*m < 0) {
+    if(*m < 0) {
   *info = -1;
-    } else if (*n < 0) {
+    } else if(*n < 0) {
   *info = -2;
-    } else if (*lda < max(1,*m)) {
+    } else if(*lda < max(1,*m)) {
   *info = -4;
     }
-    if (*info != 0) {
+    if(*info != 0) {
   i__1 = -(*info);
   _omc_internal_xerbla_("DGETF2", &i__1);
   return 0;
@@ -2315,40 +2315,40 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
 
 /*     Quick return if possible */
 
-    if (*m == 0 || *n == 0) {
+    if(*m == 0 || *n == 0) {
   return 0;
     }
 
     i__1 = min(*m,*n);
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
 
 /*        Find pivot and test for singularity. */
 
   i__2 = *m - j + 1;
   jp = j - 1 + _omc_internal_idamax_(&i__2, &a_ref(j, j), &c__1);
   ipiv[j] = jp;
-  if (a_ref(jp, j) != 0.) {
+  if(a_ref(jp, j) != 0.) {
 
 /*           Apply the interchange to columns 1:N. */
 
-      if (jp != j) {
+      if(jp != j) {
     _omc_internal_dswap_(n, &a_ref(j, 1), lda, &a_ref(jp, 1), lda);
       }
 
 /*           Compute elements J+1:M of J-th column. */
 
-      if (j < *m) {
+      if(j < *m) {
     i__2 = *m - j;
     d__1 = 1. / a_ref(j, j);
     _omc_internal_dscal_(&i__2, &d__1, &a_ref(j + 1, j), &c__1);
       }
 
-  } else if (*info == 0) {
+  } else if(*info == 0) {
 
       *info = j;
   }
 
-  if (j < min(*m,*n)) {
+  if(j < min(*m,*n)) {
 
 /*           Update trailing submatrix. */
 
@@ -2440,39 +2440,39 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
     a -= a_offset;
     /* Function Body */
     info = 0;
-    if (*m < 0) {
+    if(*m < 0) {
   info = 1;
-    } else if (*n < 0) {
+    } else if(*n < 0) {
   info = 2;
-    } else if (*incx == 0) {
+    } else if(*incx == 0) {
   info = 5;
-    } else if (*incy == 0) {
+    } else if(*incy == 0) {
   info = 7;
-    } else if (*lda < max(1,*m)) {
+    } else if(*lda < max(1,*m)) {
   info = 9;
     }
-    if (info != 0) {
+    if(info != 0) {
   _omc_internal_xerbla_("DGER  ", &info);
   return 0;
     }
 /*     Quick return if possible. */
-    if (*m == 0 || *n == 0 || *alpha == 0.) {
+    if(*m == 0 || *n == 0 || *alpha == 0.) {
   return 0;
     }
 /*     Start the operations. In this version the elements of A are
        accessed sequentially with one pass through A. */
-    if (*incy > 0) {
+    if(*incy > 0) {
   jy = 1;
     } else {
   jy = 1 - (*n - 1) * *incy;
     }
-    if (*incx == 1) {
+    if(*incx == 1) {
   i__1 = *n;
-  for (j = 1; j <= i__1; ++j) {
-      if (y[jy] != 0.) {
+  for(j = 1; j <= i__1; ++j) {
+      if(y[jy] != 0.) {
     temp = *alpha * y[jy];
     i__2 = *m;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
         a_ref(i__, j) = a_ref(i__, j) + x[i__] * temp;
 /* L10: */
     }
@@ -2481,18 +2481,18 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
 /* L20: */
   }
     } else {
-  if (*incx > 0) {
+  if(*incx > 0) {
       kx = 1;
   } else {
       kx = 1 - (*m - 1) * *incx;
   }
   i__1 = *n;
-  for (j = 1; j <= i__1; ++j) {
-      if (y[jy] != 0.) {
+  for(j = 1; j <= i__1; ++j) {
+      if(y[jy] != 0.) {
     temp = *alpha * y[jy];
     ix = kx;
     i__2 = *m;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
         a_ref(i__, j) = a_ref(i__, j) + x[ix] * temp;
         ix += *incx;
 /* L30: */
@@ -2522,17 +2522,17 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
        Parameter adjustments */
     --dx;
     /* Function Body */
-    if (*n <= 0 || *incx <= 0) {
+    if(*n <= 0 || *incx <= 0) {
   return 0;
     }
-    if (*incx == 1) {
+    if(*incx == 1) {
   goto L20;
     }
 /*        code for increment not equal to 1 */
     nincx = *n * *incx;
     i__1 = nincx;
     i__2 = *incx;
-    for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2) {
+    for(i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2) {
   dx[i__] = *da * dx[i__];
 /* L10: */
     }
@@ -2541,21 +2541,21 @@ integer _omc_internal_ieeeck_(integer *ispec, real *zero, real *one)
           clean-up loop */
 L20:
     m = *n % 5;
-    if (m == 0) {
+    if(m == 0) {
   goto L40;
     }
     i__2 = m;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   dx[i__] = *da * dx[i__];
 /* L30: */
     }
-    if (*n < 5) {
+    if(*n < 5) {
   return 0;
     }
 L40:
     mp1 = m + 1;
     i__2 = *n;
-    for (i__ = mp1; i__ <= i__2; i__ += 5) {
+    for(i__ = mp1; i__ <= i__2; i__ += 5) {
   dx[i__] = *da * dx[i__];
   dx[i__ + 1] = *da * dx[i__ + 1];
   dx[i__ + 2] = *da * dx[i__ + 2];
@@ -2584,24 +2584,24 @@ L40:
     --dy;
     --dx;
     /* Function Body */
-    if (*n <= 0) {
+    if(*n <= 0) {
   return 0;
     }
-    if (*incx == 1 && *incy == 1) {
+    if(*incx == 1 && *incy == 1) {
   goto L20;
     }
 /*       code for unequal increments or equal increments not equal
            to 1 */
     ix = 1;
     iy = 1;
-    if (*incx < 0) {
+    if(*incx < 0) {
   ix = (-(*n) + 1) * *incx + 1;
     }
-    if (*incy < 0) {
+    if(*incy < 0) {
   iy = (-(*n) + 1) * *incy + 1;
     }
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   dtemp = dx[ix];
   dx[ix] = dy[iy];
   dy[iy] = dtemp;
@@ -2614,23 +2614,23 @@ L40:
          clean-up loop */
 L20:
     m = *n % 3;
-    if (m == 0) {
+    if(m == 0) {
   goto L40;
     }
     i__1 = m;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   dtemp = dx[i__];
   dx[i__] = dy[i__];
   dy[i__] = dtemp;
 /* L30: */
     }
-    if (*n < 3) {
+    if(*n < 3) {
   return 0;
     }
 L40:
     mp1 = m + 1;
     i__1 = *n;
-    for (i__ = mp1; i__ <= i__1; i__ += 3) {
+    for(i__ = mp1; i__ <= i__1; i__ += 3) {
   dtemp = dx[i__];
   dx[i__] = dy[i__];
   dy[i__] = dtemp;
@@ -2662,14 +2662,14 @@ integer _omc_internal_idamax_(integer *n, doublereal *dx, integer *incx)
     --dx;
     /* Function Body */
     ret_val = 0;
-    if (*n < 1 || *incx <= 0) {
+    if(*n < 1 || *incx <= 0) {
   return ret_val;
     }
     ret_val = 1;
-    if (*n == 1) {
+    if(*n == 1) {
   return ret_val;
     }
-    if (*incx == 1) {
+    if(*incx == 1) {
   goto L20;
     }
 /*        code for increment not equal to 1 */
@@ -2677,8 +2677,8 @@ integer _omc_internal_idamax_(integer *n, doublereal *dx, integer *incx)
     dmax__ = abs(dx[1]);
     ix += *incx;
     i__1 = *n;
-    for (i__ = 2; i__ <= i__1; ++i__) {
-  if ((d__1 = dx[ix], abs(d__1)) <= dmax__) {
+    for(i__ = 2; i__ <= i__1; ++i__) {
+  if((d__1 = dx[ix], abs(d__1)) <= dmax__) {
       goto L5;
   }
   ret_val = i__;
@@ -2692,8 +2692,8 @@ L5:
 L20:
     dmax__ = abs(dx[1]);
     i__1 = *n;
-    for (i__ = 2; i__ <= i__1; ++i__) {
-  if ((d__1 = dx[i__], abs(d__1)) <= dmax__) {
+    for(i__ = 2; i__ <= i__1; ++i__) {
+  if((d__1 = dx[i__], abs(d__1)) <= dmax__) {
       goto L30;
   }
   ret_val = i__;

@@ -696,6 +696,11 @@ static int symbolic_initialization(DATA *data)
 
   functionInitialEquations(data);
 
+  /* valid system for the first time! */
+  saveZeroCrossings(data);
+  storePreValues(data);
+  overwriteOldSimulationData(data);
+
   return retVal;
 }
 
@@ -811,7 +816,7 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
       else
       {
         /* skipp warnings about self generated variables */
-        if (((strncmp (mData->realVarsData[i].info.name,"$ZERO.",6) != 0) && (strncmp (mData->realVarsData[i].info.name,"$pDER.",6) != 0)) || DEBUG_STREAM(LOG_INIT))
+        if(((strncmp (mData->realVarsData[i].info.name,"$ZERO.",6) != 0) && (strncmp (mData->realVarsData[i].info.name,"$pDER.",6) != 0)) || DEBUG_STREAM(LOG_INIT))
           WARNING1(LOG_INIT, "unable to import real variable %s from given file", mData->realVarsData[i].info.name);
       }
     }
@@ -982,6 +987,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
+  printAllVars(data, 0, LOG_SOTI);
   dumpInitialSolution(data);
   RELEASE(LOG_SOTI);
   INFO(LOG_INIT, "### END INITIALIZATION ###");

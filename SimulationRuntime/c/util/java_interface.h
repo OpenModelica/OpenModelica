@@ -99,11 +99,11 @@ const char* __CheckForJavaException(JNIEnv* env);
 /* #ifdef __cplusplus */ #if 0
 #define CHECK_FOR_JAVA_EXCEPTION(env) do { \
   const char* msg = __CheckForJavaException(env); \
-  if (msg != NULL) { \
+  if(msg != NULL) { \
     modelTermination=1; \
     throw TerminateSimulationException(string(msg)); \
   } \
-} while (0)
+} while(0)
 #else
 /* ModelicaUtilities.h is not available in OpenModelica?
  * Assertions also can't be used in OMC stand-alone functions; only simulations
@@ -111,11 +111,11 @@ const char* __CheckForJavaException(JNIEnv* env);
  */
 #define CHECK_FOR_JAVA_EXCEPTION(env) do { \
   const char* msg = __CheckForJavaException(env); \
-  if (msg != NULL) { \
+  if(msg != NULL) { \
     fprintf(stderr, "Error: External Java Exception Thrown but can't assert in C-mode\nLocation: %s (%s:%d)\nThe exception message was:\n%s\n", __FUNCTION__, __FILE__, __LINE__, msg); \
     EXIT(EXIT_CODE_JAVA_ERROR); \
   } \
-} while (0)
+} while(0)
 #endif
 
 #endif

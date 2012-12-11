@@ -76,14 +76,14 @@
 /*     zero out upper triangle of q in the first min(m,n) columns. */
 
     minmn = min(*m,*n);
-    if (minmn < 2) {
+    if(minmn < 2) {
   goto L30;
     }
     i__1 = minmn;
-    for (j = 2; j <= i__1; ++j) {
+    for(j = 2; j <= i__1; ++j) {
   jm1 = j - 1;
   i__2 = jm1;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       q[i__ + j * q_dim1] = zero;
 /* L10: */
   }
@@ -94,13 +94,13 @@ L30:
 /*     initialize remaining columns to those of the identity matrix. */
 
     np1 = *n + 1;
-    if (*m < np1) {
+    if(*m < np1) {
   goto L60;
     }
     i__1 = *m;
-    for (j = np1; j <= i__1; ++j) {
+    for(j = np1; j <= i__1; ++j) {
   i__2 = *m;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       q[i__ + j * q_dim1] = zero;
 /* L40: */
   }
@@ -112,29 +112,29 @@ L60:
 /*     accumulate q from its factored form. */
 
     i__1 = minmn;
-    for (l = 1; l <= i__1; ++l) {
+    for(l = 1; l <= i__1; ++l) {
   k = minmn - l + 1;
   i__2 = *m;
-  for (i__ = k; i__ <= i__2; ++i__) {
+  for(i__ = k; i__ <= i__2; ++i__) {
       wa[i__] = q[i__ + k * q_dim1];
       q[i__ + k * q_dim1] = zero;
 /* L70: */
   }
   q[k + k * q_dim1] = one;
-  if (wa[k] == zero) {
+  if(wa[k] == zero) {
       goto L110;
   }
   i__2 = *m;
-  for (j = k; j <= i__2; ++j) {
+  for(j = k; j <= i__2; ++j) {
       sum = zero;
       i__3 = *m;
-      for (i__ = k; i__ <= i__3; ++i__) {
+      for(i__ = k; i__ <= i__3; ++i__) {
     sum += q[i__ + j * q_dim1] * wa[i__];
 /* L80: */
       }
       temp = sum / wa[k];
       i__3 = *m;
-      for (i__ = k; i__ <= i__3; ++i__) {
+      for(i__ = k; i__ <= i__3; ++i__) {
     q[i__ + j * q_dim1] -= temp * wa[i__];
 /* L90: */
       }

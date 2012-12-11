@@ -48,6 +48,7 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_SOTI",  /* LOG_INIT_SOLUTION */
   "LOG_RES_INIT",
   "LOG_SOLVER",
+  "LOG_DDASRT",
   "LOG_JAC",
   "LOG_ENDJAC",
   "LOG_NONLIN_SYS",
@@ -68,6 +69,7 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "init solution",
   "res_init",
   "solver",
+  "ddasrt",
   "jac",
   "endjac",
   "nonlin_sys",

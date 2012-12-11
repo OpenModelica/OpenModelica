@@ -33,7 +33,7 @@ doublereal d1mach_(integer *idum)
 L10:
     u *= .5;
     comp = u + 1.;
-    if (comp != 1.) {
+    if(comp != 1.) {
   goto L10;
     }
     ret_val = u * 2.;
@@ -122,37 +122,37 @@ L10:
     /* Function Body */
     mesflg = 1;
     lunit = 6;
-    if (mesflg == 0) {
+    if(mesflg == 0) {
   goto L100;
     }
 /* Write the message. --------------------------------------------------- */
     io___5.ciunit = lunit;
     s_wsfe(&io___5);
     i__1 = *nmes;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   do_fio(&c__1, msg + i__, (ftnlen)1);
     }
     e_wsfe();
-    if (*ni == 1) {
+    if(*ni == 1) {
   io___7.ciunit = lunit;
   s_wsfe(&io___7);
   do_fio(&c__1, (char *)&(*i1), (ftnlen)sizeof(integer));
   e_wsfe();
     }
-    if (*ni == 2) {
+    if(*ni == 2) {
   io___8.ciunit = lunit;
   s_wsfe(&io___8);
   do_fio(&c__1, (char *)&(*i1), (ftnlen)sizeof(integer));
   do_fio(&c__1, (char *)&(*i2), (ftnlen)sizeof(integer));
   e_wsfe();
     }
-    if (*nr == 1) {
+    if(*nr == 1) {
   io___9.ciunit = lunit;
   s_wsfe(&io___9);
   do_fio(&c__1, (char *)&(*r1), (ftnlen)sizeof(doublereal));
   e_wsfe();
     }
-    if (*nr == 2) {
+    if(*nr == 2) {
   io___10.ciunit = lunit;
   s_wsfe(&io___10);
   do_fio(&c__1, (char *)&(*r1), (ftnlen)sizeof(doublereal));
@@ -161,7 +161,7 @@ L10:
     }
 /* Abort the run if LEVEL = 2. ------------------------------------------ */
 L100:
-    if (*level != 2) {
+    if(*level != 2) {
   return 0;
     }
     s_stop("", (ftnlen)0);
@@ -692,17 +692,17 @@ integer i1mach_(integer *i__)
 /*      DATA IMACH(16) /  127 /, SANITY/987/ */
 
 /*  ***  ISSUE STOP 777 IF ALL DATA STATEMENTS ARE COMMENTED... */
-    if (sanity != 987) {
+    if(sanity != 987) {
   s_stop("777", (ftnlen)3);
     }
-    if (*i__ < 1 || *i__ > 16) {
+    if(*i__ < 1 || *i__ > 16) {
   goto L10;
     }
 
     ret_val = imach[*i__ - 1];
 /* /6S */
 /* /7S */
-    if (*i__ == 6) {
+    if(*i__ == 6) {
   ret_val = 1;
     }
 /* / */

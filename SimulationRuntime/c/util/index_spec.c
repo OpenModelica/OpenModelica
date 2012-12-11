@@ -39,28 +39,28 @@
 int index_spec_ok(const index_spec_t* s)
 {
     int i;
-    if (s == NULL) {
+    if(s == NULL) {
       fprintf(stderr,"index_spec_ok: the index spec is NULL!\n"); fflush(stderr);
       return 0;
     }
-    if (s->ndims < 0) {
+    if(s->ndims < 0) {
       fprintf(stderr,"index_spec_ok: the index spec dimensions are negative: %d!\n", (int)s->ndims); fflush(stderr);
       return 0;
     }
-    if (s->dim_size == NULL) {
+    if(s->dim_size == NULL) {
       fprintf(stderr,"index_spec_ok: the index spec dimensions sizes is NULL!\n"); fflush(stderr);
       return 0;
     }
-    if (s->index == NULL) {
+    if(s->index == NULL) {
       fprintf(stderr,"index_spec_ok: the index spec index array is NULL!\n"); fflush(stderr);
       return 0;
     }
-    for (i = 0; i < s->ndims; ++i) {
-        if (s->dim_size[i] < 0) {
+    for(i = 0; i < s->ndims; ++i) {
+        if(s->dim_size[i] < 0) {
           fprintf(stderr,"index_spec_ok: the index spec dimension size for dimension %d is negative: %d!\n", i, (int)s->dim_size[i]); fflush(stderr);
           return 0;
         }
-        if ((s->index[i] == 0) && (s->dim_size[i] != 1)) {
+        if((s->index[i] == 0) && (s->dim_size[i] != 1)) {
             fprintf(stderr,"index[%d] == 0, size == %d\n", i, (unsigned int) s->dim_size[i]); fflush(stderr);
             return 0;
         }
@@ -72,8 +72,8 @@ void alloc_index_spec(index_spec_t* s)
 {
     int i;
     s->index = index_alloc(0,s->ndims);
-    for (i = 0; i < s->ndims; ++i) {
-        if (s->dim_size[i] > 0) {
+    for(i = 0; i < s->ndims; ++i) {
+        if(s->dim_size[i] > 0) {
             s->index[i] = size_alloc(0,s->dim_size[i]);
         } else {
             s->index[i] = 0;
@@ -103,7 +103,7 @@ void create_index_spec(index_spec_t* dest, int nridx, ...)
     dest->dim_size = size_alloc(0,nridx);
     dest->index = index_alloc(0,nridx);
     dest->index_type = char_alloc(0,nridx);
-    for (i = 0; i < nridx; ++i) {
+    for(i = 0; i < nridx; ++i) {
         dest->dim_size[i] = va_arg(ap, _index_t);
         dest->index[i] = va_arg(ap, _index_t*);
         dest->index_type[i] = (char) va_arg(ap,_index_t); /* char is cast to int by va_arg.*/
@@ -124,7 +124,7 @@ _index_t* make_index_array(int nridx, ...)
     va_start(ap,nridx);
 
     res = size_alloc(0,nridx);
-    for (i = 0; i < nridx; ++i) {
+    for(i = 0; i < nridx; ++i) {
         res[i] = va_arg(ap,_index_t);
     }
 
@@ -154,9 +154,9 @@ int next_index(int ndims, _index_t* idx, const _index_t* size)
 
     idx[d]++;
 
-    while (idx[d] >= size[d]) {
+    while(idx[d] >= size[d]) {
         idx[d] = 0;
-        if (d == 0) {
+        if(d == 0) {
             return 1;
         }
         d--;
@@ -177,10 +177,10 @@ void print_index_spec(const index_spec_t* spec)
                 break;
             case 'A':
                 printf("{");
-                for (k = 0; k < spec->dim_size[i]-1; ++k) {
+                for(k = 0; k < spec->dim_size[i]-1; ++k) {
                     printf("%d,", (int) spec->index[i][k]);
                 }
-                if (0 < spec->dim_size[i]) {
+                if(0 < spec->dim_size[i]) {
                     printf("%d", (int) spec->index[i][0]);
                 }
                 printf("}");
@@ -192,7 +192,7 @@ void print_index_spec(const index_spec_t* spec)
                 printf("INVALID TYPE %c.", spec->index_type[i]);
                 break;
         }
-        if (i != (spec->ndims - 1)) {
+        if(i != (spec->ndims - 1)) {
             printf(", ");
         }
     }

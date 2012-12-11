@@ -81,18 +81,18 @@ doublereal enorm_(integer *n, doublereal *x)
     floatn = (doublereal) (*n);
     agiant = rgiant / floatn;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   xabs = (d__1 = x[i__], abs(d__1));
-  if (xabs > rdwarf && xabs < agiant) {
+  if(xabs > rdwarf && xabs < agiant) {
       goto L70;
   }
-  if (xabs <= rdwarf) {
+  if(xabs <= rdwarf) {
       goto L30;
   }
 
 /*              sum for large components. */
 
-  if (xabs <= x1max) {
+  if(xabs <= x1max) {
       goto L10;
   }
 /* Computing 2nd power */
@@ -110,7 +110,7 @@ L30:
 
 /*              sum for small components. */
 
-  if (xabs <= x3max) {
+  if(xabs <= x3max) {
       goto L40;
   }
 /* Computing 2nd power */
@@ -119,7 +119,7 @@ L30:
   x3max = xabs;
   goto L50;
 L40:
-  if (xabs != zero) {
+  if(xabs != zero) {
 /* Computing 2nd power */
       d__1 = xabs / x3max;
       s3 += d__1 * d__1;
@@ -141,19 +141,19 @@ L80:
 
 /*     calculation of norm. */
 
-    if (s1 == zero) {
+    if(s1 == zero) {
   goto L100;
     }
     ret_val = x1max * sqrt(s1 + s2 / x1max / x1max);
     goto L130;
 L100:
-    if (s2 == zero) {
+    if(s2 == zero) {
   goto L110;
     }
-    if (s2 >= x3max) {
+    if(s2 >= x3max) {
   ret_val = sqrt(s2 * (one + x3max / s2 * (x3max * s3)));
     }
-    if (s2 < x3max) {
+    if(s2 < x3max) {
   ret_val = sqrt(x3max * (s2 / x3max + x3max * s3));
     }
     goto L120;

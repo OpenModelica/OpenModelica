@@ -85,10 +85,10 @@ CreateJavaVMFunc OMC_CreateJavaVM = NULL;
 int GetStringFromWindowsRegistry(HKEY key, const char *name, char *buf, int buf_length)
 {
   DWORD type, size;
-  if (RegQueryValueEx(key, name, 0, &type, 0, &size) == ERROR_SUCCESS) {
-    if (type == REG_SZ && (size < (unsigned int)buf_length)) {
+  if(RegQueryValueEx(key, name, 0, &type, 0, &size) == ERROR_SUCCESS) {
+    if(type == REG_SZ && (size < (unsigned int)buf_length)) {
       /* The key is a string with ok length */
-      if (RegQueryValueEx(key, name, 0, 0, (unsigned char*)buf, &size) == 0) {
+      if(RegQueryValueEx(key, name, 0, 0, (unsigned char*)buf, &size) == 0) {
         return 0;
       }
     }
@@ -101,21 +101,21 @@ int GetRegistryJavaHome(char *java_home, int java_home_length)
   HKEY key, curver_key;
   char version[MAXPATHLEN];
 
-  if (RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\JavaSoft\\Java Runtime Environment", 0, KEY_READ, &key) != 0) {
+  if(RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\JavaSoft\\Java Runtime Environment", 0, KEY_READ, &key) != 0) {
     return 1;
   }
 
-  if (GetStringFromWindowsRegistry(key, "CurrentVersion", version, sizeof(version))) {
+  if(GetStringFromWindowsRegistry(key, "CurrentVersion", version, sizeof(version))) {
     RegCloseKey(key);
     return 1;
   }
 
-  if (RegOpenKeyEx(key, version, 0, KEY_READ, &curver_key) != 0) {
+  if(RegOpenKeyEx(key, version, 0, KEY_READ, &curver_key) != 0) {
     RegCloseKey(key);
     return 1;
   }
 
-  if (GetStringFromWindowsRegistry(curver_key, "JavaHome", java_home, java_home_length)) {
+  if(GetStringFromWindowsRegistry(curver_key, "JavaHome", java_home, java_home_length)) {
     RegCloseKey(key);
     RegCloseKey(curver_key);
     return 1;
@@ -136,11 +136,11 @@ tryToLoadJavaHome(const char* java_home) {
       "%s\\bin\\client\\jvm.dll",
       "%s\\bin\\server\\jvm.dll"
   };
-  if (java_home == NULL)
+  if(java_home == NULL)
     return NULL;
   java_home_length = strlen(java_home);
   vmlibpath = malloc(java_home_length+500);
-  for (i=0; i<NUM_PATHS && libVM == NULL; i++) {
+  for(i=0; i<NUM_PATHS && libVM == NULL; i++) {
     sprintf(vmlibpath, possiblePaths[i], java_home);
     libVM = LoadLibrary(vmlibpath);
     /* fprintf(stderr, "Tried to load %s: %s\n", vmlibpath, libVM == NULL ? "fail" : "success"); */
@@ -157,28 +157,28 @@ void loadJNI()
   static int java_init = 0;
   java_home_registry[0] = '\0';
 
-  if (java_init == 0) {
+  if(java_init == 0) {
     java_init = 1;
     java_home_env = getenv("JAVA_HOME");
 
     libVM = tryToLoadJavaHome(java_home_env);
-    if (libVM == NULL && 0 == GetRegistryJavaHome(java_home_registry, MAXPATHLEN)) {
+    if(libVM == NULL && 0 == GetRegistryJavaHome(java_home_registry, MAXPATHLEN)) {
       libVM = tryToLoadJavaHome(java_home_registry);
     }
 
-    if (libVM == NULL) {
+    if(libVM == NULL) {
       fprintf(stderr, "Failed to dynamically load JVM\nEnvironment JAVA_HOME = '%s'\nWindows Registry JAVA_HOME = '%s'\n", java_home_env, java_home_registry);
       EXIT(EXIT_CODE_JAVA_ERROR);
     }
 
     OMC_GetCreatedJavaVMs = (GetCreatedJavaVMsFunc) GetProcAddress(libVM, "JNI_GetCreatedJavaVMs");
-    if (OMC_GetCreatedJavaVMs == NULL) {
+    if(OMC_GetCreatedJavaVMs == NULL) {
       fprintf(stderr, "GetProcAddress(JNI_GetCreatedJavaVMs) failed\n");
       EXIT(EXIT_CODE_JAVA_ERROR);
     }
 
     OMC_CreateJavaVM = (CreateJavaVMFunc) GetProcAddress(libVM, "JNI_CreateJavaVM");
-    if (OMC_CreateJavaVM == NULL) {
+    if(OMC_CreateJavaVM == NULL) {
       fprintf(stderr, "GetProcAddress(JNI_CreateJavaVM)  failed\n");
       EXIT(EXIT_CODE_JAVA_ERROR);
     }
@@ -201,11 +201,11 @@ tryToLoadJavaHome(const char* java_home) {
       "%s/jre/lib/ppc/client/libjvm.so",
       "%s/jre/lib/ppc/server/libjvm.so"
   };
-  if (java_home == NULL)
+  if(java_home == NULL)
     return NULL;
   java_home_length = strlen(java_home);
   vmlibpath = malloc(java_home_length+500);
-  for (i=0; i<NUM_PATHS && libVM == NULL; i++) {
+  for(i=0; i<NUM_PATHS && libVM == NULL; i++) {
     sprintf(vmlibpath, possiblePaths[i], java_home);
     libVM = dlopen(vmlibpath, RTLD_LAZY);
   }
@@ -220,13 +220,13 @@ void loadJNI()
   char* java_home;
   const char* default_java_home = "/usr/lib/jvm/default-java/";
 
-  if (java_init == 0) {
+  if(java_init == 0) {
     java_init = 1;
     java_home = getenv("JAVA_HOME");
     libVM = tryToLoadJavaHome(java_home);
     libVM = libVM != NULL ? libVM : tryToLoadJavaHome(default_java_home);
 
-    if (libVM == NULL) {
+    if(libVM == NULL) {
       fprintf(stderr, "Failed to dynamically load JVM\nEnvironment JAVA_HOME = '%s'\nDefault JAVA_HOME '%s'\n", java_home, default_java_home);
       EXIT(EXIT_CODE_JAVA_ERROR);
     }
@@ -235,17 +235,17 @@ void loadJNI()
      * Will produce compiler warnings because data pointers are not function pointers:
      * http://www.opengroup.org/onlinepubs/009695399/functions/dlsym.html
      */
-    if (libVM == NULL) {
+    if(libVM == NULL) {
       fprintf(stderr, "dlopen failed: %s\n", dlerror());
       EXIT(EXIT_CODE_JAVA_ERROR);
     }
     *(void **) (&OMC_CreateJavaVM) = dlsym(libVM, "JNI_CreateJavaVM");
-    if (OMC_CreateJavaVM == NULL) {
+    if(OMC_CreateJavaVM == NULL) {
       fprintf(stderr, "dlsym(JNI_CreateJavaVM) failed: %s\n", dlerror());
       EXIT(EXIT_CODE_JAVA_ERROR);
     }
     *(void **) (&OMC_GetCreatedJavaVMs) = dlsym(libVM, "JNI_GetCreatedJavaVMs");
-    if (OMC_GetCreatedJavaVMs == NULL) {
+    if(OMC_GetCreatedJavaVMs == NULL) {
       fprintf(stderr, "dlsym(JNI_GetCreatedJavaVMs) failed: %s\n", dlerror());
       EXIT(EXIT_CODE_JAVA_ERROR);
     }
@@ -276,13 +276,13 @@ JNIEnv* getJavaEnv()
 
   loadJNI();
 
-  if (OMC_GetCreatedJavaVMs(&jvm, 1, &nVMs)) {
+  if(OMC_GetCreatedJavaVMs(&jvm, 1, &nVMs)) {
     fprintf(stderr, "JNI_GetCreatedJavaVMs returned error\n");
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
 
-  if (nVMs == 1) {
-    if ((*jvm)->AttachCurrentThread(jvm, (void **)&env, NULL)) {
+  if(nVMs == 1) {
+    if((*jvm)->AttachCurrentThread(jvm, (void **)&env, NULL)) {
       fprintf(stderr, "jvm->AttachCurrentThread returned error\n");
       return NULL;
     }
@@ -290,19 +290,19 @@ JNIEnv* getJavaEnv()
   }
 
   openmodelicahome = getenv("OPENMODELICAHOME");
-  if (openmodelicahome == NULL) {
+  if(openmodelicahome == NULL) {
     fprintf(stderr, "getenv(OPENMODELICAHOME) failed - Java subsystem can't find the Java runtime...\n");
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
   openmodelicahome = init_modelica_string(openmodelicahome);
 
   classpathEnv = getenv("CLASSPATH");
-  if (classpathEnv == NULL)
+  if(classpathEnv == NULL)
     classpathEnv = "";
 
   classPathLen = strlen(classpathFormatString) + 2*strlen(openmodelicahome) + strlen(classpathEnv) + 100;
   classPath = malloc(classPathLen);
-  if (classPath == NULL) {
+  if(classPath == NULL) {
     fprintf(stderr, "%s:%d malloc failed\n", __FILE__, __LINE__);
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
@@ -331,7 +331,7 @@ JNIEnv* getJavaEnv()
   /* Create the Java VM */
   res = OMC_CreateJavaVM(&jvm, (void**)&env, &vm_args);
 
-  if (res < 0) {
+  if(res < 0) {
     jvm = NULL;
     env = NULL;
 
@@ -407,7 +407,7 @@ void MakeJavaMultiDimArray(JNIEnv* env, jobject jarr, int numDim, jint firstDim,
   CHECK_FOR_JAVA_EXCEPTION(env);
 
   va_start(va, firstDim);
-  for (i=0; i<numDim-1; i++) {
+  for(i=0; i<numDim-1; i++) {
     dims[i] = va_arg(va, jint);
   }
   va_end(va);
@@ -439,7 +439,7 @@ jobject NewFlatJavaIntegerArray(JNIEnv* env, modelica_integer* base, int num)
 {
   jobject jarr = NewJavaArray(env);
   int i;
-  for (i=0; i<num; i++) {
+  for(i=0; i<num; i++) {
     jobject o = NewJavaInteger(env, base[i]);
     JavaArrayAdd(env, jarr, o);
     (*env)->DeleteLocalRef(env, o);
@@ -451,7 +451,7 @@ jobject NewFlatJavaDoubleArray(JNIEnv* env, modelica_real* base, int num)
 {
   jobject jarr = NewJavaArray(env);
     int i;
-    for (i=0; i<num; i++) {
+    for(i=0; i<num; i++) {
       jobject o = NewJavaDouble(env, base[i]);
       JavaArrayAdd(env, jarr, o);
       (*env)->DeleteLocalRef(env, o);
@@ -463,7 +463,7 @@ jobject NewFlatJavaStringArray(JNIEnv* env, modelica_string* base, int num)
 {
   jobject jarr = NewJavaArray(env);
   int i;
-  for (i=0; i<num; i++) {
+  for(i=0; i<num; i++) {
     jobject o = NewJavaString(env, base[i]);
     JavaArrayAdd(env, jarr, o);
     (*env)->DeleteLocalRef(env, o);
@@ -475,7 +475,7 @@ jobject NewFlatJavaBooleanArray(JNIEnv* env, modelica_boolean* base, int num)
 {
   jobject jarr = NewJavaArray(env);
   int i;
-  for (i=0; i<num; i++) {
+  for(i=0; i<num; i++) {
     jobject o = NewJavaBoolean(env, base[i]);
     JavaArrayAdd(env, jarr, o);
     (*env)->DeleteLocalRef(env, o);
@@ -486,7 +486,7 @@ jobject NewFlatJavaBooleanArray(JNIEnv* env, modelica_boolean* base, int num)
 void GetFlatJavaIntegerArray(JNIEnv* env, jobject jarr, modelica_integer* base, int num)
 {
   int i;
-  for (i=0; i<num; i++) {
+  for(i=0; i<num; i++) {
     base[i] = GetJavaInteger(env, JavaArrayGet(env,jarr,i));
   }
 }
@@ -494,7 +494,7 @@ void GetFlatJavaIntegerArray(JNIEnv* env, jobject jarr, modelica_integer* base, 
 void GetFlatJavaDoubleArray(JNIEnv* env, jobject jarr, modelica_real* base, int num)
 {
   int i;
-  for (i=0; i<num; i++) {
+  for(i=0; i<num; i++) {
     base[i] = GetJavaDouble(env, JavaArrayGet(env,jarr,i));
   }
 }
@@ -502,7 +502,7 @@ void GetFlatJavaDoubleArray(JNIEnv* env, jobject jarr, modelica_real* base, int 
 void GetFlatJavaBooleanArray(JNIEnv* env, jobject jarr, modelica_boolean* base, int num)
 {
   int i;
-  for (i=0; i<num; i++) {
+  for(i=0; i<num; i++) {
     base[i] = GetJavaBoolean(env, JavaArrayGet(env,jarr,i));
   }
 }
@@ -510,7 +510,7 @@ void GetFlatJavaBooleanArray(JNIEnv* env, jobject jarr, modelica_boolean* base, 
 void GetFlatJavaStringArray(JNIEnv* env, jobject jarr, modelica_string* base, int num)
 {
   int i;
-  for (i=0; i<num; i++) {
+  for(i=0; i<num; i++) {
     base[i] = GetJavaString(env, JavaArrayGet(env,jarr,i));
   }
 }
@@ -684,29 +684,29 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
   unsigned ctor;
   int i;
 
-  if (0 == ((long)mmc & 1)) /* INTEGER */
+  if(0 == ((long)mmc & 1)) /* INTEGER */
     return NewJavaInteger(env,MMC_UNTAGFIXNUM(mmc));
   hdr = MMC_GETHDR(mmc);
-  if (hdr == MMC_REALHDR) /* REAL */
+  if(hdr == MMC_REALHDR) /* REAL */
     return NewJavaDouble(env,mmc_prim_get_real(mmc));
-  if (MMC_HDRISSTRING(hdr)) /* STRING */
+  if(MMC_HDRISSTRING(hdr)) /* STRING */
     return NewJavaString(env,MMC_STRINGDATA(mmc));
-  if (hdr == MMC_NILHDR) /* Empty list; Tested, but not in OMC. */ {
+  if(hdr == MMC_NILHDR) /* Empty list; Tested, but not in OMC. */ {
     return NewJavaArray(env);
   }
   
   numslots = MMC_HDRSLOTS(hdr);
   ctor = 255 & (hdr >> 2);
 
-  if (numslots>0 && ctor > 1) { /* RECORD */
+  if(numslots>0 && ctor > 1) { /* RECORD */
     jobject rec_map;
     struct record_description* desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),1));
     rec_map = NewJavaMap(env);
-    if (numslots == 1 && desc == NULL) {
+    if(numslots == 1 && desc == NULL) {
       return NewJavaRecord(env, "***output record***", -2, rec_map);
     }
 
-    for (i=1; i<numslots; i++) {
+    for(i=1; i<numslots; i++) {
       jobject o = mmc_to_jobject(env, MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i+1)));
       AddObjectToJavaMap(env, rec_map, desc->fieldNames[i-1], o);
     }
@@ -714,26 +714,26 @@ jobject mmc_to_jobject(JNIEnv* env, void* mmc)
     return NewJavaRecord(env, desc->name, ctor-3, rec_map);
   }
 
-  if (numslots>0 && ctor == 0) { /* TUPLE; Tested, but not in OMC. */
+  if(numslots>0 && ctor == 0) { /* TUPLE; Tested, but not in OMC. */
     jobject arr = NewJavaArray(env);
-    for (i=1; i<=numslots; i++) {
+    for(i=1; i<=numslots; i++) {
       jobject o = mmc_to_jobject(env, MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),i)));
       JavaArrayAdd(env, arr, o);
     }
     return NewJavaTuple(env, arr);
   }
 
-  if (numslots==0 && ctor==1) /* NONE(); Tested, but not in OMC. */ {
+  if(numslots==0 && ctor==1) /* NONE(); Tested, but not in OMC. */ {
     return NewJavaOption(env, NULL);
   }
 
-  if (numslots==1 && ctor==1) /* SOME(x); Tested, but not in OMC. */ {
+  if(numslots==1 && ctor==1) /* SOME(x); Tested, but not in OMC. */ {
     return NewJavaOption(env, mmc_to_jobject(env, MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(mmc),1))));
   }
 
-  if (numslots==2 && ctor==1) { /* CONS-PAIR; Tested, but not in OMC. */
+  if(numslots==2 && ctor==1) { /* CONS-PAIR; Tested, but not in OMC. */
     jobject arr = NewJavaArray(env);
-    while (!MMC_NILTEST(mmc)) {
+    while(!MMC_NILTEST(mmc)) {
       JavaArrayAdd(env, arr, mmc_to_jobject(env, MMC_CAR(mmc)));
       mmc = MMC_CDR(mmc);
     }
@@ -763,14 +763,14 @@ char* copyJstring(JNIEnv* env, jobject jstr)
 {
   const char* str_tmp;
   char* str;
-  if (jstr == NULL) {
+  if(jstr == NULL) {
     fprintf(stderr, "%s: Java String was NULL\n", __FUNCTION__);
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
   CHECK_FOR_JAVA_EXCEPTION(env);
   str_tmp = (*env)->GetStringUTFChars(env, jstr, NULL);
   CHECK_FOR_JAVA_EXCEPTION(env);
-  if (str_tmp == NULL) {
+  if(str_tmp == NULL) {
     fprintf(stderr, "%s: GetStringUTFChars failed\n", __FUNCTION__);
     EXIT(EXIT_CODE_JAVA_ERROR);
   }
@@ -831,7 +831,7 @@ void* jobject_to_mmc_record(JNIEnv* env, jobject record)
   rec_desc->fieldNames = malloc(length*sizeof(char*));
   values = malloc((length+1)*sizeof(void*));
   values[0] = rec_desc;
-  for (i=0; i<length; i++) {
+  for(i=0; i<length; i++) {
     jobject jstr = (*env)->GetObjectArrayElement(env, jarrKeys, i);
     jobject fieldValue;
     CHECK_FOR_JAVA_EXCEPTION(env);
@@ -840,7 +840,7 @@ void* jobject_to_mmc_record(JNIEnv* env, jobject record)
     values[i+1] = jobject_to_mmc(env, fieldValue);
   }
 
-  if (ctor_index == -2 && 0 == jobject_to_mmc_record_warning_shown) {
+  if(ctor_index == -2 && 0 == jobject_to_mmc_record_warning_shown) {
     char* recStr = jobjectToString(env, record);
     jobject_to_mmc_record_warning_shown = 1;
     printf("Warning: %s:%s:%d\n*** %s\n", __FILE__, __FUNCTION__, __LINE__, recStr);
@@ -896,7 +896,7 @@ void* jobject_to_mmc_tuple(JNIEnv* env, jobject obj)
   length = (*env)->GetArrayLength(env, jarr);
   
   values = malloc((length)*sizeof(void*));
-  for (i=0; i<length; i++) {
+  for(i=0; i<length; i++) {
     jobject fieldValue = (*env)->GetObjectArrayElement(env, jarr, i);
     values[i] = jobject_to_mmc(env, fieldValue);
   }
@@ -922,7 +922,7 @@ void* jobject_to_mmc_list(JNIEnv* env, jobject obj)
   length = (*env)->GetArrayLength(env, jarr);
   
   res = mmc_mk_nil();
-  for (i=0; i<length; i++) {
+  for(i=0; i<length; i++) {
     /* Copy in reverse order */
     jobject fieldValue = (*env)->GetObjectArrayElement(env, jarr, length-i-1);
     res = mmc_mk_cons(jobject_to_mmc(env, fieldValue), res);
@@ -942,7 +942,7 @@ void* jobject_to_mmc_option(JNIEnv* env, jobject obj)
   CHECK_FOR_JAVA_EXCEPTION(env);
   option = (*env)->GetObjectField(env, obj, fid);
   CHECK_FOR_JAVA_EXCEPTION(env);
-  if (option == NULL)
+  if(option == NULL)
     return mmc_mk_none();
   return mmc_mk_some(jobject_to_mmc(env, option));
 }
@@ -950,7 +950,7 @@ void* jobject_to_mmc_option(JNIEnv* env, jobject obj)
 #define CALL_IF_INSTANCEOF(env,fn,o,c) { \
   jobject cls = (*env)->FindClass(env, c); \
   CHECK_FOR_JAVA_EXCEPTION(env); \
-  if ((*env)->IsInstanceOf(env,o,cls)) \
+  if((*env)->IsInstanceOf(env,o,cls)) \
     return fn(env, o); \
   CHECK_FOR_JAVA_EXCEPTION(env);\
 };
@@ -1099,10 +1099,10 @@ const char* __CheckForJavaException(JNIEnv* env)
   static int inside_exception = 0;
 
   exc = (*env)->ExceptionOccurred(env);
-  if (exc) {
+  if(exc) {
     (*env)->ExceptionClear(env);
 
-    if (inside_exception) {
+    if(inside_exception) {
       return "The exception handler triggered an exception.\nMake sure the java runtime is installed in $OPENMODELICAHOME/share/java/modelica_java.jar\n";
     }
     inside_exception = 1;

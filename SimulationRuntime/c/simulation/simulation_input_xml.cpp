@@ -126,7 +126,7 @@ static void XMLCALL startElement(void *userData, const char *name, const char **
   /* handle DefaultExperiment */
   if(!strcmp(name, "DefaultExperiment"))
   {
-    for (i = 0; attr[i]; i += 2)
+    for(i = 0; attr[i]; i += 2)
     {
       mi->de[attr[i]] = attr[i + 1];
     }
@@ -334,15 +334,17 @@ void read_input_xml(int argc, char **argv,
     || nystrchk != modelData->nVariablesString)
   {
     WARNING(LOG_SIMULATION, "Error, input data file does not match model.");
-    WARNING2(LOG_SIMULATION, "| nx in setup file: %ld from model code: %ld", nxchk, modelData->nStates);
-    WARNING2(LOG_SIMULATION, "| ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
-    WARNING2(LOG_SIMULATION, "| np in setup file: %ld from model code: %ld", npchk, modelData->nParametersReal);
-    WARNING2(LOG_SIMULATION, "| npint in setup file: %ld from model code: %ld", npintchk, modelData->nParametersInteger);
-    WARNING2(LOG_SIMULATION, "| nyint in setup file: %ld from model code: %ld", nyintchk, modelData->nVariablesInteger);
-    WARNING2(LOG_SIMULATION, "| npbool in setup file: %ld from model code: %ld", npboolchk, modelData->nParametersBoolean);
-    WARNING2(LOG_SIMULATION, "| nybool in setup file: %ld from model code: %ld", nyboolchk, modelData->nVariablesBoolean);
-    WARNING2(LOG_SIMULATION, "| npstr in setup file: %ld from model code: %ld", npstrchk, modelData->nParametersString);
-    WARNING2(LOG_SIMULATION, "| nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
+    INDENT(LOG_SIMULATION);
+    WARNING2(LOG_SIMULATION, "nx in setup file: %ld from model code: %d", nxchk, modelData->nStates);
+    WARNING2(LOG_SIMULATION, "ny in setup file: %ld from model code: %ld", nychk, modelData->nVariablesReal - 2*modelData->nStates);
+    WARNING2(LOG_SIMULATION, "np in setup file: %ld from model code: %ld", npchk, modelData->nParametersReal);
+    WARNING2(LOG_SIMULATION, "npint in setup file: %ld from model code: %ld", npintchk, modelData->nParametersInteger);
+    WARNING2(LOG_SIMULATION, "nyint in setup file: %ld from model code: %ld", nyintchk, modelData->nVariablesInteger);
+    WARNING2(LOG_SIMULATION, "npbool in setup file: %ld from model code: %ld", npboolchk, modelData->nParametersBoolean);
+    WARNING2(LOG_SIMULATION, "nybool in setup file: %ld from model code: %ld", nyboolchk, modelData->nVariablesBoolean);
+    WARNING2(LOG_SIMULATION, "npstr in setup file: %ld from model code: %ld", npstrchk, modelData->nParametersString);
+    WARNING2(LOG_SIMULATION, "nystr in setup file: %ld from model code: %ld", nystrchk, modelData->nVariablesString);
+    RELEASE(LOG_SIMULATION);
     delete filename;
     XML_ParserFree(parser);
     fclose(file);
@@ -1041,24 +1043,24 @@ omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string*
 {
   omc_CommandLineOverrides mOverrides;
   char* overrideStr = NULL;
-  if ((override != NULL) && (overrideFile != NULL))
+  if((override != NULL) && (overrideFile != NULL))
   {
     THROW("simulation_input_xml.cpp: usage error you cannot have both -override and -overrideFile active at the same time. see Model -? for more info!");
   }
 
-  if (override != NULL)
+  if(override != NULL)
   {
     overrideStr = strdup(override->c_str());
   }
 
-  if (overrideFile != NULL)
+  if(overrideFile != NULL)
   {
     /* read override values from file */
     INFO1(LOG_SOLVER, "read override values from file: %s", overrideFile->c_str());
     std::ifstream infile;
 
     infile.open(overrideFile->c_str(), ifstream::in);
-    if (infile.is_open() == false)
+    if(infile.is_open() == false)
     {
       THROW1("simulation_input_xml.cpp: could not open the file given to -overrideFile=%s", overrideFile->c_str());
     }
@@ -1068,7 +1070,7 @@ omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string*
     std::getline(infile, line);
     std::string overrideLine(line);
     // get the rest of the lines
-    while (std::getline(infile, line))
+    while(std::getline(infile, line))
     {
       overrideLine += "," + line;
     }
@@ -1077,13 +1079,13 @@ omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string*
     infile.close();
   }
 
-  if (overrideStr != NULL)
+  if(overrideStr != NULL)
   {
     std::string key, value;
     /* read override values */
     INFO1(LOG_SOLVER, "read override values: %s", overrideStr);
     char *p = strtok(overrideStr, ",");
-    while (p)
+    while(p)
     {
         std::string *key_val = new string(p);
         // split it key = value => map[key]=value
@@ -1092,13 +1094,13 @@ omc_ModelInput doOverride(omc_ModelInput mi, MODEL_DATA* modelData, std::string*
         value = key_val->substr(pos + 1,key_val->length() - pos - 1);
 
         /* un-quote key and value
-        if (key[0] == '"')
+        if(key[0] == '"')
          key = key.substr(1,key.length() - 1);
-        if (key[key.length()] == '"')
+        if(key[key.length()] == '"')
          key = key.substr(0,key.length() - 1);
-        if (value[0] == '"')
+        if(value[0] == '"')
          value = value.substr(1,value.length() - 1);
-        if (value[value.length()] == '"')
+        if(value[value.length()] == '"')
          value = value.substr(0,value.length() - 1);
         */
 

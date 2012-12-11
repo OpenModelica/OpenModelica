@@ -107,18 +107,18 @@
 /*     to W(N+NPT). */
 
     i__1 = *npt;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
 /* L10: */
   w[*n + k] = zero;
     }
     i__1 = nptm;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   temp = zmat[*knew + j * zmat_dim1];
-  if (j < *idz) {
+  if(j < *idz) {
       temp = -temp;
   }
   i__2 = *npt;
-  for (k = 1; k <= i__2; ++k) {
+  for(k = 1; k <= i__2; ++k) {
 /* L20: */
       w[*n + k] += temp * zmat[k + j * zmat_dim1];
   }
@@ -135,7 +135,7 @@
     ss = zero;
     xoptsq = zero;
     i__2 = *n;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
 /* Computing 2nd power */
   d__1 = d__[i__];
   dd += d__1 * d__1;
@@ -149,22 +149,22 @@
   d__1 = xopt[i__];
   xoptsq += d__1 * d__1;
     }
-    if (ds * ds > dd * .99 * ss) {
+    if(ds * ds > dd * .99 * ss) {
   ksav = *knew;
   dtest = ds * ds / ss;
   i__2 = *npt;
-  for (k = 1; k <= i__2; ++k) {
-      if (k != *kopt) {
+  for(k = 1; k <= i__2; ++k) {
+      if(k != *kopt) {
     dstemp = zero;
     sstemp = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
         diff = xpt[k + i__ * xpt_dim1] - xopt[i__];
         dstemp += d__[i__] * diff;
 /* L40: */
         sstemp += diff * diff;
     }
-    if (dstemp * dstemp / sstemp < dtest) {
+    if(dstemp * dstemp / sstemp < dtest) {
         ksav = k;
         dtest = dstemp * dstemp / sstemp;
         ds = dstemp;
@@ -174,7 +174,7 @@
 /* L50: */
   }
   i__2 = *n;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
 /* L60: */
       s[i__] = xpt[ksav + i__ * xpt_dim1] - xopt[i__];
   }
@@ -192,7 +192,7 @@ L70:
     xoptd = zero;
     xopts = zero;
     i__2 = *n;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   s[i__] = temp * (dd * s[i__] - ds * d__[i__]);
   xoptd += xopt[i__] * d__[i__];
 /* L80: */
@@ -208,7 +208,7 @@ L70:
     den[2] = two * xopts * dd;
     den[3] = tempa - tempb;
     den[4] = xoptd * xopts;
-    for (i__ = 6; i__ <= 9; ++i__) {
+    for(i__ = 6; i__ <= 9; ++i__) {
 /* L90: */
   den[i__ - 1] = zero;
     }
@@ -216,12 +216,12 @@ L70:
 /*     Put the coefficients of Wcheck in WVEC. */
 
     i__2 = *npt;
-    for (k = 1; k <= i__2; ++k) {
+    for(k = 1; k <= i__2; ++k) {
   tempa = zero;
   tempb = zero;
   tempc = zero;
   i__1 = *n;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       tempa += xpt[k + i__ * xpt_dim1] * d__[i__];
       tempb += xpt[k + i__ * xpt_dim1] * s[i__];
 /* L100: */
@@ -235,7 +235,7 @@ L70:
   wvec[k + wvec_dim1 * 5] = half * tempa * tempb;
     }
     i__2 = *n;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   ip = i__ + *npt;
   wvec[ip + wvec_dim1] = zero;
   wvec[ip + (wvec_dim1 << 1)] = d__[i__];
@@ -247,39 +247,39 @@ L70:
 
 /*     Put the coefficents of THETA*Wcheck in PROD. */
 
-    for (jc = 1; jc <= 5; ++jc) {
+    for(jc = 1; jc <= 5; ++jc) {
   nw = *npt;
-  if (jc == 2 || jc == 3) {
+  if(jc == 2 || jc == 3) {
       nw = *ndim;
   }
   i__2 = *npt;
-  for (k = 1; k <= i__2; ++k) {
+  for(k = 1; k <= i__2; ++k) {
 /* L130: */
       prod[k + jc * prod_dim1] = zero;
   }
   i__2 = nptm;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
       sum = zero;
       i__1 = *npt;
-      for (k = 1; k <= i__1; ++k) {
+      for(k = 1; k <= i__1; ++k) {
 /* L140: */
     sum += zmat[k + j * zmat_dim1] * wvec[k + jc * wvec_dim1];
       }
-      if (j < *idz) {
+      if(j < *idz) {
     sum = -sum;
       }
       i__1 = *npt;
-      for (k = 1; k <= i__1; ++k) {
+      for(k = 1; k <= i__1; ++k) {
 /* L150: */
     prod[k + jc * prod_dim1] += sum * zmat[k + j * zmat_dim1];
       }
   }
-  if (nw == *ndim) {
+  if(nw == *ndim) {
       i__1 = *npt;
-      for (k = 1; k <= i__1; ++k) {
+      for(k = 1; k <= i__1; ++k) {
     sum = zero;
     i__2 = *n;
-    for (j = 1; j <= i__2; ++j) {
+    for(j = 1; j <= i__2; ++j) {
 /* L160: */
         sum += bmat[k + j * bmat_dim1] * wvec[*npt + j + jc *
           wvec_dim1];
@@ -289,10 +289,10 @@ L70:
       }
   }
   i__1 = *n;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       sum = zero;
       i__2 = nw;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
 /* L180: */
     sum += bmat[i__ + j * bmat_dim1] * wvec[i__ + jc * wvec_dim1];
       }
@@ -304,9 +304,9 @@ L70:
 /*     Include in DEN the part of BETA that depends on THETA. */
 
     i__1 = *ndim;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   sum = zero;
-  for (i__ = 1; i__ <= 5; ++i__) {
+  for(i__ = 1; i__ <= 5; ++i__) {
       par[i__ - 1] = half * prod[k + i__ * prod_dim1] * wvec[k + i__ *
         wvec_dim1];
 /* L200: */
@@ -347,7 +347,7 @@ L70:
 /*     Extend DEN so that it holds all the coefficients of DENOM. */
 
     sum = zero;
-    for (i__ = 1; i__ <= 5; ++i__) {
+    for(i__ = 1; i__ <= 5; ++i__) {
 /* Computing 2nd power */
   d__1 = prod[*knew + i__ * prod_dim1];
   par[i__ - 1] = half * (d__1 * d__1);
@@ -384,38 +384,38 @@ L70:
     temp = twopi / (doublereal) (iu + 1);
     par[0] = one;
     i__1 = iu;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   angle = (doublereal) i__ * temp;
   par[1] = cos(angle);
   par[2] = sin(angle);
-  for (j = 4; j <= 8; j += 2) {
+  for(j = 4; j <= 8; j += 2) {
       par[j - 1] = par[1] * par[j - 3] - par[2] * par[j - 2];
 /* L230: */
       par[j] = par[1] * par[j - 2] + par[2] * par[j - 3];
   }
   sumold = sum;
   sum = zero;
-  for (j = 1; j <= 9; ++j) {
+  for(j = 1; j <= 9; ++j) {
 /* L240: */
       sum += denex[j - 1] * par[j - 1];
   }
-  if (abs(sum) > abs(denmax)) {
+  if(abs(sum) > abs(denmax)) {
       denmax = sum;
       isave = i__;
       tempa = sumold;
-  } else if (i__ == isave + 1) {
+  } else if(i__ == isave + 1) {
       tempb = sum;
   }
 /* L250: */
     }
-    if (isave == 0) {
+    if(isave == 0) {
   tempa = sum;
     }
-    if (isave == iu) {
+    if(isave == iu) {
   tempb = denold;
     }
     step = zero;
-    if (tempa != tempb) {
+    if(tempa != tempb) {
   tempa -= denmax;
   tempb -= denmax;
   step = half * (tempa - tempb) / (tempa + tempb);
@@ -427,22 +427,22 @@ L70:
 
     par[1] = cos(angle);
     par[2] = sin(angle);
-    for (j = 4; j <= 8; j += 2) {
+    for(j = 4; j <= 8; j += 2) {
   par[j - 1] = par[1] * par[j - 3] - par[2] * par[j - 2];
 /* L260: */
   par[j] = par[1] * par[j - 2] + par[2] * par[j - 3];
     }
     *beta = zero;
     denmax = zero;
-    for (j = 1; j <= 9; ++j) {
+    for(j = 1; j <= 9; ++j) {
   *beta += den[j - 1] * par[j - 1];
 /* L270: */
   denmax += denex[j - 1] * par[j - 1];
     }
     i__1 = *ndim;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   vlag[k] = zero;
-  for (j = 1; j <= 5; ++j) {
+  for(j = 1; j <= 5; ++j) {
 /* L280: */
       vlag[k] += prod[k + j * prod_dim1] * par[j - 1];
   }
@@ -452,7 +452,7 @@ L70:
     tempa = zero;
     tempb = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   d__[i__] = par[1] * d__[i__] + par[2] * s[i__];
   w[i__] = xopt[i__] + d__[i__];
 /* Computing 2nd power */
@@ -462,13 +462,13 @@ L70:
 /* L290: */
   tempb += w[i__] * w[i__];
     }
-    if (iterc >= *n) {
+    if(iterc >= *n) {
   goto L340;
     }
-    if (iterc > 1) {
+    if(iterc > 1) {
   densav = max(densav,denold);
     }
-    if (abs(denmax) <= abs(densav) * 1.1) {
+    if(abs(denmax) <= abs(densav) * 1.1) {
   goto L340;
     }
     densav = denmax;
@@ -477,22 +477,22 @@ L70:
 /*     Then branch for the next iteration. */
 
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   temp = tempa * xopt[i__] + tempb * d__[i__] - vlag[*npt + i__];
 /* L300: */
   s[i__] = tau * bmat[*knew + i__ * bmat_dim1] + alpha * temp;
     }
     i__1 = *npt;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   sum = zero;
   i__2 = *n;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L310: */
       sum += xpt[k + j * xpt_dim1] * w[j];
   }
   temp = (tau * w[*n + k] - alpha * vlag[k]) * sum;
   i__2 = *n;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
 /* L320: */
       s[i__] += temp * xpt[k + i__ * xpt_dim1];
   }
@@ -500,7 +500,7 @@ L70:
     ss = zero;
     ds = zero;
     i__2 = *n;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
 /* Computing 2nd power */
   d__1 = s[i__];
   ss += d__1 * d__1;
@@ -508,7 +508,7 @@ L70:
   ds += d__[i__] * s[i__];
     }
     ssden = dd * ss - ds * ds;
-    if (ssden >= dd * 1e-8 * ss) {
+    if(ssden >= dd * 1e-8 * ss) {
   goto L70;
     }
 
@@ -516,9 +516,9 @@ L70:
 
 L340:
     i__2 = *ndim;
-    for (k = 1; k <= i__2; ++k) {
+    for(k = 1; k <= i__2; ++k) {
   w[k] = zero;
-  for (j = 1; j <= 5; ++j) {
+  for(j = 1; j <= 5; ++j) {
 /* L350: */
       w[k] += wvec[k + j * wvec_dim1] * par[j - 1];
   }

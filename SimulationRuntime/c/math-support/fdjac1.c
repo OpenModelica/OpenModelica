@@ -141,27 +141,27 @@ static integer c__1 = 1;
 
     eps = sqrt((max(*epsfcn,epsmch)));
     msum = *ml + *mu + 1;
-    if (msum < *n) {
+    if(msum < *n) {
   goto L40;
     }
 
 /*        computation of dense approximate jacobian. */
 
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   temp = x[j];
   h__ = eps * abs(temp);
-  if (h__ == zero) {
+  if(h__ == zero) {
       h__ = eps;
   }
   x[j] = temp + h__;
   (*fcn)(n, &x[1], &wa1[1], iflag, userdata);
-  if (*iflag < 0) {
+  if(*iflag < 0) {
       goto L30;
   }
   x[j] = temp;
   i__2 = *n;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       fjac[i__ + j * fjac_dim1] = (wa1[i__] - fvec[i__]) / h__;
 /* L10: */
   }
@@ -174,34 +174,34 @@ L40:
 /*        computation of banded approximate jacobian. */
 
     i__1 = msum;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   i__2 = *n;
   i__3 = msum;
-  for (j = k; i__3 < 0 ? j >= i__2 : j <= i__2; j += i__3) {
+  for(j = k; i__3 < 0 ? j >= i__2 : j <= i__2; j += i__3) {
       wa2[j] = x[j];
       h__ = eps * (d__1 = wa2[j], abs(d__1));
-      if (h__ == zero) {
+      if(h__ == zero) {
     h__ = eps;
       }
       x[j] = wa2[j] + h__;
 /* L60: */
   }
   (*fcn)(n, &x[1], &wa1[1], iflag, userdata);
-  if (*iflag < 0) {
+  if(*iflag < 0) {
       goto L100;
   }
   i__3 = *n;
   i__2 = msum;
-  for (j = k; i__2 < 0 ? j >= i__3 : j <= i__3; j += i__2) {
+  for(j = k; i__2 < 0 ? j >= i__3 : j <= i__3; j += i__2) {
       x[j] = wa2[j];
       h__ = eps * (d__1 = wa2[j], abs(d__1));
-      if (h__ == zero) {
+      if(h__ == zero) {
     h__ = eps;
       }
       i__4 = *n;
-      for (i__ = 1; i__ <= i__4; ++i__) {
+      for(i__ = 1; i__ <= i__4; ++i__) {
     fjac[i__ + j * fjac_dim1] = zero;
-    if (i__ >= j - *mu && i__ <= j + *ml) {
+    if(i__ >= j - *mu && i__ <= j + *ml) {
         fjac[i__ + j * fjac_dim1] = (wa1[i__] - fvec[i__]) / h__;
     }
 /* L70: */

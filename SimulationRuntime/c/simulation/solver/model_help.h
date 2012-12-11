@@ -41,10 +41,10 @@ extern "C" {
 }
 
 #define RELATION(res,exp1,exp2,index,op_w) { \
-  if (data->simulationInfo.discreteCall == 0){ \
+  if(data->simulationInfo.discreteCall == 0){ \
     res = data->simulationInfo.relationsPre[index]; \
   } else{ \
-    if (data->simulationInfo.solveContinuous){ \
+    if(data->simulationInfo.solveContinuous){ \
       res = data->simulationInfo.relationsPre[index]; \
       data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
     } else { \
@@ -55,11 +55,11 @@ extern "C" {
 }
 
 #define RELATIONHYSTERESIS(res,exp1,exp2,index,op_w) { \
-  if (data->simulationInfo.discreteCall == 0){ \
+  if(data->simulationInfo.discreteCall == 0){ \
       res = data->simulationInfo.relationsPre[index]; \
   } else{ \
-    if (data->simulationInfo.initial){\
-      if (data->simulationInfo.solveContinuous){ \
+    if(data->simulationInfo.initial){\
+      if(data->simulationInfo.solveContinuous){ \
         res = data->simulationInfo.relationsPre[index]; \
         data->simulationInfo.relations[index] = ((op_w)((exp1),(exp2))); \
       } else { \
@@ -67,7 +67,7 @@ extern "C" {
         data->simulationInfo.relations[index] = res; \
       }\
     } else { \
-      if (data->simulationInfo.solveContinuous){ \
+      if(data->simulationInfo.solveContinuous){ \
         res = data->simulationInfo.relationsPre[index]; \
         data->simulationInfo.relations[index] = ((op_w##ZC)((exp1),(exp2),data->simulationInfo.hysteresisEnabled[index])); \
       } else { \
@@ -91,7 +91,7 @@ void saveZeroCrossings(DATA *data);
 
 void copyStartValuestoInitValues(DATA *data);
 
-void printAllVars(DATA *data, int ringSegment);
+void printAllVars(DATA *data, int ringSegment, int stream);
 void printParameters(DATA *data);
 void printRelations(DATA *data);
 

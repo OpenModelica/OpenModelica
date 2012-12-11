@@ -141,7 +141,7 @@ int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 #endif
   /* if table is already initialized, find it */
   for(i = 0; i < ninterpolationTables; ++i)
-    if (InterpolationTable_compare(interpolationTables[i],fileName,tableName,table))
+    if(InterpolationTable_compare(interpolationTables[i],fileName,tableName,table))
     {
 #ifdef INFOS
       INFO1("Table id = %d",i);
@@ -176,13 +176,13 @@ void omcTableTimeIpoClose(int tableID)
 #ifdef INFOS
   INFO1("Close Table[%d]",tableID);
 #endif
-  if (tableID >= 0 && tableID < (int)ninterpolationTables)
+  if(tableID >= 0 && tableID < (int)ninterpolationTables)
   {
     InterpolationTable_deinit(interpolationTables[tableID]);
     interpolationTables[tableID] = NULL;
     ninterpolationTables--;
   }
-  if (ninterpolationTables <=0)
+  if(ninterpolationTables <=0)
     free(interpolationTables);
 }
 
@@ -192,7 +192,7 @@ double omcTableTimeIpo(int tableID, int icol, double timeIn)
 #ifdef INFOS
   INFO3("Interpolate Table[%d][%d] add Time %f",tableID,icol,timeIn);
 #endif
-  if (tableID >= 0 && tableID < (int)ninterpolationTables)
+  if(tableID >= 0 && tableID < (int)ninterpolationTables)
   {
     return InterpolationTable_interpolate(interpolationTables[tableID],timeIn,icol-1);
   }
@@ -206,7 +206,7 @@ double omcTableTimeTmax(int tableID)
 #ifdef INFOS
   INFO1("Time max from Table[%d]",tableID);
 #endif
-  if (tableID >= 0 && tableID < (int)ninterpolationTables)
+  if(tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_maxTime(interpolationTables[tableID]);
   else
     return 0.0;
@@ -218,7 +218,7 @@ double omcTableTimeTmin(int tableID)
 #ifdef INFOS
   INFO1("Time min from Table[%d]",tableID);
 #endif
-  if (tableID >= 0 && tableID < (int)ninterpolationTables)
+  if(tableID >= 0 && tableID < (int)ninterpolationTables)
     return InterpolationTable_minTime(interpolationTables[tableID]);
   else
     return 0.0;
@@ -235,7 +235,7 @@ int omcTable2DIni(int ipoType, const char *tableName, const char* fileName,
 #endif
   /* if table is already initialized, find it */
   for(i = 0; i < ninterpolationTables2D; ++i)
-    if (InterpolationTable2D_compare(interpolationTables2D[i],fileName,tableName,table))
+    if(InterpolationTable2D_compare(interpolationTables2D[i],fileName,tableName,table))
     {
 #ifdef INFOS
       INFO1("Table id = %d",i);
@@ -267,13 +267,13 @@ void omcTable2DIpoClose(int tableID)
 #ifdef INFOS
   INFO1("Close Table[%d]",tableID);
 #endif
-  if (tableID >= 0 && tableID < (int)ninterpolationTables2D)
+  if(tableID >= 0 && tableID < (int)ninterpolationTables2D)
   {
     InterpolationTable2D_deinit(interpolationTables2D[tableID]);
     interpolationTables2D[tableID] = NULL;
     ninterpolationTables2D--;
   }
-  if (ninterpolationTables2D <=0)
+  if(ninterpolationTables2D <=0)
     free(interpolationTables2D);
 }
 
@@ -283,7 +283,7 @@ double omcTable2DIpo(int tableID,double u1_, double u2_)
 #ifdef INFOS
   INFO3("Interpolate Table[%d][%d] add Time %f",tableID,u1_,u2_);
 #endif
-  if (tableID >= 0 && tableID < (int)ninterpolationTables2D)
+  if(tableID >= 0 && tableID < (int)ninterpolationTables2D)
     return InterpolationTable2D_interpolate(interpolationTables2D[tableID], u1_, u2_);
   else
     return 0.0;
@@ -327,7 +327,7 @@ TEXT_FILE *Text_open(const char *filename)
   l = strlen(filename);
   f->filename = (char*)calloc(1,l+1);
   ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
-  for (i=0;i<l;i++)
+  for(i=0;i<l;i++)
   {
     f->filename[i] = filename[i];
   }
@@ -338,9 +338,9 @@ TEXT_FILE *Text_open(const char *filename)
 
 void Text_close(TEXT_FILE *f)
 {
-  if (f)
+  if(f)
   {
-    if (f->filename)
+    if(f->filename)
       free(f->filename);
     fclose(f->fp);
     free(f);
@@ -350,12 +350,12 @@ void Text_close(TEXT_FILE *f)
 void trim(const char **ptr, size_t *len)
 {
   for(; *len > 0; ++(*ptr), --(*len))
-    if (!isspace(*(*ptr))) return;
+    if(!isspace(*(*ptr))) return;
 }
 char readChr(const char **ptr, size_t *len, char chr)
 {
   trim(ptr,len);
-  if ((*len)-- > 0 && *((*ptr)++) != chr)
+  if((*len)-- > 0 && *((*ptr)++) != chr)
     return 0;
   trim(ptr,len);
   return 1;
@@ -470,28 +470,28 @@ char Text_findTable(TEXT_FILE *f, const char* tableName, size_t *cols, size_t *r
   size_t i=0;
   size_t col = 0;
 
-  while (!feof(f->fp))
+  while(!feof(f->fp))
   {
     /* start new line, update counters */
     ++f->line;
     /* read whole line */
     col = Text_readLine(f,&strLn,&buflen);
     /* check if we read header */
-    if (parseHead(f,strLn,col,&tblName,&_rows,&_cols))
+    if(parseHead(f,strLn,col,&tblName,&_rows,&_cols))
     {
       /* is table name the one we are looking for? */
-      if (strncmp(tblName,tableName,strlen(tableName))==0)
+      if(strncmp(tblName,tableName,strlen(tableName))==0)
       {
         *cols = _cols;
         *rows = _rows;
-        if (strLn)
+        if(strLn)
           free(strLn);
         return 1;
       }
     }
   }
   /* no header found */
-  if (strLn)
+  if(strLn)
     free(strLn);
   return 0;
 }
@@ -519,7 +519,7 @@ void Text_readTable(TEXT_FILE *f, double *buf, size_t rows, size_t cols)
       number = entp;
     }
   }
-  if (strLn)
+  if(strLn)
     free(strLn);
 
 }
@@ -551,7 +551,7 @@ MAT_FILE *Mat_open(const char *filename)
   l = strlen(filename);
   f->filename = (char*)calloc(1,l+1);
   ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
-  for (i=0;i<l;i++)
+  for(i=0;i<l;i++)
   {
     f->filename[i] = filename[i];
   }
@@ -562,9 +562,9 @@ MAT_FILE *Mat_open(const char *filename)
 
 void Mat_close(MAT_FILE *f)
 {
-  if (f)
+  if(f)
   {
-    if (f->filename)
+    if(f->filename)
       free(f->filename);
     fclose(f->fp);
     free(f);
@@ -596,28 +596,28 @@ char Mat_findTable(MAT_FILE *f, const char* tableName, size_t *cols, size_t *row
   char name[256];
   long pos=0;
   char *returnTmp;
-  while (!feof(f->fp))
+  while(!feof(f->fp))
   {
     returnTmp = fgets((char*)&f->hdr,sizeof(hdr_t),f->fp);
-    if (ferror(f->fp))
+    if(ferror(f->fp))
     {
       fclose(f->fp);
       THROW1("Could not read from file `%s'.",f->filename);
     }
     returnTmp = fgets(name,fmin(f->hdr.namelen,(long)256),f->fp);
-    if (strncmp(tableName,name,strlen(tableName)) == 0)
+    if(strncmp(tableName,name,strlen(tableName)) == 0)
     {
-      if (f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
+      if(f->hdr.type%10 != 0 || f->hdr.type/1000 > 1)
       {
         fclose(f->fp);
         THROW1("Table `%s' not in supported format.",tableName);
       }
-      if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
+      if(f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
         fclose(f->fp);
         THROW1("Table `%s' has zero dimensions.",tableName);
       }
-      if (f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
+      if(f->hdr.mrows <= 0 || f->hdr.ncols <= 0)
       {
         fclose(f->fp);
         THROW3("Table `%s' has zero dimensions [%lu,%lu].", tableName, (unsigned long)f->hdr.mrows, (unsigned long)f->hdr.ncols);
@@ -657,7 +657,7 @@ inline static char getEndianness()
   } elem_u_ ## stype; \
   size_t i=0; \
   elem_u_ ## stype dat1, dat2; \
-  if (getEndianness() != dataEndianness) \
+  if(getEndianness() != dataEndianness) \
   { \
     dat1.num = _num; \
     for(i=0; i < sizeof(type); ++i) \
@@ -709,7 +709,7 @@ void Mat_readTable(MAT_FILE *f, double *buf, size_t rows, size_t cols)
     for(j=0; j < cols; ++j)
   {
     returnTmp = fgets(readbuf.p,elemSize,f->fp);
-    if (ferror(f->fp))
+    if(ferror(f->fp))
     {
       fclose(f->fp);
       THROW1("Could not read from file `%s'.",f->filename);
@@ -737,7 +737,7 @@ CSV_FILE *csv_open(const char *filename)
   l = strlen(filename);
   f->filename = (char*)calloc(1,l+1);
   ASSERT1(f->filename,"Not enough memory for Filename %s",filename);
-  for (i=0;i<l;i++)
+  for(i=0;i<l;i++)
   {
     f->filename[i] = filename[i];
   }
@@ -748,9 +748,9 @@ CSV_FILE *csv_open(const char *filename)
 
 void csv_close(CSV_FILE *f)
 {
-  if (f)
+  if(f)
   {
-    if (f->filename)
+    if(f->filename)
       free(f->filename);
     fclose(f->fp);
     free(f);
@@ -766,22 +766,22 @@ size_t csv_readLine(CSV_FILE *f, char **data, size_t *size)
   char *buf = *data;
   memset(*data,0,sizeof(char)*(*size));
   /* read whole line */
-  while (!feof(f->fp))
+  while(!feof(f->fp))
   {
-    if (col >= *size)
+    if(col >= *size)
     {
       char *tmp = (char*)calloc(*size+100,sizeof(char));
       ASSERT1(tmp,"Not enough memory for Filename %s",f->filename);
-      for (i = 0; i < *size; i++)
+      for(i = 0; i < *size; i++)
         tmp[i] = buf[i];
-      if (buf)
+      if(buf)
         free(buf);
       *data = tmp;
       buf = *data;
       *size = *size+100;
     }
     ch = fgetc(f->fp);
-    if (ferror(f->fp))
+    if(ferror(f->fp))
     {
       fclose(f->fp);
       THROW3("In file `%s': parsing error at line %lu and col %lu.", f->filename, (unsigned long)f->line, (unsigned long)col);
@@ -804,25 +804,25 @@ char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size_t *row
   char stop=0;
   *cols=0;
   *rows=0;
-  while (!feof(f->fp))
+  while(!feof(f->fp))
   {
     /* start new line, update counters */
     ++f->line;
     /* read whole line */
     col = csv_readLine(f,&strLn,&buflen);
 
-    if (strcmp(strLn,tableName)==0)
+    if(strcmp(strLn,tableName)==0)
     {
       f->data = ftell (f->fp);
-      if (ferror(f->fp))
+      if(ferror(f->fp))
       {
         perror ("The following error occurred");
         THROW1("Cannot get File Position! from File %s",f->filename);
       }
-      while (!feof(f->fp) && (stop==0))
+      while(!feof(f->fp) && (stop==0))
       {
         col = csv_readLine(f,&strLn,&buflen);
-        for (i = 0; i<buflen;i++)
+        for(i = 0; i<buflen;i++)
         {
           if(strLn[i]== ',')
           {
@@ -831,7 +831,7 @@ char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size_t *row
           }
           if(strLn[i]== 0)
             break;
-          if (isdigit(strLn[i]) == 0)
+          if(isdigit(strLn[i]) == 0)
           {
             if(strLn[i] != 'e')
               if(strLn[i] != 'E')
@@ -844,12 +844,12 @@ char csv_findTable(CSV_FILE *f, const char *tableName, size_t *cols, size_t *row
         *cols = fmax(_cols,*cols);
         _cols = 1;
       }
-      if (strLn)
+      if(strLn)
         free(strLn);
       return 1;
     }
   }
-  if (strLn)
+  if(strLn)
     free(strLn);
   return 0;
 }
@@ -867,22 +867,22 @@ void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows
   char *entp=NULL;
   fseek ( f->fp , 0 , SEEK_SET );
   /* WHY DOES THIS NOT WORK
-  if (fseek ( f->fp , f->data , SEEK_CUR ))
+  if(fseek ( f->fp , f->data , SEEK_CUR ))
   {
     THROW("Cannot set File Position! from File %s, no data is readed",f->filename);
   }
   */
-  while (!feof(f->fp))
+  while(!feof(f->fp))
   {
     col = csv_readLine(f,&strLn,&buflen);
 
-    if (strcmp(strLn,tableName)==0)
+    if(strcmp(strLn,tableName)==0)
     {
-      for (row=0;row<rows;row++)
+      for(row=0;row<rows;row++)
       {
         c = csv_readLine(f,&strLn,&buflen);
         number = strLn;
-        for (col=0;col<cols;col++)
+        for(col=0;col<cols;col++)
         {
           data[row*cols+col] = strtod(number,&entp);
           trim((const char**)&entp,&lh);
@@ -892,7 +892,7 @@ void csv_readTable(CSV_FILE *f, const char *tableName, double *data, size_t rows
       break;
     }
   }
-  if (strLn)
+  if(strLn)
     free(strLn);
 }
 
@@ -912,11 +912,11 @@ void openFile(const char *filename, const char* tableName, size_t *rows, size_t 
   filetype[0] = filename[sl-4];
 
   /* read data from file*/
-  if (strncmp(filetype,".csv",4) == 0) /* text file */
+  if(strncmp(filetype,".csv",4) == 0) /* text file */
   {
     CSV_FILE *f=NULL;
     f = csv_open(filename);
-    if (csv_findTable(f,tableName,cols,rows))
+    if(csv_findTable(f,tableName,cols,rows))
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
       ASSERT1(*data,"Not enough memory for Table: %s",tableName);
@@ -927,10 +927,10 @@ void openFile(const char *filename, const char* tableName, size_t *rows, size_t 
     csv_close(f);
     THROW2("No table named `%s' in file `%s'.",tableName,filename);
   }
-  else if (strncmp(filetype,".mat",4) == 0) /* mat file */
+  else if(strncmp(filetype,".mat",4) == 0) /* mat file */
   {
     MAT_FILE *f= Mat_open(filename);
-    if (Mat_findTable(f,tableName,cols,rows))
+    if(Mat_findTable(f,tableName,cols,rows))
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
       ASSERT1(*data,"Not enough memory for Table: %s",tableName);
@@ -941,10 +941,10 @@ void openFile(const char *filename, const char* tableName, size_t *rows, size_t 
     Mat_close(f);
     THROW2("No table named `%s' in file `%s'.",tableName,filename);
   }
-  else if (strncmp(filetype,".txt",4) == 0) /* csv file */
+  else if(strncmp(filetype,".txt",4) == 0) /* csv file */
   {
     TEXT_FILE *f= Text_open(filename);
-    if (Text_findTable(f,tableName,cols,rows))
+    if(Text_findTable(f,tableName,cols,rows))
     {
       *data = (double*)calloc((*cols)*(*rows),sizeof(double));
       ASSERT1(*data,"Not enough memory for Table: %s",tableName);
@@ -968,13 +968,13 @@ char *copyTableNameFile(const char *name)
   size_t i = 0;
   char *dst=NULL;
   l = strlen(name);
-  if (l==0)
+  if(l==0)
     l = 6;
   dst = (char*)calloc(1,l+1);
   ASSERT1(dst,"Not enough memory for Table: %s",name);
-  if (name)
+  if(name)
   {
-    for (i=0;i<l;i++)
+    for(i=0;i<l;i++)
     {
       dst[i] = name[i];
     }
@@ -1009,7 +1009,7 @@ InterpolationTable* InterpolationTable_init(double time, double startTime,
   tpl->tablename = copyTableNameFile(tableName);
   tpl->filename = copyTableNameFile(fileName);
 
-  if (fileName && strncmp("NoName",fileName,6) != 0)
+  if(fileName && strncmp("NoName",fileName,6) != 0)
   {
     openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
     tpl->own_data = 1;
@@ -1024,7 +1024,7 @@ InterpolationTable* InterpolationTable_init(double time, double startTime,
     ASSERT1(tpl->data,"Not enough memory for Table: %s",tableName);
     tpl->own_data = 1;
 
-    for (i=0;i<size;i++)
+    for(i=0;i<size;i++)
     {
       tpl->data[i] = table[i];
     }
@@ -1037,9 +1037,9 @@ InterpolationTable* InterpolationTable_init(double time, double startTime,
 
 void InterpolationTable_deinit(InterpolationTable *tpl)
 {
-  if (tpl)
+  if(tpl)
   {
-    if (tpl->own_data)
+    if(tpl->own_data)
       free(tpl->data);
     free(tpl);
   }
@@ -1050,20 +1050,20 @@ double InterpolationTable_interpolate(InterpolationTable *tpl, double time, size
   size_t i = 0;
   size_t lastIdx = tpl->colWise ? tpl->cols : tpl->rows;
 
-  if (!tpl->data) return 0.0;
+  if(!tpl->data) return 0.0;
 
   /* adrpo: if we have only one row [0, 0.7] return the value column */
-  if (lastIdx == 1)
+  if(lastIdx == 1)
   {
     return InterpolationTable_getElt(tpl,0,col);
   }
 
   /* substract time offset */
-  if (time < InterpolationTable_minTime(tpl))
+  if(time < InterpolationTable_minTime(tpl))
     return InterpolationTable_extrapolate(tpl,time,col,time <= InterpolationTable_minTime(tpl));
 
   for(i = 0; i < lastIdx; ++i) {
-    if (InterpolationTable_getElt(tpl,i,0) > time) {
+    if(InterpolationTable_getElt(tpl,i,0) > time) {
       return InterpolationTable_interpolateLin(tpl,time, i-1,col);
     }
   }
@@ -1082,7 +1082,7 @@ double InterpolationTable_minTime(InterpolationTable *tpl)
 char InterpolationTable_compare(InterpolationTable *tpl, const char* fname, const char* tname,
          const double* table)
 {
-  if ( (fname == NULL || tname == NULL) || ((strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)) )
+  if( (fname == NULL || tname == NULL) || ((strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)) )
   {
     /* table passed as memory location */
     return (tpl->data == table);
@@ -1121,7 +1121,7 @@ double InterpolationTable_interpolateLin(InterpolationTable *tpl, double time, s
   double t_2 = InterpolationTable_getElt(tpl,i+1,0);
   double y_1 = InterpolationTable_getElt(tpl,i,j);
   double y_2 = InterpolationTable_getElt(tpl,i+1,j);
-  /*if (std::abs(t_2-t_1) < 100.0*std::numeric_limits<double>::epsilon())
+  /*if(std::abs(t_2-t_1) < 100.0*std::numeric_limits<double>::epsilon())
     return y_1;
     else
   */
@@ -1145,10 +1145,10 @@ void InterpolationTable_checkValidityOfData(InterpolationTable *tpl)
   size_t i = 0;
   size_t maxSize = tpl->colWise ? tpl->cols : tpl->rows;
   /* if we have only one row or column, return */
-  if (maxSize == 1) return;
+  if(maxSize == 1) return;
   /* else check the validity */
   for(i = 1; i < maxSize; ++i)
-    if (InterpolationTable_getElt(tpl,i-1,0) > InterpolationTable_getElt(tpl,i,0))
+    if(InterpolationTable_getElt(tpl,i-1,0) > InterpolationTable_getElt(tpl,i,0))
       THROW2("TimeTable: Column with time variable not monotonous: %g >= %g.", InterpolationTable_getElt(tpl,i-1,0),InterpolationTable_getElt(tpl,i,0));
 }
 
@@ -1176,7 +1176,7 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
   tpl->tablename = copyTableNameFile(tableName);
   tpl->filename = copyTableNameFile(fileName);
 
-  if (fileName && strncmp("NoName",fileName,6) != 0)
+  if(fileName && strncmp("NoName",fileName,6) != 0)
   {
     openFile(fileName,tableName,&(tpl->rows),&(tpl->cols),&(tpl->data));
     tpl->own_data = 1;
@@ -1189,7 +1189,7 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
     ASSERT1(tpl->data,"Not enough memory for Table: %s",tableName);
     tpl->own_data = 1;
 
-    for (i=0;i<size;i++)
+    for(i=0;i<size;i++)
     {
       tpl->data[i] = table[i];
     }
@@ -1202,9 +1202,9 @@ InterpolationTable2D* InterpolationTable2D_init(int ipoType, const char* tableNa
 
 void InterpolationTable2D_deinit(InterpolationTable2D *table)
 {
-  if (table)
+  if(table)
   {
-    if (table->own_data)
+    if(table->own_data)
       free(table->data);
     free(table);
   }
@@ -1219,11 +1219,11 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
   size_t i=0;
   ASSERT(tlen>0,"InterpolationTable2D_akime called with empty table!");
   /* smooth interpolation with Akima Splines such that der(y) is continuous */
-  if ((tlen < 4) | (x < tx[2]) | (x > tx[tlen-3]))
+  if((tlen < 4) | (x < tx[2]) | (x > tx[tlen-3]))
   {
-  if (tlen < 3)
+  if(tlen < 3)
   {
-    if (tlen < 2)
+    if(tlen < 2)
     {
       return ty[0];
     }
@@ -1231,7 +1231,7 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
     return ((tx[1] - x)*ty[0] + (x - tx[0])*ty[1]) / (tx[1]-tx[0]);
   }
   /* parable interpolation */
-    if (x > tx[tlen-3])
+    if(x > tx[tlen-3])
     {
       x1 = tx[tlen-3];
       x2 = tx[tlen-2];
@@ -1259,11 +1259,11 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
 
   /* get index in table */
   for(index = 1; index < tlen-1; index++)
-    if (tx[index] > x) break;
+    if(tx[index] > x) break;
 
-  if (index > 2)
+  if(index > 2)
   {
-    if (index < tlen - 2)
+    if(index < tlen - 2)
     {
       /* calc */
       pos = 0;
@@ -1275,13 +1275,13 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
 
       a1 = fabs(q[3]-q[2]);
       a2 = fabs(q[1]-q[0]);
-      if (a1+a2 == 0)
+      if(a1+a2 == 0)
         yd0 = (q[1] + q[2])/2;
       else
         yd0 = (q[1]*a1 + q[2]*a2)/(a1+a2);
       a1 = fabs(q[4]-q[3]);
       a2 = fabs(q[2]-q[1]);
-      if (a1+a2 == 0)
+      if(a1+a2 == 0)
         yd1 = (q[2] + q[3])/2;
       else
         yd1 = (q[2]*a1 + q[3]*a2)/(a1+a2);
@@ -1298,7 +1298,7 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
       a = (x1*(y2-y3)+x2*(y3-y1)+x3*(y1-y2))/((x1-x2)*(x1-x3)*(x3-x2));
       b = (x1*x1*(y2-y3)+x2*x2*(y3-y1)+x3*x3*(y1-y2))/((x1-x2)*(x1-x3)*(x2-x3));
 
-      if (index < tlen - 1)
+      if(index < tlen - 1)
       {
        yd0 = 2*a*x1 - b;
        yd1 = 2*a*x2 - b;
@@ -1322,7 +1322,7 @@ double InterpolationTable2D_akime(double* tx, double* ty, size_t tlen, double x)
     a = (x1*(y2-y3)+x2*(y3-y1)+x3*(y1-y2))/((x1-x2)*(x1-x3)*(x3-x2));
     b = (x1*x1*(y2-y3)+x2*x2*(y3-y1)+x3*x3*(y1-y2))/((x1-x2)*(x1-x3)*(x2-x3));
 
-    if (index > 0)
+    if(index > 0)
     {
       yd0 = 2*a*x2 - b;
       yd1 = 2*a*x3 - b;
@@ -1355,7 +1355,7 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
   double te[6];
   size_t tlen=0;
   size_t telen=0;
-  if (table->colWise)
+  if(table->colWise)
   {
     double tmp = x1;
     x1 = x2;
@@ -1363,9 +1363,9 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
   }
 
   /* if out of boundary, use first or last two points for x2 */
-  if (table->cols == 2)
+  if(table->cols == 2)
   {
-    if (table->rows == 2)
+    if(table->rows == 2)
     {
       /*
        If the table has only one element, the table value is returned,
@@ -1375,12 +1375,12 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
     }
     /* find interval corresponding x1 */
     for(i = 2; i < table->rows; ++i)
-      if (InterpolationTable2D_getElt(table,i,0) >= x1) break;
-    if ((table->ipoType == 2) && (table->rows > 3))
+      if(InterpolationTable2D_getElt(table,i,0) >= x1) break;
+    if((table->ipoType == 2) && (table->rows > 3))
     {
       /* smooth interpolation with Akima Splines such that der(y) is continuous */
       tlen=0;
-      if (i < 4)
+      if(i < 4)
         start = 1;
       else
         start = i-3;
@@ -1396,17 +1396,17 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
     f_2 = InterpolationTable2D_getElt(table,i,1) - InterpolationTable2D_getElt(table,i-1,1);
     return InterpolationTable2D_linInterpolate(x1,InterpolationTable2D_getElt(table,i-1,0),InterpolationTable2D_getElt(table,i,0),0,f_2);
   }
-  if (table->rows == 2)
+  if(table->rows == 2)
   {
     /* find interval corresponding x2 */
     for(j = 2; j < table->cols; ++j)
-      if (InterpolationTable2D_getElt(table,0,j) >= x2) break;
+      if(InterpolationTable2D_getElt(table,0,j) >= x2) break;
 
-    if ((table->ipoType == 2) && (table->cols > 3))
+    if((table->ipoType == 2) && (table->cols > 3))
     {
       /* smooth interpolation with Akima Splines such that der(y) is continuous */
       tlen=0;
-      if (j < 4)
+      if(j < 4)
         start = 1;
       else
         start = j-3;
@@ -1424,20 +1424,20 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
 
   /* find intervals corresponding x1 and x2 */
   for(i = 2; i < table->rows-1; ++i)
-    if (InterpolationTable2D_getElt(table,i,0) >= x1) break;
+    if(InterpolationTable2D_getElt(table,i,0) >= x1) break;
   for(j = 2; j < table->cols-1; ++j)
-    if (InterpolationTable2D_getElt(table,0,j) >= x2) break;
+    if(InterpolationTable2D_getElt(table,0,j) >= x2) break;
 
-  if ((table->ipoType == 2) && (table->rows != 3) && (table->cols != 3)  )
+  if((table->ipoType == 2) && (table->rows != 3) && (table->cols != 3)  )
   {
     /* smooth interpolation with Akima Splines such that der(y) is continuous */
 
     /* interpolate rows */
-    if (i < 4)
+    if(i < 4)
       start = 1;
     else
       start = i-3;
-    if (j < 4)
+    if(j < 4)
       starte = 1;
     else
       starte = j-3;
@@ -1477,7 +1477,7 @@ double InterpolationTable2D_interpolate(InterpolationTable2D *table, double x1, 
 
 char InterpolationTable2D_compare(InterpolationTable2D *tpl, const char* fname, const char* tname, const double* table)
 {
-  if ( (fname == NULL || tname == NULL) || ((strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)) )
+  if( (fname == NULL || tname == NULL) || ((strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)) )
   {
     /* table passed as memory location */
     return (tpl->data == table);
@@ -1509,13 +1509,13 @@ void InterpolationTable2D_checkValidityOfData(InterpolationTable2D *tpl)
   /* check that first row and column are strictly monotonous */
   for(i=2; i < tpl->rows; ++i)
   {
-    if (InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
+    if(InterpolationTable2D_getElt(tpl,i-1,0) >= InterpolationTable2D_getElt(tpl,i,0))
       THROW3("Table: %s independent variable u1 not strictly \
              monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,i-1,0), InterpolationTable2D_getElt(tpl,i,0));
   }
   for(i=2; i < tpl->cols; ++i)
   {
-    if (InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
+    if(InterpolationTable2D_getElt(tpl,0,i-1) >= InterpolationTable2D_getElt(tpl,0,i))
       THROW3("Table: %s independent variable u2 not strictly \
              monotonous: %g >= %g.",tpl->tablename, InterpolationTable2D_getElt(tpl,0,i-1), InterpolationTable2D_getElt(tpl,0,i));
   }

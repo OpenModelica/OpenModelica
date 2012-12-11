@@ -89,18 +89,18 @@
 
     iterc = 0;
     i__1 = *npt;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
 /* L10: */
   hcol[k] = zero;
     }
     i__1 = nptm;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   temp = zmat[*knew + j * zmat_dim1];
-  if (j < *idz) {
+  if(j < *idz) {
       temp = -temp;
   }
   i__2 = *npt;
-  for (k = 1; k <= i__2; ++k) {
+  for(k = 1; k <= i__2; ++k) {
 /* L20: */
       hcol[k] += temp * zmat[k + j * zmat_dim1];
   }
@@ -112,7 +112,7 @@
 
     dd = zero;
     i__2 = *n;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   d__[i__] = xpt[*knew + i__ * xpt_dim1] - xopt[i__];
   gc[i__] = bmat[*knew + i__ * bmat_dim1];
   gd[i__] = zero;
@@ -122,11 +122,11 @@
   dd += d__1 * d__1;
     }
     i__2 = *npt;
-    for (k = 1; k <= i__2; ++k) {
+    for(k = 1; k <= i__2; ++k) {
   temp = zero;
   sum = zero;
   i__1 = *n;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       temp += xpt[k + j * xpt_dim1] * xopt[j];
 /* L40: */
       sum += xpt[k + j * xpt_dim1] * d__[j];
@@ -134,7 +134,7 @@
   temp = hcol[k] * temp;
   sum = hcol[k] * sum;
   i__1 = *n;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       gc[i__] += temp * xpt[k + i__ * xpt_dim1];
 /* L50: */
       gd[i__] += sum * xpt[k + i__ * xpt_dim1];
@@ -148,7 +148,7 @@
     sp = zero;
     dhd = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* Computing 2nd power */
   d__1 = gc[i__];
   gg += d__1 * d__1;
@@ -157,19 +157,19 @@
   dhd += d__[i__] * gd[i__];
     }
     scale = *delta / sqrt(dd);
-    if (sp * dhd < zero) {
+    if(sp * dhd < zero) {
   scale = -scale;
     }
     temp = zero;
-    if (sp * sp > dd * .99 * gg) {
+    if(sp * sp > dd * .99 * gg) {
   temp = one;
     }
     tau = scale * (abs(sp) + half * scale * abs(dhd));
-    if (gg * delsq < tau * .01 * tau) {
+    if(gg * delsq < tau * .01 * tau) {
   temp = one;
     }
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   d__[i__] = scale * d__[i__];
   gd[i__] = scale * gd[i__];
 /* L70: */
@@ -186,7 +186,7 @@ L80:
     sp = zero;
     ss = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* Computing 2nd power */
   d__1 = d__[i__];
   dd += d__1 * d__1;
@@ -197,12 +197,12 @@ L80:
   ss += d__1 * d__1;
     }
     temp = dd * ss - sp * sp;
-    if (temp <= dd * 1e-8 * ss) {
+    if(temp <= dd * 1e-8 * ss) {
   goto L160;
     }
     denom = sqrt(temp);
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   s[i__] = (dd * s[i__] - sp * d__[i__]) / denom;
 /* L100: */
   w[i__] = zero;
@@ -212,16 +212,16 @@ L80:
 /*     beginning with the multiplication of S by the second derivative matrix. */
 
     i__1 = *npt;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   sum = zero;
   i__2 = *n;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L110: */
       sum += xpt[k + j * xpt_dim1] * s[j];
   }
   sum = hcol[k] * sum;
   i__2 = *n;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
 /* L120: */
       w[i__] += sum * xpt[k + i__ * xpt_dim1];
   }
@@ -232,7 +232,7 @@ L80:
     cf4 = zero;
     cf5 = zero;
     i__2 = *n;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   cf1 += s[i__] * w[i__];
   cf2 += d__[i__] * gc[i__];
   cf3 += s[i__] * gc[i__];
@@ -252,29 +252,29 @@ L80:
     iu = 49;
     temp = twopi / (doublereal) (iu + 1);
     i__2 = iu;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   angle = (doublereal) i__ * temp;
   cth = cos(angle);
   sth = sin(angle);
   tau = cf1 + (cf2 + cf4 * cth) * cth + (cf3 + cf5 * cth) * sth;
-  if (abs(tau) > abs(taumax)) {
+  if(abs(tau) > abs(taumax)) {
       taumax = tau;
       isave = i__;
       tempa = tauold;
-  } else if (i__ == isave + 1) {
+  } else if(i__ == isave + 1) {
       tempb = tau;
   }
 /* L140: */
   tauold = tau;
     }
-    if (isave == 0) {
+    if(isave == 0) {
   tempa = tau;
     }
-    if (isave == iu) {
+    if(isave == iu) {
   tempb = taubeg;
     }
     step = zero;
-    if (tempa != tempb) {
+    if(tempa != tempb) {
   tempa -= taumax;
   tempb -= taumax;
   step = half * (tempa - tempb) / (tempa + tempb);
@@ -287,16 +287,16 @@ L80:
     sth = sin(angle);
     tau = cf1 + (cf2 + cf4 * cth) * cth + (cf3 + cf5 * cth) * sth;
     i__2 = *n;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   d__[i__] = cth * d__[i__] + sth * s[i__];
   gd[i__] = cth * gd[i__] + sth * w[i__];
 /* L150: */
   s[i__] = gc[i__] + gd[i__];
     }
-    if (abs(tau) <= abs(taubeg) * 1.1) {
+    if(abs(tau) <= abs(taubeg) * 1.1) {
   goto L160;
     }
-    if (iterc < *n) {
+    if(iterc < *n) {
   goto L80;
     }
 L160:

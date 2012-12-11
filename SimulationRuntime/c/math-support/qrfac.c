@@ -137,11 +137,11 @@ static integer c__1 = 1;
 /*     compute the initial column norms and initialize several arrays. */
 
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   acnorm[j] = enorm_(m, &a[j * a_dim1 + 1]);
   rdiag[j] = acnorm[j];
   wa[j] = rdiag[j];
-  if (*pivot) {
+  if(*pivot) {
       ipvt[j] = j;
   }
 /* L10: */
@@ -151,8 +151,8 @@ static integer c__1 = 1;
 
     minmn = min(*m,*n);
     i__1 = minmn;
-    for (j = 1; j <= i__1; ++j) {
-  if (! (*pivot)) {
+    for(j = 1; j <= i__1; ++j) {
+  if(! (*pivot)) {
       goto L40;
   }
 
@@ -160,17 +160,17 @@ static integer c__1 = 1;
 
   kmax = j;
   i__2 = *n;
-  for (k = j; k <= i__2; ++k) {
-      if (rdiag[k] > rdiag[kmax]) {
+  for(k = j; k <= i__2; ++k) {
+      if(rdiag[k] > rdiag[kmax]) {
     kmax = k;
       }
 /* L20: */
   }
-  if (kmax == j) {
+  if(kmax == j) {
       goto L40;
   }
   i__2 = *m;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       temp = a[i__ + j * a_dim1];
       a[i__ + j * a_dim1] = a[i__ + kmax * a_dim1];
       a[i__ + kmax * a_dim1] = temp;
@@ -188,14 +188,14 @@ L40:
 
   i__2 = *m - j + 1;
   ajnorm = enorm_(&i__2, &a[j + j * a_dim1]);
-  if (ajnorm == zero) {
+  if(ajnorm == zero) {
       goto L100;
   }
-  if (a[j + j * a_dim1] < zero) {
+  if(a[j + j * a_dim1] < zero) {
       ajnorm = -ajnorm;
   }
   i__2 = *m;
-  for (i__ = j; i__ <= i__2; ++i__) {
+  for(i__ = j; i__ <= i__2; ++i__) {
       a[i__ + j * a_dim1] /= ajnorm;
 /* L50: */
   }
@@ -205,24 +205,24 @@ L40:
 /*        and update the norms. */
 
   jp1 = j + 1;
-  if (*n < jp1) {
+  if(*n < jp1) {
       goto L100;
   }
   i__2 = *n;
-  for (k = jp1; k <= i__2; ++k) {
+  for(k = jp1; k <= i__2; ++k) {
       sum = zero;
       i__3 = *m;
-      for (i__ = j; i__ <= i__3; ++i__) {
+      for(i__ = j; i__ <= i__3; ++i__) {
     sum += a[i__ + j * a_dim1] * a[i__ + k * a_dim1];
 /* L60: */
       }
       temp = sum / a[j + j * a_dim1];
       i__3 = *m;
-      for (i__ = j; i__ <= i__3; ++i__) {
+      for(i__ = j; i__ <= i__3; ++i__) {
     a[i__ + k * a_dim1] -= temp * a[i__ + j * a_dim1];
 /* L70: */
       }
-      if (! (*pivot) || rdiag[k] == zero) {
+      if(! (*pivot) || rdiag[k] == zero) {
     goto L80;
       }
       temp = a[j + k * a_dim1] / rdiag[k];
@@ -233,7 +233,7 @@ L40:
       rdiag[k] *= sqrt((max(d__1,d__2)));
 /* Computing 2nd power */
       d__1 = rdiag[k] / wa[k];
-      if (p05 * (d__1 * d__1) > epsmch) {
+      if(p05 * (d__1 * d__1) > epsmch) {
     goto L80;
       }
       i__3 = *m - j;

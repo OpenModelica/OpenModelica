@@ -47,13 +47,11 @@
 #include <errno.h>
 #include <float.h>
 
-
 double** work_states;
 
 const int rungekutta_s = 4;
 const double rungekutta_b[4] = { 1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0 };
 const double rungekutta_c[4] = { 0.0, 0.5, 0.5, 1.0 };
-
 
 typedef struct RK4
 {
@@ -61,35 +59,35 @@ typedef struct RK4
   int work_states_ndims;
 }RK4;
 
-int
-euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
+int euler_ex_step(DATA* data, SOLVER_INFO* solverInfo);
 
-int
-rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
+int rungekutta_step(DATA* data, SOLVER_INFO* solverInfo);
 
 void checkTermination(DATA* data);
 
 void writeOutputVars(char* names, DATA* data);
 
-int
-solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo) {
-  switch (flag) {
+int solver_main_step(int flag, DATA* data, SOLVER_INFO* solverInfo)
+{
+  switch(flag)
+  {
   case 2:
     return rungekutta_step(data, solverInfo);
+
   case 3:
     return dasrt_step(data, solverInfo);
+
   case 4:
     functionODE_inline(data, solverInfo->currentStepSize);
     solverInfo->currentTime = data->localData[0]->timeValue;
     return 0;
+
   default:
   case 1:
     return euler_ex_step(data, solverInfo);
   }
   return 1;
 }
-
-
 
 /**
  * The main function for a solver with synchronous event handling
@@ -142,30 +140,36 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* allocate memory for non-linear system solvers */
   allocateNonlinearSystem(data);
 
-  if (flag == 2) {
+  if(flag == 2)
+  {
     /* Allocate RK work arrays */
     RK4 rungeData;
     rungeData.work_states_ndims = rungekutta_s;
     rungeData.work_states = (double**) malloc((rungeData.work_states_ndims + 1) * sizeof(double*));
-    for (i = 0; i < rungeData.work_states_ndims + 1; i++)
+    for(i = 0; i < rungeData.work_states_ndims + 1; i++)
       rungeData.work_states[i] = (double*) calloc(data->modelData.nStates, sizeof(double));
     solverInfo.solverData = &rungeData;
-  }else if (flag == 3){
+  }
+  else if(flag == 3)
+  {
     /* Initial DASSL solver */
     DASSL_DATA dasslData = {0};
     INFO(LOG_SOLVER, "| solver | Initializing DASSL");
     dasrt_initial(data, &solverInfo, &dasslData);
     solverInfo.solverData = &dasslData;
-  } else if (flag == 4){
+  }
+  else if(flag == 4)
+  {
     /* Enable inlining solvers */
     work_states = (double**) malloc(inline_work_states_ndims * sizeof(double*));
-    for (i = 0; i < inline_work_states_ndims; i++)
+    for(i = 0; i < inline_work_states_ndims; i++)
       work_states[i] = (double*) calloc(data->modelData.nVariablesReal, sizeof(double));
   }
 
   /* Calculate initial values from updateBoundStartValues()
    * saveall() value as pre values */
-  if (measure_time_flag) {
+  if(measure_time_flag)
+  {
     rt_accumulate(SIM_TIMER_PREINIT);
     rt_tick(SIM_TIMER_INIT);
   }
@@ -180,7 +184,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result_writeParameterData(&(data->modelData));
   INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
-  if (DEBUG_STREAM(LOG_DEBUG))
+  if(DEBUG_STREAM(LOG_DEBUG))
     printParameters(data);
 
   /* initial sample and delay again, due to maybe change
@@ -192,10 +196,10 @@ int solver_main(DATA* data, const char* init_initMethod,
   storePreValues(data);
 
   /* Activate sample and evaluate again */
-  if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
+  if(data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
   {
     simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
-    if (simInfo->sampleActivated)
+    if(simInfo->sampleActivated)
     {
       INFO(LOG_SOLVER, "Sample event at beginning of the simulation");
       /* Activate sample and evaluate again */
@@ -210,11 +214,11 @@ int solver_main(DATA* data, const char* init_initMethod,
   storeRelations(data);
 
   /*determined discrete system */
-  if(checkForNewEvent(data, solverInfo.eventLst)){
+  if(checkForNewEvent(data, solverInfo.eventLst))
     handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
-  }else{
+  else
     updateDiscreteSystem(data);
-  }
+
   storePreValues(data);
   storeOldValues(data);
   function_storeDelayed(data);
@@ -226,10 +230,11 @@ int solver_main(DATA* data, const char* init_initMethod,
   overwriteOldSimulationData(data);
 
   /* Initialization complete */
-  if (measure_time_flag)
+  if(measure_time_flag)
     rt_accumulate( SIM_TIMER_INIT);
 
-  if (data->localData[0]->timeValue >= simInfo->stopTime) {
+  if(data->localData[0]->timeValue >= simInfo->stopTime)
+  {
     INFO(LOG_SOLVER,"Simulation done!");
     solverInfo.currentTime = simInfo->stopTime;
   }
@@ -237,12 +242,14 @@ int solver_main(DATA* data, const char* init_initMethod,
   INFO(LOG_SOLVER, "Performed initial value calculation.");
   INFO2(LOG_SOLVER, "Start numerical solver from %g to %g", simInfo->startTime, simInfo->stopTime);
 
-  if (measure_time_flag) {
+  if(measure_time_flag)
+  {
     char* filename = (char*) calloc(((size_t)strlen(data->modelData.modelFilePrefix)+1+11),sizeof(char));
     filename = strncpy(filename,data->modelData.modelFilePrefix,strlen(data->modelData.modelFilePrefix));
     filename = strncat(filename,"_prof.data",10);
     fmt = fopen(filename, "wb");
-    if (!fmt) {
+    if(!fmt)
+    {
       WARNING2(LOG_SOLVER, "Warning: Time measurements output file %s could not be opened: %s", filename, strerror(errno));
       fclose(fmt);
       fmt = NULL;
@@ -250,17 +257,18 @@ int solver_main(DATA* data, const char* init_initMethod,
     free(filename);
   }
 
-  if (DEBUG_STREAM(LOG_DEBUG))
-    printAllVars(data, 0);
+  if(DEBUG_STREAM(LOG_DEBUG))
+    printAllVars(data, 0, LOG_DEBUG);
 
   /*
    * Start main simulation loop
    */
-  while (solverInfo.currentTime < simInfo->stopTime) {
-
+  while(solverInfo.currentTime < simInfo->stopTime)
+  {
     INDENT(LOG_SOLVER);
-    if (measure_time_flag) {
-      for (i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++)
+    if(measure_time_flag)
+    {
+      for(i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++)
         rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
       rt_clear(SIM_TIMER_STEP);
       rt_tick(SIM_TIMER_STEP);
@@ -270,23 +278,28 @@ int solver_main(DATA* data, const char* init_initMethod,
 
     /******** Calculation next step size ********/
     /* Calculate new step size after an event */
-    if (solverInfo.didEventStep == 1) {
+    if(solverInfo.didEventStep == 1)
+    {
       solverInfo.offset = solverInfo.currentTime - solverInfo.laststep;
-      if (solverInfo.offset + DBL_EPSILON > simInfo->stepSize)
+      if(solverInfo.offset + DBL_EPSILON > simInfo->stepSize)
         solverInfo.offset = 0;
       INFO1(LOG_SOLVER, "Offset value for the next step: %.10f", solverInfo.offset);
-    } else {
+    }
+    else
+    {
       solverInfo.offset = 0;
     }
     solverInfo.currentStepSize = simInfo->stepSize - solverInfo.offset;
-    if (solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime) {
+    if(solverInfo.currentTime + solverInfo.currentStepSize > simInfo->stopTime)
+    {
       solverInfo.currentStepSize = simInfo->stopTime - solverInfo.currentTime;
       INFO1(LOG_SOLVER, "Correct currentStepSize : %.10f", solverInfo.currentStepSize);
     }
     /******** End calculation next step size ********/
 
     /* check for next sample event */
-    if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes) {
+    if(data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
+    {
       simInfo->sampleActivated = checkForSampleEvent(data, &solverInfo);
     }
 
@@ -310,31 +323,30 @@ int solver_main(DATA* data, const char* init_initMethod,
 
     /******** Event handling ********/
     INDENT(LOG_EVENTS);
-    if (measure_time_flag)
+    if(measure_time_flag)
       rt_tick(SIM_TIMER_EVENT);
     /* Check for Events */
-    if (checkForNewEvent(data, solverInfo.eventLst)) {
-
-      if (!solverInfo.solverRootFinding){
+    if(checkForNewEvent(data, solverInfo.eventLst))
+    {
+      if(!solverInfo.solverRootFinding)
         findRoot(data, solverInfo.eventLst, &(solverInfo.currentTime));
-      }else{
+      else
         sim_result_emit(data);
-      }
-
     }
 
-    if (checkStateorSampleEvent(data, solverInfo.eventLst, &(solverInfo.currentTime))){
-      if (DEBUG_STREAM(LOG_DEBUG))
-        printAllVars(data, 0);
+    if(checkStateorSampleEvent(data, solverInfo.eventLst, &(solverInfo.currentTime)))
+    {
+      if(DEBUG_STREAM(LOG_DEBUG))
+        printAllVars(data, 0, LOG_DEBUG);
 
-      if (DEBUG_STREAM(LOG_EVENTS))
+      if(DEBUG_STREAM(LOG_EVENTS))
         printHysteresisRelations(data);
 
       handleStateEvent(data, solverInfo.eventLst, &(solverInfo.currentTime));
 
       INFO1(LOG_SOLVER," ### State event occurs at time: %.5f", solverInfo.currentTime);
 
-      if (DEBUG_STREAM(LOG_EVENTS))
+      if(DEBUG_STREAM(LOG_EVENTS))
         printHysteresisRelations(data);
 
       solverInfo.stateEvents++;
@@ -342,8 +354,9 @@ int solver_main(DATA* data, const char* init_initMethod,
       /* due to an event overwrite old values */
       overwriteOldSimulationData(data);
     /* check for sample events */
-    } else if (simInfo->sampleActivated) {
-
+    }
+    else if(simInfo->sampleActivated)
+    {
       handleSampleEvent(data);
 
       INFO1(LOG_SOLVER," ### Sample event occurs at time: %.5f", solverInfo.currentTime);
@@ -354,12 +367,13 @@ int solver_main(DATA* data, const char* init_initMethod,
       /* due to an event overwrite old values */
       overwriteOldSimulationData(data);
     /* nothing to do for events */
-    } else {
+    }
+    else
+    {
       solverInfo.laststep = solverInfo.currentTime;
       solverInfo.didEventStep = 0;
-
     }
-    if (measure_time_flag)
+    if(measure_time_flag)
       rt_accumulate(SIM_TIMER_EVENT);
     RELEASE(LOG_EVENTS);
     /******** End event handling ********/
@@ -370,7 +384,8 @@ int solver_main(DATA* data, const char* init_initMethod,
     saveZeroCrossings(data);
 
 
-    if (fmt) {
+    if(fmt)
+    {
       int flag = 1;
       double tmpdbl;
       unsigned int tmpint;
@@ -379,20 +394,22 @@ int solver_main(DATA* data, const char* init_initMethod,
       /* Disable time measurements if we have trouble writing to the file... */
       flag = flag && 1 == fwrite(&stepNo, sizeof(unsigned int), 1, fmt);
       stepNo++;
-      flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1,
-          fmt);
+      flag = flag && 1 == fwrite(&(data->localData[0]->timeValue), sizeof(double), 1, fmt);
       tmpdbl = rt_accumulated(SIM_TIMER_STEP);
       flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
-      for (i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++) {
+      for(i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++)
+      {
         tmpint = rt_ncall(i + SIM_TIMER_FIRST_FUNCTION);
         flag = flag && 1 == fwrite(&tmpint, sizeof(unsigned int), 1, fmt);
       }
-      for (i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++) {
+      for(i = 0; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++)
+      {
         tmpdbl = rt_accumulated(i + SIM_TIMER_FIRST_FUNCTION);
         flag = flag && 1 == fwrite(&tmpdbl, sizeof(double), 1, fmt);
       }
       rt_accumulate(SIM_TIMER_OVERHEAD);
-      if (!flag) {
+      if(!flag)
+      {
         WARNING1(LOG_SOLVER, "Disabled time measurements because the output file could not be generated: %s", strerror(errno));
         fclose(fmt);
         fmt = NULL;
@@ -400,24 +417,27 @@ int solver_main(DATA* data, const char* init_initMethod,
     }
     sim_result_emit(data);
 
-    if (DEBUG_STREAM(LOG_DEBUG))
-      printAllVars(data, 0);
+    if(DEBUG_STREAM(LOG_DEBUG))
+      printAllVars(data, 0, LOG_DEBUG);
 
     /********* end of Emit this time step *********/
 
     /* save dassl stats before reset */
-    if (solverInfo.didEventStep == 1 && flag == 3) {
-      for (ui = 0; ui < numStatistics; ui++)
+    if(solverInfo.didEventStep == 1 && flag == 3)
+    {
+      for(ui = 0; ui < numStatistics; ui++)
         ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[ui];
     }
 
     /* Check for termination of terminate() or assert() */
     checkForAsserts(data);
-    if (terminationAssert || terminationTerminate) {
+    if(terminationAssert || terminationTerminate)
+    {
       terminationAssert = 0;
       checkForAsserts(data);
       checkTermination(data);
-      if(!terminationAssert && terminationTerminate){
+      if(!terminationAssert && terminationTerminate)
+      {
         INFO2(LOG_STDOUT, "Simulation call terminate() at time %f\nMessage : %s", data->localData[0]->timeValue, TermMsg);
         simInfo->stopTime = solverInfo.currentTime;
       }
@@ -456,7 +476,8 @@ int solver_main(DATA* data, const char* init_initMethod,
 
 
   /* Last step with terminal()=true */
-  if (solverInfo.currentTime >= simInfo->stopTime) {
+  if(solverInfo.currentTime >= simInfo->stopTime)
+  {
     data->simulationInfo.terminal = 1;
     updateDiscreteSystem(data);
     sim_result_emit(data);
@@ -465,16 +486,18 @@ int solver_main(DATA* data, const char* init_initMethod,
   communicateStatus("Finished", 1);
 
   /* we have output variables in the command line -output a,b,c */
-  if (outputVariablesAtEnd)
+  if(outputVariablesAtEnd)
   {
     writeOutputVars(strdup(outputVariablesAtEnd), data);
   }
 
   /* save dassl stats before print */
 
-  if (DEBUG_STREAM(LOG_STATS)) {
-    if (flag == 3){
-      for (ui = 0; ui < numStatistics; ui++)
+  if(DEBUG_STREAM(LOG_STATS))
+  {
+    if(flag == 3)
+    {
+      for(ui = 0; ui < numStatistics; ui++)
         ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[ui] += ((DASSL_DATA*)solverInfo.solverData)->dasslStatisticsTmp[ui];
     }
     rt_accumulate(SIM_TIMER_TOTAL);
@@ -484,7 +507,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     INFO1(LOG_STATS, "Events: %d", solverInfo.stateEvents + solverInfo.sampleEvents);
     INFO1(LOG_STATS, "State Events: %d", solverInfo.stateEvents);
     INFO1(LOG_STATS, "Sample Events: %d", solverInfo.sampleEvents);
-    if (flag == 3)
+    if(flag == 3)
     {
       INFO(LOG_STATS, "##### Solver Statistics #####");
       INFO1(LOG_STATS, "The number of steps taken: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[0]);
@@ -494,33 +517,42 @@ int solver_main(DATA* data, const char* init_initMethod,
       INFO1(LOG_STATS, "The number of convergence test failures: %d", ((DASSL_DATA*)solverInfo.solverData)->dasslStatistics[4]);
     }
 
-  }else{
-    if (measure_time_flag)
+  }
+  else
+  {
+    if(measure_time_flag)
       rt_accumulate(SIM_TIMER_TOTAL);
   }
 
   /* deintialize solver related workspace */
-  if (flag == 2) {
+  if(flag == 2)
+  {
     /* free RK work arrays */
-    for (i = 0; i < ((RK4*)(solverInfo.solverData))->work_states_ndims + 1; i++)
+    for(i = 0; i < ((RK4*)(solverInfo.solverData))->work_states_ndims + 1; i++)
       free(((RK4*)(solverInfo.solverData))->work_states[i]);
     free(((RK4*)(solverInfo.solverData))->work_states);
-  }else if (flag == 3){
+  }
+  else if(flag == 3)
+  {
     /* De-Initial DASSL solver */
     dasrt_deinitial(solverInfo.solverData);
-  } else if (flag == 4){
+  }
+  else if(flag == 4)
+  {
     /* De-Initial inline solver */
-    for (i = 0; i < inline_work_states_ndims; i++)
+    for(i = 0; i < inline_work_states_ndims; i++)
       free(work_states[i]);
     free(work_states);
-  } else {
+  }
+  else
+  {
     /* free other solver memory */
   }
 
   /* free nonlinear system data */
   freeNonlinearSystem(data);
 
-  if (fmt)
+  if(fmt)
     fclose(fmt);
 
   return retVal;
@@ -528,13 +560,15 @@ int solver_main(DATA* data, const char* init_initMethod,
 
 /***************************************    EULER_EXP     *********************************/
 int
-euler_ex_step(DATA* data, SOLVER_INFO* solverInfo) {
+euler_ex_step(DATA* data, SOLVER_INFO* solverInfo)
+{
   int i;
   SIMULATION_DATA *sData = (SIMULATION_DATA*)data->localData[0];
   SIMULATION_DATA *sDataOld = (SIMULATION_DATA*)data->localData[1];
   modelica_real* stateDer = sDataOld->realVars + data->modelData.nStates;
 
-  for (i = 0; i < data->modelData.nStates; i++) {
+  for(i = 0; i < data->modelData.nStates; i++)
+  {
     sData->realVars[i] = sDataOld->realVars[i] + stateDer[i] * solverInfo->currentStepSize;
   }
   sData->timeValue = sDataOld->timeValue + solverInfo->currentStepSize;
@@ -544,7 +578,8 @@ euler_ex_step(DATA* data, SOLVER_INFO* solverInfo) {
 
 /***************************************    RK4      ***********************************/
 int
-rungekutta_step(DATA* data, SOLVER_INFO* solverInfo) {
+rungekutta_step(DATA* data, SOLVER_INFO* solverInfo)
+{
   double** k = ((RK4*)(solverInfo->solverData))->work_states;
   double sum;
   int i,j;
@@ -556,24 +591,30 @@ rungekutta_step(DATA* data, SOLVER_INFO* solverInfo) {
 
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
-  for (i = 0; i < data->modelData.nStates; i++) {
+  for(i = 0; i < data->modelData.nStates; i++)
+  {
     k[0][i] = stateDerOld[i];
   }
 
-  for (j = 1; j < rungekutta_s; j++) {
-    for (i = 0; i < data->modelData.nStates; i++) {
+  for(j = 1; j < rungekutta_s; j++)
+  {
+    for(i = 0; i < data->modelData.nStates; i++)
+    {
       sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * rungekutta_c[j] * k[j - 1][i];
     }
     sData->timeValue = sDataOld->timeValue + rungekutta_c[j] * solverInfo->currentStepSize;
     functionODE(data);
-    for (i = 0; i < data->modelData.nStates; i++) {
+    for(i = 0; i < data->modelData.nStates; i++)
+    {
       k[j][i] = stateDer[i];
     }
   }
 
-  for (i = 0; i < data->modelData.nStates; i++) {
+  for(i = 0; i < data->modelData.nStates; i++)
+  {
     sum = 0;
-    for (j = 0; j < rungekutta_s; j++) {
+    for(j = 0; j < rungekutta_s; j++)
+    {
       sum = sum + rungekutta_b[j] * k[j][i];
     }
     sData->realVars[i] = sDataOld->realVars[i] + solverInfo->currentStepSize * sum;
@@ -590,7 +631,8 @@ rungekutta_step(DATA* data, SOLVER_INFO* solverInfo) {
  */
 void checkTermination(DATA *data)
 {
-  if(terminationAssert){
+  if(terminationAssert)
+  {
     data->simulationInfo.simulationSuccess = -1;
     printInfo(stdout, TermInfo);
     fputc('\n', stdout);
@@ -618,64 +660,64 @@ void writeOutputVars(char* names, DATA* data)
 
   fprintf(stdout, "time=%.20g", data->localData[0]->timeValue);
 
-  while (p)
+  while(p)
   {
-    for (i = 0; i < data->modelData.nVariablesReal; i++)
-      if (!strcmp(p, data->modelData.realVarsData[i].info.name))
+    for(i = 0; i < data->modelData.nVariablesReal; i++)
+      if(!strcmp(p, data->modelData.realVarsData[i].info.name))
         fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[i]);
-    for (i = 0; i < data->modelData.nVariablesInteger; i++)
-      if (!strcmp(p, data->modelData.integerVarsData[i].info.name))
+    for(i = 0; i < data->modelData.nVariablesInteger; i++)
+      if(!strcmp(p, data->modelData.integerVarsData[i].info.name))
         fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[i]);
-    for (i = 0; i < data->modelData.nVariablesBoolean; i++)
-      if (!strcmp(p, data->modelData.booleanVarsData[i].info.name))
+    for(i = 0; i < data->modelData.nVariablesBoolean; i++)
+      if(!strcmp(p, data->modelData.booleanVarsData[i].info.name))
         fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[i]);
-    for (i = 0; i < data->modelData.nVariablesString; i++)
-      if (!strcmp(p, data->modelData.stringVarsData[i].info.name))
+    for(i = 0; i < data->modelData.nVariablesString; i++)
+      if(!strcmp(p, data->modelData.stringVarsData[i].info.name))
         fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[i]);
 
-    for (i = 0; i < data->modelData.nAliasReal; i++)
-      if (!strcmp(p, data->modelData.realAlias[i].info.name))
+    for(i = 0; i < data->modelData.nAliasReal; i++)
+      if(!strcmp(p, data->modelData.realAlias[i].info.name))
       {
-       if (data->modelData.realAlias[i].negate)
+       if(data->modelData.realAlias[i].negate)
          fprintf(stdout, ",%s=%.20g", p, -(data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
        else
          fprintf(stdout, ",%s=%.20g", p, (data->localData[0])->realVars[data->modelData.realAlias[i].nameID]);
       }
-    for (i = 0; i < data->modelData.nAliasInteger; i++)
-      if (!strcmp(p, data->modelData.integerAlias[i].info.name))
+    for(i = 0; i < data->modelData.nAliasInteger; i++)
+      if(!strcmp(p, data->modelData.integerAlias[i].info.name))
       {
-        if (data->modelData.integerAlias[i].negate)
+        if(data->modelData.integerAlias[i].negate)
           fprintf(stdout, ",%s=%li", p, -(data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
         else
           fprintf(stdout, ",%s=%li", p, (data->localData[0])->integerVars[data->modelData.integerAlias[i].nameID]);
       }
-    for (i = 0; i < data->modelData.nAliasBoolean; i++)
-      if (!strcmp(p, data->modelData.booleanAlias[i].info.name))
+    for(i = 0; i < data->modelData.nAliasBoolean; i++)
+      if(!strcmp(p, data->modelData.booleanAlias[i].info.name))
       {
-        if (data->modelData.booleanAlias[i].negate)
+        if(data->modelData.booleanAlias[i].negate)
           fprintf(stdout, ",%s=%i", p, -(data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
         else
           fprintf(stdout, ",%s=%i", p, (data->localData[0])->booleanVars[data->modelData.booleanAlias[i].nameID]);
       }
-    for (i = 0; i < data->modelData.nAliasString; i++)
-      if (!strcmp(p, data->modelData.stringAlias[i].info.name))
+    for(i = 0; i < data->modelData.nAliasString; i++)
+      if(!strcmp(p, data->modelData.stringAlias[i].info.name))
         fprintf(stdout, ",%s=\"%s\"", p, (data->localData[0])->stringVars[data->modelData.stringAlias[i].nameID]);
 
     /* parameters */
-    for (i = 0; i < data->modelData.nParametersReal; i++)
-      if (!strcmp(p, data->modelData.realParameterData[i].info.name))
+    for(i = 0; i < data->modelData.nParametersReal; i++)
+      if(!strcmp(p, data->modelData.realParameterData[i].info.name))
         fprintf(stdout, ",%s=%.20g", p, data->simulationInfo.realParameter[i]);
 
-    for (i = 0; i < data->modelData.nParametersInteger; i++)
-      if (!strcmp(p, data->modelData.integerParameterData[i].info.name))
+    for(i = 0; i < data->modelData.nParametersInteger; i++)
+      if(!strcmp(p, data->modelData.integerParameterData[i].info.name))
         fprintf(stdout, ",%s=%li", p, data->simulationInfo.integerParameter[i]);
 
-    for (i = 0; i < data->modelData.nParametersBoolean; i++)
-      if (!strcmp(p, data->modelData.booleanParameterData[i].info.name))
+    for(i = 0; i < data->modelData.nParametersBoolean; i++)
+      if(!strcmp(p, data->modelData.booleanParameterData[i].info.name))
         fprintf(stdout, ",%s=%i", p, data->simulationInfo.booleanParameter[i]);
 
-    for (i = 0; i < data->modelData.nParametersString; i++)
-      if (!strcmp(p, data->modelData.stringParameterData[i].info.name))
+    for(i = 0; i < data->modelData.nParametersString; i++)
+      if(!strcmp(p, data->modelData.stringParameterData[i].info.name))
         fprintf(stdout, ",%s=\"%s\"", p, data->simulationInfo.stringParameter[i]);
 
     /* move to next */

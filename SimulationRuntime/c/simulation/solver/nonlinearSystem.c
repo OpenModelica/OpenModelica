@@ -151,7 +151,7 @@ int check_nonlinear_solutions(DATA *data)
   int i,returnValue = 0;
 
   for(i=0;i<data->modelData.nNonLinearSystems;++i){
-    if (nonlinsys[i].solved == 0){
+    if(nonlinsys[i].solved == 0){
       returnValue = 1;
       break;
     }

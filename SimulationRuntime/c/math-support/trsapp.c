@@ -83,7 +83,7 @@
     itermax = *n;
     itersw = itermax;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L10: */
   d__[i__] = xopt[i__];
     }
@@ -95,7 +95,7 @@ L20:
     qred = zero;
     dd = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   step[i__] = zero;
   hs[i__] = zero;
   g[i__] = gq[i__] + hd[i__];
@@ -106,7 +106,7 @@ L20:
   dd += d__1 * d__1;
     }
     *crvmin = zero;
-    if (dd == zero) {
+    if(dd == zero) {
   goto L160;
     }
     ds = zero;
@@ -124,7 +124,7 @@ L40:
 L50:
     dhd = zero;
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
 /* L60: */
   dhd += d__[j] * hd[j];
     }
@@ -132,9 +132,9 @@ L50:
 /*     Update CRVMIN and set the step-length ALPHA. */
 
     alpha = bstep;
-    if (dhd > zero) {
+    if(dhd > zero) {
   temp = dhd / dd;
-  if (iterc == 1) {
+  if(iterc == 1) {
       *crvmin = temp;
   }
   *crvmin = min(*crvmin,temp);
@@ -150,7 +150,7 @@ L50:
     ggsav = gg;
     gg = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   step[i__] += alpha * d__[i__];
   hs[i__] += alpha * hd[i__];
 /* L70: */
@@ -161,14 +161,14 @@ L50:
 
 /*     Begin another conjugate direction iteration if required. */
 
-    if (alpha < bstep) {
-  if (qadd <= qred * .01) {
+    if(alpha < bstep) {
+  if(qadd <= qred * .01) {
       goto L160;
   }
-  if (gg <= ggbeg * 1e-4) {
+  if(gg <= ggbeg * 1e-4) {
       goto L160;
   }
-  if (iterc == itermax) {
+  if(iterc == itermax) {
       goto L160;
   }
   temp = gg / ggsav;
@@ -176,7 +176,7 @@ L50:
   ds = zero;
   ss = zero;
   i__1 = *n;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       d__[i__] = temp * d__[i__] - g[i__] - hs[i__];
 /* Computing 2nd power */
       d__1 = d__[i__];
@@ -187,10 +187,10 @@ L50:
       d__1 = step[i__];
       ss += d__1 * d__1;
   }
-  if (ds <= zero) {
+  if(ds <= zero) {
       goto L160;
   }
-  if (ss < delsq) {
+  if(ss < delsq) {
       goto L40;
   }
     }
@@ -200,20 +200,20 @@ L50:
 /*     Test whether an alternative iteration is required. */
 
 L90:
-    if (gg <= ggbeg * 1e-4) {
+    if(gg <= ggbeg * 1e-4) {
   goto L160;
     }
     sg = zero;
     shs = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   sg += step[i__] * g[i__];
 /* L100: */
   shs += step[i__] * hs[i__];
     }
     sgk = sg + shs;
     angtest = sgk / sqrt(gg * delsq);
-    if (angtest <= -.99) {
+    if(angtest <= -.99) {
   goto L160;
     }
 
@@ -225,7 +225,7 @@ L90:
     tempa = delsq / temp;
     tempb = sgk / temp;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L110: */
   d__[i__] = tempa * (g[i__] + hs[i__]) - tempb * step[i__];
     }
@@ -235,7 +235,7 @@ L120:
     dhd = zero;
     dhs = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   dg += d__[i__] * g[i__];
   dhd += hd[i__] * d__[i__];
 /* L130: */
@@ -252,29 +252,29 @@ L120:
     iu = 49;
     temp = twopi / (doublereal) (iu + 1);
     i__1 = iu;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   angle = (doublereal) i__ * temp;
   cth = cos(angle);
   sth = sin(angle);
   qnew = (sg + cf * cth) * cth + (dg + dhs * cth) * sth;
-  if (qnew < qmin) {
+  if(qnew < qmin) {
       qmin = qnew;
       isave = i__;
       tempa = qsav;
-  } else if (i__ == isave + 1) {
+  } else if(i__ == isave + 1) {
       tempb = qnew;
   }
 /* L140: */
   qsav = qnew;
     }
-    if ((doublereal) isave == zero) {
+    if((doublereal) isave == zero) {
   tempa = qnew;
     }
-    if (isave == iu) {
+    if(isave == iu) {
   tempb = qbeg;
     }
     angle = zero;
-    if (tempa != tempb) {
+    if(tempa != tempb) {
   tempa -= qmin;
   tempb -= qmin;
   angle = half * (tempa - tempb) / (tempa + tempb);
@@ -288,7 +288,7 @@ L120:
     reduc = qbeg - (sg + cf * cth) * cth - (dg + dhs * cth) * sth;
     gg = zero;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   step[i__] = cth * step[i__] + sth * d__[i__];
   hs[i__] = cth * hs[i__] + sth * hd[i__];
 /* L150: */
@@ -298,7 +298,7 @@ L120:
     }
     qred += reduc;
     ratio = reduc / qred;
-    if (iterc < itermax && ratio > .01) {
+    if(iterc < itermax && ratio > .01) {
   goto L90;
     }
 L160:
@@ -311,42 +311,42 @@ L160:
 
 L170:
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L180: */
   hd[i__] = zero;
     }
     i__1 = *npt;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   temp = zero;
   i__2 = *n;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L190: */
       temp += xpt[k + j * xpt_dim1] * d__[j];
   }
   temp *= pq[k];
   i__2 = *n;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
 /* L200: */
       hd[i__] += temp * xpt[k + i__ * xpt_dim1];
   }
     }
     ih = 0;
     i__2 = *n;
-    for (j = 1; j <= i__2; ++j) {
+    for(j = 1; j <= i__2; ++j) {
   i__1 = j;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       ++ih;
-      if (i__ < j) {
+      if(i__ < j) {
     hd[j] += hq[ih] * d__[i__];
       }
 /* L210: */
       hd[i__] += hq[ih] * d__[j];
   }
     }
-    if (iterc == 0) {
+    if(iterc == 0) {
   goto L20;
     }
-    if (iterc <= itersw) {
+    if(iterc <= itersw) {
   goto L50;
     }
     goto L120;

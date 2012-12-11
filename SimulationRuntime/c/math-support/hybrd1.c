@@ -131,7 +131,7 @@
 
 /*     check the input parameters for errors. */
 
-    if (*n <= 0 || *tol < zero || *lwa < *n * (*n * 3 + 13) / 2) {
+    if(*n <= 0 || *tol < zero || *lwa < *n * (*n * 3 + 13) / 2) {
   goto L20;
     }
 
@@ -144,7 +144,7 @@
     epsfcn = zero;
     mode = 2;
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   wa[j] = one;
 /* L10: */
     }
@@ -155,7 +155,7 @@
       wa[1], &mode, &factor, &nprint, info, &nfev, &wa[index + 1], n, &
       wa[*n * 6 + 1], &lr, &wa[*n + 1], &wa[(*n << 1) + 1], &wa[*n * 3
       + 1], &wa[(*n << 2) + 1], &wa[*n * 5 + 1]);
-    if (*info == 5) {
+    if(*info == 5) {
   *info = 4;
     }
 L20:

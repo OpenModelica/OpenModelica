@@ -91,30 +91,30 @@
 /*     apply the first set of givens rotations to a. */
 
     nm1 = *n - 1;
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L50;
     }
     i__1 = nm1;
-    for (nmj = 1; nmj <= i__1; ++nmj) {
+    for(nmj = 1; nmj <= i__1; ++nmj) {
   j = *n - nmj;
-  if ((d__1 = v[j], abs(d__1)) > one) {
+  if((d__1 = v[j], abs(d__1)) > one) {
       cos__ = one / v[j];
   }
-  if ((d__1 = v[j], abs(d__1)) > one) {
+  if((d__1 = v[j], abs(d__1)) > one) {
 /* Computing 2nd power */
       d__2 = cos__;
       sin__ = sqrt(one - d__2 * d__2);
   }
-  if ((d__1 = v[j], abs(d__1)) <= one) {
+  if((d__1 = v[j], abs(d__1)) <= one) {
       sin__ = v[j];
   }
-  if ((d__1 = v[j], abs(d__1)) <= one) {
+  if((d__1 = v[j], abs(d__1)) <= one) {
 /* Computing 2nd power */
       d__2 = sin__;
       cos__ = sqrt(one - d__2 * d__2);
   }
   i__2 = *m;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       temp = cos__ * a[i__ + j * a_dim1] - sin__ * a[i__ + *n * a_dim1];
       a[i__ + *n * a_dim1] = sin__ * a[i__ + j * a_dim1] + cos__ * a[
         i__ + *n * a_dim1];
@@ -127,25 +127,25 @@
 /*     apply the second set of givens rotations to a. */
 
     i__1 = nm1;
-    for (j = 1; j <= i__1; ++j) {
-  if ((d__1 = w[j], abs(d__1)) > one) {
+    for(j = 1; j <= i__1; ++j) {
+  if((d__1 = w[j], abs(d__1)) > one) {
       cos__ = one / w[j];
   }
-  if ((d__1 = w[j], abs(d__1)) > one) {
+  if((d__1 = w[j], abs(d__1)) > one) {
 /* Computing 2nd power */
       d__2 = cos__;
       sin__ = sqrt(one - d__2 * d__2);
   }
-  if ((d__1 = w[j], abs(d__1)) <= one) {
+  if((d__1 = w[j], abs(d__1)) <= one) {
       sin__ = w[j];
   }
-  if ((d__1 = w[j], abs(d__1)) <= one) {
+  if((d__1 = w[j], abs(d__1)) <= one) {
 /* Computing 2nd power */
       d__2 = sin__;
       cos__ = sqrt(one - d__2 * d__2);
   }
   i__2 = *m;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       temp = cos__ * a[i__ + j * a_dim1] + sin__ * a[i__ + *n * a_dim1];
       a[i__ + *n * a_dim1] = -sin__ * a[i__ + j * a_dim1] + cos__ * a[
         i__ + *n * a_dim1];

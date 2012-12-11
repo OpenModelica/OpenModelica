@@ -78,7 +78,7 @@
     /* Function Body */
     np = *n + 1;
     nptm = *npt - np;
-    if (*npt < *n + 2 || *npt > (*n + 2) * np / 2) {
+    if(*npt < *n + 2 || *npt > (*n + 2) * np / 2) {
   s_wsfe(&io___3);
   e_wsfe();
   goto L20;

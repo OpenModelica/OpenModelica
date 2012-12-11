@@ -221,7 +221,7 @@ static integer c__1 = 1;
 
 /*     IF PROGRESS REPORTS HAVE BEEN REQUESTED, PRINT HEADING */
 
-    if (*iprint > 0) {
+    if(*iprint > 0) {
   io___5.ciunit = lout;
   s_wsfe(&io___5);
   do_fio(&c__1, (char *)&(*iprint), (ftnlen)sizeof(integer));
@@ -231,13 +231,13 @@ static integer c__1 = 1;
 /*     CHECK INPUT ARGUMENTS */
 
     *ifault = 0;
-    if (*nop <= 0) {
+    if(*nop <= 0) {
   *ifault = 3;
     }
-    if (*nloop <= 0) {
+    if(*nloop <= 0) {
   *ifault = 4;
     }
-    if (*ifault != 0) {
+    if(*ifault != 0) {
   return 0;
     }
 
@@ -248,8 +248,8 @@ static integer c__1 = 1;
     loop = 0;
     iflag = 0;
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (step[i__] != 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(step[i__] != 0.) {
       ++nap;
   }
 /* L10: */
@@ -257,7 +257,7 @@ static integer c__1 = 1;
 
 /*     IF NAP = 0 EVALUATE FUNCTION AT THE STARTING POINT AND RETURN */
 
-    if (nap > 0) {
+    if(nap > 0) {
   goto L30;
     }
     (*functn)(nop, &p[1], func);
@@ -267,18 +267,18 @@ static integer c__1 = 1;
 
 L30:
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L40: */
   g[i__ * 21 - 21] = p[i__];
     }
     irow = 2;
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (step[i__] == 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(step[i__] == 0.) {
       goto L60;
   }
   i__2 = *nop;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L50: */
       g[irow + j * 21 - 22] = p[j];
   }
@@ -290,15 +290,15 @@ L60:
 
     np1 = nap + 1;
     i__1 = np1;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   i__2 = *nop;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L70: */
       p[j] = g[i__ + j * 21 - 22];
   }
   (*functn)(nop, &p[1], &h__[i__ - 1]);
   ++neval;
-  if (*iprint <= 0) {
+  if(*iprint <= 0) {
       goto L90;
   }
   io___16.ciunit = lout;
@@ -306,7 +306,7 @@ L60:
   do_fio(&c__1, (char *)&neval, (ftnlen)sizeof(integer));
   do_fio(&c__1, (char *)&h__[i__ - 1], (ftnlen)sizeof(doublereal));
   i__2 = *nop;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
       do_fio(&c__1, (char *)&p[j], (ftnlen)sizeof(doublereal));
   }
   e_wsfe();
@@ -325,15 +325,15 @@ L100:
     hmax = h__[0];
     hmin = h__[0];
     i__1 = np1;
-    for (i__ = 2; i__ <= i__1; ++i__) {
-  if (h__[i__ - 1] <= hmax) {
+    for(i__ = 2; i__ <= i__1; ++i__) {
+  if(h__[i__ - 1] <= hmax) {
       goto L110;
   }
   imax = i__;
   hmax = h__[i__ - 1];
   goto L120;
 L110:
-  if (h__[i__ - 1] >= hmin) {
+  if(h__[i__ - 1] >= hmin) {
       goto L120;
   }
   imin = i__;
@@ -345,17 +345,17 @@ L120:
 /*     FIND THE CENTROID OF THE VERTICES OTHER THAN P(IMAX) */
 
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L130: */
   pbar[i__ - 1] = 0.;
     }
     i__1 = np1;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (i__ == imax) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(i__ == imax) {
       goto L150;
   }
   i__2 = *nop;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L140: */
       pbar[j - 1] += g[i__ + j * 21 - 22];
   }
@@ -363,7 +363,7 @@ L150:
   ;
     }
     i__1 = *nop;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
 /* L160: */
   pbar[j - 1] /= (real) nap;
     }
@@ -372,23 +372,23 @@ L150:
 /*     HSTAR = FUNCTION VALUE AT PSTAR. */
 
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L170: */
   pstar[i__ - 1] = a * (pbar[i__ - 1] - g[imax + i__ * 21 - 22]) + pbar[
     i__ - 1];
     }
     (*functn)(nop, pstar, &hstar);
     ++neval;
-    if (*iprint <= 0) {
+    if(*iprint <= 0) {
   goto L180;
     }
-    if (neval % *iprint == 0) {
+    if(neval % *iprint == 0) {
   io___24.ciunit = lout;
   s_wsfe(&io___24);
   do_fio(&c__1, (char *)&neval, (ftnlen)sizeof(integer));
   do_fio(&c__1, (char *)&hstar, (ftnlen)sizeof(doublereal));
   i__1 = *nop;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       do_fio(&c__1, (char *)&pstar[j - 1], (ftnlen)sizeof(doublereal));
   }
   e_wsfe();
@@ -398,27 +398,27 @@ L150:
 /*     HSTST = FUNCTION VALUE AT PSTST. */
 
 L180:
-    if (hstar >= hmin) {
+    if(hstar >= hmin) {
   goto L220;
     }
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L190: */
   pstst[i__ - 1] = c__ * (pstar[i__ - 1] - pbar[i__ - 1]) + pbar[i__ -
     1];
     }
     (*functn)(nop, pstst, &hstst);
     ++neval;
-    if (*iprint <= 0) {
+    if(*iprint <= 0) {
   goto L200;
     }
-    if (neval % *iprint == 0) {
+    if(neval % *iprint == 0) {
   io___27.ciunit = lout;
   s_wsfe(&io___27);
   do_fio(&c__1, (char *)&neval, (ftnlen)sizeof(integer));
   do_fio(&c__1, (char *)&hstst, (ftnlen)sizeof(doublereal));
   i__1 = *nop;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       do_fio(&c__1, (char *)&pstst[j - 1], (ftnlen)sizeof(doublereal));
   }
   e_wsfe();
@@ -428,12 +428,12 @@ L180:
 /*     HMAX BY HSTST, THEN TEST FOR CONVERGENCE. */
 
 L200:
-    if (hstst >= hmin) {
+    if(hstst >= hmin) {
   goto L320;
     }
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (step[i__] != 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(step[i__] != 0.) {
       g[imax + i__ * 21 - 22] = pstst[i__ - 1];
   }
 /* L210: */
@@ -447,11 +447,11 @@ L200:
 
 L220:
     i__1 = np1;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (i__ == imax) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(i__ == imax) {
       goto L230;
   }
-  if (hstar < h__[i__ - 1]) {
+  if(hstar < h__[i__ - 1]) {
       goto L320;
   }
 L230:
@@ -461,12 +461,12 @@ L230:
 /*     HSTAR > ALL FUNCTION VALUES EXCEPT POSSIBLY HMAX. */
 /*     IF HSTAR <= HMAX, REPLACE P(IMAX) BY PSTAR & HMAX BY HSTAR. */
 
-    if (hstar > hmax) {
+    if(hstar > hmax) {
   goto L260;
     }
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (step[i__] != 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(step[i__] != 0.) {
       g[imax + i__ * 21 - 22] = pstar[i__ - 1];
   }
 /* L250: */
@@ -479,23 +479,23 @@ L230:
 
 L260:
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L270: */
   pstst[i__ - 1] = b * g[imax + i__ * 21 - 22] + (1.f - b) * pbar[i__ -
     1];
     }
     (*functn)(nop, pstst, &hstst);
     ++neval;
-    if (*iprint <= 0) {
+    if(*iprint <= 0) {
   goto L280;
     }
-    if (neval % *iprint == 0) {
+    if(neval % *iprint == 0) {
   io___28.ciunit = lout;
   s_wsfe(&io___28);
   do_fio(&c__1, (char *)&neval, (ftnlen)sizeof(integer));
   do_fio(&c__1, (char *)&hstst, (ftnlen)sizeof(doublereal));
   i__1 = *nop;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       do_fio(&c__1, (char *)&pstst[j - 1], (ftnlen)sizeof(doublereal));
   }
   e_wsfe();
@@ -504,12 +504,12 @@ L260:
 /*     IF HSTST < HMAX REPLACE P(IMAX) BY PSTST & HMAX BY HSTST. */
 
 L280:
-    if (hstst > hmax) {
+    if(hstst > hmax) {
   goto L300;
     }
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (step[i__] != 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(step[i__] != 0.) {
       g[imax + i__ * 21 - 22] = pstst[i__ - 1];
   }
 /* L290: */
@@ -524,13 +524,13 @@ L280:
 
 L300:
     i__1 = np1;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (i__ == imin) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(i__ == imin) {
       goto L315;
   }
   i__2 = *nop;
-  for (j = 1; j <= i__2; ++j) {
-      if (step[j] != 0.) {
+  for(j = 1; j <= i__2; ++j) {
+      if(step[j] != 0.) {
     g[i__ + j * 21 - 22] = (g[i__ + j * 21 - 22] + g[imin + j *
       21 - 22]) * .5f;
       }
@@ -539,16 +539,16 @@ L300:
   }
   (*functn)(nop, &p[1], &h__[i__ - 1]);
   ++neval;
-  if (*iprint <= 0) {
+  if(*iprint <= 0) {
       goto L315;
   }
-  if (neval % *iprint == 0) {
+  if(neval % *iprint == 0) {
       io___29.ciunit = lout;
       s_wsfe(&io___29);
       do_fio(&c__1, (char *)&neval, (ftnlen)sizeof(integer));
       do_fio(&c__1, (char *)&h__[i__ - 1], (ftnlen)sizeof(doublereal));
       i__2 = *nop;
-      for (j = 1; j <= i__2; ++j) {
+      for(j = 1; j <= i__2; ++j) {
     do_fio(&c__1, (char *)&p[j], (ftnlen)sizeof(doublereal));
       }
       e_wsfe();
@@ -562,8 +562,8 @@ L315:
 
 L320:
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (step[i__] != 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(step[i__] != 0.) {
       g[imax + i__ * 21 - 22] = pstar[i__ - 1];
   }
 /* L330: */
@@ -573,7 +573,7 @@ L320:
 /*     IF LOOP = NLOOP TEST FOR CONVERGENCE, OTHERWISE REPEAT MAIN CYCLE. */
 
 L340:
-    if (loop < *nloop) {
+    if(loop < *nloop) {
   goto L100;
     }
 
@@ -583,13 +583,13 @@ L340:
     hstd = 0.;
     hmean = 0.;
     i__1 = np1;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L350: */
   hmean += h__[i__ - 1];
     }
     hmean /= (real) np1;
     i__1 = np1;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L360: */
 /* Computing 2nd power */
   d__1 = h__[i__ - 1] - hmean;
@@ -600,7 +600,7 @@ L340:
 /*     IF THE RMS > STOPCR, SET IFLAG & LOOP TO ZERO AND GO TO THE */
 /*     START OF THE MAIN CYCLE AGAIN. */
 
-    if (hstd <= *stopcr || neval > *max__) {
+    if(hstd <= *stopcr || neval > *max__) {
   goto L410;
     }
     iflag = 0;
@@ -611,13 +611,13 @@ L340:
 
 L410:
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (step[i__] == 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(step[i__] == 0.) {
       goto L380;
   }
   p[i__] = 0.;
   i__2 = np1;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L370: */
       p[i__] += g[j + i__ * 21 - 22];
   }
@@ -627,16 +627,16 @@ L380:
     }
     (*functn)(nop, &p[1], func);
     ++neval;
-    if (*iprint <= 0) {
+    if(*iprint <= 0) {
   goto L390;
     }
-    if (neval % *iprint == 0) {
+    if(neval % *iprint == 0) {
   io___32.ciunit = lout;
   s_wsfe(&io___32);
   do_fio(&c__1, (char *)&neval, (ftnlen)sizeof(integer));
   do_fio(&c__1, (char *)&(*func), (ftnlen)sizeof(doublereal));
   i__1 = *nop;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       do_fio(&c__1, (char *)&p[j], (ftnlen)sizeof(doublereal));
   }
   e_wsfe();
@@ -646,11 +646,11 @@ L380:
 /*     OVERRUN; IF SO, EXIT WITH IFAULT = 1. */
 
 L390:
-    if (neval <= *max__) {
+    if(neval <= *max__) {
   goto L420;
     }
     *ifault = 1;
-    if (*iprint < 0) {
+    if(*iprint < 0) {
   return 0;
     }
     io___33.ciunit = lout;
@@ -664,7 +664,7 @@ L390:
     io___35.ciunit = lout;
     s_wsfe(&io___35);
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   do_fio(&c__1, (char *)&p[i__], (ftnlen)sizeof(doublereal));
     }
     e_wsfe();
@@ -679,7 +679,7 @@ L390:
 /*     IF IFLAG = 1 & CHANGE IN HMEAN <= STOPCR THEN SEARCH IS COMPLETE. */
 
 L420:
-    if (*iprint < 0) {
+    if(*iprint < 0) {
   goto L430;
     }
     io___37.ciunit = lout;
@@ -688,7 +688,7 @@ L420:
     io___38.ciunit = lout;
     s_wsfe(&io___38);
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   do_fio(&c__1, (char *)&p[i__], (ftnlen)sizeof(doublereal));
     }
     e_wsfe();
@@ -697,7 +697,7 @@ L420:
     do_fio(&c__1, (char *)&(*func), (ftnlen)sizeof(doublereal));
     e_wsfe();
 L430:
-    if (iflag > 0) {
+    if(iflag > 0) {
   goto L450;
     }
     iflag = 1;
@@ -706,10 +706,10 @@ L440:
     loop = 0;
     goto L100;
 L450:
-    if ((d__1 = savemn - hmean, abs(d__1)) >= *stopcr) {
+    if((d__1 = savemn - hmean, abs(d__1)) >= *stopcr) {
   goto L440;
     }
-    if (*iprint < 0) {
+    if(*iprint < 0) {
   goto L460;
     }
     io___41.ciunit = lout;
@@ -719,7 +719,7 @@ L450:
     io___42.ciunit = lout;
     s_wsfe(&io___42);
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   do_fio(&c__1, (char *)&p[i__], (ftnlen)sizeof(doublereal));
     }
     e_wsfe();
@@ -728,7 +728,7 @@ L450:
     do_fio(&c__1, (char *)&(*func), (ftnlen)sizeof(doublereal));
     e_wsfe();
 L460:
-    if (*iquad <= 0) {
+    if(*iquad <= 0) {
   return 0;
     }
 
@@ -736,7 +736,7 @@ L460:
 
 /*     QUADRATIC SURFACE FITTING */
 
-    if (*iprint >= 0) {
+    if(*iprint >= 0) {
   io___44.ciunit = lout;
   s_wsfe(&io___44);
   e_wsfe();
@@ -748,15 +748,15 @@ L460:
     hmin = *func;
     nmore = 0;
     i__1 = np1;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 L470:
   test = (d__1 = h__[i__ - 1] - *func, abs(d__1));
-  if (test >= *simp) {
+  if(test >= *simp) {
       goto L490;
   }
   i__2 = *nop;
-  for (j = 1; j <= i__2; ++j) {
-      if (step[j] != 0.) {
+  for(j = 1; j <= i__2; ++j) {
+      if(step[j] != 0.) {
     g[i__ + j * 21 - 22] = g[i__ + j * 21 - 22] - p[j] + g[i__ +
       j * 21 - 22];
       }
@@ -766,17 +766,17 @@ L470:
   (*functn)(nop, pstst, &h__[i__ - 1]);
   ++nmore;
   ++neval;
-  if (h__[i__ - 1] >= hmin) {
+  if(h__[i__ - 1] >= hmin) {
       goto L470;
   }
   hmin = h__[i__ - 1];
-  if (*iprint >= 0) {
+  if(*iprint >= 0) {
       io___47.ciunit = lout;
       s_wsfe(&io___47);
       do_fio(&c__1, (char *)&neval, (ftnlen)sizeof(integer));
       do_fio(&c__1, (char *)&hmin, (ftnlen)sizeof(doublereal));
       i__2 = *nop;
-      for (j = 1; j <= i__2; ++j) {
+      for(j = 1; j <= i__2; ++j) {
     do_fio(&c__1, (char *)&pstst[j - 1], (ftnlen)sizeof(
       doublereal));
       }
@@ -790,10 +790,10 @@ L490:
 /*     FUNCTION VALUES ARE CALCULATED AT AN ADDITIONAL NAP POINTS. */
 
     i__1 = nap;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   i1 = i__ + 1;
   i__2 = *nop;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L500: */
       pstar[j - 1] = (g[j * 21 - 21] + g[i1 + j * 21 - 22]) * .5f;
   }
@@ -808,17 +808,17 @@ L490:
 
     a0 = h__[0];
     i__1 = nap;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   i1 = i__ - 1;
   i2 = i__ + 1;
-  if (i1 < 1) {
+  if(i1 < 1) {
       goto L540;
   }
   i__2 = i1;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
       j1 = j + 1;
       i__3 = *nop;
-      for (k = 1; k <= i__3; ++k) {
+      for(k = 1; k <= i__3; ++k) {
 /* L520: */
     pstst[k - 1] = (g[i2 + k * 21 - 22] + g[j1 + k * 21 - 22]) *
       .5f;
@@ -835,7 +835,7 @@ L540:
     }
     l = 0;
     i__1 = nap;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   i1 = i__ + 1;
   l += i__;
   bmat[l - 1] = (h__[i1 - 1] + a0 - aval[i__ - 1] * 2.f) * 2.f;
@@ -846,7 +846,7 @@ L540:
 /*     STORED IN AVAL. */
 
     i__1 = nap;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   i1 = i__ + 1;
 /* L560: */
   aval[i__ - 1] = aval[i__ - 1] * 2.f - (h__[i1 - 1] + a0 * 3.f) * .5f;
@@ -855,24 +855,24 @@ L540:
 /*     THE MATRIX Q OF NELDER & MEAD IS CALCULATED AND STORED IN G. */
 
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L570: */
   pmin[i__ - 1] = g[i__ * 21 - 21];
     }
     i__1 = nap;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   i1 = i__ + 1;
   i__2 = *nop;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
       g[i1 + j * 21 - 22] -= g[j * 21 - 21];
 /* L580: */
   }
     }
     i__2 = nap;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   i1 = i__ + 1;
   i__1 = *nop;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       g[i__ + j * 21 - 22] = g[i1 + j * 21 - 22];
 /* L590: */
   }
@@ -881,26 +881,26 @@ L540:
 /*     INVERT BMAT */
 
     syminv_(bmat, &nap, bmat, temp, &nullty, ifault, &rmax);
-    if (*ifault != 0) {
+    if(*ifault != 0) {
   goto L600;
     }
     irank = nap - nullty;
     goto L610;
 L600:
-    if (*iprint >= 0) {
+    if(*iprint >= 0) {
   io___61.ciunit = lout;
   s_wsfe(&io___61);
   e_wsfe();
     }
     *ifault = 2;
-    if (neval > *max__) {
+    if(neval > *max__) {
   return 0;
     }
     io___62.ciunit = lout;
     s_wsfe(&io___62);
     e_wsfe();
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L605: */
   step[i__] *= .5f;
     }
@@ -910,11 +910,11 @@ L600:
 
 L610:
     i__1 = nap;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   h__[i__ - 1] = 0.;
   i__2 = nap;
-  for (j = 1; j <= i__2; ++j) {
-      if (j > i__) {
+  for(j = 1; j <= i__2; ++j) {
+      if(j > i__) {
     goto L620;
       }
       l = i__ * (i__ - 1) / 2 + j;
@@ -933,33 +933,33 @@ L630:
 
     ymin = 0.;
     i__1 = nap;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L660: */
   ymin += h__[i__ - 1] * aval[i__ - 1];
     }
     ymin = a0 - ymin;
     i__1 = *nop;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   pstst[i__ - 1] = 0.;
   i__2 = nap;
-  for (j = 1; j <= i__2; ++j) {
+  for(j = 1; j <= i__2; ++j) {
 /* L670: */
       pstst[i__ - 1] += h__[j - 1] * g[j + i__ * 21 - 22];
   }
     }
     i__2 = *nop;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
 /* L680: */
   pmin[i__ - 1] -= pstst[i__ - 1];
     }
-    if (*iprint < 0) {
+    if(*iprint < 0) {
   goto L690;
     }
     io___64.ciunit = lout;
     s_wsfe(&io___64);
     do_fio(&c__1, (char *)&ymin, (ftnlen)sizeof(doublereal));
     i__2 = *nop;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   do_fio(&c__1, (char *)&pmin[i__ - 1], (ftnlen)sizeof(doublereal));
     }
     e_wsfe();
@@ -971,13 +971,13 @@ L630:
 
 L690:
     i__2 = *nop;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   i__1 = nap;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       h__[j - 1] = 0.;
       i__3 = nap;
-      for (k = 1; k <= i__3; ++k) {
-    if (k > j) {
+      for(k = 1; k <= i__3; ++k) {
+    if(k > j) {
         goto L700;
     }
     l = j * (j - 1) / 2 + k;
@@ -991,11 +991,11 @@ L710:
 /* L730: */
   }
   i__1 = *nop;
-  for (j = i__; j <= i__1; ++j) {
+  for(j = i__; j <= i__1; ++j) {
       l = j * (j - 1) / 2 + i__;
       vc[l - 1] = 0.;
       i__3 = nap;
-      for (k = 1; k <= i__3; ++k) {
+      for(k = 1; k <= i__3; ++k) {
 /* L740: */
     vc[l - 1] += h__[k - 1] * g[k + j * 21 - 22];
       }
@@ -1008,12 +1008,12 @@ L710:
 
     j = 0;
     i__2 = *nop;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   j += i__;
 /* L770: */
   var[i__] = vc[j - 1];
     }
-    if (*iprint < 0) {
+    if(*iprint < 0) {
   return 0;
     }
     io___67.ciunit = lout;
@@ -1042,16 +1042,16 @@ L800:
     ii = 0;
     ij = 0;
     i__2 = *nop;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   ii += i__;
-  if (vc[ii - 1] > 0.) {
+  if(vc[ii - 1] > 0.) {
       vc[ii - 1] = 1.f / sqrt(vc[ii - 1]);
   } else {
       vc[ii - 1] = 0.;
   }
   jj = 0;
   i__1 = i__ - 1;
-  for (j = 1; j <= i__1; ++j) {
+  for(j = 1; j <= i__1; ++j) {
       jj += j;
       ++ij;
       vc[ij - 1] = vc[ij - 1] * vc[ii - 1] * vc[jj - 1];
@@ -1066,9 +1066,9 @@ L800:
     e_wsfe();
     ii = 0;
     i__2 = *nop;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   ii += i__;
-  if (vc[ii - 1] != 0.) {
+  if(vc[ii - 1] != 0.) {
       vc[ii - 1] = 1.;
   }
 /* L850: */
@@ -1087,7 +1087,7 @@ L860:
 L880:
     l = 1;
 L890:
-    if (l > *nop) {
+    if(l > *nop) {
   switch (ijk) {
       case 1:  goto L790;
       case 2:  goto L860;
@@ -1096,19 +1096,19 @@ L890:
     }
     ii = l * (l - 1) / 2;
     i__2 = *nop;
-    for (i__ = l; i__ <= i__2; ++i__) {
+    for(i__ = l; i__ <= i__2; ++i__) {
   i1 = ii + l;
   ii += i__;
 /* Computing MIN */
   i__1 = ii, i__3 = i1 + 5;
   i2 = min(i__1,i__3);
-  if (ijk == 3) {
+  if(ijk == 3) {
       goto L900;
   }
   io___76.ciunit = lout;
   s_wsfe(&io___76);
   i__1 = i2;
-  for (j = i1; j <= i__1; ++j) {
+  for(j = i1; j <= i__1; ++j) {
       do_fio(&c__1, (char *)&vc[j - 1], (ftnlen)sizeof(doublereal));
   }
   e_wsfe();
@@ -1117,7 +1117,7 @@ L900:
   io___77.ciunit = lout;
   s_wsfe(&io___77);
   i__1 = i2;
-  for (j = i1; j <= i__1; ++j) {
+  for(j = i1; j <= i__1; ++j) {
       do_fio(&c__1, (char *)&bmat[j - 1], (ftnlen)sizeof(doublereal));
   }
   e_wsfe();
@@ -1176,7 +1176,7 @@ L910:
     /* Function Body */
     nrow = *n;
     *ifault = 1;
-    if (nrow <= 0) {
+    if(nrow <= 0) {
   goto L100;
     }
     *ifault = 0;
@@ -1184,7 +1184,7 @@ L910:
 /*     CHOLESKY FACTORIZATION OF A, RESULT IN C */
 
     chola_(&a[1], &nrow, &c__[1], nullty, ifault, rmax, &w[1]);
-    if (*ifault != 0) {
+    if(*ifault != 0) {
   goto L100;
     }
 
@@ -1196,12 +1196,12 @@ L910:
     irow = nrow;
     ndiag = nn;
 L10:
-    if (c__[ndiag] == 0.) {
+    if(c__[ndiag] == 0.) {
   goto L60;
     }
     l = ndiag;
     i__1 = nrow;
-    for (i__ = irow; i__ <= i__1; ++i__) {
+    for(i__ = irow; i__ <= i__1; ++i__) {
   w[i__] = c__[l];
   l += i__;
 /* L20: */
@@ -1212,24 +1212,24 @@ L10:
 L30:
     l = jcol;
     x = 0.;
-    if (icol == irow) {
+    if(icol == irow) {
   x = 1. / w[irow];
     }
     k = nrow;
 L40:
-    if (k == irow) {
+    if(k == irow) {
   goto L50;
     }
     x -= w[k] * c__[l];
     --k;
     --l;
-    if (l > mdiag) {
+    if(l > mdiag) {
   l = l - k + 1;
     }
     goto L40;
 L50:
     c__[l] = x / w[irow];
-    if (icol == irow) {
+    if(icol == irow) {
   goto L80;
     }
     mdiag -= icol;
@@ -1239,7 +1239,7 @@ L50:
 L60:
     l = ndiag;
     i__1 = nrow;
-    for (j = irow; j <= i__1; ++j) {
+    for(j = irow; j <= i__1; ++j) {
   c__[l] = 0.;
   l += j;
 /* L70: */
@@ -1247,7 +1247,7 @@ L60:
 L80:
     ndiag -= irow;
     --irow;
-    if (irow != 0) {
+    if(irow != 0) {
   goto L10;
     }
 L100:
@@ -1303,12 +1303,12 @@ L100:
     eta = .5;
 L110:
     eta /= 2.;
-    if (eta + 1. > 1.) {
+    if(eta + 1. > 1.) {
   goto L110;
     }
     eta *= 2.;
     *ifault = 1;
-    if (*n <= 0) {
+    if(*n <= 0) {
   goto L100;
     }
     *ifault = 2;
@@ -1321,29 +1321,29 @@ L110:
 /*     FACTORIZE COLUMN BY COLUMN, ICOL = COLUMN NO. */
 
     i__1 = *n;
-    for (icol = 1; icol <= i__1; ++icol) {
+    for(icol = 1; icol <= i__1; ++icol) {
   l = 0;
 
 /*     IROW = ROW NUMBER WITHIN COLUMN ICOL */
 
   i__2 = icol;
-  for (irow = 1; irow <= i__2; ++irow) {
+  for(irow = 1; irow <= i__2; ++irow) {
       ++k;
       w = a[k];
-      if (irow == icol) {
+      if(irow == icol) {
 /* Computing 2nd power */
     d__1 = w * eta;
     rsq = d__1 * d__1;
       }
       m = j;
       i__3 = irow;
-      for (i__ = 1; i__ <= i__3; ++i__) {
+      for(i__ = 1; i__ <= i__3; ++i__) {
     ++l;
-    if (i__ == irow) {
+    if(i__ == irow) {
         goto L20;
     }
     w -= u[l] * u[m];
-    if (irow == icol) {
+    if(irow == icol) {
 /* Computing 2nd power */
         d__2 = u[l];
 /* Computing 2nd power */
@@ -1354,17 +1354,17 @@ L110:
 /* L10: */
       }
 L20:
-      if (irow == icol) {
+      if(irow == icol) {
     goto L50;
       }
-      if (u[l] == 0.) {
+      if(u[l] == 0.) {
     goto L30;
       }
       u[k] = w / u[l];
       goto L40;
 L30:
       u[k] = 0.;
-      if (abs(w) > (d__1 = *rmax * a[k], abs(d__1))) {
+      if(abs(w) > (d__1 = *rmax * a[k], abs(d__1))) {
     goto L100;
       }
 L40:
@@ -1375,15 +1375,15 @@ L40:
 
 L50:
   rsq = sqrt(rsq);
-  if (abs(w) <= rsq * 5.f) {
+  if(abs(w) <= rsq * 5.f) {
       goto L60;
   }
-  if (w < 0.) {
+  if(w < 0.) {
       goto L100;
   }
   u[k] = sqrt(w);
   r__[i__] = rsq / w;
-  if (r__[i__] > *rmax) {
+  if(r__[i__] > *rmax) {
       *rmax = r__[i__];
   }
   goto L70;

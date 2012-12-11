@@ -48,33 +48,33 @@ int simulation_result_mat::calcDataSize()
   const MODEL_DATA *modelData = &(data->modelData);
 
   int sz = 1; /* start with one for the timeValue */
-  for (int i = 0; i < modelData->nVariablesReal; i++)
-    if (!modelData->realVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesReal; i++)
+    if(!modelData->realVarsData[i].filterOutput)
     {
        r_indx_map[i] = sz;
        sz++;
     }
-  for (int i = 0; i < modelData->nVariablesInteger; i++)
-    if (!modelData->integerVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesInteger; i++)
+    if(!modelData->integerVarsData[i].filterOutput)
     {
        i_indx_map[i] = sz;
        sz++;
     }
-  for (int i = 0; i < modelData->nVariablesBoolean; i++)
-    if (!modelData->booleanVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesBoolean; i++)
+    if(!modelData->booleanVarsData[i].filterOutput)
     {
        b_indx_map[i] = sz;
        sz++;
     }
-  for (int i = 0; i < modelData->nAliasReal; i++)
-    if (!modelData->realAlias[i].filterOutput) sz++;
-  for (int i = 0; i < modelData->nAliasInteger; i++)
-    if (!modelData->integerAlias[i].filterOutput) sz++;
+  for(int i = 0; i < modelData->nAliasReal; i++)
+    if(!modelData->realAlias[i].filterOutput) sz++;
+  for(int i = 0; i < modelData->nAliasInteger; i++)
+    if(!modelData->integerAlias[i].filterOutput) sz++;
   negatedboolaliases = 0;
-  for (int i = 0; i < modelData->nAliasBoolean; i++)
-    if (!modelData->booleanAlias[i].filterOutput)
+  for(int i = 0; i < modelData->nAliasBoolean; i++)
+    if(!modelData->booleanAlias[i].filterOutput)
     {
-       if (modelData->booleanAlias[i].negate)
+       if(modelData->booleanAlias[i].negate)
           negatedboolaliases++;
        sz++;
     }
@@ -89,31 +89,31 @@ const VAR_INFO** simulation_result_mat::calcDataNames(int dataSize)
   int curVar = 0;
   int sz = 1;
   names[curVar++] = &timeValName;
-  for (int i = 0; i < modelData->nVariablesReal; i++) if (!modelData->realVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesReal; i++) if(!modelData->realVarsData[i].filterOutput)
     names[curVar++] = &(modelData->realVarsData[i].info);
-  for (int i = 0; i < modelData->nVariablesInteger; i++) if (!modelData->integerVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesInteger; i++) if(!modelData->integerVarsData[i].filterOutput)
     names[curVar++] = &(modelData->integerVarsData[i].info);
-  for (int i = 0; i < modelData->nVariablesBoolean; i++) if (!modelData->booleanVarsData[i].filterOutput)
+  for(int i = 0; i < modelData->nVariablesBoolean; i++) if(!modelData->booleanVarsData[i].filterOutput)
     names[curVar++] = &(modelData->booleanVarsData[i].info);
-  for (int i = 0; i < modelData->nAliasReal; i++) if (!modelData->realAlias[i].filterOutput)
+  for(int i = 0; i < modelData->nAliasReal; i++) if(!modelData->realAlias[i].filterOutput)
     names[curVar++] = &(modelData->realAlias[i].info);
-  for (int i = 0; i < modelData->nAliasInteger; i++) if (!modelData->integerAlias[i].filterOutput)
+  for(int i = 0; i < modelData->nAliasInteger; i++) if(!modelData->integerAlias[i].filterOutput)
     names[curVar++] = &(modelData->integerAlias[i].info);
-  for (int i = 0; i < modelData->nAliasBoolean; i++) if (!modelData->booleanAlias[i].filterOutput)
+  for(int i = 0; i < modelData->nAliasBoolean; i++) if(!modelData->booleanAlias[i].filterOutput)
     names[curVar++] = &(modelData->booleanAlias[i].info);
 
 
-  for (int i = 0; i < modelData->nParametersReal; i++) {
+  for(int i = 0; i < modelData->nParametersReal; i++) {
     names[curVar++] = &(modelData->realParameterData[i].info);
     r_indx_parammap[i]=sz;
     sz++;
   }
-  for (int i = 0; i < modelData->nParametersInteger; i++) {
+  for(int i = 0; i < modelData->nParametersInteger; i++) {
     names[curVar++] = &(modelData->integerParameterData[i].info);
     i_indx_parammap[i]=sz;
     sz++;
   }
-  for (int i = 0; i < modelData->nParametersBoolean; i++) {
+  for(int i = 0; i < modelData->nParametersBoolean; i++) {
     names[curVar++] = &(modelData->booleanParameterData[i].info);
     b_indx_parammap[i]=sz;
     sz++;
@@ -166,7 +166,7 @@ simulation_result_mat::simulation_result_mat(const char* filename, double tstart
   try {
     /* open file */
     fp.open(filename, std::ofstream::binary|std::ofstream::trunc);
-    if (!fp)
+    if(!fp)
       ASSERT1(0, "Cannot open File %s for writing",filename);
 
     /* write `AClass' matrix */
@@ -225,7 +225,7 @@ simulation_result_mat::~simulation_result_mat()
   rt_tick(SIM_TIMER_OUTPUT);
   /* this is a bad programming practice - closing file in destructor,
      where a proper error reporting can't be done */
-  if (fp) {
+  if(fp) {
     try {
       fp.seekp(data2HdrPos);
       writeMatVer4MatrixHeader("data_2", r_indx_map.size() + i_indx_map.size() + b_indx_map.size() + negatedboolaliases + 1 /* add one more for timeValue*/, ntimepoints, sizeof(double));
@@ -247,27 +247,27 @@ void simulation_result_mat::emit()
      although ofstream does have some buffering, but it is not enough and
      not for this purpose */
   fp.write((char*)&(data->localData[0]->timeValue),sizeof(double));
-  for (int i = 0; i < data->modelData.nVariablesReal; i++) if (!data->modelData.realVarsData[i].filterOutput)
+  for(int i = 0; i < data->modelData.nVariablesReal; i++) if(!data->modelData.realVarsData[i].filterOutput)
     fp.write((char*)&(data->localData[0]->realVars[i]),sizeof(double));
-  for (int i = 0; i < data->modelData.nVariablesInteger; i++) if (!data->modelData.integerVarsData[i].filterOutput)
+  for(int i = 0; i < data->modelData.nVariablesInteger; i++) if(!data->modelData.integerVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->integerVars[i];
       fp.write((char*)&datPoint,sizeof(double));
     }
-  for (int i = 0; i < data->modelData.nVariablesBoolean; i++) if (!data->modelData.booleanVarsData[i].filterOutput)
+  for(int i = 0; i < data->modelData.nVariablesBoolean; i++) if(!data->modelData.booleanVarsData[i].filterOutput)
     {
       datPoint = (double) data->localData[0]->booleanVars[i];
       fp.write((char*)&datPoint,sizeof(double));
     }
-  for (int i = 0; i < data->modelData.nAliasBoolean; i++) if (!data->modelData.booleanAlias[i].filterOutput)
+  for(int i = 0; i < data->modelData.nAliasBoolean; i++) if(!data->modelData.booleanAlias[i].filterOutput)
     {
-      if (data->modelData.booleanAlias[i].negate)
+      if(data->modelData.booleanAlias[i].negate)
       {
         datPoint = (double) (data->localData[0]->booleanVars[data->modelData.booleanAlias[i].nameID]==1?0:1);
         fp.write((char*)&datPoint,sizeof(double));
       }
     }
-  if (!fp)
+  if(!fp)
     ASSERT1(0, "Error while writing file %s",filename);
   ++ntimepoints;
   rt_accumulate(SIM_TIMER_OUTPUT);
@@ -278,10 +278,10 @@ void simulation_result_mat::emit()
 static inline void fixDerInName(char *str, size_t len)
 {
   char* dot;
-  if (len < 6) return;
+  if(len < 6) return;
 
   /* check if name start with "der(" and includes at least one dot */
-  while (strncmp(str,"der(",4) == 0 && (dot = strrchr(str,'.')) != NULL) {
+  while(strncmp(str,"der(",4) == 0 && (dot = strrchr(str,'.')) != NULL) {
     size_t pos = (size_t)(dot-str)+1;
     /* move prefix to the beginning of string :"der(a.b.c.d)" -> "a.b.c.b.c.d)" */
     for(size_t i = 4; i < pos; ++i)
@@ -302,9 +302,9 @@ long simulation_result_mat::flattenStrBuf(int dims,
   longest = 0; /* the longest-string length */
 
   /* calculate required size */
-  for (i = 0; i < dims; ++i) {
+  for(i = 0; i < dims; ++i) {
       len = strlen(useComment ? src[i]->comment : src[i]->name);
-      if (len > longest) longest = len;
+      if(len > longest) longest = len;
   }
 
   /* allocate memory */
@@ -312,15 +312,15 @@ long simulation_result_mat::flattenStrBuf(int dims,
   ASSERT(dest,"Cannot allocate memory");
   /* copy data */
   char *ptr = dest;
-/*  for (i=0;i<dims;i++) {
+/*  for(i=0;i<dims;i++) {
       len = strlen(useComment ? src[i]->comment : src[i]->name);
-      for (j = 0; j < len; ++j) {
+      for(j = 0; j < len; ++j) {
          strncpy(ptr + i + j*dims,useComment ? &src[i]->comment[j] : &src[i]->name[j],1);
     }
     } */
-  for (i = 0; i < dims; ++i) {
+  for(i = 0; i < dims; ++i) {
       strncpy(ptr,useComment ? src[i]->comment : src[i]->name,longest+1 /* ensures that we get \0 after the longest string*/);
-      if (fixNames) fixDerInName(ptr,strlen(useComment ? src[i]->comment : src[i]->name));
+      if(fixNames) fixDerInName(ptr,strlen(useComment ? src[i]->comment : src[i]->name));
       ptr += longest;
   }
   /* return the size of the `dest' buffer */
@@ -343,9 +343,9 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
   MHeader_t hdr;
 
   int type = 0;
-  if (size == 1 /* char */)
+  if(size == 1 /* char */)
     type = 51;
-  if (size == 4 /* int32 */)
+  if(size == 4 /* int32 */)
     type = 20;
 
   /* create matrix header structure */
@@ -356,10 +356,10 @@ void simulation_result_mat::writeMatVer4MatrixHeader(const char *name,
   hdr.namelen = strlen(name)+1;
   /* write header to file */
   fp.write((char*)&hdr, sizeof(MHeader_t));
-  if (!fp)
+  if(!fp)
     ASSERT1(0, "Cannot write to file %s",filename);
   fp.write(name, sizeof(char)*hdr.namelen);
-  if (!fp)
+  if(!fp)
     ASSERT1(0, "Cannot write to file %s",filename);
 }
 
@@ -371,7 +371,7 @@ void simulation_result_mat::writeMatVer4Matrix(const char *name,
 
   /* write data */
   fp.write((const char*)data, (size)*rows*cols);
-  if (!fp)
+  if(!fp)
     ASSERT1(0, "Cannot write to file %s",filename);
 }
 
@@ -405,28 +405,28 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       indx++;
   }
   /* alias variables */
-  for (int i = 0; i < mdl_data->nAliasReal; i++) {
-    if (!mdl_data->realAlias[i].filterOutput)
+  for(int i = 0; i < mdl_data->nAliasReal; i++) {
+    if(!mdl_data->realAlias[i].filterOutput)
     {
       int table = 0;
-      if (mdl_data->realAlias[i].aliasType == 0) /* variable */
+      if(mdl_data->realAlias[i].aliasType == 0) /* variable */
       {
         it = r_indx_map.find(mdl_data->realAlias[i].nameID);
-        if (it != r_indx_map.end())
+        if(it != r_indx_map.end())
         {
           table = 2;
           aliascol = it->second+1;
         }
       }
-      else if (mdl_data->realAlias[i].aliasType == 1) /* parameter */
+      else if(mdl_data->realAlias[i].aliasType == 1) /* parameter */
       {
         it = r_indx_parammap.find(mdl_data->realAlias[i].nameID);
-        if (it != r_indx_map.end())
+        if(it != r_indx_map.end())
         {
           table = 1;
           aliascol = it->second+1;
         }
-      } else if (mdl_data->realAlias[i].aliasType == 2) /* time */
+      } else if(mdl_data->realAlias[i].aliasType == 2) /* time */
       {
         table = 2;
         aliascol = 1;
@@ -436,7 +436,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
         /* row 1 - which table */
         dataInfo[ccol] = table;
         /* row 2 - index of var in table (variable 'Time' have index 1) */
-        if (mdl_data->realAlias[i].negate)
+        if(mdl_data->realAlias[i].negate)
           dataInfo[ccol+1] = -aliascol;
         else
           dataInfo[ccol+1] = aliascol;
@@ -448,20 +448,20 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       }
     }
   }
-  for (int i = 0; i < mdl_data->nAliasInteger; i++) {
-    if (!mdl_data->integerAlias[i].filterOutput)
+  for(int i = 0; i < mdl_data->nAliasInteger; i++) {
+    if(!mdl_data->integerAlias[i].filterOutput)
     {
       int table = 0;
-      if (mdl_data->integerAlias[i].aliasType == 0) /* variable */
+      if(mdl_data->integerAlias[i].aliasType == 0) /* variable */
       {
         it = i_indx_map.find(mdl_data->integerAlias[i].nameID);
-        if (it != i_indx_map.end())
+        if(it != i_indx_map.end())
           table = 2;
       }
-      else if (mdl_data->integerAlias[i].aliasType == 1) /* parameter */
+      else if(mdl_data->integerAlias[i].aliasType == 1) /* parameter */
       {
         it = i_indx_parammap.find(mdl_data->integerAlias[i].nameID);
-        if (it != i_indx_map.end())
+        if(it != i_indx_map.end())
           table = 1;
       }
       if(table)
@@ -469,7 +469,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
         /* row 1 - which table */
         dataInfo[ccol] = table;
         /* row 2 - index of var in table */
-        if (mdl_data->integerAlias[i].negate)
+        if(mdl_data->integerAlias[i].negate)
           dataInfo[ccol+1] = -(it->second+1);
         else
           dataInfo[ccol+1] = it->second+1;
@@ -481,25 +481,25 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
       }
     }
   }
-  for (int i = 0; i < mdl_data->nAliasBoolean; i++) {
-    if (!mdl_data->booleanAlias[i].filterOutput)
+  for(int i = 0; i < mdl_data->nAliasBoolean; i++) {
+    if(!mdl_data->booleanAlias[i].filterOutput)
     {
       int table = 0;
 
-      if (mdl_data->booleanAlias[i].negate)
+      if(mdl_data->booleanAlias[i].negate)
         table = 2;
       else
       {
-        if (mdl_data->booleanAlias[i].aliasType == 0) /* variable */
+        if(mdl_data->booleanAlias[i].aliasType == 0) /* variable */
         {
           it = b_indx_map.find(mdl_data->booleanAlias[i].nameID);
-          if (it != b_indx_map.end())
+          if(it != b_indx_map.end())
             table = 2;
         }
-        else if (mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
+        else if(mdl_data->booleanAlias[i].aliasType == 1) /* parameter */
         {
           it = b_indx_parammap.find(mdl_data->booleanAlias[i].nameID);
-          if (it != b_indx_map.end())
+          if(it != b_indx_map.end())
             table = 1;
         }
       }
@@ -508,7 +508,7 @@ void simulation_result_mat::generateDataInfo(int32_t* &dataInfo, int& rows, int&
         /* row 1 - which table */
         dataInfo[ccol] = table;
         /* row 2 - index of var in table */
-        if (mdl_data->booleanAlias[i].negate)
+        if(mdl_data->booleanAlias[i].negate)
         {
           dataInfo[ccol+1] = indx;
           indx++;

@@ -38,7 +38,7 @@
 
 modelica_real division_error_time(modelica_real b, const char* division_str, modelica_real time, const char* file, long line, modelica_boolean noThrow)
 {
-  if (noThrow){
+  if(noThrow){
     WARNING1(LOG_UTIL, "division by zero in partial equation: %s", division_str);
     WARNING1(LOG_UTIL, "at Time=%f", time);
     WARNING(LOG_UTIL,  "solver will try to handle that.");
@@ -80,7 +80,7 @@ modelica_real division_error(modelica_real b, const char* division_str, const ch
 
 modelica_real isnan_error(modelica_real b, const char* division_str, const char* file, long line)
 {
-  if (isnan(b))
+  if(isnan(b))
   {
     WARNING1(LOG_STDOUT, "division result in NAN in partial equation: %s", division_str);
     WARNING2(LOG_STDOUT, "[line] %ld | [file] %s", line, file);

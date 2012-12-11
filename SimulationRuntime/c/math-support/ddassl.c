@@ -1106,7 +1106,7 @@ static integer c__72 = 72;
     --y;
 
     /* Function Body */
-    if (info[1] != 0) {
+    if(info[1] != 0) {
   goto L100;
     }
 
@@ -1117,38 +1117,38 @@ static integer c__72 = 72;
 
 /*     FIRST CHECK INFO ARRAY TO MAKE SURE ALL ELEMENTS OF INFO */
 /*     ARE EITHER ZERO OR ONE. */
-    for (i__ = 2; i__ <= 11; ++i__) {
-  if (info[i__] != 0 && info[i__] != 1) {
+    for(i__ = 2; i__ <= 11; ++i__) {
+  if(info[i__] != 0 && info[i__] != 1) {
       goto L701;
   }
 /* L10: */
     }
 
-    if (*neq <= 0) {
+    if(*neq <= 0) {
   goto L702;
     }
 
 /*     CHECK AND COMPUTE MAXIMUM ORDER */
     mxord = 5;
-    if (info[9] == 0) {
+    if(info[9] == 0) {
   goto L20;
     }
     mxord = iwork[3];
-    if (mxord < 1 || mxord > 5) {
+    if(mxord < 1 || mxord > 5) {
   goto L703;
     }
 L20:
     iwork[3] = mxord;
 
 /*     COMPUTE MTYPE,LENPD,LENRW.CHECK ML AND MU. */
-    if (info[6] != 0) {
+    if(info[6] != 0) {
   goto L40;
     }
 /* Computing 2nd power */
     i__1 = *neq;
     lenpd = i__1 * i__1;
     lenrw = (iwork[3] + 4) * *neq + 40 + lenpd;
-    if (info[5] != 0) {
+    if(info[5] != 0) {
   goto L30;
     }
     iwork[4] = 2;
@@ -1157,14 +1157,14 @@ L30:
     iwork[4] = 1;
     goto L60;
 L40:
-    if (iwork[1] < 0 || iwork[1] >= *neq) {
+    if(iwork[1] < 0 || iwork[1] >= *neq) {
   goto L717;
     }
-    if (iwork[2] < 0 || iwork[2] >= *neq) {
+    if(iwork[2] < 0 || iwork[2] >= *neq) {
   goto L718;
     }
     lenpd = ((iwork[1] << 1) + iwork[2] + 1) * *neq;
-    if (info[5] != 0) {
+    if(info[5] != 0) {
   goto L50;
     }
     iwork[4] = 5;
@@ -1180,24 +1180,24 @@ L50:
 L60:
     leniw = *neq + 20;
     iwork[16] = lenpd;
-    if (*lrw < lenrw) {
+    if(*lrw < lenrw) {
   goto L704;
     }
-    if (*liw < leniw) {
+    if(*liw < leniw) {
   goto L705;
     }
 
 /*     CHECK TO SEE THAT TOUT IS DIFFERENT FROM T */
-    if (*tout == *t) {
+    if(*tout == *t) {
   goto L719;
     }
 
 /*     CHECK HMAX */
-    if (info[7] == 0) {
+    if(info[7] == 0) {
   goto L70;
     }
     hmax = rwork[2];
-    if (hmax <= 0.) {
+    if(hmax <= 0.) {
   goto L710;
     }
 L70:
@@ -1219,10 +1219,10 @@ L70:
 /* ----------------------------------------------------------------------- */
 
 L100:
-    if (info[1] == 1) {
+    if(info[1] == 1) {
   goto L110;
     }
-    if (info[1] != -1) {
+    if(info[1] != -1) {
   goto L701;
     }
 
@@ -1259,25 +1259,25 @@ L200:
     rtoli = rtol[1];
     atoli = atol[1];
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (info[2] == 1) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(info[2] == 1) {
       rtoli = rtol[i__];
   }
-  if (info[2] == 1) {
+  if(info[2] == 1) {
       atoli = atol[i__];
   }
-  if (rtoli > 0. || atoli > 0.) {
+  if(rtoli > 0. || atoli > 0.) {
       nzflg = 1;
   }
-  if (rtoli < 0.) {
+  if(rtoli < 0.) {
       goto L706;
   }
-  if (atoli < 0.) {
+  if(atoli < 0.) {
       goto L707;
   }
 /* L210: */
     }
-    if (nzflg == 0) {
+    if(nzflg == 0) {
   goto L708;
     }
 
@@ -1289,7 +1289,7 @@ L200:
     lpd = lphi + (iwork[3] + 1) * *neq;
     lwm = lpd;
     ntemp = iwork[16] + 1;
-    if (info[1] == 1) {
+    if(info[1] == 1) {
   goto L400;
     }
 
@@ -1307,8 +1307,8 @@ L200:
     ddawts_(neq, &info[2], &rtol[1], &atol[1], &y[1], &rwork[lwt], &rpar[1], &
       ipar[1]);
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (rwork[lwt + i__ - 1] <= 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(rwork[lwt + i__ - 1] <= 0.) {
       goto L713;
   }
 /* L305: */
@@ -1323,19 +1323,19 @@ L200:
 
 /*     CHECK INITIAL INTERVAL TO SEE THAT IT IS LONG ENOUGH */
     tdist = (d__1 = *tout - *t, abs(d__1));
-    if (tdist < hmin) {
+    if(tdist < hmin) {
   goto L714;
     }
 
 /*     CHECK HO, IF THIS WAS INPUT */
-    if (info[8] == 0) {
+    if(info[8] == 0) {
   goto L310;
     }
     ho = rwork[3];
-    if ((*tout - *t) * ho < 0.) {
+    if((*tout - *t) * ho < 0.) {
   goto L711;
     }
-    if (ho == 0.) {
+    if(ho == 0.) {
   goto L712;
     }
     goto L320;
@@ -1345,45 +1345,45 @@ L310:
 /*     DDASTP OR DDAINI, DEPENDING ON INFO(11) */
     ho = tdist * .001;
     ypnorm = ddanrm_(neq, &yprime[1], &rwork[lwt], &rpar[1], &ipar[1]);
-    if (ypnorm > .5 / ho) {
+    if(ypnorm > .5 / ho) {
   ho = .5 / ypnorm;
     }
     d__1 = *tout - *t;
     ho = d_sign(&ho, &d__1);
 /*     ADJUST HO IF NECESSARY TO MEET HMAX BOUND */
 L320:
-    if (info[7] == 0) {
+    if(info[7] == 0) {
   goto L330;
     }
     rh = abs(ho) / rwork[2];
-    if (rh > 1.) {
+    if(rh > 1.) {
   ho /= rh;
     }
 /*     COMPUTE TSTOP, IF APPLICABLE */
 L330:
-    if (info[4] == 0) {
+    if(info[4] == 0) {
   goto L340;
     }
     tstop = rwork[1];
-    if ((tstop - *t) * ho < 0.) {
+    if((tstop - *t) * ho < 0.) {
   goto L715;
     }
-    if ((*t + ho - tstop) * ho > 0.) {
+    if((*t + ho - tstop) * ho > 0.) {
   ho = tstop - *t;
     }
-    if ((tstop - *tout) * ho < 0.) {
+    if((tstop - *tout) * ho < 0.) {
   goto L709;
     }
 
 /*     COMPUTE INITIAL DERIVATIVE, UPDATING TN AND Y, IF APPLICABLE */
 L340:
-    if (info[11] == 0) {
+    if(info[11] == 0) {
   goto L350;
     }
     ddaini_(&tn, &y[1], &yprime[1], neq, (U_fp)res, (U_fp)jac, &ho, &rwork[
       lwt], idid, &rpar[1], &ipar[1], &rwork[lphi], &rwork[41], &rwork[
       le], &rwork[lwm], &iwork[1], &hmin, &rwork[9], &info[10], &ntemp);
-    if (*idid < 0) {
+    if(*idid < 0) {
   goto L390;
     }
 
@@ -1395,7 +1395,7 @@ L350:
 /*     LOAD Y AND H*YPRIME INTO PHI(*,1) AND PHI(*,2) */
     itemp = lphi + *neq;
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   rwork[lphi + i__ - 1] = y[i__];
 /* L370: */
   rwork[itemp + i__ - 1] = h__ * yprime[i__];
@@ -1416,27 +1416,27 @@ L400:
     done = FALSE_;
     tn = rwork[4];
     h__ = rwork[3];
-    if (info[7] == 0) {
+    if(info[7] == 0) {
   goto L410;
     }
     rh = abs(h__) / rwork[2];
-    if (rh > 1.) {
+    if(rh > 1.) {
   h__ /= rh;
     }
 L410:
-    if (*t == *tout) {
+    if(*t == *tout) {
   goto L719;
     }
-    if ((*t - *tout) * h__ > 0.) {
+    if((*t - *tout) * h__ > 0.) {
   goto L711;
     }
-    if (info[4] == 1) {
+    if(info[4] == 1) {
   goto L430;
     }
-    if (info[3] == 1) {
+    if(info[3] == 1) {
   goto L420;
     }
-    if ((tn - *tout) * h__ < 0.) {
+    if((tn - *tout) * h__ < 0.) {
   goto L490;
     }
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
@@ -1446,10 +1446,10 @@ L410:
     done = TRUE_;
     goto L490;
 L420:
-    if ((tn - *t) * h__ <= 0.) {
+    if((tn - *t) * h__ <= 0.) {
   goto L490;
     }
-    if ((tn - *tout) * h__ > 0.) {
+    if((tn - *tout) * h__ > 0.) {
   goto L425;
     }
     ddatrp_(&tn, &tn, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &rwork[
@@ -1466,17 +1466,17 @@ L425:
     done = TRUE_;
     goto L490;
 L430:
-    if (info[3] == 1) {
+    if(info[3] == 1) {
   goto L440;
     }
     tstop = rwork[1];
-    if ((tn - tstop) * h__ > 0.) {
+    if((tn - tstop) * h__ > 0.) {
   goto L715;
     }
-    if ((tstop - *tout) * h__ < 0.) {
+    if((tstop - *tout) * h__ < 0.) {
   goto L709;
     }
-    if ((tn - *tout) * h__ < 0.) {
+    if((tn - *tout) * h__ < 0.) {
   goto L450;
     }
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
@@ -1487,16 +1487,16 @@ L430:
     goto L490;
 L440:
     tstop = rwork[1];
-    if ((tn - tstop) * h__ > 0.) {
+    if((tn - tstop) * h__ > 0.) {
   goto L715;
     }
-    if ((tstop - *tout) * h__ < 0.) {
+    if((tstop - *tout) * h__ < 0.) {
   goto L709;
     }
-    if ((tn - *t) * h__ <= 0.) {
+    if((tn - *t) * h__ <= 0.) {
   goto L450;
     }
-    if ((tn - *tout) * h__ > 0.) {
+    if((tn - *tout) * h__ > 0.) {
   goto L445;
     }
     ddatrp_(&tn, &tn, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &rwork[
@@ -1514,7 +1514,7 @@ L445:
     goto L490;
 L450:
 /*     CHECK WHETHER WE ARE WITHIN ROUNDOFF OF TSTOP */
-    if ((d__1 = tn - tstop, abs(d__1)) > uround * 100. * (abs(tn) + abs(h__)))
+    if((d__1 = tn - tstop, abs(d__1)) > uround * 100. * (abs(tn) + abs(h__)))
        {
   goto L460;
     }
@@ -1526,14 +1526,14 @@ L450:
     goto L490;
 L460:
     tnext = tn + h__;
-    if ((tnext - tstop) * h__ <= 0.) {
+    if((tnext - tstop) * h__ <= 0.) {
   goto L490;
     }
     h__ = tstop - tn;
     rwork[3] = h__;
 
 L490:
-    if (done) {
+    if(done) {
   goto L580;
     }
 
@@ -1549,12 +1549,12 @@ L490:
 
 L500:
 /*     CHECK FOR FAILURE TO COMPUTE INITIAL YPRIME */
-    if (*idid == -12) {
+    if(*idid == -12) {
   goto L527;
     }
 
 /*     CHECK FOR TOO MANY STEPS */
-    if (iwork[11] - iwork[10] < 500) {
+    if(iwork[11] - iwork[10] < 500) {
   goto L510;
     }
     *idid = -1;
@@ -1565,8 +1565,8 @@ L510:
     ddawts_(neq, &info[2], &rtol[1], &atol[1], &rwork[lphi], &rwork[lwt], &
       rpar[1], &ipar[1]);
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (rwork[i__ + lwt - 1] > 0.) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(rwork[i__ + lwt - 1] > 0.) {
       goto L520;
   }
   *idid = -3;
@@ -1578,11 +1578,11 @@ L520:
 /*     TEST FOR TOO MUCH ACCURACY REQUESTED. */
     r__ = ddanrm_(neq, &rwork[lphi], &rwork[lwt], &rpar[1], &ipar[1]) * 100. *
        uround;
-    if (r__ <= 1.) {
+    if(r__ <= 1.) {
   goto L525;
     }
 /*     MULTIPLY RTOL AND ATOL BY R AND RETURN */
-    if (info[2] == 1) {
+    if(info[2] == 1) {
   goto L523;
     }
     rtol[1] = r__ * rtol[1];
@@ -1591,7 +1591,7 @@ L520:
     goto L527;
 L523:
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   rtol[i__] = r__ * rtol[i__];
 /* L524: */
   atol[i__] = r__ * atol[i__];
@@ -1606,11 +1606,11 @@ L525:
     hmin = uround * 4. * max(d__1,d__2);
 
 /*     TEST H VS. HMAX */
-    if (info[7] == 0) {
+    if(info[7] == 0) {
   goto L526;
     }
     rh = abs(h__) / rwork[2];
-    if (rh > 1.) {
+    if(rh > 1.) {
   h__ /= rh;
     }
 L526:
@@ -1622,7 +1622,7 @@ L526:
       , &rwork[8], &hmin, &rwork[9], &iwork[6], &iwork[5], &iwork[7], &
       iwork[8], &iwork[9], &info[10], &ntemp);
 L527:
-    if (*idid < 0) {
+    if(*idid < 0) {
   goto L600;
     }
 
@@ -1631,13 +1631,13 @@ L527:
 /*     FROM DDASTP (IDID=1).  TEST FOR STOP CONDITIONS. */
 /* -------------------------------------------------------- */
 
-    if (info[4] != 0) {
+    if(info[4] != 0) {
   goto L540;
     }
-    if (info[3] != 0) {
+    if(info[3] != 0) {
   goto L530;
     }
-    if ((tn - *tout) * h__ < 0.) {
+    if((tn - *tout) * h__ < 0.) {
   goto L500;
     }
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
@@ -1646,7 +1646,7 @@ L527:
     *t = *tout;
     goto L580;
 L530:
-    if ((tn - *tout) * h__ >= 0.) {
+    if((tn - *tout) * h__ >= 0.) {
   goto L535;
     }
     *t = tn;
@@ -1659,10 +1659,10 @@ L535:
     *t = *tout;
     goto L580;
 L540:
-    if (info[3] != 0) {
+    if(info[3] != 0) {
   goto L550;
     }
-    if ((tn - *tout) * h__ < 0.) {
+    if((tn - *tout) * h__ < 0.) {
   goto L542;
     }
     ddatrp_(&tn, tout, &y[1], &yprime[1], neq, &iwork[8], &rwork[lphi], &
@@ -1671,12 +1671,12 @@ L540:
     *idid = 3;
     goto L580;
 L542:
-    if ((d__1 = tn - tstop, abs(d__1)) <= uround * 100. * (abs(tn) + abs(h__))
+    if((d__1 = tn - tstop, abs(d__1)) <= uround * 100. * (abs(tn) + abs(h__))
       ) {
   goto L545;
     }
     tnext = tn + h__;
-    if ((tnext - tstop) * h__ <= 0.) {
+    if((tnext - tstop) * h__ <= 0.) {
   goto L500;
     }
     h__ = tstop - tn;
@@ -1688,10 +1688,10 @@ L545:
     *t = tstop;
     goto L580;
 L550:
-    if ((tn - *tout) * h__ >= 0.) {
+    if((tn - *tout) * h__ >= 0.) {
   goto L555;
     }
-    if ((d__1 = tn - tstop, abs(d__1)) <= uround * 100. * (abs(tn) + abs(h__))
+    if((d__1 = tn - tstop, abs(d__1)) <= uround * 100. * (abs(tn) + abs(h__))
       ) {
   goto L552;
     }
@@ -2158,7 +2158,7 @@ L719:
 
 L750:
     *idid = -33;
-    if (info[1] == -1) {
+    if(info[1] == -1) {
   xermsg_("SLATEC", "DDASSL", "REPEATED OCCURRENCES OF ILLEGAL INPUT$$"
     "RUN TERMINATED. APPARENT INFINITE LOOP", &c_n999, &c__2, (
     ftnlen)6, (ftnlen)6, (ftnlen)77);
@@ -2219,8 +2219,8 @@ L750:
     rtoli = rtol[1];
     atoli = atol[1];
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (*iwt == 0) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(*iwt == 0) {
       goto L10;
   }
   rtoli = rtol[i__];
@@ -2283,18 +2283,18 @@ doublereal ddanrm_(integer *neq, doublereal *v, doublereal *wt, doublereal *
     ret_val = 0.;
     vmax = 0.;
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if ((d__1 = v[i__] / wt[i__], abs(d__1)) > vmax) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if((d__1 = v[i__] / wt[i__], abs(d__1)) > vmax) {
       vmax = (d__2 = v[i__] / wt[i__], abs(d__2));
   }
 /* L10: */
     }
-    if (vmax <= 0.) {
+    if(vmax <= 0.) {
   goto L30;
     }
     sum = 0.;
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L20: */
 /* Computing 2nd power */
   d__1 = v[i__] / wt[i__] / vmax;
@@ -2434,7 +2434,7 @@ L30:
 
 /*     SAVE Y AND YPRIME IN PHI */
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   phi[i__ + phi_dim1] = y[i__];
 /* L100: */
   phi[i__ + (phi_dim1 << 1)] = yprime[i__];
@@ -2453,7 +2453,7 @@ L200:
 
 /*     PREDICT SOLUTION AND DERIVATIVE */
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L250: */
   y[i__] += *h__ * yprime[i__];
     }
@@ -2469,13 +2469,13 @@ L300:
     ires = 0;
 
     (*res)(x, &y[1], &yprime[1], &delta[1], &ires, &rpar[1], &ipar[1]);
-    if (ires < 0) {
+    if(ires < 0) {
   goto L430;
     }
 
 
 /*     EVALUATE THE ITERATION MATRIX */
-    if (jcalc != -1) {
+    if(jcalc != -1) {
   goto L310;
     }
     ++iwm[13];
@@ -2485,10 +2485,10 @@ L300:
       , &ipar[1], ntemp);
 
     s = 1e6;
-    if (ires < 0) {
+    if(ires < 0) {
   goto L430;
     }
-    if (ier != 0) {
+    if(ier != 0) {
   goto L430;
     }
     nsf = 0;
@@ -2498,7 +2498,7 @@ L300:
 /*     MULTIPLY RESIDUAL BY DAMPING FACTOR */
 L310:
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L320: */
   delta[i__] *= damp;
     }
@@ -2510,7 +2510,7 @@ L310:
 
 /*     UPDATE Y AND YPRIME */
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   y[i__] -= delta[i__];
 /* L330: */
   yprime[i__] -= cj * delta[i__];
@@ -2519,11 +2519,11 @@ L310:
 /*     TEST FOR CONVERGENCE OF THE ITERATION. */
 
     delnrm = ddanrm_(neq, &delta[1], &wt[1], &rpar[1], &ipar[1]);
-    if (delnrm <= *uround * 100. * ynorm) {
+    if(delnrm <= *uround * 100. * ynorm) {
   goto L400;
     }
 
-    if (m > 0) {
+    if(m > 0) {
   goto L340;
     }
     oldnrm = delnrm;
@@ -2533,13 +2533,13 @@ L340:
     d__1 = delnrm / oldnrm;
     d__2 = 1. / m;
     rate = pow_dd(&d__1, &d__2);
-    if (rate > .9) {
+    if(rate > .9) {
   goto L430;
     }
     s = rate / (1. - rate);
 
 L350:
-    if (s * delnrm <= .33) {
+    if(s * delnrm <= .33) {
   goto L400;
     }
 
@@ -2551,11 +2551,11 @@ L350:
 /*     ITERATION MATRIX. */
 
     ++m;
-    if (m >= maxit) {
+    if(m >= maxit) {
   goto L430;
     }
 
-    if (m / mjac * mjac == m) {
+    if(m / mjac * mjac == m) {
   jcalc = -1;
     }
     goto L300;
@@ -2564,11 +2564,11 @@ L350:
 /*     THE ITERATION HAS CONVERGED. */
 /*     CHECK NONNEGATIVITY CONSTRAINTS */
 L400:
-    if (*nonneg == 0) {
+    if(*nonneg == 0) {
   goto L450;
     }
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L410: */
 /* Computing MIN */
   d__1 = y[i__];
@@ -2576,12 +2576,12 @@ L400:
     }
 
     delnrm = ddanrm_(neq, &delta[1], &wt[1], &rpar[1], &ipar[1]);
-    if (delnrm > .33) {
+    if(delnrm > .33) {
   goto L430;
     }
 
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   y[i__] -= delta[i__];
 /* L420: */
   yprime[i__] -= cj * delta[i__];
@@ -2593,7 +2593,7 @@ L400:
 L430:
     convgd = FALSE_;
 L450:
-    if (! convgd) {
+    if(! convgd) {
   goto L600;
     }
 
@@ -2606,13 +2606,13 @@ L450:
 /* ----------------------------------------------------- */
 
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L510: */
   e[i__] = y[i__] - phi[i__ + phi_dim1];
     }
     err = ddanrm_(neq, &e[1], &wt[1], &rpar[1], &ipar[1]);
 
-    if (err <= 1.) {
+    if(err <= 1.) {
   return 0;
     }
 
@@ -2629,27 +2629,27 @@ L450:
 L600:
     *x = xold;
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   y[i__] = phi[i__ + phi_dim1];
 /* L610: */
   yprime[i__] = phi[i__ + (phi_dim1 << 1)];
     }
 
-    if (convgd) {
+    if(convgd) {
   goto L640;
     }
-    if (ier == 0) {
+    if(ier == 0) {
   goto L620;
     }
     ++nsf;
     *h__ *= .25;
-    if (nsf < 3 && abs(*h__) >= *hmin) {
+    if(nsf < 3 && abs(*h__) >= *hmin) {
   goto L690;
     }
     *idid = -12;
     return 0;
 L620:
-    if (ires > -2) {
+    if(ires > -2) {
   goto L630;
     }
     *idid = -12;
@@ -2657,7 +2657,7 @@ L620:
 L630:
     ++ncf;
     *h__ *= .25;
-    if (ncf < 10 && abs(*h__) >= *hmin) {
+    if(ncf < 10 && abs(*h__) >= *hmin) {
   goto L690;
     }
     *idid = -12;
@@ -2670,7 +2670,7 @@ L640:
     d__1 = .1, d__2 = min(.5,r__);
     r__ = max(d__1,d__2);
     *h__ *= r__;
-    if (abs(*h__) >= *hmin && nef < 10) {
+    if(abs(*h__) >= *hmin && nef < 10) {
   goto L690;
     }
     *idid = -12;
@@ -2745,7 +2745,7 @@ L690:
     koldp1 = *kold + 1;
     temp1 = *xout - *x;
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   yout[i__] = phi[i__ + phi_dim1];
 /* L10: */
   ypout[i__] = 0.;
@@ -2754,12 +2754,12 @@ L690:
     d__ = 0.;
     gamma = temp1 / psi[1];
     i__1 = koldp1;
-    for (j = 2; j <= i__1; ++j) {
+    for(j = 2; j <= i__1; ++j) {
   d__ = d__ * gamma + c__ / psi[j - 1];
   c__ *= gamma;
   gamma = (temp1 + psi[j - 1]) / psi[j];
   i__2 = *neq;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       yout[i__] += c__ * phi[i__ + j * phi_dim1];
 /* L20: */
       ypout[i__] += d__ * phi[i__ + j * phi_dim1];
@@ -2956,7 +2956,7 @@ L690:
     ncf = 0;
     nsf = 0;
     nef = 0;
-    if (*jstart != 0) {
+    if(*jstart != 0) {
   goto L120;
     }
 
@@ -2992,14 +2992,14 @@ L200:
     kp2 = *k + 2;
     km1 = *k - 1;
     xold = *x;
-    if (*h__ != *hold || *k != *kold) {
+    if(*h__ != *hold || *k != *kold) {
   *ns = 0;
     }
 /* Computing MIN */
     i__1 = *ns + 1, i__2 = *kold + 2;
     *ns = min(i__1,i__2);
     nsp1 = *ns + 1;
-    if (kp1 < *ns) {
+    if(kp1 < *ns) {
   goto L230;
     }
 
@@ -3009,7 +3009,7 @@ L200:
     gamma[1] = 0.;
     sigma[1] = 1.;
     i__1 = kp1;
-    for (i__ = 2; i__ <= i__1; ++i__) {
+    for(i__ = 2; i__ <= i__1; ++i__) {
   temp2 = psi[i__ - 1];
   psi[i__ - 1] = temp1;
   beta[i__] = beta[i__ - 1] * psi[i__ - 1] / temp2;
@@ -3026,7 +3026,7 @@ L230:
     alphas = 0.;
     alpha0 = 0.;
     i__1 = *k;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   alphas -= 1. / i__;
   alpha0 -= alpha[i__];
 /* L240: */
@@ -3045,21 +3045,21 @@ L230:
 /*     DECIDE WHETHER NEW JACOBIAN IS NEEDED */
     temp1 = (1. - xrate) / (xrate + 1.);
     temp2 = 1. / temp1;
-    if (*cj / *cjold < temp1 || *cj / *cjold > temp2) {
+    if(*cj / *cjold < temp1 || *cj / *cjold > temp2) {
   *jcalc = -1;
     }
-    if (*cj != cjlast) {
+    if(*cj != cjlast) {
   *s = 100.;
     }
 
 /*     CHANGE PHI TO PHI STAR */
-    if (kp1 < nsp1) {
+    if(kp1 < nsp1) {
   goto L280;
     }
     i__1 = kp1;
-    for (j = nsp1; j <= i__1; ++j) {
+    for(j = nsp1; j <= i__1; ++j) {
   i__2 = *neq;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
 /* L260: */
       phi[i__ + j * phi_dim1] = beta[j] * phi[i__ + j * phi_dim1];
   }
@@ -3083,15 +3083,15 @@ L280:
 /*     FIRST,PREDICT THE SOLUTION AND DERIVATIVE */
 L300:
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   y[i__] = phi[i__ + phi_dim1];
 /* L310: */
   yprime[i__] = 0.;
     }
     i__1 = kp1;
-    for (j = 2; j <= i__1; ++j) {
+    for(j = 2; j <= i__1; ++j) {
   i__2 = *neq;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       y[i__] += phi[i__ + j * phi_dim1];
 /* L320: */
       yprime[i__] += gamma[j] * phi[i__ + j * phi_dim1];
@@ -3109,7 +3109,7 @@ L300:
     ++iwm[12];
     ires = 0;
     (*res)(x, &y[1], &yprime[1], &delta[1], &ires, &rpar[1], &ipar[1]);
-    if (ires < 0) {
+    if(ires < 0) {
   goto L380;
     }
 
@@ -3119,7 +3119,7 @@ L300:
 /*     (WHERE G(X,Y,YPRIME)=0). SET */
 /*     JCALC TO 0 AS AN INDICATOR THAT */
 /*     THIS HAS BEEN DONE. */
-    if (*jcalc != -1) {
+    if(*jcalc != -1) {
   goto L340;
     }
     ++iwm[13];
@@ -3129,10 +3129,10 @@ L300:
       &ipar[1], ntemp);
     *cjold = *cj;
     *s = 100.;
-    if (ires < 0) {
+    if(ires < 0) {
   goto L380;
     }
-    if (ier != 0) {
+    if(ier != 0) {
   goto L380;
     }
     nsf = 0;
@@ -3141,7 +3141,7 @@ L300:
 /*     INITIALIZE THE ERROR ACCUMULATION VECTOR E. */
 L340:
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L345: */
   e[i__] = 0.;
     }
@@ -3153,7 +3153,7 @@ L350:
 /*     MULTIPLY RESIDUAL BY TEMP1 TO ACCELERATE CONVERGENCE */
     temp1 = 2. / (*cj / *cjold + 1.);
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L355: */
   delta[i__] *= temp1;
     }
@@ -3164,7 +3164,7 @@ L350:
 
 /*     UPDATE Y,E,AND YPRIME */
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   y[i__] -= delta[i__];
   e[i__] -= delta[i__];
 /* L360: */
@@ -3173,10 +3173,10 @@ L350:
 
 /*     TEST FOR CONVERGENCE OF THE ITERATION */
     delnrm = ddanrm_(neq, &delta[1], &wt[1], &rpar[1], &ipar[1]);
-    if (delnrm <= *uround * 100. * pnorm) {
+    if(delnrm <= *uround * 100. * pnorm) {
   goto L375;
     }
-    if (m > 0) {
+    if(m > 0) {
   goto L365;
     }
     oldnrm = delnrm;
@@ -3185,12 +3185,12 @@ L365:
     d__1 = delnrm / oldnrm;
     d__2 = 1. / m;
     rate = pow_dd(&d__1, &d__2);
-    if (rate > .9) {
+    if(rate > .9) {
   goto L370;
     }
     *s = rate / (1. - rate);
 L367:
-    if (*s * delnrm <= .33) {
+    if(*s * delnrm <= .33) {
   goto L375;
     }
 
@@ -3199,7 +3199,7 @@ L367:
 /*     MAXIMUM NUMBER OF ITERATIONS HAVE */
 /*     BEEN TRIED. */
     ++m;
-    if (m >= maxit) {
+    if(m >= maxit) {
   goto L370;
     }
 
@@ -3208,7 +3208,7 @@ L367:
     ++iwm[12];
     ires = 0;
     (*res)(x, &y[1], &yprime[1], &delta[1], &ires, &rpar[1], &ipar[1]);
-    if (ires < 0) {
+    if(ires < 0) {
   goto L380;
     }
     goto L350;
@@ -3219,7 +3219,7 @@ L367:
 /*     IS NOT CURRENT,RE-DO THE STEP WITH */
 /*     A NEW ITERATION MATRIX. */
 L370:
-    if (*jcalc == 0) {
+    if(*jcalc == 0) {
   goto L380;
     }
     *jcalc = -1;
@@ -3231,22 +3231,22 @@ L370:
 /*     TO DO IT IS SMALL ENOUGH.  IF THE CHANGE IS TOO LARGE, THEN */
 /*     CONSIDER THE CORRECTOR ITERATION TO HAVE FAILED. */
 L375:
-    if (*nonneg == 0) {
+    if(*nonneg == 0) {
   goto L390;
     }
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L377: */
 /* Computing MIN */
   d__1 = y[i__];
   delta[i__] = min(d__1,0.);
     }
     delnrm = ddanrm_(neq, &delta[1], &wt[1], &rpar[1], &ipar[1]);
-    if (delnrm > .33) {
+    if(delnrm > .33) {
   goto L380;
     }
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L378: */
   e[i__] -= delta[i__];
     }
@@ -3260,7 +3260,7 @@ L380:
     convgd = FALSE_;
 L390:
     *jcalc = 1;
-    if (! convgd) {
+    if(! convgd) {
   goto L600;
     }
 
@@ -3282,33 +3282,33 @@ L390:
     terk = (*k + 1) * erk;
     est = erk;
     knew = *k;
-    if (*k == 1) {
+    if(*k == 1) {
   goto L430;
     }
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L405: */
   delta[i__] = phi[i__ + kp1 * phi_dim1] + e[i__];
     }
     erkm1 = sigma[*k] * ddanrm_(neq, &delta[1], &wt[1], &rpar[1], &ipar[1]);
     terkm1 = *k * erkm1;
-    if (*k > 2) {
+    if(*k > 2) {
   goto L410;
     }
-    if (terkm1 <= terk * .5) {
+    if(terkm1 <= terk * .5) {
   goto L420;
     }
     goto L430;
 L410:
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L415: */
   delta[i__] = phi[i__ + *k * phi_dim1] + delta[i__];
     }
     erkm2 = sigma[*k - 1] * ddanrm_(neq, &delta[1], &wt[1], &rpar[1], &ipar[1]
       );
     terkm2 = (*k - 1) * erkm2;
-    if (max(terkm1,terkm2) > terk) {
+    if(max(terkm1,terkm2) > terk) {
   goto L430;
     }
 /*     LOWER THE ORDER */
@@ -3321,7 +3321,7 @@ L420:
 /*     TO SEE IF THE STEP WAS SUCCESSFUL */
 L430:
     err = ck * enorm;
-    if (err > 1.) {
+    if(err > 1.) {
   goto L600;
     }
 
@@ -3348,41 +3348,41 @@ L430:
 /*        ALREADY USING MAXIMUM ORDER, OR */
 /*        STEPSIZE NOT CONSTANT, OR */
 /*        ORDER RAISED IN PREVIOUS STEP */
-    if (knew == km1 || *k == iwm[3]) {
+    if(knew == km1 || *k == iwm[3]) {
   *iphase = 1;
     }
-    if (*iphase == 0) {
+    if(*iphase == 0) {
   goto L545;
     }
-    if (knew == km1) {
+    if(knew == km1) {
   goto L540;
     }
-    if (*k == iwm[3]) {
+    if(*k == iwm[3]) {
   goto L550;
     }
-    if (kp1 >= *ns || kdiff == 1) {
+    if(kp1 >= *ns || kdiff == 1) {
   goto L550;
     }
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L510: */
   delta[i__] = e[i__] - phi[i__ + kp2 * phi_dim1];
     }
     erkp1 = 1. / (*k + 2) * ddanrm_(neq, &delta[1], &wt[1], &rpar[1], &ipar[1]
       );
     terkp1 = (*k + 2) * erkp1;
-    if (*k > 1) {
+    if(*k > 1) {
   goto L520;
     }
-    if (terkp1 >= terk * .5) {
+    if(terkp1 >= terk * .5) {
   goto L550;
     }
     goto L530;
 L520:
-    if (terkm1 <= min(terk,terkp1)) {
+    if(terkm1 <= min(terk,terkp1)) {
   goto L540;
     }
-    if (terkp1 >= terk || *k == iwm[3]) {
+    if(terkp1 >= terk || *k == iwm[3]) {
   goto L550;
     }
 
@@ -3415,13 +3415,13 @@ L550:
     d__1 = est * 2. + 1e-4;
     d__2 = -1. / temp2;
     r__ = pow_dd(&d__1, &d__2);
-    if (r__ < 2.) {
+    if(r__ < 2.) {
   goto L555;
     }
     hnew = *h__ * 2.;
     goto L560;
 L555:
-    if (r__ > 1.) {
+    if(r__ > 1.) {
   goto L560;
     }
 /* Computing MAX */
@@ -3434,25 +3434,25 @@ L560:
 
 /*     UPDATE DIFFERENCES FOR NEXT STEP */
 L575:
-    if (*kold == iwm[3]) {
+    if(*kold == iwm[3]) {
   goto L585;
     }
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L580: */
   phi[i__ + kp2 * phi_dim1] = e[i__];
     }
 L585:
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L590: */
   phi[i__ + kp1 * phi_dim1] += e[i__];
     }
     i__1 = kp1;
-    for (j1 = 2; j1 <= i__1; ++j1) {
+    for(j1 = 2; j1 <= i__1; ++j1) {
   j = kp1 - j1 + 1;
   i__2 = *neq;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
 /* L595: */
       phi[i__ + j * phi_dim1] += phi[i__ + (j + 1) * phi_dim1];
   }
@@ -3476,14 +3476,14 @@ L600:
 
 /*     RESTORE X,PHI,PSI */
     *x = xold;
-    if (kp1 < nsp1) {
+    if(kp1 < nsp1) {
   goto L630;
     }
     i__2 = kp1;
-    for (j = nsp1; j <= i__2; ++j) {
+    for(j = nsp1; j <= i__2; ++j) {
   temp1 = 1. / beta[j];
   i__1 = *neq;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
 /* L610: */
       phi[i__ + j * phi_dim1] = temp1 * phi[i__ + j * phi_dim1];
   }
@@ -3491,7 +3491,7 @@ L600:
     }
 L630:
     i__2 = kp1;
-    for (i__ = 2; i__ <= i__2; ++i__) {
+    for(i__ = 2; i__ <= i__2; ++i__) {
 /* L640: */
   psi[i__ - 1] = psi[i__] - *h__;
     }
@@ -3499,7 +3499,7 @@ L630:
 
 /*     TEST WHETHER FAILURE IS DUE TO CORRECTOR ITERATION */
 /*     OR ERROR TEST */
-    if (convgd) {
+    if(convgd) {
   goto L660;
     }
     ++iwm[15];
@@ -3508,7 +3508,7 @@ L630:
 /*     THE NEWTON ITERATION FAILED TO CONVERGE WITH */
 /*     A CURRENT ITERATION MATRIX.  DETERMINE THE CAUSE */
 /*     OF THE FAILURE AND TAKE APPROPRIATE ACTION. */
-    if (ier == 0) {
+    if(ier == 0) {
   goto L650;
     }
 
@@ -3519,7 +3519,7 @@ L630:
     ++nsf;
     r__ = .25;
     *h__ *= r__;
-    if (nsf < 3 && abs(*h__) >= *hmin) {
+    if(nsf < 3 && abs(*h__) >= *hmin) {
   goto L690;
     }
     *idid = -8;
@@ -3531,7 +3531,7 @@ L630:
 /*     RETURN.  OTHERWISE, REDUCE THE STEPSIZE AND TRY AGAIN, UNLESS */
 /*     TOO MANY FAILURES HAVE OCCURED. */
 L650:
-    if (ires > -2) {
+    if(ires > -2) {
   goto L655;
     }
     *idid = -11;
@@ -3540,14 +3540,14 @@ L655:
     ++ncf;
     r__ = .25;
     *h__ *= r__;
-    if (ncf < 10 && abs(*h__) >= *hmin) {
+    if(ncf < 10 && abs(*h__) >= *hmin) {
   goto L690;
     }
     *idid = -7;
-    if (ires < 0) {
+    if(ires < 0) {
   *idid = -10;
     }
-    if (nef >= 3) {
+    if(nef >= 3) {
   *idid = -9;
     }
     goto L675;
@@ -3559,7 +3559,7 @@ L655:
 L660:
     ++nef;
     ++iwm[14];
-    if (nef > 1) {
+    if(nef > 1) {
   goto L665;
     }
 
@@ -3575,7 +3575,7 @@ L660:
     d__1 = .25, d__2 = min(.9,r__);
     r__ = max(d__1,d__2);
     *h__ *= r__;
-    if (abs(*h__) >= *hmin) {
+    if(abs(*h__) >= *hmin) {
   goto L690;
     }
     *idid = -6;
@@ -3585,12 +3585,12 @@ L660:
 /*     DECREASE ORDER BY ONE.  REDUCE THE STEPSIZE BY A FACTOR OF */
 /*     FOUR. */
 L665:
-    if (nef > 2) {
+    if(nef > 2) {
   goto L670;
     }
     *k = knew;
     *h__ *= .25;
-    if (abs(*h__) >= *hmin) {
+    if(abs(*h__) >= *hmin) {
   goto L690;
     }
     *idid = -6;
@@ -3601,7 +3601,7 @@ L665:
 L670:
     *k = 1;
     *h__ *= .25;
-    if (abs(*h__) >= *hmin) {
+    if(abs(*h__) >= *hmin) {
   goto L690;
     }
     *idid = -6;
@@ -3740,7 +3740,7 @@ L690:
 L100:
     lenpd = *neq * *neq;
     i__1 = lenpd;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L110: */
   wm[npdm1 + i__] = 0.;
     }
@@ -3748,12 +3748,12 @@ L100:
 
 
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
-    if (ipar[1] || ipar[2] ){
+    if(ipar[1] || ipar[2] ){
        nrow = npdm1;
         i__1 = *neq;
         i__2 = *neq;
         printf("cj: %g and the states\n", *cj);
-        for (k=0;k<*neq;k++) {
+        for(k=0;k<*neq;k++) {
             printf("%g ", y[k+1]);
         }
 
@@ -3761,9 +3761,9 @@ L100:
         printf("analytical jacobian\n");
         printf("at point in time : ");
         printf("%g \n", *x);
-        for (i__ = 1; i__ <= i__1; ++i__) {
+        for(i__ = 1; i__ <= i__1; ++i__) {
                  wm[nrow+i__] += *cj;
-                 for (l = 1; l <= i__2; ++l) {
+                 for(l = 1; l <= i__2; ++l) {
                      printf("%g  ",wm[nrow + l]);
                  }
                  wm[nrow+i__] -= *cj;
@@ -3771,7 +3771,7 @@ L100:
                  nrow += *neq;
         }
     }
-    if (ipar[2])
+    if(ipar[2])
         EXIT(0);
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
@@ -3786,7 +3786,7 @@ L200:
     nrow = npdm1;
     squr = sqrt(*uround);
     i__1 = *neq;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* Computing MAX */
   d__4 = (d__1 = y[i__], abs(d__1)), d__5 = (d__2 = *h__ * yprime[i__],
     abs(d__2)), d__4 = max(d__4,d__5), d__5 = (d__3 = wt[i__],
@@ -3800,12 +3800,12 @@ L200:
   y[i__] += del;
   yprime[i__] += *cj * del;
   (*res)(x, &y[1], &yprime[1], &e[1], ires, &rpar[1], &ipar[1]);
-  if (*ires < 0) {
+  if(*ires < 0) {
       return 0;
   }
   delinv = 1. / del;
   i__2 = *neq;
-  for (l = 1; l <= i__2; ++l) {
+  for(l = 1; l <= i__2; ++l) {
 /* L220: */
       wm[nrow + l] = (e[l] - delta[l]) * delinv;
   }
@@ -3815,12 +3815,12 @@ L200:
 /* L210: */
     }
     /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
-    if (ipar[1]  || ipar[2] ){
+    if(ipar[1]  || ipar[2] ){
             nrow = npdm1;
             i__1 = *neq;
             i__2 = *neq;
             printf("cj: %g and the states\n", *cj);
-            for (k=0;k<*neq;k++) {
+            for(k=0;k<*neq;k++) {
                 printf("%g ", y[k+1]);
             }
 
@@ -3828,9 +3828,9 @@ L200:
             printf("numerical jacobian\n");
             printf("at point in time : ");
             printf("%g \n",*x);
-            for (i__ = 1; i__ <= i__1; ++i__) {
+            for(i__ = 1; i__ <= i__1; ++i__) {
                     wm[nrow+i__] += *cj;
-                    for (l = 1; l <= i__1; ++l) {
+                    for(l = 1; l <= i__1; ++l) {
                             printf("%g  ",wm[nrow + l]);
                     }
                     wm[nrow+i__] -= *cj;
@@ -3838,7 +3838,7 @@ L200:
                     nrow += *neq;
             }
     }
-    if (ipar[2])
+    if(ipar[2])
         EXIT(0);
    /* WBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWBWB */
 
@@ -3860,7 +3860,7 @@ L300:
 L400:
     lenpd = ((iwm[1] << 1) + iwm[2] + 1) * *neq;
     i__1 = lenpd;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
 /* L410: */
   wm[npdm1 + i__] = 0.;
     }
@@ -3881,10 +3881,10 @@ L500:
     *ires = 0;
     squr = sqrt(*uround);
     i__1 = mba;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   i__2 = *neq;
   i__3 = mband;
-  for (n = j; i__3 < 0 ? n >= i__2 : n <= i__2; n += i__3) {
+  for(n = j; i__3 < 0 ? n >= i__2 : n <= i__2; n += i__3) {
       k = (n - j) / mband + 1;
       wm[isave + k] = y[n];
       wm[ipsave + k] = yprime[n];
@@ -3901,12 +3901,12 @@ L500:
       yprime[n] += *cj * del;
   }
   (*res)(x, &y[1], &yprime[1], &e[1], ires, &rpar[1], &ipar[1]);
-  if (*ires < 0) {
+  if(*ires < 0) {
       return 0;
   }
   i__3 = *neq;
   i__2 = mband;
-  for (n = j; i__2 < 0 ? n >= i__3 : n <= i__3; n += i__2) {
+  for(n = j; i__2 < 0 ? n >= i__3 : n <= i__3; n += i__2) {
       k = (n - j) / mband + 1;
       y[n] = wm[isave + k];
       yprime[n] = wm[ipsave + k];
@@ -3927,7 +3927,7 @@ L500:
       i2 = min(i__4,i__5);
       ii = n * meb1 - iwm[1] + npdm1;
       i__4 = i2;
-      for (i__ = i1; i__ <= i__4; ++i__) {
+      for(i__ = i1; i__ <= i__4; ++i__) {
 /* L520: */
     wm[ii + i__] = (e[i__] - delta[i__]) * delinv;
       }
@@ -4234,7 +4234,7 @@ L400:
 /*          CALLING XERMSG.  THE ERROR NUMBER SHOULD BE POSITIVE, */
 /*          AND THE LEVEL SHOULD BE BETWEEN 0 AND 2. */
 
-    if (*nerr < -9999999 || *nerr > 99999999 || *nerr == 0 || *level < -1 || *
+    if(*nerr < -9999999 || *nerr > 99999999 || *nerr == 0 || *level < -1 || *
       level > 2) {
   xerprn_(" ***", &c_n1, "FATAL ERROR IN...$$ XERMSG -- INVALID ERROR "
     "NUMBER OR LEVEL$$ JOB ABORT DUE TO FATAL ERROR.", &c__72, (
@@ -4253,7 +4253,7 @@ L400:
 /*       AND SENDING IT OUT VIA XERPRN.  PRINT ONLY IF CONTROL FLAG */
 /*       IS NOT ZERO. */
 
-    if (lkntrl != 0) {
+    if(lkntrl != 0) {
   s_copy(temp, "MESSAGE FROM ROUTINE ", (ftnlen)21, (ftnlen)21);
 /* Computing MIN */
   i__1 = i_len(subrou, subrou_len);
@@ -4287,14 +4287,14 @@ L400:
 /*       EXCEED 74 CHARACTERS. */
 /*       WE SKIP THE NEXT BLOCK IF THE INTRODUCTORY LINE IS NOT NEEDED. */
 
-    if (lkntrl > 0) {
+    if(lkntrl > 0) {
 
 /*       THE FIRST PART OF THE MESSAGE TELLS ABOUT THE LEVEL. */
 
-  if (*level <= 0) {
+  if(*level <= 0) {
       s_copy(temp, "INFORMATIVE MESSAGE,", (ftnlen)20, (ftnlen)20);
       ltemp = 20;
-  } else if (*level == 1) {
+  } else if(*level == 1) {
       s_copy(temp, "POTENTIALLY RECOVERABLE ERROR,", (ftnlen)30, (
         ftnlen)30);
       ltemp = 30;
@@ -4305,7 +4305,7 @@ L400:
 
 /*       THEN WHETHER THE PROGRAM WILL CONTINUE. */
 
-  if ((mkntrl == 2 && *level >= 1) || (mkntrl == 1 && *level == 2)) {
+  if((mkntrl == 2 && *level >= 1) || (mkntrl == 1 && *level == 2)) {
       i__1 = ltemp;
       s_copy(temp + i__1, " PROGRAM ABORTED.", ltemp + 17 - i__1, (
         ftnlen)17);
@@ -4326,12 +4326,12 @@ L400:
 
 /*       IF LKNTRL IS POSITIVE, WRITE THE ERROR NUMBER. */
 
-    if (lkntrl > 0) {
+    if(lkntrl > 0) {
   s_wsfi(&io___178);
   do_fio(&c__1, (char *)&(*nerr), (ftnlen)sizeof(integer));
   e_wsfi();
-  for (i__ = 16; i__ <= 22; ++i__) {
-      if (*(unsigned char *)&temp[i__ - 1] != ' ') {
+  for(i__ = 16; i__ <= 22; ++i__) {
+      if(*(unsigned char *)&temp[i__ - 1] != ' ') {
     goto L20;
       }
 /* L10: */
@@ -4347,7 +4347,7 @@ L20:
 
 /*       IF LKNTRL IS NOT ZERO, PRINT A BLANK LINE AND AN END OF MESSAGE. */
 
-    if (lkntrl != 0) {
+    if(lkntrl != 0) {
   xerprn_(" *  ", &c_n1, " ", &c__72, (ftnlen)4, (ftnlen)1);
   xerprn_(" ***", &c_n1, "END OF MESSAGE", &c__72, (ftnlen)4, (ftnlen)
     14);
@@ -4358,7 +4358,7 @@ L20:
 /*       CONTROL FLAG IS SET FOR RECOVERY, THEN RETURN. */
 
 /* L30: */
-    if (*level <= 0 || (*level == 1 && mkntrl <= 1)) {
+    if(*level <= 0 || (*level == 1 && mkntrl <= 1)) {
   return 0;
     }
 
@@ -4366,8 +4366,8 @@ L20:
 /*       FATAL ERROR.  PRINT THE REASON FOR THE ABORT AND THE ERROR */
 /*       SUMMARY IF THE CONTROL FLAG AND THE MAXIMUM ERROR COUNT PERMIT. */
 
-    if (lkntrl > 0) {
-  if (*level == 1) {
+    if(lkntrl > 0) {
+  if(*level == 1) {
       xerprn_(" ***", &c_n1, "JOB ABORT DUE TO UNRECOVERED ERROR.", &
         c__72, (ftnlen)4, (ftnlen)35);
   } else {
@@ -4528,8 +4528,8 @@ L20:
 
     n = i1mach_(&c__4);
     i__1 = nunit;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (iu[i__ - 1] == 0) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(iu[i__ - 1] == 0) {
       iu[i__ - 1] = n;
   }
 /* L10: */
@@ -4539,13 +4539,13 @@ L20:
 /*       BEGINNING OF CBUFF, THE CHARACTER BUFFER, AND KEPT THERE DURING */
 /*       THE REST OF THIS ROUTINE. */
 
-    if (*npref < 0) {
+    if(*npref < 0) {
   lpref = i_len(prefix, prefix_len);
     } else {
   lpref = *npref;
     }
     lpref = min(16,lpref);
-    if (lpref != 0) {
+    if(lpref != 0) {
   s_copy(cbuff, prefix, lpref, prefix_len);
     }
 
@@ -4561,8 +4561,8 @@ L20:
     lenmsg = i_len(messg, messg_len);
     n = lenmsg;
     i__1 = n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
-  if (*(unsigned char *)&messg[lenmsg - 1] != ' ') {
+    for(i__ = 1; i__ <= i__1; ++i__) {
+  if(*(unsigned char *)&messg[lenmsg - 1] != ' ') {
       goto L30;
   }
   --lenmsg;
@@ -4572,11 +4572,11 @@ L30:
 
 /*       IF THE MESSAGE IS ALL BLANKS, THEN PRINT ONE BLANK LINE. */
 
-    if (lenmsg == 0) {
+    if(lenmsg == 0) {
   i__1 = lpref;
   s_copy(cbuff + i__1, " ", lpref + 1 - i__1, (ftnlen)1);
   i__1 = nunit;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       io___187.ciunit = iu[i__ - 1];
       s_wsfe(&io___187);
       do_fio(&c__1, cbuff, lpref + 1);
@@ -4627,7 +4627,7 @@ L30:
 L50:
     lpiece = i_indx(messg + (nextc - 1), "$$", lenmsg - (nextc - 1), (ftnlen)
       2);
-    if (lpiece == 0) {
+    if(lpiece == 0) {
 
 /*       THERE WAS NO NEW LINE SENTINEL FOUND. */
 
@@ -4635,10 +4635,10 @@ L50:
 /* Computing MIN */
   i__1 = lwrap, i__2 = lenmsg + 1 - nextc;
   lpiece = min(i__1,i__2);
-  if (lpiece < lenmsg + 1 - nextc) {
-      for (i__ = lpiece + 1; i__ >= 2; --i__) {
+  if(lpiece < lenmsg + 1 - nextc) {
+      for(i__ = lpiece + 1; i__ >= 2; --i__) {
     i__1 = nextc + i__ - 2;
-    if (s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)
+    if(s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)
       1) == 0) {
         lpiece = i__ - 1;
         idelta = 1;
@@ -4652,22 +4652,22 @@ L54:
   s_copy(cbuff + i__1, messg + (nextc - 1), lpref + lpiece - i__1,
     nextc + lpiece - 1 - (nextc - 1));
   nextc = nextc + lpiece + idelta;
-    } else if (lpiece == 1) {
+    } else if(lpiece == 1) {
 
 /*       WE HAVE A NEW LINE SENTINEL AT MESSG(NEXTC:NEXTC+1). */
 /*       DON'T PRINT A BLANK LINE. */
 
   nextc += 2;
   goto L50;
-    } else if (lpiece > lwrap + 1) {
+    } else if(lpiece > lwrap + 1) {
 
 /*       LPIECE SHOULD BE SET DOWN TO LWRAP. */
 
   idelta = 0;
   lpiece = lwrap;
-  for (i__ = lpiece + 1; i__ >= 2; --i__) {
+  for(i__ = lpiece + 1; i__ >= 2; --i__) {
       i__1 = nextc + i__ - 2;
-      if (s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)1) ==
+      if(s_cmp(messg + i__1, " ", nextc + i__ - 1 - i__1, (ftnlen)1) ==
          0) {
     lpiece = i__ - 1;
     idelta = 1;
@@ -4695,7 +4695,7 @@ L58:
 /*       PRINT */
 
     i__1 = nunit;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   io___191.ciunit = iu[i__ - 1];
   s_wsfe(&io___191);
   do_fio(&c__1, cbuff, lpref + lpiece);
@@ -4703,7 +4703,7 @@ L58:
 /* L60: */
     }
 
-    if (nextc <= lenmsg) {
+    if(nextc <= lenmsg) {
   goto L50;
     }
     return 0;
@@ -4772,13 +4772,13 @@ L58:
     --iunita;
 
     /* Function Body */
-    if (xeruni_1.nunit <= 0) {
+    if(xeruni_1.nunit <= 0) {
   xeruni_1.nunit = 1;
   xeruni_1.iunit[0] = 0;
     }
     *n = xeruni_1.nunit;
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   iunita[i__] = xeruni_1.iunit[i__ - 1];
 /* L30: */
     }
@@ -4858,7 +4858,7 @@ L58:
     --iunita;
 
     /* Function Body */
-    if (*n < 1 || *n > 5) {
+    if(*n < 1 || *n > 5) {
   s_wsfi(&io___194);
   do_fio(&c__1, (char *)&(*n), (ftnlen)sizeof(integer));
   e_wsfi();
@@ -4872,7 +4872,7 @@ L58:
     }
 
     i__2 = *n;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   xeruni_1.iunit[i__ - 1] = iunita[i__];
 /* L10: */
     }

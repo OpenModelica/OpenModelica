@@ -55,9 +55,9 @@ int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
   int r = 0, c = 0;\
   printf("{{"); \
   for(r = 0; r < d1; r++) {\
-    for (c = 0; c < d2; c++) {\
+    for(c = 0; c < d2; c++) {\
       printf("%2.3f",A[r + d1 * c]);\
-      if (c != d2-1) printf(",");\
+      if(c != d2-1) printf(",");\
     }\
     if(r != d1-1) printf("},{");\
   }\
@@ -68,7 +68,7 @@ int _omc_dgesv_(integer *n, integer *nrhs, doublereal *a, integer
   printf("{");\
   for(i = 0;i < d1; i++) { \
     printf("%2.3f", b[i]); \
-    if (i != d1-1) printf(",");\
+    if(i != d1-1) printf(",");\
   } \
   printf("}\n"); \
 } while(0)
@@ -88,16 +88,16 @@ integer * ipiv = (integer*) calloc(n,sizeof(integer)); /* Pivott indices */ \
 integer info = 0; /* output */ \
 assert(ipiv != 0); \
 _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
- if (info < 0) { \
+ if(info < 0) { \
    INFO3(LOG_NONLIN_SYS,"Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
    data->simulationInfo.found_solution = -1; \
  } \
- else if (info > 0) { \
+ else if(info > 0) { \
    INFO2(LOG_NONLIN_SYS,"Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
    data->simulationInfo.found_solution = -1; \
  } \
 free(ipiv); \
-} while (0) /* (no trailing ; ) */
+} while(0) /* (no trailing ; ) */
 
 #define extraPolate(v,old1,old2) (data->localData[1]->timeValue == data->localData[2]->timeValue ) ? old1: \
 (((old1)-(old2))/(data->localData[1]->timeValue-data->localData[2]->timeValue)*data->localData[0]->timeValue \
@@ -117,46 +117,46 @@ free(ipiv); \
     hybridIterations++; \
     INFO1(LOG_NONLIN_SYS," ####  hybrid equation system solver step %d.", stepCount); \
     INFO1(LOG_NONLIN_SYS," #### SOLUTION = %d",data->simulationInfo.found_solution); \
- } while (!data->simulationInfo.found_solution); \
+ } while(!data->simulationInfo.found_solution); \
  } while(0)
 
 #define check_discrete_values(boolVar, size, index) \
 do { \
   int i = 0; \
   /* restart if any relation has changed */ \
-  if (checkRelations(data)){ \
+  if(checkRelations(data)){ \
     storeRelations(data);\
-    if (hybridIterations++ > 200){ \
+    if(hybridIterations++ > 200){ \
       data->simulationInfo.found_solution = -1; \
     } \
   }\
   INFO1(LOG_NONLIN_SYS," ####  Check VAR (system %d)", index); \
-  if (data->simulationInfo.found_solution == -1) { \
+  if(data->simulationInfo.found_solution == -1) { \
     /*system of equations failed */ \
     data->simulationInfo.found_solution = 0; \
     INFO(LOG_NONLIN_SYS," ####  NO SOLUTION "); \
   } else { \
     data->simulationInfo.found_solution = 1; \
-    for (i = 0; i < size; i++) { \
-      if (discrete_loc[i] != discrete_loc2[i]) {\
+    for(i = 0; i < size; i++) { \
+      if(discrete_loc[i] != discrete_loc2[i]) {\
         data->simulationInfo.found_solution=0;\
         break;\
       }\
     }\
     INFO1(LOG_NONLIN_SYS," #### SOLUTION = %c",data->simulationInfo.found_solution?'T':'F'); \
   }\
-  if (!data->simulationInfo.found_solution ) { \
+  if(!data->simulationInfo.found_solution ) { \
     /* try next set of values*/ \
     INFO(LOG_NONLIN_SYS," #### old STATE "); \
-    for (i = 0; i < size; i++) { \
+    for(i = 0; i < size; i++) { \
       int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
       const char *__name = data->modelData.booleanVarsData[ix].info.name; \
       INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, *loc_prePtrs[i]); \
     } \
-    if (nextVar(boolVar,size)) { \
+    if(nextVar(boolVar,size)) { \
       /* try next set of values*/ \
       INFO(LOG_NONLIN_SYS," #### next STATE "); \
-      for (i = 0; i < size; i++) { \
+      for(i = 0; i < size; i++) { \
         *loc_ptrs[i] = *loc_prePtrs[i] != boolVar[i];  \
         int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
         const char *__name = data->modelData.booleanVarsData[ix].info.name; \
@@ -164,7 +164,7 @@ do { \
       } \
     } else  {\
       /* while the initialization it's okay not a solution */ \
-      if (!data->simulationInfo.initial){ \
+      if(!data->simulationInfo.initial){ \
         WARNING2(LOG_STDOUT, "Error solving hybrid equation system with index %d at time %e", index, data->localData[0]->timeValue); \
       } \
       data->simulationInfo.needToIterate = 1; \
@@ -173,10 +173,10 @@ do { \
     } \
   } \
   /* we found a solution*/ \
-  if (data->simulationInfo.found_solution == 1 && DEBUG_STREAM(LOG_NONLIN_SYS)){ \
+  if(data->simulationInfo.found_solution == 1 && DEBUG_STREAM(LOG_NONLIN_SYS)){ \
     int i = 0; \
     INFO1(LOG_NONLIN_SYS," #### SOLUTION FOUND! (system %d)", index); \
-    for (i = 0; i < size; i++) { \
+    for(i = 0; i < size; i++) { \
       int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
       const char *__name = data->modelData.booleanVarsData[ix].info.name; \
       INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, data->simulationInfo.booleanVarsPre[ix]); \

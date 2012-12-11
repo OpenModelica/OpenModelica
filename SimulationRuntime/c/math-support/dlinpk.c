@@ -93,11 +93,11 @@ static integer c__1 = 1;
     /* Function Body */
     *info = 0;
     nm1 = *n - 1;
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L70;
     }
     i__1 = nm1;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   kp1 = k + 1;
 
 /*        find l = pivot index */
@@ -108,13 +108,13 @@ static integer c__1 = 1;
 
 /*        zero pivot implies this column already triangularized */
 
-  if (a[l + k * a_dim1] == 0.) {
+  if(a[l + k * a_dim1] == 0.) {
       goto L40;
   }
 
 /*           interchange if necessary */
 
-  if (l == k) {
+  if(l == k) {
       goto L10;
   }
   t = a[l + k * a_dim1];
@@ -131,9 +131,9 @@ L10:
 /*           row elimination with column indexing */
 
   i__2 = *n;
-  for (j = kp1; j <= i__2; ++j) {
+  for(j = kp1; j <= i__2; ++j) {
       t = a[l + j * a_dim1];
-      if (l == k) {
+      if(l == k) {
     goto L20;
       }
       a[l + j * a_dim1] = a[k + j * a_dim1];
@@ -153,7 +153,7 @@ L50:
     }
 L70:
     ipvt[*n] = *n;
-    if (a[*n + *n * a_dim1] == 0.) {
+    if(a[*n + *n * a_dim1] == 0.) {
   *info = *n;
     }
     return 0;
@@ -212,7 +212,7 @@ L70:
 /*     to compute  inverse(a) * c  where  c  is a matrix */
 /*     with  p  columns */
 /*           call dgeco(a,lda,n,ipvt,rcond,z) */
-/*           if (rcond is too small) go to ... */
+/*           if(rcond is too small) go to ... */
 /*           do 10 j = 1, p */
 /*              call dgesl(a,lda,n,ipvt,c(1,j),0) */
 /*        10 continue */
@@ -236,21 +236,21 @@ L70:
 
     /* Function Body */
     nm1 = *n - 1;
-    if (*job != 0) {
+    if(*job != 0) {
   goto L50;
     }
 
 /*        job = 0 , solve  a * x = b */
 /*        first solve  l*y = b */
 
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L30;
     }
     i__1 = nm1;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   l = ipvt[k];
   t = b[l];
-  if (l == k) {
+  if(l == k) {
       goto L10;
   }
   b[l] = b[k];
@@ -265,7 +265,7 @@ L30:
 /*        now solve  u*x = y */
 
     i__1 = *n;
-    for (kb = 1; kb <= i__1; ++kb) {
+    for(kb = 1; kb <= i__1; ++kb) {
   k = *n + 1 - kb;
   b[k] /= a[k + k * a_dim1];
   t = -b[k];
@@ -280,7 +280,7 @@ L50:
 /*        first solve  trans(u)*y = b */
 
     i__1 = *n;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   i__2 = k - 1;
   t = _omc_internal_dlinpk_ddot_(&i__2, &a[k * a_dim1 + 1], &c__1, &b[1], &c__1);
   b[k] = (b[k] - t) / a[k + k * a_dim1];
@@ -289,16 +289,16 @@ L50:
 
 /*        now solve trans(l)*x = y */
 
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L90;
     }
     i__1 = nm1;
-    for (kb = 1; kb <= i__1; ++kb) {
+    for(kb = 1; kb <= i__1; ++kb) {
   k = *n - kb;
   i__2 = *n - k;
   b[k] += _omc_internal_dlinpk_ddot_(&i__2, &a[k + 1 + k * a_dim1], &c__1, &b[k + 1], &c__1);
   l = ipvt[k];
-  if (l == k) {
+  if(l == k) {
       goto L70;
   }
   t = b[l];
@@ -422,14 +422,14 @@ L100:
 
     j0 = *mu + 2;
     j1 = min(*n,m) - 1;
-    if (j1 < j0) {
+    if(j1 < j0) {
   goto L30;
     }
     i__1 = j1;
-    for (jz = j0; jz <= i__1; ++jz) {
+    for(jz = j0; jz <= i__1; ++jz) {
   i0 = m + 1 - jz;
   i__2 = *ml;
-  for (i__ = i0; i__ <= i__2; ++i__) {
+  for(i__ = i0; i__ <= i__2; ++i__) {
       abd[i__ + jz * abd_dim1] = 0.;
 /* L10: */
   }
@@ -442,24 +442,24 @@ L30:
 /*     gaussian elimination with partial pivoting */
 
     nm1 = *n - 1;
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L130;
     }
     i__1 = nm1;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   kp1 = k + 1;
 
 /*        zero next fill-in column */
 
   ++jz;
-  if (jz > *n) {
+  if(jz > *n) {
       goto L50;
   }
-  if (*ml < 1) {
+  if(*ml < 1) {
       goto L50;
   }
   i__2 = *ml;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       abd[i__ + jz * abd_dim1] = 0.;
 /* L40: */
   }
@@ -476,13 +476,13 @@ L50:
 
 /*        zero pivot implies this column already triangularized */
 
-  if (abd[l + k * abd_dim1] == 0.) {
+  if(abd[l + k * abd_dim1] == 0.) {
       goto L100;
   }
 
 /*           interchange if necessary */
 
-  if (l == m) {
+  if(l == m) {
       goto L60;
   }
   t = abd[l + k * abd_dim1];
@@ -503,15 +503,15 @@ L60:
   i__2 = max(i__3,i__4);
   ju = min(i__2,*n);
   mm = m;
-  if (ju < kp1) {
+  if(ju < kp1) {
       goto L90;
   }
   i__2 = ju;
-  for (j = kp1; j <= i__2; ++j) {
+  for(j = kp1; j <= i__2; ++j) {
       --l;
       --mm;
       t = abd[l + j * abd_dim1];
-      if (l == mm) {
+      if(l == mm) {
     goto L70;
       }
       abd[l + j * abd_dim1] = abd[mm + j * abd_dim1];
@@ -531,7 +531,7 @@ L110:
     }
 L130:
     ipvt[*n] = *n;
-    if (abd[m + *n * abd_dim1] == 0.) {
+    if(abd[m + *n * abd_dim1] == 0.) {
   *info = *n;
     }
     return 0;
@@ -596,7 +596,7 @@ L130:
 /*     to compute  inverse(a) * c  where  c  is a matrix */
 /*     with  p  columns */
 /*           call dgbco(abd,lda,n,ml,mu,ipvt,rcond,z) */
-/*           if (rcond is too small) go to ... */
+/*           if(rcond is too small) go to ... */
 /*           do 10 j = 1, p */
 /*              call dgbsl(abd,lda,n,ml,mu,ipvt,c(1,j),0) */
 /*        10 continue */
@@ -622,27 +622,27 @@ L130:
     /* Function Body */
     m = *mu + *ml + 1;
     nm1 = *n - 1;
-    if (*job != 0) {
+    if(*job != 0) {
   goto L50;
     }
 
 /*        job = 0 , solve  a * x = b */
 /*        first solve l*y = b */
 
-    if (*ml == 0) {
+    if(*ml == 0) {
   goto L30;
     }
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L30;
     }
     i__1 = nm1;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
 /* Computing MIN */
   i__2 = *ml, i__3 = *n - k;
   lm = min(i__2,i__3);
   l = ipvt[k];
   t = b[l];
-  if (l == k) {
+  if(l == k) {
       goto L10;
   }
   b[l] = b[k];
@@ -656,7 +656,7 @@ L30:
 /*        now solve  u*x = y */
 
     i__1 = *n;
-    for (kb = 1; kb <= i__1; ++kb) {
+    for(kb = 1; kb <= i__1; ++kb) {
   k = *n + 1 - kb;
   b[k] /= abd[m + k * abd_dim1];
   lm = min(k,m) - 1;
@@ -673,7 +673,7 @@ L50:
 /*        first solve  trans(u)*y = b */
 
     i__1 = *n;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   lm = min(k,m) - 1;
   la = m - lm;
   lb = k - lm;
@@ -684,14 +684,14 @@ L50:
 
 /*        now solve trans(l)*x = y */
 
-    if (*ml == 0) {
+    if(*ml == 0) {
   goto L90;
     }
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L90;
     }
     i__1 = nm1;
-    for (kb = 1; kb <= i__1; ++kb) {
+    for(kb = 1; kb <= i__1; ++kb) {
   k = *n - kb;
 /* Computing MIN */
   i__2 = *ml, i__3 = *n - k;
@@ -699,7 +699,7 @@ L50:
   b[k] += _omc_internal_dlinpk_ddot_(&lm, &abd[m + 1 + k * abd_dim1], &c__1, &b[k + 1], &
     c__1);
   l = ipvt[k];
-  if (l == k) {
+  if(l == k) {
       goto L70;
   }
   t = b[l];
@@ -734,13 +734,13 @@ L100:
     --dx;
 
     /* Function Body */
-    if (*n <= 0) {
+    if(*n <= 0) {
   return 0;
     }
-    if (*da == 0.) {
+    if(*da == 0.) {
   return 0;
     }
-    if (*incx == 1 && *incy == 1) {
+    if(*incx == 1 && *incy == 1) {
   goto L20;
     }
 
@@ -749,14 +749,14 @@ L100:
 
     ix = 1;
     iy = 1;
-    if (*incx < 0) {
+    if(*incx < 0) {
   ix = (-(*n) + 1) * *incx + 1;
     }
-    if (*incy < 0) {
+    if(*incy < 0) {
   iy = (-(*n) + 1) * *incy + 1;
     }
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   dy[iy] += *da * dx[ix];
   ix += *incx;
   iy += *incy;
@@ -771,21 +771,21 @@ L100:
 
 L20:
     m = *n % 4;
-    if (m == 0) {
+    if(m == 0) {
   goto L40;
     }
     i__1 = m;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   dy[i__] += *da * dx[i__];
 /* L30: */
     }
-    if (*n < 4) {
+    if(*n < 4) {
   return 0;
     }
 L40:
     mp1 = m + 1;
     i__1 = *n;
-    for (i__ = mp1; i__ <= i__1; i__ += 4) {
+    for(i__ = mp1; i__ <= i__1; i__ += 4) {
   dy[i__] += *da * dx[i__];
   dy[i__ + 1] += *da * dx[i__ + 1];
   dy[i__ + 2] += *da * dx[i__ + 2];
@@ -815,10 +815,10 @@ L40:
     --sx;
 
     /* Function Body */
-    if (*n <= 0) {
+    if(*n <= 0) {
   return 0;
     }
-    if (*incx == 1 && *incy == 1) {
+    if(*incx == 1 && *incy == 1) {
   goto L20;
     }
 
@@ -827,14 +827,14 @@ L40:
 
     ix = 1;
     iy = 1;
-    if (*incx < 0) {
+    if(*incx < 0) {
   ix = (-(*n) + 1) * *incx + 1;
     }
-    if (*incy < 0) {
+    if(*incy < 0) {
   iy = (-(*n) + 1) * *incy + 1;
     }
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   sy[iy] = sx[ix];
   ix += *incx;
   iy += *incy;
@@ -849,21 +849,21 @@ L40:
 
 L20:
     m = *n % 7;
-    if (m == 0) {
+    if(m == 0) {
   goto L40;
     }
     i__1 = m;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   sy[i__] = sx[i__];
 /* L30: */
     }
-    if (*n < 7) {
+    if(*n < 7) {
   return 0;
     }
 L40:
     mp1 = m + 1;
     i__1 = *n;
-    for (i__ = mp1; i__ <= i__1; i__ += 7) {
+    for(i__ = mp1; i__ <= i__1; i__ += 7) {
   sy[i__] = sx[i__];
   sy[i__ + 1] = sx[i__ + 1];
   sy[i__ + 2] = sx[i__ + 2];
@@ -895,10 +895,10 @@ L40:
     --dx;
 
     /* Function Body */
-    if (*n <= 0) {
+    if(*n <= 0) {
   return 0;
     }
-    if (*incx == 1) {
+    if(*incx == 1) {
   goto L20;
     }
 
@@ -907,7 +907,7 @@ L40:
     nincx = *n * *incx;
     i__1 = nincx;
     i__2 = *incx;
-    for (i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2) {
+    for(i__ = 1; i__2 < 0 ? i__ >= i__1 : i__ <= i__1; i__ += i__2) {
   dx[i__] = *da * dx[i__];
 /* L10: */
     }
@@ -920,21 +920,21 @@ L40:
 
 L20:
     m = *n % 5;
-    if (m == 0) {
+    if(m == 0) {
   goto L40;
     }
     i__2 = m;
-    for (i__ = 1; i__ <= i__2; ++i__) {
+    for(i__ = 1; i__ <= i__2; ++i__) {
   dx[i__] = *da * dx[i__];
 /* L30: */
     }
-    if (*n < 5) {
+    if(*n < 5) {
   return 0;
     }
 L40:
     mp1 = m + 1;
     i__2 = *n;
-    for (i__ = mp1; i__ <= i__2; i__ += 5) {
+    for(i__ = mp1; i__ <= i__2; i__ += 5) {
   dx[i__] = *da * dx[i__];
   dx[i__ + 1] = *da * dx[i__ + 1];
   dx[i__ + 2] = *da * dx[i__ + 2];
@@ -969,10 +969,10 @@ doublereal _omc_internal_dlinpk_ddot_(integer *n, doublereal *dx, integer *incx,
     /* Function Body */
     ret_val = 0.;
     dtemp = 0.;
-    if (*n <= 0) {
+    if(*n <= 0) {
   return ret_val;
     }
-    if (*incx == 1 && *incy == 1) {
+    if(*incx == 1 && *incy == 1) {
   goto L20;
     }
 
@@ -981,14 +981,14 @@ doublereal _omc_internal_dlinpk_ddot_(integer *n, doublereal *dx, integer *incx,
 
     ix = 1;
     iy = 1;
-    if (*incx < 0) {
+    if(*incx < 0) {
   ix = (-(*n) + 1) * *incx + 1;
     }
-    if (*incy < 0) {
+    if(*incy < 0) {
   iy = (-(*n) + 1) * *incy + 1;
     }
     i__1 = *n;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   dtemp += dx[ix] * dy[iy];
   ix += *incx;
   iy += *incy;
@@ -1004,21 +1004,21 @@ doublereal _omc_internal_dlinpk_ddot_(integer *n, doublereal *dx, integer *incx,
 
 L20:
     m = *n % 5;
-    if (m == 0) {
+    if(m == 0) {
   goto L40;
     }
     i__1 = m;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   dtemp += dx[i__] * dy[i__];
 /* L30: */
     }
-    if (*n < 5) {
+    if(*n < 5) {
   goto L60;
     }
 L40:
     mp1 = m + 1;
     i__1 = *n;
-    for (i__ = mp1; i__ <= i__1; i__ += 5) {
+    for(i__ = mp1; i__ <= i__1; i__ += 5) {
   dtemp = dtemp + dx[i__] * dy[i__] + dx[i__ + 1] * dy[i__ + 1] + dx[
     i__ + 2] * dy[i__ + 2] + dx[i__ + 3] * dy[i__ + 3] + dx[i__ +
     4] * dy[i__ + 4];
@@ -1103,7 +1103,7 @@ doublereal _omc_dnrm2_(integer *n, doublereal *dx, integer *incx)
 /*     data cutlo, cuthi / 8.232d-11,  1.304d19 / */
 /*     data cutlo, cuthi / 4.441e-16,  1.304e19 / */
 
-    if (*n > 0) {
+    if(*n > 0) {
   goto L10;
     }
     ret_val = zero;
@@ -1124,7 +1124,7 @@ L20:
   case 3: goto L110;
     }
 L30:
-    if ((d__1 = dx[i__], abs(d__1)) > cutlo) {
+    if((d__1 = dx[i__], abs(d__1)) > cutlo) {
   goto L85;
     }
     next = 1;
@@ -1134,10 +1134,10 @@ L30:
 /*                        phase 1.  sum is zero */
 
 L50:
-    if (dx[i__] == zero) {
+    if(dx[i__] == zero) {
   goto L200;
     }
-    if ((d__1 = dx[i__], abs(d__1)) > cutlo) {
+    if((d__1 = dx[i__], abs(d__1)) > cutlo) {
   goto L85;
     }
 
@@ -1161,7 +1161,7 @@ L105:
 /*                             scale to avoid destructive underflow. */
 
 L70:
-    if ((d__1 = dx[i__], abs(d__1)) > cutlo) {
+    if((d__1 = dx[i__], abs(d__1)) > cutlo) {
   goto L75;
     }
 
@@ -1169,7 +1169,7 @@ L70:
 /*                     in phase 4 sum is large.  scale to avoid overflow. */
 
 L110:
-    if ((d__1 = dx[i__], abs(d__1)) <= xmax) {
+    if((d__1 = dx[i__], abs(d__1)) <= xmax) {
   goto L115;
     }
 /* Computing 2nd power */
@@ -1201,8 +1201,8 @@ L85:
 
     i__1 = nn;
     i__2 = *incx;
-    for (j = i__; i__2 < 0 ? j >= i__1 : j <= i__1; j += i__2) {
-  if ((d__1 = dx[j], abs(d__1)) >= hitest) {
+    for(j = i__; i__2 < 0 ? j >= i__1 : j <= i__1; j += i__2) {
+  if((d__1 = dx[j], abs(d__1)) >= hitest) {
       goto L100;
   }
 /* L95: */
@@ -1215,7 +1215,7 @@ L85:
 
 L200:
     i__ += *incx;
-    if (i__ <= nn) {
+    if(i__ <= nn) {
   goto L20;
     }
 
@@ -1248,14 +1248,14 @@ integer _omc_internal_dlinpk_idamax_(integer *n, doublereal *dx, integer *incx)
 
     /* Function Body */
     ret_val = 0;
-    if (*n < 1) {
+    if(*n < 1) {
   return ret_val;
     }
     ret_val = 1;
-    if (*n == 1) {
+    if(*n == 1) {
   return ret_val;
     }
-    if (*incx == 1) {
+    if(*incx == 1) {
   goto L20;
     }
 
@@ -1265,8 +1265,8 @@ integer _omc_internal_dlinpk_idamax_(integer *n, doublereal *dx, integer *incx)
     dmax__ = abs(dx[1]);
     ix += *incx;
     i__1 = *n;
-    for (i__ = 2; i__ <= i__1; ++i__) {
-  if ((d__1 = dx[ix], abs(d__1)) <= dmax__) {
+    for(i__ = 2; i__ <= i__1; ++i__) {
+  if((d__1 = dx[ix], abs(d__1)) <= dmax__) {
       goto L5;
   }
   ret_val = i__;
@@ -1282,8 +1282,8 @@ L5:
 L20:
     dmax__ = abs(dx[1]);
     i__1 = *n;
-    for (i__ = 2; i__ <= i__1; ++i__) {
-  if ((d__1 = dx[i__], abs(d__1)) <= dmax__) {
+    for(i__ = 2; i__ <= i__1; ++i__) {
+  if((d__1 = dx[i__], abs(d__1)) <= dmax__) {
       goto L30;
   }
   ret_val = i__;

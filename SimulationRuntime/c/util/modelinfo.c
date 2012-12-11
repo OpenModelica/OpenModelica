@@ -47,7 +47,7 @@
 static size_t fileSize(const char *filename) {
   size_t sz = -1;
   FILE *f = fopen(filename, "rb");
-  if (f) {
+  if(f) {
     fseek(f, 0, SEEK_END);
     sz = ftell(f);
     fclose(f);
@@ -56,7 +56,7 @@ static size_t fileSize(const char *filename) {
 }
 
 static void indent(FILE *fout, int n) {
-  while (n--) fputc(' ', fout);
+  while(n--) fputc(' ', fout);
 }
 
 static void printPlotCommand(FILE *plt, const char *plotFormat, const char *title, const char *prefix, int numFnsAndBlocks, int i, int id, const char *idPrefix) {
@@ -64,7 +64,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   const char *formatCount = "plot \"%s_prof.data\" binary format=\"%%*uint32%%*2double%%%duint32%%*%ddouble\" using %d w l lw 1\n";
   unsigned long nmin = 0, nmax = 0;
   double ymin = 0.0, ymax = 0.0;
-  if (!plt) return;
+  if(!plt) return;
   /* PNG */
   fputs("set terminal png size 32,32\n", plt);
   fprintf(plt, "set output \"%s_prof.%s%d.thumb.png\"\n", prefix, idPrefix, id);
@@ -74,7 +74,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set log y\n");
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
   fprintf(plt, "set nolog xy\n");
-  if (i >= 0) {
+  if(i >= 0) {
     nmin = rt_ncall_min(SIM_TIMER_FIRST_FUNCTION + i);
     nmax = rt_ncall_max(SIM_TIMER_FIRST_FUNCTION + i);
     ymin = nmin==0 ? -0.01 : nmin*0.99;
@@ -100,7 +100,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
   fprintf(plt, "set log y\n");
   fprintf(plt, format, prefix, numFnsAndBlocks, numFnsAndBlocks, 3+i, 3+i);
   fprintf(plt, "set nolog xy\n");
-  if (i >= 0) {
+  if(i >= 0) {
     fprintf(plt, "set yrange [%f:%f]\n", ymin, ymax);
     fprintf(plt, "set xlabel \"Global step number\"\n");
     fprintf(plt, "set ylabel \"Execution count\"\n");
@@ -112,7 +112,7 @@ static void printPlotCommand(FILE *plt, const char *plotFormat, const char *titl
 
 static void printStrXML(FILE *fout, const char *str)
 {
-  while (*str) {
+  while(*str) {
   switch (*str) {
   case '<': fputs("&lt;",fout);break;
   case '>': fputs("&gt;",fout);break;
@@ -148,7 +148,7 @@ static void printVar(FILE *fout, int level, VAR_INFO* info) {
 
 static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const char *modelFilePrefix, DATA *data, const struct FUNCTION_INFO *funcs) {
   int i;
-  for (i=0; i<data->modelData.nFunctions; i++) {
+  for(i=0; i<data->modelData.nFunctions; i++) {
     printPlotCommand(plt, plotFormat, funcs[i].name, modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, funcs[i].id, "fun");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
     indent(fout,2);
@@ -165,7 +165,7 @@ static void printFunctions(FILE *fout, FILE *plt, const char *plotFormat, const 
 
 static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DATA *data) {
   int i;
-  for (i = data->modelData.nFunctions; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++) {
+  for(i = data->modelData.nFunctions; i < data->modelData.nFunctions + data->modelData.nProfileBlocks; i++) {
     const struct EQUATION_INFO *eq = &(data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i-data->modelData.nFunctions]]);
     printPlotCommand(plt, plotFormat, eq->name, data->modelData.modelFilePrefix, data->modelData.nFunctions+data->modelData.nProfileBlocks, i, eq->id, "eq");
     rt_clear(i + SIM_TIMER_FIRST_FUNCTION);
@@ -180,10 +180,10 @@ static void printProfileBlocks(FILE *fout, FILE *plt, const char *plotFormat, DA
 
 static void printEquations(FILE *fout, int n, EQUATION_INFO *eqns) {
   int i,j;
-  for (i=0; i<n; i++) {
+  for(i=0; i<n; i++) {
     indent(fout,2);fprintf(fout, "<equation id=\"eq%d\" name=\"", eqns[i].id);printStrXML(fout,eqns[i].name);fprintf(fout,"\">\n");
     indent(fout,4);fprintf(fout, "<refs>\n");
-    for (j=0; j<eqns[i].numVar; j++) {
+    for(j=0; j<eqns[i].numVar; j++) {
       indent(fout,6);fprintf(fout, "<ref refid=\"var%d\" />\n", eqns[i].vars[j]->id);
     }
     indent(fout,4);fprintf(fout, "</refs>\n");
@@ -205,19 +205,19 @@ static void printProfilingDataHeader(FILE *fout, DATA *data) {
   indent(fout, 4); fprintf(fout, "<uint32>step</uint32>\n");
   indent(fout, 4); fprintf(fout, "<double>time</double>\n");
   indent(fout, 4); fprintf(fout, "<double>cpu time</double>\n");
-  for (i = 0; i < data->modelData.nFunctions; i++) {
+  for(i = 0; i < data->modelData.nFunctions; i++) {
     const char *name = data->modelData.functionNames[i].name;
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
-  for (i = 0; i < data->modelData.nProfileBlocks; i++) {
+  for(i = 0; i < data->modelData.nProfileBlocks; i++) {
     const char *name = data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i]].name;
     indent(fout, 4); fprintf(fout, "<uint32>");printStrXML(fout,name);fprintf(fout, " (calls)</uint32>\n");
   }
-  for (i = 0; i < data->modelData.nFunctions; i++) {
+  for(i = 0; i < data->modelData.nFunctions; i++) {
     const char *name = data->modelData.functionNames[i].name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
-  for (i = 0; i < data->modelData.nProfileBlocks; i++) {
+  for(i = 0; i < data->modelData.nProfileBlocks; i++) {
     const char *name = data->modelData.equationInfo[data->modelData.equationInfo_reverse_prof_index[i]].name;
     indent(fout, 4); fprintf(fout, "<double>");printStrXML(fout,name);fprintf(fout, " (cpu time)</double>\n");
   }
@@ -241,7 +241,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   
   ASSERT2(fout, "Failed to open %s: %s\n", filename, strerror(errno));
 
-  if (plotCommands) {
+  if(plotCommands) {
     fputs("set terminal svg\n", plotCommands);
     fputs("set nokey\n", plotCommands);
     /* The column containing the time spent to calculate each step */
@@ -337,7 +337,7 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
   fprintf(fout, "</simulation>\n");
 
   fclose(fout);
-  if (plotCommands) {
+  if(plotCommands) {
     char *omhome = NULL;
     char *buf = NULL;
     int genHtmlRes;
@@ -345,23 +345,23 @@ int printModelInfo(DATA *data, const char *filename, const char *plotfile, const
     buf = (char*)malloc(230 + 2*strlen(plotfile) + 2*(omhome ? strlen(omhome) : 0));
     assert(buf);
 #if defined(__MINGW32__) || defined(_MSC_VER) || defined(NO_PIPE)
-    if (omhome) {
+    if(omhome) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
       sprintf(buf, "%s/lib/omc/libexec/gnuplot/binary/gnuplot.exe %s", omhome, plotfile);
 #else
       sprintf(buf, "gnuplot %s", plotfile);
 #endif
       fclose(plotCommands);
-      if (0 != system(buf)) {
+      if(0 != system(buf)) {
         WARNING1(LOG_UTIL, "Plot command failed: %s\n", buf);
       }
     }
 #else
-    if (0 != pclose(plotCommands)) {
+    if(0 != pclose(plotCommands)) {
       WARNING(LOG_UTIL, "Warning: Plot command failed\n");
     }
 #endif
-    if (omhome) {
+    if(omhome) {
 #if defined(__MINGW32__) || defined(_MSC_VER)
       char *xsltproc;
       sprintf(buf, "%s/lib/omc/libexec/xsltproc/xsltproc.exe", omhome);

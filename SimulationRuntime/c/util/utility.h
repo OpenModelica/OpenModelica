@@ -40,12 +40,12 @@ static inline int in_range_integer(modelica_integer i,
          modelica_integer start,
          modelica_integer stop)
 {
-  if (start <= stop) {
-      if ((i >= start) && (i <= stop)) {
+  if(start <= stop) {
+      if((i >= start) && (i <= stop)) {
           return 1;
       }
   } else {
-      if ((i >= stop) && (i <= start)) {
+      if((i >= stop) && (i <= start)) {
           return 1;
       }
   }
@@ -56,12 +56,12 @@ static inline int in_range_real(modelica_real i,
       modelica_real start,
       modelica_real stop)
 {
-  if (start <= stop) {
-      if ((i >= start) && (i <= stop)) {
+  if(start <= stop) {
+      if((i >= start) && (i <= stop)) {
           return 1;
       }
   } else {
-      if ((i >= stop) && (i <= start)) {
+      if((i >= stop) && (i <= start)) {
           return 1;
       }
   }

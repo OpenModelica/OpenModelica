@@ -59,10 +59,10 @@
 
     jl = 1;
     i__1 = nptm;
-    for (j = 2; j <= i__1; ++j) {
-  if (j == *idz) {
+    for(j = 2; j <= i__1; ++j) {
+  if(j == *idz) {
       jl = *idz;
-  } else if (zmat[*knew + j * zmat_dim1] != zero) {
+  } else if(zmat[*knew + j * zmat_dim1] != zero) {
 /* Computing 2nd power */
       d__1 = zmat[*knew + jl * zmat_dim1];
 /* Computing 2nd power */
@@ -71,7 +71,7 @@
       tempa = zmat[*knew + jl * zmat_dim1] / temp;
       tempb = zmat[*knew + j * zmat_dim1] / temp;
       i__2 = *npt;
-      for (i__ = 1; i__ <= i__2; ++i__) {
+      for(i__ = 1; i__ <= i__2; ++i__) {
     temp = tempa * zmat[i__ + jl * zmat_dim1] + tempb * zmat[i__
       + j * zmat_dim1];
     zmat[i__ + j * zmat_dim1] = tempa * zmat[i__ + j * zmat_dim1]
@@ -88,16 +88,16 @@
 /*     and calculate the parameters of the updating formula. */
 
     tempa = zmat[*knew + zmat_dim1];
-    if (*idz >= 2) {
+    if(*idz >= 2) {
   tempa = -tempa;
     }
-    if (jl > 1) {
+    if(jl > 1) {
   tempb = zmat[*knew + jl * zmat_dim1];
     }
     i__1 = *npt;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   w[i__] = tempa * zmat[i__ + zmat_dim1];
-  if (jl > 1) {
+  if(jl > 1) {
       w[i__] += tempb * zmat[i__ + jl * zmat_dim1];
   }
 /* L30: */
@@ -113,20 +113,20 @@
 /*     then the first column of ZMAT will be exchanged with another one later. */
 
     iflag = 0;
-    if (jl == 1) {
+    if(jl == 1) {
   temp = sqrt((abs(denom)));
   tempb = tempa / temp;
   tempa = tau / temp;
   i__1 = *npt;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
 /* L40: */
       zmat[i__ + zmat_dim1] = tempa * zmat[i__ + zmat_dim1] - tempb *
         vlag[i__];
   }
-  if (*idz == 1 && temp < zero) {
+  if(*idz == 1 && temp < zero) {
       *idz = 2;
   }
-  if (*idz >= 2 && temp >= zero) {
+  if(*idz >= 2 && temp >= zero) {
       iflag = 1;
   }
     } else {
@@ -134,7 +134,7 @@
 /*     Complete the updating of ZMAT in the alternative case. */
 
   ja = 1;
-  if (*beta >= zero) {
+  if(*beta >= zero) {
       ja = jl;
   }
   jb = jl + 1 - ja;
@@ -145,18 +145,18 @@
   scala = one / sqrt(abs(*beta) * temp * temp + tausq);
   scalb = scala * sqrt((abs(denom)));
   i__1 = *npt;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       zmat[i__ + ja * zmat_dim1] = scala * (tau * zmat[i__ + ja *
         zmat_dim1] - temp * vlag[i__]);
 /* L50: */
       zmat[i__ + jb * zmat_dim1] = scalb * (zmat[i__ + jb * zmat_dim1]
         - tempa * w[i__] - tempb * vlag[i__]);
   }
-  if (denom <= zero) {
-      if (*beta < zero) {
+  if(denom <= zero) {
+      if(*beta < zero) {
     ++(*idz);
       }
-      if (*beta >= zero) {
+      if(*beta >= zero) {
     iflag = 1;
       }
   }
@@ -165,10 +165,10 @@
 /*     IDZ is reduced in the following case, and usually the first column */
 /*     of ZMAT is exchanged with a later one. */
 
-    if (iflag == 1) {
+    if(iflag == 1) {
   --(*idz);
   i__1 = *npt;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       temp = zmat[i__ + zmat_dim1];
       zmat[i__ + zmat_dim1] = zmat[i__ + *idz * zmat_dim1];
 /* L60: */
@@ -179,16 +179,16 @@
 /*     Finally, update the matrix BMAT. */
 
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   jp = *npt + j;
   w[jp] = bmat[*knew + j * bmat_dim1];
   tempa = (alpha * vlag[jp] - tau * w[jp]) / denom;
   tempb = (-(*beta) * w[jp] - tau * vlag[jp]) / denom;
   i__2 = jp;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
       bmat[i__ + j * bmat_dim1] = bmat[i__ + j * bmat_dim1] + tempa *
         vlag[i__] + tempb * w[i__];
-      if (i__ > *npt) {
+      if(i__ > *npt) {
     bmat[jp + (i__ - *npt) * bmat_dim1] = bmat[i__ + j *
       bmat_dim1];
       }

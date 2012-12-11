@@ -85,7 +85,7 @@ modelica_string_const modelica_integer_to_modelica_string(modelica_integer i, mo
   char formatStr[40];
   char buf[400];
   formatStr[0]='%';
-  if (leftJustified) {
+  if(leftJustified) {
     sprintf(&formatStr[1],"-%dd",(int)minLen);
   } else {
     sprintf(&formatStr[1],"%dd",(int)minLen);
@@ -101,7 +101,7 @@ modelica_string_const modelica_real_to_modelica_string(modelica_real r,modelica_
   char formatStr[40];
   char buf[400];
   formatStr[0]='%';
-  if (leftJustified) {
+  if(leftJustified) {
     sprintf(&formatStr[1],"-%d.%dg",(int)minLen,(int)signDigits);
   } else {
     sprintf(&formatStr[1],"%d.%dg",(int)minLen,(int)signDigits);
@@ -114,7 +114,7 @@ modelica_string_const modelica_real_to_modelica_string(modelica_real r,modelica_
 
 modelica_string_const modelica_boolean_to_modelica_string(modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified)
 {
-  if (b) {
+  if(b) {
     return "true";
   } else {
     return "false";
@@ -134,7 +134,7 @@ modelica_string_const init_modelica_string(modelica_string_const str)
   int i;
   int length = strlen(str);
   modelica_string_t dest = alloc_modelica_string(length);
-  for (i = 0; i<length; ++i) {
+  for(i = 0; i<length; ++i) {
     dest[i] = str[i];
   }
   return dest;
@@ -181,7 +181,7 @@ modelica_string_const cat_modelica_string(modelica_string_const s1, modelica_str
 extern int omc__escapedStringLength(const char* str, int nl)
 {
   int i=0;
-  while (*str) {
+  while(*str) {
     switch (*str) {
       case '"':
       case '\\':
@@ -189,8 +189,8 @@ extern int omc__escapedStringLength(const char* str, int nl)
       case '\b':
       case '\f':
       case '\v': i++;
-      case '\r': i++; if (nl && str[1] == '\n') str++;
-      case '\n': i++; if (nl && str[1] == '\r') str++;
+      case '\r': i++; if(nl && str[1] == '\n') str++;
+      case '\n': i++; if(nl && str[1] == '\r') str++;
       default: i++;
     }
     str++;
@@ -208,9 +208,9 @@ extern char* omc__escapedString(const char* str, int nl)
   int i=0;
   len1 = strlen(str);
   len2 = omc__escapedStringLength(str,nl);
-  if (len1 == len2) return NULL;
+  if(len1 == len2) return NULL;
   res = (char*) malloc(len2+1);
-  while (*str) {
+  while(*str) {
     switch (*str) {
       case '"': res[i++] = '\\'; res[i++] = '"'; break;
       case '\\': res[i++] = '\\'; res[i++] = '\\'; break;
@@ -218,8 +218,8 @@ extern char* omc__escapedString(const char* str, int nl)
       case '\b': res[i++] = '\\'; res[i++] = 'b'; break;
       case '\f': res[i++] = '\\'; res[i++] = 'f'; break;
       case '\v': res[i++] = '\\'; res[i++] = 'v'; break;
-      case '\r': if (nl) {res[i++] = '\\'; res[i++] = 'n'; if (str[1] == '\n') str++;} else {res[i++] = *str;} break;
-      case '\n': if (nl) {res[i++] = '\\'; res[i++] = 'n'; if (str[1] == '\r') str++;} else {res[i++] = *str;} break;
+      case '\r': if(nl) {res[i++] = '\\'; res[i++] = 'n'; if(str[1] == '\n') str++;} else {res[i++] = *str;} break;
+      case '\n': if(nl) {res[i++] = '\\'; res[i++] = 'n'; if(str[1] == '\r') str++;} else {res[i++] = *str;} break;
       default: res[i++] = *str;
     }
     str++;

@@ -56,8 +56,8 @@ int read_csv_dataset_size(const char* filename)
   length = strlen(header.c_str());
 
   /* second line has to be a number */
-  while (length > 0) {
-    if (length != 0)
+  while(length > 0) {
+    if(length != 0)
       size+=1;
     getline(stream,header);
     length = strlen(header.c_str());
@@ -78,14 +78,14 @@ char** read_csv_variables(const char* filename)
   getline(stream,header);
   length = strlen(header.c_str());
 
-  for (int i = 0 ; i < length ; i++)
+  for(int i = 0 ; i < length ; i++)
   {
-    if (startReading)
+    if(startReading)
       variable.append(1,header[i]);
 
-    if (header[i] == '"') {
-      if (startReading) {
-        if (header[i+1] == ',') {
+    if(header[i] == '"') {
+      if(startReading) {
+        if(header[i+1] == ',') {
           startReading = false;
           variablesList.push_back(variable.erase((strlen(variable.c_str()) - 1), 1));
           variable.clear();
@@ -97,7 +97,7 @@ char** read_csv_variables(const char* filename)
   }
 
   char **res = (char**)malloc((1+variablesList.size())*sizeof(char));
-  for (unsigned int k = 0 ; k < variablesList.size(); k++)
+  for(unsigned int k = 0 ; k < variablesList.size(); k++)
   {
     res[k] = strdup(variablesList.at(k).c_str());
   }
@@ -124,20 +124,20 @@ double* read_csv_dataset(const char *filename, const char *var, int dimsize)
   getline(stream,header);
   length = strlen(header.c_str());
 
-  for (int i = 0 ; i < length ; i++)
+  for(int i = 0 ; i < length ; i++)
   {
-    if (startReading) {
-      if (header[i] != '"') {
+    if(startReading) {
+      if(header[i] != '"') {
         variable.append(1,header[i]);
         stringlen+=1;
       }
     }
 
-    if (header[i] == '"') {
-      if (startReading) {
-        if (header[i+1] == ',') {
+    if(header[i] == '"') {
+      if(startReading) {
+        if(header[i+1] == ',') {
           startReading = false;
-          if (strncmp(variable.c_str(),var,stringlen)==0) {
+          if(strncmp(variable.c_str(),var,stringlen)==0) {
             found = 1;
             break;
           }
@@ -150,16 +150,16 @@ double* read_csv_dataset(const char *filename, const char *var, int dimsize)
       }
     }
   }
-  if (found==0)
+  if(found==0)
   return NULL;
   /* collect data */
   getline(stream,header);
   length = strlen(header.c_str());
-  while (length > 0) {
-    for (int i = 0 ; i < length ; i++)
+  while(length > 0) {
+    for(int i = 0 ; i < length ; i++)
     {
-      if (header[i] == ',') {
-        if (datapos == varpos) {
+      if(header[i] == ',') {
+        if(datapos == varpos) {
           data.push_back(atof(value.c_str()));
           break;
         }
@@ -176,7 +176,7 @@ double* read_csv_dataset(const char *filename, const char *var, int dimsize)
   }
 
   double *res = (double*)malloc((data.size())*sizeof(double));
-  for (unsigned int k = 0 ; k < data.size(); k++)
+  for(unsigned int k = 0 ; k < data.size(); k++)
   {
     res[k] = data.at(k);
   }

@@ -45,7 +45,7 @@ void* push_memory_states(int maxThreads)
   void *res = current_states;
   current_states = malloc(maxThreads*sizeof(one_state));
   assert(current_states);
-  for (i=0; i<maxThreads; i++) {
+  for(i=0; i<maxThreads; i++) {
     current_states[i].buffer = (int**) malloc(sizeof(int*));
     current_states[i].buffer[0] = malloc(sizeof(int)*NR_ELEMENTS);
     current_states[i].nbuffers = 1;
@@ -57,7 +57,7 @@ void* push_memory_states(int maxThreads)
 
 void pop_memory_states(void* new_states)
 {
-  if (current_states != NULL)
+  if(current_states != NULL)
   {
     free(current_states[0].buffer[0]); /* TODO: Free all of them... */
     free(current_states[0].buffer);
@@ -68,7 +68,7 @@ void pop_memory_states(void* new_states)
 
 state get_memory_state(void)
 {
-  if (current_states == NULL)
+  if(current_states == NULL)
   {
     push_memory_states(1);
   }
@@ -92,7 +92,7 @@ void print_state(state s)
 
 void restore_memory_state(state restore_state)
 {
-  if (current_states == NULL)
+  if(current_states == NULL)
   {
     push_memory_states(1);
   }
@@ -112,8 +112,8 @@ void* alloc_elements(int ix, int n, int sz)
   start = current_states[ix].current_state.offset;
   nelem = ((n * sz)/sizeof(int)) + (((n * sz) % sizeof(int)) ? 1 : 0);
   assert(nelem <= NR_ELEMENTS);
-  if ((start + nelem) > NR_ELEMENTS) {
-    if (current_states[ix].nbuffers == (current_states[ix].current_state.buffer + 1)) {
+  if((start + nelem) > NR_ELEMENTS) {
+    if(current_states[ix].nbuffers == (current_states[ix].current_state.buffer + 1)) {
       /* We need to allocate another region */
       current_states[ix].buffer=realloc(current_states[ix].buffer,sizeof(int*)*current_states[ix].nbuffers);
       current_states[ix].buffer[current_states[ix].nbuffers]=malloc(sizeof(int)*NR_ELEMENTS);

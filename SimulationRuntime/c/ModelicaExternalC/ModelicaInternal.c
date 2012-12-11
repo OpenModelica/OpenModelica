@@ -141,8 +141,8 @@ typedef enum {
    void ModelicaConvertToUnixDirectorySeparator(char* string) {
       /* convert to Unix directory separators */
       char* c = string;
-      while ( *c ) {
-         if ( *c == '\\' )  {*c = '/';}
+      while( *c ) {
+         if( *c == '\\' )  {*c = '/';}
          c++;
       }
    };
@@ -150,8 +150,8 @@ typedef enum {
    void ModelicaConvertFromUnixDirectorySeparator(char* string) {
       /* convert from Unix directory separators */
       char* c = string;
-      while ( *c ) {
-         if ( *c == '/' )  {*c = '\\';}
+      while( *c ) {
+         if( *c == '/' )  {*c = '\\';}
          c++;
       }
    };
@@ -176,7 +176,7 @@ void ModelicaInternal_mkdir(const char* directoryName)
     ModelicaNotExistError("ModelicaInternal_mkdir");
 #endif
 
-    if (result != 0) {
+    if(result != 0) {
         ModelicaFormatError("Not possible to create new directory\n"
             "\"%s\":\n%s", directoryName, strerror(errno));
     }
@@ -196,7 +196,7 @@ void ModelicaInternal_rmdir(const char* directoryName)
     ModelicaNotExistError("ModelicaInternal_rmdir");
 #endif
 
-    if (result != 0) {
+    if(result != 0) {
         ModelicaFormatError("Not possible to remove directory\n"
             "\"%s\":\n%s", directoryName, strerror(errno));
     }
@@ -210,22 +210,22 @@ int ModelicaInternal_stat(const char* name)
 
 #if defined(_WIN32) && defined(_MSC_VER)
     struct _stat fileInfo;
-    if ( _stat(name, &fileInfo) != 0 ) {
+    if( _stat(name, &fileInfo) != 0 ) {
         type = FileType_NoFile;
-    } else if ( fileInfo.st_mode & S_IFREG ) {
+    } else if( fileInfo.st_mode & S_IFREG ) {
         type = FileType_RegularFile;
-    } else if ( fileInfo.st_mode & S_IFDIR ) {
+    } else if( fileInfo.st_mode & S_IFDIR ) {
         type = FileType_Directory;
     } else {
         type = FileType_SpecialFile;
     }
 #elif defined(_POSIX_) || defined(__GNUC__)
     struct stat fileInfo;
-    if ( stat(name, &fileInfo) != 0 ) {
+    if( stat(name, &fileInfo) != 0 ) {
         type = FileType_NoFile;
-    } else if ( S_ISREG(fileInfo.st_mode) ) {
+    } else if( S_ISREG(fileInfo.st_mode) ) {
         type = FileType_RegularFile;
-    } else if ( S_ISDIR(fileInfo.st_mode) ) {
+    } else if( S_ISDIR(fileInfo.st_mode) ) {
         type = FileType_Directory;
     } else {
         type = FileType_SpecialFile;
@@ -241,7 +241,7 @@ int ModelicaInternal_stat(const char* name)
 void ModelicaInternal_rename(const char* oldName, const char* newName) {
    /* Changes the name of a file or of a directory */
 
-   if ( rename(oldName, newName) != 0 ) {
+   if( rename(oldName, newName) != 0 ) {
       ModelicaFormatError("renaming \"%s\" to \"%s\" failed:\n%s",
                     oldName, newName, strerror(errno));
    }
@@ -250,7 +250,7 @@ void ModelicaInternal_rename(const char* oldName, const char* newName) {
 
 void ModelicaInternal_removeFile(const char* file) {
   /* Remove file. */
-  if ( remove(file) != 0 ) {
+  if( remove(file) != 0 ) {
      ModelicaFormatError("Not possible to remove file \"%s\":\n%s",
                    file, strerror(errno));
   }
@@ -274,19 +274,19 @@ void ModelicaInternal_copyFile(const char* oldFile, const char* newFile) {
 
   /* Check file existence */
      type = (ModelicaFileType) ModelicaInternal_stat(oldFile);
-     if ( type == FileType_NoFile ) {
+     if( type == FileType_NoFile ) {
         ModelicaFormatError("\"%s\" cannot be copied\nbecause it does not exist", oldFile);
         return;
-     } else if ( type == FileType_Directory ) {
+     } else if( type == FileType_Directory ) {
         ModelicaFormatError("\"%s\" cannot be copied\nbecause it is a directory", oldFile);
         return;
-     } else if ( type == FileType_SpecialFile ) {
+     } else if( type == FileType_SpecialFile ) {
         ModelicaFormatError("\"%s\" cannot be copied\n"
                       "because it is not a regular file", oldFile);
         return;
      }
      type = (ModelicaFileType) ModelicaInternal_stat(newFile);
-     if ( type != FileType_NoFile ) {
+     if( type != FileType_NoFile ) {
         ModelicaFormatError("\"%s\" cannot be copied\nbecause the target "
                       "\"%s\" exists", oldFile, newFile);
         return;
@@ -294,18 +294,18 @@ void ModelicaInternal_copyFile(const char* oldFile, const char* newFile) {
 
   /* Copy file */
      fpOld = fopen(oldFile, modeOld);
-     if ( fpOld == NULL ) {
+     if( fpOld == NULL ) {
         ModelicaFormatError("\"%s\" cannot be copied:\n%s", oldFile, strerror(errno));
         return;
      }
      fpNew = fopen(newFile, modeNew);
-     if ( fpNew == NULL ) {
+     if( fpNew == NULL ) {
         fclose(fpOld);
         ModelicaFormatError("\"%s\" cannot be copied to \"%s\":\n%s",
                       oldFile, newFile, strerror(errno));
         return;
      }
-     while ( (c = getc(fpOld)) != EOF ) putc(c, fpNew);
+     while( (c = getc(fpOld)) != EOF ) putc(c, fpNew);
      fclose(fpOld);
      fclose(fpNew);
 }
@@ -325,18 +325,18 @@ void ModelicaInternal_readDirectory(const char* directory, int nFiles,
 
      /* Open directory information inquiry */
         pdir = opendir(directory);
-        if ( pdir == NULL ) {
+        if( pdir == NULL ) {
            ModelicaFormatError("1: Not possible to get file names of \"%s\":\n%s",
                          directory, strerror(errno));
         }
 
      /* Read file and directory names and store them in vector "files" */
      errno = 0;
-     while ( (pinfo = readdir(pdir)) != NULL ) {
-        if ( (strcmp(pinfo->d_name, "." ) != 0) &&
+     while( (pinfo = readdir(pdir)) != NULL ) {
+        if( (strcmp(pinfo->d_name, "." ) != 0) &&
              (strcmp(pinfo->d_name, "..") != 0) ) {
            /* Check if enough space in "files" vector */
-              if ( iFiles >= nFiles ) {
+              if( iFiles >= nFiles ) {
                 closedir(pdir);
                 ModelicaFormatError("Not possible to get file names of \"%s\":\n"
                               "More files in this directory as reported by nFiles (= %i)",
@@ -345,10 +345,10 @@ void ModelicaInternal_readDirectory(const char* directory, int nFiles,
 
            /* Allocate Modelica memory for file/directory name and copy name */
               pName = ModelicaAllocateStringWithErrorReturn(strlen(pinfo->d_name));
-              if ( pName == NULL ) {
+              if( pName == NULL ) {
                 errnoTemp = errno;
                 closedir(pdir);
-                if ( errnoTemp == 0 ) {
+                if( errnoTemp == 0 ) {
                    ModelicaFormatError("Not possible to get file names of \"%s\":\n"
                                  "Not enough storage", directory);
                 } else {
@@ -364,7 +364,7 @@ void ModelicaInternal_readDirectory(const char* directory, int nFiles,
         };
      };
 
-     if ( errno != 0 ) {
+     if( errno != 0 ) {
         errnoTemp = errno;
         closedir(pdir);
         ModelicaFormatError("Not possible to get file names of \"%s\":\n%s",
@@ -373,14 +373,14 @@ void ModelicaInternal_readDirectory(const char* directory, int nFiles,
 
 
      /* Check, whether the whole "files" vector is filled and close inquiry */
-        if ( iFiles != nFiles) {
+        if( iFiles != nFiles) {
            closedir(pdir);
            ModelicaFormatError("Not possible to get file names of \"%s\":\n"
                          "Less files (= %d) found as defined by argument nNames (= %d)",
                          directory, iFiles, nFiles);
         }
 
-        if ( closedir(pdir) != 0 ) {
+        if( closedir(pdir) != 0 ) {
            ModelicaFormatError("Not possible to get file names of \"%s\":\n",
                          directory, strerror(errno));
         }
@@ -402,17 +402,17 @@ int ModelicaInternal_getNumberOfFiles(const char* directory) {
     DIR* pdir;
 
     pdir = opendir(directory);
-    if ( pdir == NULL ) goto ERROR;
+    if( pdir == NULL ) goto ERROR;
     errno = 0;
-    while ( (pinfo = readdir(pdir)) != NULL ) {
-        if ( (strcmp(pinfo->d_name, "." ) != 0) &&
+    while( (pinfo = readdir(pdir)) != NULL ) {
+        if( (strcmp(pinfo->d_name, "." ) != 0) &&
             (strcmp(pinfo->d_name, "..") != 0) ) {
             nFiles++;
         };
     };
     errnoTemp = errno;
     closedir(pdir);
-    if ( errnoTemp != 0 ) {errno = errnoTemp; goto ERROR;}
+    if( errnoTemp != 0 ) {errno = errnoTemp; goto ERROR;}
 
     return nFiles;
 
@@ -436,7 +436,7 @@ const char* ModelicaInternal_fullPathName(const char* name)
 
 #if defined(_WIN32)
     char* tempName = _fullpath(buffer, name, sizeof(buffer));
-    if (tempName == NULL) {
+    if(tempName == NULL) {
         ModelicaFormatError("Not possible to construct full path name of \"%s\"\n%s",
             name, strerror(errno));
         return "";
@@ -447,7 +447,7 @@ const char* ModelicaInternal_fullPathName(const char* name)
 #else
     /* No such system call in _POSIX_ available */
     char* cwd = getcwd(buffer, sizeof(buffer));
-    if (cwd == NULL) {
+    if(cwd == NULL) {
         ModelicaFormatError("Not possible to get current working directory:\n%s",
             strerror(errno));
     }
@@ -467,7 +467,7 @@ const char* ModelicaInternal_temporaryFileName()
     char* fullName;
 
     char* tempName = tmpnam(NULL);
-    if (tempName == NULL) {
+    if(tempName == NULL) {
         ModelicaFormatError("Not possible to get temporary filename\n%s", strerror(errno));
         return "";
     }
@@ -490,7 +490,7 @@ FILE* ModelicaStreams_openFileForReading(const char* fileName) {
 
    /* Open file */
       fp = fopen(fileName, "r");
-      if ( fp == NULL ) {
+      if( fp == NULL ) {
          ModelicaFormatError("Not possible to open file \"%s\" for reading:\n"
                              "%s\n", fileName, strerror(errno));
       }
@@ -503,14 +503,14 @@ FILE* ModelicaStreams_openFileForWriting(const char* fileName) {
       FILE* fp;
 
    /* Check fileName */
-      if ( strlen(fileName) == 0 ) {
+      if( strlen(fileName) == 0 ) {
          ModelicaError("fileName is an empty string.\n"
                        "Opening of file is aborted\n");
       }
 
    /* Open file */
       fp = fopen(fileName, "a");
-      if ( fp == NULL ) {
+      if( fp == NULL ) {
          ModelicaFormatError("Not possible to open file \"%s\" for writing:\n"
                              "%s\n", fileName, strerror(errno));
       }
@@ -527,14 +527,14 @@ void ModelicaStreams_closeFile(const char* fileName) {
 void ModelicaInternal_print(const char* string, const char* fileName) {
   /* Write string to terminal or to file */
 
-     if ( fileName[0] == '\0' ) {
+     if( fileName[0] == '\0' ) {
         /* Write string to terminal */
            ModelicaMessage(string);
      } else {
         /* Write string to file */
            FILE* fp = ModelicaStreams_openFileForWriting(fileName);
-           if ( fputs(string,fp) < 0 ) goto ERROR;
-           if ( fputs("\n",fp)   < 0 ) goto ERROR;
+           if( fputs(string,fp) < 0 ) goto ERROR;
+           if( fputs("\n",fp)   < 0 ) goto ERROR;
            fclose(fp);
            return;
 
@@ -556,12 +556,12 @@ int ModelicaInternal_countLines(const char* fileName)
     FILE* fp = ModelicaStreams_openFileForReading(fileName);
 
     /* Count number of lines */
-    while ((c = fgetc(fp)) != EOF) {
-        if (start_of_line) {
+    while((c = fgetc(fp)) != EOF) {
+        if(start_of_line) {
             nLines++;
             start_of_line = 0;
         }
-        if (c == '\n') start_of_line = 1;
+        if(c == '\n') start_of_line = 1;
     }
     fclose(fp);
     return nLines;
@@ -579,19 +579,19 @@ void ModelicaInternal_readFile(const char* fileName, const char* string[], size_
 
   /* Read data from file */
      iLines = 1;
-     while ( iLines <= nLines ) {
+     while( iLines <= nLines ) {
         /* Determine length of next line */
            offset  = ftell(fp);
            lineLen = 0;
            c = fgetc(fp);
-           while ( c != '\n' && c != EOF ) {
+           while( c != '\n' && c != EOF ) {
               lineLen++;
               c = fgetc(fp);
            }
 
         /* Allocate storage for next line */
            line = ModelicaAllocateStringWithErrorReturn(lineLen);
-           if ( line == NULL ) {
+           if( line == NULL ) {
               fclose(fp);
               ModelicaFormatError("Not enough memory to allocate string for reading line %i from file\n"
                                   "\"%s\".\n"
@@ -599,13 +599,13 @@ void ModelicaInternal_readFile(const char* fileName, const char* string[], size_
            }
 
         /* Read next line */
-           if ( fseek(fp, offset, SEEK_SET != 0) ) {
+           if( fseek(fp, offset, SEEK_SET != 0) ) {
               fclose(fp);
               ModelicaFormatError("Error when reading line %i from file\n\"%s\":\n"
                                   "%s\n", iLines, fileName, strerror(errno));
            };
            nc = ( iLines < nLines ? lineLen+1 : lineLen);
-           if ( fread(line, sizeof(char), nc, fp) != nc ) {
+           if( fread(line, sizeof(char), nc, fp) != nc ) {
               fclose(fp);
               ModelicaFormatError("Error when reading line %i from file\n\"%s\"\n",
                                   iLines, fileName);
@@ -626,35 +626,35 @@ const char* ModelicaInternal_readLine(const char* fileName, int lineNumber, int*
      size_t lineLen;
      size_t iLines;
      long   offset;
-     if (!fp) goto ERROR;
+     if(!fp) goto ERROR;
 
   /* Read upto line lineNumber-1 */
      iLines = 0;
      c = 1;
-     while ( iLines != (size_t) lineNumber-1 && c != EOF ) {
+     while( iLines != (size_t) lineNumber-1 && c != EOF ) {
         c = fgetc(fp);
-        while ( c != '\n' && c != EOF ) {
+        while( c != '\n' && c != EOF ) {
            c = fgetc(fp);
         }
         iLines++;
      }
-     if ( iLines != (size_t) lineNumber-1 ) goto END_OF_FILE;
+     if( iLines != (size_t) lineNumber-1 ) goto END_OF_FILE;
 
   /* Determine length of line lineNumber */
      offset  = ftell(fp);
      lineLen = 0;
      c = fgetc(fp);
-     while ( c != '\n' && c != EOF ) {
+     while( c != '\n' && c != EOF ) {
         lineLen++;
         c = fgetc(fp);
      }
-     if ( lineLen == 0 && c == EOF ) goto END_OF_FILE;
+     if( lineLen == 0 && c == EOF ) goto END_OF_FILE;
 
   /* Read line lineNumber */
      line = ModelicaAllocateStringWithErrorReturn(lineLen);
-     if ( line == NULL ) goto ERROR;
-     if ( fseek(fp, offset, SEEK_SET != 0) ) goto ERROR;
-     if ( fread(line, sizeof(char), lineLen, fp) != lineLen ) goto ERROR;
+     if( line == NULL ) goto ERROR;
+     if( fseek(fp, offset, SEEK_SET != 0) ) goto ERROR;
+     if( fread(line, sizeof(char), lineLen, fp) != lineLen ) goto ERROR;
      fclose(fp);
      line[lineLen] = '\0';
      *endOfFile = 0;
@@ -666,7 +666,7 @@ const char* ModelicaInternal_readLine(const char* fileName, int lineNumber, int*
                   line = ModelicaAllocateString(0);
                   return line;
 
-     ERROR      : if (fp) fclose(fp);
+     ERROR      : if(fp) fclose(fp);
                   ModelicaFormatError("Error when reading line %i from file\n\"%s\":\n%s",
                                       lineNumber, fileName, strerror(errno));
                   return "";
@@ -689,7 +689,7 @@ void ModelicaInternal_chdir(const char* directoryName)
     ModelicaNotExistError("ModelicaInternal_chdir");
 #endif
 
-    if (result != 0) {
+    if(result != 0) {
         ModelicaFormatError("Not possible to change current working directory to\n"
             "\"%s\":\n%s", directoryName, strerror(errno));
     }
@@ -710,7 +710,7 @@ const char* ModelicaInternal_getcwd(int dummy)
     cwd = "";
 #endif
 
-    if (cwd == NULL) {
+    if(cwd == NULL) {
         ModelicaFormatError("Not possible to get current working directory:\n%s",
             strerror(errno));
         cwd = "";
@@ -729,14 +729,14 @@ void ModelicaInternal_getenv(const char* name, int convertToSlash, char** conten
     char* value = getenv(name);
     char* result;
 
-    if (value == NULL) {
+    if(value == NULL) {
         result = ModelicaAllocateString(0);
         result[0] = '\0';
         *exist = 0;
     } else {
         result = ModelicaAllocateString(strlen(value));
         strcpy(result, value);
-        if ( convertToSlash == 1 ) ModelicaConvertToUnixDirectorySeparator(result);
+        if( convertToSlash == 1 ) ModelicaConvertToUnixDirectorySeparator(result);
         *exist = 1;
     }
     *content = result;
@@ -747,7 +747,7 @@ void ModelicaInternal_setenv(const char* name, const char* value, int convertFro
 {
 #if defined(_WIN32) || defined(_POSIX_)
     int valueStart;
-    if (strlen(name) + strlen(value) + 1 > sizeof(buffer)) {
+    if(strlen(name) + strlen(value) + 1 > sizeof(buffer)) {
         ModelicaFormatError("Environment variable\n"
             "\"%s\"=\"%s\"\n"
             "cannot be set, because the internal buffer\n"
@@ -760,18 +760,18 @@ void ModelicaInternal_setenv(const char* name, const char* value, int convertFro
     valueStart = strlen(buffer);
     strcat(buffer, value);
 
-    if ( convertFromSlash == 1 ) ModelicaConvertFromUnixDirectorySeparator(&buffer[valueStart]);
+    if( convertFromSlash == 1 ) ModelicaConvertFromUnixDirectorySeparator(&buffer[valueStart]);
 #endif
 
     /* Set environment variable */
 #if defined(_WIN32)
-    if (_putenv(buffer) != 0) {
+    if(_putenv(buffer) != 0) {
         ModelicaFormatError("Environment variable\n"
             "\"%s\"=\"%s\"\n"
             "cannot be set: %s", name, value, strerror(errno));
     }
 #elif defined(_POSIX_)
-    if (putenv(buffer) != 0) {
+    if(putenv(buffer) != 0) {
         ModelicaFormatError("Environment variable\n"
             "\"%s\"=\"%s\"\n"
             "cannot be set: %s", name, value, strerror(errno));

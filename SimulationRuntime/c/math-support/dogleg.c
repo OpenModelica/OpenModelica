@@ -115,29 +115,29 @@ static integer c__1 = 1;
 
     jj = *n * (*n + 1) / 2 + 1;
     i__1 = *n;
-    for (k = 1; k <= i__1; ++k) {
+    for(k = 1; k <= i__1; ++k) {
   j = *n - k + 1;
   jp1 = j + 1;
   jj -= k;
   l = jj + 1;
   sum = zero;
-  if (*n < jp1) {
+  if(*n < jp1) {
       goto L20;
   }
   i__2 = *n;
-  for (i__ = jp1; i__ <= i__2; ++i__) {
+  for(i__ = jp1; i__ <= i__2; ++i__) {
       sum += r__[l] * x[i__];
       ++l;
 /* L10: */
   }
 L20:
   temp = r__[jj];
-  if (temp != zero) {
+  if(temp != zero) {
       goto L40;
   }
   l = j;
   i__2 = j;
-  for (i__ = 1; i__ <= i__2; ++i__) {
+  for(i__ = 1; i__ <= i__2; ++i__) {
 /* Computing MAX */
       d__2 = temp, d__3 = (d__1 = r__[l], abs(d__1));
       temp = max(d__2,d__3);
@@ -145,7 +145,7 @@ L20:
 /* L30: */
   }
   temp = epsmch * temp;
-  if (temp == zero) {
+  if(temp == zero) {
       temp = epsmch;
   }
 L40:
@@ -156,13 +156,13 @@ L40:
 /*     test whether the gauss-newton direction is acceptable. */
 
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   wa1[j] = zero;
   wa2[j] = diag[j] * x[j];
 /* L60: */
     }
     qnorm = enorm_(n, &wa2[1]);
-    if (qnorm <= *delta) {
+    if(qnorm <= *delta) {
   goto L140;
     }
 
@@ -171,10 +171,10 @@ L40:
 
     l = 1;
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   temp = qtb[j];
   i__2 = *n;
-  for (i__ = j; i__ <= i__2; ++i__) {
+  for(i__ = j; i__ <= i__2; ++i__) {
       wa1[i__] += r__[l] * temp;
       ++l;
 /* L70: */
@@ -189,7 +189,7 @@ L40:
     gnorm = enorm_(n, &wa1[1]);
     sgnorm = zero;
     alpha = *delta / qnorm;
-    if (gnorm == zero) {
+    if(gnorm == zero) {
   goto L120;
     }
 
@@ -197,16 +197,16 @@ L40:
 /*     at which the quadratic is minimized. */
 
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   wa1[j] = wa1[j] / gnorm / diag[j];
 /* L90: */
     }
     l = 1;
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   sum = zero;
   i__2 = *n;
-  for (i__ = j; i__ <= i__2; ++i__) {
+  for(i__ = j; i__ <= i__2; ++i__) {
       sum += r__[l] * wa1[i__];
       ++l;
 /* L100: */
@@ -220,7 +220,7 @@ L40:
 /*     test whether the scaled gradient direction is acceptable. */
 
     alpha = zero;
-    if (sgnorm >= *delta) {
+    if(sgnorm >= *delta) {
   goto L120;
     }
 
@@ -250,7 +250,7 @@ L120:
 
     temp = (one - alpha) * min(sgnorm,*delta);
     i__1 = *n;
-    for (j = 1; j <= i__1; ++j) {
+    for(j = 1; j <= i__1; ++j) {
   x[j] = temp * wa1[j] + alpha * x[j];
 /* L130: */
     }

@@ -103,12 +103,12 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
 /*     .. */
 /*     .. Executable Statements .. */
 
-    if (first) {
+    if(first) {
   first = FALSE_;
   dlamc2_(&beta, &it, &lrnd, &eps, &imin, &rmin, &imax, &rmax);
   base = (doublereal) beta;
   t = (doublereal) it;
-  if (lrnd) {
+  if(lrnd) {
       rnd = 1.;
       i__1 = 1 - it;
       eps = pow_di(&base, &i__1) / 2;
@@ -122,7 +122,7 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
   emax = (doublereal) imax;
   sfmin = rmin;
   small = 1. / rmax;
-  if (small >= sfmin) {
+  if(small >= sfmin) {
 
 /*           Use SMALL plus a bit, to avoid the possibility of rounding */
 /*           causing overflow when computing  1/sfmin. */
@@ -131,25 +131,25 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
   }
     }
 
-    if (lsame_(cmach, "E", (ftnlen)1, (ftnlen)1)) {
+    if(lsame_(cmach, "E", (ftnlen)1, (ftnlen)1)) {
   rmach = eps;
-    } else if (lsame_(cmach, "S", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "S", (ftnlen)1, (ftnlen)1)) {
   rmach = sfmin;
-    } else if (lsame_(cmach, "B", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "B", (ftnlen)1, (ftnlen)1)) {
   rmach = base;
-    } else if (lsame_(cmach, "P", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "P", (ftnlen)1, (ftnlen)1)) {
   rmach = prec;
-    } else if (lsame_(cmach, "N", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "N", (ftnlen)1, (ftnlen)1)) {
   rmach = t;
-    } else if (lsame_(cmach, "R", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "R", (ftnlen)1, (ftnlen)1)) {
   rmach = rnd;
-    } else if (lsame_(cmach, "M", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "M", (ftnlen)1, (ftnlen)1)) {
   rmach = emin;
-    } else if (lsame_(cmach, "U", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "U", (ftnlen)1, (ftnlen)1)) {
   rmach = rmin;
-    } else if (lsame_(cmach, "L", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "L", (ftnlen)1, (ftnlen)1)) {
   rmach = emax;
-    } else if (lsame_(cmach, "O", (ftnlen)1, (ftnlen)1)) {
+    } else if(lsame_(cmach, "O", (ftnlen)1, (ftnlen)1)) {
   rmach = rmax;
     }
 
@@ -242,7 +242,7 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
 /*     .. */
 /*     .. Executable Statements .. */
 
-    if (first) {
+    if(first) {
   first = FALSE_;
   one = 1.;
 
@@ -263,7 +263,7 @@ doublereal dlamch_(char *cmach, ftnlen cmach_len)
 
 /* +       WHILE( C.EQ.ONE )LOOP */
 L10:
-  if (c__ == one) {
+  if(c__ == one) {
       a *= 2;
       c__ = dlamc3_(&a, &one);
       d__1 = -a;
@@ -282,7 +282,7 @@ L10:
 
 /* +       WHILE( C.EQ.A )LOOP */
 L20:
-  if (c__ == a) {
+  if(c__ == a) {
       b *= 2;
       c__ = dlamc3_(&a, &b);
       goto L20;
@@ -308,7 +308,7 @@ L20:
   d__2 = -b / 100;
   f = dlamc3_(&d__1, &d__2);
   c__ = dlamc3_(&f, &a);
-  if (c__ == a) {
+  if(c__ == a) {
       lrnd = TRUE_;
   } else {
       lrnd = FALSE_;
@@ -317,7 +317,7 @@ L20:
   d__2 = b / 100;
   f = dlamc3_(&d__1, &d__2);
   c__ = dlamc3_(&f, &a);
-  if (lrnd && c__ == a) {
+  if(lrnd && c__ == a) {
       lrnd = FALSE_;
   }
 
@@ -346,7 +346,7 @@ L20:
 
 /* +       WHILE( C.EQ.ONE )LOOP */
 L30:
-  if (c__ == one) {
+  if(c__ == one) {
       ++lt;
       a *= lbeta;
       c__ = dlamc3_(&a, &one);
@@ -497,7 +497,7 @@ L30:
 /*     .. */
 /*     .. Executable Statements .. */
 
-    if (first) {
+    if(first) {
   first = FALSE_;
   zero = 0.;
   one = 1.;
@@ -532,7 +532,7 @@ L30:
   b = dlamc3_(&third, &d__1);
   b = dlamc3_(&b, &sixth);
   b = abs(b);
-  if (b < leps) {
+  if(b < leps) {
       b = leps;
   }
 
@@ -540,7 +540,7 @@ L30:
 
 /* +       WHILE( ( LEPS.GT.B ).AND.( B.GT.ZERO ) )LOOP */
 L10:
-  if (leps > b && b > zero) {
+  if(leps > b && b > zero) {
       leps = b;
       d__1 = half * leps;
 /* Computing 5th power */
@@ -559,7 +559,7 @@ L10:
   }
 /* +       END WHILE */
 
-  if (a < leps) {
+  if(a < leps) {
       leps = a;
   }
 
@@ -571,7 +571,7 @@ L10:
 
   rbase = one / lbeta;
   small = one;
-  for (i__ = 1; i__ <= 3; ++i__) {
+  for(i__ = 1; i__ <= 3; ++i__) {
       d__1 = small * rbase;
       small = dlamc3_(&d__1, &zero);
 /* L20: */
@@ -585,12 +585,12 @@ L10:
   dlamc4_(&gnmin, &d__1, &lbeta);
   ieee = FALSE_;
 
-  if (ngpmin == ngnmin && gpmin == gnmin) {
-      if (ngpmin == gpmin) {
+  if(ngpmin == ngnmin && gpmin == gnmin) {
+      if(ngpmin == gpmin) {
     lemin = ngpmin;
 /*            ( Non twos-complement machines, no gradual underflow; */
 /*              e.g.,  VAX ) */
-      } else if (gpmin - ngpmin == 3) {
+      } else if(gpmin - ngpmin == 3) {
     lemin = ngpmin - 1 + lt;
     ieee = TRUE_;
 /*            ( Non twos-complement machines, with gradual underflow; */
@@ -601,8 +601,8 @@ L10:
     iwarn = TRUE_;
       }
 
-  } else if (ngpmin == gpmin && ngnmin == gnmin) {
-      if ((i__1 = ngpmin - ngnmin, abs(i__1)) == 1) {
+  } else if(ngpmin == gpmin && ngnmin == gnmin) {
+      if((i__1 = ngpmin - ngnmin, abs(i__1)) == 1) {
     lemin = max(ngpmin,ngnmin);
 /*            ( Twos-complement machines, no gradual underflow; */
 /*              e.g., CYBER 205 ) */
@@ -612,9 +612,9 @@ L10:
     iwarn = TRUE_;
       }
 
-  } else if ((i__1 = ngpmin - ngnmin, abs(i__1)) == 1 && gpmin == gnmin)
+  } else if((i__1 = ngpmin - ngnmin, abs(i__1)) == 1 && gpmin == gnmin)
      {
-      if (gpmin - min(ngpmin,ngnmin) == 3) {
+      if(gpmin - min(ngpmin,ngnmin) == 3) {
     lemin = max(ngpmin,ngnmin) - 1 + lt;
 /*            ( Twos-complement machines with gradual underflow; */
 /*              no known machine ) */
@@ -633,7 +633,7 @@ L10:
   }
 /* ** */
 /* Comment out this if block if EMIN is ok */
-  if (iwarn) {
+  if(iwarn) {
       first = TRUE_;
       s_wsfe(&io___58);
       do_fio(&c__1, (char *)&lemin, (ftnlen)sizeof(integer));
@@ -654,7 +654,7 @@ L10:
 
   lrmin = 1.;
   i__1 = 1 - lemin;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       d__1 = lrmin * rbase;
       lrmin = dlamc3_(&d__1, &zero);
 /* L30: */
@@ -788,7 +788,7 @@ doublereal dlamc3_(doublereal *a, doublereal *b)
 /* +    WHILE( ( C1.EQ.A ).AND.( C2.EQ.A ).AND. */
 /*    $       ( D1.EQ.A ).AND.( D2.EQ.A )      )LOOP */
 L10:
-    if (c1 == a && c2 == a && d1 == a && d2 == a) {
+    if(c1 == a && c2 == a && d1 == a && d2 == a) {
   --(*emin);
   a = b1;
   d__1 = a / *base;
@@ -797,7 +797,7 @@ L10:
   c1 = dlamc3_(&d__1, &zero);
   d1 = zero;
   i__1 = *base;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       d1 += b1;
 /* L20: */
   }
@@ -807,7 +807,7 @@ L10:
   c2 = dlamc3_(&d__1, &zero);
   d2 = zero;
   i__1 = *base;
-  for (i__ = 1; i__ <= i__1; ++i__) {
+  for(i__ = 1; i__ <= i__1; ++i__) {
       d2 += b2;
 /* L30: */
   }
@@ -904,12 +904,12 @@ L10:
     exbits = 1;
 L10:
     try__ = lexp << 1;
-    if (try__ <= -(*emin)) {
+    if(try__ <= -(*emin)) {
   lexp = try__;
   ++exbits;
   goto L10;
     }
-    if (lexp == -(*emin)) {
+    if(lexp == -(*emin)) {
   uexp = lexp;
     } else {
   uexp = try__;
@@ -920,7 +920,7 @@ L10:
 /*     than or equal to EMIN. EXBITS is the number of bits needed to */
 /*     store the exponent. */
 
-    if (uexp + *emin > -lexp - *emin) {
+    if(uexp + *emin > -lexp - *emin) {
   expsum = lexp << 1;
     } else {
   expsum = uexp << 1;
@@ -935,7 +935,7 @@ L10:
 /*     NBITS is the total number of bits needed to store a */
 /*     floating-point number. */
 
-    if (nbits % 2 == 1 && *beta == 2) {
+    if(nbits % 2 == 1 && *beta == 2) {
 
 /*        Either there are an odd number of bits used to store a */
 /*        floating-point number, which is unlikely, or some bits are */
@@ -951,7 +951,7 @@ L10:
   --(*emax);
     }
 
-    if (*ieee) {
+    if(*ieee) {
 
 /*        Assume we are on an IEEE machine which reserves one exponent */
 /*        for infinity and NaN. */
@@ -969,22 +969,22 @@ L10:
     z__ = *beta - 1.;
     y = 0.;
     i__1 = *p;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   z__ *= recbas;
-  if (y < 1.) {
+  if(y < 1.) {
       oldy = y;
   }
   y = dlamc3_(&y, &z__);
 /* L20: */
     }
-    if (y >= 1.) {
+    if(y >= 1.) {
   y = oldy;
     }
 
 /*     Now multiply by BETA**EMAX to get RMAX. */
 
     i__1 = *emax;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   d__1 = y * *beta;
   y = dlamc3_(&d__1, &c_b32);
 /* L30: */

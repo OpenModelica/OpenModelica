@@ -61,7 +61,7 @@ void updateDiscreteSystem(DATA *data)
   function_updateRelations(data, 1);
   storeRelations(data);
   updateHysteresis(data);
-  if (DEBUG_STREAM(LOG_EVENTS))
+  if(DEBUG_STREAM(LOG_EVENTS))
     printRelations(data);
 
   functionDAE(data);
@@ -74,16 +74,16 @@ void updateDiscreteSystem(DATA *data)
   discreteChanged = checkForDiscreteChanges(data);
   while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
-    if (data->simulationInfo.needToIterate)
+    if(data->simulationInfo.needToIterate)
       INFO(LOG_EVENTS, "| reinit() call. Iteration needed!");
-    if (relationChanged)
+    if(relationChanged)
       INFO(LOG_EVENTS,"| relations changed. Iteration needed.");
-    if (discreteChanged)
+    if(discreteChanged)
       INFO(LOG_EVENTS, "| discrete Variable changed. Iteration needed.");
 
     storePreValues(data);
     storeRelations(data);
-    if (DEBUG_STREAM(LOG_EVENTS))
+    if(DEBUG_STREAM(LOG_EVENTS))
       printRelations(data);
 
     functionDAE(data);
@@ -155,63 +155,67 @@ void copyStartValuestoInitValues(DATA *data)
  *
  *  \param [in]  [data]
  *  \param [in]  [ringSegment]
+ *  \param [in]  [stream]
  *
  *  \author wbraun
  */
-void printAllVars(DATA *data, int ringSegment)
+void printAllVars(DATA *data, int ringSegment, int stream)
 {
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
-  INFO2(LOG_STDOUT, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
-  INDENT(LOG_STDOUT);
+  INFO2(stream, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
+  INDENT(stream);
 
-  INFO(LOG_STDOUT, "states variables");
-  INDENT(LOG_STDOUT);
+  INFO(stream, "states variables");
+  INDENT(stream);
   for(i=0; i<mData->nStates; ++i)
   {
-    INFO3(LOG_STDOUT, "%ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO3(stream, "%ld: %s = %g", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  RELEASE(LOG_STDOUT);
+  RELEASE(stream);
 
-  INFO(LOG_STDOUT, "derivatives variables");
-  INDENT(LOG_STDOUT);
+  INFO(stream, "derivatives variables");
+  INDENT(stream);
   for(i=mData->nStates; i<2*mData->nStates; ++i)
   {
-    INFO3(LOG_STDOUT, "%ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO3(stream, "%ld: %s = %g", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  RELEASE(LOG_STDOUT);
+  RELEASE(stream);
 
-  INFO(LOG_STDOUT, "other real values");
-  INDENT(LOG_STDOUT);
-  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i){
-    INFO3(LOG_STDOUT, "%ld: %s = %.10e", i, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+  INFO(stream, "other real values");
+  INDENT(stream);
+  for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
+  {
+    INFO3(stream, "%ld: %s = %g", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
   }
-  RELEASE(LOG_STDOUT);
+  RELEASE(stream);
 
-  INFO(LOG_STDOUT, "integer variables");
-  INDENT(LOG_STDOUT);
-  for(i=0; i<mData->nVariablesInteger; ++i){
-    INFO3(LOG_STDOUT, "%ld: %s = %ld", i, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
+  INFO(stream, "integer variables");
+  INDENT(stream);
+  for(i=0; i<mData->nVariablesInteger; ++i)
+  {
+    INFO3(stream, "%ld: %s = %ld", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
   }
-  RELEASE(LOG_STDOUT);
+  RELEASE(stream);
 
-  INFO(LOG_STDOUT, "boolean variables");
-  INDENT(LOG_STDOUT);
-  for(i=0; i<mData->nVariablesBoolean; ++i){
-    INFO3(LOG_STDOUT, "%ld: %s = %s", i, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
+  INFO(stream, "boolean variables");
+  INDENT(stream);
+  for(i=0; i<mData->nVariablesBoolean; ++i)
+  {
+    INFO3(stream, "%ld: %s = %s", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
   }
-  RELEASE(LOG_STDOUT);
+  RELEASE(stream);
 
-  INFO(LOG_STDOUT, "string variables");
-  INDENT(LOG_STDOUT);
+  INFO(stream, "string variables");
+  INDENT(stream);
   for(i=0; i<mData->nVariablesString; ++i)
   {
-    INFO3(LOG_STDOUT, "%ld: %s = %s", i, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
+    INFO3(stream, "%ld: %s = %s", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
   }
-  RELEASE(LOG_STDOUT);
+  RELEASE(stream);
 
-  RELEASE(LOG_STDOUT);
+  RELEASE(stream);
 }
 
 
@@ -496,7 +500,7 @@ modelica_boolean checkRelations(DATA *data){
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
 
   for(i=0;i<mData->nRelations;++i){
-    if (sInfo->relationsPre[i] != sInfo->relations[i]){
+    if(sInfo->relationsPre[i] != sInfo->relations[i]){
       check = 1;
       break;
     }
@@ -594,7 +598,7 @@ void updateHysteresis(DATA* data){
  */
 double getNextSampleTimeFMU(DATA *data)
 {
-  if (data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
+  if(data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
   {
     return((data->simulationInfo.sampleTimes[data->simulationInfo.curSampleTimeIx]).events);
   }
@@ -618,7 +622,7 @@ void initializeDataStruc(DATA *data)
   /* RingBuffer */
   data->simulationData = 0;
   data->simulationData = allocRingBuffer(SIZERINGBUFFER, sizeof(SIMULATION_DATA));
-  if (!data->simulationData)
+  if(!data->simulationData)
   {
     THROW("Your memory is not strong enough for our Ringbuffer!");
   }
@@ -931,7 +935,7 @@ modelica_boolean GreaterEq(double a, double b)
 modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
     value = data->simulationInfo.mathEventsValuePre[index];
   } else{
     data->simulationInfo.mathEventsValuePre[index] = x;
@@ -952,7 +956,7 @@ modelica_integer _event_integer(modelica_real x, modelica_integer index, DATA *d
 modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
     value = data->simulationInfo.mathEventsValuePre[index];
   } else{
     data->simulationInfo.mathEventsValuePre[index] = x;
@@ -973,7 +977,7 @@ modelica_real _event_floor(modelica_real x, modelica_integer index, DATA *data)
 modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
 {
   modelica_real value;
-  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
     value = data->simulationInfo.mathEventsValuePre[index];
   } else{
     data->simulationInfo.mathEventsValuePre[index] = x;
@@ -994,7 +998,7 @@ modelica_real _event_ceil(modelica_real x, modelica_integer index, DATA *data)
 modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, modelica_integer index, DATA *data)
 {
   modelica_integer value1,value2;
-  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
     value1 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index];
     value2 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index+1];
   } else{
@@ -1018,7 +1022,7 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
 modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integer index, DATA *data)
 {
   modelica_real value1,value2;
-  if (data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
+  if(data->simulationInfo.discreteCall == 0 || data->simulationInfo.solveContinuous){
     value1 = data->simulationInfo.mathEventsValuePre[index];
     value2 = data->simulationInfo.mathEventsValuePre[index+1];
   } else{
@@ -1056,20 +1060,20 @@ modelica_boolean nextVar(modelica_boolean *b, int n) {
   int n1 = 0;
   int i;
   int last;
-  for (i = 0; i < n; i++){
-    if (b[i] == 1)
+  for(i = 0; i < n; i++){
+    if(b[i] == 1)
       n1++;
   }
   /*index of last element with "1"*/
   last = n - 1;
-  while (last >= 0 && !b[last])
+  while(last >= 0 && !b[last])
     last--;
-  if (n1 == n) /*exit - all combination were already generated*/
+  if(n1 == n) /*exit - all combination were already generated*/
     return 0;
-  else if (last == -1) { /* 0000 -> 1000 */
+  else if(last == -1) { /* 0000 -> 1000 */
     b[0] = 1;
     return 1;
-  } else if (last < n - 1) { /* e.g. 1010 -> 1001 */
+  } else if(last < n - 1) { /* e.g. 1010 -> 1001 */
     b[last] = 0;
     b[last + 1] = 1;
     return 1;
@@ -1077,29 +1081,29 @@ modelica_boolean nextVar(modelica_boolean *b, int n) {
     /*detect position of last ocurenc of sequence 10 */
     int ip = n - 2; /*actual position in array*/
     int nr1 = 1; /*count of "1"*/
-    while (ip >= 0) {
-      if (b[ip] && !b[ip + 1]) { /*we found*/
+    while(ip >= 0) {
+      if(b[ip] && !b[ip + 1]) { /*we found*/
         nr1++;
         break;
-      } else if (b[ip]) { /*we didn't find, but 1 - increase nr1*/
+      } else if(b[ip]) { /*we didn't find, but 1 - increase nr1*/
         nr1++;
         ip--;
       } else { /*we didnt't find, 0*/
         ip--;
       }
     }
-    if (ip >= 0) { /*e.g. 1001 -> 0110*/
+    if(ip >= 0) { /*e.g. 1001 -> 0110*/
       int pn = ip + nr1;
       b[ip] = 0;
-      for (i = ip + 1; i <= pn; i++)
+      for(i = ip + 1; i <= pn; i++)
         b[i] = 1;
-      for (i = pn + 1; i <= n - 1; i++)
+      for(i = pn + 1; i <= n - 1; i++)
         b[i] = 0;
       return 1;
     } else {
-      for (i = 0; i <= n1; i++)
+      for(i = 0; i <= n1; i++)
         b[i] = 1;
-      for (i = n1 + 1; i <= n - 1; i++)
+      for(i = n1 + 1; i <= n - 1; i++)
         b[i] = 0;
       return 1;
     }

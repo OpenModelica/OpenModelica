@@ -68,7 +68,7 @@ static rtclock_t *tick_tp  = default_tick_tp;
 static int rtclock_compare(rtclock_t,rtclock_t);
 
 static rtclock_t max_rtclock(rtclock_t t1, rtclock_t t2) {
-  if (rtclock_compare(t1,t2) < 0) return t2;
+  if(rtclock_compare(t1,t2) < 0) return t2;
   return t1;
 }
 
@@ -98,7 +98,7 @@ void rt_update_min_max_ncall(int ix) {
   unsigned long nmin = rt_clock_ncall_min[ix];
   unsigned long nmax = rt_clock_ncall_max[ix];
   unsigned long n = rt_clock_ncall[ix];
-  if (n == 0) return;
+  if(n == 0) return;
   rt_clock_ncall_min[ix] = nmin && nmin < n ? nmin : n;
   rt_clock_ncall_max[ix] = nmax > n ? nmax : n;
 }
@@ -128,7 +128,7 @@ static LARGE_INTEGER performance_frequency;
 
 void rt_tick(int ix) {
   static int init = 0;
-  if (!init) {
+  if(!init) {
     init = 1;
     QueryPerformanceFrequency(&performance_frequency);
   }
@@ -190,7 +190,7 @@ double rt_tock(int ix) {
   uint64_t tock_tp = mach_absolute_time();
   uint64_t nsec;
   static mach_timebase_info_data_t info = {0,0};
-  if (info.denom == 0)
+  if(info.denom == 0)
     mach_timebase_info(&info);
   uint64_t elapsednano = (tock_tp-tick_tp[ix]) * (info.numer / info.denom);
   return elapsednano * 1e-9;
@@ -221,7 +221,7 @@ void rt_accumulate(int ix) {
 
 double rtclock_value(uint64_t tp) {
   static mach_timebase_info_data_t info = {0,0};
-  if (info.denom == 0)
+  if(info.denom == 0)
     mach_timebase_info(&info);
   uint64_t elapsednano = tp * (info.numer / info.denom);
   return elapsednano * 1e-9;
@@ -273,7 +273,7 @@ void rt_accumulate(int ix) {
   clock_gettime(CLOCK_MONOTONIC, &tock_tp);
   acc_tp[ix].tv_sec  += tock_tp.tv_sec -tick_tp[ix].tv_sec;
   acc_tp[ix].tv_nsec += tock_tp.tv_nsec-tick_tp[ix].tv_nsec;
-  if (acc_tp[ix].tv_nsec >= 1e9) {
+  if(acc_tp[ix].tv_nsec >= 1e9) {
     acc_tp[ix].tv_sec++;
     acc_tp[ix].tv_nsec -= 1e9;
   }
@@ -284,7 +284,7 @@ static double rtclock_value(rtclock_t tp) {
 }
 
 int rtclock_compare(rtclock_t t1, rtclock_t t2) {
-  if (t1.tv_sec == t2.tv_sec) {
+  if(t1.tv_sec == t2.tv_sec) {
     return t1.tv_nsec-t2.tv_nsec;
   }
   return t1.tv_sec-t2.tv_sec;
@@ -294,7 +294,7 @@ int rtclock_compare(rtclock_t t1, rtclock_t t2) {
 
 void rt_init(int numTimers)
 {
-  if (numTimers < NUM_RT_CLOCKS) return; /* We already have more than we need statically allocated */
+  if(numTimers < NUM_RT_CLOCKS) return; /* We already have more than we need statically allocated */
   acc_tp = calloc(numTimers,sizeof(rtclock_t));
   max_tp = calloc(numTimers,sizeof(rtclock_t));
   total_tp = calloc(numTimers,sizeof(rtclock_t));

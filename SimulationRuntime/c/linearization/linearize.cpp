@@ -46,16 +46,16 @@ string array2string(double* array, int row, int col){
   ostringstream retVal(ostringstream::out);
   retVal.precision(16);
   int k;
-  for (i=0;i<row;i++){
+  for(i=0;i<row;i++){
     k = i;
-    for (j=0;j<col-1;j++){
+    for(j=0;j<col-1;j++){
       retVal << array[k] << ",";
       k += row;
     }
-    if (col > 0) {
+    if(col > 0) {
       retVal << array[k];
     }
-    if (!((i+1) == row) && !(col == 0)) {
+    if(!((i+1) == row) && !(col == 0)) {
       retVal << ";";
     }
   }
@@ -70,7 +70,7 @@ int functionJacA(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -91,7 +91,7 @@ int functionJacA(DATA* data, double* jac){
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+  if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
   {
     INFO(LOG_JAC,"Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -113,7 +113,7 @@ int functionJacB(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -134,7 +134,7 @@ int functionJacB(DATA* data, double* jac){
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+  if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -155,7 +155,7 @@ int functionJacC(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -173,7 +173,7 @@ int functionJacC(DATA* data, double* jac){
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+  if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -194,7 +194,7 @@ int functionJacD(DATA* data, double* jac){
   for(i=0; i < data->simulationInfo.analyticJacobians[index].sizeCols; i++)
   {
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 1.0;
-    if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+    if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
     {
       printf("Caluculate one col:\n");
       for(j=0;  j < data->simulationInfo.analyticJacobians[index].sizeCols;j++)
@@ -211,7 +211,7 @@ int functionJacD(DATA* data, double* jac){
 
     data->simulationInfo.analyticJacobians[index].seedVars[i] = 0.0;
   }
-  if (DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
+  if(DEBUG_STREAM((LOG_JAC | LOG_ENDJAC)))
   {
     INFO(LOG_JAC, "Print jac:");
     for(i=0;  i < data->simulationInfo.analyticJacobians[index].sizeRows;i++)
@@ -245,29 +245,29 @@ int linearize(DATA* data)
     ASSERT(matrixD,"Calloc");
 
     /* Determine Matrix A */
-    if (!initialAnalyticJacobianA(data)){
-      if (functionJacA(data, matrixA))
+    if(!initialAnalyticJacobianA(data)){
+      if(functionJacA(data, matrixA))
         THROW("Error, can not get Matrix A ");
     }
     strA = array2string(matrixA,size_A,size_A);
 
     /* Determine Matrix B */
-    if (!initialAnalyticJacobianB(data)){
-      if (functionJacB(data, matrixB))
+    if(!initialAnalyticJacobianB(data)){
+      if(functionJacB(data, matrixB))
         THROW("Error, can not get Matrix B ");
     }
     strB = array2string(matrixB,size_A,size_Inputs);
 
     /* Determine Matrix C */
-    if (!initialAnalyticJacobianC(data)){
-      if (functionJacC(data, matrixC))
+    if(!initialAnalyticJacobianC(data)){
+      if(functionJacC(data, matrixC))
         THROW("Error, can not get Matrix C ");
     }
     strC = array2string(matrixC,size_Outputs,size_A);
 
     /* Determine Matrix D */
-    if (!initialAnalyticJacobianD(data)){
-      if (functionJacD(data, matrixD))
+    if(!initialAnalyticJacobianD(data)){
+      if(functionJacD(data, matrixD))
         THROW("Error, can not get Matrix D ");
     }
     strD = array2string(matrixD,size_Outputs,size_Inputs);
@@ -297,7 +297,7 @@ int linearize(DATA* data)
     FILE *fout = fopen(filename.c_str(),"wb");
     ASSERT1(fout,"Cannot open File %s",filename.c_str());
     fprintf(fout, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
-    if (DEBUG_STREAM(LOG_STATS))
+    if(DEBUG_STREAM(LOG_STATS))
     INFO6(LOG_STATS, linear_model_frame, strX.c_str(), strU.c_str(), strA.c_str(), strB.c_str(), strC.c_str(), strD.c_str());
     fflush(fout);
     fclose(fout);

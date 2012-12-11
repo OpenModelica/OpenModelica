@@ -82,7 +82,7 @@ void puttype(const type_description *desc)
   case TYPE_DESC_TUPLE: {
       size_t e;
       fprintf(stderr, "TUPLE (%u):\n", (unsigned) desc->data.tuple.elements);
-      for (e = 0; e < desc->data.tuple.elements; ++e) {
+      for(e = 0; e < desc->data.tuple.elements; ++e) {
         fprintf(stderr, "\t");
         puttype(desc->data.tuple.element + e);
       }
@@ -91,14 +91,14 @@ void puttype(const type_description *desc)
   case TYPE_DESC_REAL_ARRAY: {
       int d;
       fprintf(stderr, "REAL ARRAY [%d] (", desc->data.real_array.ndims);
-      for (d = 0; d < desc->data.real_array.ndims; ++d) {
+      for(d = 0; d < desc->data.real_array.ndims; ++d) {
         fprintf(stderr, "%d, ", (int) desc->data.real_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
-      if (desc->data.real_array.ndims == 1) {
+      if(desc->data.real_array.ndims == 1) {
         int e;
         fprintf(stderr, "\t[");
-        for (e = 0; e < desc->data.real_array.dim_size[0]; ++e) {
+        for(e = 0; e < desc->data.real_array.dim_size[0]; ++e) {
           fprintf(stderr, "%g, ",
                   ((modelica_real *) desc->data.real_array.data)[e]);
         }
@@ -109,14 +109,14 @@ void puttype(const type_description *desc)
   case TYPE_DESC_INT_ARRAY: {
       int d;
       fprintf(stderr, "INT ARRAY [%d] (", desc->data.int_array.ndims);
-      for (d = 0; d < desc->data.int_array.ndims; ++d) {
+      for(d = 0; d < desc->data.int_array.ndims; ++d) {
         fprintf(stderr, "%d, ", (int) desc->data.int_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
-      if (desc->data.int_array.ndims == 1) {
+      if(desc->data.int_array.ndims == 1) {
         int e;
         fprintf(stderr, "\t[");
-        for (e = 0; e < desc->data.int_array.dim_size[0]; ++e) {
+        for(e = 0; e < desc->data.int_array.dim_size[0]; ++e) {
           fprintf(stderr, "%ld, ", ((modelica_integer *) desc->data.int_array.data)[e]);
         }
         fprintf(stderr, "]\n");
@@ -126,14 +126,14 @@ void puttype(const type_description *desc)
   case TYPE_DESC_BOOL_ARRAY: {
       int d;
       fprintf(stderr, "BOOL ARRAY [%d] (", desc->data.bool_array.ndims);
-      for (d = 0; d < desc->data.bool_array.ndims; ++d) {
+      for(d = 0; d < desc->data.bool_array.ndims; ++d) {
         fprintf(stderr, "%d, ", (int) desc->data.bool_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
-      if (desc->data.bool_array.ndims == 1) {
+      if(desc->data.bool_array.ndims == 1) {
         int e;
         fprintf(stderr, "\t[");
-        for (e = 0; e < desc->data.bool_array.dim_size[0]; ++e) {
+        for(e = 0; e < desc->data.bool_array.dim_size[0]; ++e) {
           fprintf(stderr, "%c, ",
                   ((modelica_boolean *) desc->data.bool_array.data)[e] ? 'T':'F');
         }
@@ -144,14 +144,14 @@ void puttype(const type_description *desc)
   case TYPE_DESC_STRING_ARRAY: {
       int d;
       fprintf(stderr, "STRING ARRAY [%d] (", desc->data.string_array.ndims);
-      for (d = 0; d < desc->data.string_array.ndims; ++d) {
+      for(d = 0; d < desc->data.string_array.ndims; ++d) {
         fprintf(stderr, "%d, ", (int) desc->data.string_array.dim_size[d]);
       }
       fprintf(stderr, ")\n");
-      if (desc->data.string_array.ndims == 1) {
+      if(desc->data.string_array.ndims == 1) {
         int e;
         fprintf(stderr, "\t[");
-        for (e = 0; e < desc->data.string_array.dim_size[0]; ++e) {
+        for(e = 0; e < desc->data.string_array.dim_size[0]; ++e) {
           fprintf(stderr, "%s, ",
                 ((modelica_string_t *) desc->data.string_array.data)[e]);
         }
@@ -168,12 +168,12 @@ void puttype(const type_description *desc)
   case TYPE_DESC_RECORD: {
       size_t i;
       fprintf(stderr, "RECORD: %s ", desc->data.record.record_name?desc->data.record.record_name:"[no name]");
-      if (!desc->data.record.elements) {
+      if(!desc->data.record.elements) {
         fprintf(stderr, "has no members!?\n");
       } else {
         fprintf(stderr, "has the following members:\n");
       }
-      for (i = 0; i < desc->data.record.elements; i++) {
+      for(i = 0; i < desc->data.record.elements; i++) {
         fprintf(stderr, "NAME: %s\n", desc->data.record.name[i]);
         puttype(&(desc->data.record.element[i]));
       }
@@ -214,37 +214,37 @@ void free_type_description(type_description *desc)
   case TYPE_DESC_BOOL:
     break;
   case TYPE_DESC_STRING:
-    if (desc->retval) {
+    if(desc->retval) {
       free((char*)desc->data.string);
     } else {
       free_modelica_string((char**)&(desc->data.string));
     }
     break;
   case TYPE_DESC_REAL_ARRAY:
-    if (desc->retval) {
+    if(desc->retval) {
       free(desc->data.real_array.dim_size);
       free(desc->data.real_array.data);
     }
     break;
   case TYPE_DESC_INT_ARRAY:
-    if (desc->retval) {
+    if(desc->retval) {
       free(desc->data.int_array.dim_size);
       free(desc->data.int_array.data);
     }
     break;
   case TYPE_DESC_BOOL_ARRAY:
-    if (desc->retval) {
+    if(desc->retval) {
       free(desc->data.bool_array.dim_size);
       free(desc->data.bool_array.data);
     }
     break;
   case TYPE_DESC_STRING_ARRAY:
-    if (desc->retval) {
+    if(desc->retval) {
       size_t i, cnt;
       cnt = string_array_nr_of_elements(&(desc->data.string_array));
-      for (i = 0; i < cnt; ++i) {
+      for(i = 0; i < cnt; ++i) {
         modelica_string_t s = ((modelica_string_t*)desc->data.string_array.data)[i];
-        if (s != NULL) {
+        if(s != NULL) {
           free(s);
         }
       }
@@ -255,10 +255,10 @@ void free_type_description(type_description *desc)
   case TYPE_DESC_TUPLE: {
       size_t i;
       type_description *e = desc->data.tuple.element;
-      for (i = 0; i < desc->data.tuple.elements; ++i, ++e) {
+      for(i = 0; i < desc->data.tuple.elements; ++i, ++e) {
         free_type_description(e);
       }
-      if (desc->data.tuple.elements > 0) {
+      if(desc->data.tuple.elements > 0) {
         free(desc->data.tuple.element);
       }
     }
@@ -272,11 +272,11 @@ void free_type_description(type_description *desc)
       size_t i;
       type_description *e = desc->data.record.element;
       /* char **n = desc->data.record.name; */
-      for (i = 0; i < desc->data.record.elements; i++, e++) {
+      for(i = 0; i < desc->data.record.elements; i++, e++) {
         free(desc->data.record.name[i]);
         free_type_description(e);
       }
-      if (desc->data.record.elements > 0) {
+      if(desc->data.record.elements > 0) {
         free(desc->data.record.element);
         free(desc->data.record.name);
       }
@@ -360,7 +360,7 @@ int read_integer_array(type_description **descptr, integer_array_t *arr)
     return 0;
   case TYPE_DESC_REAL_ARRAY:
     /* Empty arrays automaticly get to be real arrays */
-    if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
+    if(desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
       _index_t *dim_size = desc->data.real_array.dim_size;
       desc->type = TYPE_DESC_INT_ARRAY;
@@ -389,7 +389,7 @@ int read_boolean_array(type_description **descptr, boolean_array_t *arr)
     return 0;
   case TYPE_DESC_REAL_ARRAY:
     /* Empty arrays automaticly get to be real arrays */
-    if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
+    if(desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
       _index_t *dim_size = desc->data.real_array.dim_size;
       desc->type = TYPE_DESC_BOOL_ARRAY;
@@ -418,7 +418,7 @@ int read_string_array(type_description **descptr, string_array_t *arr)
     return 0;
   case TYPE_DESC_REAL_ARRAY:
     /* Empty arrays automaticly get to be real arrays */
-    if (desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
+    if(desc->data.real_array.dim_size[desc->data.real_array.ndims - 1] == 0) {
       int dims = desc->data.real_array.ndims;
       _index_t *dim_size = desc->data.real_array.dim_size;
       desc->type = TYPE_DESC_STRING_ARRAY;
@@ -440,7 +440,7 @@ int read_string_array(type_description **descptr, string_array_t *arr)
 
 void write_modelica_real(type_description *desc, const modelica_real *data)
 {
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_REAL;
@@ -449,7 +449,7 @@ void write_modelica_real(type_description *desc, const modelica_real *data)
 
 void write_modelica_integer(type_description *desc, const modelica_integer *data)
 {
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_INT;
@@ -458,7 +458,7 @@ void write_modelica_integer(type_description *desc, const modelica_integer *data
 
 void write_modelica_boolean(type_description *desc, const modelica_boolean *data)
 {
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_BOOL;
@@ -473,11 +473,11 @@ void write_noretcall(type_description *desc)
 void write_real_array(type_description *desc, const real_array_t *arr)
 {
   size_t nr_elements = 0;
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_REAL_ARRAY;
-  if (desc->retval) {
+  if(desc->retval) {
     /* Can't use memory pool for these */
     desc->data.real_array.ndims = arr->ndims;
     desc->data.real_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
@@ -494,11 +494,11 @@ void write_real_array(type_description *desc, const real_array_t *arr)
 void write_integer_array(type_description *desc, const integer_array_t *arr)
 {
   size_t nr_elements = 0;
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_INT_ARRAY;
-  if (desc->retval) {
+  if(desc->retval) {
     /* Can't use memory pool for these */
     desc->data.int_array.ndims = arr->ndims;
     desc->data.int_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
@@ -516,11 +516,11 @@ void write_integer_array(type_description *desc, const integer_array_t *arr)
 void write_boolean_array(type_description *desc, const boolean_array_t *arr)
 {
   size_t nr_elements = 0;
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_BOOL_ARRAY;
-  if (desc->retval) {
+  if(desc->retval) {
     /* Can't use memory pool for these */
     desc->data.bool_array.ndims = arr->ndims;
     desc->data.bool_array.dim_size = (_index_t*)malloc(sizeof(*(arr->dim_size)) * arr->ndims);
@@ -537,11 +537,11 @@ void write_boolean_array(type_description *desc, const boolean_array_t *arr)
 void write_string_array(type_description *desc, const string_array_t *arr)
 {
   size_t nr_elements = 0;
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_STRING_ARRAY;
-  if (desc->retval) {
+  if(desc->retval) {
     size_t i;
     modelica_string_t *dst = NULL, *src = NULL;
     desc->data.string_array.ndims = arr->ndims;
@@ -551,7 +551,7 @@ void write_string_array(type_description *desc, const string_array_t *arr)
     desc->data.string_array.data = malloc(sizeof(modelica_string)* nr_elements);
     dst = (modelica_string_t*)desc->data.string_array.data;
     src = (modelica_string_t*)arr->data;
-    for (i = 0; i < nr_elements; ++i) {
+    for(i = 0; i < nr_elements; ++i) {
       size_t len = modelica_string_length(*src);
       *dst = (modelica_string_t)malloc(len + 1);
       memcpy(*dst, *src, len + 1);
@@ -581,11 +581,11 @@ int read_modelica_string(type_description **descptr, modelica_string_t *str)
 void write_modelica_string(type_description *desc, modelica_string *str)
 {
   size_t len = 0;
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_STRING;
-  if (desc->retval) {
+  if(desc->retval) {
     /* Can't use memory pool */
     len = modelica_string_length(*str);
     desc->data.string = (modelica_string_const)malloc(len + 1);
@@ -612,7 +612,7 @@ int read_modelica_complex(type_description **descptr, modelica_complex *data)
 
 void write_modelica_complex(type_description *desc, const modelica_complex *data)
 {
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_COMPLEX;
@@ -638,7 +638,7 @@ int read_modelica_fnptr(type_description **descptr, modelica_fnptr *fn)
 
 void write_modelica_fnptr(type_description *desc, const modelica_fnptr *fn)
 {
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_FUNCTION;
@@ -674,7 +674,7 @@ int read_modelica_metatype(type_description **descptr, modelica_metatype *ut)
 
 void write_modelica_metatype(type_description *desc, const modelica_metatype *ut)
 {
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_MMC;
@@ -689,7 +689,7 @@ static int read_modelica_record_helper(type_description **descptr, va_list *arg)
   switch (desc->type) {
   case TYPE_DESC_RECORD:
     elem = desc->data.record.element;
-    for (e = 0; e < desc->data.record.elements; ++e) {
+    for(e = 0; e < desc->data.record.elements; ++e) {
       switch (elem->type) {
       case TYPE_DESC_NONE:
         return -1;
@@ -783,7 +783,7 @@ static void write_modelica_record_helper(type_description *desc, const void* rec
 {
   enum type_desc_e type;
   const struct record_description rec_desc = *((const struct record_description*) rec_desc_void);
-  if (desc->type != TYPE_DESC_NONE) {
+  if(desc->type != TYPE_DESC_NONE) {
     desc = add_tuple_item(desc);
   }
   desc->type = TYPE_DESC_RECORD;
@@ -792,7 +792,7 @@ static void write_modelica_record_helper(type_description *desc, const void* rec
   desc->data.record.name = NULL;
   desc->data.record.element = NULL;
   /* atleast small enums gets casted to ints */
-  while ((type = (enum type_desc_e) va_arg(*arg, int)) != TYPE_DESC_NONE) {
+  while((type = (enum type_desc_e) va_arg(*arg, int)) != TYPE_DESC_NONE) {
     type_description *elem;
     const char *name;
     size_t nlen;
@@ -881,7 +881,7 @@ static type_description *add_tuple_item(type_description *desc)
 {
   type_description *ret = NULL;
 
-  if (desc->type == TYPE_DESC_TUPLE) {
+  if(desc->type == TYPE_DESC_TUPLE) {
     desc->data.tuple.element = (struct type_desc_s*)realloc(desc->data.tuple.element,
                                        (desc->data.tuple.elements + 1)
                                        * sizeof(struct type_desc_s));

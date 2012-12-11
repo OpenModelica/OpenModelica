@@ -128,7 +128,7 @@ static integer c__3 = 3;
 
     l = jj;
     i__1 = *m;
-    for (i__ = *n; i__ <= i__1; ++i__) {
+    for(i__ = *n; i__ <= i__1; ++i__) {
   w[i__] = s[l];
   ++l;
 /* L10: */
@@ -138,22 +138,22 @@ static integer c__3 = 3;
 /*     in such a way that a spike is introduced into w. */
 
     nm1 = *n - 1;
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L70;
     }
     i__1 = nm1;
-    for (nmj = 1; nmj <= i__1; ++nmj) {
+    for(nmj = 1; nmj <= i__1; ++nmj) {
   j = *n - nmj;
   jj -= *m - j + 1;
   w[j] = zero;
-  if (v[j] == zero) {
+  if(v[j] == zero) {
       goto L50;
   }
 
 /*        determine a givens rotation which eliminates the */
 /*        j-th element of v. */
 
-  if ((d__1 = v[*n], abs(d__1)) >= (d__2 = v[j], abs(d__2))) {
+  if((d__1 = v[*n], abs(d__1)) >= (d__2 = v[j], abs(d__2))) {
       goto L20;
   }
   cotan = v[*n] / v[j];
@@ -162,7 +162,7 @@ static integer c__3 = 3;
   sin__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
   cos__ = sin__ * cotan;
   tau = one;
-  if (abs(cos__) * giant > one) {
+  if(abs(cos__) * giant > one) {
       tau = one / cos__;
   }
   goto L30;
@@ -185,7 +185,7 @@ L30:
 
   l = jj;
   i__2 = *m;
-  for (i__ = j; i__ <= i__2; ++i__) {
+  for(i__ = j; i__ <= i__2; ++i__) {
       temp = cos__ * s[l] - sin__ * w[i__];
       w[i__] = sin__ * s[l] + cos__ * w[i__];
       s[l] = temp;
@@ -201,7 +201,7 @@ L70:
 /*     add the spike from the rank 1 update to w. */
 
     i__1 = *m;
-    for (i__ = 1; i__ <= i__1; ++i__) {
+    for(i__ = 1; i__ <= i__1; ++i__) {
   w[i__] += v[*n] * u[i__];
 /* L80: */
     }
@@ -209,19 +209,19 @@ L70:
 /*     eliminate the spike. */
 
     *sing = FALSE_;
-    if (nm1 < 1) {
+    if(nm1 < 1) {
   goto L140;
     }
     i__1 = nm1;
-    for (j = 1; j <= i__1; ++j) {
-  if (w[j] == zero) {
+    for(j = 1; j <= i__1; ++j) {
+  if(w[j] == zero) {
       goto L120;
   }
 
 /*        determine a givens rotation which eliminates the */
 /*        j-th element of the spike. */
 
-  if ((d__1 = s[jj], abs(d__1)) >= (d__2 = w[j], abs(d__2))) {
+  if((d__1 = s[jj], abs(d__1)) >= (d__2 = w[j], abs(d__2))) {
       goto L90;
   }
   cotan = s[jj] / w[j];
@@ -230,7 +230,7 @@ L70:
   sin__ = p5 / sqrt(p25 + p25 * (d__1 * d__1));
   cos__ = sin__ * cotan;
   tau = one;
-  if (abs(cos__) * giant > one) {
+  if(abs(cos__) * giant > one) {
       tau = one / cos__;
   }
   goto L100;
@@ -247,7 +247,7 @@ L100:
 
   l = jj;
   i__2 = *m;
-  for (i__ = j; i__ <= i__2; ++i__) {
+  for(i__ = j; i__ <= i__2; ++i__) {
       temp = cos__ * s[l] + sin__ * w[i__];
       w[i__] = -sin__ * s[l] + cos__ * w[i__];
       s[l] = temp;
@@ -263,7 +263,7 @@ L120:
 
 /*        test for zero diagonal elements in the output s. */
 
-  if (s[jj] == zero) {
+  if(s[jj] == zero) {
       *sing = TRUE_;
   }
   jj += *m - j + 1;
@@ -275,12 +275,12 @@ L140:
 
     l = jj;
     i__1 = *m;
-    for (i__ = *n; i__ <= i__1; ++i__) {
+    for(i__ = *n; i__ <= i__1; ++i__) {
   s[l] = w[i__];
   ++l;
 /* L150: */
     }
-    if (s[jj] == zero) {
+    if(s[jj] == zero) {
   *sing = TRUE_;
     }
     return 0;
