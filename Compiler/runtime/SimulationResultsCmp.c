@@ -37,6 +37,8 @@
 
 #include "systemimpl.h"
 
+/* Size of the buffer for warnings and other messages */
+#define WARNINGBUFFSIZE 250
 
 typedef struct {
   double *data;
@@ -628,15 +630,15 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   }
   /* check if reftime is larger or equal time */
   res = mk_nil();
-  if (time.data[time.n] > timeref.data[timeref.n]) {
-    char buf[250];
+  if (time.data[time.n-1] > timeref.data[timeref.n-1]) {
+    char buf[WARNINGBUFFSIZE];
 #ifdef DEBUGOUTPUT
-    fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n],timeref.data[timeref.n]);
+    fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n-1],timeref.data[timeref.n-1]);
 #endif
     res = mk_cons(mk_scon("Reference file has not enough time points!\n"),res);
-    snprintf(buf,250,"Reffile[%d]=%f\n",timeref.n,timeref.data[timeref.n]);
+    snprintf(buf,WARNINGBUFFSIZE,"Reffile[%d]=%f\n",timeref.n,timeref.data[timeref.n-1]);
     res = mk_cons(mk_scon(buf),res);
-    snprintf(buf,250,"File[%d]=%f\n",time.n,time.data[time.n]);
+    snprintf(buf,WARNINGBUFFSIZE,"File[%d]=%f\n",time.n,time.data[time.n-1]);
     res = mk_cons(mk_scon(buf),res);
   }
   var1=NULL;

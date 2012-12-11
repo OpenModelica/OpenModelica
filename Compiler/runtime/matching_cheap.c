@@ -200,7 +200,8 @@ void sk_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
     int* match, int* row_match, int n, int m) {
   int i;
-
+  /* initialize seed */
+  srand(1);
   int* col_stack = (int*)malloc(n * sizeof(int));
   int* col_degrees = (int*)malloc(n * sizeof(int));
   memset(col_degrees, 0, n * sizeof(int));
