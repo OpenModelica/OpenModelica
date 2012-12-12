@@ -811,6 +811,7 @@ algorithm
       String msg;
     case (BackendDAE.VAR(varName=cr1),_,false,BackendDAE.VAR(varName=cr2),_,false,_,_,_,_,_)
       equation
+        checkEqualAlias(intEq(i1,i2),v1,negate,source);
         colum = iMT[i1];
         _ = arrayUpdate(iMT,i1,iIndex::colum);
         colum = iMT[i2];
@@ -836,11 +837,37 @@ algorithm
         crexp2 = Debug.bcallret1(negate,Expression.negate,crexp2,crexp2);
         msg = "Found Equation without time dependent variables ";
         msg = msg +& ExpressionDump.printExpStr(crexp1) +& " = " +& ExpressionDump.printExpStr(crexp2) +& "\n";
-        Error.addMessage(Error.INTERNAL_ERROR, {msg});       
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then 
         fail();
   end match;
 end generateSimpleContainter;
+
+protected function checkEqualAlias
+  input Boolean equal;
+  input BackendDAE.Var v;
+  input Boolean negate;
+  input DAE.ElementSource source;
+algorithm
+  _ := match(equal,v,negate,source)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp crexp1,crexp2;
+      String eqn_str,var_str;
+      Absyn.Info info;
+    case(false,_,_,_) then ();
+    case(true,BackendDAE.VAR(varName=cr),_,_)
+      equation
+        var_str = BackendDump.varString(v);
+        crexp1 = Expression.crefExp(cr);
+        crexp2 = Debug.bcallret1(negate,Expression.negate,crexp1,crexp1);
+        eqn_str = ExpressionDump.printExpStr(crexp1) +& " = " +& ExpressionDump.printExpStr(crexp2) +& "\n";        
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);        
+      then
+        fail();
+  end match;
+end checkEqualAlias;
 
 protected function timeIndependentEquationAcausal
 "function timeIndependentEquationAcausal
