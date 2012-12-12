@@ -61,11 +61,12 @@ void updateDiscreteSystem(DATA *data)
   function_updateRelations(data, 1);
   storeRelations(data);
   updateHysteresis(data);
+
   if(DEBUG_STREAM(LOG_EVENTS))
     printRelations(data);
 
   functionDAE(data);
-  INFO(LOG_EVENTS, "updated discrete System.");
+  INFO(LOG_EVENTS, "updated discrete System");
 
   if(DEBUG_STREAM(LOG_EVENTS))
     printRelations(data);
@@ -75,11 +76,11 @@ void updateDiscreteSystem(DATA *data)
   while(discreteChanged || data->simulationInfo.needToIterate || relationChanged)
   {
     if(data->simulationInfo.needToIterate)
-      INFO(LOG_EVENTS, "| reinit() call. Iteration needed!");
+      INFO(LOG_EVENTS, "reinit() call. Iteration needed!");
     if(relationChanged)
-      INFO(LOG_EVENTS,"| relations changed. Iteration needed.");
+      INFO(LOG_EVENTS,"relations changed. Iteration needed.");
     if(discreteChanged)
-      INFO(LOG_EVENTS, "| discrete Variable changed. Iteration needed.");
+      INFO(LOG_EVENTS, "discrete Variable changed. Iteration needed.");
 
     storePreValues(data);
     storeRelations(data);
@@ -295,13 +296,13 @@ void printRelations(DATA *data)
 {
   long i;
 
-  INFO(LOG_STDOUT, "Status of relations:");
-  INDENT(LOG_STDOUT);
+  INFO(LOG_EVENTS, "status of relations");
+  INDENT(LOG_EVENTS);
+
   for(i=0; i<data->modelData.nRelations; i++)
-  {
-    INFO5(LOG_STDOUT, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
-  }
-  RELEASE(LOG_STDOUT);
+    INFO5(LOG_EVENTS, "[%ld] %s = %c | pre(%s) = %c", i, relationDescription[i], data->simulationInfo.relations[i] ? 'T' : 'F', relationDescription[i], data->simulationInfo.relationsPre[i] ? 'T' : 'F');
+
+  RELEASE(LOG_EVENTS);
 }
 
 /*! \fn overwriteOldSimulationData

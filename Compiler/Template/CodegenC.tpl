@@ -1227,13 +1227,14 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   
   int functionODE(DATA *data)
   {
-    int id,th_id;
+    int id, th_id;
     state mem_state; /* We need to have separate memory pools for separate systems... */
     mem_state = get_memory_state();
     
     data->simulationInfo.discreteCall = 0;
     <% if Flags.isSet(Flags.OPENMP) then '#pragma omp parallel for private(id,th_id) schedule(<%match noProc() case 0 then "dynamic" else "static"%>)' %>
-    for (id=0; id<<%nFuncs%>; id++) {
+    for(id=0; id<<%nFuncs%>; id++)
+    {
       th_id = omp_get_thread_num();
       functionODE_systems[id](data,th_id);
     }
@@ -1249,8 +1250,10 @@ template functionODE(list<list<SimEqSystem>> derivativEquations, Text method)
   case "inline-euler"
   case "inline-rungekutta" then
   <<
-  // we need to access the inline define that we compiled the simulation with
-  // from the simulation runtime.
+  /* 
+   * we need to access the inline define that we compiled the simulation with
+   * from the simulation runtime.
+   */
   int functionODE_inline(DATA* data, double stepSize)
   {
     state mem_state;
@@ -1292,7 +1295,7 @@ template functionAlgebraic(list<SimEqSystem> algebraicEquations)
   {
     state mem_state;
     <%varDecls%>
-   data->simulationInfo.discreteCall = 0;
+    data->simulationInfo.discreteCall = 0;
     mem_state = get_memory_state();
     <%algEquations%>
     restore_memory_state(mem_state);
@@ -1507,9 +1510,12 @@ template functionRelations(list<ZeroCrossing> relations) "template functionRelat
     <%varDecls%>
   
     mem_state = get_memory_state();
-    if (evalforZeroCross){
+    if(evalforZeroCross)
+    {
       <%relationsCode%>
-    } else {
+    }
+    else
+    {
       <%relationsCodeElse%>
     }
     restore_memory_state(mem_state);
@@ -1553,7 +1559,13 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "
     match var
     case CREF_QUAL(__)
     case CREF_IDENT(__) then
-      'if(<%cref(var)%> != $P$PRE<%cref(var)%>) {INFO2(LOG_EVENTS, "| events | | Discrete Var <%crefStr(var)%> changed:  <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>); needToIterate=1;}'
+      <<
+      if(<%cref(var)%> != $P$PRE<%cref(var)%>)
+      {
+        INFO2(LOG_EVENTS, "discrete var changed: <%crefStr(var)%> from <%crefToPrintfArg(var)%> to <%crefToPrintfArg(var)%>", $P$PRE<%cref(var)%>, <%cref(var)%>);
+        needToIterate = 1;
+      }
+      >>
       ;separator="\n")
 
   <<
@@ -1561,7 +1573,10 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) "
   {
     int needToIterate = 0;
     
+    INFO(LOG_EVENTS, "check for discrete changes");
+    INDENT(LOG_EVENTS);
     <%changediscreteVars%>
+    RELEASE(LOG_EVENTS);
     
     return needToIterate;
   }
