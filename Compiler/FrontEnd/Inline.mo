@@ -1426,14 +1426,14 @@ algorithm
       equation
         true = DAEUtil.convertInlineTypeToBool(inlineType);
         true = checkInlineType(inlineType,fns);
-        (fn,comment) = getFunctionBody(p,fns);  
+        (fn,comment) = getFunctionBody(p,fns);
         // get inputs, body and output
         (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
-        // merge statements to one line 
+        // merge statements to one line
         repl = mergeFunctionBody(stmts,repl);
         newExp = VarTransform.getReplacement(repl,cr);
         argmap = List.threadTuple(crefs,args);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());        
+        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
         // add noEvent to avoid events as usually for functions
@@ -1503,7 +1503,7 @@ algorithm
       equation
         false = Config.acceptMetaModelicaGrammar();
         true = checkInlineType(inlineType,fns);
-        (fn,comment) = getFunctionBody(p,fns);  
+        (fn,comment) = getFunctionBody(p,fns);
         // get inputs, body and output
         (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
         // merge statements to one line 
@@ -1519,9 +1519,9 @@ algorithm
         newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
         ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
-        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));        
+        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
       then
-        ((newExp1,(fns,true)));        
+        ((newExp1,(fns,true)));
     else inTuple;
   end matchcontinue;
 end forceInlineCall;
