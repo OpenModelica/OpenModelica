@@ -471,13 +471,6 @@ public
 type MatchingOptions = tuple<IndexReduction, EquationConstraints> "- Matching Options" ;
 
 public
-uniontype DAEHandlerJop
-  record STARTSTEP end STARTSTEP;
-  record REDUCE_INDEX end REDUCE_INDEX;
-  record ENDSTEP end ENDSTEP;
-end DAEHandlerJop;
-
-public
 type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations,array<list<Integer>>,array<Integer>,Integer> "StateOrder,ConstraintEqns,Eqn->EqnsIndxes,EqnIndex->Eqns,NrOfEqnsbeforeIndexReduction";
 
 
