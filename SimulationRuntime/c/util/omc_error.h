@@ -55,6 +55,7 @@ extern void (*omc_assert)(const char*, FILE_INFO);
 extern void (*omc_assert_warning)(const char*, FILE_INFO);
 extern void (*omc_terminate)(const char*, FILE_INFO);
 extern void (*omc_throw)();
+void initDumpSystem();
 void omc_assert_function(const char *msg, FILE_INFO info);
 void omc_assert_warning_function(const char *msg, FILE_INFO info);
 void omc_terminate_function(const char *msg, FILE_INFO info);
@@ -90,6 +91,7 @@ enum LOG_STREAM
 };
 extern const char *LOG_STREAM_NAME[LOG_MAX];
 extern const char *LOG_STREAM_DESC[LOG_MAX];
+extern const char *LOG_STREAM_DETAILED_DESC[LOG_MAX];
 
 enum LOG_TYPE
 {

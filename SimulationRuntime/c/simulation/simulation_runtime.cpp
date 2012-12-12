@@ -147,8 +147,9 @@ void setTermMsg(const char *msg)
  */
 void setGlobalVerboseLevel(int argc, char**argv)
 {
-  const string * flags = getFlagValue("lv", argc, argv);
+  const string *flags = getFlagValue("lv", argc, argv);
   int i;
+  int error = 0;
 
   if(!flags)
   {
@@ -160,19 +161,42 @@ void setGlobalVerboseLevel(int argc, char**argv)
 
   if(flags->find("LOG_ALL", 0) != string::npos)
   {
-    for(i=0; i<LOG_MAX; ++i)
+    for(i=1; i<LOG_MAX; ++i)
       useStream[i] = 1;
   }
   else
   {
-    for(i=0; i<LOG_MAX; ++i)
+    string flagList = *flags;
+    string flag;
+    unsigned long pos;
+    int localError;
+
+    do
     {
-      if(flags->find(LOG_STREAM_NAME[i], 0) != string::npos)
-        useStream[i] = 1;
+      localError = 1;
+      pos = flagList.find(",", 0);
+      if(pos != string::npos)
+      {
+        flag = flagList.substr(0, pos);
+        flagList = flagList.substr(pos+1);
+      }
       else
-        useStream[i] = 0;
-    }
+        flag = flagList;
+
+      for(i=1; i<LOG_MAX; ++i)
+      {
+        if(flag == string(LOG_STREAM_NAME[i]))
+        {
+          useStream[i] = 1;
+          localError = 0;
+        }
+      }
+
+      if(localError)
+        error = 1;
+    }while(pos != string::npos);
   }
+
   /* default activated */
   useStream[LOG_STDOUT] = 1;
   useStream[LOG_ASSERT] = 1;
@@ -184,6 +208,17 @@ void setGlobalVerboseLevel(int argc, char**argv)
   /* print states if LOG_SOLVER if active */
   if(useStream[LOG_SOLVER] == 1)
     useStream[LOG_STATS] = 1;
+
+  if(error)
+  {
+    WARNING1(LOG_STDOUT, "unrecognized option -lv %s", flags->c_str());
+    WARNING(LOG_STDOUT, "current options are:");
+    INDENT(LOG_STDOUT);
+    for(i=1; i<LOG_MAX; ++i)
+      WARNING2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DETAILED_DESC[i]);
+    RELEASE(LOG_STDOUT);
+    THROW("see last warning");
+  }
 
   delete flags;
 }
@@ -484,51 +519,57 @@ int callSolver(DATA* simData, string result_file_cstr, string init_initMethod,
  */
 int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
 {
+  int i;
+  initDumpSystem();
+
   if(flagSet("?", argc, argv) || flagSet("help", argc, argv))
   {
-    cout << "usage: " << argv[0] << "\n\t"
-         << "<-f setup file> "
-             "\n\t\t[specify a new setup XML file to the generated simulation code]" << "\n\t"
-         << "<-r result file> "
-             "\n\t\t[specify a new result file than the default Model_res.mat]" << "\n\t"
-         << "<-m|s solver:{dassl,euler,rungekutta,inline-euler,inline-rungekutta,qss}> "
-             "\n\t\t[specify the solver]" << "\n\t"
-         << "<-interactive> <-port value> "
-             "\n\t\t[specify interactive simulation and port]" << "\n\t"
-         << "<-iim initialization method:{none,numeric,symbolic}> "
-             "\n\t\t[specify the initialization method]" << "\n\t"
-         << "<-iom optimization method:{nelder_mead_ex,nelder_mead_ex2,simplex,newuoa}> "
-             "\n\t\t[specify the initialization optimization method]" << "\n\t"
-         << "<-iif initialization file> "
-             "\n\t\t[specify an external file for the initialization of the model]" << "\n\t"
-         << "<-iit initialization time> "
-             "\n\t\t[specify a time for the initialization of the model]" << "\n\t"
-         << "<-override var1=start1,var2=start2,par3=start3,\n\t           "
-             "startTime=val1,stopTime=val2,stepSize=val3,tolerance=val4,\n\t           "
-             "solver=\"see -m\",outputFormat=\"mat|plt|csv|empty\",variableFilter=\"filter\"> "
-             "\n\t\t[override the variables or the simulation settings in the XML setup file]" << "\n\t"
-         << "<-overrideFile overrideFileName"
-             "\n\t\t[note that: -overrideFile CANNOT be used with -override]" <<
-             "\n\t\t[use when variables for -override are too many and do not fit in command line size]" <<
-             "\n\t\t[overrideFileName contains lines of the form: var1=start1]" <<
-             "\n\t\t[will override the variables or the simulation settings in the XML setup file with the values from the file]" << "\n\t"
-         << "<-output a,b,c>"
-             "\n\t\t[output the variables a, b and c at the end of the simulation to the standard output as time = value, a = value, b = value, c = value]" << "\n\t"
-         << "<-noemit>"
-             "\n\t\t[do not emit any results to the result file]" << "\n\t"
-         << "<-jac> " <<
-             "\n\t\t[specify jacobian]" << "\n\t"
-         << "<-numjac> " <<
-             "\n\t\t[specify numerical jacobian]" << "\n\t"
-         << "<-l linear time> "
-             "\n\t\t[specify a time where the linearization of the model should be performed]" << "\n\t"
-         << "<-mt> "
-             "\n\t\t[this command line parameter is DEPRECATED!]" << "\n\t"
-         << "<-measureTimePlotFormat svg|jpg|ps|gif|...> "
-             "\n\t\t[specify the output format of the measure time functionality]" << "\n\t"
-         << "<-lv [LOG_STATS][,LOG_INIT][,LOG_RES_INIT][,LOG_SOLVER][,LOG_EVENTS][,LOG_NONLIN_SYS][,LOG_ZEROCROSSINGS][,LOG_DEBUG]> "
-             "\n\t\t[specify the logging level]" << "\n\t"
-         << endl;
+    INFO1(LOG_STDOUT, "usage: %s", argv[0]);
+    INDENT(LOG_STDOUT);
+    INFO(LOG_STDOUT, "<-f setup file>");
+    INFO(LOG_STDOUT, "\tspecify a new setup XML file to the generated simulation code");
+    INFO(LOG_STDOUT, "<-r result file>");
+    INFO(LOG_STDOUT, "\tspecify a new result file than the default Model_res.mat");
+    INFO(LOG_STDOUT, "<-m|s solver:{dassl,euler,rungekutta,inline-euler,inline-rungekutta,qss}>");
+    INFO(LOG_STDOUT, "\tspecify the solver");
+    INFO(LOG_STDOUT, "<-interactive> <-port value>");
+    INFO(LOG_STDOUT, "\tspecify interactive simulation and port");
+    INFO(LOG_STDOUT, "<-iim initialization method:{none,numeric,symbolic}>");
+    INFO(LOG_STDOUT, "\tspecify the initialization method");
+    INFO(LOG_STDOUT, "<-iom optimization method:{nelder_mead_ex,nelder_mead_ex2,simplex,newuoa}>");
+    INFO(LOG_STDOUT, "\tspecify the initialization optimization method");
+    INFO(LOG_STDOUT, "<-iif initialization file>");
+    INFO(LOG_STDOUT, "\tspecify an external file for the initialization of the model");
+    INFO(LOG_STDOUT, "<-iit initialization time>");
+    INFO(LOG_STDOUT, "\tspecify a time for the initialization of the model");
+    INFO(LOG_STDOUT, "<-override var1=start1,var2=start2,par3=start3,");
+    INFO(LOG_STDOUT, " startTime=val1,stopTime=val2,stepSize=val3,tolerance=val4,");
+    INFO(LOG_STDOUT, " solver=\"see -m\",outputFormat=\"mat|plt|csv|empty\",variableFilter=\"filter\">");
+    INFO(LOG_STDOUT, "\toverride the variables or the simulation settings in the XML setup file");
+    INFO(LOG_STDOUT, "<-overrideFile overrideFileName>");
+    INFO(LOG_STDOUT, "\tnote that: -overrideFile CANNOT be used with -override");
+    INFO(LOG_STDOUT, "\tuse when variables for -override are too many and do not fit in command line size");
+    INFO(LOG_STDOUT, "\toverrideFileName contains lines of the form: var1=start1");
+    INFO(LOG_STDOUT, "\twill override the variables or the simulation settings in the XML setup file with the values from the file");
+    INFO(LOG_STDOUT, "<-output a,b,c>");
+    INFO(LOG_STDOUT, "\toutput the variables a, b and c at the end of the simulation to the standard output as time = value, a = value, b = value, c = value");
+    INFO(LOG_STDOUT, "<-noemit>");
+    INFO(LOG_STDOUT, "\tdo not emit any results to the result file");
+    INFO(LOG_STDOUT, "<-jac> ");
+    INFO(LOG_STDOUT, "\tspecify jacobian");
+    INFO(LOG_STDOUT, "<-numjac> ");
+    INFO(LOG_STDOUT, "\tspecify numerical jacobian");
+    INFO(LOG_STDOUT, "<-l linear time> ");
+    INFO(LOG_STDOUT, "\tspecify a time where the linearization of the model should be performed");
+    INFO(LOG_STDOUT, "<-mt> ");
+    INFO(LOG_STDOUT, "\tthis command line parameter is DEPRECATED!");
+    INFO(LOG_STDOUT, "<-measureTimePlotFormat svg|jpg|ps|gif|...> ");
+    INFO(LOG_STDOUT, "\tspecify the output format of the measure time functionality");
+    INFO(LOG_STDOUT, "<-lv [flag1][,flags2][,...]>");
+    INFO(LOG_STDOUT, "\tspecify the logging level");
+    for(i=1; i<LOG_MAX; ++i)
+      INFO2(LOG_STDOUT, "\t%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DETAILED_DESC[i]);
+    RELEASE(LOG_STDOUT);
     EXIT(0);
   }
 

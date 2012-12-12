@@ -868,10 +868,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
     if(initMethod == IIM_UNKNOWN)
     {
-      WARNING1(LOG_INIT, "unrecognized option -iim %s", pInitMethod);
-      WARNING(LOG_INIT, "current options are:");
+      WARNING1(LOG_STDOUT, "unrecognized option -iim %s", pInitMethod);
+      WARNING(LOG_STDOUT, "current options are:");
       for(i=1; i<IIM_MAX; ++i)
-        WARNING2(LOG_INIT, "| %-15s [%s]", initMethodStr[i], initMethodDescStr[i]);
+        WARNING2(LOG_STDOUT, "| %-15s [%s]", initMethodStr[i], initMethodDescStr[i]);
       THROW("see last warning");
     }
   }
@@ -888,10 +888,10 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
     if(optiMethod == IOM_UNKNOWN)
     {
-      WARNING1(LOG_INIT, "unrecognized option -iom %s", pOptiMethod);
-      WARNING(LOG_INIT, "current options are:");
+      WARNING1(LOG_STDOUT, "unrecognized option -iom %s", pOptiMethod);
+      WARNING(LOG_STDOUT, "current options are:");
       for(i=1; i<IOM_MAX; ++i)
-        WARNING2(LOG_INIT, "| %-15s [%s]", optiMethodStr[i], optiMethodDescStr[i]);
+        WARNING2(LOG_STDOUT, "| %-15s [%s]", optiMethodStr[i], optiMethodDescStr[i]);
       THROW("see last warning");
     }
   }

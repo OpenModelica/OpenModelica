@@ -77,7 +77,28 @@ const char *LOG_STREAM_DESC[LOG_MAX] = {
   "events",
   "zerocrossings",
   "debug",
-  ""
+  "|"
+};
+
+const char *LOG_STREAM_DETAILED_DESC[LOG_MAX] = {
+  "unknown",
+  "this stream is alway active",
+  "util",
+  "simulation",
+  "stats",
+  "additional information during initialization",
+  "final solution of the initialization",
+  "res_init",
+  "solver",
+  "ddasrt",
+  "jac",
+  "endjac",
+  "nonlin_sys",
+  "nonlin_sys_v",
+  "additional information during event iteration",
+  "zerocrossings",
+  "debug",
+  "this stream is alway active"
 };
 
 static const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
@@ -94,6 +115,21 @@ int level[LOG_MAX];
 int lastType[LOG_MAX];
 int lastStream = LOG_UNKNOWN;
 char logBuffer[2048];
+
+void initDumpSystem()
+{
+  int i;
+
+  for(i=0; i<LOG_MAX; ++i)
+  {
+    useStream[i] = 0;
+    level[i] = 0;
+    lastType[i] = 0;
+  }
+
+  useStream[LOG_STDOUT] = 1;
+  useStream[LOG_ASSERT] = 1;
+}
 
 void printInfo(FILE *stream, FILE_INFO info)
 {
