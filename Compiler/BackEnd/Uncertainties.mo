@@ -717,6 +717,7 @@ algorithm
         nxVarMap = listLength(xVarMap);
         nxEqMap = listLength(xEqMap);
         //print("Final matching of "+&intString(nxEqMap)+&" equations and "+&intString(nxVarMap)+&" variables \n");
+        nxVarMap=Util.if_(nxEqMap>nxVarMap,nxEqMap,nxVarMap);
         Matching.matchingExternalsetIncidenceMatrix(nxVarMap,nxEqMap,mx);
         
 
@@ -805,10 +806,10 @@ algorithm
       neq = listLength(getEquationsNumber(m));
       variables = getVariables(m);
       nvar = listLength(variables); 
-      true =  neq>=nvar; // The system is squared or overdetermined, do nothing
+      true =  neq>=nvar; // The system is squared or overdetermined do nothing
     then
       m;
-    case(_,_)
+    case(_,_)  
     equation
       neq = listLength(getEquationsNumber(m));
       variables = getVariables(m);
