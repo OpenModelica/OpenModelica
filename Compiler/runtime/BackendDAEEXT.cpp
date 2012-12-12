@@ -76,7 +76,7 @@ void BackendDAEEXTImpl__initMarks(int nvars, int neqns)
 // Why are the inputs not even used?
   v_mark.clear();
   e_mark.clear();
-} 
+}
 
 void BackendDAEEXTImpl__eMark(int i)
 {
@@ -143,23 +143,23 @@ void BackendDAEEXTImpl__initLowLink(int nvars)
 {
   //cout << "init lowlink n= " << nvars << endl;
   lowlink.reserve(nvars);
-  
+
   while (lowlink.size() < (unsigned int)nvars)
     lowlink.push_back(0);
   for (int i =0; i < nvars; i++)
     lowlink[i]=0;
-} 
+}
 
 void BackendDAEEXTImpl__initNumber(int nvars)
 {
   //cout << "init number n= " << nvars << endl;
   number.reserve(nvars);
-  
+
   while (number.size() < (unsigned int)nvars)
     number.push_back(0);
-  for (int i =0; i < nvars; i++) 
+  for (int i =0; i < nvars; i++)
     number[i]=0;
-} 
+}
 
 void BackendDAEEXTImpl__setLowLink(int i, int val)
 {
@@ -234,15 +234,15 @@ void BackendDAEExtImpl__matching(int nvars, int neqns, int matchingID, int cheap
   int i=0;
   if (clear_match==0){
     if (neqns>n) {
-      int* tmp = (int*) malloc(neqns * sizeof(int));
       if(match)
       {
+        int* tmp = (int*) malloc(neqns * sizeof(int));
         memcpy(tmp,match,n*sizeof(int));
         free(match);
         match = tmp;
-    for (i = n; i < neqns; i++) {
-      match[i] = -1;
-    }
+        for (i = n; i < neqns; i++) {
+          match[i] = -1;
+        }
       } else {
          match = (int*) malloc(neqns * sizeof(int));
          memset(match,-1,neqns * sizeof(int));
@@ -250,15 +250,15 @@ void BackendDAEExtImpl__matching(int nvars, int neqns, int matchingID, int cheap
       n = neqns;
     }
     if (nvars>m) {
-      int* tmp = (int*) malloc(nvars * sizeof(int));
       if(row_match)
       {
+        int* tmp = (int*) malloc(nvars * sizeof(int));
         memcpy(tmp,row_match,m*sizeof(int));
         free(row_match);
         row_match = tmp;
-    for (i = m; i < nvars; i++) {
-      row_match[i] = -1;
-    }
+        for (i = m; i < nvars; i++) {
+          row_match[i] = -1;
+        }
       } else {
         row_match = (int*) malloc(nvars * sizeof(int));
          memset(row_match,-1,nvars * sizeof(int));

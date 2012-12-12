@@ -333,7 +333,6 @@ RML_BEGIN_LABEL(BackendDAEEXT__setAssignment)
       free(match);
     }
     match = (int*) malloc(n * sizeof(int));
-    memset(match,-1,n * sizeof(int));
     for(i=0; i<n; ++i) {
       match[i] = RML_UNTAGFIXNUM(RML_STRUCTDATA(rmlA2)[i])-1;
       if (match[i]<0) match[i] = -1;
@@ -346,7 +345,6 @@ RML_BEGIN_LABEL(BackendDAEEXT__setAssignment)
       free(row_match);
     }
     row_match = (int*) malloc(m * sizeof(int));
-    memset(row_match,-1,m * sizeof(int));
     for(i=0; i<m; ++i) {
       row_match[i] = RML_UNTAGFIXNUM(RML_STRUCTDATA(rmlA3)[i])-1;
       if (row_match[i]<0) row_match[i] = -1;

@@ -50,7 +50,6 @@ void sk_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 
   int* col_stack = (int*)malloc(n * sizeof(int));
   int* col_degrees = (int*)malloc(n * sizeof(int));
-  memset(col_degrees, 0, n * sizeof(int));
 
   int no_of_d1_cols = 0;
   for(i = 0; i < n; i++) {
@@ -62,7 +61,6 @@ void sk_cheap(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 
   int* row_stack = (int*)malloc(m * sizeof(int));
   int* row_degrees = (int*)malloc(m * sizeof(int));
-  memset(row_degrees, 0, m * sizeof(int));
 
   int no_of_d1_rows = 0;
   for(i = 0; i < m; i++) {
@@ -204,7 +202,6 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
   srand(1);
   int* col_stack = (int*)malloc(n * sizeof(int));
   int* col_degrees = (int*)malloc(n * sizeof(int));
-  memset(col_degrees, 0, n * sizeof(int));
 
   int no_of_d1_cols = 0;
   for(i = 0; i < n; i++) {
@@ -216,7 +213,6 @@ void sk_cheap_rand(int* col_ptrs, int* col_ids, int* row_ptrs, int* row_ids,
 
   int* row_stack = (int*)malloc(m * sizeof(int));
   int* row_degrees = (int*)malloc(m * sizeof(int));
-  memset(row_degrees, 0, m * sizeof(int));
 
   int no_of_d1_rows = 0;
   for(i = 0; i < m; i++) {
