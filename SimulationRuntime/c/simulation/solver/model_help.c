@@ -99,8 +99,6 @@ void updateDiscreteSystem(DATA *data)
   updateHysteresis(data);
 }
 
-
-
 /*! \fn updateContinuousSystem
  *
  *  Function to update the whole system with EventIteration.
@@ -163,8 +161,9 @@ void copyStartValuestoInitValues(DATA *data)
 void printAllVars(DATA *data, int ringSegment, int stream)
 {
   long i;
-  MODEL_DATA *mData = &(data->modelData);
-
+  MODEL_DATA      *mData = &(data->modelData);
+  SIMULATION_INFO *sInfo = &(data->simulationInfo);
+  
   INFO2(stream, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
   INDENT(stream);
 
@@ -172,7 +171,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   INDENT(stream);
   for(i=0; i<mData->nStates; ++i)
   {
-    INFO3(stream, "%ld: %s = %g", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
   }
   RELEASE(stream);
 
@@ -180,7 +179,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   INDENT(stream);
   for(i=mData->nStates; i<2*mData->nStates; ++i)
   {
-    INFO3(stream, "%ld: %s = %g", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
   }
   RELEASE(stream);
 
@@ -188,7 +187,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   INDENT(stream);
   for(i=2*mData->nStates; i<mData->nVariablesReal; ++i)
   {
-    INFO3(stream, "%ld: %s = %g", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i]);
+    INFO4(stream, "%ld: %s = %g (pre: %g)", i+1, mData->realVarsData[i].info.name, data->localData[ringSegment]->realVars[i], sInfo->realVarsPre[i]);
   }
   RELEASE(stream);
 
@@ -196,7 +195,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   INDENT(stream);
   for(i=0; i<mData->nVariablesInteger; ++i)
   {
-    INFO3(stream, "%ld: %s = %ld", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i]);
+    INFO4(stream, "%ld: %s = %ld (pre: %ld)", i+1, mData->integerVarsData[i].info.name, data->localData[ringSegment]->integerVars[i], sInfo->integerVarsPre[i]);
   }
   RELEASE(stream);
 
@@ -204,7 +203,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   INDENT(stream);
   for(i=0; i<mData->nVariablesBoolean; ++i)
   {
-    INFO3(stream, "%ld: %s = %s", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false");
+    INFO4(stream, "%ld: %s = %s (pre: %s)", i+1, mData->booleanVarsData[i].info.name, data->localData[ringSegment]->booleanVars[i] ? "true" : "false", sInfo->booleanVarsPre[i] ? "true" : "false");
   }
   RELEASE(stream);
 
@@ -212,7 +211,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   INDENT(stream);
   for(i=0; i<mData->nVariablesString; ++i)
   {
-    INFO3(stream, "%ld: %s = %s", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i]);
+    INFO4(stream, "%ld: %s = %s (pre: %s)", i+1, mData->stringVarsData[i].info.name, data->localData[ringSegment]->stringVars[i], sInfo->stringVarsPre[i]);
   }
   RELEASE(stream);
 
@@ -225,41 +224,41 @@ void printAllVars(DATA *data, int ringSegment, int stream)
  *  prints all parameter values
  *
  *  \param [in]  [data]
- *  \param [in]  [ringSegment]
+ *  \param [in]  [stream]
  *
  *  \author wbraun
  */
-void printParameters(DATA *data)
+void printParameters(DATA *data, int stream)
 {
   long i;
   MODEL_DATA *mData = &(data->modelData);
 
-  INFO(LOG_STDOUT, "Print parameter values");
-  INDENT(LOG_STDOUT);
+  INFO(stream, "parameter values");
+  INDENT(stream);
 
-  INFO(LOG_STDOUT, "real parameters");
-  INDENT(LOG_STDOUT);
+  INFO(stream, "real parameters");
+  INDENT(stream);
   for(i=0; i<mData->nParametersReal; ++i)
-    INFO3(LOG_STDOUT, "%ld: %s = %g", i+1, mData->realParameterData[i].info.name, data->simulationInfo.realParameter[i]);
-  RELEASE(LOG_STDOUT);
+    INFO3(stream, "%ld: %s = %g", i+1, mData->realParameterData[i].info.name, data->simulationInfo.realParameter[i]);
+  RELEASE(stream);
 
-  INFO(LOG_STDOUT, "integer parameters");
-  INDENT(LOG_STDOUT);
+  INFO(stream, "integer parameters");
+  INDENT(stream);
   for(i=0; i<mData->nParametersInteger; ++i)
-    INFO3(LOG_STDOUT, " | | %ld: %s = %ld", i+1, mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
-  RELEASE(LOG_STDOUT);
+    INFO3(stream, "%ld: %s = %ld", i+1, mData->integerParameterData[i].info.name, data->simulationInfo.integerParameter[i]);
+  RELEASE(stream);
 
-  INFO(LOG_STDOUT, "boolean parameters");
-  INDENT(LOG_STDOUT);
+  INFO(stream, "boolean parameters");
+  INDENT(stream);
   for(i=0; i<mData->nParametersBoolean; ++i)
-    INFO3(LOG_STDOUT, "%ld: %s = %s", i+1, mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i] ? "true" : "false");
-  RELEASE(LOG_STDOUT);
+    INFO3(stream, "%ld: %s = %s", i+1, mData->booleanParameterData[i].info.name, data->simulationInfo.booleanParameter[i] ? "true" : "false");
+  RELEASE(stream);
 
-  INFO(LOG_STDOUT, "string parameters");
-  INDENT(LOG_STDOUT);
+  INFO(stream, "string parameters");
+  INDENT(stream);
   for(i=0; i<mData->nParametersString; ++i)
-    INFO3(LOG_STDOUT, "%ld: %s = %s", i+1, mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
-  RELEASE(LOG_STDOUT);
+    INFO3(stream, "%ld: %s = %s", i+1, mData->stringParameterData[i].info.name, data->simulationInfo.stringParameter[i]);
+  RELEASE(stream);
 }
 
 /*! \fn printAllHelpVars

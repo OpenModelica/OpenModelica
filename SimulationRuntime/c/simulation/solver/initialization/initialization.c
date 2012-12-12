@@ -58,7 +58,7 @@ enum INIT_INIT_METHOD
 {
   IIM_UNKNOWN = 0,
   IIM_NONE,
-  IIM_STATE,
+  IIM_NUMERIC,
   IIM_SYMBOLIC,
   IIM_MAX
 };
@@ -66,7 +66,7 @@ enum INIT_INIT_METHOD
 static const char *initMethodStr[IIM_MAX] = {
   "unknown",
   "none",
-  "state",
+  "numeric",
   "symbolic"
 };
 static const char *initMethodDescStr[IIM_MAX] = {
@@ -595,66 +595,16 @@ static int initialize(DATA *data, int optiMethod)
   return retVal;
 }
 
-/*! \fn static int none_initialization(DATA *data)
- *
- *  \param [ref] [data]
- *
- *  \author lochel
- */
-static int none_initialization(DATA *data)
-{
-  /* initial sample and delay before initial the system */
-  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
-  initDelay(data, data->simulationInfo.startTime);
-
-  /* initialize all relations that are ZeroCrossings */
-  storePreValues(data);
-  overwriteOldSimulationData(data);
-  updateDiscreteSystem(data);
-
-  /* and restore start values and helpvars */
-  restoreExtrapolationDataOld(data);
-  resetAllHelpVars(data);
-  storePreValues(data);
-  storeRelations(data);
-
-  storePreValues(data);             /* save pre-values */
-  overwriteOldSimulationData(data); /* if there are non-linear equations */
-  updateDiscreteSystem(data);           /* evaluate discrete variables */
-
-  /* valid system for the first time! */
-  saveZeroCrossings(data);
-  storePreValues(data);             /* save pre-values */
-  overwriteOldSimulationData(data); /* if there are non-linear equations */
-
-  return 0;
-}
-
-/*! \fn static int state_initialization(DATA *data, int optiMethod)
+/*! \fn static int numeric_initialization(DATA *data, int optiMethod)
  *
  *  \param [ref] [data]
  *  \param [in]  [optiMethod] specified optimization method
  *
  *  \author lochel
  */
-static int state_initialization(DATA *data, int optiMethod)
+static int numeric_initialization(DATA *data, int optiMethod)
 {
   int retVal = 0;
-
-  /* initial sample and delay before initial the system */
-  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
-  initDelay(data, data->simulationInfo.startTime);
-
-  /* initialize all relations that are ZeroCrossings */
-  storePreValues(data);
-  overwriteOldSimulationData(data);
-  updateDiscreteSystem(data);
-
-  /* and restore start values and helpvars */
-  restoreExtrapolationDataOld(data);
-  resetAllHelpVars(data);
-  storeRelations(data);
-  storePreValues(data);
 
   retVal = initialize(data, optiMethod);
 
@@ -678,30 +628,9 @@ static int state_initialization(DATA *data, int optiMethod)
  */
 static int symbolic_initialization(DATA *data)
 {
-  int retVal = 0;
-
-  /* initial sample and delay before initial the system */
-  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
-  initDelay(data, data->simulationInfo.startTime);
-
-  /* initialize all relations that are ZeroCrossings */
-  storePreValues(data);
-  overwriteOldSimulationData(data);
-  updateDiscreteSystem(data);
-
-  /* and restore start values and helpvars */
-  restoreExtrapolationDataOld(data);
-  resetAllHelpVars(data);
-  storePreValues(data);
-
   functionInitialEquations(data);
 
-  /* valid system for the first time! */
-  saveZeroCrossings(data);
-  storePreValues(data);
-  overwriteOldSimulationData(data);
-
-  return retVal;
+  return 0;
 }
 
 /*! \fn static char *mapToDymolaVars(const char *varname)
@@ -903,7 +832,7 @@ static int importStartValues(DATA *data, const char *pInitFile, double initTime)
  */
 int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod, const char* pInitFile, double initTime)
 {
-  int initMethod = useSymbolicInitialization ? IIM_SYMBOLIC : IIM_STATE;  /* default method */
+  int initMethod = useSymbolicInitialization ? IIM_SYMBOLIC : IIM_NUMERIC;  /* default method */
   int optiMethod = IOM_NELDER_MEAD_EX;                                    /* default method */
   int retVal = -1;
   int i;
@@ -973,17 +902,31 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
 
+  
+  /* initial sample and delay before initial the system */
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
+  initDelay(data, data->simulationInfo.startTime);
+
+  /* initialize all relations that are ZeroCrossings */
+  storePreValues(data);
+  overwriteOldSimulationData(data);
+  updateDiscreteSystem(data);
+
+  /* and restore start values and helpvars */
+  restoreExtrapolationDataOld(data);
+  resetAllHelpVars(data);
+  storeRelations(data);
+  storePreValues(data);
+
   /* select the right initialization-method */
   if(initMethod == IIM_NONE)
-    retVal = none_initialization(data);
-  else if(initMethod == IIM_STATE)
-    retVal = state_initialization(data, optiMethod);
+    retVal = 0;
+  else if(initMethod == IIM_NUMERIC)
+    retVal = numeric_initialization(data, optiMethod);
   else if(initMethod == IIM_SYMBOLIC)
     retVal = symbolic_initialization(data);
   else
     THROW("unsupported option -iim");
-
-  data->simulationInfo.initial = 0;
 
   INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
@@ -991,6 +934,17 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   dumpInitialSolution(data);
   RELEASE(LOG_SOTI);
   INFO(LOG_INIT, "### END INITIALIZATION ###");
+
+  data->simulationInfo.initial = 0;
+
+  storePreValues(data);                 /* save pre-values */
+  overwriteOldSimulationData(data);     /* if there are non-linear equations */
+  updateDiscreteSystem(data);           /* evaluate discrete variables */
+
+  /* valid system for the first time! */
+  saveZeroCrossings(data);
+  storePreValues(data);                 /* save pre-values */
+  overwriteOldSimulationData(data);     /* if there are non-linear equations */
 
   return retVal;
 }

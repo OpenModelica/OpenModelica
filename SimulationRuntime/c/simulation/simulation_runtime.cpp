@@ -495,7 +495,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
              "\n\t\t[specify the solver]" << "\n\t"
          << "<-interactive> <-port value> "
              "\n\t\t[specify interactive simulation and port]" << "\n\t"
-         << "<-iim initialization method:{none,state,symbolic}> "
+         << "<-iim initialization method:{none,numeric,symbolic}> "
              "\n\t\t[specify the initialization method]" << "\n\t"
          << "<-iom optimization method:{nelder_mead_ex,nelder_mead_ex2,simplex,newuoa}> "
              "\n\t\t[specify the initialization optimization method]" << "\n\t"

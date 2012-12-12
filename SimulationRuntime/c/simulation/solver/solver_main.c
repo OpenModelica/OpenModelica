@@ -185,7 +185,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   sim_result_writeParameterData(&(data->modelData));
   INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
   if(DEBUG_STREAM(LOG_DEBUG))
-    printParameters(data);
+    printParameters(data, LOG_DEBUG);
 
   /* initial sample and delay again, due to maybe change
    * parameters during Initialization */
