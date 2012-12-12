@@ -2849,7 +2849,7 @@ algorithm
   unreplacable := HashSet.emptyHashSet();
   unreplacable := BackendDAEUtil.traverseBackendDAEExps(inDAE,traverserUnreplacable,unreplacable);
   Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
-  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);  
+  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
   (outDAE,(repl,_,b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,causal1,(repl,unreplacable,false));
   outDAE := removeSimpleEquationsShared(b,outDAE,repl);
   // until remove simple equations does not update assignments and comps remove them
@@ -3055,7 +3055,7 @@ algorithm
       BackendDAE.EqSystem syst;
       HashSet.HashSet unreplacable;
       tuple<BackendDAE.Variables,BackendDAE.Shared,BackendVarTransform.VariableReplacements,HashSet.HashSet,array<list<Integer>>,list<BackendDAE.Equation>,Boolean> tpl;
-    case (false,_,_,{},_,_,_,_,_,_,_) 
+    case (false,_,_,{},_,_,_,_,_,_,_)
       then ((iVars,ishared,iRepl,iUnreplacable,iMT,iGlobalEqnslst,didReplacement or globalFoundSimple));
     case (false,_,_,_,_,_,_,_,_,_,_) 
       then ((iVars,ishared,iRepl,iUnreplacable,iMT,listAppend(iEqnslst,iGlobalEqnslst),didReplacement or globalFoundSimple));
@@ -3126,7 +3126,7 @@ algorithm
   unreplacable := HashSet.emptyHashSet();
   unreplacable := BackendDAEUtil.traverseBackendDAEExps(inDAE,traverserUnreplacable,unreplacable);
   Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
-  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);  
+  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
   (outDAE,(repl,_,b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,allAcausal1,(repl,unreplacable,false));
   outDAE := removeSimpleEquationsShared(b,outDAE,repl);
   // until remove simple equations does not update assignments and comps remove them
@@ -3147,7 +3147,6 @@ algorithm
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-      BackendDAE.StrongComponents comps;
       BackendDAE.Shared shared;
       BackendVarTransform.VariableReplacements repl;
       HashSet.HashSet unreplacable;
@@ -3155,7 +3154,7 @@ algorithm
       array<list<Integer>> mT;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.EqSystem syst;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps)),(shared,(repl,unreplacable,b1)))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),(shared,(repl,unreplacable,b1)))
       equation
         // transform to list, this is later not neccesary because the acausal system should save the equations as list
         eqnslst = BackendEquation.equationList(eqns);        

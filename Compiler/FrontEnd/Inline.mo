@@ -1412,27 +1412,34 @@ algorithm
       list<DAE.Element> fn;
       Absyn.Path p;
       list<DAE.Exp> args;
+      DAE.ComponentRef cr;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
       DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
       HashTableCG.HashTable checkcr;
+      list<DAE.Statement> stmts;
+      VarTransform.VariableReplacements repl;      
+      Boolean generateEvents;
+      Option<SCode.Comment> comment;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         true = DAEUtil.convertInlineTypeToBool(inlineType);
         true = checkInlineType(inlineType,fns);
-        fn = getFunctionBody(p,fns);
-        crefs = List.map(fn,getInputCrefs);
-        crefs = List.select(crefs,removeWilds);
+        (fn,comment) = getFunctionBody(p,fns);  
+        // get inputs, body and output
+        (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
+        // merge statements to one line 
+        repl = mergeFunctionBody(stmts,repl);
+        newExp = VarTransform.getReplacement(repl,cr);
         argmap = List.threadTuple(crefs,args);
-        false = List.exist(fn,DAEUtil.isProtectedVar);
-        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        newExp = getRhsExp(fn);
+        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());        
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
         // add noEvent to avoid events as usually for functions
         // MSL 3.2.1 need GenerateEvents to disable this
-        newExp = Expression.addNoEventToRelationsAndConds(newExp);
+        generateEvents = hasGenerateEventsAnnotation(comment);
+        newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
         ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
@@ -1441,6 +1448,24 @@ algorithm
     else inTuple;
   end matchcontinue;
 end inlineCall;
+
+protected function hasGenerateEventsAnnotation
+  input Option<SCode.Comment> comment;
+  output Boolean b;
+algorithm
+  b := match(comment)
+    local
+      SCode.Annotation anno;
+      list<SCode.Annotation> annos;
+    case (SOME(SCode.COMMENT(annotation_=SOME(anno))))
+      then
+        SCode.hasBooleanNamedAnnotation({anno},"GenerateEvents");
+    case(SOME(SCode.CLASS_COMMENT(annotations=annos)))
+      then 
+        SCode.hasBooleanNamedAnnotation(annos,"GenerateEvents");
+    else then false;
+  end match;
+end hasGenerateEventsAnnotation;
 
 protected function dumpArgmap
   input tuple<DAE.ComponentRef, DAE.Exp> inTpl;
@@ -1472,23 +1497,29 @@ algorithm
       HashTableCG.HashTable checkcr;
       list<DAE.Statement> stmts;
       VarTransform.VariableReplacements repl;
+      Boolean generateEvents;
+      Option<SCode.Comment> comment;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
         false = Config.acceptMetaModelicaGrammar();
         true = checkInlineType(inlineType,fns);
-        fn = getFunctionBody(p,fns);  
-        // get inputs, body and outpout
-        (crefs,{cr},stmts) = getFunctionInputsOutputBody(fn,{},{},{});
+        (fn,comment) = getFunctionBody(p,fns);  
+        // get inputs, body and output
+        (crefs,{cr},stmts,repl) = getFunctionInputsOutputBody(fn,{},{},{},VarTransform.emptyReplacements());
         // merge statements to one line 
-        repl = mergeFunctionBody(stmts,VarTransform.emptyReplacements());
+        repl = mergeFunctionBody(stmts,repl);
         newExp = VarTransform.getReplacement(repl,cr);
         argmap = List.threadTuple(crefs,args);
         (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
-        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // compare types
         true = checkExpsTypeEquiv(e1, newExp);
+        // add noEvent to avoid events as usually for functions
+        // MSL 3.2.1 need GenerateEvents to disable this
+        generateEvents = hasGenerateEventsAnnotation(comment);
+        newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
+        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
-        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
+        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));        
       then
         ((newExp1,(fns,true)));        
     else inTuple;
@@ -1558,34 +1589,76 @@ protected function getFunctionInputsOutputBody
   input list<DAE.ComponentRef> iInputs;
   input list<DAE.ComponentRef> iOutput;
   input list<DAE.Statement> iBody;
+  input VarTransform.VariableReplacements iRepl;
   output list<DAE.ComponentRef> oInputs;
   output list<DAE.ComponentRef> oOutput;
   output list<DAE.Statement> oBody;
+  output VarTransform.VariableReplacements oRepl;
 algorithm
-  (oInputs,oOutput,oBody) := match(fn,iInputs,iOutput,iBody)
+  (oInputs,oOutput,oBody,oRepl) := match(fn,iInputs,iOutput,iBody,iRepl)
     local
       DAE.ComponentRef cr;
       list<DAE.Statement> st;
       list<DAE.Element> rest;
-    case ({},_,_,_) then (listReverse(iInputs),listReverse(iOutput),iBody);
-    case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_)
+      VarTransform.VariableReplacements repl;
+      Option<DAE.Exp> binding;
+    case ({},_,_,_,_) then (listReverse(iInputs),listReverse(iOutput),iBody,iRepl);
+    case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_,_)
       equation
-         (oInputs,oOutput,oBody) = getFunctionInputsOutputBody(rest,cr::iInputs,iOutput,iBody);
+         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,cr::iInputs,iOutput,iBody,iRepl);
       then 
-        (oInputs,oOutput,oBody);
-    case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT())::rest,_,_,_)
+        (oInputs,oOutput,oBody,repl);
+    case (DAE.VAR(componentRef=cr,direction=DAE.OUTPUT())::rest,_,_,_,_)
       equation
-        (oInputs,oOutput,oBody) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody);
+        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody,iRepl);
       then 
-        (oInputs,oOutput,oBody);
-    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))::rest,_,_,_)
+        (oInputs,oOutput,oBody,repl);
+    case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=binding)::rest,_,_,_,_)
+      equation
+        repl = addOptBindingReplacements(cr,binding,iRepl);
+        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,iBody,repl);
+      then 
+        (oInputs,oOutput,oBody,repl);
+    case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(st))::rest,_,_,_,_)
       equation
         st = listAppend(iBody,st);
-        (oInputs,oOutput,oBody) = getFunctionInputsOutputBody(rest,iInputs,iOutput,st);
+        (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,st,iRepl);
       then 
-        (oInputs,oOutput,oBody);
+        (oInputs,oOutput,oBody,repl);
   end match;
 end getFunctionInputsOutputBody;
+
+protected function addOptBindingReplacements
+  input DAE.ComponentRef cr;
+  input Option<DAE.Exp> binding;
+  input VarTransform.VariableReplacements iRepl;
+  output VarTransform.VariableReplacements oRepl;
+algorithm
+  oRepl := match(cr,binding,iRepl)
+    local
+      DAE.Exp e;
+    case (_,SOME(e),_) then addReplacement(cr, e, iRepl);
+    case (_,NONE(),_) then iRepl;
+  end match;
+end addOptBindingReplacements;
+
+protected function addReplacement
+  input DAE.ComponentRef iCr;
+  input DAE.Exp iExp;
+  input VarTransform.VariableReplacements iRepl;
+  output VarTransform.VariableReplacements oRepl;
+algorithm
+  oRepl := matchcontinue(iCr,iExp,iRepl)
+    local
+      DAE.Exp e;
+      DAE.Type tp;
+    case (DAE.CREF_IDENT(identType=tp),_,_)
+      equation
+        false = Expression.isArrayType(tp);
+        false = Expression.isRecordType(tp);
+      then VarTransform.addReplacement(iRepl, iCr, iExp);
+  end matchcontinue;
+end addReplacement;
 
 protected function checkInlineType "
 Author: Frenkel TUD, 2010-05"
@@ -1763,15 +1836,17 @@ protected function getFunctionBody
   input Absyn.Path p;
   input Functiontuple fns;
   output list<DAE.Element> outfn;
+  output Option<SCode.Comment> oComment;
 algorithm
-  outfn := matchcontinue(p,fns)
+  (outfn,oComment) := matchcontinue(p,fns)
     local
       list<DAE.Element> body;
       DAE.FunctionTree ftree;
+      Option<SCode.Comment> comment;
     case(_,(SOME(ftree),_))
       equation
-        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_)) = DAEUtil.avlTreeGet(ftree,p);
-      then body;
+        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_,comment=comment)) = DAEUtil.avlTreeGet(ftree,p);
+      then (body,comment);
     case(_,_)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
