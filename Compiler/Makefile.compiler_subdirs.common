@@ -61,7 +61,7 @@ clean:
 	(cd $(srcdir) && $(RM) $(SRCH))
 	$(RM) -f .depend
 	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~ \
-	$(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) 
+	$(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) *.srz *.o *.sig *.sigx *.c *.h
 
 reallyclean: clean
 	$(RM) -f $(ALLMO:%.mo=%.srz) $(SRCSIGX) $(SRCSIG) $(PROG)$(EXEEXT) 
