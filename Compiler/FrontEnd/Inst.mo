@@ -9532,7 +9532,7 @@ protected function updateComponentInEnv
   input Prefix.Prefix pre;
   input DAE.Mod mod;
   input Absyn.ComponentRef cref;
-  input ClassInf.State ci_state;
+  input ClassInf.State inCIState;
   input Boolean impl;
   input HashTable5.HashTable inUpdatedComps;
   input Option<Absyn.ComponentRef> currentCref "The cref that caused this call to updateComponentInEnv.";
@@ -9542,7 +9542,7 @@ protected function updateComponentInEnv
   output HashTable5.HashTable outUpdatedComps;
 algorithm
   (outCache,outEnv,outIH,outUpdatedComps) :=
-  matchcontinue (inCache,inEnv,inIH,pre,mod,cref,ci_state,impl,inUpdatedComps,currentCref)
+  matchcontinue (inCache,inEnv,inIH,pre,mod,cref,inCIState,impl,inUpdatedComps,currentCref)
     local
       String n,id, nn, name;
       SCode.ConnectorType ct;
@@ -9579,6 +9579,7 @@ algorithm
       Env.InstStatus instStatus;
       Env.Cache cache;
       HashTable5.HashTable updatedComps;
+      ClassInf.State ci_state;
       
     // if there are no modifications, return the same!
     //case (cache,env,ih,pre,DAE.NOMOD(),cref,ci_state,csets,impl,updatedComps)
@@ -9623,7 +9624,7 @@ algorithm
         (cache,tyVar,SCode.COMPONENT(n,_,_,Absyn.TPATH(t, _),_,comment,cond,info),_,_,idENV)
           = Lookup.lookupIdent(cache, env, id);
         
-        ci_state = updateClassInfState(cache, idENV, env, ci_state);  
+        ci_state = updateClassInfState(cache, idENV, env, inCIState);  
         
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
@@ -9693,7 +9694,7 @@ algorithm
             Absyn.TPATH(t, _),m,comment,cond,info),cmod,_,idENV)
           = Lookup.lookupIdent(cache, env, id);
         
-        ci_state = updateClassInfState(cache, idENV, env, ci_state);
+        ci_state = updateClassInfState(cache, idENV, env, inCIState);
         
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
