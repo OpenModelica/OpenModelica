@@ -1379,7 +1379,6 @@ algorithm
   outDAE := inDAE;
 end noStateDeselection;
 
-
 /*****************************************
  dynamic state selection method .
  see 

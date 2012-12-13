@@ -122,7 +122,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vmark = arrayCreate(nvars,-1);
         emark = arrayCreate(neqns,-1);
         vec1 = arrayCreate(nvars,-1);
@@ -492,7 +492,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         rowmarks = arrayCreate(nvars,-1);
         parentcolum = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
@@ -824,7 +824,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         rowmarks = arrayCreate(nvars,-1);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
@@ -1088,7 +1088,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         rowmarks = arrayCreate(nvars,-1);
         lookahead = arrayCreate(neqns,0);
         vec1 = arrayCreate(neqns,-1);
@@ -1455,7 +1455,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
@@ -1871,7 +1871,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
@@ -2245,7 +2245,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
@@ -2910,7 +2910,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
@@ -3248,7 +3248,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         rowmarks = arrayCreate(nvars,-1);
@@ -3972,7 +3972,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);   
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);     
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         l_label = arrayCreate(neqns,-1);
@@ -5055,7 +5055,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),1);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,1,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5107,7 +5107,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),2);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,2,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5159,7 +5159,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),3);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,3,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5211,7 +5211,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),4);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,4,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5263,7 +5263,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),5);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5315,7 +5315,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),6);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,6,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5367,7 +5367,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),7);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,7,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5419,7 +5419,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),8);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,8,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -5471,7 +5471,7 @@ algorithm
         nvars = BackendVariable.daenumVariables(isyst);      
         true = intGt(nvars,0);
         true = intGt(neqns,0);
-        checkSystemForMatching(nvars,neqns,inMatchingOptions);
+        checkSystemForMatching(nvars,neqns,inMatchingOptions,isyst,ishared,inArg,NONE(),10);
         vec1 = arrayCreate(neqns,-1);
         vec2 = arrayCreate(nvars,-1);
         (vec1,vec2,syst,shared,arg) = matchingExternal({},false,10,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nvars, neqns, vec1, vec2, inMatchingOptions, sssHandler, inArg);
@@ -6003,7 +6003,7 @@ algorithm
 end assignmentsArrayExpand;
 
 protected function prune
-"function: checkSystemForMatching
+"function: prune
   author: Frenkel TUD 2012-06
   function to prune, mark as never again test, collums"
   input list<Integer> inVisitedcolums;
@@ -6025,53 +6025,6 @@ algorithm
          ();
    end match; 
 end prune;
-
-public function checkSystemForMatching
-"function: checkSystemForMatching
-  author: Frenkel TUD 2012-06
-
-  Checks that the system is qualified for matching, i.e. that the number of variables
-  is the same as the number of equations. If not, the function fails and
-  prints an error message.
-  If matching options indicate that underconstrained systems are ok, no
-  check is performed."
-  input Integer nvars;
-  input Integer neqns;
-  input BackendDAE.MatchingOptions inMatchingOptions;
-algorithm
-  _ := matchcontinue (nvars,neqns,inMatchingOptions)
-    local
-      String esize_str,vsize_str;
-    case (_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED())) then ();
-    case (_,_,_)
-      equation
-        true = intEq(nvars,neqns);
-      then
-        ();
-    case (_,_,_)
-      equation
-        true = intGt(nvars,neqns);
-        esize_str = intString(neqns);
-        vsize_str = intString(nvars);
-        Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
-      then
-        fail();
-    case (_,_,_)
-      equation
-        true = intLt(nvars,neqns);
-        esize_str = intString(neqns) ;
-        vsize_str = intString(nvars);
-        Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
-      then
-        fail();
-    else
-      equation
-        Debug.fprint(Flags.FAILTRACE, "- Matching.checkSystemForMatching failed\n");
-      then
-        fail();
-  end matchcontinue;
-end checkSystemForMatching;
-
 
 protected function checkAssignment
 "function: checkAssignment
@@ -6407,5 +6360,291 @@ algorithm
   end match; 
 end randSortSystem1;
 
+
+/*****************************************
+ Singular System check
+ *****************************************/
+
+protected function checkSystemForMatching
+"function: checkSystemForMatching
+  author: Frenkel TUD 2012-06
+
+  Checks that the system is qualified for matching, i.e. that the number of variables
+  is the same as the number of equations. If not, the function fails and
+  prints an error message.
+  If matching options indicate that underconstrained systems are ok, no
+  check is performed."
+  input Integer nvars;
+  input Integer neqns;
+  input BackendDAE.MatchingOptions inMatchingOptions;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  input Option<matchingAlgorithmFunc> matchingAlgorithmfunc;
+  input Integer extMatchingAlgorithmFunc;
+algorithm
+  _ := matchcontinue (nvars,neqns,inMatchingOptions,isyst,ishared,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc)
+    local
+      String esize_str,vsize_str;
+    case (_,_,(_,BackendDAE.ALLOW_UNDERCONSTRAINED()),_,_,_,_,_) then ();
+    case (_,_,(BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.EXACT()),_,_,_,_,_)
+      equation
+        true = intEq(nvars,neqns);
+      then
+        ();
+    case (_,_,_,_,_,_,_,_)
+      equation
+        true = intEq(nvars,neqns);
+        singularSystemCheck(nvars,neqns,isyst,ishared,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
+      then
+        ();
+    case (_,_,_,_,_,_,_,_)
+      equation
+        true = intGt(nvars,neqns);
+        esize_str = intString(neqns);
+        vsize_str = intString(nvars);
+        Error.addMessage(Error.UNDERDET_EQN_SYSTEM, {esize_str,vsize_str});
+      then
+        fail();
+    case (_,_,_,_,_,_,_,_)
+      equation
+        true = intLt(nvars,neqns);
+        esize_str = intString(neqns) ;
+        vsize_str = intString(nvars);
+        Error.addMessage(Error.OVERDET_EQN_SYSTEM, {esize_str,vsize_str});
+      then
+        fail();
+    else
+      equation
+        Debug.fprint(Flags.FAILTRACE, "- Matching.checkSystemForMatching failed\n");
+      then
+        fail();
+  end matchcontinue;
+end checkSystemForMatching;
+
+protected function singularSystemCheck
+"function: singularSystemCheck
+  author: Frenkel TUD 2012-12
+  check if the system is singular"
+  input Integer nVars;
+  input Integer nEqns;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  input Option<matchingAlgorithmFunc> matchingAlgorithmfunc;
+  input Integer extMatchingAlgorithmFunc;  
+protected
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  array<Integer> stateindexs,vec1,vec2;
+  Integer nStates,nVars1,nEqns1;
+  BackendDAE.IncidenceMatrix m,mO;
+  BackendDAE.IncidenceMatrixT mT;
+  list<Integer> derstatesindexs;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(mO)) := isyst;
+  // get State Indexes
+  stateindexs := arrayCreate(nVars,-1);
+  ((stateindexs,_,nStates,derstatesindexs)) := BackendVariable.traverseBackendDAEVars(vars,getStateIndexes,(stateindexs,1,nVars,{}));
+  nStates := nStates-nVars;
+  // generate Incidence Matrix with entries for states, map negative entries to positive + nVars
+  nVars1 := nVars+nStates;
+  nEqns1 := nEqns+nStates;
+  m := arrayCreate(nEqns1,{});
+  mT := arrayCreate(nVars1,{});
+  singularSystemCheckGetIncidenceMatrixStates(derstatesindexs,nVars1,nEqns1,m,mT);
+  singularSystemCheckGetIncidenceMatrix(nEqns,m,mT,mO,stateindexs);
+  // try to match
+  vec1 := arrayCreate(nEqns1,-1);
+  vec2 := arrayCreate(nVars1,-1);
+  (vec1,vec2) := singularSystemCheckMatch(nVars1,nEqns1,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING()),ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
+  //  BackendDump.dumpEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING()));
+  //  BackendDump.dumpMatching(vec2);
+  //  BackendDump.dumpMatching(vec1);  
+end singularSystemCheck;
+
+protected function getStateIndexes
+  input tuple<BackendDAE.Var, tuple<array<Integer>,Integer,Integer,list<Integer>>> inTpl;
+  output tuple<BackendDAE.Var, tuple<array<Integer>,Integer,Integer,list<Integer>>> outTpl;
+algorithm
+  outTpl := match(inTpl)
+    local
+      BackendDAE.Var v;
+      array<Integer> stateindexs;
+      Integer indx,s;
+      list<Integer> derstatesindexs;
+    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE()),(stateindexs,indx,s,derstatesindexs)))
+      equation
+        s = s+1;
+        _= arrayUpdate(stateindexs,indx,s);
+      then 
+        ((v,(stateindexs,indx+1,s,indx::derstatesindexs)));
+    case ((v,(stateindexs,indx,s,derstatesindexs)))
+      then 
+        ((v,(stateindexs,indx+1,s,derstatesindexs)));
+  end match;
+end getStateIndexes;
+
+protected function singularSystemCheckGetIncidenceMatrixStates
+  input list<Integer> iDerstatesindexs;
+  input Integer nVars;
+  input Integer nEqns;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+algorithm
+  _ := match(iDerstatesindexs,nVars,nEqns,m,mT)
+    local
+      Integer sd;
+      list<Integer> derstatesindexs;
+    case ({},_,_,_,_) then ();
+    case (sd::derstatesindexs,_,_,_,_)
+      equation
+        _= arrayUpdate(m,nEqns,{nVars,sd});
+        _= arrayUpdate(mT,nVars,{nEqns});
+        _= arrayUpdate(mT,sd,{nEqns});
+        singularSystemCheckGetIncidenceMatrixStates(derstatesindexs,nVars-1,nEqns-1,m,mT);
+      then
+        ();
+  end match;
+end singularSystemCheckGetIncidenceMatrixStates;
+
+protected function singularSystemCheckGetIncidenceMatrix
+  input Integer nEqns;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input BackendDAE.IncidenceMatrix mo;
+  input array<Integer> stateindexs;
+algorithm
+  _ := match(nEqns,m,mT,mo,stateindexs)
+    local
+      list<Integer> row;
+    case (0,_,_,_,_) then ();
+    case (_,_,_,_,_)
+      equation
+        // get row
+        row = mo[nEqns];
+        // replace negative index with index from stateindexs
+        row = List.map1(row,replaceStateIndex,stateindexs);
+        // update m
+        _ = arrayUpdate(m,nEqns,row);
+        // update mT
+        _ = List.fold1(row,Util.arrayCons,nEqns,mT);
+        // next
+        singularSystemCheckGetIncidenceMatrix(nEqns-1,m,mT,mo,stateindexs);
+      then
+        ();
+  end match;
+end singularSystemCheckGetIncidenceMatrix;
+
+protected function replaceStateIndex
+  input Integer iR;
+  input array<Integer> stateindexs;
+  output Integer oR;
+algorithm
+  oR := matchcontinue(iR,stateindexs)
+    local
+      Integer s,r;
+    case (_,_)
+      equation
+        false = intGt(iR,0);
+        r = intAbs(iR);
+        s = stateindexs[r];
+      then
+        s;
+    case (_,_) then iR;
+  end matchcontinue;
+end replaceStateIndex;
+
+protected function singularSystemCheckMatch
+"function: singularSystemCheckMatch
+  author: Frenkel TUD 2012-12
+  check if the system is singular"
+  input Integer nVars;
+  input Integer nEqns;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input array<Integer> vec1;
+  input array<Integer> vec2;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  input Option<matchingAlgorithmFunc> matchingAlgorithmfunc;
+  input Integer extMatchingAlgorithmFunc;  
+  output array<Integer> v1;
+  output array<Integer> v2;
+algorithm
+  (v1,v2) := match(nVars,nEqns,isyst,ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc)
+    case(_,_,_,_,_,_,_,NONE(),_)
+      equation
+        (v1,v2,_,_,_) = matchingExternal({},false,extMatchingAlgorithmFunc,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nVars, nEqns, vec1, vec2, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT()), foundSingularSystem, inArg);
+      then
+        (v1,v2);
+    case(_,_,_,_,_,_,_,SOME(_),_)
+      equation
+        (v1,v2,_,_,_) = matchingExternal({},false,5,Config.getCheapMatchingAlgorithm(),1,isyst,ishared,nVars, nEqns, vec1, vec2, (BackendDAE.INDEX_REDUCTION(),BackendDAE.EXACT()), foundSingularSystem, inArg);
+      then
+        (v1,v2);        
+  end match;
+end singularSystemCheckMatch;
+
+protected function foundSingularSystem
+"function: foundSingularSystem
+  author: Frenkel TUD 2012-12
+  check if the system is singular"
+  input list<list<Integer>> eqns;
+  input Integer actualEqn;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input array<Integer> inAssignments1;
+  input array<Integer> inAssignments2;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+  output list<Integer> changedEqns;
+  output Integer continueEqn;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output array<Integer> outAssignments1;
+  output array<Integer> outAssignments2; 
+  output BackendDAE.StructurallySingularSystemHandlerArg outArg;
+algorithm
+  (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg) := 
+  matchcontinue(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
+    local
+      Integer n;
+      list<Integer> unmatched,unmatched1,vars;
+      String eqn_str,var_str;
+      DAE.ElementSource source;
+      Absyn.Info info;
+      array<Integer> mapIncRowEqn;
+    case ({},_,_,_,_,_,_) then ({},actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
+    case (_::_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
+      equation
+        n = BackendDAEUtil.systemSize(isyst);
+        // get from scalar eqns indexes the indexes in the equation array
+        unmatched = List.select1(List.flatten(eqns),intLe,n);
+        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
+        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
+        vars = getUnassigned(n, inAssignments2, {});
+        vars = List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
+        var_str = BackendDump.dumpMarkedVars(isyst, vars);
+        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+        info = DAEUtil.getElementSourceFileInfo(source);
+        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
+      then 
+        fail();
+  end matchcontinue;
+end foundSingularSystem;
+
+protected function getAssignedVars
+  input Integer e;
+  input array<Integer> ass;
+  input list<Integer> iAcc;
+  output list<Integer> oAcc;
+protected
+  Integer i;
+  Boolean b;
+algorithm
+  i := ass[e];
+  b := intGt(i,0);
+  oAcc := List.consOnTrue(b,i,iAcc); 
+end getAssignedVars;
 
 end Matching;
