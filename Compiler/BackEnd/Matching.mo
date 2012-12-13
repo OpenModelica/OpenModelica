@@ -176,7 +176,7 @@ protected function DFSLH2
   input array<Integer> vmark;
   input array<Integer> ass1;
   input array<Integer> ass2;
-  input BackendDAE.MatchingOptions inMatchingOptions9;
+  input BackendDAE.MatchingOptions match_opts;
   input StructurallySingularSystemHandlerFunc sssHandler;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output array<Integer> outAssignments1;
@@ -186,23 +186,17 @@ protected function DFSLH2
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAssignments1,outAssignments2,osyst,oshared,outArg):=
-  matchcontinue (isyst,ishared,nv,nf,i,emark,vmark,ass1,ass2,inMatchingOptions9,sssHandler,inArg)
+  matchcontinue (isyst,ishared,nv,nf,i,emark,vmark,ass1,ass2,match_opts,sssHandler,inArg)
     local
       array<Integer> ass1_1,ass2_1,ass1_2,ass2_2,ass1_3,ass2_3;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
       Integer i_1,nv_1,nf_1;
       BackendDAE.EquationArray eqns;
-      BackendDAE.EquationConstraints eq_cons;
       list<Integer> eqn_lst,var_lst,meqns;
-      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
-      DAE.ElementSource source;
-      Absyn.Info info;
       BackendDAE.EqSystem syst;
-      BackendDAE.Shared shared;   
-      BackendDAE.MatchingOptions match_opts;   
-      array<Integer> mapIncRowEqn;
+      BackendDAE.Shared shared; 
     case (syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = intGe(i,nv);
@@ -214,7 +208,7 @@ algorithm
       equation
         i_1 = i + 1;
         true = intGt(ass2[i],0);
-        (ass1_2,ass2_2,syst,shared,arg) = DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1, ass2, inMatchingOptions9, sssHandler, inArg);
+        (ass1_2,ass2_2,syst,shared,arg) = DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1, ass2, match_opts, sssHandler, inArg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
@@ -222,11 +216,11 @@ algorithm
       equation
         i_1 = i + 1;
         (ass1_1,ass2_1) = pathFound(m, mt, i, i,emark, vmark, ass1, ass2) "eMark(i)=vMark(i)=false" ;
-        (ass1_2,ass2_2,syst,shared,arg) = DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1_1, ass2_1, inMatchingOptions9, sssHandler, inArg);
+        (ass1_2,ass2_2,syst,shared,arg) = DFSLH2(syst, ishared, nv, nf, i_1, emark, vmark, ass1_1, ass2_1, match_opts, sssHandler, inArg);
       then
         (ass1_2,ass2_2,syst,shared,arg);
 
-    case (_,_,_,_,_,_,_,_,_,match_opts as (BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
+    case (_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
       equation
         meqns = getMarked(nf,i,emark,{});
         (_,i_1,syst,shared,ass1_1,ass2_1,arg) = sssHandler({meqns},i,isyst,ishared,ass1,ass2,inArg) 
@@ -259,20 +253,10 @@ algorithm
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        // "When index reduction also fails, the model is structurally singular." ;
         eqn_lst = getMarked(nf,i,emark,{});
-        var_lst = getMarked(nv,i,vmark,{});
-        // get from scalar eqns indexes the indexes in the equation array
-        eqn_lst = List.map1r(eqn_lst,arrayGet,mapIncRowEqn);
-        eqn_lst = List.uniqueIntN(eqn_lst,arrayLength(mapIncRowEqn));
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, eqn_lst);
-        var_str = BackendDump.dumpMarkedVars(isyst, var_lst);
-        i_1::_ = eqn_lst;
-        source = BackendEquation.markedEquationSource(isyst, i_1);
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
+        singularSystemError({eqn_lst},i,isyst,ishared,ass1,ass2,inArg);
       then
         fail();
   end matchcontinue;
@@ -1508,45 +1492,28 @@ protected function PF1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
-      DAE.ElementSource source;
-      Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1; 
-      array<Integer> mapIncRowEqn;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case (_,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         (i_1,unmatched1) = PFaugmentmatching(i,unmatched,nv,ne,m,mt,rowmarks,lookahead,ass1,ass2,listLength(unmatched),{});
         meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = PF2(meqns,unmatched1,{},rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = PF1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
-      equation
-        // get from scalar eqns indexes the indexes in the equation array
-        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
-        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
-        unmatched1 = getUnassigned(nv, ass2, {});
-        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end PF1;
 
 protected function PF2
@@ -1581,7 +1548,6 @@ algorithm
   match (meqns,unmatched,changedEqns,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       Integer nv_1,ne_1;
-      BackendDAE.EquationConstraints eq_cons;
       list<Integer> unmatched1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -1591,7 +1557,7 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (unmatched,rowmarks,lookahead,nv,ne,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
       equation
         (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
         ne_1 = BackendDAEUtil.systemSize(syst);
@@ -1603,6 +1569,11 @@ algorithm
         MC21A1fixArray(unmatched1,lookahead1);   
       then
         (unmatched1,rowmarks1,lookahead1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
+      then
+        fail();        
   end match;
 end PF2;
 
@@ -1925,21 +1896,16 @@ protected function PFPlus1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outI,outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (i,unmatched,rowmarks,lookahead,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
-      DAE.ElementSource source;
-      Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,lookahead1;
-      array<Integer> mapIncRowEqn;
-
     case (_,{},_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (i,ass1,ass2,isyst,ishared,inArg);
@@ -1951,20 +1917,7 @@ algorithm
         (i_1,ass1_2,ass2_2,syst,shared,arg1) = PFPlus1(i_1+1,unmatched1,rowmarks1,lookahead1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (i_1,ass1_2,ass2_2,syst,shared,arg1);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
-      equation
-        // get from scalar eqns indexes the indexes in the equation array
-        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
-        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
-        unmatched1 = getUnassigned(nv, ass2, {});
-        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end PFPlus1;
 
 protected function PFPlusaugmentmatching
@@ -2300,20 +2253,16 @@ protected function HK1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (i,unmatched,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (i,unmatched,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
-      DAE.ElementSource source;
-      Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1; 
-      array<Integer> mapIncRowEqn;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
@@ -2325,20 +2274,7 @@ algorithm
         (ass1_2,ass2_2,syst,shared,arg1) = HK1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
-      equation
-        // get from scalar eqns indexes the indexes in the equation array
-        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
-        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
-        unmatched1 = getUnassigned(nv, ass2, {});
-        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end HK1;
 
 protected function HK2
@@ -2375,7 +2311,6 @@ algorithm
   match (meqns,unmatched,changedEqns,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       Integer nv_1,ne_1;
-      BackendDAE.EquationConstraints eq_cons;
       list<Integer> unmatched1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -2385,7 +2320,7 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (unmatched,rowmarks,collummarks,level,nv,ne,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
       equation
         (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
         ne_1 = BackendDAEUtil.systemSize(syst);
@@ -2397,6 +2332,11 @@ algorithm
         level1 = assignmentsArrayExpand(level,ne_1,arrayLength(level),-1);   
       then
         (unmatched1,rowmarks1,collummarks1,level1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
+      equation
+        singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
+      then
+        fail();        
   end match;
 end HK2;
 
@@ -2965,20 +2905,16 @@ protected function HKDW1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (i,unmatched,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (i,unmatched,rowmarks,collummarks,level,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
-      DAE.ElementSource source;
-      Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1; 
-      array<Integer> mapIncRowEqn;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
@@ -2990,20 +2926,7 @@ algorithm
         (ass1_2,ass2_2,syst,shared,arg1) = HKDW1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
-      equation
-        // get from scalar eqns indexes the indexes in the equation array
-        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
-        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
-        unmatched1 = getUnassigned(nv, ass2, {});
-        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end HKDW1;
 
 protected function HKDWphase
@@ -3307,47 +3230,30 @@ protected function ABMP1
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (i,unmatched,rowmarks,collummarks,level,rlevel,colptrs,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (i,unmatched,rowmarks,collummarks,level,rlevel,colptrs,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,i_1,lim;
       list<Integer> unmatched1;
       list<list<Integer>> meqns;
-      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
-      DAE.ElementSource source;
-      Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1,rlevel1; 
-      array<Integer> mapIncRowEqn;
+      array<Integer> ass1_1,ass1_2,ass2_1,ass2_2,rowmarks1,collummarks1,level1,rlevel1;
     case (_,{},_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         lim = realInt(realMul(0.1,realSqrt(intReal(arrayLength(ass1)))));
         unmatched1 = ABMPphase(unmatched,i,nv,ne,m,mt,rowmarks,rlevel,colptrs,lim,ass1,ass2);
         (i_1,unmatched1) = HKphase(i+1,unmatched,nv,ne,m,mt,rowmarks,collummarks,level,ass1,ass2,listLength(unmatched),{});
         meqns = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = ABMP2(meqns,unmatched1,{},rowmarks,collummarks,level,rlevel,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg) = ABMP2(meqns,unmatched1,{},rowmarks,collummarks,level,rlevel,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
         (ass1_2,ass2_2,syst,shared,arg1) = ABMP1(i_1+1,unmatched1,rowmarks1,collummarks1,level1,rlevel1,colptrs,syst,shared,nv_1,ne_1,ass1_1,ass2_1,inMatchingOptions,sssHandler,arg);
       then
         (ass1_2,ass2_2,syst,shared,arg1);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
-      equation
-        // get from scalar eqns indexes the indexes in the equation array
-        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
-        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
-        unmatched1 = getUnassigned(nv, ass2, {});
-        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
-      then
-        fail();
-  end matchcontinue;
+  end match;
 end ABMP1;
 
 protected function ABMP2
@@ -3386,7 +3292,6 @@ algorithm
   match (meqns,unmatched,changedEqns,rowmarks,collummarks,level,rlevel,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       Integer nv_1,ne_1;
-      BackendDAE.EquationConstraints eq_cons;
       list<Integer> unmatched1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -3396,7 +3301,7 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
         (unmatched,rowmarks,collummarks,level,rlevel,nv,ne,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
       equation
         (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
         ne_1 = BackendDAEUtil.systemSize(syst);
@@ -3409,6 +3314,11 @@ algorithm
         level1 = assignmentsArrayExpand(level,ne_1,arrayLength(level),-1);   
       then
         (unmatched1,rowmarks1,collummarks1,level1,rlevel1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) 
+      equation
+        singularSystemError(meqns,0,isyst,ishared,ass2,ass1,inArg);
+      then
+        fail();        
   end match;
 end ABMP2;
 
@@ -4099,17 +4009,16 @@ algorithm
   match (meqns,unmatched,changedEqns,l_label,r_label,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       Integer nv_1,ne_1;
-      BackendDAE.EquationConstraints eq_cons;
       list<Integer> unmatched1;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
       array<Integer> ass1_1,ass2_1,l_label1,r_label1; 
 
-    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) 
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_)
       then 
         (unmatched,l_label,r_label,nv,ne,ass1,ass2,isyst,ishared,inArg);
-    case (_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
       equation
         (unmatched1,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
         ne_1 = BackendDAEUtil.systemSize(syst);
@@ -4120,6 +4029,11 @@ algorithm
         r_label1 = assignmentsArrayExpand(r_label,nv_1,arrayLength(r_label),-1); 
       then
         (unmatched1,l_label1,r_label1,nv_1,ne_1,ass1_1,ass2_1,syst,shared,arg);
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);        
+      then
+        fail();
   end match;
 end PR_FIFO_FAIR2;
 
@@ -5522,35 +5436,30 @@ protected function matchingExternal
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (outAss1,outAss2,osyst,oshared,outArg):=
-  matchcontinue (meqns,internalCall,algIndx,cheapMatching,clearMatching,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
+  match (meqns,internalCall,algIndx,cheapMatching,clearMatching,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       BackendDAE.IncidenceMatrix m,mt;
       Integer nv_1,ne_1,memsize;
-      BackendDAE.EquationConstraints eq_cons;
       list<Integer> unmatched1;
       list<list<Integer>> meqns1;
-      String eqn_str,var_str;
       BackendDAE.StructurallySingularSystemHandlerArg arg,arg1;
-      DAE.ElementSource source;
-      Absyn.Info info;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
-      array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3;  
-      array<Integer> mapIncRowEqn;
-    case ({},true,_,_,_,syst,_,_,_,_,_,_,_,_) 
+      array<Integer> ass1_1,ass1_2,ass1_3,ass2_1,ass2_2,ass2_3;
+    case ({},true,_,_,_,_,_,_,_,_,_,_,_,_) 
       then 
-        (ass1,ass2,syst,ishared,inArg);
-    case ({},false,_,_,_,syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
+        (ass1,ass2,isyst,ishared,inArg);
+    case ({},false,_,_,_,BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_,_,_,_,_)
       equation
         matchingExternalsetIncidenceMatrix(nv,ne,m);
         BackendDAEEXT.matching(nv,ne,algIndx,cheapMatching,1.0,clearMatching);
         BackendDAEEXT.getAssignment(ass1,ass2);
         unmatched1 = getUnassigned(ne, ass1, {});
         meqns1 = getEqnsforIndexReduction(unmatched1,ne,m,mt,ass1,ass2,inArg);
-        (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns1,true,algIndx,-1,0,syst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
+        (ass1_1,ass2_1,syst,shared,arg) = matchingExternal(meqns1,true,algIndx,-1,0,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg);
       then
         (ass1_1,ass2_1,syst,shared,arg);
-    case (_::_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
+    case (_::_,_,_,_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
       equation
         memsize = arrayLength(ass1);
         (_,_,syst,shared,ass2_1,ass1_1,arg) = sssHandler(meqns,0,isyst,ishared,ass2,ass1,inArg);
@@ -5563,22 +5472,13 @@ algorithm
       then
         (ass1_3,ass2_3,syst,shared,arg1);
 
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        // get from scalar eqns indexes the indexes in the equation array
-        unmatched1 = getUnassigned(ne, ass1, {});
-        unmatched1 = List.map1r(unmatched1,arrayGet,mapIncRowEqn);
-        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
-        unmatched1 = getUnassigned(nv, ass2, {});
-        var_str = BackendDump.dumpMarkedVars(isyst, unmatched1);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
+        singularSystemError(meqns,0,isyst,ishared,ass1,ass2,inArg);
       then
         fail();
 
-  end matchcontinue;
+  end match;
 end matchingExternal;
 
 protected function countincidenceMatrixEntries
@@ -5952,7 +5852,6 @@ algorithm
   match (meqns,actualEqn,isyst,ishared,nv,ne,ass1,ass2,inMatchingOptions,sssHandler,inArg)
     local
       Integer nv_1,ne_1,i_1;
-      BackendDAE.EquationConstraints eq_cons;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;    
@@ -5962,7 +5861,7 @@ algorithm
     case ({},_,_,_,_,_,_,_,_,_,_) 
       then 
         ({},actualEqn+1,isyst,ishared,nv,ne,ass1,ass2,inArg);
-    case (_::_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),eq_cons),_,_)
+    case (_::_,_,_,_,_,_,_,_,(BackendDAE.INDEX_REDUCTION(),_),_,_)
       equation
         (changedEqns,i_1,syst,shared,ass2_1,ass1_1,arg) = sssHandler({meqns},actualEqn,isyst,ishared,ass2,ass1,inArg);
         ne_1 = BackendDAEUtil.systemSize(syst);
@@ -5971,6 +5870,11 @@ algorithm
         ass2_2 = assignmentsArrayExpand(ass2_1,nv_1,arrayLength(ass2_1),-1);
       then
         (changedEqns,i_1,syst,shared,nv_1,ne_1,ass1_2,ass2_2,arg);
+    case (_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        singularSystemError({meqns},actualEqn,isyst,ishared,ass1,ass2,inArg);
+      then
+        fail();
   end match;
 end reduceIndexifNecessary;
 
@@ -6605,35 +6509,49 @@ protected function foundSingularSystem
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
 algorithm
   (changedEqns,continueEqn,osyst,oshared,outAssignments1,outAssignments2,outArg) := 
-  matchcontinue(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
-    local
-      Integer n;
-      list<Integer> unmatched,unmatched1,vars;
-      String eqn_str,var_str;
-      DAE.ElementSource source;
-      Absyn.Info info;
-      array<Integer> mapIncRowEqn;
+  match(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg)
     case ({},_,_,_,_,_,_) then ({},actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
-    case (_::_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
+    case (_::_,_,_,_,_,_,_)
       equation
-        n = BackendDAEUtil.systemSize(isyst);
-        // get from scalar eqns indexes the indexes in the equation array
-        unmatched = List.select1(List.flatten(eqns),intLe,n);
-      print("SystemSize: " +& intString(n) +& " \nEqns:" +& stringDelimitList(List.map(unmatched,intString),", ") +& "\n");
-        unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
-        unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-      print("ArrayIndizes: " +& stringDelimitList(List.map(unmatched1,intString),", ") +& "\n");
-        eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
-        vars = getUnassigned(n, inAssignments2, {});
-        vars = List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
-        var_str = BackendDump.dumpMarkedVars(isyst, vars);
-        source = BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
-        info = DAEUtil.getElementSourceFileInfo(source);
-        Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
+        singularSystemError(eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg);
       then 
         fail();
-  end matchcontinue;
+  end match;
 end foundSingularSystem;
+
+protected function singularSystemError
+  input list<list<Integer>> eqns;
+  input Integer actualEqn;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input array<Integer> inAssignments1;
+  input array<Integer> inAssignments2;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
+protected  
+  Integer n;
+  list<Integer> unmatched,unmatched1,vars;
+  String eqn_str,var_str;
+  DAE.ElementSource source;
+  Absyn.Info info;
+  array<Integer> mapIncRowEqn;
+algorithm
+  (_,_,_,mapIncRowEqn,_) := inArg;
+  n := BackendDAEUtil.systemSize(isyst);
+  // get from scalar eqns indexes the indexes in the equation array
+  unmatched := List.select1(List.flatten(eqns),intLe,n);
+  unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
+  unmatched1 := List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+  unmatched1 := List.sortIntN(unmatched1,n);
+  eqn_str := BackendDump.dumpMarkedEqns(isyst, unmatched1);
+  vars := getUnassigned(n, inAssignments2, {});
+  vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
+  vars := List.select1(vars,intLe,n);
+  vars := List.sortIntN(vars,n);
+  var_str := BackendDump.dumpMarkedVars(isyst, vars);
+  source := BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+  info := DAEUtil.getElementSourceFileInfo(source);
+  Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
+end singularSystemError;
 
 protected function getAssignedVars
   input Integer e;
