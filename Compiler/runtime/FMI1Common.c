@@ -38,31 +38,26 @@ extern "C" {
 #include "fmilib.h"
 
 #define BUFFER 1000
-#define FMI_DEBUG
 
 static void importlogger(jm_callbacks* c, jm_string module, jm_log_level_enu_t log_level, jm_string message)
 {
-#ifdef FMI_DEBUG
   printf("module = %s, log level = %d: %s\n", module, log_level, message);
-#endif
 }
 
 /* Logger function used by the FMU internally */
 static void fmilogger(fmi1_component_t c, fmi1_string_t instanceName, fmi1_status_t status, fmi1_string_t category, fmi1_string_t message, ...)
 {
-#ifdef FMI_DEBUG
   char msg[BUFFER];
   va_list argp;
   va_start(argp, message);
   vsprintf(msg, message, argp);
   printf("fmiStatus = %d;  %s (%s): %s\n", status, instanceName, category, msg);
-#endif
 }
 
 /*
  * Creates an instance of the FMI Import Context i.e fmi_import_context_t
  */
-void* fmiImportContext_OMC(int fmi_log_level)
+void* fmi1ImportContext_OMC(int fmi_log_level)
 {
   // JM callbacks
   static int init = 0;
@@ -84,7 +79,7 @@ void* fmiImportContext_OMC(int fmi_log_level)
 /*
  * Destroys the instance of the FMI Import Context i.e fmi_import_context_t
  */
-void fmiImportFreeContext_OMC(void* context)
+void fmi1ImportFreeContext_OMC(void* context)
 {
   fmi_import_free_context(context);
 }
@@ -94,7 +89,7 @@ void fmiImportFreeContext_OMC(void* context)
  * Reads the xml.
  * Loads the binary (dll/so).
  */
-void* fmiImportInstance_OMC(void* context, char* working_directory)
+void* fmi1ImportInstance_OMC(void* context, char* working_directory)
 {
   // FMI callback functions
   static int init = 0;
@@ -126,7 +121,7 @@ void* fmiImportInstance_OMC(void* context, char* working_directory)
  * Destroys the instance of the FMI Import i.e fmi1_import_t
  * Also destroys the loaded binary (dll/so).
  */
-void fmiImportFreeInstance_OMC(void* fmi)
+void fmi1ImportFreeInstance_OMC(void* fmi)
 {
   fmi1_import_t* fmi1 = (fmi1_import_t*)fmi;
   fmi1_import_destroy_dllfmu(fmi1);
@@ -136,93 +131,10 @@ void fmiImportFreeInstance_OMC(void* fmi)
 /*
  * Destroys the instance of the FMI Event Info i.e fmi1_event_info_t
  */
-void fmiFreeEventInfo_OMC(void* eventInfo)
+void fmi1FreeEventInfo_OMC(void* eventInfo)
 {
   if ((fmi1_event_info_t*)eventInfo != NULL)
     free((fmi1_event_info_t*)eventInfo);
-}
-
-/*
- * Wrapper for the FMI function fmiInstantiateModel.
- */
-double fmiInstantiateModel_OMC(void* fmi, char* instanceName, int debugLogging)
-{
-  static int init = 0;
-  if (!init) {
-    init = 1;
-    fmi1_import_instantiate_model((fmi1_import_t*)fmi, instanceName);
-    fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
-  }
-  return 1;
-}
-
-/*
- * Wrapper for the FMI function fmiSetTime.
- * Returns status.
- */
-double fmiSetTime_OMC(void* fmi, double time)
-{
-  fmi1_import_set_time((fmi1_import_t*)fmi, time);
-  return time;
-}
-
-/*
- * Wrapper for the FMI function fmiInitialize.
- * Returns FMI Event Info i.e fmi1_event_info_t.
- */
-void* fmiInitialize_OMC(void* fmi, void* inEventInfo)
-{
-  static int init = 0;
-  if (!init) {
-    init = 1;
-    fmi1_boolean_t toleranceControlled = fmi1_true;
-    fmi1_real_t relativeTolerance = 0.001;
-    fmi1_event_info_t* eventInfo = malloc(sizeof(fmi1_event_info_t));
-    fmi1_import_initialize((fmi1_import_t*)fmi, toleranceControlled, relativeTolerance, eventInfo);
-    return eventInfo;
-  }
-  return inEventInfo;
-}
-
-/*
- * Wrapper for the FMI function fmiGetContinuousStates.
- * parameter flowParams is dummy and is only used to run the equations in sequence.
- * Returns states.
- */
-void fmiGetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowParams, double* states)
-{
-  fmi1_import_get_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
-}
-
-/*
- * Wrapper for the FMI function fmiSetContinuousStates.
- * parameter flowParams is dummy and is only used to run the equations in sequence.
- * Returns status.
- */
-double fmiSetContinuousStates_OMC(void* fmi, int numberOfContinuousStates, double flowParams, double* states)
-{
-  fmi1_import_set_continuous_states((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
-  return flowParams;
-}
-
-/*
- * Wrapper for the FMI function fmiGetEventIndicators.
- * parameter flowStates is dummy and is only used to run the equations in sequence.
- * Returns events.
- */
-void fmiGetEventIndicators_OMC(void* fmi, int numberOfEventIndicators, double flowStates, double* events)
-{
-  fmi1_import_get_event_indicators((fmi1_import_t*)fmi, (fmi1_real_t*)events, numberOfEventIndicators);
-}
-
-/*
- * Wrapper for the FMI function fmiGetDerivatives.
- * parameter flowStates is dummy and is only used to run the equations in sequence.
- * Returns states.
- */
-void fmiGetDerivatives_OMC(void* fmi, int numberOfContinuousStates, double flowStates, double* states)
-{
-  fmi1_import_get_derivatives((fmi1_import_t*)fmi, (fmi1_real_t*)states, numberOfContinuousStates);
 }
 
 /*
@@ -244,7 +156,7 @@ fmi1_value_reference_t* real_to_fmi1_value_reference(int numberOfValueReferences
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns realValues.
  */
-void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues)
+void fmi1GetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double flowStatesInput, double* realValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
   fmi1_import_get_real((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
@@ -255,7 +167,7 @@ void fmiGetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesRe
  * Wrapper for the FMI function fmiSetReal.
  * Returns status.
  */
-double fmiSetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double* realValues)
+double fmi1SetReal_OMC(void* fmi, int numberOfValueReferences, double* realValuesReferences, double* realValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, realValuesReferences);
   fmi1_status_t fmistatus = fmi1_import_set_real((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_real_t*)realValues);
@@ -267,7 +179,7 @@ double fmiSetReal_OMC(void* fmi, int numberOfValueReferences, double* realValues
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns integerValues.
  */
-void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues)
+void fmi1GetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, double flowStatesInput, int* integerValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
   fmi1_import_get_integer((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
@@ -278,7 +190,7 @@ void fmiGetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerVa
  * Wrapper for the FMI function fmiSetInteger.
  * Returns status.
  */
-double fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, int* integerValues)
+double fmi1SetInteger_OMC(void* fmi, int numberOfValueReferences, double* integerValuesReferences, int* integerValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, integerValuesReferences);
   fmi1_status_t fmistatus = fmi1_import_set_integer((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_integer_t*)integerValues);
@@ -290,7 +202,7 @@ double fmiSetInteger_OMC(void* fmi, int numberOfValueReferences, double* integer
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns booleanValues.
  */
-void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues)
+void fmi1GetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, double flowStatesInput, int* booleanValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
   fmi1_import_get_boolean((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
@@ -301,7 +213,7 @@ void fmiGetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanVa
  * Wrapper for the FMI function fmiSetBoolean.
  * Returns status.
  */
-double fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
+double fmi1SetBoolean_OMC(void* fmi, int numberOfValueReferences, double* booleanValuesReferences, int* booleanValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, booleanValuesReferences);
   fmi1_status_t fmistatus = fmi1_import_set_boolean((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_boolean_t*)booleanValues);
@@ -313,7 +225,7 @@ double fmiSetBoolean_OMC(void* fmi, int numberOfValueReferences, double* boolean
  * parameter flowStatesInput is dummy and is only used to run the equations in sequence.
  * Returns stringValues.
  */
-void fmiGetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues)
+void fmi1GetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, double flowStatesInput, char** stringValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
   fmi1_import_get_string((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
@@ -324,78 +236,11 @@ void fmiGetString_OMC(void* fmi, int numberOfValueReferences, double* stringValu
  * Wrapper for the FMI function fmiSetString.
  * Returns status.
  */
-double fmiSetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
+double fmi1SetString_OMC(void* fmi, int numberOfValueReferences, double* stringValuesReferences, char** stringValues)
 {
   fmi1_value_reference_t* valuesReferences_int = real_to_fmi1_value_reference(numberOfValueReferences, stringValuesReferences);
   fmi1_status_t fmistatus = fmi1_import_set_string((fmi1_import_t*)fmi, valuesReferences_int, numberOfValueReferences, (fmi1_string_t*)stringValues);
   return (double)fmistatus;
-}
-
-/*
- * Wrapper for the FMI function fmiEventUpdate.
- * parameter flowStates is dummy and is only used to run the equations in sequence.
- * Returns FMI Event Info i.e fmi1_event_info_t
- */
-int fmiEventUpdate_OMC(void* fmi, int intermediateResults, void* eventInfo, double flowStates)
-{
-  fmi1_event_info_t* e = (fmi1_event_info_t*)eventInfo;
-  fmi1_import_eventUpdate((fmi1_import_t*)fmi, intermediateResults, e);
-  return e->stateValuesChanged;
-}
-
-/*
- * Wrapper for the FMI function fmiCompletedIntegratorStep.
- */
-int fmiCompletedIntegratorStep_OMC(void* fmi, double flowStates)
-{
-  fmi1_boolean_t callEventUpdate = fmi1_false;
-  fmi1_import_completed_integrator_step((fmi1_import_t*)fmi, &callEventUpdate);
-  return callEventUpdate;
-}
-
-/*
- * Wrapper for the FMI function fmiTerminate.
- */
-int fmiTerminate_OMC(void* fmi)
-{
-  fmi1_status_t fmistatus = fmi1_import_terminate((fmi1_import_t*)fmi);
-  return fmistatus;
-}
-
-/*
- * Wrapper for the FMI function fmiInstantiateSlave.
- */
-void fmiInstantiateSlave_OMC(void* fmi, char* instanceName, char* fmuLocation, char* mimeType, double timeout, int visible, int interactive, int debugLogging)
-{
-  fmi1_import_instantiate_slave((fmi1_import_t*)fmi, instanceName, fmuLocation, mimeType, timeout, visible, interactive);
-  fmi1_import_set_debug_logging((fmi1_import_t*)fmi, debugLogging);
-}
-
-/*
- * Wrapper for the FMI function fmiInitializeSlave.
- */
-void fmiInitializeSlave_OMC(void* fmi, double tStart, int stopTimeDefined, double tStop)
-{
-  fmi1_import_initialize_slave((fmi1_import_t*)fmi, tStart, stopTimeDefined, tStop);
-}
-
-/*
- * Wrapper for the FMI function fmiDoStep.
- * Return value is dummy and is only used to run the equations in sequence.
- */
-double fmiDoStep_OMC(void* fmi, double currentCommunicationPoint, double communicationStepSize, int newStep)
-{
-  fmi1_import_do_step((fmi1_import_t*)fmi, currentCommunicationPoint, communicationStepSize, newStep);
-  return 0.0;
-}
-
-/*
- * Wrapper for the FMI function fmiTerminateSlave.
- */
-int fmiTerminateSlave_OMC(void* fmi)
-{
-  fmi1_status_t fmistatus = fmi1_import_terminate_slave((fmi1_import_t*)fmi);
-  return fmistatus;
 }
 
 #ifdef __cplusplus

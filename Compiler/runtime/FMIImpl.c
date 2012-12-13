@@ -246,10 +246,10 @@ int FMIImpl__initializeFMIImport(const char* file_name, const char* working_dire
   // extract the fmu file and read the version
   fmi_version_enu_t version;
   version = fmi_import_get_fmi_version(context, file_name, working_directory);
-  if (version > fmi_version_1_enu) {
+  if ((version <= fmi_version_unknown_enu) || (version >= fmi_version_unsupported_enu)) {
     fmi_import_free_context(context);
     const char* tokens[1] = {fmi_version_to_string(version)};
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("The FMU version is %s. Only version 1.0 is supported so far."), tokens, 1);
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("The FMU version is %s. Unknown/Unsupported FMU version."), tokens, 1);
     return 0;
   }
   // parse the xml file
