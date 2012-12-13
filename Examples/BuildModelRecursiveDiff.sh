@@ -17,4 +17,4 @@ diff -u "$1.build" "$2.build" | grep ^[+-]
 grep "$SIM" "$1" | egrep -o "$SEARCH" | tr -d "<> (" > "$1.sim"
 grep "$SIM" "$2" | egrep -o "$SEARCH" | tr -d "<> (" > "$2.sim"
 echo "Sim diff (failures between $REV1 and $REV2)"
-diff -u "$1.sim" "$2.sim" | grep "^[+-][A-Za-z0-9._]*"
+diff -u "$1.sim" "$2.sim" | grep "^[+-][A-Za-z0-9._]"
