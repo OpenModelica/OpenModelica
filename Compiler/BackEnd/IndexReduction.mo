@@ -109,7 +109,6 @@ algorithm
       list<Integer> changedeqns,discEqns;
       list<list<Integer>> eqns_1,unassignedStates,unassignedEqns;
       Integer contiEqn,size,newsize;
-      Boolean b;
       array<Integer> ass1,ass2;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       BackendDAE.EqSystem syst;
@@ -122,12 +121,12 @@ algorithm
         //  syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{})); 
         //  dumpSystemGraphML(syst,ishared,NONE(),"ConstrainRevoluteJoint" +& intString(listLength(List.flatten(eqns))) +& ".graphml");
         // check by count vars of equations, if len(eqns) > len(vars) stop because of structural singular system
-        (b,eqns_1,unassignedStates,unassignedEqns,discEqns) = minimalStructurallySingularSystem(eqns,isyst,inAssignments1,inAssignments2);
+        (eqns_1,unassignedStates,unassignedEqns,discEqns) = minimalStructurallySingularSystem(eqns,isyst,ishared,inAssignments1,inAssignments2,inArg);
         size = BackendDAEUtil.systemSize(isyst);
         ErrorExt.setCheckpoint("Pantelites");
         Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index\n");
         (syst,shared,ass1,ass2,arg,_) =
-         pantelidesIndexReduction1(b,unassignedStates,unassignedEqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,{});
+         pantelidesIndexReduction1(unassignedStates,unassignedEqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,{});
         ErrorExt.rollBack("Pantelites");
         // get from eqns indexes the scalar indexes
         newsize = BackendDAEUtil.systemSize(syst);
@@ -180,11 +179,10 @@ algorithm
   end matchcontinue;
 end getChangedEqnsAndLowest;
 
-public function pantelidesIndexReduction1
+protected function pantelidesIndexReduction1
 "function: pantelidesIndexReduction1
   author: Frenkel TUD 2012-04
   Index Reduction algorithm to get a index 1 or 0 system."
-  input Boolean b;
   input list<list<Integer>> unassignedStates;
   input list<list<Integer>> unassignedEqns;
   input list<list<Integer>> alleqns;
@@ -195,34 +193,36 @@ public function pantelidesIndexReduction1
   input array<Integer> inAssignments1;
   input array<Integer> inAssignments2;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  input list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>>> iNotDiffableMSS;
+  input list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> iNotDiffableMSS;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2; 
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-  output list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>>> oNotDiffableMSS;
+  output list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> oNotDiffableMSS;
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2,outArg,oNotDiffableMSS):=
-  matchcontinue (b,unassignedStates,unassignedEqns,alleqns,iEqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,iNotDiffableMSS)
+  matchcontinue (unassignedStates,unassignedEqns,alleqns,iEqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,iNotDiffableMSS)
     local
       list<Integer> states,eqns,eqns_1,ueqns;
-      list<list<Integer>> statelst,eqnsrest,eqnsrest_1,ueqnsrest;
-      array<Integer>  ass1,ass2; 
+      list<list<Integer>> statelst,ueqnsrest,eqnsrest,eqnsrest_1;
+      array<Integer>  ass1,ass2;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.StructurallySingularSystemHandlerArg arg;
-      list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>>> notDiffableMSS;
-    case (_,_,_,_,{},_,_,_,_,_,_,_)
+      list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> notDiffableMSS;
+    case (_,_,_,{},_,_,_,_,_,_,_)
+      equation
+        (syst,shared,ass1,ass2,arg) = handleundifferntiableMSSLst(iNotDiffableMSS,isyst,ishared,inAssignments1,inAssignments2,inArg);
       then
-        (isyst,ishared,inAssignments1,inAssignments2,inArg,iNotDiffableMSS);
-    case (_,states::statelst,ueqns::ueqnsrest,eqns::eqnsrest,eqns_1::eqnsrest_1,_,_,_,_,_,_,_)
+        (syst,shared,ass1,ass2,arg,{});
+    case (states::statelst,ueqns::ueqnsrest,eqns::eqnsrest,eqns_1::eqnsrest_1,_,_,_,_,_,_,_)
       equation
         (syst,shared,ass1,ass2,arg,notDiffableMSS) =
-         pantelidesIndexReductionMSS(b,states,ueqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,iNotDiffableMSS);
+         pantelidesIndexReductionMSS(states,ueqns,eqns,eqns_1,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,iNotDiffableMSS);
         // next MSS
         (syst,shared,ass1,ass2,arg,notDiffableMSS) =
-         pantelidesIndexReduction1(b,statelst,ueqnsrest,eqnsrest,eqnsrest_1,actualEqn,syst,shared,ass1,ass2,arg,notDiffableMSS);
+         pantelidesIndexReduction1(statelst,ueqnsrest,eqnsrest,eqnsrest_1,actualEqn,syst,shared,ass1,ass2,arg,notDiffableMSS);
       then
        (syst,shared,ass1,ass2,arg,notDiffableMSS);      
     else
@@ -233,11 +233,10 @@ algorithm
   end matchcontinue;
 end pantelidesIndexReduction1;
 
-public function pantelidesIndexReductionMSS
+protected function pantelidesIndexReductionMSS
 "function: pantelidesIndexReductionMSS
   author: Frenkel TUD 2012-04
   Index Reduction algorithm to get a index 1 or 0 system."
-  input Boolean b;
   input list<Integer> unassignedStates;
   input list<Integer> unassignedEqns;
   input list<Integer> alleqns;
@@ -248,16 +247,16 @@ public function pantelidesIndexReductionMSS
   input array<Integer> inAssignments1;
   input array<Integer> inAssignments2;
   input BackendDAE.StructurallySingularSystemHandlerArg inArg;
-  input list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>>> iNotDiffableMSS;
+  input list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> iNotDiffableMSS;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAssignments1;
   output array<Integer> outAssignments2; 
   output BackendDAE.StructurallySingularSystemHandlerArg outArg;
-  output list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>>> oNotDiffableMSS;
+  output list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> oNotDiffableMSS;
 algorithm
   (osyst,oshared,outAssignments1,outAssignments2,outArg,oNotDiffableMSS):=
-  matchcontinue (b,unassignedStates,unassignedEqns,alleqns,eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,iNotDiffableMSS)
+  matchcontinue (unassignedStates,unassignedEqns,alleqns,eqns,actualEqn,isyst,ishared,inAssignments1,inAssignments2,inArg,iNotDiffableMSS)
     local
       list<BackendDAE.Var> varlst;
       list<Integer> changedeqns,eqns1;
@@ -268,13 +267,13 @@ algorithm
       BackendDAE.Shared shared;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
-      Integer noofeqns,eqnssize;
       String eqnstr;
+      Integer noofeqns,eqnssize;
       BackendDAE.EquationArray eqnsarray;
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> notdiffedEqns,diffedEqns,orgeqns;
-      list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>>> notDiffableMSS;
-    case (true,_,_,_,_::_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqnsarray),_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_)
+      list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> notDiffableMSS;
+    case (_,_,_,_::_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqnsarray),_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_)
       equation
         // get from scalar eqns indexes the indexes in the equation array
         eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
@@ -293,42 +292,6 @@ algorithm
         (syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,notDiffableMSS) = differentiateEqns(notdiffedEqns,diffedEqns,orgeqns,eqns1,unassignedStates,unassignedEqns,isyst,ishared,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iNotDiffableMSS);
       then
         (syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,noofeqns),notDiffableMSS);
-
-    case (_,_,_,_,{},_,_,_,_,_,(_,_,_,mapIncRowEqn,_),_)
-      equation
-        Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! Found empty set of continues equations.\nmarked equations:\n");
-        // get from scalar eqns indexes the indexes in the equation array
-        eqns1 = List.map1r(alleqns,arrayGet,mapIncRowEqn);
-        eqns1 = List.unique(eqns1);          
-        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
-        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
-        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
-      then
-        fail(); 
-
-    case (false,_,_,_,_::_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_),_)
-      equation
-        Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states.\nmarked equations:\n");
-        // get from scalar eqns indexes the indexes in the equation array
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns,intString," ","\n"));
-        eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
-        eqns1 = List.uniqueIntN(eqns1,arrayLength(mapIncRowEqn));        
-        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
-        Debug.fcall(Flags.BLT_DUMP, print, "unassgined states:\n");
-        varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,BackendVariable.daeVars(isyst));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList,varlst);
-        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
-        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction1 failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
-      then
-        fail();
-    case (_,_,_,_,_,_,_,_,_,_,(_,_,_,mapIncRowEqn,_),_)
-      equation
-        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
-      then
-        fail();         
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.pantelidesIndexReductionMSS failed! Use +d=bltdump to get more information."});
@@ -346,9 +309,10 @@ protected function minimalStructurallySingularSystem
   equations."
   input list<list<Integer>> inEqnsLst;
   input BackendDAE.EqSystem syst;
+  input BackendDAE.Shared shared;
   input array<Integer> inAssignments1;
   input array<Integer> inAssignments2;
-  output Boolean b;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   output list<list<Integer>> outEqnsLst "subsets without discrete equations";
   output list<list<Integer>> outStateIndxs "states contained in each subset";
   output list<list<Integer>> outunassignedEqns "the unassigned eqns of each subset";
@@ -360,6 +324,7 @@ protected
   BackendDAE.EquationArray eqns;
   array<Integer> statemark;
   Integer size;
+  Boolean b;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(m)) := syst;
   size := BackendVariable.varsSize(vars);
@@ -369,18 +334,21 @@ algorithm
   stateindxs := List.fold2(unassignedEqns,statesInEquations,(m,statemark,0),inAssignments1,{});
   ((unassignedEqns,eqnslst,discEqns)) := List.fold2(unassignedEqns,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},{}));
   b := intGe(listLength(stateindxs),listLength(unassignedEqns));
+  singulareSystemError(b,stateindxs,unassignedEqns,eqnslst,syst,shared,inAssignments1,inAssignments2,inArg);
   // check each mss
-  (b,outEqnsLst,outStateIndxs,outunassignedEqns,discEqns) := minimalStructurallySingularSystem1(b,listReverse(inEqnsLst),inAssignments1,inAssignments2,statemark,1,m,vars,{eqnslst},{stateindxs},{unassignedEqns},discEqns);
+  (outEqnsLst,outStateIndxs,outunassignedEqns,discEqns) := minimalStructurallySingularSystemMSS(inEqnsLst,syst,shared,inAssignments1,inAssignments2,inArg,statemark,1,m,vars,{},{},{},{});
 end minimalStructurallySingularSystem;
 
-protected function minimalStructurallySingularSystem1
-"function: minimalStructurallySingularSystem1
+protected function minimalStructurallySingularSystemMSS
+"function: minimalStructurallySingularSystemMSS
   author: Frenkel TUD - 2012-11,
   helper for minimalStructurallySingularSystem"
-  input Boolean b;
   input list<list<Integer>> inEqnsLst;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input array<Integer> inAssignments1;
   input array<Integer> inAssignments2;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
   input array<Integer> statemark;
   input Integer mark;
   input BackendDAE.IncidenceMatrix m;
@@ -389,52 +357,19 @@ protected function minimalStructurallySingularSystem1
   input list<list<Integer>> inStateIndxsAcc;
   input list<list<Integer>> inUnassEqnsAcc;
   input list<Integer> inDiscEqnsAcc;
-  output Boolean outB;
   output list<list<Integer>> outEqnsLst;
   output list<list<Integer>> outStateIndxs;
   output list<list<Integer>> outUnassEqnsAcc;
   output list<Integer> outDiscEqns;
 algorithm
-  (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) := 
-    match(b,inEqnsLst,inAssignments1,inAssignments2,statemark,mark,m,vars,inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc)
-    case (false,_,_,_,_,_,_,_,_,_,_,_) then (false,inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc);
-    case (true,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) = minimalStructurallySingularSystem2(inEqnsLst,inAssignments1,inAssignments2,statemark,mark,m,vars,{},{},{},{});
-     then
-       (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns);
-  end match;
-end minimalStructurallySingularSystem1;
-
-protected function minimalStructurallySingularSystem2
-"function: minimalStructurallySingularSystem2
-  author: Frenkel TUD - 2012-11,
-  helper for minimalStructurallySingularSystem"
-  input list<list<Integer>> inEqnsLst;
-  input array<Integer> inAssignments1;
-  input array<Integer> inAssignments2;
-  input array<Integer> statemark;
-  input Integer mark;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.Variables vars;
-  input list<list<Integer>> inEqnsLstAcc;
-  input list<list<Integer>> inStateIndxsAcc;
-  input list<list<Integer>> inUnassEqnsAcc;
-  input list<Integer> inDiscEqnsAcc;
-  output Boolean outB;
-  output list<list<Integer>> outEqnsLst;
-  output list<list<Integer>> outStateIndxs;
-  output list<list<Integer>> outUnassEqnsAcc;
-  output list<Integer> outDiscEqns;
-algorithm
-  (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) := 
-    match(inEqnsLst,inAssignments1,inAssignments2,statemark,mark,m,vars,inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc)
+  (outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) := 
+    match(inEqnsLst,isyst,ishared,inAssignments1,inAssignments2,inArg,statemark,mark,m,vars,inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc)
     local
       list<Integer> ilst,unassignedEqns,eqnsLst,discEqns,stateIndxs;
       list<list<Integer>> rest;
       Boolean b;
-    case ({},_,_,_,_,_,_,_,_,_,_) then (true,inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc);
-    case (ilst::rest,_,_,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_) then (inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqnsAcc);
+    case (ilst::rest,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         //  print("Eqns " +& stringDelimitList(List.map(ilst,intString),", ") +& "\n");
         ((unassignedEqns,eqnsLst,discEqns)) = List.fold2(ilst,unassignedContinuesEqns,vars,(inAssignments2,m),({},{},inDiscEqnsAcc));
@@ -442,47 +377,68 @@ algorithm
         stateIndxs = List.fold2(ilst,statesInEquations,(m,statemark,mark),inAssignments1,{});
         // print("stateIndxs " +& stringDelimitList(List.map(stateIndxs,intString),", ") +& "\n");
         b = intGe(listLength(stateIndxs),listLength(unassignedEqns));
-        (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) = minimalStructurallySingularSystem3(b,eqnsLst,stateIndxs,unassignedEqns,rest,inAssignments1,inAssignments2,statemark,mark+1,m,vars,inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,discEqns);
+        singulareSystemError(b,stateIndxs,unassignedEqns,eqnsLst,isyst,ishared,inAssignments1,inAssignments2,inArg);
+        (outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) = 
+          minimalStructurallySingularSystemMSS(rest,isyst,ishared,inAssignments1,inAssignments2,inArg,statemark,mark+1,m,vars,eqnsLst::inEqnsLstAcc,stateIndxs::inStateIndxsAcc,unassignedEqns::inUnassEqnsAcc,discEqns);
      then
-       (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns);
+       (outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns);
   end match;
-end minimalStructurallySingularSystem2;
+end minimalStructurallySingularSystemMSS;
 
-protected function minimalStructurallySingularSystem3
-"function: minimalStructurallySingularSystem3
-  author: Frenkel TUD - 2012-11,
-  helper for minimalStructurallySingularSystem."
-  input Boolean inB;
-  input list<Integer> inEqnsLst;
-  input list<Integer> inStateIndxs;
-  input list<Integer> inUnassEqns;
-  input list<list<Integer>> rest;
+protected function singulareSystemError
+"function: pantelidesIndexReductionMSS
+  author: Frenkel TUD 2012-04
+  Index Reduction algorithm to get a index 1 or 0 system."
+  input Boolean b;
+  input list<Integer> unassignedStates;
+  input list<Integer> unassignedEqns;
+  input list<Integer> eqns;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
   input array<Integer> inAssignments1;
   input array<Integer> inAssignments2;
-  input array<Integer> statemark;
-  input Integer mark;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.Variables vars;
-  input list<list<Integer>> inEqnsLstAcc;
-  input list<list<Integer>> inStateIndxsAcc;
-  input list<list<Integer>> inUnassEqnsAcc;
-  input list<Integer> inDiscEqns;
-  output Boolean outB;
-  output list<list<Integer>> outEqnsLst;
-  output list<list<Integer>> outStateIndxs;
-  output list<list<Integer>> outUnassEqnsAcc;
-  output list<Integer> outDiscEqns;
+  input BackendDAE.StructurallySingularSystemHandlerArg inArg;
 algorithm
-  (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) := 
-  match(inB,inEqnsLst,inStateIndxs,inUnassEqns,rest,inAssignments1,inAssignments2,statemark,mark,m,vars,inEqnsLstAcc,inStateIndxsAcc,inUnassEqnsAcc,inDiscEqns)
-    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then (false,{inEqnsLst},{inStateIndxs},{inUnassEqns},inDiscEqns);
-    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+  _:=
+  match (b,unassignedStates,unassignedEqns,eqns,isyst,ishared,inAssignments1,inAssignments2,inArg)
+    local
+      list<BackendDAE.Var> varlst;
+      list<Integer> eqns1;
+      BackendDAE.EqSystem syst;
+      array<Integer> mapIncRowEqn;
+    // OK
+    case (true,_,_,_::_,_,_,_,_,_) then ();
+    // Failure
+    case (_,_,_,{},_,_,_,_,(_,_,_,mapIncRowEqn,_))
       equation
-        (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns) = minimalStructurallySingularSystem2(rest,inAssignments1,inAssignments2,statemark,mark,m,vars,inEqnsLst::inEqnsLstAcc,inStateIndxs::inStateIndxsAcc,inUnassEqns::inUnassEqnsAcc,inDiscEqns);
+        Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! Found empty set of continues equations.\nmarked equations:\n");
+        // get from scalar eqns indexes the indexes in the equation array
+        eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
+        eqns1 = List.uniqueIntN(eqns1,arrayLength(mapIncRowEqn));
+        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
+        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
+        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
       then
-        (outB,outEqnsLst,outStateIndxs,outUnassEqnsAcc,outDiscEqns);
+        fail();
+    case (false,_,_,_::_,_,_,_,_,(_,_,_,mapIncRowEqn,_))
+      equation
+        Debug.fcall(Flags.BLT_DUMP, print, "Reduce Index failed! System is structurally singulare and cannot handled because number of unassigned continues equations is larger than number of states.\nmarked equations:\n");
+        // get from scalar eqns indexes the indexes in the equation array
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (eqns,intString," ","\n"));
+        eqns1 = List.map1r(eqns,arrayGet,mapIncRowEqn);
+        eqns1 = List.uniqueIntN(eqns1,arrayLength(mapIncRowEqn));
+        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
+        Debug.fcall(Flags.BLT_DUMP, print, "unassgined states:\n");
+        varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,BackendVariable.daeVars(isyst));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList,varlst);
+        syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
+        Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction1 failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
+      then
+        fail();
   end match;
-end minimalStructurallySingularSystem3;
+end singulareSystemError;
 
 protected function unassignedContinuesEqns
 "function: unassignedContinuesEqns
@@ -564,7 +520,7 @@ algorithm
   outStateLst := listAppend(inStateLst,vars);        
 end statesInEquations;
 
-public function isMarked
+protected function isMarked
 "function isMarked
   author: Frenkel TUD 2012-05"
   input tuple<array<Integer>,Integer> ass;
@@ -578,7 +534,7 @@ algorithm
   b := intEq(arr[intAbs(indx)],mark);
 end isMarked;
 
-public function isUnMarked
+protected function isUnMarked
 "function isUnMarked
   author: Frenkel TUD 2012-05"
   input tuple<array<Integer>,Integer> ass;
@@ -592,7 +548,7 @@ algorithm
   b := not intEq(arr[intAbs(indx)],mark);
 end isUnMarked;
 
-public function markTrue
+protected function markTrue
 "function markElement
   author: Frenkel TUD 2012-05"
   input Integer indx;
@@ -722,7 +678,7 @@ protected function differentiateEqns
   input BackendDAE.ConstraintEquations inOrgEqnsLst;
   input array<list<Integer>> imapEqnIncRow;
   input array<Integer> imapIncRowEqn;
-  input list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>>> iNotDiffableMSS;
+  input list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> iNotDiffableMSS;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
   output array<Integer> outAss1;
@@ -731,7 +687,7 @@ protected function differentiateEqns
   output BackendDAE.ConstraintEquations outOrgEqnsLst;
   output array<list<Integer>> omapEqnIncRow;
   output array<Integer> omapIncRowEqn;
-  output list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>>> oNotDiffableMSS;
+  output list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> oNotDiffableMSS;
 algorithm
   (osyst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn,oNotDiffableMSS):=
   match (notDiffedEquations,inDiffEqns,inOrgEqns,inEqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,iNotDiffableMSS)
@@ -773,32 +729,9 @@ algorithm
       then
         (syst,ishared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iNotDiffableMSS);
     // not all equations are differentiated
-/*    case (_::_,_,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=v,mT = SOME(mt)),_,_,_,_,_,_,_,_)
-      then
-        (isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,(notDiffedEquations,inDiffEqns,inOrgEqns)::iNotDiffableMSS);
-*/    // not all equations are differentiated
     case (_::_,_,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=v,mT = SOME(mt)),_,_,_,_,_,_,_,_)
-      equation
-        Debug.fcall(Flags.BLT_DUMP, print, "notDiffedEquations:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, notDiffedEquations);
-        Debug.fcall(Flags.BLT_DUMP, print, "inOrgEqns:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, inOrgEqns);
-        Debug.fcall(Flags.BLT_DUMP, print, "inDiffEqns:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, inDiffEqns);
-        Debug.fcall(Flags.BLT_DUMP, print, "unassignedEqns:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (unassignedEqns, intString, ", ", "\n"));
-        Debug.fcall(Flags.BLT_DUMP, print, "unassignedStates:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (unassignedStates,intString, ", ", "\n"));
-        ilst = List.fold1(unassignedStates, statesWithUnusedDerivative, mt, {});
-        ilst = List.select1(ilst, isStateonIndex, v);
-        // check also initial equations (this could be done alse once before
-        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
-        Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
-        Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(ilst,intString,", ","\n"));
-        (syst,shared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn) =
-          handleundifferntiableMSS(intEq(listLength(ilst),listLength(unassignedEqns)),ilst,notDiffedEquations,inDiffEqns,inOrgEqns,inEqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn);
       then
-        (syst,shared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iNotDiffableMSS);
+        (isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,(notDiffedEquations,inDiffEqns,inOrgEqns,inEqns,unassignedStates,unassignedEqns)::iNotDiffableMSS);
   end match;
 end differentiateEqns;
 
@@ -973,6 +906,68 @@ algorithm
   v := BackendVariable.getVarAt(vars,index);
   b := BackendVariable.isStateVar(v);
 end isStateonIndex;
+
+protected function handleundifferntiableMSSLst
+"function: handleundifferntiableMSSLst
+  author: Frenkel TUD 2012-12
+  handle list of undifferentiatable equations for 
+  Pantelides index reduction method."
+  input list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> iNotDiffableMSS;
+  input BackendDAE.EqSystem isyst;
+  input BackendDAE.Shared ishared;
+  input array<Integer> inAss1;
+  input array<Integer> inAss2;
+  input BackendDAE.StructurallySingularSystemHandlerArg iArg;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;
+  output array<Integer> outAss1;
+  output array<Integer> outAss2; 
+  output BackendDAE.StructurallySingularSystemHandlerArg oArg;
+algorithm
+  (osyst,oshared,outAss1,outAss2,oArg):=
+  match (iNotDiffableMSS,isyst,ishared,inAss1,inAss2,iArg)
+    local
+      list<BackendDAE.Equation> notDiffedEquations,inDiffEqns,inOrgEqns;
+      list<tuple<list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<BackendDAE.Equation>,list<Integer>,list<Integer>,list<Integer>>> notDiffableMSS;
+      list<Integer> unassignedEqns,unassignedStates,eqns,ilst;
+      BackendDAE.Variables v;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      BackendDAE.StateOrder so;
+      BackendDAE.ConstraintEquations orgEqnsLst;
+      array<list<Integer>> mapEqnIncRow;
+      array<Integer> mapIncRowEqn;
+      Integer noofeqns;
+      BackendDAE.StructurallySingularSystemHandlerArg arg;
+      BackendDAE.IncidenceMatrixT mt;
+      array<Integer> ass1,ass2;
+    case ({},_,_,_,_,_) 
+      then (isyst,ishared,inAss1,inAss2,iArg);
+    case ((notDiffedEquations,inDiffEqns,inOrgEqns,eqns,unassignedStates,unassignedEqns)::notDiffableMSS,BackendDAE.EQSYSTEM(orderedVars=v,mT=SOME(mt)),_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns))
+      equation
+        Debug.fcall(Flags.BLT_DUMP, print, "notDiffedEquations:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, notDiffedEquations);
+        Debug.fcall(Flags.BLT_DUMP, print, "inOrgEqns:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, inOrgEqns);
+        Debug.fcall(Flags.BLT_DUMP, print, "inDiffEqns:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, inDiffEqns);
+        Debug.fcall(Flags.BLT_DUMP, print, "unassignedEqns:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (unassignedEqns, intString, ", ", "\n"));
+        Debug.fcall(Flags.BLT_DUMP, print, "unassignedStates:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst, (unassignedStates,intString, ", ", "\n"));
+        ilst = List.fold1(unassignedStates, statesWithUnusedDerivative, mt, {});
+        ilst = List.select1(ilst, isStateonIndex, v);
+        // check also initial equations (this could be done alse once before
+        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
+        Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
+        Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(ilst,intString,", ","\n"));
+        (syst,shared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn) =
+          handleundifferntiableMSS(intEq(listLength(ilst),listLength(unassignedEqns)),ilst,notDiffedEquations,inDiffEqns,inOrgEqns,eqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn);
+        (syst,shared,ass1,ass2,arg) = handleundifferntiableMSSLst(notDiffableMSS,syst,shared,ass1,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns));
+      then
+        (syst,shared,ass1,ass2,arg);
+  end match;
+end handleundifferntiableMSSLst;
 
 protected function handleundifferntiableMSS
 "function: handleundifferntiableMSS

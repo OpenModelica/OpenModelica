@@ -6541,12 +6541,10 @@ algorithm
   unmatched := List.select1(List.flatten(eqns),intLe,n);
   unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
   unmatched1 := List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
-  unmatched1 := List.sortIntN(unmatched1,n);
   eqn_str := BackendDump.dumpMarkedEqns(isyst, unmatched1);
   vars := getUnassigned(n, inAssignments2, {});
   vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
   vars := List.select1(vars,intLe,n);
-  vars := List.sortIntN(vars,n);
   var_str := BackendDump.dumpMarkedVars(isyst, vars);
   source := BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
   info := DAEUtil.getElementSourceFileInfo(source);
