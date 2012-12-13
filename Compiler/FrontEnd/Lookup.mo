@@ -1512,8 +1512,9 @@ public function lookupIdent
   output SCode.Element outElement;
   output DAE.Mod outMod;
   output Env.InstStatus instStatus;
+  output Env.Env outEnv "the env where we found the ident";
 algorithm
-  (outCache,outVar,outElement,outMod,instStatus):=
+  (outCache,outVar,outElement,outMod,instStatus,outEnv):=
   matchcontinue (inCache,inEnv,inIdent)
     local
       DAE.Var fv;
@@ -1523,20 +1524,20 @@ algorithm
       Option<String> sid;
       Env.AvlTree ht;
       String id;
-      Env.Env rest;
+      Env.Env rest,e;
       Env.Cache cache;
 
     case (cache,(Env.FRAME(name = sid,clsAndVars = ht) :: _),id)
       equation
         (cache,fv,c,m,i,_) = lookupVar2(cache, ht, id);
       then
-        (cache,fv,c,m,i);
+        (cache,fv,c,m,i,inEnv);
     
     case (cache,(_ :: rest),id)
       equation
-        (cache,fv,c,m,i) = lookupIdent(cache, rest, id);
+        (cache,fv,c,m,i,e) = lookupIdent(cache, rest, id);
       then
-        (cache,fv,c,m,i);
+        (cache,fv,c,m,i,e);
   
   end matchcontinue;
 end lookupIdent;

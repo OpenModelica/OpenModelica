@@ -9482,6 +9482,45 @@ algorithm
   //print("outEnv:");print(Env.printEnvStr(outEnv));print("\n");
 end updateComponentsInEnv;
 
+protected function updateClassInfState
+  input Env.Cache inCache;
+  input Env.Env inNewEnv;
+  input Env.Env inOldEnv;
+  input ClassInf.State inCIState;
+  output ClassInf.State outCIState;
+algorithm
+  outCIState := matchcontinue(inCache, inNewEnv, inOldEnv, inCIState)
+    local 
+      ClassInf.State ci_state;
+      Env.Env rest;
+      Absyn.Ident id;
+      SCode.Element cls;
+    
+    // top env, return the same ci_state
+    case (_, {Env.FRAME(name = NONE())}, _, ci_state) then ci_state;
+        
+    // same environment, return the same ci_state
+    case (_, _, _, ci_state)
+      equation
+        true = stringEq(Env.getEnvNameStr(inNewEnv),
+                        Env.getEnvNameStr(inOldEnv));
+      then
+        ci_state;
+        
+    // not the same environment, try to 
+    // make a ci state from the new env
+    case (_, Env.FRAME(name = SOME(id))::rest, _, ci_state)
+      equation
+        (_, cls, _) = Lookup.lookupClass(inCache, rest, Absyn.IDENT(id), false);
+        ci_state = ClassInf.start(SCode.getClassRestriction(cls), Env.getEnvName(inNewEnv));
+      then
+        ci_state;
+    
+    else then inCIState;
+  
+  end matchcontinue;
+end updateClassInfState;
+
 protected function updateComponentInEnv
 "function: updateComponentInEnv
   author: PA
@@ -9536,7 +9575,7 @@ algorithm
       DAE.Mod daeMod;
       SCode.Prefixes prefixes;
       SCode.Attributes attributes;
-      Env.Env compenv, env;
+      Env.Env compenv, env, idENV;
       Env.InstStatus instStatus;
       Env.Cache cache;
       HashTable5.HashTable updatedComps;
@@ -9581,8 +9620,11 @@ algorithm
         io = SCode.prefixesInnerOuter(pf);
         SCode.ATTR(ad,ct,prl1,var1,dir) = attr;
 
-        (cache,tyVar,SCode.COMPONENT(n,_,_,Absyn.TPATH(t, _),_,comment,cond,info),_,_)
+        (cache,tyVar,SCode.COMPONENT(n,_,_,Absyn.TPATH(t, _),_,comment,cond,info),_,_,idENV)
           = Lookup.lookupIdent(cache, env, id);
+        
+        ci_state = updateClassInfState(cache, idENV, env, ci_state);  
+        
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
         //Debug.traceln("got class " +& SCodeDump.printClassStr(cl));
@@ -9634,7 +9676,7 @@ algorithm
     case (cache,env,ih,_,mods,_,_,_,updatedComps,_)
       equation
         id = Absyn.crefFirstIdent(cref);
-        (cache,_,_,_,is) = Lookup.lookupIdent(cache,env,id);
+        (cache,_,_,_,is,idENV) = Lookup.lookupIdent(cache,env,id);
         true = Env.isTyped(is) "If InstStatus is typed, return";
       then
         (cache,env,ih,updatedComps);
@@ -9648,8 +9690,11 @@ algorithm
             n,
             pf as SCode.PREFIXES(innerOuter = io, visibility = visibility),
             attr as SCode.ATTR(ad,ct,prl1,var1,dir),
-            Absyn.TPATH(t, _),m,comment,cond,info),cmod,_)
+            Absyn.TPATH(t, _),m,comment,cond,info),cmod,_,idENV)
           = Lookup.lookupIdent(cache, env, id);
+        
+        ci_state = updateClassInfState(cache, idENV, env, ci_state);
+        
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
         //Debug.traceln("got class " +& SCodeDump.printClassStr(cl));
@@ -10606,11 +10651,11 @@ algorithm
 
     case (cache,env,cref as DAE.CREF_IDENT(ident = id),_)
       equation
-        (cache,_,SCode.COMPONENT(modifications = m),cmod,_)
-          = Lookup.lookupIdent(cache,env, id);
+        (cache,_,SCode.COMPONENT(modifications = m),cmod,_,_)
+          = Lookup.lookupIdent(cache, env, id);
         cmod_1 = Mod.stripSubmod(cmod);
         m_1 = SCode.stripSubmod(m);
-        (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), m_1, false,info);
+        (cache,m_2) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), m_1, false, info);
         mod_2 = Mod.merge(cmod_1, m_2, env, Prefix.NOPRE());
         SOME(eq) = Mod.modEquation(mod_2);
         (cache,dims) = elabComponentArraydimFromEnv2(cache,eq, env);
@@ -10619,7 +10664,7 @@ algorithm
     
     case (cache,env,cref as DAE.CREF_IDENT(ident = id),_)
       equation
-        (cache,_,SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ad)),_,_)
+        (cache,_,SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ad)),_,_,_)
           = Lookup.lookupIdent(cache,env, id);
         (cache, subs, _) = Static.elabSubscripts(cache, env, ad, true, Prefix.NOPRE(), info);
         dims = Expression.subscriptDimensions(subs);

@@ -7212,7 +7212,7 @@ algorithm
         Absyn.IDENT(componentName) = fnPrefix; // see that is just a name TODO! this might be a path
         (_, _, SCode.COMPONENT(
           prefixes = SCode.PREFIXES(innerOuter=innerOuter), 
-          typeSpec = Absyn.TPATH(componentType, _)),_, _) =
+          typeSpec = Absyn.TPATH(componentType, _)),_, _, _) =
           Lookup.lookupIdent(cache, env, componentName); // search for the component
         // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
         functionClassPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
@@ -9806,7 +9806,7 @@ algorithm
         failure((_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl,info));
         id = Absyn.crefFirstIdent(c);
         (cache,DAE.TYPES_VAR(name, attributes, visibility, ty, binding, constOfForIteratorRange), 
-               SOME((cl as SCode.COMPONENT(n, pref, SCode.ATTR(arrayDims = ad), Absyn.TPATH(tpath, _),m,comment,cond,info),cmod)),instStatus)
+               SOME((cl as SCode.COMPONENT(n, pref, SCode.ATTR(arrayDims = ad), Absyn.TPATH(tpath, _),m,comment,cond,info),cmod)),instStatus,_)
           = Lookup.lookupIdent(cache, env, id);
         print("Static: cref:" +& Absyn.printComponentRefStr(c) +& " component first ident:\n" +& SCodeDump.unparseElementStr(cl) +& "\n");
         (cache, cl, env) = Lookup.lookupClass(cache, env, tpath, false);

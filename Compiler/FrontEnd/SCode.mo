@@ -4623,6 +4623,12 @@ algorithm
   end matchcontinue;
 end algorithmContainReinit;
 
+public function getClassRestriction
+  input Element inElement;
+  output Restriction outRestriction;
+algorithm
+  CLASS(restriction = outRestriction) := inElement;
+end getClassRestriction;
 
 end SCode;
 
