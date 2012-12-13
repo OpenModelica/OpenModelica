@@ -1,7 +1,6 @@
 package MathematicaDump "Copyright (C) MathCore Engineering AB, 2005 "
 
   import BackendDAE;
-  import BackendDAEUtil;
   import BackendVariable;
   import ComponentReference;
   import DAE;
@@ -86,12 +85,12 @@ algorithm
           exp = DAE.CALL( path = Absyn.IDENT("der"),
           expLst = {DAE.CREF(DAE.CREF_IDENT("$dummy",_,_),_)})
           ),_) then "";
-    case(BackendDAE.EQUATION(e1,e2,_),(vars,knvars)) equation
+    case(BackendDAE.EQUATION(exp=e1,scalar=e2),(vars,knvars)) equation
       s1 = printExpMmaStr(e1,vars,knvars);
       s2 = printExpMmaStr(e2,vars,knvars);
       str = stringAppendList({s1,"==",s2});
       then str;
-    case(BackendDAE.SOLVED_EQUATION(cr,e2,_),(vars,knvars)) equation
+    case(BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e2),(vars,knvars)) equation
       s1 = printComponentRefMmaStr(cr,vars,knvars);
       s2 = printExpMmaStr(e2,vars,knvars);
       str = stringAppendList({s1,"==",s2});

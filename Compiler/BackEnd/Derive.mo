@@ -101,7 +101,7 @@ algorithm
         op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        BackendDAE.EQUATION(e1_2,e2_2,source);
+        BackendDAE.EQUATION(e1_2,e2_2,source,false);
     
     // complex equations
     case (BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source=source),timevars,_) /* time varying variables */
@@ -114,7 +114,7 @@ algorithm
         op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source);
+        BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source,false);
    
     // Array Equations   
     case (BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source=source),timevars,_) /* time varying variables */
@@ -127,7 +127,7 @@ algorithm
         op2 = DAE.OP_DERIVE(DAE.crefTime,e2,e2_2);
         source = List.foldr({op1,op2},DAEUtil.addSymbolicTransformation,source);
       then
-        BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source);     
+        BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,false);     
     // diverivative of function with multiple outputs
     case (BackendDAE.ALGORITHM(size = size,alg=alg,source=source),timevars,BackendDAE.SHARED(functionTree=funcs))
       equation

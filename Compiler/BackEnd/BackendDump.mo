@@ -497,9 +497,11 @@ algorithm
       Integer i;
       DAE.ElementSource source;
       DAE.Algorithm alg;
+      Boolean diffed;
+      DAE.ComponentRef cr;
 
     case ({}, _) then ();
-    case (BackendDAE.EQUATION(e1, e2, source)::res, printExpTree) equation /*done*/
+    case (BackendDAE.EQUATION(e1, e2, source, diffed)::res, printExpTree) equation /*done*/
       str = "EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e1);
       str = str +& " = ";
@@ -535,7 +537,7 @@ algorithm
       
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.SOLVED_EQUATION(_, e, source)::res,printExpTree) equation
+    case (BackendDAE.SOLVED_EQUATION(componentRef=cr,exp=e,source=source)::res,printExpTree) equation
       print("SOLVED_EQUATION: ");
       str = ExpressionDump.printExpStr(e);
       print(str);
@@ -546,7 +548,7 @@ algorithm
       print("\n");
       dumpBackendDAEEqnList2(res,printExpTree);
     then ();
-    case (BackendDAE.RESIDUAL_EQUATION(e, source)::res, printExpTree) equation /*done*/
+    case (BackendDAE.RESIDUAL_EQUATION(exp=e,source=source)::res, printExpTree) equation /*done*/
       str = "RESIDUAL_EQUATION: ";
       str = str +& ExpressionDump.printExpStr(e);
       str = str +& "\n";

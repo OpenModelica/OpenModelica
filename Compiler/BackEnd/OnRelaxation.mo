@@ -144,6 +144,9 @@ algorithm
       (comp as BackendDAE.EQUATIONSYSTEM(eqns=eindex,vars=vindx,jac=SOME(jac),jacType=BackendDAE.JAC_TIME_VARYING()))::comps)
       equation
         print("try to relax\n");
+          BackendDAEUtil.profilerinit();
+          BackendDAEUtil.profilerstart2();
+          BackendDAEUtil.profilerstart1();
         size = listLength(vindx);
         esize = listLength(eindex);
         ass1 = arrayCreate(size,-1);
@@ -155,7 +158,7 @@ algorithm
 
         subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
         (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE());
-          BackendDump.dumpEqSystem(subsyst);
+        //  BackendDump.dumpEqSystem(subsyst);
 
         // Vector Matching a=f(..),f(..)=a 
         ((_,ass1,ass2)) = List.fold1(eqn_lst,vectorMatching,vars,(1,ass1,ass2));
@@ -229,7 +232,10 @@ algorithm
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemOneFreeMatching.graphml");
 
         // hier sollte zur vorsicht noch mal ein matching durchgefuehrt werden
-        
+          BackendDAEUtil.profilerstop1();
+          print("Matching  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          BackendDAEUtil.profilerreset1();
+          BackendDAEUtil.profilerstart1();
         // collect tearing variables and residual equations
         vorphans = getOrphans(1,size,ass1,{});
         eorphans = getOrphans(1,size,ass2,{});
@@ -268,7 +274,10 @@ algorithm
         //  BackendDump.debuglst((roots,intString,", ","\n")); 
         //  print("constraints:\n");
         //  BackendDump.debuglst((constraints,intString,", ","\n")); 
-
+          BackendDAEUtil.profilerstop1();
+          print("Identifikation  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          BackendDAEUtil.profilerreset1();
+          BackendDAEUtil.profilerstart1();
         // Order of orphans 
         vorphansarray1 = arrayCreate(size,{});
         List.map2_0(roots,doMark,rowmarks,mark);
@@ -283,7 +292,10 @@ algorithm
         //  BackendDump.dumpIncidenceMatrix(vorphansarray1);
 
         (vorphans,mark) = getOrphansOrderEdvanced3(roots,otherorphans,constraints,vorphans,vorphansarray1,mark,rowmarks);
-
+          BackendDAEUtil.profilerstop1();
+          print("Reihenfolge  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          BackendDAEUtil.profilerreset1();
+          BackendDAEUtil.profilerstart1();
         List.map2_0(constraints,doMark,rowmarks,mark);
         otherorphans = List.select2(vorphans, unmarked, rowmarks, mark);
 
@@ -300,7 +312,10 @@ algorithm
         //  print("Matching with Orphans:\n");
         //  BackendDump.dumpMatching(ass1);
         //  BackendDump.dumpIncidenceMatrix(ass22); 
-        
+          BackendDAEUtil.profilerstop1();
+          print("Paarung  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          BackendDAEUtil.profilerreset1();
+          BackendDAEUtil.profilerstart1();
         vec1 = arrayCreate(esize,{});
         vec2 = arrayCreate(esize,-1);
         
@@ -315,7 +330,10 @@ algorithm
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,SOME(vec3),"System.graphml");
 
         ((_,_,_,eqns,vars)) = Util.arrayFold(vec2,getEqnsinOrder,(eqns,vars,ass22,BackendEquation.listEquation({}),BackendVariable.emptyVars()));
-        
+          BackendDAEUtil.profilerstop1();
+          print("Indizierung  time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          BackendDAEUtil.profilerreset1();
+          BackendDAEUtil.profilerstart1();
         // replace evaluated parametes
         //_ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, replaceFinalParameter, BackendVariable.daeKnVars(shared));
         
@@ -346,8 +364,15 @@ algorithm
         crefexplst = List.map(BackendVariable.varList(vars),makeCrefExps);
         crefexps = listArray(crefexplst);
         neweqns = makeGausElimination(1,size,matrix,crefexps,{});
+          BackendDAEUtil.profilerstop1();
+          print("Gaus Elimination time: " +& realString(BackendDAEUtil.profilertime1()) +& "\n");
+          BackendDAEUtil.profilerreset1();
+          BackendDAEUtil.profilerstart1();        
         syst = replaceEquationsAddNew(eindex,neweqns,syst);
-        
+          BackendDAEUtil.profilerstop2();
+          print("Gesamt  time: " +& realString(BackendDAEUtil.profilertime2()) +& "\n");
+          BackendDAEUtil.profilerreset1();
+          BackendDAEUtil.profilerstart1();
         /*
         vars = BackendVariable.addVars(var_lst, vars);
         eqns = BackendEquation.addEquations(neweqns, teqns);
@@ -1808,7 +1833,7 @@ algorithm
         //(e,_) = ExpressionSimplify.simplify(e);
         //(b,_) = ExpressionSimplify.simplify(b);
         //  BackendDump.debugStrExpStrExpStr(("",e," = ",b,"\n"));
-        eqn = BackendDAE.EQUATION(e,b,DAE.emptyElementSource);
+        eqn = BackendDAE.EQUATION(e,b,DAE.emptyElementSource,false);
       then
         makeGausElimination(row+1,size,matrix,vars,eqn::iAcc);
   end matchcontinue;
@@ -2017,7 +2042,7 @@ algorithm
       sb = intString(b);
       cr = ComponentReference.makeCrefIdent(stringAppendList({"$tmp",sa,"_",sb}),DAE.T_REAL_DEFAULT,{});
       cexp = Expression.crefExp(cr);
-      eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(cexp,e,DAE.emptyElementSource),inEqns);
+      eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(cexp,e,DAE.emptyElementSource,false),inEqns);
       v = BackendDAE.VAR(cr,BackendDAE.VARIABLE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},DAE.emptyElementSource,NONE(),NONE(),DAE.NON_CONNECTOR());
       vars = BackendVariable.addVar(v,inVars);
     then
@@ -2798,10 +2823,10 @@ algorithm
         // generate subgraph from residual equation to tearing variable
         rows = List.select(m[eorphan], Util.intPositive);
         rows = List.fold1(ass2[eorphan],List.removeOnTrue, intEq, rows);
-         BackendDump.debuglst((rows,intString,", ","\n"));
+        // BackendDump.debuglst((rows,intString,", ","\n"));
         _ = getIndexSubGraph(rows,vorphans,m,mT,imark,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,false);        
         // generate queue with BFS from tearing var to residual equation
-         print("getIndex ");
+        // print("getIndex ");
         vorphanseqns = List.unique(List.flatten(List.map1r(vorphans,arrayGet,mT))); 
         //  BackendDump.debuglst((vorphanseqns,intString,", ","\n"));
         queuelst = getIndexQueque(vorphanseqns,m,mT,imark,rowmarks,colummarks,ass1,ass2,vec2,queuemark,{},{},{});
@@ -2849,8 +2874,8 @@ algorithm
        _ = List.fold1(vorphans,markOrphans,-1,orowmarks);
        _ = List.fold1r(vorphans,arrayUpdate,{},mT);
 
-          syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
-          IndexReduction.dumpSystemGraphML(syst,shared,NONE(),intString(size) +& "SystemIndexing" +& intString(index) +& ".graphml");
+       //   syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
+       //   IndexReduction.dumpSystemGraphML(syst,shared,NONE(),intString(size) +& "SystemIndexing" +& intString(index) +& ".graphml");
         
       then
        getIndexesForEqnsAdvanced(rest,index1+1,m,mT,mark+2,rowmarks,colummarks,orowmarks,ocolummarks,ass1,ass2,vec1,vec2,queuemark, vars,eqns,shared,size);

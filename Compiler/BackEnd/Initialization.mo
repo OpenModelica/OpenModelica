@@ -162,7 +162,7 @@ algorithm
     case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
       true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
       identType = ComponentReference.crefType(left);
-      eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), right, source);
+      eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), right, source, false);
     then eqn;
     
     // inactive when equation during initialization
@@ -247,7 +247,7 @@ protected
 algorithm
   identType := ComponentReference.crefType(inCRef);
   preCR := ComponentReference.crefPrefixPre(inCRef);
-  outEqn := BackendDAE.EQUATION(DAE.CREF(inCRef, identType), DAE.CREF(preCR, identType), inSource);
+  outEqn := BackendDAE.EQUATION(DAE.CREF(inCRef, identType), DAE.CREF(preCR, identType), inSource, false);
 end generateInactiveWhenEquationForInitialization;
 
 protected function generateInactiveWhenAlgStatementForInitialization "function generateInactiveWhenAlgStatementForInitialization
@@ -677,7 +677,7 @@ algorithm
       tp = Expression.typeof(e);
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource);
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
       
       crStr = ComponentReference.crefStr(cref);
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [discrete] " +& crStr);
@@ -696,7 +696,7 @@ algorithm
       tp = Expression.typeof(e);
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource);
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
       
       crStr = ComponentReference.crefStr(cref);
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [continuous] " +& crStr);
@@ -740,7 +740,7 @@ algorithm
       tp = Expression.typeof(e);
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource);
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
       
       crStr = ComponentReference.crefStr(cref);
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [discrete] " +& crStr);
@@ -756,7 +756,7 @@ algorithm
       tp = Expression.typeof(e);
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       
-      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource);
+      eqn = BackendDAE.EQUATION(crefExp, startExp, DAE.emptyElementSource, false);
       
       crStr = ComponentReference.crefStr(var);
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [continuous] " +& crStr);
@@ -946,7 +946,7 @@ algorithm
     // binding
     case((var as BackendDAE.VAR(varName=cr, bindExp=SOME(bindExp), varType=ty, source=source), (eqns, reeqns))) equation
       crefExp = DAE.CREF(cr, ty);      
-      eqn = BackendDAE.EQUATION(crefExp, bindExp, source);
+      eqn = BackendDAE.EQUATION(crefExp, bindExp, source, false);
       eqns = BackendEquation.equationAdd(eqn, eqns);
     then ((var, (eqns, reeqns)));
     

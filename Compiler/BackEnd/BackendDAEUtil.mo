@@ -937,7 +937,7 @@ algorithm
    * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0;
    */
   exp := Expression.crefExp(cr);
-  eqn := BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),DAE.RCONST(0.0), DAE.emptyElementSource);
+  eqn := BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{exp},DAE.callAttrBuiltinReal),DAE.RCONST(0.0), DAE.emptyElementSource,false);
   eqns := BackendEquation.listEquation({eqn});
   // generate equationsystem
   ass := listArray({1});
@@ -6339,19 +6339,6 @@ algorithm
   end match;
 end arrayDimensionsToRange;
 
-
-protected function makeResidualEqn "function: makeResidualEqn
-  author: PA
-  Transforms an expression into a residual equation"
-  input DAE.Exp inExp;
-  output BackendDAE.Equation outEquation;
-algorithm
-  outEquation := matchcontinue (inExp)
-    local DAE.Exp e;
-    case (e) then BackendDAE.RESIDUAL_EQUATION(e,DAE.emptyElementSource);
-  end matchcontinue;
-end makeResidualEqn;
-
 protected function calculateJacobianRowLst "function: calculateJacobianRowLst
   author: Frenkel TUD 2012-06
   calls calculateJacobianRow2 for a list of DAE.Exp"
@@ -6459,7 +6446,7 @@ algorithm
       then
         iAcc;
     else
-      (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(inExp,source)) :: iAcc;
+      (eqn_indx,vindx,BackendDAE.RESIDUAL_EQUATION(inExp,source,false)) :: iAcc;
   end matchcontinue;
 end calculateJacobianRow3;
 

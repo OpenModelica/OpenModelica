@@ -6619,8 +6619,10 @@ algorithm
         n = BackendDAEUtil.systemSize(isyst);
         // get from scalar eqns indexes the indexes in the equation array
         unmatched = List.select1(List.flatten(eqns),intLe,n);
+      print("SystemSize: " +& intString(n) +& " \nEqns:" +& stringDelimitList(List.map(unmatched,intString),", ") +& "\n");
         unmatched1 = List.map1r(unmatched,arrayGet,mapIncRowEqn);
         unmatched1 = List.uniqueIntN(unmatched1,arrayLength(mapIncRowEqn));
+      print("ArrayIndizes: " +& stringDelimitList(List.map(unmatched1,intString),", ") +& "\n");
         eqn_str = BackendDump.dumpMarkedEqns(isyst, unmatched1);
         vars = getUnassigned(n, inAssignments2, {});
         vars = List.fold1(unmatched,getAssignedVars,inAssignments1,vars);

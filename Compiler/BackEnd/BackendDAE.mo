@@ -121,6 +121,7 @@ uniontype Equation "- Equation"
     .DAE.Exp exp;
     .DAE.Exp scalar "scalar" ;
     .DAE.ElementSource source "origin of equation";
+    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end EQUATION;
 
   record ARRAY_EQUATION
@@ -128,17 +129,20 @@ uniontype Equation "- Equation"
     .DAE.Exp left "left ; lhs" ;
     .DAE.Exp right "right ; rhs" ;
     .DAE.ElementSource source "the element source";
+    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end ARRAY_EQUATION;
 
   record SOLVED_EQUATION
     .DAE.ComponentRef componentRef "componentRef" ;
     .DAE.Exp exp "exp" ;
     .DAE.ElementSource source "origin of equation";
+    Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end SOLVED_EQUATION;
 
   record RESIDUAL_EQUATION
     .DAE.Exp exp "exp ; not present from front end" ;
     .DAE.ElementSource source "origin of equation";
+     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end RESIDUAL_EQUATION;
 
   record ALGORITHM
@@ -158,6 +162,7 @@ uniontype Equation "- Equation"
     .DAE.Exp left "left ; lhs" ;
     .DAE.Exp right "right ; rhs" ;
     .DAE.ElementSource source "the element source";  
+     Boolean differentiated "true if the equation was differentiated, and should not differentiated again to avoid equal equations";
   end COMPLEX_EQUATION;
   
   record IF_EQUATION " an if-equation"

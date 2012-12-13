@@ -1371,7 +1371,7 @@ algorithm
       list<DAE.Exp> expl,expl1,expl2;
       BackendDAE.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source;
-      Boolean b1,b2,b3;
+      Boolean b1,b2,b3,diffed;
       list<Integer> dimSize;
       DAE.Algorithm alg;
       list<DAE.Statement> stmts,stmts1;
@@ -1380,7 +1380,7 @@ algorithm
       list<list<BackendDAE.Equation>> eqnslst;
 
     case ({},_,_,_,_) then (listReverse(inAcc),iReplacementPerformed);
-    case ((BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source) :: es),repl,_,_,_)
+    case ((BackendDAE.ARRAY_EQUATION(dimSize=dimSize,left = e1,right = e2,source = source,differentiated = diffed) :: es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
@@ -1391,10 +1391,10 @@ algorithm
         (e2_2,b2) = ExpressionSimplify.condsimplify(b2,e2_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
         source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
-        (es,b1) = replaceEquations2(es,repl,inFuncTypeExpExpToBooleanOption,BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source)::inAcc,true);
+        (es,b1) = replaceEquations2(es,repl,inFuncTypeExpExpToBooleanOption,BackendDAE.ARRAY_EQUATION(dimSize,e1_2,e2_2,source,diffed)::inAcc,true);
       then
         (es,b1);
-    case ((BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source) :: es),repl,_,_,_)
+    case ((BackendDAE.COMPLEX_EQUATION(size=size,left = e1,right = e2,source = source,differentiated = diffed) :: es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
@@ -1405,10 +1405,10 @@ algorithm
         (e2_2,b2) = ExpressionSimplify.condsimplify(b2,e2_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
         source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
-        (es,b1) = replaceEquations2(es,repl,inFuncTypeExpExpToBooleanOption,BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source)::inAcc,true);
+        (es,b1) = replaceEquations2(es,repl,inFuncTypeExpExpToBooleanOption,BackendDAE.COMPLEX_EQUATION(size,e1_2,e2_2,source,diffed)::inAcc,true);
       then
         (es,b1);
-    case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source) :: es),repl,_,_,_)
+    case ((BackendDAE.EQUATION(exp = e1,scalar = e2,source = source,differentiated = diffed) :: es),repl,_,_,_)
       equation
         (e1_1,b1) = replaceExp(e1, repl,inFuncTypeExpExpToBooleanOption);
         (e2_1,b2) = replaceExp(e2, repl,inFuncTypeExpExpToBooleanOption);
@@ -1419,7 +1419,7 @@ algorithm
         (e2_2,b2) = ExpressionSimplify.condsimplify(b2,e2_1);
         source = DAEUtil.addSymbolicTransformationSimplify(b1,source,e1_1,e1_2);
         source = DAEUtil.addSymbolicTransformationSimplify(b2,source,e2_1,e2_2);
-        (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.EQUATION(e1_2,e2_2,source)::inAcc,true);
+        (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.EQUATION(e1_2,e2_2,source,diffed)::inAcc,true);
       then
         (es,b1);
     case ((BackendDAE.ALGORITHM(size=size,alg = alg as DAE.ALGORITHM_STMTS(statementLst = stmts),source = source) :: es),repl,_,_,_)
@@ -1429,20 +1429,20 @@ algorithm
         (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.ALGORITHM(size,alg,source)::inAcc,true);
       then
         (es,b1);
-    case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl,_,_,_)
+    case ((BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e,source = source,differentiated = diffed) :: es),repl,_,_,_)
       equation
         (e_1,true) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
-        (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.SOLVED_EQUATION(cr,e_2,source)::inAcc,true);
+        (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.SOLVED_EQUATION(cr,e_2,source,diffed)::inAcc,true);
       then
         (es,b1);
-    case ((BackendDAE.RESIDUAL_EQUATION(exp = e,source = source) :: es),repl,_,_,_)
+    case ((BackendDAE.RESIDUAL_EQUATION(exp = e,source = source,differentiated = diffed) :: es),repl,_,_,_)
       equation
         (e_1,true) = replaceExp(e, repl,inFuncTypeExpExpToBooleanOption);
         (e_2,_) = ExpressionSimplify.simplify(e_1);
         source = DAEUtil.addSymbolicTransformationSubstitution(true,source,e,e_2);
-        (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.RESIDUAL_EQUATION(e_2,source)::inAcc,true);
+        (es,b1) = replaceEquations2(es, repl,inFuncTypeExpExpToBooleanOption,BackendDAE.RESIDUAL_EQUATION(e_2,source,diffed)::inAcc,true);
       then
         (es,b1);
     case ((BackendDAE.WHEN_EQUATION(size,whenEqn,source) :: es),repl,_,_,_)

@@ -202,47 +202,48 @@ algorithm
       DAE.Exp e1,e2,e1_1,e2_1;
       list<DAE.Exp> ea1,ea2;
       list<BackendDAE.Equation> eqns;
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source),_)
+      Boolean diffed;
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2,source=source,differentiated=diffed),_)
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2);
-        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
+        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
       then
         (eqns,true);
-    case (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source),_)
+    case (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2,source=source,differentiated=diffed),_)
       equation
         true = Expression.isArray(e2) or Expression.isMatrix(e2);
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2);
-        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
+        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
       then
         (eqns,true);
-    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source),_)
+    case (BackendDAE.ARRAY_EQUATION(left=e1,right=e2 as DAE.CREF(componentRef =_),source=source,differentiated=diffed),_)
       equation
         true = Expression.isArray(e1) or Expression.isMatrix(e1);
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
-        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
+        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
       then
         (eqns,true);
-    case (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source),_)
+    case (BackendDAE.ARRAY_EQUATION(left=e1 as DAE.CREF(componentRef =_),right=e2 as DAE.CREF(componentRef =_),source=source,differentiated=diffed),_)
       equation
         ((e1_1,(_,_))) = BackendDAEUtil.extendArrExp((e1,(NONE(),false)));
         ((e2_1,(_,_))) = BackendDAEUtil.extendArrExp((e2,(NONE(),false)));
         ea1 = Expression.flattenArrayExpToList(e1_1);
         ea2 = Expression.flattenArrayExpToList(e2_1);
-        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
+        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
       then
         (eqns,true);
-    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source),_)
+    case (BackendDAE.COMPLEX_EQUATION(left=e1,right=e2,source=source,differentiated=diffed),_)
       equation
         ea1 = Expression.splitRecord(e1,Expression.typeof(e1));
         ea2 = Expression.splitRecord(e2,Expression.typeof(e2));
-        eqns = List.threadFold1(ea1,ea2,generateScalarArrayEqns2,source,iAcc);
+        eqns = List.threadFold2(ea1,ea2,generateScalarArrayEqns2,source,diffed,iAcc);
       then
         (eqns,true);        
     case (_,_) then (iEqn::iAcc,false);
@@ -254,10 +255,11 @@ protected function generateScalarArrayEqns2 "function generateScalarArrayEqns2
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.ElementSource source;
+  input Boolean diffed;
   input list<BackendDAE.Equation> iEqns;
   output list<BackendDAE.Equation> oEqns;
 algorithm
-  oEqns := matchcontinue(inExp1,inExp2,source,iEqns)
+  oEqns := matchcontinue(inExp1,inExp2,source,diffed,iEqns)
     local
       Expression.Type tp;
       Integer size;
@@ -265,25 +267,25 @@ algorithm
       list<Integer> ds;
       Boolean b1,b2;
     // complex types to complex equations  
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation 
         tp = Expression.typeof(inExp1);
         true = DAEUtil.expTypeComplex(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size,inExp1,inExp2,source)::iEqns;
+        BackendDAE.COMPLEX_EQUATION(size,inExp1,inExp2,source,diffed)::iEqns;
       
     // array types to array equations  
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation 
         tp = Expression.typeof(inExp1);
         true = DAEUtil.expTypeArray(tp);
         dims = Expression.arrayDimension(tp);
         ds = Expression.dimensionsSizes(dims);
       then
-        BackendDAE.ARRAY_EQUATION(ds,inExp1,inExp2,source)::iEqns;
+        BackendDAE.ARRAY_EQUATION(ds,inExp1,inExp2,source,diffed)::iEqns;
     // other types  
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation
         tp = Expression.typeof(inExp1);
         b1 = DAEUtil.expTypeComplex(tp);
@@ -291,7 +293,7 @@ algorithm
         false = b1 or b2;
         //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
       then
-        BackendDAE.EQUATION(inExp1,inExp2,source)::iEqns;
+        BackendDAE.EQUATION(inExp1,inExp2,source,diffed)::iEqns;
     else
       equation
         // show only on failtrace!
@@ -2933,7 +2935,7 @@ algorithm
         SOME(jac_subSyst1) = jac_subSyst;
         row = listGet(jac_subSyst1,1);
         (_,_,eq) = row;
-        BackendDAE.RESIDUAL_EQUATION(e,_) = eq;
+        BackendDAE.RESIDUAL_EQUATION(exp=e) = eq;
         l = listLength(tvars);
         eArr = arrayCreate(l,DAE.RCONST(0.0));
         varsempty = BackendVariable.emptyVars();
@@ -3148,7 +3150,7 @@ algorithm
     equation
       true = (indx<=max);
       SOME(entry) = arrayGet(inOptEqArr,indx);
-      BackendDAE.EQUATION(e1,e2,_) = entry;
+      BackendDAE.EQUATION(exp=e1,scalar=e2) = entry;
       transEntry = BackendEquation.equationToResidualForm(entry);
       transEntry1 = SOME(transEntry);
       arr = arrayUpdate(inOptEqArr,indx,transEntry1);
@@ -3158,10 +3160,6 @@ algorithm
   case (_,_,_)
     equation
       true = (indx<=max);
-      NONE() = arrayGet(inOptEqArr,indx);
-      transEntry = BackendDAE.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource);
-      transEntry1 = SOME(transEntry);
-      arr = arrayUpdate(inOptEqArr,indx,transEntry1);
       outEqArr = equationToResidualFormArr(inOptEqArr,indx+1,max);
     then
       outEqArr;
@@ -3278,7 +3276,7 @@ algorithm
     equation
       true = (indx<=arrayLength(inEqArr));
       entryExp = arrayGet(inExpArr,indx);
-      entry = BackendDAE.EQUATION(entryExp,DAE.RCONST(0.0),DAE.emptyElementSource);  //DAE.RCONST???
+      entry = BackendDAE.EQUATION(entryExp,DAE.RCONST(0.0),DAE.emptyElementSource,false);  //DAE.RCONST???
       eqArr = arrayUpdate(inEqArr,indx,entry);
       eqArr1 = expToEquationArr(inExpArr,indx+1,eqArr);
     then
@@ -3309,7 +3307,7 @@ algorithm
       true = (indx<=arrayLength(arr));
       optEq = arrayGet(inArr,indx);
       SOME(eq) = optEq;
-      BackendDAE.EQUATION(e,_,_) = eq;
+      BackendDAE.EQUATION(exp=e) = eq;
       arr1 = arrayUpdate(arr,indx,e);
       arr2 = equationToExpArr(inArr,indx+1,arr1);
     then
@@ -3319,7 +3317,7 @@ algorithm
       true = (indx<=arrayLength(arr));
       optEq = arrayGet(inArr,indx);
       SOME(eq) = optEq;
-      BackendDAE.RESIDUAL_EQUATION(e,_) = eq;
+      BackendDAE.RESIDUAL_EQUATION(exp=e) = eq;
       arr1 = arrayUpdate(arr,indx,e);
       arr2 = equationToExpArr(inArr,indx+1,arr1);
     then
@@ -3394,7 +3392,7 @@ algorithm
       cr = listGet(varcrefs,col);
       varExp = Expression.crefExp(cr);
       eq = getEqFromTupleLst(jac,row,col);  //entry of the jacobian
-      BackendDAE.RESIDUAL_EQUATION(eqExp,_) = eq;
+      BackendDAE.RESIDUAL_EQUATION(exp=eqExp) = eq;
       true = Expression.isZero(eqExp);
       (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,inExpArr,varcrefs); 
     then
@@ -3408,7 +3406,7 @@ algorithm
       cr = listGet(varcrefs,col);
       varExp = Expression.crefExp(cr);
       eq = getEqFromTupleLst(jac,row,col);  //entry of the jacobian
-      BackendDAE.RESIDUAL_EQUATION(eqExp,_) = eq;
+      BackendDAE.RESIDUAL_EQUATION(exp=eqExp) = eq;
       false = Expression.isZero(eqExp);
       exp1 = Expression.expMul(eqExp,varExp);
       expArr = arrayUpdate(inExpArr,row,exp1);
@@ -3430,7 +3428,7 @@ algorithm
       cr = listGet(varcrefs,col);
       varExp = Expression.crefExp(cr);
       eq = getEqFromTupleLst(jac,row,col);
-      BackendDAE.RESIDUAL_EQUATION(eqExp,_) = eq;
+      BackendDAE.RESIDUAL_EQUATION(exp=eqExp) = eq;
       false = Expression.isZero(eqExp);
       e = arrayGet(inExpArr,row);
       exp1 = Expression.expAdd(e,Expression.expMul(eqExp,varExp));
@@ -3447,7 +3445,7 @@ algorithm
       cr = listGet(varcrefs,col);
       varExp = Expression.crefExp(cr);
       eq = getEqFromTupleLst(jac,row,col);
-      BackendDAE.RESIDUAL_EQUATION(eqExp,_) = eq;
+      BackendDAE.RESIDUAL_EQUATION(exp=eqExp) = eq;
       true = Expression.isZero(eqExp);
       (expArr,varcrefs) = matrixVectorMultiplication(jac,row,col+1,vars,size,inExpArr,varcrefs);
     then
@@ -3495,7 +3493,7 @@ algorithm
       eq;
   case ({},_,_)
     then
-      BackendDAE.RESIDUAL_EQUATION(DAE.RCONST(0.0),DAE.emptyElementSource);  //(r,c) does not appear in jac
+      BackendDAE.RESIDUAL_EQUATION(DAE.RCONST(0.0),DAE.emptyElementSource,false);  //(r,c) does not appear in jac
   end matchcontinue;
 end getEqFromTupleLst;
 
@@ -3708,6 +3706,7 @@ algorithm
       array<Option<BackendDAE.Equation>> equOptArr1,equOptArr;
       
       BackendDAE.Equation eq,entry,entry1,entry1_1;
+      Boolean diffed;
       
     
     case (dlow as BackendDAE.DAE(eqs={syst}),dlow1,m,mT,v1,v2,comp,eqs,exclude,tearingvar,residualeqns,tearingvars,tearingeqns,crlst)
@@ -3731,7 +3730,7 @@ algorithm
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR()), ordvars);
         // replace in residual equation orgvar with Tearing Var
-        BackendDAE.EQUATION(eqn,scalar,source) = BackendDAEUtil.equationNth(eqns,residualeqn-1);
+        BackendDAE.EQUATION(eqn,scalar,source,diffed) = BackendDAEUtil.equationNth(eqns,residualeqn-1);
         // (eqn_1,replace) =  Expression.replaceExp(eqn,Expression.crefExp(cr),Expression.crefExp(crt));
         // (scalar_1,replace1) =  Expression.replaceExp(scalar,Expression.crefExp(cr),Expression.crefExp(crt));
         // true = replace + replace1 > 0;
@@ -3740,17 +3739,17 @@ algorithm
         rhs = Expression.crefExp(crt);
         eq = BackendDAEUtil.equationNth(eqns,residualeqn-1);
         entry = BackendEquation.equationToResidualForm(eq);
-        BackendDAE.RESIDUAL_EQUATION(expR,_) = entry;
+        BackendDAE.RESIDUAL_EQUATION(exp=expR) = entry;
         expR1 =  Expression.makeDifference(expR,rhs);
-        entry1 = BackendDAE.EQUATION(expR1,DAE.RCONST(0.0),source);
-        entry1_1 = BackendDAE.EQUATION(expR,DAE.RCONST(0.0),source);
+        entry1 = BackendDAE.EQUATION(expR1,DAE.RCONST(0.0),source,false);
+        entry1_1 = BackendDAE.EQUATION(expR,DAE.RCONST(0.0),source,false);
         eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,entry1);
         eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,entry1_1);
         // add equation to calc org var
         expCref = Expression.crefExp(cr);
         eqns_2 = BackendEquation.equationAdd(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
                           {},DAE.callAttrBuiltinReal),
-                          expCref, DAE.emptyElementSource),eqns_1);
+                          expCref, DAE.emptyElementSource,false),eqns_1);
 
         tearingeqnid = BackendDAEUtil.equationSize(eqns_2);
         dlow_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns_2,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
@@ -3794,7 +3793,7 @@ algorithm
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR()), ordvars);
         // replace in residual equation orgvar with Tearing Var
-        BackendDAE.EQUATION(eqn,scalar,source) = BackendDAEUtil.equationNth(eqns,residualeqn-1);
+        BackendDAE.EQUATION(eqn,scalar,source,diffed) = BackendDAEUtil.equationNth(eqns,residualeqn-1);
         // true = replace + replace1 > 0;
 
         // Add Residual eqn
@@ -3802,10 +3801,10 @@ algorithm
         
         eq = BackendDAEUtil.equationNth(eqns,residualeqn-1);
         entry = BackendEquation.equationToResidualForm(eq);
-        BackendDAE.RESIDUAL_EQUATION(expR,_) = entry;
+        BackendDAE.RESIDUAL_EQUATION(exp=expR) = entry;
         expR1 =  Expression.makeDifference(expR,rhs);
-        entry1 = BackendDAE.EQUATION(expR1,DAE.RCONST(0.0),source);
-        entry1_1 = BackendDAE.EQUATION(expR,DAE.RCONST(0.0),source);
+        entry1 = BackendDAE.EQUATION(expR1,DAE.RCONST(0.0),source,false);
+        entry1_1 = BackendDAE.EQUATION(expR,DAE.RCONST(0.0),source,false);
         eqns_1 = BackendEquation.equationSetnth(eqns,residualeqn-1,entry1);
         eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,entry1_1);
         //eqns1_1 = BackendEquation.equationSetnth(eqns1,residualeqn-1,BackendDAE.EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.T_REAL_DEFAULT),scalar),DAE.RCONST(0.0),source));
@@ -3813,7 +3812,7 @@ algorithm
         expCref = Expression.crefExp(cr);
         eqns_2 = BackendEquation.equationAdd(BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
                           {},DAE.callAttrBuiltinReal),
-                          expCref, DAE.emptyElementSource),eqns_1);
+                          expCref, DAE.emptyElementSource,false),eqns_1);
 
         tearingeqnid = BackendDAEUtil.equationSize(eqns_2);
         dlow_1 = BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,eqns_2,NONE(),NONE(),BackendDAE.NO_MATCHING())::{},shared);
@@ -5035,7 +5034,7 @@ algorithm
       startExp = Expression.makeBuiltinCall("$_start", {e}, tp);
       e1 = DAE.BINARY(crefExp, DAE.SUB(DAE.T_REAL_DEFAULT), startExp);
       
-      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource);
+      eqn = BackendDAE.RESIDUAL_EQUATION(e1, DAE.emptyElementSource,false);
       eqns = generateImplicitInitialEquations(vars);
     then eqn::eqns;
       
@@ -5089,11 +5088,11 @@ algorithm
     case({}, _, _ , _)
     then (listReverse(iEquationList), listReverse(iVariableList));
     
-    case((BackendDAE.RESIDUAL_EQUATION(exp, source))::restEquationList, index,_,_) equation
+    case((BackendDAE.RESIDUAL_EQUATION(exp=exp,source=source))::restEquationList, index,_,_) equation
       varName = "$res" +& intString(index);
       componentRef = DAE.CREF_IDENT(varName, DAE.T_REAL_DEFAULT, {});
       expVarName = DAE.CREF(componentRef, DAE.T_REAL_DEFAULT);
-      currEquation = BackendDAE.EQUATION(expVarName, exp, source);
+      currEquation = BackendDAE.EQUATION(expVarName, exp, source, false);
       
       currVariable = BackendDAE.VAR(componentRef, BackendDAE.VARIABLE(), DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.T_REAL_DEFAULT, NONE(), NONE(), {}, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
 
@@ -6098,7 +6097,7 @@ algorithm
     case(currEquation as BackendDAE.EQUATION(exp=lhs, scalar=rhs, source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _,  _, _) equation
       lhs_ = differentiateWithRespectToXVec(lhs, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
       rhs_ = differentiateWithRespectToXVec(rhs, vars, functions, inputVars, paramVars, stateVars, knownVars, inorderedVars, inDiffVars, inMatrixName);
-      derivedEqns = List.threadMap1(lhs_, rhs_, createEqn, source);
+      derivedEqns = List.threadMap1(lhs_, rhs_, BackendEquation.generateEQUATION, source);
     then derivedEqns;
       
     case(currEquation as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=lhs,right=rhs,source=source),_, vars, functions, inputVars, paramVars, stateVars, knownVars, _, _, _) equation
@@ -6174,7 +6173,7 @@ algorithm
       equation
         lhs_ = differentiateWithRespectToXVec(lhs, inVars, functions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName);
         rhs_ = differentiateWithRespectToXVec(rhs, inVars, functions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName);
-        derivedEqns = List.threadMap1(lhs_, rhs_, createEqn, source);
+        derivedEqns = List.threadMap1(lhs_, rhs_, BackendEquation.generateEQUATION, source);
         derivedEqns = listAppend(inDerivedEquations,derivedEqns);
       then 
         deriveLst(lhsrest,rhsrest, source, inVars, functions, inInputVars, inParamVars, inStateVars, inKnownVars, inorderedVars, inDiffVars, inMatrixName, derivedEqns);
@@ -6182,22 +6181,13 @@ algorithm
   end match;
 end deriveLst;
 
-protected function createEqn
-  input DAE.Exp inLHS;
-  input DAE.Exp inRHS;
-  input DAE.ElementSource Source;
-  output BackendDAE.Equation outEqn;
-algorithm 
-  outEqn := BackendDAE.EQUATION(inLHS,inRHS,Source);
-end createEqn;
-
 protected function createSolvedEqn
   input DAE.ComponentRef inCref;
   input DAE.Exp inRHS;
   input DAE.ElementSource Source;
   output BackendDAE.Equation outEqn;
 algorithm 
-  outEqn := BackendDAE.SOLVED_EQUATION(inCref,inRHS,Source);
+  outEqn := BackendDAE.SOLVED_EQUATION(inCref,inRHS,Source,false);
 end createSolvedEqn;
 
 protected function createResidualEqn
@@ -6205,7 +6195,7 @@ protected function createResidualEqn
   input DAE.ElementSource Source;
   output BackendDAE.Equation outEqn;
 algorithm 
-  outEqn := BackendDAE.RESIDUAL_EQUATION(inRHS, Source);
+  outEqn := BackendDAE.RESIDUAL_EQUATION(inRHS, Source, false);
 end createResidualEqn;
 
 protected function createAlgorithmEqn
@@ -7639,7 +7629,8 @@ algorithm
       DAE.Exp e1,e2,e;
       DAE.ElementSource source;
       Integer i;
-    case ((BackendDAE.EQUATION(e1,e2,source),i))
+      Boolean diffed;
+    case ((BackendDAE.EQUATION(e1,e2,source,diffed),i))
       equation
         // This is ok, because EQUATION is not an array equation :D
         DAE.T_REAL(source = _) = Expression.typeof(e1);
@@ -7647,7 +7638,7 @@ algorithm
         e = DAE.BINARY(e1,DAE.SUB(DAE.T_REAL_DEFAULT),e2);
         (e,_) = ExpressionSimplify.simplify(e);
         source = DAEUtil.addSymbolicTransformation(source, DAE.OP_RESIDUAL(e1,e2,e));
-        ntpl = (BackendDAE.EQUATION(DAE.RCONST(0.0),e,source),i);
+        ntpl = (BackendDAE.EQUATION(DAE.RCONST(0.0),e,source,diffed),i);
       then ntpl;
     else tpl;
   end matchcontinue;
@@ -9736,7 +9727,7 @@ algorithm
         ty = Expression.typeof(e2);
         e1 = DAE.ARRAY(ty, true, explst);
       then
-        generateHEquations(heqns,tvarcrefs,hzeroeqns,BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source)::iEqns);      
+        generateHEquations(heqns,tvarcrefs,hzeroeqns,BackendDAE.ARRAY_EQUATION(dimSize,e1,e2,source,false)::iEqns);      
     case (eqns::heqns,_,eqn::hzeroeqns,_)
       equation
         explst = List.map(eqns,equationToExp);
@@ -9746,7 +9737,7 @@ algorithm
         e2 = Expression.negate(e2);
         source = BackendEquation.equationSource(eqn);
       then
-        generateHEquations(heqns,tvarcrefs,hzeroeqns,BackendDAE.EQUATION(e1,e2,source)::iEqns);
+        generateHEquations(heqns,tvarcrefs,hzeroeqns,BackendDAE.EQUATION(e1,e2,source,false)::iEqns);
   end match;
 end generateHEquations;
 
@@ -10092,17 +10083,18 @@ algorithm
       BackendDAE.Equation eqn;
       list<Option<Integer>> ad;
       list<list<DAE.Subscript>> subslst;
+      Boolean diffed;
     case ({},_,_,_,_,_,_,_) then (inEqns,inRepl,iOtherVars);
     case ({c}::rest,_,_,_,_,_,_,_)
       equation
         e = mapIncRowEqn[c];
-        (eqn as BackendDAE.EQUATION(e1,e2,source)) = BackendDAEUtil.equationNth(inEqns, e-1);
+        (eqn as BackendDAE.EQUATION(e1,e2,source,diffed)) = BackendDAEUtil.equationNth(inEqns, e-1);
         v = ass2[c];
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
         varexp = Expression.crefExp(cr);
         varexp = Debug.bcallret1(BackendVariable.isStateVar(var), Expression.expDer, varexp, varexp);
         (expr,{}) = ExpressionSolve.solve(e1, e2, varexp);
-        eqns = BackendEquation.equationSetnth(inEqns,e-1,BackendDAE.EQUATION(expr,varexp,source));
+        eqns = BackendEquation.equationSetnth(inEqns,e-1,BackendDAE.EQUATION(expr,varexp,source,diffed));
         dcr = Debug.bcallret1(BackendVariable.isStateVar(var), ComponentReference.crefPrefixDer, cr, cr);
         repl = BackendVarTransform.addReplacement(inRepl,dcr,expr,SOME(BackendVarTransform.skipPreOperator));
         repl = Debug.bcallret3(BackendVariable.isStateVar(var), BackendVarTransform.addDerConstRepl, cr, expr, repl, repl);
@@ -10114,7 +10106,7 @@ algorithm
       equation
         e = mapIncRowEqn[c];
         true = getZeroVarReplacements2(e,clst,mapIncRowEqn);        
-        (eqn as BackendDAE.ARRAY_EQUATION(ds, e1, e2, source)) = BackendDAEUtil.equationNth(inEqns, e-1);
+        (eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2,source=source)) = BackendDAEUtil.equationNth(inEqns, e-1);
         vlst = List.map1r(c::clst,arrayGet,ass2);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,inVars);
         ad = List.map(ds,Util.makeOption);
@@ -10832,7 +10824,7 @@ algorithm
       equation
         crexp = Expression.crefExp(cr);
       then
-       simplifySolvedIfEqns2(rest,BackendDAE.EQUATION(crexp,e,DAE.emptyElementSource)::inEqns);       
+       simplifySolvedIfEqns2(rest,BackendDAE.EQUATION(crexp,e,DAE.emptyElementSource,false)::inEqns);       
   end match;
 end simplifySolvedIfEqns2;
 
@@ -11244,7 +11236,7 @@ algorithm
         tbsFirst = List.map(tbs,List.first);
 
         ifexp = Expression.makeNestedIf(conds,tbsFirst,fb);
-        eq = BackendDAE.EQUATION(DAE.RCONST(0.0),ifexp,src);
+        eq = BackendDAE.EQUATION(DAE.RCONST(0.0),ifexp,src,false);
       then
         (eq :: rest_res);
   end match;
@@ -11387,11 +11379,12 @@ algorithm
       Absyn.Path path;
       DAE.CallAttributes attr;
       DAE.ElementSource source,source1;
+      Boolean diffed;
     case ({},_,_,_) then iAcc;
     case (sa::rest,_,_,_)
       equation
         i1 = BaseHashTable.get(sa,iHt);
-        ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path=path,expLst = {x,_,s1},attr=attr),source=source),index)) = IEqnsarray[i1];
+        ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path=path,expLst = {x,_,s1},attr=attr),source=source,differentiated=diffed),index)) = IEqnsarray[i1];
         // get Order of s1,s2,s3,..,sn,sb
         (sb,source1,index1,explst) = semiLinearOptimize3(s1,source,index,iHt,IEqnsarray,{});
         // generate optimized equations
@@ -11400,8 +11393,8 @@ algorithm
         // ..
         // sn = sn-1
         // y = semiLinear(x,sa,sb)
-        eqn = BackendDAE.EQUATION(s1,DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(x,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE())},DAE.callAttrBuiltinBool),sa,sb),source);      
-        eqn1 = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source1);      
+        eqn = BackendDAE.EQUATION(s1,DAE.IFEXP(DAE.CALL(Absyn.IDENT("noEvent"),{DAE.RELATION(x,DAE.GREATEREQ(DAE.T_REAL_DEFAULT),DAE.RCONST(0.0),-1,NONE())},DAE.callAttrBuiltinBool),sa,sb),source,diffed);      
+        eqn1 = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source1,diffed);      
         acc = semiLinearOptimize4(explst,(eqn1,index1)::iAcc);
       then
         semiLinearOptimize2(rest,iHt,IEqnsarray,(eqn,index)::acc);
@@ -11430,7 +11423,7 @@ algorithm
     case (_::{},_) then iAcc;
     case((s2,index,source)::(rest as ((s1,_,_)::_)),_)
       equation
-        eqn = BackendDAE.EQUATION(s2,s1,source);
+        eqn = BackendDAE.EQUATION(s2,s1,source,false);
       then
         semiLinearOptimize4(rest,(eqn,index)::iAcc);
   end match;
@@ -11647,60 +11640,61 @@ algorithm
       DAE.ElementSource source;
       Absyn.Path path;
       DAE.CallAttributes attr;
+      Boolean diffed;
     // 0 = semiLinear(0,sa,sb) -> sa=sb
-    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb}),source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb}),source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
         true = Expression.isZero(y);
         true = Expression.isZero(x);
-      then ((BackendDAE.EQUATION(sa,sb,source),(eqnslst,index+1,true)));
-    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb}),scalar=y,source=source),(eqnslst,index,_)))
+      then ((BackendDAE.EQUATION(sa,sb,source,diffed),(eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb}),scalar=y,source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
         true = Expression.isZero(y);
         true = Expression.isZero(x);
-      then ((BackendDAE.EQUATION(sa,sb,source),(eqnslst,index+1,true)));
-    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb})),source=source),(eqnslst,index,_)))
+      then ((BackendDAE.EQUATION(sa,sb,source,diffed),(eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb})),source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
         true = Expression.isZero(y);
         true = Expression.isZero(x);
-      then ((BackendDAE.EQUATION(sa,sb,source),(eqnslst,index+1,true)));
-    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb})),scalar=y,source=source),(eqnslst,index,_)))
+      then ((BackendDAE.EQUATION(sa,sb,source,diffed),(eqnslst,index+1,true)));
+    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=DAE.CALL(path = Absyn.IDENT("semiLinear"), expLst = {x,sa,sb})),scalar=y,source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
         true = Expression.isZero(y);
         true = Expression.isZero(x);
-      then ((BackendDAE.EQUATION(sa,sb,source),(eqnslst,index+1,true)));
+      then ((BackendDAE.EQUATION(sa,sb,source,diffed),(eqnslst,index+1,true)));
     // y = -semiLinear(-x,sb,sa) -> y = semiLinear(x,sa,sb)
-    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr)),source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr)),source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
-        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,diffed);
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));
-    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr)),scalar=y,source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr)),scalar=y,source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
-        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,diffed);
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));
     // -y = semiLinear(-x,sb,sa) -> y = semiLinear(x,sa,sb)
-    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=y),scalar=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp=y),scalar=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
-        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,diffed);
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));
-    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),scalar=DAE.UNARY(exp=y),source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),scalar=DAE.UNARY(exp=y),source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
-        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,diffed);
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));
     // y = semiLinear(-x,sb,sa) -> -y = semiLinear(x,sa,sb)
-    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
         y = Expression.negate(y);
-        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,diffed);
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));
-    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),scalar=y,source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=DAE.CALL(path = path as Absyn.IDENT("semiLinear"), expLst = {DAE.UNARY(exp=x),sb,sa},attr=attr),scalar=y,source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
         y = Expression.negate(y);
-        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source);
+        eqn = BackendDAE.EQUATION(y,DAE.CALL(path,{x,sa,sb},attr),source,diffed);
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));        
     // y = semiLinear(x,sa,sb)
@@ -11712,16 +11706,16 @@ algorithm
       equation
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));
-    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp= x as DAE.CALL(path = Absyn.IDENT("semiLinear"))),source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=y,scalar=DAE.UNARY(exp= x as DAE.CALL(path = Absyn.IDENT("semiLinear"))),source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
         y = Expression.negate(y);
-        eqn = BackendDAE.EQUATION(y,x,source);
+        eqn = BackendDAE.EQUATION(y,x,source,diffed);
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));
-    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp= x as DAE.CALL(path = Absyn.IDENT("semiLinear"))),scalar=y,source=source),(eqnslst,index,_)))
+    case ((BackendDAE.EQUATION(exp=DAE.UNARY(exp= x as DAE.CALL(path = Absyn.IDENT("semiLinear"))),scalar=y,source=source,differentiated=diffed),(eqnslst,index,_)))
       equation
         y = Expression.negate(y);
-        eqn = BackendDAE.EQUATION(y,x,source);
+        eqn = BackendDAE.EQUATION(y,x,source,diffed);
         Debug.fcall(Flags.SEMILINEAR,BackendDump.debugStrEqnStr,("Found semiLinear ",eqn,"\n"));
       then ((eqn,((eqn,index)::eqnslst,index+1,true)));
 

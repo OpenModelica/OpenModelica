@@ -288,8 +288,8 @@ algorithm
         // diff Alias does not yet work proper
         //(syst,shared,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedeqns,eqns1) = differentiateAliasEqns(isyst,ishared,eqns1,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,{},{});
         //(syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,changedeqns) = differentiateEqns(syst,shared,eqns1,ass1,ass2,so1,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,changedeqns);
-        // For unrolling errors
-        (notdiffedEqns,diffedEqns,orgeqns) = differentiateEqnsLst(eqns1,vars,eqnsarray,ishared,{},{},{});
+        // remove allready diffed equations
+        (eqns1,notdiffedEqns,diffedEqns,orgeqns) = differentiateEqnsLst(eqns1,vars,eqnsarray,ishared,{},{},{},{});
         (syst,shared,ass1,ass2,so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,notDiffableMSS) = differentiateEqns(notdiffedEqns,diffedEqns,orgeqns,eqns1,unassignedStates,unassignedEqns,isyst,ishared,inAssignments1,inAssignments2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,iNotDiffableMSS);
       then
         (syst,shared,ass1,ass2,(so1,orgEqnsLst1,mapEqnIncRow,mapIncRowEqn,noofeqns),notDiffableMSS);
@@ -753,7 +753,7 @@ algorithm
     case ({},_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_,_)
       equation
         eqnss = BackendDAEUtil.equationArraySize(eqns);
-        (v1,eqns_1,so,ilst,orgEqnsLst) = replaceDifferentiatedEqns(listReverse(inEqns),inDiffEqns,inOrgEqns,v,eqns,inStateOrd,mt,imapIncRowEqn,{},inOrgEqnsLst);
+        (v1,eqns_1,so,ilst,orgEqnsLst) = replaceDifferentiatedEqns(inEqns,inDiffEqns,inOrgEqns,v,eqns,inStateOrd,mt,imapIncRowEqn,{},inOrgEqnsLst);
         eqnss1 = BackendDAEUtil.equationArraySize(eqns_1);
         eqnslst = Debug.bcallret2(intGt(eqnss1,eqnss),List.intRange2,eqnss+1,eqnss1,{});
         // set equation assigned variable assignemts zero
@@ -844,37 +844,49 @@ protected function differentiateEqnsLst
   input BackendDAE.Variables vars;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Shared ishared;
+  input list<Integer> iAcc;
   input list<BackendDAE.Equation> inNotDiffed;
   input list<BackendDAE.Equation> inDiffEqns;
   input list<BackendDAE.Equation> inOrgEqns;
+  output list<Integer> outEqns;
   output list<BackendDAE.Equation> outNotDiffed;
   output list<BackendDAE.Equation> outDiffEqns;
   output list<BackendDAE.Equation> outOrgEqns;
 algorithm
-  (outNotDiffed,outDiffEqns,outOrgEqns):=
-  matchcontinue (inEqns,vars,eqns,ishared,inNotDiffed,inDiffEqns,inOrgEqns)
+  (outEqns,outNotDiffed,outDiffEqns,outOrgEqns):=
+  matchcontinue (inEqns,vars,eqns,ishared,iAcc,inNotDiffed,inDiffEqns,inOrgEqns)
     local
       Integer e_1,e;
       BackendDAE.Equation eqn,eqn_1;
       list<Integer> es;
-    case ({},_,_,_,_,_,_) then (inNotDiffed,inDiffEqns,inOrgEqns);
-    case (e::es,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_) then (iAcc,inNotDiffed,inDiffEqns,inOrgEqns);
+    case (e::es,_,_,_,_,_,_,_)
+      equation
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        true = BackendEquation.isDifferentiated(eqn);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrEqnStr,("Skipp allready differentiated equation",eqn,""));
+        (es,outNotDiffed,outDiffEqns,outOrgEqns) = differentiateEqnsLst(es,vars,eqns,ishared,iAcc,inNotDiffed,inDiffEqns,inOrgEqns);
+      then
+        (es,outNotDiffed,outDiffEqns,outOrgEqns);
+    case (e::es,_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         // print( "differentiat equation " +& intString(e) +& " " +& BackendDump.equationString(eqn) +& "\n");
         eqn_1 = Derive.differentiateEquationTime(eqn, vars, ishared);
         // print( "differentiated equation " +& intString(e) +& " " +& BackendDump.equationString(eqn_1) +& "\n");
-        (outNotDiffed,outDiffEqns,outOrgEqns) = differentiateEqnsLst(es,vars,eqns,ishared,inNotDiffed,eqn_1::inDiffEqns,eqn::inOrgEqns);
+        eqn = BackendEquation.markDifferentiated(eqn);
+        (es,outNotDiffed,outDiffEqns,outOrgEqns) = differentiateEqnsLst(es,vars,eqns,ishared,e::iAcc,inNotDiffed,eqn_1::inDiffEqns,eqn::inOrgEqns);
       then
-        (outNotDiffed,outDiffEqns,outOrgEqns);
-    case (e::es,_,_,_,_,_,_)
+        (es,outNotDiffed,outDiffEqns,outOrgEqns);
+    case (e::es,_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);        
-        (outNotDiffed,outDiffEqns,outOrgEqns) = differentiateEqnsLst(es,vars,eqns,ishared,eqn::inNotDiffed,inDiffEqns,inOrgEqns);
+        (es,outNotDiffed,outDiffEqns,outOrgEqns) = differentiateEqnsLst(es,vars,eqns,ishared,iAcc,eqn::inNotDiffed,inDiffEqns,inOrgEqns);
       then
-        (outNotDiffed,outDiffEqns,outOrgEqns);
+        (es,outNotDiffed,outDiffEqns,outOrgEqns);
   end matchcontinue;
 end differentiateEqnsLst;
 
@@ -3114,7 +3126,7 @@ algorithm
         //eqcont = BackendDAE.EQUATION(crconexp,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinInteger),DAE.ICONST(setsize),contExp),DAE.emptyElementSource);
         hack = hackSelect(listReverse(states));
         //contExp = DAE.ICONST(hack);
-        eqcont = BackendDAE.EQUATION(crconexp,contExp,DAE.emptyElementSource);       
+        eqcont = BackendDAE.EQUATION(crconexp,contExp,DAE.emptyElementSource,false);       
         // generate select equations and when clauses
         (selecteqns,dselecteqns,wclst,varlst) = generateSelectEquationsMulti(determinants,1,set,Expression.crefExp(set),crconexp,contstartExp,vars,rang,{},{},{},varlst,{});
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
@@ -3180,7 +3192,7 @@ algorithm
         //eqcont = BackendDAE.EQUATION(crconexp,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinInteger),DAE.ICONST(setsize),contExp),DAE.emptyElementSource);
         hack = hackSelect(listReverse(states));
         //contExp = DAE.ICONST(hack);
-        eqcont = BackendDAE.EQUATION(crconexp,contExp,DAE.emptyElementSource);       
+        eqcont = BackendDAE.EQUATION(crconexp,contExp,DAE.emptyElementSource,false);       
         // generate select equations and when clauses
         (selecteqns,dselecteqns,wclst,varlst) = generateSelectEquationsMulti(determinants,1,set,Expression.crefExp(set),crconexp,contstartExp,vars,rang,{},{},{},varlst,{});
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
@@ -3249,7 +3261,7 @@ algorithm
     case (c::rest,_,_,_,_,_,_,_,_)
       equation
         e = iMapIncRowEqn[c];
-        (eqn as BackendDAE.EQUATION(e1,e2,source)) = BackendDAEUtil.equationNth(inEqns, e-1);
+        (eqn as BackendDAE.EQUATION(exp=e1,scalar=e2,source=source)) = BackendDAEUtil.equationNth(inEqns, e-1);
         v = ass2[c];
         _ = arrayUpdate(solvedeqns,c,true);
         (var as BackendDAE.VAR(varName=cr)) = BackendVariable.getVarAt(inVars, v);
@@ -3267,7 +3279,7 @@ algorithm
     case (c::rest,_,_,_,_,_,_,_,_)
       equation
         e = iMapIncRowEqn[c];       
-        (eqn as BackendDAE.ARRAY_EQUATION(ds, e1, e2, source)) = BackendDAEUtil.equationNth(inEqns, e-1);
+        (eqn as BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2,source=source)) = BackendDAEUtil.equationNth(inEqns, e-1);
         clst = iMapEqnIncRow[e];
         vlst = List.map1r(clst,arrayGet,ass2);
         varlst = List.map1r(vlst,BackendVariable.getVarAt,inVars);
@@ -3408,7 +3420,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print,"Constraint Equation:\n");
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.equationString(eqn));
         Debug.fcall(Flags.BLT_DUMP, print,"Constraint Equation with Set:\n");
-        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.equationString(BackendDAE.EQUATION(exp,DAE.RCONST(0.0),source)));
+        Debug.fcall(Flags.BLT_DUMP, print, BackendDump.equationString(BackendDAE.EQUATION(exp,DAE.RCONST(0.0),source,false)));
       then
         fail();
 */    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -3441,7 +3453,7 @@ algorithm
         crconexp = Expression.crefExp(crcon);
         setsize = listLength(crstates);
         //eqcont = BackendDAE.EQUATION(crconexp,DAE.IFEXP(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinInteger),DAE.ICONST(setsize),contExp),DAE.emptyElementSource);
-        eqcont = BackendDAE.EQUATION(crconexp,contExp,DAE.emptyElementSource);
+        eqcont = BackendDAE.EQUATION(crconexp,contExp,DAE.emptyElementSource,false);
         // generate select equations and when clauses
         (selecteqns,dselecteqns,wclst,varlst) = generateSelectEquations(1,crset,crconexp,List.map(crstates,Expression.crefExp),contstartExp,varlst,List.map(statesvars,BackendVariable.varStartValue),{},{},{},{});
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
@@ -3861,9 +3873,9 @@ algorithm
         crconexppre = DAE.CALL(Absyn.IDENT("pre"), {contexp}, DAE.callAttrBuiltinReal);
         e1 = generateSetExpressions(ifexplst,index-1,crconexppre);
         e2 = generateSetExpressions(ifdexplst,index-1,crconexppre);
-        eqn = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},crsetexp,e1,DAE.emptyElementSource),BackendDAE.EQUATION(crsetexp,e1,DAE.emptyElementSource));
+        eqn = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},crsetexp,e1,DAE.emptyElementSource,false),BackendDAE.EQUATION(crsetexp,e1,DAE.emptyElementSource,false));
         tp = Expression.typeof(crsetexp);
-        deqn = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},DAE.CALL(Absyn.IDENT("der"),{crsetexp},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),e2,DAE.emptyElementSource),BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{crsetexp},DAE.callAttrBuiltinReal),e2,DAE.emptyElementSource));
+        deqn = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},DAE.CALL(Absyn.IDENT("der"),{crsetexp},DAE.CALL_ATTR(tp,false,true,DAE.NO_INLINE(),DAE.NO_TAIL())),e2,DAE.emptyElementSource,false),BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{crsetexp},DAE.callAttrBuiltinReal),e2,DAE.emptyElementSource,false));
         startvalues = generateStartExpressions(istartvalues,index-1,contstartExp);
         varlst = setVarLstStartValue(isetvarlst,startvalues,{});
       then 
@@ -3964,9 +3976,9 @@ algorithm
         con = DAE.RELATION(crconexppre,DAE.GREATER(DAE.T_INTEGER_DEFAULT),DAE.ICONST(indx),-1,NONE());
         //coni = DAE.LBINARY(DAE.CALL(Absyn.IDENT("initial"),{},DAE.callAttrBuiltinBool),DAE.OR(DAE.T_BOOL_DEFAULT),con);
         //eqn = BackendDAE.EQUATION(cre,DAE.IFEXP(coni,e1,e2),DAE.emptyElementSource);
-        eqn = BackendDAE.EQUATION(cre,DAE.IFEXP(con,e1,e2),DAE.emptyElementSource);
+        eqn = BackendDAE.EQUATION(cre,DAE.IFEXP(con,e1,e2),DAE.emptyElementSource,false);
         //deqn = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{cre},DAE.callAttrBuiltinReal),DAE.IFEXP(coni,DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal)),DAE.emptyElementSource);
-        deqn = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{cre},DAE.callAttrBuiltinReal),DAE.IFEXP(con,DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal)),DAE.emptyElementSource);
+        deqn = BackendDAE.EQUATION(DAE.CALL(Absyn.IDENT("der"),{cre},DAE.callAttrBuiltinReal),DAE.IFEXP(con,DAE.CALL(Absyn.IDENT("der"),{e1},DAE.callAttrBuiltinReal),DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal)),DAE.emptyElementSource,false);
         con = DAE.RELATION(contexp,DAE.GREATER(DAE.T_INTEGER_DEFAULT),DAE.ICONST(indx),-1,NONE());
         wc = BackendDAE.WHEN_CLAUSE(con,{BackendDAE.REINIT(cr,e1,DAE.emptyElementSource)},NONE());
         wc1 = BackendDAE.WHEN_CLAUSE(DAE.LUNARY(DAE.NOT(DAE.T_BOOL_DEFAULT),con),{BackendDAE.REINIT(cr,e2,DAE.emptyElementSource)},NONE());
@@ -5194,7 +5206,7 @@ algorithm
         ecr = Expression.makeCrefExp(inCr,DAE.T_REAL_DEFAULT);
         edcr = Expression.makeCrefExp(inDCr,DAE.T_REAL_DEFAULT);
         c = DAE.CALL(Absyn.IDENT("der"),{ecr},DAE.callAttrBuiltinReal);
-        eqns1 = BackendEquation.equationAdd(BackendDAE.EQUATION(edcr,c,DAE.emptyElementSource),inEqns);
+        eqns1 = BackendEquation.equationAdd(BackendDAE.EQUATION(edcr,c,DAE.emptyElementSource,false),inEqns);
         so = BackendDAETransform.addStateOrder(inCr,inDCr,inSo);
         eqnindxs = List.map(mt[i], intAbs);
         // get from scalar eqns indexes the indexes in the equation array

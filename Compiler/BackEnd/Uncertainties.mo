@@ -31,7 +31,6 @@ package Uncertainties
   import ClassInf;
   import BackendVarTransform;
   import ExpressionSolve;
-  import BackendDump;
   import ExpressionSimplify;
   import MathematicaDump;
   import Matching;
@@ -522,7 +521,7 @@ algorithm
     local
       list<SCode.Comment> comment;
       Boolean ret;
-    case(BackendDAE.EQUATION(_,_,DAE.SOURCE(comment=comment)))
+    case(BackendDAE.EQUATION(source=DAE.SOURCE(comment=comment)))
       equation
         ret = isApproximatedEquation2(comment);
       then  
@@ -1829,7 +1828,7 @@ algorithm
       mvars_1 = BaseHashTable.add((cr1,0),mvars);
       (eqns_1,seqns_1,mvars_2,repl_2) = eliminateVariablesDAE2(eqns, eqnIndex + 1, vars, knvars, mvars_1, repl_1, inDoubles, m, elimVarIndexList_1, failCheck);
     then
-      (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2);
+      (eqns_1,(BackendDAE.SOLVED_EQUATION(cr1,e2,source,false) :: seqns_1),mvars_2,repl_2);
       
     // Next equation.
     case ((e :: eqns),_,_,_,_,_,_,_,_,false)
@@ -1849,7 +1848,7 @@ algorithm
   (exp,source) := match(eqn,cr)
     local
       DAE.Exp e1,e2;
-    case(BackendDAE.EQUATION(e1,e2,source),_)
+    case(BackendDAE.EQUATION(exp=e1,scalar=e2,source=source),_)
       equation
         (exp,_) = ExpressionSolve.solve(e1,e2,DAE.CREF(cr,DAE.T_REAL_DEFAULT));      
       then (exp,source);

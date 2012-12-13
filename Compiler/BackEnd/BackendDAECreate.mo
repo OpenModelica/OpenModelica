@@ -511,7 +511,7 @@ algorithm
         vars = BackendVariable.addVar(backendVar1, inVars);
         e1 = Expression.crefExp(cr);
       then
-        (vars,inKnVars,inExVars,BackendDAE.EQUATION(e1, e2, source)::inEqnsLst);
+        (vars,inKnVars,inExVars,BackendDAE.EQUATION(e1, e2, source, false)::inEqnsLst);
         
     // variables: states and algebraic variables with NO binding equation
     case (DAE.VAR(binding=NONE(), source = source),_,_,_,_,_)
@@ -974,7 +974,7 @@ algorithm
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
-        BackendDAE.EQUATION(e1,e2,source)::inEqns;
+        BackendDAE.EQUATION(e1,e2,source,false)::inEqns;
 
     case (DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = source),_,_)
       equation
@@ -983,7 +983,7 @@ algorithm
         (e1,source,_) = Inline.inlineExp(e1, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
-        BackendDAE.EQUATION(e1,e2,source)::inEqns;
+        BackendDAE.EQUATION(e1,e2,source,false)::inEqns;
 
     case (DAE.EQUEQUATION(cr1 = cr1, cr2 = cr2,source = source),_,_)
       equation
@@ -998,7 +998,7 @@ algorithm
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);        
         e1 = Expression.crefExp(cr1);
       then
-        BackendDAE.EQUATION(e1,e2,source)::inEqns;
+        BackendDAE.EQUATION(e1,e2,source,false)::inEqns;
 
     case (DAE.INITIALDEFINE(componentRef = cr1, exp = e2, source = source),_,_)
       equation
@@ -1006,7 +1006,7 @@ algorithm
         (e2,source) = ExpressionSimplify.simplifyAddSymbolicOperation(e2, source);
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
       then
-        BackendDAE.EQUATION(e1,e2,source)::inEqns;
+        BackendDAE.EQUATION(e1,e2,source,false)::inEqns;
 
     case (DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source),_,_)
       equation
@@ -1025,7 +1025,7 @@ algorithm
         (e2,source,_) = Inline.inlineExp(e2, (SOME(functionTree),{DAE.NORM_INLINE()}), source);
         size = Expression.sizeOf(Expression.typeof(e1));
       then
-        BackendDAE.COMPLEX_EQUATION(size,e1,e2,source)::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size,e1,e2,source,false)::inEqns;
 
     case (DAE.ARRAY_EQUATION(dimension=dims,exp = e1,array = e2,source = source),_,_)
       equation
@@ -1353,7 +1353,7 @@ algorithm
         true = DAEUtil.expTypeComplex(tp);
         size = Expression.sizeOf(tp);
       then
-        BackendDAE.COMPLEX_EQUATION(size,inExp1,inExp2,source)::inEqns;
+        BackendDAE.COMPLEX_EQUATION(size,inExp1,inExp2,source,false)::inEqns;
       
     // array types to array equations  
     case (_,_,_,_,_)
@@ -1372,7 +1372,7 @@ algorithm
         false = b1 or b2;
         //Error.assertionOrAddSourceMessage(not b1,Error.INTERNAL_ERROR,{str}, Absyn.dummyInfo);
       then
-        BackendDAE.EQUATION(inExp1,inExp2,source)::inEqns;
+        BackendDAE.EQUATION(inExp1,inExp2,source,false)::inEqns;
     else
       equation
         // show only on failtrace!
@@ -1409,7 +1409,7 @@ algorithm
       equation
         ds = Expression.dimensionsSizes(dims);
       then 
-        BackendDAE.ARRAY_EQUATION(ds,e1,e2,source)::iAcc;
+        BackendDAE.ARRAY_EQUATION(ds,e1,e2,source,false)::iAcc;
   end matchcontinue;
 end lowerArrayEqn;
 
@@ -1428,7 +1428,7 @@ algorithm
     case ({},{},_,_) then iAcc;
     case (e1::e1lst,e2::e2lst,_,_)
       then
-        generateEquations(e1lst,e2lst,source,BackendDAE.EQUATION(e1,e2,source)::iAcc);
+        generateEquations(e1lst,e2lst,source,BackendDAE.EQUATION(e1,e2,source,false)::iAcc);
   end match;
 end generateEquations;
 
@@ -2376,7 +2376,7 @@ algorithm
     // if no alias selectable add as equation
     case (_,_,_,_,_,_,_,_,_)
       then
-        (iVars,iKnVars,iExtVars,iAVars,iRepl,BackendDAE.EQUATION(exp1,exp2,source)::iEqns);
+        (iVars,iKnVars,iExtVars,iAVars,iRepl,BackendDAE.EQUATION(exp1,exp2,source,false)::iEqns);
   end matchcontinue;
 end selectAlias;
 
@@ -3408,6 +3408,7 @@ algorithm
       Option<Integer> elseClause_;
       list<Integer> dimsize;
       BackendDAE.WhenEquation weqn;
+      Boolean diffed;
       
     case (_,_,{},_,{},_,countRelations, countMathFunctions,res,relationsLst,sampleLst) then (res,{},{},countRelations, countMathFunctions,relationsLst,sampleLst);
     
@@ -3440,44 +3441,44 @@ algorithm
         (res1,BackendDAE.WHEN_EQUATION(size,weqn,source_)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
         
     // after all algorithms and when clauses are processed, all equations are processed 
-    case (v,_,((e as BackendDAE.EQUATION(exp = e1,scalar = e2, source= source_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
+    case (v,_,((e as BackendDAE.EQUATION(exp = e1,scalar = e2, source= source_, differentiated=diffed)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
       equation
         eq_count = eq_count + 1;
         (eres1,countRelations, countMathFunctions,zcs1,relationsLst, sampleLst) = findZeroCrossings3(e1,zcs,relationsLst, sampleLst, countRelations, countMathFunctions,eq_count,-1,v,knvars);
         (eres2,countRelations, countMathFunctions,res,relationsLst, sampleLst) = findZeroCrossings3(e2,zcs1,relationsLst, sampleLst, countRelations, countMathFunctions,eq_count,-1,v,knvars);
         (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,res,relationsLst, sampleLst);
       then
-        (res1,BackendDAE.EQUATION(eres1,eres2,source_)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
-    case (v,_,((e as BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2,source=source)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
+        (res1,BackendDAE.EQUATION(eres1,eres2,source_,diffed)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
+    case (v,_,((e as BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2,source=source, differentiated=diffed)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
       equation
         eq_count = eq_count + 1;
         (eres1,countRelations, countMathFunctions,zcs1,relationsLst,sampleLst) = findZeroCrossings3(e1,zcs,relationsLst, sampleLst,countRelations, countMathFunctions,eq_count,-1,v,knvars);
         (eres2,countRelations, countMathFunctions,res,relationsLst,sampleLst) = findZeroCrossings3(e2,zcs1,relationsLst, sampleLst,countRelations, countMathFunctions,eq_count,-1,v,knvars);
         (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,res,relationsLst, sampleLst);
       then
-        (res1,BackendDAE.COMPLEX_EQUATION(size,eres1,eres2,source)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
-    case (v,_,((e as BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2,source=source)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
+        (res1,BackendDAE.COMPLEX_EQUATION(size,eres1,eres2,source,diffed)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
+    case (v,_,((e as BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2,source=source,differentiated=diffed)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
       equation
         eq_count = eq_count + 1;
         (eres1,countRelations, countMathFunctions,zcs1,relationsLst, sampleLst) = findZeroCrossings3(e1,zcs,relationsLst, sampleLst,countRelations, countMathFunctions,eq_count,-1,v,knvars);
         (eres2,countRelations, countMathFunctions,res,relationsLst, sampleLst) = findZeroCrossings3(e2,zcs1,relationsLst, sampleLst,countRelations, countMathFunctions,eq_count,-1,v,knvars);
         (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,res,relationsLst, sampleLst);
       then
-        (res1,BackendDAE.ARRAY_EQUATION(dimsize,eres1,eres2,source)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
-    case (v,_,((e as BackendDAE.SOLVED_EQUATION(componentRef = cref,exp = e1,source= source_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
+        (res1,BackendDAE.ARRAY_EQUATION(dimsize,eres1,eres2,source,diffed)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
+    case (v,_,((e as BackendDAE.SOLVED_EQUATION(componentRef = cref,exp = e1,source= source_,differentiated=diffed)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
       equation
         eq_count_1 = eq_count + 1;
         (eres1,countRelations, countMathFunctions,res,relationsLst, sampleLst) = findZeroCrossings3(e1,zcs,relationsLst, sampleLst,countRelations, countMathFunctions,eq_count,-1,v,knvars);
         (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,res,relationsLst, sampleLst);
       then
-        (res1,BackendDAE.SOLVED_EQUATION(cref,eres1,source_)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
-    case (v,_,((e as BackendDAE.RESIDUAL_EQUATION(exp = e1,source= source_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
+        (res1,BackendDAE.SOLVED_EQUATION(cref,eres1,source_,diffed)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
+    case (v,_,((e as BackendDAE.RESIDUAL_EQUATION(exp = e1,source= source_,differentiated=diffed)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
       equation
         eq_count = eq_count + 1;
         (eres1,countRelations, countMathFunctions,relationsLst,res, sampleLst) = findZeroCrossings3(e1,zcs,relationsLst, sampleLst,countRelations, countMathFunctions,eq_count,-1,v,knvars);
         (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,res,relationsLst, sampleLst);
       then
-        (res1,BackendDAE.RESIDUAL_EQUATION(eres1,source_)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
+        (res1,BackendDAE.RESIDUAL_EQUATION(eres1,source_,diffed)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
 
     case (v,_,((e as BackendDAE.IF_EQUATION(conditions=conds, eqnstrue=eqnslst, eqnsfalse=el, source= source_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
       equation
