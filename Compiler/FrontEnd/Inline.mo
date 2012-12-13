@@ -1422,8 +1422,33 @@ algorithm
       VarTransform.VariableReplacements repl;      
       Boolean generateEvents;
       Option<SCode.Comment> comment;
+    
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
+        true = Config.acceptMetaModelicaGrammar();
+        true = DAEUtil.convertInlineTypeToBool(inlineType);
+        true = checkInlineType(inlineType,fns);
+        (fn,_) = getFunctionBody(p,fns);
+        crefs = List.map(fn,getInputCrefs);
+        crefs = List.select(crefs,removeWilds);
+        argmap = List.threadTuple(crefs,args);
+        false = List.exist(fn,DAEUtil.isProtectedVar);
+        (argmap,checkcr) = extendCrefRecords(argmap,HashTableCG.emptyHashTable());
+        newExp = getRhsExp(fn);
+        // compare types
+        true = checkExpsTypeEquiv(e1, newExp);
+        // add noEvent to avoid events as usually for functions
+        // MSL 3.2.1 need GenerateEvents to disable this
+        newExp = Expression.addNoEventToRelationsAndConds(newExp);
+        ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
+        // for inlinecalls in functions
+        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
+      then
+        ((newExp1,(fns,true)));    
+    
+    case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
+      equation
+        false = Config.acceptMetaModelicaGrammar();
         true = DAEUtil.convertInlineTypeToBool(inlineType);
         true = checkInlineType(inlineType,fns);
         (fn,comment) = getFunctionBody(p,fns);
@@ -1445,6 +1470,7 @@ algorithm
         ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,inlineCall,(fns,true));
       then
         ((newExp1,(fns,true)));
+    
     else inTuple;
   end matchcontinue;
 end inlineCall;
