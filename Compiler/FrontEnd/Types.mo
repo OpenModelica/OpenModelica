@@ -7482,4 +7482,79 @@ algorithm
   end match;
 end fixUnknownDimensions;
 
+public function isFixedWithNoBinding
+"check if the type has bindings for everything
+ if is parameter or constant without fixed = false 
+ specified otherwise"
+  input DAE.Type inTy;
+  input SCode.Variability inVariability;
+  output Boolean outFixed;
+algorithm
+  outFixed := matchcontinue(inTy, inVariability)
+    local 
+      Boolean b;
+      list<DAE.Var> vl;
+    
+    case (_, _)
+      equation
+        // if this function doesn't fail return its value 
+        b = getFixedVarAttribute(inTy);
+      then
+        b;
+    
+    case (DAE.T_COMPLEX(varLst = vl), _)
+      equation 
+        true = allHaveBindings(vl);
+      then
+        false;
+    
+    // we couldn't get the fixed attribute
+    // assume true for constants and parameters
+    // false otherwise
+    case (_, _)
+      equation
+        b = listMember(inVariability, {SCode.PARAM(), SCode.CONST()});
+      then
+        b;
+  
+  end matchcontinue;
+end isFixedWithNoBinding;
+
+public function allHaveBindings
+  input list<DAE.Var> inVars;
+  output Boolean b;
+algorithm
+  b := matchcontinue(inVars)
+    local
+      DAE.Var v;
+      list<DAE.Var> rest;
+    
+    case ({}) then true;
+    
+    case (v::rest)
+      equation
+        false = hasBinding(v);
+      then
+        false;
+
+    case (v::rest)
+      equation
+        true = hasBinding(v);
+        true = allHaveBindings(rest);
+      then
+        true;
+  
+  end matchcontinue;
+end allHaveBindings;
+
+public function hasBinding
+  input DAE.Var inVar;
+  output Boolean b;
+algorithm
+  b := matchcontinue(inVar)
+    case (DAE.TYPES_VAR(binding = DAE.UNBOUND())) then false;
+    else true;
+  end matchcontinue;
+end hasBinding;
+
 end Types;

@@ -92,6 +92,7 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import ValuesUtil;
+protected import ClassInf;
 
 public function ceval "
   This function is used when the value of a constant expression is
@@ -258,7 +259,7 @@ algorithm
     // MetaModelica Uniontype Constructor. sjoelund 2009-05-18
     case (cache,env,DAE.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,stOpt,msg)
       equation
-        (cache,vallst,stOpt) = cevalList(cache,env, expl, impl, stOpt, msg);
+        (cache,vallst,stOpt) = cevalList(cache, env, expl, impl, stOpt, msg);
       then (cache,Values.RECORD(funcpath,vallst,fieldNames,index),stOpt);
 
     // MetaModelica Option type. sjoelund 2009-07-01 
@@ -4857,6 +4858,12 @@ algorithm
       String rfn,iter,expstr,s1,s2,str;
       DAE.Exp elexp,iterexp,exp;
       Env.Cache cache;
+      list<DAE.Var> vl;
+      Absyn.Path tpath;
+      DAE.Type ty;
+      Absyn.Ident id;
+      Absyn.Info info;
+      DAE.Binding binding;
 
     case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) 
       equation 
@@ -4865,6 +4872,17 @@ algorithm
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, impl, msg);
       then
         (cache,res);
+
+    // take the bindings form the cref type if is a record that has bindings for everything!
+    case (cache,env,DAE.CREF_IDENT(id, ty, {}),DAE.UNBOUND(),_,MSG(info))
+      equation
+        (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
+           varLst = vl)) = Types.arrayElementType(ty);
+        true = Types.allHaveBindings(vl);
+        binding = Inst.makeRecordBinding(cache, env, tpath, ty, vl, {}, info);
+        (cache, res) = cevalCrefBinding(cache, env, inComponentRef, binding, inBoolean, inMsg);
+      then 
+        (cache, res);
 
     case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG(_)) then fail();
 

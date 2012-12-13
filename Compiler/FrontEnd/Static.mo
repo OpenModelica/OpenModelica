@@ -7258,15 +7258,17 @@ algorithm
       equation
         // For unrolling errors if an overloaded 'constructor' matches later.
         ErrorExt.setCheckpoint("RecordConstructor");
+
+        // print(" inst record: " +& name +& " \n");
+        // adrpo: do lookup class first as lookupType is much more complex!
+        (_,recordCl,recordEnv) = Lookup.lookupClass(cache, env, fn, false);
+        true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
         
         (cache,
          t as DAE.T_FUNCTION(
                 funcArg = fargs, 
                 funcResultType = outtype as DAE.T_COMPLEX(complexClassType = complexClassType as ClassInf.RECORD(path=_))),_)
           = Lookup.lookupType(cache,env, fn, NONE());
-        // print(" inst record: " +& name +& " \n");
-        (_,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
-        true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
         
         // we might still have to look for overloaded constructors if the defualt doesn't match
         // Util.setStatefulBoolean(stopElab,true);
@@ -10513,8 +10515,11 @@ algorithm
     // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)                 
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.PARAM()),_,_,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre,_,_)
       equation
+        genWarning = Types.isFixedWithNoBinding(tt, SCode.PARAM());
         s = ComponentReference.printComponentRefStr(cr);
-        genWarning = not (Util.isSome(forIteratorConstOpt) or Flags.getConfigBool(Flags.CHECK_MODEL));
+        genWarning = not (boolNot(genWarning) or 
+                          Util.isSome(forIteratorConstOpt) or 
+                          Flags.getConfigBool(Flags.CHECK_MODEL));
         pre_str = PrefixUtil.printPrefixStr2(pre);
         // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
         s = pre_str +& s;

@@ -14662,6 +14662,16 @@ algorithm
       list<DAE.SubMod> sub_mods;
       Absyn.Info info;
 
+    // A record might have bindings from the class, use those if there is no modifier!
+    case (cache, _, _, DAE.NOMOD(), _, _, _, _)
+      equation
+        (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = tpath),
+           varLst = complex_vars)) = Types.arrayElementType(inType);
+        true = Types.allHaveBindings(complex_vars);
+        binding = makeRecordBinding(cache, inEnv, tpath, inType, complex_vars, {}, inInfo);
+      then
+        (cache, binding);
+    
     case (cache,_,_,DAE.NOMOD(),tp,_,_,_) then (cache,DAE.UNBOUND());
     
     case (cache,_,_,DAE.REDECL(finalPrefix = _),tp,_,_,_) then (cache,DAE.UNBOUND());
@@ -14740,7 +14750,7 @@ algorithm
   end matchcontinue;
 end makeBinding;
 
-protected function makeRecordBinding
+public function makeRecordBinding
   "Creates a binding for a record given a list of submodifiers. This is the case
    when a record is given a binding by modifiers, ex:
     
