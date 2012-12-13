@@ -1769,11 +1769,11 @@ algorithm
   end match;
 end createGenericBuiltinFunctions;
 
-protected function lookupTypeInEnv "- Internal functions
-  Type lookup
-  function: lookupTypeInEnv
+// - Internal functions
+//   Type lookup
 
-"
+protected function lookupTypeInEnv 
+"function: lookupTypeInEnv"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
@@ -1793,11 +1793,13 @@ algorithm
       Env.Frame f;
       Env.Cache cache;
       Absyn.Path path;
+    
     case (cache,(env as (Env.FRAME(name = sid,clsAndVars = ht,types = httypes) :: fs)),Absyn.IDENT(name = id))
       equation
-        (cache,c,env_1) = lookupTypeInFrame(cache,ht, httypes, env, id);
+        (cache,c,env_1) = lookupTypeInFrame(cache, ht, httypes, env, id);
       then
         (cache,c,env_1);
+    
     case (cache,f::fs,path)
       equation
         (cache,c,env_1) = lookupTypeInEnv(cache,fs,path);
@@ -1806,10 +1808,9 @@ algorithm
   end matchcontinue;
 end lookupTypeInEnv;
 
-protected function lookupTypeInFrame "function: lookupTypeInFrame
-
-  Searches a frame for a type.
-"
+protected function lookupTypeInFrame 
+"function: lookupTypeInFrame
+  Searches a frame for a type."
   input Env.Cache inCache;
   input Env.AvlTree inBinTree1;
   input Env.AvlTree inBinTree2;
@@ -1838,10 +1839,9 @@ algorithm
   end match;
 end lookupTypeInFrame;
 
-protected function lookupTypeInFrame2 "function: lookupTypeInFrame
-
-  Searches a frame for a type.
-"
+protected function lookupTypeInFrame2 
+"function: lookupTypeInFrame
+  Searches a frame for a type."
   input Env.Cache inCache;
   input Env.Item item;
   input Env.Env inEnv3;
@@ -1884,9 +1884,14 @@ algorithm
     case (cache,Env.CLASS((cdef as SCode.CLASS(restriction=SCode.R_FUNCTION(_))),cenv,_),env,id)
       equation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP TYPE IN FRAME ICD: " +& Env.printEnvPathStr(env) +& " id:" +& id);
+        
+        // select the env if is the same as cenv as is updated!
+        cenv = selectUpdatedEnv(env, cenv);
+        
         (cache ,env_1,_) = Inst.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), cdef, {});
+        
         (cache,ty,env_3) = lookupTypeInEnv(cache, env_1, Absyn.IDENT(id));
       then
         (cache,ty,env_3);
@@ -1955,6 +1960,10 @@ algorithm
       equation
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv,_) = Env.avlTreeGet(ht, id);
         true = SCode.isFunctionRestriction(restr) "If found class that is function.";
+
+        // select the env if is the same as cenv as is updated!
+        cenv = selectUpdatedEnv(env, cenv);
+
         //function dae collected from instantiation
         // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
         (cache,env_1,_) =
@@ -1964,24 +1973,54 @@ algorithm
       then
         (cache,tps);
 
-     // Found class that is is external object
-     case (cache,ht,httypes,env,id,_)
-        equation
-          Env.CLASS(cdef,cenv,_) = Env.avlTreeGet(ht, id);
-          true = Inst.classIsExternalObject(cdef);
-          // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
-          (cache,env_1,_,_,_,_,t,_,_,_) = 
+    // Found class that is is external object
+    case (cache,ht,httypes,env,id,_)
+      equation
+        Env.CLASS(cdef,cenv,_) = Env.avlTreeGet(ht, id);
+        true = Inst.classIsExternalObject(cdef);
+
+        // select the env if is the same as cenv as is updated!
+        cenv = selectUpdatedEnv(env, cenv);
+
+        // Debug.fprintln(Flags.INST_TRACE, "LOOKUP FUNCTIONS IN FRAME ICD: " +& Env.printEnvPathStr(env) +& "." +& id);
+        (cache,env_1,_,_,_,_,t,_,_,_) = 
           Inst.instClass(cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
             DAE.NOMOD(), Prefix.NOPRE(), cdef, {}, false, Inst.TOP_CALL(),
             ConnectionGraph.EMPTY, Connect.emptySet);
-          (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
-          // s = Types.unparseType(t);
-          // print("type :");print(s);print("\n");
-       then
+        (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
+        // s = Types.unparseType(t);
+        // print("type :");print(s);print("\n");
+      then
         (cache,{t});
   
   end matchcontinue;
 end lookupFunctionsInFrame;
+
+protected function selectUpdatedEnv
+  input Env.Env inNewEnv;
+  input Env.Env inOldEnv;
+  output Env.Env outEnv;
+algorithm
+  outEnv := matchcontinue(inNewEnv, inOldEnv)
+    local Env.Env env;
+    
+    // return old if is top scope!
+    case (_, _)
+      equation
+        true = Env.isTopScope(inNewEnv);
+      then
+        inOldEnv;
+    // if they point to the same env, return the new one
+    case (_, _)
+      equation
+        true = stringEq(Env.getEnvNameStr(inNewEnv),
+                        Env.getEnvNameStr(inOldEnv));
+      then
+        inNewEnv;
+    
+    else then inOldEnv;        
+  end matchcontinue;
+end selectUpdatedEnv;
 
 protected function buildRecordType ""
   input Env.Cache cache;

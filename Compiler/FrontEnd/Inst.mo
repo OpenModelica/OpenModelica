@@ -5412,13 +5412,15 @@ algorithm
     local 
       list<Absyn.Exp> rest;
       Absyn.Exp e;
-      list<tuple<SCode.Element, DAE.Mod>> deps;
+      list<tuple<SCode.Element, DAE.Mod>> deps, els;
 
     // handle the empty case
     case ({}, _, _) then inDependencies;
     // handle the normal case
     case (e::rest, _, deps) 
       equation
+        //(_, (_, _, (els, deps))) = Absyn.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
+        //deps = getDepsFromExps(rest, els, deps);
         (_, (_, _, (_, deps))) = Absyn.traverseExpBidir(e, (getElementDependenciesTraverserEnter, getElementDependenciesTraverserExit, (inAllElements, deps)));
         deps = getDepsFromExps(rest, inAllElements, deps);
       then
@@ -5550,6 +5552,7 @@ algorithm
       Boolean hasUnknownDims;
       Absyn.Direction direction;
       list<tuple<SCode.Element, DAE.Mod>> inAllElements;
+      list<SCode.Element> els;
 
     // For constants and parameters we check the component conditional, array dimensions, modifiers and binding
     case ((SCode.COMPONENT(name = name, condition = cExpOpt, attributes = SCode.ATTR(arrayDims = ad, variability = var),
@@ -5611,9 +5614,57 @@ algorithm
       then
         deps;
     
+    // We might have functions here and their input/output elements can have bindings from the list
+    // see reference_X in PartialMedium.
+    /* this might not be really needed for now.
+    case ((SCode.CLASS(name = name, restriction = SCode.R_FUNCTION(_), classDef = SCode.PARTS(elementLst = els)), 
+           daeMod), (inAllElements, _))
+      equation
+        exps = getExpsFromDefaults(els, {}); 
+        (bexps, sexps) = getExpsFromMod(Mod.unelabMod(daeMod));
+        exps = listAppend(bexps, listAppend(sexps, exps));
+        deps = getDepsFromExps(exps, inAllElements, {});
+      then
+        deps;*/
+    
     else then {};
   end matchcontinue;
 end getElementDependencies;
+
+protected function getExpsFromDefaults
+  input SCode.Program inEls;
+  input list<Absyn.Exp> inAcc;
+  output list<Absyn.Exp> outExps;
+algorithm
+  outExps := matchcontinue(inEls, inAcc)
+    local 
+      SCode.Program rest;
+      list<Absyn.Exp> exps, acc;
+      SCode.Mod m;
+    
+    case ({}, _) then inAcc;
+    
+    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.INPUT()), modifications = m)::rest, _)
+      equation
+        (exps, _) = getExpsFromMod(m);
+        exps = getExpsFromDefaults(rest, listAppend(exps, inAcc));
+      then
+        exps;
+    
+    case (SCode.COMPONENT(attributes = SCode.ATTR(direction = Absyn.OUTPUT()), modifications = m)::rest, _)
+      equation
+        (exps, _) = getExpsFromMod(m);
+        exps = getExpsFromDefaults(rest, listAppend(exps, inAcc));
+      then
+        exps;
+    
+    case (_::rest, _)
+      equation
+        exps = getExpsFromDefaults(rest, inAcc);
+      then
+        exps;
+  end matchcontinue;
+end getExpsFromDefaults;
 
 protected function getElementDependenciesTraverserEnter
   "Traverse function used by getElementDependencies to collect all dependencies
@@ -5640,6 +5691,19 @@ algorithm
         (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
       then
         ((exp, (all_el, e :: accum_el)));
+    
+    /* adpro: add function calls crefs too! 
+       this works fine but changes order in too many 
+       models, i'll enable this and update them later 
+    case ((exp as Absyn.CALL(function_ = cref), (all_el, accum_el)))
+      equation
+        id = Absyn.crefFirstIdent(cref);
+        // Try and delete the element with the given name from the list of all
+        // elements. If this succeeds, add it to the list of elements. This
+        // ensures that we don't add any dependency more than once.
+        (all_el, SOME(e)) = List.deleteMemberOnTrue(id, all_el, isElementNamed);
+      then
+        ((exp, (all_el, e :: accum_el)));*/
 
     else then inTuple;
   end matchcontinue;
@@ -9624,7 +9688,7 @@ algorithm
         (cache,tyVar,SCode.COMPONENT(n,_,_,Absyn.TPATH(t, _),_,comment,cond,info),_,_,idENV)
           = Lookup.lookupIdent(cache, env, id);
         
-        ci_state = updateClassInfState(cache, idENV, env, inCIState);  
+        ci_state = updateClassInfState(cache, idENV, env, inCIState);
         
         //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCodeDump.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
@@ -16909,6 +16973,7 @@ algorithm
     // This case catches when we want to update an already typed and bound var.
     case (cache,env,ih,_,mods,(Absyn.CREF_IDENT(name = n, subscripts = {}) :: rest),_,_,updatedComps,_)
       equation
+        // (_,DAE.TYPES_VAR(binding = binding),_,_,_,_) = Lookup.lookupIdent(cache, env, n);
         (_,DAE.TYPES_VAR(binding = binding),_,_,_,_) = Lookup.lookupIdentLocal(cache, env, n);
         true = DAEUtil.isBound(binding);
         (cache,env_2,ih,updatedComps) = updateComponentsInEnv2(cache, env, ih,
