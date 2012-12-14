@@ -1516,6 +1516,10 @@ algorithm
       equation
        b = Util.getOptionOrDefault(blst,true);
       then ((e,false,(vars,knvars,SOME(b))));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "initial")),(vars,knvars,blst)))) 
+      equation
+       b = Util.getOptionOrDefault(blst,true);
+      then ((e,false,(vars,knvars,SOME(b))));
 /*
     This cases are wrong because of Modelica Specification:
     
