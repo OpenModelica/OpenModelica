@@ -587,7 +587,7 @@ public constant Message UNBOUND_PARAMETER_WARNING = MESSAGE(500, TRANSLATION(), 
 public constant Message BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER = MESSAGE(502, TRANSLATION(), WARNING(),
   Util.gettext("Function \"product\" has scalar as argument in %s in component %s"));
 public constant Message SETTING_FIXED_ATTRIBUTE = MESSAGE(503, TRANSLATION(), WARNING(),
-  Util.gettext("Using overdeterimed solver for initialization. Setting fixed=false to the following variables: %s"));
+  Util.gettext("Using overdetermined solver for initialization. Setting fixed=false to the following variables: %s"));
 public constant Message FAILED_TO_EVALUATE_FUNCTION = MESSAGE(506, TRANSLATION(), ERROR(),
   Util.gettext("Failed to evaluate function: %s"));
 public constant Message FINAL_OVERRIDE = MESSAGE(508, TRANSLATION(), ERROR(),

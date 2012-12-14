@@ -1133,7 +1133,7 @@ const double InterpolationTable_getElt(InterpolationTable *tpl, size_t row, size
   /* is this really correct? doesn't it depends on tpl>colWise? */
   ASSERT6(
       row < tpl->rows && col < tpl->cols,
-      "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] aut of range!",
+      "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] out of range!",
       tpl->tablename, tpl->filename,
       (unsigned long)tpl->rows, (unsigned long)tpl->cols,
       (unsigned long)row, (unsigned long)col);
@@ -1497,7 +1497,7 @@ double InterpolationTable2D_linInterpolate(double x, double x_1, double x_2, dou
 
 const double InterpolationTable2D_getElt(InterpolationTable2D *tpl, size_t row, size_t col)
 {
-  ASSERT6(row < tpl->rows && col < tpl->cols, "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] aut of range!", tpl->tablename, tpl->filename, (unsigned long)tpl->rows, (unsigned long)tpl->cols, (unsigned long)row, (unsigned long)col);
+  ASSERT6(row < tpl->rows && col < tpl->cols, "In Table: %s from File: %s with Size[%lu,%lu] try to get Element[%lu,%lu] out of range!", tpl->tablename, tpl->filename, (unsigned long)tpl->rows, (unsigned long)tpl->cols, (unsigned long)row, (unsigned long)col);
   return tpl->data[row*tpl->cols+col];
 }
 
