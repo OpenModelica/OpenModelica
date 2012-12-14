@@ -3396,7 +3396,7 @@ algorithm
       list<BackendDAE.ZeroCrossing> zcs,zcs1,res,res1, relationsLst,sampleLst;
       Integer size,countRelations,eq_count_1,eq_count,wc_count,countMathFunctions;
       BackendDAE.Equation e;
-      list<BackendDAE.Equation> xs,el,eq_reslst;
+      list<BackendDAE.Equation> xs,el,eq_reslst,eqnselse;
       list<list<BackendDAE.Equation>> eqnslst;
       DAE.Exp daeExp,e1,e2, eres1, eres2;
       BackendDAE.WhenClause wc;
@@ -3479,7 +3479,14 @@ algorithm
         (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,res,relationsLst, sampleLst);
       then
         (res1,BackendDAE.RESIDUAL_EQUATION(eres1,source_,diffed)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
-
+/*
+    case (v,_,((e as BackendDAE.IF_EQUATION(conditions=conds as {DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue={el},eqnsfalse=eqnselse, source= source_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
+      equation
+        (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,eqnselse,eq_count, {}, 0,countRelations, countMathFunctions,zcs,relationsLst, sampleLst);
+        (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,zcs,relationsLst, sampleLst);
+      then
+        (res1,BackendDAE.IF_EQUATION(conds,{el},el,source_)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
+*/
     case (v,_,((e as BackendDAE.IF_EQUATION(conditions=conds, eqnstrue=eqnslst, eqnsfalse=el, source= source_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
       equation
         print("Warning If equations not handled propper in findZeroCrossings2\n");

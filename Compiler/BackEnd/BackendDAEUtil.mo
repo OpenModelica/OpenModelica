@@ -5031,7 +5031,7 @@ algorithm
       DAE.Algorithm alg;
       BackendDAE.AdjacencyMatrixElementEnhanced row;
       list<list<BackendDAE.Equation>> eqnslst;
-      list<BackendDAE.Equation> eqns;
+      list<BackendDAE.Equation> eqns,eqnselse;
       list<DAE.ComponentRef> algoutCrefs;
     
     // EQUATION
@@ -5116,6 +5116,13 @@ algorithm
       then 
         (row,size);
             
+    // special case for it initial() then ... else ... end if; only else branch needs to be checked
+    case(vars,BackendDAE.IF_EQUATION(conditions={DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue={eqns},eqnsfalse=eqnselse),_,_,_)
+      equation
+        (row,size) = adjacencyRowEnhancedEqnLst(eqnselse,inVariables,mark,rowmark,kvars,{},0);
+      then
+        (row,size);
+
     // if Equation
     // TODO : how to handle this?
     // Proposal:
@@ -5138,6 +5145,34 @@ algorithm
         fail();
   end matchcontinue;
 end adjacencyRowEnhanced;    
+
+protected function adjacencyRowEnhancedEqnLst
+  input list<BackendDAE.Equation> iEqns;
+  input BackendDAE.Variables inVariables;
+  input Integer mark;
+  input array<Integer> rowmark;
+  input BackendDAE.Variables kvars;
+  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
+  input Integer iSize;
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
+  output Integer oSize;
+algorithm
+  (outRow,oSize) := match(iEqns,inVariables,mark,rowmark,kvars,iRow,iSize)
+    local
+      BackendDAE.AdjacencyMatrixElementEnhanced row;
+      Integer size;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> rest;
+    case ({},_,_,_,_,_,_) then (iRow,iSize);
+    case (eqn::rest,_,_,_,_,_,_)
+      equation
+        (row,size) = adjacencyRowEnhanced(inVariables,eqn,mark,rowmark,kvars);
+        row = listAppend(row,iRow);
+        (row,size) = adjacencyRowEnhancedEqnLst(rest,inVariables,mark,rowmark,kvars,row,size + iSize);
+      then
+        (row,size);
+  end match;  
+end adjacencyRowEnhancedEqnLst;
 
 protected function adjacencyRowAlgorithmOutputs
 "function: adjacencyRowAlgorithmOutputs
