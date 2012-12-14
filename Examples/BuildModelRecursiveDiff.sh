@@ -11,11 +11,11 @@ REV1=`grep -o "[(]r[0-9]*" "$1" | tr -d "("`
 REV2=`grep -o "[(]r[0-9]*" "$2" | tr -d "("`
 egrep "$BUILD" $1 | egrep -o "$SEARCH" | tr -d "<> (" > "$1.build"
 egrep "$BUILD" $2 | egrep -o "$SEARCH" | tr -d "<> (" > "$2.build"
-echo "Build diff (failures between $REV1 and $REV2)"
+echo "Build diff (failures between $REV1 and $REV2 *plus is bad*)"
 diff -u "$1.build" "$2.build" | grep ^[+-]
 
 egrep "$SIM" "$1" | egrep -o "$SEARCH" | tr -d "<> (" > "$1.sim"
 egrep "$SIM" "$2" | egrep -o "$SEARCH" | tr -d "<> (" > "$2.sim"
-echo "Sim diff (failures between $REV1 and $REV2)"
+echo "Sim diff (failures between $REV1 and $REV2 - *plus is bad*)"
 diff -u "$1.sim" "$2.sim" | grep "^[+-][A-Za-z0-9._]"
 rm -f "$1.build" "$2.build" "$1.sim" "$2.sim"
