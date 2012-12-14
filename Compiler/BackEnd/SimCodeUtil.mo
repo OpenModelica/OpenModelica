@@ -6718,8 +6718,7 @@ algorithm
         //mT = BackendDAEUtil.transposeMatrix(m);
         v1 = listArray(lv1);
         v2 = listArray(lv2);
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, print, "Param DAE:\n");
-        Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpBackendDAE, paramdlow);
+        Debug.fcall2(Flags.PARAM_DLOW_DUMP, BackendDump.dumpBackendDAE, paramdlow, "Param DAE");
         Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrix, m);
         Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpIncidenceMatrixT, mT);
         Debug.fcall(Flags.PARAM_DLOW_DUMP, BackendDump.dumpMatching, v1);

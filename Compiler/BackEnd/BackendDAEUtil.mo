@@ -7857,8 +7857,7 @@ algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strdaeHandler);
   
-  Debug.fcall(Flags.DUMP_DAE_LOW, print, "dumpdaelow:\n");
-  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE);
+  Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   // pre optimisation phase
   // Frenkel TUD: why is this neccesarray? it only consumes time!
@@ -7880,8 +7879,7 @@ algorithm
   //Debug.execStat("calculateValue",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   //outSODE := expandAlgorithmsbyInitStmts(sode2);
   Debug.execStat("expandAlgorithmsbyInitStmts",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
-  Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE);
+  Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE);
   checkBackendDAEWithErrorMsg(outSODE);
@@ -7925,7 +7923,7 @@ algorithm
         dae = optModule(inDAE);
         Debug.execStat("preOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dumpBackendDAE, dae);
+        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
         (dae1,status) = preoptimiseDAE(dae,rest);
       then (dae1,status);
     case (_,(optModule,moduleStr,b)::rest)
@@ -8151,7 +8149,7 @@ algorithm
         dae = optModule(inDAE);
         Debug.execStat("pastOpt " +& moduleStr,BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
         Debug.fcall(Flags.OPT_DAE_DUMP, print, stringAppendList({"\nOptimisation Module ",moduleStr,":\n\n"}));
-        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.dumpBackendDAE, dae);
+        Debug.fcall(Flags.OPT_DAE_DUMP, BackendDump.printBackendDAE, dae);
         dae1 = causalizeDAE(dae,NONE(),matchingAlgorithm,daeHandler,false);
         (dae2,status) = pastoptimiseDAE(dae1,rest,matchingAlgorithm,daeHandler);
       then
@@ -8260,8 +8258,7 @@ algorithm
   matchingAlgorithm := getMatchingAlgorithm(strmatchingAlgorithm);
   daeHandler := getIndexReductionMethod(strdaeHandler);
   
-  Debug.fcall(Flags.DUMP_DAE_LOW, print, "dumpdaelow:\n");
-  Debug.fcall(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE);
+  Debug.fcall2(Flags.DUMP_DAE_LOW, BackendDump.dumpBackendDAE, inDAE, "dumpdaelow");
   // pre optimisation phase
   _ := traverseBackendDAEExps(inDAE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
   (optdae,Util.SUCCESS()) := preoptimiseDAE(inDAE,preOptModules);
@@ -8274,8 +8271,7 @@ algorithm
   (outSODE,Util.SUCCESS()) := pastoptimiseDAE(sode,pastOptModules,matchingAlgorithm,daeHandler);
   _ := traverseBackendDAEExps(outSODE,ExpressionSimplify.simplifyTraverseHelper,0) "simplify all expressions";
 
-  Debug.fcall(Flags.DUMP_INDX_DAE, print, "dumpindxdae:\n");
-  Debug.fcall(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE);
+  Debug.fcall2(Flags.DUMP_INDX_DAE, BackendDump.dumpBackendDAE, outSODE, "dumpindxdae");
   Debug.fcall(Flags.DUMP_BACKENDDAE_INFO, BackendDump.dumpCompShort, outSODE);
   Debug.fcall(Flags.DUMP_EQNINORDER, BackendDump.dumpEqnsSolved, outSODE);
 end getSolvedSystemforJacobians;

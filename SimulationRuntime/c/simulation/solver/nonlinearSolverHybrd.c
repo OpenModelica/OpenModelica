@@ -44,10 +44,45 @@
 #include "nonlinearSystem.h"
 #include "nonlinearSolverHybrd.h"
 
+typedef struct DATA_HYBRD
+{
+  int initialized; /* 1 = initialized, else = 0*/
+  double* resScaling;
+  int useXScaling;
+  double* xScalefactors;
+  double* fvecScaled;
+
+  integer n;
+  double* x;
+  double* fvec;
+  double xtol;
+  int maxfev;
+  int ml;
+  int mu;
+  double epsfcn;
+  double* diag;
+  double* diagres;
+  int mode;
+  double factor;
+  int nprint;
+  int info;
+  int nfev;
+  double* fjac;
+  double* fjacobian;
+  int ldfjac;
+  double* r__;
+  int lr;
+  double* qtf;
+  double* wa1;
+  double* wa2;
+  double* wa3;
+  double* wa4;
+} DATA_HYBRD;
+
 /*! \fn allocate memory for nonlinear system solver hybrd
  *
  */
-int allocateHybrdData(int* size, void** voiddata)
+int allocateHybrdData(int size, void** voiddata)
 {
   DATA_HYBRD* data = (DATA_HYBRD*) malloc(sizeof(DATA_HYBRD));
 
@@ -55,36 +90,36 @@ int allocateHybrdData(int* size, void** voiddata)
   ASSERT(data, "allocationHybrdData() failed!");
 
   data->initialized = 0;
-  data->resScaling = (double*) malloc(*size*sizeof(double));
-  data->fvecScaled = (double*) malloc(*size*sizeof(double));
+  data->resScaling = (double*) malloc(size*sizeof(double));
+  data->fvecScaled = (double*) malloc(size*sizeof(double));
   data->useXScaling = 1;
-  data->xScalefactors = (double*) malloc(*size*sizeof(double));
+  data->xScalefactors = (double*) malloc(size*sizeof(double));
 
-  data->n = *size;
-  data->x = (double*) malloc(*size*sizeof(double));
-  data->fvec = (double*) calloc(*size,sizeof(double));
+  data->n = size;
+  data->x = (double*) malloc(size*sizeof(double));
+  data->fvec = (double*) calloc(size,sizeof(double));
   data->xtol = 1e-12;
-  data->maxfev = *size*10000;
-  data->ml = *size - 1;
-  data->mu = *size - 1;
+  data->maxfev = size*10000;
+  data->ml = size - 1;
+  data->mu = size - 1;
   data->epsfcn = 1e-12;
-  data->diag = (double*) malloc(*size*sizeof(double));
-  data->diagres = (double*) malloc(*size*sizeof(double));
+  data->diag = (double*) malloc(size*sizeof(double));
+  data->diagres = (double*) malloc(size*sizeof(double));
   data->mode = 1;
   data->factor = 100.0;
   data->nprint = 0;
   data->info = 0;
   data->nfev = 0;
-  data->fjac = (double*) malloc((*size**size)*sizeof(double));
-  data->fjacobian = (double*) malloc((*size**size)*sizeof(double));
-  data->ldfjac = *size;
-  data->r__ = (double*) malloc(((*size*(*size+1))/2)*sizeof(double));
-  data->lr = (*size*(*size + 1)) / 2;
-  data->qtf = (double*) malloc(*size*sizeof(double));
-  data->wa1 = (double*) malloc(*size*sizeof(double));
-  data->wa2 = (double*) malloc(*size*sizeof(double));
-  data->wa3 = (double*) malloc(*size*sizeof(double));
-  data->wa4 = (double*) malloc(*size*sizeof(double));
+  data->fjac = (double*) malloc((size*size)*sizeof(double));
+  data->fjacobian = (double*) malloc((size*size)*sizeof(double));
+  data->ldfjac = size;
+  data->r__ = (double*) malloc(((size*(size+1))/2)*sizeof(double));
+  data->lr = (size*(size + 1)) / 2;
+  data->qtf = (double*) malloc(size*sizeof(double));
+  data->wa1 = (double*) malloc(size*sizeof(double));
+  data->wa2 = (double*) malloc(size*sizeof(double));
+  data->wa3 = (double*) malloc(size*sizeof(double));
+  data->wa4 = (double*) malloc(size*sizeof(double));
 
   ASSERT(*voiddata, "allocationHybrdData() voiddata failed!");
   return 0;
@@ -93,8 +128,8 @@ int allocateHybrdData(int* size, void** voiddata)
 /*! \fn free memory for nonlinear solver hybrd
  *
  */
-int freeHybrdData(void **voiddata){
-
+int freeHybrdData(void **voiddata)
+{
   DATA_HYBRD* data = (DATA_HYBRD*) *voiddata;
 
   free(data->resScaling);
@@ -122,63 +157,62 @@ int freeHybrdData(void **voiddata){
  *
  *
  */
-void wrapper_fvec_hybrd(integer* n, double* x, double* f, int* iflag, void* data){
-
-  int i,currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
+void wrapper_fvec_hybrd(integer* n, double* x, double* f, int* iflag, void* data)
+{
+  int i;
+  int currentSys = ((DATA*)data)->simulationInfo.currentNonlinearSystemIndex;
   NONLINEAR_SYSTEM_DATA* systemData = &(((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys]);
-  DATA_HYBRD* solverData = (DATA_HYBRD*)(((SOLVER_DATA*)systemData->solverData)->hybrdData);
+  DATA_HYBRD* solverData = (DATA_HYBRD*)systemData->solverData;
 
-  /* Debug output */
-  if(DEBUG_STREAM(LOG_NONLIN_SYS_V)){
-    INFO(LOG_NONLIN_SYS_V,"Call residual function:");
+  /* debug output */
+  if(DEBUG_STREAM(LOG_NONLIN_SYS_V))
+  {
+    INFO(LOG_NONLIN_SYS_V, "Call residual function:");
     INDENT(LOG_NONLIN_SYS_V);
-    INFO(LOG_NONLIN_SYS_V,"Iteration variable values scaled:");
+    INFO(LOG_NONLIN_SYS_V, "Iteration variable values scaled:");
     INDENT(LOG_NONLIN_SYS_V);
-    for(i=0;i<*n;i++){
+    for(i=0; i<*n; i++)
       INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, x[i]);
-    }
     RELEASE(LOG_NONLIN_SYS_V);
   }
 
   /* re-scaling x vector */
-  if(solverData->useXScaling ){
-    for(i=0;i<*n;i++){
+  if(solverData->useXScaling)
+  {
+    for(i=0; i<*n; i++)
+    {
       x[i] = x[i]*solverData->xScalefactors[i];
     }
   }
 
-  /* Debug output */
-  if(DEBUG_STREAM(LOG_NONLIN_SYS_V)){
-    INFO(LOG_NONLIN_SYS_V,"Iteration variable values:");
+  /* debug output */
+  if(DEBUG_STREAM(LOG_NONLIN_SYS_V))
+  {
+    INFO(LOG_NONLIN_SYS_V, "Iteration variable values:");
     INDENT(LOG_NONLIN_SYS_V);
-    for(i=0;i<*n;i++){
-      INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, x[i]);
-    }
+    for(i=0; i<*n; i++)
+      INFO2(LOG_NONLIN_SYS_V, "[%d]. %.15e", i, x[i]);
     RELEASE(LOG_NONLIN_SYS_V);
   }
 
   /* call residual function */
-  (*((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data,
-      x, f, iflag);
+  (*((DATA*)data)->simulationInfo.nonlinearSystemData[currentSys].residualFunc)(data, x, f, iflag);
 
-  /* Scaling x vector */
-  if(solverData->useXScaling ){
-    for(i=0;i<*n;i++){
+  /* scaling x vector */
+  if(solverData->useXScaling)
+    for(i=0; i<*n; i++)
       x[i] = (1.0/solverData->xScalefactors[i]) * x[i];
-    }
-  }
 
-  /* Debug output */
-  if(DEBUG_STREAM(LOG_NONLIN_SYS_V)){
+  /* debug output */
+  if(DEBUG_STREAM(LOG_NONLIN_SYS_V))
+  {
     INFO(LOG_NONLIN_SYS_V,"Residual values:");
     INDENT(LOG_NONLIN_SYS_V);
-    for(i=0;i<*n;i++){
+    for(i=0; i<*n; i++)
       INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, f[i]);
-    }
     RELEASE(LOG_NONLIN_SYS_V);
     RELEASE(LOG_NONLIN_SYS_V);
   }
-
 }
 
 
@@ -189,23 +223,25 @@ void wrapper_fvec_hybrd(integer* n, double* x, double* f, int* iflag, void* data
  *
  *  \author wbraun
  */
-void printStatus(DATA_HYBRD *solverData, const int *nfunc_evals,const double *xerror,const double *xerror_scaled, const int logLevel){
+void printStatus(DATA_HYBRD *solverData, const int *nfunc_evals,const double *xerror,const double *xerror_scaled, const int logLevel)
+{
   int i;
 
-  INDENT(logLevel);
-  INDENT(logLevel);
   INFO3(logLevel, "nfunc = %d +++ error = %.20e +++ error_scaled = %.20e", *nfunc_evals, *xerror, *xerror_scaled);
+  INDENT(logLevel);
+
+  INFO(logLevel, "x");
+  INDENT(logLevel);
+  for(i = 0; i < solverData->n; i++)
+    INFO3(logLevel, "x[%d] = %.20e\n\tscaling factor = %f", i, solverData->x[i], solverData->diag[i]);
   RELEASE(logLevel);
-  for(i = 0; i < solverData->n; i++) {
-    INDENT(logLevel);
-    INFO3(logLevel, "x[%d] = %.20e\n\tscaling factor = %f", i, solverData->x[i],solverData->diag[i]);
-    RELEASE(logLevel);
-  }
-  for(i = 0; i < solverData->n; i++) {
-    INDENT(logLevel);
+
+  INFO(logLevel, "fvec");
+  INDENT(logLevel);
+  for(i = 0; i < solverData->n; i++)
     INFO3(logLevel, "res[%d] = %.20e\n\tscaling factor = %f", i, solverData->fvec[i], solverData->resScaling[i]);
-    RELEASE(logLevel);
-  }
+  RELEASE(logLevel);
+
   RELEASE(logLevel);
 }
 
@@ -217,11 +253,10 @@ void printStatus(DATA_HYBRD *solverData, const int *nfunc_evals,const double *xe
  *
  *  \author wbraun
  */
-int solveHybrd(DATA *data, int sysNumber) {
-
-
+int solveHybrd(DATA *data, int sysNumber)
+{
   NONLINEAR_SYSTEM_DATA* systemData = &(data->simulationInfo.nonlinearSystemData[sysNumber]);
-  DATA_HYBRD* solverData = (DATA_HYBRD*)(((SOLVER_DATA*)systemData->solverData)->hybrdData);
+  DATA_HYBRD* solverData = (DATA_HYBRD*)systemData->solverData;
   /* We are given the number of the non-linear system. We want to look it up among all equations. */
   int eqSystemNumber = data->modelData.equationInfo_reverse_prof_index[systemData->simProfEqNr];
 
@@ -253,7 +288,7 @@ int solveHybrd(DATA *data, int sysNumber) {
       INFO2(LOG_NONLIN_SYS, "x[%d] = %.20e", i, systemData->nlsx[i]);
       INDENT(LOG_NONLIN_SYS);
       INFO3(LOG_NONLIN_SYS, "scaling = %f +++ old = %.20e +++ extrapolated = %.20e",
-            systemData->nlsxScaling[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
+            systemData->nominal[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
       RELEASE(LOG_NONLIN_SYS);
       RELEASE(LOG_NONLIN_SYS);
     }
@@ -267,7 +302,7 @@ int solveHybrd(DATA *data, int sysNumber) {
     memcpy(solverData->x, systemData->nlsxExtrapolation, solverData->n*(sizeof(double)));
 
   for(i=0;i<solverData->n;i++){
-    solverData->xScalefactors[i] = fmax(solverData->x[i], systemData->nlsxScaling[i]);
+    solverData->xScalefactors[i] = fmax(solverData->x[i], systemData->nominal[i]);
   }
 
 
@@ -421,7 +456,7 @@ int solveHybrd(DATA *data, int sysNumber) {
     /* try to vary the initial values */
     } else if((solverData->info == 4 || solverData->info == 5) && retries < 1) {
         for(i = 0; i < solverData->n; i++) {
-          solverData->x[i] += systemData->nlsxScaling[i] * 0.1;
+          solverData->x[i] += systemData->nominal[i] * 0.1;
         };
         solverData->useXScaling = 1;
         retries++;
@@ -436,7 +471,7 @@ int solveHybrd(DATA *data, int sysNumber) {
     } else if((solverData->info == 4 || solverData->info == 5) && retries < 2) {
 
         for(i=0;i<solverData->n;i++){
-          solverData->xScalefactors[i] = fmax(systemData->nlsxOld[i], systemData->nlsxScaling[i]);
+          solverData->xScalefactors[i] = fmax(systemData->nlsxOld[i], systemData->nominal[i]);
         }
         retries++;
         giveUp = 0;
@@ -449,7 +484,7 @@ int solveHybrd(DATA *data, int sysNumber) {
     /* try to disable x-Scaling */
     } else if((solverData->info == 4 || solverData->info == 5) && retries < 3) {
         solverData->useXScaling = 0;
-        memcpy(solverData->xScalefactors, systemData->nlsxScaling, solverData->n*(sizeof(double)));
+        memcpy(solverData->xScalefactors, systemData->nominal, solverData->n*(sizeof(double)));
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
@@ -555,7 +590,7 @@ int solveHybrd(DATA *data, int sysNumber) {
     /* try to vary the initial values */
     } else if((solverData->info == 4 || solverData->info == 5) && retries2 < 4) {
       /* set x vector */
-      memcpy(solverData->x, systemData->nlsxScaling, solverData->n*(sizeof(double)));
+      memcpy(solverData->x, systemData->nominal, solverData->n*(sizeof(double)));
       retries = 0;
       retries2++;
       giveUp = 0;

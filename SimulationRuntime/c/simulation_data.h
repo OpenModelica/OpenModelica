@@ -52,364 +52,370 @@
 #define set_struct(TYPE, x, info) x = (TYPE)info
 #endif
 
+/* Model info structures */
+typedef struct VAR_INFO
+{
+  int id;
+  const char *name;
+  const char *comment;
+  const FILE_INFO info;
+}VAR_INFO;
 
-  /* Model info structures */
-  typedef struct VAR_INFO
-  {
-    int id;
-    const char* name;
-    const char* comment;
-    const FILE_INFO info;
-  }VAR_INFO;
+typedef struct EQUATION_INFO
+{
+  int id;
+  const char *name;
+  int numVar;
+  const VAR_INFO** vars; /* The variables involved in the equation */
+}EQUATION_INFO;
 
-  typedef struct EQUATION_INFO
-  {
-    int id;
-    const char *name;
-    int numVar;
-    const VAR_INFO** vars; /* The variables involved in the equation */
-  }EQUATION_INFO;
+typedef struct FUNCTION_INFO
+{
+  int id;
+  const char* name;
+  const FILE_INFO info;
+}FUNCTION_INFO;
 
-  typedef struct FUNCTION_INFO
-  {
-    int id;
-    const char* name;
-    const FILE_INFO info;
-  }FUNCTION_INFO;
+typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
 
-  typedef enum {ERROR_AT_TIME,NO_PROGRESS_START_POINT,NO_PROGRESS_FACTOR,IMPROPER_INPUT} equationSystemError;
+/* Sample times */
+typedef struct SAMPLE_RAW_TIME
+{
+  double start;
+  double interval;
+  int zc_index;
+} SAMPLE_RAW_TIME;
 
-  /* Sample times */
-  typedef struct SAMPLE_RAW_TIME {
-    double start;
-    double interval;
-    int zc_index;
-  } SAMPLE_RAW_TIME;
-
-  typedef struct SAMPLE_TIME {
-    double events;
-    int zc_index;
-    int activated;
-  } SAMPLE_TIME;
-
-
-  /* SPARSE_PATTERN
-   *
-   * sparse pattern struct used by jacobians
-   * leadindex points to an index where to corresponding
-   * index of an row or column is noted in index.
-   * sizeofIndex contain number of elements in index
-   * colorsCols contain color of colored columns
-   *
-   */
-  typedef struct SPARSE_PATTERN
-  {
-      unsigned int* leadindex;
-      unsigned int* index;
-      unsigned int sizeofIndex;
-      unsigned int* colorCols;
-      unsigned int maxColors;
-  }SPARSE_PATTERN;
-
-  /* ANALYTIC_JACOBIAN
-   *
-   * analytic jacobian struct used for dassl and linearization.
-   * jacobianName contain "A" || "B" etc.
-   * sizeCols contain size of column
-   * sizeRows contain size of rows
-   * sparsePattern contain the sparse pattern include colors
-   * seedVars contain seed vector to the corresponding jacobian
-   * resultVars contain result of one column to the corresponding jacobian
-   * jacobian contains dense jacobian elements
-   *
-   */
-  typedef struct ANALYTIC_JACOBIAN
-  {
-      char jacobianName;
-      unsigned int sizeCols;
-      unsigned int sizeRows;
-      SPARSE_PATTERN sparsePattern;
-      modelica_real* seedVars;
-      modelica_real* tmpVars;
-      modelica_real* resultVars;
-      modelica_real* jacobian;
-
-  }ANALYTIC_JACOBIAN;
-
-  /* Alias data with various types*/
-  typedef struct DATA_REAL_ALIAS
-  {
-    int negate;
-    int nameID;  /* Pointer to Alias */
-    char aliasType; /* 0 variable, 1 parameter, 2 time */
-    VAR_INFO info;
-    modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }DATA_REAL_ALIAS;
-
-  typedef struct DATA_INTEGER_ALIAS
-  {
-    int negate;
-    int nameID;
-    char aliasType; /* 0 variable, 1 parameter */
-    VAR_INFO info;
-    modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }DATA_INTEGER_ALIAS;
-
-  typedef struct DATA_BOOLEAN_ALIAS
-  {
-    int negate;
-    int nameID;
-    char aliasType; /* 0 variable, 1 parameter */
-    VAR_INFO info;
-    modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }DATA_BOOLEAN_ALIAS;
-
-  typedef struct DATA_STRING_ALIAS
-  {
-    int negate;
-    int nameID;
-    char aliasType; /* 0 variable, 1 parameter */
-    VAR_INFO info;
-    modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }DATA_STRING_ALIAS;
+typedef struct SAMPLE_TIME
+{
+  double events;
+  int zc_index;
+  int activated;
+} SAMPLE_TIME;
 
 
-  /* collect all attributes from one variable in one struct */
-  typedef struct REAL_ATTRIBUTE
-  {
-    modelica_string quantity;     /* = "" */
-    modelica_string unit;         /* = "" */
-    modelica_string displayUnit;  /* = "" */
-    modelica_real min;            /* = -Inf */
-    modelica_real max;            /* = +Inf */
-    modelica_boolean fixed;       /* depends on the type */
-    modelica_boolean useNominal;  /* = false */
-    modelica_real nominal;        /* = 1.0 */
-    modelica_boolean useStart;    /* = false */
-    modelica_real start;          /* = 0.0 */
-  }REAL_ATTRIBUTE;
+/* SPARSE_PATTERN
+  *
+  * sparse pattern struct used by jacobians
+  * leadindex points to an index where to corresponding
+  * index of an row or column is noted in index.
+  * sizeofIndex contain number of elements in index
+  * colorsCols contain color of colored columns
+  *
+  */
+typedef struct SPARSE_PATTERN
+{
+    unsigned int* leadindex;
+    unsigned int* index;
+    unsigned int sizeofIndex;
+    unsigned int* colorCols;
+    unsigned int maxColors;
+}SPARSE_PATTERN;
 
-  typedef struct INTEGER_ATTRIBUTE
-  {
-    modelica_string quantity;     /* = "" */
-    modelica_integer min;         /* = -Inf */
-    modelica_integer max;         /* = +Inf */
-    modelica_boolean fixed;       /* depends on the type */
-    modelica_boolean useStart;    /* = false */
-    modelica_integer start;       /* = 0 */
-  }INTEGER_ATTRIBUTE;
+/* ANALYTIC_JACOBIAN
+  *
+  * analytic jacobian struct used for dassl and linearization.
+  * jacobianName contain "A" || "B" etc.
+  * sizeCols contain size of column
+  * sizeRows contain size of rows
+  * sparsePattern contain the sparse pattern include colors
+  * seedVars contain seed vector to the corresponding jacobian
+  * resultVars contain result of one column to the corresponding jacobian
+  * jacobian contains dense jacobian elements
+  *
+  */
+typedef struct ANALYTIC_JACOBIAN
+{
+    char jacobianName;
+    unsigned int sizeCols;
+    unsigned int sizeRows;
+    SPARSE_PATTERN sparsePattern;
+    modelica_real* seedVars;
+    modelica_real* tmpVars;
+    modelica_real* resultVars;
+    modelica_real* jacobian;
 
-  typedef struct BOOLEAN_ATTRIBUTE
-  {
-    modelica_string quantity;     /* = "" */
-    modelica_boolean fixed;       /* depends on the type */
-    modelica_boolean useStart;    /* = false */
-    modelica_boolean start;       /* = false */
-  }BOOLEAN_ATTRIBUTE;
+}ANALYTIC_JACOBIAN;
 
-  typedef struct STRING_ATTRIBUTE
-  {
-    modelica_string quantity;     /* = "" */
-    modelica_boolean useStart;    /* = false */
-    modelica_string start;        /* = "" */
-  }STRING_ATTRIBUTE;
+/* Alias data with various types*/
+typedef struct DATA_REAL_ALIAS
+{
+  int negate;
+  int nameID;  /* Pointer to Alias */
+  char aliasType; /* 0 variable, 1 parameter, 2 time */
+  VAR_INFO info;
+  modelica_boolean filterOutput; /* True if this variable should be filtered */
+}DATA_REAL_ALIAS;
 
-  typedef struct STATIC_REAL_DATA
-  {
-    VAR_INFO info;
-    REAL_ATTRIBUTE attribute;
-    modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }STATIC_REAL_DATA;
+typedef struct DATA_INTEGER_ALIAS
+{
+  int negate;
+  int nameID;
+  char aliasType; /* 0 variable, 1 parameter */
+  VAR_INFO info;
+  modelica_boolean filterOutput; /* True if this variable should be filtered */
+}DATA_INTEGER_ALIAS;
 
-  typedef struct STATIC_INTEGER_DATA
-  {
-    VAR_INFO info;
-    INTEGER_ATTRIBUTE attribute;
-    modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }STATIC_INTEGER_DATA;
+typedef struct DATA_BOOLEAN_ALIAS
+{
+  int negate;
+  int nameID;
+  char aliasType; /* 0 variable, 1 parameter */
+  VAR_INFO info;
+  modelica_boolean filterOutput; /* True if this variable should be filtered */
+}DATA_BOOLEAN_ALIAS;
 
-  typedef struct STATIC_BOOLEAN_DATA
-  {
-    VAR_INFO info;
-    BOOLEAN_ATTRIBUTE attribute;
-    modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }STATIC_BOOLEAN_DATA;
+typedef struct DATA_STRING_ALIAS
+{
+  int negate;
+  int nameID;
+  char aliasType; /* 0 variable, 1 parameter */
+  VAR_INFO info;
+  modelica_boolean filterOutput; /* True if this variable should be filtered */
+}DATA_STRING_ALIAS;
 
-  typedef struct STATIC_STRING_DATA
-  {
-    VAR_INFO info;
-    STRING_ATTRIBUTE attribute;
-    modelica_boolean filterOutput; /* True if this variable should be filtered */
-  }STATIC_STRING_DATA;
 
-  typedef struct NONLINEAR_SYSTEM_DATA
-  {
-    modelica_integer size;
-    void (*residualFunc)(void*,double*,double*,int*);
+/* collect all attributes from one variable in one struct */
+typedef struct REAL_ATTRIBUTE
+{
+  modelica_string quantity;     /* = "" */
+  modelica_string unit;         /* = "" */
+  modelica_string displayUnit;  /* = "" */
+  modelica_real min;            /* = -Inf */
+  modelica_real max;            /* = +Inf */
+  modelica_boolean fixed;       /* depends on the type */
+  modelica_boolean useNominal;  /* = false */
+  modelica_real nominal;        /* = 1.0 */
+  modelica_boolean useStart;    /* = false */
+  modelica_real start;          /* = 0.0 */
+}REAL_ATTRIBUTE;
 
-    void* solverData;
-    modelica_real* nlsx;
-    modelica_real* nlsxOld;
-    modelica_real* nlsxExtrapolation;
-    modelica_real* nlsxScaling;
-    modelica_integer simProfEqNr;
+typedef struct INTEGER_ATTRIBUTE
+{
+  modelica_string quantity;     /* = "" */
+  modelica_integer min;         /* = -Inf */
+  modelica_integer max;         /* = +Inf */
+  modelica_boolean fixed;       /* depends on the type */
+  modelica_boolean useStart;    /* = false */
+  modelica_integer start;       /* = 0 */
+}INTEGER_ATTRIBUTE;
 
-    modelica_integer method;
-    modelica_real residualError;
-    modelica_boolean solved; /* flag for  solving */
-  }NONLINEAR_SYSTEM_DATA;
+typedef struct BOOLEAN_ATTRIBUTE
+{
+  modelica_string quantity;     /* = "" */
+  modelica_boolean fixed;       /* depends on the type */
+  modelica_boolean useStart;    /* = false */
+  modelica_boolean start;       /* = false */
+}BOOLEAN_ATTRIBUTE;
 
-  typedef struct MODEL_DATA
-  {
-    STATIC_REAL_DATA* realVarsData;
-    STATIC_INTEGER_DATA* integerVarsData;
-    STATIC_BOOLEAN_DATA* booleanVarsData;
-    STATIC_STRING_DATA* stringVarsData;
+typedef struct STRING_ATTRIBUTE
+{
+  modelica_string quantity;     /* = "" */
+  modelica_boolean useStart;    /* = false */
+  modelica_string start;        /* = "" */
+}STRING_ATTRIBUTE;
 
-    STATIC_REAL_DATA* realParameterData;
-    STATIC_INTEGER_DATA* integerParameterData;
-    STATIC_BOOLEAN_DATA* booleanParameterData;
-    STATIC_STRING_DATA* stringParameterData;
+typedef struct STATIC_REAL_DATA
+{
+  VAR_INFO info;
+  REAL_ATTRIBUTE attribute;
+  modelica_boolean filterOutput; /* True if this variable should be filtered */
+}STATIC_REAL_DATA;
 
-    DATA_REAL_ALIAS* realAlias;
-    DATA_INTEGER_ALIAS* integerAlias;
-    DATA_BOOLEAN_ALIAS* booleanAlias;
-    DATA_STRING_ALIAS* stringAlias;
+typedef struct STATIC_INTEGER_DATA
+{
+  VAR_INFO info;
+  INTEGER_ATTRIBUTE attribute;
+  modelica_boolean filterOutput; /* True if this variable should be filtered */
+}STATIC_INTEGER_DATA;
 
-    FUNCTION_INFO* functionNames;
-    EQUATION_INFO* equationInfo;
-    int* equationInfo_reverse_prof_index;
+typedef struct STATIC_BOOLEAN_DATA
+{
+  VAR_INFO info;
+  BOOLEAN_ATTRIBUTE attribute;
+  modelica_boolean filterOutput; /* True if this variable should be filtered */
+}STATIC_BOOLEAN_DATA;
 
-    modelica_string_t modelName;
-    modelica_string_t modelFilePrefix;
-    modelica_string_t modelDir;
-    modelica_string_t modelGUID;
+typedef struct STATIC_STRING_DATA
+{
+  VAR_INFO info;
+  STRING_ATTRIBUTE attribute;
+  modelica_boolean filterOutput; /* True if this variable should be filtered */
+}STATIC_STRING_DATA;
 
-    fortran_integer nStates;
-    long nVariablesReal; /* all Real Variables of the model (states,statesderivatives,algebraics) */
-    long nVariablesInteger;
-    long nVariablesBoolean;
-    long nVariablesString;
-    long nParametersReal;
-    long nParametersInteger;
-    long nParametersBoolean;
-    long nParametersString;
-    long nInputVars;
-    long nOutputVars;
-    long nHelpVars;   /* results of relations in when equation */
+typedef struct NONLINEAR_SYSTEM_DATA
+{
+  modelica_integer size;
+  void (*residualFunc)(void*,double*,double*,int*);
 
-    long nZeroCrossings;
-    long nSamples;
-    long nRelations;
-    long nMathEvents;         /* number of math triggering functions e.g. cail, floor, integer */
-    long nDelayExpressions;
-    long nInitEquations;      /* number of initial equations */
-    long nInitAlgorithms;     /* number of initial algorithms */
-    long nInitResiduals;      /* number of initial residuals */
-    long nExtObjs;
-    long nFunctions;
-    long nEquations;
-    long nProfileBlocks;
-    long nNonLinearSystems;
+  void *solverData;
+  modelica_real *nlsx;              /* x */
+  modelica_real *nlsxOld;           /* previous x */
+  modelica_real *nlsxExtrapolation; /* extrapolated values for x from ol and old2 - used as initial guess */
+  modelica_integer simProfEqNr;     /* index for EQUATION_INFO */
 
-    long nAliasReal;
-    long nAliasInteger;
-    long nAliasBoolean;
-    long nAliasString;
+  /* attributes for x */
+  modelica_real *min;
+  modelica_real *max;
+  modelica_real *nominal;
 
-    long nJacobians;
-  }MODEL_DATA;
+  modelica_integer method;          /* not used */
+  modelica_real residualError;      /* not used */
+  modelica_boolean solved;          /* 1: solved in current step - else not */
+}NONLINEAR_SYSTEM_DATA;
 
-  typedef struct SIMULATION_INFO
-  {
-    modelica_real startTime;
-    modelica_real stopTime;
-    modelica_integer numSteps;
-    modelica_real stepSize;
-    modelica_real tolerance;
-    modelica_string solverMethod;
-    modelica_string outputFormat;
-    modelica_string variableFilter;
+typedef struct MODEL_DATA
+{
+  STATIC_REAL_DATA* realVarsData;
+  STATIC_INTEGER_DATA* integerVarsData;
+  STATIC_BOOLEAN_DATA* booleanVarsData;
+  STATIC_STRING_DATA* stringVarsData;
 
-    /* indicators for simulations state */
-    modelica_boolean initial;           /* =1 during initialization, 0 otherwise. */
-    modelica_boolean terminal;          /* =1 at the end of the simulation, 0 otherwise. */
-    modelica_boolean discreteCall;      /* =1 for a discrete step, otherwise 0 */
-    modelica_boolean needToIterate;     /* =1 if reinit has been activated, iteration about the system is needed */
-    modelica_boolean simulationSuccess; /*=0 the simulation run successful, otherwise an error code is set */
-    modelica_boolean sampleActivated;   /* =1 a sample expresion if going to be actived, 0 otherwise */
-    modelica_boolean solveContinuous;   /* =1 during the continuous integration to avoid zero-crossings jums,  0 otherwise. */
-    modelica_boolean noThrowDivZero;    /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
-    modelica_boolean found_solution;    /* helper for mixed systems */
+  STATIC_REAL_DATA* realParameterData;
+  STATIC_INTEGER_DATA* integerParameterData;
+  STATIC_BOOLEAN_DATA* booleanParameterData;
+  STATIC_STRING_DATA* stringParameterData;
 
-    void** extObjs; /* External objects */
+  DATA_REAL_ALIAS* realAlias;
+  DATA_INTEGER_ALIAS* integerAlias;
+  DATA_BOOLEAN_ALIAS* booleanAlias;
+  DATA_STRING_ALIAS* stringAlias;
 
-    /* An array containing the initial data of samples used in the sim */
-    SAMPLE_RAW_TIME* rawSampleExps;
-    /* The queue of sample time events to be processed. */
-    SAMPLE_TIME* sampleTimes;
-    modelica_integer curSampleTimeIx;
-    modelica_integer nSampleTimes;
+  FUNCTION_INFO* functionNames;
+  EQUATION_INFO* equationInfo;
+  int* equationInfo_reverse_prof_index;
 
-    modelica_real* zeroCrossings;
-    modelica_real* zeroCrossingsPre;
-    modelica_boolean* relations;
-    modelica_boolean* relationsPre;
-    modelica_boolean* hysteresisEnabled;
-    modelica_real* mathEventsValuePre;
-    long* zeroCrossingIndex;               /* pointer for a list events at event instants */
+  modelica_string_t modelName;
+  modelica_string_t modelFilePrefix;
+  modelica_string_t modelDir;
+  modelica_string_t modelGUID;
 
-    /* helpVars are the result when relations and samples */
-    modelica_boolean* helpVars;
-    modelica_boolean* helpVarsPre;
+  fortran_integer nStates;
+  long nVariablesReal; /* all Real Variables of the model (states,statesderivatives,algebraics) */
+  long nVariablesInteger;
+  long nVariablesBoolean;
+  long nVariablesString;
+  long nParametersReal;
+  long nParametersInteger;
+  long nParametersBoolean;
+  long nParametersString;
+  long nInputVars;
+  long nOutputVars;
+  long nHelpVars;   /* results of relations in when equation */
 
-    /* old vars for event handling */
-    modelica_real timeValueOld;
-    modelica_real* realVarsOld;
+  long nZeroCrossings;
+  long nSamples;
+  long nRelations;
+  long nMathEvents;         /* number of math triggering functions e.g. cail, floor, integer */
+  long nDelayExpressions;
+  long nInitEquations;      /* number of initial equations */
+  long nInitAlgorithms;     /* number of initial algorithms */
+  long nInitResiduals;      /* number of initial residuals */
+  long nExtObjs;
+  long nFunctions;
+  long nEquations;
+  long nProfileBlocks;
+  long nNonLinearSystems;
 
-    modelica_real* realVarsPre;
-    modelica_integer* integerVarsPre;
-    modelica_boolean* booleanVarsPre;
-    modelica_string* stringVarsPre;
+  long nAliasReal;
+  long nAliasInteger;
+  long nAliasBoolean;
+  long nAliasString;
 
-    modelica_real* realParameter;
-    modelica_integer* integerParameter;
-    modelica_boolean* booleanParameter;
-    modelica_string* stringParameter;
+  long nJacobians;
+}MODEL_DATA;
 
-    modelica_real* inputVars;
-    modelica_real* outputVars;
+typedef struct SIMULATION_INFO
+{
+  modelica_real startTime;
+  modelica_real stopTime;
+  modelica_integer numSteps;
+  modelica_real stepSize;
+  modelica_real tolerance;
+  modelica_string solverMethod;
+  modelica_string outputFormat;
+  modelica_string variableFilter;
+  int nlsMethod;                      /* nonlinear solver */
 
-    ANALYTIC_JACOBIAN* analyticJacobians;
+  /* indicators for simulations state */
+  modelica_boolean initial;           /* =1 during initialization, 0 otherwise. */
+  modelica_boolean terminal;          /* =1 at the end of the simulation, 0 otherwise. */
+  modelica_boolean discreteCall;      /* =1 for a discrete step, otherwise 0 */
+  modelica_boolean needToIterate;     /* =1 if reinit has been activated, iteration about the system is needed */
+  modelica_boolean simulationSuccess; /*=0 the simulation run successful, otherwise an error code is set */
+  modelica_boolean sampleActivated;   /* =1 a sample expresion if going to be actived, 0 otherwise */
+  modelica_boolean solveContinuous;   /* =1 during the continuous integration to avoid zero-crossings jums,  0 otherwise. */
+  modelica_boolean noThrowDivZero;    /* =1 if solving nonlinear system to avoid THROW for division by zero,  0 otherwise. */
+  modelica_boolean found_solution;    /* helper for mixed systems */
 
-    NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
-    int currentNonlinearSystemIndex;
+  void** extObjs; /* External objects */
 
-    /* delay vars */
-    double tStart;
-    RINGBUFFER **delayStructure;
+  /* An array containing the initial data of samples used in the sim */
+  SAMPLE_RAW_TIME* rawSampleExps;
+  /* The queue of sample time events to be processed. */
+  SAMPLE_TIME* sampleTimes;
+  modelica_integer curSampleTimeIx;
+  modelica_integer nSampleTimes;
 
-  }SIMULATION_INFO;
+  modelica_real* zeroCrossings;
+  modelica_real* zeroCrossingsPre;
+  modelica_boolean* relations;
+  modelica_boolean* relationsPre;
+  modelica_boolean* hysteresisEnabled;
+  modelica_real* mathEventsValuePre;
+  long* zeroCrossingIndex;               /* pointer for a list events at event instants */
 
-  /* collects all dynamic model data like the variabel-values */
-  typedef struct SIMULATION_DATA
-  {
-    modelica_real timeValue;
+  /* helpVars are the result when relations and samples */
+  modelica_boolean* helpVars;
+  modelica_boolean* helpVarsPre;
 
-    modelica_real* realVars;
-    modelica_integer* integerVars;
-    modelica_boolean* booleanVars;
-    modelica_string* stringVars;
+  /* old vars for event handling */
+  modelica_real timeValueOld;
+  modelica_real* realVarsOld;
 
-  }SIMULATION_DATA;
+  modelica_real* realVarsPre;
+  modelica_integer* integerVarsPre;
+  modelica_boolean* booleanVarsPre;
+  modelica_string* stringVarsPre;
 
-  /* top-level struct to collect dynamic and static model data */
-  typedef struct DATA
-  {
-    RINGBUFFER* simulationData;     /* RINGBUFFER of SIMULATION_DATA */
-    SIMULATION_DATA **localData;
-    MODEL_DATA modelData;           /* static stuff */
-    SIMULATION_INFO simulationInfo;
-  }DATA;
+  modelica_real* realParameter;
+  modelica_integer* integerParameter;
+  modelica_boolean* booleanParameter;
+  modelica_string* stringParameter;
+
+  modelica_real* inputVars;
+  modelica_real* outputVars;
+
+  ANALYTIC_JACOBIAN* analyticJacobians;
+
+  NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
+  int currentNonlinearSystemIndex;
+
+  /* delay vars */
+  double tStart;
+  RINGBUFFER **delayStructure;
+
+}SIMULATION_INFO;
+
+/* collects all dynamic model data like the variabel-values */
+typedef struct SIMULATION_DATA
+{
+  modelica_real timeValue;
+
+  modelica_real* realVars;
+  modelica_integer* integerVars;
+  modelica_boolean* booleanVars;
+  modelica_string* stringVars;
+
+}SIMULATION_DATA;
+
+/* top-level struct to collect dynamic and static model data */
+typedef struct DATA
+{
+  RINGBUFFER* simulationData;     /* RINGBUFFER of SIMULATION_DATA */
+  SIMULATION_DATA **localData;
+  MODEL_DATA modelData;           /* static stuff */
+  SIMULATION_INFO simulationInfo;
+}DATA;
 
 #endif

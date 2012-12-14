@@ -76,13 +76,11 @@ algorithm
     case dae equation
       true = Flags.isSet(Flags.INLINE_SOLVER);
       
-      Debug.fcall(Flags.DUMP_INLINE_SOLVER, print, "\ninlineSolver (1)\n########################################\n\n");
-      Debug.fcall(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae);
+      Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver (1)");
       
       dae = replaceStates(dae);
       
-      Debug.fcall(Flags.DUMP_INLINE_SOLVER, print, "\ninlineSolver (2)\n########################################\n\n");
-      Debug.fcall(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae);
+      Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver (2)");
     then NONE();
     
     else equation

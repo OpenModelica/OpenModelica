@@ -417,7 +417,7 @@ algorithm
         eqns1 = List.uniqueIntN(eqns1,arrayLength(mapIncRowEqn));
         Debug.fcall(Flags.BLT_DUMP, print, BackendDump.dumpMarkedEqns(isyst, eqns1));
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printBackendDAE, BackendDAE.DAE({syst},ishared));
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction failed! Found empty set of continues equations. Use +d=bltdump to get more information."});
       then
         fail();
@@ -433,7 +433,7 @@ algorithm
         varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,BackendVariable.daeVars(isyst));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList,varlst);
         syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpBackendDAE, BackendDAE.DAE({syst},ishared));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printBackendDAE, BackendDAE.DAE({syst},ishared));
         Error.addMessage(Error.INTERNAL_ERROR, {"IndexReduction.pantelidesIndexReduction1 failed! System is structurally singulare and cannot handled because number of unassigned equations is larger than number of states. Use +d=bltdump to get more information."});
       then
         fail();

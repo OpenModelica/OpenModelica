@@ -29,45 +29,16 @@
  *
  */
 
-/*! \file nonlinearSystem.h
+/*! \file kinsolSolver.h
  */
 
-
-#ifndef _NONLINEARSYSTEM_H_
-#define _NONLINEARSYSTEM_H_
+#ifndef _KINSOL_SOLVER_H_
+#define _KINSOL_SOLVER_H_
 
 #include "simulation_data.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-#include "blaswrap.h"
-#include "f2c.h"
-
-#ifdef VOID
-#undef VOID
-#endif
-
-extern doublereal enorm_(integer *n, doublereal *x);
-
-#ifdef __cplusplus
-}
-#endif
-
-enum NONLINEAR_SOLVER
-{
-  NS_NONE = 0,
-  NS_HYBRID,
-  NS_KINSOL,
-  NS_MAX
-};
-
-typedef void* SOLVER_DATA;
-
-int allocateNonlinearSystem(DATA *data);
-int freeNonlinearSystem(DATA *data);
-int solve_nonlinear_system(DATA *data, int sysNumber);
-int check_nonlinear_solutions(DATA *data);
+int nls_kinsol_allocate(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData);
+int nls_kinsol_free(NONLINEAR_SYSTEM_DATA *nlsData);
+int nonlinearSolve_kinsol(DATA *data, int sysNumber);
 
 #endif

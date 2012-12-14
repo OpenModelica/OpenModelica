@@ -67,44 +67,8 @@ void _omc_hybrd_(void (*) (integer*, double *, double*, int*, void*),
 }
 #endif
 
-typedef struct DATA_HYBRD
-{
-  int initialized; /* 1 = initialized, else = 0*/
-  double* resScaling;
-  int useXScaling;
-  double* xScalefactors;
-  double* fvecScaled;
-
-  integer n;
-  double* x;
-  double* fvec;
-  double xtol;
-  int maxfev;
-  int ml;
-  int mu;
-  double epsfcn;
-  double* diag;
-  double* diagres;
-  int mode;
-  double factor;
-  int nprint;
-  int info;
-  int nfev;
-  double* fjac;
-  double* fjacobian;
-  int ldfjac;
-  double* r__;
-  int lr;
-  double* qtf;
-  double* wa1;
-  double* wa2;
-  double* wa3;
-  double* wa4;
-} DATA_HYBRD;
-
-int allocateHybrdData(int* size, void** data);
-int freeHybrdData(void** data);
-
+int allocateHybrdData(int size, void **data);
+int freeHybrdData(void **data);
 int solveHybrd(DATA *data, int sysNumber);
 
 #endif

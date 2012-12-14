@@ -2773,7 +2773,7 @@ algorithm
         (r,t,_,dlow_1,m_1,mT_1,v1_1,v2_1,comps_2) = tearingSystem1(dlow,dlow1,m,mT,v1,v2,comps_1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpIncidenceMatrix, m_1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpIncidenceMatrixT, mT_1);
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpBackendDAE, dlow_1);
+        Debug.fcall(Flags.TEARING_DUMP, BackendDump.printBackendDAE, dlow_1);
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpMatching, v1_1);
         //Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponents, comps_2);
         Debug.fcall(Flags.TEARING_DUMP, print, "==========\n");
@@ -2981,8 +2981,7 @@ algorithm
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,SOME(m_new),SOME(mT_new),matching);
         linearDAE = BackendDAE.DAE({eqSystem},shared);
         linearDAE1 = BackendDAEUtil.transformBackendDAE(linearDAE,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())),NONE(),NONE());
-        print("\n---linearDAE1---\n");
-        BackendDump.dumpBackendDAE(linearDAE1);
+        BackendDump.dumpBackendDAE(linearDAE1, "linearDAE1");
         BackendDAE.DAE({eqSystem},shared) = linearDAE1;
         BackendDAE.EQSYSTEM(variables,eqArray,_,_,matching) = eqSystem;
         BackendDAE.MATCHING(v1_new,v2_new,_) = matching;

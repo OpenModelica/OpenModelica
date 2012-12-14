@@ -77,6 +77,19 @@ protected import Util;
 // These are functions, that print directly to the standard-stream.
 // =============================================================================
 
+public function printBackendDAE "function printBackendDAE
+  This function dumps the BackendDAE.BackendDAE representaton to stdout."
+  input BackendDAE.BackendDAE inBackendDAE;
+protected
+  BackendDAE.EqSystems eqs;
+  BackendDAE.Shared shared;
+algorithm
+  BackendDAE.DAE(eqs,shared) := inBackendDAE;
+  List.map_0(eqs,dumpEqSystem);
+  print("\n");
+  dumpShared(shared);  
+end printBackendDAE;
+
 public function printVariables "function printVariables
   Helper function to dump."
   input BackendDAE.Variables vars;
@@ -237,14 +250,11 @@ end dumpEquationArray;
 public function dumpBackendDAE "function dumpBackendDAE
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
-protected
-  BackendDAE.EqSystems eqs;
-  BackendDAE.Shared shared;
+    input String heading;
 algorithm
-  BackendDAE.DAE(eqs,shared) := inBackendDAE;
-  List.map_0(eqs,dumpEqSystem);
+  print("\n########################################\n" +& heading +& "\n########################################\n\n");
+  printBackendDAE(inBackendDAE);
   print("\n");
-  dumpShared(shared);  
 end dumpBackendDAE;
 
 public function dumpSparsityPattern "function dumpSparsityPattern

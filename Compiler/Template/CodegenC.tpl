@@ -2301,9 +2301,11 @@ case SES_NONLINEAR(__) then
     let namestr = cref(name)
     <<
     data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>] = <%namestr%>;
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxScaling[<%i0%>] = $P$ATTRIBUTE<%namestr%>.nominal;
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
     data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nominal[<%i0%>] = $P$ATTRIBUTE<%namestr%>.nominal;
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].min[<%i0%>] = $P$ATTRIBUTE<%namestr%>.min;
+    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].max[<%i0%>] = $P$ATTRIBUTE<%namestr%>.max;
     >>
   ;separator="\n"%>
   solve_nonlinear_system(data, <%indexNonLinear%>);

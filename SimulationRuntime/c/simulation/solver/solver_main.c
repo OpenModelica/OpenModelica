@@ -139,7 +139,7 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   /* allocate memory for non-linear system solvers */
   allocateNonlinearSystem(data);
-
+  
   if(flag == 2)
   {
     /* Allocate RK work arrays */
@@ -154,7 +154,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   {
     /* Initial DASSL solver */
     DASSL_DATA dasslData = {0};
-    INFO(LOG_SOLVER, "| solver | Initializing DASSL");
+    INFO(LOG_SOLVER, "Initializing DASSL");
     dasrt_initial(data, &solverInfo, &dasslData);
     solverInfo.solverData = &dasslData;
   }
@@ -250,7 +250,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     fmt = fopen(filename, "wb");
     if(!fmt)
     {
-      WARNING2(LOG_SOLVER, "Warning: Time measurements output file %s could not be opened: %s", filename, strerror(errno));
+      WARNING2(LOG_SOLVER, "Time measurements output file %s could not be opened: %s", filename, strerror(errno));
       fclose(fmt);
       fmt = NULL;
     }

@@ -121,24 +121,29 @@ void setTermMsg(const char *msg)
 {
   size_t i;
   size_t length = strlen(msg);
-  if(length > 0) {
-      if(TermMsg == NULL) {
+  if(length > 0)
+  {
+    if(TermMsg == NULL)
+    {
+      TermMsg = (char*)malloc((length+1)*sizeof(char));
+    }
+    else
+    {
+      if(strlen(msg) > strlen(TermMsg))
+      {
+        if(TermMsg != NULL)
+        {
+          free(TermMsg);
+        }
         TermMsg = (char*)malloc((length+1)*sizeof(char));
-      } else {
-          if(strlen(msg) > strlen(TermMsg)) {
-            if(TermMsg != NULL) {
-                  free(TermMsg);
-            }
-            TermMsg = (char*)malloc((length+1)*sizeof(char));
-          }
       }
-      for(i=0;i<length;i++)
-        TermMsg[i] = msg[i];
-      /* set the terminating 0 */
-      TermMsg[i] = '\0';
+    }
+    for(i=0;i<length;i++)
+      TermMsg[i] = msg[i];
+    /* set the terminating 0 */
+    TermMsg[i] = '\0';
   }
 }
-
 
 /* \brief determine verboselevel by investigating flag -lv flags
  *
@@ -221,6 +226,27 @@ void setGlobalVerboseLevel(int argc, char**argv)
   }
 
   delete flags;
+}
+
+int getNonlinearSolverMethod(int argc, char**argv)
+{
+  const string *method = getOption("nls", argc, argv);
+
+  if(!method)
+    return NS_HYBRID; /* default method */
+
+  if(*method == string("hybrid"))
+    return NS_HYBRID;
+  else if(*method == string("kinsol"))
+    return NS_KINSOL;
+
+  WARNING1(LOG_STDOUT, "unrecognized option -nls %s", method->c_str());
+  WARNING(LOG_STDOUT, "current options are:");
+  INDENT(LOG_STDOUT);
+  WARNING2(LOG_STDOUT, "%-18s [%s]", "hybrid", "default method");
+  WARNING2(LOG_STDOUT, "%-18s [%s]", "kinsol", "sundials/kinsol");
+  THROW("see last warning");
+  return NS_NONE;
 }
 
 /**
@@ -532,6 +558,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     INFO(LOG_STDOUT, "\tspecify a new result file than the default Model_res.mat");
     INFO(LOG_STDOUT, "<-m|s solver:{dassl,euler,rungekutta,inline-euler,inline-rungekutta,qss}>");
     INFO(LOG_STDOUT, "\tspecify the solver");
+    INFO(LOG_STDOUT, "<-nls={hybrid|kinsol}>");
+    INFO(LOG_STDOUT, "\tspecify the nonlinear solver");
     INFO(LOG_STDOUT, "<-interactive> <-port value>");
     INFO(LOG_STDOUT, "\tspecify interactive simulation and port");
     INFO(LOG_STDOUT, "<-iim initialization method:{none,numeric,symbolic}>");
@@ -573,6 +601,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     EXIT(0);
   }
 
+  setGlobalVerboseLevel(argc, argv);
   initializeDataStruc(data);
   if(!data)
   {
@@ -619,7 +648,7 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
   }
 #endif
 
-  setGlobalVerboseLevel(argc, argv);
+  data->simulationInfo.nlsMethod = getNonlinearSolverMethod(argc, argv);
 
   return 0;
 }
@@ -670,6 +699,7 @@ void communicateStatus(const char *phase, double completionPercent /*0.0 to 1.0*
 int _main_SimulationRuntime(int argc, char**argv, DATA *data)
 {
   int retVal = -1;
+
   if(!setjmp(globalJmpbuf))
   {
     if(initRuntimeAndSimulation(argc, argv, data)) //initRuntimeAndSimulation returns 1 if an error occurs

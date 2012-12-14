@@ -35,39 +35,47 @@
 #include <math.h>
 
 #include "omc_error.h"
-
-
 #include "nonlinearSystem.h"
+#include "kinsolSolver.h"
 #include "nonlinearSolverHybrd.h"
 
-
-/*! \fn allocateNonlinearSystem
+/*! \fn int allocateNonlinearSystem(DATA *data)
  *
- *  This function allocates memory of nonlinear systems
+ *  This function allocates memory for all nonlinear systems.
  *
  *  \param [ref] [data]
  */
-int allocateNonlinearSystem(DATA *data){
-
-  int *size;
+int allocateNonlinearSystem(DATA *data)
+{
   int i;
+  int size;
+  NONLINEAR_SYSTEM_DATA *nonlinsys = data->simulationInfo.nonlinearSystemData;
 
-  NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
-
-  for(i=0;i<data->modelData.nNonLinearSystems;++i){
-    SOLVER_DATA* solverData = (SOLVER_DATA*) malloc(sizeof(SOLVER_DATA));
-    size = (int*)&(nonlinsys[i].size);
+  for(i=0; i<data->modelData.nNonLinearSystems; ++i)
+  {
+    size = nonlinsys[i].size;
 
     /* allocate system data */
-    nonlinsys[i].nlsx = (double*) malloc(*size*sizeof(double));
-    nonlinsys[i].nlsxExtrapolation = (double*) malloc(*size*sizeof(double));
-    nonlinsys[i].nlsxOld = (double*) malloc(*size*sizeof(double));
-    nonlinsys[i].nlsxScaling = (double*) malloc(*size*sizeof(double));
+    nonlinsys[i].nlsx = (double*) malloc(size*sizeof(double));
+    nonlinsys[i].nlsxExtrapolation = (double*) malloc(size*sizeof(double));
+    nonlinsys[i].nlsxOld = (double*) malloc(size*sizeof(double));
 
-    nonlinsys[i].solverData = (void*) solverData;
+    nonlinsys[i].nominal = (double*) malloc(size*sizeof(double));
+    nonlinsys[i].min = (double*) malloc(size*sizeof(double));
+    nonlinsys[i].max = (double*) malloc(size*sizeof(double));
 
     /* allocate solver data */
-    allocateHybrdData(size, &((SOLVER_DATA*)nonlinsys[i].solverData)->hybrdData);
+    switch(data->simulationInfo.nlsMethod)
+    {
+    case NS_HYBRID:
+      allocateHybrdData(size, &nonlinsys[i].solverData);
+      break;
+    case NS_KINSOL:
+      nls_kinsol_allocate(data, &nonlinsys[i]);
+      break;
+    default:
+      THROW("unrecognized nonlinear solver");
+    }
   }
 
   return 0;
@@ -79,27 +87,38 @@ int allocateNonlinearSystem(DATA *data){
  *
  *  \param [ref] [data]
  */
-int freeNonlinearSystem(DATA *data){
-
+int freeNonlinearSystem(DATA *data)
+{
   int i;
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
 
-  for(i=0;i<data->modelData.nNonLinearSystems;++i){
+  for(i=0;i<data->modelData.nNonLinearSystems;++i)
+  {
     free(nonlinsys[i].nlsx);
     free(nonlinsys[i].nlsxExtrapolation);
     free(nonlinsys[i].nlsxOld);
-    free(nonlinsys[i].nlsxScaling);
+    free(nonlinsys[i].nominal);
+    free(nonlinsys[i].min);
+    free(nonlinsys[i].max);
 
     /* allocate solver data */
-    freeHybrdData(&((SOLVER_DATA*)nonlinsys[i].solverData)->hybrdData);
-
+    switch(data->simulationInfo.nlsMethod)
+    {
+    case NS_HYBRID:
+      freeHybrdData(&nonlinsys[i].solverData);
+      break;
+    case NS_KINSOL:
+      nls_kinsol_free(&nonlinsys[i]);
+      break;
+    default:
+      THROW("unrecognized nonlinear solver");
+    }
 
     free(nonlinsys[i].solverData);
   }
 
   return 0;
 }
-
 
 /*! \fn solve non-linear systems
  *
@@ -125,14 +144,22 @@ int solve_nonlinear_system(DATA *data, int sysNumber)
    *
    */
 
-
   /* for now just use hybrd solver as before */
-  success = solveHybrd(data, sysNumber);
+  switch(data->simulationInfo.nlsMethod)
+  {
+  case NS_HYBRID:
+    success = solveHybrd(data, sysNumber);
+    break;
+  case NS_KINSOL:
+    success = nonlinearSolve_kinsol(data, sysNumber);
+    break;
+  default:
+    THROW("unrecognized nonlinear solver");
+  }
   nonlinsys[sysNumber].solved = success;
 
   /* enable to avoid division by zero */
   data->simulationInfo.noThrowDivZero = 0;
-
 
   return 0;
 }
@@ -150,8 +177,10 @@ int check_nonlinear_solutions(DATA *data)
   NONLINEAR_SYSTEM_DATA* nonlinsys = data->simulationInfo.nonlinearSystemData;
   int i,returnValue = 0;
 
-  for(i=0;i<data->modelData.nNonLinearSystems;++i){
-    if(nonlinsys[i].solved == 0){
+  for(i=0;i<data->modelData.nNonLinearSystems;++i)
+  {
+    if(nonlinsys[i].solved == 0)
+    {
       returnValue = 1;
       break;
     }
@@ -159,5 +188,3 @@ int check_nonlinear_solutions(DATA *data)
 
   return returnValue;
 }
-
-

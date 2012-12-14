@@ -74,8 +74,7 @@ protected
 algorithm
   dae := inlineWhenForInitialization(inDAE);
   
-  Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\ninlineWhenForInitialization\n########################################\n\n");
-  Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae);
+  Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae, "inlineWhenForInitialization");
   
   initVars := selectInitializationVariablesDAE(dae);
   Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
@@ -426,8 +425,7 @@ algorithm
                                                  {}));
 
       // some debug prints
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\ninitial system\n########################################\n\n");
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae);
+      Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae, "initial system");
       
       // now let's solve the system!
       initdae = solveInitialSystem2(vars, eqns, inDAE, initdae);
@@ -482,8 +480,7 @@ algorithm
       // simplify system
       (isyst, Util.SUCCESS()) = BackendDAEUtil.pastoptimiseDAE(isyst, pastOptModules, matchingAlgorithm, daeHandler);
       
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, print, "\nsolved initial system\n########################################\n\n");
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, isyst);
+      Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, isyst, "solved initial system");
     then isyst;
     
     // under-determined system  
