@@ -149,7 +149,6 @@
   {
     NLS_KINSOL_DATA *kinsolData = (NLS_KINSOL_DATA*) user_data;
     int eqSystemNumber = kinsolData->data->modelData.equationInfo_reverse_prof_index[kinsolData->nlsData->simProfEqNr];
-    int i;
 
     if(DEBUG_STREAM(LOG_NLS))
     {
@@ -257,7 +256,7 @@
     for(i=0; i<size; ++i)
     {
       kinsolData->nlsData->nlsx[i] = NV_Ith_S(z, i);
-      INFO3(LOG_NLS, "[%d] %s = %g", i+1, kinsolData->data->modelData.equationInfo[eqSystemNumber].vars[i]->name,  kinsolData->nlsData->nlsx[i]);
+      INFO3(LOG_NLS, "[%ld] %s = %g", i+1, kinsolData->data->modelData.equationInfo[eqSystemNumber].vars[i]->name,  kinsolData->nlsData->nlsx[i]);
     }
 
     INFO1(LOG_NLS, "KINGetNumNonlinSolvIters = %5ld", nni);
@@ -266,7 +265,7 @@
     INFO1(LOG_NLS, "KINDlsGetNumFuncEvals    = %5ld", nfeD);
     RELEASE(LOG_NLS);
 
-    /* Free memory */
+    /* free memory */
     N_VDestroy_Serial(z);
     N_VDestroy_Serial(sVars);
     N_VDestroy_Serial(sEqns);
@@ -275,7 +274,7 @@
 
     if(error_code < 0)
     {
-      INFO(LOG_STDOUT, "kinsol failed. see last warning. use [-lv LOG_NLS] for more output.");
+      WARNING1(LOG_STDOUT, "kinsol failed [error_code=%d]. see last warning. use [-lv LOG_NLS] for more output.", error_code);
       return 0;
     }
 

@@ -38,67 +38,50 @@
 /* Global JumpBuffer */
 jmp_buf globalJmpbuf;
 
+const int firstOMCErrorStream = 3;
+
 const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_UNKNOWN",
-  "LOG_STDOUT",
-  "LOG_UTIL",
-  "LOG_SIMULATION",
-  "LOG_STATS",
-  "LOG_INIT",
-  "LOG_SOTI",           /* LOG_INIT_SOLUTION */
-  "LOG_RES_INIT",
-  "LOG_SOLVER",
+  "stdout",
+  "assert",
+
   "LOG_DDASRT",
-  "LOG_JAC",
+  "LOG_DEBUG",
   "LOG_ENDJAC",
+  "LOG_EVENTS",
+  "LOG_INIT",
+  "LOG_JAC",
   "LOG_NLS",
   "LOG_NLS_V",
-  "LOG_EVENTS",
-  "LOG_ZEROCROSSINGS",
-  "LOG_DEBUG",
-  "LOG_ASSERT",
+  "LOG_RES_INIT",
+  "LOG_SIMULATION",
+  "LOG_SOLVER",
+  "LOG_SOTI",
+  "LOG_STATS",
+  "LOG_UTIL",
+  "LOG_ZEROCROSSINGS"
 };
 
 const char *LOG_STREAM_DESC[LOG_MAX] = {
   "unknown",
-  "stdout",
-  "util",
-  "simulation",
-  "stats",
-  "init",
-  "init solution",
-  "res_init",
-  "solver",
-  "ddasrt",
-  "jac",
-  "endjac",
-  "nls",
-  "nls (verbose)",
-  "events",
-  "zerocrossings",
-  "debug",
-  "|"
-};
+  "this stream is always active",                   /* LOG_STDOUT */
+  "this stream is always active",                   /* LOG_ASSERT */
 
-const char *LOG_STREAM_DETAILED_DESC[LOG_MAX] = {
-  "unknown",
-  "this stream is alway active",
-  "util",
-  "simulation",
-  "stats",
-  "additional information during initialization",
-  "final solution of the initialization",
-  "res_init",
-  "solver",
-  "ddasrt",
-  "jac",
-  "endjac",
-  "logging for nonlinear systems",
-  "verbose logging of nonlinear systems",
-  "additional information during event iteration",
-  "zerocrossings",
-  "debug",
-  "this stream is alway active"
+  "???",                                            /* LOG_DDASRT */
+  "???",                                            /* LOG_DEBUG */
+  "???",                                            /* LOG_ENDJAC */
+  "additional information during event iteration",  /* LOG_EVENTS */
+  "additional information during initialization",   /* LOG_INIT */
+  "???",                                            /* LOG_JAC */
+  "logging for nonlinear systems",                  /* LOG_NLS */
+  "verbose logging of nonlinear systems",           /* LOG_NLS_V */
+  "???",                                            /* LOG_RES_INIT */
+  "???",                                            /* LOG_SIMULATION */
+  "???",                                            /* LOG_SOLVER */
+  "final solution of the initialization",           /* LOG_SOTI */
+  "???",                                            /* LOG_STATS */
+  "???",                                            /* LOG_UTIL*/
+  "???"                                             /* LOG_ZEROCROSSINGS */
 };
 
 static const char *LOG_TYPE_DESC[LOG_TYPE_MAX] = {
@@ -171,7 +154,7 @@ void Message(int type, int stream, char *msg, int subline)
   if((type != LOG_TYPE_ERROR) && !useStream[stream])
     return;
 
-  printf("%-13s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_DESC[stream]);
+  printf("%-17s | ", (subline || (lastStream == stream && level[stream] > 0)) ? "|" : LOG_STREAM_NAME[stream]);
   printf("%-7s | ", (subline || (lastStream == stream && lastType[stream] == type && level[stream] > 0)) ? "|" : LOG_TYPE_DESC[type]);
   lastType[stream] = type;
   lastStream = stream;

@@ -222,8 +222,8 @@ void setGlobalVerboseLevel(int argc, char**argv)
     WARNING1(LOG_STDOUT, "unrecognized option -lv %s", flags->c_str());
     WARNING(LOG_STDOUT, "current options are:");
     INDENT(LOG_STDOUT);
-    for(i=1; i<LOG_MAX; ++i)
-      WARNING2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DETAILED_DESC[i]);
+    for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
+      WARNING2(LOG_STDOUT, "%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
     RELEASE(LOG_STDOUT);
     THROW("see last warning");
   }
@@ -598,8 +598,8 @@ int initRuntimeAndSimulation(int argc, char**argv, DATA *data)
     INFO(LOG_STDOUT, "\tspecify the output format of the measure time functionality");
     INFO(LOG_STDOUT, "<-lv [flag1][,flags2][,...]>");
     INFO(LOG_STDOUT, "\tspecify the logging level");
-    for(i=1; i<LOG_MAX; ++i)
-      INFO2(LOG_STDOUT, "\t%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DETAILED_DESC[i]);
+    for(i=firstOMCErrorStream; i<LOG_MAX; ++i)
+      INFO2(LOG_STDOUT, "\t%-18s [%s]", LOG_STREAM_NAME[i], LOG_STREAM_DESC[i]);
     RELEASE(LOG_STDOUT);
     EXIT(0);
   }
