@@ -63,6 +63,7 @@ public import HashTableExpToIndex;
 public import HashTableStringToPath;
 public import HashTableCrSimVars;
 public import Initialization;
+public import InlineSolver;
 public import Inline;
 public import Interactive;
 public import SCode;
@@ -1870,6 +1871,9 @@ algorithm
       
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
+      
+      // generate system for inline solver
+      _ = InlineSolver.generateDAE(dlow);
 
       // check if the Sytems has states
       dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);

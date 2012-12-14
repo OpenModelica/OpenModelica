@@ -141,6 +141,7 @@ GraphML.mo \
 HashTableCrSimVars.mo \
 IndexReduction.mo \
 Initialization.mo \
+InlineSolver.mo \
 Matching.mo \
 MathematicaDump.mo \
 OnRelaxation.mo \
