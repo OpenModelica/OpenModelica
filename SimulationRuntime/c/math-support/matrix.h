@@ -89,11 +89,11 @@ integer info = 0; /* output */ \
 assert(ipiv != 0); \
 _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if(info < 0) { \
-   INFO3(LOG_NONLIN_SYS,"Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
+   INFO3(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
    data->simulationInfo.found_solution = -1; \
  } \
  else if(info > 0) { \
-   INFO2(LOG_NONLIN_SYS,"Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
+   INFO2(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
    data->simulationInfo.found_solution = -1; \
  } \
 free(ipiv); \
@@ -115,8 +115,8 @@ free(ipiv); \
 #define mixed_equation_system_end(size) \
     stepCount++; \
     hybridIterations++; \
-    INFO1(LOG_NONLIN_SYS," ####  hybrid equation system solver step %d.", stepCount); \
-    INFO1(LOG_NONLIN_SYS," #### SOLUTION = %d",data->simulationInfo.found_solution); \
+    INFO1(LOG_NLS," ####  hybrid equation system solver step %d.", stepCount); \
+    INFO1(LOG_NLS," #### SOLUTION = %d",data->simulationInfo.found_solution); \
  } while(!data->simulationInfo.found_solution); \
  } while(0)
 
@@ -130,11 +130,11 @@ do { \
       data->simulationInfo.found_solution = -1; \
     } \
   }\
-  INFO1(LOG_NONLIN_SYS," ####  Check VAR (system %d)", index); \
+  INFO1(LOG_NLS," ####  Check VAR (system %d)", index); \
   if(data->simulationInfo.found_solution == -1) { \
     /*system of equations failed */ \
     data->simulationInfo.found_solution = 0; \
-    INFO(LOG_NONLIN_SYS," ####  NO SOLUTION "); \
+    INFO(LOG_NLS," ####  NO SOLUTION "); \
   } else { \
     data->simulationInfo.found_solution = 1; \
     for(i = 0; i < size; i++) { \
@@ -143,24 +143,24 @@ do { \
         break;\
       }\
     }\
-    INFO1(LOG_NONLIN_SYS," #### SOLUTION = %c",data->simulationInfo.found_solution?'T':'F'); \
+    INFO1(LOG_NLS," #### SOLUTION = %c",data->simulationInfo.found_solution?'T':'F'); \
   }\
   if(!data->simulationInfo.found_solution ) { \
     /* try next set of values*/ \
-    INFO(LOG_NONLIN_SYS," #### old STATE "); \
+    INFO(LOG_NLS," #### old STATE "); \
     for(i = 0; i < size; i++) { \
       int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
       const char *__name = data->modelData.booleanVarsData[ix].info.name; \
-      INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, *loc_prePtrs[i]); \
+      INFO4(LOG_NLS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, *loc_prePtrs[i]); \
     } \
     if(nextVar(boolVar,size)) { \
       /* try next set of values*/ \
-      INFO(LOG_NONLIN_SYS," #### next STATE "); \
+      INFO(LOG_NLS," #### next STATE "); \
       for(i = 0; i < size; i++) { \
         *loc_ptrs[i] = *loc_prePtrs[i] != boolVar[i];  \
         int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
         const char *__name = data->modelData.booleanVarsData[ix].info.name; \
-        INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, *loc_prePtrs[i]); \
+        INFO4(LOG_NLS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, *loc_prePtrs[i]); \
       } \
     } else  {\
       /* while the initialization it's okay not a solution */ \
@@ -173,13 +173,13 @@ do { \
     } \
   } \
   /* we found a solution*/ \
-  if(data->simulationInfo.found_solution == 1 && DEBUG_STREAM(LOG_NONLIN_SYS)){ \
+  if(data->simulationInfo.found_solution == 1 && DEBUG_STREAM(LOG_NLS)){ \
     int i = 0; \
-    INFO1(LOG_NONLIN_SYS," #### SOLUTION FOUND! (system %d)", index); \
+    INFO1(LOG_NLS," #### SOLUTION FOUND! (system %d)", index); \
     for(i = 0; i < size; i++) { \
       int ix = (loc_ptrs[i]-data->localData[0]->booleanVars); \
       const char *__name = data->modelData.booleanVarsData[ix].info.name; \
-      INFO4(LOG_NONLIN_SYS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, data->simulationInfo.booleanVarsPre[ix]); \
+      INFO4(LOG_NLS, "%s = %d  pre(%s)= %d",__name, *loc_ptrs[i], __name, data->simulationInfo.booleanVarsPre[ix]); \
     } \
   } \
 } while(0)

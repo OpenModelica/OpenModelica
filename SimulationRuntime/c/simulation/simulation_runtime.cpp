@@ -148,7 +148,7 @@ void setTermMsg(const char *msg)
 /* \brief determine verboselevel by investigating flag -lv flags
  *
  * Flags are or'ed to a returnvalue.
- * Valid flags: LOG_EVENTS, LOG_NONLIN_SYS
+ * Valid flags: LOG_EVENTS, LOG_NLS
  */
 void setGlobalVerboseLevel(int argc, char**argv)
 {
@@ -214,8 +214,8 @@ void setGlobalVerboseLevel(int argc, char**argv)
   if(useStream[LOG_SOLVER] == 1)
     useStream[LOG_STATS] = 1;
 
-  if(useStream[LOG_NONLIN_SYS_V])
-    useStream[LOG_NONLIN_SYS] = 1;
+  if(useStream[LOG_NLS_V])
+    useStream[LOG_NLS] = 1;
 
   if(error)
   {

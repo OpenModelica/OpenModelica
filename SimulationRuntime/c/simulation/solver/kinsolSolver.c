@@ -80,11 +80,11 @@
     int eqSystemNumber = data->modelData.equationInfo_reverse_prof_index[nlsData->simProfEqNr];
     NLS_KINSOL_DATA *kinsolData;
 
-    INFO1(LOG_NONLIN_SYS, "allocate memory for %s", data->modelData.equationInfo[eqSystemNumber].name);
-    INDENT(LOG_NONLIN_SYS);
+    INFO1(LOG_NLS, "allocate memory for %s", data->modelData.equationInfo[eqSystemNumber].name);
+    INDENT(LOG_NLS);
     for(i=0; i<size; ++i)
-      INFO2(LOG_NONLIN_SYS, "[%d] %s", i+1, data->modelData.equationInfo[eqSystemNumber].vars[i]->name);
-    RELEASE(LOG_NONLIN_SYS);
+      INFO2(LOG_NLS, "[%d] %s", i+1, data->modelData.equationInfo[eqSystemNumber].vars[i]->name);
+    RELEASE(LOG_NLS);
 
     /* allocate system data */
     nlsData->solverData = malloc(sizeof(NLS_KINSOL_DATA));
@@ -151,15 +151,15 @@
     int eqSystemNumber = kinsolData->data->modelData.equationInfo_reverse_prof_index[kinsolData->nlsData->simProfEqNr];
     int i;
 
-    if(DEBUG_STREAM(LOG_NONLIN_SYS))
+    if(DEBUG_STREAM(LOG_NLS))
     {
-      WARNING1(LOG_NONLIN_SYS, "kinsol failed for %s", kinsolData->data->modelData.equationInfo[eqSystemNumber].name);
-      INDENT(LOG_NONLIN_SYS);
+      WARNING1(LOG_NLS, "kinsol failed for %s", kinsolData->data->modelData.equationInfo[eqSystemNumber].name);
+      INDENT(LOG_NLS);
 
-      WARNING3(LOG_NONLIN_SYS, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
-      WARNING1(LOG_NONLIN_SYS, "%s", msg);
+      WARNING3(LOG_NLS, "[module] %s | [function] %s | [error_code] %d", module, function, error_code);
+      WARNING1(LOG_NLS, "%s", msg);
 
-      RELEASE(LOG_NONLIN_SYS);
+      RELEASE(LOG_NLS);
     }
   }
 
@@ -252,19 +252,19 @@
     KINDlsGetNumFuncEvals(kmem, &nfeD);
 
     /* solution */
-    INFO2(LOG_NONLIN_SYS, "solution for %s at t=%g", kinsolData->data->modelData.equationInfo[eqSystemNumber].name, kinsolData->data->localData[0]->timeValue);
-    INDENT(LOG_NONLIN_SYS);
+    INFO2(LOG_NLS, "solution for %s at t=%g", kinsolData->data->modelData.equationInfo[eqSystemNumber].name, kinsolData->data->localData[0]->timeValue);
+    INDENT(LOG_NLS);
     for(i=0; i<size; ++i)
     {
       kinsolData->nlsData->nlsx[i] = NV_Ith_S(z, i);
-      INFO3(LOG_NONLIN_SYS, "[%d] %s = %g", i+1, kinsolData->data->modelData.equationInfo[eqSystemNumber].vars[i]->name,  kinsolData->nlsData->nlsx[i]);
+      INFO3(LOG_NLS, "[%d] %s = %g", i+1, kinsolData->data->modelData.equationInfo[eqSystemNumber].vars[i]->name,  kinsolData->nlsData->nlsx[i]);
     }
 
-    INFO1(LOG_NONLIN_SYS, "KINGetNumNonlinSolvIters = %5ld", nni);
-    INFO1(LOG_NONLIN_SYS, "KINGetNumFuncEvals       = %5ld", nfe);
-    INFO1(LOG_NONLIN_SYS, "KINDlsGetNumJacEvals     = %5ld", nje);
-    INFO1(LOG_NONLIN_SYS, "KINDlsGetNumFuncEvals    = %5ld", nfeD);
-    RELEASE(LOG_NONLIN_SYS);
+    INFO1(LOG_NLS, "KINGetNumNonlinSolvIters = %5ld", nni);
+    INFO1(LOG_NLS, "KINGetNumFuncEvals       = %5ld", nfe);
+    INFO1(LOG_NLS, "KINDlsGetNumJacEvals     = %5ld", nje);
+    INFO1(LOG_NLS, "KINDlsGetNumFuncEvals    = %5ld", nfeD);
+    RELEASE(LOG_NLS);
 
     /* Free memory */
     N_VDestroy_Serial(z);
@@ -275,7 +275,7 @@
 
     if(error_code < 0)
     {
-      INFO(LOG_STDOUT, "kinsol failed. see last warning. use [-lv LOG_NONLIN_SYS] for more output.");
+      INFO(LOG_STDOUT, "kinsol failed. see last warning. use [-lv LOG_NLS] for more output.");
       return 0;
     }
 

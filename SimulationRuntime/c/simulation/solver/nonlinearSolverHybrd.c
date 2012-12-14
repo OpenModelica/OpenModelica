@@ -165,15 +165,15 @@ void wrapper_fvec_hybrd(integer* n, double* x, double* f, int* iflag, void* data
   DATA_HYBRD* solverData = (DATA_HYBRD*)systemData->solverData;
 
   /* debug output */
-  if(DEBUG_STREAM(LOG_NONLIN_SYS_V))
+  if(DEBUG_STREAM(LOG_NLS_V))
   {
-    INFO(LOG_NONLIN_SYS_V, "Call residual function:");
-    INDENT(LOG_NONLIN_SYS_V);
-    INFO(LOG_NONLIN_SYS_V, "Iteration variable values scaled:");
-    INDENT(LOG_NONLIN_SYS_V);
+    INFO(LOG_NLS_V, "Call residual function:");
+    INDENT(LOG_NLS_V);
+    INFO(LOG_NLS_V, "Iteration variable values scaled:");
+    INDENT(LOG_NLS_V);
     for(i=0; i<*n; i++)
-      INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, x[i]);
-    RELEASE(LOG_NONLIN_SYS_V);
+      INFO2(LOG_NLS_V, " [%d]. %.15e", i, x[i]);
+    RELEASE(LOG_NLS_V);
   }
 
   /* re-scaling x vector */
@@ -186,13 +186,13 @@ void wrapper_fvec_hybrd(integer* n, double* x, double* f, int* iflag, void* data
   }
 
   /* debug output */
-  if(DEBUG_STREAM(LOG_NONLIN_SYS_V))
+  if(DEBUG_STREAM(LOG_NLS_V))
   {
-    INFO(LOG_NONLIN_SYS_V, "Iteration variable values:");
-    INDENT(LOG_NONLIN_SYS_V);
+    INFO(LOG_NLS_V, "Iteration variable values:");
+    INDENT(LOG_NLS_V);
     for(i=0; i<*n; i++)
-      INFO2(LOG_NONLIN_SYS_V, "[%d]. %.15e", i, x[i]);
-    RELEASE(LOG_NONLIN_SYS_V);
+      INFO2(LOG_NLS_V, "[%d]. %.15e", i, x[i]);
+    RELEASE(LOG_NLS_V);
   }
 
   /* call residual function */
@@ -204,14 +204,14 @@ void wrapper_fvec_hybrd(integer* n, double* x, double* f, int* iflag, void* data
       x[i] = (1.0/solverData->xScalefactors[i]) * x[i];
 
   /* debug output */
-  if(DEBUG_STREAM(LOG_NONLIN_SYS_V))
+  if(DEBUG_STREAM(LOG_NLS_V))
   {
-    INFO(LOG_NONLIN_SYS_V,"Residual values:");
-    INDENT(LOG_NONLIN_SYS_V);
+    INFO(LOG_NLS_V,"Residual values:");
+    INDENT(LOG_NLS_V);
     for(i=0; i<*n; i++)
-      INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, f[i]);
-    RELEASE(LOG_NONLIN_SYS_V);
-    RELEASE(LOG_NONLIN_SYS_V);
+      INFO2(LOG_NLS_V, " [%d]. %.15e", i, f[i]);
+    RELEASE(LOG_NLS_V);
+    RELEASE(LOG_NLS_V);
   }
 }
 
@@ -274,25 +274,25 @@ int solveHybrd(DATA *data, int sysNumber)
   int retries3 = 0;
 
   /* debug output */
-  if(DEBUG_STREAM(LOG_NONLIN_SYS))
+  if(DEBUG_STREAM(LOG_NLS))
   {
-    INFO2(LOG_NONLIN_SYS, "Start solving Non-Linear System %s at time %e",
+    INFO2(LOG_NLS, "Start solving Non-Linear System %s at time %e",
       data->modelData.equationInfo[eqSystemNumber].name,
       data->localData[0]->timeValue);
-    INDENT(LOG_NONLIN_SYS);
+    INDENT(LOG_NLS);
 
-    INDENT(LOG_NONLIN_SYS);
+    INDENT(LOG_NLS);
     for(i = 0; i < solverData->n; i++)
     {
-      INDENT(LOG_NONLIN_SYS);
-      INFO2(LOG_NONLIN_SYS, "x[%d] = %.20e", i, systemData->nlsx[i]);
-      INDENT(LOG_NONLIN_SYS);
-      INFO3(LOG_NONLIN_SYS, "scaling = %f +++ old = %.20e +++ extrapolated = %.20e",
+      INDENT(LOG_NLS);
+      INFO2(LOG_NLS, "x[%d] = %.20e", i, systemData->nlsx[i]);
+      INDENT(LOG_NLS);
+      INFO3(LOG_NLS, "scaling = %f +++ old = %.20e +++ extrapolated = %.20e",
             systemData->nominal[i], systemData->nlsxOld[i], systemData->nlsxExtrapolation[i]);
-      RELEASE(LOG_NONLIN_SYS);
-      RELEASE(LOG_NONLIN_SYS);
+      RELEASE(LOG_NLS);
+      RELEASE(LOG_NLS);
     }
-    RELEASE(LOG_NONLIN_SYS);
+    RELEASE(LOG_NLS);
   }
 
   /* set x vector */
@@ -321,13 +321,13 @@ int solveHybrd(DATA *data, int sysNumber)
   while(!giveUp && !success) {
 
     /* debug output */
-    if(DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
-      INFO(LOG_NONLIN_SYS_V,"Iteration variable values scaled:");
-      INDENT(LOG_NONLIN_SYS_V);
+    if(DEBUG_STREAM(LOG_NLS_V)) {
+      INFO(LOG_NLS_V,"Iteration variable values scaled:");
+      INDENT(LOG_NLS_V);
       for(i=0;i<solverData->n;i++){
-        INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, solverData->x[i]);
+        INFO2(LOG_NLS_V, " [%d]. %.15e", i, solverData->x[i]);
       }
-      RELEASE(LOG_NONLIN_SYS_V);
+      RELEASE(LOG_NLS_V);
     }
 
     /* Scaling x vector */
@@ -337,12 +337,12 @@ int solveHybrd(DATA *data, int sysNumber)
       }
     }
     /* debug output */
-    INFO(LOG_NONLIN_SYS_V,"Iteration variable values scaled:");
-    INDENT(LOG_NONLIN_SYS_V);
+    INFO(LOG_NLS_V,"Iteration variable values scaled:");
+    INDENT(LOG_NLS_V);
     for(i=0;i<solverData->n;i++){
-      INFO2(LOG_NONLIN_SYS_V, " [%d]. %.15e", i, solverData->x[i]);
+      INFO2(LOG_NLS_V, " [%d]. %.15e", i, solverData->x[i]);
     }
-    RELEASE(LOG_NONLIN_SYS_V);
+    RELEASE(LOG_NLS_V);
 
 
     /* set residual function continuous
@@ -397,9 +397,9 @@ int solveHybrd(DATA *data, int sysNumber)
     }
 
     /* Debug output */
-    if(DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
+    if(DEBUG_STREAM(LOG_NLS_V)) {
       int i,j,l=0;
-      INFO(LOG_NONLIN_SYS_V,"Jacobi-Matrix");
+      INFO(LOG_NLS_V,"Jacobi-Matrix");
       for(i=0;i<solverData->n;i++){
         printf("%d : ", i);
         for(j=0;j<solverData->n;j++){
@@ -421,16 +421,16 @@ int solveHybrd(DATA *data, int sysNumber)
         }
         solverData->fvecScaled[i] = solverData->fvec[i] * (1 / solverData->resScaling[i]);
       }
-      if(DEBUG_STREAM(LOG_NONLIN_SYS_V)) {
-        INFO(LOG_NONLIN_SYS_V, "scaling factors for residual vector");
-        INDENT(LOG_NONLIN_SYS_V);
+      if(DEBUG_STREAM(LOG_NLS_V)) {
+        INFO(LOG_NLS_V, "scaling factors for residual vector");
+        INDENT(LOG_NLS_V);
         for(i=0;i<solverData->n;i++){
-          INFO2(LOG_NONLIN_SYS_V, "scaling factor [%d] : %.20e", i, solverData->fvecScaled[i]);
-          INDENT(LOG_NONLIN_SYS_V);
-          INFO2(LOG_NONLIN_SYS_V, "scaled residual [%d] : %.20e", i, solverData->resScaling[i]);
-          RELEASE(LOG_NONLIN_SYS_V);
+          INFO2(LOG_NLS_V, "scaling factor [%d] : %.20e", i, solverData->fvecScaled[i]);
+          INDENT(LOG_NLS_V);
+          INFO2(LOG_NLS_V, "scaled residual [%d] : %.20e", i, solverData->resScaling[i]);
+          RELEASE(LOG_NLS_V);
         }
-        RELEASE(LOG_NONLIN_SYS_V);
+        RELEASE(LOG_NLS_V);
       }
     }
 
@@ -445,12 +445,12 @@ int solveHybrd(DATA *data, int sysNumber)
     if(solverData->info == 1 || xerror <= local_tol || xerror_scaled <= local_tol) {
       success = 1;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        RELEASE(LOG_NONLIN_SYS);
-        INFO2(LOG_NONLIN_SYS, "*** System solved ***\n%d retries +++ %d restarts", retries,
+      if(DEBUG_STREAM(LOG_NLS)) {
+        RELEASE(LOG_NLS);
+        INFO2(LOG_NLS, "*** System solved ***\n%d retries +++ %d restarts", retries,
             retries2+retries3);
 
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS);
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS);
 
       }
     /* try to vary the initial values */
@@ -462,10 +462,10 @@ int solveHybrd(DATA *data, int sysNumber)
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-          INFO(LOG_NONLIN_SYS,
+        if(DEBUG_STREAM(LOG_NLS)) {
+          INFO(LOG_NLS,
               " - iteration making no progress:\t vary solution point by 1%%.");
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
         }
     /* try old values as x-Scaling factors */
     } else if((solverData->info == 4 || solverData->info == 5) && retries < 2) {
@@ -476,10 +476,10 @@ int solveHybrd(DATA *data, int sysNumber)
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-          INFO(LOG_NONLIN_SYS,
+        if(DEBUG_STREAM(LOG_NLS)) {
+          INFO(LOG_NLS,
               " - iteration making no progress:\t try without scaling at all.");
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
         }
     /* try to disable x-Scaling */
     } else if((solverData->info == 4 || solverData->info == 5) && retries < 3) {
@@ -488,10 +488,10 @@ int solveHybrd(DATA *data, int sysNumber)
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-          INFO(LOG_NONLIN_SYS,
+        if(DEBUG_STREAM(LOG_NLS)) {
+          INFO(LOG_NLS,
               " - iteration making no progress:\t try without scaling at all.");
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
         }
     /* first try to decrease factor*/
     } else if((solverData->info == 4 || solverData->info == 5) && retries < 6) {
@@ -506,10 +506,10 @@ int solveHybrd(DATA *data, int sysNumber)
         retries++;
         giveUp = 0;
         nfunc_evals += solverData->nfev;
-        if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-          INFO1(LOG_NONLIN_SYS, " - iteration making no progress:\t decreasing initial step bound to %f.",
+        if(DEBUG_STREAM(LOG_NLS)) {
+          INFO1(LOG_NLS, " - iteration making no progress:\t decreasing initial step bound to %f.",
               solverData->factor);
-          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+          printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
         }
     /* try to solve non-continuous
      * work-a-round: since other wise some model does
@@ -528,9 +528,9 @@ int solveHybrd(DATA *data, int sysNumber)
 
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t try to solve a discontinuous system.");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      if(DEBUG_STREAM(LOG_NLS)) {
+        INFO(LOG_NLS, " - iteration making no progress:\t try to solve a discontinuous system.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     /* Then try with old values (instead of extrapolating )*/
     } else if((solverData->info == 4 || solverData->info == 5) && retries2 < 1) {
@@ -544,9 +544,9 @@ int solveHybrd(DATA *data, int sysNumber)
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t use old values instead extrapolated.");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      if(DEBUG_STREAM(LOG_NLS)) {
+        INFO(LOG_NLS, " - iteration making no progress:\t use old values instead extrapolated.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     /* try to vary the initial values */
     } else if((solverData->info == 4 || solverData->info == 5) && retries2 < 2) {
@@ -563,10 +563,10 @@ int solveHybrd(DATA *data, int sysNumber)
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS,
+      if(DEBUG_STREAM(LOG_NLS)) {
+        INFO(LOG_NLS,
             " - iteration making no progress:\t vary initial point by adding 1%%.");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     /* try to vary the initial values */
     } else if((solverData->info == 4 || solverData->info == 5) && retries2 < 3) {
@@ -583,9 +583,9 @@ int solveHybrd(DATA *data, int sysNumber)
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t vary initial point by -1%%.");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      if(DEBUG_STREAM(LOG_NLS)) {
+        INFO(LOG_NLS, " - iteration making no progress:\t vary initial point by -1%%.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     /* try to vary the initial values */
     } else if((solverData->info == 4 || solverData->info == 5) && retries2 < 4) {
@@ -595,9 +595,9 @@ int solveHybrd(DATA *data, int sysNumber)
       retries2++;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t try scaling factor as initial point.");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      if(DEBUG_STREAM(LOG_NLS)) {
+        INFO(LOG_NLS, " - iteration making no progress:\t try scaling factor as initial point.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     /* try own scaling factors */
     } else if((solverData->info == 4 || solverData->info == 5) && retries2 < 5) {
@@ -617,9 +617,9 @@ int solveHybrd(DATA *data, int sysNumber)
       giveUp = 0;
       solverData->mode = 2;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t try with own scaling factors.");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      if(DEBUG_STREAM(LOG_NLS)) {
+        INFO(LOG_NLS, " - iteration making no progress:\t try with own scaling factors.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     /* try without internal scaling */
     } else if((solverData->info == 4 || solverData->info == 5) && retries3 < 1) {
@@ -638,9 +638,9 @@ int solveHybrd(DATA *data, int sysNumber)
       solverData->mode = 2;
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO(LOG_NONLIN_SYS, " - iteration making no progress:\t disable solver internal scaling.");
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      if(DEBUG_STREAM(LOG_NLS)) {
+        INFO(LOG_NLS, " - iteration making no progress:\t disable solver internal scaling.");
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     /* try to reduce the tolerance a bit */
     } else if((solverData->info == 4 || solverData->info == 5) && retries3 < 6) {
@@ -661,9 +661,9 @@ int solveHybrd(DATA *data, int sysNumber)
 
       giveUp = 0;
       nfunc_evals += solverData->nfev;
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        INFO1(LOG_NONLIN_SYS, " - iteration making no progress:\t reduce the tolerance slightly to %e.",local_tol);
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS_V);
+      if(DEBUG_STREAM(LOG_NLS)) {
+        INFO1(LOG_NLS, " - iteration making no progress:\t reduce the tolerance slightly to %e.",local_tol);
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS_V);
       }
     } else if(solverData->info >= 2 && solverData->info <= 5) {
       data->simulationInfo.found_solution = -1;
@@ -672,10 +672,10 @@ int solveHybrd(DATA *data, int sysNumber)
       if(!data->simulationInfo.initial){
         printErrorEqSyst(ERROR_AT_TIME, data->modelData.equationInfo[eqSystemNumber], data->localData[0]->timeValue);
       }
-      if(DEBUG_STREAM(LOG_NONLIN_SYS)) {
-        RELEASE(LOG_NONLIN_SYS);
-        INFO1(LOG_NONLIN_SYS, "### No Solution! ###\n after %d restarts", retries+retries2+retries3);
-        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NONLIN_SYS);
+      if(DEBUG_STREAM(LOG_NLS)) {
+        RELEASE(LOG_NLS);
+        INFO1(LOG_NLS, "### No Solution! ###\n after %d restarts", retries+retries2+retries3);
+        printStatus(solverData, &nfunc_evals, &xerror, &xerror_scaled, LOG_NLS);
       }
     }
   }
