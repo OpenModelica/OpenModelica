@@ -962,7 +962,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP,print,"states without used derivative:\n");
         Debug.fcall(Flags.BLT_DUMP,BackendDump.debuglst,(ilst,intString,", ","\n"));
         (syst,shared,ass1,ass2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn) =
-          handleundifferntiableMSS(intEq(listLength(ilst),listLength(unassignedEqns)),ilst,notDiffedEquations,inDiffEqns,inOrgEqns,eqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn);
+          handleundifferntiableMSS(intLe(listLength(ilst),listLength(unassignedEqns)),ilst,notDiffedEquations,inDiffEqns,inOrgEqns,eqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn);
         (syst,shared,ass1,ass2,arg) = handleundifferntiableMSSLst(notDiffableMSS,syst,shared,ass1,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns));
       then
         (syst,shared,ass1,ass2,arg);
@@ -1105,7 +1105,7 @@ algorithm
         _::_ = ilst;
         Debug.fcall(Flags.BLT_DUMP, print, "All unassignedStates without Derivative: " +& stringDelimitList(List.map(ilst,intString),", ")  +& "\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
-        (syst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn) = handleundifferntiableMSS(intEq(listLength(unassignedEqns),listLength(ilst)),ilst,notDiffedEquations,inDiffEqns,inOrgEqns,inEqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn);
+        (syst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn) = handleundifferntiableMSS(intLe(listLength(ilst),listLength(unassignedEqns)),ilst,notDiffedEquations,inDiffEqns,inOrgEqns,inEqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn);
       then
         (syst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn);  
 
