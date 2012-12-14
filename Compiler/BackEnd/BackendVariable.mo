@@ -1175,6 +1175,10 @@ algorithm
     case (BackendDAE.VAR(varKind = kind,
                      varType = typeVar as DAE.T_INTEGER(source = _)))
       then false;
+    /* int enumeration */
+    case (BackendDAE.VAR(varKind = kind,
+                     varType = typeVar as DAE.T_ENUMERATION(source = _)))
+      then false;
     /* string variable */
     case (BackendDAE.VAR(varKind = kind,
                      varType = typeVar as DAE.T_STRING(source = _)))
@@ -1226,6 +1230,14 @@ algorithm
         kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
                     BackendDAE.DUMMY_STATE()};
       then listMember(kind, kind_lst);
+    case (BackendDAE.VAR(varKind = kind,
+                     varType = typeVar as DAE.T_ENUMERATION(source = _)))
+      equation
+
+        kind_lst = {BackendDAE.VARIABLE(), BackendDAE.DISCRETE(), BackendDAE.DUMMY_DER(),
+                    BackendDAE.DUMMY_STATE()};
+      then listMember(kind, kind_lst);
+
     else false;
   end match;
 end isVarIntAlg;
@@ -1264,6 +1276,9 @@ algorithm
       then false;
     /* int variable */
     case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
+      then false;
+    /* enum variable */
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_ENUMERATION(source = _)))
       then false;
     /* string variable */
     case (BackendDAE.VAR(varType = typeVar as DAE.T_STRING(source = _)))
@@ -1306,6 +1321,10 @@ algorithm
       BackendDAE.Type typeVar;
     /* int variable */
     case (BackendDAE.VAR(varType = typeVar as DAE.T_INTEGER(source = _)))
+      equation
+        true = isConst(var);
+      then true;
+    case (BackendDAE.VAR(varType = typeVar as DAE.T_ENUMERATION(source = _)))
       equation
         true = isConst(var);
       then true;
@@ -1483,6 +1502,7 @@ algorithm
   outBoolean:=
   matchcontinue (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_INTEGER(source = _))) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.PARAM(),varType = DAE.T_ENUMERATION(source = _))) then true;
     case (_) then false;
   end matchcontinue;
 end isIntParam;
