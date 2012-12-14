@@ -252,7 +252,7 @@
     KINDlsGetNumFuncEvals(kmem, &nfeD);
 
     /* solution */
-    INFO1(LOG_NONLIN_SYS, "solution for %s", kinsolData->data->modelData.equationInfo[eqSystemNumber].name);
+    INFO2(LOG_NONLIN_SYS, "solution for %s at t=%g", kinsolData->data->modelData.equationInfo[eqSystemNumber].name, kinsolData->data->localData[0]->timeValue);
     INDENT(LOG_NONLIN_SYS);
     for(i=0; i<size; ++i)
     {

@@ -214,6 +214,9 @@ void setGlobalVerboseLevel(int argc, char**argv)
   if(useStream[LOG_SOLVER] == 1)
     useStream[LOG_STATS] = 1;
 
+  if(useStream[LOG_NONLIN_SYS_V])
+    useStream[LOG_NONLIN_SYS] = 1;
+
   if(error)
   {
     WARNING1(LOG_STDOUT, "unrecognized option -lv %s", flags->c_str());
