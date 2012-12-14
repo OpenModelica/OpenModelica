@@ -1047,6 +1047,7 @@ algorithm
         v1 = BackendVariable.addVars(varlst,v);
         // update IncidenceMatrix
         eqnslst1 = BackendDAETransform.collectVarEqns(statesWithUnusedDer,{},mt,arrayLength(mt));
+        eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
         syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," ","\n"));
@@ -1084,6 +1085,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
         // update IncidenceMatrix
         eqnslst1 = BackendDAETransform.collectVarEqns({i},{},mt,arrayLength(mt));
+        eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
         syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," ","\n"));
@@ -1091,11 +1093,28 @@ algorithm
       then
         (syst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
+    // if no state with unused derivative is in the set check global
+    case (_,{},_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
+      equation
+        ilst = Matching.getUnassigned(BackendVariable.varsSize(v), inAss1, {});
+        ilst = List.fold1(ilst, statesWithUnusedDerivative, mt, {});
+        varlst = List.map1r(ilst,BackendVariable.getVarAt,v);
+        // check also initial equations (this could be done alse once before
+        ((ilst,_)) = BackendDAEUtil.traverseBackendDAEExpsEqns(BackendEquation.daeInitialEqns(ishared),searchDerivativesEqn,(ilst,v));
+        // check if there are states with unused derivative
+        _::_ = ilst;
+        Debug.fcall(Flags.BLT_DUMP, print, "All unassignedStates without Derivative: " +& stringDelimitList(List.map(ilst,intString),", ")  +& "\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
+        (syst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn) = handleundifferntiableMSS(intEq(listLength(unassignedEqns),listLength(ilst)),ilst,notDiffedEquations,inDiffEqns,inOrgEqns,inEqns,unassignedStates,unassignedEqns,isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn);
+      then
+        (syst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn);  
+
     case (_,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),_,_,_,_,_,_,_)
       equation
         varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,v);
         Debug.fcall(Flags.BLT_DUMP, print, "unassignedStates\n");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, varlst);
+        
         //  syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAss1,inAss2,{})); 
         //  dumpSystemGraphML(syst,ishared,NONE(),"IndexReductionFailed.graphml");
       then
