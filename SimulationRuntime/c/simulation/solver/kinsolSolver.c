@@ -133,7 +133,7 @@
     long i;
 
     /* call residual function */
-    kinsolData->nlsData->residualFunc(kinsolData->data, kinsolData->nlsData->nlsx,  kinsolData->res, 0);
+    kinsolData->nlsData->residualFunc(kinsolData->data, zdata,  kinsolData->res, 0);
     
     for(i=0; i<kinsolData->nlsData->size; ++i)
     {
