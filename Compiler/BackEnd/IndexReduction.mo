@@ -850,7 +850,8 @@ algorithm
         (outVars,outEqns,outStateOrd,outChangedVars,outOrgEqnsLst);
     case ((e,NONE(),eqn)::rest,_,_,_,_,_,_,_)
       equation
-        orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst,e,eqn);
+        //orgEqnsLst = BackendDAETransform.addOrgEqn(inOrgEqnsLst,e,eqn);
+        orgEqnsLst = inOrgEqnsLst;
         (outVars,outEqns,outStateOrd,outChangedVars,outOrgEqnsLst) = 
            replaceDifferentiatedEqns(rest,vars,eqns,inStateOrd,mt,imapIncRowEqn,inChangedVars,orgEqnsLst);
       then
@@ -1917,6 +1918,8 @@ algorithm
       equation
         // get Orgequations of that level
         (eqnslst,ilst,orgEqnsLst) = getFirstOrgEqns(orgEqnsLst,{},{},{});
+        // replace final parameter
+        (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceFinalVarsEqn,(BackendVariable.daeKnVars(ishared),false,BackendVarTransform.emptyReplacements()));
         // force inline
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, forceInlinEqn,BackendDAEUtil.getFunctions(ishared));
         // try to make scalar
