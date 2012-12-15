@@ -2353,7 +2353,7 @@ algorithm
       equation
         (pos < n) = true;
         NONE() = arr[pos + 1];
-        print("- vararrayNth " +& intString(pos +1 ) +& " has NONE!!!\n");
+        print("- BackendVariable.vararrayNth " +& intString(pos +1 ) +& " has NONE!!!\n");
       then
         fail();
   end matchcontinue;

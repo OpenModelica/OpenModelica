@@ -6546,7 +6546,7 @@ algorithm
   vars := List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
   vars := List.select1(vars,intLe,n);
   var_str := BackendDump.dumpMarkedVars(isyst, vars);
-  source := BackendEquation.markedEquationSource(isyst, listGet(unmatched,1));
+  source := BackendEquation.markedEquationSource(isyst, listGet(unmatched1,1));
   info := DAEUtil.getElementSourceFileInfo(source);
   Error.addSourceMessage(Error.STRUCT_SINGULAR_SYSTEM, {eqn_str,var_str}, info);
 end singularSystemError;
