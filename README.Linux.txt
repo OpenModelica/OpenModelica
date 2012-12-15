@@ -1,8 +1,8 @@
 Debian/Ubuntu Compile Cheat Sheet (or read on for the full guide)
 =================================================================
 
-$ sudo su -c "echo deb http://build.openmodelica.org/apt nightly contrib >> /etc/apt/sources.list"
-$ sudo su -c "echo deb-src http://build.openmodelica.org/apt nightly contrib >> /etc/apt/sources.list"
+$ sudo su -c "echo deb http://build.openmodelica.org/apt precise nightly >> /etc/apt/sources.list"
+$ sudo su -c "echo deb-src http://build.openmodelica.org/apt precise nightly >> /etc/apt/sources.list"
 $ sudo apt-get update
 $ sudo apt-get build-dep openmodelica
 $ autoconf
