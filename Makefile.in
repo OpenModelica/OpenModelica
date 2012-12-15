@@ -123,7 +123,7 @@ SOURCE_DIRS_UTF8=OM*/ Compiler/ SimulationRuntime/ mosh/ libraries/ `bash -c ech
 bom-error:
 	rm -f bom-error.log bom-error.sh
 	echo "#!/bin/sh\ntest \"\`head -c3 \\\"\$$1\\\"\`\" = \"\`/bin/echo -ne \"\\xef\\xbb\\xbf\"\`\" && (echo \$$1 contains BOM >> bom-error.log)" > bom-error.sh
-	find $(SOURCE_DIRS) -type f \( ! -path '*/.svn/*' -prune \) -exec sh bom-error.sh "{}" ';'
+	find $(SOURCE_DIRS) -type f \( ! -path '*/.svn/*' -prune \) \( ! -path 'libraries/Modelica 3.2.1/*' -prune \) -exec sh bom-error.sh "{}" ';'
 	@if test -e bom-error.log; then cat bom-error.log; fi
 	@test ! -e bom-error.log
 	rm -f bom-error.log bom-error.sh
