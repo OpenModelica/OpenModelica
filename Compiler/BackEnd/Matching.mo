@@ -5612,7 +5612,7 @@ algorithm
   end match;
 end getAssigned;
 
-protected function getEqnsforIndexReduction
+public function getEqnsforIndexReduction
 "function getEqnsforIndexReduction, collect all equations for the index reduction from a given set of 
  unmatched equations
  autor: Frenkel TUD 2012-04"
