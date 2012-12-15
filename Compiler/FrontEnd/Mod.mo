@@ -1726,6 +1726,10 @@ algorithm
       list<DAE.SubMod> submods;
       String strPrefix, s1, s2, s3, s4;
       Option<Absyn.Path> p;
+      list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
+      SCode.Final fp1, fp2;
+      SCode.Each ep1, ep2;
+      SCode.Program els1, els2;
       
     case (DAE.NOMOD(),DAE.NOMOD(),_,_) then DAE.NOMOD();
     case (DAE.NOMOD(),m,_,_) then m;
@@ -1745,9 +1749,13 @@ algorithm
       then m;
 
     // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
-    case(DAE.REDECL(finalPrefix = _),DAE.REDECL(finalPrefix = _),_,_)
+    case(DAE.REDECL(fp1, ep1, elsmods1),DAE.REDECL(fp2, ep2, elsmods2),_,_)
       equation
-        true = valueEq(inModOuter,inModInner);
+        true = SCode.eachEqual(ep1, ep2);
+        true = SCode.finalEqual(fp1, fp2);
+        els1 = List.map(elsmods1, Util.tuple21); 
+        els2 = List.map(elsmods2, Util.tuple21);
+        true = List.fold(List.threadMap(els1, els2, SCode.elementEqual), boolAnd, true);
       then 
         inModOuter;
 
@@ -2109,6 +2117,11 @@ algorithm
     case(DAE.MOD(f1,each1,submods1,NONE()),DAE.MOD(f2,SCode.NOT_EACH(),{},eqmod2 as SOME(_)))
       equation
         b = valueEq(f1,f2);
+      then b;
+
+    case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,SCode.NOT_EACH(),{},eqmod2))
+      equation
+        b = valueEq(eqmod1,eqmod2);
       then b;
 
     // handle subset equal
@@ -2680,19 +2693,20 @@ algorithm
       DAE.Properties prop;
       Absyn.Exp ae;
     case NONE() then "";
+    
     case SOME(DAE.TYPED(e,SOME(e_val),prop,_,_))
       equation
         str = ExpressionDump.printExpStr(e);
         str2 = Types.printPropStr(prop);
         e_val_str = ValuesUtil.valString(e_val);
-        res = stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
+        res = stringAppendList({" = (typed)",str," ",str2,", value: ",e_val_str});
       then
         res;
     case SOME(DAE.TYPED(e,NONE(),prop,_,_))
       equation
         str = ExpressionDump.printExpStr(e);
         str2 = Types.printPropStr(prop);
-        res = stringAppendList({" = (typed)",str,str2});
+        res = stringAppendList({" = (typed)",str, ", type:\n", str2});
       then
         res;
     case SOME(DAE.UNTYPED(exp=ae))

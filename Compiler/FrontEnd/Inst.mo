@@ -3433,7 +3433,7 @@ algorithm
         // Debug.fprintln(Flags.INNER_OUTER, "Number of components: " +& intString(listLength(compelts_2_elem)));
         // Debug.fprintln(Flags.INNER_OUTER, stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
         
-        checkMods = Mod.merge(mods,emods,env4,Prefix.NOPRE());
+        checkMods = Mod.merge(mods,emods,env4,pre);
         mods = checkMods;
         
         //print("To match modifiers,\n" +& Mod.printModStr(checkMods) +& "\n on components: ");

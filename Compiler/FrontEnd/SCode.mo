@@ -3410,6 +3410,18 @@ algorithm
   end match;
 end finalBool;
 
+public function finalEqual
+  input Final inFinal1;
+  input Final inFinal2;
+  output Boolean bFinal;
+algorithm
+  bFinal := match(inFinal1,inFinal2)
+    case (FINAL(),FINAL()) then true;
+    case (NOT_FINAL(),NOT_FINAL()) then true;
+    case (_, _) then false;
+  end match;
+end finalEqual;
+
 public function boolFinal
   input Boolean inBoolFinal;
   output Final outFinal;
