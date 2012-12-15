@@ -112,7 +112,6 @@ fix-svn-eol-style:
 	svn propset svn:eol-style LF `find testsuite/ Compiler/ libraries/ -name "*.mos" | grep -v parser/ParseModel | grep -v "[ ]" | grep -v "_temp[0-9]*"`
 	svn propset svn:eol-style LF `find testsuite/ Compiler/ libraries/ -name "*.tpl" | grep -v parser/ParseModel | grep -v "[ ]" | grep -v "_temp[0-9]*"`
 	svn propset svn:eol-style LF `find SimulationRuntime/c Compiler/runtime/ libraries/ OMEdit/ OMNotebook/ | egrep "\.[ch]\$$|\.[ch]pp\$$" | grep -v "[ ]"`
-	svn propset svn:eol-style LF `find . | grep /Makefile\$$`
 	svn propset svn:eol-style LF `find . | grep /Makefile.in\$$`
 fix-bom:
 	find . -type f \( ! -path '*/.svn/*' -prune \) | while read file;do sed -i '1 s/^\xef\xbb\xbf//' "$$file";done 
