@@ -2920,7 +2920,7 @@ algorithm
         // remove empty entries from vars
         vars = BackendVariable.listVar1(BackendVariable.varList(iVars));
         // replace unoptimized equations with optimized
-        eqns = BackendEquation.listEquation(listReverse(iEqnslst));        
+        eqns = BackendEquation.listEquation(listReverse(iEqnslst));
       then 
         BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
   end match;

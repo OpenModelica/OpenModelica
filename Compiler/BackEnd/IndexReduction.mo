@@ -1868,7 +1868,7 @@ algorithm
         dummystates = List.unique(dummystates);
       then
         (dummystates,syst,shared);       
-/*        
+        
     case (_,_,_,_,_,_,_,(so,_,_,_,_),_)
       equation
         // get highest order derivatives
@@ -1879,7 +1879,7 @@ algorithm
         (dummystates,syst,shared) = processComps1(inComps,isyst,ishared,vec2,inArg,hov,inDummyStates);
       then
         (dummystates,syst,shared);
-*/  end matchcontinue;
+  end matchcontinue;
 end processComps;
 
 protected function processComps1New
@@ -2155,7 +2155,7 @@ algorithm
         dummyStates = listAppend(dummyStates,inDummyStates);        
       then
         (vlst,dummyStates,inIsyst,inIshared);    
-    case (assigned::sets,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_)
+/*    case (assigned::sets,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_)
       equation
         vlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
         dummyStates = List.map(vlst,BackendVariable.varCref);
@@ -2164,15 +2164,15 @@ algorithm
         unassigned = List.select1r(assigned,Matching.isUnAssigned,vec1);
         set = getEqnsforDynamicStateSelection(unassigned,arrayLength(inM),inM,inMT,vec1,vec2,inMapEqnIncRow,inMapIncRowEqn);
         assigned = List.select1r(set,Matching.isAssigned,vec1);
-        //  print("Set: " +& intString(listLength(set)) +& "\n");
-        //  print(stringDelimitList(List.map(set,intString),", ") +& "\n");
+          print("Set: " +& intString(listLength(set)) +& "\n");
+          print(stringDelimitList(List.map(set,intString),", ") +& "\n");
         //  print("assigned: " +& intString(listLength(assigned)) +& "\n");
         //  print(stringDelimitList(List.map(assigned,intString),", ") +& "\n");
         flag = arrayCreate(inVarSize,true);
         ((statevars,dstatevars)) = List.fold3(set,getSetStates,flag,inM,vec2,({},{}));
-        //  print("Statevars: " +& intString(listLength(statevars)) +& "\n");
-        //  print(stringDelimitList(List.map(statevars,intString),", ") +& "\n");
-        //  print("Select " +& intString(listLength(unassigned)) +& " from " +& intString(listLength(statevars)) +& "\n");
+          print("Statevars: " +& intString(listLength(statevars)) +& "\n");
+          print(stringDelimitList(List.map(statevars,intString),", ") +& "\n");
+          print("Select " +& intString(listLength(unassigned)) +& " from " +& intString(listLength(statevars)) +& "\n");
         ass1 = List.consN(listLength(statevars), -1, {});
         ass2 = List.consN(listLength(unassigned), -1, {});
         varlst = List.map1r(statevars,BackendVariable.getVarAt,vars);
@@ -2183,7 +2183,7 @@ algorithm
         eqns = BackendEquation.listEquation(eqnlst);
         vars = BackendVariable.listVar1(varlst);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-        //  BackendDump.dumpEqSystem(syst);
+          BackendDump.dumpEqSystem(syst);
         //  BackendDump.dumpMatching(listArray(ass1));
         //  BackendDump.dumpMatching(listArray(ass2));
         (me,meT,mapEqnIncRow1,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inIshared);
@@ -2193,7 +2193,7 @@ algorithm
         (vlst,dummyStates,syst,shared) = processComps4New(sets,{},{},inVarSize,inEqnsSize,inSubsyst,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,syst,shared,inArg,inHov,dummystates);
      then
         (vlst,dummyStates,syst,shared);
-  end matchcontinue;
+*/  end matchcontinue;
 end processComps4New;
 
 protected function forceInlinEqn
@@ -2384,7 +2384,9 @@ algorithm
         rows = List.removeOnTrue(ass1[e], intEq, rows);
         //  print("search in Rows " +& stringDelimitList(List.map(rows,intString),", ") +& " from " +& intString(e) +& "\n");
         (set,found) = getEqnsforDynamicStateSelectionRows(rows,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);
+        //  print("add " +& boolString(found) +& " equation " +& intString(e) +& "\n");
         set = List.consOnTrue(found, e, set);
+        _ = Debug.bcallret3(found,arrayUpdate,colummarks,e,mark,colummarks);
         (set,found) = getEqnsforDynamicStateSelectionPhase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,set,found or iFound);
       then
         (set,found);
@@ -3516,9 +3518,10 @@ algorithm
         (hov1,dummystates,lov,syst,shared);         
     case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        true = intLt(listLength(assignedEqns),10);
+        //true = intLt(listLength(assignedEqns),10);
         unassignedEqnsSize = listLength(unassignedEqns);
         rang = listLength(states)-unassignedEqnsSize;
+        true = intGt(rang,0);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));     
         Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
