@@ -632,7 +632,9 @@ public constant Message PACKAGE_ORDER_FILE_NOT_COMPLETE = MESSAGE(529, GRAMMAR()
   Util.gettext("The package.order file does not list all .mo files and directories (containing package.mo) present in its directory.\nMissing names are:\n\t%s"));
 public constant Message REINIT_IN_WHEN_INITIAL = MESSAGE(530, TRANSLATION(), ERROR(),
   Util.gettext("Using reinit in when with condition initial() is not allowed. Use assignment or equality equation instead."));  
-  
+public constant Message MISSING_INNER_CLASS = MESSAGE(531, TRANSLATION(), WARNING(),
+  Util.gettext("No corresponding 'inner' declaration found for class %s declared as '%s'.\n Continuing flattening by only considering the 'outer' class declaration."));  
+
 public constant Message MATCH_SHADOWING = MESSAGE(5001, TRANSLATION(), ERROR(),
   Util.gettext("Local variable '%s' shadows another variable."));
 public constant Message META_POLYMORPHIC = MESSAGE(5002, TRANSLATION(), ERROR(),

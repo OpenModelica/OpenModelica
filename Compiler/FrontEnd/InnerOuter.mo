@@ -91,11 +91,9 @@ uniontype InstInner
     String fullName "full inner component name";
     Absyn.Path typePath "the type of the inner";
     String scope "the scope of the inner";
-    // add these if needed!
-    // SCode.Mod scodeMod;
-    // DAE.Mod mod;
     Option<InstResult> instResult;
     list<DAE.ComponentRef> outers "which outers are referencing this inner";
+    Option<SCode.Element> innerElement "class or component";
   end INST_INNER;
 end InstInner;
 
@@ -1592,7 +1590,7 @@ public function emptyInstInner
   output InstInner outInstInner;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
-  outInstInner := INST_INNER(innerPrefix, name, Absyn.NOT_INNER_OUTER(), "", Absyn.IDENT(""), "", NONE(), {});
+  outInstInner := INST_INNER(innerPrefix, name, Absyn.NOT_INNER_OUTER(), "", Absyn.IDENT(""), "", NONE(), {}, NONE());
 end emptyInstInner;
 
 public function lookupInnerVar
@@ -1705,6 +1703,43 @@ algorithm
         fail();
   end match;
 end updateInstHierarchy;
+
+public function addClass
+  input SCode.Element inClass;
+  input Prefix.Prefix inPrefix;
+  input String inScope;
+  input InstHierarchy inIH;
+  output InstHierarchy outIH;
+algorithm
+  outIH := matchcontinue(inClass, inPrefix, inScope, inIH)
+    local
+      String name;
+      Absyn.InnerOuter io;
+    
+    // add inner or innerouter
+    case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io)), _, _, _)
+      equation
+        true = boolOr(Absyn.isInner(io), Absyn.isInnerOuter(io));
+        // add to instance hierarchy
+        outIH = updateInstHierarchy(inIH, inPrefix, io,
+          INST_INNER(
+            inPrefix, // prefix
+            name, // class name
+            io,
+            name,
+            Absyn.IDENT(name),
+            inScope,
+            NONE(),
+            {},
+            SOME(inClass)));
+      then
+        outIH;
+    
+    // do nothing if not inner
+    else then inIH;
+  
+  end matchcontinue;
+end addClass;
 
 public function addOuterPrefixToIH
 "@author: adrpo
@@ -1888,7 +1923,7 @@ algorithm
       list<DAE.ComponentRef> outers "which outers are referencing this inner";
       String str, strOuters;
 
-    case(INST_INNER(innerPrefix, name, io, fullName, typePath, scope, instResult, outers))
+    case(INST_INNER(innerPrefix, name, io, fullName, typePath, scope, instResult, outers, _))
       equation
         outers = List.uniqueOnTrue(outers, ComponentReference.crefEqualNoStringCompare);
         strOuters = Util.if_(listLength(outers) == 0, 

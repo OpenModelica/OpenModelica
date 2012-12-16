@@ -1567,6 +1567,118 @@ algorithm
       CallingScope callscope;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      Absyn.Path fullEnvPathPlusClass;
+      Option<Absyn.Path> envPathOpt;
+      String className, s1, s2;
+      UnitAbsyn.InstStore store;
+      Absyn.InnerOuter io;
+      Absyn.Info info;
+
+    // if the class is no inner and no outer! 
+    case (_,_,_,_,_,_,_,c as SCode.CLASS(prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
+      equation
+        true = Absyn.isNotInnerOuter(io);
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
+          instClassIn2(inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref);        
+      then 
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
+
+    // if the class is outer we need to instantiate the inner! 
+    case (_,_,_,_,_,_,_,c as SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
+      equation
+        true = Absyn.isOnlyOuter(io);
+
+        // lookup in IH
+        InnerOuter.INST_INNER(
+           innerElement = SOME(c)) =
+          InnerOuter.lookupInnerVar(inCache, inEnv, inIH, inPrefix, n, io);
+
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
+          instClassIn2(inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,c,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref);        
+      then 
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
+
+    // if the class is outer we need to instantiate the inner! 
+    case (_,_,_,_,_,_,_,c as SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io), info = info),_,_,_,_,_,_,_)
+      equation
+        true = Absyn.isOnlyOuter(io);
+
+        // failure(_ = InnerOuter.lookupInnerVar(inCache, inEnv, inIH, inPrefix, n, io));
+
+        s1 = n;
+        s2 = Dump.unparseInnerouterStr(io);
+        Error.addSourceMessage(Error.MISSING_INNER_CLASS,{s1, s2}, info);
+        
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
+          instClassIn2(inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,c,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref);        
+      then 
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
+  
+  end matchcontinue;
+end instClassIn;
+
+public function instClassIn2 
+"This rule instantiates the contents of a class definition, with a new
+ environment already setup.
+ The *implicitInstantiation* boolean indicates if the class should be
+ instantiated implicit, i.e. without generating DAE.
+ The last option is a even stronger indication of implicit instantiation,
+ used when looking up variables in packages. This must be used because
+ generation of functions in implicit instanitation (according to
+ *implicitInstantiation* boolean) can cause circular dependencies
+ (e.g. if a function uses a constant in its body)"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input UnitAbsyn.InstStore inStore;
+  input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
+  input ClassInf.State inState;
+  input SCode.Element inClass;
+  input SCode.Visibility inVisibility;
+  input InstDims inInstDims;
+  input Boolean implicitInstantiation;
+  input CallingScope inCallingScope;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  input Connect.Sets inSets;
+  input Option<DAE.ComponentRef> instSingleCref;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+  output UnitAbsyn.InstStore outStore;
+  output DAE.DAElist outDae;
+  output Connect.Sets outSets;
+  output ClassInf.State outState;
+  output list<DAE.Var> outTypesVarLst;
+  output Option<DAE.Type> outTypesTypeOption;
+  output Option<SCode.Attributes> optDerAttr;
+  output DAE.EqualityConstraint outEqualityConstraint;
+  output ConnectionGraph.ConnectionGraph outGraph;
+algorithm
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
+  matchcontinue (inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref)
+    local
+      Option<DAE.Type> bc;
+      list<Env.Frame> env;
+      DAE.Mod mods;
+      Prefix.Prefix pre;
+      ClassInf.State ci_state;
+      SCode.Element c;
+      InstDims inst_dims;
+      Boolean impl;
+      SCode.Visibility vis;
+      String n;
+      DAE.DAElist dae;
+      Connect.Sets csets;
+      list<DAE.Var> tys;
+      SCode.Restriction r,rCached;
+      SCode.ClassDef d;
+      Env.Cache cache;
+      Option<SCode.Attributes> oDA;
+      DAE.EqualityConstraint equalityConstraint;
+      CallingScope callscope;
+      ConnectionGraph.ConnectionGraph graph;
+      InstanceHierarchy ih;
       InstHashTable instHash;
       CachedInstItemInputs inputs;
       CachedInstItemOutputs outputs;
@@ -1668,12 +1780,12 @@ algorithm
       equation
         //print("instClassIn(");print(n);print(") failed\n");
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassIn failed on class:" +&
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassInInnerOuter failed on class:" +&
            n +& " in environment: " +& Env.printEnvPathStr(env));
       then
         fail();
   end matchcontinue;
-end instClassIn;
+end instClassIn2;
 
 protected function checkClassEqual
   input SCode.Element c1;
@@ -6203,6 +6315,7 @@ algorithm
         enumclass = instEnumeration(s, enumLst, cmt, info);
         env_1 = Env.extendFrameC(env, enumclass);
         (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
+        ih = InnerOuter.addClass(cl2, pre, Env.getEnvNameStr(env_1), ih);
         (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
         (env_2,ih);
@@ -6214,6 +6327,7 @@ algorithm
         env_1 = Env.extendFrameC(env, sel1);
         // call to redeclareType which calls updateComponents in env wich updates the class frame
         (env_1,ih,cl2) = addClassdefsToEnv3(env_1, ih, pre, redeclareMod, sel1);
+        ih = InnerOuter.addClass(cl2, pre, Env.getEnvNameStr(env_1), ih);
         (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
         (env_2,ih);
@@ -6231,19 +6345,21 @@ algorithm
         (env,ih);
     
     // adrpo: see if is an enumeration! then extend frame with in class.
-    case (env,ih,pre,( (sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)) :: xs),impl,_)
+    case (env,ih,pre,(sel1 as SCode.CLASS(name = s, classDef=SCode.ENUMERATION(enumLst,cmt),info=info)) :: xs,impl,_)
       equation
         enumclass = instEnumeration(s, enumLst, cmt, info);
         env_1 = Env.extendFrameC(env, enumclass);
+        ih = InnerOuter.addClass(enumclass, pre, Env.getEnvNameStr(env_1), ih);
         (env_2,ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
         (env_2,ih);
 
     // otherwise, extend frame with in class.
-    case (env,ih,pre,( (sel1 as SCode.CLASS(classDef = _)) :: xs),impl,_)
+    case (env,ih,pre,(sel1 as SCode.CLASS(classDef = _)) :: xs,impl,_)
       equation
         // Debug.traceln("Extend frame " +& Env.printEnvPathStr(env) +& " with " +& SCode.className(cl));
         env_1 = Env.extendFrameC(env, sel1);
+        ih = InnerOuter.addClass(sel1, pre, Env.getEnvNameStr(env_1), ih);
         (env_2, ih) = addClassdefsToEnv2(env_1, ih, pre, xs, impl, redeclareMod);
       then
         (env_2,ih);
@@ -6945,7 +7061,7 @@ algorithm
 
         // The types in the environment does not have correct Binding.
         // We must update those variables that is found in m into a new environment.
-        own_cref = Absyn.CREF_IDENT(name, {})  ;
+        own_cref = Absyn.CREF_IDENT(name, {});
         crefs1 = getCrefFromMod(m);
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
@@ -7986,7 +8102,8 @@ algorithm
                   typePath, // fully qual type path
                   innerScope, // the scope,                  
                   SOME(InnerOuter.INST_RESULT(cache,outerCompEnv,store,outerDAE,csets,ty,graph)), // instantiation result 
-                  {} // outers connected to this inner
+                  {}, // outers connected to this inner
+                  NONE()
                   ));
       then
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph);
@@ -8005,7 +8122,7 @@ algorithm
         s2 = Mod.prettyPrintMod(mod, 0);
         s = s1 +&  " " +& s2;
         // add a warning!
-        Error.addMessage(Error.OUTER_MODIFICATION, {s});
+        Error.addSourceMessage(Error.OUTER_MODIFICATION, {s}, info);
 
         // call myself without any modification!
         (cache,compenv,ih,store,dae,csets,ty,graph) = 
@@ -8033,7 +8150,8 @@ algorithm
            fullName, 
            typePath, 
            innerScope, 
-           instResult as SOME(InnerOuter.INST_RESULT(cache,compenv,store,outerDAE,_,ty,graph)),outers) =
+           instResult as SOME(InnerOuter.INST_RESULT(cache,compenv,store,outerDAE,_,ty,graph)),
+           outers,_) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
         // add outer prefix + component name and its corresponding inner prefix to the IH
@@ -8051,7 +8169,8 @@ algorithm
                   typePath, // fully qual type path
                   innerScope, // the scope,                  
                   instResult, 
-                  outers // outers connected to this inner
+                  outers, // outers connected to this inner
+                  NONE()
                   ));
 
         // outer dae has no meaning!
@@ -8078,7 +8197,8 @@ algorithm
            fullName, 
            typePath, 
            innerScope, 
-           instResult as NONE(),outers) =
+           instResult as NONE(),
+           outers,_) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
         
         // Debug.fprintln(Flags.INNER_OUTER, "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
@@ -8094,7 +8214,7 @@ algorithm
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
-        Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3});
+        Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.rollBack, "innerouter-instVar-implicit");
         
         // call it normaly
@@ -8129,7 +8249,7 @@ algorithm
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE()
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
-        Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3});
+        Error.addSourceMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3}, info);
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.rollBack, "innerouter-instVar-implicit");
         
         // call it normally
@@ -8173,7 +8293,9 @@ algorithm
                   fullName,
                   typePath,
                   innerScope,
-                  SOME(InnerOuter.INST_RESULT(cache,outerCompEnv,store,innerDAE,csetsInner,ty,graph)), {}));
+                  SOME(InnerOuter.INST_RESULT(cache,outerCompEnv,store,innerDAE,csetsInner,ty,graph)), 
+                  {},
+                  NONE()));
         
         // now instantiate it as an outer with no modifications
         pf = SCode.prefixesSetInnerOuter(pf, Absyn.OUTER());
@@ -13026,7 +13148,7 @@ algorithm
 
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
-        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref));
+        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env,cref));
         crefstr = ComponentReference.printComponentRefStr(cref);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});

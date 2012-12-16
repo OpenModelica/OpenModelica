@@ -4459,7 +4459,7 @@ algorithm
       Exp x, y;
       Integer   i; Real   r;
     
-    // real vs. integer  
+    // real vs. integer
     case (INTEGER(i), REAL(r))
       equation
         true = realEq(intReal(i), r);

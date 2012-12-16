@@ -740,7 +740,7 @@ protected function analyseElement
   input SCode.Restriction inClassRestriction;
   output list<Extends> outExtends;
 algorithm
-  outExtends := match(inElement, inEnv, inExtends, inClassRestriction)
+  outExtends := matchcontinue(inElement, inEnv, inExtends, inClassRestriction)
     local
       Absyn.Path bc, bc2;
       SCode.Mod mods;
@@ -755,6 +755,7 @@ algorithm
       SCode.Restriction res;
       String errorMessage;
       list<Extends> exts;
+      Absyn.InnerOuter io;
 
     // Fail on 'extends ExternalObject' so we can handle it as a special case in
     // analyseClassDef.
@@ -853,6 +854,14 @@ algorithm
       then
         inExtends;
 
+    // inner/innerouter classes may not be explicitly used but might be needed anyway 
+    case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io), info = info), _, _, _)
+      equation
+        true = boolOr(Absyn.isInner(io), Absyn.isInnerOuter(io));
+        analyseClass(Absyn.IDENT(name), inEnv, info);
+      then
+        inExtends;
+
     case (SCode.CLASS(name = name, info = info, classDef=SCode.CLASS_EXTENDS(baseClassName = _)), _, _, _)
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
@@ -860,7 +869,8 @@ algorithm
         inExtends;
 
     else inExtends;
-  end match;
+  
+  end matchcontinue;
 end analyseElement;
 
 protected function markAsUsedOnRestriction
