@@ -1324,18 +1324,14 @@ algorithm
     case(_,_,_) 
       equation
         true = modEqual(mod1, mod2);
-      then 
-        mod2;
-    
+      then mod2;
     // print error message
     case(_,_,_) equation
       s1 = printModStr(mod1);
       s2 = printModStr(mod2);
       s = s1 +& " and " +& s2;
       Error.addMessage(Error.DUPLICATE_MODIFICATIONS,{s,n});
-    then 
-      fail();
-  
+    then fail();
   end matchcontinue;
 end checkDuplicateModifications;
 
@@ -1419,7 +1415,6 @@ algorithm
         mod = merge(mod1, mod2, {}, Prefix.NOPRE());
       then
         mod;
-    
     case ((x as DAE.IDXMOD(mod=mod1))::rest)
       equation
         // make sure x is not present in the rest
@@ -1745,21 +1740,19 @@ algorithm
     case(_,_,_,_)
       equation
         true = merge2(inModInner);
-      then 
-        doMerge(inModOuter,inModInner,inEnv,inPrefix);
+      then doMerge(inModOuter,inModInner,inEnv,inPrefix);
 
     case(_,_,_,_)
       equation
         true = modSubsetOrEqualOrNonOverlap(inModOuter,inModInner);
         m = doMerge(inModOuter,inModInner,inEnv,inPrefix);
-      then 
-        m;
+      then m;
 
     // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
     case(DAE.REDECL(fp1, ep1, elsmods1),DAE.REDECL(fp2, ep2, elsmods2),_,_)
       equation
-        //true = SCode.finalEqual(fp1, fp2);
         true = SCode.eachEqual(ep1, ep2);
+        true = SCode.finalEqual(fp1, fp2);
         els1 = List.map(elsmods1, Util.tuple21); 
         els2 = List.map(elsmods2, Util.tuple21);
         true = List.fold(List.threadMap(els1, els2, SCode.elementEqual), boolAnd, true);
@@ -1776,9 +1769,7 @@ algorithm
         s3 = printModStr(inModOuter);
         s4 = printModStr(inModInner);
         Error.addMessage(Error.FINAL_OVERRIDE, {s1,s2,s3,s4});
-      then 
-        fail();
-  
+      then fail();
   end matchcontinue;
 end merge;
 
@@ -2119,49 +2110,34 @@ algorithm
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
       Boolean b;
-      list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
-      SCode.Program els1, els2;
 
     // adrpo: handle non-overlap: final parameter Real eAxis_ia[3](each final unit="1") = {1,2,3};
     //        mod1 = final each unit="1" mod2 = final = {1,2,3}
     //        otherwise we get an error as: Error: Variable eAxis_ia: trying to override final variable ...
     case(DAE.MOD(f1,each1,submods1,NONE()),DAE.MOD(f2,SCode.NOT_EACH(),{},eqmod2 as SOME(_)))
       equation
-        b = true; // b = SCode.finalEqual(f1, f2);
-      then 
-        b;
+        b = valueEq(f1,f2);
+      then b;
 
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,SCode.NOT_EACH(),{},eqmod2))
       equation
-        b = eqModSubsetOrEqual(eqmod1,eqmod2);
-      then 
-        b;
+        b = valueEq(eqmod1,eqmod2);
+      then b;
 
     // handle subset equal
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2))
       equation
-        // true = SCode.finalEqual(f1, f2);
+        true = valueEq(f1,f2);
         true = SCode.eachEqual(each1,each2);
         true = subModsEqual(submods1,submods2);
         true = eqModSubsetOrEqual(eqmod1,eqmod2);
       then 
         true;
-
-    // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
-    case(DAE.REDECL(f1, each1, elsmods1),DAE.REDECL(f2, each2, elsmods2))
-      equation
-        // true = SCode.finalEqual(f1, f2);
-        true = SCode.eachEqual(each1, each2);
-        els1 = List.map(elsmods1, Util.tuple21); 
-        els2 = List.map(elsmods2, Util.tuple21);
-        true = List.fold(List.threadMap(els1, els2, SCode.elementEqual), boolAnd, true);
-      then 
-        true;
-    
+    case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_))
+      then valueEq(mod1,mod2);
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
-    case (_, _) then false;
-    
-    case (_, _) 
+    case (_,_) then false;
+    case(_, _) 
       equation
         //true = Flags.isSet(Flags.FAILTRACE);
         //Debug.traceln("- Mod.modSubsetOrEqualOrNonOverlap failed on: " +& 
@@ -2169,7 +2145,6 @@ algorithm
         //   " mod2: " +& printModStr(mod2));
       then
         fail();
-  
   end matchcontinue;
 end modSubsetOrEqualOrNonOverlap;
 
@@ -2193,44 +2168,39 @@ algorithm
     // typed mods
     case(SOME(DAE.TYPED(modifierAsExp = exp1)),SOME(DAE.TYPED(modifierAsExp = exp2))) 
       equation
-        true = eqModEqual(eqMod1,eqMod2);
-      then 
-        true;
+        equal = Expression.expEqual(exp1,exp2);
+      then equal;
     
     // typed vs. untyped mods
     case(SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp1))),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        //aexp1 = Expression.unelabExp(exp1);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     case(SOME(DAE.TYPED(exp1,_,_,NONE(),_)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         aexp1 = Expression.unelabExp(exp1);
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     // untyped vs. typed 
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp2)))) 
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE(),_))) 
       equation
         aexp2 = Expression.unelabExp(exp2);
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     // untyped mods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     // anything else gives false
     case(_,_) then false;
@@ -2292,34 +2262,21 @@ algorithm
       SCode.Each each1,each2;
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
-      list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
-      SCode.Program els1, els2;
 
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2)) 
       equation
-        // true = SCode.finalEqual(f1, f2);
+        true = valueEq(f1,f2);
         true = SCode.eachEqual(each1,each2);
         true = subModsEqual(submods1,submods2);
         true = eqModEqual(eqmod1,eqmod2);
       then 
         true;
     
-    // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
-    case(DAE.REDECL(f1, each1, elsmods1),DAE.REDECL(f2, each2, elsmods2))
-      equation
-        // true = SCode.finalEqual(f1, f2);
-        true = SCode.eachEqual(each1, each2);
-        els1 = List.map(elsmods1, Util.tuple21); 
-        els2 = List.map(elsmods2, Util.tuple21);
-        true = List.fold(List.threadMap(els1, els2, SCode.elementEqual), boolAnd, true);
-      then 
-        true;
-    
+    case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_)) then valueEq(mod1,mod2);
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
     
     // adrpo: do not fail, return false!
-    case (_, _) 
-      then false;
+    case (_, _) then false;
   end matchcontinue;
 end modEqual;
 
@@ -2356,7 +2313,6 @@ algorithm
     
     // otherwise false
     case(_,_) then false;
-  
   end matchcontinue;
 end subModsEqual;
 
@@ -2392,24 +2348,6 @@ algorithm
   end matchcontinue;
 end subModEqual;
 
-protected function valEqual
-  input Values.Value v1;
-  input Values.Value v2;
-  input Boolean equal;
-  output Boolean bEq;
-algorithm
-  bEq := matchcontinue(v1, v2, equal)
-    case (_, _, true) then true;
-    case (_, _, false)
-      equation
-        bEq = Expression.expEqual(
-                  ValuesUtil.valueExp(v1), 
-                  ValuesUtil.valueExp(v2));
-      then
-        bEq;
-  end matchcontinue;
-end valEqual;
-
 protected function eqModEqual "Returns true if two EqMods are equal"
   input Option<DAE.EqMod> eqMod1;
   input Option<DAE.EqMod> eqMod2;
@@ -2419,59 +2357,48 @@ algorithm
     local 
       Absyn.Exp aexp1,aexp2;
       DAE.Exp exp1,exp2;
-      Values.Value v1, v2;
 
     // no equ mods
     case(NONE(),NONE()) then true;
 
     // typed equmods
-    case(SOME(DAE.TYPED(modifierAsExp = exp1, modifierAsValue = SOME(v1))),
-         SOME(DAE.TYPED(modifierAsExp = exp2, modifierAsValue = SOME(v2)))) 
+    case(SOME(DAE.TYPED(modifierAsExp=exp1)),SOME(DAE.TYPED(modifierAsExp=exp2))) 
       equation
         equal = Expression.expEqual(exp1,exp2);
-        // check the values as crefs might have been replaced!
-        true = valEqual(v1, v2, equal);
-      then 
-        true;
+      then equal;
 
     // typed vs. untyped equmods
     case(SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp1))),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     case(SOME(DAE.TYPED(exp1,_,_,NONE(),_)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         aexp1 = Expression.unelabExp(exp1);
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     // untyped vs. typed equmods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp2)))) 
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE(),_))) 
       equation
         aexp2 = Expression.unelabExp(exp2);
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     // untyped equmods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        true = Absyn.expEqual(aexp1,aexp2);
-      then 
-        true;
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
 
     // anything else will give false
     case(_,_) then false;
-  
   end matchcontinue;
 end eqModEqual;
 
