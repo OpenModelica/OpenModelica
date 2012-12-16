@@ -2164,15 +2164,15 @@ algorithm
         unassigned = List.select1r(assigned,Matching.isUnAssigned,vec1);
         set = getEqnsforDynamicStateSelection(unassigned,arrayLength(inM),inM,inMT,vec1,vec2,inMapEqnIncRow,inMapIncRowEqn);
         assigned = List.select1r(set,Matching.isAssigned,vec1);
-          print("Set: " +& intString(listLength(set)) +& "\n");
-          print(stringDelimitList(List.map(set,intString),", ") +& "\n");
+        //  print("Set: " +& intString(listLength(set)) +& "\n");
+        //  print(stringDelimitList(List.map(set,intString),", ") +& "\n");
         //  print("assigned: " +& intString(listLength(assigned)) +& "\n");
         //  print(stringDelimitList(List.map(assigned,intString),", ") +& "\n");
         flag = arrayCreate(inVarSize,true);
         ((statevars,dstatevars)) = List.fold3(set,getSetStates,flag,inM,vec2,({},{}));
-          print("Statevars: " +& intString(listLength(statevars)) +& "\n");
-          print(stringDelimitList(List.map(statevars,intString),", ") +& "\n");
-          print("Select " +& intString(listLength(unassigned)) +& " from " +& intString(listLength(statevars)) +& "\n");
+        //  print("Statevars: " +& intString(listLength(statevars)) +& "\n");
+        //  print(stringDelimitList(List.map(statevars,intString),", ") +& "\n");
+        //  print("Select " +& intString(listLength(unassigned)) +& " from " +& intString(listLength(statevars)) +& "\n");
         ass1 = List.consN(listLength(statevars), -1, {});
         ass2 = List.consN(listLength(unassigned), -1, {});
         varlst = List.map1r(statevars,BackendVariable.getVarAt,vars);
@@ -2183,7 +2183,7 @@ algorithm
         eqns = BackendEquation.listEquation(eqnlst);
         vars = BackendVariable.listVar1(varlst);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
-          BackendDump.dumpEqSystem(syst);
+        //  BackendDump.dumpEqSystem(syst);
         //  BackendDump.dumpMatching(listArray(ass1));
         //  BackendDump.dumpMatching(listArray(ass2));
         (me,meT,mapEqnIncRow1,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inIshared);
@@ -3533,7 +3533,7 @@ algorithm
           
         // get jacobian for all variables
         SOME(jac) = BackendDAEUtil.calculateJacobianEnhanced(vars, eqns, me, true, ishared);
-        //print("Jac: " +& BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
+        //  print("Jac: " +& BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
         // get for each state the determinant of the jacobian [state,dummystates]
         digraph = arrayCreate(eqnsSize,{});    
         select = arrayCreate(varSize,-1);
@@ -4259,9 +4259,8 @@ algorithm
         varlst = List.map1r(ilst,BackendVariable.getVarAt,vars);
         crlst = List.map(varlst,BackendVariable.varCref);
         explst = List.map(crlst,Expression.crefExp);
-        e1 = listGet(explst,1);
-        e1 = Debug.bcallret2(intGt(rang,1), Expression.makeScalarArray, explst, DAE.T_REAL_DEFAULT, e1);
         e2 = listGet(explst,1);
+        e1 = Debug.bcallret2(intGt(rang,1), Expression.makeScalarArray, explst, DAE.T_REAL_DEFAULT, e2);
         explst = List.map(explst,makeder);
         e2 = Debug.bcallret2(intGt(rang,1), Expression.makeScalarArray, explst, DAE.T_REAL_DEFAULT, DAE.CALL(Absyn.IDENT("der"),{e2},DAE.callAttrBuiltinReal));
         con = DAE.RELATION(contexp,DAE.EQUAL(DAE.T_INTEGER_DEFAULT),DAE.ICONST(index),-1,NONE());
@@ -4523,14 +4522,14 @@ algorithm
           blst = List.map1(crlst1,ComponentReference.crefEqualNoStringCompare,cr);
           true = Util.boolAndList(blst);
           size = listLength(states);
-          tp = Util.if_(intLt(listLength(states),3),DAE.T_REAL_DEFAULT,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource));
+          tp = Util.if_(intEq(setsize,1),DAE.T_REAL_DEFAULT,DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource));
           cr = ComponentReference.crefSetLastType(cr, DAE.T_COMPLEX_DEFAULT);
           cr = ComponentReference.crefStripLastSubs(cr);
           set = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("set",tp,{}));
           cont = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("cond",DAE.T_INTEGER_DEFAULT,{}));
           noset = ComponentReference.joinCrefs(cr,ComponentReference.makeCrefIdent("noset",tp,{}));
-          range = List.intRange(listLength(states)-1);
-          crlst1 = List.map1r(range, ComponentReference.subscriptCrefWithInt, set);
+          range = List.intRange(setsize);
+          crlst1 = Debug.bcallret3(intGt(setsize,1),List.map1r,range, ComponentReference.subscriptCrefWithInt, set,{set});
           vars = List.map3(crlst1,generateVar,BackendDAE.STATE(),DAE.T_REAL_DEFAULT,NONE());
           vars = List.map1(vars,BackendVariable.setVarFixed,false);
           vcont = generateVar(cont,BackendDAE.DISCRETE(),DAE.T_INTEGER_DEFAULT,SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),SOME(DAE.ICONST(size)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())));
