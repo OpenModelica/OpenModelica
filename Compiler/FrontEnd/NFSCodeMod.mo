@@ -45,18 +45,22 @@ public import SCode;
 public import NFSCodeEnv;
 public import NFInstTypes;
 
+protected import BaseHashTable;
 protected import Dump;
 protected import Error;
-protected import NFInstDump;
 protected import List;
-protected import SCodeDump;
+protected import NFInstDump;
 protected import NFSCodeLookup;
+protected import SCodeDump;
+protected import System;
 protected import Util;
 
 public type Binding = NFInstTypes.Binding;
 public type Env = NFSCodeEnv.Env;
 public type Prefix = NFInstTypes.Prefix;
 public type Modifier = NFInstTypes.Modifier;
+
+protected type Extends = NFSCodeEnv.Extends;
 
 public function translateMod
   input SCode.Mod inMod;
@@ -143,25 +147,18 @@ public function applyModifications
   output list<tuple<SCode.Element, Modifier>> outElements;
 protected
   list<tuple<String, Modifier>> mods;
-  list<tuple<String, Option<list<Absyn.Path>>, Modifier>> upd_mods;
+  list<tuple<String, list<Absyn.Path>, Modifier>> upd_mods;
   list<tuple<SCode.Element, Modifier>> el;
+  ModifierTable mod_table;
+  list<Extends> exts;
 algorithm
-  /***************************************************************************/
-  // TODO: This is pretty inefficient, particularly applyModifications2, and
-  // should be reimplemented using a hashtable or something.
-  /***************************************************************************/
   mods := splitMod(inMod, inPrefix);
   upd_mods := List.map2(mods, updateModElement, inEnv, inPrefix);
-  el := List.map(inElements, addNoMod);
-  outElements := List.fold(upd_mods, applyModifications2, el);
+  mod_table := emptyModifierTable(listLength(upd_mods));
+  mod_table := List.fold(upd_mods, updateModTable, mod_table); 
+  exts := NFSCodeEnv.getEnvExtendsFromTable(inEnv);
+  (outElements, _) := List.map1Fold(inElements, updateElementWithMod, mod_table, exts);
 end applyModifications;
-
-protected function addNoMod
-  input SCode.Element inElement;
-  output tuple<SCode.Element, Modifier> outElement;
-algorithm
-  outElement := (inElement, NFInstTypes.NOMOD());
-end addNoMod;
 
 protected function updateModElement
   "Given a tuple of an element name and a modifier, checks if the element 
@@ -171,12 +168,12 @@ protected function updateModElement
   input tuple<String, Modifier> inMod;
   input Env inEnv;
   input Prefix inPrefix;
-  output tuple<String, Option<list<Absyn.Path>>, Modifier> outMod;
+  output tuple<String, list<Absyn.Path>, Modifier> outMod;
 protected
   String name;
   Modifier mod;
   NFSCodeEnv.Item item;
-  Option<list<Absyn.Path>> bcl;
+  list<Absyn.Path> bcl;
 algorithm
   (name, mod) := inMod;
   (item, bcl) := lookupMod(name, inEnv, inPrefix, mod);
@@ -190,7 +187,7 @@ protected function lookupMod
   input Prefix inPrefix;
   input Modifier inMod;
   output NFSCodeEnv.Item outItem;
-  output Option<list<Absyn.Path>> outBaseClasses;
+  output list<Absyn.Path> outBaseClasses;
 algorithm
   (outItem, outBaseClasses) := matchcontinue(inName, inEnv, inPrefix, inMod)
     local
@@ -199,19 +196,19 @@ algorithm
       Absyn.Info info;
       String pre_str;
 
-    // Check if the modified element can be found in the local scope.
-    case (_, _, _, _)
-      equation
-        (item, _) = NFSCodeLookup.lookupInClass(inName, inEnv);
-      then
-        (item, NONE());
-
     // Check if the modified element can be found in one of the extended classes.
     case (_, _, _, _)
       equation
         (item :: _, bcl) = NFSCodeLookup.lookupInheritedNameAndBC(inName, inEnv);
       then
-        (item, SOME(bcl));
+        (item, bcl);
+
+    // Check if the modified element can be found in the local scope.
+    case (_, _, _, _)
+      equation
+        (item, _) = NFSCodeLookup.lookupInClass(inName, inEnv);
+      then
+        (item, {});
 
     // The modified element couldn't be found, show an error.
     else
@@ -276,62 +273,89 @@ algorithm
   end match;
 end getModifierInfo;
 
-protected function applyModifications2
-  input tuple<String, Option<list<Absyn.Path>>, Modifier> inMod;
-  input list<tuple<SCode.Element, Modifier>> inElements;
-  output list<tuple<SCode.Element, Modifier>> outElements;
+protected function updateModTable
+  input tuple<String, list<Absyn.Path>, Modifier> inMod;
+  input ModifierTable inTable;
+  output ModifierTable outTable;
+protected
+  String name;
+  list<Absyn.Path> bcl;
+  Modifier mod;
 algorithm
-  outElements := matchcontinue(inMod, inElements)
+  (name, bcl, mod) := inMod;
+  outTable := BaseHashTable.addNoUpdCheck((Absyn.IDENT(name), mod), inTable);
+  outTable := List.fold1(bcl, updateModTable2, mod, outTable);
+end updateModTable;
+
+protected function getExtendsMod
+  input Absyn.Path inBaseClass;
+  input ModifierTable inTable;
+  output Modifier outMod;
+algorithm
+  outMod := matchcontinue(inBaseClass, inTable)
     local
-      String name, id;
-      Absyn.Path path, bc_path;
-      Modifier outer_mod, sub_mod, inner_mod;
-      SCode.Element el;
-      list<tuple<SCode.Element, Modifier>> rest_el;
-      tuple<SCode.Element, Modifier> e;
-      list<Absyn.Path> bcl;
+      Modifier mod;
 
-    // No more elements, this should actually be an error!
-    case (_, {}) then {};
-
-    // The optional path is NONE, we are looking for an element.
-    case ((id, NONE(), outer_mod),
-        (el as SCode.COMPONENT(name = name), inner_mod) :: rest_el)
+    case (_, _)
       equation
-        true = stringEq(id, name);
-        // Element name matches, merge the modifiers.
-        inner_mod = mergeMod(outer_mod, inner_mod);
+        mod = BaseHashTable.get(inBaseClass, inTable);
       then
-        (el, inner_mod) :: rest_el;
+        mod;
 
-    // The optional path is SOME, we are looking for an extends.
-    case ((id, SOME(bcl as _ :: _), sub_mod),
-        (el as SCode.EXTENDS(baseClassPath = bc_path), inner_mod) :: rest_el)
+    else NFInstTypes.NOMOD();
+  end matchcontinue;
+end getExtendsMod;
+
+protected function updateModTable2
+  input Absyn.Path inName;
+  input Modifier inMod;
+  input ModifierTable inTable;
+  output ModifierTable outTable;
+protected
+  Modifier inner_mod, outer_mod;
+algorithm
+  inner_mod := getExtendsMod(inName, inTable);
+  outer_mod := NFInstTypes.MODIFIER("", SCode.NOT_FINAL(), SCode.NOT_EACH(),
+    NFInstTypes.UNBOUND(), {inMod}, Absyn.dummyInfo);
+  inner_mod := mergeMod(outer_mod, inner_mod);
+  outTable := BaseHashTable.addNoUpdCheck((inName, inner_mod), inTable);
+end updateModTable2;
+
+protected function updateElementWithMod
+  input SCode.Element inElement;
+  input ModifierTable inTable;
+  input list<Extends> inExtends;
+  output tuple<SCode.Element, Modifier> outElement;
+  output list<Extends> outExtends;
+algorithm
+  (outElement, outExtends) := matchcontinue(inElement, inTable, inExtends)
+    local
+      String name;
+      Modifier mod;
+      Absyn.Path bc;
+      list<Extends> rest_exts;
+
+    case (SCode.COMPONENT(name = name), _, _)
       equation
-        (bcl, SOME(_)) = List.deleteMemberOnTrue(bc_path, bcl, Absyn.pathEqual);
-        // Element name matches. Create a new modifier with the given modifier
-        // as a named sub modifier, since the modifier is meant for an element
-        // in the extended class, and merge the modifiers.
-        outer_mod = NFInstTypes.MODIFIER("", SCode.NOT_FINAL(), SCode.NOT_EACH(),
-          NFInstTypes.UNBOUND(), {sub_mod}, Absyn.dummyInfo);
-        inner_mod = mergeMod(outer_mod, inner_mod);
-        rest_el = applyModifications2((id, SOME(bcl), sub_mod), rest_el);
+        mod = BaseHashTable.get(Absyn.IDENT(name), inTable);
       then
-        (el, inner_mod) :: rest_el;
+        ((inElement, mod), inExtends);
 
-    // All extends that the modifier should be applied to have been found.
-    case ((_, SOME({}), _), _) then inElements;
-
-    // No match, search the rest of the elements.
-    case (_, e :: rest_el)
+    case (SCode.EXTENDS(baseClassPath = _), _,
+        NFSCodeEnv.EXTENDS(baseClass = bc) :: rest_exts)
       equation
-        rest_el = applyModifications2(inMod, rest_el);
+        mod = BaseHashTable.get(bc, inTable);
       then
-        e :: rest_el;
+        ((inElement, mod), rest_exts);
+
+    case (SCode.EXTENDS(baseClassPath = _), _, _ :: rest_exts)
+      then ((inElement, NFInstTypes.NOMOD()), rest_exts);
+
+    else ((inElement, NFInstTypes.NOMOD()), inExtends);
 
   end matchcontinue;
-end applyModifications2;
-        
+end updateElementWithMod;
+
 public function mergeMod
   "Merges two modifiers, where the outer modifier has higher priority than the
    inner one."
@@ -509,7 +533,7 @@ end mergeSubMod_tail2;
 protected function splitMod
   "Splits a modifier that contains sub modifiers info a list of tuples of
    element names with their corresponding modifiers. Ex:
-     MOD(x(w = 2), y = 3, x(z = 4) = 5 => 
+     MOD(x(w = 2), y = 3, x(z = 4) = 5) => 
       {('x', MOD(w = 2, z = 4) = 5), ('y', MOD() = 3)}" 
   input Modifier inMod;
   input Prefix inPrefix;
@@ -654,14 +678,13 @@ protected function mergeSubModInSameScope
   input list<Modifier> inSubMods;
   output list<Modifier> outSubMods;
 algorithm
-  outSubMods := match(inSubMod, inPrefix, inElementName, inSubMods)
+  outSubMods := matchcontinue(inSubMod, inPrefix, inElementName, inSubMods)
     local
       SCode.Ident id1, id2;
       Modifier mod;
       list<Modifier> rest_mods;
 
-    case (_, _, _, {}) then inSubMods;
-
+    // If the given modifier has the same name as the first in the list, merge them.
     case (NFInstTypes.MODIFIER(name = id1), _, _, 
         (mod as NFInstTypes.MODIFIER(name = id2)) :: rest_mods)
       equation
@@ -671,13 +694,17 @@ algorithm
       then
         mod :: rest_mods;
 
+    // Search the rest of the mods.
     case (_, _, _, mod :: rest_mods)
       equation
         rest_mods = mergeSubModInSameScope(inSubMod, inPrefix, inElementName, rest_mods);
       then
         mod :: rest_mods;
 
-  end match;
+    // No matching modifier was found, add it to the list of modifiers.
+    case (_, _, _, {}) then inSubMod :: inSubMods;
+
+  end matchcontinue;
 end mergeSubModInSameScope;
 
 public function getModifierBinding
@@ -1042,5 +1069,63 @@ algorithm
         
   end matchcontinue;
 end removeRedeclaresFromSubMod;
+
+
+// Modifier hashtable implementation.
+protected type Key = Absyn.Path;
+protected type Value = Modifier;
+
+protected type ModifierTableFuncs = tuple<FuncHash, FuncKeyEqual, FuncKeyStr, FuncValueStr>;
+protected type ModifierTable = tuple<
+  array<list<tuple<Key, Integer>>>,
+  tuple<Integer, Integer, array<Option<tuple<Key, Value>>>>,
+  Integer,
+  Integer,
+  ModifierTableFuncs
+>;
+
+partial function FuncHash
+  input Key inKey;
+  input Integer inMod;
+  output Integer outHash;
+end FuncHash;
+
+partial function FuncKeyEqual
+  input Key inKey1;
+  input Key inKey2;
+  output Boolean outEqual;
+end FuncKeyEqual;
+
+partial function FuncKeyStr
+  input Key inKey;
+  output String outString;
+end FuncKeyStr;
+
+partial function FuncValueStr
+  input Value inValue;
+  output String outString;
+end FuncValueStr;
+
+protected function hashFunc
+  input Key inKey;
+  input Integer inMod;
+  output Integer outHash;
+protected
+  String str;
+algorithm
+  str := Absyn.pathString(inKey);
+  outHash := System.stringHashDjb2Mod(str, inMod);
+end hashFunc;
+
+protected function emptyModifierTable
+  input Integer inModCount;
+  output ModifierTable outTable;
+protected
+  Integer table_size;
+algorithm
+  table_size := Util.nextPrime(inModCount);
+  outTable := BaseHashTable.emptyHashTableWork(table_size,
+    (hashFunc, Absyn.pathEqual, Absyn.pathString, printMod));
+end emptyModifierTable;
 
 end NFSCodeMod;

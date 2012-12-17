@@ -603,12 +603,13 @@ algorithm
       list<NFSCodeEnv.Extends> exts;
       Globals globals;
       Env env;
+      Modifier orig_mod;
 
     case (elem :: rest_el, _, exts, _, _, _, accum_el, cse, globals)
       equation
-        (elem, env, _) = resolveRedeclaredElement(elem, inEnv);
-        (accum_el, exts, cse, globals) = instElement_dispatch(elem, inPrefixes, exts,
-          env, inPrefix, inInstPolicy, accum_el, cse, globals);
+        (elem, orig_mod, env, _) = resolveRedeclaredElement(elem, inEnv, inPrefix);
+        (accum_el, exts, cse, globals) = instElement_dispatch(elem, orig_mod,
+          inPrefixes, exts, env, inPrefix, inInstPolicy, accum_el, cse, globals);
         (accum_el, cse, globals) = instElementList2(rest_el, inPrefixes, exts,
           inEnv, inPrefix, inInstPolicy, accum_el, cse, globals);
       then
@@ -638,43 +639,75 @@ public function resolveRedeclaredElement
    be instantiated is returned, otherwise the old environment."
   input tuple<SCode.Element, Modifier> inElement;
   input Env inEnv;
+  input Prefix inPrefix;
   output tuple<SCode.Element, Modifier> outElement;
+  output Modifier outOriginalMod;
   output Env outEnv;
   output list<tuple<NFSCodeEnv.Item, Env>> outPreviousItem;
 algorithm
-  (outElement, outEnv, outPreviousItem) := match(inElement, inEnv)
+  (outElement, outOriginalMod, outEnv, outPreviousItem) := match(inElement, inEnv, inPrefix)
     local
-      Modifier mod;
+      Modifier mod, omod;
       String name;
       Item item;
-      SCode.Element el;
+      SCode.Element orig_el, new_el;
       Env env;
       Boolean b;
       list<tuple<NFSCodeEnv.Item, Env>> previousItem;
       
     // Only components which are actually replaceable needs to be looked up,
     // since non-replaceable components can't have been replaced.
-    case ((SCode.COMPONENT(name = name, prefixes =
-        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _)
+    case ((orig_el as SCode.COMPONENT(name = name, prefixes =
+        SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), mod), _, _)
       equation
         (item, _) = NFSCodeLookup.lookupInClass(name, inEnv);
-        (NFSCodeEnv.VAR(var = el), env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, inEnv);
+        (NFSCodeEnv.VAR(var = new_el), env, previousItem) = NFSCodeEnv.resolveRedeclaredItem(item, inEnv);
+        omod = getOriginalMod(orig_el, inEnv, inPrefix);
       then
-        ((el, mod), env, previousItem);
+        ((new_el, mod), omod, env, previousItem);
 
     // Other elements doesn't need to be looked up. Extends may not be
     // replaceable, and classes are looked up in the environment anyway. The
     // exception is packages with constants, but those are handled in
     // instPackageConstants.
-    else (inElement, inEnv, {});
+    else (inElement, NFInstTypes.NOMOD(), inEnv, {});
 
   end match;
 end resolveRedeclaredElement;
+
+protected function getOriginalMod
+  input SCode.Element inOriginalElement;
+  input Env inEnv;
+  input Prefix inPrefix;
+  output Modifier outModifier;
+algorithm
+  outModifier := match(inOriginalElement, inEnv, inPrefix)
+    local
+      SCode.Ident name;
+      Absyn.ArrayDim ad;
+      Integer dim_count;
+      SCode.Mod smod;
+      Modifier mod;
+
+    case (SCode.COMPONENT(modifications = SCode.NOMOD()), _, _)
+      then NFInstTypes.NOMOD(); 
+
+    case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
+        modifications = smod), _, _)
+      equation
+        dim_count = listLength(ad);
+        mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+      then
+        mod;
+
+  end match;
+end getOriginalMod;
 
 protected function instElement_dispatch
   "Helper function to instElementList2. Dispatches the given element to the
    correct function for instantiation."
   input tuple<SCode.Element, Modifier> inElement;
+  input Modifier inOriginalMod;
   input Prefixes inPrefixes;
   input list<NFSCodeEnv.Extends> inExtends;
   input Env inEnv;
@@ -689,8 +722,8 @@ protected function instElement_dispatch
   output Globals outGlobals;
 algorithm
   (outElements, outExtends, outContainsSpecialExtends, outGlobals) :=
-  match(inElement, inPrefixes, inExtends, inEnv, inPrefix, inInstPolicy,
-      inAccumEl, inContainsSpecialExtends, inGlobals)
+  match(inElement, inOriginalMod, inPrefixes, inExtends, inEnv, inPrefix,
+      inInstPolicy, inAccumEl, inContainsSpecialExtends, inGlobals)
     local
       SCode.Element elem;
       Modifier mod;
@@ -709,23 +742,25 @@ algorithm
       Item item;
 
     // A component when we're in 'instantiate everything'-mode.
-    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, INST_ALL(), _, cse, globals)
+    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, INST_ALL(), _, cse, globals)
       equation
-        (res, globals) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, globals);
+        (res, globals) = instElement(elem, mod, inOriginalMod, inPrefixes,
+          inEnv, inPrefix, inInstPolicy, globals);
       then
         (res :: inAccumEl, inExtends, cse, globals);
 
     // A constant when we're on 'instantiate only constants'-mode.
     case ((elem as SCode.COMPONENT(attributes = SCode.ATTR(variability =
-        SCode.CONST())), mod), _, _, _, _, INST_ONLY_CONST(), _, cse, globals)
+        SCode.CONST())), mod), _, _, _, _, _, INST_ONLY_CONST(), _, cse, globals)
       equation
-        (res, globals) = instElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstPolicy, globals);
+        (res, globals) = instElement(elem, mod, inOriginalMod, inPrefixes,
+          inEnv, inPrefix, inInstPolicy, globals);
       then
         (res :: inAccumEl, inExtends, cse, globals);
 
     // An extends clause. Instantiate it together with the next Extends element
     // from the environment.
-    case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
+    case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _, _,
         NFSCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, ip, _, _, globals)
       equation
         (res, cse, globals) = instExtends(elem, mod, inPrefixes, redecls,
@@ -736,7 +771,7 @@ algorithm
     
     // A package, instantiate only the constants.
     case ((elem as SCode.CLASS(name = name, restriction = SCode.R_PACKAGE()),
-        mod), _, _, _, _, ip, _, cse, globals)
+        mod), _, _, _, _, _, ip, _, cse, globals)
       equation
         (ores, globals) = instPackageConstants(elem, mod, inEnv, inPrefix, globals);
         accum_el = List.consOption(ores, inAccumEl);
@@ -746,7 +781,7 @@ algorithm
     // We should have one Extends element for each extends clause in the class.
     // If we get an extends clause but don't have any Extends elements left,
     // something has gone very wrong.
-    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _, _, _)
+    case ((SCode.EXTENDS(baseClassPath = _), _), _, _, {}, _, _, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"NFSCodeInst.instElement_dispatch ran out of extends!."});
@@ -762,6 +797,7 @@ end instElement_dispatch;
 protected function instElement
   input SCode.Element inElement;
   input Modifier inClassMod;
+  input Modifier inOriginalMod;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
@@ -770,8 +806,8 @@ protected function instElement
   output Element outElement;
   output Globals outGlobals;
 algorithm
-  (outElement,outGlobals) := 
-  match(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstPolicy, inGlobals)
+  (outElement, outGlobals) := match(inElement, inClassMod, inOriginalMod,
+      inPrefixes, inEnv, inPrefix, inInstPolicy, inGlobals)
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
@@ -800,7 +836,7 @@ algorithm
     // an outer component
     case (SCode.COMPONENT(name = name, 
         typeSpec = Absyn.TPATH(path = tpath),
-        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, globals)
+        prefixes = SCode.PREFIXES(innerOuter = Absyn.OUTER())), _, _, _, _, _, _, globals)
       equation
         prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
         path = NFInstUtil.prefixToPath(prefix);
@@ -810,7 +846,7 @@ algorithm
 
     case (SCode.COMPONENT(name = name, typeSpec = Absyn.TPATH(path =
         Absyn.QUALIFIED(name = "$EnumType", path = tpath)), info = info),
-        _, _, _, _, ip, globals)
+        _, _, _, _, _, ip, globals)
       equation
         Absyn.QUALIFIED(name = enum_idx_str, path = tpath) = tpath;
         enum_idx = stringInt(enum_idx_str);
@@ -829,7 +865,7 @@ algorithm
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(name = name, attributes = SCode.ATTR(arrayDims = ad),
         typeSpec = Absyn.TPATH(path = tpath), modifications = smod,
-        condition = NONE(), info = info), _, _, _, _, ip, globals)
+        condition = NONE(), info = info), _, _, _, _, _, ip, globals)
       equation
         // Look up the class of the component.
         (item, _, env) = NFSCodeLookup.lookupClassName(tpath, inEnv, info);
@@ -846,6 +882,7 @@ algorithm
         // Merge the class modifications with this element's modifications.
         dim_count = listLength(ad);
         mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+        mod = NFSCodeMod.mergeMod(inOriginalMod, mod);
         cmod = NFSCodeMod.propagateMod(inClassMod, dim_count);
         mod = NFSCodeMod.mergeMod(cmod, mod);
 
@@ -879,7 +916,7 @@ algorithm
 
     // A conditional component, save it for later.
     case (SCode.COMPONENT(name = name, condition = SOME(cond_exp), info = info),
-        _, _, _, _, _, globals)
+        _, _, _, _, _, _, globals)
       equation
         path = NFInstUtil.prefixPath(Absyn.IDENT(name), inPrefix);
         (inst_exp, globals) = instExp(cond_exp, inEnv, inPrefix, info, globals);
@@ -2297,7 +2334,7 @@ algorithm
         (NFSCodeEnv.VAR(var = selem), env, _) = NFSCodeEnv.resolveRedeclaredItem(item, env);
 
         prefix = NFInstUtil.restPrefix(NFInstUtil.pathPrefix(inName));
-        (elem, (consts, funcs)) = instElement(selem, NFInstTypes.NOMOD(),
+        (elem, (consts, funcs)) = instElement(selem, NFInstTypes.NOMOD(), NFInstTypes.NOMOD(),
           NFInstTypes.NO_PREFIXES(), env, prefix, INST_ALL(), inGlobals);
 
         consts = NFInstSymbolTable.addElement(elem, consts);
@@ -2413,7 +2450,7 @@ algorithm
     case (_, NFSCodeEnv.VAR(var = selem as SCode.COMPONENT(typeSpec =
         Absyn.TPATH(path = Absyn.QUALIFIED(name = "$EnumType")))), env, _, _)
       equation
-        (elem, (consts, funcs)) = instElement(selem, NFInstTypes.NOMOD(),
+        (elem, (consts, funcs)) = instElement(selem, NFInstTypes.NOMOD(), NFInstTypes.NOMOD(),
           NFInstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
         consts = NFInstSymbolTable.addElement(elem, consts);
       then
@@ -2422,7 +2459,7 @@ algorithm
     // A normal package constant.
     case (_, NFSCodeEnv.VAR(var = selem), env, _, _)
       equation
-        (elem, (consts, funcs)) = instElement(selem, NFInstTypes.NOMOD(),
+        (elem, (consts, funcs)) = instElement(selem, NFInstTypes.NOMOD(), NFInstTypes.NOMOD(),
           NFInstTypes.NO_PREFIXES(), env, inPrefix, INST_ALL(), inGlobals);
 
         NFInstTypes.ELEMENT(component = comp) = elem;
@@ -3944,7 +3981,7 @@ algorithm
         // instElement will just add it as a conditional component again.
         sel = SCode.removeComponentCondition(inElement);
         // Instantiate the element and update the symbol table.
-        (el, globals) = instElement(sel, inMod, inPrefixes, inEnv, inPrefix, INST_ALL(), globals);
+        (el, globals) = instElement(sel, inMod, NFInstTypes.NOMOD(), inPrefixes, inEnv, inPrefix, INST_ALL(), globals);
         (st, added) = NFInstSymbolTable.addInstCondElement(el, st);
         // Recursively instantiate any conditional components in this element.
         (oel, st, globals) = instConditionalElementOnTrue(added, el, st, globals);

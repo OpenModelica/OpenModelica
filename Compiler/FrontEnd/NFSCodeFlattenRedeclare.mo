@@ -704,7 +704,7 @@ algorithm
   end match;
 end propagateItemPrefixes;
 
-protected function propagateAttributesVar
+public function propagateAttributesVar
   input SCode.Element inOriginalVar;
   input SCode.Element inNewVar;
   output SCode.Element outNewVar;

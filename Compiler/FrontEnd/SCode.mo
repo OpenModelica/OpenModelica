@@ -4642,5 +4642,29 @@ algorithm
   CLASS(restriction = outRestriction) := inElement;
 end getClassRestriction;
 
+public function isRedeclareSubMod
+  input SubMod inSubMod;
+  output Boolean outIsRedeclare;
+algorithm
+  outIsRedeclare := match(inSubMod)
+    case NAMEMOD(A = REDECL(element = _)) then true;
+    else false;
+  end match;
+end isRedeclareSubMod;
+
+public function componentMod
+  input Element inElement;
+  output Mod outMod;
+algorithm
+  outMod := match(inElement)
+    local
+      Mod mod;
+
+    case COMPONENT(modifications = mod) then mod;
+    else NOMOD();
+
+  end match;
+end componentMod;
+
 end SCode;
 

@@ -1952,6 +1952,8 @@ algorithm
       SCode.Final sfp;
       SCode.Each sep;
       SCode.SubMod sub;
+      Option<SCode.SubMod> opt_mod;
+      list<SCode.SubMod> accum;
 
     case (Absyn.MODIFICATION(finalPrefix = fp, eachPrefix = ep,
         componentRef = cref, modification = mod, info = info) :: rest_args, _)
@@ -1962,21 +1964,113 @@ algorithm
         translateArgs_tail(rest_args, sub :: inAccumSubs);
 
     case (Absyn.REDECLARATION(finalPrefix = fp, redeclareKeywords = rk, eachPrefix = ep,
-        elementSpec = spec, constrainClass = cc, info = info) :: rest_args, _)
+        elementSpec = spec, constrainClass = cc, info = info) :: rest_args, accum)
       equation
         n = Absyn.elementSpecName(spec);
         {elem} = translateElementspec(cc, fp, Absyn.NOT_INNER_OUTER(),
           SOME(rk), SCode.PUBLIC(), spec, info);
+        //(elem, opt_mod) = splitModInElement(elem);
+        //accum = List.consOption(opt_mod, accum);
         sfp = SCode.boolFinal(fp);
         sep = translateEach(ep);
         sub = SCode.NAMEMOD(n, SCode.REDECL(sfp, sep, elem));
       then
-        translateArgs_tail(rest_args, sub :: inAccumSubs);
+        translateArgs_tail(rest_args, sub :: accum);
         
     case ({}, _) then listReverse(inAccumSubs);
 
   end match;
 end translateArgs_tail;
+
+protected function splitModInElement
+  input SCode.Element inElement;
+  output SCode.Element outElement;
+  output Option<SCode.SubMod> outMod;
+algorithm
+  (outElement, outMod) := matchcontinue(inElement)
+    local
+      SCode.Ident name;
+      SCode.Prefixes prefs;
+      SCode.Attributes attr;
+      SCode.Encapsulated ep;
+      SCode.Partial pp;
+      SCode.Restriction res;
+      SCode.ClassDef cdef;
+      Absyn.Info info;
+      Absyn.TypeSpec ty;
+      Option<SCode.Comment> cmt;
+      Option<Absyn.Exp> cond;
+      SCode.Mod mod, redecl;
+      Option<SCode.SubMod> opt_mod;
+
+    case SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info)
+      equation
+        (redecl, opt_mod) = splitRedeclareMod(mod, name);
+      then
+        (SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), opt_mod);
+
+    case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr, cmt), info)
+      equation
+        (redecl, opt_mod) = splitRedeclareMod(mod, name);
+      then
+        (SCode.CLASS(name, prefs, ep, pp, res,
+          SCode.DERIVED(ty, mod, attr, cmt), info), opt_mod);
+
+    else (inElement, NONE());
+  end matchcontinue;
+end splitModInElement;
+
+protected function splitRedeclareMod
+  input SCode.Mod inMod;
+  input SCode.Ident inName;
+  output SCode.Mod outRedeclares;
+  output Option<SCode.SubMod> outMod;
+algorithm
+  (outRedeclares, outMod) := match(inMod, inName)
+    local
+      SCode.Final fp;
+      SCode.Each ep;
+      list<SCode.SubMod> submods, redecl;
+      Option<tuple<Absyn.Exp, Boolean>> binding;
+      Option<SCode.SubMod> opt_mod;
+      Absyn.Info info;
+      
+    case (SCode.MOD(fp, ep, submods, binding, info), _)
+      equation
+        (redecl, submods) = List.splitOnTrue(submods, SCode.isRedeclareSubMod);
+        opt_mod = makeSubMod(inName, submods, binding, fp, ep, info);
+      then
+        (SCode.MOD(fp, ep, redecl, binding, info), opt_mod);
+
+    else (inMod, NONE());
+    
+  end match;
+end splitRedeclareMod;
+
+protected function makeSubMod
+  input SCode.Ident inName;
+  input list<SCode.SubMod> inSubMods;
+  input Option<tuple<Absyn.Exp, Boolean>> inBinding;
+  input SCode.Final inFinal;
+  input SCode.Each inEach;
+  input Absyn.Info inInfo;
+  output Option<SCode.SubMod> outMod;
+algorithm
+  outMod := matchcontinue(inName, inSubMods, inBinding, inFinal, inEach, inInfo)
+    local
+      SCode.SubMod mod;
+
+    case (_, _, _, _, _, _)
+      equation
+        true = List.isNotEmpty(inSubMods) or Util.isSome(inBinding);
+        mod = SCode.NAMEMOD(inName, SCode.MOD(inFinal, inEach, inSubMods,
+              inBinding, inInfo));
+      then
+        SOME(mod);
+
+    else NONE();
+  end matchcontinue;
+end makeSubMod;
 
 protected function translateSub
 "function: translateSub

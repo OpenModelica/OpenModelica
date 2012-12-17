@@ -431,11 +431,12 @@ algorithm
       IScope is;
       String str;
       list<tuple<Item, Env>> previousItem;
+      Modifier orig_mod;
 
     case (elem :: rest_el, exts, _, _, islist, _)
       equation
-        (elem, env, previousItem) = NFSCodeInst.resolveRedeclaredElement(elem, inEnv);
-        (islist, exts, ii) = analyseElement_dispatch(elem, exts, env, inPrefix, islist, inInstStack, previousItem);
+        (elem, orig_mod, env, previousItem) = NFSCodeInst.resolveRedeclaredElement(elem, inEnv, inPrefix);
+        (islist, exts, ii) = analyseElement_dispatch(elem, orig_mod, exts, env, inPrefix, islist, inInstStack, previousItem);
         (islist, ii) = analyseElementList(rest_el, exts, inEnv, inPrefix, islist, ii);
       then
         (islist, ii);
@@ -462,6 +463,7 @@ protected function analyseElement_dispatch
 "Helper function to analyseElementList. 
  Dispatches the given element to the correct function for transformation."
   input tuple<Element, Modifier> inElement;
+  input Modifier inOriginalMod;
   input list<NFSCodeEnv.Extends> inExtends;
   input Env inEnv;
   input Prefix inPrefix;
@@ -473,7 +475,7 @@ protected function analyseElement_dispatch
   output InstStack outInstStack;
 algorithm
   (outIScopes, outExtends, outInstStack) :=
-  matchcontinue(inElement, inExtends, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
+  matchcontinue(inElement, inOriginalMod, inExtends, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
     local
       Element elem;
       Modifier mod;
@@ -495,21 +497,21 @@ algorithm
       Integer i;
 
     // A component 
-    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, _)
+    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, _, _)
       equation
-        (islist, ii) = analyseElement(elem, mod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem); 
+        (islist, ii) = analyseElement(elem, mod, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem); 
       then
         (islist, inExtends, ii);
 
     // A class 
-    case ((elem as SCode.CLASS(name = _), mod), _, _, _, _, _, _)
+    case ((elem as SCode.CLASS(name = _), mod), _, _, _, _, _, _, _)
       equation
-        (islist, ii) = analyseElement(elem, mod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem); 
+        (islist, ii) = analyseElement(elem, mod, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem); 
       then
         (islist, inExtends, ii);
 
     // An extends clause. Transform it it together with the next Extends element from the environment.
-    case ((elem as SCode.EXTENDS(baseClassPath = _), mod),
+    case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
           NFSCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, _, _)
       equation
         (islist, ii) = analyseExtends(elem, mod, redecls, inEnv, inPrefix, inIScopesAcc, inInstStack);
@@ -519,7 +521,7 @@ algorithm
     // We should have one Extends element for each extends clause in the class.
     // If we get an extends clause but don't have any Extends elements left,
     // something has gone very wrong.
-    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _)
+    case ((SCode.EXTENDS(baseClassPath = _), _), _, _, {}, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"NFSCodeAnalyseRedeclare.analyseElement_dispatch ran out of extends!."});
       then
@@ -542,6 +544,7 @@ end analyseElement_dispatch;
 protected function analyseElement
   input Element inElement;
   input Modifier inClassMod;
+  input Modifier inOriginalMod;
   input Env inEnv;
   input Prefix inPrefix;
   input IScopes inIScopesAcc;
@@ -551,7 +554,7 @@ protected function analyseElement
   output InstStack outInstStack;
 algorithm
   (outIScopes, outInstStack) := 
-  matchcontinue(inElement, inClassMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
+  matchcontinue(inElement, inClassMod, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
     local
       Absyn.Info info;
       Absyn.Path path, tpath, newpath;
@@ -593,7 +596,7 @@ algorithm
             name = name, 
             typeSpec = Absyn.TPATH(tpath, ad),
             modifications = smod,
-            info = info), _, _, _, _, _, _)
+            info = info), _, _, _, _, _, _, _)
       equation 
         // Look up the class of the component.
         // print("Looking up: " +& Absyn.pathString(tpath) +& " for component: " +& name +& "\n");
@@ -613,6 +616,7 @@ algorithm
 
         // Merge the class modifications with this element's modifications.
         mod = NFSCodeMod.translateMod(smod, name, 0, inPrefix, inEnv);
+        mod = NFSCodeMod.mergeMod(inOriginalMod, mod);
         mod = NFSCodeMod.mergeMod(inClassMod, mod);
 
         // Apply redeclarations to the class definition and instantiate it.
@@ -639,7 +643,7 @@ algorithm
             name = name, 
             info = info,
             classDef = SCode.CLASS_EXTENDS(baseClassName = _) 
-            ), _, _, _, _, _, _)
+            ), _, _, _, _, _, _, _)
       equation
       then
         (inIScopesAcc,inInstStack);
@@ -648,7 +652,7 @@ algorithm
     case (SCode.CLASS(
             name = name, 
             info = info, 
-            prefixes = SCode.PREFIXES(replaceablePrefix = _ /*SCode.REPLACEABLE(_)*/)), _, _, _, _, _, _)
+            prefixes = SCode.PREFIXES(replaceablePrefix = _ /*SCode.REPLACEABLE(_)*/)), _, _, _, _, _, _, _)
       equation
         fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
         // print("Looking up CLASS: " +& Absyn.pathString(fullName) +& "\n");
@@ -674,7 +678,7 @@ algorithm
         (islist, ii);
 
    // for debugging
-   case (_, _, _, _, _, _, _)
+   case (_, _, _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("NFSCodeAnalyseRedeclare.instElement ignored element:" +& SCodeDump.unparseElementStr(inElement) +& "\n");

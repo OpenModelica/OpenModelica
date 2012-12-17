@@ -490,11 +490,12 @@ algorithm
       list<NFSCodeEnv.Extends> exts;
       InstInfo ii;
       Env env;
+      Modifier orig_mod;
 
     case (elem :: rest_el, _, exts, _, _, accum_el, _)
       equation
-        (elem, env, _) = NFSCodeInst.resolveRedeclaredElement(elem, inEnv);
-        (accum_el, exts, ii) = mkElement_dispatch(elem, inPrefixes, exts, env, inPrefix, accum_el, inInstInfo);
+        (elem, orig_mod, env, _) = NFSCodeInst.resolveRedeclaredElement(elem, inEnv, inPrefix);
+        (accum_el, exts, ii) = mkElement_dispatch(elem, orig_mod, inPrefixes, exts, env, inPrefix, accum_el, inInstInfo);
         (accum_el, ii) = mkElementList(rest_el, inPrefixes, exts, inEnv, inPrefix, accum_el, ii);
       then
         (accum_el, ii);
@@ -518,6 +519,7 @@ protected function mkElement_dispatch
 "Helper function to mkElementList. 
  Dispatches the given element to the correct function for transformation."
   input tuple<SCode.Element, Modifier> inElement;
+  input Modifier inOriginalMod;
   input Prefixes inPrefixes;
   input list<NFSCodeEnv.Extends> inExtends;
   input Env inEnv;
@@ -529,7 +531,7 @@ protected function mkElement_dispatch
   output InstInfo outInstInfo;
 algorithm
   (outElements, outExtends, outInstInfo) :=
-  matchcontinue(inElement, inPrefixes, inExtends, inEnv, inPrefix, inAccumEl, inInstInfo)
+  matchcontinue(inElement, inOriginalMod, inPrefixes, inExtends, inEnv, inPrefix, inAccumEl, inInstInfo)
     local
       SCode.Element elem;
       Modifier mod;
@@ -548,15 +550,15 @@ algorithm
       InstInfo ii;
 
     // A component 
-    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, _)
+    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, _, _)
       equation
-        (res, ii) = mkElement(elem, mod, inPrefixes, inEnv, inPrefix, inInstInfo);
+        (res, ii) = mkElement(elem, mod, inOriginalMod, inPrefixes, inEnv, inPrefix, inInstInfo);
         accum_el = listAppend(inAccumEl, res); 
       then
         (accum_el, inExtends, ii);
 
     // An extends clause. Transform it it together with the next Extends element from the environment.
-    case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
+    case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _, _,
         NFSCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, _)
       equation
         (res, ii) = mkExtends(elem, mod, inPrefixes, redecls, inEnv, inPrefix, inInstInfo);
@@ -565,7 +567,7 @@ algorithm
         (accum_el, rest_exts, ii);
     
     // functions, packages, classes
-    case ((elem as SCode.CLASS(name = name),mod), _, _, _, _, _, _)
+    case ((elem as SCode.CLASS(name = name),mod), _, _, _, _, _, _, _)
       equation
         prefix = NFInstUtil.addPrefix(name, {}, inPrefix);
         fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
@@ -582,14 +584,14 @@ algorithm
     // We should have one Extends element for each extends clause in the class.
     // If we get an extends clause but don't have any Extends elements left,
     // something has gone very wrong.
-    case ((SCode.EXTENDS(baseClassPath = _), _), _, {}, _, _, _, _)
+    case ((SCode.EXTENDS(baseClassPath = _), _), _, _, {}, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"NFSCodeInstShortcut.mkElement_dispatch ran out of extends!."});
       then
         fail();
 
     /*/ debugging case
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         (elem, _) = inElement;
@@ -611,6 +613,7 @@ end mkElement_dispatch;
 protected function mkElement
   input SCode.Element inElement;
   input Modifier inClassMod;
+  input Modifier inOriginalMod;
   input Prefixes inPrefixes;
   input Env inEnv;
   input Prefix inPrefix;
@@ -619,7 +622,7 @@ protected function mkElement
   output InstInfo outInstInfo;
 algorithm
   (outElements, outInstInfo) := 
-  match(inElement, inClassMod, inPrefixes, inEnv, inPrefix, inInstInfo)
+  match(inElement, inClassMod, inOriginalMod, inPrefixes, inEnv, inPrefix, inInstInfo)
     local
       Absyn.ArrayDim ad;
       Absyn.Info info;
@@ -661,7 +664,7 @@ algorithm
             smod,
             cmt, 
             condition,
-            info), _, _, _, _, _)
+            info), _, _, _, _, _, _)
       equation
         // Look up the class of the component.
         (item, tpath, env) = NFSCodeLookup.lookupClassName(tpath, inEnv, info);
@@ -682,6 +685,7 @@ algorithm
         // Merge the class modifications with this element's modifications.
         dim_count = listLength(ad);
         mod = NFSCodeMod.translateMod(smod, name, dim_count, inPrefix, inEnv);
+        mod = NFSCodeMod.mergeMod(inOriginalMod, mod);
         cmod = NFSCodeMod.propagateMod(inClassMod, dim_count);
         mod = NFSCodeMod.mergeMod(cmod, mod);
 
