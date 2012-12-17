@@ -233,7 +233,7 @@ algorithm
     
     // state
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, eqns))) equation
-      (x0,_) = make_var("$t0",cr,ty,arryDim);
+      (x0,_) = make_var("$t0", cr, ty, arryDim);
       
       (x1,var) = make_var("$t1",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
@@ -268,7 +268,6 @@ protected function make_var
   input DAE.InstDims arryDim;
   output DAE.ComponentRef outCR;
   output BackendDAE.Var var;
-  
 algorithm
   outCR := ComponentReference.crefPrefixString(varTyp, inCR);
   var := BackendDAE.VAR(outCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());

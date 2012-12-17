@@ -476,7 +476,7 @@ algorithm
 end getAllCrefFromEquations;
 
 protected function traversingEquationCrefFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Equation, list<DAE.ComponentRef>> inTpl;
  output tuple<BackendDAE.Equation, list<DAE.ComponentRef>> outTpl;
 algorithm
@@ -1638,7 +1638,7 @@ end equationRemove;
 
 public function compressEquations
 " function: compressEquations
-  autor: Frenkel TUD 2012-11
+  author: Frenkel TUD 2012-11
   Closes the gabs "
   input BackendDAE.EquationArray inEquationArray;
   output BackendDAE.EquationArray outEquationArray;
@@ -1662,7 +1662,7 @@ end compressEquations;
 
 protected function compressEquations1
 " function: compressEquations1
-  autor: Frenkel TUD 2012-11"
+  author: Frenkel TUD 2012-11"
   input Integer index;
   input Integer insertindex;
   input Integer numberOfElement;
@@ -2053,7 +2053,7 @@ end daeInitialEqns;
 
 public function aliasEquation
 "function aliasEquation
-  autor Frenkel TUD 2011-04
+  author Frenkel TUD 2011-04
   Returns the two sides of an alias equation as expressions and cref.
   If the equation is not simple, this function will fail."
   input BackendDAE.Equation eqn;
@@ -2080,7 +2080,7 @@ end aliasEquation;
 
 protected function aliasEquation1
 "function aliasEquation1
-  autor Frenkel TUD 2011-04
+  author Frenkel TUD 2011-04
   helper for aliasEquation"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -2189,7 +2189,7 @@ end aliasEquation1;
 
 protected function aliasEquationLst
 "function aliasEquation1
-  autor Frenkel TUD 2011-04
+  author Frenkel TUD 2011-04
   helper for aliasEquation"
   input list<DAE.Exp> elst1;
   input list<DAE.Exp> elst2;
@@ -2201,7 +2201,7 @@ end aliasEquationLst;
 
 protected function aliasEquation2
 "function aliasEquation1
-  autor Frenkel TUD 2011-04
+  author Frenkel TUD 2011-04
   helper for aliasEquation"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -2236,7 +2236,7 @@ end aliasEquation2;
 
 protected function aliasArray
 "function aliasArray
-  autor Frenkel TUD 2011-04
+  author Frenkel TUD 2011-04
   helper for aliasEquation"
   input DAE.ComponentRef cr;
   input Boolean negate;
@@ -2264,7 +2264,7 @@ end aliasArray;
 
 protected function aliasRecord
 "function aliasRecord
-  autor Frenkel TUD 2011-04
+  author Frenkel TUD 2011-04
   helper for aliasEquation"
   input DAE.ComponentRef cr;
   input list<DAE.Var> varLst;
@@ -2314,7 +2314,7 @@ end aliasRecord;
 
 protected function aliasExpression
 "function aliasExpression
-  autor Frenkel TUD 2011-11
+  author Frenkel TUD 2011-11
   Returns the two sides of an alias expression as expressions and cref.
   If the expression is not simple, this function will fail."
   input DAE.Exp exp;
@@ -2353,7 +2353,7 @@ end aliasExpression;
 
 public function derivativeEquation
 "function derivativeEquation
-  autor Frenkel TUD 2011-04
+  author Frenkel TUD 2011-04
   Returns the two sides of an derivative equation as expressions and cref.
   If the equation is not a derivative equaiton, this function will fail."
   input BackendDAE.Equation eqn;

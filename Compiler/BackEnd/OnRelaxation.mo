@@ -2778,7 +2778,7 @@ end getOrphansPairsConstraints1;
 
 protected function getIndexesForEqnsAdvanced
 "function getIndexesForEqnsAdvanced
- autor: Frenkel TUD 2012-07"
+ author: Frenkel TUD 2012-07"
   input list<Integer> orphans;
   input Integer index;
   input BackendDAE.IncidenceMatrix m;
@@ -2937,7 +2937,7 @@ end setBoarderElemts;
 
 protected function setIndexQueue
 "function setIndexQueue
- autor: Frenkel TUD 2012-07"
+ author: Frenkel TUD 2012-07"
  input Integer col;
  input tuple<array<list<Integer>>,array<Integer>,array<list<Integer>>,array<Boolean>,array<Integer>,Integer> tpl;
  input tuple<Integer,list<Integer>,list<Integer>> itpl;
@@ -2976,7 +2976,7 @@ end setIndexQueue;
 
 protected function getIndexQueque
 "function getIndexQueque
- autor: Frenkel TUD 2012-07"
+ author: Frenkel TUD 2012-07"
   input list<Integer> colums;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -3141,7 +3141,7 @@ end doMark;
 
 protected function getIndexSubGraph
 "function getIndexSubGraph
- autor: Frenkel TUD 2012-07"
+ author: Frenkel TUD 2012-07"
   input list<Integer> rows;
   input list<Integer> vorphan;
   input BackendDAE.IncidenceMatrix m;
@@ -3211,7 +3211,7 @@ end getIndexSubGraph;
 
 protected function markIndexSubgraph
 "function markIndexSubgraph
- autor: Frenkel TUD 2012-07"
+ author: Frenkel TUD 2012-07"
   input Boolean b;
   input list<Integer> r;
   input Integer mark;

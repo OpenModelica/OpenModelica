@@ -2101,7 +2101,7 @@ end varSortFunc;
 
 public function getAlias
 " function getAlias
-  autor: Frenkel TUD 2012-11
+  author: Frenkel TUD 2012-11
   returns the original Varname of an AliasVar"
   input BackendDAE.Var inVar;
   output DAE.ComponentRef outCr;
@@ -2635,7 +2635,7 @@ algorithm
 end deleteVars;
 
 protected function deleteVars1
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, BackendDAE.Variables> inTpl;
  output tuple<BackendDAE.Var, BackendDAE.Variables> outTpl;
 algorithm
@@ -2842,7 +2842,7 @@ end removeVar2;
 
 public function compressVariables
 " function: compressVariables
-  autor: Frenkel TUD 2012-09
+  author: Frenkel TUD 2012-09
   Closes the gabs "
   input BackendDAE.Variables iVars;
   output BackendDAE.Variables oVars;
@@ -2873,7 +2873,7 @@ end compressVariables;
 
 protected function compressVariables1
 " function: compressVariables1
-  autor: Frenkel TUD 2012-09"
+  author: Frenkel TUD 2012-09"
   input Integer index;
   input Integer numberOfElement;
   input Integer insertindex;
@@ -3514,7 +3514,7 @@ algorithm
 end getVarIndexFromVariables;
 
 protected function traversingisVarIndexVarFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
 algorithm
@@ -3546,7 +3546,7 @@ algorithm
 end getVarIndexFromVar;
 
 protected function traversingVarIndexFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, list<Integer>>> outTpl;
 algorithm
@@ -3813,7 +3813,7 @@ algorithm
 end getAllCrefFromVariables;
 
 protected function traversingVarCrefFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
  output tuple<BackendDAE.Var, list<DAE.ComponentRef>> outTpl;
 algorithm
@@ -3839,7 +3839,7 @@ algorithm
 end getAllDiscreteVarFromVariables;
 
 protected function traversingisisVarDiscreteFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
  output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
 algorithm
@@ -3864,7 +3864,7 @@ algorithm
 end getAllStateVarFromVariables;
 
 protected function traversingisStateVarFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, list<BackendDAE.Var>> inTpl;
  output tuple<BackendDAE.Var, list<BackendDAE.Var>> outTpl;
 algorithm
@@ -3890,7 +3890,7 @@ algorithm
 end getAllStateVarIndexFromVariables;
 
 protected function traversingisStateVarIndexFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> inTpl;
  output tuple<BackendDAE.Var, tuple<list<BackendDAE.Var>,list<Integer>,Integer>> outTpl;
 algorithm
@@ -3958,7 +3958,7 @@ algorithm
 end greater;
 
 public function mergeAliasVars
-"autor: Frenkel TUD 2011-04"
+"author: Frenkel TUD 2011-04"
   input BackendDAE.Var inVar;
   input BackendDAE.Var inAVar "the alias var";
   input Boolean negate;
@@ -3987,7 +3987,7 @@ algorithm
 end mergeAliasVars;
 
 protected function mergeStartFixed
-"autor: Frenkel TUD 2011-04"
+"author: Frenkel TUD 2011-04"
   input BackendDAE.Var inVar;
   input Boolean fixed;
   input Option<DAE.Exp> sv;
@@ -4086,7 +4086,7 @@ algorithm
 end mergeStartFixed;
 
 protected function startValueType
-"autor: Frenkel TUD 2012-10
+"author: Frenkel TUD 2012-10
   return the start value or the default value in case of NONE()"
   input Option<DAE.Exp> iExp;
   input DAE.Type iTy;
@@ -4122,8 +4122,8 @@ algorithm
   end matchcontinue;   
 end startValueType;
 
-protected function mergeStartFixed1
-"autor: Frenkel TUD 2011-04"
+protected function mergeStartFixed1 "function mergeStartFixed1
+  author: Frenkel TUD 2011-04"
   input Boolean b "true if Alias Var have less dots in the name";
   input BackendDAE.Var inVar;
   input DAE.ComponentRef cr;
@@ -4199,7 +4199,7 @@ algorithm
 end replaceCrefWithBindExp;
 
 protected function getNonZeroStart
-"autor: Frenkel TUD 2011-04"
+"author: Frenkel TUD 2011-04"
   input Boolean mustBeEqual;
   input DAE.Exp exp1;
   input Option<DAE.Exp> so "StartOrigin";
@@ -4505,9 +4505,8 @@ algorithm
   end matchcontinue;
 end mergeDirection;
 
-public function calcAliasKey
-"function calcAliasKey
-  autor Frenkel TUD 2011-04
+public function calcAliasKey "function calcAliasKey
+  author Frenkel TUD 2011-04
   helper for selectAlias. This function is
   mainly usable to chose the favorite name
   of the keeped var"
@@ -4552,9 +4551,7 @@ algorithm
   end match;
 end selfGeneratedVar;
 
-
-public function varStateSelectPrioAlias
-"function varStateSelectPrioAlias
+public function varStateSelectPrioAlias "function varStateSelectPrioAlias
   Helper function to calculateVarPriorities.
   Calculates a priority contribution bases on the stateSelect attribute."
   input BackendDAE.Var v;
@@ -4566,8 +4563,8 @@ algorithm
   prio := stateSelectToInteger(ss);
 end varStateSelectPrioAlias;
 
-public function stateSelectToInteger
-"helper function to stateSelectToInteger
+public function stateSelectToInteger "function stateSelectToInteger
+  helper function to stateSelectToInteger
   return 
   Never: -1
   Avoid: 0

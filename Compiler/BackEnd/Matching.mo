@@ -448,7 +448,7 @@ end forallUnmarkedVarsInEqnBody;
 public function BFSB
 "function Breath first search based algorithm using augmenting paths
           complexity O(n*tau)
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -508,7 +508,7 @@ end BFSB;
 
 protected function BFSB1
 "function helper for BFSB, traverses all colums and perform a BFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input Integer rowmark;
   input Integer nv;
@@ -579,7 +579,7 @@ end BFSB1;
 
 protected function BFSBphase
 "function helper for BFSB, traverses all colums and perform a BFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> queue;
   input Integer rowmark;
   input Integer i;
@@ -624,7 +624,7 @@ end BFSBphase;
 
 protected function BFSBphase1
 "function helper for BFSB, traverses all colums and perform a BFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean inPathFound;
   input list<Integer> queue;
   input Integer rowmark;
@@ -657,7 +657,7 @@ end BFSBphase1;
 
 protected function BFSBtraverseRows
 "function helper for BFSB, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> queue;  
   input Integer rowmark;
@@ -710,7 +710,7 @@ protected function BFSBreasign
 "function helper for BFSB, reasignment(rematching) allong the augmenting path
  remove all edges from the assignments that are in the path
  add all other edges to the assignment
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input Integer c;
   input array<Integer> parentcolum;
@@ -745,7 +745,7 @@ end BFSBreasign;
 
 protected function BFSBenque
 "function helper for BFSB, enque a collum if the row is not visited
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> queue;  
   input Integer rowmark;
   input Integer c;
@@ -780,7 +780,7 @@ end BFSBenque;
 public function DFSB
 "function Depth first search based algorithm using augmenting paths
           complexity O(n*tau)
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -839,7 +839,7 @@ end DFSB;
 
 protected function DFSB1
 "function helper for DFSB, traverses all colums and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input Integer rowmark;
   input Integer nv;
@@ -907,7 +907,7 @@ end DFSB1;
 
 protected function DFSBphase
 "function helper for DFSB, traverses all colums and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer i;
   input Integer c;
@@ -944,7 +944,7 @@ end DFSBphase;
 
 protected function DFSBtraverseRows
 "function helper for DFSB, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> stack;  
   input Integer i;
@@ -995,7 +995,7 @@ end DFSBtraverseRows;
 
 protected function DFSBtraverseRows1
 "function helper for DFSBtraverseRows
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> stack;  
   input Integer i;
@@ -1020,7 +1020,7 @@ protected function DFSBreasign
 "function helper for DFSB, reasignment(rematching) allong the augmenting path
  remove all edges from the assignments that are in the path
  add all other edges to the assignment
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer r;
   input array<Integer> ass1;
@@ -1044,7 +1044,7 @@ end DFSBreasign;
 public function MC21A
 "function Depth first search based algorithm using augmenting paths with lookahead mechanism
           complexity O(n*tau)
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -1104,7 +1104,7 @@ end MC21A;
 
 protected function MC21A1
 "function helper for MC21A, traverses all colums and perform a MC21A phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input Integer rowmark;
   input Integer nv;
@@ -1230,7 +1230,7 @@ end MC21A1fixArray;
 
 protected function MC21Aphase
 "function helper for MC21A, traverses all colums and perform a MC21A phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer i;
   input Integer c;
@@ -1269,7 +1269,7 @@ end MC21Aphase;
 
 protected function MC21Achecklookahead
 "function helper for MC21A, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean dolookahaed;
   input list<Integer> rows;
   input list<Integer> stack;  
@@ -1298,7 +1298,7 @@ end MC21Achecklookahead;
 
 protected function MC21AtraverseRowsUnmatched
 "function helper for MC21A, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> rows1;
   input list<Integer> stack;  
@@ -1341,7 +1341,7 @@ end MC21AtraverseRowsUnmatched;
 
 protected function MC21AtraverseRows
 "function helper for MC21A, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> stack;  
   input Integer i;
@@ -1385,7 +1385,7 @@ end MC21AtraverseRows;
 
 protected function MC21AtraverseRows1
 "function helper for MC21AtraverseRows
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> stack;  
   input Integer i;
@@ -1411,7 +1411,7 @@ end MC21AtraverseRows1;
 public function PF
 "function Depth first search based algorithm using augmenting paths with lookahead mechanism
           complexity O(n*tau)
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -1580,7 +1580,7 @@ end PF2;
 protected function PFaugmentmatching
 "function helper for PFaugmentmatching, traverses all unmatched
  colums and perform one pass of the augmenting proceure
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input list<Integer> U;
   input Integer nv;
@@ -1637,7 +1637,7 @@ end PFaugmentmatching;
 
 protected function PFphase
 "function helper for PF, traverses all colums and perform a PF phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer i;
   input Integer c;
@@ -1675,7 +1675,7 @@ end PFphase;
 
 protected function PFchecklookahead
 "function helper for PF, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean dolookahaed;
   input list<Integer> rows;
   input list<Integer> stack;  
@@ -1703,7 +1703,7 @@ end PFchecklookahead;
 
 protected function PFtraverseRowsUnmatched
 "function helper for PF, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> rows1;
   input list<Integer> stack;  
@@ -1745,7 +1745,7 @@ end PFtraverseRowsUnmatched;
 
 protected function PFtraverseRows
 "function helper for PF, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> stack;  
   input Integer i;
@@ -1789,7 +1789,7 @@ end PFtraverseRows;
 
 protected function PFtraverseRows1
 "function helper for PFtraverseRows
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> stack;  
   input Integer i;
@@ -1814,7 +1814,7 @@ end PFtraverseRows1;
 public function PFPlus
 "function Depth first search based algorithm using augmenting paths with lookahead mechanism
           complexity O(n*tau)
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -1923,7 +1923,7 @@ end PFPlus1;
 protected function PFPlusaugmentmatching
 "function helper for PFPlusaugmentmatching, traverses all unmatched
  colums and perform one pass of the augmenting proceure
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input list<Integer> U;
   input Integer nv;
@@ -1981,7 +1981,7 @@ end PFPlusaugmentmatching;
 
 protected function PFPlusphase
 "function helper for PFPlus, traverses all colums and perform a PFPlus phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer i;
   input Integer c;
@@ -2027,7 +2027,7 @@ end PFPlusphase;
 
 protected function PFPluschecklookahead
 "function helper for PFPlus, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean dolookahaed;
   input list<Integer> rows;
   input list<Integer> stack;  
@@ -2056,7 +2056,7 @@ end PFPluschecklookahead;
 
 protected function PFPlustraverseRowsUnmatched
 "function helper for PFPlus, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> rows1;
   input list<Integer> stack;  
@@ -2099,7 +2099,7 @@ end PFPlustraverseRowsUnmatched;
 
 protected function PFPlustraverseRows
 "function helper for PFPlus, traverses all vars of a equations and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> stack;  
   input Integer i;
@@ -2144,7 +2144,7 @@ end PFPlustraverseRows;
 
 protected function PFPlustraverseRows1
 "function helper for PFPlustraverseRows
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> stack;  
   input Integer i;
@@ -2170,7 +2170,7 @@ end PFPlustraverseRows1;
 public function HK
 "function Combined BFS and DFS algorithm 
           complexity O(sqrt(n)*tau)
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -2343,7 +2343,7 @@ end HK2;
 protected function HKphase
 "function helper for HK, traverses all unmatched
  colums and run a BFS and DFS
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input list<Integer> U;
   input Integer nv;
@@ -2423,7 +2423,7 @@ end HKgetUnmatched;
 protected function HKBFS
 "function helper for HK, traverses all colums and perform a BFSB phase on each to get the level information
  the BFS stops at a colum with unmatched rows
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> colums;
   input Integer nv;
   input Integer ne;
@@ -2461,7 +2461,7 @@ end HKBFS;
 
 protected function HKBFSBphase
 "function helper for HKBFS, traverses all colums and perform a BFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> queue;
   input Integer i;
   input Integer l "current level";
@@ -2522,7 +2522,7 @@ end HKBFSBphase;
 
 protected function HKBFSBphase1
 "function helper for HKBFSB
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean inUnMaRowFound;
   input list<Integer> queue;
   input Integer i;
@@ -2562,7 +2562,7 @@ end HKBFSBphase1;
 
 protected function HKBFStraverseRows
 "function helper for BFSB, traverses all rows of a collum and set level
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input list<Integer> queue;  
   input Integer i;
@@ -2622,7 +2622,7 @@ end HKBFStraverseRows;
 
 protected function HKDFS
 "function helper for HKDFSB, traverses all colums and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<tuple<Integer,Integer>> unmatchedRows;
   input Integer i;
   input Integer nv;
@@ -2662,7 +2662,7 @@ end HKDFS;
 
 protected function HKDFSphase
 "function helper for HKDFSBphase, traverses all colums and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer i;
   input Integer r;
@@ -2699,7 +2699,7 @@ end HKDFSphase;
 
 protected function HKDFStraverseCollums
 "function helper for HKDFSB, traverses all collums of a row and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> collums;
   input list<Integer> stack;  
   input Integer i;
@@ -2770,7 +2770,7 @@ end HKDFStraverseCollums;
 
 protected function HKDFStraverseCollums1
 "function helper for HKDFSBtraverseCollums
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean inMatched;
   input list<Integer> rows;
   input list<Integer> stack;  
@@ -2797,7 +2797,7 @@ protected function HKDFSreasign
 "function helper for HKDFS, reasignment(rematching) allong the augmenting path
  remove all edges from the assignments that are in the path
  add all other edges to the assignment
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer c;
   input array<Integer> ass1;
@@ -2822,7 +2822,7 @@ end HKDFSreasign;
 public function HKDW
 "function Combined BFS and DFS algorithm 
           complexity O(sqrt(n)*tau)
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -2932,7 +2932,7 @@ end HKDW1;
 protected function HKDWphase
 "function helper for HKDW, traverses all unmatched
  colums and run a BFS and DFS
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input list<Integer> U;
   input Integer nv;
@@ -2991,7 +2991,7 @@ end HKDWphase;
 
 protected function HKDWDFS
 "function helper for HKDWDFSB, traverses all colums and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> unmatchedRows;
   input Integer i;
   input Integer nv;
@@ -3026,7 +3026,7 @@ end HKDWDFS;
 
 protected function HKDWDFSphase
 "function helper for HKDWDFSBphase, traverses all colums and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer i;
   input Integer r;
@@ -3061,7 +3061,7 @@ end HKDWDFSphase;
 
 protected function HKDWDFStraverseCollums
 "function helper for HKDWDFSB, traverses all collums of a row and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> collums;
   input list<Integer> stack;  
   input Integer i;
@@ -3118,7 +3118,7 @@ end HKDWDFStraverseCollums;
 
 protected function HKDWDFStraverseCollums1
 "function helper for HKDWDFSBtraverseCollums
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean inMatched;
   input list<Integer> rows;
   input list<Integer> stack;  
@@ -3143,7 +3143,7 @@ end HKDWDFStraverseCollums1;
 public function ABMP
 "function Combined BFS and DFS algorithm 
           complexity O(sqrt(n)*tau)
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -3326,7 +3326,7 @@ protected function ABMPphase
 "function helper for ABMP, traverses all unmatched
  colums and run a BFS and DFS to assign level information
  and increase matching.
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> U;
   input Integer i;
   input Integer nv;
@@ -3364,7 +3364,7 @@ protected function ABMPphase1
 "function helper for ABMP, traverses all unmatched
  colums and run a BFS and DFS to assign level information
  and increase matching.
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> U;
   input list<Integer> unmatchedRows;
   input Integer i;
@@ -3406,7 +3406,7 @@ protected function ABMPphase2
 "function helper for ABMP, traverses all unmatched
  colums and run a BFS and DFS to assign level information
  and increase matching.
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> U;
   input Integer i;
   input Integer L;
@@ -3444,7 +3444,7 @@ end ABMPphase2;
 
 protected function ABMPBFSphase
 "function helper for ABMP, traverses all colums and set level information
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> queue;
   input Integer i;
   input Integer L;
@@ -3492,7 +3492,7 @@ end ABMPBFSphase;
 
 protected function ABMPBFSphase1
 "function helper for ABMPBFSphase
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean inStop;
   input list<Integer> queue;
   input Integer i;
@@ -3527,7 +3527,7 @@ end ABMPBFSphase1;
 
 protected function ABMPBFStraverseRows
 "function helper for ABMPBFS, traverses all rows and assign level informaiton
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input Integer i;
   input Integer L;
@@ -3589,7 +3589,7 @@ end ABMPBFStraverseRows;
 
 protected function ABMPDFS
 "function helper for ABMPDFS, traverses all rows and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> unmatchedRows;
   input Integer i;
   input Integer L;  
@@ -3633,7 +3633,7 @@ end ABMPDFS;
 
 protected function ABMPDFS1
 "function helper for ABMPDFS, traverses all rows and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean inMatched;
   input Integer r;
   input list<Integer> unmatchedRows;
@@ -3709,7 +3709,7 @@ end ABMPDFS1;
 
 protected function ABMPDFSphase
 "function helper for ABMPDFSBphase, traverses all colums and perform a DFSB phase on each
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> stack;
   input Integer i;
   input Integer r;
@@ -3750,7 +3750,7 @@ end ABMPDFSphase;
 
 protected function ABMPDFStraverseCollums
 "function helper for ABMPDFSB, traverses all collums of a row and search a augmenting path
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> collums;
   input Integer counter;
   input list<Integer> stack;
@@ -3815,7 +3815,7 @@ end ABMPDFStraverseCollums;
 
 protected function ABMPDFStraverseCollums1
 "function helper for ABMPDFSBtraverseCollums
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Boolean inMatched;
   input Integer counter;
   input list<Integer> rows;
@@ -3853,7 +3853,7 @@ end ABMPDFStraverseCollums1;
 public function PR_FIFO_FAIR
 "function matching algorithm using push relabel  
           complexity O(n*tau)
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -4040,7 +4040,7 @@ end PR_FIFO_FAIR2;
 protected function PR_Global_Relabel
 "function PR_Global_Relabel, helper for PR_FIFO_FAIR, 
           update the labels of eatch vertex
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input array<Integer> l_label;
   input array<Integer> r_label;
   input Integer nv;
@@ -4061,7 +4061,7 @@ end PR_Global_Relabel;
 
 protected function PR_Global_Relabel_init_l_label
 "function PR_Global_Relabel_init_l_label, helper for PR_Global_Relabel
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer i;
   input Integer ne;
   input Integer max;
@@ -4084,7 +4084,7 @@ end PR_Global_Relabel_init_l_label;
 
 protected function PR_Global_Relabel_init_r_label
 "function PR_Global_Relabel_init_r_label, helper for PR_Global_Relabel
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer i;
   input Integer nv;
   input Integer max;
@@ -4117,7 +4117,7 @@ end PR_Global_Relabel_init_r_label;
 protected function PR_Global_Relabel1
 "function PR_Global_Relabel, helper for PR_FIFO_FAIR, 
           update the labels of eatch vertex
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<Integer> queue;
   input array<Integer> l_label;
   input array<Integer> r_label;
@@ -4152,7 +4152,7 @@ end PR_Global_Relabel1;
 
 protected function PR_Global_Relabel_traverseCollums
 "function helper for PR_Global_Relabel1, traverses all collums of a row and asing label indexes
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<Integer> collums;
   input Integer max;
   input Integer r;
@@ -4197,7 +4197,7 @@ end PR_Global_Relabel_traverseCollums;
 
 protected function PR_FIFO_FAIRphase
 "function PR_FIFO_FAIRphase, match rows and collums with push relabel tecnic
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer relabels;
   input list<Integer> U;
   input Integer max;
@@ -4238,7 +4238,7 @@ end PR_FIFO_FAIRphase;
 
 protected function PR_FIFO_FAIRphase1
 "function helper for PR_FIFO_FAIRphase
- autor: Frenkel TUD 2012-04" 
+ author: Frenkel TUD 2012-04" 
   input Boolean b;
   input Integer relabels;
   input Integer max_vertex;
@@ -4275,7 +4275,7 @@ end PR_FIFO_FAIRphase1;
 
 protected function PR_FIFO_FAIRphase2
 "function helper for PR_FIFO_FAIRphase
- autor: Frenkel TUD 2012-04" 
+ author: Frenkel TUD 2012-04" 
   input Boolean b;
   input Integer relabels;
   input Integer max_vertex;
@@ -4317,7 +4317,7 @@ end PR_FIFO_FAIRphase2;
 
 protected function PR_FIFO_FAIRphase_traverseRows
 "function helper for PR_FIFO_FAIRphase2
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<Integer> rows;
   input Integer relabels;
   input Integer max_vertex;
@@ -4374,7 +4374,7 @@ end PR_FIFO_FAIRphase_traverseRows;
 
 protected function PR_FIFO_FAIRrelabel
 "function helper for PR_FIFO_FAIRphase
- autor: Frenkel TUD 2012-04"  
+ author: Frenkel TUD 2012-04"  
   input Integer max_vertex;
   input Integer min_vertex;
   input Integer min_label;
@@ -4427,7 +4427,7 @@ end PR_FIFO_FAIRrelabel;
 
 protected function cheapmatchingalgorithm
 "function cheapmatchingalgorithm, traverses all colums and look for a cheap matching, a unmatch row
- autor: Frenkel TUD 2012-07"
+ author: Frenkel TUD 2012-07"
   input Integer nv;
   input Integer ne;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
@@ -4442,7 +4442,7 @@ end cheapmatchingalgorithm;
 
 protected function cheapmatchingalgorithm1
 "function cheapmatchingalgorithm
- autor: Frenkel TUD 2012-07"
+ author: Frenkel TUD 2012-07"
   input Integer algorithmid;
   input Integer nv;
   input Integer ne;
@@ -4464,7 +4464,7 @@ end cheapmatchingalgorithm1;
 
 protected function matchSingleVars
 "function matchSingleVars, match all vars with one equation
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer i;
   input Integer nv;
   input Integer ne;
@@ -4505,7 +4505,7 @@ end matchSingleVars;
 
 protected function matchSingleVars1
 "function helper for matchSingleVars
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input Integer c;
   input array<Integer> ass1;
@@ -4529,7 +4529,7 @@ end matchSingleVars1;
 
 protected function cheapmatching
 "function cheapmatching, traverses all colums and look for a cheap matching, a unmatch row
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input Integer i;
   input Integer nv;
   input Integer ne;
@@ -4570,7 +4570,7 @@ end cheapmatching;
 
 protected function cheapmatching1
 "function helper for cheapmatching, traverses all rows, fails if no unmatched is found
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input list<Integer> rows;
   input Integer c;
   input array<Integer> ass1;
@@ -4599,7 +4599,7 @@ end cheapmatching1;
 
 protected function ks_rand_cheapmatching
 "function ks_rand_cheapmatching, Random Karp-Sipser
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer nv;
   input Integer ne;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
@@ -4623,7 +4623,7 @@ end ks_rand_cheapmatching;
 
 protected function ks_rand_cheapmatching1
 "function ks_rand_cheapmatching1, helper for ks_rand_cheapmatching.
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer i;
   input Integer ne;
   input list<Integer> onecolums;
@@ -4660,7 +4660,7 @@ end ks_rand_cheapmatching1;
 
 protected function ks_rand_cheapmatching2
 "function ks_rand_cheapmatching2, helper for ks_rand_cheapmatching.
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Boolean b;
   input Integer c;
   input array<Integer> col_degrees;
@@ -4693,7 +4693,7 @@ end ks_rand_cheapmatching2;
   
 protected function ks_rand_cheapmatching3
 "function ks_rand_cheapmatching3, helper for ks_rand_match.
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer e_id;
   input list<Integer> rows;
   input array<Integer> row_degrees;
@@ -4737,7 +4737,7 @@ end ks_rand_cheapmatching3;
   
 protected function ks_rand_cheapmatching4
 "function ks_rand_cheapmatching4, helper for ks_rand_cheapmatching.
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<Integer> cols;
   input Integer count;
   input array<Integer> col_degrees;
@@ -4771,7 +4771,7 @@ end ks_rand_cheapmatching4;
 protected function getOneRows
 "function getOneRows, helper for ks_rand_cheapmatching.
  return all rows with length == 1
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
  input Integer n;
  input BackendDAE.IncidenceMatrix m;
  input array<Integer> degrees;
@@ -4797,7 +4797,7 @@ end getOneRows;
 protected function setrandArray
 "function setrandArray, helper for ks_rand_cheapmatching.
  return all rows with length == 1
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
  input Integer n;
  input array<Integer> randarr;
 algorithm
@@ -4819,7 +4819,7 @@ end setrandArray;
 
 protected function ks_rand_match
 "function ks_rand_match, helper for ks_rand_cheapmatching.
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<Integer> stack1;
   input list<Integer> stack2;
   input array<Integer> degrees1;
@@ -4881,7 +4881,7 @@ end ks_rand_match;
 
 protected function ks_rand_match1
 "function ks_rand_match1, helper for ks_rand_match.
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer i;
   input list<Integer> entries;
   input list<Integer> stack;
@@ -4913,7 +4913,7 @@ end ks_rand_match1;
 
 protected function ks_rand_match_degree
 "function ks_rand_match_degree, helper for ks_rand_match.
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<Integer> entries;
   input array<Integer> degrees;
   input array<Integer> ass;
@@ -5615,7 +5615,7 @@ end getAssigned;
 public function getEqnsforIndexReduction
 "function getEqnsforIndexReduction, collect all equations for the index reduction from a given set of 
  unmatched equations
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<Integer> U;
   input Integer neqns;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
@@ -5679,7 +5679,7 @@ end appendNonEmpty;
 
 protected function getEqnsforIndexReduction1
 "function getEqnsforIndexReduction1, helper for getEqnsforIndexReduction
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<Integer> U;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
   input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
@@ -5720,7 +5720,7 @@ end getEqnsforIndexReduction1;
 protected function getEqnsforIndexReductionphase
 "function getEqnsforIndexReductionphase
   helper for getEqnsforIndexReduction
-  autor: Frenkel TUD 2012-04"
+  author: Frenkel TUD 2012-04"
   input list<Integer> elst;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -5757,7 +5757,7 @@ end getEqnsforIndexReductionphase;
 protected function getEqnsforIndexReductiontraverseRows
 "function getEqnsforIndexReductiontraverseRows
   helper for getEqnsforIndexReduction
-  autor: Frenkel TUD 2012-04"
+  author: Frenkel TUD 2012-04"
   input list<Integer> rows;
   input list<Integer> nextColums;
   input BackendDAE.IncidenceMatrix m;
@@ -5880,7 +5880,7 @@ end reduceIndexifNecessary;
 
 protected function assignmentsArrayExpand
 "function helper for assignmentsArrayExpand
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
  input array<Integer> ass;
  input Integer needed;
  input Integer memsize;
@@ -5966,7 +5966,7 @@ end checkAssignment;
 
 public function testMatchingAlgorithms
 "function testMatchingAlgorithms, test all matching algorithms
- autor: Frenkel TUD 2012-03"
+ author: Frenkel TUD 2012-03"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input BackendDAE.MatchingOptions inMatchingOptions;
@@ -6028,7 +6028,7 @@ end testMatchingAlgorithms;
 
 public function testMatchingAlgorithms1
 "function testMatchingAlgorithms1, helper for testMatchingAlgorithms
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<tuple<String,matchingAlgorithmFunc>> matchingAlgorithms;
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
@@ -6089,7 +6089,7 @@ end testMatchingAlgorithms1;
 
 public function testMatchingAlgorithm
 "function testMatchingAlgorithm, tests a specific matching algorithm
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer index;
   input matchingAlgorithmFunc matchingAlgorithm;
   input BackendDAE.EqSystem isyst;
@@ -6140,7 +6140,7 @@ end testMatchingAlgorithm;
 
 public function testExternMatchingAlgorithms1
 "function testExternMatchingAlgorithms1, helper for testMatchingAlgorithms
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input list<tuple<String,Integer>> matchingAlgorithms;
   input Integer cheapId;
   input Integer nv;
@@ -6175,7 +6175,7 @@ end testExternMatchingAlgorithms1;
 
 public function testExternMatchingAlgorithm
 "function testMatchingAlgorithm, tests a specific matching algorithm
- autor: Frenkel TUD 2012-04"
+ author: Frenkel TUD 2012-04"
   input Integer index;
   input Integer matchingAlgorithm;
   input Integer cheapId;
@@ -6197,7 +6197,7 @@ end testExternMatchingAlgorithm;
 
 protected function randSortSystem
 "function randSortSystem, resort all equations and variables in random order
- autor: Frenkel TUD 2012-043"
+ author: Frenkel TUD 2012-043"
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   output BackendDAE.EqSystem osyst;

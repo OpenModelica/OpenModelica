@@ -657,7 +657,7 @@ end dumpComment;
 
 protected function dumpComponents
 "function: dumpComponents
-  autor: Frenkel TUD 2011-05
+  author: Frenkel TUD 2011-05
   This function is used to print BLT information using xml format.
 The output is something like:
 <bltBlock id=\"\">
@@ -673,7 +673,7 @@ end dumpComponents;
 
 protected function dumpComponentsWork
 "function: dumpComponentsWork
-  autor: Frenkel TUD 2011-05
+  author: Frenkel TUD 2011-05
   wrapper for calling dumpComponents for each equation system"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -2103,7 +2103,7 @@ end dumpFunctionsStr;
 
 protected function dumpIncidenceMatrix
 "function: dumpIncidenceMatrix
-  autor: Frenkel TUD 2011-05
+  author: Frenkel TUD 2011-05
   This function dumps a matrix using an xml representation.
 <matrix>
      <matrixrow>
@@ -2127,7 +2127,7 @@ end dumpIncidenceMatrix;
 
 protected function dumpIncidenceMatrixWork
 "function: dumpIncidenceMatrixWork
-  autor: Frenkel TUD 2011-05
+  author: Frenkel TUD 2011-05
   wrapper for calling dumpIncidenceMatrix for each equation system"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;
@@ -2472,7 +2472,7 @@ end dumpLstStr;
 
 protected function dumpMatching
 "function: dumpMatchingWork
-  autor: Frenkel TUD 2011-05
+  author: Frenkel TUD 2011-05
   prints the matching information on stdout."
   input BackendDAE.BackendDAE dae;
 algorithm
@@ -2483,7 +2483,7 @@ end dumpMatching;
 
 protected function dumpMatchingWork
 "function: dumpMatchingWork
-  autor: Frenkel TUD 2011-05
+  author: Frenkel TUD 2011-05
   wrapper for calling dumpMatching for each equation system"
   input BackendDAE.EqSystem syst;
   input BackendDAE.Shared shared;

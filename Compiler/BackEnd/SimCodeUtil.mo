@@ -3155,7 +3155,7 @@ algorithm
 end extractDiscreteModelVars;
 
 protected function traversingisVarDiscreteCrefFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
   input tuple<BackendDAE.Var, list<DAE.ComponentRef>> inTpl;
   output tuple<BackendDAE.Var, list<DAE.ComponentRef>> outTpl;
 algorithm
@@ -4237,7 +4237,7 @@ end moveDivToMul;
 
 protected function createNonlinearResidualExp
 "function createNonlinearResidualExp
-  autor Frenkel TUD 2012-10
+  author Frenkel TUD 2012-10
   do some numerical helpfull thinks like
   a = b/c - > a*c-b"
   input DAE.Exp iExp1;
@@ -6469,7 +6469,7 @@ end createInitialResiduals;
 
 
 protected function traverseKnVarsToSimEqSystem
-  "autor: Frenkel TUD 2012-10"
+  "author: Frenkel TUD 2012-10"
    input tuple<BackendDAE.Var, tuple<Integer,list<SimCode.SimEqSystem>>> inTpl;
    output tuple<BackendDAE.Var, tuple<Integer,list<SimCode.SimEqSystem>>> outTpl;
 algorithm
@@ -6491,7 +6491,7 @@ algorithm
 end traverseKnVarsToSimEqSystem;
 
 protected function traverseAliasVarsToSimEqSystem
-  "autor: Frenkel TUD 2012-10"
+  "author: Frenkel TUD 2012-10"
    input tuple<BackendDAE.Var, tuple<Integer,list<SimCode.SimEqSystem>>> inTpl;
    output tuple<BackendDAE.Var, tuple<Integer,list<SimCode.SimEqSystem>>> outTpl;
 algorithm
@@ -9730,7 +9730,7 @@ algorithm
 end getCausality;
 
 protected function traversingdlowvarToSimvarFold
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
   input BackendDAE.Var v;
   input tuple<list<SimCode.SimVar>,BackendDAE.Variables> inTpl;
   output tuple<list<SimCode.SimVar>,BackendDAE.Variables> outTpl;
@@ -9739,7 +9739,7 @@ algorithm
 end traversingdlowvarToSimvarFold;
 
 protected function traversingdlowvarToSimvar
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
   input tuple<BackendDAE.Var, tuple<list<SimCode.SimVar>,BackendDAE.Variables>> inTpl;
   output tuple<BackendDAE.Var, tuple<list<SimCode.SimVar>,BackendDAE.Variables>> outTpl;
 algorithm

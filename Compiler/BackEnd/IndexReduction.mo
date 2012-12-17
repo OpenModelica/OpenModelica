@@ -867,7 +867,7 @@ end replaceDifferentiatedEqns;
 
 protected function statesWithUnusedDerivative
 "function statesWithUnusedDerivative
-  autor Frenkel TUD 2012-11
+  author Frenkel TUD 2012-11
   add to iAcc all states with no positiv rows in mt"
   input Integer state;
   input BackendDAE.IncidenceMatrix mt;
@@ -1170,7 +1170,7 @@ algorithm
 end replaceFinalVarsExp;
 
 protected function replaceFinalVarsGetExp
-"autor: Frenkel TUD 2012-11"
+"author: Frenkel TUD 2012-11"
  input BackendDAE.Var inVar;
  input tuple<BackendVarTransform.VariableReplacements,Boolean> iTpl;
  output tuple<BackendVarTransform.VariableReplacements,Boolean> oTpl;
@@ -1704,7 +1704,7 @@ end highestOrderDerivatives;
 
 protected function traversinghighestOrderDerivativesFinder
 " function traversinghighestOrderDerivativesFinder
-  autor: Frenkel TUD 2012-05
+  author: Frenkel TUD 2012-05
   helper for highestOrderDerivatives"
  input tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,list<BackendDAE.Var>>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,list<BackendDAE.Var>>> outTpl;
@@ -1748,7 +1748,7 @@ end lowerOrderDerivatives;
 
 protected function traversinglowerOrderDerivativesFinder
 " function traversinglowerOrderDerivativesFinder
-  autor: Frenkel TUD 2012-05
+  author: Frenkel TUD 2012-05
   helpber for lowerOrderDerivatives"
  input tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables>> outTpl;
@@ -1800,7 +1800,7 @@ end higerOrderDerivatives;
 
 protected function traversinghigerOrderDerivativesFinder
 " function traversinghigerOrderDerivativesFinder
-  autor: Frenkel TUD 2012-06
+  author: Frenkel TUD 2012-06
   helpber for higerOrderDerivatives"
  input tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables,list<DAE.ComponentRef>>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendDAE.StateOrder,BackendDAE.Variables,BackendDAE.Variables,list<DAE.ComponentRef>>> outTpl;
@@ -2290,7 +2290,7 @@ end getSetEqnStates;
 protected function getEqnsforDynamicStateSelection
 "function getEqnsforDynamicStateSelection, collect all equations for the dynamic state selection set from the
  unmatched equations
- autor: Frenkel TUD 2012-12"
+ author: Frenkel TUD 2012-12"
   input list<Integer> U;
   input Integer neqns;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
@@ -2316,7 +2316,7 @@ end getEqnsforDynamicStateSelection;
 
 protected function getEqnsforDynamicStateSelection1
 "function getEqnsforDynamicStateSelection1, helper for getEqnsforDynamicStateSelection
- autor: Frenkel TUD 2012-12"
+ author: Frenkel TUD 2012-12"
   input list<Integer> U;
   input BackendDAE.IncidenceMatrix m "m[eqnindx] = list(varindx)";
   input BackendDAE.IncidenceMatrixT mT "mT[varindx] = list(eqnindx)";
@@ -2355,7 +2355,7 @@ end getEqnsforDynamicStateSelection1;
 protected function getEqnsforDynamicStateSelectionPhase
 "function getEqnsforDynamicStateSelectionPhase
   helper for getEqnsforDynamicStateSelection
-  autor: Frenkel TUD 2012-12"
+  author: Frenkel TUD 2012-12"
   input list<Integer> elst;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -2396,7 +2396,7 @@ end getEqnsforDynamicStateSelectionPhase;
 protected function getEqnsforDynamicStateSelectionRows
 "function getEqnsforDynamicStateSelectionRows
   helper for getEqnsforDynamicStateSelection
-  autor: Frenkel TUD 2012-12"
+  author: Frenkel TUD 2012-12"
   input list<Integer> rows;
   input BackendDAE.IncidenceMatrix m;
   input BackendDAE.IncidenceMatrixT mT;
@@ -4970,7 +4970,7 @@ algorithm
 end replaceDummyDerivativesShared;
 
 protected function replaceDummyDerivativesVar
-"autor: Frenkel TUD 2012-08"
+"author: Frenkel TUD 2012-08"
  input tuple<BackendDAE.Var, HashTable2.HashTable> inTpl;
  output tuple<BackendDAE.Var, HashTable2.HashTable> outTpl;
 algorithm
@@ -5679,7 +5679,7 @@ algorithm
 end dumpSystemGraphML;
 
 protected function addVarGraph
-"autor: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
  input tuple<BackendDAE.Var, tuple<Integer,GraphML.Graph>> inTpl;
  output tuple<BackendDAE.Var, tuple<Integer,GraphML.Graph>> outTpl;
 algorithm
@@ -5712,7 +5712,7 @@ algorithm
 end addVarGraph;
 
 protected function addVarGraphMatch
-"autor: Frenkel TUD 2012-05"
+"author: Frenkel TUD 2012-05"
  input tuple<BackendDAE.Var, tuple<Integer,array<Integer>,GraphML.Graph>> inTpl;
  output tuple<BackendDAE.Var, tuple<Integer,array<Integer>,GraphML.Graph>> outTpl;
 algorithm

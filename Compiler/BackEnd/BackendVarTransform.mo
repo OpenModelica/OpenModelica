@@ -2018,7 +2018,7 @@ end moveNegateRhs;
 
 protected function validLhsArrayAssignSTMT "
 function: validLhsArrayAssignSTMT
-  autor Frenkel TUD 2012-11
+  author Frenkel TUD 2012-11
   checks if the lhs is a variable or an array of variables."
   input DAE.ComponentRef oldCr;
   input DAE.Exp lhs;
@@ -2069,7 +2069,7 @@ algorithm
 
 protected function validLhsAssignSTMT "
 function: validLhsAssignSTMT
-  autor Frenkel TUD 2012-11
+  author Frenkel TUD 2012-11
   checks if the lhs is a variable or an array of variables."
   input DAE.Exp lhs;
   input DAE.Exp rhs;

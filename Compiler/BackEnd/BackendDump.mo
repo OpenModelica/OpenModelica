@@ -452,7 +452,7 @@ end dumpEquation;
 
 public function dumpTearing
 " function: dumpTearing
-  autor: Frenkel TUD
+  author: Frenkel TUD
   Dump tearing vars and residual equations."
   input list<list<Integer>> inResEqn;
   input list<list<Integer>> inTearVar;
@@ -659,7 +659,7 @@ end dumpEqnsSolved1;
 
 protected function dumpEqnsSolved2 
 " function: dumpEqnsSolved2
-  autor: Frenkel TUD 2012-03"
+  author: Frenkel TUD 2012-03"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EquationArray eqns;
   input BackendDAE.Variables vars;
@@ -3095,7 +3095,7 @@ algorithm
 end dumpAliasVariables;
 
 protected function dumpAliasVariable
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var,list<Integer>> inTpl;
  output tuple<BackendDAE.Var,list<Integer>> outTpl;
 algorithm
@@ -3134,7 +3134,7 @@ algorithm
 end dumpStateVariables;
 
 protected function dumpStateVariable
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, Integer> inTpl;
  output tuple<BackendDAE.Var, Integer> outTpl;
 algorithm
@@ -3158,7 +3158,7 @@ algorithm
 end dumpStateVariable;
 
 public function bltdump
-"autor: Frenkel TUD 2011-03"
+"author: Frenkel TUD 2011-03"
   input tuple<String,BackendDAE.BackendDAE> inTpl;
 algorithm
    _:=
@@ -3301,7 +3301,7 @@ algorithm
 end dumpCompShort1;
 
 protected function traversingisStateTopInputVarFinder
-"autor: Frenkel TUD 2010-11"
+"author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var, tuple<Integer,Integer,list<DAE.ComponentRef>> > inTpl;
  output tuple<BackendDAE.Var, tuple<Integer,Integer,list<DAE.ComponentRef>> > outTpl;
 algorithm
@@ -3455,7 +3455,7 @@ end dumpCompShort2;
 
 public function dumpNrOfEquations
 "function dumpNrOfEquations
-  autor Frenkel TUD 2012-11
+  author Frenkel TUD 2012-11
   prints the number of scalar equations in the dae system"
   input BackendDAE.BackendDAE inDAE;
   input String preStr;

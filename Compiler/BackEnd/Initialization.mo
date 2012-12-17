@@ -1000,7 +1000,7 @@ protected function replaceDerPreCrefExp "function replaceDerPreCrefExp
   input tuple<DAE.Exp, Integer> inExp;
   output tuple<DAE.Exp, Integer> outExp;
 algorithm
-  (outExp) := matchcontinue(inExp)
+  outExp := matchcontinue(inExp)
     local
       DAE.ComponentRef dummyder, cr;
       DAE.Type ty;

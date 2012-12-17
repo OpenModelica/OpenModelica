@@ -1185,7 +1185,7 @@ end lowerEqns;
 
 protected function lowerIfEquationAsserts
 "function: lowerIfEquationAsserts
-  autor: Frenkel TUD 2012-10
+  author: Frenkel TUD 2012-10
   lowar all asserts in if equations"
   input list<DAE.Exp> conditions;
   input list<list<DAE.Element>> theneqns;
@@ -1220,7 +1220,7 @@ end lowerIfEquationAsserts;
 
 protected function lowerIfEquationAsserts1
 "function: lowerIfEquationAsserts1
-  autor: Frenkel TUD 2012-10
+  author: Frenkel TUD 2012-10
   helper for lowerIfEquationAsserts"
   input list<DAE.Element> brancheqns;
   input Option<DAE.Exp> condition;
@@ -1673,7 +1673,7 @@ end lowerWhenTupleEqn;
 
 protected function lowerWhenIfEqns2
 "function: lowerWhenIfEqns
-  autor: Frenkel TUD 2012-11
+  author: Frenkel TUD 2012-11
   helper for lowerWhen"
   input list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;
   input DAE.Exp inCond;
@@ -1702,7 +1702,7 @@ end lowerWhenIfEqns2;
 
 protected function lowerWhenIfEqns
 "function: lowerWhenIfEqns
-  autor: Frenkel TUD 2012-11
+  author: Frenkel TUD 2012-11
   helper for lowerWhen"
   input list<DAE.Exp> conditions;
   input list<list<DAE.Element>> theneqns;
@@ -1730,7 +1730,7 @@ end lowerWhenIfEqns;
 
 protected function lowerWhenIfEqns1
 "function: simplifySolvedIfEqns1
-  autor: Frenkel TUD 2012-11
+  author: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input DAE.Exp condition;
   input list<DAE.Element> brancheqns;
@@ -1817,7 +1817,7 @@ end lowerWhenIfEqns1;
 
 protected function lowerWhenIfEqnsMergeNestedIf
 "function: lowerWhenIfEqnsMergeNestedIf
-  autor: Frenkel TUD 2012-11
+  author: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input list<tuple<DAE.ComponentRef,tuple<DAE.Exp,DAE.ElementSource>>> crexplst;
   input DAE.Exp inCond;
@@ -1848,7 +1848,7 @@ end lowerWhenIfEqnsMergeNestedIf;
 
 protected function lowerWhenIfEqnsElse
 "function: lowerWhenIfEqnsElse
-  autor: Frenkel TUD 2012-11
+  author: Frenkel TUD 2012-11
   helper for lowerWhenIfEqns"
   input list<DAE.Element> elseenqs;
   input DAE.FunctionTree functionTree; 
@@ -2222,7 +2222,7 @@ algorithm
 end handleAliasEquations1;
 
 protected function replaceAliasVarTraverser
-"autor: Frenkel TUD 2011-03"
+"author: Frenkel TUD 2011-03"
  input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
  output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
 algorithm
@@ -2667,7 +2667,7 @@ end selectAliasVar;
 
 protected function replaceableAlias
 "function replaceableAlias
-  autor Frenkel TUD 2011-08
+  author Frenkel TUD 2011-08
   check if the variable is a replaceable alias."
   input BackendDAE.Var var;
 algorithm
