@@ -1719,7 +1719,7 @@ algorithm
     // add inner or innerouter
     case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io)), _, _, _)
       equation
-        true = boolOr(Absyn.isInner(io), Absyn.isInnerOuter(io));
+        true = Absyn.isInner(io);
         // add to instance hierarchy
         outIH = updateInstHierarchy(inIH, inPrefix, io,
           INST_INNER(

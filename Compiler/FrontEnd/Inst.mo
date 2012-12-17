@@ -1780,10 +1780,11 @@ algorithm
       equation
         //print("instClassIn(");print(n);print(") failed\n");
         true = Flags.isSet(Flags.FAILTRACE);
-        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassInInnerOuter failed on class:" +&
+        Debug.fprintln(Flags.FAILTRACE, "- Inst.instClassIn2 failed on class:" +&
            n +& " in environment: " +& Env.printEnvPathStr(env));
       then
         fail();
+  
   end matchcontinue;
 end instClassIn2;
 

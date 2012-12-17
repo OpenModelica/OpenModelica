@@ -734,7 +734,7 @@ protected function analyseElement
   input SCode.Restriction inClassRestriction;
   output list<Extends> outExtends;
 algorithm
-  outExtends := matchcontinue(inElement, inEnv, inExtends, inClassRestriction)
+  outExtends := match(inElement, inEnv, inExtends, inClassRestriction)
     local
       Absyn.Path bc, bc2;
       SCode.Mod mods;
@@ -848,22 +848,28 @@ algorithm
       then
         inExtends;
 
-    // inner/innerouter classes may not be explicitly used but might be needed anyway 
-    case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = io), info = info), _, _, _)
+    case (SCode.CLASS(name = name, info = info, classDef=SCode.CLASS_EXTENDS(baseClassName = _)), _, _, _)
       equation
-        true = boolOr(Absyn.isInner(io), Absyn.isInnerOuter(io));
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
-
-    case (SCode.CLASS(name = name, info = info, classDef=SCode.CLASS_EXTENDS(baseClassName = _)), _, _, _)
+    
+    // inner/innerouter classes may not be explicitly used but might be needed anyway 
+    case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER()), info = info), _, _, _)
+      equation
+        analyseClass(Absyn.IDENT(name), inEnv, info);
+      then
+        inExtends;
+    
+    // inner/innerouter classes may not be explicitly used but might be needed anyway 
+    case (SCode.CLASS(name = name, prefixes = SCode.PREFIXES(innerOuter = Absyn.INNER_OUTER()), info = info), _, _, _)
       equation
         analyseClass(Absyn.IDENT(name), inEnv, info);
       then
         inExtends;
 
     else inExtends;
-  end matchcontinue;
+  end match;
 end analyseElement;
 
 protected function markAsUsedOnRestriction

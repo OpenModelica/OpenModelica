@@ -387,6 +387,7 @@ uniontype InnerOuter
   record INNER_OUTER     "an inner outer prefix" end INNER_OUTER;
   record NOT_INNER_OUTER "no inner outer prefix" end NOT_INNER_OUTER;    
 end InnerOuter;
+
 public
 uniontype Import "Import statements, different kinds"
   // A named import is a import statement to a variable ex;
