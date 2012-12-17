@@ -52,6 +52,9 @@
 #define set_struct(TYPE, x, info) x = (TYPE)info
 #endif
 
+/* Forward declaration of DATA to avoid warnings in NONLINEAR_SYSTEM_DATA. */
+struct DATA;
+
 /* Model info structures */
 typedef struct VAR_INFO
 {
