@@ -332,7 +332,7 @@ AC_LINK_IFELSE([AC_LANG_CALL([], [dgesv_])],[AC_MSG_RESULT([ok])],[AC_MSG_ERROR(
 
 AC_CHECK_HEADERS(kinsol/kinsol.h kinsol/kinsol_dense.h nvector/nvector_serial.h sundials/sundials_types.h sundials/sundials_math.h,[],[NO_SUNDIALS="yes"])
 SUNDIALS_LDFLAGS="-lsundials_kinsol -lsundials_nvecserial -llapack"
-LIBS=$SUNDIALS_LDFLAGS
+LIBS="$SUNDIALS_LDFLAGS -lm"
 AC_MSG_CHECKING([Sundials linking])
 AC_LINK_IFELSE([AC_LANG_CALL([], [KINInit])],
   [AC_MSG_RESULT([ok])],
