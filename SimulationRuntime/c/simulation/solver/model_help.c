@@ -282,6 +282,22 @@ void printAllHelpVars(DATA *data)
   RELEASE(LOG_STDOUT);
 }
 
+/*! \fn syncPreForHelpVars
+ *
+ *  This functions copies all values of the help vars to their pre-help vars.
+ *
+ *  \param [ref] [data]
+ *
+ *  \author lochel
+ */
+void syncPreForHelpVars(DATA *data)
+{
+  long i;
+
+  for(i=0; i<data->modelData.nHelpVars; i++)
+    data->simulationInfo.helpVarsPre[i] = data->simulationInfo.helpVars[i];
+}
+
 
 /*! \fn printRelations
  *
@@ -1051,7 +1067,7 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
  *  Example: for n = 3
  *           generates sequence: 000, 100, 010, 001, 110, 101, 011, 111
  *
- *  \param [ref]  [data]
+ *  \param [ref] [data]
  *
  * \author Jan Silar
  *

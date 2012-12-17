@@ -2340,9 +2340,12 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   <<
   <%preExp%>
   <%helpInits%>
-  if (<%helpIf%>) {
+  if(<%helpIf%>)
+  {
     <%assign%>
-  } else {
+  }
+  else
+  {
     <%cref(left)%> = $P$PRE<%cref(left)%>;
   }
   >>
@@ -2359,11 +2362,13 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   <<
   <%preExp%>
   <%helpInits%>
-  if (<%helpIf%>) {
+  if(<%helpIf%>)
+  {
     <%assign%>
   }
   <%elseWhen%>
-  else {
+  else
+  {
     <%cref(left)%> = $P$PRE<%cref(left)%>;
   }
   >> 
@@ -2381,7 +2386,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
     ;separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
-  else if (<%helpIf%>) {
+  else if(<%helpIf%>)
+  {
     <%assign%>
   }
   >>
@@ -2394,7 +2400,8 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseW
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
   <<
-  else if (<%helpIf%>) {
+  else if(<%helpIf%>)
+  {
     <%assign%>
   }
   <%elseWhen%>
@@ -3709,7 +3716,8 @@ case FUNCTION(__) then
   
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  <%retType%> omc_<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>) {
+  <%retType%> omc_<%fname%>(<%functionArguments |> var => funArgDefinition(var) ;separator=", "%>)
+  {
     /* functionBodyRegularFunction: GC: save roots mark when you enter the function */    
     <%if acceptMetaModelicaGrammar() 
       then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("_<%fname%>");'%>  
@@ -3745,7 +3753,8 @@ case FUNCTION(__) then
   }
   <% if inFunc then
   <<
-  int in_<%fname%>(type_description * inArgs, type_description * outVar) {
+  int in_<%fname%>(type_description * inArgs, type_description * outVar)
+  {
     void* states = push_memory_states(1);
     <% if acceptMetaModelicaGrammar() then "if (!mmc_GC_state) mmc_GC_init(mmc_GC_settings_default);" %>
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
@@ -3812,10 +3821,8 @@ case KERNEL_FUNCTION(__) then
   <<
   
   __kernel void omc_<%fname%>(
-    <%\t%><%\t%><%argStr%>
-  ) {
- 
-
+    <%\t%><%\t%><%argStr%>)
+  { 
     /* functionBodyKernelFunction: Reconstruct Arrays */
     <%reconstrucedArrays%>
   
@@ -4153,7 +4160,8 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     '<%retVar%>.c<%i1%> = <%funArgBox(arg, ty, &varUnbox, &varDecls)%>;'
     ;separator="\n")
   <<
-  <%retTypeBoxed%> boxptr_<%fname%>(<%funargs |> var => funArgBoxedDefinition(var) ;separator=", "%>) {    
+  <%retTypeBoxed%> boxptr_<%fname%>(<%funargs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
+  {    
     /* GC: save roots mark when you enter the function */    
     <%if acceptMetaModelicaGrammar() 
       then 'mmc_GC_local_state_type mmc_GC_local_state = mmc_GC_save_roots_state("boxptr__<%fname%>");'%>
@@ -4187,7 +4195,8 @@ case RECORD_CONSTRUCTOR(__) then
   ;separator=", ")
   let funArgCount = incrementInt(listLength(funArgs), 1)
   <<
-  modelica_metatype boxptr_<%fname%>(<%funArgs |> var => funArgBoxedDefinition(var) ;separator=", "%>) {
+  modelica_metatype boxptr_<%fname%>(<%funArgs |> var => funArgBoxedDefinition(var) ;separator=", "%>)
+  {
     return mmc_mk_box<%funArgCount%>(3, &<%fname%>__desc, <%funArgsStr%>);
   }
   >>
@@ -4538,7 +4547,8 @@ case var as VARIABLE(ty = T_STRING(__)) then
       let &varCopy +=
         <<
         <%strVar%> = (modelica_string_t*) malloc(<%sz%>*sizeof(modelica_string_t));
-        for (<%loopVar%>=0;<%loopVar%><<%sz%>;<%loopVar%>++) {
+        for (<%loopVar%>=0;<%loopVar%><<%sz%>;<%loopVar%>++)
+        {
           <%strVar%>[<%loopVar%>] = strdup(string_get(&<%contextCref(var.name,contextFunction)%>,<%loopVar%>));<%\n%>
         }
         <%\n%>>>
@@ -4547,7 +4557,8 @@ case var as VARIABLE(ty = T_STRING(__)) then
       // let &varAssign += 'copy_<%expTypeShort(var.ty)%>_array_data(&<%contextCref(var.name,contextFunction)%>, &<%dest%>.c<%ix%>);<%\n%>'
       let &varAssign +=
         <<
-        for (<%loopVar%>=0;<%loopVar%><<%sz%>;<%loopVar%>++) {
+        for (<%loopVar%>=0;<%loopVar%><<%sz%>;<%loopVar%>++)
+        {
           ((modelica_string_t*) <%destTarget%>->data)[<%loopVar%>] = init_modelica_string(<%strVar%>[<%loopVar%>]);
           free(<%strVar%>[<%loopVar%>]);<%\n%>
         }
@@ -4778,7 +4789,8 @@ case EXTERNAL_FUNCTION(__) then
   let fname = if dynamicLoad then 'ptr_<%extFunctionName(extName, language)%>' else '<%extName%>'
   let dynamicCheck = if dynamicLoad then 
   <<
-  if (<%fname%>==NULL) {
+  if(<%fname%>==NULL)
+  {
     FILE_INFO info = {<%infoArgs(info)%>};
     omc_terminate("dynamic external function <%extFunctionName(extName, language)%> not set!", info);
   } else
@@ -5451,7 +5463,8 @@ case STMT_IF(__) then
   let condExp = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
   <%preExp%>
-  if (<%condExp%>) {
+  if(<%condExp%>)
+  {
     <%statementLst |> stmt => algStatement(stmt, context, &varDecls /*BUFD*/) ;separator="\n"%>
   }
   <%elseExpr(else_, context, &varDecls /*BUFD*/)%>
@@ -5497,27 +5510,22 @@ case STMT_PARFOR(range=rng as RANGE(__)) then
         modelica_integer loop_start,
         modelica_integer loop_step,
         modelica_integer loop_end,
-        <%argStr%>
-  ) {
-  
-  
-      /* algStmtParForRangeBody : Thread managment for parfor loops */    
-      modelica_integer inner_start = (get_global_id(0) * loop_step) + (loop_start);
-      modelica_integer stride = get_global_size(0) * loop_step;
-    
-      for(modelica_integer <%iterName%> = (modelica_integer) inner_start; in_range_integer(<%iterName%>, loop_start, loop_end); <%iterName%> += stride)
-        {
-        
-          /*algStmtParForRangeBody : Reconstruct Arrays */
-          <%reconstrucedArrays%>
-        
-          /* algStmtParForRangeBody : locals */
-          <%loopVarDecls%>
-          
-          <%body%>
-        
-        }
-  
+        <%argStr%>)
+  {
+    /* algStmtParForRangeBody : Thread managment for parfor loops */    
+    modelica_integer inner_start = (get_global_id(0) * loop_step) + (loop_start);
+    modelica_integer stride = get_global_size(0) * loop_step;
+
+    for(modelica_integer <%iterName%> = (modelica_integer) inner_start; in_range_integer(<%iterName%>, loop_start, loop_end); <%iterName%> += stride)
+    {
+      /* algStmtParForRangeBody : Reconstruct Arrays */
+      <%reconstrucedArrays%>
+
+      /* algStmtParForRangeBody : locals */
+      <%loopVarDecls%>
+
+      <%body%>
+    }
   }
   >>
 end algStmtParForRangeBody;
@@ -5635,12 +5643,16 @@ case RANGE(__) then
   <<
   <%preExp%>
   <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
-  if (!<%stepVar%>) {
+  if(!<%stepVar%>)
+  {
     FILE_INFO info = omc_dummyFileInfo;
     omc_assert("assertion range step != 0 failed", info);
-  } else if (!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>)))) {
+  }
+  else if(!(((<%stepVar%> > 0) && (<%startVar%> > <%stopVar%>)) || ((<%stepVar%> < 0) && (<%startVar%> < <%stopVar%>))))
+  {
     <%type%> <%iterName%>;
-    for (<%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>) { 
+    for(<%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>)
+    { 
       <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%body%>
       <%if not acceptMetaModelicaGrammar() then 'restore_memory_state(<%stateVar%>);'%>
@@ -5683,7 +5695,8 @@ template algStmtForGeneric_impl(Exp exp, Ident iterator, String type,
   {
     <%type%> <%iterName%>;
   
-    for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(<%evar%>, 1); ++<%tvar%>) {
+    for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(<%evar%>, 1); ++<%tvar%>)
+    {
       <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
       <%stmtStuff%>
       <%body%>
@@ -5701,9 +5714,10 @@ case STMT_WHILE(__) then
   let &preExp = buffer "" /*BUFD*/
   let var = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
   <<
-  while (1) {
+  while(1)
+  {
     <%preExp%>
-    if (!<%var%>) break;
+    if(!<%var%>) break;
     <%statementLst |> stmt => algStatement(stmt, context, &varDecls /*BUFD*/) ;separator="\n"%>
   }
   >>
@@ -5790,7 +5804,8 @@ case STMT_CATCH(__) then
     ;separator="\n")
   <<
   #error "Using STMT_CATCH: This is deprecated, and should be matched with catch anyway."
-  catch (int i) {
+  catch(int i)
+  {
     <%body%>
   }
   >>
@@ -5823,9 +5838,11 @@ case SIMULATION(__) then
       ;separator="\n")
     let else = algStatementWhenElse(elseWhen, &varDecls /*BUFD*/)
     <<
-    if (data->simulationInfo.discreteCall == 1) {
+    if(data->simulationInfo.discreteCall == 1)
+    {
       <%preIf%>
-      if (<%helpVarIndices |> idx => 'data->simulationInfo.helpVars[<%idx%>] && !data->simulationInfo.helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>) {
+      if(<%helpVarIndices |> idx => 'data->simulationInfo.helpVars[<%idx%>] && !data->simulationInfo.helpVarsPre[<%idx%>] /* edge */' ;separator=" || "%>)
+      {
         <%statements%>
       }
       <%else%>
@@ -5888,7 +5905,8 @@ case SOME(when as STMT_WHEN(__)) then
       'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
     ;separator=" || ")
   <<
-  else if (<%elseCondStr%>) {
+  else if(<%elseCondStr%>)
+  {
     <%statements%>
   }
   <%else%>
@@ -5929,9 +5947,8 @@ template algStmtReinit(DAE.Statement stmt, Context context, Text &varDecls /*BUF
     <<
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
-    if (DEBUG_STREAM(LOG_EVENTS)) {
+    if(DEBUG_STREAM(LOG_EVENTS))
       INFO1(LOG_EVENTS, "reinit <%expPart1%> = %f", <%expPart1%>);
-    }
     data->simulationInfo.needToIterate = 1;
     >>
 end algStmtReinit;
@@ -5956,9 +5973,11 @@ template elseExpr(DAE.Else else_, Context context, Text &varDecls /*BUFP*/)
     let &preExp = buffer "" /*BUFD*/
     let condExp = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     <<
-    else {
+    else
+    {
       <%preExp%>
-      if (<%condExp%>) {
+      if(<%condExp%>)
+      {
         <%statementLst |> stmt =>
           algStatement(stmt, context, &varDecls /*BUFD*/)
         ;separator="\n"%>
@@ -5969,7 +5988,8 @@ template elseExpr(DAE.Else else_, Context context, Text &varDecls /*BUFP*/)
   case ELSE(__) then
 
     <<
-    else {
+    else
+    {
       <%statementLst |> stmt =>
         algStatement(stmt, context, &varDecls /*BUFD*/)
       ;separator="\n"%>
@@ -6803,10 +6823,13 @@ case IFEXP(__) then
       let &preExp +=  
       <<
       <%condVar%> = (modelica_boolean)<%condExp%>;
-      if (<%condVar%>) {
+      if(<%condVar%>)
+      {
         <%preExpThen%>
         <%if eThen then resultVarAssignment(typeof(exp),resVar,eThen)%>
-      } else {
+      }
+      else
+      {
         <%preExpElse%>
         <%if eElse then resultVarAssignment(typeof(exp),resVar,eElse)%>
       }<%\n%>
@@ -7348,7 +7371,8 @@ template daeExpAsub(Exp inExp, Context context, Text &preExp /*BUFP*/,
       >> ; separator = "\n")
     let &preExp +=
     <<
-    switch (<%idx1%>) { /* ASUB */
+    switch(<%idx1%>)
+    { /* ASUB */
     <%expl%>
     default:
       assert(NULL == "index out of bounds");
@@ -7507,9 +7531,12 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
       let fExpStr = daeExp(fExp, context, &bodyExpPre, &tmpVarDecls)
       if not ri.defaultValue then
       <<
-      if (<%foundFirst%>) {
+      if(<%foundFirst%>)
+      {
         <%res%> = <%fExpStr%>;
-      } else {
+      }
+      else
+      {
         <%res%> = <%reductionBodyExpr%>;
         <%foundFirst%> = 1;
       }
@@ -7534,14 +7561,16 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
   let loopHead = match identType
     case "modelica_metatype" then
     <<
-    while (!<%empty%>) {
+    while(!<%empty%>)
+    {
       <%identType%> <%iteratorName%>;
       <%iteratorName%> = MMC_CAR(<%loopVar%>);
       <%loopVar%> = MMC_CDR(<%loopVar%>);
     >>
     else
     <<
-    while (<%firstIndex%> <= size_of_dimension_<%arrayType%>(<%loopVar%>, 1)) {
+    while(<%firstIndex%> <= size_of_dimension_<%arrayType%>(<%loopVar%>, 1))
+    {
       <%identType%> <%iteratorName%>;
       <%iteratorName%> = *(<%arrayType%>_element_addr1(&<%loopVar%>, 1, <%firstIndex%>++));
       <%if not acceptMetaModelicaGrammar() then '<%stateVar%> = get_memory_state();'%>
@@ -7559,7 +7588,8 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
     <% if resTail then '<%resTail%> = &<%res%>;' %>
     <%loopHead%>
       <%&guardExpPre%>
-      if (<%guardCond%>) {
+      if(<%guardCond%>)
+      {
         <%&bodyExpPre%>
         <%foldExp%>
       }
@@ -8397,9 +8427,11 @@ template assertCommon(Exp condition, Exp message, Exp level, Context context, Te
   let &preExpMsg = buffer ""
   let msgVar = daeExp(message, context, &preExpMsg, &varDecls)
   <<
-  if (!<%warningTriggered%>) {
+  if(!<%warningTriggered%>)
+  {
     <%preExpCond%>
-    if (!<%condVar%>) {
+    if(!<%condVar%>)
+    {
       <%preExpMsg%>
       FILE_INFO info = {<%infoArgs(info)%>};
       omc_assert_warning(<%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>, info);
@@ -8415,9 +8447,11 @@ template assertCommon(Exp condition, Exp message, Exp level, Context context, Te
   let msgVar = daeExp(message, context, &preExpMsg, &varDecls)
   <<
   <%preExpLevel%>
-  if (<%levelVar%> == 1 || !<%warningTriggered%>) {
+  if(<%levelVar%> == 1 || !<%warningTriggered%>)
+  {
     <%preExpCond%>
-    if (!<%condVar%>) {
+    if(!<%condVar%>)
+    {
       <%preExpMsg%>
       FILE_INFO info = {<%infoArgs(info)%>};
       if (<%levelVar%> == 1)
@@ -8435,7 +8469,8 @@ template assertCommonVar(Text condVar, Exp message, Context context, Text &varDe
   let &preExpMsg = buffer ""
   let msgVar = daeExp(message, context, &preExpMsg, &varDecls)
   <<
-  if (!<%condVar%>) {
+  if(!<%condVar%>)
+  {
       <%preExpMsg%>
       FILE_INFO info = {<%infoArgs(info)%>};
       omc_assert(<%if acceptMetaModelicaGrammar() then 'MMC_STRINGDATA(<%msgVar%>)' else msgVar%>, info);

@@ -606,6 +606,8 @@ static int numeric_initialization(DATA *data, int optiMethod)
 {
   int retVal = 0;
 
+  resetAllHelpVars(data);              /* just a workaround - as long as this method do not support discrete systems at all */
+
   retVal = initialize(data, optiMethod);
 
   storePreValues(data);                 /* save pre-values */
@@ -902,7 +904,6 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
 
-  
   /* initial sample and delay before initial the system */
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
   initDelay(data, data->simulationInfo.startTime);
@@ -914,7 +915,7 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
   /* and restore start values and helpvars */
   restoreExtrapolationDataOld(data);
-  resetAllHelpVars(data);
+  syncPreForHelpVars(data);     /* resetAllHelpVars(data); */
   storeRelations(data);
   storePreValues(data);
 
