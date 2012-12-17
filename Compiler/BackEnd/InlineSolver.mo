@@ -69,63 +69,69 @@ algorithm
     local
       BackendDAE.BackendDAE dae;
       
-    case _ equation
+    case _ equation /*do nothing */
       false = Flags.isSet(Flags.INLINE_SOLVER);
     then NONE();
     
     case dae equation
       true = Flags.isSet(Flags.INLINE_SOLVER);
+
+      Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: raw system");
+
+      /*dae -> algebraic system*/      
+      dae = dae_to_algSystem(dae);
       
-      Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver (1)");
-      
-      dae = replaceStates(dae);
-      
-      Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver (2)");
+      /*output: algebraic system */
+      Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: algebraic system");
     then NONE();
     
-    else equation
+    else equation /* don't work */
       Error.addCompilerWarning("./Compiler/BackEnd/InlineSolver.mo: function generateDAE failed");
       Error.addCompilerWarning("inline solver can not be used.");
     then NONE();
   end matchcontinue;
 end generateDAE;
 
-protected function replaceStates "function replaceStates
+
+protected function dae_to_algSystem "function dae_to_algSystem
   author: lochel, vruge
-  This is a helper function for generateDAE."
+  This is a helper function for generateDAE.
+  Transformation dae in algebraic system
+  "
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
   BackendDAE.EqSystems systs;
   BackendDAE.Shared shared;
   
+  /*need for new matching */
   list<tuple<BackendDAEUtil.pastoptimiseDAEModule, String, Boolean>> pastOptModules;
   tuple<BackendDAEUtil.StructurallySingularSystemHandlerFunc, String, BackendDAEUtil.stateDeselectionFunc, String> daeHandler;
   tuple<BackendDAEUtil.matchingAlgorithmFunc, String> matchingAlgorithm;
-  Integer nVars, nEqns;
-  BackendDAE.Variables vars;
-  BackendDAE.EquationArray eqns;
   BackendDAE.BackendDAE dae;
+  
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
-  
-  systs := List.map(systs, replaceStates1);
+  systs := List.map(systs, eliminiertStatesDerivations);
   dae := BackendDAE.DAE(systs, shared);
   
+  // matching options
   pastOptModules := BackendDAEUtil.getPastOptModules(SOME({"constantLinearSystem", "removeSimpleEquations", "tearingSystem"}));
   matchingAlgorithm := BackendDAEUtil.getMatchingAlgorithm(NONE());
   daeHandler := BackendDAEUtil.getIndexReductionMethod(NONE());
-
+  
   // solve system
   dae := BackendDAEUtil.transformBackendDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
-
   // simplify system
   (outDAE, Util.SUCCESS()) := BackendDAEUtil.pastoptimiseDAE(dae, pastOptModules, matchingAlgorithm, daeHandler);
-end replaceStates;
+end dae_to_algSystem;
 
-protected function replaceStates1 "function replaceStates1
+
+protected function eliminiertStatesDerivations "function eliminiertStatesDerivations
   author: lochel, vruge
-  This is a helper function for replaceStates."
+  This is a helper function for dae_to_algSystem.
+  change function call der(x) in  variable xder
+  change kind: state in known variable "
   input BackendDAE.EqSystem inEqSystem;
   output BackendDAE.EqSystem outEqSystem;
 protected  
@@ -134,22 +140,23 @@ protected
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.EquationArray eqns;
   BackendDAE.EqSystem eqSystem;
-  
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := inEqSystem;
-  
   vars := BackendVariable.emptyVars();
   eqns := BackendEquation.emptyEqns();
-  
-  ((_, eqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates1_eqs, (orderedVars, eqns));  
-  ((vars, eqns)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates1_vars, (vars, eqns));
-  
+  // change function call der(x) in  variable xder
+  ((_, eqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns));  
+  // change kind: state in known variable 
+  ((vars, eqns)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns));
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
   (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL());
-end replaceStates1;
+end eliminiertStatesDerivations;
 
-protected function replaceStates1_eqs "function replaceStates1_eqs
-  author: lochel, vruge"
+
+protected function replaceStates_eqs "function replaceStates_eqs
+  author: lochel, vruge
+  This is a helper function for eliminiertStatesDerivations.
+  replace der(x) with $DER.x."
   input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables, BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Equation, tuple<BackendDAE.Variables, BackendDAE.EquationArray>> outTpl;
 protected
@@ -158,16 +165,17 @@ protected
   BackendDAE.Variables vars;
 algorithm
   (eqn, (vars, eqns)) := inTpl;
-  
-  // replace der(x) with $DER.x and replace pre(x) with $PRE.x
+  // replace der(x) with $DER.x
   (eqn1, _) := BackendEquation.traverseBackendDAEExpsEqn(eqn, replaceDerStateCref, (vars, 0));
   eqns := BackendEquation.equationAdd(eqn1, eqns);
-  
   outTpl := (eqn, (vars, eqns));
-end replaceStates1_eqs;
+end replaceStates_eqs;
 
+
+/*replaceDerStateCref*/
 protected function replaceDerStateCref "function replaceDerStateCref
-  author: lochel, vruge"
+  author: lochel, vruge
+  This is a helper function for dae_to_algSystem."
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer>> inExp;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer>> outExp;
 protected
@@ -180,73 +188,65 @@ algorithm
 end replaceDerStateCref;
 
 protected function replaceDerStateExp "function replaceDerStateExp
-  author: lochel, vruge"
+  author: lochel, vruge
+  This is a helper function for replaceDerStateCref."
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer>> inExp;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer>> outExp;
 algorithm
   (outExp) := matchcontinue(inExp)
     local
-      DAE.ComponentRef dummyder, cr, vitCR;
+      DAE.ComponentRef cr;
       DAE.Type ty;
       Integer i;
       BackendDAE.Variables vars;
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"), expLst = {DAE.CREF(componentRef = cr)}, attr=DAE.CALL_ATTR(ty=ty)), (vars, i))) equation
       cr = ComponentReference.popCref(cr);
-      dummyder = ComponentReference.crefPrefixString("$vit_0_der", cr);
-    then ((DAE.CREF(dummyder, ty), (vars, i+1)));
+      cr = ComponentReference.crefPrefixString("$t0_der", cr); //der(x) for timepoint t0
+    then ((DAE.CREF(cr, ty), (vars, i+1)));
     
     case ((DAE.CREF(componentRef = cr, ty=ty), (vars, i))) equation
       true = BackendVariable.isState(cr, vars);
-      vitCR = ComponentReference.crefPrefixString("$vit_0", cr);
-    then ((DAE.CREF(vitCR, ty), (vars, i+1)));
+      cr = ComponentReference.crefPrefixString("$t0", cr); //x for timepoint t0
+    then ((DAE.CREF(cr, ty), (vars, i+1)));
       
     else
     then inExp;
   end matchcontinue;
 end replaceDerStateExp;
 
-protected function replaceStates1_vars "function replaceStates1_vars
+protected function replaceStates_vars "function replaceStates1_vars
   author: lochel, vruge"
   input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local
-      BackendDAE.Var var, preVar;
+      BackendDAE.Var var;
       BackendDAE.Variables vars;
-      DAE.ComponentRef cr, vit_0CR, vit_1CR, vit_0_derCR;
+      DAE.ComponentRef cr, x0, x1, derx0;
       DAE.Type ty;
       DAE.InstDims arryDim;
       BackendDAE.EquationArray eqns;
       BackendDAE.Equation eqn;
-      DAE.Exp vit_1Exp, rhs, exp, vit_0_derExp;
+      DAE.Exp dt;
     
     // state
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, eqns))) equation
-      vit_0CR = ComponentReference.crefPrefixString("$vit_0", cr);
-      var = BackendDAE.VAR(vit_0CR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-      //vars = BackendVariable.addVar(var, vars);
+      (x0,_) = make_var("$t0",cr,ty,arryDim);
       
-      vit_1CR = ComponentReference.crefPrefixString("$vit_1", cr);
-      var = BackendDAE.VAR(vit_1CR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      (x1,var) = make_var("$t1",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
       
-      vit_0_derCR = ComponentReference.crefPrefixString("$vit_0_der", cr);
-      var = BackendDAE.VAR(vit_0_derCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      (derx0,var) = make_var("$t0_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
       
-      // generate vit_1_x = vit_0_x + dt * vit_0_der_x
-      vit_1Exp = DAE.CREF(vit_1CR, ty);
-      vit_0_derExp = DAE.CREF(vit_0_derCR, ty);
-      rhs = DAE.CREF(vit_0CR, ty);
-      
-      exp = DAE.CREF(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
-      exp = DAE.BINARY(exp, DAE.MUL(DAE.T_REAL_DEFAULT), vit_0_derExp);
-      rhs = DAE.BINARY(rhs, DAE.ADD(DAE.T_REAL_DEFAULT), exp);
-      
-      eqn = BackendDAE.EQUATION(vit_1Exp, rhs, DAE.emptyElementSource, false);
+      dt = DAE.CREF(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT); 
+      // explicit: x_{i+1} = x_{i} + dt * der(x_{i})  
+      // implicit: x_{i+1} = x_{i} + dt * der(x_{i+1})
+      eqn = eulerStep(x0,x1,derx0,dt,ty);
       eqns = BackendEquation.equationAdd(eqn, eqns);
+      
     then ((var, (vars, eqns)));
     
     // else
@@ -258,6 +258,38 @@ algorithm
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/InlineSolver.mo: function replaceStates1_vars failed"});
     then fail();
   end matchcontinue;
-end replaceStates1_vars;
+end replaceStates_vars;
+
+
+protected function make_var
+  input String varTyp;
+  input DAE.ComponentRef inCR;
+  input DAE.Type ty;
+  input DAE.InstDims arryDim;
+  output DAE.ComponentRef outCR;
+  output BackendDAE.Var var;
+  
+algorithm
+  outCR := ComponentReference.crefPrefixString(varTyp, inCR);
+  var := BackendDAE.VAR(outCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+end make_var;
+
+protected function eulerStep
+  input DAE.ComponentRef x0, x1, derx;
+  input DAE.Exp dt;
+  input DAE.Type ty;
+  output BackendDAE.Equation eqn;
+protected
+  DAE.Exp rhs, lhs, e1, e2;
+algorithm
+  lhs := DAE.CREF(x1, ty);
+  e1 := DAE.CREF(derx, ty);
+  e2 := DAE.CREF(x0, ty);
+  
+  rhs := DAE.BINARY(dt, DAE.MUL(ty), e1);
+  rhs := DAE.BINARY(rhs, DAE.ADD(ty), e2);
+  
+  eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
+end eulerStep;
 
 end InlineSolver;
