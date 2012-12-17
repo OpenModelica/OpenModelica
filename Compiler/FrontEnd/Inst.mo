@@ -1574,19 +1574,19 @@ algorithm
       Absyn.InnerOuter io;
       Absyn.Info info;
 
-    // if the class is no inner and no outer! 
+    // if the class is no outer: regular, or inner 
     case (_,_,_,_,_,_,_,c as SCode.CLASS(prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
       equation
-        true = Absyn.isNotInnerOuter(io);
+        true = boolOr(Absyn.isNotInnerOuter(io), Absyn.isOnlyInner(io));
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) =
           instClassIn2(inCache,inEnv,inIH,inStore,inMod,inPrefix,inState,inClass,inVisibility,inInstDims,implicitInstantiation,inCallingScope,inGraph,inSets,instSingleCref);        
       then 
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
-    // if the class is outer we need to instantiate the inner! 
+    // if the class is inner or innerouter we need to instantiate the inner! 
     case (_,_,_,_,_,_,_,c as SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io)),_,_,_,_,_,_,_)
       equation
-        true = Absyn.isOnlyOuter(io);
+        true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
 
         // lookup in IH
         InnerOuter.INST_INNER(
@@ -1598,12 +1598,10 @@ algorithm
       then 
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
-    // if the class is outer we need to instantiate the inner! 
+    // we could not find the inner, use the outer as it is!
     case (_,_,_,_,_,_,_,c as SCode.CLASS(name = n, prefixes = SCode.PREFIXES(innerOuter = io), info = info),_,_,_,_,_,_,_)
       equation
-        true = Absyn.isOnlyOuter(io);
-
-        // failure(_ = InnerOuter.lookupInnerVar(inCache, inEnv, inIH, inPrefix, n, io));
+        true = boolOr(Absyn.isInnerOuter(io), Absyn.isOnlyOuter(io));
 
         s1 = n;
         s2 = Dump.unparseInnerouterStr(io);
