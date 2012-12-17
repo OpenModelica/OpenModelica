@@ -64,6 +64,8 @@ int allocateNonlinearSystem(DATA *data)
     nonlinsys[i].min = (double*) malloc(size*sizeof(double));
     nonlinsys[i].max = (double*) malloc(size*sizeof(double));
 
+    nonlinsys[i].initializeStaticNLSData(data, &nonlinsys[i]);
+
     /* allocate solver data */
     switch(data->simulationInfo.nlsMethod)
     {

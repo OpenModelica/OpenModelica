@@ -246,18 +246,20 @@ typedef struct STATIC_STRING_DATA
 typedef struct NONLINEAR_SYSTEM_DATA
 {
   modelica_integer size;
-  void (*residualFunc)(void*,double*,double*,int*);
-
-  void *solverData;
-  modelica_real *nlsx;              /* x */
-  modelica_real *nlsxOld;           /* previous x */
-  modelica_real *nlsxExtrapolation; /* extrapolated values for x from ol and old2 - used as initial guess */
   modelica_integer simProfEqNr;     /* index for EQUATION_INFO */
 
   /* attributes for x */
   modelica_real *min;
   modelica_real *max;
   modelica_real *nominal;
+
+  void (*residualFunc)(void*, double*, double*, int*);
+  void (*initializeStaticNLSData)(struct DATA*, struct NONLINEAR_SYSTEM_DATA*);
+
+  void *solverData;
+  modelica_real *nlsx;              /* x */
+  modelica_real *nlsxOld;           /* previous x */
+  modelica_real *nlsxExtrapolation; /* extrapolated values for x from old and old2 - used as initial guess */
 
   modelica_integer method;          /* not used */
   modelica_real residualError;      /* not used */

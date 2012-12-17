@@ -915,6 +915,7 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations)
      nonLinearSystemData[<%indexNonLinear%>].simProfEqNr = SIM_PROF_EQ_<%index%>;
      nonLinearSystemData[<%indexNonLinear%>].size = <%size%>;
      nonLinearSystemData[<%indexNonLinear%>].residualFunc = residualFunc<%index%>;
+     nonLinearSystemData[<%indexNonLinear%>].initializeStaticNLSData = initializeStaticNLSData<%index%>;
      >> 
    )
    ;separator="\n\n")
@@ -951,6 +952,13 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
      let &varDecls = buffer "" /*BUFD*/
      let &tmp = buffer ""
      let xlocs = (crefs |> cr hasindex i0 => '<%cref(cr)%> = xloc[<%i0%>];' ;separator="\n") 
+     let body_initializeStaticNLSData = (crefs |> cr hasindex i0 => 
+      <<
+      /* static nls data for <%cref(cr)%> */
+      nlsData->nominal[i] = $P$ATTRIBUTE<%cref(cr)%>.nominal;
+      nlsData->min[i]     = $P$ATTRIBUTE<%cref(cr)%>.min;
+      nlsData->max[i++]   = $P$ATTRIBUTE<%cref(cr)%>.max;
+      >> ;separator="\n") 
      let prebody = (eq.eqs |> eq2 =>
          functionExtraResidualsPreBody(eq2, &varDecls /*BUFD*/, &tmp)
        ;separator="\n")   
@@ -962,6 +970,12 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        ;separator="\n")
      <<
      <%&tmp%>
+     void initializeStaticNLSData<%index%>(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData)
+     {
+       int i=0;
+       <%body_initializeStaticNLSData%>
+     }
+     
      void residualFunc<%index%>(void* dataIn, double* xloc, double* res, int* iflag)
      {
        DATA* data = (DATA*) dataIn;
@@ -2303,9 +2317,6 @@ case SES_NONLINEAR(__) then
     data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>] = <%namestr%>;
     data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
     data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nominal[<%i0%>] = $P$ATTRIBUTE<%namestr%>.nominal;
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].min[<%i0%>] = $P$ATTRIBUTE<%namestr%>.min;
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].max[<%i0%>] = $P$ATTRIBUTE<%namestr%>.max;
     >>
   ;separator="\n"%>
   solve_nonlinear_system(data, <%indexNonLinear%>);
