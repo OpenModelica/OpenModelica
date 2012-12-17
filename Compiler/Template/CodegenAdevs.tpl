@@ -226,6 +226,12 @@ case MODELINFO(vars = vars as SIMVARS(__)) then
      'int get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
    <%(vars.boolParamVars |> SIMVAR(__) =>
      'bool get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+   <%(vars.aliasVars |> SIMVAR(__) =>
+     'double get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+   <%(vars.intAliasVars |> SIMVAR(__) =>
+     'int get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
+   <%(vars.boolAliasVars |> SIMVAR(__) =>
+     'bool get_<%cref(name)%>() const { return <%cref(name)%>; }') ;separator="\n"%>
    >>
 end makeGetAccessors;
 
@@ -258,6 +264,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
    <%(vars.paramVars |> SIMVAR(__) => 'double <%cref(name)%>;') ;separator="\n"%>
    <%(vars.intParamVars |> SIMVAR(__) => 'int <%cref(name)%>;') ;separator="\n"%>
    <%(vars.boolParamVars |> SIMVAR(__) => 'bool <%cref(name)%>;') ;separator="\n"%>
+   <%(vars.aliasVars |> SIMVAR(__) => 'double <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.intAliasVars |> SIMVAR(__) => 'int <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
+   <%(vars.boolAliasVars |> SIMVAR(__) => 'bool <%cref(name)%>, $P$old<%cref(name)%>;') ;separator="\n"%>
    >>
 end makeMemberVariables;
 
@@ -627,6 +636,9 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
        <%(vars.algVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
        <%(vars.intAlgVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
        <%(vars.boolAlgVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+       <%(vars.aliasVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+       <%(vars.intAliasVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
+       <%(vars.boolAliasVars |> SIMVAR(__) => '$P$old<%cref(name)%>=<%cref(name)%>;') ;separator="\n"%>
        <%makeSaveDelays(delayedExps)%>
    }
    >>
@@ -668,6 +680,9 @@ case MODELINFO(vars = SIMVARS(__)) then
        <%(vars.algVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
        <%(vars.intAlgVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
        <%(vars.boolAlgVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
+       <%(vars.aliasVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
+       <%(vars.intAliasVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
+       <%(vars.boolAliasVars |> SIMVAR(__) => '<%cref(name)%>=$P$old<%cref(name)%>;') ;separator="\n"%>
    }
    >>
 end makeRestoreMemberVariables;
@@ -802,7 +817,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
           <%(vars.stateVars |> SIMVAR(__) => '<%cref(name)%>=q[<%index%>];') ;separator="\n"%>
       }
       // Calculate the odes
-      <%allEqns(allEquations,whenClauses)%>
+      <%allEqns(allEquations,whenClauses,removedEquations)%>
       if (atEvent && !reInit) reInit = check_for_new_events();
       if (reInit) 
       {
@@ -813,10 +828,13 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   >>
 end makeDerFuncCalculator;
 
-template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses)
+template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whenClauses, list<SimEqSystem> removedEqns)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq =>
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
+    ;separator="\n")
+  let aliasEqs = (removedEqns |> eq =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/)
     ;separator="\n")
   let reinit = (whenClauses |> when hasindex i0 =>
@@ -825,6 +843,7 @@ template allEqns(list<SimEqSystem> allEquationsPlusWhen, list<SimWhenClause> whe
   <<
   <%varDecls%>
   <%eqs%>
+  <%aliasEqs%>
   <%reinit%>
   >>
 end allEqns;
