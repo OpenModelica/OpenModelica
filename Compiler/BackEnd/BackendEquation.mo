@@ -978,7 +978,7 @@ algorithm
       list<Integer> dimSize;
       DAE.Algorithm alg;
       list<list<BackendDAE.Equation>> eqnstrue;
-      list<BackendDAE.Equation> eqnsfalse;
+      list<BackendDAE.Equation> eqns,eqnsfalse,eqnsfalse1;
       Boolean diffed;
     case (BackendDAE.EQUATION(exp = e1,scalar = e2,source=source,differentiated=diffed),_,_)
       equation
@@ -1039,9 +1039,19 @@ algorithm
         bres = Util.boolOrList({b1,b2});
       then
         (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source,diffed),bres,ext_arg_2);
+        
+    // special case for it initial() then ... else ... end if; only else branch needs to be checked
+    case (BackendDAE.IF_EQUATION(conditions={e1 as DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue={eqns},eqnsfalse=eqnsfalse,source=source),_,_)
+      equation
+        (eqnsfalse,eqnsfalse1,ext_arg_2) = traverseBackendDAEExpsEqnListOutEqn(eqnsfalse,{},func,inTypeA);
+        bres = List.isNotEmpty(eqnsfalse1);
+        eqnsfalse1 = Util.if_(bres,eqnsfalse1,eqnsfalse);
+      then
+        (BackendDAE.IF_EQUATION({e1},{eqns},eqnsfalse1,source),bres,ext_arg_2);
+        
     case (BackendDAE.IF_EQUATION(conditions = expl, eqnstrue = eqnstrue, eqnsfalse = eqnsfalse,source=source),_,_)
       equation
-        print("not implemented error - BackendDAE.IF_EQUATION - BackendEquation.traverseBackendDAEExpsEqnWithStop\n"); 
+        print("not implemented error - BackendDAE.IF_EQUATION - BackendEquation.traverseBackendDAEExpsEqnOutEqn\n"); 
         //(expl,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
         //(eqnslst,ext_arg_2) = List.map1Fold(eqnslst,traverseBackendDAEExpsEqnList,func,ext_arg_1);
         //(eqnsfalse,ext_arg_2) = traverseBackendDAEExpsEqnListOutEqn(eqnsfalse,func,ext_arg_2);
