@@ -2262,6 +2262,13 @@ package List
     input list<Type_a> inList;
     output Integer outPosition;
   end position;
+  
+  function splitEqualParts
+    replaceable type Type_a subtypeof Any;
+    input list<Type_a> inList;
+    input Integer inParts;
+    output list<list<Type_a>> outParts;
+  end splitEqualParts;
  
 end List;
 

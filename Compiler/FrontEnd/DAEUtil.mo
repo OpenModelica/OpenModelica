@@ -6383,11 +6383,20 @@ public function addSymbolicTransformationSolve
   input DAE.Exp exp;
   input list<DAE.Statement> asserts;
   output DAE.ElementSource outSource;
-protected
-  list<DAE.Exp> assertExps;
 algorithm
-  assertExps := List.map(asserts,Algorithm.getAssertCond);
-  outSource := condAddSymbolicTransformation(add,source,DAE.SOLVE(cr,exp1,exp2,exp,assertExps));
+  outSource := match (add,source,cr,exp1,exp2,exp,asserts)
+    local
+      list<DAE.Exp> assertExps;
+      DAE.SymbolicOperation op,op1,op2;
+    case (false,_,_,_,_,_,_) then source;
+    case (_,_,_,_,_,_,_)
+      equation
+        assertExps = List.map(asserts,Algorithm.getAssertCond);
+        op1 = DAE.SOLVE(cr,exp1,exp2,exp,assertExps);
+        op2 = DAE.SOLVED(cr,exp2) "If it was already on solved form";
+        op = Util.if_(Expression.expEqual(exp2,exp),op2,op1);
+      then addSymbolicTransformation(source,op);
+  end match;
 end addSymbolicTransformationSolve;
 
 public function getSymbolicTransformations
