@@ -2338,8 +2338,8 @@ algorithm
                 
         // all vars beside the inVars are inputs for the jacobian
         allvars = BackendVariable.copyVariables(inAllVars);
-        allvars = BackendVariable.deleteCrefs(independentComRefs, allvars);
-        allvars = BackendVariable.deleteCrefs(otherVarsLstComRefs, allvars);
+        allvars = BackendVariable.removeCrefs(independentComRefs, allvars);
+        allvars = BackendVariable.removeCrefs(otherVarsLstComRefs, allvars);
         knvars = BackendVariable.mergeVariables(inKnVars,allvars);
 
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");

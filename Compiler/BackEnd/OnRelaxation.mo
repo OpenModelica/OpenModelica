@@ -2354,7 +2354,7 @@ algorithm
         ();        
     case ((r,c,_)::rest,_,_,_,_,_)
       equation
-        false = intEq(r,row);
+        true = intGe(r,row);
         transformJacToMatrix(jac,row,col+1,size,b,matrix);
       then
         ();          

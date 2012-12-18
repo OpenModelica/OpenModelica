@@ -2601,12 +2601,13 @@ end isTopLevelInputOrOutput;
 
 public function deleteCrefs "function deleteCrefs
   author: wbraun
-  Deletes a list of DAE.ComponentRef from BackendDAE.Variables"
+  Removes a list of DAE.ComponentRef from BackendDAE.Variables"
   input list<DAE.ComponentRef> varlst;
   input BackendDAE.Variables vars;
   output BackendDAE.Variables vars_1;
 algorithm
   vars_1 := List.fold(varlst, removeCref, vars);
+  vars_1 := listVar1(varList(vars_1));
 end deleteCrefs;
 
 public function deleteVars "function deleteVars
@@ -2673,6 +2674,16 @@ algorithm
     then vars;
   end match;
 end deleteVar;
+
+public function removeCrefs "function removeCrefs
+  author: wbraun
+  Removes a list of DAE.ComponentRef from BackendDAE.Variables"
+  input list<DAE.ComponentRef> varlst;
+  input BackendDAE.Variables vars;
+  output BackendDAE.Variables vars_1;
+algorithm
+  vars_1 := List.fold(varlst, removeCref, vars);
+end removeCrefs;
 
 public function removeCref
 "function: removeCref

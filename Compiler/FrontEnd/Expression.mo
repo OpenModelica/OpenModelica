@@ -2793,7 +2793,7 @@ algorithm
 end expAdd;
 
 public function expSub
-"function: expMul
+"function: expSub
   author: PA
   Subtracts two scalar expressions."
   input DAE.Exp e1;
