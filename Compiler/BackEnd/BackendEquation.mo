@@ -1474,11 +1474,11 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.StateSets statSets;
-    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,statSets=statSets))
+      BackendDAE.StateSets stateSets;
+    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,stateSets=stateSets))
       equation
         eqns1 = equationAdd(inEquation,eqns);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING(),statSets);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING(),stateSets);
   end match;
 end equationAddDAE;
 
@@ -1495,11 +1495,11 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.StateSets statSets;
-    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,statSets=statSets))
+      BackendDAE.StateSets stateSets;
+    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,stateSets=stateSets))
       equation
         eqns1 = List.fold(inEquations,equationAdd,eqns);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING(),statSets);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING(),stateSets);
   end match;
 end equationsAddDAE;
 
@@ -1548,11 +1548,11 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
-    case (_,_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,statSets))
+      BackendDAE.StateSets stateSets;
+    case (_,_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,matching,statSets);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,matching,stateSets);
   end match;
 end equationSetnthDAE;
 

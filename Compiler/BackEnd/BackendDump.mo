@@ -99,18 +99,18 @@ protected
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrix> mT;
   BackendDAE.Matching matching;
-  BackendDAE.StateSets statSets;
+  BackendDAE.StateSets stateSets;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, 
                       orderedEqs=orderedEqs, 
                       m=m, 
                       mT=mT, 
                       matching=matching,
-                      statSets=statSets) := inEqSystem;
+                      stateSets=stateSets) := inEqSystem;
 
   dumpVariables(orderedVars, "Variables");
   dumpEquationArray(orderedEqs, "Equations");
-  dumpStateSets(statSets, "State Sets");
+  dumpStateSets(stateSets, "State Sets");
   dumpOption(m, dumpIncidenceMatrix);
   dumpOption(mT, dumpIncidenceMatrixT);
   

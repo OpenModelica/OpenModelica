@@ -510,12 +510,12 @@ protected function stripCorrelationVarsAndEqns " help function "
 protected
   BackendDAE.Variables vars;
   BackendDAE.EquationArray eqns;
-  BackendDAE.StateSets statSets;
+  BackendDAE.StateSets stateSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, statSets = statSets)  := eqsys;
+  BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs = eqns, stateSets = stateSets)  := eqsys;
   vars := stripCorrelationVars(vars);
   eqns := stripCorrelationEqns(eqns); 
-  outEqsys := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets);
+  outEqsys := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
 end stripCorrelationVarsAndEqns;
 
 protected function stripCorrelationEqns "help function "

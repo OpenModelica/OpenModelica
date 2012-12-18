@@ -625,8 +625,8 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT,m1,mT1;
       BackendDAE.Matching matching,matching1;
       BackendDAE.Shared shared;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,statSets),shared)
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets),shared)
       equation
         // copy varibales
         ordvars1 = BackendVariable.copyVariables(ordvars);
@@ -636,7 +636,7 @@ algorithm
         mT1 = copyIncidenceMatrix(mT);
         matching1 = copyMatching(matching);
       then
-        (BackendDAE.EQSYSTEM(ordvars1,eqns1,m1,mT1,matching1,statSets),shared);
+        (BackendDAE.EQSYSTEM(ordvars1,eqns1,m1,mT1,matching1,stateSets),shared);
   end match;
 end copyBackendDAEEqSystem;
 
@@ -853,11 +853,11 @@ algorithm
       EquationArray eqs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, statSets),_)
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets),_)
       equation
         vars = BackendVariable.addVars(varlst, vars);
-      then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, statSets);
+      then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, stateSets);
   end match;
 end addVarsToEqSystem;
 
@@ -4144,12 +4144,12 @@ algorithm
       BackendDAE.Variables vars;
       EquationArray daeeqns;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,statSets),eqns)
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),eqns)
       equation
         (m,mt) = updateIncidenceMatrix1(vars,daeeqns,m,mt,eqns);
       then
-        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,statSets);
+        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets);
 
     else
       equation
@@ -4233,8 +4233,8 @@ algorithm
       BackendDAE.Matching matching;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;      
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_)
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_)
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
@@ -4253,7 +4253,7 @@ algorithm
         eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
         (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m,mt,eqns,mapEqnIncRow,mapIncRowEqn,inIndxType);
       then
-        (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,statSets),mapEqnIncRow,mapIncRowEqn);
+        (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),mapEqnIncRow,mapIncRowEqn);
 
     else
       equation
@@ -4503,17 +4503,17 @@ algorithm
       EquationArray eq;
       BackendDAE.Matching matching;
       BackendDAE.IndexType it;
-      BackendDAE.StateSets statSets;
-    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=NONE(),matching=matching,statSets=statSets),it)
+      BackendDAE.StateSets stateSets;
+    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=NONE(),matching=matching,stateSets=stateSets),it)
       equation
         (m,mT) = incidenceMatrix(syst, it);
       then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,statSets),m,mT);
-    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=SOME(m),mT=NONE(),matching=matching,statSets=statSets),_)
+        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,stateSets),m,mT);
+    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=SOME(m),mT=NONE(),matching=matching,stateSets=stateSets),_)
       equation  
         mT = transposeMatrix(m,BackendVariable.varsSize(v));
       then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,statSets),m,mT);
+        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,stateSets),m,mT);
     case(BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT)),_)
       then
         (syst,m,mT);
@@ -4532,11 +4532,11 @@ protected
   BackendDAE.Variables v;
   EquationArray eq;
   BackendDAE.Matching matching;
-  BackendDAE.StateSets statSets;
+  BackendDAE.StateSets stateSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,statSets=statSets) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets) := inEqSystem;
   (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType);
-  outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, statSets);
+  outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets);
 end getIncidenceMatrix;    
     
 public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
@@ -4551,11 +4551,11 @@ protected
   BackendDAE.Variables v;
   EquationArray eq;
   BackendDAE.Matching matching;
-  BackendDAE.StateSets statSets;
+  BackendDAE.StateSets stateSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,statSets=statSets) := syst;
+  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets) := syst;
   (outM,outMT,outMapEqnIncRow,outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType);
-  osyst := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, statSets);
+  osyst := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets);
 end getIncidenceMatrixScalar;     
     
 
@@ -8824,10 +8824,10 @@ protected
   EquationArray eqs;
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrixT> mT;
-  BackendDAE.StateSets statSets;
+  BackendDAE.StateSets stateSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,statSets=statSets) := syst;
-  osyst := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,statSets); 
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,stateSets=stateSets) := syst;
+  osyst := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,stateSets); 
 end setEqSystemMatching;
 
 public function filterEmptySystems

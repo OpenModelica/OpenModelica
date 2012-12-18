@@ -610,9 +610,9 @@ algorithm
       BackendDAE.Var var1,var2;
       BackendDAE.ConstraintEquations orgEqnsLst;
       array<list<Integer>> mapEqnIncRow;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
     case (_,_,{},_,_,_,_,_,_,_,_) then (isyst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,imapEqnIncRow,imapIncRowEqn,inchangedEqns,iEqnsAcc);
-    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),shared,(e :: es),_,_,_,_,_,_,_,_)
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),shared,(e :: es),_,_,_,_,_,_,_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -641,7 +641,7 @@ algorithm
         b = intGt(e1,0);    
         ass1 = consArrayUpdate(b, inAss1,i,-1);
         ass2 = consArrayUpdate(b, inAss2,e1,-1);
-        syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching,statSets);
+        syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching,stateSets);
         changedEqns =  List.unique(List.map1r(changedEqns,arrayGet,imapIncRowEqn));
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), changedEqns, imapEqnIncRow, imapIncRowEqn);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStrCrefStr,("Found Alias State ",cr," := ",scr,"\n Update Incidence Matrix: "));
@@ -703,9 +703,9 @@ algorithm
       BackendDAE.Matching matching;
       array<Integer> ass1,ass2,mapIncRowEqn;
       array<list<Integer>> mapEqnIncRow;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
     // all equations are differentiated
-    case (_::_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_,_,_,_,_)
+    case (_::_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_,_)
       equation
         eqnss = BackendDAEUtil.equationArraySize(eqns);
         (v1,eqns_1,so,ilst,orgEqnsLst) = replaceDifferentiatedEqns(inEqnsTpl,v,eqns,inStateOrd,mt,imapIncRowEqn,{},inOrgEqnsLst);
@@ -718,7 +718,7 @@ algorithm
         // set changed variables assignments to zero
         ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
         eqnslst1 = BackendDAETransform.collectVarEqns(ilst,{},mt,arrayLength(mt));
-        syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching,statSets);
+        syst = BackendDAE.EQSYSTEM(v1,eqns_1,SOME(m),SOME(mt),matching,stateSets);
         eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
         eqnslst1 =  List.uniqueIntN(listAppend(inEqns,eqnslst1),eqnss1);
         eqnslst1 = listAppend(eqnslst1,eqnslst);
@@ -1000,9 +1000,9 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       list<BackendDAE.Var> varlst;
       BackendDAE.Var var;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
     // 1th try to replace final parameter
-    case (_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_,_,_,_)
+    case (_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
       equation
         ((eqns,eqnslst as _::_,_)) = List.fold1(inEqns,replaceFinalVars,BackendVariable.daeKnVars(ishared),(eqns,{},BackendVarTransform.emptyReplacements()));
         // unassign changed equations and assigned vars
@@ -1013,7 +1013,7 @@ algorithm
         ass1 = List.fold1r(ilst,arrayUpdate,-1,inAss1);
         // update IncidenceMatrix
         Debug.fcall(Flags.BLT_DUMP, print, "Replaced final Parameter in Eqns\n");
-        syst = BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets);
+        syst = BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst,intString," ","\n"));
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst, imapEqnIncRow, imapIncRowEqn);
@@ -1021,7 +1021,7 @@ algorithm
         (syst,ishared,ass1,ass2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
               
     // if size of unmatched eqns is equal to size of states without used derivative change all to algebraic
-    case (true,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_,_,_,_)
+    case (true,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
       equation
         // change varKind
         varlst = List.map1r(statesWithUnusedDer,BackendVariable.getVarAt,v);
@@ -1032,7 +1032,7 @@ algorithm
         // update IncidenceMatrix
         eqnslst1 = BackendDAETransform.collectVarEqns(statesWithUnusedDer,{},mt,arrayLength(mt));
         eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
-        syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching,statSets);
+        syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching,stateSets);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," ","\n"));
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
@@ -1040,7 +1040,7 @@ algorithm
         (syst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
 /* Debugging case
-    case (false,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_,_,_,_)
+    case (false,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
       equation
         varlst = BackendEquation.equationsLstVars(notDiffedEquations,v);
         varlst = List.select(varlst,BackendVariable.isStateVar);
@@ -1055,7 +1055,7 @@ algorithm
 
     // if size of unmatched eqns is not equal to size of states without used derivative change first to algebraic 
     // until I have a better sulution
-    case (false,i::ilst,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_,_,_,_)
+    case (false,i::ilst,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
       equation
         // change varKind
         var = BackendVariable.getVarAt(v,i);
@@ -1070,7 +1070,7 @@ algorithm
         // update IncidenceMatrix
         eqnslst1 = BackendDAETransform.collectVarEqns({i},{},mt,arrayLength(mt));
         eqnslst1 = List.map1r(eqnslst1,arrayGet,imapIncRowEqn);
-        syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching,statSets);
+        syst = BackendDAE.EQSYSTEM(v1,eqns,SOME(m),SOME(mt),matching,stateSets);
         Debug.fcall(Flags.BLT_DUMP, print, "Update Incidence Matrix: ");
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(eqnslst1,intString," ","\n"));
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), eqnslst1, imapEqnIncRow, imapIncRowEqn);
@@ -1078,7 +1078,7 @@ algorithm
         (syst,ishared,inAss1,inAss2,inStateOrd,inOrgEqnsLst,mapEqnIncRow,mapIncRowEqn);
 
     // if no state with unused derivative is in the set check global
-    case (_,{},_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_,_,_,_)
+    case (_,{},_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
       equation
         ilst = Matching.getUnassigned(BackendVariable.varsSize(v), inAss1, {});
         ilst = List.fold1(ilst, statesWithUnusedDerivative, mt, {});
@@ -1093,7 +1093,7 @@ algorithm
       then
         (syst,oshared,outAss1,outAss2,outStateOrd,outOrgEqnsLst,omapEqnIncRow,omapIncRowEqn);  
 
-    case (_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_,_,_,_)
+    case (_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_,_,_)
       equation
         varlst = List.map1r(unassignedStates,BackendVariable.getVarAt,v);
         Debug.fcall(Flags.BLT_DUMP, print, "unassignedStates\n");
@@ -1508,6 +1508,7 @@ algorithm
        
         (dummyStates,syst,shared) = processComps(freestatevars,varlst,orgeqnscount,comps,syst,ishared,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),{});
         enqnslst = List.flatten(List.map(orgEqnsLst,Util.tuple22));
+        enqnslst = Util.if_(Flags.getConfigBool(Flags.DYNAMIC_PIVOT),{},enqnslst);
         syst = BackendEquation.equationsAddDAE(enqnslst, syst);
         ne1 = BackendDAEUtil.systemSize(syst);
         ndummystates = listLength(dummyStates);
@@ -1852,6 +1853,17 @@ algorithm
         list<BackendDAE.Var> varlst;
         BackendDAE.Variables hov;
         BackendDAE.StateOrder so;
+        BackendDAE.ConstraintEquations orgEqnsLst;
+        list<BackendDAE.Equation> enqnslst;
+    case (_,_,_,_,_,_,_,(_,orgEqnsLst,_,_,_),_)
+      equation
+        true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
+        true = intEq(cfreeStates,cOrgEqns);
+        dummystates = List.map(freeStates,BackendVariable.varCref);
+        enqnslst = List.flatten(List.map(orgEqnsLst,Util.tuple22));
+        syst = BackendEquation.equationsAddDAE(enqnslst, isyst);
+      then (dummystates,syst,ishared);
+
     case (_,_,_,_,_,_,_,_,_)
       equation
         true = intEq(cfreeStates,cOrgEqns);
@@ -2085,10 +2097,13 @@ algorithm
         //  dumpSystemGraphML(syst,inIshared,NONE(),"StateSelection" +& intString(arrayLength(m)) +& ".graphml");
         (syst,m,mT,mapEqnIncRow1,mapIncRowEqn1) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.NORMAL());
         sets = Matching.getEqnsforIndexReduction(unassigned,arrayLength(m),m,mT,vec1,vec2,(so,orgEqnsLst,mapEqnIncRow1,mapIncRowEqn1,noofeqns));
+        // collect equations with no sets and add it to the system
+        
+        
         //  print("Sets:\n");
         //  BackendDump.dumpIncidenceMatrix(listArray(sets));
         //  BackendDump.printEqSystem(syst);
-        (vlst,dummyStates,syst,shared) = processComps4New(sets,dstates,states,inVarSize,inEqnsSize,syst,m,mT,mapEqnIncRow1,mapIncRowEqn1,vec1,vec2,inIsyst,inIshared,inArg,inHov,inDummyStates);
+        (vlst,dummyStates,syst,shared) = processComps4New(sets,dstates,states,inVarSize,inEqnsSize,vars,eqns,m,mT,mapEqnIncRow1,mapIncRowEqn1,vec1,vec2,inIsyst,inIshared,inArg,inHov,inDummyStates);
      then
         (vlst,dummyStates,syst,shared);
   end matchcontinue;
@@ -2104,7 +2119,8 @@ protected function processComps4New
   input list<tuple<DAE.ComponentRef, Integer>> states;
   input Integer inVarSize;
   input Integer inEqnsSize;
-  input BackendDAE.EqSystem inSubsyst;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.EquationArray iEqns;
   input BackendDAE.IncidenceMatrix inM;
   input BackendDAE.IncidenceMatrixT inMT;   
   input array<list<Integer>> inMapEqnIncRow;
@@ -2122,7 +2138,7 @@ protected function processComps4New
   output BackendDAE.Shared oshared;  
 algorithm
   (outDummyVars,outDummyStates,osyst,oshared) := 
-  matchcontinue(iSets,dstates,states,inVarSize,inEqnsSize,inSubsyst,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,inIsyst,inIshared,inArg,inHov,inDummyStates)
+  matchcontinue(iSets,dstates,states,inVarSize,inEqnsSize,iVars,iEqns,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,inIsyst,inIshared,inArg,inHov,inDummyStates)
     local 
       BackendDAE.StateOrder so;
       BackendDAE.ConstraintEquations orgEqnsLst;
@@ -2131,7 +2147,7 @@ algorithm
       Integer noofeqns;
       list<DAE.ComponentRef> dummyStates;  
       BackendDAE.Variables vars;
-      BackendDAE.EquationArray eqns;
+      BackendDAE.EquationArray eqns,eqns1;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;     
       BackendDAE.Variables hov1,lov;
@@ -2148,28 +2164,29 @@ algorithm
       BackendDAE.AdjacencyMatrixTEnhanced meT;
       list<tuple<DAE.ComponentRef, Integer>> states1,dstates1;
     
-    case ({},_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars),_,_,_,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
-        vlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
+        vlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,iVars);
         dummyStates = List.map(vlst,BackendVariable.varCref);
         dummyStates = listAppend(dummyStates,inDummyStates);
       then
         (vlst,dummyStates,inIsyst,inIshared);    
-    case ({},_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,_,_,_,_,_,_,_,_,_,_)
+    case ({},_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
-        vlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
+        vlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,iVars);
         dummyStates = List.map(vlst,BackendVariable.varCref);
         dummyStates = listAppend(dummyStates,inDummyStates);
-        eqnlst = BackendEquation.equationList(eqns);
+        // add all reamain equations to the systems
+        eqnlst = BackendEquation.equationList(iEqns);
         syst = BackendEquation.equationsAddDAE(eqnlst,inIsyst);
       then
         (vlst,dummyStates,syst,inIshared);    
-    case (assigned::sets,_,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_,_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_)
+    case (assigned::sets,_,_,_,_,_,_,_,_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_)
       equation
         true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
-        vlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
+        vlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,iVars);
         dummyStates = List.map(vlst,BackendVariable.varCref);
         dummyStates = listAppend(dummyStates,inDummyStates);        
 
@@ -2187,11 +2204,12 @@ algorithm
         //  print("Select " +& intString(listLength(unassigned)) +& " from " +& intString(listLength(statevars)) +& "\n");
         ass1 = List.consN(listLength(statevars), -1, {});
         ass2 = List.consN(listLength(unassigned), -1, {});
-        varlst = List.map1r(statevars,BackendVariable.getVarAt,vars);
+        varlst = List.map1r(statevars,BackendVariable.getVarAt,iVars);
         assigend1 = List.map1r(unassigned,arrayGet,inMapIncRowEqn);
         assigend1 = List.uniqueIntN(assigend1,arrayLength(inMapIncRowEqn));        
-        eqnlst = BackendEquation.getEqns(assigend1, eqns);
-        (eqnlst,varlst,ass1,ass2) = getSetSystem(assigned,inMapEqnIncRow,inMapIncRowEqn,vec1,vars,eqns,arrayCreate(inEqnsSize,true),listLength(assigned),eqnlst,varlst,ass1,ass2);
+        eqnlst = BackendEquation.getEqns(assigend1,iEqns);
+        eqns1 = List.fold(assigend1,BackendEquation.equationRemove,iEqns);
+        (eqnlst,varlst,ass1,ass2,eqns1) = getSetSystem(assigned,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,eqns1,arrayCreate(inEqnsSize,true),listLength(assigned),eqnlst,varlst,ass1,ass2);
         eqns = BackendEquation.listEquation(eqnlst);
         vars = BackendVariable.listVar1(varlst);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
@@ -2200,9 +2218,10 @@ algorithm
         //  BackendDump.dumpMatching(listArray(ass2));
         (me,meT,mapEqnIncRow1,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inIshared);
         (dstates1,states1) = checkAssignment(1,listLength(ass1),listArray(ass1),vars,{},{});
-        (_,dummystates,_,syst,shared) = selectDummyDerivatives2(dstates1,states1,List.intRange2(listLength(assigned)+1,listLength(assigned)+listLength(unassigned)),List.intRange2(1,listLength(assigned)),listArray(ass1),listArray(ass2),me,meT,mapEqnIncRow1,mapIncRowEqn1,vars,BackendVariable.varsSize(vars),eqns,BackendDAEUtil.equationSize(eqns),{},BackendVariable.listVar1(inHov),dummyStates,inIsyst,inIshared,BackendVariable.emptyVars());
+        assigend1 = Debug.bcallret2(List.isNotEmpty(assigned),List.intRange2,1,listLength(assigned),{});
+        (_,dummystates,_,syst,shared) = selectDummyDerivatives2new(dstates1,states1,List.intRange2(listLength(assigned)+1,listLength(assigned)+listLength(unassigned)),assigend1,listArray(ass1),listArray(ass2),me,meT,mapEqnIncRow1,mapIncRowEqn1,vars,BackendVariable.varsSize(vars),eqns,BackendDAEUtil.equationSize(eqns),{},BackendVariable.listVar1(inHov),dummyStates,inIsyst,inIshared,BackendVariable.emptyVars());
         
-        (vlst,dummyStates,syst,shared) = processComps4New(sets,{},{},inVarSize,inEqnsSize,inSubsyst,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,syst,shared,inArg,inHov,dummystates);
+        (vlst,dummyStates,syst,shared) = processComps4New(sets,{},{},inVarSize,inEqnsSize,iVars,eqns1,inM,inMT,inMapEqnIncRow,inMapIncRowEqn,vec1,vec2,syst,shared,inArg,inHov,dummystates);
      then
         (vlst,dummyStates,syst,shared);
   end matchcontinue;
@@ -2237,21 +2256,24 @@ protected function getSetSystem
   output list<BackendDAE.Var> oVarsLst;
   output list<Integer> oAss1;
   output list<Integer> oAss2;
+  output BackendDAE.EquationArray oEqnsArr;
 algorithm
-  (oEqnsLst,oVarsLst,oAss1,oAss2) := 
+  (oEqnsLst,oVarsLst,oAss1,oAss2,oEqnsArr) := 
   matchcontinue(iEqns,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,iEqnsArr,flag,n,iEqnsLst,iVarsLst,iAss1,iAss2)
     local
       Integer e,e1;
       list<Integer> rest,eqns,vindx,ass,ass1,ass2;
       BackendDAE.Equation eqn;
       list<BackendDAE.Var> varlst;
-    case ({},_,_,_,_,_,_,_,_,_,_,_) then (iEqnsLst,iVarsLst,iAss1,iAss2);
+      BackendDAE.EquationArray eqnarr;
+    case ({},_,_,_,_,_,_,_,_,_,_,_) then (iEqnsLst,iVarsLst,iAss1,iAss2,iEqnsArr);
     case (e::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
         true = flag[e];
         true = intGt(vec1[e],0);
         e1 = inMapIncRowEqn[e];
         eqn = BackendDAEUtil.equationNth(iEqnsArr,e1-1);
+        eqnarr = BackendEquation.equationRemove(e1,iEqnsArr);
         eqns = inMapEqnIncRow[e1];
         _ = List.fold1r(eqns,arrayUpdate,false,flag);
         vindx = List.map1r(eqns,arrayGet,vec1);
@@ -2260,14 +2282,14 @@ algorithm
         ass = List.intRange2(n-listLength(eqns)+1, n);
         ass1 = listAppend(ass,iAss1);
         ass2 = listAppend(ass,iAss2);
-        (oEqnsLst,oVarsLst,ass1,ass2) = getSetSystem(rest,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,iEqnsArr,flag,n-listLength(eqns),eqn::iEqnsLst,varlst,ass1,ass2);
+        (oEqnsLst,oVarsLst,ass1,ass2,eqnarr) = getSetSystem(rest,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,eqnarr,flag,n-listLength(eqns),eqn::iEqnsLst,varlst,ass1,ass2);
       then
-        (oEqnsLst,oVarsLst,ass1,ass2);
+        (oEqnsLst,oVarsLst,ass1,ass2,eqnarr);
     case (e::rest,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        (oEqnsLst,oVarsLst,ass1,ass2) = getSetSystem(rest,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,iEqnsArr,flag,n,iEqnsLst,iVarsLst,iAss1,iAss2);
+        (oEqnsLst,oVarsLst,ass1,ass2,eqnarr) = getSetSystem(rest,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,iEqnsArr,flag,n,iEqnsLst,iVarsLst,iAss1,iAss2);
       then
-        (oEqnsLst,oVarsLst,ass1,ass2);        
+        (oEqnsLst,oVarsLst,ass1,ass2,eqnarr);        
   end matchcontinue;
 end getSetSystem;
 
@@ -3446,178 +3468,6 @@ algorithm
         (hov1,dummystates,lov,syst,shared);
 /*    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
-        unassignedEqnsSize = listLength(unassignedEqns);
-        size = listLength(states);
-        rang = size-unassignedEqnsSize; 
-        true = intGt(rang,0);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",size,"\n"));   
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));     
-        Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
-
-        // generate Symbolic Jacobian
-
-        // reduce system, solve other equations and replace other vars in unassigned equations
-        ilst = List.map1r(unassignedEqns,arrayGet,iMapIncRowEqn);
-        ilst = List.sortIntN(ilst,eqnsSize);        
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((ilst,intString,", ","\n")));     
-        eqnslst = BackendEquation.getEqns(ilst,eqns);
-        solvedeqns = arrayCreate(eqnsSize,false);
-        repl = BackendVarTransform.emptyReplacements();
-        repl = solveOtherEquations(assignedEqns,solvedeqns,eqns,vars,ass1,iMapEqnIncRow,iMapIncRowEqn,ishared,repl);
-        (eqnslst,_) = BackendVarTransform.replaceEquations(eqnslst, repl,SOME(BackendVarTransform.skipPreOperator));
-
-        //subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        //(subsyst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL());
-        //  dumpSystemGraphML(subsyst,ishared,NONE(),"System" +& intString(unassignedEqnsSize) +& ".graphml");
-         
-        // generatate jacobian
-        ilst = List.map(states,Util.tuple22);
-        v = BackendVariable.listVar1(List.map1r(ilst,BackendVariable.getVarAt,vars));
-        eqns1 = BackendEquation.listEquation(eqnslst);
-        syst = BackendDAE.EQSYSTEM(v,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        states1 = List.threadTuple(BackendVariable.getAllCrefFromVariables(v),List.intRange(BackendVariable.varsSize(v)));
-        //  BackendDump.dumpEqSystem(syst);
-        (m,_) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
-        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqns1, m, true,ishared); 
-          print("Jac: " +& BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
-        //subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        //(subsyst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL());
-        //  dumpSystemGraphML(subsyst,ishared,NONE(),"System" +& intString(unassignedEqnsSize) +& ".graphml");
-         
-        // generate state set and condition name 
-        crstates = List.map(states,Util.tuple21);
-        //crstates = List.sort(crstates,ComponentReference.crefSortFunc);
-        (crset,set,crcon,vcont::varlst,_,_,crA,varA,crJ,varJ) = getStateSetNames(crstates,rang,unassignedEqnsSize);
-        
-        //stateindxs = List.map(states,Util.tuple22);
-        //statesvars = List.map1r(stateindxs,BackendVariable.getVarAt,vars);
-        //(varlst,_) = List.mapFold(varlst, setStartValue, statesvars);
-        
-        Debug.fcall(Flags.BLT_DUMP, print, ("StatesSet:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(crset,ComponentReference.printComponentRefStr,"\n","\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugCrefStr,(crA,"\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugCrefStr,(crJ,"\n"));
-
-        explst = transformJacToMatrix(jac,1,1,unassignedEqnsSize,size,{});
-
-        // A = pivot(J,pre(A));
-        tp = Util.if_(intGt(rang,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(rang),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource));
-        expcrA = Expression.crefExp(crA);
-        expJ = Expression.crefExp(crJ);
-        expJ = DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(unassignedEqnsSize),DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),false,explst);
-        exppreA =  Expression.makeBuiltinCall("pre",{expcrA},tp);
-        pivot = Expression.makeBuiltinCall("omc_pivot",{expJ,exppreA},tp);
-        dims = Util.if_(intGt(rang,1),{rang,size},{size});
-        epivot = BackendDAE.ARRAY_EQUATION(dims,expcrA,pivot,DAE.emptyElementSource,false);
-        // set = A*x
-        explst = List.map(crstates,Expression.crefExp);
-        expSet = Expression.crefExp(set);
-        op = Util.if_(intGt(rang,1),DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT),DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT));
-        tp = Util.if_(intGt(rang,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource));
-        mulAset = DAE.BINARY(DAE.CAST(tp,expcrA),op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),false,explst));
-        //((mulAset,(_,_))) = BackendDAEUtil.extendArrExp((mulAset,(NONE(),false)));
-        eset = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({size},expSet,mulAset,DAE.emptyElementSource,false),
-                                      BackendDAE.EQUATION(expSet,mulAset,DAE.emptyElementSource,false));
-        // der(set) = A*der(x)    
-        explst = List.map(explst,makeder);
-        derset = makeder(expSet);
-        mulAset = DAE.BINARY(DAE.CAST(tp,expcrA),op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),false,explst));
-        //((mulAset,(_,_))) = BackendDAEUtil.extendArrExp((mulAset,(NONE(),false)));
-        ederset  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},derset,mulAset,DAE.emptyElementSource,false),
-                                          BackendDAE.EQUATION(derset,mulAset,DAE.emptyElementSource,false));
-
-        selecteqns = {epivot,eset,ederset};
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
-        // add Equations and vars
-        systSize = BackendDAEUtil.systemSize(isyst);
-        syst = List.fold(varA,BackendVariable.addVarDAE,isyst);
-        syst = List.fold(varlst,BackendVariable.addVarDAE,syst);
-        syst = List.fold(selecteqns,BackendEquation.equationAddDAE,syst);
-        changedeqns = List.intRange2(systSize,systSize+size+2);
-        // ToDO Fix this, thers chould be used updateIncidenceMatrixScalar
-        //syst = BackendDAEUtil.updateIncidenceMatrix(syst, changedeqns);
-        //shared = List.fold(varJ, BackendVariable.addKnVarDAE,ishared);
-        shared = ishared;
-        (hov1,lov,dummystates) = selectDummyStates(listAppend(states,dstates),1,varSize,vars,hov,inLov,inDummyStates);
-      then
-        (hov1,dummystates,lov,syst,shared);
-*/    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
-        unassignedEqnsSize = listLength(unassignedEqns);
-        size = listLength(states);
-        rang = size-unassignedEqnsSize; 
-        true = intGt(rang,0);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",size,"\n"));   
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));     
-        Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
-
-        // generate Symbolic Jacobian
-
-         
-        // generate state set and condition name 
-        crstates = List.map(states,Util.tuple21);
-        //crstates = List.sort(crstates,ComponentReference.crefSortFunc);
-        (crset,set,crcon,vcont::varlst,_,_,crA,varA,crJ,varJ) = getStateSetNames(crstates,rang,unassignedEqnsSize);
-        
-        varJ = List.map1(varJ,BackendVariable.setBindExp,DAE.RCONST(1.0));
-        
-        //stateindxs = List.map(states,Util.tuple22);
-        //statesvars = List.map1r(stateindxs,BackendVariable.getVarAt,vars);
-        //(varlst,_) = List.mapFold(varlst, setStartValue, statesvars);
-        
-        Debug.fcall(Flags.BLT_DUMP, print, ("StatesSet:\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(crset,ComponentReference.printComponentRefStr,"\n","\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugCrefStr,(crA,"\n"));
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugCrefStr,(crJ,"\n"));
-
-        // A = pivot(J,pre(A));
-        tp = Util.if_(intGt(rang,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(rang),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource));
-        expcrA = Expression.crefExp(crA);
-        expJ = Expression.crefExp(crJ);
-        exppreA =  Expression.makeBuiltinCall("pre",{expcrA},tp);
-        ((exppreA,(_,_))) = BackendDAEUtil.extendArrExp((exppreA,(NONE(),false)));
-        pivot = Expression.makeBuiltinCall("omc_pivot",{expJ,exppreA},tp);
-        dims = Util.if_(intGt(rang,1),{rang,size},{size});
-        epivot = BackendDAE.ARRAY_EQUATION(dims,expcrA,pivot,DAE.emptyElementSource,false);
-        // set = A*x
-        explst = List.map(crstates,Expression.crefExp);
-        expSet = Expression.crefExp(set);
-        op = Util.if_(intGt(rang,1),DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT),DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT));
-        tp = Util.if_(intGt(rang,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource));
-        mulAset = DAE.BINARY(DAE.CAST(tp,expcrA),op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),true,explst));
-        //((mulAset,(_,_))) = BackendDAEUtil.extendArrExp((mulAset,(NONE(),false)));
-        eset = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({size},expSet,mulAset,DAE.emptyElementSource,false),
-                                      BackendDAE.EQUATION(expSet,mulAset,DAE.emptyElementSource,false));
-        // der(set) = A*der(x)    
-        explst = List.map(explst,makeder);
-        derset = makeder(expSet);
-        mulAset = DAE.BINARY(DAE.CAST(tp,expcrA),op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),true,explst));
-        //((mulAset,(_,_))) = BackendDAEUtil.extendArrExp((mulAset,(NONE(),false)));
-        ederset  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},derset,mulAset,DAE.emptyElementSource,false),
-                                          BackendDAE.EQUATION(derset,mulAset,DAE.emptyElementSource,false));
-
-        selecteqns = {epivot,eset,ederset};
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
-        // add Equations and vars
-        systSize = BackendDAEUtil.systemSize(isyst);
-        syst = List.fold(varA,BackendVariable.addVarDAE,isyst);
-        syst = List.fold(varlst,BackendVariable.addVarDAE,syst);
-        syst = List.fold(selecteqns,BackendEquation.equationAddDAE,syst);
-        changedeqns = List.intRange2(systSize,systSize+size+2);
-        // ToDO Fix this, thers chould be used updateIncidenceMatrixScalar
-        //syst = BackendDAEUtil.updateIncidenceMatrix(syst, changedeqns);
-        shared = List.fold(varJ, BackendVariable.addKnVarDAE,ishared);
-        (hov1,lov,dummystates) = selectDummyStates(listAppend(states,dstates),1,varSize,vars,hov,inLov,inDummyStates);
-      then
-        (hov1,dummystates,lov,syst,shared);        
-/*          
-    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
         unassignedEqnsSize = listLength(unassignedEqns);
         rang = listLength(states)-unassignedEqnsSize;
         true = intGt(rang,0);
@@ -3663,6 +3513,8 @@ algorithm
         select = unsetSelectArray({},select);
         determinants = getDeterminants1(states1,jac,unassignedEqnsSize-1,size,arrayList(digraph),select,{},{});
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((determinants,dumpDeterminants,"",""))); 
+        Debug.fcall(Flags.BLT_DUMP, print, ("Select as states:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states1,BackendDAETransform.dumpStates,"\n","\n")));        
         // generate state set and condition name 
         crstates = List.map(states1,Util.tuple21);
         //crstates = List.sort(crstates,ComponentReference.crefSortFunc);
@@ -3792,6 +3644,196 @@ algorithm
         (hov1,dummystates,lov,isyst,ishared); 
   end matchcontinue;
 end selectDummyDerivatives2;
+
+protected function selectDummyDerivatives2new
+"function: selectDummyDerivatives2
+  author: Frenkel TUD 2012-05
+  select dummy derivatives from strong connected component"
+  input list<tuple<DAE.ComponentRef, Integer>> dstates;
+  input list<tuple<DAE.ComponentRef, Integer>> states;
+  input list<Integer> unassignedEqns;
+  input list<Integer> assignedEqns;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input BackendDAE.AdjacencyMatrixEnhanced me;
+  input BackendDAE.AdjacencyMatrixTEnhanced meT;
+  input array<list<Integer>> iMapEqnIncRow;
+  input array<Integer> iMapIncRowEqn;  
+  input BackendDAE.Variables vars;
+  input Integer varSize;
+  input BackendDAE.EquationArray eqns;
+  input Integer eqnsSize;
+  input list<Integer> eqnindxlst;
+  input BackendDAE.Variables hov;
+  input list<DAE.ComponentRef> inDummyStates;
+  input BackendDAE.EqSystem isyst;  
+  input BackendDAE.Shared ishared;
+  input BackendDAE.Variables inLov;
+  output BackendDAE.Variables outhov;
+  output list<DAE.ComponentRef> outDummyStates;
+  output BackendDAE.Variables outlov;
+  output BackendDAE.EqSystem osyst;
+  output BackendDAE.Shared oshared;   
+algorithm
+  (outhov,outDummyStates,outlov,osyst,oshared) := 
+  matchcontinue(dstates,states,unassignedEqns,assignedEqns,ass1,ass2,me,meT,iMapEqnIncRow,iMapIncRowEqn,vars,varSize,eqns,eqnsSize,eqnindxlst,hov,inDummyStates,isyst,ishared,inLov)
+      local 
+        BackendDAE.Variables hov1,lov,v;
+        list<DAE.ComponentRef> dummystates,crset,crstates;
+        DAE.ComponentRef crcon,set,crA,crJ;
+        Integer rang,size,setsize,unassignedEqnsSize,systSize;
+        BackendDAE.EqSystem syst;
+        BackendDAE.Shared shared; 
+        list<BackendDAE.Var> varlst,statesvars,varA,varJ;
+        BackendDAE.Var vcont;
+        list<tuple<DAE.ComponentRef, Integer>> dstates1,states1; 
+        list<Integer> changedeqns,stateindxs,dims;   
+        BackendDAE.Equation eqn,eqcont,epivot,eset,ederset;
+        DAE.Exp exp,contExp,crconexp,contstartExp,expcrA,expSet,mulAset,derset,pivot,expJ,exppreA;
+        list<DAE.Exp> explst;
+        list<BackendDAE.Equation> selecteqns,dselecteqns,eqnlst,eqnslst;
+        list<BackendDAE.WhenClause> wclst;
+        DAE.FunctionTree ft;
+        list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
+        array<list<tuple<Integer,DAE.Exp>>> digraph;
+        array<Integer> select;          
+        list<tuple<DAE.Exp,list<Integer>>> determinants;
+        Integer hack;
+        array<Boolean> solvedeqns;
+        BackendVarTransform.VariableReplacements repl;
+        BackendDAE.EquationArray eqnsarr;
+        list<Integer> ilst;
+        DAE.Type tp;
+        DAE.Operator op;
+        Option<BackendDAE.IncidenceMatrix> om;
+        Option<BackendDAE.IncidenceMatrixT> omT;
+        BackendDAE.Matching matching;
+        BackendDAE.StateSets stateSets;      
+        BackendDAE.EqSystem subsyst;
+        BackendDAE.IncidenceMatrix m;
+        BackendDAE.IncidenceMatrix mt;
+        
+    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        true = intEq(listLength(dstates),eqnsSize);
+        Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",varSize-eqnsSize," from ",varSize,"\n"));
+        // add eqns for dummy states
+        eqnlst = BackendEquation.equationList(eqns); 
+        syst = BackendEquation.equationsAddDAE(eqnlst,isyst);
+        // add dummy states
+        varlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
+        dummystates = List.map(varlst,BackendVariable.varCref);
+        dummystates = listAppend(dummystates,inDummyStates);
+      then
+        (hov,dummystates,inLov,syst,ishared); 
+    case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching,stateSets),_,_)
+      equation
+        unassignedEqnsSize = listLength(unassignedEqns);
+        size = listLength(states);
+        rang = size-unassignedEqnsSize; 
+        true = intGt(rang,0);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",size,"\n"));   
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states,BackendDAETransform.dumpStates,"\n","\n")));     
+        Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
+
+        // add eqns for dummy states
+        eqnlst = BackendEquation.getEqns(assignedEqns, eqns);
+        eqnsarr = BackendEquation.addEquations(eqnlst,eqnsarr);
+        // add state set
+        crstates = List.map(states,Util.tuple21);
+        dummystates = List.map(dstates,Util.tuple21);
+        eqnlst = BackendEquation.getEqns(unassignedEqns, eqns);
+        
+        syst = BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching,BackendDAE.STATESET(crstates,eqnlst,dummystates)::stateSets);
+/*
+        // generate Symbolic Jacobian
+
+         
+        // generate state set and condition name 
+        crstates = List.map(states,Util.tuple21);
+        //crstates = List.sort(crstates,ComponentReference.crefSortFunc);
+        (crset,set,crcon,vcont::varlst,_,_,crA,varA,crJ,varJ) = getStateSetNames(crstates,rang,unassignedEqnsSize);
+        
+        varJ = List.map1(varJ,BackendVariable.setBindExp,DAE.RCONST(1.0));
+        
+        //stateindxs = List.map(states,Util.tuple22);
+        //statesvars = List.map1r(stateindxs,BackendVariable.getVarAt,vars);
+        //(varlst,_) = List.mapFold(varlst, setStartValue, statesvars);
+        
+        Debug.fcall(Flags.BLT_DUMP, print, ("StatesSet:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,(crset,ComponentReference.printComponentRefStr,"\n","\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugCrefStr,(crA,"\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugCrefStr,(crJ,"\n"));
+
+        // A = pivot(J,pre(A));
+        tp = Util.if_(intGt(rang,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(rang),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource));
+        expcrA = Expression.crefExp(crA);
+        expJ = Expression.crefExp(crJ);
+        exppreA =  Expression.makeBuiltinCall("pre",{expcrA},tp);
+        ((exppreA,(_,_))) = BackendDAEUtil.extendArrExp((exppreA,(NONE(),false)));
+        pivot = Expression.makeBuiltinCall("omc_pivot",{expJ,exppreA},tp);
+        dims = Util.if_(intGt(rang,1),{rang,size},{size});
+        epivot = BackendDAE.ARRAY_EQUATION(dims,expcrA,pivot,DAE.emptyElementSource,false);
+        // set = A*x
+        explst = List.map(crstates,Expression.crefExp);
+        expSet = Expression.crefExp(set);
+        op = Util.if_(intGt(rang,1),DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT),DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT));
+        tp = Util.if_(intGt(rang,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang),DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)}, DAE.emptyTypeSource));
+        mulAset = DAE.BINARY(DAE.CAST(tp,expcrA),op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),true,explst));
+        //((mulAset,(_,_))) = BackendDAEUtil.extendArrExp((mulAset,(NONE(),false)));
+        eset = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({size},expSet,mulAset,DAE.emptyElementSource,false),
+                                      BackendDAE.EQUATION(expSet,mulAset,DAE.emptyElementSource,false));
+        // der(set) = A*der(x)    
+        explst = List.map(explst,makeder);
+        derset = makeder(expSet);
+        mulAset = DAE.BINARY(DAE.CAST(tp,expcrA),op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),true,explst));
+        //((mulAset,(_,_))) = BackendDAEUtil.extendArrExp((mulAset,(NONE(),false)));
+        ederset  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},derset,mulAset,DAE.emptyElementSource,false),
+                                          BackendDAE.EQUATION(derset,mulAset,DAE.emptyElementSource,false));
+
+        selecteqns = {epivot,eset,ederset};
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
+        // add Equations and vars
+        systSize = BackendDAEUtil.systemSize(isyst);
+        syst = List.fold(varA,BackendVariable.addVarDAE,isyst);
+        syst = List.fold(varlst,BackendVariable.addVarDAE,syst);
+        syst = List.fold(selecteqns,BackendEquation.equationAddDAE,syst);
+        changedeqns = List.intRange2(systSize,systSize+size+2);
+        // ToDO Fix this, thers chould be used updateIncidenceMatrixScalar
+        //syst = BackendDAEUtil.updateIncidenceMatrix(syst, changedeqns);
+        shared = List.fold(varJ, BackendVariable.addKnVarDAE,ishared);
+*/  
+        // add dummy states
+        varlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
+        dummystates = List.map(varlst,BackendVariable.varCref);
+        dummystates = listAppend(dummystates,inDummyStates);
+      then
+        (hov,dummystates,inLov,syst,ishared);        
+   // dummy derivative case - no dynamic state selection
+   case(_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        rang = listLength(states)-listLength(unassignedEqns);
+        (states1,dstates1) = List.split(states, rang);
+        dstates1 = listAppend(dstates1,dstates);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrIntStrIntStr, ("Select ",rang," from ",listLength(states),"\n"));   
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((states1,BackendDAETransform.dumpStates,"\n","\n")));     
+        Debug.fcall(Flags.BLT_DUMP, print, ("Select as dummyStates:\n"));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates1,BackendDAETransform.dumpStates,"\n","\n")));
+        // add eqns for dummy states
+        eqnlst = BackendEquation.equationList(eqns); 
+        syst = BackendEquation.equationsAddDAE(eqnlst,isyst);         
+        // add dummy states
+        varlst = List.map1r(List.map(dstates1,Util.tuple22),BackendVariable.getVarAt,vars);
+        dummystates = List.map(varlst,BackendVariable.varCref);
+        dummystates = listAppend(dummystates,inDummyStates);
+      then
+        (hov,dummystates,inLov,syst,ishared); 
+  end matchcontinue;
+end selectDummyDerivatives2new;
+
 
 protected function transformJacToMatrix
   input list<tuple<Integer, Integer, BackendDAE.Equation>> jac;
@@ -5173,6 +5215,13 @@ algorithm
          (hov1,lov, dummystates) = selectDummyStates(rest,i+1,nstates,vars,hov1,lov,cr::inDummyStates);
         then
           (hov1,lov, dummystates);
+      case ((cr,s)::rest,_,_,_,_,_,_)
+        equation
+          print("selectDummyStates failed for " +& intString(s) +& " " +& ComponentReference.printComponentRefStr(cr) +& "\n");
+          BackendDump.printVariables(vars);
+          BackendDump.printVariables(hov);
+        then
+          fail();          
   end matchcontinue;    
 end selectDummyStates;
 
@@ -5232,15 +5281,15 @@ algorithm
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
     case ({},_,_,_) then (isyst,ishared,iHt);
-    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=om,mT=omT,matching=matching,statSets=statSets),_,_)
+    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=om,mT=omT,matching=matching,stateSets=stateSets),_,_)
       equation
         // create dummy_der vars and change deselected states to dummy states
         ((vars,ht)) = List.fold(dummyStates,makeDummyVarandDummyDerivative,(vars,iHt)); 
         (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,replaceDummyDerivatives,ht);
-        syst = BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,statSets);
+        syst = BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,stateSets);
       then
         (syst,ishared,ht);
   end match;

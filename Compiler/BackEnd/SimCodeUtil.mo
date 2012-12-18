@@ -8286,12 +8286,12 @@ algorithm
       Integer size;
       list<SimCode.HelpVarInfo> helpvarinfo;
       list<BackendDAE.Equation> sampleEquations;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,statSets),(size,helpvarinfo,sampleEquations))
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),(size,helpvarinfo,sampleEquations))
       equation
         (eqns,(size,helpvarinfo,sampleEquations)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,generateHelpVarsForWhenStatements2,(size,helpvarinfo,sampleEquations));
       then
-        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,statSets),(size,helpvarinfo,sampleEquations));
+        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),(size,helpvarinfo,sampleEquations));
   end match;
 end generateHelpVarsForWhenStatements1;
 

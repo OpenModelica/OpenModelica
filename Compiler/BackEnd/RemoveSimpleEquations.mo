@@ -127,7 +127,7 @@ protected constant VarSetAttributes EMPTYVARSETATTRIBUTES  = (false,(-1,{}),NONE
 
 public function fastAcausal
 "function: fastAcausal
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   This Function remove with a linear skaling with respect to the 
   number of equations in an acausal system as much as 
   possible simple equations."
@@ -155,7 +155,7 @@ algorithm
 end fastAcausal;
 
 protected function traverserUnreplacable
-"@author: Frenkel TUD 2012-12"
+"@autor: Frenkel TUD 2012-12"
   input tuple<DAE.Exp, HashSet.HashSet> inExp;
   output tuple<DAE.Exp, HashSet.HashSet> outExp;
 protected
@@ -167,7 +167,7 @@ algorithm
 end traverserUnreplacable;
 
 protected function traverserExpUnreplacable
-"@author: Frenkel TUD 2012-12"
+"@autor: Frenkel TUD 2012-12"
   input tuple<DAE.Exp, HashSet.HashSet> inExp;
   output tuple<DAE.Exp, HashSet.HashSet> outExp;
 algorithm 
@@ -186,7 +186,7 @@ algorithm
 end traverserExpUnreplacable;
  
 protected function traverseCrefUnreplacable
- "@author: Frenkel TUD 2012-12"
+ "@autor: Frenkel TUD 2012-12"
   input DAE.ComponentRef inCref;
   input Option<DAE.ComponentRef> preCref;
   input HashSet.HashSet iUnreplacable;
@@ -239,7 +239,7 @@ end traverseCrefUnreplacable;
 
 protected function fastAcausal1
 "function: fastAcausal1
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input BackendDAE.EqSystem isyst; 
   input tuple<BackendDAE.Shared,tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet>> sharedOptimized;
@@ -273,7 +273,7 @@ algorithm
 end fastAcausal1;
 
 protected function simpleEquationsFinderAcausal
-"author: Frenkel TUD 2012-12
+"autor: Frenkel TUD 2012-12
   map from equation to lhs and rhs"
   input BackendDAE.Equation eqn;
   input AccTuple inTpl;
@@ -311,7 +311,7 @@ end simpleEquationsFinderAcausal;
 
 protected function simpleEquationAcausal
 "function simpleEquationAcausal
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquationsFinderAcausal"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -442,7 +442,7 @@ end simpleEquationAcausal;
 
 protected function simpleArrayEquationAcausal
 "function simpleArrayEquationAcausal
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquationAcausal"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -469,7 +469,7 @@ end simpleArrayEquationAcausal;
 
 protected function simpleEquationAcausalLst
 "function simpleEquationAcausalLst
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquationAcausal"
   input list<DAE.Exp> elst1;
   input list<DAE.Exp> elst2;
@@ -483,7 +483,7 @@ end simpleEquationAcausalLst;
 
 protected function simpleEquationAcausal1
 "function simpleEquationAcausal1
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquationAcausal"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -536,7 +536,7 @@ end simpleEquationAcausal1;
 
 protected function generateEquation
 "function generateEquation
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper to generate an equation from lhs and rhs.
   This function is called if an equation is found which is not simple"
   input DAE.Exp lhs;
@@ -598,7 +598,7 @@ end generateEquation;
 
 protected function simpleExpressionAcausal
 "function simpleExpressionAcausal
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquationsAcausal"
   input DAE.Exp exp;
   input EquationAttributes eqnAttributes;
@@ -662,7 +662,7 @@ end simpleExpressionAcausal;
 
 protected function addSimpleEquationAcausal
 "function addSimpleEquationAcausal
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   add a simple equation to the list of simple equations"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
@@ -708,7 +708,7 @@ end addSimpleEquationAcausal;
 
 protected function getVars
 "function: getVars
-  author: Frenkel TUD 2012-11"
+  autor: Frenkel TUD 2012-11"
   input DAE.ComponentRef cr;
   input BackendDAE.Variables vars;
   input BackendDAE.Shared shared;
@@ -736,7 +736,7 @@ end getVars;
 
 protected function generateSimpleContainters
 "function generateSimpleContainters
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   add a simple equation to the list of simple equations"
   input list<BackendDAE.Var> vars1;
   input list<Integer> ilst1;
@@ -789,7 +789,7 @@ end generateSimpleContainters;
 
 protected function generateSimpleContainter
 "function generateSimpleContainter
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   add a simple equation to the list of simple equations"
   input BackendDAE.Var v1;
   input Integer i1;
@@ -876,7 +876,7 @@ end checkEqualAlias;
 
 protected function timeIndependentEquationAcausal
 "function timeIndependentEquationAcausal
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquationsAcausal"
   input DAE.Exp lhs;
   input DAE.Exp rhs;
@@ -924,7 +924,7 @@ end timeIndependentEquationAcausal;
 
 protected function timeIndependentExpressionAcausal
 "function timeIndependentExpressionAcausal
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquationsAcausal"
   input DAE.Exp exp;
   input EquationAttributes eqnAttributes;
@@ -969,7 +969,7 @@ end timeIndependentExpressionAcausal;
 
 protected function toplevelInputOrUnfixed
 " function toplevelInputOrUnfixed
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   return true is var on topliven and input or is unfixed parameter"
   input BackendDAE.Var inVar;
   output Boolean b;
@@ -979,7 +979,7 @@ algorithm
 end toplevelInputOrUnfixed;
 
 protected function traversingTimeVarsFinder "
-Author: Frenkel 2012-12"
+autor: Frenkel 2012-12"
   input tuple<DAE.Exp, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean,list<Integer>> > inExp;
   output tuple<DAE.Exp, Boolean, tuple<Boolean,BackendDAE.Variables,BackendDAE.Variables,Boolean,Boolean,list<Integer>> > outExp;
 algorithm 
@@ -1025,7 +1025,7 @@ end traversingTimeVarsFinder;
 
 protected function solveTimeIndependentAcausal
 "function solveTimeIndependentAcausal
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquationsAcausal"
   input list<BackendDAE.Var> vlst;
   input list<Integer> ilst;
@@ -1067,7 +1067,7 @@ end solveTimeIndependentAcausal;
 
 protected function solveTimeIndependentAcausal1
 "function solveTimeIndependentAcausal1
-  author Frenkel TUD 2012-12
+  autor Frenkel TUD 2012-12
   helper for simpleEquations"
   input list<BackendDAE.Var> vlst;
   input list<Integer> ilst;
@@ -1103,7 +1103,7 @@ end solveTimeIndependentAcausal1;
 
 protected function constOrAliasArrayAcausal
 "function constOrAliasArrayAcausal
-  author Frenkel TUD 2012-12"
+  autor Frenkel TUD 2012-12"
   input list<BackendDAE.Var> vars;
   input list<Integer> indxs;
   input DAE.Exp exp;
@@ -1134,7 +1134,7 @@ end constOrAliasArrayAcausal;
 
 protected function constOrAliasAcausal
 "function constOrAliasAcausal
-  author Frenkel TUD 2012-12"
+  autor Frenkel TUD 2012-12"
   input BackendDAE.Var var;
   input Integer i;
   input DAE.ComponentRef cr;
@@ -1181,7 +1181,7 @@ end constOrAliasAcausal;
 
 protected function aliasExp
 "function aliasExp
-  author Frenkel TUD 2011-04"
+  autor Frenkel TUD 2011-04"
   input DAE.Exp exp;
   output Boolean negate;
   output DAE.ComponentRef outCr;
@@ -1201,7 +1201,7 @@ end aliasExp;
 
 protected function fastAcausal2
 "function: fastAcausal2
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input Boolean foundSimple;
   input list<SimpleContainer> iSimpleeqnslst;
@@ -1227,9 +1227,9 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       HashSet.HashSet unreplacable;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
     case (false,_,_,_,_,_,_) then (isyst,ishared,iTpl);
-    case (true,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,statSets=statSets),_,(repl,b,unreplacable))
+    case (true,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,stateSets=stateSets),_,(repl,b,unreplacable))
       equation
         // transform simpleeqns to array
         simpleeqns = listArray(listReverse(iSimpleeqnslst));
@@ -1240,13 +1240,13 @@ algorithm
         // replace unoptimized equations with optimized
         eqns = BackendEquation.listEquation(listReverse(eqnslst));        
       then 
-        (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets),shared,(repl,true,unreplacable));
+        (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),shared,(repl,true,unreplacable));
   end match;
 end fastAcausal2;
 
 protected function fastAcausal3
 "function: fastAcausal3
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input Integer index "downwarts";
   input Integer mark;
@@ -1592,7 +1592,7 @@ end setVisited;
 
 protected function replaceableAlias
 "function replaceableAlias
-  author Frenkel TUD 2012-11
+  autor Frenkel TUD 2012-11
   check if the variable is a replaceable alias."
   input BackendDAE.Var var;
   input HashSet.HashSet unreplacable;
@@ -1621,7 +1621,7 @@ end replaceableAlias;
 
 protected function handleSet
 "function: handleSet
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input Option<tuple<Integer,Integer>> iRmax;
   input Option<tuple<Integer,Integer>> iSmax;
@@ -1756,7 +1756,7 @@ end handleSet;
 
 protected function handleSetVar
 "function: handleSet
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input Boolean replacable;
   input BackendDAE.Var v;
@@ -1804,7 +1804,7 @@ end handleSetVar;
 
 protected function optMoveVarShared
 "function: optMoveVarShared
-  author: Frenkel TUD 2012-12"
+  autor: Frenkel TUD 2012-12"
   input Boolean replacable;
   input BackendDAE.Var v;
   input Integer i;
@@ -1846,7 +1846,7 @@ end optMoveVarShared;
 
 protected function moveVarShared
 "function: moveVarShared
-  author: Frenkel TUD 2012-12"
+  autor: Frenkel TUD 2012-12"
   input BackendDAE.Var v;
   input Integer i;
   input DAE.ElementSource source;
@@ -1883,7 +1883,7 @@ end moveVarShared;
 
 protected function traverseAliasTree
 "function: traverseAliasTree
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input list<Integer> rows;
   input Integer ilast;
@@ -1931,7 +1931,7 @@ end traverseAliasTree;
 
 protected function traverseAliasTree1
 "function: traverseAliasTree
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input SimpleContainer sc;
   input Integer r;
@@ -2024,7 +2024,7 @@ algorithm
 end traverseAliasTree1;
 
 protected function addSubstitutionOption
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
  input Option<DAE.Exp> optExp;
  input DAE.Exp exp;
  input DAE.ElementSource iSource;
@@ -2038,7 +2038,7 @@ algorithm
 end addSubstitutionOption;
 
 protected function addVarSetAttributes
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean negate;
   input Integer mark;
@@ -2068,7 +2068,7 @@ algorithm
 end addVarSetAttributes;
 
 protected function addStartValue
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input Boolean fixed;
   input Boolean fixedset;
   input DAE.ComponentRef cr;
@@ -2128,7 +2128,7 @@ algorithm
 end addStartValue;
 
 protected function addNominalAttribute
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean negate;  
   input Option<DAE.Exp> iNominal;
@@ -2157,7 +2157,7 @@ algorithm
 end addNominalAttribute;
 
 protected function addMinMaxAttribute
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input BackendDAE.Var inVar;
   input Boolean negate;
   input Integer mark;
@@ -2174,7 +2174,7 @@ algorithm
 end addMinMaxAttribute;
 
 protected function mergeMinMax
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input Boolean negate;
   input list<Option<DAE.Exp>> ominmax;
   input tuple<Option<DAE.Exp>,Option<DAE.Exp>> ominmax1;
@@ -2232,7 +2232,7 @@ algorithm
 end mergeMinMax;
 
 protected function checkMinMax
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>,Option<DAE.Exp>> minmax;
   input Integer mark;
   input array<SimpleContainer> simpleeqnsarr;
@@ -2260,7 +2260,7 @@ algorithm
 end checkMinMax;
 
 protected function mergeMinMax1
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input tuple<Option<DAE.Exp>,Option<DAE.Exp>> ominmax;
   input tuple<Option<DAE.Exp>,Option<DAE.Exp>> ominmax1;
   output tuple<Option<DAE.Exp>,Option<DAE.Exp>> minMax;
@@ -2333,7 +2333,7 @@ algorithm
 end mergeMinMax1;
 
 protected function handleVarSetAttributes
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input VarSetAttributes iAttributes "fixed,list<startvalue,origin,cr>,nominal,min,max";
   input BackendDAE.Var inVar;
   input Integer i;
@@ -2623,7 +2623,7 @@ algorithm
 end selectFreeValue1;
 
 protected function mergeNominalAttribute
-"author: Frenkel TUD 2012-12"
+"autor: Frenkel TUD 2012-12"
   input Option<DAE.Exp> nominal;
   input Integer n;
   input BackendDAE.Var inVar;
@@ -2734,7 +2734,7 @@ algorithm
 end fixAliasConstBindings1;
 
 protected function replaceAliasVarTraverser
-"author: Frenkel TUD 2011-12"
+"autor: Frenkel TUD 2011-12"
  input tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements,list<BackendDAE.Var>>> inTpl;
  output tuple<BackendDAE.Var, tuple<BackendVarTransform.VariableReplacements,list<BackendDAE.Var>>> outTpl;
 algorithm
@@ -2758,7 +2758,7 @@ algorithm
 end replaceAliasVarTraverser;
 
 protected function replaceVarTraverser
-"author: Frenkel TUD 2011-03"
+"autor: Frenkel TUD 2011-03"
  input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
  output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
 algorithm
@@ -2788,6 +2788,7 @@ algorithm
 end assertWithCondTrue;
 
 protected function removeSimpleEquationsShared1
+"autor: Frenkel TUD 2012-12"
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.EqSystems inSysts1;
   input BackendVarTransform.VariableReplacements repl;
@@ -2801,18 +2802,112 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       Boolean b;
       BackendDAE.EqSystem syst;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
     case ({},_,_) then inSysts1;
-    case ((syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqns,statSets=statSets))::rest,_,_)
+    case ((syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqns,stateSets=stateSets))::rest,_,_)
       equation
         ((_,eqnslst,b)) = BackendEquation.traverseBackendDAEEqns(eqns,replaceEquationTraverser,(repl,{},false));
         eqnslst = Debug.bcallret1(b,listReverse,eqnslst,eqnslst);
         eqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,eqns);
-        syst = Util.if_(b,BackendDAE.EQSYSTEM(v,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets),syst);
+        (stateSets,b) = removeSimpleEquationsStateSets(stateSets,v,repl,{},b);
+        syst = Util.if_(b,BackendDAE.EQSYSTEM(v,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),syst);
       then
         removeSimpleEquationsShared1(rest,syst::inSysts1,repl);
     end match;
 end removeSimpleEquationsShared1;
+
+protected function removeSimpleEquationsStateSets
+"autor: Frenkel TUD 2012-12"
+  input BackendDAE.StateSets istateSets;
+  input BackendDAE.Variables vars;
+  input BackendVarTransform.VariableReplacements repl;
+  input BackendDAE.StateSets iAcc;
+  input Boolean iDoRepl;
+  output BackendDAE.StateSets oAcc;
+  output Boolean oDoRepl;
+algorithm
+  (oAcc,oDoRepl) := match(istateSets,vars,repl,iAcc,iDoRepl)
+    local
+      list<DAE.ComponentRef> states,dstates;
+      list<BackendDAE.Equation> ceqns;
+      BackendDAE.StateSets sets;
+      Boolean b,b1;
+    case(_,_,_,_,_) then (iAcc,iDoRepl);
+    case(BackendDAE.STATESET(states,ceqns,dstates)::sets,_,_,_,_)
+      equation
+        // do replacements in states is not neccessary because alias states are not replaced
+        // do replacements in dummystates
+        (dstates,b1) = removeSimpleEquationsStateSetsDummyStates(dstates,vars,repl,HashSet.emptyHashSet(),{},iDoRepl);
+        // do replacements in constraint equations
+        (ceqns,b) = BackendVarTransform.replaceEquations(ceqns,repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        (sets,b) = removeSimpleEquationsStateSets(sets,vars,repl,BackendDAE.STATESET(states,ceqns,dstates)::iAcc,b or b1);
+      then
+        (sets,b);
+  end match;
+end removeSimpleEquationsStateSets;
+
+protected function removeSimpleEquationsStateSetsDummyStates
+  input list<DAE.ComponentRef> iDStates;
+  input BackendDAE.Variables vars;
+  input BackendVarTransform.VariableReplacements repl;
+  input HashSet.HashSet iSt;
+  input list<DAE.ComponentRef> iAcc;
+  input Boolean iDoRepl;
+  output list<DAE.ComponentRef> oAcc;
+  output Boolean oDoRepl;
+algorithm
+  (oAcc,oDoRepl) := matchcontinue(iDStates,vars,repl,iSt,iAcc,iDoRepl)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> dstates;
+      Boolean b;
+      DAE.Exp e;
+      HashSet.HashSet st;
+      list<BackendDAE.Var> vlst;
+    case ({},_,_,_,_,_) then (iAcc,iDoRepl);
+    case (cr::dstates,_,_,_,_,_)
+      equation
+        e = BackendVarTransform.getReplacement(repl,cr);
+        vlst = BackendEquation.expressionVars(e,vars);
+        (dstates,st) = addDummyVarsStateSet(vlst,iAcc,iSt);
+        (dstates,b) = removeSimpleEquationsStateSetsDummyStates(dstates,vars,repl,st,dstates,true);
+      then
+        (dstates,b);
+    case (cr::dstates,_,_,_,_,_)
+      equation
+        (dstates,b) = removeSimpleEquationsStateSetsDummyStates(dstates,vars,repl,iSt,cr::iAcc,iDoRepl);
+      then
+        (dstates,b);
+  end matchcontinue;
+end removeSimpleEquationsStateSetsDummyStates;
+
+protected function addDummyVarsStateSet
+  input list<BackendDAE.Var> iVarLst;
+  input list<DAE.ComponentRef> iAcc;
+  input HashSet.HashSet iSt;
+  output list<DAE.ComponentRef> oAcc;
+  output HashSet.HashSet oSt;
+algorithm
+  (oAcc,oSt) := matchcontinue(iVarLst,iAcc,iSt)
+    local
+      DAE.ComponentRef cr;
+      list<BackendDAE.Var> vlst;
+      HashSet.HashSet st;
+      list<DAE.ComponentRef> dstates;
+    case ({},_,_) then (iAcc,iSt);
+    case (BackendDAE.VAR(varName=cr)::vlst,_,_)
+      equation
+        st = BaseHashSet.addUnique(cr,iSt);
+        (dstates,st) = addDummyVarsStateSet(vlst,cr::iAcc,st);
+      then
+        (dstates,st);
+    case (_::vlst,_,_)
+      equation
+        (dstates,st) = addDummyVarsStateSet(vlst,iAcc,iSt);
+      then
+        (dstates,st);        
+  end matchcontinue;
+end addDummyVarsStateSet;
 
 protected function replaceEquationTraverser
   "Help function to e.g. removeSimpleEquations"
@@ -2840,7 +2935,7 @@ end replaceEquationTraverser;
 
 public function causal
 "function causal
- author: Frenkel TUD 2012-12"
+ autor: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -2865,7 +2960,7 @@ end causal;
 
 protected function causal1
 "function: causal1
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   This function moves simple equations on the form a=b and a=const and a=f(not time)
   in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem isyst;
@@ -2886,32 +2981,32 @@ algorithm
       array<list<Integer>> mT;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.EqSystem syst;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),statSets=statSets),(shared,(repl,unreplacable,b1)))
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),stateSets=stateSets),(shared,(repl,unreplacable,b1)))
       equation
         mT = arrayCreate(BackendVariable.varsSize(vars),{});
         // check equations
         ((vars,shared,repl,unreplacable,_,eqnslst,b)) = 
           traverseComponents(comps,eqns,allCausalFinder,
             (vars,shared,repl,unreplacable,mT,{},false));
-        syst = causal2(b,eqnslst,vars,statSets,isyst);
+        syst = causal2(b,eqnslst,vars,stateSets,isyst);
       then (syst,(shared,(repl,unreplacable,b or b1)));
   end match;
 end causal1;
 
 protected function causal2
 "function: causal2
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input Boolean foundSimple;
   input list<BackendDAE.Equation> iEqnslst;
   input BackendDAE.Variables iVars;
-  input BackendDAE.StateSets statSets;
+  input BackendDAE.StateSets stateSets;
   input BackendDAE.EqSystem isyst;
   output BackendDAE.EqSystem osyst;
 algorithm
   osyst:=
-  match (foundSimple,iEqnslst,iVars,statSets,isyst)
+  match (foundSimple,iEqnslst,iVars,stateSets,isyst)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -2923,13 +3018,13 @@ algorithm
         // replace unoptimized equations with optimized
         eqns = BackendEquation.listEquation(listReverse(iEqnslst));
       then 
-        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets);
+        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets);
   end match;
 end causal2;
 
 protected function traverseComponents 
 " function: traverseComponents
-  author: Frenkel TUD 2010-12"
+  autor: Frenkel TUD 2010-12"
   replaceable type Type_a subtypeof Any;
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EquationArray iEqns;
@@ -3014,7 +3109,7 @@ algorithm
 end traverseComponents;
 
 protected function allCausalFinder
-"author: Frenkel TUD 2012-12
+"autor: Frenkel TUD 2012-12
    "
   input list<BackendDAE.Equation> eqns;
   input tuple<BackendDAE.Variables,BackendDAE.Shared,BackendVarTransform.VariableReplacements,HashSet.HashSet,array<list<Integer>>,list<BackendDAE.Equation>,Boolean> inTpl;
@@ -3037,7 +3132,7 @@ end allCausalFinder;
 
 protected function allCausalFinder1
 "function: allAcausalFinder1
-  author: Frenkel TUD 2012-12"
+  autor: Frenkel TUD 2012-12"
   input Boolean foundSimple;
   input Boolean didReplacement;
   input list<SimpleContainer> iSimpleeqnslst;
@@ -3083,7 +3178,7 @@ algorithm
 end allCausalFinder1;
 
 protected function allCausalFinder2
-"author: Frenkel TUD 2012-12
+"autor: Frenkel TUD 2012-12
    "
   input Boolean b;
   input list<BackendDAE.Equation> iEqnslst;
@@ -3119,7 +3214,7 @@ end allCausalFinder2;
 
 public function allAcausal
 "function causal
- author: Frenkel TUD 2012-12"
+ autor: Frenkel TUD 2012-12"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -3144,7 +3239,7 @@ end allAcausal;
 
 protected function allAcausal1
 "function: allAcausal1
-  author: Frenkel TUD 2012-12
+  autor: Frenkel TUD 2012-12
   This function moves simple equations on the form a=b and a=const and a=f(not time)
   in BackendDAE.BackendDAE to get speed up"
   input BackendDAE.EqSystem isyst;
@@ -3164,15 +3259,15 @@ algorithm
       array<list<Integer>> mT;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.EqSystem syst;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,statSets=statSets),(shared,(repl,unreplacable,b1)))
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),(shared,(repl,unreplacable,b1)))
       equation
         // transform to list, this is later not neccesary because the acausal system should save the equations as list
         eqnslst = BackendEquation.equationList(eqns);        
         mT = arrayCreate(BackendVariable.varsSize(vars),{});
         // check equations
         ((vars,shared,repl,unreplacable,_,eqnslst,b)) = allCausalFinder(eqnslst,(vars,shared,repl,unreplacable,mT,{},false));
-        syst = causal2(b,eqnslst,vars,statSets,isyst);
+        syst = causal2(b,eqnslst,vars,stateSets,isyst);
       then (syst,(shared,(repl,unreplacable,b or b1)));
   end match;
 end allAcausal1;

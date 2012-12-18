@@ -302,7 +302,7 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
     Option<IncidenceMatrix> m;
     Option<IncidenceMatrixT> mT;
     Matching matching;
-    StateSets statSets "the statesets of the system";
+    StateSets stateSets "the statesets of the system";
   end EQSYSTEM;
 end EqSystem;
 

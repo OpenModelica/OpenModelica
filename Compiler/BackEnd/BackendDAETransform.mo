@@ -133,9 +133,9 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
     // fail case if daelow is empty
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt),statSets=statSets),_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt),stateSets=stateSets),_,_,_,_)
       equation
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -144,7 +144,7 @@ algorithm
         vec1 = listArray({});
         vec2 = listArray({});
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{}),statSets),ishared,inArg);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{}),stateSets),ishared,inArg);
     case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
         BackendDAEEXT.clearDifferentiated();
@@ -156,12 +156,12 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt),statSets=statSets),shared,arg) = 
+        (ass1,ass2,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt),stateSets=stateSets),shared,arg) = 
           matchingAlgorithm2(isyst,ishared,nvars, neqns, 1, assign1, assign2, inMatchingOptions, sssHandler, inArg);
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{}),statSets),shared,arg);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{}),stateSets),shared,arg);
 
     else
       equation
@@ -752,8 +752,8 @@ algorithm
       BackendDAE.EquationArray eqs;
       BackendDAE.Variables vars;
       array<Integer> markarray;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),statSets=statSets),_,_,_)
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets),_,_,_)
       equation
         comps = tarjanAlgorithm(m,mt,ass1,ass2);
         markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs),-1);
@@ -762,7 +762,7 @@ algorithm
         //noscalass2 = eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
       then
         // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-        (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1),statSets),comps1);
+        (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets),comps1);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"sorting equations(strongComponents failed)"});
@@ -962,13 +962,13 @@ algorithm
       BackendDAE.StrongComponents comps1;
       BackendDAE.EquationArray eqs;
       BackendDAE.Variables vars;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),statSets=statSets),_)
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),stateSets=stateSets),_)
       equation
         comps = tarjanAlgorithm(m,mt,ass1,ass2);
         comps1 = analyseStrongComponents(comps,syst,shared,ass1,ass2,{});
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1),statSets),comps1);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1),stateSets),comps1);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"sorting equations(strongComponents failed)"});
@@ -2831,13 +2831,13 @@ algorithm
       BackendDAE.EquationArray e;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
-    case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching,statSets),cr)
+      BackendDAE.StateSets stateSets;
+    case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching,stateSets),cr)
       equation
         ((BackendDAE.VAR(cr,kind,d,prl,t,b,value,dim,source,dae_var_attr,comment,ct) :: _),indx) = BackendVariable.getVar(cr, vars);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,t,b,value,dim,source,dae_var_attr,comment,ct), vars);
       then
-        BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching,statSets);
+        BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching,stateSets);
 
     else
       equation
@@ -2885,9 +2885,9 @@ algorithm
       BackendDAE.ExternalObjectClasses eoc;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
    /* eqns dummy state */
-    case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching,statSets),_,_,_)
+    case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching,stateSets),_,_,_)
       equation
         eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
@@ -2899,7 +2899,7 @@ algorithm
         v_2 = BackendVariable.setVarFixed(v_1, dummy_fixed);
         vars_1 = BackendVariable.addVar(v_2, vars);
       then
-        BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching,statSets);
+        BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching,stateSets);
 
     // Never propagate fixed=true
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=e),_,_,_)
@@ -2996,17 +2996,17 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.EventInfo einfo;
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
       list<DAE.ComponentRef> crlst;
       
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,statSets),BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs),{})
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,stateSets),BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs),{})
       equation
         (av,(_, _)) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp));
         (ie1,(_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
-       then (BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,statSets),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+       then (BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,stateSets),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
 
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,statSets),shared,(e :: rest))
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,stateSets),shared,(e :: rest))
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -3016,7 +3016,7 @@ algorithm
          "incidence_row(v\'\',eqn\') => row\' &
           Util.list_replaceat(row\',e\',m) => m\' &
           transpose_matrix(m\') => mt\' &" ;
-        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,m,mt,matching,statSets),shared, rest);
+        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,m,mt,matching,stateSets),shared, rest);
       then
         (syst,shared);
 
@@ -3571,8 +3571,8 @@ algorithm
       BackendDAE.Var dummyvar;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
-    case (var,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,statSets),_)
+      BackendDAE.StateSets stateSets;
+    case (var,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,stateSets),_)
       equation
         ((BackendDAE.VAR(name,kind,dir,prl,tp,bind,value,dim,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(var, vars);
         dummyvar_cr = ComponentReference.crefPrefixDer(name);
@@ -3583,7 +3583,7 @@ algorithm
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
         vars_1 = BackendVariable.addNewVar(dummyvar, vars);
       then
-        (dummyvar_cr,BackendDAE.EQSYSTEM(vars_1,eqns,om,omT,matching,statSets));
+        (dummyvar_cr,BackendDAE.EQSYSTEM(vars_1,eqns,om,omT,matching,stateSets));
 
     else
       equation
@@ -4282,21 +4282,21 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StateOrder so;
       BackendDAE.ConstraintEquations orgEqnsLst;  
-      BackendDAE.StateSets statSets;
+      BackendDAE.StateSets stateSets;
     case (syst,shared,{},_,_) then (syst,shared,{},inStateOrd,inOrgEqnsLst);
 
-    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),shared,(e :: es),_,_)
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),shared,(e :: es),_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         ev = BackendEquation.equationsLstVarsWithoutRelations({eqn},v);
         false = BackendVariable.hasContinousVar(ev);
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),shared, es,inStateOrd,inOrgEqnsLst);
+        (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),shared, es,inStateOrd,inOrgEqnsLst);
       then
         (syst,shared,(e :: reqns),so,orgEqnsLst);
         
-    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),shared,(e :: es),_,_)
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,stateSets),shared,(e :: es),_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -4311,7 +4311,7 @@ algorithm
         leneqns = BackendDAEUtil.equationArraySize(eqns_1);
         // print("New Equation: " +& intString(leneqns) +& "\n");
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns_1,SOME(m),SOME(mt),matching,statSets),shared, es,inStateOrd,inOrgEqnsLst);
+        (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns_1,SOME(m),SOME(mt),matching,stateSets),shared, es,inStateOrd,inOrgEqnsLst);
       then
         (syst,shared,(leneqns :: (e :: reqns)),so,orgEqnsLst);
     else

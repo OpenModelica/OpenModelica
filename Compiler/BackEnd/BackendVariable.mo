@@ -2781,11 +2781,11 @@ algorithm
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
-    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,statSets=statSets))
+      BackendDAE.StateSets stateSets;
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets=stateSets))
       equation
         (ordvars1,outVar) = removeVar(inVarPos,ordvars);
-      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,statSets),outVar);
+      then (BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets),outVar);
   end match;
 end removeVarDAE;  
   
@@ -2998,11 +2998,11 @@ algorithm
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
-    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,statSets))
+      BackendDAE.StateSets stateSets;
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets))
       equation
         ordvars1 = addVar(inVar,ordvars);
-      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,statSets);
+      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets);
   end match;
 end addVarDAE;
 
@@ -3181,11 +3181,11 @@ algorithm
       BackendDAE.EquationArray eqns;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-      BackendDAE.StateSets statSets;
-    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,statSets))
+      BackendDAE.StateSets stateSets;
+    case (_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,stateSets))
       equation
         ordvars1 = expandVars(needed,ordvars);
-      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,statSets);
+      then BackendDAE.EQSYSTEM(ordvars1,eqns,m,mT,matching,stateSets);
   end match;
 end expandVarsDAE;
 

@@ -212,23 +212,22 @@ end addNoUpdCheck;
 
 public function addUnique
   "Add a Key to hashset. If the Key is already used it fails."
-  input Key entry;
+  input Key key;
   input HashSet hashSet;
   output HashSet outHashSet;
 algorithm
-  outHashSet := match(entry, hashSet)
+  outHashSet := match(key, hashSet)
     local
       Integer hval,indx,newpos,n,n_1,bsize,indx_1;
       tuple<Integer,Integer,array<Option<Key>>> varr_1,varr;
       list<tuple<Key,Integer>> indexes;
       array<list<tuple<Key,Integer>>> hashvec_1,hashvec;
-      Key key;
       FuncsTuple fntpl;
       FuncHash hashFunc;
     
     // Adding when not existing previously
-    case (key, 
-        (hashSet as (hashvec, varr, bsize, n, fntpl as (hashFunc, _, _))))
+    case (_, 
+        ((hashvec, varr, bsize, n, fntpl as (hashFunc, _, _))))
       equation
         failure(_ = get(key, hashSet));
         indx = hashFunc(key, bsize);
