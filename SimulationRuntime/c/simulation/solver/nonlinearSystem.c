@@ -55,6 +55,18 @@ int allocateNonlinearSystem(DATA *data)
   {
     size = nonlinsys[i].size;
 
+    /* check if residual function pointer are valid */
+    ASSERT(nonlinsys[i].residualFunc, "residual function pointer is invalid" );
+
+    /* check if analytical jacobian is created */
+    if(nonlinsys[i].jacobianIndex != -1){
+      ASSERT(nonlinsys[i].analyticalJacobianColumn, "jacobian function pointer is invalid" );
+      if (nonlinsys[i].initialAnalyticalJacobian(data)){
+        nonlinsys[i].jacobianIndex = -1;
+      }
+    }
+
+
     /* allocate system data */
     nonlinsys[i].nlsx = (double*) malloc(size*sizeof(double));
     nonlinsys[i].nlsxExtrapolation = (double*) malloc(size*sizeof(double));

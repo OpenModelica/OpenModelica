@@ -64,7 +64,7 @@ type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
 type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>; // helpvarindex, expression, whenclause index
 type SampleCondition = tuple<DAE.Exp,Integer>; // helpvarindex, expression,
 type JacobianColumn = tuple<list<SimEqSystem>, list<SimVar>, String>; // column equations, column vars, column length
-type JacobianMatrix = tuple<list<JacobianColumn>,   // column
+type JacobianMatrix = tuple<list<JacobianColumn>,  // column
                             list<SimVar>,           // seed vars
                             String,                 // matrix name
                             tuple<list<tuple<DAE.ComponentRef,list<DAE.ComponentRef>>>,tuple<list<SimVar>,list<SimVar>>>,    // sparse pattern
@@ -421,6 +421,7 @@ uniontype SimEqSystem
     list<SimEqSystem> eqs;
     list<DAE.ComponentRef> crefs;
     Integer indexNonLinear;
+    Option<JacobianMatrix> jacobianMatrix; 
   end SES_NONLINEAR;
   record SES_MIXED
     Integer index;

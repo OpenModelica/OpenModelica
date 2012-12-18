@@ -1733,9 +1733,24 @@ algorithm
       list<list<DAE.Subscript>> subslst;
       String errorMessage;
       Boolean diffed;
+      Real r;
     
     case (BackendDAE.EQUATION(exp=DAE.TUPLE(explst), scalar=e2, source=source)) equation
       ((_, eqns)) = List.fold2(explst, equationTupleToScalarResidualForm, e2, source, (1, {}));
+    then eqns;
+
+    // workaround, should changed to DAE.RCONST(0.0)
+    // when new rml is availiable
+    case (BackendDAE.EQUATION(exp=e1 as DAE.RCONST(r), scalar=e2, source=source, differentiated=diffed)) equation
+      true = realEq(r, 0.0);
+      eqns ={BackendDAE.RESIDUAL_EQUATION(e2, source, diffed)};
+    then eqns;
+
+    // workaround, should changed to DAE.RCONST(0.0)
+    // when new rml is availiable      
+    case (BackendDAE.EQUATION(exp=e1, scalar=e2 as DAE.RCONST(r), source=source, differentiated=diffed)) equation
+      true = realEq(r, 0.0);
+      eqns ={BackendDAE.RESIDUAL_EQUATION(e1, source, diffed)};
     then eqns;
     
     case (BackendDAE.EQUATION(exp=e1, scalar=e2, source=source, differentiated=diffed)) equation

@@ -231,21 +231,20 @@ extern const int INDEX_JAC_D;
  * Return-value 0: jac is present
  * Return-value 1: jac is not present
  */
-extern int initialAnalyticJacobianG(DATA* data);
-extern int initialAnalyticJacobianA(DATA* data);
-extern int initialAnalyticJacobianB(DATA* data);
-extern int initialAnalyticJacobianC(DATA* data);
-extern int initialAnalyticJacobianD(DATA* data);
+extern int initialAnalyticJacobianG(void* data);
+extern int initialAnalyticJacobianA(void* data);
+extern int initialAnalyticJacobianB(void* data);
+extern int initialAnalyticJacobianC(void* data);
+extern int initialAnalyticJacobianD(void* data);
 
 /*
  * These functions calculate specific jacobian column.
  */
-extern int functionJacG_column(DATA* data);
-extern int functionJacA_column(DATA* data);
-extern int functionJacB_column(DATA* data);
-extern int functionJacC_column(DATA* data);
-extern int functionJacD_column(DATA* data);
-
+extern int functionJacG_column(void* data);
+extern int functionJacA_column(void* data);
+extern int functionJacB_column(void* data);
+extern int functionJacC_column(void* data);
+extern int functionJacD_column(void* data);
 /*
  * These functions calculate specific jacobians using sparsity pattern.
  * Output array jac contains each element of the matrix and must be filled with zeros before calling.

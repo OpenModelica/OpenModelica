@@ -129,7 +129,6 @@ typedef struct SPARSE_PATTERN
   */
 typedef struct ANALYTIC_JACOBIAN
 {
-    char jacobianName;
     unsigned int sizeCols;
     unsigned int sizeRows;
     SPARSE_PATTERN sparsePattern;
@@ -256,8 +255,18 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_real *max;
   modelica_real *nominal;
 
+  /* if analyticalJacobianColumn != NULL analyticalJacobian is available and
+   * can be produced with the help of analyticalJacobianColumnn function pointer
+   * which is a generic column of the jacobian matrix. (see ANALYTIC_JACOBIAN)
+   *
+   * if analyticalJacobianColumn == NULL no analyticalJacobian is available
+   */
+  int (*analyticalJacobianColumn)(void*);
+  int (*initialAnalyticalJacobian)(void*);
+  modelica_integer jacobianIndex;
+
   void (*residualFunc)(void*, double*, double*, int*);
-  void (*initializeStaticNLSData)(struct DATA*, struct NONLINEAR_SYSTEM_DATA*);
+  void (*initializeStaticNLSData)(void*, void*);
 
   void *solverData;
   modelica_real *nlsx;              /* x */

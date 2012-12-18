@@ -2606,7 +2606,7 @@ public function deleteCrefs "function deleteCrefs
   input BackendDAE.Variables vars;
   output BackendDAE.Variables vars_1;
 algorithm
-  vars_1 := List.fold(varlst, deleteVar, vars);
+  vars_1 := List.fold(varlst, removeCref, vars);
 end deleteCrefs;
 
 public function deleteVars "function deleteVars
@@ -3188,7 +3188,6 @@ algorithm
         fail();
   end matchcontinue;
 end expandVars;
-
 
 public function getVarAt
 "function: getVarAt

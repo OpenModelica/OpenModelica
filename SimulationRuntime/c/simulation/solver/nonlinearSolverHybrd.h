@@ -67,8 +67,10 @@ void _omc_hybrd_(void (*) (integer*, double *, double*, int*, void*),
 }
 #endif
 
+
 int allocateHybrdData(int size, void **data);
 int freeHybrdData(void **data);
 int solveHybrd(DATA *data, int sysNumber);
 
 #endif
+

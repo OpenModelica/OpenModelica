@@ -287,6 +287,7 @@ package SimCode
       list<SimEqSystem> eqs;
       list<DAE.ComponentRef> crefs;
       Integer indexNonLinear;
+      Option<JacobianMatrix> jacobianMatrix;
     end SES_NONLINEAR;
     record SES_MIXED
       Integer index;

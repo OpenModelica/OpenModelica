@@ -143,8 +143,8 @@ template simulationFile(SimCode simCode, String guid)
     #else
     int measure_time_flag = 0;
     #endif
-
-    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, appendAllequations(jacobianMatrixes), delayedExps)%>
+    
+    <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
     
     <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes), parameterEquations, initialEquations)%>
     
@@ -238,7 +238,7 @@ template simulationFileHeader(SimCode simCode)
   end match
 end simulationFileHeader;
 
-template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, DelayedExpression delayed)
+template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed)
   "Generates information for data.modelInfo struct."
 ::=
   match modelInfo
@@ -260,7 +260,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nParametersString = <%varInfo.numStringParamVars%>;
     data->modelData.nInputVars = <%varInfo.numInVars%>;
     data->modelData.nOutputVars = <%varInfo.numOutVars%>;
-    data->modelData.nJacobians = 5;
+    data->modelData.nJacobians = <%listLength(symJacs)%>;
     data->modelData.nHelpVars = <%varInfo.numHelpVars%>;
 
     data->modelData.nAliasReal = <%varInfo.numAlgAliasVars%>;
@@ -286,14 +286,14 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
   end match
 end populateModelInfo;
 
-template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, DelayedExpression delayed)
+template functionInitializeDataStruc(ModelInfo modelInfo, String fileNamePrefix, String guid, list<SimEqSystem> allEquations, list<SimCode.JacobianMatrix> symJacs, DelayedExpression delayed)
   "Generates function in simulation file."
 ::=
   <<
   void setupDataStruc(DATA *data)
   {  
     ASSERT(data, "Error while initialize Data");
-    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacEquations, delayed)%>
+    <%populateModelInfo(modelInfo, fileNamePrefix, guid, allEquations, symJacs, delayed)%>
   }
   >>
 end functionInitializeDataStruc;
@@ -526,6 +526,9 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes) "te
     let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
     let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
     <<
+    const int INDEX_JAC_<%name%> = <%index0%>;
+    int functionJac<%name%>_column(void* data);
+    int initialAnalyticJacobian<%name%>(void* data);
     <%varsDef%>
     <%sparseDef%>
     >>
@@ -911,11 +914,18 @@ template functionInitialNonLinearSystemsTemp(list<SimEqSystem> allEquations)
      case eq as SES_MIXED(__) then functionInitialNonLinearSystemsTemp(fill(eq.cont,1))
      case eq as SES_NONLINEAR(__) then
      let size = listLength(crefs)
+     let generatedJac = match jacobianMatrix case SOME(__) then 'functionJacNLSJac<%eq.index%>_column' case NONE() then 'NULL'
+     let initialJac = match jacobianMatrix case SOME(__) then 'initialAnalyticJacobianNLSJac<%eq.index%>' case NONE() then 'NULL'
+     let jacIndex = match jacobianMatrix case SOME(__) then 'INDEX_JAC_NLSJac<%eq.index%>' case NONE() then '-1'
      <<
      nonLinearSystemData[<%indexNonLinear%>].simProfEqNr = SIM_PROF_EQ_<%index%>;
      nonLinearSystemData[<%indexNonLinear%>].size = <%size%>;
      nonLinearSystemData[<%indexNonLinear%>].residualFunc = residualFunc<%index%>;
+     nonLinearSystemData[<%indexNonLinear%>].analyticalJacobianColumn = <%generatedJac%>;
+     nonLinearSystemData[<%indexNonLinear%>].initialAnalyticalJacobian = <%initialJac%>;
+     nonLinearSystemData[<%indexNonLinear%>].jacobianIndex = <%jacIndex%>;
      nonLinearSystemData[<%indexNonLinear%>].initializeStaticNLSData = initializeStaticNLSData<%index%>;
+     
      >> 
    )
    ;separator="\n\n")
@@ -970,8 +980,10 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
        ;separator="\n")
      <<
      <%&tmp%>
-     void initializeStaticNLSData<%index%>(DATA *data, NONLINEAR_SYSTEM_DATA *nlsData)
+     void initializeStaticNLSData<%index%>(void *inData, void *inNlsData)
      {
+       DATA* data = (DATA*) inData;
+       NONLINEAR_SYSTEM_DATA* nlsData = (NONLINEAR_SYSTEM_DATA*) inNlsData;
        int i=0;
        <%body_initializeStaticNLSData%>
      }
@@ -1747,16 +1759,12 @@ end genVector;
 template functionAnalyticJacobians(list<JacobianMatrix> JacobianMatrixes) "template functionAnalyticJacobians
   This template generates source code for all given jacobians."
 ::=
-  let jacobianIndices = (JacobianMatrixes |> (mat, vars, name, _, _, _) hasindex index0 =>
-    <<const int INDEX_JAC_<%name%> = <%index0%>;>>; separator="\n")
   let initialjacMats = (JacobianMatrixes |> (mat, vars, name, (sparsepattern,(_,_)), colorList, maxColor) =>
     initialAnalyticJacobians(mat, vars, name, sparsepattern, colorList, maxColor); separator="\n")
   let jacMats = (JacobianMatrixes |> (mat, vars, name, sparsepattern, colorList, maxColor) =>
     generateMatrix(mat, vars, name) ;separator="\n")
   
   <<
-  <%jacobianIndices%>
-  
   <%initialjacMats%>
    
   <%jacMats%>
@@ -1771,7 +1779,7 @@ template initialAnalyticJacobians(list<JacobianColumn> jacobianColumn, list<SimV
 match seedVars
 case {} then
 <<
-int initialAnalyticJacobian<%matrixname%>(DATA* data)
+int initialAnalyticJacobian<%matrixname%>(void* inData)
 {
   return 1;
 }
@@ -1780,7 +1788,7 @@ case _ then
   match sparsepattern 
   case {(_,{})} then 
     <<
-    int initialAnalyticJacobian<%matrixname%>(DATA* data)
+    int initialAnalyticJacobian<%matrixname%>(void* inData)
     {
       return 1;
     }
@@ -1812,13 +1820,13 @@ case _ then
       let tmpvarsSize = (jacobianColumn |> (_,vars,_) => listLength(vars);separator="\n")
       let index_ = listLength(seedVars)
       <<
-      int initialAnalyticJacobian<%matrixname%>(DATA* data)
+      int initialAnalyticJacobian<%matrixname%>(void* inData)
       {
+        DATA* data = ((DATA*)inData);
         int index = INDEX_JAC_<%matrixname%>;
         
         int i;
         
-        data->simulationInfo.analyticJacobians[index].jacobianName = '<%matrixname%>';
         data->simulationInfo.analyticJacobians[index].sizeCols = <%index_%>;
         data->simulationInfo.analyticJacobians[index].sizeRows = <%indexColumn%>;
         data->simulationInfo.analyticJacobians[index].seedVars = (modelica_real*) calloc(<%index_%>,sizeof(modelica_real));
@@ -1857,7 +1865,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
   match indxColumn
   case "0" then
     <<
-    int functionJac<%matrixname%>_column(DATA* data)
+    int functionJac<%matrixname%>_column(void* data)
     {
       return 0;
     }
@@ -1866,7 +1874,7 @@ template generateMatrix(list<JacobianColumn> jacobianColumn, list<SimVar> seedVa
     match seedVars 
      case {} then
         <<
-        int functionJac<%matrixname%>_column(DATA* data)
+        int functionJac<%matrixname%>_column(void* data)
         {
           return 0;
         }
@@ -1896,21 +1904,14 @@ template functionJac(list<SimEqSystem> jacEquations, list<SimVar> tmpVars, Strin
   
   <<
   <%&tmp%>
-  int functionJac<%matrixName%>_column(DATA* data)
+  int functionJac<%matrixName%>_column(void* inData)
   {
     state mem_state;
+    DATA* data = ((DATA*)inData);
     int index = INDEX_JAC_<%matrixName%>;
     <%varDecls%>
     mem_state = get_memory_state();
     <%eqns_%>
-    
-    int i;
-    if(DEBUG_STREAM(LOG_DEBUG))
-    {
-      for(i=0; i<<%columnLength%>; i++)
-        INFO2(LOG_DEBUG, "col: col[%d] = %f", i, data->simulationInfo.analyticJacobians[index].resultVars[i]);
-    }
-    
     restore_memory_state(mem_state);
     return 0;
   }

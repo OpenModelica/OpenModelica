@@ -31,6 +31,20 @@ template dumpSimCode(SimCode code)
   >>
 end dumpSimCode;
 
+template dumpVarsShort(list<SimVar> vars)
+::=
+  let varsString = (vars |> v as SIMVAR(__) hasindex index0 =>
+  <<
+  <%index0%>: <%crefStr(v.name)%>
+  >>
+  ;separator="\n";empty)
+  <<
+  <%varsString%>
+  
+  >>
+end dumpVarsShort;
+
+
 template dumpVars(list<SimVar> vars)
 ::=
   vars |> v as SIMVAR(__) =>

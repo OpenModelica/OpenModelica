@@ -4513,12 +4513,14 @@ algorithm
         adjSizeT = arrayLength(adjMatrixT);
         
         // Debug dumping
+        /*
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpFullMatching, bdaeMatching);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.printVarList,BackendVariable.varList(varswithDiffs));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.printEquationList,BackendEquation.equationList(orderedEqns));
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrix,adjMatrix);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpIncidenceMatrixT,adjMatrixT);
         Debug.fcall(Flags.JAC_DUMP2,BackendDump.dumpComponents, comps);
+        */
         
         // get indexes of diffed vars (rows)
         diffedVars = BackendVariable.listVar1(indiffedVars);  
@@ -4568,7 +4570,7 @@ algorithm
         sparsetuple = List.threadTuple(diffCompRefs, translated);
         
         
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse  graph.");
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> build sparse  graph.\n");
         // build up a graph of pattern
         nodesList = List.intRange2(1,adjSize);
         sparseGraph = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
@@ -4578,7 +4580,7 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2,print,"transposed sparse graph: \n");
         Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraphT);
         
-        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.");
+        Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
         // color sparse bipartite graph
         forbiddenColor = arrayCreate(adjSize,NONE());
         colored = arrayCreate(adjSize,0);
@@ -5047,7 +5049,7 @@ algorithm
   end matchcontinue;
 end generateImplicitInitialEquations;
 
-protected function convertInitialResidualsIntoInitialEquations "function convertInitialResidualsIntoInitialEquations
+public function convertInitialResidualsIntoInitialEquations "function convertInitialResidualsIntoInitialEquations
   author: lochel
   This function converts initial residuals into initial equations of the following form:
     e.g.: 0 = a+b -> $res1 = a+b"
@@ -5222,7 +5224,6 @@ algorithm
                                                       BackendVariable.listVar1(parameters),     // 
                                                       BackendVariable.listVar1(outputs),        // 
                                                       orderedVarList,                          // 
-                                                      (orderedVarCrefList, knownVarCrefList),  // 
                                                       "G");                                    // name
     then (jacobian, sparsityPattern, DAE);
     
@@ -5485,7 +5486,7 @@ algorithm
         paramvars = List.select(knvarlst, BackendVariable.isParam);
 
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> prepared vars for symbolic matrix A time: " +& realString(clock()) +& "\n");
-        (outJacobian, outSparsePattern, outSparseColoring)  = createJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,(comref_vars,comref_knvars),"A");
+        (outJacobian, outSparsePattern, outSparseColoring)  = createJacobian(backendDAE2,states,BackendVariable.listVar1(states),BackendVariable.listVar1(inputvars),BackendVariable.listVar1(paramvars),BackendVariable.listVar1(states),varlst,"A");
         
       then
         (outJacobian, outSparsePattern, outSparseColoring);
@@ -5548,25 +5549,25 @@ algorithm
         outputvarsarr = BackendVariable.listVar1(outputvars);
         
         // Differentiate the System w.r.t states for matrices A
-        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,(comref_vars,comref_knvars),"A");
+        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"A");
         linearModelMatrices = {(SOME(linearModelMatrix),sparsePattern,sparseColoring)};
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix A time: " +& realString(clock()) +& "\n");
   
         
         // Differentiate the System w.r.t inputs for matrices B
-        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,(comref_vars,comref_knvars),"B");
+        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,statesarr,varlst,"B");
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix B time: " +& realString(clock()) +& "\n");
 
 
         // Differentiate the System w.r.t states for matrices C
-        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,(comref_vars,comref_knvars),"C");
+        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,states,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"C");
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix C time: " +& realString(clock()) +& "\n");
 
         
         // Differentiate the System w.r.t inputs for matrices D
-        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,(comref_vars,comref_knvars),"D");
+        (linearModelMatrix, sparsePattern, sparseColoring) = createJacobian(backendDAE2,inputvars2,statesarr,inputvarsarr,paramvarsarr,outputvarsarr,varlst,"D");
         linearModelMatrices = listAppend(linearModelMatrices,{(SOME(linearModelMatrix),sparsePattern,sparseColoring)});
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> generated system for matrix D time: " +& realString(clock()) +& "\n");
 
@@ -5590,18 +5591,17 @@ public function createJacobian "function createJacobian
   input BackendDAE.Variables inParameterVars;
   input BackendDAE.Variables inDifferentiatedVars;
   input list<BackendDAE.Var> inVars;
-  input tuple<list<DAE.ComponentRef>,list<DAE.ComponentRef>> inOrigTuple;
   input String inName;
   output BackendDAE.SymbolicJacobian outJacobian;
   output BackendDAE.SparsePattern outSparsePattern;
   output BackendDAE.SparseColoring outSparseColoring;
 algorithm
   (outJacobian, outSparsePattern, outSparseColoring) :=
-  matchcontinue (inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,inOrigTuple,inName)
+  matchcontinue (inBackendDAE,inDiffVars,inStateVars,inInputVars,inParameterVars,inDifferentiatedVars,inVars,inName)
     local
       BackendDAE.BackendDAE backendDAE;
       
-      list<DAE.ComponentRef> inOrigVars, inOrigKnVars, comref_vars, comref_seedVars, comref_differentiatedVars;
+      list<DAE.ComponentRef> comref_vars, comref_seedVars, comref_differentiatedVars;
       
       BackendDAE.Shared shared;
       BackendDAE.Variables  knvars, knvars1;
@@ -5611,7 +5611,7 @@ algorithm
       BackendDAE.SparsePattern sparsepattern;
       BackendDAE.SparseColoring colsColors;
       
-    case (_,_,_,_,_,_,_,(inOrigVars,inOrigKnVars),_)
+    case (_,_,_,_,_,_,_,_)
       equation
         
         diffedVars = BackendVariable.varList(inDifferentiatedVars);
@@ -5704,7 +5704,7 @@ algorithm
                                                                          "removeSimpleEquations",
                                                                          "collapseIndependentBlocks"}));
           _ = Flags.set(Flags.EXEC_STAT, b);
-          Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",backendDAE2));
+          //Debug.fcall(Flags.JAC_DUMP2, BackendDump.bltdump, ("jacdump2",backendDAE2));
         then backendDAE2;
      else
        equation
@@ -6231,7 +6231,7 @@ algorithm
     case(cref, x, (matrixName,false))
       equation
         id = ComponentReference.printComponentRefStr(cref) +& BackendDAE.partialDerivativeNamePrefix +& matrixName +& "$P" +& ComponentReference.printComponentRefStr(x);
-        id = Util.stringReplaceChar(id, ",", "$K");
+        id = Util.stringReplaceChar(id, ",", "$c");
         id = Util.stringReplaceChar(id, ".", "$P");
         id = Util.stringReplaceChar(id, "[", "$lB");
         id = Util.stringReplaceChar(id, "]", "$rB");
@@ -7868,8 +7868,14 @@ public function tearingSystemNew "function tearingSystem
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  false := Flags.getConfigBool(Flags.NO_TEARING);
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemNew0,false);
+  outDAE := matchcontinue(inDAE)
+    case(_)
+      equation 
+        false = Flags.getConfigBool(Flags.NO_TEARING);
+        (outDAE,_) = BackendDAEUtil.mapEqSystemAndFold(inDAE,tearingSystemNew0,false);
+      then outDAE;
+    case(_) then inDAE;
+   end matchcontinue;
 end tearingSystemNew;
 
 protected function tearingSystemNew0 "function tearingSystem0
