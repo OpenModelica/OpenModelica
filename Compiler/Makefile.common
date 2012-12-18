@@ -150,6 +150,7 @@ PartFn.mo \
 RemoveSimpleEquations.mo \
 ResidualCmp.mo \
 SimCode.mo \
+SimCodeMain.mo \
 SimCodeUtil.mo \
 TaskGraph.mo \
 Uncertainties.mo \
