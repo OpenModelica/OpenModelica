@@ -863,6 +863,77 @@ algorithm
   end match;
 end applyExpSubscripts;
 
+
+public function subscriptExp
+"@mahge
+  This function does the same job as 'applyExpSubscripts' function.
+  However this one doesn't use ExpressionSimplify.simplify.
+  
+  
+  Takes an expression and a list of subscripts and subscripts
+  the given expression.
+  If a component refernce is given the subs are appled to it.
+  If an array(DAE.ARRAY) is given the element at the specified
+  subscripts is returned.
+  e.g. subscriptExp on ({{1,2},{3,4}}) with sub [2,1] gives 3
+       subscriptExp on (a) with sub [2,1] gives a[2,1]
+       
+"
+  input DAE.Exp inExp;
+  input list<DAE.Subscript> inSubs;
+  output DAE.Exp outArg;
+algorithm
+  outArg := match(inExp, inSubs)
+    local
+      DAE.ComponentRef cref;
+      DAE.Type ty;
+      DAE.Exp exp,exp1,exp2;
+      list<DAE.Exp> explst;
+      DAE.Subscript sub;
+      list<DAE.Subscript> restsubs;
+      DAE.Operator op;
+      String str;
+      
+    case(_, {}) then inExp;
+      
+    case(DAE.CREF(cref, ty), _) 
+      equation
+        cref = ComponentReference.subscriptCref(cref, inSubs);
+      then 
+        DAE.CREF(cref, ty);
+    
+    case(DAE.ARRAY(_, _, explst), sub::restsubs) 
+      equation
+        exp = listNth(explst, subscriptInt(sub) - 1);
+      then 
+        subscriptExp(exp, restsubs);
+    
+    case (DAE.BINARY(exp1, op, exp2), _)
+      equation
+        exp1 = subscriptExp(exp1, inSubs);
+        exp2 = subscriptExp(exp2, inSubs);
+      then
+        DAE.BINARY(exp1, op, exp2);
+    
+    case (DAE.CAST(ty,exp1), _)
+      equation
+        exp1 = subscriptExp(exp1, inSubs);
+        ty = Types.arrayElementType(ty);
+        exp1 = DAE.CAST(ty,exp1);
+      then
+        exp1;
+    
+    else
+      equation
+        str = "Expression.subscriptExp failed on " +& ExpressionDump.printExpStr(inExp) +& "\n";
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();
+        
+  end match;    
+end subscriptExp;
+
+
 public function unliftArray
 "function: unliftArray
   Converts an array type into its element type
@@ -1479,7 +1550,7 @@ algorithm
   DAE.INDEX(exp = outExp) := inSubscript;
 end subscriptIndexExp;
 
-public function subscriptExp
+public function getSubscriptExp
   "Returns the subscript expression, or fails on DAE.WHOLEDIM."
   input Subscript inSubscript;
   output DAE.Exp outExp;
@@ -1491,7 +1562,7 @@ algorithm
     case DAE.INDEX(exp = e) then e;
     case DAE.WHOLE_NONEXP(exp = e) then e;
   end match;
-end subscriptExp;
+end getSubscriptExp;
 
 public function subscriptNonExpandedExp
 "function: subscriptNonExpandedExp
@@ -3374,6 +3445,127 @@ algorithm
   end match;
 end makeZeroExpression;
 
+
+public function listToArray
+" @mahge:
+  creates an array from a list of expressions and 
+  dimensions. e.g.
+   listToArray({1,2,3,4,5,6}, {3,2}) -> {{1,2}, {3,4}, {5,6}}
+"
+  input list<DAE.Exp> inList;
+  input DAE.Dimensions dims;
+  output DAE.Exp oExp;
+algorithm 
+  oExp := matchcontinue(inList, dims)
+    local
+      DAE.Type ty;
+      DAE.Exp exp;
+    
+    case(_, {}) 
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray called with empty dimension list."});
+      then fail();
+    
+    case({}, _) 
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray called with empty list."}); 
+      then fail();
+      
+    // Here we assume that all the elements of the list
+    // have the same type.  
+    case(exp::_, _)
+      equation
+        ty = typeof(exp);
+        oExp = listToArray2(inList,dims,ty);
+      then
+        oExp;
+  end matchcontinue;
+  
+end listToArray;
+
+
+protected function listToArray2
+  input list<DAE.Exp> inList;
+  input DAE.Dimensions iDims;
+  input DAE.Type inType;
+  output DAE.Exp oExp;
+algorithm 
+  oExp := matchcontinue(inList, iDims, inType)
+  local
+    Integer i;
+    DAE.Dimension d;
+    list<DAE.Exp> explst, restexps;
+    DAE.Exp arrexp;
+    DAE.Dimensions dims;
+    
+  case(_, {d}, _)
+    equation
+      i = dimensionSize(d);
+      true = i == listLength(inList);
+    then
+      DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),false,inList);
+      
+  case(_, {d}, _)
+    equation
+      i = dimensionSize(d);
+      true = i > listLength(inList);
+      Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray2: Not enough elements left in list to fit dimension."});
+    then
+      fail();
+  
+  case(_, _ :: _ , _)
+    equation
+      i = listLength(iDims) - 1;
+      d = List.last(iDims);
+      (dims, _) = List.split(iDims,i); 
+       
+      explst = listToArray3(inList,d,inType);
+      arrexp = listToArray2(explst,dims,inType);      
+    then
+      arrexp;
+  end matchcontinue;
+end listToArray2;
+
+
+protected function listToArray3
+  input list<DAE.Exp> inList;
+  input DAE.Dimension iDim;
+  input DAE.Type inType;
+  output list<DAE.Exp> oExps;
+algorithm 
+  oExps := matchcontinue(inList, iDim, inType)
+  local
+    Integer i;
+    DAE.Dimension d;
+    list<DAE.Exp> explst, restexps, restarr;
+    DAE.Exp arrexp;
+    DAE.Dimensions dims;
+    
+    case({}, _, _) then {};
+    
+    case(_, d, _)
+      equation
+        i = dimensionSize(d);
+        true = i > listLength(inList);
+        Error.addMessage(Error.INTERNAL_ERROR, {"Expression.listToArray3: Not enough elements left in list to fit dimension."});
+      then
+        fail();
+        
+    case(_, d, _)
+      equation
+        i = dimensionSize(d);
+        (explst, restexps) = List.split(inList,i);
+        
+        arrexp = DAE.ARRAY(DAE.T_ARRAY(inType,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),false,explst);
+        
+        restarr = listToArray3(restexps,d,inType);      
+      then
+        arrexp::restarr;
+        
+  end matchcontinue;
+end listToArray3;
+
+
 public function arrayFill
   input DAE.Dimensions dims;
   input DAE.Exp inExp;
@@ -3402,6 +3594,7 @@ algorithm
     DAE.Dimension d;
     Type ty;
     list<DAE.Exp> expl;
+    DAE.Exp arrexp;
     DAE.Dimensions dims;
   case({d},_)
     equation
@@ -3411,11 +3604,12 @@ algorithm
     then
       DAE.ARRAY(DAE.T_ARRAY(ty,{DAE.DIM_INTEGER(i)},DAE.emptyTypeSource),true,expl);
   
-  case(_::dims,_)
+  case(d::dims,_)
     equation
-      print(" arrayFill2 not implemented for matrixes, only single arrays \n");
+      arrexp = arrayFill2({d},inExp);
+      arrexp = arrayFill2(dims,arrexp);      
     then
-      fail();
+      arrexp;
   end matchcontinue;
 end arrayFill2;
 

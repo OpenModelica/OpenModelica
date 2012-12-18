@@ -9900,7 +9900,7 @@ algorithm
         et = Types.simplifyType(ty);
         (ss as _::_) = ComponentReference.crefLastSubs(cr);
         exp = DAE.ARRAY(et,sc,{});
-        exp = Expression.makeASUB(exp,List.map(ss,Expression.subscriptExp));
+        exp = Expression.makeASUB(exp,List.map(ss,Expression.getSubscriptExp));
       then (exp,c);
     
     case (_,exp,_,_) then (exp,c);
@@ -10293,7 +10293,7 @@ algorithm
         (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info));
         // print("Got value: " +& ValuesUtil.valString(v) +& "\n");
         e = ValuesUtil.valueExp(v);
-        e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+        e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
         // print(ComponentReference.printComponentRefStr(cr) +& " is a constant with variable subscript and binding: " +& ExpressionDump.printB+& "\n");
       then
         (cache,e,DAE.C_VAR(),attr);
@@ -10305,7 +10305,7 @@ algorithm
         subsc = ComponentReference.crefLastSubs(cr);
         (cache,v) = Ceval.cevalCref(cache,env,cr2,false,Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
-        e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+        e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
       then
         (cache,e,DAE.C_PARAM(),attr);
 
@@ -10328,7 +10328,7 @@ algorithm
         DAE.EQBOUND(exp = e, constant_ = DAE.C_CONST()) = binding;
         // adrpo: todo -> subscript the binding expression
         // subsc = ComponentReference.crefLastSubs(cr);
-        // e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+        // e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
         const = DAE.C_CONST(); // const = Types.constAnd(DAE.C_CONST(), constSubs);
       then
         (cache,e,const,attr);
@@ -10343,7 +10343,7 @@ algorithm
         e = ValuesUtil.valueExp(v);
         // adrpo: todo -> subscript the binding expression
         // subsc = ComponentReference.crefLastSubs(cr);
-        // e = Expression.makeASUB(e, List.map(subsc,Expression.subscriptExp));
+        // e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
         // const = Types.constAnd(DAE.C_CONST(), constSubs);
         const = DAE.C_CONST();
       then

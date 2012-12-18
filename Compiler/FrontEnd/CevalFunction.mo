@@ -2581,7 +2581,7 @@ algorithm
 
     case (_, _)
       equation
-        sub_exp = Expression.subscriptExp(inSubscript);
+        sub_exp = Expression.getSubscriptExp(inSubscript);
         (_, (_, _, arg)) = Expression.traverseExpBidir(
           sub_exp,
           (getElementDependenciesTraverserEnter,

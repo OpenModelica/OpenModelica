@@ -495,6 +495,31 @@ algorithm
   end match;
 end getComponentType;
 
+public function getElementComponentType
+  input Element inElement;
+  output DAE.Type outType;
+algorithm
+  outType := match(inElement)
+    local
+      DAE.Type ty;
+
+    case NFInstTypes.ELEMENT(NFInstTypes.TYPED_COMPONENT(ty = ty),_) then ty;
+    case NFInstTypes.ELEMENT(_, _)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"NFInstUtil.getElementComponentType: Expected element with TYPED_COMPONENT \n"});
+      then
+        fail();
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {"NFInstUtil.getElementComponentType: Expected ELEMENT. found either conditional or extended element \n"});
+      then
+        fail();
+
+  end match;
+end getElementComponentType;
+
 public function getComponentTypeDimensions
   input Component inComponent;
   output DAE.Dimensions outDims;

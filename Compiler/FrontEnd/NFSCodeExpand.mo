@@ -518,7 +518,7 @@ algorithm
       equation
         flat_subs = List.flatten(inSubscripts);
         flat_subs = List.lastN(flat_subs, pd);
-        sub_exps = List.map(flat_subs, Expression.subscriptExp);
+        sub_exps = List.map(flat_subs, Expression.getSubscriptExp);
         exp = DAE.ASUB(exp, sub_exps);
         (exp, _) = ExpressionSimplify.simplify(exp);
       then 
@@ -820,7 +820,7 @@ algorithm
     case ((lhs, rhs), subs as comp_subs :: _, _)
       equation
         subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
         lhs = subscriptExp(lhs, sub_expl, subs);
         (lhs, _) = ExpressionSimplify.simplify(lhs);
         rhs = subscriptExp(rhs, sub_expl, subs);
@@ -972,7 +972,7 @@ algorithm
     case (NFInstTypes.ASSIGN_STMT(lhs = lhs, rhs = rhs), _, subs as comp_subs :: _, _)
       equation
         subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
         lhs = subscriptExp(lhs, sub_expl, subs);
         /* (lhs, _) = ExpressionSimplify.simplify(lhs); ??? */
         rhs = subscriptExp(rhs, sub_expl, subs);
@@ -991,7 +991,7 @@ algorithm
     case (NFInstTypes.NORETCALL_STMT(exp = exp), _, subs as comp_subs :: _, _)
       equation
         subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
         exp = subscriptExp(exp, sub_expl, subs);
         (exp, _) = ExpressionSimplify.simplify(exp);
       then DAE.STMT_NORETCALL(exp, DAE.emptyElementSource)::inAccumEl;
@@ -999,7 +999,7 @@ algorithm
     case (NFInstTypes.IF_STMT(branches = branches), _, subs as comp_subs :: _, _)
       equation
         subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
         dbranches = List.map3(branches,expandBranch,inKind,subs,sub_expl);
         dbody = Algorithm.makeIfFromBranches(dbranches,DAE.emptyElementSource);
       then listAppend(dbody,inAccumEl);
@@ -1007,7 +1007,7 @@ algorithm
     case (NFInstTypes.FOR_STMT(name=name,index=index,indexType=ty,range=SOME(exp),body=body), _, subs as comp_subs :: _, _)
       equation
         subs = listReverse(subs);
-        sub_expl = List.map(comp_subs, Expression.subscriptExp);
+        sub_expl = List.map(comp_subs, Expression.getSubscriptExp);
         exp = subscriptExp(exp, sub_expl, subs);
         (exp, _) = ExpressionSimplify.simplify(exp);
         dbody = List.fold2(body,expandStatement,inKind,subs,{});

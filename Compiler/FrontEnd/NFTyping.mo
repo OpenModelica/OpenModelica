@@ -53,7 +53,6 @@ protected import ComponentReference;
 protected import NFConnectCheck;
 protected import NFConnectEquations;
 protected import NFConnectUtil2;
-protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
@@ -63,7 +62,6 @@ protected import Flags;
 protected import NFInstUtil;
 protected import List;
 protected import Types;
-protected import Util;
 protected import NFTypeCheck;
 
 public type Binding = NFInstTypes.Binding;
@@ -672,11 +670,11 @@ protected function typeExpList
   input Context inContext;
   input SymbolTable inSymbolTable;
   output list<DAE.Exp> outExpList;
-  output DAE.Type outType;
+  output list<DAE.Type> outTypeList;
   output list<DAE.Const> outConstList;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExpList, outType, outConstList, outSymbolTable) :=
+  (outExpList, outTypeList, outConstList, outSymbolTable) :=
   match(inExpList, inEvalPolicy, inContext, inSymbolTable)
     local
       DAE.Exp exp;
@@ -684,18 +682,19 @@ algorithm
       EvalPolicy ep;
       SymbolTable st;
       DAE.Type ty;
+      list<DAE.Type> tyList;
       Context c;
       list<DAE.Const> constList;
       DAE.Const const;
 
-    case ({}, _, _, st) then ({}, DAE.T_UNKNOWN_DEFAULT, {}, st);
+    case ({}, _, _, st) then ({}, {}, {}, st);
 
     case (exp :: rest_expl, ep, c, st)
       equation
         (exp, ty, const, st) = typeExp(exp, ep, c, st);
-        (rest_expl, _, constList, st) = typeExpList(rest_expl, ep, c, st);
+        (rest_expl, tyList, constList, st) = typeExpList(rest_expl, ep, c, st);
       then
-        (exp :: rest_expl, ty, const::constList, st);
+        (exp::rest_expl, ty::tyList, const::constList, st);
 
   end match;
 end typeExpList;
@@ -762,12 +761,16 @@ algorithm
       Component comp;
       Integer dim_int;
       DAE.Dimension dim;
-      list<DAE.Exp> expl;
+      list<DAE.Exp> expl, args;
+      list<DAE.Type> tyList;
       EvalPolicy ep;
       Option<DAE.Exp> oe;
       Context c;
       DAE.Const const,const1,const2,const3;
       list<DAE.Const> constList;
+      Absyn.Path fnName;
+      DAE.CallAttributes attrs;
+      Function func;
 
     case (DAE.ICONST(integer = _), _, _, st) then (inExp, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
     case (DAE.RCONST(real = _), _, _, st) then (inExp, DAE.T_REAL_DEFAULT, DAE.C_CONST(), st);
@@ -781,7 +784,7 @@ algorithm
         
     case (DAE.ARRAY(array = expl), ep, c, st)
       equation
-        (expl, ty, constList, st) = typeExpList(expl, ep, c, st);
+        (expl, ty::_, constList, st) = typeExpList(expl, ep, c, st);
         dim_int = listLength(expl);
         ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(dim_int)}, DAE.emptyTypeSource);
         const = List.fold(constList, Types.constAnd, DAE.C_CONST());
@@ -861,7 +864,21 @@ algorithm
           {"NFTyping.typeExp got obsolete MATRIX expression."});
       then
         fail();
-
+        
+    /* Uncomment this when lookup can find functions. */
+    /*
+    case (DAE.CALL(path = fnName, expLst = args, attr = attrs), ep, c, st)
+      equation
+        // Make sure that the func is there before typing the arguments
+        func = lookupFunction(fnName, inSymbolTable);
+        
+        (args, tyList, constList, st) = typeExpList(args, ep, c, st);
+        (e1,ty) = typeCall(func, args, tyList, attrs);
+        const = List.fold(constList, Types.constAnd, DAE.C_CONST());
+      then
+        (e1, ty, const, st);
+    */
+    
     else (inExp, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), inSymbolTable);
     //else
     //  equation
@@ -872,6 +889,68 @@ algorithm
 
   end match;
 end typeExp;
+
+
+protected function typeCall
+"@mahge:
+  Handles typing of calls. 
+  Extracts the input and output types of a function. Matches the given
+  call arguments againest the function inputs. constructs the return type
+  for the function. Vectorizes if necessary."
+  input Function inFunc;
+  input list<DAE.Exp> inArgs;
+  input list<DAE.Type> inArgTypes;
+  input DAE.CallAttributes inAttrs;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+algorithm
+  (outExp, outType) := matchcontinue(inFunc, inArgs, inArgTypes, inAttrs)
+    local
+      DAE.Exp outexp;
+      DAE.Type retType, outtype;
+      list<DAE.Exp> fixedArgs;
+      list<Element> inputs, outputs;
+      list<DAE.Type> inputTypes, outputTypes;
+      Boolean isTuple, isBuiltin;
+      DAE.InlineType inlineType;
+      DAE.TailCall tailCall;
+      DAE.CallAttributes attrs;
+      DAE.Dimensions forEachDim;
+      Absyn.Path fnName;
+      
+      case(NFInstTypes.FUNCTION(fnName, inputs, outputs, _, _), _, _, _)
+        equation
+          
+          // Match the args of the call exp againest the input/formal types of the function.
+          // We get matched args and a 'foreachdim' if vectorization is done
+          inputTypes = List.map(inputs, NFInstUtil.getElementComponentType);
+          (fixedArgs, forEachDim) = NFTypeCheck.matchCallArgs(inArgs, inArgTypes, inputTypes, {} /*vectorization dim*/); 
+          
+          // Create the return type for the function
+          outputTypes = List.map(outputs, NFInstUtil.getElementComponentType);
+          (retType, isTuple) = NFTypeCheck.makeCallReturnType(outputTypes);
+          
+          // create the call attributes. retType + isTuple
+          DAE.CALL_ATTR( _, _, isBuiltin, inlineType, tailCall) = inAttrs;
+          attrs = DAE.CALL_ATTR(retType, isTuple, isBuiltin, inlineType, tailCall);
+          
+          // See if we need to vectorize the call i.e. if we have 'forEachDim' then
+          // we return an array exp other wise a call exp.
+          (outexp,outtype) = NFTypeCheck.vectorizeCall(fnName, fixedArgs, attrs, retType, forEachDim);
+          
+        then
+          (outexp,outtype);
+          
+      else
+        equation
+          Error.addMessage(Error.INTERNAL_ERROR,
+            {"NFTyping.typeCall Failed."});
+        then
+          fail();
+          
+  end matchcontinue;    
+end typeCall;
+
     
 protected function dimensionExp
   input DAE.Dimension inDimension;
