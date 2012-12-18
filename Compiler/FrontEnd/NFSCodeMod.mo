@@ -46,8 +46,10 @@ public import NFSCodeEnv;
 public import NFInstTypes;
 
 protected import BaseHashTable;
+protected import Debug;
 protected import Dump;
 protected import Error;
+protected import Flags;
 protected import List;
 protected import NFInstDump;
 protected import NFSCodeLookup;
@@ -146,19 +148,49 @@ public function applyModifications
   input Env inEnv;
   output list<tuple<SCode.Element, Modifier>> outElements;
 protected
-  list<tuple<String, Modifier>> mods;
-  list<tuple<String, list<Absyn.Path>, Modifier>> upd_mods;
-  list<tuple<SCode.Element, Modifier>> el;
-  ModifierTable mod_table;
-  list<Extends> exts;
 algorithm
-  mods := splitMod(inMod, inPrefix);
-  upd_mods := List.map2(mods, updateModElement, inEnv, inPrefix);
-  mod_table := emptyModifierTable(listLength(upd_mods));
-  mod_table := List.fold(upd_mods, updateModTable, mod_table); 
-  exts := NFSCodeEnv.getEnvExtendsFromTable(inEnv);
-  (outElements, _) := List.map1Fold(inElements, updateElementWithMod, mod_table, exts);
+  outElements := matchcontinue(inMod, inElements, inPrefix, inEnv)
+    local
+      list<tuple<String, Modifier>> mods;
+      list<tuple<String, list<Absyn.Path>, Modifier>> upd_mods;
+      list<tuple<SCode.Element, Modifier>> el;
+      ModifierTable mod_table;
+      list<Extends> exts;
+      
+    case (NFInstTypes.NOMOD(), _, _, _)
+      equation
+        el = List.map(inElements, addNoMod);
+      then
+        el;
+
+    case (_, _, _, _)
+      equation
+        mods = splitMod(inMod, inPrefix);
+        upd_mods = List.map2(mods, updateModElement, inEnv, inPrefix);
+        mod_table = emptyModifierTable(listLength(upd_mods));
+        mod_table = List.fold(upd_mods, updateModTable, mod_table); 
+        exts = NFSCodeEnv.getEnvExtendsFromTable(inEnv);
+        (el, _) = List.map1Fold(inElements, updateElementWithMod, mod_table, exts);
+      then
+        el;
+
+    else
+      equation
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- NFSCodeMod.applyModifications failed on modifier " +&
+          printMod(inMod));
+      then
+        fail();
+
+  end matchcontinue;
 end applyModifications;
+
+protected function addNoMod 
+  input SCode.Element inElement; 
+  output tuple<SCode.Element, Modifier> outElement; 
+algorithm 
+  outElement := (inElement, NFInstTypes.NOMOD()); 
+end addNoMod;
 
 protected function updateModElement
   "Given a tuple of an element name and a modifier, checks if the element 
@@ -557,7 +589,8 @@ algorithm
 end splitMod;
 
 protected function splitSubMod
-  "Splits a named sub modifier."
+  "Adds the given sub modifier to the list of modifiers, merging it with an
+   already existing modifier with the same name if such a modifier exists."
   input Modifier inSubMod;
   input Prefix inPrefix;
   input list<tuple<String, Modifier>> inMods;
@@ -567,6 +600,7 @@ algorithm
     local
       SCode.Ident id;
       list<tuple<String, Modifier>> mods;
+      Boolean found;
 
     // Filter out redeclarations, they have already been applied.
     case (NFInstTypes.REDECLARE(element = _), _, _)
@@ -574,7 +608,10 @@ algorithm
 
     case (NFInstTypes.MODIFIER(name = id), _, _)
       equation
-        mods = splitMod2(id, inSubMod, inPrefix, inMods);
+        // Use splitMod2 to try and find a matching modifier to merge with.
+        (mods, found) = List.findMap3(inMods, splitMod2, id, inSubMod, inPrefix);
+        // Add the sub modifier to the list if it wasn't merged by splitMod2.
+        mods = List.consOnTrue(not found, (id, inSubMod), mods);
       then
         mods;
 
@@ -584,38 +621,31 @@ algorithm
 end splitSubMod;
 
 protected function splitMod2
-  "Helper function to splitSubMod. Tries to find a modifier for the same element
-   as the given modifier, and in that case merges them. Otherwise, add the
-   modifier to the given list."
+  "Helper function to splitSubMod. Merges the given modifiers if they have the
+   same name, i.e. if they modify the same element."
+  input tuple<String, Modifier> inExistingMod;
   input String inId;
-  input Modifier inMod;
+  input Modifier inNewMod;
   input Prefix inPrefix;
-  input list<tuple<String, Modifier>> inMods;
-  output list<tuple<String, Modifier>> outMods;
+  output tuple<String, Modifier> outMod;
+  output Boolean outFound;
 algorithm
-  outMods := matchcontinue(inId, inMod, inPrefix, inMods)
+  (outMod, outFound) := matchcontinue(inExistingMod, inId, inNewMod, inPrefix)
     local
-      Modifier mod;
-      tuple<String, Modifier> tup_mod;
-      list<tuple<String, Modifier>> rest_mods;
       String id;
+      Modifier mod;
 
-    // No match, add the modifier to the list.
-    case (_, _, _, {}) then {(inId, inMod)};
-
-    case (_, _, _, (id, mod) :: rest_mods)
+    case ((id, _), _, _, _)
       equation
-        true = stringEq(id, inId);
-        // Matching element, merge the modifiers.
-        mod = mergeModsInSameScope(mod, inMod, id, inPrefix);
+        false = stringEq(id, inId);
       then
-        (inId, mod) :: rest_mods;
+        (inExistingMod, false);
 
-    case (_, _, _, tup_mod :: rest_mods)
+    case ((id, mod), _, _, _)
       equation
-        rest_mods = splitMod2(inId, inMod, inPrefix, rest_mods);
+        mod = mergeModsInSameScope(mod, inNewMod, id, inPrefix);
       then
-        tup_mod :: rest_mods;
+        ((id, mod), true);
 
   end matchcontinue;
 end splitMod2;
@@ -671,41 +701,51 @@ algorithm
 end mergeModsInSameScope;
 
 protected function mergeSubModInSameScope
-  "Merges two sub modifiers in the same scope."
   input Modifier inSubMod;
   input Prefix inPrefix;
   input String inElementName;
   input list<Modifier> inSubMods;
   output list<Modifier> outSubMods;
+protected
+  Boolean found;
 algorithm
-  outSubMods := matchcontinue(inSubMod, inPrefix, inElementName, inSubMods)
+  (outSubMods, found) := List.findMap3(inSubMods, mergeSubModInSameScope2,
+    inSubMod, inPrefix, inElementName);
+  outSubMods := List.consOnTrue(not found, inSubMod, outSubMods);
+end mergeSubModInSameScope;
+
+protected function mergeSubModInSameScope2
+  "Helper function to mergeModsInSameScope. Merges two sub modifiers if they
+   have the same name."
+  input Modifier inExistingMod;
+  input Modifier inNewMod;
+  input Prefix inPrefix;
+  input String inElementName;
+  output Modifier outMod;
+  output Boolean outFound;
+algorithm
+  (outMod, outFound) :=
+  matchcontinue(inExistingMod, inNewMod, inPrefix, inElementName)
     local
-      SCode.Ident id1, id2;
+      String id1, id2;
       Modifier mod;
-      list<Modifier> rest_mods;
 
-    // If the given modifier has the same name as the first in the list, merge them.
-    case (NFInstTypes.MODIFIER(name = id1), _, _, 
-        (mod as NFInstTypes.MODIFIER(name = id2)) :: rest_mods)
+    case (NFInstTypes.MODIFIER(name = id1),
+          NFInstTypes.MODIFIER(name = id2), _, _)
       equation
-        true = stringEq(id1, id2);
+        false = stringEq(id1, id2);
+      then
+        (inExistingMod, false);
+
+    case (NFInstTypes.MODIFIER(name = id1), _, _, _)
+      equation
         id1 = inElementName +& "." +& id1;
-        mod = mergeModsInSameScope(inSubMod, mod, id1, inPrefix);
+        mod = mergeModsInSameScope(inExistingMod, inNewMod, id1, inPrefix);
       then
-        mod :: rest_mods;
-
-    // Search the rest of the mods.
-    case (_, _, _, mod :: rest_mods)
-      equation
-        rest_mods = mergeSubModInSameScope(inSubMod, inPrefix, inElementName, rest_mods);
-      then
-        mod :: rest_mods;
-
-    // No matching modifier was found, add it to the list of modifiers.
-    case (_, _, _, {}) then inSubMod :: inSubMods;
+        (mod, true);
 
   end matchcontinue;
-end mergeSubModInSameScope;
+end mergeSubModInSameScope2;
 
 public function getModifierBinding
   input Modifier inModifier;

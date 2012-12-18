@@ -8037,4 +8037,232 @@ algorithm
   outList := {a,b};
 end first2FromTuple3;
 
+public function findMap
+  "Same as map, but stops when it find a certain element as indicated by the
+   mapping function. Returns the new list, and whether the element was found or
+   not."
+  input list<ElementType> inList;
+  input FuncType inFunc;
+  output list<ElementType> outList;
+  output Boolean outFound;
+
+  partial function FuncType
+    input ElementType inElement;
+    output ElementType outElement;
+    output Boolean outFound;
+  end FuncType;
+algorithm
+  (outList, outFound) := findMap_tail(false, inList, inFunc, {});
+end findMap;
+
+public function findMap_tail
+  input Boolean inFound;
+  input list<ElementType> inList;
+  input FuncType inFunc;
+  input list<ElementType> inAccum;
+  output list<ElementType> outList;
+  output Boolean outFound;
+
+  partial function FuncType
+    input ElementType inElement;
+    output ElementType outElement;
+    output Boolean outFound;
+  end FuncType;
+algorithm
+  (outList, outFound) := match(inFound, inList, inFunc, inAccum)
+    local
+      ElementType head;
+      list<ElementType> rest, accum;
+      Boolean found;
+
+    case (false, head :: rest, _, accum)
+      equation
+        (head, found) = inFunc(head);
+        (accum, found) = findMap_tail(found, rest, inFunc, head :: accum);
+      then
+        (accum, found);
+
+    case (true, _, _, _) then (inAccum, true);
+    case (_, {}, _, _) then (inAccum, false);
+
+  end match;
+end findMap_tail;
+
+public function findMap1
+  "Same as map1, but stops when it find a certain element as indicated by the
+   mapping function. Returns the new list, and whether the element was found or
+   not."
+  input list<ElementType> inList;
+  input FuncType inFunc;
+  input ArgType1 inArg1;
+  output list<ElementType> outList;
+  output Boolean outFound;
+
+  partial function FuncType
+    input ElementType inElement;
+    input ArgType1 inArg1;
+    output ElementType outElement;
+    output Boolean outFound;
+  end FuncType;
+algorithm
+  (outList, outFound) := findMap1_tail(false, inList, inFunc, inArg1, {});
+end findMap1;
+
+public function findMap1_tail
+  input Boolean inFound;
+  input list<ElementType> inList;
+  input FuncType inFunc;
+  input ArgType1 inArg1;
+  input list<ElementType> inAccum;
+  output list<ElementType> outList;
+  output Boolean outFound;
+
+  partial function FuncType
+    input ElementType inElement;
+    input ArgType1 inArg1;
+    output ElementType outElement;
+    output Boolean outFound;
+  end FuncType;
+algorithm
+  (outList, outFound) := match(inFound, inList, inFunc, inArg1, inAccum)
+    local
+      ElementType head;
+      list<ElementType> rest, accum;
+      Boolean found;
+
+    case (false, head :: rest, _, _, accum)
+      equation
+        (head, found) = inFunc(head, inArg1);
+        (accum, found) = findMap1_tail(found, rest, inFunc, inArg1, head :: accum);
+      then
+        (accum, found);
+
+    case (true, _, _, _, _) then (inAccum, true);
+    case (_, {}, _, _, _) then (inAccum, false);
+
+  end match;
+end findMap1_tail;
+
+public function findMap2
+  "Same as map2, but stops when it find a certain element as indicated by the
+   mapping function. Returns the new list, and whether the element was found or
+   not."
+  input list<ElementType> inList;
+  input FuncType inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  output list<ElementType> outList;
+  output Boolean outFound;
+
+  partial function FuncType
+    input ElementType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output ElementType outElement;
+    output Boolean outFound;
+  end FuncType;
+algorithm
+  (outList, outFound) := findMap2_tail(false, inList, inFunc, inArg1, inArg2, {});
+end findMap2;
+
+public function findMap2_tail
+  input Boolean inFound;
+  input list<ElementType> inList;
+  input FuncType inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input list<ElementType> inAccum;
+  output list<ElementType> outList;
+  output Boolean outFound;
+
+  partial function FuncType
+    input ElementType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    output ElementType outElement;
+    output Boolean outFound;
+  end FuncType;
+algorithm
+  (outList, outFound) := match(inFound, inList, inFunc, inArg1, inArg2, inAccum)
+    local
+      ElementType head;
+      list<ElementType> rest, accum;
+      Boolean found;
+
+    case (false, head :: rest, _, _, _, accum)
+      equation
+        (head, found) = inFunc(head, inArg1, inArg2);
+        (accum, found) = findMap2_tail(found, rest, inFunc, inArg1, inArg2, head :: accum);
+      then
+        (accum, found);
+
+    case (true, _, _, _, _, _) then (inAccum, true);
+    case (_, {}, _, _, _, _) then (inAccum, false);
+
+  end match;
+end findMap2_tail;
+
+public function findMap3
+  "Same as map3, but stops when it find a certain element as indicated by the
+   mapping function. Returns the new list, and whether the element was found or
+   not."
+  input list<ElementType> inList;
+  input FuncType inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  output list<ElementType> outList;
+  output Boolean outFound;
+
+  partial function FuncType
+    input ElementType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    output ElementType outElement;
+    output Boolean outFound;
+  end FuncType;
+algorithm
+  (outList, outFound) := findMap3_tail(false, inList, inFunc, inArg1, inArg2, inArg3, {});
+end findMap3;
+
+public function findMap3_tail
+  input Boolean inFound;
+  input list<ElementType> inList;
+  input FuncType inFunc;
+  input ArgType1 inArg1;
+  input ArgType2 inArg2;
+  input ArgType3 inArg3;
+  input list<ElementType> inAccum;
+  output list<ElementType> outList;
+  output Boolean outFound;
+
+  partial function FuncType
+    input ElementType inElement;
+    input ArgType1 inArg1;
+    input ArgType2 inArg2;
+    input ArgType3 inArg3;
+    output ElementType outElement;
+    output Boolean outFound;
+  end FuncType;
+algorithm
+  (outList, outFound) := match(inFound, inList, inFunc, inArg1, inArg2, inArg3, inAccum)
+    local
+      ElementType head;
+      list<ElementType> rest, accum;
+      Boolean found;
+
+    case (false, head :: rest, _, _, _, _, accum)
+      equation
+        (head, found) = inFunc(head, inArg1, inArg2, inArg3);
+        (accum, found) = findMap3_tail(found, rest, inFunc, inArg1, inArg2, inArg3, head :: accum);
+      then
+        (accum, found);
+
+    case (true, _, _, _, _, _, _) then (inAccum, true);
+    case (_, {}, _, _, _, _, _) then (inAccum, false);
+
+  end match;
+end findMap3_tail;
+
 end List;

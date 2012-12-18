@@ -1969,8 +1969,8 @@ algorithm
         n = Absyn.elementSpecName(spec);
         {elem} = translateElementspec(cc, fp, Absyn.NOT_INNER_OUTER(),
           SOME(rk), SCode.PUBLIC(), spec, info);
-        //(elem, opt_mod) = splitModInElement(elem);
-        //accum = List.consOption(opt_mod, accum);
+        (elem, opt_mod) = splitModInElement(elem);
+        accum = List.consOption(opt_mod, accum);
         sfp = SCode.boolFinal(fp);
         sep = translateEach(ep);
         sub = SCode.NAMEMOD(n, SCode.REDECL(sfp, sep, elem));
@@ -2003,18 +2003,30 @@ algorithm
       SCode.Mod mod, redecl;
       Option<SCode.SubMod> opt_mod;
 
+    case _
+      equation
+        false = Flags.isSet(Flags.SCODE_INST);
+      then
+        (inElement, NONE());
+
     case SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info)
       equation
         (redecl, opt_mod) = splitRedeclareMod(mod, name);
       then
-        (SCode.COMPONENT(name, prefs, attr, ty, mod, cmt, cond, info), opt_mod);
+        (SCode.COMPONENT(name, prefs, attr, ty, redecl, cmt, cond, info), opt_mod);
 
-    case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr, cmt), info)
-      equation
-        (redecl, opt_mod) = splitRedeclareMod(mod, name);
-      then
-        (SCode.CLASS(name, prefs, ep, pp, res,
-          SCode.DERIVED(ty, mod, attr, cmt), info), opt_mod);
+    /*************************************************************************/
+    // TODO: Splitting class modifications doesn't work yet, since the new
+    //       instantiation doesn't handle class modifications yet. Enable this
+    //       when it does.
+    /*************************************************************************/
+
+    //case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr, cmt), info)
+    //  equation
+    //    (redecl, opt_mod) = splitRedeclareMod(mod, name);
+    //  then
+    //    (SCode.CLASS(name, prefs, ep, pp, res,
+    //      SCode.DERIVED(ty, redecl, attr, cmt), info), opt_mod);
 
     else (inElement, NONE());
   end matchcontinue;
