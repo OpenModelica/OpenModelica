@@ -562,7 +562,7 @@ algorithm
                               emptyEqns,
                               NONE(),
                               NONE(),
-                              BackendDAE.NO_MATCHING()
+                              BackendDAE.NO_MATCHING(),{}
                             )},
                             BackendDAE.SHARED(
                               emptyvars,
@@ -625,7 +625,8 @@ algorithm
       Option<BackendDAE.IncidenceMatrix> m,mT,m1,mT1;
       BackendDAE.Matching matching,matching1;
       BackendDAE.Shared shared;
-    case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching),shared)
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,statSets),shared)
       equation
         // copy varibales
         ordvars1 = BackendVariable.copyVariables(ordvars);
@@ -635,7 +636,7 @@ algorithm
         mT1 = copyIncidenceMatrix(mT);
         matching1 = copyMatching(matching);
       then
-        (BackendDAE.EQSYSTEM(ordvars1,eqns1,m1,mT1,matching1),shared);
+        (BackendDAE.EQSYSTEM(ordvars1,eqns1,m1,mT1,matching1,statSets),shared);
   end match;
 end copyBackendDAEEqSystem;
 
@@ -852,10 +853,11 @@ algorithm
       EquationArray eqs;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-    case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching),_)
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, statSets),_)
       equation
         vars = BackendVariable.addVars(varlst, vars);
-      then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching);
+      then BackendDAE.EQSYSTEM(vars, eqs, m, mT, matching, statSets);
   end match;
 end addVarsToEqSystem;
 
@@ -941,7 +943,7 @@ algorithm
   eqns := BackendEquation.listEquation({eqn});
   // generate equationsystem
   ass := listArray({1});
-  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(ass,ass,{BackendDAE.SINGLEEQUATION(1,1)}));
+  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(ass,ass,{BackendDAE.SINGLEEQUATION(1,1)}),{});
   // add system to list of systems
   osysts := syst::isysts;
 end addDummyState;
@@ -4142,12 +4144,12 @@ algorithm
       BackendDAE.Variables vars;
       EquationArray daeeqns;
       BackendDAE.Matching matching;
-
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),eqns)
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,statSets),eqns)
       equation
         (m,mt) = updateIncidenceMatrix1(vars,daeeqns,m,mt,eqns);
       then
-        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching);
+        BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,statSets);
 
     else
       equation
@@ -4231,8 +4233,8 @@ algorithm
       BackendDAE.Matching matching;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;      
-
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),_,_,_,_)
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,statSets),_,_,_,_)
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
@@ -4251,7 +4253,7 @@ algorithm
         eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
         (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m,mt,eqns,mapEqnIncRow,mapIncRowEqn,inIndxType);
       then
-        (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching),mapEqnIncRow,mapIncRowEqn);
+        (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,statSets),mapEqnIncRow,mapIncRowEqn);
 
     else
       equation
@@ -4501,17 +4503,18 @@ algorithm
       EquationArray eq;
       BackendDAE.Matching matching;
       BackendDAE.IndexType it;
-    case(BackendDAE.EQSYSTEM(v,eq,NONE(),_,matching),it)
+      BackendDAE.StateSets statSets;
+    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=NONE(),matching=matching,statSets=statSets),it)
       equation
         (m,mT) = incidenceMatrix(syst, it);
       then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
-    case(BackendDAE.EQSYSTEM(v,eq,SOME(m),NONE(),matching),_)
+        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,statSets),m,mT);
+    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=SOME(m),mT=NONE(),matching=matching,statSets=statSets),_)
       equation  
         mT = transposeMatrix(m,BackendVariable.varsSize(v));
       then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT);
-    case(BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),_)
+        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,statSets),m,mT);
+    case(BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT)),_)
       then
         (syst,m,mT);
   end match;
@@ -4519,7 +4522,7 @@ end getIncidenceMatrixfromOption;
     
 public function getIncidenceMatrix "function getIncidenceMatrix
   this function returns the incidence matrix,
-  if the system contains multi"
+  if the system contains multidimensional equations and the scalare one is needed us getIncidenceMatrixScalar"
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndxType;
   output BackendDAE.EqSystem outEqSystem;
@@ -4529,10 +4532,11 @@ protected
   BackendDAE.Variables v;
   EquationArray eq;
   BackendDAE.Matching matching;
+  BackendDAE.StateSets statSets;
 algorithm
-  BackendDAE.EQSYSTEM(v, eq, _, _, matching) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,statSets=statSets) := inEqSystem;
   (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType);
-  outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching);
+  outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, statSets);
 end getIncidenceMatrix;    
     
 public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
@@ -4542,24 +4546,16 @@ public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
   output array<list<Integer>> outMapEqnIncRow;
-  output array<Integer> outMapIncRowEqn;  
+  output array<Integer> outMapIncRowEqn;
+protected
+  BackendDAE.Variables v;
+  EquationArray eq;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets statSets;
 algorithm
-  (osyst,outM,outMT,outMapEqnIncRow,outMapIncRowEqn):=
-  match (syst,inIndxType)
-    local  
-      BackendDAE.IncidenceMatrix m,mT;
-      BackendDAE.Variables v;
-      EquationArray eq;
-      BackendDAE.Matching matching;
-      BackendDAE.IndexType it;
-      array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;      
-    case(BackendDAE.EQSYSTEM(v,eq,_,_,matching),it)
-      equation
-        (m,mT,mapEqnIncRow,mapIncRowEqn) = incidenceMatrixScalar(syst, it);
-      then
-        (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching),m,mT,mapEqnIncRow,mapIncRowEqn);
-  end match;
+  BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,statSets=statSets) := syst;
+  (outM,outMT,outMapEqnIncRow,outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType);
+  osyst := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, statSets);
 end getIncidenceMatrixScalar;     
     
 
@@ -8823,14 +8819,15 @@ public function setEqSystemMatching
   input BackendDAE.EqSystem syst;
   input BackendDAE.Matching matching;
   output BackendDAE.EqSystem osyst;
+protected
+  BackendDAE.Variables vars;
+  EquationArray eqs;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.StateSets statSets;
 algorithm
-  osyst := match (syst,matching)
-    local
-      BackendDAE.Variables vars;
-      EquationArray eqs;
-      Option<BackendDAE.IncidenceMatrix> m,mT;
-    case (BackendDAE.EQSYSTEM(vars,eqs,m,mT,_),_) then BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching); 
-  end match;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=m,mT=mT,statSets=statSets) := syst;
+  osyst := BackendDAE.EQSYSTEM(vars,eqs,m,mT,matching,statSets); 
 end setEqSystemMatching;
 
 public function filterEmptySystems

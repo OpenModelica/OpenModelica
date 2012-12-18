@@ -1118,6 +1118,37 @@ algorithm
   end match;
 end traverseBackendDAEExpListWithStop;
 
+public function traverseBackendDAEEqnsList
+"function traverseBackendDAEEqnsList
+ author Frenkel TUD:
+ Calls user function for each element of list."
+  replaceable type Type_a subtypeof Any;
+  input list<BackendDAE.Equation> inEqns;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  input list<BackendDAE.Equation> inAccEqns;
+  output list<BackendDAE.Equation> outEqns;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<BackendDAE.Equation, Type_a> inTpl;
+    output tuple<BackendDAE.Equation, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outEqns,outTypeA) := match(inEqns,func,inTypeA,inAccEqns)
+  local 
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> rest;
+      Type_a ext_arg;
+    case({},_,_,_) then (listReverse(inAccEqns),inTypeA);
+    case(eqn::rest,_,_,_)
+      equation
+        ((eqn,ext_arg)) = func((eqn, inTypeA));
+        (rest,ext_arg) = traverseBackendDAEEqnsList(rest,func,ext_arg,eqn::inAccEqns);
+      then
+        (rest,ext_arg);
+  end match;
+end traverseBackendDAEEqnsList;
+
 public function traverseBackendDAEEqns "function: traverseBackendDAEEqns
   author: Frenkel TUD
 
@@ -1443,10 +1474,11 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
-    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT))
+      BackendDAE.StateSets statSets;
+    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,statSets=statSets))
       equation
         eqns1 = equationAdd(inEquation,eqns);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING());
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING(),statSets);
   end match;
 end equationAddDAE;
 
@@ -1463,10 +1495,11 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m;
       Option<BackendDAE.IncidenceMatrixT> mT;
-    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT))
+      BackendDAE.StateSets statSets;
+    case (_,BackendDAE.EQSYSTEM(orderedVars=ordvars,orderedEqs=eqns,m=m,mT=mT,statSets=statSets))
       equation
         eqns1 = List.fold(inEquations,equationAdd,eqns);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING());
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,BackendDAE.NO_MATCHING(),statSets);
   end match;
 end equationsAddDAE;
 
@@ -1515,10 +1548,11 @@ algorithm
       BackendDAE.EquationArray eqns,eqns1;
       Option<BackendDAE.IncidenceMatrix> m,mT;
       BackendDAE.Matching matching;
-    case (_,_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching))
+      BackendDAE.StateSets statSets;
+    case (_,_,BackendDAE.EQSYSTEM(ordvars,eqns,m,mT,matching,statSets))
       equation
         eqns1 = equationSetnth(eqns,inInteger,inEquation);
-      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,matching);
+      then BackendDAE.EQSYSTEM(ordvars,eqns1,m,mT,matching,statSets);
   end match;
 end equationSetnthDAE;
 

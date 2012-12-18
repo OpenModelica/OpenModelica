@@ -6210,8 +6210,9 @@ algorithm
      BackendDAE.EquationArray eqns,eqns1;
      BackendDAE.IncidenceMatrix m;
      BackendDAE.IncidenceMatrixT mT;  
-     BackendDAE.EqSystem syst; 
-   case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),_)
+     BackendDAE.EqSystem syst;
+     BackendDAE.StateSets statSets;
+   case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,statSets=statSets),_)
      equation
        ne = BackendDAEUtil.systemSize(isyst);
        nv = BackendVariable.daenumVariables(isyst);
@@ -6221,7 +6222,7 @@ algorithm
        setrandArray(nv,randarr1);
        eqns1 = randSortSystem1(ne,-1,randarr,eqns,BackendEquation.listEquation({}),BackendDAEUtil.equationNth,BackendEquation.equationAdd);
        vars1 = randSortSystem1(nv,0,randarr1,vars,BackendVariable.emptyVars(),BackendVariable.getVarAt,BackendVariable.addVar);
-       (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING()),BackendDAE.NORMAL());
+       (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets),BackendDAE.NORMAL());
      then 
        syst;
   end match;
@@ -6345,8 +6346,9 @@ protected
   BackendDAE.IncidenceMatrix m,mO;
   BackendDAE.IncidenceMatrixT mT;
   list<Integer> derstatesindexs;
+  BackendDAE.StateSets statSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(mO)) := isyst;
+  BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(mO),statSets=statSets) := isyst;
   // get State Indexes
   stateindexs := arrayCreate(nVars,-1);
   ((stateindexs,_,nStates,derstatesindexs)) := BackendVariable.traverseBackendDAEVars(vars,getStateIndexes,(stateindexs,1,nVars,{}));
@@ -6361,8 +6363,8 @@ algorithm
   // try to match
   vec1 := arrayCreate(nEqns1,-1);
   vec2 := arrayCreate(nVars1,-1);
-  (vec1,vec2) := singularSystemCheckMatch(nVars1,nEqns1,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING()),ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
-  //  BackendDump.dumpEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING()));
+  (vec1,vec2) := singularSystemCheckMatch(nVars1,nEqns1,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),statSets),ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
+  //  BackendDump.dumpEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),statSets));
   //  BackendDump.dumpMatching(vec2);
   //  BackendDump.dumpMatching(vec1);  
 end singularSystemCheck;

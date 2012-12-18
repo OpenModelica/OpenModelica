@@ -222,6 +222,31 @@ algorithm
   end match;
 end printEquationNo;
 
+public function printStateSets
+  input BackendDAE.StateSets stateSets;
+algorithm
+  List.map_0(stateSets,printStateSet);
+end printStateSets;
+
+public function printStateSet
+  input BackendDAE.StateSet statSet;
+protected
+  list<DAE.ComponentRef> states;
+  list<BackendDAE.Equation> ceqns;
+  list<DAE.ComponentRef> dstates;
+algorithm
+  BackendDAE.STATESET(states,ceqns,dstates) := statSet;
+  print("StateSet:\n");
+  print("States:\n");
+  debuglst((states,ComponentReference.printComponentRefStr,"\n","\n"));
+  print("ConstraintEquations:\n");
+  debuglst((ceqns,equationString,"\n","\n"));
+  print("Dummystates:\n");
+  debuglst((dstates,ComponentReference.printComponentRefStr,"\n","\n"));
+end printStateSet;
+
+
+
 // =============================================================================
 // section for all dump* functions
 // 
@@ -288,9 +313,10 @@ protected
   BackendDAE.EquationArray eqns;
   Option<BackendDAE.IncidenceMatrix> m;
   Option<BackendDAE.IncidenceMatrix> mT;
-  BackendDAE.Matching matching;     
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets statSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching,statSets=statSets) := inEqSystem;
   print("Variables (");
   vars := BackendVariable.varList(vars1);
   varlen := listLength(vars);
@@ -311,6 +337,8 @@ algorithm
   print(")\n");
   print("=========\n");
   printEquationList(eqnsl);
+  print("\n");
+  printStateSets(statSets); 
   print("\n");
   dumpOption(m,dumpIncidenceMatrix);
   dumpOption(mT,dumpIncidenceMatrixT);
@@ -644,7 +672,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       BackendDAE.StrongComponents comps;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(_,_,comps)),_)
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps)),_)
       equation
         dumpEqnsSolved2(comps,eqns,vars);
        then
@@ -2964,7 +2992,7 @@ protected
   BackendDAE.IncidenceMatrix mT;
   array<Integer> ass1,ass2;
 algorithm
-  BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(ass1,ass2,_))}) := inDAE;
+  BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT),matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2))}) := inDAE;
   n :=  BackendDAEUtil.systemSize(syst);
   lst := dumpComponentsGraphStr2(1,n,m,mT,ass1,ass2);
   s := stringDelimitList(lst,",");

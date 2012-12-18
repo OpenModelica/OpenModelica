@@ -156,7 +156,7 @@ algorithm
         var_lst = List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
         vars = BackendVariable.listVar1(var_lst);
 
-        subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
         (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.ABSOLUTE());
         //  BackendDump.dumpEqSystem(subsyst);
 
@@ -268,7 +268,7 @@ algorithm
         //   BackendDump.debuglst((constraintresidual,intString,", ","\n"));        
         (mark,roots,constraints) = prepairOrphansOrder(vorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vorphansarray1,vars,{},{}) "generate cliques for tearing vars";
         mark = prepairOrphansOrder2(vorphans,ass1,ass22,mc,mct,mark,rowmarks,colummarks,vorphansarray1);
-        //  subsyst = BackendDAE.EQSYSTEM(vars,eqns,SOME(mc),SOME(mct),BackendDAE.NO_MATCHING());
+        //  subsyst = BackendDAE.EQSYSTEM(vars,eqns,SOME(mc),SOME(mct),BackendDAE.NO_MATCHING(),{});
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemPreIndex.graphml");
         //  print("roots:\n");
         //  BackendDump.debuglst((roots,intString,", ","\n")); 
@@ -337,7 +337,7 @@ algorithm
         // replace evaluated parametes
         //_ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, replaceFinalParameter, BackendVariable.daeKnVars(shared));
         
-        subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
         (subsyst,m,mt) = BackendDAEUtil.getIncidenceMatrix(subsyst, BackendDAE.ABSOLUTE());
         //  BackendDump.dumpEqSystem(subsyst);   
         //  IndexReduction.dumpSystemGraphML(subsyst,shared,NONE(),intString(size) +& "SystemIndexed.graphml"); 
@@ -355,7 +355,7 @@ algorithm
         ht = HashTable4.emptyHashTable();
         (tvars,teqns) = gaussElimination(1,size,matrix,BackendVariable.emptyVars(),BackendEquation.listEquation({}),(1,1));
         //  dumpMatrix(1,size,matrix);
-        //  subsyst = BackendDAE.EQSYSTEM(tvars,teqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        //  subsyst = BackendDAE.EQSYSTEM(tvars,teqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
         //  BackendDump.dumpEqSystem(subsyst);
         eqn_lst = BackendEquation.equationList(teqns);  
         var_lst = BackendVariable.varList(tvars);      
@@ -376,7 +376,7 @@ algorithm
         /*
         vars = BackendVariable.addVars(var_lst, vars);
         eqns = BackendEquation.addEquations(neweqns, teqns);
-        subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        subsyst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
           (subsyst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL());
           print("Relaxed System:\n");
           BackendDump.dumpEqSystem(subsyst);
@@ -2874,7 +2874,7 @@ algorithm
        _ = List.fold1(vorphans,markOrphans,-1,orowmarks);
        _ = List.fold1r(vorphans,arrayUpdate,{},mT);
 
-       //   syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING());
+       //   syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{});
        //   IndexReduction.dumpSystemGraphML(syst,shared,NONE(),intString(size) +& "SystemIndexing" +& intString(index) +& ".graphml");
         
       then

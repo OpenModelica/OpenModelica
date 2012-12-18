@@ -113,12 +113,12 @@ algorithm
         //BackendDump.dump(dlow_1);
 
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
-        BackendDAE.EQSYSTEM(allVars,allEqs,_,_,_) = currentSystem;
+        BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(knownVars=sharedVars) = shared;         
         
         (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL());
 
-        //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(allVars,allEqs,SOME(m),SOME(mt),_)::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
+        //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs,m=SOME(m),mT=SOME(mt))::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
 
         true = intEq(0,listLength(eqsyslist));
         mExt=getExtIncidenceMatrix(m);
@@ -145,7 +145,7 @@ algorithm
         // First try to eliminate all the unknown variables
         dlow_1 = eliminateVariablesDAE(unknowns,dlow_1);
         BackendDAE.DAE(currentSystem::eqsyslist,shared) = dlow_1;
-        BackendDAE.EQSYSTEM(allVars,allEqs,_,_,_) = currentSystem;
+        BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(knownVars=sharedVars) = shared;         
         
 
@@ -1864,20 +1864,17 @@ public function setDaeVars "
   input BackendDAE.BackendDAE systIn;
   input BackendDAE.Variables newVarsIn;
   output BackendDAE.BackendDAE sysOut;
+protected
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrixT> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.Shared shared;
+  BackendDAE.EquationArray eqns;
+  list<BackendDAE.EqSystem> eqlist;
+  BackendDAE.StateSets statSets;
 algorithm
-  sysOut:= match(systIn,newVarsIn) 
-    local
-       Option<BackendDAE.IncidenceMatrix> m;
-       Option<BackendDAE.IncidenceMatrixT> mT;
-       BackendDAE.Matching matching;
-       BackendDAE.Shared shared;
-       BackendDAE.EquationArray eqns;
-       BackendDAE.Variables newVars;
-       list<BackendDAE.EqSystem> eqlist;
-      case (BackendDAE.DAE(BackendDAE.EQSYSTEM(_,eqns,m,mT,matching)::eqlist,shared),newVars)
-        then 
-           BackendDAE.DAE(BackendDAE.EQSYSTEM(newVars,eqns,m,mT,matching)::eqlist,shared);   
-  end match;
+  BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedEqs=eqns,m=m,mT=mT,matching=matching,statSets=statSets)::eqlist,shared) := systIn;
+  sysOut := BackendDAE.DAE(BackendDAE.EQSYSTEM(newVarsIn,eqns,m,mT,matching,statSets)::eqlist,shared);
 end setDaeVars; 
 
 public function setDaeEqns "set the equations of a dae
@@ -1915,26 +1912,26 @@ algorithm
     BackendDAE.ExternalObjectClasses extObjClasses "classes of external objects, contains constructor & destructor";
     BackendDAE.BackendDAEType backendDAEType "indicate for what the BackendDAE is used"; 
     BackendDAE.SymbolicJacobians symjacs;
+    BackendDAE.StateSets statSets;
     
     case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
+      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,statSets=statSets))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
                                    removedEqs=removedEqs,functionTree=funcs,
                                    eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),_,false) 
     equation
-       syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching);                              
+       syst = BackendDAE.EQSYSTEM(orderedVars,eqns,m,mT,matching,statSets);                              
     then
        BackendDAE.DAE(syst::systList,shared); 
     
-    case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
-      (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
+    case(BackendDAE.DAE(systList,
+      shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
                                    removedEqs=removedEqs,constraints=constraints,classAttrs=classAttrs,cache=cache,env=env,
-                                   functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),_,true) 
+                                   functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs)),_,true) 
     equation
        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,eqns,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
-       BackendDAE.DAE(syst::systList,shared); 
+       BackendDAE.DAE(systList,shared); 
        
   end match;
 end setDaeEqns;
@@ -1979,9 +1976,10 @@ algorithm
     BackendDAE.SymbolicJacobians symjacs;
     list<BackendDAE.Equation> eqnslst;
     Boolean b;
+    BackendDAE.StateSets statSets;
   
     case(BackendDAE.DAE(
-      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching))::systList,
+      (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,m=m,mT=mT,matching=matching,statSets=statSets))::systList,
       (shared as BackendDAE.SHARED(knownVars=knownVars,externalObjects=externalObjects,aliasVars=aliasVars,initialEqs=initialEqs,
                                    removedEqs=removedEqs,constraints=constraints,classAttrs=classAttrs,cache=cache,env=env,
                                    functionTree=funcs,eventInfo=eventInfo,extObjClasses=extObjClasses,backendDAEType=backendDAEType,symjacs=symjacs))),_,_,_) 
@@ -1990,7 +1988,7 @@ algorithm
        eqnslst = BackendEquation.equationList(orderedEqs);
        (eqnslst,b) = BackendVarTransform.replaceEquations(eqnslst,repl,NONE());
        orderedEqs = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,orderedEqs);
-       syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching);
+       syst = BackendDAE.EQSYSTEM(orderedVars,orderedEqs,m,mT,matching,statSets);
        shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,initialEqs,removedEqs,constraints,classAttrs,cache,env,funcs,eventInfo,extObjClasses,backendDAEType,symjacs);                              
     then
        BackendDAE.DAE(syst::systList,shared); 

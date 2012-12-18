@@ -101,7 +101,7 @@ algorithm
       SimCode.SimCode sc;
       Integer offset;
        
-    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(_,eqsdae,_,_,_)},shared), ass1, ass2, 
+    case (dlow as BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedEqs=eqsdae)},shared), ass1, ass2, 
           m, mt, comps,sc as SimCode.SIMCODE(odeEquations={eqs},sampleConditions=sampleConditions,zeroCrossings=zeroCrossings))
       equation
         print("\n ----------------------------\n");

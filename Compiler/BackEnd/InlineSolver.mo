@@ -140,15 +140,16 @@ protected
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.EquationArray eqns;
   BackendDAE.EqSystem eqSystem;
+  BackendDAE.StateSets statSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs,statSets=statSets) := inEqSystem;
   vars := BackendVariable.emptyVars();
   eqns := BackendEquation.emptyEqns();
   // change function call der(x) in  variable xder
   ((_, eqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns));  
   // change kind: state in known variable 
   ((vars, eqns)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns));
-  eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
+  eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),statSets);
   (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL());
 end eliminiertStatesDerivations;
 

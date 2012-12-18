@@ -127,11 +127,12 @@ algorithm
       BackendDAE.EquationArray orderedEqs;
       BackendDAE.Matching matching;
       Boolean b1,b2;
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching),_)
+      BackendDAE.StateSets statSets;
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,matching=matching,statSets=statSets),_)
       equation
         (orderedVars,b1) = inlineVariables(orderedVars,tpl);
         (orderedEqs,b2) = inlineEquationArray(orderedEqs,tpl);       
-        syst = Util.if_(b1 or b2,BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching),syst);
+        syst = Util.if_(b1 or b2,BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),matching,statSets),syst);
       then 
         syst;
   end match;

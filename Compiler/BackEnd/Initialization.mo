@@ -112,13 +112,14 @@ protected
   BackendDAE.Variables orderedVars;
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.EquationArray eqns;
+  BackendDAE.StateSets statSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, statSets=statSets) := inEqSystem;
   
   eqns := BackendEquation.emptyEqns();
   eqns := BackendEquation.traverseBackendDAEEqns(orderedEqs, inlineWhenForInitialization2, eqns);
 
-  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
+  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),statSets);
 end inlineWhenForInitialization1;
 
 protected function inlineWhenForInitialization2 "function inlineWhenForInitialization2
@@ -400,10 +401,10 @@ algorithm
       // ((_, vars, fixvars)) = traverseBackendDAEExpsEqns(reeqns, collectAliasPreVars, (avars, vars, fixvars));
       
       // generate initial system
-      initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
+      initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
       initsyst = analyzeInitialSystem(initsyst, inDAE, inInitVars);      
       (initsyst, _, _) = BackendDAEUtil.getIncidenceMatrix(initsyst, BackendDAE.NORMAL());
-      BackendDAE.EQSYSTEM(vars, eqns, _, _, _) = initsyst;
+      BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = initsyst;
 
       evars = BackendVariable.emptyVars();
       eavars = BackendVariable.emptyVars();
@@ -541,7 +542,7 @@ algorithm
       
       (true, vars, eqns) = fixUnderDeterminedInitialSystem(inDAE, vars, eqns, inInitVars);
       
-      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING());
+      system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
     then system;
 
     else
@@ -816,15 +817,30 @@ protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqns
 protected
   BackendDAE.Variables orderedVars, vars, fixvars;
   BackendDAE.EquationArray orderedEqs, eqns, reqns;
+  BackendDAE.StateSets statSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs) := isyst;
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs,statSets=statSets) := isyst;
   (vars, fixvars, eqns, reqns) := iTpl;
 
   ((vars, fixvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars));
   ((eqns, reqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, collectInitialEqns, (eqns, reqns));
+  ((eqns, reqns)) := List.fold(statSets, collectInitialEqnsStateSet, (eqns, reqns));
 
   oTpl := (vars, fixvars, eqns, reqns);
 end collectInitialVarsEqnsSystem;
+
+protected function collectInitialEqnsStateSet
+"author: Frenkel TUD 2012-12"
+  input BackendDAE.StateSet inSet;
+  input tuple<BackendDAE.EquationArray,BackendDAE.EquationArray> inTpl;
+  output tuple<BackendDAE.EquationArray,BackendDAE.EquationArray> outTpl;
+protected
+  list<BackendDAE.Equation> ceqns;
+  BackendDAE.EquationArray eqns, reqns;
+algorithm
+  BackendDAE.STATESET(constraintEquations=ceqns) := inSet;
+  (_,outTpl) := BackendEquation.traverseBackendDAEEqnsList(ceqns, collectInitialEqns, inTpl,{});
+end collectInitialEqnsStateSet;
 
 protected function collectInitialVars "protected function collectInitialVars
   This function collects all the vars for the initial system."

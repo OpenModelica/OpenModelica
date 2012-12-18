@@ -1226,9 +1226,10 @@ algorithm
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
-      HashSet.HashSet unreplacable; 
+      HashSet.HashSet unreplacable;
+      BackendDAE.StateSets statSets;
     case (false,_,_,_,_,_,_) then (isyst,ishared,iTpl);
-    case (true,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars),_,(repl,b,unreplacable))
+    case (true,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,statSets=statSets),_,(repl,b,unreplacable))
       equation
         // transform simpleeqns to array
         simpleeqns = listArray(listReverse(iSimpleeqnslst));
@@ -1239,7 +1240,7 @@ algorithm
         // replace unoptimized equations with optimized
         eqns = BackendEquation.listEquation(listReverse(eqnslst));        
       then 
-        (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()),shared,(repl,true,unreplacable));
+        (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets),shared,(repl,true,unreplacable));
   end match;
 end fastAcausal2;
 
@@ -2797,19 +2798,17 @@ algorithm
       BackendDAE.EqSystems rest;
       BackendDAE.Variables v;
       BackendDAE.EquationArray eqns;
-      Option<BackendDAE.IncidenceMatrix> m;
-      Option<BackendDAE.IncidenceMatrixT> mT;
-      BackendDAE.Matching matching;
       list<BackendDAE.Equation> eqnslst;
       Boolean b;
       BackendDAE.EqSystem syst;
+      BackendDAE.StateSets statSets;
     case ({},_,_) then inSysts1;
-    case ((syst as BackendDAE.EQSYSTEM(v,eqns,m,mT,matching))::rest,_,_)
+    case ((syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqns,statSets=statSets))::rest,_,_)
       equation
         ((_,eqnslst,b)) = BackendEquation.traverseBackendDAEEqns(eqns,replaceEquationTraverser,(repl,{},false));
         eqnslst = Debug.bcallret1(b,listReverse,eqnslst,eqnslst);
         eqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,eqns);
-        syst = Util.if_(b,BackendDAE.EQSYSTEM(v,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING()),syst);
+        syst = Util.if_(b,BackendDAE.EQSYSTEM(v,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets),syst);
       then
         removeSimpleEquationsShared1(rest,syst::inSysts1,repl);
     end match;
@@ -2887,14 +2886,15 @@ algorithm
       array<list<Integer>> mT;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.EqSystem syst;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps)),(shared,(repl,unreplacable,b1)))
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps),statSets=statSets),(shared,(repl,unreplacable,b1)))
       equation
         mT = arrayCreate(BackendVariable.varsSize(vars),{});
         // check equations
         ((vars,shared,repl,unreplacable,_,eqnslst,b)) = 
           traverseComponents(comps,eqns,allCausalFinder,
             (vars,shared,repl,unreplacable,mT,{},false));
-        syst = causal2(b,eqnslst,vars,isyst);
+        syst = causal2(b,eqnslst,vars,statSets,isyst);
       then (syst,(shared,(repl,unreplacable,b or b1)));
   end match;
 end causal1;
@@ -2906,23 +2906,24 @@ protected function causal2
   input Boolean foundSimple;
   input list<BackendDAE.Equation> iEqnslst;
   input BackendDAE.Variables iVars;
+  input BackendDAE.StateSets statSets;
   input BackendDAE.EqSystem isyst;
   output BackendDAE.EqSystem osyst;
 algorithm
   osyst:=
-  match (foundSimple,iEqnslst,iVars,isyst)
+  match (foundSimple,iEqnslst,iVars,statSets,isyst)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
-    case (false,_,_,_) then isyst;
-    case (true,_,_,_)
+    case (false,_,_,_,_) then isyst;
+    case (true,_,_,_,_)
       equation
         // remove empty entries from vars
         vars = BackendVariable.listVar1(BackendVariable.varList(iVars));
         // replace unoptimized equations with optimized
         eqns = BackendEquation.listEquation(listReverse(iEqnslst));
       then 
-        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets);
   end match;
 end causal2;
 
@@ -3163,14 +3164,15 @@ algorithm
       array<list<Integer>> mT;
       list<BackendDAE.Equation> eqnslst;
       BackendDAE.EqSystem syst;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),(shared,(repl,unreplacable,b1)))
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,statSets=statSets),(shared,(repl,unreplacable,b1)))
       equation
         // transform to list, this is later not neccesary because the acausal system should save the equations as list
         eqnslst = BackendEquation.equationList(eqns);        
         mT = arrayCreate(BackendVariable.varsSize(vars),{});
         // check equations
         ((vars,shared,repl,unreplacable,_,eqnslst,b)) = allCausalFinder(eqnslst,(vars,shared,repl,unreplacable,mT,{},false));
-        syst = causal2(b,eqnslst,vars,isyst);
+        syst = causal2(b,eqnslst,vars,statSets,isyst);
       then (syst,(shared,(repl,unreplacable,b or b1)));
   end match;
 end allAcausal1;

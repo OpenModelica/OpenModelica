@@ -133,9 +133,9 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
-
+      BackendDAE.StateSets statSets;
     // fail case if daelow is empty
-    case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),_,_,_,_)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt),statSets=statSets),_,_,_,_)
       equation
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
@@ -144,11 +144,11 @@ algorithm
         vec1 = listArray({});
         vec2 = listArray({});
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{})),ishared,inArg);
-    case (syst as BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),_),_,_,_,_)
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{}),statSets),ishared,inArg);
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt)),_,_,_,_)
       equation
         BackendDAEEXT.clearDifferentiated();
-        checkMatching(syst, inMatchingOptions);
+        checkMatching(isyst, inMatchingOptions);
         nvars = arrayLength(m);
         neqns = arrayLength(mt);
         (nvars > 0) = true;
@@ -156,12 +156,12 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt)),shared,arg) = 
-          matchingAlgorithm2(syst,ishared,nvars, neqns, 1, assign1, assign2, inMatchingOptions, sssHandler, inArg);
+        (ass1,ass2,syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqs,m=SOME(m),mT=SOME(mt),statSets=statSets),shared,arg) = 
+          matchingAlgorithm2(isyst,ishared,nvars, neqns, 1, assign1, assign2, inMatchingOptions, sssHandler, inArg);
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{})),shared,arg);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(vec1,vec2,{}),statSets),shared,arg);
 
     else
       equation
@@ -752,7 +752,8 @@ algorithm
       BackendDAE.EquationArray eqs;
       BackendDAE.Variables vars;
       array<Integer> markarray;
-    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_)),_,_,_)
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),statSets=statSets),_,_,_)
       equation
         comps = tarjanAlgorithm(m,mt,ass1,ass2);
         markarray = arrayCreate(BackendDAEUtil.equationArraySize(eqs),-1);
@@ -760,9 +761,8 @@ algorithm
         ass1 = varAssignmentNonScalar(1,arrayLength(ass1),ass1,mapIncRowEqn,{});
         //noscalass2 = eqnAssignmentNonScalar(1,arrayLength(mapEqnIncRow),mapEqnIncRow,ass2,{});
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1)),comps1);
         // Frenkel TUD: Do not hand over the scalar incidence Matrix because following modules does not check if scalar or not
-        //(BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1)),comps1);
+        (BackendDAE.EQSYSTEM(vars,eqs,NONE(),NONE(),BackendDAE.MATCHING(ass1,ass2,comps1),statSets),comps1);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"sorting equations(strongComponents failed)"});
@@ -962,12 +962,13 @@ algorithm
       BackendDAE.StrongComponents comps1;
       BackendDAE.EquationArray eqs;
       BackendDAE.Variables vars;
-    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,_)),_)
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1=ass1,ass2=ass2),statSets=statSets),_)
       equation
         comps = tarjanAlgorithm(m,mt,ass1,ass2);
         comps1 = analyseStrongComponents(comps,syst,shared,ass1,ass2,{});
       then
-        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1)),comps1);
+        (BackendDAE.EQSYSTEM(vars,eqs,SOME(m),SOME(mt),BackendDAE.MATCHING(ass1,ass2,comps1),statSets),comps1);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"sorting equations(strongComponents failed)"});
@@ -1120,7 +1121,7 @@ algorithm
         var_lst_1 = List.map(var_lst, transformXToXd);
         vars_1 = BackendVariable.listVar1(var_lst_1);
         eqns_1 = BackendEquation.listEquation(eqn_lst);
-        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING());
+        syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
         (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, true,shared);
@@ -2512,16 +2513,16 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
 
-    case (dummystate,stateindx,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),_,_)
+    case (dummystate,stateindx,BackendDAE.EQSYSTEM(mT=SOME(mt)),_,_)
       equation
-        (dummy_der,syst) = newDummyVar(dummystate, syst, DAE.NEW_DUMMY_DER(dummystate,{}));
+        (dummy_der,syst) = newDummyVar(dummystate, isyst, DAE.NEW_DUMMY_DER(dummystate,{}));
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debugStrCrefStr, ("Chosen dummy: ",dummy_der," as dummy state\n"));
         changedeqns = BackendDAEUtil.eqnsForVarWithStates(mt, stateindx);
         stateexp = Expression.crefExp(dummystate);
         stateexpcall = DAE.CALL(Absyn.IDENT("der"),{stateexp},DAE.callAttrBuiltinReal);
         dummyderexp = Expression.crefExp(dummy_der);
         changedeqns = List.unique(List.map1r(changedeqns,arrayGet,mapIncRowEqn));        
-        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, syst, ishared, changedeqns)
+        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, isyst, ishared, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, dummystate);
       then
@@ -2831,13 +2832,13 @@ algorithm
       BackendDAE.EquationArray e;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
-
-    case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching),cr)
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching,statSets),cr)
       equation
         ((BackendDAE.VAR(cr,kind,d,prl,t,b,value,dim,source,dae_var_attr,comment,ct) :: _),indx) = BackendVariable.getVar(cr, vars);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(cr,BackendDAE.DUMMY_STATE(),d,prl,t,b,value,dim,source,dae_var_attr,comment,ct), vars);
       then
-        BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching);
+        BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching,statSets);
 
     else
       equation
@@ -2865,12 +2866,12 @@ protected function propagateDummyFixedAttribute
   this fixed value has to be propagated to s1 when s2 becomes a dummy
   state."
   input BackendDAE.EqSystem syst;
-  input list<Integer> inIntegerLst;
-  input DAE.ComponentRef inComponentRef;
-  input Integer inInteger;
+  input list<Integer> eqns;
+  input DAE.ComponentRef dummy;
+  input Integer dummy_no;
   output BackendDAE.EqSystem osyst;
 algorithm
-  osyst := matchcontinue (syst,inIntegerLst,inComponentRef,inInteger)
+  osyst := matchcontinue (syst,eqns,dummy,dummy_no)
     local
       list<Integer> eqns;
       list<BackendDAE.Equation> eqns_lst;
@@ -2880,15 +2881,14 @@ algorithm
       Integer indx,indx_1,dummy_no;
       Boolean dummy_fixed;
       BackendDAE.Variables vars_1,vars,kv,ev,av;
-      BackendDAE.BackendDAE dae;
       BackendDAE.EquationArray e,se,ie;
       BackendDAE.EventInfo ei;
       BackendDAE.ExternalObjectClasses eoc;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
-
+      BackendDAE.StateSets statSets;
    /* eqns dummy state */
-    case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching),eqns,dummy,dummy_no)
+    case (BackendDAE.EQSYSTEM(vars,e,om,omT,matching,statSets),_,_,_)
       equation
         eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
@@ -2900,10 +2900,10 @@ algorithm
         v_2 = BackendVariable.setVarFixed(v_1, dummy_fixed);
         vars_1 = BackendVariable.addVar(v_2, vars);
       then
-        BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching);
+        BackendDAE.EQSYSTEM(vars_1,e,om,omT,matching,statSets);
 
     // Never propagate fixed=true
-    case (syst as BackendDAE.EQSYSTEM(vars,e,om,omT,matching),eqns,dummy,dummy_no)
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=e),_,_,_)
       equation
         eqns_lst = BackendEquation.getEqns(eqns,e);
         crefs = BackendEquation.equationsCrefs(eqns_lst);
@@ -2997,17 +2997,17 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.EventInfo einfo;
-      
+      BackendDAE.StateSets statSets;
       list<DAE.ComponentRef> crlst;
       
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs),{})
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,statSets),BackendDAE.SHARED(kv,ev,av,ie,seqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs),{})
       equation
         (av,(_, _)) = BackendVariable.traverseBackendDAEVarsWithUpdate(av,traverseReplaceAliasVarsBindExp,(stateexpcall, dummyderexp));
         (ie1,(_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(ie,traversereplaceDummyDer,(replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
         (seqns1,(_,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(seqns,traversereplaceDummyDer,(replaceDummyDer2Exp,(stateexpcall,dummyderexp)));
-       then (BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+       then (BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,statSets),BackendDAE.SHARED(kv,ev,av,ie1,seqns1,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
 
-    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching),shared,(e :: rest))
+    case (stateexpcall,dummyderexp,BackendDAE.EQSYSTEM(v,eqns,m,mt,matching,statSets),shared,(e :: rest))
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -3017,7 +3017,7 @@ algorithm
          "incidence_row(v\'\',eqn\') => row\' &
           Util.list_replaceat(row\',e\',m) => m\' &
           transpose_matrix(m\') => mt\' &" ;
-        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,m,mt,matching),shared, rest);
+        (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, BackendDAE.EQSYSTEM(v_1,eqns_1,m,mt,matching,statSets),shared, rest);
       then
         (syst,shared);
 
@@ -3572,8 +3572,8 @@ algorithm
       BackendDAE.Var dummyvar;
       Option<BackendDAE.IncidenceMatrix> om,omT;
       BackendDAE.Matching matching;
-
-    case (var,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching),_)
+      BackendDAE.StateSets statSets;
+    case (var,BackendDAE.EQSYSTEM(vars,eqns,om,omT,matching,statSets),_)
       equation
         ((BackendDAE.VAR(name,kind,dir,prl,tp,bind,value,dim,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(var, vars);
         dummyvar_cr = ComponentReference.crefPrefixDer(name);
@@ -3584,7 +3584,7 @@ algorithm
         dummyvar = BackendVariable.setVarFixed(dummyvar,false);
         vars_1 = BackendVariable.addNewVar(dummyvar, vars);
       then
-        (dummyvar_cr,BackendDAE.EQSYSTEM(vars_1,eqns,om,omT,matching));
+        (dummyvar_cr,BackendDAE.EQSYSTEM(vars_1,eqns,om,omT,matching,statSets));
 
     else
       equation
@@ -4283,21 +4283,21 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.StateOrder so;
       BackendDAE.ConstraintEquations orgEqnsLst;  
-
+      BackendDAE.StateSets statSets;
     case (syst,shared,{},_,_) then (syst,shared,{},inStateOrd,inOrgEqnsLst);
 
-    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),_,_)
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),shared,(e :: es),_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         ev = BackendEquation.equationsLstVarsWithoutRelations({eqn},v);
         false = BackendVariable.hasContinousVar(ev);
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared, es,inStateOrd,inOrgEqnsLst);
+        (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),shared, es,inStateOrd,inOrgEqnsLst);
       then
         (syst,shared,(e :: reqns),so,orgEqnsLst);
         
-    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching),shared,(e :: es),_,_)
+    case (BackendDAE.EQSYSTEM(v,eqns,SOME(m),SOME(mt),matching,statSets),shared,(e :: es),_,_)
       equation
         e_1 = e - 1;
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
@@ -4312,7 +4312,7 @@ algorithm
         leneqns = BackendDAEUtil.equationArraySize(eqns_1);
         // print("New Equation: " +& intString(leneqns) +& "\n");
         BackendDAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns_1,SOME(m),SOME(mt),matching),shared, es,inStateOrd,inOrgEqnsLst);
+        (syst,shared,reqns,so,orgEqnsLst) = differentiateEqns(BackendDAE.EQSYSTEM(v,eqns_1,SOME(m),SOME(mt),matching,statSets),shared, es,inStateOrd,inOrgEqnsLst);
       then
         (syst,shared,(leneqns :: (e :: reqns)),so,orgEqnsLst);
     else

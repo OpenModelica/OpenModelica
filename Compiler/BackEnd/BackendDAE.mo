@@ -302,6 +302,7 @@ uniontype EqSystem "An independent system of equations (and their corresponding 
     Option<IncidenceMatrix> m;
     Option<IncidenceMatrixT> mT;
     Matching matching;
+    StateSets statSets "the statesets of the system";
   end EQSYSTEM;
 end EqSystem;
 
@@ -482,7 +483,6 @@ type StructurallySingularSystemHandlerArg = tuple<StateOrder,ConstraintEquations
 public
 type ConstraintEquations = list<tuple<Integer,list<Equation>>>;
 
-
 public
 uniontype StateOrder
   record STATEORDER
@@ -490,6 +490,18 @@ uniontype StateOrder
     HashTable3.HashTable invHashTable "dx -> {x,y,z}";
   end STATEORDER;
 end StateOrder;
+
+public
+type StateSets = list<StateSet> "List of StateSets";
+
+public 
+uniontype StateSet
+  record STATESET
+    list< .DAE.ComponentRef> states "the states of the set";
+    list<Equation> constraintEquations "the constrain equations of the set";
+    list< .DAE.ComponentRef> dummystates "the dummystates of the set";
+  end STATESET;
+end StateSet;
 
 public
 uniontype StrongComponent

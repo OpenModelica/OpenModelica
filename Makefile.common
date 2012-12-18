@@ -169,8 +169,14 @@ testlibraries:
 	(cd testsuite/simulation/libraries && time $(MAKE) -f Makefile)
 
 testlibrariemsl31:
+	(time $(MAKE) -C testsuite -f Makefile omc-diff)
 	(cd testsuite/simulation/libraries/msl31 && time $(MAKE) -f Makefile > testsuite-msl31-trace.txt 2>&1)
 	echo "log is in testsuite/simulation/libraries/msl31/testsuite-msl31-trace.txt" 
+
+testlibrariemsl32:
+	(time $(MAKE) -C testsuite -f Makefile omc-diff)
+	(cd testsuite/simulation/libraries/msl32 && time $(MAKE) -f Makefile > testsuite-msl32-trace.txt 2>&1)
+	echo "log is in testsuite/simulation/libraries/msl32/testsuite-msl31-trace.txt" 
 
 testfmi:
 	(cd testsuite/openmodelica/fmi && time $(MAKE) -f Makefile)

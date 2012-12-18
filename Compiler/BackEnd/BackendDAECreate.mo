@@ -128,7 +128,7 @@ algorithm
                                                       eqnarr,
                                                       NONE(),
                                                       NONE(),
-                                                      BackendDAE.NO_MATCHING())::{},
+                                                      BackendDAE.NO_MATCHING(),{})::{},
                                   BackendDAE.SHARED(knvars,
                                                     extVars,
                                                     aliasVars,
@@ -3056,13 +3056,14 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.SymbolicJacobians symjacs;
       Env.Cache cache;
-      Env.Env env;      
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
+      Env.Env env;
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,statSets),BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs))
       equation
         (eqns1,(vars1,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(eqns,traverserexpandDerEquation,(vars,shared));
         (inieqns1,(vars2,_)) = BackendEquation.traverseBackendDAEEqnsWithUpdate(inieqns,traverserexpandDerEquation,(vars1,shared));
       then
-        (BackendDAE.EQSYSTEM(vars2,eqns1,m,mT,matching),BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
+        (BackendDAE.EQSYSTEM(vars2,eqns1,m,mT,matching,statSets),BackendDAE.SHARED(knvars,exobj,av,inieqns1,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
   end match;
 end expandDerOperatorWork;
 
@@ -3343,8 +3344,9 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.SymbolicJacobians symjacs;
       Env.Cache cache;
-      Env.Env env;    
-    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching),
+      Env.Env env;
+      BackendDAE.StateSets statSets;
+    case (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,statSets),
           (BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,
           cache,env,funcs,einfo as BackendDAE.EVENT_INFO(zeroCrossingLst=zero_crossings,
           sampleLst=sampleLst,whenClauseLst=whenclauses,relationsLst=relations,
@@ -3359,7 +3361,7 @@ algorithm
         einfo1 = BackendDAE.EVENT_INFO(whenclauses, zero_crossings, sampleLst, relations, countRelations, countMathFunctions);
         allvars = listAppend(allvars,BackendVariable.varList(vars));
       then
-        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching),(BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo1,eoc,btp,symjacs),allvars));
+        (BackendDAE.EQSYSTEM(vars,eqns1,m,mT,matching,statSets),(BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo1,eoc,btp,symjacs),allvars));
   end match;
 end findZeroCrossings1;
 
