@@ -84,11 +84,92 @@ protected
   BackendDAE.EqSystems eqs;
   BackendDAE.Shared shared;
 algorithm
-  BackendDAE.DAE(eqs,shared) := inBackendDAE;
-  List.map_0(eqs,dumpEqSystem);
+  BackendDAE.DAE(eqs, shared) := inBackendDAE;
+  List.map_0(eqs, printEqSystem);
   print("\n");
-  dumpShared(shared);  
+  printShared(shared);  
 end printBackendDAE;
+
+public function printEqSystem "function printEqSystem
+  This function prints the BackendDAE.EqSystem representaton to stdout."
+  input BackendDAE.EqSystem inEqSystem;
+protected
+  BackendDAE.Variables orderedVars;
+  BackendDAE.EquationArray orderedEqs;
+  Option<BackendDAE.IncidenceMatrix> m;
+  Option<BackendDAE.IncidenceMatrix> mT;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets statSets;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, 
+                      orderedEqs=orderedEqs, 
+                      m=m, 
+                      mT=mT, 
+                      matching=matching,
+                      statSets=statSets) := inEqSystem;
+
+  dumpVariables(orderedVars, "Variables");
+  dumpEquationArray(orderedEqs, "Equations");
+  dumpStateSets(statSets, "State Sets");
+  dumpOption(m, dumpIncidenceMatrix);
+  dumpOption(mT, dumpIncidenceMatrixT);
+  
+  print("\n");
+  dumpFullMatching(matching);
+end printEqSystem;
+
+public function printShared "function printShared
+  This function dumps the BackendDAE.Shared representaton to stdout."
+  input BackendDAE.Shared inShared;
+protected
+  BackendDAE.Variables knownVars, externalObjects, aliasVars;
+  BackendDAE.EquationArray initialEqs, removedEqs;
+  array<DAE.Constraint> constraints;
+  list<BackendDAE.ZeroCrossing> zeroCrossingLst, sampleLst;
+  list<BackendDAE.WhenClause> whenClauseLst;
+  Integer relationsNumber;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+algorithm
+  BackendDAE.SHARED(knownVars=knownVars,
+                    externalObjects=externalObjects,
+                    aliasVars=aliasVars,
+                    initialEqs=initialEqs,
+                    removedEqs=removedEqs,
+                    constraints=constraints,
+                    eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst=zeroCrossingLst, sampleLst=sampleLst, whenClauseLst=whenClauseLst, relationsNumber=relationsNumber),
+                    extObjClasses=extObjClasses,
+                    backendDAEType=backendDAEType,
+                    symjacs=symjacs) := inShared;
+    print("\nBackendDAEType: ");
+    printBackendDAEType(backendDAEType);
+    print("\n\n");
+    
+    dumpVariables(knownVars, "Known Variables (constants)");
+    dumpVariables(externalObjects, "External Objects");
+    dumpExternalObjectClasses(extObjClasses, "Classes of External Objects");
+    dumpVariables(aliasVars, "AliasVariables");
+    dumpEquationArray(removedEqs, "Simple Equations");
+    dumpEquationArray(initialEqs, "Initial Equations");
+    dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " +& intString(relationsNumber) +& ")");
+    dumpZeroCrossingList(sampleLst, "Samples");
+    dumpWhenClauseList(whenClauseLst, "When Clauses");
+    dumpConstraintArray(constraints, "Constraints");
+end printShared;
+
+protected function printBackendDAEType
+  input BackendDAE.BackendDAEType btp; 
+algorithm
+  _ := match(btp)
+    case (BackendDAE.SIMULATION()) equation print("simulation"); then ();
+    case (BackendDAE.JACOBIAN()) equation print("jacobian"); then ();
+    case (BackendDAE.ALGEQSYSTEM()) equation print("algebraic loop"); then ();
+    case (BackendDAE.ARRAYSYSTEM()) equation print("multidim equation arrays"); then ();
+    case (BackendDAE.PARAMETERSYSTEM()) equation print("parameter system"); then ();
+    case (BackendDAE.INITIALSYSTEM()) equation print("initial system"); then ();
+  end match;
+end printBackendDAEType;
 
 public function printVariables "function printVariables
   Helper function to dump."
@@ -144,6 +225,35 @@ public function printEquationList "function printEquationList
 algorithm
   _ := List.fold(eqns, printEquationList2, 1);
 end printEquationList;
+
+protected function printExternalObjectClasses "function printExternalObjectClasses
+  dump classes of external objects"
+  input BackendDAE.ExternalObjectClasses cls;
+algorithm
+  _ := match(cls)
+    local
+      BackendDAE.ExternalObjectClasses xs;
+      Absyn.Path path;
+      list<Absyn.Path> paths;
+      list<String> paths_lst;
+      DAE.ElementSource source "the element source";
+      String path_str;
+
+    case {} then ();
+
+    case BackendDAE.EXTOBJCLASS(path,source)::xs equation
+      print("class ");
+      print(Absyn.pathString(path));
+      print("\n  extends ExternalObject;");
+      print("\n origin: ");
+      paths = DAEUtil.getElementSourceTypes(source);
+      paths_lst = List.map(paths, Absyn.pathString);
+      path_str = stringDelimitList(paths_lst, ", ");
+      print(path_str +& "\n");
+      print("end ");print(Absyn.pathString(path));
+    then ();
+  end match;
+end printExternalObjectClasses;
 
 protected function printEquationList2 "function printEquationList2
   Helper function to printEquationList"
@@ -222,13 +332,13 @@ algorithm
   end match;
 end printEquationNo;
 
-public function printStateSets
+protected function printStateSets
   input BackendDAE.StateSets stateSets;
 algorithm
-  List.map_0(stateSets,printStateSet);
+  List.map_0(stateSets, printStateSet);
 end printStateSets;
 
-public function printStateSet
+protected function printStateSet
   input BackendDAE.StateSet statSet;
 protected
   list<DAE.ComponentRef> states;
@@ -245,32 +355,12 @@ algorithm
   debuglst((dstates,ComponentReference.printComponentRefStr,"\n","\n"));
 end printStateSet;
 
-
-
 // =============================================================================
 // section for all dump* functions
 // 
 // These are functions, that print directly to the standard-stream and separates 
 // there output (e.g. with some kind of headings).
 // =============================================================================
-
-public function dumpVariables "function dumpVariables"
-  input BackendDAE.Variables inVars;
-  input String heading;
-algorithm
-  print("\n" +& heading +& "\n========================================\n");
-  printVariables(inVars);
-  print("\n");
-end dumpVariables;
-
-public function dumpEquationArray "function dumpEquationArray"
-  input BackendDAE.EquationArray inEqns;
-  input String heading;
-algorithm
-  print("\n" +& heading +& " (" +& intString(BackendDAEUtil.equationSize(inEqns)) +& ")\n========================================\n");
-  printEquationArray(inEqns);
-  print("\n");
-end dumpEquationArray;
 
 public function dumpBackendDAE "function dumpBackendDAE
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
@@ -281,6 +371,88 @@ algorithm
   printBackendDAE(inBackendDAE);
   print("\n");
 end dumpBackendDAE;
+
+public function dumpEqSystem "function dumpEqSystem"
+  input BackendDAE.EqSystem inEqSystem;
+  input String heading;
+algorithm
+  print("\n" +& heading +& "\n========================================\n");
+  printEqSystem(inEqSystem);
+  print("\n");
+end dumpEqSystem;
+
+public function dumpVariables "function dumpVariables"
+  input BackendDAE.Variables inVars;
+  input String heading;
+algorithm
+  print("\n" +& heading +& " (" +& intString(BackendVariable.varsSize(inVars)) +& ")\n========================================\n");
+  printVariables(inVars);
+  print("\n");
+end dumpVariables;
+
+public function dumpVarList "function dumpVarList"
+  input list<BackendDAE.Var> inVars;
+  input String heading;
+algorithm
+  print("\n" +& heading +& " (" +& intString(listLength(inVars)) +& ")\n========================================\n");
+  printVarList(inVars);
+  print("\n");
+end dumpVarList;
+
+public function dumpEquationArray "function dumpEquationArray"
+  input BackendDAE.EquationArray inEqns;
+  input String heading;
+algorithm
+  print("\n" +& heading +& " (" +& intString(listLength(BackendEquation.equationList(inEqns))) +& ", " +& intString(BackendDAEUtil.equationSize(inEqns)) +& ")\n========================================\n");
+  printEquationArray(inEqns);
+  print("\n");
+end dumpEquationArray;
+
+protected function dumpExternalObjectClasses "function dumpExternalObjectClasses
+  dump classes of external objects"
+  input BackendDAE.ExternalObjectClasses inEOC;
+  input String heading;
+algorithm
+  print("\n" +& heading +& " (" +& intString(listLength(inEOC)) +& ")\n========================================\n");
+  printExternalObjectClasses(inEOC);
+  print("\n");
+end dumpExternalObjectClasses;
+
+protected function dumpStateSets
+  input BackendDAE.StateSets stateSets;
+  input String heading;
+algorithm
+  print("\n" +& heading +& "\n========================================\n");
+  printStateSets(stateSets);
+  print("\n");
+end dumpStateSets;
+
+protected function dumpZeroCrossingList "function dumpZeroCrossingList"
+  input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
+  input String heading;
+algorithm
+  print("\n" +& heading +& "\n========================================\n");
+  print(zeroCrossingListString(inZeroCrossingList));
+  print("\n");
+end dumpZeroCrossingList;
+
+protected function dumpWhenClauseList "function dumpWhenClauseList"
+  input list<BackendDAE.WhenClause> inWhenClauseList;
+  input String heading;
+algorithm
+  print("\n" +& heading +& "\n========================================\n");
+  print(whenClauseListString(inWhenClauseList));
+  print("\n");
+end dumpWhenClauseList;
+
+protected function dumpConstraintArray "function dumpConstraintArray"
+  input array<DAE.Constraint> inConstraintArray;
+  input String heading;
+algorithm
+  print("\n" +& heading +& "\n========================================\n");
+  dumpConstraints(arrayList(inConstraintArray), 0);
+  print("\n");
+end dumpConstraintArray;
 
 public function dumpSparsityPattern "function dumpSparsityPattern
   author lochel"
@@ -300,153 +472,6 @@ algorithm
   
   printSparsityPattern(pattern);
 end dumpSparsityPattern;
-
-public function dumpEqSystem "function dumpEqSystem
-  This function dumps the BackendDAE.EqSystem representaton to stdout."
-  input BackendDAE.EqSystem inEqSystem;
-protected
-  list<BackendDAE.Var> vars;
-  Integer varlen,eqnlen,eqnssize;
-  String varlen_str,eqnlen_str;
-  list<BackendDAE.Equation> eqnsl;
-  BackendDAE.Variables vars1;
-  BackendDAE.EquationArray eqns;
-  Option<BackendDAE.IncidenceMatrix> m;
-  Option<BackendDAE.IncidenceMatrix> mT;
-  BackendDAE.Matching matching;
-  BackendDAE.StateSets statSets;
-algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars1,orderedEqs=eqns,m=m,mT=mT,matching=matching,statSets=statSets) := inEqSystem;
-  print("Variables (");
-  vars := BackendVariable.varList(vars1);
-  varlen := listLength(vars);
-  varlen_str := intString(varlen);
-  print(varlen_str);
-  print(")\n");
-  print("=========\n");
-  printVarList(vars);
-  print("\n");        
-  print("\nEquations (");
-  eqnsl := BackendEquation.equationList(eqns);
-  eqnlen := listLength(eqnsl);
-  eqnlen_str := intString(eqnlen);
-  print(eqnlen_str);
-  eqnssize := BackendDAEUtil.equationSize(eqns);
-  print(", ");
-  print(intString(eqnssize));
-  print(")\n");
-  print("=========\n");
-  printEquationList(eqnsl);
-  print("\n");
-  printStateSets(statSets); 
-  print("\n");
-  dumpOption(m,dumpIncidenceMatrix);
-  dumpOption(mT,dumpIncidenceMatrixT);
-  dumpFullMatching(matching);
-end dumpEqSystem;
-
-public function dumpShared "function dumpShared
-  This function dumps the BackendDAE.Shared representaton to stdout."
-  input BackendDAE.Shared inShared;
-algorithm
-  _:=
-  match (inShared)
-    local
-      list<BackendDAE.Var> knvars,extvars;
-      Integer varlen,eqnlen,eqnssize;
-      String varlen_str,eqnlen_str,s;
-      list<BackendDAE.Equation> reqnsl,ieqnsl;
-      list<String> ss;
-      BackendDAE.Variables vars2,vars3,av;
-      BackendDAE.EquationArray reqns,ieqns;
-      array<DAE.Constraint> constrs;
-      list<BackendDAE.ZeroCrossing> zc, samples;
-      list<BackendDAE.WhenClause> wc;
-      Integer numberOfRelations;
-      BackendDAE.ExternalObjectClasses extObjCls;
-      BackendDAE.BackendDAEType btp;
-      BackendDAE.SymbolicJacobians symjacs;
-      DAE.FunctionTree funcs;
-    case (BackendDAE.SHARED(knownVars=vars2,externalObjects=vars3,aliasVars=av,initialEqs=ieqns,removedEqs=reqns,constraints=constrs,
-          functionTree=funcs,eventInfo=BackendDAE.EVENT_INFO(zeroCrossingLst = zc,sampleLst=samples,whenClauseLst=wc,relationsNumber=numberOfRelations),extObjClasses=extObjCls,backendDAEType=btp,symjacs=symjacs))
-      equation
-        print("BackendDAEType: ");
-        dumpBackendDAEType(btp);
-        print("\n\n");
-        
-        print("Known Variables (constants) (");
-        knvars = BackendVariable.varList(vars2);
-        varlen = listLength(knvars);
-        varlen_str = intString(varlen);
-        print(varlen_str);
-        print(")\n");
-        print("=============================\n");
-        printVarList(knvars);
-        print("External Objects (");
-        extvars = BackendVariable.varList(vars3);
-        varlen = listLength(extvars);
-        varlen_str = intString(varlen);
-        print(varlen_str);
-        print(")\n");
-        print("=============================\n");
-        printVarList(extvars);
-
-        print("Classes of External Objects (");
-        varlen = listLength(extObjCls);
-        varlen_str = intString(varlen);
-        print(varlen_str);
-        print(")\n");
-        print("=============================\n");
-        dumpExtObjCls(extObjCls);
-        
-        dumpAliasVariables(av);
-        
-        print("Simple Equations (");
-        reqnsl = BackendEquation.equationList(reqns);
-        eqnlen = listLength(reqnsl);
-        eqnlen_str = intString(eqnlen);
-        print(eqnlen_str);
-        eqnssize = BackendDAEUtil.equationSize(reqns);
-        print(", ");
-        print(intString(eqnssize));
-        print(")\n");        
-        print(")\n");
-        print("=========\n");
-        printEquationList(reqnsl);
-        print("Initial Equations (");
-        ieqnsl = BackendEquation.equationList(ieqns);
-        eqnlen = listLength(ieqnsl);
-        eqnlen_str = intString(eqnlen);
-        print(eqnlen_str);
-        eqnssize = BackendDAEUtil.equationSize(ieqns);
-        print(", ");
-        print(intString(eqnssize));
-        print(")\n");        
-        print(")\n");
-        print("=========\n");
-        printEquationList(ieqnsl);
-        print("Zero Crossings (numberOfRelations = " +& intString(numberOfRelations) +&") : \n");
-        print("===============\n");
-        s = dumpZcStr1(zc);
-        print(s);
-        print("Samples : \n");
-        print("===============\n");
-        s = dumpZcStr1(samples);
-        print(s);        
-        print("\n");
-        print("When Clauses :\n");
-        print("===============\n");
-        ss = List.map(wc, dumpWcStr);
-        s = stringDelimitList(ss, ",\n");
-        print(s);
-        print("\n");
-        print("Constraints:\n");
-        print("===============\n");
-        dumpConstraints(arrayList(constrs),0);       
-      then
-        ();
-  end match;
-end dumpShared;
 
 public function dumpEquation "function dumpEquation
   author: Frenkel TUD"
@@ -919,7 +944,7 @@ public function dumpComponents
   input BackendDAE.StrongComponents inComps;
 algorithm
   print("StrongComponents\n");
-  print("=======\n");  
+  print("========================================\n");  
   List.map_0(inComps,dumpComponent);
 end dumpComponents;
 
@@ -1261,6 +1286,113 @@ algorithm
         res;
   end matchcontinue;
 end equationString;
+
+public function zeroCrossingListString "function zeroCrossingListString"
+  input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
+  output String outString;
+algorithm
+ outString := match(inZeroCrossingList)
+  local
+    BackendDAE.ZeroCrossing curr;
+    list<BackendDAE.ZeroCrossing> rest;
+  case ({}) then "";
+  case (curr::rest) equation
+  then zeroCrossingString(curr) +& "\n" +& zeroCrossingListString(rest);
+end match;
+end zeroCrossingListString;
+
+protected function zeroCrossingString "function: zeroCrossingString
+  Dumps a zerocrossing into a string, for debugging purposes."
+  input BackendDAE.ZeroCrossing inZeroCrossing;
+  output String outString;
+algorithm
+  outString:= match(inZeroCrossing)
+    local
+      list<String> eq_s_list,wc_s_list;
+      String eq_s,wc_s,str,str2,str_index;
+      DAE.Exp e;
+      Integer index_;
+      list<Integer> eq,wc;
+      
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq,occurWhenLst = wc) equation
+      eq_s_list = List.map(eq, intString);
+      eq_s = stringDelimitList(eq_s_list, ",");
+      wc_s_list = List.map(wc, intString);
+      wc_s = stringDelimitList(wc_s_list, ",");
+      str = ExpressionDump.printExpStr(e);
+      str_index=intString(index_);
+      str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+    then str2;
+        
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(operator=_),occurEquLst = eq,occurWhenLst = wc) equation
+      eq_s_list = List.map(eq, intString);
+      eq_s = stringDelimitList(eq_s_list, ",");
+      wc_s_list = List.map(wc, intString);
+      wc_s = stringDelimitList(wc_s_list, ",");        
+      str = ExpressionDump.printExpStr(e);
+      str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+    then str2;
+      
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(operator=_),occurEquLst = eq,occurWhenLst = wc) equation
+      eq_s_list = List.map(eq, intString);
+      eq_s = stringDelimitList(eq_s_list, ",");
+      wc_s_list = List.map(wc, intString);
+      wc_s = stringDelimitList(wc_s_list, ",");        
+      str = ExpressionDump.printExpStr(e);
+      str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+    then str2;
+      
+    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT(name = _)),occurEquLst = eq,occurWhenLst = wc) equation
+      eq_s_list = List.map(eq, intString);
+      eq_s = stringDelimitList(eq_s_list, ",");
+      wc_s_list = List.map(wc, intString);
+      wc_s = stringDelimitList(wc_s_list, ",");        
+      str = ExpressionDump.printExpStr(e);
+      str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
+    then str2;
+      
+    else then "";
+  end match;
+end zeroCrossingString;
+
+protected function whenClauseListString "function whenClauseListString"
+  input list<BackendDAE.WhenClause> inWhenClauseList;
+  output String outString;
+protected
+  list<String> strList;
+algorithm
+  strList := List.map(inWhenClauseList, whenClauseString);
+  outString := stringDelimitList(strList, ",\n");
+end whenClauseListString;
+
+public function whenClauseString "function: whenClauseString
+  Dumps a whenclause into a string, for debugging purposes."
+  input BackendDAE.WhenClause inWhenClause;
+  output String outString;
+algorithm
+  outString:= match(inWhenClause)
+    local
+      String sc,s1,si,str;
+      DAE.Exp c;
+      list<BackendDAE.WhenOperator> reinitStmtLst;
+      Integer i;
+
+    case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = SOME(i)) equation
+      sc = ExpressionDump.printExpStr(c);
+      s1 = stringDelimitList(List.map(reinitStmtLst,dumpWhenOperatorStr),"  ");              
+      si = intString(i);
+      str = stringAppendList({" whenclause = ",sc," then ",s1," else whenclause",si});
+    then str;
+
+    case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = NONE()) equation
+      sc = ExpressionDump.printExpStr(c);
+      s1 = stringDelimitList(List.map(reinitStmtLst,dumpWhenOperatorStr),"  ");              
+      str = stringAppendList({" whenclause = ",sc," then ",s1});
+    then str;
+
+    else then "";
+  end match;
+end whenClauseString;
 
 public function componentRef_DIVISION_String
   input DAE.ComponentRef inCref;
@@ -1651,117 +1783,6 @@ algorithm
   end match;
 end dumpTypeStr;
 
-public function dumpZcStr1 ""
-  input list<BackendDAE.ZeroCrossing> zero_crossings;
-  output String outString;
-algorithm outString := match(zero_crossings)
-  local
-    BackendDAE.ZeroCrossing vf;
-    String s1,s2,s3;
-    list<BackendDAE.ZeroCrossing> rest;
-  case({}) then "";
-  case( vf::rest )
-    equation
-      s1=  dumpZcStr(vf);
-      s2= dumpZcStr1(rest);
-      s3 = stringAppendList({s1,"\n", s2 });
-    then
-      s3;
-end match;
-end dumpZcStr1;
-
-public function dumpZcStr
-"function: dumpZcStr
-  Dumps a zerocrossing into a string, for debugging purposes."
-  input BackendDAE.ZeroCrossing inZeroCrossing;
-  output String outString;
-algorithm
-  outString:=
-  match (inZeroCrossing)
-    local
-      list<String> eq_s_list,wc_s_list;
-      String eq_s,wc_s,str,str2,str_index;
-      DAE.Exp e;
-      Integer index_;
-      list<Integer> eq,wc;
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.RELATION(index=index_),occurEquLst = eq,occurWhenLst = wc)
-      equation
-        eq_s_list = List.map(eq, intString);
-        eq_s = stringDelimitList(eq_s_list, ",");
-        wc_s_list = List.map(wc, intString);
-        wc_s = stringDelimitList(wc_s_list, ",");
-        str = ExpressionDump.printExpStr(e);
-        str_index=intString(index_);
-        str2 = stringAppendList({str," with index = ",str_index," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
-      then
-        str2;
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LBINARY(operator=_),occurEquLst = eq,occurWhenLst = wc)
-      equation
-        eq_s_list = List.map(eq, intString);
-        eq_s = stringDelimitList(eq_s_list, ",");
-        wc_s_list = List.map(wc, intString);
-        wc_s = stringDelimitList(wc_s_list, ",");        
-        str = ExpressionDump.printExpStr(e);
-        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
-      then
-        str2;
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.LUNARY(operator=_),occurEquLst = eq,occurWhenLst = wc)
-      equation
-        eq_s_list = List.map(eq, intString);
-        eq_s = stringDelimitList(eq_s_list, ",");
-        wc_s_list = List.map(wc, intString);
-        wc_s = stringDelimitList(wc_s_list, ",");        
-        str = ExpressionDump.printExpStr(e);
-        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
-      then
-        str2;
-    case BackendDAE.ZERO_CROSSING(relation_ = e as DAE.CALL(path = Absyn.IDENT(name = _)),occurEquLst = eq,occurWhenLst = wc)
-      equation
-        eq_s_list = List.map(eq, intString);
-        eq_s = stringDelimitList(eq_s_list, ",");
-        wc_s_list = List.map(wc, intString);
-        wc_s = stringDelimitList(wc_s_list, ",");        
-        str = ExpressionDump.printExpStr(e);
-        str2 = stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]"});
-      then
-        str2;
-        else then "";
-  end match;
-end dumpZcStr;
-
-public function dumpWcStr
-"function: dumpWcStr
-  Dumps a whenclause into a string, for debugging purposes."
-  input BackendDAE.WhenClause inWhenClause;
-  output String outString;
-algorithm
-  outString:=
-  match (inWhenClause)
-    local
-      String sc,s1,si,str;
-      DAE.Exp c;
-      list<BackendDAE.WhenOperator> reinitStmtLst;
-      Integer i;
-    case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = SOME(i))
-     equation
-      sc = ExpressionDump.printExpStr(c);
-      s1 = stringDelimitList(List.map(reinitStmtLst,dumpWhenOperatorStr),"  ");              
-      si = intString(i);
-      str = stringAppendList({" whenclause = ",sc," then ",s1," else whenclause",si});
-     then
-      str;
-    case BackendDAE.WHEN_CLAUSE(condition = c,reinitStmtLst = reinitStmtLst,elseClause = NONE())
-     equation
-      sc = ExpressionDump.printExpStr(c);
-      s1 = stringDelimitList(List.map(reinitStmtLst,dumpWhenOperatorStr),"  ");              
-      str = stringAppendList({" whenclause = ",sc," then ",s1});
-     then
-      str;
-     else
-     then "";
-  end match;
-end dumpWcStr;
-
 public function dumpWhenOperatorStr
 "function: dumpWhenOperatorStr
   Dumps a WhenOperator into a string, for debugging purposes."
@@ -1818,9 +1839,8 @@ algorithm
   match(inType,infunc)
     local 
       Type_A a;
-    case(SOME(a),_) equation infunc(a); then ();
-    else
-      then ();
+    case (SOME(a), _) equation infunc(a); then();
+    else then ();
   end match;
 end dumpOption;
 
@@ -2019,20 +2039,6 @@ protected function dumpSharedHTML
 algorithm
   outDoc:= inDoc;
 end dumpSharedHTML;
-
-
-public function dumpBackendDAEType
-  input BackendDAE.BackendDAEType btp; 
-algorithm
-  _ := match(btp)
-    case (BackendDAE.SIMULATION())equation print("simulation"); then ();
-    case (BackendDAE.JACOBIAN()) equation print("jacobian"); then ();
-    case (BackendDAE.ALGEQSYSTEM()) equation print("algebraic loop"); then ();
-    case (BackendDAE.ARRAYSYSTEM()) equation print("multidim equation arrays"); then ();
-    case (BackendDAE.PARAMETERSYSTEM()) equation print("parameter system"); then ();
-    case (BackendDAE.INITIALSYSTEM()) equation print("initial system"); then ();
-  end match;
-end dumpBackendDAEType;
 
 public function dumpAlgorithms "Help function to dump, prints algorithms to stdout"
   input list<DAE.Algorithm> ialgs;
@@ -2250,35 +2256,6 @@ algorithm
         ifequationString(elst,eqnslst,eqnsfalse,s);
   end match;
 end ifequationString;
-
-protected function dumpExtObjCls "dump classes of external objects"
-  input BackendDAE.ExternalObjectClasses cls;
-algorithm
-  _ := match(cls)
-    local
-      BackendDAE.ExternalObjectClasses xs;
-      Absyn.Path path;
-      list<Absyn.Path> paths;
-      list<String> paths_lst;
-      DAE.ElementSource source "the element source";
-      String path_str;
-
-    case {} then ();
-
-    case BackendDAE.EXTOBJCLASS(path,source)::xs
-      equation
-        print("class ");
-        print(Absyn.pathString(path));
-        print("\n  extends ExternalObject;");
-        print("\n origin: ");
-        paths = DAEUtil.getElementSourceTypes(source);
-        paths_lst = List.map(paths, Absyn.pathString);
-        path_str = stringDelimitList(paths_lst, ", ");
-        print(path_str +& "\n");
-        print("end ");print(Absyn.pathString(path));
-      then ();
-  end match;
-end dumpExtObjCls;
 
 public function varString "function varString
   Helper function to printVarList."
@@ -2663,8 +2640,8 @@ protected
   String mlen_str;
   list<list<Integer>> m_1;
 algorithm
-  print("Incidence Matrix (row == equation)\n");
-  print("====================================\n");
+  print("\nIncidence Matrix (row: equation)\n");
+  print("========================================\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   print("number of rows: ");
@@ -2672,6 +2649,7 @@ algorithm
   print("\n");
   m_1 := arrayList(m);
   dumpIncidenceMatrix2(m_1,1);
+  print("\n");
 end dumpIncidenceMatrix;
 
 public function dumpIncidenceMatrixT
@@ -2684,8 +2662,8 @@ protected
   String mlen_str;
   list<list<Integer>> m_1;
 algorithm
-  print("Transpose Incidence Matrix (row == var)\n");
-  print("=====================================\n");
+  print("\nTranspose Incidence Matrix (row: var)\n");
+  print("========================================\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   print("number of rows: ");
@@ -2693,6 +2671,7 @@ algorithm
   print("\n");
   m_1 := arrayList(m);
   dumpIncidenceMatrix2(m_1,1);
+  print("\n");
 end dumpIncidenceMatrixT;
 
 protected function dumpIncidenceMatrix2
@@ -2863,10 +2842,11 @@ algorithm
     local 
       array<Integer> ass1;
       BackendDAE.StrongComponents comps;
-      case (BackendDAE.NO_MATCHING()) equation print("NoMatching\n"); then ();
+      case (BackendDAE.NO_MATCHING()) equation print("no matching\n"); then ();
       case (BackendDAE.MATCHING(ass1,_,comps))
         equation
           dumpMatching(ass1);
+          print("\n\n");
           dumpComponents(comps);          
         then
           ();
@@ -2883,7 +2863,7 @@ protected
   String len_str;
 algorithm
   print("Matching\n");
-  print("========\n");
+  print("========================================\n");
   len := arrayLength(v);
   len_str := intString(len);
   print(len_str);
@@ -3101,27 +3081,6 @@ algorithm
   res := stringAppendList({"{",res,"}"});
 end intListStr;
 
-public function dumpAliasVariables "function: dumpAliasVariables
-  author: Frenkel TUD 2010-12
-
-  dump AliasVariables.
-"
-  input BackendDAE.Variables inAliasVars;
-protected
-  list<BackendDAE.Var> vars;
-  String sl;
-  Integer l;
-algorithm
-  l := BackendVariable.varsSize(inAliasVars);
-  sl := intString(l);
-  vars := BackendVariable.varList(inAliasVars);
-  print("AliasVariables: ");
-  print(sl);
-  print("\n===============\n");
-  printVarList(vars);
-  print("\n");
-end dumpAliasVariables;
-
 protected function dumpAliasVariable
 "author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Var,list<Integer>> inTpl;
@@ -3213,9 +3172,9 @@ algorithm
     case ((headerline,BackendDAE.DAE(eqs,shared)))
       equation
         print(headerline); print(":\n");
-        List.map_0(eqs,dumpEqSystem);
+        List.map_0(eqs,printEqSystem);
         print("\n");
-        dumpShared(shared);
+        printShared(shared);
       then
         ();
   end matchcontinue; 

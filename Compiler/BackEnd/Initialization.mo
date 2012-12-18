@@ -856,7 +856,7 @@ algorithm
       DAE.Type ty;
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
-      DAE.Exp startExp;
+      DAE.Exp startExp, bindExp;
       String errorMessage;
     
     // state
@@ -889,7 +889,7 @@ algorithm
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
     then ((var, (vars, fixvars)));
     
-    // parameter (without binding)
+    // parameter without binding
     case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=NONE()), (vars, fixvars))) equation
       true = BackendVariable.varFixed(var);
       startExp = BackendVariable.varStartValueType(var);
@@ -897,6 +897,12 @@ algorithm
       
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
+    then ((var, (vars, fixvars)));
+    
+    // parameter with constant binding
+    case((var as BackendDAE.VAR(varKind=BackendDAE.PARAM(), bindExp=SOME(bindExp)), (vars, fixvars))) equation
+      true = Expression.isConst(bindExp);
+      fixvars = BackendVariable.addVar(var, fixvars);
     then ((var, (vars, fixvars)));
     
     // parameter

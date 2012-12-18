@@ -115,7 +115,7 @@ algorithm
       BackendDAE.Shared shared;
     case (_::_,_,_,_,_,_,_)
       equation
-        //  BackendDump.dumpEqSystem(isyst);
+        //  BackendDump.printEqSystem(isyst);
         //  BackendDump.dumpMatching(inAssignments1);
         //  BackendDump.dumpMatching(inAssignments2);
         //  syst = BackendDAEUtil.setEqSystemMatching(isyst,BackendDAE.MATCHING(inAssignments1,inAssignments2,{})); 
@@ -1497,8 +1497,7 @@ algorithm
         nv = BackendVariable.varsSize(v);
         // iterate comps
         (syst,m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.NORMAL());
-        Debug.fcall(Flags.BLT_DUMP, print, "Index Reduced System:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);
+        Debug.fcall2(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst, "Index Reduced System");
         comps = BackendDAETransform.tarjanAlgorithm(m,mt,ass1,ass2);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpComponentsOLD,comps);
         
@@ -1519,14 +1518,12 @@ algorithm
         syst = BackendVariable.expandVarsDAE(ndummystates,syst);
         (syst,shared,ht) = addDummyStates(dummyStates,syst,shared,iHt);
         (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.NORMAL());
-        Debug.fcall(Flags.BLT_DUMP, print, "Full System:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);
+        Debug.fcall2(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst, "Full System");
         Matching.matchingExternalsetIncidenceMatrix(nv1,ne1,m);        
         BackendDAEEXT.matching(nv1,ne1,5,-1,0.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);     
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(vec1,vec2,{})); 
-        Debug.fcall(Flags.BLT_DUMP, print, "Final System with DummyStates:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem,syst);       
+        Debug.fcall2(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst, "Final System with DummyStates");       
      then 
        (syst,shared,ht);
     else
@@ -2062,7 +2059,7 @@ algorithm
       equation
         m = incidenceMatrixfromEnhanced2(inMe,vars);
         mT = BackendDAEUtil.transposeMatrix(m,inVarSize);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
         // match the variables not the equations, to have prevered states unmatched
         Matching.matchingExternalsetIncidenceMatrix(inEqnsSize,inVarSize,mT);
         BackendDAEEXT.matching(inEqnsSize,inVarSize,3,-1,1.0,1);
@@ -2090,7 +2087,7 @@ algorithm
         sets = Matching.getEqnsforIndexReduction(unassigned,arrayLength(m),m,mT,vec1,vec2,(so,orgEqnsLst,mapEqnIncRow1,mapIncRowEqn1,noofeqns));
         //  print("Sets:\n");
         //  BackendDump.dumpIncidenceMatrix(listArray(sets));
-        //  BackendDump.dumpEqSystem(syst);
+        //  BackendDump.printEqSystem(syst);
         (vlst,dummyStates,syst,shared) = processComps4New(sets,dstates,states,inVarSize,inEqnsSize,syst,m,mT,mapEqnIncRow1,mapIncRowEqn1,vec1,vec2,inIsyst,inIshared,inArg,inHov,inDummyStates);
      then
         (vlst,dummyStates,syst,shared);
@@ -2198,7 +2195,7 @@ algorithm
         eqns = BackendEquation.listEquation(eqnlst);
         vars = BackendVariable.listVar1(varlst);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        //  BackendDump.dumpEqSystem(syst);
+        //  BackendDump.printEqSystem(syst);
         //  BackendDump.dumpMatching(listArray(ass1));
         //  BackendDump.dumpMatching(listArray(ass2));
         (me,meT,mapEqnIncRow1,mapIncRowEqn1) = BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,inIshared);
@@ -2763,7 +2760,7 @@ algorithm
         (hov_1,dummyStates,syst,shared); 
     else
       equation
-        BackendDump.dumpEqSystem(isyst);
+        BackendDump.printEqSystem(isyst);
       then 
         fail();
   end matchcontinue;
@@ -2975,7 +2972,7 @@ algorithm
         false = intGt(eqnsSize,varSize);
         Debug.fcall(Flags.BLT_DUMP, print, "try to select dummy vars heuristic based\n");
         (syst,_,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{}),BackendDAE.NORMAL());
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst);
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, syst);
         varlst = BackendVariable.varList(vars);
         crlst = List.map(varlst,BackendVariable.varCref);
         states = List.threadTuple(crlst,List.intRange2(1,varSize));
@@ -3294,7 +3291,7 @@ algorithm
       equation
         m = incidenceMatrixfromEnhanced(me);
         mT = incidenceMatrixfromEnhanced(meT);  
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
         Matching.matchingExternalsetIncidenceMatrix(eqnsSize,varSize,mT);
         BackendDAEEXT.matching(eqnsSize,varSize,3,-1,1.0,1);
         vec1 = arrayCreate(eqnsSize,-1);
@@ -3330,7 +3327,7 @@ algorithm
       equation
         m = incidenceMatrixfromEnhanced1(me);
         mT = incidenceMatrixfromEnhanced1(meT);  
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
         Matching.matchingExternalsetIncidenceMatrix(eqnsSize,varSize,mT);
         BackendDAEEXT.matching(eqnsSize,varSize,3,-1,1.0,1);
         vec1 = arrayCreate(eqnsSize,-1);
@@ -3647,9 +3644,11 @@ algorithm
         ilst = List.map(states,Util.tuple22);
         v = BackendVariable.listVar1(List.map1r(ilst,BackendVariable.getVarAt,vars));
         eqns1 = BackendEquation.listEquation(eqnslst);
+
         syst = BackendDAE.EQSYSTEM(v,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
         states1 = List.threadTuple(BackendVariable.getAllCrefFromVariables(v),List.intRange(BackendVariable.varsSize(v)));
-        //  BackendDump.dumpEqSystem(syst);
+        //  BackendDump.printEqSystem(syst);
+
         (m,_) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqns1, m, true,ishared);         
@@ -3693,7 +3692,7 @@ algorithm
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
         varlst = vcont::varlst;
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.dumpWcStr,"\n","\n")));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.whenClauseString,"\n","\n")));
         // add Equations and vars
         size = BackendDAEUtil.systemSize(isyst);
         syst = List.fold(varlst,BackendVariable.addVarDAE,isyst);
@@ -3766,7 +3765,7 @@ algorithm
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
         varlst = vcont::varlst;
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.dumpWcStr,"\n","\n")));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.whenClauseString,"\n","\n")));
         // add Equations and vars
         size = BackendDAEUtil.systemSize(isyst);
         syst = List.fold(varlst,BackendVariable.addVarDAE,isyst);
@@ -4121,7 +4120,7 @@ algorithm
         selecteqns = listAppend(eqcont::selecteqns,dselecteqns);
         varlst = vcont::varlst;
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printEquationList, selecteqns);
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.dumpWcStr,"\n","\n")));
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((wclst,BackendDump.whenClauseString,"\n","\n")));
         // add Equations and vars
         size = BackendDAEUtil.systemSize(isyst);
         syst = List.fold(varlst,BackendVariable.addVarDAE,isyst);
@@ -5449,7 +5448,7 @@ algorithm
       
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared, b1))
       equation
-         BackendDump.dumpEqSystem(syst);
+         BackendDump.printEqSystem(syst);
          (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.NORMAL());
          BackendDump.dumpIncidenceMatrixT(mt);
          

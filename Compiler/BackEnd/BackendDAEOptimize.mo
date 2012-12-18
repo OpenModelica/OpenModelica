@@ -2998,7 +2998,7 @@ algorithm
         BackendDAE.MATCHING(v1_new,v2_new,_) = matching;
         //(relaxedEqSystem,relaxedShared,_) = tearingSystemNew1(eqSystem,shared,{comps_Newton},false);
         print("\nrelaxedEqSystem\n");
-        //BackendDump.dumpEqSystem(relaxedEqSystem);
+        //BackendDump.printEqSystem(relaxedEqSystem);
         print("\n----end of linear system----\n");
         
         //-------------
@@ -8023,7 +8023,7 @@ algorithm
   subsyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
   (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL());
   //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System" +& intString(size) +& ".graphml");
-  Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,subsyst);
+  Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEqSystem, subsyst);
 
   (me,meT,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(subsyst,ishared);
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpAdjacencyMatrixEnhanced,me);
@@ -8069,7 +8069,7 @@ algorithm
   m1 := getOtherEqSysIncidenceMatrix(m,size,1,ass2,ass1,m1);
   mt1 := getOtherEqSysIncidenceMatrix(mt,size,1,ass1,ass2,mt1);
   //  subsyst := BackendDAE.EQSYSTEM(vars,eqns,SOME(m1),SOME(mt1),BackendDAE.MATCHING(ass1,ass2,{}));
-  //  BackendDump.dumpEqSystem(subsyst);
+  //  BackendDump.printEqSystem(subsyst);
   number := arrayCreate(size,0);
   lowlink := arrayCreate(size,0);        
   number := setIntArray(residual,number,size);
@@ -8078,9 +8078,9 @@ algorithm
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponentsOLD,othercomps); 
   Debug.fcall(Flags.TEARING_DUMP, print, "\n");
   // calculate influence of tearing vars in residual equations 
-  mt1 := arrayCreate(size,{});
-  mark := getDependensOtherVars(othercomps,ass1,ass2,m,mt1,columark,mark);
-  (residual,mark) := sortResidualDepentOnTVars(residual,tvars,ass1,m,mt1,columark,mark);
+  mt1 := arrayCreate(size, {});
+  mark := getDependenciesOfVars(othercomps, ass1, ass2, m, mt1, columark, mark);
+  (residual, mark) := sortResidualDepentOnTVars(residual, tvars, ass1, m, mt1, columark, mark);
   // handle system in case of liniear and other cases 
   //(osyst,oshared,outRunMatching) := tearingSystemNew4(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn);
   (ocomp,outRunMatching) := tearingSystemNew4_1(jacType,isyst,ishared,subsyst,tvars,residual,ass1,ass2,othercomps,eindex,vindx,mapEqnIncRow,mapIncRowEqn,columark,mark);
@@ -8197,7 +8197,7 @@ algorithm
   end match;
 end tVarsofResidualEqns;
 
-protected function getDependensOtherVars
+protected function getDependenciesOfVars
   input list<list<Integer>> iComps;
   input array<Integer> ass1;
   input array<Integer> ass2;
@@ -8207,35 +8207,35 @@ protected function getDependensOtherVars
   input Integer iMark;
   output Integer oMark;
 algorithm
-  oMark := match(iComps,ass1,ass2,m,mT,visited,iMark)
+  oMark := match(iComps, ass1, ass2, m, mT, visited, iMark)
     local
-      Integer c,v;
-      list<Integer> comp,tvars,vars;
+      Integer c, v;
+      list<Integer> comp, tvars, vars;
       list<list<Integer>> comps;
-    case ({},_,_,_,_,_,_) then iMark;
-    case ({c}::comps,_,_,_,_,_,_)
-      equation
-        // get var of eqn
-        v = ass2[c];
-        // get TVars of Eqn
-        vars = List.select(m[c], Util.intPositive);
-        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,{});
-        // update map
-        _ = arrayUpdate(mT,v,tvars);
-      then
-        getDependensOtherVars(comps,ass1,ass2,m,mT,visited,iMark+1);
-    case (comp::comps,_,_,_,_,_,_)
-      equation
-        // get var of eqns
-        vars = List.map1r(comp,arrayGet,ass2);
-        // get TVars of Eqns
-        tvars = tVarsofEqns(comp,m,ass1,mT,visited,iMark,{});
-        // update map
-        _ = List.fold1r(vars,arrayUpdate,tvars,mT);
-      then
-        getDependensOtherVars(comps,ass1,ass2,m,mT,visited,iMark+1);
+    
+    case ({}, _, _, _, _, _, _)
+    then iMark;
+    
+    case ({c}::comps, _, _, _, _, _, _) equation
+      // get var of eqn
+      v = ass2[c];
+      // get TVars of Eqn
+      vars = List.select(m[c], Util.intPositive);
+      tvars = tVarsofEqn(vars, ass1, mT, visited, iMark, {});
+      // update map
+      _ = arrayUpdate(mT, v, tvars);
+    then getDependenciesOfVars(comps, ass1, ass2, m, mT, visited, iMark+1);
+    
+    case (comp::comps, _, _, _, _, _, _) equation
+      // get var of eqns
+      vars = List.map1r(comp,arrayGet,ass2);
+      // get TVars of Eqns
+      tvars = tVarsofEqns(comp, m, ass1, mT, visited, iMark, {});
+      // update map
+      _ = List.fold1r(vars, arrayUpdate, tvars, mT);
+    then getDependenciesOfVars(comps, ass1, ass2, m, mT, visited, iMark+1);
   end match; 
-end getDependensOtherVars;
+end getDependenciesOfVars;
 
 protected function tVarsofEqns
   input list<Integer> iEqns;
@@ -8247,17 +8247,18 @@ protected function tVarsofEqns
   input list<Integer> iAcc;
   output list<Integer> oAcc;
 algorithm
-  oAcc := match(iEqns,m,ass1,mT,visited,iMark,iAcc)
+  oAcc := match(iEqns, m, ass1, mT, visited, iMark, iAcc)
     local
       Integer e;
-      list<Integer> eqns,vars,tvars;
-    case ({},_,_,_,_,_,_) then iAcc;
-    case (e::eqns,_,_,_,_,_,_)
-      equation
-        vars = List.select(m[e], Util.intPositive);
-        tvars = tVarsofEqn(vars,ass1,mT,visited,iMark,iAcc);
-      then
-        tVarsofEqns(eqns,m,ass1,mT,visited,iMark,tvars);
+      list<Integer> eqns, vars, tvars;
+      
+    case ({}, _, _, _, _, _, _)
+    then iAcc;
+    
+    case (e::eqns, _, _, _, _, _, _) equation
+      vars = List.select(m[e], Util.intPositive);
+      tvars = tVarsofEqn(vars, ass1, mT, visited, iMark, iAcc);
+    then tVarsofEqns(eqns, m, ass1, mT, visited, iMark, tvars);
   end match;
 end tVarsofEqns;
 
@@ -8281,11 +8282,9 @@ algorithm
         tvars = uniqueIntLst(v,iMark,visited,iAcc);
       then
         tVarsofEqn(vars,ass1,mT,visited,iMark,tvars);
-    case (v::vars,_,_,_,_,_)
-      equation
-        tvars = List.fold2(mT[v],uniqueIntLst,iMark,visited,iAcc);
-      then
-        tVarsofEqn(vars,ass1,mT,visited,iMark,tvars);
+    case (v::vars,_,_,_,_,_) equation
+      tvars = List.fold2(mT[v],uniqueIntLst,iMark,visited,iAcc);
+    then tVarsofEqn(vars, ass1, mT, visited, iMark, tvars);
   end matchcontinue;
 end tVarsofEqn;
 
@@ -9496,8 +9495,7 @@ algorithm
         true = intEq(listLength(tvars),numvars);
         // replace new residual equations in original system
         syseqns = BackendEquation.daeEqns(isyst);
-        Debug.fcall(Flags.TEARING_DUMP, print,"dump original system\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,isyst);
+        Debug.fcall2(Flags.TEARING_DUMP, BackendDump.dumpEqSystem, isyst, "dump original system");
         // all additional vars and equations
         sysvars = BackendVariable.addVars(k0,sysvars);
         sysvars = BackendVariable.addVars(pdvarlst,sysvars);
@@ -9507,9 +9505,8 @@ algorithm
         ores = List.map1r(residual1,arrayGet,listArray(eindex));
         syseqns = replaceHEquationsinSystem(ores,h,syseqns);
         syst = BackendDAE.EQSYSTEM(sysvars,syseqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),statSets);
-        //  BackendDump.dumpEqSystem(syst);
-        Debug.fcall(Flags.TEARING_DUMP, print,"dump original replaced system\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,syst);
+        //  BackendDump.printEqSystem(syst);
+        Debug.fcall2(Flags.TEARING_DUMP, BackendDump.dumpEqSystem, syst, "dump original replaced system");
       then
         (syst,ishared,true);
   
@@ -9550,11 +9547,9 @@ algorithm
         Debug.fcall(Flags.TEARING_DUMP, BackendDump.debugStrIntStr,("Found ",numvars," Tearing Vars in the Residual Equations\n"));
         true = intEq(listLength(tvars),numvars);       
         // replace new residual equations in original system
-        Debug.fcall(Flags.TEARING_DUMP, print,"dump original system\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,isyst);
+        Debug.fcall2(Flags.TEARING_DUMP, BackendDump.dumpEqSystem, isyst, "dump original system");
         syst = replaceTornEquationsinSystem(residual1,listArray(eindex),eqns,isyst);
-        Debug.fcall(Flags.TEARING_DUMP, print,"dump original replaced system\n");
-        Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpEqSystem,syst);        
+        Debug.fcall2(Flags.TEARING_DUMP, BackendDump.dumpEqSystem, syst, "dump original replaced system");        
       then
         (syst,ishared,true);           
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)

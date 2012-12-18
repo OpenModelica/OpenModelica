@@ -184,6 +184,27 @@ algorithm
   end matchcontinue;
 end varFixed;
 
+public function getFixed "function getFixed
+  author: lochel
+  Extracts the fixed attribute of a variable."
+  input BackendDAE.Var inVar;
+  output DAE.Exp outFixed;
+algorithm
+  outFixed := matchcontinue(inVar)
+    local
+      DAE.Exp fixed;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_REAL(fixed=SOME(fixed))))) then fixed;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_INT(fixed=SOME(fixed))))) then fixed;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_BOOL(fixed=SOME(fixed))))) then fixed;
+    case (BackendDAE.VAR(values=SOME(DAE.VAR_ATTR_ENUMERATION(fixed=SOME(fixed))))) then fixed;
+    case (_) equation /* params are by default fixed */
+      BackendDAE.PARAM() = varKind(inVar);
+    then DAE.BCONST(true);
+
+    case (_) then DAE.BCONST(false);
+  end matchcontinue;
+end getFixed;
+
 public function setVarStartValue
 "function: setVarStartValue
   author: Frenkel TUD

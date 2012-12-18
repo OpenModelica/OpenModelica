@@ -2402,15 +2402,10 @@ algorithm
         //  dump derived system
         BackendDAE.DAE({BackendDAE.EQSYSTEM(orderedVars = dependentVars,orderedEqs = eqns)},BackendDAE.SHARED(knownVars = knvars)) = jacBackendDAE;
         
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ derived system +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.dumpEqSystem , syst);
-
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ dependent variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, dependentVars);
-
+        Debug.fcall2(Flags.JAC_DUMP2, BackendDump.dumpEqSystem , syst, "---+++ derived system +++---");
+        Debug.fcall2(Flags.JAC_DUMP2, BackendDump.dumpVariables, dependentVars, "---+++ dependent variables +++---");
         independentVars = BackendVariable.listVar1(independentVarsLst);
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ independent variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, independentVars);
+        Debug.fcall2(Flags.JAC_DUMP2, BackendDump.dumpVariables, independentVars, "---+++ independent variables +++---");
 
         // createSymbolicJacobianssSimCode
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> creating SimCode equations for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");

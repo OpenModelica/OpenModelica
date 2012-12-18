@@ -2731,8 +2731,7 @@ algorithm
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, state);
         (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), changedeqns,mapEqnIncRow,mapIncRowEqn);
-        // print("new DAE:");
-        // BackendDump.dumpEqSystem(syst);
+        // BackendDump.dumpEqSystem(systm, "new DAE:");
         // BackendDump.dump(BackendDAE.DAE({syst},shared));
         // print("new IM:");
         // (_,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.SOLVABLE());
@@ -3635,7 +3634,7 @@ algorithm
     case ({},_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAETransform.selectDummyState: no state to select"});
-        BackendDump.dumpEqSystem(syst);
+        BackendDump.printEqSystem(syst);
       then
         fail();
 

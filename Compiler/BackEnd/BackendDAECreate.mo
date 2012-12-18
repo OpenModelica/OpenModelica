@@ -3645,7 +3645,7 @@ algorithm
         {zc} = makeZeroCrossings({e_1}, {eq_count}, {wc_count});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
-        print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
+        print(Debug.fcallret1(Flags.RELIDX, BackendDump.zeroCrossingListString, zeroCrossings, ""));
       then
         ((e_1,false,((zeroCrossings,relations,samples,numRelations1,numMathFunctions),(eq_count,wc_count,vars,knvars))));
     // function with discrete expressions generate no zerocrossing                  
@@ -3812,7 +3812,7 @@ algorithm
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
-        print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
+        print(Debug.fcallret1(Flags.RELIDX, BackendDump.zeroCrossingListString, zeroCrossings, ""));
       then
         ((e_1,false,(iterator,le,range,(zeroCrossings,relations,samples,numRelations1,numMathFunctions),(alg_indx,vars,knvars))));        
     // function with discrete expressions generate no zerocrossing
@@ -4001,7 +4001,7 @@ algorithm
         zc_lst = mergeZeroCrossings(zc_lst);
         itmp = (listLength(zc_lst)-listLength(zeroCrossings));
         zeroCrossings = Util.if_(itmp>0,zc_lst,zeroCrossings);
-        print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
+        print(Debug.fcallret1(Flags.RELIDX, BackendDump.zeroCrossingListString, zeroCrossings, ""));
       then
         ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations1, numMathFunctions),(alg_indx,vars,knvars))));
     case (((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations, numMathFunctions),(alg_indx,vars,knvars))))
@@ -4015,7 +4015,7 @@ algorithm
         {zc} = makeZeroCrossings({e_1}, {alg_indx}, {});
         zc_lst = List.select1(zeroCrossings, sameZeroCrossing, zc);
         zeroCrossings = Util.if_(listLength(zc_lst)==0,listAppend(zeroCrossings,{zc}),zeroCrossings);
-        print(Debug.fcallret1(Flags.RELIDX, BackendDump.dumpZcStr1, zeroCrossings, ""));
+        print(Debug.fcallret1(Flags.RELIDX, BackendDump.zeroCrossingListString, zeroCrossings, ""));
       then
         ((e_1,false,(iterator,inExpLst,range,(zeroCrossings,relations,samples,numRelations1,numMathFunctions),(alg_indx,vars,knvars))));          
     // function with discrete expressions generate no zerocrossing.
