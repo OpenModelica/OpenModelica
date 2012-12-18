@@ -142,20 +142,20 @@ algorithm
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := inShared;
-    print("\nBackendDAEType: ");
-    printBackendDAEType(backendDAEType);
-    print("\n\n");
-    
-    dumpVariables(knownVars, "Known Variables (constants)");
-    dumpVariables(externalObjects, "External Objects");
-    dumpExternalObjectClasses(extObjClasses, "Classes of External Objects");
-    dumpVariables(aliasVars, "AliasVariables");
-    dumpEquationArray(removedEqs, "Simple Equations");
-    dumpEquationArray(initialEqs, "Initial Equations");
-    dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " +& intString(relationsNumber) +& ")");
-    dumpZeroCrossingList(sampleLst, "Samples");
-    dumpWhenClauseList(whenClauseLst, "When Clauses");
-    dumpConstraintArray(constraints, "Constraints");
+  print("\nBackendDAEType: ");
+  printBackendDAEType(backendDAEType);
+  print("\n\n");
+  
+  dumpVariables(knownVars, "Known Variables (constants)");
+  dumpVariables(externalObjects, "External Objects");
+  dumpExternalObjectClasses(extObjClasses, "Classes of External Objects");
+  dumpVariables(aliasVars, "AliasVariables");
+  dumpEquationArray(removedEqs, "Simple Equations");
+  dumpEquationArray(initialEqs, "Initial Equations");
+  dumpZeroCrossingList(zeroCrossingLst, "Zero Crossings (number of relations: " +& intString(relationsNumber) +& ")");
+  dumpZeroCrossingList(sampleLst, "Samples");
+  dumpWhenClauseList(whenClauseLst, "When Clauses");
+  dumpConstraintArray(constraints, "Constraints");
 end printShared;
 
 protected function printBackendDAEType
