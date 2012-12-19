@@ -5862,7 +5862,7 @@ algorithm
         (ifbranches, uniqueEqIndex, tempvars) = createEquationsIfBranch(conditions, eqnsLst, inVars, helpVarInfo, shared, genDiscrete, iuniqueEqIndex, itempvars);
         (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(elseqns, inVars, helpVarInfo, genDiscrete, uniqueEqIndex, tempvars);
       then
-        ({SimCode.SES_IFEQUATION_ASSIGN(uniqueEqIndex,ifbranches,equations_,source_)}, uniqueEqIndex+1, tempvars);
+        ({SimCode.SES_IFEQUATION(uniqueEqIndex,ifbranches,equations_,source_)}, uniqueEqIndex+1, tempvars);
     else
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.createSingleIfEqnCode failed."});
@@ -13094,10 +13094,10 @@ algorithm
       equation
         ((exp,a)) = func((exp,a));
       then (SimCode.SES_ARRAY_CALL_ASSIGN(index,cr,exp,source),a);
-    case (SimCode.SES_IFEQUATION_ASSIGN(index,ifbranches,elsebranch,source),_,a)
+    case (SimCode.SES_IFEQUATION(index,ifbranches,elsebranch,source),_,a)
       equation
          /* TODO: Me */
-      then (SimCode.SES_IFEQUATION_ASSIGN(index,ifbranches,elsebranch,source),a);
+      then (SimCode.SES_IFEQUATION(index,ifbranches,elsebranch,source),a);
     case (SimCode.SES_ALGORITHM(index,stmts),_,a)
       equation
         /* TODO: Me */
