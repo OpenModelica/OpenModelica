@@ -84,6 +84,7 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
 protected import HashSet;
+protected import IndexReduction;
 protected import Initialization;
 protected import Inline;
 protected import InlineSolver;
@@ -1481,6 +1482,9 @@ algorithm
       // generate system for inline solver
       _ = InlineSolver.generateDAE(dlow);
 
+      // handle states sets
+      dlow = IndexReduction.handleStateSetsCodeGeneration(dlow);
+
       // check if the Sytems has states
       dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
       
@@ -1866,7 +1870,7 @@ algorithm
       equation
         (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE());
         stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);        
-        stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1, ass2);
+        stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
         (odeEquations1,algebraicEquations1,allEquations1,uniqueEqIndex,tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, comps, helpVarInfo,iuniqueEqIndex,itempvars);
         odeEquations = odeEquations1::odeEquations;
         algebraicEquations = listAppend(algebraicEquations,algebraicEquations1);

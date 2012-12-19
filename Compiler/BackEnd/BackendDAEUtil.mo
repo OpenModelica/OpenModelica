@@ -2077,7 +2077,7 @@ algorithm
       equation
         size = arrayLength(ass1) "equation_size(e) => size &" ;
         arr = arrayCreate(size, 0);
-        arr_1 = markStateEquations(syst, arr, ass1, ass2);
+        arr_1 = markStateEquations(syst, arr, ass1);
         (blt_states,blt_no_states) = splitBlocks(comps, arr_1);
       then
         (blt_states,blt_no_states);
@@ -2175,201 +2175,83 @@ public function markStateEquations "function: markStateEquations
     assignments2: int vector)
   outputs: marks: int array"
   input BackendDAE.EqSystem syst;
-  input array<Integer> inIntegerArray2;
-  input array<Integer> inIntegerArray5;
-  input array<Integer> inIntegerArray6;
+  input array<Integer> arr;
+  input array<Integer> ass1;
   output array<Integer> outIntegerArray;
+protected
+  list<Integer> statevarindx_lst,eqns;
+  BackendDAE.IncidenceMatrix m;
+  BackendDAE.Variables v;
 algorithm
-  outIntegerArray:=
-  matchcontinue (syst,inIntegerArray2,inIntegerArray5,inIntegerArray6)
-    local
-      list<Integer> statevarindx_lst;
-      array<Integer> arr_1,arr,a1,a2;
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
-      BackendDAE.Variables v;
-    
-    case (BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m),mT=SOME(mt)),arr,a1,a2)
-      equation
-        (_,statevarindx_lst) = BackendVariable.getAllStateVarIndexFromVariables(v);
-        ((arr_1,_,_,_,_)) = List.fold(statevarindx_lst, markStateEquation, (arr,m,mt,a1,a2));
-      then
-        arr_1;
-    
-    else
-      equation
-        print("- BackendDAEUtil.markStateEquations failed\n");
-      then
-        fail();
-  end matchcontinue;
+  BackendDAE.EQSYSTEM(orderedVars = v,m=SOME(m)) := syst;
+  (_,statevarindx_lst) := BackendVariable.getAllStateVarIndexFromVariables(v);
+  eqns := List.map1r(statevarindx_lst,arrayGet,ass1);
+  eqns := List.select(eqns, Util.intPositive);
+  outIntegerArray := markStateEquationsWork(eqns,{},m,ass1,arr);
 end markStateEquations;
      
-protected function markStateEquation
-"function: markStateEquation
-  This function is a helper function to mark_state_equations
-  It performs marking for one equation and its transitive closure by
-  following edges in backward direction.
-  inputs and outputs are tuples so we can use Util.list_fold"
-  input Integer inVarIndx;
-  input tuple<array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> inTpl;
-  output tuple<array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> outTpl;
-algorithm
-  outTpl:=
-  matchcontinue (inVarIndx,inTpl)
-    local
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
-      array<Integer> arr_1,arr,a1,a2;
-      Integer eindx;
-    
-    case (_,(arr,m,mt,a1,a2))
-      equation
-        eindx = a1[inVarIndx];
-        ((arr_1,m,mt,a1,a2)) = markStateEquation2({eindx}, (arr,m,mt,a1,a2));
-      then
-        ((arr_1,m,mt,a1,a2));
-    
-    case (_,(arr,m,mt,a1,a2))
-      equation
-        failure(_ = a1[inVarIndx]);
-        print("-  BackendDAEUtil.markStateEquation index = " +& intString(inVarIndx) +& ", failed\n");
-      then
-        fail();
-  end matchcontinue;
-end markStateEquation;
-
-protected function markStateEquation2
-"function: markStateEquation2
+protected function markStateEquationsWork
+"function: markStateEquationsWork
   Helper function to mark_state_equation
   Does the job by looking at variable indexes and incidencematrices.
   inputs: (eqns: int list,
-             marks: (int array  BackendDAE.IncidenceMatrix  BackendDAE.IncidenceMatrixT  int vector  int vector))
-  outputs: ((marks: int array  BackendDAE.IncidenceMatrix  IncidenceMatrixT
+             marks: (int array  BackendDAE.IncidenceMatrix  int vector  int vector))
+  outputs: ((marks: int array  BackendDAE.IncidenceMatrix
         int vector  int vector))"
-  input list<Integer> inIntegerLst;
-  input tuple<array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> inTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
-  output tuple<array<Integer>, BackendDAE.IncidenceMatrix, BackendDAE.IncidenceMatrixT, array<Integer>, array<Integer>> outTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray;
+  input list<Integer> inEqns;
+  input list<Integer> nextQueue;
+  input BackendDAE.IncidenceMatrix m;
+  input array<Integer> ass1;
+  input array<Integer> iMark;
+  output array<Integer> oMark;
 algorithm
-  outTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray:=
-  matchcontinue (inIntegerLst,inTplIntegerArrayIncidenceMatrixIncidenceMatrixTIntegerArrayIntegerArray)
+  oMark:= matchcontinue (inEqns,nextQueue,m,ass1,iMark)
     local
-      array<Integer> marks,marks_1,marks_2,marks_3;
-      array<list<Integer>> m,mt,m_1,mt_1;
-      array<Integer> a1,a2,a1_1,a2_1;
-      Integer eqn,mark_value,len;
-      list<Integer> inv_reachable,inv_reachable_1,eqns;
-      list<list<Integer>> inv_reachable_2;
-      String eqnstr,lens,ms;
-    
-    case ({},(marks,m,mt,a1,a2)) then ((marks,m,mt,a1,a2));
-    
-    case ((eqn :: eqns),(marks,m,mt,a1,a2))
+      array<Integer> mark;
+      Integer eqn;
+      list<Integer> eqns,queue,vlst;
+    case ({},{},_,_,_) then iMark;
+    case ({},_,_,_,_)
+      then
+        markStateEquationsWork(nextQueue,{},m,ass1,iMark);
+    case (eqn::eqns,_,_,_,_)
       equation
         // "Mark an unmarked node/equation"
-        0 = marks[eqn];
-        marks_1 = arrayUpdate(marks, eqn, 1);
-        inv_reachable = invReachableNodes(eqn, m, mt, a1, a2);
-        inv_reachable_1 = removeNegative(inv_reachable);
-        inv_reachable_2 = List.map(inv_reachable_1, List.create);
-        ((marks_2,m,mt,a1,a2)) = List.fold(inv_reachable_2, markStateEquation2, (marks_1,m,mt,a1,a2));
-        ((marks_3,m_1,mt_1,a1_1,a2_1)) = markStateEquation2(eqns, (marks_2,m,mt,a1,a2));
+        true = intEq(iMark[eqn],0);
+        mark = arrayUpdate(iMark, eqn, 1);
+        vlst = List.select(m[eqn], Util.intPositive) "vars of equation";
+        queue = List.map1r(vlst,arrayGet,ass1) "equations of vars";
+        queue = List.select(queue, Util.intPositive);
+        queue = List.fold1(queue,consNotMarked,mark,nextQueue);
       then
-        ((marks_3,m_1,mt_1,a1_1,a2_1));
-    
-    case ((eqn :: eqns),(marks,m,mt,a1,a2))
+        markStateEquationsWork(eqns,queue,m,ass1,mark);
+    case (eqn::eqns,_,_,_,_)
       equation
         // Node allready marked.
-        mark_value = marks[eqn];
-        (mark_value <> 0) = true;
-        ((marks_1,m_1,mt_1,a1_1,a2_1)) = markStateEquation2(eqns, (marks,m,mt,a1,a2));
+        false = intEq(iMark[eqn],0);
       then
-        ((marks_1,m_1,mt_1,a1_1,a2_1));
-    
-    case ((eqn :: _),(marks,m,mt,a1,a2))
+        markStateEquationsWork(eqns,nextQueue,m,ass1,iMark);
+    case (eqn::_,_,_,_,_)
       equation
-        print("- BackendDAEUtil.markStateEquation2 failed, eqn: ");
-        eqnstr = intString(eqn);
-        print(eqnstr);
-        print("array length = ");
-        len = arrayLength(marks);
-        lens = intString(len);
-        print(lens);
-        print("\n");
-        mark_value = marks[eqn];
-        ms = intString(mark_value);
-        print("mark_value: ");
-        print(ms);
-        print("\n");
+        print("- BackendDAEUtil.markStateEquationsWork failed for eqn: " +& intString(eqn));
+        print(" array length = " +& intString(arrayLength(iMark)) +& "\n");
+        print("mark_value: " +& intString(iMark[eqn]) +& "\n");
       then
         fail();
   end matchcontinue;
-end markStateEquation2;
+end markStateEquationsWork;
 
-public function invReachableNodes "function: invReachableNodes
-  Similar to reachable_nodes, but follows edges in backward direction
-  I.e. what equations/variables needs to be solved to solve this one."
+protected function consNotMarked
+"function consNotMarked
+  author Frenkel TUD 2012-12
+  if mark[e]=0 then e::iQueue else iQueue"
   input Integer e;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
-  input array<Integer> a1;
-  input array<Integer> a2;
-  output list<Integer> outIntegerLst;
+  input array<Integer> mark;
+  input list<Integer> iQueue;
+  output list<Integer> oQueue;
 algorithm
-  outIntegerLst :=
-  matchcontinue (e,m,mt,a1,a2)
-    local
-      list<Integer> var_lst,var_lst_1,lst;
-      String eqn_str;
-    
-    case (_,_,_,_,_)
-      equation
-        var_lst = m[e];
-        var_lst_1 = removeNegative(var_lst);
-        lst = invReachableNodes2(var_lst_1, a1);
-      then
-        lst;
-    
-    case (_,_,_,_,_)
-      equation
-        print("- BackendDAEUtil.invEeachableNodes failed, eqn: ");
-        eqn_str = intString(e);
-        print(eqn_str);
-        print("\n");
-      then
-        fail();
-  end matchcontinue;
-end invReachableNodes;
-
-protected function invReachableNodes2 "function: invReachableNodes2
-  Helper function to invReachableNodes
-  inputs:  (variables: int list, assignments1: int vector)
-  outputs: int list"
-  input list<Integer> inIntegerLst;
-  input array<Integer> inIntegerArray;
-  output list<Integer> outIntegerLst;
-algorithm
-  outIntegerLst := matchcontinue (inIntegerLst,inIntegerArray)
-    local
-      list<Integer> eqns,vs;
-      Integer eqn,v;
-      array<Integer> a1;
-    
-    case ({},_) then {};
-    
-    case ((v :: vs),a1)
-      equation
-        eqns = invReachableNodes2(vs, a1);
-        eqn = a1[v] "Which equation is variable solved in?" ;
-      then
-        (eqn :: eqns);
-    
-    case (_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"- BackendDAEUtil.invReachableNodes2 failed\n"});
-      then
-        fail();
-  end matchcontinue;
-end invReachableNodes2;
+  oQueue := List.consOnTrue(intEq(mark[e],0),e,iQueue);
+end consNotMarked;
 
 public function removeNegative
 "function: removeNegative
