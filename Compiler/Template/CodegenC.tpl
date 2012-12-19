@@ -45,9 +45,7 @@
 
 package CodegenC
 
-
 import interface SimCodeTV;
-
 import CodegenUtil.*;
 
 template translateModel(SimCode simCode)
@@ -8657,123 +8655,123 @@ end equationInfo1;
 template equationInfo(list<SimEqSystem> eqs, Text &eqnsDefines, Integer numEqns)
 ::=
   match eqs
-  case {} then "const struct EQUATION_INFO equation_info[1] = {{0, NULL}};"
-  else
-    let()= System.tmpTickReset(0)
-    let &preBuf = buffer ""
-    let res =
-    <<
-    const struct EQUATION_INFO equationInfo[<%numEqns%>] = {
-      <% eqs |> eq =>
-        <<<%equationInfo1(eq,preBuf,eqnsDefines)%>
-        >> ; separator=",\n"%>
-    };
-    >>
-    <<
-    <%preBuf%>
-    <%res%>
-    >>
+    case {} then "const struct EQUATION_INFO equation_info[1] = {{0, NULL}};"
+    else
+      let() = System.tmpTickReset(0)
+      let &preBuf = buffer ""
+      let res =
+        <<
+        const struct EQUATION_INFO equationInfo[<%numEqns%>] = {
+          <% eqs |> eq =>
+            <<<%equationInfo1(eq,preBuf,eqnsDefines)%>
+            >> ; separator=",\n"%>
+        };
+        >>
+      <<
+      <%preBuf%>
+      <%res%>
+      >>
 end equationInfo;
 
 template ModelVariables(ModelInfo modelInfo)
  "Generates code for ModelVariables file for FMU target."
 ::=
-match modelInfo
-case MODELINFO(vars=SIMVARS(__)) then
-  <<
-  <ModelVariables>
-  <%System.tmpTickReset(1000)%>
-  
-  <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n";empty%>  
-  <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n";empty%>
-  <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n";empty%>
-  <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n";empty%>
-  <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n";empty%>
-  
-  <%vars.intAlgVars      |> var hasindex i0 => ScalarVariable(var,i0,"iAlg") ;separator="\n";empty%>
-  <%vars.intParamVars    |> var hasindex i0 => ScalarVariable(var,i0,"iPar") ;separator="\n";empty%>
-  <%vars.intAliasVars    |> var hasindex i0 => ScalarVariable(var,i0,"iAli") ;separator="\n";empty%>
-  
-  <%vars.boolAlgVars     |> var hasindex i0 => ScalarVariable(var,i0,"bAlg") ;separator="\n";empty%>
-  <%vars.boolParamVars   |> var hasindex i0 => ScalarVariable(var,i0,"bPar") ;separator="\n";empty%>  
-  <%vars.boolAliasVars   |> var hasindex i0 => ScalarVariable(var,i0,"bAli") ;separator="\n";empty%>  
-  
-  <%vars.stringAlgVars   |> var hasindex i0 => ScalarVariable(var,i0,"sAlg") ;separator="\n";empty%>
-  <%vars.stringParamVars |> var hasindex i0 => ScalarVariable(var,i0,"sPar") ;separator="\n";empty%> 
-  <%vars.stringAliasVars |> var hasindex i0 => ScalarVariable(var,i0,"sAli") ;separator="\n";empty%> 
-  </ModelVariables> 
-  >>
+  match modelInfo
+    case MODELINFO(vars=SIMVARS(__)) then
+      <<
+      <ModelVariables>
+      <%System.tmpTickReset(1000)%>
+      
+      <%vars.stateVars       |> var hasindex i0 => ScalarVariable(var,i0,"rSta") ;separator="\n";empty%>  
+      <%vars.derivativeVars  |> var hasindex i0 => ScalarVariable(var,i0,"rDer") ;separator="\n";empty%>
+      <%vars.algVars         |> var hasindex i0 => ScalarVariable(var,i0,"rAlg") ;separator="\n";empty%>
+      <%vars.paramVars       |> var hasindex i0 => ScalarVariable(var,i0,"rPar") ;separator="\n";empty%>
+      <%vars.aliasVars       |> var hasindex i0 => ScalarVariable(var,i0,"rAli") ;separator="\n";empty%>
+      
+      <%vars.intAlgVars      |> var hasindex i0 => ScalarVariable(var,i0,"iAlg") ;separator="\n";empty%>
+      <%vars.intParamVars    |> var hasindex i0 => ScalarVariable(var,i0,"iPar") ;separator="\n";empty%>
+      <%vars.intAliasVars    |> var hasindex i0 => ScalarVariable(var,i0,"iAli") ;separator="\n";empty%>
+      
+      <%vars.boolAlgVars     |> var hasindex i0 => ScalarVariable(var,i0,"bAlg") ;separator="\n";empty%>
+      <%vars.boolParamVars   |> var hasindex i0 => ScalarVariable(var,i0,"bPar") ;separator="\n";empty%>  
+      <%vars.boolAliasVars   |> var hasindex i0 => ScalarVariable(var,i0,"bAli") ;separator="\n";empty%>  
+      
+      <%vars.stringAlgVars   |> var hasindex i0 => ScalarVariable(var,i0,"sAlg") ;separator="\n";empty%>
+      <%vars.stringParamVars |> var hasindex i0 => ScalarVariable(var,i0,"sPar") ;separator="\n";empty%> 
+      <%vars.stringAliasVars |> var hasindex i0 => ScalarVariable(var,i0,"sAli") ;separator="\n";empty%> 
+      </ModelVariables> 
+      >>
 end ModelVariables;
 
 template ScalarVariable(SimVar simVar, Integer classIndex, String classType)
  "Generates code for ScalarVariable file for FMU target."
 ::=
-match simVar
-case SIMVAR(__) then
-  <<
-  <ScalarVariable 
-    <%ScalarVariableAttribute(simVar, classIndex, classType)%>>
-    <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
-  </ScalarVariable>  
-  >>
+  match simVar
+    case SIMVAR(__) then
+      <<
+      <ScalarVariable 
+        <%ScalarVariableAttribute(simVar, classIndex, classType)%>>
+        <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
+      </ScalarVariable>  
+      >>
 end ScalarVariable;
 
 template ScalarVariableAttribute(SimVar simVar, Integer classIndex, String classType)
  "Generates code for ScalarVariable Attribute file for FMU target."
 ::=
-match simVar
-  case SIMVAR(source = SOURCE(info = info)) then
-  let valueReference = '<%System.tmpTick()%>'
-  let variability = getVariablity(varKind)
-  let description = if comment then 'description = "<%Util.escapeModelicaStringToXmlString(comment)%>"' 
-  let alias = getAliasVar(aliasvar)
-  let caus = getCausality(causality)
-  <<
-  name = "<%crefStr(name)%>" 
-  valueReference = "<%valueReference%>"
-  <%description%>  
-  variability = "<%variability%>" isDiscrete = "<%isDiscrete%>" 
-  causality = "<%caus%>" 
-  alias = <%alias%>
-  classIndex = "<%classIndex%>" classType = "<%classType%>"
-  <%getInfoArgs(info)%>
-  >>  
+  match simVar
+    case SIMVAR(source = SOURCE(info = info)) then
+      let valueReference = '<%System.tmpTick()%>'
+      let variability = getVariablity(varKind)
+      let description = if comment then 'description = "<%Util.escapeModelicaStringToXmlString(comment)%>"' 
+      let alias = getAliasVar(aliasvar)
+      let caus = getCausality(causality)
+      <<
+      name = "<%crefStr(name)%>" 
+      valueReference = "<%valueReference%>"
+      <%description%>  
+      variability = "<%variability%>" isDiscrete = "<%isDiscrete%>" 
+      causality = "<%caus%>" 
+      alias = <%alias%>
+      classIndex = "<%classIndex%>" classType = "<%classType%>"
+      <%getInfoArgs(info)%>
+      >>  
 end ScalarVariableAttribute;
 
 template getInfoArgs(Info info)
 ::=
   match info
-  case INFO(__) then 'fileName = "<%Util.escapeModelicaStringToXmlString(fileName)%>" startLine = "<%lineNumberStart%>" startColumn = "<%columnNumberStart%>" endLine = "<%lineNumberEnd%>" endColumn = "<%columnNumberEnd%>" fileWritable = "<%if isReadOnly then false else true%>"'
+    case INFO(__) then 'fileName = "<%Util.escapeModelicaStringToXmlString(fileName)%>" startLine = "<%lineNumberStart%>" startColumn = "<%columnNumberStart%>" endLine = "<%lineNumberEnd%>" endColumn = "<%columnNumberEnd%>" fileWritable = "<%if isReadOnly then false else true%>"'
 end getInfoArgs;
 
 template getCausality(Causality c)
  "Returns the Causality Attribute of ScalarVariable."
 ::=
-match c
-  case NONECAUS(__) then "none"
-  case INTERNAL(__) then "internal"
-  case OUTPUT(__) then "output"
-  case INPUT(__) then "input"
+  match c
+    case NONECAUS(__) then "none"
+    case INTERNAL(__) then "internal"
+    case OUTPUT(__) then "output"
+    case INPUT(__) then "input"
 end getCausality;
 
 template getVariablity(VarKind varKind)
  "Returns the variablity Attribute of ScalarVariable."
 ::=
-match varKind
-  case DISCRETE(__) then "discrete"
-  case PARAM(__) then "parameter"
-  case CONST(__) then "constant"
-  else "continuous"
+  match varKind
+    case DISCRETE(__) then "discrete"
+    case PARAM(__) then "parameter"
+    case CONST(__) then "constant"
+    else "continuous"
 end getVariablity;
 
 template getAliasVar(AliasVariable aliasvar)
  "Returns the alias Attribute of ScalarVariable."
 ::=
-match aliasvar
-  case NOALIAS(__) then '"noAlias"'
-  case ALIAS(__) then '"alias" aliasVariable="<%crefStr(varName)%>"'
-  case NEGATEDALIAS(__) then '"negatedAlias" aliasVariable="<%crefStr(varName)%>"'
-  else '"noAlias"'
+  match aliasvar
+    case NOALIAS(__) then '"noAlias"'
+    case ALIAS(__) then '"alias" aliasVariable="<%crefStr(varName)%>"'
+    case NEGATEDALIAS(__) then '"negatedAlias" aliasVariable="<%crefStr(varName)%>"'
+    else '"noAlias"'
 end getAliasVar;
 
 template ScalarVariableType(String unit, String displayUnit, Option<DAE.Exp> minValue, Option<DAE.Exp> maxValue, Option<DAE.Exp> initialValue, Option<DAE.Exp> nominalValue, Boolean isFixed, DAE.Type type_)
@@ -8791,91 +8789,83 @@ end ScalarVariableType;
 template ScalarVariableTypeStartAttribute(Option<DAE.Exp> initialValue, DAE.Type type_)
  "generates code for start attribute"
 ::=
-match initialValue
-  case SOME(exp) then 'useStart="true" start="<%initValXml(exp)%>"' 
-  case NONE() then
-    match type_
-      case T_ENUMERATION(__)
-      case T_INTEGER(__) then 'useStart="false" start="0"'
-      case T_REAL(__) then 'useStart="false" start="0.0"'
-      case T_BOOL(__) then 'useStart="false" start="false"'
-      case T_STRING(__) then 'useStart="false" start=""'
-      else error(sourceInfo(), 'ScalarVariableTypeStartAttribute: <%unparseType(type_)%>')
+  match initialValue
+    case SOME(exp) then 'useStart="true" start="<%initValXml(exp)%>"' 
+    case NONE() then
+      match type_
+        case T_ENUMERATION(__)
+        case T_INTEGER(__) then 'useStart="false" start="0"'
+        case T_REAL(__) then 'useStart="false" start="0.0"'
+        case T_BOOL(__) then 'useStart="false" start="false"'
+        case T_STRING(__) then 'useStart="false" start=""'
+        else error(sourceInfo(), 'ScalarVariableTypeStartAttribute: <%unparseType(type_)%>')
 end ScalarVariableTypeStartAttribute;
 
 template ScalarVariableTypeFixedAttribute(Boolean isFixed)
  "generates code for fixed attribute"
 ::=
-<<
-fixed="<%isFixed%>"
->>
+  'fixed="<%isFixed%>"'
 end ScalarVariableTypeFixedAttribute;
 
 template ScalarVariableTypeNominalAttribute(Option<DAE.Exp> nominalValue)
  "generates code for nominal attribute"
 ::=
-match nominalValue
-  case SOME(exp) then 'useNominal="true" nominal="<%initValXml(exp)%>"' 
-  case NONE() then 'useNominal="false" nominal="1.0"'
+  match nominalValue
+    case SOME(exp) then 'useNominal="true" nominal="<%initValXml(exp)%>"' 
+    case NONE() then 'useNominal="false" nominal="1.0"'
 end ScalarVariableTypeNominalAttribute;
 
 template ScalarVariableTypeUnitAttribute(String unit)
  "generates code for unit attribute"
 ::=
-let unit_ = if unit then 'unit="<%unit%>"' else ''
-<<
-<%unit_%>
->>
+  '<% if unit then 'unit="<%unit%>"' else '' %>'
 end ScalarVariableTypeUnitAttribute;
 
 template ScalarVariableTypeDisplayUnitAttribute(String displayUnit)
  "generates code for displayUnit attribute"
 ::=
-let displayUnit_ = if displayUnit then 'displayUnit="<%displayUnit%>"' else ''
-<<
-<%displayUnit_%>
->>
+  '<% if displayUnit then 'displayUnit="<%displayUnit%>"' else '' %>'
 end ScalarVariableTypeDisplayUnitAttribute;
 
 template ScalarVariableTypeIntegerMinAttribute(Option<DAE.Exp> minValue)
  "generates code for min attribute"
 ::=
-match minValue
-  case SOME(exp) then 'min="<%initValXml(exp)%>"' 
-  // replace bei modelica limits
-  case NONE() then 'min="-2147483648"'
+  match minValue
+    case SOME(exp) then 'min="<%initValXml(exp)%>"' 
+    // replace bei modelica limits
+    case NONE() then 'min="-2147483648"'
 end ScalarVariableTypeIntegerMinAttribute;
 
 template ScalarVariableTypeIntegerMaxAttribute(Option<DAE.Exp> maxValue)
  "generates code for max attribute"
 ::=
-match maxValue
-  case SOME(exp) then 'max="<%initValXml(exp)%>"' 
-  // replace bei modelica limits
-  case NONE() then 'max="2147483647"'
+  match maxValue
+    case SOME(exp) then 'max="<%initValXml(exp)%>"' 
+    // replace bei modelica limits
+    case NONE() then 'max="2147483647"'
 end ScalarVariableTypeIntegerMaxAttribute;
 
 template ScalarVariableTypeRealMinAttribute(Option<DAE.Exp> minValue)
  "generates code for min attribute"
 ::=
-match minValue
-  case SOME(exp) then 'min="<%initValXml(exp)%>"' 
-  // replace bei modelica limits
-  case NONE() then 'min="-1.7976931348623157E+308"'
+  match minValue
+    case SOME(exp) then 'min="<%initValXml(exp)%>"' 
+    // replace bei modelica limits
+    case NONE() then 'min="-1.7976931348623157E+308"'
 end ScalarVariableTypeRealMinAttribute;
 
 template ScalarVariableTypeRealMaxAttribute(Option<DAE.Exp> maxValue)
  "generates code for max attribute"
 ::=
-match maxValue
-  case SOME(exp) then 'max="<%initValXml(exp)%>"' 
-  // replace bei modelica limits
-  case NONE() then 'max="1.7976931348623157E+308"'
+  match maxValue
+    case SOME(exp) then 'max="<%initValXml(exp)%>"' 
+    // replace bei modelica limits
+    case NONE() then 'max="1.7976931348623157E+308"'
 end ScalarVariableTypeRealMaxAttribute;
 
 template addRootsTempArray()
 ::=
-  let() = System.tmpTickResetIndex(0,2)
+  let() = System.tmpTickResetIndex(0, 2)
   match System.tmpTickIndex(1)
     case 0 then ""
     case i then
@@ -8888,17 +8878,13 @@ end addRootsTempArray;
 template modelicaLine(Info info)
 ::=
   match info
-  case INFO(columnNumberStart=0) then "/* Dummy Line */"
-  else <<
-  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/'%>
-  >>
+    case INFO(columnNumberStart=0) then "/* Dummy Line */"
+    else '<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then '/*#modelicaLine <%infoStr(info)%>*/'%>'
 end modelicaLine;
 
 template endModelicaLine()
 ::=
-  <<
-  <% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "/*#endModelicaLine*/"%>
-  >>
+  '<% if boolOr(acceptMetaModelicaGrammar(), Flags.isSet(Flags.GEN_DEBUG_SYMBOLS)) then "/*#endModelicaLine*/"%>'
 end endModelicaLine;
 
 end CodegenC;

@@ -123,7 +123,7 @@ end Graph;
 
 public function getGraph
 "function getGraph
- autor: Frenkel TUD 2011-08
+ author: Frenkel TUD 2011-08
  get a empty graph"
   input String id;
   input Boolean directed;
@@ -134,7 +134,7 @@ end getGraph;
 
 public function addNode
 "function addNode
- autor: Frenkel TUD 2011-08
+ author: Frenkel TUD 2011-08
  add a node"
   input String id;
   input String text;
@@ -154,7 +154,7 @@ end addNode;
 
 public function addEgde
 "function addEgde
- autor: Frenkel TUD 2011-08
+ author: Frenkel TUD 2011-08
  add a edge"
   input String id;
   input String target;
@@ -177,7 +177,7 @@ end addEgde;
 
 public function dumpGraph
 "function dumpGraph
- autor: Frenkel TUD 2011-08
+ author: Frenkel TUD 2011-08
  print the graph"
   input Graph inGraph;
   input String name;
@@ -192,7 +192,7 @@ end dumpGraph;
 
 public function printGraph
 "function printGraph
- autor: Frenkel TUD 2011-08
+ author: Frenkel TUD 2011-08
  print the graph"
   input Graph inGraph;
   input String name;

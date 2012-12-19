@@ -50,7 +50,6 @@ import CodegenUtil.*;
 import CodegenCpp.*; //unqualified import, no need the CodegenC is optional when calling a template; or mandatory when the same named template exists in this package (name hiding) 
 import CodegenFMU.*;
 
-
 template translateModel(SimCode simCode) 
  "Generates C code and Makefile for compiling a FMU of a
   Modelica model."

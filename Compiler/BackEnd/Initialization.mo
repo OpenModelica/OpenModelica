@@ -73,7 +73,6 @@ protected
   BackendDAE.Variables initVars;
 algorithm
   dae := inlineWhenForInitialization(inDAE);
-  
   Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae, "inlineWhenForInitialization");
   
   initVars := selectInitializationVariablesDAE(dae);
@@ -911,7 +910,7 @@ algorithm
       vars = BackendVariable.addVar(var, vars);
     then ((var, (vars, fixvars)));
 
-    // constant
+    // skip constant
     case((var as BackendDAE.VAR(varKind=BackendDAE.CONST()), (vars, fixvars))) // equation
       // fixvars = BackendVariable.addVar(var, fixvars);
     then ((var, (vars, fixvars)));
