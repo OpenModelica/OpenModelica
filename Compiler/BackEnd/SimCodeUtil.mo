@@ -1520,7 +1520,6 @@ algorithm
       
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},tempvars);
-      
       modelInfo = addTempVars(tempvars,modelInfo);
       
       odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
@@ -1546,6 +1545,7 @@ algorithm
       (initialEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(initialEquations, 0, 0, {});
       (parameterEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(parameterEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
       (allEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
+      modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
               
       // replace div operator with div operator with check of Division by zero
       allEquations = List.map(allEquations,addDivExpErrorMsgtoSimEqSystem);
@@ -1555,8 +1555,6 @@ algorithm
       startValueEquations = List.map(startValueEquations,addDivExpErrorMsgtoSimEqSystem);
       parameterEquations = List.map(parameterEquations,addDivExpErrorMsgtoSimEqSystem);
       removedEquations = List.map(removedEquations,addDivExpErrorMsgtoSimEqSystem);
-
-      modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
       
       // generate jacobian or linear model matrices
       LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
@@ -1908,6 +1906,8 @@ algorithm
       list<SimCode.SimEqSystem> equations1,noDiscEquations1;
       Boolean bwhen,bdisc,bdynamic;
       list<SimCode.SimVar> tempvars;
+      
+      String eqnsStr;
       // handle empty
     case (_, _, _, {},_,_,_) then ({},{},{},iuniqueEqIndex,itempvars);
         // single equation 
@@ -1977,7 +1977,7 @@ algorithm
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);
                
       // A single when equation
-    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEWHENEQUATION(eqn=e)) :: restComps, _, _,_)
+    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, (comp as BackendDAE.SINGLEWHENEQUATION(eqn=e)) :: restComps, _, _, _)
       equation
         // block is dynamic, belong in dynamic section
         bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
@@ -1986,6 +1986,22 @@ algorithm
         varlst = List.map(varlst, transformXToXd);
         (equations1,uniqueEqIndex,tempvars) = createSingleWhenEqnCode(listGet(eqnlst,1),varlst,helpVarInfo,shared,iuniqueEqIndex,itempvars);
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, restComps, helpVarInfo,uniqueEqIndex,tempvars);
+        allEquations = listAppend(equations1,allEquations);
+      then
+        (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);
+
+     // A single if equation
+    case (_, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, (comp as BackendDAE.SINGLEIFEQUATION(eqn=e)) :: restComps, _, _, _)
+      equation
+        // block is dynamic, belong in dynamic section
+        bdynamic = BackendDAEUtil.blockIsDynamic({e}, stateeqnsmark);        
+        (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        // States are solved for der(x) not x.
+        varlst = List.map(varlst, transformXToXd);
+        (equations1,uniqueEqIndex,tempvars) = createSingleIfEqnCode(listGet(eqnlst,1),varlst,helpVarInfo,shared,true,iuniqueEqIndex,itempvars);
+        (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, restComps, helpVarInfo,uniqueEqIndex,tempvars);
+        odeEquations = Debug.bcallret2(bdynamic, listAppend, equations1, odeEquations,odeEquations);
+        algebraicEquations = Debug.bcallret2((not bdynamic), listAppend, equations1, algebraicEquations,algebraicEquations);
         allEquations = listAppend(equations1,allEquations);
       then
         (odeEquations,algebraicEquations,allEquations,uniqueEqIndex,tempvars);               
@@ -2144,7 +2160,20 @@ algorithm
         equations = listAppend(equations1,equations);
         noDiscEquations = listAppend(equations1,noDiscEquations);
       then
-        (equations,noDiscEquations,uniqueEqIndex,tempvars);          
+        (equations,noDiscEquations,uniqueEqIndex,tempvars);
+
+      // A single if equation
+    case (_, _, _, _, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_, (comp as BackendDAE.SINGLEIFEQUATION(eqn=index)) :: restComps, _, _,_)
+      equation
+        (eqnlst,varlst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
+        // States are solved for der(x) not x.
+        varlst = List.map(varlst, transformXToXd);
+        (equations1,uniqueEqIndex,tempvars) = createSingleIfEqnCode(listGet(eqnlst,1),varlst,helpVarInfo,shared,genDiscrete,iuniqueEqIndex,itempvars);
+        (equations,noDiscEquations,uniqueEqIndex,tempvars) = createEquations(includeWhen, skipDiscInZc, genDiscrete,  skipDiscInAlgorithm, linearSystem, syst, shared, restComps, helpVarInfo,uniqueEqIndex,tempvars);
+        equations = listAppend(equations1,equations);
+        noDiscEquations = listAppend(equations1,noDiscEquations);
+      then
+        (equations,noDiscEquations,uniqueEqIndex,tempvars);
                  
         // a system of equations 
     case (_, _, _, _, _, _, _, comp :: restComps, _,_,_)
@@ -2378,41 +2407,6 @@ algorithm
       then fail();
   end matchcontinue;
 end createEquation;
-
-protected function createElseWhenEquation
-  input BackendDAE.WhenEquation elseWhen;
-  input list<BackendDAE.WhenClause> wcl;
-  input list<SimCode.HelpVarInfo> helpVarInfo;
-  input DAE.ElementSource source;
-  output SimCode.SimEqSystem equation_;
-algorithm
-  equation_ :=
-  match (elseWhen, wcl, helpVarInfo, source)
-    local
-      DAE.ComponentRef left;
-      DAE.Exp  right,cond;
-      BackendDAE.WhenEquation elseWhenEquation;
-      SimCode.SimEqSystem simElseWhenEq;
-      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
-      list<DAE.Exp> conditions;
-      // when eq without else
-    case (BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart= NONE()), _, _, _)
-      equation
-        conditions = getConditionList(cond);
-        conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-      then
-        SimCode.SES_WHEN(0,left, right, conditionsWithHindex, NONE(), source);
-        
-        // when eq with else
-    case (BackendDAE.WHEN_EQ(condition=cond, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), _, _, _)
-      equation
-        simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo,source);
-        conditions = getConditionList(cond);
-        conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-      then
-        SimCode.SES_WHEN(0,left,right,conditionsWithHindex,SOME(simElseWhenEq),source);
-  end match;
-end createElseWhenEquation;
 
 protected function createSampleEquations
 " function: createSampleEquations
@@ -3953,6 +3947,9 @@ algorithm
     case (BackendDAE.ARRAY_EQUATION(dimSize=_),_,_)
       then
         BackendDAE.SINGLEARRAY(eqnindx, varindx);
+    case (BackendDAE.IF_EQUATION(conditions=_),_,_)
+      then
+        BackendDAE.SINGLEIFEQUATION(eqnindx, varindx);
     case (BackendDAE.ALGORITHM(size=_),_,_)
       then
         BackendDAE.SINGLEALGORITHM(eqnindx, varindx);
@@ -5802,6 +5799,176 @@ algorithm
   end matchcontinue;
 end createSingleWhenEqnCode;
 
+protected function createElseWhenEquation
+  input BackendDAE.WhenEquation elseWhen;
+  input list<BackendDAE.WhenClause> wcl;
+  input list<SimCode.HelpVarInfo> helpVarInfo;
+  input DAE.ElementSource source;
+  output SimCode.SimEqSystem equation_;
+algorithm
+  equation_ :=
+  match (elseWhen, wcl, helpVarInfo, source)
+    local
+      DAE.ComponentRef left;
+      DAE.Exp  right,cond;
+      BackendDAE.WhenEquation elseWhenEquation;
+      SimCode.SimEqSystem simElseWhenEq;
+      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
+      list<DAE.Exp> conditions;
+      // when eq without else
+    case (BackendDAE.WHEN_EQ(condition=cond, left=left, right=right, elsewhenPart= NONE()), _, _, _)
+      equation
+        conditions = getConditionList(cond);
+        conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
+      then
+        SimCode.SES_WHEN(0,left, right, conditionsWithHindex, NONE(), source);
+        
+        // when eq with else
+    case (BackendDAE.WHEN_EQ(condition=cond, left=left,right=right, elsewhenPart = SOME(elseWhenEquation)), _, _, _)
+      equation
+        simElseWhenEq = createElseWhenEquation(elseWhenEquation,wcl,helpVarInfo,source);
+        conditions = getConditionList(cond);
+        conditionsWithHindex = List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
+      then
+        SimCode.SES_WHEN(0,left,right,conditionsWithHindex,SOME(simElseWhenEq),source);
+  end match;
+end createElseWhenEquation;
+
+protected function createSingleIfEqnCode
+  input BackendDAE.Equation inEquation;
+  input list<BackendDAE.Var> inVars;
+  input list<SimCode.HelpVarInfo> helpVarInfo;
+  input BackendDAE.Shared shared;
+  input Boolean genDiscrete;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  output list<SimCode.SimEqSystem> equations_;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+  (equations_,ouniqueEqIndex,otempvars) := matchcontinue(inEquation,inVars,helpVarInfo,shared,genDiscrete,iuniqueEqIndex,itempvars) 
+    local
+      list<DAE.Exp> conditions;
+      Integer uniqueEqIndex;
+
+      list<SimCode.SimVar> tempvars;
+      list<list<BackendDAE.Equation>> eqnsLst;
+      list<BackendDAE.Equation> elseqns;
+      list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> ifbranches;
+      DAE.ElementSource source_;
+
+    case (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsLst, eqnsfalse=elseqns, source=source_),_,_,_,_,_,_)
+      equation
+        (ifbranches, uniqueEqIndex, tempvars) = createEquationsIfBranch(conditions, eqnsLst, inVars, helpVarInfo, shared, genDiscrete, iuniqueEqIndex, itempvars);
+        (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(elseqns, inVars, helpVarInfo, genDiscrete, uniqueEqIndex, tempvars);
+      then
+        ({SimCode.SES_IFEQUATION_ASSIGN(uniqueEqIndex,ifbranches,equations_,source_)}, uniqueEqIndex+1, tempvars);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.createSingleIfEqnCode failed."});
+      then
+        fail();
+  end matchcontinue;
+end createSingleIfEqnCode;
+
+protected function createEquationsIfBranch
+  input list<DAE.Exp> inConditions;
+  input list<list<BackendDAE.Equation>> inEquationsLst;
+  input list<BackendDAE.Var> inVars;
+  input list<SimCode.HelpVarInfo> helpVarInfo;
+  input BackendDAE.Shared shared;
+  input Boolean genDiscrete;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  output list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> outEquations;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+  (outEquations,ouniqueEqIndex,otempvars) := matchcontinue(inConditions,inEquationsLst,inVars,helpVarInfo,shared,genDiscrete,iuniqueEqIndex,itempvars) 
+    local
+      list<BackendDAE.Equation> eqns;
+      list<list<BackendDAE.Equation>> eqnsLst;
+      DAE.Exp  condition;
+      list<DAE.Exp>  conditionList;
+      list<SimCode.SimVar> tempvars;
+      Integer uniqueEqIndex;
+      list<SimCode.SimEqSystem> equations_;
+      tuple<DAE.Exp,list<SimCode.SimEqSystem>> ifbranch;
+      list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> ifbranches;
+  
+    case ({},{},_,_,_,_,_,_) then ({}, iuniqueEqIndex, itempvars);
+  
+    case (condition::conditionList,eqns::eqnsLst,_,_,_,_,_,_)
+      equation
+        (equations_, uniqueEqIndex, tempvars) = createEquationsfromList(eqns, inVars, helpVarInfo, genDiscrete, iuniqueEqIndex, itempvars);
+        ifbranch = ((condition, equations_));
+        (ifbranches, uniqueEqIndex, tempvars) = createEquationsIfBranch(conditionList, eqnsLst, inVars, helpVarInfo, shared, genDiscrete, uniqueEqIndex, tempvars);
+        ifbranches = listAppend({ifbranch}, ifbranches);
+      then
+        (ifbranches, uniqueEqIndex, tempvars);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.createEquationfromList failed."});
+      then
+       fail();
+    end matchcontinue;
+end createEquationsIfBranch;
+
+protected function createEquationsfromList
+  input list<BackendDAE.Equation> inEquations;
+  input list<BackendDAE.Var> inVars;
+  input list<SimCode.HelpVarInfo> helpVarInfo;
+  input Boolean genDiscrete;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  output list<SimCode.SimEqSystem> equations_;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+  (equations_,ouniqueEqIndex,otempvars) := matchcontinue(inEquations,inVars,helpVarInfo,genDiscrete,iuniqueEqIndex,itempvars) 
+    local
+      BackendDAE.Variables evars,vars1;
+      BackendDAE.EquationArray eeqns,eqns_1;
+      array<DAE.Constraint> constrs;
+      array<DAE.ClassAttributes> clsAttrs;
+      Env.Cache cache;
+      DAE.FunctionTree funcs;
+      DAE.ElementSource source;
+      BackendDAE.BackendDAE subsystem_dae;
+      SimCode.SimEqSystem equation_;
+      BackendDAE.StrongComponents comps;
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      Integer uniqueEqIndex;
+      String str;
+      list<SimCode.SimVar> tempvars;
+      list<BackendDAE.Equation> eqns;
+
+    case ({},_,_,_,_,_) then ({}, iuniqueEqIndex, itempvars);  
+    case (_,_,_,_,_,_)
+      equation
+        eqns_1 = BackendEquation.listEquation(inEquations);
+        vars1 = BackendVariable.listVar1(inVars);
+        evars = BackendVariable.emptyVars();
+        eeqns = BackendEquation.emptyEqns();
+        constrs = listArray({});
+        clsAttrs = listArray({});
+        cache = Env.emptyCache();
+        funcs = DAEUtil.avlTreeNew();
+        syst = BackendDAE.EQSYSTEM(vars1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
+        shared = BackendDAE.SHARED(evars,evars,evars,eeqns,eeqns,constrs,clsAttrs,cache,{},funcs, BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.ARRAYSYSTEM(),{});
+        subsystem_dae = BackendDAE.DAE({syst},shared);
+        (BackendDAE.DAE({syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},shared)) = BackendDAEUtil.transformBackendDAE(subsystem_dae,SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
+        (equations_,_,uniqueEqIndex,tempvars) = createEquations(false, false, genDiscrete, false, false, syst, shared, comps, helpVarInfo, iuniqueEqIndex,itempvars);
+      then
+        (equations_, uniqueEqIndex, tempvars);
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"SimCodeUtil.createEquationfromList failed."});
+      then
+       fail();
+    end matchcontinue;
+end createEquationsfromList;
 
 protected function createSingleComplexEqnCode
   input BackendDAE.Equation inEquation;
@@ -12910,6 +13077,8 @@ algorithm
       list<Integer> values,values_dims;
       list<tuple<DAE.Exp, Integer>> conditions;
       Option<SimCode.SimEqSystem> elseWhen;
+      list<tuple<DAE.Exp,list<SimCode.SimEqSystem>>> ifbranches;
+      list<SimCode.SimEqSystem> elsebranch;
       DAE.ElementSource source;
       A a;
       Option<SimCode.JacobianMatrix> symJac;
@@ -12925,6 +13094,10 @@ algorithm
       equation
         ((exp,a)) = func((exp,a));
       then (SimCode.SES_ARRAY_CALL_ASSIGN(index,cr,exp,source),a);
+    case (SimCode.SES_IFEQUATION_ASSIGN(index,ifbranches,elsebranch,source),_,a)
+      equation
+         /* TODO: Me */
+      then (SimCode.SES_IFEQUATION_ASSIGN(index,ifbranches,elsebranch,source),a);
     case (SimCode.SES_ALGORITHM(index,stmts),_,a)
       equation
         /* TODO: Me */

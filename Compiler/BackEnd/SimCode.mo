@@ -405,6 +405,12 @@ uniontype SimEqSystem
     DAE.Exp exp;
     DAE.ElementSource source;
   end SES_ARRAY_CALL_ASSIGN;
+  record SES_IFEQUATION
+    Integer index;
+    list<tuple<DAE.Exp,list<SimEqSystem>>> ifbranches;
+    list<SimEqSystem> elsebranch;
+    DAE.ElementSource source;
+  end SES_IFEQUATION;
   record SES_ALGORITHM
     Integer index;
     list<DAE.Statement> statements;

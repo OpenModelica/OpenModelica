@@ -3255,9 +3255,11 @@ algorithm
   end matchcontinue;
 end updateStatesVars;
 
-/*
- *  Section with all functions for findZeroCrossings
- */
+// =============================================================================
+//
+// Section for find zero crossings in BackendDAE
+// =============================================================================
+
 public function findZeroCrossings "function: findZeroCrossings
   This function finds all zerocrossings in the list of equations and
   the list of when clauses."
@@ -3481,27 +3483,20 @@ algorithm
         (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,res,relationsLst, sampleLst);
       then
         (res1,BackendDAE.RESIDUAL_EQUATION(eres1,source_,diffed)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
-/*
-    case (v,_,((e as BackendDAE.IF_EQUATION(conditions=conds as {DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue={el},eqnsfalse=eqnselse, source= source_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
+
+    case (v,_,((e as BackendDAE.IF_EQUATION(conditions=_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
       equation
-        (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,eqnselse,eq_count, {}, 0,countRelations, countMathFunctions,zcs,relationsLst, sampleLst);
-        (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,zcs,relationsLst, sampleLst);
-      then
-        (res1,BackendDAE.IF_EQUATION(conds,{el},el,source_)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
-*/
-    case (v,_,((e as BackendDAE.IF_EQUATION(conditions=conds, eqnstrue=eqnslst, eqnsfalse=el, source= source_)) :: xs),eq_count,{},_,countRelations, countMathFunctions,zcs,relationsLst, sampleLst)
-      equation
-        print("Warning If equations not handled propper in findZeroCrossings2\n");
         eq_count = eq_count + 1;
-        (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,zcs,relationsLst, sampleLst);
+        (e, countRelations, countMathFunctions, res,relationsLst, sampleLst) = findZeroCrossingsIfEqns(e,zcs,relationsLst,sampleLst,countRelations, countMathFunctions,eq_count,-1,v,knvars);
+        (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst);
       then
-        (res1,BackendDAE.IF_EQUATION(conds,eqnslst,el,source_)::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
+        (res1,e::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
 
     // let when equation pass they are discrete and can't contain ZeroCrossings 
     case (v,_,(e :: xs),eq_count,{},_,countRelations, countMathFunctions,res,relationsLst, sampleLst)
       equation
         eq_count = eq_count + 1;
-        (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0,countRelations, countMathFunctions,res,relationsLst, sampleLst);
+        (res1,eq_reslst,wc_reslst,countRelations, countMathFunctions, relationsLst, sampleLst) = findZeroCrossings2(v, knvars,xs,eq_count, {}, 0, countRelations, countMathFunctions, res, relationsLst, sampleLst);
       then
         (res1,e::eq_reslst,wc_reslst,countRelations, countMathFunctions,relationsLst, sampleLst);
    end matchcontinue;
@@ -3549,6 +3544,55 @@ algorithm
         (BackendDAE.WHEN_EQ(cond, cr, e, SOME(we)), countRelations, countMathFunctions, zc, relations, samples);
   end match;
 end findZeroCrossingsWhenEqns;
+
+protected function findZeroCrossingsIfEqns
+"function: findZeroCrossingsIfEqns
+  Helper function to findZeroCrossing."
+  input BackendDAE.Equation inIfEqn;
+  input list<BackendDAE.ZeroCrossing> inZeroCrossings;
+  input list<BackendDAE.ZeroCrossing> inrelationsinZC;
+  input list<BackendDAE.ZeroCrossing> inSamplesLst;
+  input Integer incountRelations;
+  input Integer incountMathFunctions;
+  input Integer counteq;
+  input Integer countwc;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables knvars;
+  output BackendDAE.Equation oIfEqn;
+  output Integer outcountRelations;
+  output Integer outcountMathFunctions;
+  output list<BackendDAE.ZeroCrossing> outZeroCrossings;
+  output list<BackendDAE.ZeroCrossing> outrelationsinZC;
+  output list<BackendDAE.ZeroCrossing> outSamplesLst;
+algorithm
+  (oIfEqn,outcountRelations,outcountMathFunctions,outZeroCrossings,outrelationsinZC,outSamplesLst) := 
+  match(inIfEqn,inZeroCrossings,inrelationsinZC,inSamplesLst,incountRelations,incountMathFunctions,counteq,countwc,vars,knvars)
+    local
+      DAE.Exp condition,e;
+      list<DAE.Exp> conditions, restconditions;
+      BackendDAE.Equation ifeqn;
+      list<BackendDAE.Equation> eqnstrue, elseeqns;
+      list<list<BackendDAE.Equation>> eqnsTrueLst, resteqns;
+      list<BackendDAE.ZeroCrossing> zc, relations, samples;
+      Integer countRelations,countMathFunctions;
+      DAE.ElementSource source_;
+    case (BackendDAE.IF_EQUATION(conditions={}, eqnstrue={}, eqnsfalse=elseeqns, source=source_),_,_,_,_,_,_,_,_,_)
+      equation
+        (zc, elseeqns, _, countRelations, countMathFunctions, relations, samples) = findZeroCrossings2(vars, knvars, elseeqns, counteq, {}, countwc, incountRelations, incountMathFunctions, inZeroCrossings,inrelationsinZC,inSamplesLst);
+      then
+        (BackendDAE.IF_EQUATION({}, {}, elseeqns, source_), countRelations, countMathFunctions, zc, relations, samples);
+    case (BackendDAE.IF_EQUATION(conditions=condition::restconditions, eqnstrue=eqnstrue::resteqns, eqnsfalse=elseeqns, source=source_),_,_,_,_,_,_,_,_,_)
+      equation
+        (condition, countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossings3(condition, inZeroCrossings, inrelationsinZC, inSamplesLst, incountRelations, incountMathFunctions,counteq,countwc,vars,knvars);
+        (zc, eqnstrue, _, countRelations, countMathFunctions, relations, samples) = findZeroCrossings2(vars, knvars, eqnstrue, counteq, {}, countwc, countRelations, countMathFunctions, zc, relations, samples);
+        ifeqn = BackendDAE.IF_EQUATION(restconditions, resteqns, elseeqns, source_);
+        (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsTrueLst, eqnsfalse=elseeqns, source=source_), countRelations, countMathFunctions, zc, relations, samples) = findZeroCrossingsIfEqns(ifeqn, zc, relations, samples, countRelations, countMathFunctions, counteq, countwc, vars, knvars);
+        conditions = listAppend({condition},conditions);
+        eqnsTrueLst = listAppend({eqnstrue},eqnsTrueLst);
+      then
+        (BackendDAE.IF_EQUATION(conditions, eqnsTrueLst, elseeqns, source_), countRelations, countMathFunctions, zc, relations, samples);      
+  end match;
+end findZeroCrossingsIfEqns;
 
 protected function findZeroCrossings3
 "function: findZeroCrossings3
@@ -3613,7 +3657,7 @@ algorithm
         Debug.fcall(Flags.RELIDX, print, "discrete LUNARY: " +& intString(numRelations) +& "\n");
         //Debug.fcall(Flags.RELIDX, BackendDump.debugExpStr, (e, "\n"));
       then
-        ((e,true,((zeroCrossings,relations,samples,numRelations, numMathFunctions),(eq_count,wc_count,vars,knvars))));     
+        ((e,true,((zeroCrossings,relations,samples,numRelations, numMathFunctions),(eq_count,wc_count,vars,knvars))));
     case (((e as DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2)),((zeroCrossings,relations,samples,numRelations, numMathFunctions),(eq_count,wc_count,vars,knvars))))
       equation
         true = BackendDAEUtil.isDiscreteExp(e1, vars, knvars);

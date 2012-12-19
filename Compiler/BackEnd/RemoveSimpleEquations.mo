@@ -3077,6 +3077,12 @@ algorithm
         arg = inFunc({eqn},inTypeA);
       then 
         traverseComponents(rest,iEqns,inFunc,arg);
+    case (BackendDAE.SINGLEIFEQUATION(eqn=e)::rest,_,_,_)
+      equation
+        eqn = BackendDAEUtil.equationNth(iEqns,e-1);
+        arg = inFunc({eqn},inTypeA);
+      then 
+        traverseComponents(rest,iEqns,inFunc,arg);
     case (BackendDAE.SINGLEALGORITHM(eqn=e)::rest,_,_,_)
       equation
         eqn = BackendDAEUtil.equationNth(iEqns,e-1);

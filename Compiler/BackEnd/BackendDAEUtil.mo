@@ -5017,7 +5017,7 @@ protected function adjacencyRowEnhanced
 algorithm
   (outRow,size) := matchcontinue (inVariables,inEquation,mark,rowmark,kvars)
     local
-      list<Integer> lst,ds;
+      list<Integer> lst,ds, lstall;
       BackendDAE.Variables vars;
       DAE.Exp e1,e2,e,expCref,cond;
       list<DAE.Exp> expl;
@@ -5025,32 +5025,32 @@ algorithm
       BackendDAE.WhenEquation we,elsewe;
       String eqnstr;
       DAE.Algorithm alg;
-      BackendDAE.AdjacencyMatrixElementEnhanced row;
+      BackendDAE.AdjacencyMatrixElementEnhanced row, row1;
       list<list<BackendDAE.Equation>> eqnslst;
       list<BackendDAE.Equation> eqns,eqnselse;
       list<DAE.ComponentRef> algoutCrefs;
-    
+
     // EQUATION
     case (vars,BackendDAE.EQUATION(exp = e1,scalar = e2),_,_,_)
       equation
-        lst = adjacencyRowExpEnhanced(e1, vars, {},(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), {});
+        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
         row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
       then
         (row,1);
     // COMPLEX_EQUATION
     case (vars,BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2),_,_,_)
       equation
-        lst = adjacencyRowExpEnhanced(e1, vars, {},(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), {});
+        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
         row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
       then
         (row,size);    
     // ARRAY_EQUATION
     case (vars,BackendDAE.ARRAY_EQUATION(dimSize=ds,left=e1,right=e2),_,_,_)
       equation
-        lst = adjacencyRowExpEnhanced(e1, vars, {},(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), {});
+        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
         row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
         size = List.fold(ds,intMul,1);
       then
@@ -5060,38 +5060,38 @@ algorithm
     case (vars,BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_,_,_)
       equation
         expCref = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(expCref, vars, {},(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(expCref, vars, (mark,rowmark), {});
+        lst = adjacencyRowExpEnhanced(e, vars, (mark,rowmark), lst);
         row = adjacencyRowEnhanced1(lst,expCref,e,vars,kvars,mark,rowmark,{});
       then
         (row,1);
     // RESIDUAL_EQUATION
     case (vars,BackendDAE.RESIDUAL_EQUATION(exp = e),_,_,_)
       equation
-        lst = adjacencyRowExpEnhanced(e, vars, {},(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e, vars, (mark,rowmark), {});
         row = adjacencyRowEnhanced1(lst,e,DAE.RCONST(0.0),vars,kvars,mark,rowmark,{});
       then
         (row,1);    
     // WHEN_EQUATION
     case (vars,BackendDAE.WHEN_EQUATION(whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE())),_,_,_)
       equation
-        lst = adjacencyRowExpEnhanced(cond, vars, {},(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(cond, vars, (mark,rowmark), {});
+        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
         // mark all negative because the when condition cannot used to solve a variable 
         _ = List.fold1(lst,markNegativ,rowmark,mark);
         e1 = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), lst);
         row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
       then
         (row,1);
     case (vars,BackendDAE.WHEN_EQUATION(size=size,whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe))),_,_,_)
       equation
-        lst = adjacencyRowExpEnhanced(cond, vars, {},(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(cond, vars, (mark,rowmark), {});
+        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
         // mark all negative because the when condition cannot used to solve a variable 
         _ = List.fold1(lst,markNegativ,rowmark,mark);
         e1 = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), lst);
         lst = adjacencyRowWhenEnhanced(vars,elsewe,mark,rowmark,kvars,lst);
         row = adjacencyRowEnhanced1(lst,e1,e2,vars,kvars,mark,rowmark,{});
       then
@@ -5122,15 +5122,27 @@ algorithm
     // if Equation
     // TODO : how to handle this?
     // Proposal:
-    // mark all vars in conditions as unsolvable
-    // vars occure in all branches: check how they are occure
-    // vars occure not in all branches: mark as unsolvable 
-    case(vars,BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns),_,_,_)
+    // 1. mark all vars in conditions as unsolvable
+    // 2. vars occure in all branches: check how they are occure
+    // 3. vars occure not in all branches: mark as unsolvable 
+    case(vars, BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqnselse),_,_,_)
       equation
-        print("Warning: BackendDAEUtil.adjacencyRowEnhanced does not handle if-equations propper!\n");
-
+        //print("Warning: BackendDAEUtil.adjacencyRowEnhanced does not handle if-equations propper!\n");
+        // mark all negative because the when condition cannot used to solve a variable 
+        lst = List.fold2(expl, adjacencyRowExpEnhanced, vars, (mark,rowmark), {});
+        _ = List.fold1(lst,markNegativ,rowmark,mark);
+        row1 = adjacencyRowEnhanced1(lst,DAE.RCONST(0.0),DAE.RCONST(0.0),vars,kvars,mark,rowmark,{});
+         
+        (row, size) = adjacencyRowEnhancedEqnLst(eqnselse, vars, mark, rowmark, kvars, {}, 0);
+        lst = List.map(row,Util.tuple21);
+        (lst, row, size) = List.fold43(eqnslst, adjacencyRowEnhancedEqnLstIfBranches, vars, mark, rowmark, kvars, lst, row, size);
+        
+        lstall = List.map(row, Util.tuple21);
+        (_, lst, _) = List.intersection1OnTrue(lstall, lst, intEq);
+        _ = List.fold1(lst, markNegativ, rowmark, mark);
+        row = listAppend(row,row1);
       then
-        ({},1);            
+        (row,size);            
             
     else
       equation
@@ -5140,7 +5152,40 @@ algorithm
       then
         fail();
   end matchcontinue;
-end adjacencyRowEnhanced;    
+end adjacencyRowEnhanced;
+
+protected function adjacencyRowEnhancedEqnLstIfBranches
+  input list<BackendDAE.Equation> iEqns;
+  input BackendDAE.Variables inVariables;
+  input Integer mark;
+  input array<Integer> rowmark;
+  input BackendDAE.Variables kvars;
+  input list<Integer> inLstAllBranch;
+  input BackendDAE.AdjacencyMatrixElementEnhanced iRow;
+  input Integer iSize;
+  output list<Integer> outLstAllBranch;
+  output BackendDAE.AdjacencyMatrixElementEnhanced outRow;
+  output Integer oSize;
+algorithm
+  (outLstAllBranch,outRow,oSize) := match(iEqns,inVariables,mark,rowmark,kvars,inLstAllBranch,iRow,iSize)
+    local
+      BackendDAE.AdjacencyMatrixElementEnhanced row;
+      Integer size;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Equation> rest;
+      list<Integer> lst;
+    case ({},_,_,_,_,_,_,_) then (inLstAllBranch, iRow, iSize);
+    case (eqn::rest,_,_,_,_,_,_,_)
+      equation
+        (row,size) = adjacencyRowEnhanced(inVariables, eqn, mark, rowmark, kvars);
+        lst = List.map(row,Util.tuple21);
+        lst = List.intersectionOnTrue(lst, inLstAllBranch,intEq);
+        row = listAppend(row,iRow);
+        (lst, row, size) = adjacencyRowEnhancedEqnLstIfBranches(rest, inVariables, mark, rowmark, kvars, lst, row, size + iSize);
+      then
+        (lst, row, size);
+  end match;  
+end adjacencyRowEnhancedEqnLstIfBranches;
 
 protected function adjacencyRowEnhancedEqnLst
   input list<BackendDAE.Equation> iEqns;
@@ -5307,23 +5352,23 @@ algorithm
     case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE()),_,_,_,_)
       equation
         // mark all negative because the when condition cannot used to solve a variable 
-        lst = adjacencyRowExpEnhanced(cond, vars, {},(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(cond, vars, (mark,rowmark), {});
+        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
         _ = List.fold1(lst,markNegativ,rowmark,mark);
         lst = listAppend(lst,iRow);
         e1 = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), {});
       then
         lst; 
     case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe)),_,_,_,_)
       equation
         // mark all negative because the when condition cannot used to solve a variable 
-        lst = adjacencyRowExpEnhanced(cond, vars, {},(mark,rowmark));
-        lst = adjacencyRowExpEnhanced(e2, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(cond, vars, (mark,rowmark), {});
+        lst = adjacencyRowExpEnhanced(e2, vars, (mark,rowmark), lst);
         _ = List.fold1(lst,markNegativ,rowmark,mark);
         lst = listAppend(lst,iRow);
         e1 = Expression.crefExp(cr);
-        lst = adjacencyRowExpEnhanced(e1, vars, lst,(mark,rowmark));
+        lst = adjacencyRowExpEnhanced(e1, vars, (mark,rowmark), lst);
         lst = adjacencyRowWhenEnhanced(vars,elsewe,mark,rowmark,kvars,lst);
       then
         lst;  
@@ -5658,8 +5703,8 @@ protected function adjacencyRowExpEnhanced
   variables, returning variable indexes, and mark the solvability."
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
-  input list<Integer> inRow;
-  input tuple<Integer,array<Integer>> inTpl;  
+  input tuple<Integer,array<Integer>> inTpl;
+  input list<Integer> inRow;  
   output list<Integer> outRow;
 algorithm
   ((_,(_,_,_,outRow))) := Expression.traverseExpTopDown(inExp, traversingadjacencyRowExpSolvableEnhancedFinder, (inVariables,false,inTpl,inRow));
@@ -8239,6 +8284,11 @@ algorithm
         outInt = countComponents(comps,inInt+i);
       then outInt;
     case (BackendDAE.SINGLEARRAY(vars=ilst)::comps,_)
+      equation
+        i = listLength(ilst);
+        outInt = countComponents(comps,inInt+i);
+      then outInt;
+    case (BackendDAE.SINGLEIFEQUATION(vars=ilst)::comps,_)
       equation
         i = listLength(ilst);
         outInt = countComponents(comps,inInt+i);

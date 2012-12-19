@@ -426,6 +426,14 @@ algorithm
         comps = List.consOnTrue(intGt(listLength(eqns),0), comp, iAcc);
       then
         comps;
+    case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vars),_,_,_)
+      equation
+        e = eqnindxs[e];
+        vars = List.map1r(vars,arrayGet,varindxs);
+        vars = List.select1(vars,intGt,0);
+        comps = List.consOnTrue(intGt(e,0), BackendDAE.SINGLEIFEQUATION(e,vars), iAcc);
+      then
+        comps;
     case (BackendDAE.SINGLEARRAY(eqn=e,vars=vars),_,_,_)
       equation
         e = eqnindxs[e];
@@ -3012,6 +3020,9 @@ algorithm
     case (BackendDAE.SINGLEARRAY(eqn=e))
       then
         {e};
+    case (BackendDAE.SINGLEIFEQUATION(eqn=e))
+      then
+        {e};
     case (BackendDAE.SINGLEALGORITHM(eqn=e))
       then
         {e};
@@ -5008,6 +5019,21 @@ algorithm
         result = getSparsePattern(rest,result,inMatrix,inMatrixT);
       then result;
     case(BackendDAE.SINGLEARRAY(eqn=eqn,vars=vars)::rest,result,_,_)
+      equation
+        //print("SINGLEARRAY update: ");
+        rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
+        rowElements = List.unionList(rowElementsList);
+        eqnlst = arrayGet(result, eqn);
+        List.map2_0(rowElements, Util.arrayUpdateElementListUnion, eqnlst, result);
+        /*
+        BackendDump.dumpIncidenceRow(rowElements);
+        dumpList = List.map1(rowElements, Util.arrayGetIndexFirst, result);
+        List.map_0(dumpList, BackendDump.dumpIncidenceRow);
+        print("\n\n");
+        */        
+        result = getSparsePattern(rest,result,inMatrix,inMatrixT);
+      then result;
+    case(BackendDAE.SINGLEIFEQUATION(eqn=eqn,vars=vars)::rest,result,_,_)
       equation
         //print("SINGLEARRAY update: ");
         rowElementsList = List.map1(vars, Util.arrayGetIndexFirst, inMatrixT);
@@ -10551,6 +10577,12 @@ algorithm
       then
         countOperationstraverseComps(rest,isyst,ishared,tpl);
     case (BackendDAE.SINGLEARRAY(eqn=e)::rest,_,_,_)
+      equation 
+         eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
+         (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);
+      then 
+         countOperationstraverseComps(rest,isyst,ishared,tpl);
+    case (BackendDAE.SINGLEIFEQUATION(eqn=e)::rest,_,_,_)
       equation 
          eqn = BackendDAEUtil.equationNth(BackendEquation.daeEqns(isyst), e-1);
          (_,tpl) = BackendEquation.traverseBackendDAEExpsEqn(eqn,countOperationsExp,inTpl);

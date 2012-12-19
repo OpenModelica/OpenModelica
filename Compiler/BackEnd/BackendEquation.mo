@@ -1041,6 +1041,7 @@ algorithm
         (BackendDAE.COMPLEX_EQUATION(size,e_1,e_2,source,diffed),bres,ext_arg_2);
         
     // special case for it initial() then ... else ... end if; only else branch needs to be checked
+    /*
     case (BackendDAE.IF_EQUATION(conditions={e1 as DAE.CALL(path=Absyn.IDENT("initial"))},eqnstrue={eqns},eqnsfalse=eqnsfalse,source=source),_,_)
       equation
         (eqnsfalse,eqnsfalse1,ext_arg_2) = traverseBackendDAEExpsEqnListOutEqn(eqnsfalse,{},func,inTypeA);
@@ -1048,18 +1049,64 @@ algorithm
         eqnsfalse1 = Util.if_(bres,eqnsfalse1,eqnsfalse);
       then
         (BackendDAE.IF_EQUATION({e1},{eqns},eqnsfalse1,source),bres,ext_arg_2);
-        
-    case (BackendDAE.IF_EQUATION(conditions = expl, eqnstrue = eqnstrue, eqnsfalse = eqnsfalse,source=source),_,_)
+    */    
+    case (eq as BackendDAE.IF_EQUATION(conditions=_),_,_)
       equation
-        print("not implemented error - BackendDAE.IF_EQUATION - BackendEquation.traverseBackendDAEExpsEqnOutEqn\n"); 
-        //(expl,ext_arg_1) = traverseBackendDAEExpList(expl,func,inTypeA);
-        //(eqnslst,ext_arg_2) = List.map1Fold(eqnslst,traverseBackendDAEExpsEqnList,func,ext_arg_1);
-        //(eqnsfalse,ext_arg_2) = traverseBackendDAEExpsEqnListOutEqn(eqnsfalse,func,ext_arg_2);
+        (eq,bres,ext_arg_1) = traverseBackendDAEExpsEqnOutEqnIfEqns( eq, func, inTypeA);
       then
-        fail();
-        //(BackendDAE.IF_EQUATION(expl,eqnstrue,eqnsfalse,source),false,inTypeA);        
+        (eq,bres,ext_arg_1);
+                
   end match;
 end traverseBackendDAEExpsEqnOutEqn;
+
+protected function traverseBackendDAEExpsEqnOutEqnIfEqns
+"function: traverseBackendDAEExpsEqnOutEqnIfEqns
+  Helper function to traverseBackendDAEExpsEqnOutEqn."
+  replaceable type Type_a subtypeof Any;
+  input BackendDAE.Equation inIfEqn;
+  input FuncExpType func;
+  input Type_a inTypeA;
+  output BackendDAE.Equation outIfEqn;
+  output Boolean outflag;
+  output Type_a outTypeA;
+  partial function FuncExpType
+    input tuple<DAE.Exp, Type_a> inTpl;
+    output tuple<DAE.Exp, Boolean, Type_a> outTpl;
+  end FuncExpType;
+algorithm
+  (outIfEqn,outflag,outTypeA):= match (inIfEqn,func,inTypeA)
+    local
+      Type_a ext_arg_1;
+      Boolean bres,bres1,bres2;
+      DAE.Exp condition;
+      list<DAE.Exp> conditions, restconditions;
+      BackendDAE.Equation ifeqn;
+      list<BackendDAE.Equation> eqnstrue, eqnstrue1, elseeqns, elseeqns1;
+      list<list<BackendDAE.Equation>> eqnsTrueLst, resteqns;
+      DAE.ElementSource source_;
+    case (BackendDAE.IF_EQUATION(conditions={}, eqnstrue={}, eqnsfalse=elseeqns, source=source_),_,_)
+      equation
+        (elseeqns,elseeqns1,ext_arg_1) = traverseBackendDAEExpsEqnListOutEqn(elseeqns,{},func,inTypeA);
+        bres = List.isNotEmpty(elseeqns1);
+        elseeqns = Util.if_(bres,elseeqns1,elseeqns);
+      then
+        (BackendDAE.IF_EQUATION({},{},elseeqns,source_),bres,ext_arg_1);         
+    case (BackendDAE.IF_EQUATION(conditions=condition::restconditions, eqnstrue=eqnstrue::resteqns, eqnsfalse=elseeqns, source=source_),_,_)
+      equation
+        ((condition,bres,ext_arg_1)) = func((condition,inTypeA));
+        (eqnstrue,eqnstrue1,ext_arg_1) = traverseBackendDAEExpsEqnListOutEqn(eqnstrue,{},func,ext_arg_1);
+        bres1 = List.isNotEmpty(eqnstrue1);
+        eqnstrue = Util.if_(bres,eqnstrue1,eqnstrue);
+        ifeqn = BackendDAE.IF_EQUATION(restconditions, resteqns, elseeqns, source_);
+        (BackendDAE.IF_EQUATION(conditions=conditions, eqnstrue=eqnsTrueLst, eqnsfalse=elseeqns, source=source_), bres2, ext_arg_1) 
+                                                                    = traverseBackendDAEExpsEqnOutEqnIfEqns(ifeqn, func, ext_arg_1);
+        conditions = listAppend({condition},conditions);
+        eqnsTrueLst = listAppend({eqnstrue},eqnsTrueLst);
+        bres = Util.boolOrList({bres,bres1,bres2});
+      then
+        (BackendDAE.IF_EQUATION(conditions, eqnsTrueLst, elseeqns, source_), bres, ext_arg_1);      
+  end match;
+end traverseBackendDAEExpsEqnOutEqnIfEqns;
 
 public function traverseBackendDAEExpList
 "function traverseBackendDAEExps

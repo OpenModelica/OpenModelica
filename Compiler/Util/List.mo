@@ -123,6 +123,9 @@ replaceable type ArgType8 subtypeof Any;
 replaceable type ArgType9 subtypeof Any;
 
 replaceable type FoldType subtypeof Any;
+replaceable type FoldType1 subtypeof Any;
+replaceable type FoldType2 subtypeof Any;
+replaceable type FoldType3 subtypeof Any;
 
 
 // Output types:
@@ -4718,6 +4721,58 @@ algorithm
 
   end match;
 end fold3;
+
+public function fold43
+  "Takes a list and a function operating on list elements having an extra
+   argument that is 'updated', thus returned from the function, and three constant
+   arguments that are not updated. fold will call the function for each element in
+   a sequence, updating the start value."
+  input list<ElementType> inList;
+  input FoldFunc inFoldFunc;
+  input ArgType1 inExtraArg1;
+  input ArgType2 inExtraArg2;
+  input ArgType3 inExtraArg3;
+  input ArgType4 inExtraArg4;
+  input FoldType1 inStartValue1;
+  input FoldType2 inStartValue2;
+  input FoldType3 inStartValue3;
+  output FoldType1 outResult1;
+  output FoldType2 outResult2;
+  output FoldType3 outResult3;
+
+  partial function FoldFunc
+    input ElementType inElement;
+    input ArgType1 inConstantArg1;
+    input ArgType2 inConstantArg2;
+    input ArgType3 inConstantArg3;
+    input ArgType4 inConstantArg4;
+    input FoldType1 inFoldArg1;
+    input FoldType2 inFoldArg2;
+    input FoldType3 inFoldArg3;
+    output FoldType1 outFoldArg1;
+    output FoldType2 outFoldArg2;
+    output FoldType3 outFoldArg3;
+  end FoldFunc;
+algorithm
+  (outResult1, outResult2, outResult3) := match(inList, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue1, inStartValue2, inStartValue3)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      FoldType1 arg1; 
+      FoldType2 arg2;
+      FoldType3 arg3;
+
+    case ({}, _, _, _, _, _, _, _, _) then (inStartValue1, inStartValue2, inStartValue3);
+
+    case (e :: rest, _, _, _, _, _, _, _, _)
+      equation
+        (arg1, arg2, arg3) = inFoldFunc(e, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, inStartValue1, inStartValue2, inStartValue3);
+        (outResult1, outResult2, outResult3) = fold43(rest, inFoldFunc, inExtraArg1, inExtraArg2, inExtraArg3, inExtraArg4, arg1, arg2, arg3);
+      then 
+        (outResult1, outResult2, outResult3);
+
+  end match;
+end fold43;
 
 public function mapFold
   "Takes a list, an extra argument and a function. The function will be applied

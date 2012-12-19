@@ -1930,6 +1930,7 @@ template equationIndex(SimEqSystem eq)
   case SES_RESIDUAL(__) then '<%index%>'
   case SES_SIMPLE_ASSIGN(__) then '<%index%>'
   case SES_ARRAY_CALL_ASSIGN(__) then '<%index%>'
+  case SES_IFEQUATION(__) then '<%index%>'
   case SES_ALGORITHM(__) then '<%index%>'
   case SES_LINEAR(__) then '<%index%>'
   case SES_NONLINEAR(__) then '<%index%>'
@@ -1953,6 +1954,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   let ix = equationIndex(eq) /*System.tmpTickIndex(10)*/
   let &tmp = buffer ""
   let &varD = buffer ""
+  let &tempeqns = buffer ""
   let disc = match context
   case SIMULATION(genDiscrete=true) then 1
   else 0
@@ -1961,6 +1963,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
     then equationSimpleAssign(e, context, &varD /*BUFD*/)
   case e as SES_ARRAY_CALL_ASSIGN(__)
     then equationArrayCallAssign(e, context, &varD /*BUFD*/)
+  case e as SES_IFEQUATION(__)
+    then equationIfEquationAssign(e, context, &varD /*BUFD*/, &tempeqns/*EQNSBUF*/)
   case e as SES_ALGORITHM(__)
     then equationAlgorithm(e, context, &varD /*BUFD*/)
   case e as SES_LINEAR(__)
@@ -1978,6 +1982,7 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Tex
   let &eqs +=
   <<
   
+  <%tempeqns%>
   void eqFunction_<%ix%>(DATA *data)
   {
     <%&varD%>
@@ -2467,6 +2472,45 @@ match ty
       <%cref(left)%> = <%exp%>;
    >>
 end whenAssign;
+
+
+template equationIfEquationAssign(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/, Text &eqnsDecls /*EQNBUF*/)
+ "Generates a if equation."
+::=
+match eq
+case SES_IFEQUATION(ifbranches=ifbranches, elsebranch=elsebranch) then
+  let &preExp = buffer "" /*BUFD*/
+  let IfEquation = (ifbranches |> (e, eqns) hasindex index0 =>
+    let condition = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let ifequations = ( eqns |> eqn =>
+       let eqnStr = equation_(eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/)
+       <<
+       <%eqnStr%>
+       >>
+       
+      ;separator="\n")
+   let conditionline = if index0 then 'else if(<%condition%>)' else 'if(<%condition%>)'
+    <<
+    <%conditionline%>
+    {
+      <%ifequations%>
+    }
+    >>
+    ;separator="\n")
+  let elseequations = ( elsebranch |> eqn =>
+     let eqnStr = equation_(eqn, context, &varDecls, &eqnsDecls /*EQNBUF*/)
+       <<
+       <%eqnStr%>
+       >>
+    ;separator="\n")
+  <<
+  <%preExp%>
+  <%IfEquation%>else
+  {
+    <%elseequations%>
+  }
+  >>
+end equationIfEquationAssign;
 
 template simulationFunctionsFile(String filePrefix, list<Function> functions, list<Exp> literals)
  "Generates the content of the C file for functions in the simulation case."
@@ -8627,6 +8671,11 @@ match eq
     //let var = '<%cref(componentRef)%>__varInfo'
     //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%index%> = &<%var%>;'
     '{<%index%>,"SES_ARRAY_CALL_ASSIGN <%index%>",0,NULL}'
+  case SES_IFEQUATION(__) then
+    // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
+    //let var = '<%cref(componentRef)%>__varInfo'
+    //let &preBuf += 'const struct VAR_INFO *equationInfo_cref<%index%> = &<%var%>;'
+    '{<%index%>,"SES_IFEQUATION <%index%>",0,NULL}'
   case SES_ALGORITHM(__) then 
     // let &eqnsDefines += '<%functionSimProfDef(eq,System.tmpTick())%>' 
     '{<%index%>,"SES_ALGORITHM <%index%>", 0, NULL}'

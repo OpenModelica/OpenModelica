@@ -1088,6 +1088,11 @@ algorithm
         varindxs = List.map(var_varindx_lst,Util.tuple22);
       then
         BackendDAE.SINGLEARRAY(compelem,varindxs);
+    case (compelem::{},BackendDAE.IF_EQUATION(conditions = _)::{},var_varindx_lst,_,_,_,_,false)
+      equation
+        varindxs = List.map(var_varindx_lst,Util.tuple22);
+      then
+        BackendDAE.SINGLEIFEQUATION(compelem,varindxs);
     case (compelem::{},BackendDAE.COMPLEX_EQUATION(size=_)::{},var_varindx_lst,_,_,_,_,false)
       equation
         varindxs = List.map(var_varindx_lst,Util.tuple22);
@@ -1311,6 +1316,13 @@ algorithm
         eqn = BackendDAEUtil.equationNth(eqns, e_1);
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
       then
+        ({eqn},varlst,e);
+    case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst),eqns,vars) 
+      equation
+        e_1 = e - 1;
+        eqn = BackendDAEUtil.equationNth(eqns, e_1);
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+      then
         ({eqn},varlst,e);  
     case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst),eqns,vars)
       equation
@@ -1421,6 +1433,9 @@ algorithm
       then
         (elst,vlst);
     case BackendDAE.SINGLEARRAY(eqn=e,vars=vlst)
+      then
+        ({e},vlst);
+    case BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst)
       then
         ({e},vlst);
     case BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)

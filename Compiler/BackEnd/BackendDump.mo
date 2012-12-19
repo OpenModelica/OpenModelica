@@ -427,7 +427,7 @@ algorithm
   print("\n");
 end dumpStateSets;
 
-protected function dumpZeroCrossingList "function dumpZeroCrossingList"
+public function dumpZeroCrossingList "function dumpZeroCrossingList"
   input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
   input String heading;
 algorithm
@@ -773,7 +773,17 @@ algorithm
         printEquationList({eqn}); 
         dumpEqnsSolved2(rest,eqns,vars);
       then 
-        ();  
+        ();
+    case (BackendDAE.SINGLEIFEQUATION(eqn=e,vars=vlst)::rest,_,_) 
+      equation
+        print("IfEquation:\n");
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
+        printVarList(varlst);
+        eqn = BackendDAEUtil.equationNth(eqns,e-1);
+        printEquationList({eqn}); 
+        dumpEqnsSolved2(rest,eqns,vars);
+      then 
+        ();
     case (BackendDAE.SINGLEALGORITHM(eqn=e,vars=vlst)::rest,_,_) 
       equation
         print("Algorithm:\n");
@@ -1016,6 +1026,18 @@ algorithm
         print("}}\n");
       then
         ();
+    case BackendDAE.SINGLEIFEQUATION(eqn=i,vars=vlst)
+      equation
+        print("IfEquation ");
+        print(" {{");
+        print(intString(i));
+        print(":");
+        ls = List.map(vlst, intString);
+        s = stringDelimitList(ls, ", ");
+        print(s);
+        print("}}\n");
+      then
+        ();
     case BackendDAE.SINGLEALGORITHM(eqn=i,vars=vlst)
       equation
         print("Algorithm ");
@@ -1126,6 +1148,14 @@ algorithm
       then
         s2;
     case BackendDAE.SINGLEARRAY(eqn=i,vars=vlst)
+      equation
+        ls = List.map(vlst, intString);
+        s = stringDelimitList(ls, ", ");
+        sl = intString(i); 
+        s2 = stringAppendList({"Array ",sl," {",s,"}"});
+      then
+        s2;
+    case BackendDAE.SINGLEIFEQUATION(eqn=i,vars=vlst)
       equation
         ls = List.map(vlst, intString);
         s = stringDelimitList(ls, ", ");
@@ -3335,6 +3365,9 @@ algorithm
     case (BackendDAE.SINGLEARRAY(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys,teqsys))
       then 
         ((seq,salg,sarr+1,sce,eqsys,meqsys,teqsys));
+    case (BackendDAE.SINGLEIFEQUATION(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys,teqsys))
+      then 
+        ((seq+1,salg,sarr,sce,eqsys,meqsys,teqsys));
     case (BackendDAE.SINGLEALGORITHM(eqn=_),(seq,salg,sarr,sce,eqsys,meqsys,teqsys))
       then 
         ((seq,salg+1,sarr,sce,eqsys,meqsys,teqsys));
