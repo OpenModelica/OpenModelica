@@ -1080,11 +1080,11 @@ end getProtectedAttr;
 public function setFixedAttr "Function: setFixedAttr
 Sets the start attribute:fixed to inputarg"
   input Option<DAE.VariableAttributes> attr;
-  input Option<DAE.Exp> start;
+  input Option<DAE.Exp> fixed;
   output Option<DAE.VariableAttributes> outAttr;
 algorithm
   outAttr:=
-  match (attr,start)
+  match (attr,fixed)
     local
       Option<DAE.Exp> q,u,du,n,ini,so;
       tuple<Option<DAE.Exp>, Option<DAE.Exp>> minMax;
@@ -1095,15 +1095,15 @@ algorithm
       Option<Boolean> ip,fn;
     
     case (SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,_,n,ss,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,start,n,ss,unc,distOpt,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_REAL(q,u,du,minMax,ini,fixed,n,ss,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_INT(q,minMax,ini,_,unc,distOpt,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_INT(q,minMax,ini,start,unc,distOpt,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_INT(q,minMax,ini,fixed,unc,distOpt,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_BOOL(q,ini,_,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_BOOL(q,ini,start,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_BOOL(q,ini,fixed,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so)),_)
     then SOME(DAE.VAR_ATTR_STRING(q,ini,eb,ip,fn,so));
     case (SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,_,eb,ip,fn,so)),_)
-    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,start,eb,ip,fn,so));
+    then SOME(DAE.VAR_ATTR_ENUMERATION(q,minMax,u,fixed,eb,ip,fn,so));
   end match;
 end setFixedAttr;
 
