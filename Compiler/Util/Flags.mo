@@ -527,7 +527,7 @@ constant ConfigFlag HELP = CONFIG_FLAG(2, "help",
   SOME(STRING_OPTION({"debug", "optmodules"})),
   Util.gettext("Displays the help text."));
 constant ConfigFlag RUNNING_TESTSUITE = CONFIG_FLAG(3, "running-testsuite",
-  NONE(), EXTERNAL(), BOOL_FLAG(false), NONE(),
+  NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("Used when running the testsuite."));
 constant ConfigFlag SHOW_VERSION = CONFIG_FLAG(4, "version",
   SOME("+v"), EXTERNAL(), BOOL_FLAG(false), NONE(),

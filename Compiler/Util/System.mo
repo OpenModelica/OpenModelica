@@ -290,9 +290,9 @@ public function writeFile
 end writeFile;
 
 public function appendFile
-  input String inString1;
-  input String inString2;
-  external "C" System_appendFile(inString1,inString2) annotation(Library = "omcruntime");
+  input String file;
+  input String data;
+  external "C" System_appendFile(file,data) annotation(Library = "omcruntime");
 end appendFile;
 
 public function readFile

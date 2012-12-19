@@ -250,8 +250,14 @@ end setShowAnnotations;
 public function getRunningTestsuite
   output Boolean runningTestsuite;
 algorithm
-  runningTestsuite := Flags.getConfigBool(Flags.RUNNING_TESTSUITE);
+  runningTestsuite := not stringEq(Flags.getConfigString(Flags.RUNNING_TESTSUITE),"");
 end getRunningTestsuite;
+
+public function getRunningTestsuiteFile
+  output String tempFile "File containing a list of files created by running this test so rtest can remove them after";
+algorithm
+  tempFile := Flags.getConfigString(Flags.RUNNING_TESTSUITE);
+end getRunningTestsuiteFile;
 
 public function getEvaluateParametersInAnnotations
 "@author: adrpo

@@ -3581,6 +3581,7 @@ algorithm
         
         // call the system command to compile the model!
         0 = System.systemCall(s_call);
+        Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), fileEXE +& "\n" +& fileDLL +& "\n" +& fileLOG +& "\n");
         
         Debug.fprintln(Flags.DYN_LOAD, "compileModel: successful! ");
       then

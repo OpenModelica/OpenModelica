@@ -9,6 +9,7 @@ encapsulated package Tpl
 "
 
 //import Util;
+protected import Config;
 protected import Debug;
 protected import System;
 protected import Util;
@@ -1714,6 +1715,7 @@ algorithm
         textStringBuf(txt);
         rtTickW = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
         Print.writeBuf(file);
+        Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), file +& "\n");
         Print.clearBuf();
         Debug.fprintln(Flags.PERF_TIMES,
                 "textFile " +& file 
@@ -1730,12 +1732,6 @@ algorithm
       then 
         ();
     
-    //should not ever happen 
-    //case (_ )
-    //  equation
-    //    Debug.fprint(Flags.FAILTRACE, "-!!!Tpl.textFile failed.\n");
-    //  then 
-    //    fail();
   end matchcontinue;
 end textFile;
   
