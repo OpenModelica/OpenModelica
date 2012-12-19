@@ -3528,7 +3528,6 @@ algorithm
   end matchcontinue;
 end getFileDir;
 
-//protected function compileModel "function: compileModel
 public function compileModel "function: compileModel
   author: PA, x02lucpo
   Compiles a model given a file-prefix, helper function to buildModel."
@@ -3581,7 +3580,9 @@ algorithm
         
         // call the system command to compile the model!
         0 = System.systemCall(s_call);
-        Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(), fileEXE +& "\n" +& fileDLL +& "\n" +& fileLOG +& "\n");
+        Debug.bcall2(Config.getRunningTestsuite(), System.appendFile, Config.getRunningTestsuiteFile(),
+          fileEXE +& "\n" +& fileDLL +& "\n" +& fileLOG +& "\n" +& fileprefix +& ".o\n" +& fileprefix +& ".libs\n" +&
+          fileprefix +& "_records.o\n" +& fileprefix +& "_res.mat\n");
         
         Debug.fprintln(Flags.DYN_LOAD, "compileModel: successful! ");
       then
