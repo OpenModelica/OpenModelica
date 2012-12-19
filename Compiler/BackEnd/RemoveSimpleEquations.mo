@@ -2832,7 +2832,7 @@ algorithm
       list<BackendDAE.Equation> ceqns;
       BackendDAE.StateSets sets;
       Boolean b,b1;
-    case(_,_,_,_,_) then (iAcc,iDoRepl);
+    case({},_,_,_,_) then (iAcc,iDoRepl);
     case(BackendDAE.STATESET(states,ceqns,dstates)::sets,_,_,_,_)
       equation
         // do replacements in states is not neccessary because alias states are not replaced

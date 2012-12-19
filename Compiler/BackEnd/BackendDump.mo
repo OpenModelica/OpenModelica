@@ -332,7 +332,7 @@ algorithm
   end match;
 end printEquationNo;
 
-protected function printStateSets
+public function printStateSets
   input BackendDAE.StateSets stateSets;
 algorithm
   List.map_0(stateSets, printStateSet);
