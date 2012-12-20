@@ -40,6 +40,7 @@ encapsulated package InlineSolver
 public import Absyn;
 public import BackendDAE;
 public import DAE;
+public import Env;
 
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -104,7 +105,7 @@ protected
   BackendDAE.EqSystem timesystem;
   BackendDAE.Shared shared;
   
-  BackendDAE.Variables orderedVars;
+  BackendDAE.Variables orderedVars, vars;
   BackendDAE.EquationArray orderedEqs;
   
   /*need for new matching */
@@ -115,10 +116,10 @@ protected
   
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
-  systs := List.map(systs, eliminatedStatesDerivations);
+  ((systs,vars)) := List.fold(systs, eliminatedStatesDerivations,({},BackendVariable.emptyVars()));
   timesystem := timeEquation();
-
   systs := listAppend(systs, {timesystem});
+  shared := addKnowInitialValueForState(shared,vars);
   dae := BackendDAE.DAE(systs, shared);
   
   Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: befor mathching algebraic system");
@@ -132,6 +133,31 @@ algorithm
   // simplify system
   (outDAE, Util.SUCCESS()) := BackendDAEUtil.pastoptimiseDAE(dae, pastOptModules, matchingAlgorithm, daeHandler);
 end dae_to_algSystem;
+
+protected function addKnowInitialValueForState
+  input BackendDAE.Shared inShared;
+  input BackendDAE.Variables invars;
+  output BackendDAE.Shared outShared;
+  
+protected
+  BackendDAE.Var var;
+  BackendDAE.Variables knownVars, externalObjects, aliasVars;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  array< DAE.Constraint> constraints;
+  array< DAE.ClassAttributes> classAttrs;
+  Env.Cache cache;
+  Env.Env env;
+  DAE.FunctionTree functionTree;
+  BackendDAE.EventInfo eventInfo;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;  
+algorithm
+   BackendDAE.SHARED(knownVars=knownVars, externalObjects=externalObjects, aliasVars=aliasVars,initialEqs=initialEqs, removedEqs=removedEqs, constraints=constraints, classAttrs=classAttrs, cache=cache, env=env, functionTree=functionTree, eventInfo=eventInfo, extObjClasses=extObjClasses, backendDAEType=backendDAEType, symjacs=symjacs) := inShared;
+   knownVars := BackendVariable.mergeVariables(invars, knownVars);
+   outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars,initialEqs, removedEqs, constraints, classAttrs, cache, env, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs);
+end addKnowInitialValueForState;
 
 protected function timeEquation
   output BackendDAE.EqSystem outEqSystem;
@@ -207,16 +233,19 @@ protected function eliminatedStatesDerivations "function eliminatedStatesDerivat
   change function call der(x) in  variable xder
   change kind: state in known variable "
   input BackendDAE.EqSystem inEqSystem;
-  output BackendDAE.EqSystem outEqSystem;
+  input tuple<BackendDAE.EqSystems, BackendDAE.Variables> inTupel ;
+  output tuple<BackendDAE.EqSystems, BackendDAE.Variables> outTupel;
 protected  
   BackendDAE.Variables orderedVars;
-  BackendDAE.Variables vars;
+  BackendDAE.Variables vars, invars, outvars;
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.EquationArray eqns, eqns1, eqns2;
   BackendDAE.EqSystem eqSystem;
+  BackendDAE.EqSystems inSystems;
   BackendDAE.StateSets stateSets;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inEqSystem;
+  (inSystems, invars) := inTupel;
   vars := BackendVariable.emptyVars();
   eqns := BackendEquation.emptyEqns();
   eqns2 := BackendEquation.emptyEqns();
@@ -232,9 +261,10 @@ algorithm
   ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t4","$t4_der"));
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
   // change kind: state in known variable 
-  ((vars, eqns)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns2));
+  ((vars, eqns, outvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns2, invars));
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
-  (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL());
+  (eqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL());
+  outTupel := (listAppend(inSystems,{eqSystem}), BackendVariable.mergeVariables(invars,outvars));
 end eliminatedStatesDerivations;
 
 protected function replaceStates_eqs "function replaceStates_eqs
@@ -321,13 +351,13 @@ end crefPrefixStringWithpopCref;
 
 protected function replaceStates_vars "function replaceStates_vars
   author: vruge"
-  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray>> outTpl;
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local
       BackendDAE.Var var;
-      BackendDAE.Variables vars;
+      BackendDAE.Variables vars, vars0;
       DAE.ComponentRef cr, x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4;
       DAE.Type ty;
       DAE.InstDims arryDim;
@@ -337,8 +367,11 @@ algorithm
       DAE.Exp dt;
     
     // state
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, eqns))) equation
-      (x0,_) = stringCrVar("$t0", cr, ty, arryDim);
+
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, eqns,vars0))) equation
+      (x0,_) = stringCrVar("$t0", cr, ty, arryDim); // VarDirection = input
+      var = BackendDAE.VAR(x0, BackendDAE.VARIABLE(), DAE.INPUT(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      vars0 = BackendVariable.addVar(var, vars0);
       
       (x1,var) = stringCrVar("$t1",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
@@ -373,12 +406,12 @@ algorithm
       eqn = stepLobatt(x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4,dt,ty);
       eqns = BackendEquation.mergeEquationArray(eqn, eqns);
       
-    then ((var, (vars, eqns)));
+    then ((var, (vars, eqns,vars0)));
     
     // else
-    case((var, (vars, eqns))) equation
+    case((var, (vars, eqns,vars0))) equation
       vars = BackendVariable.addVar(var, vars);
-    then ((var, (vars, eqns)));
+    then ((var, (vars, eqns,vars0)));
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/InlineSolver.mo: function replaceStates1_vars failed"});
