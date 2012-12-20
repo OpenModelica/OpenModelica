@@ -135,6 +135,7 @@ package SimCode
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> algorithmAndEquationAsserts;
       //list<DAE.Statement> algorithmAndEquationAsserts;
+      list<StateSet> stateSets;
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings;
@@ -311,6 +312,14 @@ package SimCode
       DAE.ElementSource source;
     end SES_WHEN;
   end SimEqSystem;
+
+  uniontype StateSet
+      record SES_STATESET
+      Integer index;
+      DAE.ComponentRef crA;
+      Option<JacobianMatrix> jacobianMatrix; 
+    end SES_STATESET;
+  end StateSet;
 
   uniontype SimWhenClause
     record SIM_WHEN_CLAUSE

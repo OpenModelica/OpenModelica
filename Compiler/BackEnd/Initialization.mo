@@ -784,23 +784,9 @@ algorithm
 
   ((vars, fixvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars));
   ((eqns, reqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, collectInitialEqns, (eqns, reqns));
-  ((eqns, reqns)) := List.fold(stateSets, collectInitialEqnsStateSet, (eqns, reqns));
 
   oTpl := (vars, fixvars, eqns, reqns);
 end collectInitialVarsEqnsSystem;
-
-protected function collectInitialEqnsStateSet "function collectInitialEqnsStateSet
-  author: Frenkel TUD 2012-12"
-  input BackendDAE.StateSet inSet;
-  input tuple<BackendDAE.EquationArray,BackendDAE.EquationArray> inTpl;
-  output tuple<BackendDAE.EquationArray,BackendDAE.EquationArray> outTpl;
-protected
-  list<BackendDAE.Equation> ceqns;
-  BackendDAE.EquationArray eqns, reqns;
-algorithm
-  BackendDAE.STATESET(constraintEquations=ceqns) := inSet;
-  (_,outTpl) := BackendEquation.traverseBackendDAEEqnsList(ceqns, collectInitialEqns, inTpl,{});
-end collectInitialEqnsStateSet;
 
 protected function collectInitialVars "function collectInitialVars
   author: lochel

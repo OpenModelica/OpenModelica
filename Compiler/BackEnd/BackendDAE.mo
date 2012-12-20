@@ -497,9 +497,13 @@ type StateSets = list<StateSet> "List of StateSets";
 public 
 uniontype StateSet
   record STATESET
-    list< .DAE.ComponentRef> states "the states of the set";
-    list<Equation> constraintEquations "the constrain equations of the set";
-    list< .DAE.ComponentRef> dummystates "the dummystates of the set";
+    Integer rang;
+    .DAE.ComponentRef crA "set.x=A*states";
+    list< Var> varA;
+    list< Var> states;
+    list< Var> ovars;
+    list< Equation> eqns;
+    list< Equation> oeqns;
   end STATESET;
 end StateSet;
 

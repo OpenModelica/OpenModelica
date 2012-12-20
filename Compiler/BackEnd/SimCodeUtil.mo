@@ -84,7 +84,6 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
 protected import HashSet;
-protected import IndexReduction;
 protected import Initialization;
 protected import Inline;
 protected import InlineSolver;
@@ -1467,9 +1466,8 @@ algorithm
       list<SimCode.SimVar> tempvars;
       
       SimCode.JacobianMatrix jacG;
-      list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> setData;
-      
       Option<BackendDAE.BackendDAE> inlineDAE;
+      list<SimCode.StateSet> stateSets;
       
     case (dlow,class_,_,fileDir,_,_,_,_,_,_,_,_) equation
       System.tmpTickReset(0);
@@ -1485,9 +1483,6 @@ algorithm
       
       // generate system for inline solver
       inlineDAE = InlineSolver.generateDAE(dlow);
-
-      // handle states sets
-      (dlow,setData) = IndexReduction.handleStateSetsCodeGeneration(dlow);
 
       // check if the Sytems has states
       dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
@@ -1512,13 +1507,13 @@ algorithm
       n_h = listLength(helpVarInfo);
       
       // state set stuff
-      (_, uniqueEqIndex, tempvars) = createStateSets(setData,shared,{},uniqueEqIndex,{});
+      (dlow2,stateSets, uniqueEqIndex, tempvars) = createStateSets(dlow2,{},uniqueEqIndex,{});
 
       // inline solver stuff
-      (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars, helpVarInfo);
+      (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, {}, helpVarInfo);
       
       // initialization stuff
-      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, tempvars, helpVarInfo);
+      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, {}, helpVarInfo);
       (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
 
       // expandAlgorithmsbyInitStmts
@@ -1528,7 +1523,7 @@ algorithm
                                                         classAttrs=clsattrsarra,
                                                         functionTree=functionTree,
                                                         symjacs=symJacs)) = dlow2;        
-      
+
       // Add model info
       modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir, ifcpp);
       
@@ -1556,7 +1551,8 @@ algorithm
       allEquations = listAppend(allEquations,removedEquations);
       
       // update indexNonLinear in SES_NONLINEAR and count
-      (initialEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(initialEquations, 0, 0, {});
+      NLSjacs = indexStateSets(stateSets,{});
+      (initialEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(initialEquations, 0, 0, NLSjacs);
       (inlineEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(inlineEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
       (parameterEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(parameterEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
       (allEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
@@ -1598,6 +1594,7 @@ algorithm
                                 inlineEquations,
                                 removedEquations,
                                 algorithmAndEquationAsserts,
+                                stateSets,
                                 constraints,
                                 classAttributes,
                                 zeroCrossings,
@@ -3987,56 +3984,134 @@ end createTornSystemOtherEqns1;
 // Section to create state set equations
 // =============================================================================
 
-protected function createStateSets
-  input list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> iSetData;
-  input BackendDAE.Shared iShared;
-  input list<SimCode.SimEqSystem> iEquations_;
+protected function createStateSets 
+"function createStateSets
+  author: Frenkel TUD 2012
+  This function handle states sets for code generation."
+  input BackendDAE.BackendDAE inDAE;
+  input list<SimCode.StateSet> iEquations;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
-  output list<SimCode.SimEqSystem> oEquations_;
+  output BackendDAE.BackendDAE outDAE;
+  output list<SimCode.StateSet> oEquations;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;  
+algorithm
+  (outDAE,(oEquations,ouniqueEqIndex,otempvars)) := 
+    BackendDAEUtil.mapEqSystemAndFold(inDAE,createStateSetsSystem,(iEquations,iuniqueEqIndex,itempvars));
+  // BackendDump.printBackendDAE(outDAE);
+end createStateSets;
+
+protected function createStateSetsSystem
+"function: createStateSetsSystem
+  author: Frenkel TUD 2012-12
+  traverse an Equationsystem to handle states sets"
+  input BackendDAE.EqSystem isyst; 
+  input tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>,Integer,list<SimCode.SimVar>>> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>,Integer,list<SimCode.SimVar>>> osharedChanged;
+algorithm
+  (osyst,osharedChanged):= match (isyst,sharedChanged)
+    local
+      BackendDAE.EqSystem syst;
+      BackendDAE.Shared shared;
+      BackendDAE.Variables vars,knvars;
+      BackendDAE.EquationArray eqns;
+      Option<BackendDAE.IncidenceMatrix> m;
+      Option<BackendDAE.IncidenceMatrixT> mT;
+      BackendDAE.Matching matching;
+      BackendDAE.StateSets stateSets;
+      tuple<list<SimCode.SimEqSystem>,Integer,list<SimCode.SimVar>> tpl;
+      list<SimCode.StateSet> equations;
+      Integer uniqueEqIndex;
+      list<SimCode.SimVar> tempvars;      
+      DAE.FunctionTree functree;
+    // no stateSet
+    case (BackendDAE.EQSYSTEM(stateSets={}),_) then (isyst,sharedChanged);
+    // sets
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets),
+         (shared,(equations,uniqueEqIndex,tempvars)))
+      equation
+        knvars = BackendVariable.daeKnVars(shared);
+        functree = BackendDAEUtil.getFunctions(shared);
+        (vars,equations,uniqueEqIndex,tempvars) = createStateSetsSets(stateSets,vars,knvars,functree,equations,uniqueEqIndex,tempvars);
+      then
+        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),(shared,(equations,uniqueEqIndex,tempvars)));
+  end match;
+end createStateSetsSystem;
+
+protected function createStateSetsSets
+  input BackendDAE.StateSets iStateSets;
+  input BackendDAE.Variables iVars;
+  input BackendDAE.Variables knVars;
+  input DAE.FunctionTree functree;
+  input list<SimCode.StateSet> iEquations;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  output BackendDAE.Variables oVars;
+  output list<SimCode.StateSet> oEquations;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
 algorithm
-   (oEquations_,ouniqueEqIndex,otempvars) := 
-   matchcontinue(iSetData,iShared,iEquations_,iuniqueEqIndex,itempvars)
-     local
-       list<DAE.ComponentRef> crset,tcrs;
-       DAE.ComponentRef crA;
-       list<BackendDAE.Var> states,dstates;
-       list<BackendDAE.Equation> ceqns,oeqns;
-       list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> setData;
-       BackendDAE.Variables vars,kv,diffVars,ovars;
-       BackendDAE.EquationArray eqnsarr,oeqnsarr;
-       Option<SimCode.JacobianMatrix> jacobianMatrix;
-       DAE.FunctionTree functree;
-       list<SimCode.SimEqSystem> simequations;
-       list<SimCode.SimVar> tempvars;
-       Integer uniqueEqIndex;
-     case({},_,_,_,_) then (iEquations_,iuniqueEqIndex,itempvars);
-     case((crset,crA,states,ceqns,dstates,oeqns)::setData,BackendDAE.SHARED(knownVars=kv,functionTree=functree),_,_,_)
-       equation
-         ceqns = replaceDerOpInEquationList(ceqns);
-         oeqns = replaceDerOpInEquationList(oeqns);
+  (oVars,oEquations,ouniqueEqIndex,otempvars) := 
+  matchcontinue(iStateSets,iVars,knVars,functree,iEquations,iuniqueEqIndex,itempvars)
+    local
+      BackendDAE.StateSets sets;
+      DAE.ComponentRef crA;
+      list<BackendDAE.Var> aVars,statevars,dstatesvars;
+      list<BackendDAE.Equation> ceqns,oeqns;
+      list<DAE.ComponentRef> crstates;
+      BackendDAE.Variables vars,vars1,diffVars,ovars;
+      BackendDAE.EquationArray eqnsarr,oeqnsarr;
+      Option<SimCode.JacobianMatrix> jacobianMatrix;
+      list<SimCode.StateSet> simequations;
+      list<SimCode.SimVar> tempvars;
+      Integer uniqueEqIndex;
+    case({},_,_,_,_,_,_) then (iVars,iEquations,iuniqueEqIndex,itempvars);
+    case(BackendDAE.STATESET(crA=crA,varA=aVars,states=statevars,ovars=dstatesvars,eqns=ceqns,oeqns=oeqns)::sets,_,_,_,_,_,_)
+      equation
+        // add vars for A
+        vars = BackendVariable.addVars(aVars,iVars);
+        // replace der in equations
+        ceqns = replaceDerOpInEquationList(ceqns);
+        oeqns = replaceDerOpInEquationList(oeqns);
+        // get state names
+        crstates = List.map(statevars,BackendVariable.varCref);
+        // create symbolic jacobian for simulation
+        oeqnsarr = BackendEquation.listEquation(oeqns);
+        eqnsarr = BackendEquation.listEquation(ceqns);
+        diffVars = BackendVariable.listVar1(statevars);
+        ovars = BackendVariable.listVar1(dstatesvars);
+        vars1 = BackendVariable.listVar1(statevars);
+        vars1 = BackendVariable.addVars(dstatesvars,vars1);
+        (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(diffVars, knVars, eqnsarr, oeqnsarr, ovars, functree, vars1, iuniqueEqIndex,itempvars);
+        // next set  
+        (vars,simequations,uniqueEqIndex,tempvars) = createStateSetsSets(sets,vars,knVars,functree,SimCode.SES_STATESET(uniqueEqIndex,crA,jacobianMatrix)::iEquations,uniqueEqIndex+1,itempvars);
+      then
+        (vars,simequations,uniqueEqIndex,tempvars);
+  end matchcontinue;
+end createStateSetsSets;
 
-         tcrs = List.map(states,BackendVariable.varCref);
-         
-         // constraint equations
-         (simequations,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(ceqns,iuniqueEqIndex,itempvars);
-         
-         // create symbolic jacobian for simulation
-         oeqnsarr = BackendEquation.listEquation(oeqns);
-         eqnsarr = BackendEquation.listEquation(ceqns);
-         diffVars = BackendVariable.listVar1(states);
-         ovars = BackendVariable.listVar1(dstates);
-         vars = BackendVariable.listVar1(states);
-         vars = BackendVariable.addVars(dstates,vars);
-         (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(diffVars, kv, eqnsarr, oeqnsarr, ovars, functree, vars, uniqueEqIndex,tempvars);
-         // next setData
-         (simequations,uniqueEqIndex,tempvars) = createStateSets(setData,iShared,SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs, 0, jacobianMatrix)::iEquations_,uniqueEqIndex+1,tempvars);
-       then
-         (simequations,uniqueEqIndex,tempvars);
-   end matchcontinue;
-end createStateSets;
+protected function indexStateSets
+" function indexStateSets
+ function to collect jacobians for statesets"
+  input list<SimCode.StateSet> inSets;
+  input list<SimCode.JacobianMatrix> inSymJacs;
+  output list<SimCode.JacobianMatrix> outSymJacs;
+algorithm
+  outSymJacs := match(inSets, inSymJacs)
+    local
+      list<SimCode.StateSet> sets;
+      SimCode.JacobianMatrix symJac;
+    case ({},_) then inSymJacs;
+    case(SimCode.SES_STATESET(jacobianMatrix=NONE())::sets, _)
+      then 
+        indexStateSets(sets,inSymJacs);
+    case(SimCode.SES_STATESET(jacobianMatrix=SOME(symJac))::sets, _)
+      then 
+        indexStateSets(sets,symJac::inSymJacs);
+  end match;
+end indexStateSets;
 
 // =============================================================================
 //
@@ -12739,6 +12814,7 @@ algorithm
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> odeEquations;
       list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
+      list<SimCode.StateSet> stateSets;
       Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
       list<DAE.Constraint> constraints;
@@ -12770,7 +12846,7 @@ algorithm
         inSimCode;
     
     case SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
-                 parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,constraints,classAttributes,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
+                 parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,stateSets,constraints,classAttributes,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
                  discreteModelVars,extObjInfo,makefileParams,delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT)
       equation
         SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels) = modelInfo;
@@ -12786,7 +12862,7 @@ algorithm
         modelInfo = SimCode.MODELINFO(name, directory, varInfo, vars, functions, labels);
       then
         SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
-                  parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,constraints,classAttributes,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
+                  parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,stateSets,constraints,classAttributes,zeroCrossings,relations,sampleConditions,sampleEquations,helpVarInfo,whenClauses,
                   discreteModelVars,extObjInfo,makefileParams,delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT);
                   
     case inSimCode
@@ -13058,6 +13134,7 @@ algorithm
       list<SimCode.SimEqSystem> inlineEquations;
       list<SimCode.SimEqSystem> removedEquations;
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
+      list<SimCode.StateSet> stateSets;
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
@@ -13079,7 +13156,7 @@ algorithm
     case (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
                           useSymbolicInitialization, initialEquations, startValueEquations, 
-                          parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, 
+                          parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts,stateSets,
                           constraints, classAttributes, zeroCrossings, relations, sampleConditions, sampleEquations, 
                           helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
@@ -13106,7 +13183,7 @@ algorithm
       then (SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes, 
                             allEquations, odeEquations, algebraicEquations, residualEquations, 
                             useSymbolicInitialization, initialEquations, startValueEquations, 
-                            parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts, 
+                            parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts,stateSets,
                             constraints, classAttributes, zeroCrossings, relations, sampleConditions, sampleEquations, 
                             helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams, 
                             delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, 
@@ -13262,6 +13339,7 @@ algorithm
       list<SimCode.SimEqSystem> inlineEquations;
       list<SimCode.SimEqSystem> removedEquations;
       list<SimCode.SimEqSystem> algorithmAndEquationAsserts;
+      list<SimCode.StateSet> stateSets;
       list<DAE.Constraint> constraints;
       list<DAE.ClassAttributes> classAttributes;
       list<BackendDAE.ZeroCrossing> zeroCrossings, relations;
@@ -13282,14 +13360,14 @@ algorithm
     case (SimCode.SIMCODE(modelInfo, _, recordDecls, externalFunctionIncludes,
                           allEquations, odeEquations, algebraicEquations, residualEquations, 
                           useSymbolicInitialization, initialEquations, startValueEquations, 
-                          parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts,
+                          parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts,stateSets,
                           constraints, classAttributes, zeroCrossings, relations, sampleConditions, sampleEquations,
                           helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                           delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT),_)
       then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                            allEquations, odeEquations, algebraicEquations, residualEquations,
                            useSymbolicInitialization, initialEquations, startValueEquations,
-                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts,
+                           parameterEquations, inlineEquations, removedEquations, algorithmAndEquationAsserts,stateSets,
                            constraints, classAttributes, zeroCrossings, relations, sampleConditions, sampleEquations,
                            helpVarInfo, whenClauses, discreteModelVars, extObjInfo, makefileParams,
                            delayedExps, jacobianMatrixes, simulationSettingsOpt, fileNamePrefix, crefToSimVarHT);

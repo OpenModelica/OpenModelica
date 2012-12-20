@@ -2809,105 +2809,11 @@ algorithm
         ((_,eqnslst,b)) = BackendEquation.traverseBackendDAEEqns(eqns,replaceEquationTraverser,(repl,{},false));
         eqnslst = Debug.bcallret1(b,listReverse,eqnslst,eqnslst);
         eqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,eqns);
-        (stateSets,b) = removeSimpleEquationsStateSets(stateSets,v,repl,{},b);
         syst = Util.if_(b,BackendDAE.EQSYSTEM(v,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),syst);
       then
         removeSimpleEquationsShared1(rest,syst::inSysts1,repl);
     end match;
 end removeSimpleEquationsShared1;
-
-protected function removeSimpleEquationsStateSets
-"author: Frenkel TUD 2012-12"
-  input BackendDAE.StateSets istateSets;
-  input BackendDAE.Variables vars;
-  input BackendVarTransform.VariableReplacements repl;
-  input BackendDAE.StateSets iAcc;
-  input Boolean iDoRepl;
-  output BackendDAE.StateSets oAcc;
-  output Boolean oDoRepl;
-algorithm
-  (oAcc,oDoRepl) := match(istateSets,vars,repl,iAcc,iDoRepl)
-    local
-      list<DAE.ComponentRef> states,dstates;
-      list<BackendDAE.Equation> ceqns;
-      BackendDAE.StateSets sets;
-      Boolean b,b1;
-    case({},_,_,_,_) then (iAcc,iDoRepl);
-    case(BackendDAE.STATESET(states,ceqns,dstates)::sets,_,_,_,_)
-      equation
-        // do replacements in states is not neccessary because alias states are not replaced
-        // do replacements in dummystates
-        (dstates,b1) = removeSimpleEquationsStateSetsDummyStates(dstates,vars,repl,HashSet.emptyHashSet(),{},iDoRepl);
-        // do replacements in constraint equations
-        (ceqns,b) = BackendVarTransform.replaceEquations(ceqns,repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-        (sets,b) = removeSimpleEquationsStateSets(sets,vars,repl,BackendDAE.STATESET(states,ceqns,dstates)::iAcc,b or b1);
-      then
-        (sets,b);
-  end match;
-end removeSimpleEquationsStateSets;
-
-protected function removeSimpleEquationsStateSetsDummyStates
-  input list<DAE.ComponentRef> iDStates;
-  input BackendDAE.Variables vars;
-  input BackendVarTransform.VariableReplacements repl;
-  input HashSet.HashSet iSt;
-  input list<DAE.ComponentRef> iAcc;
-  input Boolean iDoRepl;
-  output list<DAE.ComponentRef> oAcc;
-  output Boolean oDoRepl;
-algorithm
-  (oAcc,oDoRepl) := matchcontinue(iDStates,vars,repl,iSt,iAcc,iDoRepl)
-    local
-      DAE.ComponentRef cr;
-      list<DAE.ComponentRef> dstates;
-      Boolean b;
-      DAE.Exp e;
-      HashSet.HashSet st;
-      list<BackendDAE.Var> vlst;
-    case ({},_,_,_,_,_) then (iAcc,iDoRepl);
-    case (cr::dstates,_,_,_,_,_)
-      equation
-        e = BackendVarTransform.getReplacement(repl,cr);
-        vlst = BackendEquation.expressionVars(e,vars);
-        (dstates,st) = addDummyVarsStateSet(vlst,iAcc,iSt);
-        (dstates,b) = removeSimpleEquationsStateSetsDummyStates(dstates,vars,repl,st,dstates,true);
-      then
-        (dstates,b);
-    case (cr::dstates,_,_,_,_,_)
-      equation
-        (dstates,b) = removeSimpleEquationsStateSetsDummyStates(dstates,vars,repl,iSt,cr::iAcc,iDoRepl);
-      then
-        (dstates,b);
-  end matchcontinue;
-end removeSimpleEquationsStateSetsDummyStates;
-
-protected function addDummyVarsStateSet
-  input list<BackendDAE.Var> iVarLst;
-  input list<DAE.ComponentRef> iAcc;
-  input HashSet.HashSet iSt;
-  output list<DAE.ComponentRef> oAcc;
-  output HashSet.HashSet oSt;
-algorithm
-  (oAcc,oSt) := matchcontinue(iVarLst,iAcc,iSt)
-    local
-      DAE.ComponentRef cr;
-      list<BackendDAE.Var> vlst;
-      HashSet.HashSet st;
-      list<DAE.ComponentRef> dstates;
-    case ({},_,_) then (iAcc,iSt);
-    case (BackendDAE.VAR(varName=cr)::vlst,_,_)
-      equation
-        st = BaseHashSet.addUnique(cr,iSt);
-        (dstates,st) = addDummyVarsStateSet(vlst,cr::iAcc,st);
-      then
-        (dstates,st);
-    case (_::vlst,_,_)
-      equation
-        (dstates,st) = addDummyVarsStateSet(vlst,iAcc,iSt);
-      then
-        (dstates,st);        
-  end matchcontinue;
-end addDummyVarsStateSet;
 
 protected function replaceEquationTraverser
   "Help function to e.g. removeSimpleEquations"

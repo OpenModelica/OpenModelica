@@ -255,29 +255,24 @@ algorithm
 end printBackendDAEType;
 
 public function printStateSets "function printStateSets
-  author: jfrenkel"
+  author: Frenkel TUD"
   input BackendDAE.StateSets stateSets;
 algorithm
   List.map_0(stateSets, printStateSet);
 end printStateSets;
 
 protected function printStateSet "function printStateSet
-  author: jfrenkel
-  This is a helper for printStateSets."
+  author: Frenkel TUD"
   input BackendDAE.StateSet statSet;
 protected
-  list<DAE.ComponentRef> states;
-  list<BackendDAE.Equation> ceqns;
-  list<DAE.ComponentRef> dstates;
+  Integer rang;
+  list<BackendDAE.Var> states;
+  list<DAE.ComponentRef> crstates;
 algorithm
-  BackendDAE.STATESET(states,ceqns,dstates) := statSet;
-  print("StateSet:\n");
-  print("States:\n");
-  debuglst((states,ComponentReference.printComponentRefStr,"\n","\n"));
-  print("ConstraintEquations:\n");
-  debuglst((ceqns,equationString,"\n","\n"));
-  print("Dummystates:\n");
-  debuglst((dstates,ComponentReference.printComponentRefStr,"\n","\n"));
+  BackendDAE.STATESET(rang=rang,states=states) := statSet;
+  crstates := List.map(states,BackendVariable.varCref);
+  print("StateSet: select " +& intString(rang) +& " from\n");
+  debuglst((crstates,ComponentReference.printComponentRefStr,"\n","\n"));
 end printStateSet;
 
 public function printVar "function printVar

@@ -1476,7 +1476,6 @@ algorithm
         lsteqns = BackendEquation.equationList(eqns);
         (vars,_) = replaceFinalVars(1,vars,repl,false); // replacing variable attributes (e.g start) in unknown vars 
         (eqns_1,_) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
-        ((stateSets,_)) = List.fold1(stateSets,replaceEquationsStateSet,repl,({},false));
         eqns1 = BackendEquation.listEquation(eqns_1);
       then
         BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),matching,stateSets);
@@ -1564,15 +1563,14 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
       list<BackendDAE.Equation> eqns_1,lsteqns;
-      Boolean b,b1;
+      Boolean b;
       BackendDAE.StateSets stateSets;
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),_)
       equation      
         lsteqns = BackendEquation.equationList(eqns);
         (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
         eqns1 = Debug.bcallret1(b, BackendEquation.listEquation,eqns_1,eqns);
-        ((stateSets,b1)) = List.fold1(stateSets,replaceEquationsStateSet,repl,({},false));
-        syst = Util.if_(b or b1,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),isyst);
+        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),isyst);
       then
         syst;
   end match;
@@ -12107,7 +12105,7 @@ algorithm
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns,eqns1;
       list<BackendDAE.Equation> eqns_1,lsteqns;
-      Boolean b,b1;
+      Boolean b;
       BackendDAE.EqSystem syst;
       BackendDAE.StateSets stateSets;      
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),_)
@@ -12116,31 +12114,11 @@ algorithm
         lsteqns = BackendEquation.equationList(eqns);
         (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
         eqns1 = Debug.bcallret1(b,BackendEquation.listEquation,eqns_1,eqns);
-        ((stateSets,b1)) = List.fold1(stateSets,replaceEquationsStateSet,repl,({},false));
-        syst = Util.if_(b or b1,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),isyst);
+        syst = Util.if_(b,BackendDAE.EQSYSTEM(vars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),isyst);
       then
         syst;
   end match;
 end removeConstantsWork;
-
-protected function replaceEquationsStateSet
-"author: Frenkel TUD 2012-12"
-  input BackendDAE.StateSet inSet;
-  input BackendVarTransform.VariableReplacements repl;
-  input tuple<BackendDAE.StateSets,Boolean> inTpl;
-  output tuple<BackendDAE.StateSets,Boolean> outTpl;
-protected
-  list< .DAE.ComponentRef> states;
-  list<BackendDAE.Equation> ceqns;
-  list< .DAE.ComponentRef> dstates;
-  BackendDAE.StateSets sets;
-  Boolean b,b1;
-algorithm
-  BackendDAE.STATESET(states,ceqns,dstates) := inSet;
-  (sets,b) := inTpl;
-  (ceqns,b1) := BackendVarTransform.replaceEquations(ceqns, repl,NONE());
-  outTpl := (BackendDAE.STATESET(states,ceqns,dstates)::sets,b or b1);
-end replaceEquationsStateSet;
 
 protected function removeConstantsFinder
 "author: Frenkel TUD 2012-10"
