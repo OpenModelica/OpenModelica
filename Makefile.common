@@ -37,7 +37,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_doc)/omc/testmodels
 	mkdir -p $(builddir_man)/man1/
 
-release: omc omc-diff
+release: omc-diff omc
 
 install-python:
 	(time $(MAKE) -C PythonInterface -f $(defaultMakefileTarget))

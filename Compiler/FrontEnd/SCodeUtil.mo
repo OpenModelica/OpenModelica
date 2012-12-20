@@ -2005,7 +2005,8 @@ algorithm
 
     case _
       equation
-        false = Flags.isSet(Flags.SCODE_INST);
+        true = boolNot(boolOr(Flags.isSet(Flags.SCODE_INST),
+                              Flags.isSet(Flags.SCODE_INST_SHORTCUT)));
       then
         (inElement, NONE());
 
@@ -2021,12 +2022,13 @@ algorithm
     //       when it does.
     /*************************************************************************/
 
-    //case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr, cmt), info)
-    //  equation
-    //    (redecl, opt_mod) = splitRedeclareMod(mod, name);
-    //  then
-    //    (SCode.CLASS(name, prefs, ep, pp, res,
-    //      SCode.DERIVED(ty, redecl, attr, cmt), info), opt_mod);
+    case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr, cmt), info)
+      equation
+        true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
+        (redecl, opt_mod) = splitRedeclareMod(mod, name);
+      then
+        (SCode.CLASS(name, prefs, ep, pp, res,
+          SCode.DERIVED(ty, redecl, attr, cmt), info), opt_mod);
 
     else (inElement, NONE());
   end matchcontinue;

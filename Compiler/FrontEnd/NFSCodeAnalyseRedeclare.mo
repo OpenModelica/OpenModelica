@@ -420,7 +420,7 @@ algorithm
   (outIScopes, outInstStack) :=
   match(inElements, inExtends, inEnv, inPrefix, inIScopesAcc, inInstStack)
     local
-      tuple<Element, Modifier> elem;
+      tuple<Element, Modifier> elem, new_elem;
       list<tuple<Element, Modifier>> rest_el;
       Boolean cse;
       list<Element> accum_el;
@@ -435,8 +435,8 @@ algorithm
 
     case (elem :: rest_el, exts, _, _, islist, _)
       equation
-        (elem, orig_mod, env, previousItem) = NFSCodeInst.resolveRedeclaredElement(elem, inEnv, inPrefix);
-        (islist, exts, ii) = analyseElement_dispatch(elem, orig_mod, exts, env, inPrefix, islist, inInstStack, previousItem);
+        (new_elem, orig_mod, env, previousItem) = NFSCodeInst.resolveRedeclaredElement(elem, inEnv, inPrefix);
+        (islist, exts, ii) = analyseElement_dispatch(new_elem, elem, orig_mod, exts, env, inPrefix, islist, inInstStack, previousItem);
         (islist, ii) = analyseElementList(rest_el, exts, inEnv, inPrefix, islist, ii);
       then
         (islist, ii);
@@ -463,6 +463,7 @@ protected function analyseElement_dispatch
 "Helper function to analyseElementList. 
  Dispatches the given element to the correct function for transformation."
   input tuple<Element, Modifier> inElement;
+  input tuple<Element, Modifier> inOriginalElement;
   input Modifier inOriginalMod;
   input list<NFSCodeEnv.Extends> inExtends;
   input Env inEnv;
@@ -475,9 +476,9 @@ protected function analyseElement_dispatch
   output InstStack outInstStack;
 algorithm
   (outIScopes, outExtends, outInstStack) :=
-  matchcontinue(inElement, inOriginalMod, inExtends, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
+  matchcontinue(inElement, inOriginalElement, inOriginalMod, inExtends, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
     local
-      Element elem;
+      Element elem, cls, orig;
       Modifier mod;
       list<Element> res;
       Option<Element> ores;
@@ -488,7 +489,6 @@ algorithm
       String name;
       Prefix prefix;
       Env env;
-      Element cls;
       Item item;
       InstStack ii;
       Absyn.Info info;
@@ -497,21 +497,21 @@ algorithm
       Integer i;
 
     // A component 
-    case ((elem as SCode.COMPONENT(name = _), mod), _, _, _, _, _, _, _)
+    case ((elem as SCode.COMPONENT(name = _), mod), (orig, _), _, _, _, _, _, _, _)
       equation
-        (islist, ii) = analyseElement(elem, mod, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem); 
+        (islist, ii) = analyseElement(elem, mod, orig, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem); 
       then
         (islist, inExtends, ii);
 
     // A class 
-    case ((elem as SCode.CLASS(name = _), mod), _, _, _, _, _, _, _)
+    case ((elem as SCode.CLASS(name = _), mod), (orig, _), _, _, _, _, _, _, _)
       equation
-        (islist, ii) = analyseElement(elem, mod, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem); 
+        (islist, ii) = analyseElement(elem, mod, orig, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem); 
       then
         (islist, inExtends, ii);
 
     // An extends clause. Transform it it together with the next Extends element from the environment.
-    case ((elem as SCode.EXTENDS(baseClassPath = _), mod), _,
+    case ((elem as SCode.EXTENDS(baseClassPath = _), mod), (orig, _), _,
           NFSCodeEnv.EXTENDS(redeclareModifiers = redecls) :: rest_exts, _, _, _, _, _)
       equation
         (islist, ii) = analyseExtends(elem, mod, redecls, inEnv, inPrefix, inIScopesAcc, inInstStack);
@@ -521,7 +521,7 @@ algorithm
     // We should have one Extends element for each extends clause in the class.
     // If we get an extends clause but don't have any Extends elements left,
     // something has gone very wrong.
-    case ((SCode.EXTENDS(baseClassPath = _), _), _, _, {}, _, _, _, _)
+    case ((SCode.EXTENDS(baseClassPath = _), _), _, _, _, {}, _, _, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"NFSCodeAnalyseRedeclare.analyseElement_dispatch ran out of extends!."});
       then
@@ -544,6 +544,7 @@ end analyseElement_dispatch;
 protected function analyseElement
   input Element inElement;
   input Modifier inClassMod;
+  input Element inOrigElement;
   input Modifier inOriginalMod;
   input Env inEnv;
   input Prefix inPrefix;
@@ -554,11 +555,11 @@ protected function analyseElement
   output InstStack outInstStack;
 algorithm
   (outIScopes, outInstStack) := 
-  matchcontinue(inElement, inClassMod, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
+  matchcontinue(inElement, inClassMod, inOrigElement, inOriginalMod, inEnv, inPrefix, inIScopesAcc, inInstStack, inPreviousItem)
     local
       Absyn.Info info;
       Absyn.Path path, tpath, newpath;
-      Element comp;
+      Element comp, orig;
       DAE.Type ty;
       Env env;
       Item item, itemOld;
@@ -596,7 +597,7 @@ algorithm
             name = name, 
             typeSpec = Absyn.TPATH(tpath, ad),
             modifications = smod,
-            info = info), _, _, _, _, _, _, _)
+            info = info), _, orig, _, _, _, _, _, _)
       equation 
         // Look up the class of the component.
         // print("Looking up: " +& Absyn.pathString(tpath) +& " for component: " +& name +& "\n");
@@ -630,7 +631,7 @@ algorithm
         
         comp = inElement;
         comp = SCode.setComponentTypeSpec(comp, Absyn.TPATH(tpath, ad));
-        infos = mkInfos(listAppend(previousItem,inPreviousItem), {RP(replacements),EI(comp, env)});
+        infos = mkInfos(List.union(previousItem,inPreviousItem), {RP(replacements),EI(comp, env),EI(orig, inEnv)});
         
         fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv); 
         
@@ -643,7 +644,7 @@ algorithm
             name = name, 
             info = info,
             classDef = SCode.CLASS_EXTENDS(baseClassName = _) 
-            ), _, _, _, _, _, _, _)
+            ), _, _, _, _, _, _, _, _)
       equation
       then
         (inIScopesAcc,inInstStack);
@@ -652,7 +653,8 @@ algorithm
     case (SCode.CLASS(
             name = name, 
             info = info, 
-            prefixes = SCode.PREFIXES(replaceablePrefix = _ /*SCode.REPLACEABLE(_)*/)), _, _, _, _, _, _, _)
+            prefixes = SCode.PREFIXES(replaceablePrefix = _ /*SCode.REPLACEABLE(_)*/)), 
+            _, _, _, _, _, _, _, _)
       equation
         fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv);
         // print("Looking up CLASS: " +& Absyn.pathString(fullName) +& "\n");
@@ -668,7 +670,7 @@ algorithm
         // remove it
         ii = inInstStack;
         
-        infos = mkInfos(listAppend(previousItem,inPreviousItem), {EI(inElement, env)});
+        infos = mkInfos(List.union(previousItem,inPreviousItem), {EI(inElement, env)});
         
         // for debugging 
         // fullName = Absyn.joinPaths(fullName, Absyn.IDENT("$local"));
@@ -678,7 +680,7 @@ algorithm
         (islist, ii);
 
    // for debugging
-   case (_, _, _, _, _, _, _, _)
+   case (_, _, _, _, _, _, _, _, _)
       equation
         true = Flags.isSet(Flags.FAILTRACE);
         Debug.traceln("NFSCodeAnalyseRedeclare.instElement ignored element:" +& SCodeDump.unparseElementStr(inElement) +& "\n");
@@ -996,15 +998,17 @@ public function replaceCompEIwithRI
   output Infos outInfos;
 algorithm
   outInfos := matchcontinue(inInfos)
-    local Infos infos; Info info; Env env, denv; Element e,c; Absyn.TypeSpec ts;
+    local Infos infos; Info info; Env env, denv; Element e,c,o; Absyn.TypeSpec ts;
     // use the component from the redeclare
     case (_)
       equation
-        EI(e, env) = getEIFromInfos(inInfos);
+        EI(o, env) = getEIFromInfos(inInfos);
         RI(NFSCodeEnv.REDECLARED_ITEM(NFSCodeEnv.VAR(e, _), denv), env) = getRIFromInfos(inInfos);
+        e = mergeComponentModifiers(e, o);
         infos = EI(e, env)::inInfos;
       then
         infos;
+    
     // use the type from the redeclare
     case (_)
       equation
@@ -1017,8 +1021,137 @@ algorithm
         infos = EI(e, env)::inInfos;
       then
         infos;
+  
   end matchcontinue;
 end replaceCompEIwithRI;
+
+protected function mergeComponentModifiers
+  input SCode.Element inNewComp;
+  input SCode.Element inOldComp;
+  output SCode.Element outComp;
+algorithm
+  outComp := matchcontinue(inNewComp, inOldComp)
+    local
+      SCode.Ident n1,n2;
+      SCode.Prefixes p1,p2;
+      SCode.Attributes a1,a2;
+      Absyn.TypeSpec t1,t2;
+      SCode.Mod m1,m2,m;
+      Option<SCode.Comment> c1,c2;
+      Option<Absyn.Exp> cnd1,cnd2;
+      Absyn.Info i1,i2;
+      SCode.Element c;
+    
+    case (SCode.COMPONENT(n1, p1, a1, t1, m1, c1, cnd1, i1),
+          SCode.COMPONENT(n2, p2, a2, t2, m2, c2, cnd2, i2))
+      equation
+        m = mergeModifiers(m1, m2);
+        c = SCode.COMPONENT(n1, p1, a1, t1, m, c1, cnd1, i1);
+      then
+        c;
+  
+  end matchcontinue;
+end mergeComponentModifiers;
+
+protected function mergeModifiers
+  input SCode.Mod inNewMod;
+  input SCode.Mod inOldMod;
+  output SCode.Mod outMod;
+algorithm
+  outMod := matchcontinue(inNewMod, inOldMod)
+    local
+      SCode.Final f1, f2;
+      SCode.Each e1, e2;
+      list<SCode.SubMod> sl1, sl2, sl;
+      Option<tuple<Absyn.Exp, Boolean>> b1, b2, b;
+      Absyn.Info i1, i2;
+      SCode.Mod m;
+    
+    case (SCode.NOMOD(), _) then inOldMod;
+    case (_, SCode.NOMOD()) then inNewMod;
+    case (SCode.REDECL(element = _), _) then inNewMod;
+    
+    case (SCode.MOD(f1, e1, sl1, b1, i1),
+          SCode.MOD(f2, e2, sl2, b2, i2))
+      equation
+        b = mergeBindings(b1, b2);
+        sl = mergeSubMods(sl1, sl2); 
+        m = SCode.MOD(f1, e1, sl, b1, i1);
+      then
+        m;
+     
+    else inNewMod;
+  
+  end matchcontinue;
+end mergeModifiers;
+
+protected function mergeBindings
+  input Option<tuple<Absyn.Exp, Boolean>> inNew;
+  input Option<tuple<Absyn.Exp, Boolean>> inOld;
+  output Option<tuple<Absyn.Exp, Boolean>> outBnd;
+algorithm
+  outBnd := matchcontinue(inNew, inOld)
+    case (SOME(_), _) then inNew;
+    case (NONE(), _) then inOld;
+  end matchcontinue;
+end mergeBindings;
+
+protected function mergeSubMods
+  input list<SCode.SubMod> inNew;
+  input list<SCode.SubMod> inOld;
+  output list<SCode.SubMod> outSubs;
+algorithm
+  outSubs := matchcontinue(inNew, inOld)
+    local
+      list<SCode.SubMod> sl, rest, old;
+      SCode.SubMod s;
+    
+    case ({}, _) then inOld;
+    
+    case (s::rest, _)
+      equation
+        old = removeSub(s, inOld);
+        sl = mergeSubMods(rest, old);
+      then
+        s::sl;
+        
+     else inNew; 
+  end matchcontinue;
+end mergeSubMods;
+
+protected function removeSub
+  input SCode.SubMod inSub;
+  input list<SCode.SubMod> inOld;
+  output list<SCode.SubMod> outSubs;
+algorithm
+  outSubs := matchcontinue(inSub, inOld)
+    local
+      list<SCode.SubMod> sl, rest, old;
+      SCode.Ident id1, id2;
+      list<SCode.Subscript> idxs1, idxs2;
+      SCode.SubMod s;
+
+    case (_, {}) then {}; 
+    
+    case (SCode.NAMEMOD(id1, _), SCode.NAMEMOD(id2, _)::rest)
+      equation
+        true = stringEqual(id1, id2);
+      then
+        rest;
+    
+    case (SCode.IDXMOD(idxs1, _), SCode.IDXMOD(idxs2, _)::rest)
+      equation
+        true = valueEq(idxs1, idxs2);
+      then
+        rest;
+    
+    case (_, s::rest)
+      equation
+        rest = removeSub(inSub, rest);
+      then
+        s::rest;
+  end matchcontinue;  
+end removeSub;
 
 public function replaceClassEIwithRI
   input Infos inInfos;
@@ -1247,11 +1380,11 @@ end propagateModifiersAndArrayDims;
 public function mergeCdefs
 "@auhtor: adrpo
  merge two derived classdefs first onto second"
-  input SCode.ClassDef inCd1;
-  input SCode.ClassDef inCd2;
+  input SCode.ClassDef inOldCd1;
+  input SCode.ClassDef inNewCd2;
   output SCode.ClassDef outCd;
 algorithm 
-  outCd := matchcontinue(inCd1, inCd2)
+  outCd := matchcontinue(inOldCd1, inNewCd2)
     local
       SCode.Attributes atr1, atr2;
       SCode.ClassDef cd1, cd2, cd;  
@@ -1261,9 +1394,11 @@ algorithm
       
     case (SCode.DERIVED(ts1, m1, atr1, cmt1), SCode.DERIVED(ts2, m2, atr2, cmt2))
       equation
-        cd = SCode.DERIVED(ts2, m1, atr2, cmt2);
+        m2 = mergeModifiers(m2, m1);
+        cd = SCode.DERIVED(ts2, m2, atr2, cmt2);
       then
         cd;
+  
   end matchcontinue;
 end mergeCdefs;
 
@@ -1776,6 +1911,21 @@ algorithm
   end matchcontinue;
 end getRIFromInfos;
 
+public function getOriginalFromInfos
+  input Infos inInfos;
+  output Info outInfo;
+algorithm
+  outInfo := matchcontinue(inInfos)
+    local
+      Infos rest;
+      Info i;
+    
+    case ((i as RI(item = NFSCodeEnv.VAR(var = _)))::rest) then i;
+    case (_::rest) then getRIFromInfos(rest);
+    
+  end matchcontinue;
+end getOriginalFromInfos;
+
 protected function replacementStr
   input Replacement inReplacement;
   output String outStr;
@@ -1822,14 +1972,14 @@ algorithm
       
     case (NFSCodeEnv.REDECLARED_ITEM(i, de), _)
       equation
-        str = "REDECLARED(" +& itemShortStr(i) +& ").DECL_ENV(" +& NFSCodeEnv.getEnvName(de) +& ")." +&
-              "LOOKUP_ENV(" +& NFSCodeEnv.getEnvName(inEnv) +& ")"; 
+        str = "RED(" +& itemShortStr(i) +& ").DENV(" +& NFSCodeEnv.getEnvName(de) +& ")." +&
+              "LENV(" +& NFSCodeEnv.getEnvName(inEnv) +& ")"; 
       then
         str;
     
     case (i, _)
       equation
-        str = "REDECLARED(" +& itemShortStr(i) +& ").LOOKUP_ENV(" +& NFSCodeEnv.getEnvName(inEnv) +& ")"; 
+        str = "PRE(" +& itemShortStr(i) +& ").LENV(" +& NFSCodeEnv.getEnvName(inEnv) +& ")"; 
       then
         str;
       
@@ -2061,6 +2211,5 @@ algorithm
     else false;
   end match;
 end isReferenced;
-
 
 end NFSCodeAnalyseRedeclare;
