@@ -100,7 +100,8 @@ protected function dae_to_algSystem "function dae_to_algSystem
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
-  BackendDAE.EqSystems systs, timesystem;
+  BackendDAE.EqSystems systs;
+  BackendDAE.EqSystem timesystem;
   BackendDAE.Shared shared;
   
   BackendDAE.Variables orderedVars;
@@ -116,9 +117,8 @@ algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
   systs := List.map(systs, eliminatedStatesDerivations);
   timesystem := timeEquation();
-  timesystem := {timesystem};
 
-  systs := listAppend(systs,timesystem);
+  systs := listAppend(systs, {timesystem});
   dae := BackendDAE.DAE(systs, shared);
   
   Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: befor mathching algebraic system");
