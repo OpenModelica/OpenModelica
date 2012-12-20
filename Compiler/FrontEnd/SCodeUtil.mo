@@ -2021,7 +2021,6 @@ algorithm
     //       instantiation doesn't handle class modifications yet. Enable this
     //       when it does.
     /*************************************************************************/
-
     case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr, cmt), info)
       equation
         true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);

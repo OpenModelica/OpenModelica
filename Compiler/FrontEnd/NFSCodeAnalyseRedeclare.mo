@@ -631,7 +631,8 @@ algorithm
         
         comp = inElement;
         comp = SCode.setComponentTypeSpec(comp, Absyn.TPATH(tpath, ad));
-        infos = mkInfos(List.union(previousItem,inPreviousItem), {RP(replacements),EI(comp, env),EI(orig, inEnv)});
+        comp = mergeComponentModifiers(comp, orig);
+        infos = mkInfos(List.union(previousItem,inPreviousItem), {RP(replacements), EI(comp, env)});
         
         fullName = NFSCodeEnv.mergePathWithEnvPath(Absyn.IDENT(name), inEnv); 
         
