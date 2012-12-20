@@ -1466,6 +1466,7 @@ algorithm
       list<SimCode.SimVar> tempvars;
       
       SimCode.JacobianMatrix jacG;
+      list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> setData;
       
     case (dlow,class_,_,fileDir,_,_,_,_,_,_,_,_) equation
       System.tmpTickReset(0);
@@ -1483,7 +1484,7 @@ algorithm
       _ = InlineSolver.generateDAE(dlow);
 
       // handle states sets
-      dlow = IndexReduction.handleStateSetsCodeGeneration(dlow);
+      (dlow,setData) = IndexReduction.handleStateSetsCodeGeneration(dlow);
 
       // check if the Sytems has states
       dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
@@ -1507,8 +1508,11 @@ algorithm
       (uniqueEqIndex,sampleEquations) = createSampleEquations(sampleEqns,1,{});
       n_h = listLength(helpVarInfo);
       
+      // state set stuff
+      (_,uniqueEqIndex,tempvars) = createStateSets(setData,shared,{},uniqueEqIndex,{});
+      
       // initialization stuff
-      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, {}, helpVarInfo);
+      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, tempvars, helpVarInfo);
       (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
 
       // expandAlgorithmsbyInitStmts
@@ -3970,6 +3974,61 @@ algorithm
   end match;
 end createTornSystemOtherEqns1;
 
+// =============================================================================
+//
+// Section to create state set equations
+// =============================================================================
+
+protected function createStateSets
+  input list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> iSetData;
+  input BackendDAE.Shared iShared;
+  input list<SimCode.SimEqSystem> iEquations_;
+  input Integer iuniqueEqIndex;
+  input list<SimCode.SimVar> itempvars;
+  output list<SimCode.SimEqSystem> oEquations_;
+  output Integer ouniqueEqIndex;
+  output list<SimCode.SimVar> otempvars;
+algorithm
+   (oEquations_,ouniqueEqIndex,otempvars) := 
+   matchcontinue(iSetData,iShared,iEquations_,iuniqueEqIndex,itempvars)
+     local
+       list<DAE.ComponentRef> crset,tcrs;
+       DAE.ComponentRef crA;
+       list<BackendDAE.Var> states,dstates;
+       list<BackendDAE.Equation> ceqns,oeqns;
+       list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> setData;
+       BackendDAE.Variables vars,kv,diffVars,ovars;
+       BackendDAE.EquationArray eqnsarr,oeqnsarr;
+       Option<SimCode.JacobianMatrix> jacobianMatrix;
+       DAE.FunctionTree functree;
+       list<SimCode.SimEqSystem> simequations;
+       list<SimCode.SimVar> tempvars;
+       Integer uniqueEqIndex;
+     case({},_,_,_,_) then (iEquations_,iuniqueEqIndex,itempvars);
+     case((crset,crA,states,ceqns,dstates,oeqns)::setData,BackendDAE.SHARED(knownVars=kv,functionTree=functree),_,_,_)
+       equation
+         ceqns = replaceDerOpInEquationList(ceqns);
+         oeqns = replaceDerOpInEquationList(oeqns);
+
+         tcrs = List.map(states,BackendVariable.varCref);
+         
+         // constraint equations
+         (simequations,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(ceqns,iuniqueEqIndex,itempvars);
+         
+         // create symbolic jacobian for simulation
+         oeqnsarr = BackendEquation.listEquation(oeqns);
+         eqnsarr = BackendEquation.listEquation(ceqns);
+         diffVars = BackendVariable.listVar1(states);
+         ovars = BackendVariable.listVar1(dstates);
+         vars = BackendVariable.listVar1(states);
+         vars = BackendVariable.addVars(dstates,vars);
+         (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(diffVars, kv, eqnsarr, oeqnsarr, ovars, functree, vars, uniqueEqIndex,tempvars);
+         // next setData
+         (simequations,uniqueEqIndex,tempvars) = createStateSets(setData,iShared,SimCode.SES_NONLINEAR(uniqueEqIndex, simequations, tcrs, 0, jacobianMatrix)::iEquations_,uniqueEqIndex+1,tempvars);
+       then
+         (simequations,uniqueEqIndex,tempvars);
+   end matchcontinue;
+end createStateSets;
 
 // =============================================================================
 //

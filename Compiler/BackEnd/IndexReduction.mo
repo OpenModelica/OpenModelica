@@ -2072,12 +2072,15 @@ algorithm
         m = incidenceMatrixfromEnhanced2(inMe,vars);
         mT = BackendDAEUtil.transposeMatrix(m,inVarSize);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
-        // match the variables not the equations, to have prevered states unmatched
-        Matching.matchingExternalsetIncidenceMatrix(inEqnsSize,inVarSize,mT);
-        BackendDAEEXT.matching(inEqnsSize,inVarSize,3,-1,1.0,1);
+        // do onefree matching
         vec1 = arrayCreate(inEqnsSize,-1);
         vec2 = arrayCreate(inVarSize,-1);
-        BackendDAEEXT.getAssignment(vec2,vec1);         
+        //onefreeMatchingBFS(List.intRange(inEqnsSize),m,mT,vec2,vec1,{});
+        // match the variables not the equations, to have prevered states unmatched
+        //true = BackendDAEEXT.setAssignment(inVarSize,inEqnsSize,vec2,vec1);
+        Matching.matchingExternalsetIncidenceMatrix(inEqnsSize,inVarSize,mT);
+        BackendDAEEXT.matching(inEqnsSize,inVarSize,3,-1,1.0,1);
+        BackendDAEEXT.getAssignment(vec2,vec1);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec1);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.dumpMatching, vec2);
 
@@ -2108,6 +2111,87 @@ algorithm
         (vlst,dummyStates,syst,shared);
   end matchcontinue;
 end processComps3New;
+
+protected function onefreeMatchingBFS
+"function onefreeMatchingBFS
+  author: Frenkel TUD 2012-05"
+  input BackendDAE.IncidenceMatrixElement queue;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
+  input array<Integer> ass1; 
+  input array<Integer> ass2;
+  input BackendDAE.IncidenceMatrixElement nextQeue;
+algorithm
+  _ := match(queue,m,mt,ass1,ass2,nextQeue)
+    local 
+      Integer c;
+      BackendDAE.IncidenceMatrixElement rest,newqueue,rows;
+    case ({},_,_,_,_,{}) then ();
+    case ({},_,_,_,_,_)
+      equation
+        //  print("NextQeue\n");
+        onefreeMatchingBFS(nextQeue,m,mt,ass1,ass2,{});
+      then 
+        ();
+    case(c::rest,_,_,_,_,_)
+      equation
+        //  print("Process Eqn " +& intString(c) +& "\n");
+        rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]); 
+        //_ = arrayUpdate(columark,c,mark);
+        newqueue = onefreeMatchingBFS1(rows,c,mt,ass1,ass2,nextQeue);
+        onefreeMatchingBFS(rest,m,mt,ass1,ass2,newqueue);
+      then 
+        ();
+  end match; 
+end onefreeMatchingBFS;
+
+protected function isAssignedSaveEnhanced
+"function isAssigned
+  author: Frenkel TUD 2012-05"
+  input array<Integer> ass;
+  input Integer inTpl;
+  output Boolean outB;
+algorithm
+  outB := matchcontinue(ass,inTpl)
+    local
+      Integer i;
+    case (_,i)
+      equation
+        true = intGt(i,0);
+      then
+        intGt(ass[i],0); 
+    else
+      true;
+  end matchcontinue;
+end isAssignedSaveEnhanced;
+
+protected function onefreeMatchingBFS1
+"function onefreeMatchingBFS1
+  author: Frenkel TUD 2012-05"
+  input BackendDAE.IncidenceMatrixElement rows;
+  input Integer c;
+  input BackendDAE.IncidenceMatrix mt;
+  input array<Integer> ass1; 
+  input array<Integer> ass2;
+  input BackendDAE.IncidenceMatrixElement inNextQeue;
+  output BackendDAE.IncidenceMatrixElement outNextQeue;
+algorithm
+  outNextQeue := matchcontinue(rows,c,mt,ass1,ass2,inNextQeue)
+    local 
+      Integer r;
+      BackendDAE.IncidenceMatrixElement vareqns;
+    case (r::{},_,_,_,_,_)
+      equation
+        //  print("Assign Var" +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
+        // assigen 
+        _ = arrayUpdate(ass1,r,c);
+        _ = arrayUpdate(ass2,c,r);
+        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);   
+      then 
+        listAppend(inNextQeue,vareqns);
+    else then inNextQeue;
+  end matchcontinue; 
+end onefreeMatchingBFS1;
 
 protected function processComps4New
 "function: processComps4
@@ -2416,9 +2500,9 @@ algorithm
         // traverse all adiacent rows but not the assigned
         rows = List.select(m[e], Util.intPositive);
         rows = List.removeOnTrue(ass1[e], intEq, rows);
-        //  print("search in Rows " +& stringDelimitList(List.map(rows,intString),", ") +& " from " +& intString(e) +& "\n");
+        // print("search in Rows " +& stringDelimitList(List.map(rows,intString),", ") +& " from " +& intString(e) +& "\n");
         (set,found) = getEqnsforDynamicStateSelectionRows(rows,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);
-        //  print("add " +& boolString(found) +& " equation " +& intString(e) +& "\n");
+        // print("add " +& boolString(found) +& " equation " +& intString(e) +& "\n");
         set = List.consOnTrue(found, e, set);
         _ = Debug.bcallret3(found,arrayUpdate,colummarks,e,mark,colummarks);
         (set,found) = getEqnsforDynamicStateSelectionPhase(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,set,found or iFound);
@@ -2459,6 +2543,7 @@ algorithm
         rc = ass2[r];
         // print("check Colum " +& intString(rc) +& "\n");
         false = intGt(rc,0);
+        // print("Found free eqn " +& intString(rc) +& "\n");
         (set,b) = getEqnsforDynamicStateSelectionRows(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,true);
       then
         (set,b);
@@ -2474,7 +2559,7 @@ algorithm
         e = mapIncRowEqn[rc];
         eqns = mapEqnIncRow[e];
         _ = List.fold1r(eqns,arrayUpdate,Util.if_(iFound,mark,-mark),colummarks);
-        //  print("add to nextQueue and Queue " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");        
+        // print("traverse Eqns " +& stringDelimitList(List.map(eqns,intString),", ") +& "\n");        
         (set,b) = getEqnsforDynamicStateSelectionPhase(eqns,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,false);          
         _ = Debug.bcallret4(b and not iFound,List.fold1r,eqns,arrayUpdate,mark,colummarks,colummarks);
         (set,b) = getEqnsforDynamicStateSelectionRows(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,set,b or iFound);
@@ -2488,6 +2573,7 @@ algorithm
         // print("check Colum " +& intString(rc) +& "\n");
         true = intGt(rc,0);
         b = intGt(colummarks[rc],0);
+        // print("Found " +& boolString(b) +& " equation " +& intString(rc) +& "\n");
         (set,b) = getEqnsforDynamicStateSelectionRows(rest,m,mT,mark,colummarks,ass1,ass2,mapEqnIncRow,mapIncRowEqn,inSubset,b or iFound);
       then
         (set,b);
@@ -6013,8 +6099,10 @@ public function handleStateSetsCodeGeneration
   This function handle states sets for code generation."
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
+  output list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> setData;
 algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(inDAE,handleStateSetsSystem,1);
+  (outDAE,(_,setData)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,handleStateSetsSystem,(1,{}));
+  // BackendDump.printBackendDAE(outDAE);
 end handleStateSetsCodeGeneration;
 
 protected function handleStateSetsSystem
@@ -6022,9 +6110,9 @@ protected function handleStateSetsSystem
   author: Frenkel TUD 2012-12
   traverse an Equationsystem to handle states sets"
   input BackendDAE.EqSystem isyst; 
-    input tuple<BackendDAE.Shared, Integer> sharedChanged;
-    output BackendDAE.EqSystem osyst;
-    output tuple<BackendDAE.Shared, Integer> osharedChanged;
+  input tuple<BackendDAE.Shared, tuple<Integer,list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>>>> sharedChanged;
+  output BackendDAE.EqSystem osyst;
+  output tuple<BackendDAE.Shared, tuple<Integer,list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>>>> osharedChanged;
 algorithm
   (osyst,osharedChanged):= match (isyst,sharedChanged)
     local
@@ -6038,23 +6126,24 @@ algorithm
       BackendDAE.StateSets stateSets;
       Integer index,nvars,neqns,nvars1,neqns1;
       list<tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>>> comps;
-      array<Integer> newIndexArr;
+      array<Integer> newIndexArr,ass1;
       HashTable2.HashTable ht;
+      list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> setData;
     // no stateSet
     case (BackendDAE.EQSYSTEM(stateSets={}),_) then (isyst,sharedChanged);
     // sets
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets),(shared,index))
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching as BackendDAE.MATCHING(ass1=ass1),stateSets=stateSets),(shared,(index,setData)))
       equation
         newIndexArr = arrayCreate(BackendVariable.varsSize(vars),-1);
         ht = HashTable2.emptyHashTable();
         nvars = BackendVariable.varsSize(vars);
-        neqns = BackendDAEUtil.equationArraySize(eqns);
-        (vars,eqns,index,comps,newIndexArr,ht) = handleStateSets(stateSets,vars,eqns,index,{},newIndexArr,ht);
+        neqns = BackendDAEUtil.equationSize(eqns);
+        (vars,eqns,index,comps,newIndexArr,ht,setData) = handleStateSets(stateSets,vars,eqns,ass1,index,{},newIndexArr,ht,setData);
         // change der(dummstate) to $DER.dummystate
         (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,replaceDummyDerivativesVar,ht);
         _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns,replaceDummyDerivatives,ht);
         nvars1 = BackendVariable.varsSize(vars);
-        neqns1 = BackendDAEUtil.equationArraySize(eqns);
+        neqns1 = BackendDAEUtil.equationSize(eqns);
         // update incidence matrix
         // add row and collum to incidence matrix
         //m = updateOptIncidenceMatrixStateSet(m,neqns1-neqns,newIndexArr);
@@ -6062,7 +6151,7 @@ algorithm
         // add stong component for der(set.states)
         matching = updateMatchingStateSets(matching,nvars1-nvars,neqns1-neqns,comps,newIndexArr);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),(shared,index));
+        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),(shared,(index,setData)));
   end match;
 end handleStateSetsSystem;
 
@@ -6073,22 +6162,25 @@ protected function handleStateSets
   input BackendDAE.StateSets iStateSets;
   input BackendDAE.Variables iVars;
   input BackendDAE.EquationArray iEqns;
+  input array<Integer> ass1;
   input Integer iIndex;
   input list<tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>>> iComps;
   input array<Integer> iNewIndexArr;
   input HashTable2.HashTable iHt;
+  input list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> iSetData;
   output BackendDAE.Variables oVars;
   output BackendDAE.EquationArray oEqns;
   output Integer oIndex;
   output list<tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>>> oComps;
   output array<Integer> oNewIndexArr;
   output HashTable2.HashTable oHt;
+  output list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> oSetData;
 algorithm
-  (oVars,oEqns,oIndex,oComps,oNewIndexArr,oHt):=
-  match (iStateSets,iVars,iEqns,iIndex,iComps,iNewIndexArr,iHt)
+  (oVars,oEqns,oIndex,oComps,oNewIndexArr,oHt,oSetData):=
+  match (iStateSets,iVars,iEqns,ass1,iIndex,iComps,iNewIndexArr,iHt,iSetData)
     local
       list<DAE.ComponentRef> states,dstates;
-      list<BackendDAE.Equation> ceqns;
+      list<BackendDAE.Equation> ceqns,oeqns;
       BackendDAE.StateSets sets;
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
@@ -6096,16 +6188,17 @@ algorithm
       list<tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>>> comps;
       array<Integer> newIndexArr;
       HashTable2.HashTable ht;
-      list<Integer> ilst,setilst,ailst;
+      list<Integer> ilst,setilst,ailst,dlst;
       list<DAE.ComponentRef> crset;
       DAE.ComponentRef crA;
-      list<BackendDAE.Var> setVars,aVars;
+      list<BackendDAE.Var> setVars,aVars,dummyvars,statevars;
       list<DAE.Exp> expcrset,expcrstates;
       DAE.Exp expcrA,mulAstates,expderset;
       BackendDAE.Equation eqn;
       DAE.Operator op;
-    case ({},_,_,_,_,_,_) then (iVars,iEqns,iIndex,iComps,iNewIndexArr,iHt);
-    case (BackendDAE.STATESET(states=states,constraintEquations=ceqns,dummystates=dstates)::sets,_,_,_,_,_,_)
+      list<tuple<list<DAE.ComponentRef>,DAE.ComponentRef,list<BackendDAE.Var>,list<BackendDAE.Equation>,list<BackendDAE.Var>,list<BackendDAE.Equation>>> setData;
+    case ({},_,_,_,_,_,_,_,_) then (iVars,iEqns,iIndex,iComps,iNewIndexArr,iHt,iSetData);
+    case (BackendDAE.STATESET(states=states,constraintEquations=ceqns,dummystates=dstates)::sets,_,_,_,_,_,_,_,_)
       equation
         // create dummy_der vars and change deselected states to dummy states
         ((vars,ht,newIndexArr,ilst)) = List.fold(states,makeDummyVarandDummyDerivative,(iVars,iHt,iNewIndexArr,{})); 
@@ -6136,10 +6229,18 @@ algorithm
         eqns = BackendEquation.equationAdd(eqn, iEqns);
         esindex = BackendDAEUtil.equationSize(eqns);
         eindex = BackendDAEUtil.equationArraySize(eqns);
+        // collect other equations and other vars
+        (statevars,_) = BackendVariable.getVarLst(states,vars,{},{});
+        (dummyvars,dlst) = BackendVariable.getVarLst(dstates,vars,{},{});
+        dlst = List.map1r(dlst,arrayGet,ass1) "get the equations indices";
+        dlst = List.uniqueIntN(dlst,nvars) "remove duplacated";
+        // print("states: " +& stringDelimitList(List.map(states,ComponentReference.printComponentRefStr),"\n") +& "\n");
+        // print("OEqns: " +& stringDelimitList(List.map(dlst,intString),", ") +& "\n");
+        oeqns = BackendEquation.getEqns(dlst,eqns) "get the equations";
         // next
-        (vars,eqns,index,comps,newIndexArr,ht) = handleStateSets(sets,vars,eqns,iIndex+1,(eindex,esindex,ilst,setilst,ailst)::iComps,newIndexArr,ht);
+        (vars,eqns,index,comps,newIndexArr,ht,setData) = handleStateSets(sets,vars,eqns,ass1,iIndex+1,(eindex,esindex,ilst,setilst,ailst)::iComps,newIndexArr,ht,(crset,crA,statevars,ceqns,dummyvars,oeqns)::iSetData);
       then
-        (vars,eqns,index,comps,newIndexArr,ht);
+        (vars,eqns,index,comps,newIndexArr,ht,setData);
   end match;
 end handleStateSets;
 
@@ -6250,6 +6351,8 @@ algorithm
 end updateMatchingStateSets;
 
 protected function addAssignmentsStateSets
+"function addAssignmentsStateSets
+  author Frenkel TUD 2012-12"
   input list<tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>>> iComps;
   input array<Integer> newIndexArr;
   input array<Integer> iAss1;
@@ -6259,23 +6362,23 @@ protected function addAssignmentsStateSets
 algorithm
   (oAss1,oAss2) := match(iComps,newIndexArr,iAss1,iAss2)
     local
-      Integer e,i;
+      Integer e,e1,i;
       list<Integer> ilst,slst;
       list<tuple<Integer,Integer,list<Integer>,list<Integer>,list<Integer>>> comps;
       array<Integer> ass1,ass2;
     case({},_,_,_) then (iAss1,iAss2);
-    case((_,e,ilst,{i},_)::comps,_,_,_)
+    case((e,e1,ilst,{i},_)::comps,_,_,_)
       equation
         (ass1,ass2) = updateStateAssignmentStateSet(ilst,newIndexArr,iAss1,iAss2);
-        ass1 = arrayUpdate(ass1,i,e);
-        ass2 = arrayUpdate(ass2,e,i);
+        ass1 = arrayUpdate(ass1,i,e) "der(set.x) is solved in equation";
+        ass2 = arrayUpdate(ass2,e1,i);
         (ass1,ass2) = addAssignmentsStateSets(comps,newIndexArr,ass1,ass2);
       then
         (ass1,ass2);
-    case((_,e,ilst,slst,_)::comps,_,_,_)
+    case((e,e1,ilst,slst,_)::comps,_,_,_)
       equation
         (ass1,ass2) = updateStateAssignmentStateSet(ilst,newIndexArr,iAss1,iAss2);
-        (ass1,ass2) = addAssignmentStateSet(slst,e,ass1,ass2);
+        (ass1,ass2) = addAssignmentStateSet(slst,e,e1,ass1,ass2);
         (ass1,ass2) = addAssignmentsStateSets(comps,newIndexArr,ass1,ass2);
       then
         (ass1,ass2);
@@ -6283,6 +6386,11 @@ algorithm
 end addAssignmentsStateSets;
 
 protected function updateStateAssignmentStateSet
+"function updateStateAssignmentStateSet
+  author Frenkel TUD 2012-12
+  update the assignments for setstates because they become dummy states and the derivative was
+  append to the end of the varlist, hence the assigment has to point to the new position of the
+  derivative"
   input list<Integer> iLst;
   input array<Integer> newIndexArr;
   input array<Integer> iAss1;
@@ -6312,22 +6420,23 @@ end updateStateAssignmentStateSet;
 protected function addAssignmentStateSet
   input list<Integer> iLst;
   input Integer e;
+  input Integer e1;
   input array<Integer> iAss1;
   input array<Integer> iAss2;
   output array<Integer> oAss1;
   output array<Integer> oAss2;
 algorithm
-  (oAss1,oAss2) := match(iLst,e,iAss1,iAss2)
+  (oAss1,oAss2) := match(iLst,e,e1,iAss1,iAss2)
     local
       Integer i;
       list<Integer> ilst;
       array<Integer> ass1,ass2;
-    case({},_,_,_) then (iAss1,iAss2);
-    case(i::ilst,_,_,_)
+    case({},_,_,_,_) then (iAss1,iAss2);
+    case(i::ilst,_,_,_,_)
       equation
-        ass1 = arrayUpdate(iAss1,i,e);
-        ass2 = arrayUpdate(iAss2,e,i);
-        (ass1,ass2) = addAssignmentStateSet(ilst,e+1,ass1,ass2);
+        ass1 = arrayUpdate(iAss1,i,e) "ass1 is not scalare";
+        ass2 = arrayUpdate(iAss2,e1,i) "ass2 is scalar";
+        (ass1,ass2) = addAssignmentStateSet(ilst,e,e1+1,ass1,ass2);
       then
         (ass1,ass2);
   end match;
