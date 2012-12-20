@@ -78,7 +78,7 @@ case SIMCODE(__) then
 #include <gsl/gsl_linalg.h>
 #include "<% getName(modelInfo)%>_parameters.h" // Parameters
 ' /*BUFD*/
-  let eqs = (odeEquations |> eq => generateOdeEqs(eq,BackendQSS.getStateIndexList(qssInfo),BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),&funDecls,externalFuncs);separator="\n")
+  let eqs = (odeEquations |> eq => generateOdeEqs(eq, BackendQSS.getStateIndexList(qssInfo), BackendQSS.getStates(qssInfo), BackendQSS.getDisc(qssInfo), BackendQSS.getAlgs(qssInfo), &funDecls, externalFuncs); separator="\n")
   let () = textFile(&externalFuncs,'<% getName(modelInfo)%>_external_functions.c')
   <<
   <% generateModelInfo(modelInfo,BackendQSS.getStates(qssInfo),BackendQSS.getDisc(qssInfo),BackendQSS.getAlgs(qssInfo),sampleConditions,parameterEquations) %>
@@ -250,12 +250,12 @@ case SOME(s as SIMULATION_SETTINGS(__)) then
   >>
 end generateAnnotation;
 
-template generateOdeEqs(list<SimEqSystem> odeEquations,list<list<Integer>> indexs, list<DAE.ComponentRef> states,list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs,Text &funDecls, Text &externalFuncs)
+template generateOdeEqs(list<SimEqSystem> odeEquations, list<list<Integer>> indexs, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, Text &funDecls, Text &externalFuncs)
  "Generates the ODE equations of the model"
 ::=
-<<
-<% (odeEquations |> eq hasindex i0 => generateOdeEq(eq,listNth(indexs,0),states,disc,algs,&funDecls,&externalFuncs); separator="\n")  %>
->>
+  <<
+  <% (odeEquations |> eq hasindex i0 => generateOdeEq(eq, listNth(indexs, 0), states, disc, algs, &funDecls, &externalFuncs); separator="\n") %>
+  >>
 end generateOdeEqs;
 
 template generateOdeEq(SimEqSystem odeEquation,list<Integer> indexEq, list<DAE.ComponentRef> states, list<DAE.ComponentRef> disc, list<DAE.ComponentRef> algs, Text &funDecls, Text &externalFuncs)

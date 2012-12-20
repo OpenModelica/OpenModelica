@@ -83,7 +83,7 @@ algorithm
       
       /*output: algebraic system */
       Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: algebraic system");
-    then NONE();
+    then SOME(dae);
     
     else equation /* don't work */
       Error.addCompilerWarning("./Compiler/BackEnd/InlineSolver.mo: function generateDAE failed");
@@ -151,21 +151,21 @@ algorithm
   vars := BackendVariable.emptyVars();
   ty := DAE.T_REAL_DEFAULT;
   cr := DAE.CREF_IDENT("time", ty, {});
-  t0 := ComponentReference.crefPrefixString("$t0_", cr);
-  t1 := ComponentReference.crefPrefixString("$t1_", cr);
-  t2 := ComponentReference.crefPrefixString("$t2_", cr);
-  t3 := ComponentReference.crefPrefixString("$t3_", cr);
-  t4 := ComponentReference.crefPrefixString("$t4_", cr);
+  t0 := ComponentReference.crefPrefixString("$t0", cr);
+  t1 := ComponentReference.crefPrefixString("$t1", cr);
+  t2 := ComponentReference.crefPrefixString("$t2", cr);
+  t3 := ComponentReference.crefPrefixString("$t3", cr);
+  t4 := ComponentReference.crefPrefixString("$t4", cr);
   
-  (_,var):= stringCrVar("$t0_", cr, ty, {});
+  (_,var):= stringCrVar("$t0", cr, ty, {});
   vars := BackendVariable.addVar(var, vars);
-  (_,var):= stringCrVar("$t1_", cr, ty, {});
+  (_,var):= stringCrVar("$t1", cr, ty, {});
   vars := BackendVariable.addVar(var, vars);
-  (_,var):= stringCrVar("$t2_", cr, ty, {});
+  (_,var):= stringCrVar("$t2", cr, ty, {});
   vars := BackendVariable.addVar(var, vars);
-  (_,var):= stringCrVar("$t3_", cr, ty, {});
+  (_,var):= stringCrVar("$t3", cr, ty, {});
   vars := BackendVariable.addVar(var, vars);
-  (_,var):= stringCrVar("$t4_", cr, ty, {});
+  (_,var):= stringCrVar("$t4", cr, ty, {});
   vars := BackendVariable.addVar(var, vars);
   
   dt := DAE.CREF(DAE.CREF_IDENT("$dt", ty, {}), DAE.T_REAL_DEFAULT);
@@ -221,15 +221,15 @@ algorithm
   eqns := BackendEquation.emptyEqns();
   eqns2 := BackendEquation.emptyEqns();
   // change function call der(x) in  variable xder
-  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t0_","$t0_der"));
+  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t0","$t0_der"));
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
-  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t1_","$t1_der"));
+  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t1","$t1_der"));
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
-  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t2_","$t2_der"));
+  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t2","$t2_der"));
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
-  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t3_","$t3_der"));
+  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t3","$t3_der"));
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
-  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t4_","$t4_der"));
+  ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t4","$t4_der"));
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
   // change kind: state in known variable 
   ((vars, eqns)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns2));
@@ -338,18 +338,18 @@ algorithm
     
     // state
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, eqns))) equation
-      (x0,_) = stringCrVar("$t0_", cr, ty, arryDim);
+      (x0,_) = stringCrVar("$t0", cr, ty, arryDim);
       
-      (x1,var) = stringCrVar("$t1_",cr,ty,arryDim);
+      (x1,var) = stringCrVar("$t1",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
       
-      (x2,var) = stringCrVar("$t2_",cr,ty,arryDim);
+      (x2,var) = stringCrVar("$t2",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
       
-      (x3,var) = stringCrVar("$t3_",cr,ty,arryDim);
+      (x3,var) = stringCrVar("$t3",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
       
-      (x4,var) = stringCrVar("$t4_",cr,ty,arryDim);
+      (x4,var) = stringCrVar("$t4",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
       
       (derx0,var) = stringCrVar("$t0_der",cr,ty,arryDim);

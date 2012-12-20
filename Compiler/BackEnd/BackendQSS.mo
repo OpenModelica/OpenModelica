@@ -1013,7 +1013,7 @@ algorithm
       list<SimCode.RecordDeclaration> recordDecls;
       list<String> externalFunctionIncludes;
       list<list<SimCode.SimEqSystem>> odeEquations;
-      list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
+      list<SimCode.SimEqSystem> allEquations,algebraicEquations,residualEquations,startValueEquations,parameterEquations,inlineEquations,removedEquations,sampleEquations,algorithmAndEquationAsserts;
       Boolean useSymbolicInitialization;
       list<SimCode.SimEqSystem> initialEquations;
       list<DAE.Constraint> constraints;
@@ -1033,7 +1033,7 @@ algorithm
       list<SimCode.SimEqSystem> eqs;
     case (SimCode.SIMCODE(modelInfo,literals,recordDecls,externalFunctionIncludes,allEquations,odeEquations,
           algebraicEquations,residualEquations,useSymbolicInitialization,initialEquations,startValueEquations, 
-          parameterEquations,removedEquations,algorithmAndEquationAsserts,constraints,classAttributes,zeroCrossings,relations,
+          parameterEquations,inlineEquations,removedEquations,algorithmAndEquationAsserts,constraints,classAttributes,zeroCrossings,relations,
           sampleConditions,sampleEquations,helpVarInfo,whenClauses,discreteModelVars,extObjInfo,makefileParams,
           delayedExps,jacobianMatrixes,simulationSettingsOpt,fileNamePrefix,crefToSimVarHT),_)
     equation
@@ -1041,7 +1041,7 @@ algorithm
       eqs = List.map1(eqs,replaceZC,zc_exps);
     then SimCode.SIMCODE(modelInfo, literals, recordDecls, externalFunctionIncludes,
                          allEquations, {eqs}, algebraicEquations, residualEquations, useSymbolicInitialization,
-                         initialEquations, startValueEquations, parameterEquations,
+                         initialEquations, startValueEquations, parameterEquations, inlineEquations,
                          removedEquations, algorithmAndEquationAsserts, constraints, classAttributes, 
                          zeroCrossings, relations, sampleConditions, sampleEquations,
                          helpVarInfo, whenClauses, discreteModelVars, extObjInfo,

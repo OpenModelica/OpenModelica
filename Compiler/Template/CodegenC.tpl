@@ -144,13 +144,14 @@ template simulationFile(SimCode simCode, String guid)
     
     <%functionInitializeDataStruc(modelInfo, fileNamePrefix, guid, allEquations, jacobianMatrixes, delayedExps)%>
     
-    <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes), parameterEquations, initialEquations)%>
+    <%functionInitializeDataStruc2(modelInfo, allEquations, appendAllequations(jacobianMatrixes), parameterEquations, initialEquations, inlineEquations)%>
     
     <%functionCallExternalObjectConstructors(extObjInfo)%>
     
     <%functionCallExternalObjectDestructors(extObjInfo)%>
     
     <%functionExtraResiduals(initialEquations)%>
+    <%functionExtraResiduals(inlineEquations)%>
     <%functionExtraResiduals(parameterEquations)%>
     <%functionExtraResiduals(allEquations)%>
     
@@ -169,8 +170,9 @@ template simulationFile(SimCode simCode, String guid)
     <%functionUpdateBoundStartValues(startValueEquations)%>
     
     <%functionInitialResidual(residualEquations)%>
-    
     <%functionInitialEquations(useSymbolicInitialization, initialEquations)%>
+    
+    <%functionInlineEquations(inlineEquations)%>
     
     <%functionUpdateBoundParameters(parameterEquations)%>
 
@@ -309,7 +311,7 @@ template functionSimProfDef(SimEqSystem eq, Integer value)
   end match
 end functionSimProfDef;
 
-template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> initialEquations)
+template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> allEquations, list<SimEqSystem> symJacEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations)
   "Generates function in simulation file."
 ::=
   match modelInfo
@@ -319,12 +321,12 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
      */
      /*
      let &eqnsDefines = buffer ""
-     let allEqsPlusParamEqns = listAppend(listAppend(initialEquations,parameterEquations),allEquations) 
+     let allEqsPlusParamEqns = listAppend(listAppend(listAppend(initialEquations,inlineEquations),parameterEquations),allEquations) 
      let eqnsDefines = (allEqsPlusParamEqns |> eq hasindex i0 => functionSimProfDef(eq,i0); separator="";empty)
       <%equationInfo(allEquations)%>
      */
      let &eqnsDefines = buffer ""
-     let eqnInfo = equationInfo(listAppend(listAppend(initialEquations,parameterEquations),allEquations),&eqnsDefines,intAdd(varInfo.numEquations, listLength(symJacEquations)))
+     let eqnInfo = equationInfo(listAppend(listAppend(listAppend(initialEquations,inlineEquations),parameterEquations),allEquations),&eqnsDefines,intAdd(varInfo.numEquations, listLength(symJacEquations)))
     <<
     /* Some empty lines, since emptyCount is not implemented in susan! */
     <%eqnsDefines%>
@@ -336,14 +338,14 @@ template functionInitializeDataStruc2(ModelInfo modelInfo, list<SimEqSystem> all
       <%eqnInfo%>
       memcpy(data->modelData.equationInfo, &equationInfo, data->modelData.nEquations*sizeof(EQUATION_INFO));
       
-      data->modelData.nProfileBlocks = 0 <% listAppend(listAppend(initialEquations,parameterEquations),allEquations) |> eq => match eq
+      data->modelData.nProfileBlocks = 0 <% listAppend(listAppend(listAppend(initialEquations,inlineEquations),parameterEquations),allEquations) |> eq => match eq
         case SES_MIXED(__) then "+1"
         case SES_LINEAR(__) then "+1"
         case SES_NONLINEAR(__) then "+1"
       %>;
       data->modelData.equationInfo_reverse_prof_index = (int*) malloc(data->modelData.nProfileBlocks*sizeof(int));
       <%System.tmpTickReset(0)%>
-      <% listAppend(listAppend(initialEquations,parameterEquations),allEquations) |> eq hasindex i0 => match eq
+      <% listAppend(listAppend(listAppend(initialEquations,inlineEquations),parameterEquations),allEquations) |> eq hasindex i0 => match eq
         case SES_MIXED(__)     then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
         case SES_LINEAR(__)    then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
         case SES_NONLINEAR(__) then 'data->modelData.equationInfo_reverse_prof_index[<%System.tmpTick()%>] = <%i0%>;<%\n%>'
@@ -787,107 +789,6 @@ template functionSampleEquations(list<SimEqSystem> sampleEqns)
   >>
 end functionSampleEquations;
 
-template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
-  "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
-  let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
-      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
-    ;separator="\n")
-    
-  <<
-  <%&tmp%>
-  int updateBoundStartValues(DATA *data)
-  {
-    <%varDecls%>
-  
-    <%eqPart%>
-  
-    INFO(LOG_INIT, "updating start-values");
-    INDENT(LOG_INIT);
-    <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
-    'INFO2(LOG_INIT, "%s(start=%g)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
-    $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;'
-    ;separator="\n"%>
-    RELEASE(LOG_INIT);
-  
-    return 0;
-  }
-  >>
-end functionUpdateBoundStartValues;
-
-template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
- "Generates an equation."
-::=
-  match eq
-  case e as SES_RESIDUAL(__) then
-    match exp 
-    case DAE.SCONST(__) then
-      'initialResiduals[i++] = 0;'
-    else
-      let &preExp = buffer "" /*BUFD*/
-      let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      <<
-      <%preExp%>initialResiduals[i++] = <%expPart%>;
-      INFO3(LOG_RES_INIT, "[%d]: %s = %g", i, initialResidualDescription[i-1], initialResiduals[i-1]);
-      >>
-    end match
-  else
-  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
-  end match
-end functionInitialResidualBody;
-
-template functionInitialResidual(list<SimEqSystem> residualEquations)
-  "Generates function in simulation file."
-::=
-  let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
-  let resDesc = (residualEquations |> SES_RESIDUAL(__) =>
-      match exp 
-      case DAE.SCONST(__) then
-        '"0", '
-      else
-        '"<%ExpressionDump.printExpStr(exp)%>", '
-        ;separator="\n")
-      
-  let body = (residualEquations |> eq2 =>
-       functionInitialResidualBody(eq2, &varDecls /*BUFD*/, &tmp)
-     ;separator="\n")
-  let desc = match residualEquations
-             case {} then
-               <<
-               const char *initialResidualDescription[1] = {"empty"};
-               >> 
-             else
-               <<
-               const char *initialResidualDescription[] = 
-               {
-                 <%resDesc%>
-               };
-               >>      
-  <<
-  <%desc%>
-
-  <%tmp%>  
-  int initial_residual(DATA *data, double *initialResiduals)
-  {
-    int i = 0;
-    state mem_state;
-    <%varDecls%>
-  
-    mem_state = get_memory_state();
-    INFO(LOG_RES_INIT, "updating initial residuals");
-    INDENT(LOG_RES_INIT);
-    <%body%>
-    RELEASE(LOG_RES_INIT);
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionInitialResidual;
-
 template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations)
   "Generates functions in simulation file."
 ::=
@@ -1005,6 +906,113 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
    ;separator="\n\n")
 end functionExtraResiduals;
 
+// =============================================================================
+// section for initialization
+//
+// This is all the stuff to generate the c code for the initialization.
+// =============================================================================
+
+template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
+  let eqPart = (startValueEquations |> eq as SES_SIMPLE_ASSIGN(__) =>
+      equation_(eq, contextOther, &varDecls /*BUFD*/, &tmp)
+    ;separator="\n")
+    
+  <<
+  <%&tmp%>
+  int updateBoundStartValues(DATA *data)
+  {
+    <%varDecls%>
+  
+    <%eqPart%>
+  
+    INFO(LOG_INIT, "updating start-values");
+    INDENT(LOG_INIT);
+    <%startValueEquations |> SES_SIMPLE_ASSIGN(__) =>
+    'INFO2(LOG_INIT, "%s(start=%g)", <%cref(cref)%>__varInfo.name, (<%crefType(cref)%>) <%cref(cref)%>);
+    $P$ATTRIBUTE<%cref(cref)%>.start = <%cref(cref)%>;'
+    ;separator="\n"%>
+    RELEASE(LOG_INIT);
+  
+    return 0;
+  }
+  >>
+end functionUpdateBoundStartValues;
+
+template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
+ "Generates an equation."
+::=
+  match eq
+  case e as SES_RESIDUAL(__) then
+    match exp 
+    case DAE.SCONST(__) then
+      'initialResiduals[i++] = 0;'
+    else
+      let &preExp = buffer "" /*BUFD*/
+      let expPart = daeExp(exp, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+      <<
+      <%preExp%>initialResiduals[i++] = <%expPart%>;
+      INFO3(LOG_RES_INIT, "[%d]: %s = %g", i, initialResidualDescription[i-1], initialResiduals[i-1]);
+      >>
+    end match
+  else
+  equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &eqs)
+  end match
+end functionInitialResidualBody;
+
+template functionInitialResidual(list<SimEqSystem> residualEquations)
+  "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
+  let resDesc = (residualEquations |> SES_RESIDUAL(__) =>
+      match exp 
+      case DAE.SCONST(__) then
+        '"0", '
+      else
+        '"<%ExpressionDump.printExpStr(exp)%>", '
+        ;separator="\n")
+      
+  let body = (residualEquations |> eq2 =>
+       functionInitialResidualBody(eq2, &varDecls /*BUFD*/, &tmp)
+     ;separator="\n")
+  let desc = match residualEquations
+             case {} then
+               <<
+               const char *initialResidualDescription[1] = {"empty"};
+               >> 
+             else
+               <<
+               const char *initialResidualDescription[] = 
+               {
+                 <%resDesc%>
+               };
+               >>      
+  <<
+  <%desc%>
+
+  <%tmp%>  
+  int initial_residual(DATA *data, double *initialResiduals)
+  {
+    int i = 0;
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    INFO(LOG_RES_INIT, "updating initial residuals");
+    INDENT(LOG_RES_INIT);
+    <%body%>
+    RELEASE(LOG_RES_INIT);
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionInitialResidual;
+
 template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqSystem> initalEquations)
   "Generates function in simulation file."
 ::=
@@ -1041,6 +1049,37 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
   }
   >>
 end functionInitialEquations;
+
+// =============================================================================
+// section for inline solver
+//
+// This is all the stuff to generate the c code for the inline solver.
+// =============================================================================
+
+template functionInlineEquations(list<SimEqSystem> inlineEquations)
+  "Generates function in simulation file."
+::=
+  let () = System.tmpTickReset(0)
+  let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
+  let body = (inlineEquations |> eq  =>
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+    ;separator="\n")  
+  <<
+  <%&tmp%>
+  int functionInlineEquations(DATA *data)
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%body%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionInlineEquations;
 
 template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
   "Generates function in simulation file."
@@ -7205,22 +7244,22 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
       case FUNCTION_CONTEXT(__) then "" 
       case PARALLEL_FUNCTION_CONTEXT(__) then "" 
       else
-          <<
-          <%\n%>#ifdef _OMC_MEASURE_TIME
-          SIM_PROF_TICK_FN(<%funName%>_index);
-          #endif<%\n%>
-          >>
+        <<
+        <%\n%>#ifdef _OMC_MEASURE_TIME
+        SIM_PROF_TICK_FN(<%funName%>_index);
+        #endif<%\n%>
+        >>
     let &preExp += '<%if retVar then '<%retVar%> = '%><%daeExpCallBuiltinPrefix(attr.builtin)%><%funName%>(<%argStr%>);<%\n%>'
     let &preExp += if not attr.builtin then 
     match context 
       case FUNCTION_CONTEXT(__) then "" 
       case PARALLEL_FUNCTION_CONTEXT(__) then "" 
       else
-          <<
-          <%\n%>#ifdef _OMC_MEASURE_TIME
-          SIM_PROF_ACC_FN(<%funName%>_index);
-          #endif<%\n%>
-          >>
+        <<
+        <%\n%>#ifdef _OMC_MEASURE_TIME
+        SIM_PROF_ACC_FN(<%funName%>_index);
+        #endif<%\n%>
+        >>
     match exp
       // no return calls
       case CALL(attr=CALL_ATTR(ty=T_NORETCALL(__))) then '/* NORETCALL */'

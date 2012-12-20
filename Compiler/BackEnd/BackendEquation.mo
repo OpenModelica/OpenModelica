@@ -62,6 +62,75 @@ protected import HashTable;
 protected import List;
 protected import Util;
 
+// =============================================================================
+// These are all the public functions:
+//   - addEquations
+//   - addOperation
+//   - aliasEquation
+//   - compressEquations
+//   - copyEquationArray
+//   - daeEqns
+//   - daeInitialEqns
+//   - derivativeEquation
+//   - emptyEqns
+//   - equationAdd
+//   - equationAddDAE
+//   - equationDelete
+//   - equationEqual
+//   - equationInfo
+//   - equationList
+//   - equationLstSize
+//   - equationOptSize
+//   - equationRemove
+//   - equationsAddDAE
+//   - equationsCrefs
+//   - equationSetnth
+//   - equationSetnthDAE
+//   - equationSize
+//   - equationsLstVars
+//   - equationsLstVarsWithoutRelations
+//   - equationSource
+//   - equationsStates
+//   - equationsVars
+//   - equationsVarsWithoutRelations
+//   - equationToExp
+//   - equationToResidualForm
+//   - equationToScalarResidualForm
+//   - equationUnknownCrefs
+//   - equationVars
+//   - expressionVars
+//   - generateEQUATION
+//   - generateRESIDUAL_EQUATION
+//   - getAllCrefFromEquations
+//   - getEqns
+//   - getWhenEquationExpr
+//   - getZeroCrossingIndicesFromWhenClause
+//   - isAlgorithm
+//   - isArrayEquation
+//   - isDifferentiated
+//   - isNotAlgorithm
+//   - isWhenEquation
+//   - listEquation
+//   - markDifferentiated
+//   - markedEquationSource
+//   - mergeEquationArray
+//   - requationsAddDAE
+//   - traverseBackendDAEEqns
+//   - traverseBackendDAEEqnsList
+//   - traverseBackendDAEEqnsWithStop
+//   - traverseBackendDAEEqnsWithUpdate
+//   - traverseBackendDAEExpList
+//   - traverseBackendDAEExpListWithStop
+//   - traverseBackendDAEExpsEqn
+//   - traverseBackendDAEExpsEqnList
+//   - traverseBackendDAEExpsEqnListListWithStop
+//   - traverseBackendDAEExpsEqnListOutEqn
+//   - traverseBackendDAEExpsEqnListWithStop
+//   - traverseBackendDAEExpsEqnOutEqn
+//   - traverseBackendDAEExpsEqnWithStop
+//   - traversingStateRefFinder
+// =============================================================================
+
 public function listEquation "function listEquation
   author: PA
   Transform the a list of Equations into an expandable BackendDAE.Equation array."

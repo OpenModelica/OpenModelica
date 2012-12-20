@@ -131,6 +131,7 @@ package SimCode
       list<SimEqSystem> initialEquations;
       list<SimEqSystem> startValueEquations;
       list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> inlineEquations;
       list<SimEqSystem> removedEquations;
       list<SimEqSystem> algorithmAndEquationAsserts;
       //list<DAE.Statement> algorithmAndEquationAsserts;
