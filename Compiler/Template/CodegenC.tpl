@@ -8759,8 +8759,8 @@ template ScalarVariable(SimVar simVar, Integer classIndex, String classType)
     case SIMVAR(__) then
       <<
       <ScalarVariable 
-        <%ScalarVariableAttribute(simVar, classIndex, classType)%>>
-        <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
+      <%ScalarVariableAttribute(simVar, classIndex, classType)%>>
+      <%ScalarVariableType(unit, displayUnit, minValue, maxValue, initialValue, nominalValue, isFixed, type_)%>
       </ScalarVariable>  
       >>
 end ScalarVariable;

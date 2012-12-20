@@ -3256,8 +3256,10 @@ algorithm
 end updateStatesVars;
 
 // =============================================================================
+// section for zero crossings
 //
-// Section for find zero crossings in BackendDAE
+// This section contains all the functions to find zero crossings inside 
+// BackendDAE.
 // =============================================================================
 
 public function findZeroCrossings "function: findZeroCrossings

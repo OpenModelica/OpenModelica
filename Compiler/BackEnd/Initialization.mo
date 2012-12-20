@@ -394,11 +394,11 @@ algorithm
       
       ((vars, fixvars, eqns, reeqns)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns)));
       ((eqns, reeqns)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
-      
+
       // collect pre(var) from alias
       // ((_, vars, fixvars)) = traverseBackendDAEExpsEqns(eqns, collectAliasPreVars, (avars, vars, fixvars));
       // ((_, vars, fixvars)) = traverseBackendDAEExpsEqns(reeqns, collectAliasPreVars, (avars, vars, fixvars));
-      
+
       // generate initial system
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
       initsyst = analyzeInitialSystem(initsyst, inDAE, inInitVars);      
@@ -436,7 +436,7 @@ algorithm
   end matchcontinue;
 end solveInitialSystem1;
 
-protected function solveInitialSystem2 "protected function solveInitialSystem2
+protected function solveInitialSystem2 "function solveInitialSystem2
   author: jfrenkel, lochel
   This is a helper function of solveInitialSystem and solves the generated system."
   input BackendDAE.Variables inVars;
@@ -494,7 +494,7 @@ algorithm
   end matchcontinue;
 end solveInitialSystem2;
 
-protected function analyzeInitialSystem "protected function analyzeInitialSystem
+protected function analyzeInitialSystem "function analyzeInitialSystem
   author: lochel
   This function fixes discrete and state variables to balance the initial equation system."
   input BackendDAE.EqSystem inSystem;
@@ -595,7 +595,7 @@ algorithm
       (dep, _) = sparsityPattern;
       selectedVars = collectIndependentVars(dep, {});
       
-      Debug.fcall(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpSparsityPattern, sparsityPattern);
+      Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpSparsityPattern, sparsityPattern, "Sparsity Pattern");
       true = intEq(nVars-nEqns, listLength(selectedVars));  // fix only if it is definite
       
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
@@ -608,7 +608,7 @@ algorithm
   end matchcontinue;
 end fixUnderDeterminedInitialSystem;
 
-protected function collectIndependentVars "protected function collectIndependentVars
+protected function collectIndependentVars "function collectIndependentVars
   author lochel"
   input list<tuple< DAE.ComponentRef, list< DAE.ComponentRef>>> inPattern;
   input list< DAE.ComponentRef> inVars;
@@ -768,45 +768,6 @@ algorithm
   end matchcontinue;
 end addStartValueEquations1;
 
-protected function collectAliasPreVars
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> inTpl;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> outTpl;
-algorithm
-  outTpl :=
-  matchcontinue inTpl
-    local  
-      DAE.Exp exp;
-      BackendDAE.Variables avars,vars,fixvars;
-    case ((exp,(avars,vars,fixvars)))
-      equation
-         ((_,(avars,vars,fixvars))) = Expression.traverseExp(exp,collectAliasPreVarsExp,(avars,vars,fixvars));
-       then
-        ((exp,(avars,vars,fixvars)));
-    case _ then inTpl;
-  end matchcontinue;
-end collectAliasPreVars;
-
-protected function collectAliasPreVarsExp
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> inTuple;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> outTuple;
-algorithm
-  outTuple := matchcontinue(inTuple)
-    local
-      DAE.Exp e;
-      BackendDAE.Variables avars,vars,fixvars;
-      DAE.ComponentRef cr;
-      BackendDAE.Var v;    
-    // add it?
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}),(avars,vars,fixvars)))
-      equation
-         (v::_,_) = BackendVariable.getVar(cr, avars);
-         ((_,(vars,fixvars))) =  collectInitialVars((v,(vars,fixvars)));
-      then
-        ((e, (avars,vars,fixvars)));
-    else then inTuple;
-  end matchcontinue;
-end collectAliasPreVarsExp;
-
 protected function collectInitialVarsEqnsSystem "function collectInitialVarsEqnsSystem
   author: lochel, Frenkel TUD 2012-10
   This function collects variables and equations for the initial system out of an given EqSystem."
@@ -828,8 +789,8 @@ algorithm
   oTpl := (vars, fixvars, eqns, reqns);
 end collectInitialVarsEqnsSystem;
 
-protected function collectInitialEqnsStateSet
-"author: Frenkel TUD 2012-12"
+protected function collectInitialEqnsStateSet "function collectInitialEqnsStateSet
+  author: Frenkel TUD 2012-12"
   input BackendDAE.StateSet inSet;
   input tuple<BackendDAE.EquationArray,BackendDAE.EquationArray> inTpl;
   output tuple<BackendDAE.EquationArray,BackendDAE.EquationArray> outTpl;
@@ -841,7 +802,8 @@ algorithm
   (_,outTpl) := BackendEquation.traverseBackendDAEEqnsList(ceqns, collectInitialEqns, inTpl,{});
 end collectInitialEqnsStateSet;
 
-protected function collectInitialVars "protected function collectInitialVars
+protected function collectInitialVars "function collectInitialVars
+  author: lochel
   This function collects all the vars for the initial system."
   input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> outTpl;
@@ -937,7 +899,8 @@ algorithm
   end matchcontinue;
 end collectInitialVars;
 
-protected function collectInitialBindings "protected function collectInitialBindings
+protected function collectInitialBindings "function collectInitialBindings
+  author: lochel
   This function collects all the vars for the initial system."
   input tuple<BackendDAE.Var, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> outTpl;
@@ -979,7 +942,8 @@ algorithm
   end match;
 end collectInitialBindings;
 
-protected function collectInitialEqns
+protected function collectInitialEqns "function collectInitialEqns
+  author: lochel"
   input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray,BackendDAE.EquationArray>> outTpl;
 protected
@@ -1039,4 +1003,52 @@ algorithm
     then inExp;
   end matchcontinue;
 end replaceDerPreCrefExp;
+
+// =============================================================================
+// section for probably not needed code
+// 
+// This section can be probably removed.
+// =============================================================================
+
+protected function collectAliasPreVars "function collectAliasPreVars
+  author: jfrenkel"
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl :=
+  matchcontinue inTpl
+    local  
+      DAE.Exp exp;
+      BackendDAE.Variables avars,vars,fixvars;
+    case ((exp,(avars,vars,fixvars)))
+      equation
+         ((_,(avars,vars,fixvars))) = Expression.traverseExp(exp,collectAliasPreVarsExp,(avars,vars,fixvars));
+       then
+        ((exp,(avars,vars,fixvars)));
+    case _ then inTpl;
+  end matchcontinue;
+end collectAliasPreVars;
+
+protected function collectAliasPreVarsExp "function collectAliasPreVarsExp
+  author: jfrenkel"
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> inTuple;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      BackendDAE.Variables avars,vars,fixvars;
+      DAE.ComponentRef cr;
+      BackendDAE.Var v;    
+    // add it?
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}),(avars,vars,fixvars)))
+      equation
+         (v::_,_) = BackendVariable.getVar(cr, avars);
+         ((_,(vars,fixvars))) =  collectInitialVars((v,(vars,fixvars)));
+      then
+        ((e, (avars,vars,fixvars)));
+    else then inTuple;
+  end matchcontinue;
+end collectAliasPreVarsExp;
+
 end Initialization;

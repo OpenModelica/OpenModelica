@@ -92,9 +92,8 @@ algorithm
   end matchcontinue;
 end generateDAE;
 
-
 protected function dae_to_algSystem "function dae_to_algSystem
-  author: lochel, vruge
+  author: vruge
   This is a helper function for generateDAE.
   Transformation dae in algebraic system
   "
@@ -203,7 +202,7 @@ algorithm
 end timeEquation;
 
 protected function eliminatedStatesDerivations "function eliminatedStatesDerivations
-  author: lochel, vruge
+  author: vruge
   This is a helper function for dae_to_algSystem.
   change function call der(x) in  variable xder
   change kind: state in known variable "
@@ -238,9 +237,8 @@ algorithm
   (outEqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL());
 end eliminatedStatesDerivations;
 
-
 protected function replaceStates_eqs "function replaceStates_eqs
-  author: lochel, vruge
+  author: vruge
   This is a helper function for eliminiertStatesDerivations.
   replace der(x) with $DER.x."
   input tuple<BackendDAE.Equation, tuple<BackendDAE.Variables, BackendDAE.EquationArray, String, String>> inTpl;
@@ -259,10 +257,8 @@ algorithm
   outTpl := (eqn, (vars, eqns,preState,preDer));
 end replaceStates_eqs;
 
-
-/*replaceDerStateCref*/
 protected function replaceDerStateCref "function replaceDerStateCref
-  author: lochel, vruge
+  author: vruge
   This is a helper function for dae_to_algSystem."
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> inExp;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> outExp;
@@ -278,7 +274,7 @@ algorithm
 end replaceDerStateCref;
 
 protected function replaceDerStateExp "function replaceDerStateExp
-  author: lochel, vruge
+  author: vruge
   This is a helper function for replaceDerStateCref."
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> inExp;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> outExp;
@@ -324,7 +320,7 @@ protected function crefPrefixStringWithpopCref
 end crefPrefixStringWithpopCref;
 
 protected function replaceStates_vars "function replaceStates_vars
-  author: lochel, vruge"
+  author: vruge"
   input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray>> outTpl;
 algorithm

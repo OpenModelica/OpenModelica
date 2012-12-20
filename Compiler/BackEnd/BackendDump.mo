@@ -75,6 +75,17 @@ protected import Util;
 // section for all print* functions
 //
 // These are functions, that print directly to the standard-stream.
+//   - printBackendDAE
+//   - printEqSystem
+//   - printEquation
+//   - printEquationArray
+//   - printEquationList
+//   - printEquations
+//   - printShared
+//   - printStateSets
+//   - printVar
+//   - printVariables
+//   - printVarList
 // =============================================================================
 
 public function printBackendDAE "function printBackendDAE
@@ -118,6 +129,77 @@ algorithm
   dumpFullMatching(matching);
 end printEqSystem;
 
+public function printEquation "function printEquation
+  author: PA
+  Helper function to print_equations"
+  input BackendDAE.Equation inEquation;
+algorithm
+  print(equationString(inEquation) +& "\n");
+end printEquation;
+
+public function printEquationArray "function printEquationArray
+  Helper function to dump."
+  input BackendDAE.EquationArray eqns;
+algorithm
+  _ := List.fold(BackendEquation.equationList(eqns), printEquationList2, 1);
+end printEquationArray;
+
+public function printEquationList "function printEquationList
+  Helper function to dump."
+  input list<BackendDAE.Equation> eqns;
+algorithm
+  _ := List.fold(eqns, printEquationList2, 1);
+end printEquationList;
+
+protected function printEquationList2 "function printEquationList2
+  Helper function for printEquationArray and printEquationList"
+  input BackendDAE.Equation inEquation;
+  input Integer inInteger;
+  output Integer oInteger;
+algorithm
+  print(intString(inInteger) +& " (" +& intString(BackendEquation.equationSize(inEquation)) +& "): " +& equationString(inEquation) +& "\n");
+  oInteger := inInteger + 1;
+end printEquationList2;
+
+public function printEquations "function printEquations
+  "
+  input list<Integer> inIntegerLst;
+  input BackendDAE.EqSystem syst;
+algorithm
+  _:= match(inIntegerLst, syst)
+    local
+      Integer n;
+      list<Integer> rest;
+    case ({}, _) then ();
+    case ((n :: rest), _) equation
+      printEquations(rest, syst);
+      printEquationNo(n, syst);
+    then ();
+  end match;
+end printEquations;
+
+protected function printEquationNo "function printEquationNo
+  author: PA
+  Helper function to printEquations"
+  input Integer inInteger;
+  input BackendDAE.EqSystem syst;
+algorithm
+  _:=
+  match (inInteger,syst)
+    local
+      Integer eqno_1,eqno;
+      BackendDAE.Equation eq;
+      BackendDAE.EquationArray eqns;
+    case (eqno,BackendDAE.EQSYSTEM(orderedEqs = eqns))
+      equation
+        eqno_1 = eqno - 1;
+        eq = BackendDAEUtil.equationNth(eqns, eqno_1);
+        printEquation(eq);
+      then
+        ();
+  end match;
+end printEquationNo;
+
 public function printShared "function printShared
   This function dumps the BackendDAE.Shared representaton to stdout."
   input BackendDAE.Shared inShared;
@@ -158,7 +240,8 @@ algorithm
   dumpConstraintArray(constraints, "Constraints");
 end printShared;
 
-protected function printBackendDAEType
+protected function printBackendDAEType "function printBackendDAEType
+  This is a helper for printShared."
   input BackendDAE.BackendDAEType btp; 
 algorithm
   _ := match(btp)
@@ -170,6 +253,39 @@ algorithm
     case (BackendDAE.INITIALSYSTEM()) equation print("initial system"); then ();
   end match;
 end printBackendDAEType;
+
+public function printStateSets "function printStateSets
+  author: jfrenkel"
+  input BackendDAE.StateSets stateSets;
+algorithm
+  List.map_0(stateSets, printStateSet);
+end printStateSets;
+
+protected function printStateSet "function printStateSet
+  author: jfrenkel
+  This is a helper for printStateSets."
+  input BackendDAE.StateSet statSet;
+protected
+  list<DAE.ComponentRef> states;
+  list<BackendDAE.Equation> ceqns;
+  list<DAE.ComponentRef> dstates;
+algorithm
+  BackendDAE.STATESET(states,ceqns,dstates) := statSet;
+  print("StateSet:\n");
+  print("States:\n");
+  debuglst((states,ComponentReference.printComponentRefStr,"\n","\n"));
+  print("ConstraintEquations:\n");
+  debuglst((ceqns,equationString,"\n","\n"));
+  print("Dummystates:\n");
+  debuglst((dstates,ComponentReference.printComponentRefStr,"\n","\n"));
+end printStateSet;
+
+public function printVar "function printVar
+  "
+  input BackendDAE.Var inVar;
+algorithm
+  print(varString(inVar) +& "\n");
+end printVar;
 
 public function printVariables "function printVariables
   Helper function to dump."
@@ -185,15 +301,8 @@ algorithm
   _ := List.fold(vars, printVars1, 1);
 end printVarList;
 
-public function printVar "function printVar
-  "
-  input BackendDAE.Var inVar;
-algorithm
-  print(varString(inVar) +& "\n");
-end printVar;
-
 protected function printVars1 "function printVars1 
-  Helper function to printVariables and printVarList"
+  This is a helper function for printVariables and printVarList"
   input BackendDAE.Var inVar;
   input Integer inVarNo;
   output Integer outVarNo;
@@ -203,28 +312,6 @@ algorithm
   printVar(inVar);
   outVarNo := inVarNo + 1;
 end printVars1;
-
-public function printEquation "function printEquation
-  author: PA
-  Helper function to print_equations"
-  input BackendDAE.Equation inEquation;
-algorithm
-  print(equationString(inEquation) +& "\n");
-end printEquation;
-
-public function printEquationArray "function printEquationArray
-  Helper function to dump."
-  input BackendDAE.EquationArray eqns;
-algorithm
-  _ := List.fold(BackendEquation.equationList(eqns), printEquationList2, 1);
-end printEquationArray;
-
-public function printEquationList "function printEquationList
-  Helper function to dump."
-  input list<BackendDAE.Equation> eqns;
-algorithm
-  _ := List.fold(eqns, printEquationList2, 1);
-end printEquationList;
 
 protected function printExternalObjectClasses "function printExternalObjectClasses
   dump classes of external objects"
@@ -255,16 +342,6 @@ algorithm
   end match;
 end printExternalObjectClasses;
 
-protected function printEquationList2 "function printEquationList2
-  Helper function to printEquationList"
-  input BackendDAE.Equation inEquation;
-  input Integer inInteger;
-  output Integer oInteger;
-algorithm
-  print(intString(inInteger) +& " (" +& intString(BackendEquation.equationSize(inEquation)) +& "): " +& equationString(inEquation) +& "\n");
-  oInteger := inInteger + 1;
-end printEquationList2;
-
 protected function printSparsityPattern "function printSparsityPattern
   author lochel"
   input list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> inPattern;
@@ -291,83 +368,36 @@ algorithm
   end matchcontinue;
 end printSparsityPattern;
 
-public function printEquations
-  input list<Integer> inIntegerLst;
-  input BackendDAE.EqSystem syst;
-algorithm
-  _:=
-  match (inIntegerLst,syst)
-    local
-      Integer n;
-      list<Integer> rest;
-    case ({},_) then ();
-    case ((n :: rest),_)
-      equation
-        printEquations(rest, syst);
-        printEquationNo(n, syst);
-      then
-        ();
-  end match;
-end printEquations;
-
-protected function printEquationNo "function printEquationNo
-  author: PA
-  Helper function to printEquations"
-  input Integer inInteger;
-  input BackendDAE.EqSystem syst;
-algorithm
-  _:=
-  match (inInteger,syst)
-    local
-      Integer eqno_1,eqno;
-      BackendDAE.Equation eq;
-      BackendDAE.EquationArray eqns;
-    case (eqno,BackendDAE.EQSYSTEM(orderedEqs = eqns))
-      equation
-        eqno_1 = eqno - 1;
-        eq = BackendDAEUtil.equationNth(eqns, eqno_1);
-        printEquation(eq);
-      then
-        ();
-  end match;
-end printEquationNo;
-
-public function printStateSets
-  input BackendDAE.StateSets stateSets;
-algorithm
-  List.map_0(stateSets, printStateSet);
-end printStateSets;
-
-protected function printStateSet
-  input BackendDAE.StateSet statSet;
-protected
-  list<DAE.ComponentRef> states;
-  list<BackendDAE.Equation> ceqns;
-  list<DAE.ComponentRef> dstates;
-algorithm
-  BackendDAE.STATESET(states,ceqns,dstates) := statSet;
-  print("StateSet:\n");
-  print("States:\n");
-  debuglst((states,ComponentReference.printComponentRefStr,"\n","\n"));
-  print("ConstraintEquations:\n");
-  debuglst((ceqns,equationString,"\n","\n"));
-  print("Dummystates:\n");
-  debuglst((dstates,ComponentReference.printComponentRefStr,"\n","\n"));
-end printStateSet;
-
 // =============================================================================
 // section for all dump* functions
 // 
 // These are functions, that print directly to the standard-stream and separates 
 // there output (e.g. with some kind of headings).
+//   - dumpBackendDAE
+//   - dumpBackendDAEEqnList
+//   - dumpBackendDAEVarList
+//   - dumpComponent
+//   - dumpComponents
+//   - dumpComponentsAdvanced
+//   - dumpEqnsSolved
+//   - dumpEqSystem
+//   - dumpEquation
+//   - dumpEquationArray
+//   - dumpSparsityPattern
+//   - dumpTearing
+//   - dumpVariables
+//   - dumpVarList
 // =============================================================================
+
+protected constant String border    = "########################################";
+protected constant String underline = "========================================";
 
 public function dumpBackendDAE "function dumpBackendDAE
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
     input String heading;
 algorithm
-  print("\n########################################\n" +& heading +& "\n########################################\n\n");
+  print("\n" +& border +& "\n" +& heading +& "\n" +& border +& "\n\n");
   printBackendDAE(inBackendDAE);
   print("\n");
 end dumpBackendDAE;
@@ -376,7 +406,7 @@ public function dumpEqSystem "function dumpEqSystem"
   input BackendDAE.EqSystem inEqSystem;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n========================================\n");
+  print("\n" +& heading +& "\n" +& underline +& "\n");
   printEqSystem(inEqSystem);
   print("\n");
 end dumpEqSystem;
@@ -385,7 +415,7 @@ public function dumpVariables "function dumpVariables"
   input BackendDAE.Variables inVars;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(BackendVariable.varsSize(inVars)) +& ")\n========================================\n");
+  print("\n" +& heading +& " (" +& intString(BackendVariable.varsSize(inVars)) +& ")\n" +& underline +& "\n");
   printVariables(inVars);
   print("\n");
 end dumpVariables;
@@ -394,7 +424,7 @@ public function dumpVarList "function dumpVarList"
   input list<BackendDAE.Var> inVars;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(inVars)) +& ")\n========================================\n");
+  print("\n" +& heading +& " (" +& intString(listLength(inVars)) +& ")\n" +& underline +& "\n");
   printVarList(inVars);
   print("\n");
 end dumpVarList;
@@ -403,7 +433,7 @@ public function dumpEquationArray "function dumpEquationArray"
   input BackendDAE.EquationArray inEqns;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(BackendEquation.equationList(inEqns))) +& ", " +& intString(BackendDAEUtil.equationSize(inEqns)) +& ")\n========================================\n");
+  print("\n" +& heading +& " (" +& intString(listLength(BackendEquation.equationList(inEqns))) +& ", " +& intString(BackendDAEUtil.equationSize(inEqns)) +& ")\n" +& underline +& "\n");
   printEquationArray(inEqns);
   print("\n");
 end dumpEquationArray;
@@ -413,7 +443,7 @@ protected function dumpExternalObjectClasses "function dumpExternalObjectClasses
   input BackendDAE.ExternalObjectClasses inEOC;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(inEOC)) +& ")\n========================================\n");
+  print("\n" +& heading +& " (" +& intString(listLength(inEOC)) +& ")\n" +& underline +& "\n");
   printExternalObjectClasses(inEOC);
   print("\n");
 end dumpExternalObjectClasses;
@@ -422,16 +452,16 @@ protected function dumpStateSets
   input BackendDAE.StateSets stateSets;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n========================================\n");
+  print("\n" +& heading +& "\n" +& underline +& "\n");
   printStateSets(stateSets);
   print("\n");
 end dumpStateSets;
 
-public function dumpZeroCrossingList "function dumpZeroCrossingList"
+protected function dumpZeroCrossingList "function dumpZeroCrossingList"
   input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n========================================\n");
+  print("\n" +& heading +& "\n" +& underline +& "\n");
   print(zeroCrossingListString(inZeroCrossingList));
   print("\n");
 end dumpZeroCrossingList;
@@ -440,7 +470,7 @@ protected function dumpWhenClauseList "function dumpWhenClauseList"
   input list<BackendDAE.WhenClause> inWhenClauseList;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n========================================\n");
+  print("\n" +& heading +& "\n" +& underline +& "\n");
   print(whenClauseListString(inWhenClauseList));
   print("\n");
 end dumpWhenClauseList;
@@ -449,7 +479,7 @@ protected function dumpConstraintArray "function dumpConstraintArray"
   input array<DAE.Constraint> inConstraintArray;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n========================================\n");
+  print("\n" +& heading +& "\n" +& underline +& "\n");
   dumpConstraints(arrayList(inConstraintArray), 0);
   print("\n");
 end dumpConstraintArray;
@@ -457,17 +487,18 @@ end dumpConstraintArray;
 public function dumpSparsityPattern "function dumpSparsityPattern
   author lochel"
   input BackendDAE.SparsePattern inPattern;
+  input String heading;
 protected
   list<tuple< .DAE.ComponentRef, list< .DAE.ComponentRef>>> pattern;
   list< .DAE.ComponentRef> diffVars, diffedVars;
 algorithm
   (pattern, (diffVars, diffedVars)) := inPattern;
   
-  print("Sparsity Pattern\n================\n");
-  print("independents [or inputs] (" +& intString(listLength(diffVars)) +& ")\n  ");
+  print("\n" +& heading +& "\n" +& underline +& "\n");
+  print("independents [or inputs] (" +& intString(listLength(diffVars)) +& ")\n");
   ComponentReference.printComponentRefList(diffVars);
   
-  print("dependents [or outputs] (" +& intString(listLength(diffedVars)) +& ")\n  ");
+  print("dependents [or outputs] (" +& intString(listLength(diffedVars)) +& ")\n");
   ComponentReference.printComponentRefList(diffedVars);
   
   printSparsityPattern(pattern);
@@ -668,50 +699,38 @@ algorithm
    print("===================\n");
 end dumpBackendDAEVarList;
 
-public function dumpEqnsSolved
-"function: dumpEqnsSolved
+public function dumpEqnsSolved "function dumpEqnsSolved
   This function dumps the equations in the order they have to be calculate."
   input BackendDAE.BackendDAE inBackendDAE;
+protected
+  BackendDAE.EqSystems eqs;
 algorithm
-  _:=
-  match (inBackendDAE)
-    local
-      BackendDAE.EqSystems eqs;
-      BackendDAE.Shared shared;
-    case (BackendDAE.DAE(eqs,shared))
-      equation
-        List.map1_0(eqs,dumpEqnsSolved1,shared);
-      then
-        ();
-  end match;
+  BackendDAE.DAE(eqs=eqs) := inBackendDAE;
+  List.map_0(eqs, dumpEqnsSolved1);
 end dumpEqnsSolved;
 
-protected function dumpEqnsSolved1
-"function: dumpEqnsSolved1."
+protected function dumpEqnsSolved1 "function dumpEqnsSolved1
+  This is a helper for dumpEqnsSolved."
   input BackendDAE.EqSystem inEqSystem;
-  input BackendDAE.Shared inShared;
 algorithm
-  _:=
-  match (inEqSystem,inShared)
+  _:= match(inEqSystem)
     local
       BackendDAE.EquationArray eqns;
       BackendDAE.Variables vars;
       BackendDAE.StrongComponents comps;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,matching=BackendDAE.MATCHING(comps=comps)),_)
-      equation
-        dumpEqnsSolved2(comps,eqns,vars);
-       then
-        ();
-    else
-      equation
-        print("No Matching\n");
-       then
-        ();        
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,
+                              orderedEqs=eqns,
+                              matching=BackendDAE.MATCHING(comps=comps))) equation
+      dumpEqnsSolved2(comps, eqns, vars);
+    then ();
+
+    else equation
+      print("No Matching\n");
+    then ();        
   end match;
 end dumpEqnsSolved1;
 
-protected function dumpEqnsSolved2 
-" function: dumpEqnsSolved2
+protected function dumpEqnsSolved2 "function dumpEqnsSolved2
   author: Frenkel TUD 2012-03"
   input BackendDAE.StrongComponents inComps;
   input BackendDAE.EquationArray eqns;
@@ -848,9 +867,7 @@ end dumpEqnsSolved2;
 
 public function dumpComponentsAdvanced "function dumpComponentsAdvanced
   author: Frenkel TUD
-
-  Prints the blocks of the BLT sorting on stdout.
-"
+  Prints the blocks of the BLT sorting on stdout."
   input list<list<Integer>> l;
   input array<Integer> v2;
   input BackendDAE.EqSystem syst;
@@ -865,9 +882,7 @@ end dumpComponentsAdvanced;
 
 protected function dumpComponentsAdvanced2 "function dumpComponentsAdvanced2
   author: PA
-
-  Helper function to dump_components.
-"
+  Helper function to dump_components."
   input list<list<Integer>> inIntegerLstLst;
   input Integer inInteger;
   input array<Integer> v2;
@@ -900,9 +915,7 @@ end dumpComponentsAdvanced2;
 
 protected function dumpComponentsAdvanced3 "function dumpComponentsAdvanced3
   author: PA
-
-  Helper function to dump_components.
-"
+  Helper function to dump_components."
   input list<Integer> inIntegerLst;
   input array<Integer> v2;
   input BackendDAE.Variables vars;
@@ -954,7 +967,7 @@ public function dumpComponents
   input BackendDAE.StrongComponents inComps;
 algorithm
   print("StrongComponents\n");
-  print("========================================\n");  
+  print(underline +& "\n");  
   List.map_0(inComps,dumpComponent);
 end dumpComponents;
 
@@ -1103,6 +1116,11 @@ end dumpComponent;
 // section for all *String functions
 // 
 // These are functions, that return their output with a String.
+//   - componentRef_DIVISION_String
+//   - equationString
+//   - strongComponentString
+//   - whenClauseString
+//   - zeroCrossingListString
 // =============================================================================
 
 public function strongComponentString
@@ -1699,6 +1717,7 @@ end debuglst;
 // These section should be empty. Feel free to sort these functions into one of 
 // the upper sections.
 // =============================================================================
+
 public function printCallFunction2StrDIVISION
 "function: printCallFunction2Str
   Print the exp of typ DAE.CALL."
@@ -2671,7 +2690,7 @@ protected
   list<list<Integer>> m_1;
 algorithm
   print("\nIncidence Matrix (row: equation)\n");
-  print("========================================\n");
+  print(underline +& "\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   print("number of rows: ");
@@ -2693,7 +2712,7 @@ protected
   list<list<Integer>> m_1;
 algorithm
   print("\nTranspose Incidence Matrix (row: var)\n");
-  print("========================================\n");
+  print(underline +& "\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   print("number of rows: ");
@@ -2893,7 +2912,7 @@ protected
   String len_str;
 algorithm
   print("Matching\n");
-  print("========================================\n");
+  print(underline +& "\n");
   len := arrayLength(v);
   len_str := intString(len);
   print(len_str);
