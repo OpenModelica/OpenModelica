@@ -250,7 +250,7 @@ clean: qtclean fmil-clean opencl_rt_clean gc-clean
 	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd PythonInterface && $(MAKE) -f $(defaultMakefileTarget) clean)
-	$(MAKE) -C 3rdParty/modelica3d/build clean || true
+	if test -f 3rdParty/modelica3d/build/Makefile; then $(MAKE) -C 3rdParty/modelica3d/build clean; fi
 	(rm -rf 3rdParty/modelica3d/build)
 	(rm -rf SimulationRuntime/build_c)
 	rm -rf build/share build/lib build/include build/bin/OMShell* build/bin/OMNotebook* \
