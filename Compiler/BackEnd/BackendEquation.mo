@@ -1461,6 +1461,17 @@ algorithm
   eqns_1 := List.fold(eqnlst, equationAdd, eqns);
 end addEquations;
 
+public function mergeEquationArray "function mergeEquationArray
+  author: vitalij
+  This function returns an EquationArray containing all the equations from both
+  inputs."
+  input BackendDAE.EquationArray inEqns1;
+  input BackendDAE.EquationArray inEqns2;
+  output BackendDAE.EquationArray outEqns;
+algorithm
+  outEqns := addEquations(equationList(inEqns1), inEqns2);
+end mergeEquationArray;
+
 public function equationAdd "function: equationAdd
   author: PA
 
