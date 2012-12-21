@@ -945,9 +945,9 @@ algorithm
         forbiddenColor = addForbiddenColorsInt(node, nodes, inColored, inforbiddenColor, inGraph);
         color = arrayFindMinColorIndexInt(forbiddenColor, node, 1);
         colored = arrayUpdate(inColored, node, color);
-        colored = partialDistance2colorInt(restGraph, forbiddenColor, inColors, inGraph, colored);
-    then colored;
-      else
+    then 
+      partialDistance2colorInt(restGraph, forbiddenColor, inColors, inGraph, colored);
+    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.partialDistance2colorInt failed."});
       then fail();
@@ -962,7 +962,7 @@ protected function addForbiddenColorsInt
   input array<tuple<Integer, list<Integer>>> inGraph;
   output array<Option<list<Integer>>> outForbiddenColor;   
 algorithm
-  outForbiddenColor := match(inNode, inNodes, inColored, inForbiddenColor, inGraph)
+  outForbiddenColor := matchcontinue(inNode, inNodes, inColored, inForbiddenColor, inGraph)
   local
     Integer node;
     list<Integer> rest;
@@ -972,13 +972,18 @@ algorithm
       equation
         ((_,indexes)) = arrayGet(inGraph,node);
         updateForbiddenColorArrayInt(indexes, inColored, inForbiddenColor, inNode); 
-        outForbiddenColor = addForbiddenColorsInt(inNode, rest, inColored, inForbiddenColor, inGraph);
-      then outForbiddenColor;
-      else
+      then 
+        addForbiddenColorsInt(inNode, rest, inColored, inForbiddenColor, inGraph);
+/*    case (_, node::rest, _, _, _)
+      equation
+        print("node : " +& intString(node) +& "\n");
+        print("inGraph : " +& intString(arrayLength(inGraph)) +& "\n");
+      then fail();
+*/    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Graph.addForbiddenColors failed."});
       then fail();        
-  end match;
+  end matchcontinue;
 end addForbiddenColorsInt;
 
 protected function updateForbiddenColorArrayInt
@@ -1006,7 +1011,12 @@ algorithm
       false = intGt(colorIndex,0);
       updateForbiddenColorArrayInt(rest, inColored, inForbiddenColor, inNode);
     then ();
-  end matchcontinue;      
+/*    case (index::rest, _, _, _)
+      equation
+        print("index : " +& intString(index) +& "\n");
+        print("inColored : " +& intString(arrayLength(inColored)) +& "\n");
+      then fail();      
+*/  end matchcontinue;      
 end updateForbiddenColorArrayInt;
 
 protected function arrayFindMinColorIndexInt
@@ -1037,8 +1047,8 @@ algorithm
         //inPrintFunc(nodes,"FobiddenColors:" );
         _ = List.getMemberOnTrue(inNode, nodes, intEq);
         //print("Not found color on index : " +& intString(inIndex) +& "\n");
-        index = arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);
-      then index;        
+      then 
+        arrayFindMinColorIndexInt(inForbiddenColor, inNode, inIndex+1);   
   end matchcontinue;
 end arrayFindMinColorIndexInt;
 

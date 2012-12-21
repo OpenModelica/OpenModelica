@@ -3839,7 +3839,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
 
         // generate Set Vars
-        (crset,setVars,crA,aVars,tp) = getSetVars(iSetIndex,rang,size);
+        (crset,setVars,crA,aVars,tp,crJ,varJ) = getSetVars(iSetIndex,rang,size);
         // add set states 
         v = BackendVariable.addVars(setVars,v);
 
@@ -3880,7 +3880,7 @@ algorithm
         varlst = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
         ovarlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
         
-        syst = BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching,BackendDAE.STATESET(rang,crA,aVars,varlst,ovarlst,eqnlst,oeqnlst)::stateSets);
+        syst = BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching,BackendDAE.STATESET(rang,crA,aVars,varlst,ovarlst,eqnlst,oeqnlst,crJ,varJ)::stateSets);
  
         // add dummy states
         dstates1 = listAppend(states,dstates);
@@ -6086,6 +6086,8 @@ protected function getSetVars
   output DAE.ComponentRef ocrA;
   output list<BackendDAE.Var> oAVars;
   output DAE.Type realtp;
+  output DAE.ComponentRef ocrJ;
+  output list<BackendDAE.Var> oJVars;
 protected
   DAE.ComponentRef set,crstates;
   DAE.Type tp;
@@ -6105,7 +6107,13 @@ algorithm
                                  DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource));
   ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
   oAVars := generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
-  oAVars := List.map1(oAVars,BackendVariable.setVarFixed,false);
+  oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
+  // add start value A[i,j] = if i==j then 1 else 0 
+  oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.RCONST(0.0));
+  tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource),DAE.T_REAL_DEFAULT);
+  ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
+  oJVars := generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
+  oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);
 end getSetVars;
 
 /* 

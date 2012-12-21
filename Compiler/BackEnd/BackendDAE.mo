@@ -504,6 +504,8 @@ uniontype StateSet
     list< Var> ovars;
     list< Equation> eqns;
     list< Equation> oeqns;
+    .DAE.ComponentRef crJ;
+    list< Var> varJ;
   end STATESET;
 end StateSet;
 

@@ -4787,7 +4787,7 @@ algorithm
         // build up a graph of pattern
         nodesList = List.intRange2(1,adjSize);
         sparseGraph = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArray);
-        sparseGraphT = Graph.buildGraph(nodesList,createBipartiteGraph,sparseArrayT);
+        sparseGraphT = Graph.buildGraph(List.intRange2(1,sizeN),createBipartiteGraph,sparseArrayT);
         Debug.fcall(Flags.JAC_DUMP2,print,"sparse graph: \n");
         Debug.fcall(Flags.JAC_DUMP2,Graph.printGraphInt,sparseGraph);
         Debug.fcall(Flags.JAC_DUMP2,print,"transposed sparse graph: \n");
@@ -4795,11 +4795,10 @@ algorithm
         
         Debug.fcall(Flags.JAC_DUMP,print,"analytical Jacobians[SPARSE] -> builded graph for coloring.\n");
         // color sparse bipartite graph
-        forbiddenColor = arrayCreate(adjSize,NONE());
-        colored = arrayCreate(adjSize,0);
-        arraysparseGraph = listArray(sparseGraph);        
+        forbiddenColor = arrayCreate(sizeN,NONE());
+        colored = arrayCreate(sizeN,0);
+        arraysparseGraph = listArray(sparseGraph);
         colored1 = Graph.partialDistance2colorInt(sparseGraphT, forbiddenColor, nodesList, arraysparseGraph, colored);
-        
         // get max color used
         maxColor = Util.arrayFold(colored1, intMax, 0);
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians[SPARSE] -> colored graph with " +& intString(maxColor) +& " colors. Time : " +& realString(clock()) +& "\n");
@@ -4831,9 +4830,9 @@ protected function mapIndexColors
   output array<list<Integer>> outColors;
 algorithm
   outColors := matchcontinue(inColors, inMaxIndex, inArray)
-  local
-    Integer i, index;
-    list<Integer> lst;
+    local
+      Integer i, index;
+      list<Integer> lst;
     case (_, 0, _) then inArray;
     case (_, i, _)
       equation
@@ -4841,11 +4840,22 @@ algorithm
         lst = arrayGet(inArray, index);
         lst = listAppend({i},lst);
         _ = arrayUpdate(inArray, index, lst);
-    then mapIndexColors(inColors, i-1, inArray);
-      else
+      then
+        mapIndexColors(inColors, i-1, inArray);
+/*    case (_, i, _)
       equation
-       Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern: mapIndexColors failed"});
-      then fail();
+        print("i " +& intString(i) +& "\n");
+        print("inColors " +& intString(arrayLength(inColors)) +& "\n");
+        index = arrayGet(inColors, i);
+        print("index " +& intString(index) +& "\n");
+        print("inArray " +& intString(arrayLength(inArray)) +& "\n");
+      then
+        fail();
+*/    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"BackendDAEOptimize.generateSparsePattern: mapIndexColors failed"});
+      then
+         fail();
  end matchcontinue;
 end mapIndexColors;
 

@@ -784,9 +784,27 @@ algorithm
 
   ((vars, fixvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars));
   ((eqns, reqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, collectInitialEqns, (eqns, reqns));
+  fixvars := List.fold(stateSets,collectInitialStateSetVars,fixvars);
 
   oTpl := (vars, fixvars, eqns, reqns);
 end collectInitialVarsEqnsSystem;
+
+protected function collectInitialStateSetVars
+"function collectInitialStateSetVars
+   author Frenkel TUD
+   add the vars for state set to the initial system
+   Because the statevars are calculated by
+   set.x = set.A*dummystates we add set.A to the
+   initial system with set.A = {{1,0,0},{0,1,0}}"
+   input BackendDAE.StateSet inSet;
+   input BackendDAE.Variables iFixedVars;
+   output BackendDAE.Variables oFixedVars;
+protected
+  list<BackendDAE.Var> varJ;
+algorithm
+  BackendDAE.STATESET(varJ=varJ) := inSet;
+  oFixedVars := BackendVariable.addVars(varJ,iFixedVars);
+end collectInitialStateSetVars;
 
 protected function collectInitialVars "function collectInitialVars
   author: lochel
