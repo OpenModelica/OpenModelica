@@ -364,6 +364,9 @@ algorithm
  
     // state
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, eqns,vars0))) equation
+      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+      vars = BackendVariable.addVar(var, vars);
+    
       (x0,_) = stringCrVar("$t0", cr, ty, arryDim); // VarDirection = input
       var = BackendDAE.VAR(x0, BackendDAE.VARIABLE(), DAE.INPUT(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
       vars0 = BackendVariable.addVar(var, vars0);
@@ -400,6 +403,7 @@ algorithm
       //eqn = eulerStep(x0,x1,derx0,dt,ty);
       eqn = stepLobatt(x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4,dt,ty);
       eqns = BackendEquation.mergeEquationArray(eqn, eqns);
+      eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(DAE.CREF(cr, ty), DAE.CREF(x4, ty), DAE.emptyElementSource, false), eqns);
     then ((var, (vars, eqns,vars0)));
     
     // else

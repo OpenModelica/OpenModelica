@@ -1669,8 +1669,7 @@ algorithm
   outVars := List.map1(inVars,setVarKind,inVarKind);
 end setVarsKind;
 
-public function setVarKind
-"function setVarKind
+public function setVarKind "function setVarKind
   author: PA
   Sets the BackendDAE.VarKind of a variable"
   input BackendDAE.Var inVar;
