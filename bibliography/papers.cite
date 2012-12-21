@@ -13,10 +13,10 @@ openmodelica.org:christoph:modelica:2012
 openmodelica.org:niklas:modelica:2012
 openmodelica.org:asghar:MATHMOD:2012
 openmodelica.org:muhammed:MATHMOD:2012
-openmodelica.org:waldimir:TMS/DEVS:2012
+openmodelica.org:wladimir:TMS/DEVS:2012
 openmodelica.org:broman:SAC:2012
 openmodelica.org:afshin:MCC:2011
-openmodelica.org:mohsen:SIMS:2011
+openmodelica.org:mohsen:sims:2011
 openmodelica.org:wuzhu:eoolt:2011
 openmodelica.org:toby:eoolt:2011
 openmodelica.org:sjoelund:eoolt:2011
@@ -52,7 +52,7 @@ openmodelica.org:lundvall:CPC:2009
 openmodelica.org:fritzson:aswec:2009
 openmodelica.org:lundvall:CPC:2009
 openmodelica.org:lundvall:MCC:2008
-openmodelica.org:ericsson:SIMS:2008
+openmodelica.org:magnusson:SIMS:2008
 openmodelica.org:guy:eoolt:2008
 openmodelica.org:broman:eoolt:2008
 openmodelica.org:guy:aswec:2008
@@ -61,6 +61,7 @@ openmodelica.org:stavaker:modelica:2008
 openmodelica.org:pop:modelica:2008
 openmodelica.org:pop:sims:2007
 openmodelica.org:norling:sims:2007
+openmodelica.org:lundvall:sims:2007
 openmodelica.org:lundvall:europvm:2007
 openmodelica.org:lundvall:eurosim:2007
 openmodelica.org:pop:eoolt:2007
@@ -78,13 +79,9 @@ openmodelica.org:jagudin:sims:2006
 openmodelica.org:fransson:sims:2006
 openmodelica.org:sandholm:sims:2006
 openmodelica.org:pop:modelica:2006
-openmodelica.org:kessler:para:2006
-openmodelica.org:fernstrom:rise:2006
 openmodelica.org:edelfeldt:sims:2005
 openmodelica.org:fritzson:sims:2005
 openmodelica.org:lundvall:sims:2005
-openmodelica.org:larsdotter:biomedsim:2005
-openmodelica.org:broman:simsafe:2005
 penmodelica.org:fritzson:modelica:2005
 openmodelica.org:nystrom:sims:2004
 openmodelica.org:pop:sims:2004
@@ -94,24 +91,15 @@ openmodelica.org:aronsson:eurosim:2004
 openmodelica.org:idebrant:eurosim:2004
 openmodelica.org:engelson:eurosim:2004
 openmodelica.org:fritzson:simsafe:2004
-openmodelica.org:evalena:iscs:2003
-openmodelica.org:bunus:ieee:2003
+openmodelica.org:pop:modelica:2003
 openmodelica.org:lundvall:sims:2003
 openmodelica.org:engelson:sims:2003
 openmodelica.org:evalena:sims:2003
-openmodelica.org:aronsson:compilers:2003
 openmodelica.org:aronsson:sims:2002
 openmodelica.org:endelson:sims:2002
-openmodelica.org:bunus:lncs:2002
+openmodelica.org:bunus:PADL:2002
 openmodelica.org:saldamli:sims:2001
-openmodelica.org:saldamli:eurosim:2001
-openmodelica.org:endelson:ieee:2000
-openmodelica.org:mats:ims:1999
-openmodelica.org:andreas:ims:1999
-openmodelica.org:fritzson:ecoop:1998
-openmodelica.org:fritzson:simulation:1998
-openmodelica.org:kagedal:simulation:1998
-openmodelica.org:fritzson:para:1998
+
 
 
 
