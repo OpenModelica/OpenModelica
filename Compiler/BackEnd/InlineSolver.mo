@@ -79,10 +79,10 @@ algorithm
 
       Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: raw system");
 
-      /*dae -> algebraic system*/      
+      /* dae -> algebraic system */      
       dae = dae_to_algSystem(dae);
       
-      /*output: algebraic system */
+      /* output: algebraic system */
       Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: algebraic system");
     then SOME(dae);
     
@@ -96,8 +96,7 @@ end generateDAE;
 protected function dae_to_algSystem "function dae_to_algSystem
   author: vruge
   This is a helper function for generateDAE.
-  Transformation dae in algebraic system
-  "
+  Transformation dae in algebraic system"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 protected
@@ -134,11 +133,11 @@ algorithm
   (outDAE, Util.SUCCESS()) := BackendDAEUtil.pastoptimiseDAE(dae, pastOptModules, matchingAlgorithm, daeHandler);
 end dae_to_algSystem;
 
-protected function addKnowInitialValueForState
+protected function addKnowInitialValueForState "function addKnowInitialValueForState
+  author: vruge"
   input BackendDAE.Shared inShared;
   input BackendDAE.Variables invars;
   output BackendDAE.Shared outShared;
-  
 protected
   BackendDAE.Var var;
   BackendDAE.Variables knownVars, externalObjects, aliasVars;
@@ -159,9 +158,9 @@ algorithm
    outShared := BackendDAE.SHARED(knownVars, externalObjects, aliasVars,initialEqs, removedEqs, constraints, classAttrs, cache, env, functionTree, eventInfo, extObjClasses, backendDAEType, symjacs);
 end addKnowInitialValueForState;
 
-protected function timeEquation
+protected function timeEquation "function timeEquation
+  author: vruge"
   output BackendDAE.EqSystem outEqSystem;
-  
 protected 
   BackendDAE.EqSystem eqSystem;
   BackendDAE.Equation eqn;
@@ -231,7 +230,7 @@ protected function eliminatedStatesDerivations "function eliminatedStatesDerivat
   author: vruge
   This is a helper function for dae_to_algSystem.
   change function call der(x) in  variable xder
-  change kind: state in known variable "
+  change kind: state in known variable"
   input BackendDAE.EqSystem inEqSystem;
   input tuple<BackendDAE.EqSystems, BackendDAE.Variables> inTupel ;
   output tuple<BackendDAE.EqSystems, BackendDAE.Variables> outTupel;
@@ -308,7 +307,6 @@ protected function replaceDerStateExp "function replaceDerStateExp
   This is a helper function for replaceDerStateCref."
   input tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> inExp;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables, Integer, String, String>> outExp;
-
 algorithm
   (outExp) := matchcontinue(inExp)
     local
@@ -337,16 +335,14 @@ algorithm
   end matchcontinue;
 end replaceDerStateExp;
 
-
-protected function crefPrefixStringWithpopCref 
+protected function crefPrefixStringWithpopCref "function crefPrefixStringWithpopCref 
+  author: vruge"
   input String name;
   input DAE.ComponentRef in_cr;
   output DAE.ComponentRef out_cr;
-  
  algorithm
    out_cr := ComponentReference.popCref(in_cr);
    out_cr := ComponentReference.crefPrefixString(name, out_cr);
-
 end crefPrefixStringWithpopCref;
 
 protected function replaceStates_vars "function replaceStates_vars
@@ -365,9 +361,8 @@ algorithm
       //BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqn;
       DAE.Exp dt;
-    
+ 
     // state
-
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, eqns,vars0))) equation
       (x0,_) = stringCrVar("$t0", cr, ty, arryDim); // VarDirection = input
       var = BackendDAE.VAR(x0, BackendDAE.VARIABLE(), DAE.INPUT(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
@@ -405,7 +400,6 @@ algorithm
       //eqn = eulerStep(x0,x1,derx0,dt,ty);
       eqn = stepLobatt(x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4,dt,ty);
       eqns = BackendEquation.mergeEquationArray(eqn, eqns);
-      
     then ((var, (vars, eqns,vars0)));
     
     // else
@@ -419,8 +413,9 @@ algorithm
   end matchcontinue;
 end replaceStates_vars;
 
-protected function stepLobatt
-/* t1 = t0 + a0*dt*/
+protected function stepLobatt "function stepLobatt
+  author: vruge
+  t1 = t0 + a0*dt"
   input DAE.ComponentRef x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4;
   input DAE.Exp dt;
   input DAE.Type ty;
@@ -428,49 +423,49 @@ protected function stepLobatt
 protected
   DAE.Exp rhs1, lhs1, rhs2, lhs2, rhs3, lhs3, rhs4, lhs4, e1, e2,e3, e4,e5,ee1,ee2,ee3,ee4,ee5, a0, a1,a2, a3, a4, d0, d1;
   BackendDAE.Equation eqn;
-  algorithm
-    eqns := BackendEquation.emptyEqns();
-    
-    ee1 := DAE.CREF(derx0, ty);
-    ee2 := DAE.CREF(derx1, ty);
-    ee3 := DAE.CREF(derx2, ty);
-    ee4 := DAE.CREF(derx3, ty);
-    ee5 := DAE.CREF(derx4, ty);
-    
-    e1 := DAE.CREF(x0, ty);
-    e2 := DAE.CREF(x1, ty);
-    e3 := DAE.CREF(x2, ty);
-    e4 := DAE.CREF(x3, ty);
-    e5 := DAE.CREF(x4, ty);
-    
-    (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA1(ty);
-    lhs1 := eADD(eMUL(ee1,d0),eMUL(ee2,d1));
-    rhs1 :=  eADD(eADD(eADD(eADD(eMUL(e1,a0),eMUL(e2,a1)),eMUL(e3,a2)),eMUL(e4,a3)),eMUL(e5,a4));
-    eqn := BackendDAE.EQUATION(lhs1, rhs1, DAE.emptyElementSource, false);
-    eqns := BackendEquation.equationAdd(eqn, eqns);
-    
-    
-    (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA2(ty);
-    lhs2 := eADD(eMUL(ee1,d0),eMUL(ee3,d1));
-    rhs2 :=  eADD(eADD(eADD(eADD(eMUL(e1,a0),eMUL(e2,a1)),eMUL(e3,a2)),eMUL(e4,a3)),eMUL(e5,a4));
-    eqn := BackendDAE.EQUATION(lhs2, rhs2, DAE.emptyElementSource, false);
-    eqns := BackendEquation.equationAdd(eqn, eqns);
-    
-    (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA3(ty);
-    lhs3 := eADD(eMUL(ee1,d0),eMUL(ee4,d1));
-    rhs3 :=  eADD(eADD(eADD(eADD(eMUL(e1,a0),eMUL(e2,a1)),eMUL(e3,a2)),eMUL(e4,a3)),eMUL(e5,a4));
-    eqn := BackendDAE.EQUATION(lhs3, rhs3, DAE.emptyElementSource, false);
-    eqns := BackendEquation.equationAdd(eqn, eqns);
-    
-    (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA4(ty);
-    lhs4 := eADD(eMUL(ee1,d0),eMUL(ee5,d1));
-    rhs4 :=  eADD(eADD(eADD(eADD(eMUL(e1,a0),eMUL(e2,a1)),eMUL(e3,a2)),eMUL(e4,a3)),eMUL(e5,a4));
-    eqn := BackendDAE.EQUATION(lhs4, rhs4, DAE.emptyElementSource, false);
-    eqns := BackendEquation.equationAdd(eqn, eqns);
-    
+algorithm
+  eqns := BackendEquation.emptyEqns();
+  
+  ee1 := DAE.CREF(derx0, ty);
+  ee2 := DAE.CREF(derx1, ty);
+  ee3 := DAE.CREF(derx2, ty);
+  ee4 := DAE.CREF(derx3, ty);
+  ee5 := DAE.CREF(derx4, ty);
+  
+  e1 := DAE.CREF(x0, ty);
+  e2 := DAE.CREF(x1, ty);
+  e3 := DAE.CREF(x2, ty);
+  e4 := DAE.CREF(x3, ty);
+  e5 := DAE.CREF(x4, ty);
+  
+  (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA1(ty);
+  lhs1 := eADD(eMUL(ee1,d0),eMUL(ee2,d1));
+  rhs1 :=  eADD(eADD(eADD(eADD(eMUL(e1,a0),eMUL(e2,a1)),eMUL(e3,a2)),eMUL(e4,a3)),eMUL(e5,a4));
+  eqn := BackendDAE.EQUATION(lhs1, rhs1, DAE.emptyElementSource, false);
+  eqns := BackendEquation.equationAdd(eqn, eqns);
+  
+  
+  (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA2(ty);
+  lhs2 := eADD(eMUL(ee1,d0),eMUL(ee3,d1));
+  rhs2 :=  eADD(eADD(eADD(eADD(eMUL(e1,a0),eMUL(e2,a1)),eMUL(e3,a2)),eMUL(e4,a3)),eMUL(e5,a4));
+  eqn := BackendDAE.EQUATION(lhs2, rhs2, DAE.emptyElementSource, false);
+  eqns := BackendEquation.equationAdd(eqn, eqns);
+  
+  (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA3(ty);
+  lhs3 := eADD(eMUL(ee1,d0),eMUL(ee4,d1));
+  rhs3 :=  eADD(eADD(eADD(eADD(eMUL(e1,a0),eMUL(e2,a1)),eMUL(e3,a2)),eMUL(e4,a3)),eMUL(e5,a4));
+  eqn := BackendDAE.EQUATION(lhs3, rhs3, DAE.emptyElementSource, false);
+  eqns := BackendEquation.equationAdd(eqn, eqns);
+  
+  (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA4(ty);
+  lhs4 := eADD(eMUL(ee1,d0),eMUL(ee5,d1));
+  rhs4 :=  eADD(eADD(eADD(eADD(eMUL(e1,a0),eMUL(e2,a1)),eMUL(e3,a2)),eMUL(e4,a3)),eMUL(e5,a4));
+  eqn := BackendDAE.EQUATION(lhs4, rhs4, DAE.emptyElementSource, false);
+  eqns := BackendEquation.equationAdd(eqn, eqns);
 end stepLobatt;
 
-protected function stringCrVar
+protected function stringCrVar "function stringCrVar
+  author: vruge"
   input String varTyp;
   input DAE.ComponentRef inCR;
   input DAE.Type ty;
@@ -482,7 +477,8 @@ algorithm
   var := BackendDAE.VAR(outCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
 end stringCrVar;
 
-protected function rDIV
+protected function rDIV "function rDIV
+  author: vruge"
  input Real a;
  input Real b;
  output DAE.Exp c;
@@ -490,39 +486,43 @@ algorithm
   c := DAE.BINARY(DAE.RCONST(a),DAE.DIV(DAE.T_REAL_DEFAULT),DAE.RCONST(b));
 end rDIV;
 
-protected function eADD
- input DAE.Exp a;
- input DAE.Exp b;
- output DAE.Exp c;
+protected function eADD "function eADD
+  author vruge"
+  input DAE.Exp a;
+  input DAE.Exp b;
+  output DAE.Exp c;
 algorithm
   c := DAE.BINARY(a,DAE.ADD(DAE.T_REAL_DEFAULT),b);
 end eADD;
 
-protected function eSUB
- input DAE.Exp a;
- input DAE.Exp b;
- output DAE.Exp c;
+protected function eSUB "function eSUB
+  author vruge"
+  input DAE.Exp a;
+  input DAE.Exp b;
+  output DAE.Exp c;
 algorithm
   c := DAE.BINARY(a,DAE.SUB(DAE.T_REAL_DEFAULT),b);
 end eSUB;
 
-
-protected function eMUL
- input DAE.Exp a;
- input DAE.Exp b;
- output DAE.Exp c;
+protected function eMUL "function eMUL
+  author vruge"
+  input DAE.Exp a;
+  input DAE.Exp b;
+  output DAE.Exp c;
 algorithm
   c := DAE.BINARY(a,DAE.MUL(DAE.T_REAL_DEFAULT),b);
 end eMUL;
 
-protected function eNEG
- input DAE.Exp a;
- output DAE.Exp c;
+protected function eNEG "function eNEG
+  author vruge"
+  input DAE.Exp a;
+  output DAE.Exp c;
 algorithm
   c := DAE.UNARY(DAE.UMINUS(DAE.T_REAL_DEFAULT),a);
 end eNEG;
 
-protected function sqrt
+protected function sqrt "function sqrt
+  author vruge"
   input Real a;
   output DAE.Exp c;
 protected
@@ -532,135 +532,130 @@ algorithm
   c := DAE.BINARY(DAE.RCONST(a),DAE.POW(DAE.T_REAL_DEFAULT),b);
 end sqrt;
 
-
-protected function coeffsLobattoIIIA1
+protected function coeffsLobattoIIIA1 "function coeffsLobattoIIIA1
+  author vruge"
   input DAE.Type ty;
-  
   output DAE.Exp a0, a1,a2, a3, a4;
   output DAE.Exp d0, d1;
 protected
   DAE.Exp e1,e2,e3, sqrt21;
- algorithm
-   sqrt21 := sqrt(21.0);
-   d0 := rDIV(3.0,7.0);
-   d1 := DAE.RCONST(1.0);
-   
-   e1 := rDIV(81.0, 14.0);
-   e2 := rDIV(3.0,14.0);
-   e2 := eMUL(sqrt21,e2);
-   e3 := eADD(e1,e2);
-   a0 := eNEG(e3);
-   
-   e1 := rDIV(7.0,2.0);
-   e2 := rDIV(1.0,2.0);
-   e2 := eMUL(sqrt21,e2);
-   a1 := eADD(e1,e2);
-   
-   e1 := rDIV(16.0,21.0);
-   e1 := eMUL(sqrt21,e1);
-   e2 := rDIV(16.0,7.0);
-   a2 := eSUB(e1,e2);
-   
-   e1 := rDIV(7.0,2.0);
-   e2 := rDIV(5.0,6.0);
-   e2 := eMUL(sqrt21,e2);
-   a3 := eSUB(e1,e2);
-   
-   e1 := rDIV(15.0,14.0);
-   e2 := rDIV(3.0,14.0);
-   e2 := eMUL(sqrt21,e2);
-   a4 := eSUB(e1,e2);  
-   
+algorithm
+  sqrt21 := sqrt(21.0);
+  d0 := rDIV(3.0,7.0);
+  d1 := DAE.RCONST(1.0);
+
+  e1 := rDIV(81.0, 14.0);
+  e2 := rDIV(3.0,14.0);
+  e2 := eMUL(sqrt21,e2);
+  e3 := eADD(e1,e2);
+  a0 := eNEG(e3);
+
+  e1 := rDIV(7.0,2.0);
+  e2 := rDIV(1.0,2.0);
+  e2 := eMUL(sqrt21,e2);
+  a1 := eADD(e1,e2);
+
+  e1 := rDIV(16.0,21.0);
+  e1 := eMUL(sqrt21,e1);
+  e2 := rDIV(16.0,7.0);
+  a2 := eSUB(e1,e2);
+
+  e1 := rDIV(7.0,2.0);
+  e2 := rDIV(5.0,6.0);
+  e2 := eMUL(sqrt21,e2);
+  a3 := eSUB(e1,e2);
+
+  e1 := rDIV(15.0,14.0);
+  e2 := rDIV(3.0,14.0);
+  e2 := eMUL(sqrt21,e2);
+  a4 := eSUB(e1,e2);
 end coeffsLobattoIIIA1;
 
-protected function coeffsLobattoIIIA2
+protected function coeffsLobattoIIIA2 "function coeffsLobattoIIIA2
+  author vruge"
   input DAE.Type ty;
-  
   output DAE.Exp a0, a1,a2, a3, a4;
   output DAE.Exp d0, d2;
 protected
   DAE.Exp e1,e2,e3, sqrt21;
- algorithm
-   sqrt21 := sqrt(21.0);
-   d0 := rDIV(-3.0,8.0);
-   d2 := rDIV(1.0,1.0);
-   
-   a0 := rDIV(9.0,2.0);
-   
-   e1 := rDIV(49.0,48.0);
-   e1 := eMUL(sqrt21,e1);
-   e2 := rDIV(49.0,16.0);
-   e3 := eADD(e1,e2);
-   a1 := eNEG(e3);
-   
-   a2 := rDIV(2.0,1.0);
-   
-   e1 := rDIV(-49.0,16.0);
-   e2 := rDIV(49.0,48.0);
-   e2 := eMUL(sqrt21,e2);
-   a3 := eADD(e1,e2);
-   
-   a4 := rDIV(-3.0,8.0);
-   
+algorithm
+  sqrt21 := sqrt(21.0);
+  d0 := rDIV(-3.0,8.0);
+  d2 := rDIV(1.0,1.0);
+
+  a0 := rDIV(9.0,2.0);
+
+  e1 := rDIV(49.0,48.0);
+  e1 := eMUL(sqrt21,e1);
+  e2 := rDIV(49.0,16.0);
+  e3 := eADD(e1,e2);
+  a1 := eNEG(e3);
+
+  a2 := rDIV(2.0,1.0);
+
+  e1 := rDIV(-49.0,16.0);
+  e2 := rDIV(49.0,48.0);
+  e2 := eMUL(sqrt21,e2);
+  a3 := eADD(e1,e2);
+
+  a4 := rDIV(-3.0,8.0);
 end coeffsLobattoIIIA2;
 
-
-protected function coeffsLobattoIIIA3
+protected function coeffsLobattoIIIA3 "function coeffsLobattoIIIA3
+  author vruge"
   input DAE.Type ty;
-  
   output DAE.Exp a0, a1,a2, a3, a4;
   output DAE.Exp d0, d3;
 protected
   DAE.Exp e1,e2,e3, sqrt21;
- algorithm
-   sqrt21 := sqrt(21.0);
-   d0 := rDIV(3.0,7.0);
-   d3 := rDIV(1.0,1.0);
-   
-   e1 := rDIV(-81.0,14.0);
-   e2 := rDIV(3.0,14.0);
-   e2 := eMUL(sqrt21,e2);
-   a0 := eADD(e1,e2);
-   
-   e1 := rDIV(7.0,2.0);
-   e2 := rDIV(5.0,6.0);
-   e2 := eMUL(sqrt21,e2);
-   a1 := eADD(e1,e2);
-   
-   e1 := rDIV(16.0,7.0);
-   e2 := rDIV(16.0,21.0);
-   e2 := eMUL(sqrt21,e2);
-   e3 := eADD(e2,e1);
-   a2 := eNEG(e3);
-   
-   e1 := rDIV(7.0,2.0);
-   e2 := rDIV(-1.0,2.0);
-   e2 := eMUL(sqrt21,e2);
-   a3 := eADD(e1,e2);
-   
-   e1 := rDIV(15.0,14.0);
-   e2 := rDIV(3.0,14.0);
-   e2 := eMUL(sqrt21,e2);
-   a4 := eADD(e1,e2);
-   
+algorithm
+  sqrt21 := sqrt(21.0);
+  d0 := rDIV(3.0,7.0);
+  d3 := rDIV(1.0,1.0);
+
+  e1 := rDIV(-81.0,14.0);
+  e2 := rDIV(3.0,14.0);
+  e2 := eMUL(sqrt21,e2);
+  a0 := eADD(e1,e2);
+
+  e1 := rDIV(7.0,2.0);
+  e2 := rDIV(5.0,6.0);
+  e2 := eMUL(sqrt21,e2);
+  a1 := eADD(e1,e2);
+
+  e1 := rDIV(16.0,7.0);
+  e2 := rDIV(16.0,21.0);
+  e2 := eMUL(sqrt21,e2);
+  e3 := eADD(e2,e1);
+  a2 := eNEG(e3);
+
+  e1 := rDIV(7.0,2.0);
+  e2 := rDIV(-1.0,2.0);
+  e2 := eMUL(sqrt21,e2);
+  a3 := eADD(e1,e2);
+
+  e1 := rDIV(15.0,14.0);
+  e2 := rDIV(3.0,14.0);
+  e2 := eMUL(sqrt21,e2);
+  a4 := eADD(e1,e2);
 end coeffsLobattoIIIA3;
 
-protected function coeffsLobattoIIIA4
+protected function coeffsLobattoIIIA4 "function coeffsLobattoIIIA4
+  author vruge"
   input DAE.Type ty;
-  
   output DAE.Exp a0, a1,a2, a3, a4;
   output DAE.Exp d0, d4;
 protected
   DAE.Exp e1,e2,e3;
- algorithm
-   d0 := rDIV(-1.0,1.0);
-   d4 := rDIV(1.0,1.0);
-   
-   a0 := rDIV(11.0,1.0);
-   a1 := rDIV(-49.0,3.0);
-   a2 := rDIV(32.0,3.0);
-   a3 := a1;
-   a4 := a0;
+algorithm
+  d0 := rDIV(-1.0,1.0);
+  d4 := rDIV(1.0,1.0);
+
+  a0 := rDIV(11.0,1.0);
+  a1 := rDIV(-49.0,3.0);
+  a2 := rDIV(32.0,3.0);
+  a3 := a1;
+  a4 := a0;
 end coeffsLobattoIIIA4;
 
 end InlineSolver;
