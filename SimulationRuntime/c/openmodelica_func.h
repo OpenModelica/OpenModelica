@@ -77,6 +77,14 @@ extern void callExternalObjectDestructors(DATA *_data);
  */
 extern void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA *data);
 
+/*! \fn initialNonLinearSystem
+ *
+ *  This function initialize state set structure.
+ *
+ *  \param [ref] [data]
+ */
+extern void initializeStateSets(STATE_SET_DATA* statesetData, DATA *data);
+
 /* functionODE contains those equations that are needed
  * to calculate the dynamic part of the system */
 extern int functionODE(DATA *data);
