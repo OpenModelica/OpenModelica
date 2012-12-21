@@ -2024,6 +2024,11 @@ algorithm
     case SCode.CLASS(name, prefs, ep, pp, res, SCode.DERIVED(ty, mod, attr, cmt), info)
       equation
         true = Flags.isSet(Flags.SCODE_INST_SHORTCUT);
+        // do not split for functions and records!
+        true = boolNot(
+                 boolOr(
+                   SCode.isFunctionOrExtFunctionRestriction(res),
+                   SCode.isRecord(inElement)));
         (redecl, opt_mod) = splitRedeclareMod(mod, name);
       then
         (SCode.CLASS(name, prefs, ep, pp, res,
