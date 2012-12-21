@@ -124,7 +124,7 @@ template simulationFile(SimCode simCode, String guid)
   "Generates code for main C file for simulation target."
 ::=
   match simCode
-  case simCode as SIMCODE(__) then
+    case simCode as SIMCODE(__) then
     <<
     <%simulationFileHeader(simCode)%>
     <%externalFunctionIncludes(externalFunctionIncludes)%>
@@ -362,56 +362,72 @@ template variableDefinitions(ModelInfo modelInfo)
   let () = System.tmpTickReset(1000)
   
   match modelInfo
-  case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars), vars=SIMVARS(__)) then
-    <<
-    #define time data->localData[0]->timeValue
-    
-    /* States */
-    <%vars.stateVars |> var =>
-      globalDataVarDefine(var, "realVars",0)
-    ;separator="\n"%>
-    /* StatesDerivatives */
-    <%vars.derivativeVars |> var =>
-      globalDataVarDefine(var, "realVars",numStateVars)
-    ;separator="\n"%>
-    /* Algebraic Vars */
-    <%vars.algVars |> var =>
-      globalDataVarDefine(var, "realVars",intMul(2,numStateVars))
-    ;separator="\n"%>
-    /* Algebraic Parameter */
-    <%vars.paramVars |> var =>
-      globalDataParDefine(var, "realParameter")
-    ;separator="\n"%>
-    /* External Objects */
-    <%vars.extObjVars |> var =>
-      globalDataParDefine(var, "extObjs")
-    ;separator="\n"%>
-    /* Algebraic Integer Vars */
-    <%vars.intAlgVars |> var =>
-      globalDataVarDefine(var, "integerVars",0)
-    ;separator="\n"%>
-    /* Algebraic Integer Parameter */
-    <%vars.intParamVars |> var =>
-      globalDataParDefine(var, "integerParameter")
-    ;separator="\n"%>
-    /* Algebraic Boolean Vars */
-    <%vars.boolAlgVars |> var =>
-      globalDataVarDefine(var, "booleanVars",0)
-    ;separator="\n"%>
-    /* Algebraic Boolean Parameters */
-    <%vars.boolParamVars |> var =>
-      globalDataParDefine(var, "booleanParameter")
-    ;separator="\n"%>  
-    /* Algebraic String Variables */
-    <%vars.stringAlgVars |> var =>
-      globalDataVarDefine(var, "stringVars",0)
-    ;separator="\n"%>
-    /* Algebraic String Parameter */
-    <%vars.stringParamVars |> var =>
-      globalDataParDefine(var, "stringParameter")
-    ;separator="\n"%>
-    <%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
-    >>
+    case MODELINFO(varInfo=VARINFO(numStateVars=numStateVars), vars=SIMVARS(__)) then
+      <<
+      #define time data->localData[0]->timeValue
+      
+      /* States */
+      <%vars.stateVars |> var =>
+        globalDataVarDefine(var, "realVars",0)
+      ;separator="\n"%>
+      
+      /* StatesDerivatives */
+      <%vars.derivativeVars |> var =>
+        globalDataVarDefine(var, "realVars",numStateVars)
+      ;separator="\n"%>
+      
+      /* InlineSolver Vars */
+      <%vars.inlineVars |> var =>
+        globalDataVarDefine(var, "inlineVars", 0)
+      ;separator="\n"%>
+      
+      /* Algebraic Vars */
+      <%vars.algVars |> var =>
+        globalDataVarDefine(var, "realVars",intMul(2,numStateVars))
+      ;separator="\n"%>
+      
+      /* Algebraic Parameter */
+      <%vars.paramVars |> var =>
+        globalDataParDefine(var, "realParameter")
+      ;separator="\n"%>
+      
+      /* External Objects */
+      <%vars.extObjVars |> var =>
+        globalDataParDefine(var, "extObjs")
+      ;separator="\n"%>
+      
+      /* Algebraic Integer Vars */
+      <%vars.intAlgVars |> var =>
+        globalDataVarDefine(var, "integerVars",0)
+      ;separator="\n"%>
+      
+      /* Algebraic Integer Parameter */
+      <%vars.intParamVars |> var =>
+        globalDataParDefine(var, "integerParameter")
+      ;separator="\n"%>
+      
+      /* Algebraic Boolean Vars */
+      <%vars.boolAlgVars |> var =>
+        globalDataVarDefine(var, "booleanVars",0)
+      ;separator="\n"%>
+      
+      /* Algebraic Boolean Parameters */
+      <%vars.boolParamVars |> var =>
+        globalDataParDefine(var, "booleanParameter")
+      ;separator="\n"%>
+      
+      /* Algebraic String Variables */
+      <%vars.stringAlgVars |> var =>
+        globalDataVarDefine(var, "stringVars",0)
+      ;separator="\n"%>
+      
+      /* Algebraic String Parameter */
+      <%vars.stringParamVars |> var =>
+        globalDataParDefine(var, "stringParameter")
+      ;separator="\n"%>
+      
+      <%functions |> fn hasindex i0 => '#define <%functionName(fn,false)%>_index <%i0%>'; separator="\n"%>
+      >>
   end match
 end variableDefinitions;
 
@@ -537,6 +553,7 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes) "te
   <<
   /* Jacobian Variables */
   <%analyticVars%>
+  
   >>
 end variableDefinitionsJacobians;
 

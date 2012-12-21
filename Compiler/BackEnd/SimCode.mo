@@ -174,6 +174,7 @@ uniontype VarInfo
     Integer numRelations;
     Integer numMathEventFunctions;
     Integer numStateVars;
+    Integer numInlineVars;
     Integer numAlgVars;
     Integer numIntAlgVars;
     Integer numBoolAlgVars;
@@ -204,6 +205,7 @@ uniontype SimVars
   record SIMVARS
     list<SimVar> stateVars;
     list<SimVar> derivativeVars;
+    list<SimVar> inlineVars;
     list<SimVar> algVars;
     list<SimVar> intAlgVars;
     list<SimVar> boolAlgVars;
@@ -226,7 +228,7 @@ uniontype SimVars
   end SIMVARS;
 end SimVars;
 
-public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {},
+public constant SimVars emptySimVars = SIMVARS({}, {}, {}, {}, {}, {}, {}, {},
   {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {});
 
 // Information about a variable in a Modelica model.

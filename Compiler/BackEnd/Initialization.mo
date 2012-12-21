@@ -35,7 +35,7 @@ encapsulated package Initialization
   description: Initialization.mo contains everything needed to set up the 
                BackendDAE for the initial system.
 
-  RCS: $Id: Initialization.mo 14238 2012-12-05 14:00:00Z lochel $"
+  RCS: $Id$"
 
 public import Absyn;
 public import BackendDAE;

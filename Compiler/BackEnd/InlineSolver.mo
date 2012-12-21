@@ -35,7 +35,7 @@ encapsulated package InlineSolver
   description: InlineSolver.mo contains everything needed to set up the 
                BackendDAE for the inline solver
 
-  RCS: $Id: InlineSolver.mo 14238 2012-12-05 14:00:00Z lochel $"
+  RCS: $Id$"
 
 public import Absyn;
 public import BackendDAE;
@@ -65,14 +65,15 @@ public function generateDAE "function generateDAE
   This function generates a algebraic system of equations for the inline solver"
   input BackendDAE.BackendDAE inDAE;
   output Option<BackendDAE.BackendDAE> outDAE;
+  output Option<BackendDAE.Variables> outInlineVars;
 algorithm
-  outDAE := matchcontinue(inDAE)
+  (outDAE, outInlineVars) := matchcontinue(inDAE)
     local
       BackendDAE.BackendDAE dae;
       
     case _ equation /*do nothing */
       false = Flags.isSet(Flags.INLINE_SOLVER);
-    then NONE();
+    then (NONE(), NONE());
     
     case dae equation
       true = Flags.isSet(Flags.INLINE_SOLVER);
@@ -84,12 +85,12 @@ algorithm
       
       /* output: algebraic system */
       Debug.fcall2(Flags.DUMP_INLINE_SOLVER, BackendDump.dumpBackendDAE, dae, "inlineSolver: algebraic system");
-    then SOME(dae);
+    then (SOME(dae), NONE());
     
     else equation /* don't work */
       Error.addCompilerWarning("./Compiler/BackEnd/InlineSolver.mo: function generateDAE failed");
       Error.addCompilerWarning("inline solver can not be used.");
-    then NONE();
+    then (NONE(), NONE());
   end matchcontinue;
 end generateDAE;
 

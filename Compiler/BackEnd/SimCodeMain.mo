@@ -34,12 +34,10 @@ encapsulated package SimCodeMain
   package:     SimCodeMain
   description: Code generation using Susan templates
 
-  RCS: $Id: SimCodeMain.mo 12794 2012-09-05 16:52:31Z perost $
-
   The entry points to this module are the translateModel function and the
   translateFunctions fuction.
-
-"
+  
+  RCS: $Id$"
 
 // public imports
 public import Absyn;

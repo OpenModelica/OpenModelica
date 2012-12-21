@@ -34,12 +34,10 @@ encapsulated package SimCodeUtil
   package:     SimCodeUtil
   description: Code generation using Susan templates
 
-  RCS: $Id: SimCodeUtil.mo 12794 2012-09-05 16:52:31Z perost $
-
   The entry points to this module are the functions createSimCode and 
   createFunctions.
-
-"
+  
+  RCS: $Id$"
 
 // public imports
 public import Absyn;
@@ -827,7 +825,7 @@ algorithm
         // failure
     case (fn,_,_,_,_,_)
       equation 
-        str = "SimCode.elaborateFunction failed for function: \n" +& DAEDump.dumpFunctionStr(fn);
+        str = "./Compiler/BackEnd/SimCodeUtil.mo: function elaborateFunction failed for function: \n" +& DAEDump.dumpFunctionStr(fn);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -911,7 +909,7 @@ algorithm
     case (_)
       equation
         // TODO: ArrayEqn fails here
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.daeInOutSimVar failed\n"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function daeInOutSimVar failed\n"});
       then
         fail();
   end matchcontinue;
@@ -1250,7 +1248,7 @@ algorithm
       then replaceLiteralExp2(inTpl);
     case ((exp,_))
       equation
-        msg = "SimCode.replaceLiteralExp failed. Falling back to not replacing "+&ExpressionDump.printExpStr(exp)+&".";
+        msg = "./Compiler/BackEnd/SimCodeUtil.mo: function replaceLiteralExp failed. Falling back to not replacing "+&ExpressionDump.printExpStr(exp)+&".";
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then inTpl;
   end matchcontinue;
@@ -1482,7 +1480,7 @@ algorithm
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
       
       // generate system for inline solver
-      inlineDAE = InlineSolver.generateDAE(dlow);
+      (inlineDAE, _) = InlineSolver.generateDAE(dlow);
 
       // check if the Sytems has states
       dlow = BackendDAEUtil.addDummyStateIfNeeded(dlow);
@@ -1529,7 +1527,7 @@ algorithm
       
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},tempvars);
-      modelInfo = addTempVars(tempvars,modelInfo);
+      modelInfo = addTempVars(tempvars, modelInfo);
       
       odeEquations = makeEqualLengthLists(odeEquations,Config.noProc());
 
@@ -1636,12 +1634,12 @@ algorithm
       String directory;
       SimCode.VarInfo varInfo;
       SimCode.SimVars vars;
-      list<SimCode.SimVar> stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars;
+      list<SimCode.SimVar> stateVars,derivativeVars,inlineVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars;
       list<SimCode.SimVar> stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars;
       list<SimCode.Function> functions;
       list<String> labels;
       Integer numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents;
-      Integer numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
+      Integer numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
       Integer numParams,numIntParams,numBoolParams,numOutVars,numInVars;
       Integer numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
       Integer numStringParamVars,numStringAliasVars;
@@ -1650,10 +1648,10 @@ algorithm
     case({},_) then modelInfo;
     case(_,SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels))
       equation
-        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
            numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder) = varInfo;
-        SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
+        SimCode.SIMVARS(stateVars,derivativeVars,inlineVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
                stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars) = vars;
         
        (numAlgVars,algVars,numIntAlgVars,intAlgVars,numBoolAlgVars,boolAlgVars,numStringAlgVars,stringAlgVars)=
@@ -1664,10 +1662,10 @@ algorithm
         boolAlgVars = listReverse(boolAlgVars);
         stringAlgVars = listReverse(stringAlgVars);
 
-        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
            numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder);
-        vars = SimCode.SIMVARS(stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
+        vars = SimCode.SIMVARS(stateVars,derivativeVars,inlineVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
                stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars);
       then
        SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels); 
@@ -1768,17 +1766,17 @@ algorithm
       list<SimCode.Function> functions;
       list<String> labels;
       Integer numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents;
-      Integer numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
+      Integer numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
       Integer numParams,numIntParams,numBoolParams,numOutVars,numInVars;
       Integer numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
       Integer numStringParamVars,numStringAliasVars;
       Option<Integer> dimODE1stOrder,dimODE2ndOrder;
     case(SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels),_,_)
       equation
-        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,  
           numStringParamVars,numStringAliasVars,_,_,dimODE1stOrder,dimODE2ndOrder) = varInfo;
-        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
+        varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,  
           numStringParamVars,numStringAliasVars,numEqns,numNonLinearSys,dimODE1stOrder,dimODE2ndOrder);
         then SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels);
@@ -2710,7 +2708,7 @@ algorithm
        s1 = ExpressionDump.printExpStr(e1);
        s2 = ExpressionDump.printExpStr(e2);
        s3 = ComponentReference.crefStr(cr);
-       s = stringAppendList({"SimCode.createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
+       s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
        Error.addMessage(Error.INTERNAL_ERROR, {s});
        */        
     then
@@ -3215,7 +3213,7 @@ algorithm
       // create always a linear system of equations 
     case (_,_,true,syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),shared as BackendDAE.SHARED(knownVars = knvars, constraints = constrs, classAttrs = clsAttrs,functionTree=funcs),comp as BackendDAE.EQUATIONSYSTEM(eqns=ieqns,vars=ivars,jac=jac,jacType=jac_tp),_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create system (create linear jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create system (create linear jacobian).");
         //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
@@ -3234,7 +3232,7 @@ algorithm
         (equations_,equations_,uniqueEqIndex,tempvars);
     case (_,_,true,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, constraints = constrs, classAttrs=clsAttrs,cache=cache,env=env,functionTree=funcs, eventInfo = ev, extObjClasses = eoc),comp as BackendDAE.MIXEDEQUATIONSYSTEM(disc_eqns=disc_eqns,disc_vars=disc_vars),_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create mixed system (create linear jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create mixed system (create linear jacobian).");
         //print("\ncreateOdeSystem -> Linear: ...\n");
         //BackendDump.printEquations(block_,daelow);
         // extract the variables and equations of the block.
@@ -3256,7 +3254,7 @@ algorithm
         // mixed system of equations, continuous part only
     case (false, _, false,syst,shared,BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1),_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create mixed system continuous part.");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create mixed system continuous part.");
         (_,noDiscequations_,uniqueEqIndex,tempvars) = createEquations(true,false,false,skipDiscInAlgorithm,false,syst,shared,{comp1},helpVarInfo,iuniqueEqIndex,itempvars);
       then
         ({},noDiscequations_,uniqueEqIndex,tempvars);
@@ -3264,7 +3262,7 @@ algorithm
         // mixed system of equations, both continous and discrete eqns
     case (true, _, false,syst as BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),shared as BackendDAE.SHARED(knownVars=knvars),BackendDAE.MIXEDEQUATIONSYSTEM(condSystem=comp1,disc_eqns=ieqns,disc_vars=ivars),_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create mixed system.");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create mixed system.");
         //print("\ncreateOdeSystem -> Mixed: cont. and discrete\n");
         //BackendDump.printEquations(block_,dlow);
         disc_eqn = BackendEquation.getEqns(ieqns,eqns); 
@@ -3310,7 +3308,7 @@ algorithm
         /* continuous system of equations */
     case (_, _, false,BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),BackendDAE.SHARED(knownVars = knvars, externalObjects = exvars, constraints = constrs,classAttrs=clsAttrs,functionTree=funcs, eventInfo = ev, extObjClasses = eoc),comp as BackendDAE.EQUATIONSYSTEM(jac=jac,jacType=jac_tp),_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem create continuous system.");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem create continuous system.");
         //print("\ncreateOdeSystem -> Cont sys: ...\n");
         // extract the variables and equations of the block.
         (eqn_lst,var_lst,index) = BackendDAETransform.getEquationAndSolvedVar(comp,eqns,vars);
@@ -3399,7 +3397,7 @@ algorithm
         // here. Currently uses dgesv as for next case
     case (_,_,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_CONSTANT(),_,_,_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create linear system(const jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system(const jacobian).");
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
         ((_,beqs,sources,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{},SOME(inFuncs)));
@@ -3441,7 +3439,7 @@ algorithm
         // Time varying jacobian. Linear system of equations that needs to be solved during runtime.
     case (_,_,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_TIME_VARYING(),_,_,_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create linear system(time varying jacobian).");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create linear system(time varying jacobian).");
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
         simVars = listReverse(simVars);
         ((_,beqs,_,_)) = BackendEquation.traverseBackendDAEEqns(eqn,BackendEquation.equationToExp,(v,{},{},SOME(inFuncs)));
@@ -3453,7 +3451,7 @@ algorithm
         // Time varying nonlinear jacobian. Non-linear system of equations.
     case (_,_,v,kv,eqn,constrs,clsAttrs,SOME(jac),BackendDAE.JAC_NONLINEAR(),_,_,_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create non-linear system with jacobian.");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: function createOdeSystem2 create non-linear system with jacobian.");
         eqn_lst = BackendEquation.equationList(eqn);
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(eqn_lst,iuniqueEqIndex,itempvars);
@@ -3468,7 +3466,7 @@ algorithm
         // No analytic jacobian available. Generate non-linear system.
     case (_,_,v,kv,eqn,constrs,clsAttrs,NONE(),BackendDAE.JAC_NO_ANALYTIC(),_,_,_,_,_)
       equation
-        Debug.fprintln(Flags.FAILTRACE, "SimCode.createOdeSystem2 create non-linear system without jacobian.");
+        Debug.fprintln(Flags.FAILTRACE, "./Compiler/BackEnd/SimCodeUtil.mo: functioncreateOdeSystem2 create non-linear system without jacobian.");
         eqn_lst = BackendEquation.equationList(eqn);
         crefs = BackendVariable.getAllCrefFromVariables(v);
         (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations(eqn_lst,iuniqueEqIndex,itempvars);
@@ -4949,7 +4947,7 @@ algorithm
         (delayedExps,maxDelayedExpIndex+1);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.extractDelayedExpressions failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function extractDelayedExpressions failed"});
       then
         fail();
   end matchcontinue;
@@ -5073,7 +5071,7 @@ algorithm
         helpVarInfo;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.helpVarInfoFromWhenConditionChecks failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"./Compiler/BackEnd/SimCodeUtil.mo: function helpVarInfoFromWhenConditionChecks failed"});
       then
         fail();
   end matchcontinue;
@@ -5108,7 +5106,7 @@ algorithm
         outTpl;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.helpVarInfoFromWhenConditionChecks1 failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"./Compiler/BackEnd/SimCodeUtil.mo: function helpVarInfoFromWhenConditionChecks1 failed"});
       then
         fail();
   end matchcontinue;
@@ -5557,7 +5555,7 @@ algorithm
       then vLst2;
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.extractDiscreteModelVars failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"./Compiler/BackEnd/SimCodeUtil.mo: function extractDiscreteModelVars failed"});
       then fail();
   end matchcontinue;
 end extractDiscreteModelVars;
@@ -5601,7 +5599,7 @@ algorithm
         listReverse(simWhenClauses);
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.createSimWhenClauses failed"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"./Compiler/BackEnd/SimCodeUtil.mo: function createSimWhenClauses failed"});
       then fail();
   end matchcontinue;
 end createSimWhenClauses;
@@ -5819,7 +5817,7 @@ algorithm
     // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.extractDiscEqs failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function extractDiscEqs failed!"});
       then
         fail();
   end match;
@@ -5844,7 +5842,7 @@ algorithm
     // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.extractValuesAndDims failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function extractValuesAndDims failed!"});
       then
         fail();        
   end match;
@@ -6497,7 +6495,7 @@ algorithm
        s1 = ExpressionDump.printExpStr(e1);
        s2 = ExpressionDump.printExpStr(e2);
        s3 = ComponentReference.crefStr(cr);
-       s = stringAppendList({"SimCode.createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
+       s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleComplexEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
        Error.addMessage(Error.INTERNAL_ERROR, {s});
        */        
     then
@@ -6697,7 +6695,7 @@ algorithm
     // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"SimCode.createSingleAlgorithmCode failed!"});
+        Error.addMessage(Error.INTERNAL_ERROR,{"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleAlgorithmCode failed!"});
       then
         fail();
   end matchcontinue;
@@ -6780,7 +6778,7 @@ algorithm
        s1 = ExpressionDump.printExpStr(e1);
        s2 = ExpressionDump.printExpStr(e2);
        s3 = ComponentReference.crefStr(cr);
-       s = stringAppendList({"SimCode.createSingleArrayEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
+       s = stringAppendList({"./Compiler/BackEnd/SimCodeUtil.mo: function createSingleArrayEqnCode2 failed for: ", s1, " = " , s2, " solve for ", s3 });
        Error.addMessage(Error.INTERNAL_ERROR, {s});
        */        
     then
@@ -7628,7 +7626,7 @@ algorithm
         // failure
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createZeroCrossingNeedSave failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createZeroCrossingNeedSave failed"});
       then
         fail();
   end matchcontinue;
@@ -7653,6 +7651,8 @@ algorithm
       SimCode.VarInfo varInfo;
       SimCode.SimVars vars;
       list<SimCode.SimVar> stateVars;
+      list<SimCode.SimVar> derivativeVars;
+      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -7672,20 +7672,21 @@ algorithm
       list<SimCode.SimVar> intConstVars;
       list<SimCode.SimVar> boolConstVars;
       list<SimCode.SimVar> stringConstVars;
-      Integer nx,ny,np,na,next,numOutVars,numInVars,ny_int,np_int,na_int,ny_bool,np_bool,dim_1,dim_2;
+      Integer nx,numInlineVars,ny,np,na,next,numOutVars,numInVars,ny_int,np_int,na_int,ny_bool,np_bool,dim_1,dim_2;
       Integer na_bool,ny_string,np_string,na_string;
       list<SimCode.SimVar> states1,states_lst,states_lst2,der_states_lst;
-      list<SimCode.SimVar> states_2,derivatives_2,derivative;
+      list<SimCode.SimVar> states_2,derivatives_2;
     
     case (_, _, _, _, _, _, _, _, true)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
-        (vars as SimCode.SIMVARS(stateVars=stateVars,derivativeVars=derivative,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
+        (vars as SimCode.SIMVARS(stateVars=stateVars,derivativeVars=derivativeVars,inlineVars=inlineVars,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
                        inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,
                        paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,stringParamVars=stringParamVars,
                        stringAliasVars=stringAliasVars,extObjVars=extObjVars,constVars=constVars,intConstVars=intConstVars,boolConstVars=boolConstVars,stringConstVars=stringConstVars))=createVars(dlow);
         nx = listLength(stateVars);
+        numInlineVars = listLength(inlineVars);
         ny = listLength(algVars);
         ny_int = listLength(intAlgVars);
         ny_bool = listLength(boolAlgVars);
@@ -7703,7 +7704,7 @@ algorithm
         next = listLength(extObjVars);
         (dim_1,dim_2)= dimensions(dlow);
         Debug.fcall(Flags.CPP,print,"create varinfo \n");
-        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
+        varInfo = createVarInfo(dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2);
          Debug.fcall(Flags.CPP,print,"create state index \n");
          states1 = stateindex1(stateVars,dlow);
@@ -7716,10 +7717,10 @@ algorithm
          states_2 = replaceindex1(stateVars,states_lst);
          // Debug.fcall(Flags.CPP_VAR,print," replace der varibales: \n " +&dumpVarinfoList(states_lst2));
           Debug.fcall(Flags.CPP,print,"replace index in der states  \n");
-         derivatives_2=replaceindex1(derivative,der_states_lst);
+         derivatives_2=replaceindex1(derivativeVars,der_states_lst);
          //Debug.fcall(Flags.CPP_VAR,print,"state varibales: \n " +&dumpVarinfoList(states_lst2));
       then
-        SimCode.MODELINFO(class_, directory, varInfo, SimCode.SIMVARS(states_2,derivatives_2,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
+        SimCode.MODELINFO(class_, directory, varInfo, SimCode.SIMVARS(states_2,derivatives_2,inlineVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,
                   intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars), 
                   functions, labels);
     
@@ -7728,11 +7729,12 @@ algorithm
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
         vars = createVars(dlow);
-        SimCode.SIMVARS(stateVars=stateVars,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
+        SimCode.SIMVARS(stateVars=stateVars,inlineVars=inlineVars,algVars=algVars,intAlgVars=intAlgVars,boolAlgVars=boolAlgVars,
                 inputVars=inputVars,outputVars=outputVars,aliasVars=aliasVars,intAliasVars=intAliasVars,boolAliasVars=boolAliasVars,
                 paramVars=paramVars,intParamVars=intParamVars,boolParamVars=boolParamVars,stringAlgVars=stringAlgVars,
                 stringParamVars=stringParamVars,stringAliasVars=stringAliasVars,extObjVars=extObjVars,constVars=constVars,intConstVars=intConstVars,boolConstVars=boolConstVars,stringConstVars=stringConstVars) = vars;
         nx = listLength(stateVars);
+        numInlineVars = listLength(inlineVars);
         ny = listLength(algVars);
         ny_int = listLength(intAlgVars);
         ny_bool = listLength(boolAlgVars);
@@ -7748,14 +7750,14 @@ algorithm
         np_string = listLength(stringParamVars);
         na_string = listLength(stringAliasVars);
         next = listLength(extObjVars);
-        varInfo = createVarInfo(dlow,nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
+        varInfo = createVarInfo(dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,0,0);
       then
         SimCode.MODELINFO(class_, directory, varInfo, vars, functions, labels);
     
     else
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createModelInfo failed"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createModelInfo failed"});
       then
         fail();
   end matchcontinue;
@@ -7765,6 +7767,7 @@ end createModelInfo;
 protected function createVarInfo
   input BackendDAE.BackendDAE dlow;
   input Integer nx;
+  input Integer numInlineVars;
   input Integer ny;
   input Integer np;
   input Integer na;
@@ -7788,12 +7791,11 @@ protected function createVarInfo
   output SimCode.VarInfo varInfo;
 algorithm
   varInfo :=
-  matchcontinue (dlow, nx, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
+  matchcontinue (dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
                  ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2)
     local
       Integer ng, ng_sam, ng_rel, ng_math, numInitialResiduals;
-    case (_, _, _, _, _, _, _, _, _, _, _,
-                 _, _, _, _, _, _, _, _, _,_,_)
+    case (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,_, _, _)
       equation
         (ng, ng_sam, ng_rel, ng_math) = BackendDAEUtil.numberOfZeroCrossings(dlow);
         ng = filterNg(ng);
@@ -7801,13 +7803,11 @@ algorithm
         ng_rel = filterNg(ng_rel);        
         numInitialResiduals = numInitialEquations+numInitialAlgorithms;
       then
-        SimCode.VARINFO(numHelpVars, ng, ng_sam, ng_rel, ng_math, nx, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+        SimCode.VARINFO(numHelpVars, ng, ng_sam, ng_rel, ng_math, nx, numInlineVars, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
           numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, SOME(dim_1),SOME(dim_2));
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfo failed"});
-      then
-        fail();
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfo failed"});
+    then fail();
   end matchcontinue;
 end createVarInfo;
 
@@ -7880,6 +7880,7 @@ algorithm
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
+      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -7904,7 +7905,7 @@ algorithm
       BackendDAE.Variables v;
       Boolean isalias;
     case (_,_,v,
-      SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+      SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
           stringAlgVars, stringParamVars, stringAliasVars, extObjVars,constVars,intConstVars,boolConstVars,stringConstVars))
       equation
@@ -7917,6 +7918,8 @@ algorithm
           BackendVariable.isStateVar(dlowVar), simvar, stateVars);
         derivativeVars = List.consOnTrue((not isalias) and
           BackendVariable.isStateVar(dlowVar), derivSimvar, derivativeVars);
+        inlineVars = List.consOnTrue((not isalias) and
+          BackendVariable.isVarAlg(dlowVar), simvar, inlineVars);
         algVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarAlg(dlowVar), simvar, algVars);
         intAlgVars = List.consOnTrue((not isalias) and
@@ -7956,7 +7959,7 @@ algorithm
         stringConstVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarStringConst(dlowVar), simvar, stringConstVars);
       then
-        SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+        SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
           aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
           stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars);
   end match;
@@ -8047,6 +8050,7 @@ algorithm
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
+      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -8068,7 +8072,7 @@ algorithm
       list<SimCode.SimVar> stringConstVars;
       HashSet.HashSet set;
     // runtime CPP, there it is not necesarry to sort the arrays because different memory management
-    case (true,SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+    case (true, SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars))
       equation 
@@ -8077,6 +8081,7 @@ algorithm
         set = HashSet.emptyHashSet();
         set = List.fold(stateVars,collectArrayFirstVars,set);
         set = List.fold(derivativeVars,collectArrayFirstVars,set);
+        set = List.fold(inlineVars,collectArrayFirstVars,set);
         set = List.fold(algVars,collectArrayFirstVars,set);
         set = List.fold(intAlgVars,collectArrayFirstVars,set);
         set = List.fold(boolAlgVars,collectArrayFirstVars,set);
@@ -8099,6 +8104,7 @@ algorithm
         // add array information to incomplete arrays
         (stateVars,set) = List.mapFold(stateVars,setArrayElementnoFirst, set);
         (derivativeVars,set) = List.mapFold(derivativeVars,setArrayElementnoFirst, set);
+        (inlineVars,set) = List.mapFold(inlineVars,setArrayElementnoFirst, set);
         (algVars,set) = List.mapFold(algVars,setArrayElementnoFirst, set);
         (intAlgVars,set) = List.mapFold(intAlgVars,setArrayElementnoFirst, set);
         (boolAlgVars,set) = List.mapFold(boolAlgVars,setArrayElementnoFirst, set);
@@ -8118,16 +8124,17 @@ algorithm
         (intConstVars,set) = List.mapFold(intConstVars,setArrayElementnoFirst, set);
         (boolConstVars,set) = List.mapFold(boolConstVars,setArrayElementnoFirst, set);
         (stringConstVars,set) = List.mapFold(stringConstVars,setArrayElementnoFirst, set);        
-      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars);
     // other runtimes
-    case (_,SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+    case (_, SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars))
       equation
         stateVars = sortSimVars1(stateVars);
         derivativeVars = sortSimVars1(derivativeVars);
+        inlineVars = sortSimVars1(inlineVars);
         algVars = sortSimVars1(algVars);
         intAlgVars = sortSimVars1(intAlgVars);
         boolAlgVars = sortSimVars1(boolAlgVars);
@@ -8148,7 +8155,7 @@ algorithm
         boolConstVars = sortSimVars1(boolConstVars);
         stringConstVars = sortSimVars1(stringConstVars);
         
-      then SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+      then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars);
   end match;
@@ -8554,6 +8561,7 @@ algorithm
     local
       list<SimCode.SimVar> stateVars;
       list<SimCode.SimVar> derivativeVars;
+      list<SimCode.SimVar> inlineVars;
       list<SimCode.SimVar> algVars;
       list<SimCode.SimVar> intAlgVars;
       list<SimCode.SimVar> boolAlgVars;
@@ -8573,14 +8581,14 @@ algorithm
       list<SimCode.SimVar> intConstVars;
       list<SimCode.SimVar> boolConstVars;
       list<SimCode.SimVar> stringConstVars;
-  
       
-    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars,
       outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars,intConstVars, boolConstVars,stringConstVars))
       equation
         stateVars = rewriteIndex(stateVars, 0);
         derivativeVars = rewriteIndex(derivativeVars, 0);
+        inlineVars = rewriteIndex(inlineVars, 0);
         algVars = rewriteIndex(algVars, 0);
         intAlgVars = rewriteIndex(intAlgVars,0);
         boolAlgVars = rewriteIndex(boolAlgVars,0);
@@ -8600,7 +8608,7 @@ algorithm
         extObjVars = rewriteIndex(extObjVars, 0);
         inputVars = rewriteIndex(inputVars, 0);
         outputVars = rewriteIndex(outputVars, 0);
-      then SimCode.SIMVARS(stateVars, derivativeVars, algVars,intAlgVars, boolAlgVars, inputVars,
+      then SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars,intAlgVars, boolAlgVars, inputVars,
         outputVars, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars,
         stringAlgVars, stringParamVars, stringAliasVars, extObjVars,constVars,intConstVars,boolConstVars,stringConstVars);
   end match;
@@ -8664,15 +8672,16 @@ algorithm
   outHT :=  matchcontinue (modelInfo)
     local
       SimCode.HashTableCrefToSimVar ht;
-      list<SimCode.SimVar> stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, aliasVars, intAliasVars, boolAliasVars, stringAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars,constVars,intConstVars,boolConstVars,stringConstVars;
+      list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, aliasVars, intAliasVars, boolAliasVars, stringAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars,constVars,intConstVars,boolConstVars,stringConstVars;
     case (SimCode.MODELINFO(vars = SimCode.SIMVARS(
-      stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, 
+      stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, 
       _/*inputVars*/, _/*outputVars*/, aliasVars, intAliasVars, boolAliasVars, paramVars, intParamVars, boolParamVars, 
       stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars)))
       equation
         ht = emptyHashTable();
         ht = List.fold(stateVars, addSimVarToHashTable, ht);
         ht = List.fold(derivativeVars, addSimVarToHashTable, ht);
+        ht = List.fold(inlineVars, addSimVarToHashTable, ht);
         ht = List.fold(algVars, addSimVarToHashTable, ht);
         ht = List.fold(intAlgVars, addSimVarToHashTable, ht);
         ht = List.fold(boolAlgVars, addSimVarToHashTable, ht);
@@ -9791,7 +9800,7 @@ algorithm
     case (path,_,ht,_)
       equation
         failure(_ = DAEUtil.getNamedFunction(path, funcs));
-        str = "SimCode.getCalledFunctionsInFunction2: Class " +& pathstr +& " not found in global scope.";
+        str = "./Compiler/BackEnd/SimCodeUtil.mo: function getCalledFunctionsInFunction2: Class " +& pathstr +& " not found in global scope.";
         Error.addMessage(Error.INTERNAL_ERROR,{str});
       then
         fail();
@@ -9987,7 +9996,7 @@ algorithm
         
     else
       equation
-        print("SimCode.getCrefFromExp failed: input was not of type DAE.CREF");
+        print("./Compiler/BackEnd/SimCodeUtil.mo: function getCrefFromExp failed: input was not of type DAE.CREF");
       then
         fail();
   end match;
@@ -12550,16 +12559,16 @@ algorithm
   outFiles := match(inSimVars, inFiles)
     local
       SimCode.Files files;
-      list<SimCode.SimVar> stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,
+      list<SimCode.SimVar> stateVars,derivativeVars,inlineVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,
                    boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,
                    extObjVars,constVars,intConstVars,boolConstVars,stringConstVars;      
       
-    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
+    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
                   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars,intConstVars,boolConstVars,stringConstVars),
           files)
       equation
         (_, files) = List.mapFoldList(
-                       {stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
+                       {stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
                         paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars,intConstVars,boolConstVars,stringConstVars}, 
                        getFilesFromSimVar, files);
       then 
@@ -13098,7 +13107,7 @@ algorithm
                   
     case inSimCode
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.collectAllFiles failed to collect files from SimCode!"});        
+        Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function collectAllFiles failed to collect files from SimCode!"});        
       then
         inSimCode;
   end matchcontinue;
@@ -13301,12 +13310,12 @@ public function traveseSimVars
 algorithm
   (outSimVars, oTpl) := matchcontinue(inSimVars, func, iTpl)
     local 
-     list<SimCode.SimVar> stateVars,derivativeVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,
-                   boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,
-                   extObjVars,constVars,intConstVars,boolConstVars,stringConstVars;
+     list<SimCode.SimVar> stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars,
+                   boolAliasVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars,
+                   extObjVars, constVars, intConstVars, boolConstVars, stringConstVars;
      tpl intpl;      
       
-    case (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
+    case (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
                   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars, intConstVars, boolConstVars, stringConstVars),_,intpl)
          equation
            (stateVars,intpl) = List.mapFoldTuple(stateVars, func, intpl);
@@ -13329,7 +13338,7 @@ algorithm
            (intConstVars,intpl) = List.mapFoldTuple(intConstVars, func, intpl);
            (boolConstVars,intpl) = List.mapFoldTuple(boolConstVars, func, intpl);
            (stringConstVars,intpl) = List.mapFoldTuple(stringConstVars, func, intpl);
-         then (SimCode.SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
+         then (SimCode.SIMVARS(stateVars, derivativeVars, inlineVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars, aliasVars, intAliasVars, boolAliasVars, 
                   paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, stringAliasVars, extObjVars, constVars,intConstVars,boolConstVars,stringConstVars),intpl);
     case (_,_,_) then fail();
   end matchcontinue;

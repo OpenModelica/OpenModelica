@@ -356,6 +356,7 @@ package SimCode
       Integer numRelations;
       Integer numMathEventFunctions;      
       Integer numStateVars;
+      Integer numInlineVars;
       Integer numAlgVars;
       Integer numIntAlgVars;
       Integer numBoolAlgVars;
@@ -385,6 +386,7 @@ package SimCode
     record SIMVARS
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
+      list<SimVar> inlineVars;
       list<SimVar> algVars;
       list<SimVar> intAlgVars;
       list<SimVar> boolAlgVars;

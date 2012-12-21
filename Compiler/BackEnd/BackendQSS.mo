@@ -9,7 +9,7 @@
  *
  * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
  * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
@@ -28,16 +28,15 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-
-
+ 
 encapsulated package BackendQSS
 " file:        BackendQSS.mo
   package:     BackendQSS
-  description: BackendQSS contains the datatypes used by the backend for QSS solver.
-  authors: florosx, fbergero
+  description: BackendQSS contains the datatypes used by the backend for QSS 
+               solver.
+  authors:     florosx, fbergero
 
-  $Id$
-"
+  $Id$"
 
 public import ExpressionSimplify;
 public import SimCode;
