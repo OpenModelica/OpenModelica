@@ -441,7 +441,7 @@ protected function stepLobatt "function stepLobatt
   input DAE.Type ty;
   output BackendDAE.EquationArray eqns;
 protected
-  DAE.Exp rhs1, lhs1, rhs2, lhs2, rhs3, lhs3, rhs4, lhs4, e1, e2,e3, e4,e5,ee1,ee2,ee3,ee4,ee5, a0, a1,a2, a3, a4, d0, d1, dt;
+  DAE.Exp rhs1, lhs1, rhs2, lhs2, rhs3, lhs3, rhs4, lhs4, e1, e2,e3, e4,e5,ee1,ee2,ee3,ee4,ee5, a0, a1,a2, a3, a4, d0, d1;
   BackendDAE.Equation eqn;
 algorithm
   eqns := BackendEquation.emptyEqns();
@@ -458,7 +458,7 @@ algorithm
   e4 := DAE.CREF(x3, ty);
   e5 := DAE.CREF(x4, ty);
   
-  dt := DAE.CREF(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT); 
+  //dt := DAE.CREF(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT); 
   
   (a0, a1,a2, a3, a4, d0, d1) := coeffsLobattoIIIA1(ty);
   lhs1 := eADD(eMUL(eMUL(ee2,d1),dt),eMUL(e2,a1));
