@@ -290,7 +290,7 @@ typedef struct STATE_SET_DATA
   modelica_real* J;
 
   modelica_real* states;
-  unsigned int* statescandidates;
+  VAR_INFO** statescandidates;
 
   /* if analyticalJacobianColumn != NULL analyticalJacobian is available and
    * can be produced with the help of analyticalJacobianColumnn function pointer

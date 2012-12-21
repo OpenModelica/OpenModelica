@@ -6109,14 +6109,39 @@ algorithm
   ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
   oAVars := generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
-  // add start value A[i,j] = if i==j then 1 else 0 
-  oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.RCONST(0.0));
+  // add start value A[i,j] = if i==j then 1 else 0 via initial equations
+  oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
+  oAVars := setSetAStart(oAVars,1,nStates,{});
   tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource),DAE.T_REAL_DEFAULT);
   ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
   oJVars := generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
   oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);
 end getSetVars;
 
+
+protected function setSetAStart
+  input list<BackendDAE.Var> iVars;
+  input Integer n;
+  input Integer nStates;
+  input list<BackendDAE.Var> iAcc;
+  output list<BackendDAE.Var> oAcc;
+algorithm
+  oAcc := match(iVars,n,nStates,iAcc)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> rest;
+      Integer n1;
+      DAE.Exp start;
+    case({},_,_,_) then listReverse(iAcc);
+    case(v::rest,_,_,_)
+      equation
+        start = Util.if_(intEq(n,1),DAE.ICONST(1),DAE.ICONST(0));
+        v = BackendVariable.setVarStartValue(v,start);
+        n1 = Util.if_(intEq(n,nStates),1,n+1);
+      then
+        setSetAStart(rest,n1,nStates,v::iAcc);
+  end match;
+end setSetAStart;
 /* 
  * dump GraphML stuff
  *

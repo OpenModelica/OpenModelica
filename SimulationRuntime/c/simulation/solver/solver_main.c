@@ -145,6 +145,7 @@ int solver_main(DATA* data, const char* init_initMethod,
   /* allocate memory for state selection */
   initializeStateSetJacobians(data);
 
+
   if(flag == 2)
   {
     /* Allocate RK work arrays */
@@ -186,9 +187,6 @@ int solver_main(DATA* data, const char* init_initMethod,
     retVal = -1;
   }
 
-  /* do pivoting for dynamic state selection */ 
-  stateSelection(data);
-
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result_writeParameterData(&(data->modelData));
   INFO(LOG_SOLVER, "Wrote parameters to the file after initialization (for output formats that support this)");
@@ -202,6 +200,9 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   saveZeroCrossings(data);
   storePreValues(data);
+
+  /* do pivoting for dynamic state selection */ 
+  stateSelection(data);
 
   /* Activate sample and evaluate again */
   if(data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)

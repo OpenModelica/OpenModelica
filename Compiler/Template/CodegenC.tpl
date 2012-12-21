@@ -379,11 +379,6 @@ template variableDefinitions(ModelInfo modelInfo)
         globalDataVarDefine(var, "realVars",numStateVars)
       ;separator="\n"%>
       
-      /* InlineSolver Vars */
-      <%vars.inlineVars |> var =>
-        globalDataVarDefine(var, "inlineVars", 0)
-      ;separator="\n"%>
-      
       /* Algebraic Vars */
       <%vars.algVars |> var =>
         globalDataVarDefine(var, "realVars",intMul(2,numStateVars))
@@ -946,13 +941,13 @@ template functionInitialStateSets(list<StateSet> stateSets)
        let generatedJac = 'functionJacStateSetJac<%set.index%>_column'
        let initialJac = 'initialAnalyticJacobianStateSetJac<%set.index%>'
        let jacIndex = 'INDEX_JAC_StateSetJac<%set.index%>'
-       let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = <%cref(cstate)%>__varInfo.id;' ;separator="\n")
+       let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = &<%cref(cstate)%>__varInfo;' ;separator="\n")
        <<
        statesetData[<%i1%>].nCandidates = <%nCandidates%>;
        statesetData[<%i1%>].nStates = <%nStates%>;
        statesetData[<%i1%>].nDummyStates = <%nCandidates%>-<%nStates%>;
        statesetData[<%i1%>].states = &<%cref(states)%>;
-       statesetData[<%i1%>].statescandidates = (unsigned int*) calloc(<%nCandidates%>,sizeof(unsigned int));
+       statesetData[<%i1%>].statescandidates = (VAR_INFO**) calloc(<%nCandidates%>,sizeof(VAR_INFO));
        <%statescandidatesvars%>
        statesetData[<%i1%>].A = &<%cref(crA)%>;
        statesetData[<%i1%>].rowPivot = (modelica_integer*) calloc(<%nCandidates%>-<%nStates%>,sizeof(modelica_integer));

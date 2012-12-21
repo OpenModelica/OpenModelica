@@ -784,7 +784,7 @@ algorithm
 
   ((vars, fixvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars));
   ((eqns, reqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, collectInitialEqns, (eqns, reqns));
-  fixvars := List.fold(stateSets,collectInitialStateSetVars,fixvars);
+  ((fixvars,eqns)) := List.fold(stateSets,collectInitialStateSetVars,(fixvars,eqns));
 
   oTpl := (vars, fixvars, eqns, reqns);
 end collectInitialVarsEqnsSystem;
@@ -797,14 +797,46 @@ protected function collectInitialStateSetVars
    set.x = set.A*dummystates we add set.A to the
    initial system with set.A = {{1,0,0},{0,1,0}}"
    input BackendDAE.StateSet inSet;
-   input BackendDAE.Variables iFixedVars;
-   output BackendDAE.Variables oFixedVars;
+   input tuple<BackendDAE.Variables,BackendDAE.EquationArray> iTpl;
+   output tuple<BackendDAE.Variables,BackendDAE.EquationArray> oTpl;
 protected
-  list<BackendDAE.Var> varJ;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  DAE.ComponentRef crA;
+  list<BackendDAE.Var> varA,statevars;
+  Integer setsize,rang;
 algorithm
-  BackendDAE.STATESET(varJ=varJ) := inSet;
-  oFixedVars := BackendVariable.addVars(varJ,iFixedVars);
+  (vars,eqns) := iTpl;
+  BackendDAE.STATESET(rang=rang,crA=crA,statescandidates=statevars,varA=varA) := inSet;
+  vars := BackendVariable.addVars(varA,vars);
+//  setsize := listLength(statevars) - rang;
+//  eqns := addInitalSetEqns(setsize,intGt(rang,1),crA,eqns);
+  oTpl := (vars,eqns);
 end collectInitialStateSetVars;
+
+protected function addInitalSetEqns
+  input Integer n;
+  input Boolean twoDims;
+  input DAE.ComponentRef crA;
+  input BackendDAE.EquationArray iEqns;
+  output BackendDAE.EquationArray oEqns;
+algorithm
+  oEqns := match(n,twoDims,crA,iEqns)
+    local
+      DAE.ComponentRef crA1;
+      DAE.Exp expcrA;
+      BackendDAE.EquationArray eqns;
+    case(0,_,_,_) then iEqns;
+    case(_,_,_,_)
+      equation
+        crA1 = ComponentReference.subscriptCrefWithInt(crA,n);
+        crA1 = Debug.bcallret2(twoDims,ComponentReference.subscriptCrefWithInt,crA1,n,crA1);
+        expcrA = Expression.crefExp(crA1);
+        eqns = BackendEquation.equationAdd(BackendDAE.EQUATION(expcrA,DAE.ICONST(1),DAE.emptyElementSource,false), iEqns);
+      then
+        addInitalSetEqns(n-1,twoDims,crA,eqns);
+  end match;
+end addInitalSetEqns;
 
 protected function collectInitialVars "function collectInitialVars
   author: lochel

@@ -57,7 +57,12 @@ void initializeStateSetJacobians(DATA *data)
     {
       set->colPivot[n] = n;
     }
-  }
+/*    for (n=0;n<set->nStates;n++)
+    {
+      /* set A[row,col] 
+      set_matrix_elt(set->A,n,n,set->nCandidates,1);
+    }
+*/  }
 }
 
 
@@ -131,19 +136,19 @@ void getAnalyticalJacobianSet(DATA* data, unsigned int index)
   }
 }
 
-void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, modelica_integer nStates, modelica_integer* A, modelica_real* states, int* statecandidates, DATA *data)
+void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, modelica_integer nStates, modelica_integer* A, modelica_real* states, VAR_INFO** statecandidates, DATA *data)
 {
   modelica_integer col;
   modelica_integer row=0;
   /* clear old values */
-  memset(A,0.0,nCandidates*nStates*sizeof(modelica_integer));
+  memset(A,0,nCandidates*nStates*sizeof(modelica_integer));
 
   for (col=0;col<nCandidates;col++)
   {
     if (newEnable[col]==2)
     {
-      unsigned int id = statecandidates[col];
-      INFO1(LOG_DSS," select %s\n",data->modelData.realVarsData[id].info.name);
+      unsigned int id = statecandidates[col]->id-1000;
+      INFO1(LOG_DSS," select %s\n",statecandidates[col]->name);
       /* set A[row,col] */
       set_matrix_elt(A,col,row,nCandidates,1);
       /* reinit state */
@@ -153,7 +158,7 @@ void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, model
   } 
 }
 
-int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelica_integer nCandidates, modelica_integer nDummyStates, modelica_integer nStates, modelica_integer* A, modelica_real* states, int* statecandidates, DATA *data)
+int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelica_integer nCandidates, modelica_integer nDummyStates, modelica_integer nStates, modelica_integer* A, modelica_real* states, VAR_INFO** statecandidates, DATA *data)
 {
   modelica_integer i;
   int ret = 0;
