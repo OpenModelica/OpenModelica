@@ -37,6 +37,8 @@
 #include "delay.h"
 #include "events.h"
 #include "varinfo.h"
+#include "stateset.h"
+
 /*
  * #include "dopri45.h"
  */
@@ -139,7 +141,10 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   /* allocate memory for non-linear system solvers */
   allocateNonlinearSystem(data);
-  
+
+  /* allocate memory for state selection */
+  initializeStateSetJacobians(data);
+
   if(flag == 2)
   {
     /* Allocate RK work arrays */
@@ -180,6 +185,9 @@ int solver_main(DATA* data, const char* init_initMethod,
     simInfo->stopTime = simInfo->startTime;
     retVal = -1;
   }
+
+  /* do pivoting for dynamic state selection */ 
+  stateSelection(data);
 
   /* adrpo: write the parameter data in the file once again after bound parameters and initialization! */
   sim_result_writeParameterData(&(data->modelData));
@@ -320,7 +328,6 @@ int solver_main(DATA* data, const char* init_initMethod,
     RELEASE(LOG_SOLVER);
 
 
-
     /******** Event handling ********/
     INDENT(LOG_EVENTS);
     if(measure_time_flag)
@@ -377,6 +384,13 @@ int solver_main(DATA* data, const char* init_initMethod,
       rt_accumulate(SIM_TIMER_EVENT);
     RELEASE(LOG_EVENTS);
     /******** End event handling ********/
+
+    /******** check state selection ********/
+    if (stateSelection(data))
+    {
+      /* if new set is calculated reinit the solver */
+      solverInfo.didEventStep = 1;
+    }
 
     /******** Emit this time step ********/
     storePreValues(data);

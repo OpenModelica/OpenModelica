@@ -269,7 +269,7 @@ protected
   list<BackendDAE.Var> states;
   list<DAE.ComponentRef> crstates;
 algorithm
-  BackendDAE.STATESET(rang=rang,states=states) := statSet;
+  BackendDAE.STATESET(rang=rang,statescandidates=states) := statSet;
   crstates := List.map(states,BackendVariable.varCref);
   print("StateSet: select " +& intString(rang) +& " from\n");
   debuglst((crstates,ComponentReference.printComponentRefStr,"\n","\n"));

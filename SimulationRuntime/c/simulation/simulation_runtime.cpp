@@ -361,7 +361,7 @@ int startNonInteractiveSimulation(int argc, char**argv, DATA* data)
   setupDataStruc2(data);
 
   /* calc numStep */
-  data->simulationInfo.numSteps = (data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize;
+  data->simulationInfo.numSteps = static_cast<modelica_integer>((data->simulationInfo.stopTime - data->simulationInfo.startTime)/data->simulationInfo.stepSize);
 
   if(measure_time_flag)
   {

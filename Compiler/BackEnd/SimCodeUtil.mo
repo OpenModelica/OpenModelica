@@ -1415,7 +1415,7 @@ algorithm
   matchcontinue (inBackendDAE,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,includeDirs,libs,simSettingsOpt,recordDecls,literals,args)
     local
       String cname,   fileDir;
-      Integer n_h,maxDelayedExpIndex, uniqueEqIndex, numberofNonLinearSys, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms;
+      Integer n_h,maxDelayedExpIndex, uniqueEqIndex, numberofNonLinearSys, numberofEqns, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets;
       list<SimCode.HelpVarInfo> helpVarInfo;
       BackendDAE.BackendDAE dlow,dlow2;
       Option<BackendDAE.BackendDAE> initDAE;
@@ -1505,7 +1505,7 @@ algorithm
       n_h = listLength(helpVarInfo);
       
       // state set stuff
-      (dlow2,stateSets, uniqueEqIndex, tempvars) = createStateSets(dlow2,{},uniqueEqIndex,{});
+      (dlow2,stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow2,{},uniqueEqIndex,{});
 
       // inline solver stuff
       (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, {}, helpVarInfo);
@@ -1523,7 +1523,7 @@ algorithm
                                                         symjacs=symJacs)) = dlow2;        
 
       // Add model info
-      modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, fileDir, ifcpp);
+      modelInfo = createModelInfo(class_, dlow2, functions, {}, n_h, numberOfInitialEquations, numberOfInitialAlgorithms, numStateSets, fileDir, ifcpp);
       
       // equation generation for euler, dassl2, rungekutta
       (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,{},{},{},tempvars);
@@ -1642,7 +1642,7 @@ algorithm
       Integer numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
       Integer numParams,numIntParams,numBoolParams,numOutVars,numInVars;
       Integer numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
-      Integer numStringParamVars,numStringAliasVars;
+      Integer numStringParamVars,numStringAliasVars,numStateSets;
       Option<Integer> dimODE1stOrder,dimODE2ndOrder;
       Integer numNonLinearResFunctions, numEqns;
     case({},_) then modelInfo;
@@ -1650,7 +1650,7 @@ algorithm
       equation
         SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
-           numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder) = varInfo;
+           numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,numStateSets,dimODE1stOrder,dimODE2ndOrder) = varInfo;
         SimCode.SIMVARS(stateVars,derivativeVars,inlineVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
                stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars) = vars;
         
@@ -1664,7 +1664,7 @@ algorithm
 
         varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
            numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,
-           numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,dimODE1stOrder,dimODE2ndOrder);
+           numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,numStateSets,dimODE1stOrder,dimODE2ndOrder);
         vars = SimCode.SIMVARS(stateVars,derivativeVars,inlineVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
                stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars);
       then
@@ -1769,16 +1769,16 @@ algorithm
       Integer numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars;
       Integer numParams,numIntParams,numBoolParams,numOutVars,numInVars;
       Integer numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars;
-      Integer numStringParamVars,numStringAliasVars;
+      Integer numStringParamVars,numStringAliasVars,numStateSets;
       Option<Integer> dimODE1stOrder,dimODE2ndOrder;
     case(SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels),_,_)
       equation
         SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,  
-          numStringParamVars,numStringAliasVars,_,_,dimODE1stOrder,dimODE2ndOrder) = varInfo;
+          numStringParamVars,numStringAliasVars,_,_,numStateSets,dimODE1stOrder,dimODE2ndOrder) = varInfo;
         varInfo = SimCode.VARINFO(numHelpVars,numZeroCrossings,numTimeEvents,numRelations,numMathEvents,numStateVars,numInlineVars,numAlgVars,numIntAlgVars,numBoolAlgVars,numAlgAliasVars,numIntAliasVars,numBoolAliasVars,numParams,
           numIntParams,numBoolParams,numOutVars,numInVars,numInitialEquations,numInitialAlgorithms,numInitialResiduals,numExternalObjects,numStringAlgVars,  
-          numStringParamVars,numStringAliasVars,numEqns,numNonLinearSys,dimODE1stOrder,dimODE2ndOrder);
+          numStringParamVars,numStringAliasVars,numEqns,numNonLinearSys,numStateSets,dimODE1stOrder,dimODE2ndOrder);
         then SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels);
   end match;
 end addNumEqnsandNonLinear;
@@ -3994,9 +3994,10 @@ protected function createStateSets
   output list<SimCode.StateSet> oEquations;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
+  output Integer numStateSets;
 algorithm
-  (outDAE,(oEquations,ouniqueEqIndex,otempvars)) := 
-    BackendDAEUtil.mapEqSystemAndFold(inDAE,createStateSetsSystem,(iEquations,iuniqueEqIndex,itempvars));
+  (outDAE,(oEquations,ouniqueEqIndex,otempvars,numStateSets)) := 
+    BackendDAEUtil.mapEqSystemAndFold(inDAE,createStateSetsSystem,(iEquations,iuniqueEqIndex,itempvars,0));
   // BackendDump.printBackendDAE(outDAE);
 end createStateSets;
 
@@ -4005,9 +4006,9 @@ protected function createStateSetsSystem
   author: Frenkel TUD 2012-12
   traverse an Equationsystem to handle states sets"
   input BackendDAE.EqSystem isyst; 
-  input tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>,Integer,list<SimCode.SimVar>>> sharedChanged;
+  input tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>,Integer,list<SimCode.SimVar>,Integer>> sharedChanged;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>,Integer,list<SimCode.SimVar>>> osharedChanged;
+  output tuple<BackendDAE.Shared, tuple<list<SimCode.StateSet>,Integer,list<SimCode.SimVar>,Integer>> osharedChanged;
 algorithm
   (osyst,osharedChanged):= match (isyst,sharedChanged)
     local
@@ -4021,20 +4022,20 @@ algorithm
       BackendDAE.StateSets stateSets;
       tuple<list<SimCode.SimEqSystem>,Integer,list<SimCode.SimVar>> tpl;
       list<SimCode.StateSet> equations;
-      Integer uniqueEqIndex;
+      Integer uniqueEqIndex,numStateSets;
       list<SimCode.SimVar> tempvars;      
       DAE.FunctionTree functree;
     // no stateSet
     case (BackendDAE.EQSYSTEM(stateSets={}),_) then (isyst,sharedChanged);
     // sets
     case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets),
-         (shared,(equations,uniqueEqIndex,tempvars)))
+         (shared,(equations,uniqueEqIndex,tempvars,numStateSets)))
       equation
         knvars = BackendVariable.daeKnVars(shared);
         functree = BackendDAEUtil.getFunctions(shared);
-        (vars,equations,uniqueEqIndex,tempvars) = createStateSetsSets(stateSets,vars,knvars,functree,equations,uniqueEqIndex,tempvars);
+        (vars,equations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(stateSets,vars,knvars,functree,equations,uniqueEqIndex,tempvars,numStateSets);
       then
-        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),(shared,(equations,uniqueEqIndex,tempvars)));
+        (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),(shared,(equations,uniqueEqIndex,tempvars,numStateSets)));
   end match;
 end createStateSetsSystem;
 
@@ -4046,27 +4047,29 @@ protected function createStateSetsSets
   input list<SimCode.StateSet> iEquations;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
+  input Integer iNumStateSets;
   output BackendDAE.Variables oVars;
   output list<SimCode.StateSet> oEquations;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
+  output Integer oNumStateSets;
 algorithm
-  (oVars,oEquations,ouniqueEqIndex,otempvars) := 
-  matchcontinue(iStateSets,iVars,knVars,functree,iEquations,iuniqueEqIndex,itempvars)
+  (oVars,oEquations,ouniqueEqIndex,otempvars,oNumStateSets) := 
+  matchcontinue(iStateSets,iVars,knVars,functree,iEquations,iuniqueEqIndex,itempvars,iNumStateSets)
     local
       BackendDAE.StateSets sets;
-      Integer rang;
-      DAE.ComponentRef crA,crJ;
+      Integer rang,numStateSets,nCandidates;
+      DAE.ComponentRef crset,crA,crJ;
       BackendDAE.Variables vars;
       list<BackendDAE.Var> aVars,statevars,dstatesvars,varJ;
       list<BackendDAE.Equation> ceqns,oeqns;
       list<DAE.ComponentRef> crstates;
-      Option<SimCode.JacobianMatrix> jacobianMatrix;
+      SimCode.JacobianMatrix jacobianMatrix;
       list<SimCode.StateSet> simequations;
       list<SimCode.SimVar> tempvars;
       Integer uniqueEqIndex;
-    case({},_,_,_,_,_,_) then (iVars,iEquations,iuniqueEqIndex,itempvars);
-    case(BackendDAE.STATESET(rang=rang,crA=crA,varA=aVars,states=statevars,ovars=dstatesvars,eqns=ceqns,oeqns=oeqns,crJ=crJ,varJ=varJ)::sets,_,_,_,_,_,_)
+    case({},_,_,_,_,_,_,_) then (iVars,iEquations,iuniqueEqIndex,itempvars,iNumStateSets);
+    case(BackendDAE.STATESET(rang=rang,state=crset,crA=crA,varA=aVars,statescandidates=statevars,ovars=dstatesvars,eqns=ceqns,oeqns=oeqns,crJ=crJ,varJ=varJ)::sets,_,_,_,_,_,_,_)
       equation
         // add vars for A
         vars = BackendVariable.addVars(aVars,iVars);
@@ -4077,12 +4080,14 @@ algorithm
         ceqns = createResidualSetEquations(ceqns,crJ,1,intGt(rang,1),{});
         // get state names
         crstates = List.map(statevars,BackendVariable.varCref);
+        // number of states
+        nCandidates = listLength(statevars);
         // create symbolic jacobian for simulation
-        (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobianSet(statevars, knVars, varJ, ceqns, dstatesvars, oeqns, functree, iuniqueEqIndex,itempvars);
+        (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobianSet(statevars, knVars, varJ, ceqns, dstatesvars, oeqns, vars, functree, iuniqueEqIndex,itempvars);
         // next set  
-        (vars,simequations,uniqueEqIndex,tempvars) = createStateSetsSets(sets,vars,knVars,functree,SimCode.SES_STATESET(uniqueEqIndex,crA,jacobianMatrix)::iEquations,uniqueEqIndex+1,itempvars);
+        (vars,simequations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(sets,vars,knVars,functree,SimCode.SES_STATESET(iuniqueEqIndex,nCandidates,rang,crset,crstates,crA,jacobianMatrix)::iEquations,uniqueEqIndex,tempvars,iNumStateSets+1);
       then
-        (vars,simequations,uniqueEqIndex,tempvars);
+        (vars,simequations,uniqueEqIndex,tempvars,numStateSets);
   end matchcontinue;
 end createStateSetsSets;
 
@@ -4097,14 +4102,15 @@ protected function createSymbolicSimulationJacobianSet
   input list<BackendDAE.Equation> inResEquations;
   input list<BackendDAE.Var> inotherVars;
   input list<BackendDAE.Equation> inotherEquations;
+  input BackendDAE.Variables iAllVars;
   input DAE.FunctionTree inFuncs;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
-  output Option<SimCode.JacobianMatrix> res;
+  output SimCode.JacobianMatrix res;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
 algorithm
-  (res, ouniqueEqIndex, otempvars) := matchcontinue(inVars, inKnVars, inResVars, inResEquations, inotherVars, inotherEquations, inFuncs, iuniqueEqIndex, itempvars)
+  (res, ouniqueEqIndex, otempvars) := matchcontinue(inVars, inKnVars, inResVars, inResEquations, inotherVars, inotherEquations, iAllVars, inFuncs, iuniqueEqIndex, itempvars)
   local
     array<DAE.Constraint> constrs;
     array<DAE.ClassAttributes> clsAttrs;
@@ -4137,7 +4143,7 @@ algorithm
     list<SimCode.SimVar> seedVars, indexVars;
   
     String errorMessage;
-    case(_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fcall(Flags.JAC_DUMP2, print, "---+++ create analytical jacobian +++---");
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ independent variables +++---\n");
@@ -4152,10 +4158,10 @@ algorithm
         otherVarsLstComRefs = List.map(otherVarsLst,BackendVariable.varCref);
                 
         // all vars beside the inVars are inputs for the jacobian
-//        allvars = BackendVariable.copyVariables(inAllVars);
-//        allvars = BackendVariable.removeCrefs(independentComRefs, allvars);
-//        allvars = BackendVariable.removeCrefs(otherVarsLstComRefs, allvars);
-        //knvars = BackendVariable.mergeVariables(inKnVars,allvars);
+        allvars = BackendVariable.copyVariables(iAllVars);
+        allvars = BackendVariable.removeCrefs(independentComRefs, allvars);
+        allvars = BackendVariable.removeCrefs(otherVarsLstComRefs, allvars);
+        knvars = BackendVariable.mergeVariables(inKnVars,allvars);
 
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, inKnVars);
@@ -4177,7 +4183,6 @@ algorithm
         // create known variables
         //knvarLst = BackendEquation.equationsVars(eqns,knvars);
         //knvars = BackendVariable.listVar1(knvarLst);
-        knvars = inKnVars;
         
         //prepare vars and equations for BackendDAE
         emptyVars =  BackendVariable.emptyVars();
@@ -4265,16 +4270,13 @@ algorithm
 
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
-        then (SOME(({(columnEquations,columnVars,s)},seedVars,name,(sparsepatternComRefs,(seedVars,indexVars)),sparseColoring,maxColor)), uniqueEqIndex, tempvars);
-    case(_,_,_,_,_,_,_,_,_)
-      equation
-        false = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
-      then (NONE(), iuniqueEqIndex, itempvars);          
+        then (({(columnEquations,columnVars,s)},seedVars,name,(sparsepatternComRefs,(seedVars,indexVars)),sparseColoring,maxColor), uniqueEqIndex, tempvars);
     else
       equation
         errorMessage = "./Compiler/BackEnd/SimCodeUtil.mo: function createSymbolicSimulationJacobianSet failed.";
         Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
-      then (NONE(), iuniqueEqIndex, itempvars);
+      then 
+        fail();
   end matchcontinue;
 end createSymbolicSimulationJacobianSet;
 
@@ -4333,10 +4335,7 @@ algorithm
       list<SimCode.StateSet> sets;
       SimCode.JacobianMatrix symJac;
     case ({},_) then inSymJacs;
-    case(SimCode.SES_STATESET(jacobianMatrix=NONE())::sets, _)
-      then 
-        indexStateSets(sets,inSymJacs);
-    case(SimCode.SES_STATESET(jacobianMatrix=SOME(symJac))::sets, _)
+    case(SimCode.SES_STATESET(jacobianMatrix=symJac)::sets, _)
       then 
         indexStateSets(sets,symJac::inSymJacs);
   end match;
@@ -7640,12 +7639,13 @@ protected function createModelInfo
   input Integer numHelpVars;
   input Integer numInitialEquations;
   input Integer numInitialAlgorithms;
+  input Integer numStateSets;
   input String fileDir;
   input Boolean ifcpp;
   output SimCode.ModelInfo modelInfo;
 algorithm
   modelInfo :=
-  matchcontinue (class_, dlow, functions, labels, numHelpVars, numInitialEquations, numInitialAlgorithms, fileDir,ifcpp)
+  matchcontinue (class_, dlow, functions, labels, numHelpVars, numInitialEquations, numInitialAlgorithms, numStateSets, fileDir,ifcpp)
     local
       String directory;
       SimCode.VarInfo varInfo;
@@ -7677,7 +7677,7 @@ algorithm
       list<SimCode.SimVar> states1,states_lst,states_lst2,der_states_lst;
       list<SimCode.SimVar> states_2,derivatives_2;
     
-    case (_, _, _, _, _, _, _, _, true)
+    case (_, _, _, _, _, _, _, _, _, true)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -7705,7 +7705,7 @@ algorithm
         (dim_1,dim_2)= dimensions(dlow);
         Debug.fcall(Flags.CPP,print,"create varinfo \n");
         varInfo = createVarInfo(dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
-                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2);
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2,numStateSets);
          Debug.fcall(Flags.CPP,print,"create state index \n");
          states1 = stateindex1(stateVars,dlow);
           Debug.fcall(Flags.CPP,print,"set state index \n");
@@ -7724,7 +7724,7 @@ algorithm
                   intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars), 
                   functions, labels);
     
-    case (_, _, _, _, _, _, _, _, false)
+    case (_, _, _, _, _, _, _, _, _, false)
       equation
         //name = Absyn.pathStringNoQual(class_);
         directory = System.trim(fileDir, "\"");
@@ -7751,7 +7751,7 @@ algorithm
         na_string = listLength(stringAliasVars);
         next = listLength(extObjVars);
         varInfo = createVarInfo(dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
-                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,0,0);
+                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,0,0,numStateSets);
       then
         SimCode.MODELINFO(class_, directory, varInfo, vars, functions, labels);
     
@@ -7788,27 +7788,18 @@ protected function createVarInfo
   input Integer na_string;
   input Integer dim_1;
   input Integer dim_2;
+  input Integer numStateSets;
   output SimCode.VarInfo varInfo;
+protected
+  Integer ng, ng_sam, ng_rel, ng_math, numInitialResiduals;
 algorithm
-  varInfo :=
-  matchcontinue (dlow, nx, numInlineVars, ny, np, na, next, numOutVars, numInVars, numHelpVars, numInitialEquations, numInitialAlgorithms,
-                 ny_int, np_int, na_int, ny_bool, np_bool, na_bool, ny_string, np_string, na_string,dim_1,dim_2)
-    local
-      Integer ng, ng_sam, ng_rel, ng_math, numInitialResiduals;
-    case (_, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _, _,_, _, _)
-      equation
-        (ng, ng_sam, ng_rel, ng_math) = BackendDAEUtil.numberOfZeroCrossings(dlow);
-        ng = filterNg(ng);
-        ng_sam = filterNg(ng_sam);
-        ng_rel = filterNg(ng_rel);        
-        numInitialResiduals = numInitialEquations+numInitialAlgorithms;
-      then
-        SimCode.VARINFO(numHelpVars, ng, ng_sam, ng_rel, ng_math, nx, numInlineVars, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
-          numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, SOME(dim_1),SOME(dim_2));
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"createVarInfo failed"});
-    then fail();
-  end matchcontinue;
+  (ng, ng_sam, ng_rel, ng_math) := BackendDAEUtil.numberOfZeroCrossings(dlow);
+  ng := filterNg(ng);
+  ng_sam := filterNg(ng_sam);
+  ng_rel := filterNg(ng_rel);        
+  numInitialResiduals := numInitialEquations+numInitialAlgorithms;
+  varInfo := SimCode.VARINFO(numHelpVars, ng, ng_sam, ng_rel, ng_math, nx, numInlineVars, ny, ny_int, ny_bool, na, na_int, na_bool, np, np_int, np_bool, numOutVars, numInVars,
+          numInitialEquations, numInitialAlgorithms, numInitialResiduals, next, ny_string, np_string, na_string, 0, 0, numStateSets, SOME(dim_1),SOME(dim_2));
 end createVarInfo;
 
 protected function createVars

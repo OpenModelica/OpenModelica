@@ -1498,7 +1498,7 @@ algorithm
     case(_,_,false,_,_,SOME((_,w2)),_,_)
       equation
         w1 = BackendVariable.calcAliasKey(var);
-        tpl = Util.if_(intGt(w1,w2),SOME((i,w1)),iRmax);
+        tpl = Util.if_(intLt(w1,w2),SOME((i,w1)),iRmax);
       then
         (tpl,iSmax,iUnremovable);
   end match;

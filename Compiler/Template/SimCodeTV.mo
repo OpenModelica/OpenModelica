@@ -314,10 +314,14 @@ package SimCode
   end SimEqSystem;
 
   uniontype StateSet
-      record SES_STATESET
+    record SES_STATESET
       Integer index;
+      Integer nCandidates;
+      Integer nStates;
+      DAE.ComponentRef states;
+      list<DAE.ComponentRef> statescandidates;
       DAE.ComponentRef crA;
-      Option<JacobianMatrix> jacobianMatrix; 
+      JacobianMatrix jacobianMatrix;
     end SES_STATESET;
   end StateSet;
 
@@ -376,9 +380,10 @@ package SimCode
       Integer numStringParamVars;
       Integer numStringAliasVars;
       Integer numEquations;
-      Integer numNonLinearResFunctions;   
+      Integer numNonLinearResFunctions;
+      Integer numStateSets;
       Option <Integer> dimODE1stOrder;
-      Option <Integer> dimODE2ndOrder; 
+      Option <Integer> dimODE2ndOrder;
     end VARINFO;
   end VarInfo;
   

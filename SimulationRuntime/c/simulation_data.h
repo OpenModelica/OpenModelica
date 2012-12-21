@@ -278,6 +278,31 @@ typedef struct NONLINEAR_SYSTEM_DATA
   modelica_boolean solved;          /* 1: solved in current step - else not */
 }NONLINEAR_SYSTEM_DATA;
 
+typedef struct STATE_SET_DATA
+{
+  modelica_integer nCandidates;
+  modelica_integer nStates;
+  modelica_integer nDummyStates;
+
+  modelica_integer* A;
+  modelica_integer* rowPivot;
+  modelica_integer* colPivot;
+  modelica_real* J;
+
+  modelica_real* states;
+  unsigned int* statescandidates;
+
+  /* if analyticalJacobianColumn != NULL analyticalJacobian is available and
+   * can be produced with the help of analyticalJacobianColumnn function pointer
+   * which is a generic column of the jacobian matrix. (see ANALYTIC_JACOBIAN)
+   *
+   * if analyticalJacobianColumn == NULL no analyticalJacobian is available
+   */
+  int (*analyticalJacobianColumn)(void*);
+  int (*initialAnalyticalJacobian)(void*);
+  modelica_integer jacobianIndex;
+}STATE_SET_DATA;
+
 typedef struct MODEL_DATA
 {
   STATIC_REAL_DATA* realVarsData;
@@ -330,6 +355,7 @@ typedef struct MODEL_DATA
   long nEquations;
   long nProfileBlocks;
   long nNonLinearSystems;
+  long nStateSets;
 
   long nAliasReal;
   long nAliasInteger;
@@ -404,6 +430,8 @@ typedef struct SIMULATION_INFO
 
   NONLINEAR_SYSTEM_DATA* nonlinearSystemData;
   int currentNonlinearSystemIndex;
+
+  STATE_SET_DATA* stateSetData;
 
   /* delay vars */
   double tStart;

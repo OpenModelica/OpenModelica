@@ -156,6 +156,8 @@ template simulationFile(SimCode simCode, String guid)
     <%functionExtraResiduals(allEquations)%>
     
     <%functionInitialNonLinearSystems(initialEquations,parameterEquations,allEquations)%>
+
+    <%functionInitialStateSets(stateSets)%>
     
     <%functionInput(modelInfo)%>
     
@@ -279,6 +281,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nFunctions = <%listLength(functions)%>;
     data->modelData.nEquations = <%varInfo.numEquations%>;
     data->modelData.nNonLinearSystems = <%varInfo.numNonLinearResFunctions%>;
+    data->modelData.nStateSets = <%varInfo.numStateSets%>;
     
     data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
@@ -542,9 +545,15 @@ template variableDefinitionsJacobians(list<JacobianMatrix> JacobianMatrixes) "te
     let varsDef = variableDefinitionsJacobians2(index0, jacColumn, seedVars, name)
     let sparseDef = defineSparseIndexes(diffVars, diffedVars, name)
     <<
-    const int INDEX_JAC_<%name%> = <%index0%>;
-    int functionJac<%name%>_column(void* data);
-    int initialAnalyticJacobian<%name%>(void* data);
+    #if defined(_MSC_VER)
+    extern "C" {
+    #endif
+      const int INDEX_JAC_<%name%> = <%index0%>;
+      int functionJac<%name%>_column(void* data);
+      int initialAnalyticJacobian<%name%>(void* data);
+    #if defined(_MSC_VER)
+    }
+    #endif
     <%varsDef%>
     <%sparseDef%>
     >>
@@ -922,6 +931,48 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
    )
    ;separator="\n\n")
 end functionExtraResiduals;
+
+// =============================================================================
+//
+// section for State Sets
+//
+// =============================================================================
+
+template functionInitialStateSets(list<StateSet> stateSets)
+  "Generates functions in simulation file to initialize the stateset data."
+::=
+     let body = (stateSets |> set hasindex i1 fromindex 0 => (match set
+       case set as SES_STATESET(__) then
+       let generatedJac = 'functionJacStateSetJac<%set.index%>_column'
+       let initialJac = 'initialAnalyticJacobianStateSetJac<%set.index%>'
+       let jacIndex = 'INDEX_JAC_StateSetJac<%set.index%>'
+       let statescandidatesvars = (statescandidates |> cstate hasindex i2 fromindex 0 => 'statesetData[<%i1%>].statescandidates[<%i2%>] = <%cref(cstate)%>__varInfo.id;' ;separator="\n")
+       <<
+       statesetData[<%i1%>].nCandidates = <%nCandidates%>;
+       statesetData[<%i1%>].nStates = <%nStates%>;
+       statesetData[<%i1%>].nDummyStates = <%nCandidates%>-<%nStates%>;
+       statesetData[<%i1%>].states = &<%cref(states)%>;
+       statesetData[<%i1%>].statescandidates = (unsigned int*) calloc(<%nCandidates%>,sizeof(unsigned int));
+       <%statescandidatesvars%>
+       statesetData[<%i1%>].A = &<%cref(crA)%>;
+       statesetData[<%i1%>].rowPivot = (modelica_integer*) calloc(<%nCandidates%>-<%nStates%>,sizeof(modelica_integer));
+       statesetData[<%i1%>].colPivot = (modelica_integer*) calloc(<%nCandidates%>,sizeof(modelica_integer));
+       statesetData[<%i1%>].J = (modelica_real*) calloc(<%nCandidates%>*<%nStates%>,sizeof(modelica_real));
+       statesetData[<%i1%>].analyticalJacobianColumn = <%generatedJac%>;
+       statesetData[<%i1%>].initialAnalyticalJacobian = <%initialJac%>;
+       statesetData[<%i1%>].jacobianIndex = <%jacIndex%>;
+     
+       >> 
+   )
+   ;separator="\n\n")
+  <<
+  /* funtion initialize state sets */
+  void initializeStateSets(STATE_SET_DATA* statesetData, DATA *data)
+  {
+    <%body%>
+  }
+  >>    
+end functionInitialStateSets;
 
 // =============================================================================
 // section for initialization

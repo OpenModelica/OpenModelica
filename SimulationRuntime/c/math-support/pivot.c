@@ -1,6 +1,9 @@
 /* pivot.c
  provides a simple function to do a full pivot search while doing an LU factorization
 */
+
+#include "modelica.h"
+
 #include <math.h>
 #include <assert.h>
 //#include "matrix.h"
@@ -18,8 +21,10 @@
 /* Matrixes using column major order (as in Fortran) */
 /* colInd, rowInd, n_rows is added implicitly, makes code easier to read but may be considered bad programming style! */
 #define set_pivot_matrix_elt(A,r,c,value) set_matrix_elt(A,rowInd[r],colInd[c],n_rows,value)
+//#define set_pivot_matrix_elt(A,r,c,value) set_matrix_elt(A,colInd[c],rowInd[r],n_cols,value)
 #define get_pivot_matrix_elt(A,r,c) get_matrix_elt(A,rowInd[r],colInd[c],n_rows)
-#define swap(a,b) { int _swap=a; a=b; b=_swap; }
+//#define get_pivot_matrix_elt(A,r,c) get_matrix_elt(A,colInd[c],rowInd[r],n_cols)
+#define swap(a,b) { modelica_integer _swap=a; a=b; b=_swap; }
 
 #ifndef min
 #define min(a,b) ((a > b) ? (b) : (a))
@@ -28,15 +33,15 @@
 /* 
 find the maximum element below (and including) line/row start
 */
-void maxsearch( double *A, int start, int n_rows, int n_cols, int *rowInd, int *colInd, int *maxrow, int *maxcol, double *maxabsval)
+void maxsearch( double *A, modelica_integer start, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd, modelica_integer *maxrow, modelica_integer *maxcol, double *maxabsval)
 {
   // temporary variables
-  int row;
-  int col;
+  modelica_integer row;
+  modelica_integer col;
 
   // Initialization
-  int mrow = -1;
-  int mcol = -1;
+  modelica_integer mrow = -1;
+  modelica_integer mcol = -1;
   double mabsval = 0.0;
 
   // go through all rows and columns
@@ -73,16 +78,16 @@ rowInd and colInd are vectors of length nrwos and n_cols respectively.
 They hold the old (and new) pivoting information, such that
   A_pivoted[i,j] = A[rowInd[i], colInd[j]]
 */
-void pivot( double *A, int n_rows, int n_cols, int *rowInd, int *colInd )
+void pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd )
 {
   // parameter, determines how much larger an element should be before rows and columns are interchanged
   const double fac = 2.0;
 
   // temporary variables
-  int row;
-  int i,j;
-  int maxrow;
-  int maxcol;
+  modelica_integer row;
+  modelica_integer i,j;
+  modelica_integer maxrow;
+  modelica_integer maxcol;
   double maxabsval;
   double pivot;
 

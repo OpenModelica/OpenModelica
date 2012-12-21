@@ -11,7 +11,8 @@ SET(solver_sources  dassl.c
                     nonlinearSystem.c
                     nonlinearSolverHybrd.c
                     kinsolSolver.c
-                    solver_main.c)
+                    solver_main.c
+					stateset.c)
 
 SET(solver_headers  dassl.h
                     delay.h 
@@ -20,7 +21,8 @@ SET(solver_headers  dassl.h
                     nonlinearSolverHybrd.h
                     kinsolSolver.h
                     nonlinearSystem.h
-                    solver_main.h)				 
+                    solver_main.h
+					stateset.h)				 
 						 
 # Library util
 ADD_LIBRARY(solver ${solver_sources} ${solver_headers})

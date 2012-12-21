@@ -498,9 +498,10 @@ public
 uniontype StateSet
   record STATESET
     Integer rang;
+    .DAE.ComponentRef state;
     .DAE.ComponentRef crA "set.x=A*states";
     list< Var> varA;
-    list< Var> states;
+    list< Var> statescandidates;
     list< Var> ovars;
     list< Equation> eqns;
     list< Equation> oeqns;

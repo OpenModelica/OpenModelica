@@ -3839,7 +3839,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
 
         // generate Set Vars
-        (crset,setVars,crA,aVars,tp,crJ,varJ) = getSetVars(iSetIndex,rang,size);
+        (set,crset,setVars,crA,aVars,tp,crJ,varJ) = getSetVars(iSetIndex,rang,size);
         // add set states 
         v = BackendVariable.addVars(setVars,v);
 
@@ -3880,7 +3880,7 @@ algorithm
         varlst = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
         ovarlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
         
-        syst = BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching,BackendDAE.STATESET(rang,crA,aVars,varlst,ovarlst,eqnlst,oeqnlst,crJ,varJ)::stateSets);
+        syst = BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching,BackendDAE.STATESET(rang,set,crA,aVars,varlst,ovarlst,eqnlst,oeqnlst,crJ,varJ)::stateSets);
  
         // add dummy states
         dstates1 = listAppend(states,dstates);
@@ -6081,6 +6081,7 @@ protected function getSetVars
   input Integer index;
   input Integer setsize;
   input Integer nStates;
+  output DAE.ComponentRef crstates;
   output list<DAE.ComponentRef> crset;
   output list<BackendDAE.Var> oSetVars;
   output DAE.ComponentRef ocrA;
@@ -6089,7 +6090,7 @@ protected function getSetVars
   output DAE.ComponentRef ocrJ;
   output list<BackendDAE.Var> oJVars;
 protected
-  DAE.ComponentRef set,crstates;
+  DAE.ComponentRef set;
   DAE.Type tp;
   list<Integer> range;
 algorithm

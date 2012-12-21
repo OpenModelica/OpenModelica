@@ -163,7 +163,7 @@ void printAllVars(DATA *data, int ringSegment, int stream)
   long i;
   MODEL_DATA      *mData = &(data->modelData);
   SIMULATION_INFO *sInfo = &(data->simulationInfo);
-  
+
   INFO2(stream, "Print values for buffer segment %d regarding point in time : %e", ringSegment, data->localData[ringSegment]->timeValue);
   INDENT(stream);
 
@@ -720,6 +720,10 @@ void initializeDataStruc(DATA *data)
   data->simulationInfo.nonlinearSystemData = (NONLINEAR_SYSTEM_DATA*) malloc(data->modelData.nNonLinearSystems*sizeof(NONLINEAR_SYSTEM_DATA));
   initialNonLinearSystem(data->simulationInfo.nonlinearSystemData);
 
+  /* buffer for state sets */
+  data->simulationInfo.stateSetData = (STATE_SET_DATA*) malloc(data->modelData.nStateSets*sizeof(STATE_SET_DATA));
+  initializeStateSets(data->simulationInfo.stateSetData, data);
+
   /* buffer for analytical jacobains */
   data->simulationInfo.analyticJacobians = (ANALYTIC_JACOBIAN*) malloc(data->modelData.nJacobians*sizeof(ANALYTIC_JACOBIAN));
 
@@ -1057,7 +1061,7 @@ modelica_real _event_div_real(modelica_real x1, modelica_real x2, modelica_integ
   };
 #else
   return trunc(value1/value2);
-#endif 
+#endif
 }
 
 /*! \fn deInitializeDataStruc

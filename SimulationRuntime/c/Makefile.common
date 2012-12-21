@@ -35,6 +35,7 @@ RUNTIME_HEADERS = ./simulation/libf2c/f2c.h \
 ./simulation/solver/model_help.h \
 ./simulation/solver/nonlinearSystem.h \
 ./simulation/solver/simulation_inline_solver.h \
+./simulation/solver/stateset.h \
 ./simulation/results/simulation_result.h \
 ./util/base_array.h \
 ./util/boolean_array.h \
