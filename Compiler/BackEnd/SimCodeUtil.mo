@@ -1478,7 +1478,7 @@ algorithm
       
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
-      
+
       // generate system for inline solver
       (inlineDAE, _) = InlineSolver.generateDAE(dlow);
 

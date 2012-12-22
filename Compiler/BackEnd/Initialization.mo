@@ -284,6 +284,7 @@ algorithm
   BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knownVars)) := inDAE;
   outVars := selectInitializationVariables(systs);
   outVars := BackendVariable.traverseBackendDAEVars(knownVars, selectInitializationVariables2, outVars);
+  /* what is with alias variables, I guess this one should also be checked */
 end selectInitializationVariablesDAE;
 
 protected function selectInitializationVariables "function selectInitializationVariables
@@ -386,7 +387,8 @@ algorithm
       fixvars = BackendVariable.emptyVars();
       eqns = BackendEquation.emptyEqns();
       reeqns = BackendEquation.emptyEqns();
-      
+
+      ((vars, fixvars)) = BackendVariable.traverseBackendDAEVars(avars, collectInitialAliasVars, (vars, fixvars));
       ((vars, fixvars)) = BackendVariable.traverseBackendDAEVars(knvars, collectInitialVars, (vars, fixvars));
       ((eqns, reeqns)) = BackendEquation.traverseBackendDAEEqns(inieqns, collectInitialEqns, (eqns, reeqns));
       
@@ -934,6 +936,49 @@ algorithm
     then fail();
   end matchcontinue;
 end collectInitialVars;
+
+protected function collectInitialAliasVars "function collectInitialAliasVars
+  author: lochel
+  This function collects all the vars for the initial system."
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+    local
+      BackendDAE.Var var, preVar, derVar;
+      BackendDAE.Variables vars, fixvars;
+      DAE.ComponentRef cr, preCR, derCR;
+      Boolean isFixed;
+      DAE.Type ty;
+      DAE.InstDims arryDim;
+      Option<DAE.Exp> startValue;
+      DAE.Exp startExp, bindExp;
+      String errorMessage;
+    
+    // discrete
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.DISCRETE(), varType=ty, arryDim=arryDim), (vars, fixvars))) equation
+      isFixed = BackendVariable.varFixed(var);
+      startValue = BackendVariable.varStartValueOption(var);
+      
+      preCR = ComponentReference.crefPrefixPre(cr);  // cr => $PRE.cr
+      preVar = BackendDAE.VAR(preCR, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      preVar = BackendVariable.setVarFixed(preVar, isFixed);
+      preVar = BackendVariable.setVarStartValueOption(preVar, startValue);
+      
+      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, preVar, vars, vars);
+      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
+    then ((var, (vars, fixvars)));
+    
+    case ((var, _)) equation
+      errorMessage = "./Compiler/BackEnd/Initialization.mo: function collectInitialAliasVars failed for: " +& BackendDump.varString(var);
+      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
+    then fail();
+
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function collectInitialAliasVars failed"});
+    then fail();
+  end matchcontinue;
+end collectInitialAliasVars;
 
 protected function collectInitialBindings "function collectInitialBindings
   author: lochel
