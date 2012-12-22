@@ -755,7 +755,7 @@ constant ConfigFlag NO_TEARING = CONFIG_FLAG(43, "noTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
   Util.gettext("Disables tearing at all."));
 constant ConfigFlag DYNAMIC_PIVOT = CONFIG_FLAG(44, "dynamicPivot",
-  NONE(), EXTERNAL(), BOOL_FLAG(true),NONE(),
+  NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
   Util.gettext("Enable dynamic pivoting of states during simulation. Works only with dynamic state selection"));
 constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(45, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
