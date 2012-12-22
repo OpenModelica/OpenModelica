@@ -495,22 +495,14 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
     bool result = false;
     double* z = new double[numZeroCrossings()];
       <%zeroCrossingEqns(zeroCrossings,relations)%>
-    for (int i = 0; i < numRelations(); i++)
+    for (int i = 0; i < numRelations() && !result; i++)
     {
-      if (z[i] < -epsilon && zc[i] == 1)
-      {
-        result = true;
-        zc[i] = 0;
-      }
-      else if (z[i] > epsilon && zc[i] == 0)
-      {
-        result = true;
-        zc[i] = 1;
-      }
+      if (z[i] < 0.0 && zc[i] == 1) result = true;
+      else if (z[i] > 0.0 && zc[i] == 0) result = true;
     }
     for (int i = numRelations(); i < numZeroCrossings() && !result; i += 2)
     {
-        if (z[i] < -epsilon || z[i+1] < -epsilon) result = true;
+        if (z[i] < 0.0 || z[i+1] < 0.0) result = true;
     }
     delete [] z;
     return result;
@@ -550,15 +542,6 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   void <%lastIdentOfPath(modelInfo.name)%>::internal_event(double* q, const bool* state_event)
   {
       atEvent = true;
-      // Switch the state event variables
-      for (int i = 0; i < numRelations(); i++)
-         if (state_event[i]) zc[i] = !zc[i];
-      for (int i = numRelations(); i < numZeroCrossings(); i += 2)
-      {
-          int which = (i-numRelations())/2;
-          if (state_event[i]) eventFuncs[which]->goUp(); 
-          else if (state_event[i+1]) eventFuncs[which]->goDown(); 
-      }
       for (int i = 0; i < numTimeEvents(); i++)
       {
           assert(samples[i] != NULL);
@@ -809,7 +792,7 @@ case SIMCODE(modelInfo = MODELINFO(vars = vars as SIMVARS(__))) then
   {
       bool reInit = false;
       active_model = this;
-      if (doReinit) clear_event_flags();
+      if (atEvent || doReinit) clear_event_flags();
       // Copy state variable arrays to values used in the odes
       if (q != NULL)
       {
