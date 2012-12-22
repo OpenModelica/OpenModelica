@@ -2218,13 +2218,14 @@ algorithm
       equation
         // "Mark an unmarked node/equation"
         true = intEq(iMark[eqn],0);
-        mark = arrayUpdate(iMark, eqn, 1);
+        _ = arrayUpdate(iMark, eqn, 1);
         vlst = List.select(m[eqn], Util.intPositive) "vars of equation";
+        vlst = List.removeOnTrue(arrayLength(ass1), intLt, vlst) "take care we access not behind ass1 length";
         queue = List.map1r(vlst,arrayGet,ass1) "equations of vars";
         queue = List.select(queue, Util.intPositive);
-        queue = List.fold1(queue,consNotMarked,mark,nextQueue);
+        queue = List.fold1(queue,consNotMarked,iMark,nextQueue);
       then
-        markStateEquationsWork(eqns,queue,m,ass1,mark);
+        markStateEquationsWork(eqns,queue,m,ass1,iMark);
     case (eqn::eqns,_,_,_,_)
       equation
         // Node allready marked.

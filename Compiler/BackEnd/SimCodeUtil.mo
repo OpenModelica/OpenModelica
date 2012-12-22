@@ -3459,7 +3459,7 @@ algorithm
         // create symbolic jacobian for simulation
         emptyEqns = BackendEquation.listEquation({});
         emptyVars =  BackendVariable.emptyVars();
-        (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(v, kv, eqn, emptyEqns, emptyVars, inFuncs, inAllVars, uniqueEqIndex, tempvars); 
+        (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(v, kv, eqn, emptyEqns, emptyVars, inFuncs, inAllVars, "NLSJac", uniqueEqIndex, tempvars); 
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix)},uniqueEqIndex+1,tempvars);
         
@@ -3474,7 +3474,7 @@ algorithm
         // create symbolic jacobian for simulation
         emptyEqns = BackendEquation.listEquation({});
         emptyVars =  BackendVariable.emptyVars();
-        (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(v, kv, eqn, emptyEqns, emptyVars, inFuncs, inAllVars, uniqueEqIndex, tempvars);
+        (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(v, kv, eqn, emptyEqns, emptyVars, inFuncs, inAllVars, "NLSJac", uniqueEqIndex, tempvars);
       then
         ({SimCode.SES_NONLINEAR(uniqueEqIndex2, resEqs, crefs, 0, jacobianMatrix)},uniqueEqIndex+1,tempvars);
         
@@ -3797,7 +3797,7 @@ algorithm
          otherVarsInts = List.unionList(otherVarsIntsLst);
          ovarsLst = List.map1r(otherVarsInts, BackendVariable.getVarAt, vars);
          ovars = BackendVariable.listVar1(ovarsLst);
-         (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(diffVars, kv, eqns, oeqns, ovars, functree, vars, uniqueEqIndex, tempvars);
+         (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(diffVars, kv, eqns, oeqns, ovars, functree, vars, "NLSJac", uniqueEqIndex, tempvars);
        then
          ({SimCode.SES_NONLINEAR(uniqueEqIndex2, simequations, tcrs, 0, jacobianMatrix)},uniqueEqIndex+1,tempvars);
    end matchcontinue;
@@ -3995,9 +3995,13 @@ protected function createStateSets
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
   output Integer numStateSets;
+protected
+  Boolean flag;
 algorithm
+  flag := Flags.set(Flags.NLS_ANALYTIC_JACOBIAN, true);
   (outDAE,(oEquations,ouniqueEqIndex,otempvars,numStateSets)) := 
     BackendDAEUtil.mapEqSystemAndFold(inDAE,createStateSetsSystem,(iEquations,iuniqueEqIndex,itempvars,0));
+  _ := Flags.set(Flags.NLS_ANALYTIC_JACOBIAN, flag);
   // BackendDump.printBackendDAE(outDAE);
 end createStateSets;
 
@@ -4059,7 +4063,8 @@ algorithm
     local
       BackendDAE.StateSets sets;
       Integer rang,numStateSets,nCandidates;
-      DAE.ComponentRef crset,crA,crJ;
+      list<DAE.ComponentRef> crset;
+      DAE.ComponentRef crA,crJ;
       BackendDAE.Variables vars;
       list<BackendDAE.Var> aVars,statevars,dstatesvars,varJ;
       list<BackendDAE.Equation> ceqns,oeqns;
@@ -4068,6 +4073,8 @@ algorithm
       list<SimCode.StateSet> simequations;
       list<SimCode.SimVar> tempvars;
       Integer uniqueEqIndex;
+      BackendDAE.Variables diffVars,ovars;
+      BackendDAE.EquationArray eqnsarr,oeqnsarr;      
     case({},_,_,_,_,_,_,_) then (iVars,iEquations,iuniqueEqIndex,itempvars,iNumStateSets);
     case(BackendDAE.STATESET(rang=rang,state=crset,crA=crA,varA=aVars,statescandidates=statevars,ovars=dstatesvars,eqns=ceqns,oeqns=oeqns,crJ=crJ,varJ=varJ)::sets,_,_,_,_,_,_,_)
       equation
@@ -4077,11 +4084,22 @@ algorithm
         ceqns = replaceDerOpInEquationList(ceqns);
         oeqns = replaceDerOpInEquationList(oeqns);
         // convert ceqns to res[..] = lhs-rhs
-        ceqns = createResidualSetEquations(ceqns,crJ,1,intGt(rang,1),{});
+        ceqns = createResidualSetEquations(ceqns,crJ,1,intGt(listLength(ceqns),1),{});
         // get state names
         crstates = List.map(statevars,BackendVariable.varCref);
+        // get first a element for varinfo
+        crA = ComponentReference.subscriptCrefWithInt(crA,1);
+        crA = Debug.bcallret2(intGt(listLength(crset),1),ComponentReference.subscriptCrefWithInt,crA,1,crA);
         // number of states
         nCandidates = listLength(statevars);
+
+        // create symbolic jacobian for simulation
+        //oeqnsarr = BackendEquation.listEquation(oeqns);
+        //eqnsarr = BackendEquation.listEquation(ceqns);
+        //diffVars = BackendVariable.listVar1(statevars);
+        //ovars = BackendVariable.listVar1(dstatesvars);
+        //(SOME(jacobianMatrix),uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(diffVars, knVars, eqnsarr, oeqnsarr, ovars, functree, vars, "StateSetJac", iuniqueEqIndex,itempvars);
+
         // create symbolic jacobian for simulation
         (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobianSet(statevars, knVars, varJ, ceqns, dstatesvars, oeqns, vars, functree, iuniqueEqIndex,itempvars);
         // next set  
@@ -4356,14 +4374,15 @@ protected function createSymbolicSimulationJacobian
   input BackendDAE.EquationArray inotherEquations;
   input BackendDAE.Variables inotherVars;
   input DAE.FunctionTree inFuncs;
-  input BackendDAE.Variables inAllVars; 
+  input BackendDAE.Variables inAllVars;
+  input String Name;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
   output Option<SimCode.JacobianMatrix> res;
   output Integer ouniqueEqIndex;
   output list<SimCode.SimVar> otempvars;
 algorithm
-  (res, ouniqueEqIndex, otempvars) := matchcontinue(inVars, inKnVars, inResEquations, inotherEquations, inotherVars, inFuncs, inAllVars, iuniqueEqIndex, itempvars)
+  (res, ouniqueEqIndex, otempvars) := matchcontinue(inVars, inKnVars, inResEquations, inotherEquations, inotherVars, inFuncs, inAllVars, Name, iuniqueEqIndex, itempvars)
   local
     array<DAE.Constraint> constrs;
     array<DAE.ClassAttributes> clsAttrs;
@@ -4396,7 +4415,7 @@ algorithm
     list<SimCode.SimVar> seedVars, indexVars;
   
     String errorMessage;
-    case(_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
         Debug.fcall(Flags.JAC_DUMP2, print, "---+++ create analytical jacobian +++---");
@@ -4469,7 +4488,7 @@ algorithm
                                           knvars,
                                           dependentVars,
                                           dependentVarsLst,
-                                          "NLSJac" +& intString(iuniqueEqIndex));
+                                          Name +& intString(iuniqueEqIndex));
         
         (BackendDAE.DAE(eqs={syst as BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=comps))},
                                     shared=shared), name,
@@ -4527,7 +4546,7 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP, print, "analytical Jacobians -> transformed to SimCode for Matrix " +& name +& " time: " +& realString(clock()) +& "\n");
 
         then (SOME(({(columnEquations,columnVars,s)},seedVars,name,(sparsepatternComRefs,(seedVars,indexVars)),sparseColoring,maxColor)), uniqueEqIndex, tempvars);
-    case(_,_,_,_,_,_,_,_,_)
+    case(_,_,_,_,_,_,_,_,_,_)
       equation
         false = Flags.isSet(Flags.NLS_ANALYTIC_JACOBIAN);
       then (NONE(), iuniqueEqIndex, itempvars);          

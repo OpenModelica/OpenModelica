@@ -391,6 +391,7 @@ int solver_main(DATA* data, const char* init_initMethod,
     {
       /* if new set is calculated reinit the solver */
       solverInfo.didEventStep = 1;
+      overwriteOldSimulationData(data);
     }
 
     /******** Emit this time step ********/

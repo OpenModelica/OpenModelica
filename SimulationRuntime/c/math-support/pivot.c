@@ -81,7 +81,7 @@ They hold the old (and new) pivoting information, such that
 void pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd )
 {
   // parameter, determines how much larger an element should be before rows and columns are interchanged
-  const double fac = 2.0;
+  const double fac = 1.125; // approved by dymola ;)
 
   // temporary variables
   modelica_integer row;

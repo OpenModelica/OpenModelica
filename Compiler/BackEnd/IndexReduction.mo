@@ -3839,7 +3839,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, BackendDump.debuglst,((dstates,BackendDAETransform.dumpStates,"\n","\n")));
 
         // generate Set Vars
-        (set,crset,setVars,crA,aVars,tp,crJ,varJ) = getSetVars(iSetIndex,rang,size);
+        (set,crset,setVars,crA,aVars,tp,crJ,varJ) = getSetVars(iSetIndex,rang,size,unassignedEqnsSize);
         // add set states 
         v = BackendVariable.addVars(setVars,v);
 
@@ -3852,8 +3852,9 @@ algorithm
         expcrA = DAE.CAST(tp,expcrA);
         op = Util.if_(intGt(rang,1),DAE.MUL_MATRIX_PRODUCT(DAE.T_REAL_DEFAULT),DAE.MUL_SCALAR_PRODUCT(DAE.T_REAL_DEFAULT));
         mulAstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),true,expcrstates));
+        ((mulAstates,(_,_))) = BackendDAEUtil.extendArrExp((mulAstates,(NONE(),false)));
         mulAdstates = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(size)},DAE.emptyTypeSource),true,expcrdstates));
-        //((mulAset,(_,_))) = BackendDAEUtil.extendArrExp((mulAset,(NONE(),false)));
+        ((mulAdstates,(_,_))) = BackendDAEUtil.extendArrExp((mulAdstates,(NONE(),false)));
         expset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset),listGet(expcrset,1));
         expderset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset),listGet(expcrdset,1));
         // add set.states = set.A*{dummystates} equation
@@ -3880,7 +3881,7 @@ algorithm
         varlst = List.map1r(List.map(states,Util.tuple22),BackendVariable.getVarAt,vars);
         ovarlst = List.map1r(List.map(dstates,Util.tuple22),BackendVariable.getVarAt,vars);
         
-        syst = BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching,BackendDAE.STATESET(rang,set,crA,aVars,varlst,ovarlst,eqnlst,oeqnlst,crJ,varJ)::stateSets);
+        syst = BackendDAE.EQSYSTEM(v,eqnsarr,om,omT,matching,BackendDAE.STATESET(rang,crset,crA,aVars,varlst,ovarlst,eqnlst,oeqnlst,crJ,varJ)::stateSets);
  
         // add dummy states
         dstates1 = listAppend(states,dstates);
@@ -6081,6 +6082,7 @@ protected function getSetVars
   input Integer index;
   input Integer setsize;
   input Integer nStates;
+  input Integer nCEqns;
   output DAE.ComponentRef crstates;
   output list<DAE.ComponentRef> crset;
   output list<BackendDAE.Var> oSetVars;
@@ -6112,7 +6114,7 @@ algorithm
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
   oAVars := setSetAStart(oAVars,1,nStates,{});
-  tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource),DAE.T_REAL_DEFAULT);
+  tp := Util.if_(intGt(nCEqns,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}, DAE.emptyTypeSource),DAE.T_REAL_DEFAULT);
   ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
   oJVars := generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
   oJVars := List.map1(oJVars,BackendVariable.setVarFixed,false);

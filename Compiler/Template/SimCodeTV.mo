@@ -318,7 +318,7 @@ package SimCode
       Integer index;
       Integer nCandidates;
       Integer nStates;
-      DAE.ComponentRef states;
+      list<DAE.ComponentRef> states;
       list<DAE.ComponentRef> statescandidates;
       DAE.ComponentRef crA;
       JacobianMatrix jacobianMatrix;

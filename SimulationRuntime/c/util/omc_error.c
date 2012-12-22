@@ -60,7 +60,8 @@ const char *LOG_STREAM_NAME[LOG_MAX] = {
   "LOG_STATS",
   "LOG_UTIL",
   "LOG_ZEROCROSSINGS",
-  "LOG_DSS"
+  "LOG_DSS",
+  "LOG_DSSJAC"
 };
 
 const char *LOG_STREAM_DESC[LOG_MAX] = {

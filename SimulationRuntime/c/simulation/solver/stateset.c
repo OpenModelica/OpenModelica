@@ -93,10 +93,10 @@ void getAnalyticalJacobianSet(DATA* data, unsigned int index)
       if(data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.colorCols[ii]-1 == i)
         data->simulationInfo.analyticJacobians[jacIndex].seedVars[ii] = 1;
 
-    if(DEBUG_STREAM(LOG_DSS)){
-      INFO(LOG_DSS,"Caluculate one col:\n");
+    if(DEBUG_STREAM(LOG_DSSJAC)){
+      INFO(LOG_DSSJAC,"Caluculate one col:\n");
       for(l=0;  l < data->simulationInfo.analyticJacobians[jacIndex].sizeCols;l++)
-        INFO2(LOG_DSS,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[jacIndex].seedVars[l]);
+        INFO2(LOG_DSSJAC,"seed: data->simulationInfo.analyticJacobians[index].seedVars[%d]= %f",l,data->simulationInfo.analyticJacobians[jacIndex].seedVars[l]);
     }
 
     ((data->simulationInfo.stateSetData[index].analyticalJacobianColumn))(data);
@@ -109,13 +109,13 @@ void getAnalyticalJacobianSet(DATA* data, unsigned int index)
           ii = 0;
         else
           ii = data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.leadindex[j-1];
-        INFO2(LOG_DSS," take for %d -> %d\n",j,ii);
+        INFO2(LOG_DSSJAC," take for %d -> %d\n",j,ii);
         while(ii < data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.leadindex[j])
         {
           l  = data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.index[ii];
           k  = j*data->simulationInfo.analyticJacobians[jacIndex].sizeRows + l;
           jac[k] = data->simulationInfo.analyticJacobians[jacIndex].resultVars[l];
-          INFO7(LOG_DSS,"write %d. in jac[%d]-[%d,%d]=%f from col[%d]=%f",ii,k,l,j,jac[k],l,data->simulationInfo.analyticJacobians[jacIndex].resultVars[l]);
+          INFO7(LOG_DSSJAC,"write %d. in jac[%d]-[%d,%d]=%f from col[%d]=%f",ii,k,l,j,jac[k],l,data->simulationInfo.analyticJacobians[jacIndex].resultVars[l]);
           ii++;
         };
       }
@@ -136,29 +136,33 @@ void getAnalyticalJacobianSet(DATA* data, unsigned int index)
   }
 }
 
-void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, modelica_integer nStates, modelica_integer* A, modelica_real* states, VAR_INFO** statecandidates, DATA *data)
+void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, modelica_integer nStates, VAR_INFO* Ainfo, VAR_INFO** states, VAR_INFO** statecandidates, DATA *data)
 {
   modelica_integer col;
   modelica_integer row=0;
   /* clear old values */
+  unsigned int aid = Ainfo->id - data->modelData.integerVarsData[0].info.id;
+  modelica_integer *A = &(data->localData[0]->integerVars[aid]);
   memset(A,0,nCandidates*nStates*sizeof(modelica_integer));
 
   for (col=0;col<nCandidates;col++)
   {
     if (newEnable[col]==2)
     {
-      unsigned int id = statecandidates[col]->id-1000;
+      unsigned int firstrealid = data->modelData.realVarsData[0].info.id;
+      unsigned int id = statecandidates[col]->id-firstrealid;
+      unsigned int sid = states[row]->id-firstrealid;
       INFO1(LOG_DSS," select %s\n",statecandidates[col]->name);
       /* set A[row,col] */
       set_matrix_elt(A,col,row,nCandidates,1);
       /* reinit state */
-      states[row] = data->localData[0]->realVars[id];
+      data->localData[0]->realVars[sid] = data->localData[0]->realVars[id];
       row++;
     }
   } 
 }
 
-int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelica_integer nCandidates, modelica_integer nDummyStates, modelica_integer nStates, modelica_integer* A, modelica_real* states, VAR_INFO** statecandidates, DATA *data)
+int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelica_integer nCandidates, modelica_integer nDummyStates, modelica_integer nStates, VAR_INFO* A, VAR_INFO** states, VAR_INFO** statecandidates, DATA *data)
 {
   modelica_integer i;
   int ret = 0;
@@ -176,7 +180,7 @@ int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelic
   {
     if (newEnable[i] != oldEnable[i])
     {
-      INFO(LOG_DSS,"Select new States:");
+      INFO1(LOG_DSS,"Select new States at time %f:",data->localData[0]->timeValue);
       ret = -1;
       break;
     }

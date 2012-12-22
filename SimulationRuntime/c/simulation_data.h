@@ -284,12 +284,12 @@ typedef struct STATE_SET_DATA
   modelica_integer nStates;
   modelica_integer nDummyStates;
 
-  modelica_integer* A;
+  VAR_INFO* A;
   modelica_integer* rowPivot;
   modelica_integer* colPivot;
   modelica_real* J;
 
-  modelica_real* states;
+  VAR_INFO** states;
   VAR_INFO** statescandidates;
 
   /* if analyticalJacobianColumn != NULL analyticalJacobian is available and
