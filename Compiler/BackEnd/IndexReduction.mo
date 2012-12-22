@@ -2002,6 +2002,15 @@ algorithm
       BackendDAE.AdjacencyMatrixTEnhanced meT;      
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
+        false = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
+        true = intEq(freeStates,neqns);
+        dummyStates = List.map(varlst,BackendVariable.varCref);
+        dummyStates = listAppend(dummyStates,inDummyStates);
+      then 
+        (varlst,dummyStates,isyst,ishared,iSetIndex);
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
         true = intEq(freeStates,neqns);
         dummyStates = List.map(varlst,BackendVariable.varCref);
         dummyStates = listAppend(dummyStates,inDummyStates);
