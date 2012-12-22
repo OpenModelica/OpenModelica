@@ -2005,8 +2005,10 @@ algorithm
         true = intEq(freeStates,neqns);
         dummyStates = List.map(varlst,BackendVariable.varCref);
         dummyStates = listAppend(dummyStates,inDummyStates);
+        // add all reamain equations to the systems
+        syst = BackendEquation.equationsAddDAE(eqnslst,isyst);        
       then 
-        (varlst,dummyStates,isyst,ishared,iSetIndex);
+        (varlst,dummyStates,syst,ishared,iSetIndex);
     case (_,_,_,_,_,_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_,_)
       equation
         // try to select dummy vars
