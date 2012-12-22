@@ -362,6 +362,7 @@ algorithm
   outInitDAE := matchcontinue(inDAE, inInitVars)
     local
       BackendDAE.EqSystems systs;
+      BackendDAE.Shared shared;
       BackendDAE.Variables knvars, vars, fixvars, evars, eavars, avars;
       BackendDAE.EquationArray inieqns, eqns, emptyeqns, reeqns;
       BackendDAE.EqSystem initsyst;
@@ -372,7 +373,7 @@ algorithm
       array<DAE.Constraint> constraints;
       array<DAE.ClassAttributes> classAttrs;
       
-    case(BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knvars,
+    case(BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars,
                                                  aliasVars=avars,
                                                  initialEqs=inieqns,
                                                  constraints=constraints,
@@ -403,7 +404,7 @@ algorithm
 
       // generate initial system
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
-      initsyst = analyzeInitialSystem(initsyst, inDAE, inInitVars);      
+      initsyst = analyzeInitialSystem(initsyst, inDAE, inInitVars, shared);      
       (initsyst, _, _) = BackendDAEUtil.getIncidenceMatrix(initsyst, BackendDAE.NORMAL());
       BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = initsyst;
 
@@ -495,22 +496,73 @@ algorithm
     then fail();
   end matchcontinue;
 end solveInitialSystem2;
-
+//protected import IndexReduction;
 protected function analyzeInitialSystem "function analyzeInitialSystem
   author: lochel
   This function fixes discrete and state variables to balance the initial equation system."
   input BackendDAE.EqSystem inSystem;
   input BackendDAE.BackendDAE inDAE;      // original DAE
   input BackendDAE.Variables inInitVars;
+  input BackendDAE.Shared shared;
   output BackendDAE.EqSystem outSystem;
 protected
   BackendDAE.EqSystem system;
   BackendDAE.IncidenceMatrix m, mt;
 algorithm
   (system, m, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL());
+  // remove unused vars of the system
+  system := removeUnusedInitialVars(system,mt);
   system := analyzeInitialSystem2(system, inDAE, inInitVars);     // fix unbalanced initial system if it is definite
-  (outSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(system, BackendDAE.NORMAL());
+  (outSystem, _, mt) := BackendDAEUtil.getIncidenceMatrix(system, BackendDAE.NORMAL());
+//  IndexReduction.dumpSystemGraphML(outSystem,shared,NONE(),"InitialSystem" +& intString(arrayLength(mt)) +& ".graphml");
 end analyzeInitialSystem;
+
+protected function removeUnusedInitialVars
+  input BackendDAE.EqSystem inSystem;
+  input BackendDAE.IncidenceMatrix mt;
+  output BackendDAE.EqSystem outSystem;
+protected
+  BackendDAE.Variables orderedVars;
+  BackendDAE.EquationArray orderedEqs;
+  BackendDAE.Matching matching;
+  BackendDAE.StateSets stateSets;
+  Boolean b;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars,orderedEqs=orderedEqs,stateSets=stateSets) := inSystem;
+  (orderedVars,b) := removeUnusedInitialVarsWork(arrayLength(mt),mt,orderedVars,false);
+  outSystem := Util.if_(b,BackendDAE.EQSYSTEM(orderedVars,orderedEqs,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),inSystem);
+end removeUnusedInitialVars;
+
+protected function removeUnusedInitialVarsWork
+  input Integer n;
+  input BackendDAE.IncidenceMatrix mt;
+  input BackendDAE.Variables iVars;
+  input Boolean iB;
+  output BackendDAE.Variables oVars;
+  output Boolean oB;
+algorithm
+  (oVars,oB) := match(n,mt,iVars,iB)
+    local
+      list<Integer> row;
+      Boolean b;
+      BackendDAE.Variables vars;
+    case(0,_,_,false) then (iVars,false);
+    case(0,_,_,true)
+      equation
+        vars = BackendVariable.listVar1(BackendVariable.varList(iVars));
+      then
+        (vars,true);
+    case(_,_,_,_)
+      equation
+        row = mt[n];
+        b = List.isEmpty(row);
+        row = Util.if_(b,{n},{});
+        (vars,_) = BackendVariable.removeVars(row,iVars,{});
+        (vars,b) = removeUnusedInitialVarsWork(n-1,mt,vars,b or iB);
+      then
+        (vars,b);
+  end match;
+end removeUnusedInitialVarsWork;
 
 protected function analyzeInitialSystem2 "function analyzeInitialSystem2
   author lochel"
@@ -628,7 +680,7 @@ algorithm
     
     case (curr::rest, _) equation
       (cr, crList) = curr;
-      0 = listLength(crList);
+      true = List.isEmpty(crList);
     
       vars = collectIndependentVars(rest, inVars);
       vars = cr::vars;
@@ -943,7 +995,7 @@ protected function collectInitialAliasVars "function collectInitialAliasVars
   input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> inTpl;
   output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.Variables>> outTpl;
 algorithm
-  outTpl := matchcontinue(inTpl)
+  outTpl := match(inTpl)
     local
       BackendDAE.Var var, preVar, derVar;
       BackendDAE.Variables vars, fixvars;
@@ -969,15 +1021,9 @@ algorithm
       fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, preVar, fixvars, fixvars);
     then ((var, (vars, fixvars)));
     
-    case ((var, _)) equation
-      errorMessage = "./Compiler/BackEnd/Initialization.mo: function collectInitialAliasVars failed for: " +& BackendDump.varString(var);
-      Error.addMessage(Error.INTERNAL_ERROR, {errorMessage});
-    then fail();
-
-    else equation
-      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function collectInitialAliasVars failed"});
-    then fail();
-  end matchcontinue;
+    case((var, (vars, fixvars))) equation
+      then ((var, (vars, fixvars)));
+  end match;
 end collectInitialAliasVars;
 
 protected function collectInitialBindings "function collectInitialBindings
