@@ -51,7 +51,7 @@ writeFile(\""+log+"\",\""+s+"\n\",append=true);
 statFile := \""+s+".stat\";
 writeFile(statFile,\"<tr><td bgcolor=\\\"#ff0000\\\">"+s+"</td></tr>\");getErrorString();
 loadModel(Modelica,{\""+MSLVersion+"\"});"+loadModelicaTest+"
-setCommandLineOptions(\"+d=nogen\");
+setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\"); 
 res:=buildModel("+s+");
 greenColor := \"#00FF00\";
 if res[1] == \"\" then
@@ -59,12 +59,6 @@ if res[1] == \"\" then
   setCommandLineOptions(\"+d=scodeInstShortcut\");
   res:=buildModel("+s+");
   greenColor := \"#FFFF00\";
-end if;
-if res[1] == \"\" then
-  err:=getErrorString();
-  setCommandLineOptions(\"+d=-scodeInstShortcut\");
-  res:=buildModel("+s+");
-  greenColor := \"#FF0000\";
 end if;
 errFile:=\""+s+".err\";
 simFile:=\""+s+".sim\";
@@ -133,6 +127,7 @@ str:="<h1>Recursive BuildModel Test</h1>
 <p>Tested Library: Modelica "+getVersion(Modelica)+"</p>
 <p>BuildModel time limit: "+ulimitOmc+"s</p>
 <p>Simulation time limit: "+ulimitExe+"s</p>
+<p>Flags: setCommandLineOptions(\"+d=nogen\"); setMatchingAlgorithm(\"PFPlusExt\"); setIndexReductionMethod(\"dynamicStateSelection\");</p>
 ";
 writeFile(log,"<html><head><title>BuildModel Results</title></head><body>" + str);
 writeFile(log,"<table><tr><th>Model</th><th>Simulate</th><th>Total buildModel</th><th>Frontend</th><th>Backend</th><th>SimCode</th><th>Templates</th><th>Compile</th></tr>",append=true);getErrorString();
