@@ -7568,20 +7568,21 @@ algorithm
       BackendDAE.Shared shared;
     case (BackendDAE.DAE({syst},shared))
       equation
-        (systs,shared) = partitionIndependentBlocksHelper(syst,shared,Error.getNumErrorMessages());
+        (systs,shared) = partitionIndependentBlocksHelper(syst,shared,Error.getNumErrorMessages(),false);
       then BackendDAE.DAE(systs,shared); // TODO: Add support for partitioned systems of equations
   end match;
 end partitionIndependentBlocks;
 
-protected function partitionIndependentBlocksHelper
+public function partitionIndependentBlocksHelper
   "Finds independent partitions of the equation system by "
   input BackendDAE.EqSystem isyst;
   input BackendDAE.Shared ishared;
   input Integer numErrorMessages;
+  input Boolean throwNoError;
   output list<BackendDAE.EqSystem> systs;
   output BackendDAE.Shared oshared;
 algorithm
-  (systs,oshared) := matchcontinue (isyst,ishared,numErrorMessages)
+  (systs,oshared) := matchcontinue (isyst,ishared,numErrorMessages,throwNoError)
     local
       BackendDAE.IncidenceMatrix m,mT;
       array<Integer> ixs;
@@ -7590,7 +7591,7 @@ algorithm
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
       
-    case (syst,shared,_)
+    case (syst,shared,_,_)
       equation
         // print("partitionIndependentBlocks: TODO: Implement me\n");
         (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
@@ -7601,7 +7602,7 @@ algorithm
         b = i > 1;
         // Debug.bcall(b,BackendDump.dump,BackendDAE.DAE({syst},shared));
         // printPartition(b,ixs);
-        systs = Debug.bcallret4(b,partitionIndependentBlocksSplitBlocks,i,syst,ixs,mT,{syst});
+        systs = Debug.bcallret5(b,partitionIndependentBlocksSplitBlocks,i,syst,ixs,mT,throwNoError,{syst});
       then (systs,shared);
     else
       equation
@@ -7616,9 +7617,10 @@ protected function partitionIndependentBlocksSplitBlocks
   input BackendDAE.EqSystem syst;
   input array<Integer> ixs;
   input BackendDAE.IncidenceMatrix mT;
+  input Boolean throwNoError;
   output list<BackendDAE.EqSystem> systs;
 algorithm
-  systs := match (n,syst,ixs,mT)
+  systs := match (n,syst,ixs,mT,throwNoError)
     local
       BackendDAE.Variables vars;
       BackendDAE.EquationArray arr;
@@ -7628,7 +7630,7 @@ algorithm
       list<list<BackendDAE.Var>> vl;
       Integer i1,i2;
       String s1,s2;
-    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=arr),_,_)
+    case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=arr),_,_,_)
       equation
         ea = arrayCreate(n,{});
         va = arrayCreate(n,{});
@@ -7636,7 +7638,7 @@ algorithm
         i2 = BackendVariable.numVariables(vars);
         s1 = intString(i1);
         s2 = intString(i2);
-        Error.assertionOrAddSourceMessage(i1 == i2,
+        Error.assertionOrAddSourceMessage((i1 == i2) or throwNoError,
           Util.if_(i1 > i2, Error.OVERDET_EQN_SYSTEM, Error.UNDERDET_EQN_SYSTEM), 
           {s1,s2}, Absyn.dummyInfo);
 

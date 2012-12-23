@@ -414,8 +414,7 @@ algorithm
       evars = BackendVariable.emptyVars();
       eavars = BackendVariable.emptyVars();
       emptyeqns = BackendEquation.emptyEqns();
-      initdae = BackendDAE.DAE({initsyst},
-                               BackendDAE.SHARED(fixvars,
+      shared = BackendDAE.SHARED(fixvars,
                                                  evars,
                                                  eavars,
                                                  emptyeqns,
@@ -428,12 +427,13 @@ algorithm
                                                  BackendDAE.EVENT_INFO({},{},{},{},0,0),
                                                  {},
                                                  BackendDAE.INITIALSYSTEM(),
-                                                 {}));
+                                                 {});
 
       // split it in independend subsystems
-      //initdae = BackendDAEOptimize.partitionIndependentBlocks(initdae);
+      (systs,shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst,shared,Error.getNumErrorMessages(),true);
+      initdae = BackendDAE.DAE(systs,shared);
       // analzye initial system
-      initdae = analyzeInitialSystem(initdae, inDAE, inInitVars);      
+      initdae = analyzeInitialSystem(initdae, inDAE, inInitVars);
 
       // some debug prints
       Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, initdae, "initial system");
