@@ -519,7 +519,7 @@ public function bcallret5
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;
   replaceable type Type_e subtypeof Any;
-  replaceable type Type_f subtypeof Any;
+  replaceable type Type_g subtypeof Any;
   annotation(__OpenModelica_EarlyInline = true);
 algorithm
   res := match (flag,func,arg1,arg2,arg3,arg4,arg5,default)
