@@ -7630,6 +7630,7 @@ algorithm
       list<list<BackendDAE.Var>> vl;
       Integer i1,i2;
       String s1,s2;
+      Boolean b;
     case (_,BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=arr),_,_,_)
       equation
         ea = arrayCreate(n,{});
@@ -7646,7 +7647,8 @@ algorithm
         partitionVars(i2,arr,vars,ixs,mT,va);
         el = arrayList(ea);
         vl = arrayList(va);
-        (systs,true) = List.threadMapFold(el,vl,createEqSystem,true);
+        (systs,(b,_)) = List.threadMapFold(el,vl,createEqSystem,(true,throwNoError));
+        true = throwNoError or b;
       then systs;
   end match;
 end partitionIndependentBlocksSplitBlocks;
@@ -7654,16 +7656,18 @@ end partitionIndependentBlocksSplitBlocks;
 protected function createEqSystem
   input list<BackendDAE.Equation> el;
   input list<BackendDAE.Var> vl;
-  input Boolean success;
+  input tuple<Boolean,Boolean> iTpl;
   output BackendDAE.EqSystem syst;
-  output Boolean osuccess;
+  output tuple<Boolean,Boolean> oTpl;
 protected
   BackendDAE.EquationArray arr;
   BackendDAE.Variables vars;
   Integer i1,i2;
   String s1,s2,s3,s4;
   list<String> crs;
+  Boolean success,throwNoError;
 algorithm
+  (success,throwNoError) := iTpl;
   vars := BackendVariable.listVar1(vl);
   arr := BackendEquation.listEquation(el);
   i1 := BackendDAEUtil.equationSize(arr);
@@ -7674,9 +7678,10 @@ algorithm
   s3 := stringDelimitList(crs,"\n");
   s4 := Debug.bcallret1(i1<>i2,BackendDump.dumpEqnsStr,el,"");
   // Can this even be triggered? We check that all variables are defined somewhere, so everything should be balanced already?
-  Debug.bcall3(i1<>i2,Error.addSourceMessage,Error.IMBALANCED_EQUATIONS,{s1,s2,s3,s4},Absyn.dummyInfo);
+  Debug.bcall3((i1<>i2) and not throwNoError,Error.addSourceMessage,Error.IMBALANCED_EQUATIONS,{s1,s2,s3,s4},Absyn.dummyInfo);
   syst := BackendDAE.EQSYSTEM(vars,arr,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-  osuccess := success and i1==i2;
+  success := success and i1==i2;
+  oTpl := (success,throwNoError);
 end createEqSystem;
 
 protected function partitionEquations
