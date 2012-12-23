@@ -1474,8 +1474,9 @@ algorithm
       cname = Absyn.pathStringNoQual(class_);
       
       // generate initalsystem before replacing pre(alias)!
-      initDAE = Initialization.solveInitialSystem(dlow);
-      
+      (initDAE,varlst) = Initialization.solveInitialSystem(dlow,{}); 
+      BackendDAE.DAE(shared=BackendDAE.SHARED(knownVars=knownVars)) = dlow;
+      tempvars = List.map2(varlst,dlowvarToSimvar,NONE(),knownVars);
       // replace pre(alias) in time-equations
       dlow = BackendDAEOptimize.simplifyTimeIndepFuncCalls(dlow);
 
@@ -1505,13 +1506,13 @@ algorithm
       n_h = listLength(helpVarInfo);
       
       // state set stuff
-      (dlow2,stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow2,{},uniqueEqIndex,{});
+      (dlow2,stateSets, uniqueEqIndex, tempvars, numStateSets) = createStateSets(dlow2,{},uniqueEqIndex,tempvars);
 
       // inline solver stuff
-      (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, {}, helpVarInfo);
+      (inlineEquations, uniqueEqIndex, tempvars) = createInlineSolverEqns(inlineDAE, uniqueEqIndex, tempvars, helpVarInfo);
       
       // initialization stuff
-      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, {}, helpVarInfo);
+      (residuals, initialEquations, numberOfInitialEquations, numberOfInitialAlgorithms, uniqueEqIndex, tempvars, useSymbolicInitialization) = createInitialResiduals(dlow2, initDAE, uniqueEqIndex, tempvars, helpVarInfo);
       (jacG, uniqueEqIndex) = createInitialMatrices(dlow2, uniqueEqIndex);
 
       // expandAlgorithmsbyInitStmts
@@ -1653,7 +1654,7 @@ algorithm
            numStringParamVars,numStringAliasVars,numEqns,numNonLinearResFunctions,numStateSets,dimODE1stOrder,dimODE2ndOrder) = varInfo;
         SimCode.SIMVARS(stateVars,derivativeVars,inlineVars,algVars,intAlgVars,boolAlgVars,inputVars,outputVars,aliasVars,intAliasVars,boolAliasVars,paramVars,intParamVars,boolParamVars,
                stringAlgVars,stringParamVars,stringAliasVars,extObjVars,constVars,intConstVars,boolConstVars,stringConstVars) = vars;
-        
+
        (numAlgVars,algVars,numIntAlgVars,intAlgVars,numBoolAlgVars,boolAlgVars,numStringAlgVars,stringAlgVars)=
           addTempVars1(tempVars,numAlgVars,listReverse(algVars),numIntAlgVars,listReverse(intAlgVars),numBoolAlgVars,listReverse(boolAlgVars),numStringAlgVars,listReverse(stringAlgVars));
 
@@ -1713,6 +1714,15 @@ algorithm
       list<String> numArrayElement;
      case({},_,_,_,_,_,_,_,_) then (numAlgVars,algVars,numIntAlgVars,intAlgVars,numBoolAlgVars,boolAlgVars,numStringAlgVars,stringAlgVars);     
      case(SimCode.SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_ as DAE.T_INTEGER(varLst=_),
+          isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)::rest,_,_,_,_,_,_,_,_)
+       equation
+         var = SimCode.SIMVAR(name,varKind,comment,unit,displayUnit,numIntAlgVars,minValue,maxValue,initialValue,nominalValue,isFixed,type_,
+          isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement);
+         (onumAlgVars,oalgVars,onumIntAlgVars,ointAlgVars,onumBoolAlgVars,oboolAlgVars,onumStringAlgVars,ostringAlgVars) = 
+         addTempVars1(rest,numAlgVars,algVars,numIntAlgVars+1,var::intAlgVars,numBoolAlgVars,boolAlgVars,numStringAlgVars,stringAlgVars);
+       then
+         (onumAlgVars,oalgVars,onumIntAlgVars,ointAlgVars,onumBoolAlgVars,oboolAlgVars,onumStringAlgVars,ostringAlgVars);
+     case(SimCode.SIMVAR(name,varKind,comment,unit,displayUnit,index,minValue,maxValue,initialValue,nominalValue,isFixed,type_ as DAE.T_ENUMERATION(path=_),
           isDiscrete,arrayCref,aliasvar,source,causality,variable_index,numArrayElement)::rest,_,_,_,_,_,_,_,_)
        equation
          var = SimCode.SIMVAR(name,varKind,comment,unit,displayUnit,numIntAlgVars,minValue,maxValue,initialValue,nominalValue,isFixed,type_,
