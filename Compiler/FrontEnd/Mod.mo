@@ -1133,7 +1133,7 @@ public function lookupCompModification "function: lookupCompModification
   input Absyn.Ident inIdent;
   output DAE.Mod outMod;
 algorithm
-  outMod := match (inMod,inIdent)
+  outMod := matchcontinue (inMod,inIdent)
     local
       DAE.Mod mod,mod1,mod2;
       list<DAE.SubMod> subs;
@@ -1142,8 +1142,6 @@ algorithm
       SCode.Each e;
       SCode.Final f;
     
-    case (DAE.NOMOD(),_) then DAE.NOMOD();
-    case (DAE.REDECL(finalPrefix = _),_) then DAE.NOMOD();
     case (DAE.MOD(finalPrefix = f,eachPrefix = e,subModLst = subs,eqModOption = eqMod),n)
       equation
         mod1 = lookupCompModification2(subs, n);
@@ -1151,8 +1149,97 @@ algorithm
         mod = checkDuplicateModifications(mod1,mod2,n);
       then
         mod;
-  end match;
+    
+    else DAE.NOMOD(); 
+  end matchcontinue;
 end lookupCompModification;
+
+public function getModifs
+"return the modifications from mod
+ which is named inName or which
+ is named name if name is inside 
+ inSMod(xxx = name)"
+  input DAE.Mod inMods;
+  input SCode.Ident inName;
+  input SCode.Mod inSMod;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue(inMods, inName, inSMod)
+    local 
+      DAE.Mod m;
+      
+    case (_, _, _)
+      equation
+        m = lookupCompModification(inMods, inName);
+        m = mergeModifiers(inMods, m, inSMod); 
+      then
+        m;
+    
+    case (_, _, _)
+      equation
+        m = mergeModifiers(inMods, DAE.NOMOD(), inSMod); 
+      then
+        m;
+  end matchcontinue;
+end getModifs;
+
+protected function mergeModifiers
+  input DAE.Mod inMods;
+  input DAE.Mod inMod;
+  input SCode.Mod inSMod;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue(inMods, inMod, inSMod)
+    local 
+      DAE.Mod m;
+      list<SCode.SubMod> sl;
+      SCode.Final f;
+      SCode.Each e;
+    
+    case (_, _, SCode.MOD(f, e, sl, _, _))
+      equation
+        m = mergeSubMods(inMods, inMod, f, e, sl);
+      then
+        m;
+    
+    else inMod;
+  
+  end matchcontinue;
+end mergeModifiers;
+
+protected function mergeSubMods
+  input DAE.Mod inMods;
+  input DAE.Mod inMod;
+  input SCode.Final f;
+  input SCode.Each e;
+  input list<SCode.SubMod> inSMods;
+  output DAE.Mod outMod;
+algorithm
+  outMod := matchcontinue(inMods, inMod, f, e, inSMods)
+    local 
+      DAE.Mod m;
+      SCode.Ident id, n;
+      list<SCode.SubMod> rest;
+    
+    case (_, _, _, _, {}) then inMod;
+    
+    case (_, _, _, _, SCode.NAMEMOD(n, SCode.MOD(binding = SOME((Absyn.CREF(Absyn.CREF_IDENT(id, _)),_))))::rest)
+      equation
+        m = lookupCompModification(inMods, id);
+        m = DAE.MOD(f, e, {DAE.NAMEMOD(n, m)}, NONE());
+        m = merge(inMod, m, {}, Prefix.NOPRE());
+        m = mergeSubMods(inMods, m, f, e, rest);
+      then
+        m;
+            
+    case (_, _, _, _, _::rest)
+      equation
+        m = mergeSubMods(inMods, inMod, f, e, rest);
+      then
+        m;
+  
+  end matchcontinue;
+end mergeSubMods;
 
 public function lookupCompModificationFromEqu "function: lookupCompModification
   This function is used to look up an identifier in a modification."
@@ -1320,20 +1407,62 @@ algorithm
 
     case(DAE.NOMOD(),_,_) then mod2;
     case (_,DAE.NOMOD(),_) then mod1;
-    // if they are equal, return the second one!
+    // if they are equal, ignoring prefix, return the second one!
     case(_,_,_) 
       equation
         true = modEqual(mod1, mod2);
-      then mod2;
+      then 
+        mod2;
+    
     // print error message
     case(_,_,_) equation
       s1 = printModStr(mod1);
       s2 = printModStr(mod2);
       s = s1 +& " and " +& s2;
       Error.addMessage(Error.DUPLICATE_MODIFICATIONS,{s,n});
-    then fail();
+    then 
+      mod2;
+  
   end matchcontinue;
 end checkDuplicateModifications;
+
+protected function modEqualNoPrefix
+  input DAE.Mod mod1;
+  input DAE.Mod mod2;
+  output DAE.Mod outMod;
+  output Boolean equal;
+algorithm
+  (outMod, equal) := matchcontinue(mod1, mod2)
+    local 
+      SCode.Final f1,f2;
+      SCode.Each each1,each2;
+      list<DAE.SubMod> submods1,submods2;
+      Option<DAE.EqMod> eqmod1,eqmod2;
+      list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
+      SCode.Program els1, els2;
+
+    case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2)) 
+      equation
+        true = subModsEqual(submods1,submods2);
+        true = eqModEqual(eqmod1,eqmod2);
+      then 
+        (DAE.MOD(f2,each2,submods2,eqmod2), true);
+    
+    // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
+    case(DAE.REDECL(f1, each1, elsmods1),DAE.REDECL(f2, each2, elsmods2))
+      equation
+        els1 = List.map(elsmods1, Util.tuple21); 
+        els2 = List.map(elsmods2, Util.tuple21);
+        true = List.fold(List.threadMap(els1, els2, SCode.elementEqual), boolAnd, true);
+      then 
+        (DAE.REDECL(f2, each2, elsmods2), true);
+    
+    case(DAE.NOMOD(),DAE.NOMOD()) then (DAE.NOMOD(), true);
+    
+    // adrpo: do not fail, return false!
+    case (_, _) then (mod2, false);
+  end matchcontinue;
+end modEqualNoPrefix;
 
 protected function lookupNamedModifications 
 "@author: adrpo
@@ -1415,6 +1544,7 @@ algorithm
         mod = merge(mod1, mod2, {}, Prefix.NOPRE());
       then
         mod;
+    
     case ((x as DAE.IDXMOD(mod=mod1))::rest)
       equation
         // make sure x is not present in the rest
@@ -1739,14 +1869,16 @@ algorithm
       
     case(_,_,_,_)
       equation
-        true = merge2(inModInner);
-      then doMerge(inModOuter,inModInner,inEnv,inPrefix);
+        //true = merge2(inModInner);
+      then 
+        doMerge(inModOuter,inModInner,inEnv,inPrefix);
 
     case(_,_,_,_)
       equation
         true = modSubsetOrEqualOrNonOverlap(inModOuter,inModInner);
         m = doMerge(inModOuter,inModInner,inEnv,inPrefix);
-      then m;
+      then 
+        m;
 
     // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
     case(DAE.REDECL(fp1, ep1, elsmods1),DAE.REDECL(fp2, ep2, elsmods2),_,_)
@@ -1769,7 +1901,11 @@ algorithm
         s3 = printModStr(inModOuter);
         s4 = printModStr(inModInner);
         Error.addMessage(Error.FINAL_OVERRIDE, {s1,s2,s3,s4});
-      then fail();
+        // keep this for debugging via gdb.
+        // _ = merge(inModOuter,inModInner,inEnv,inPrefix); 
+      then 
+        fail();
+  
   end matchcontinue;
 end merge;
 
@@ -1878,42 +2014,69 @@ algorithm
       then
         DAE.REDECL(f1,each1,{(celm,cm)});
 
-    // When modifiers are identical
-    case (outer_,inner_,_,_)
-      equation                
-        // adrpo: TODO! FIXME! why isn't modEqual working here??!! 
-        // true = modEqual(outer_, inner_);
-        equality(outer_ = inner_);
-      then
-        outer_;
-
     case (DAE.MOD(finalPrefix = finalPrefix,eachPrefix = each1,subModLst = subs1,eqModOption = ass1),
           DAE.MOD(finalPrefix = _/* SCode.NOT_FINAL(), see case above.*/,eachPrefix = each2,subModLst = subs2,eqModOption = ass2),env,pre)
       equation
         subs = mergeSubs(subs1, subs2, env, pre);
         ass = mergeEq(ass1, ass2);
+        mm2 = DAE.MOD(finalPrefix,each1,subs,ass);
+        // checkModification(subs, mm2);
       then
-        DAE.MOD(finalPrefix,each1,subs,ass);
+        mm2;
     
     /* Case when we have a modifier on a redeclared class
      * This is of current date BZ:2008-03-04 not completly working.
      * see testcase mofiles/Modification14.mo
      */
     case (mm1 as DAE.MOD(subModLst = subs), 
-          mm2 as DAE.REDECL(finalPrefix = SCode.NOT_FINAL(),eachPrefix = each1, tplSCodeElementModLst = (els as {((elementOne as SCode.CLASS(name = id1)),mm3)})),env,pre)
+          mm2 as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each1, tplSCodeElementModLst = (els as {((elementOne as SCode.CLASS(name = id1)),mm3)})),env,pre)
       equation
-        mm1 = merge(mm1,mm3,env,pre );
-      then DAE.REDECL(SCode.NOT_FINAL(),each1,{(elementOne,mm1)});
+        mm1 = merge(mm1,mm3,env,pre);
+      then 
+        DAE.REDECL(finalPrefix,each1,{(elementOne,mm1)});
 
-    case (mm2 as DAE.REDECL(finalPrefix = SCode.NOT_FINAL(),eachPrefix = each1, tplSCodeElementModLst = (els as {((elementOne as SCode.CLASS(name = id1)),mm3)})),
+    case (mm2 as DAE.REDECL(finalPrefix = finalPrefix,eachPrefix = each1, tplSCodeElementModLst = (els as {((elementOne as SCode.CLASS(name = id1)),mm3)})),
           mm1 as DAE.MOD(subModLst = subs),env,pre)
       equation
-        mm1 = merge(mm3,mm1,env,pre );
+        mm1 = merge(mm3,mm1,env,pre);
       then 
-        DAE.REDECL(SCode.NOT_FINAL(),each1,{(elementOne,mm1)});
+        DAE.REDECL(finalPrefix,each1,{(elementOne,mm1)});
     
   end matchcontinue;
 end doMerge;
+
+protected function checkModification
+"we lookup all named modifications inside mod
+ to see that we don't get duplicates such as: R b(a = 2) = R(a = 2)"
+  input list<SubMod> inSubs;
+  input DAE.Mod inMod;
+algorithm
+  _ := matchcontinue(inSubs, inMod)
+    local
+      list<SubMod> rest;
+      SCode.Ident id;
+    
+    case ({}, _) then ();
+    
+    // named mod 
+    case (DAE.NAMEMOD(id, _)::rest, _) 
+      equation
+        _ = lookupCompModification(inMod, id);
+        checkModification(rest, inMod);
+      then
+        ();
+    
+    // ignore idx for now
+    case (DAE.IDXMOD(_, _)::rest, _) 
+      equation
+        checkModification(rest, inMod);
+      then
+        ();
+    
+    else ();
+  
+  end matchcontinue;
+end checkModification;
 
 protected function mergeSubs "function: mergeSubs
   This function merges to list of DAE.SubMods."
@@ -2110,41 +2273,49 @@ algorithm
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
       Boolean b;
+      list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
+      SCode.Program els1, els2;
 
     // adrpo: handle non-overlap: final parameter Real eAxis_ia[3](each final unit="1") = {1,2,3};
     //        mod1 = final each unit="1" mod2 = final = {1,2,3}
     //        otherwise we get an error as: Error: Variable eAxis_ia: trying to override final variable ...
     case(DAE.MOD(f1,each1,submods1,NONE()),DAE.MOD(f2,SCode.NOT_EACH(),{},eqmod2 as SOME(_)))
       equation
-        b = valueEq(f1,f2);
-      then b;
+        true = SCode.finalEqual(f1, f2);
+      then 
+        true;
 
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,SCode.NOT_EACH(),{},eqmod2))
       equation
-        b = valueEq(eqmod1,eqmod2);
-      then b;
+        true = eqModSubsetOrEqual(eqmod1,eqmod2);
+      then 
+        true;
 
     // handle subset equal
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2))
       equation
-        true = valueEq(f1,f2);
+        true = SCode.finalEqual(f1, f2);
         true = SCode.eachEqual(each1,each2);
         true = subModsEqual(submods1,submods2);
         true = eqModSubsetOrEqual(eqmod1,eqmod2);
       then 
         true;
-    case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_))
-      then valueEq(mod1,mod2);
-    case(DAE.NOMOD(),DAE.NOMOD()) then true;
-    case (_,_) then false;
-    case(_, _) 
+
+    // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
+    case(DAE.REDECL(f1, each1, elsmods1),DAE.REDECL(f2, each2, elsmods2))
       equation
-        //true = Flags.isSet(Flags.FAILTRACE);
-        //Debug.traceln("- Mod.modSubsetOrEqualOrNonOverlap failed on: " +& 
-        //   " mod1: " +& printModStr(mod1) +& 
-        //   " mod2: " +& printModStr(mod2));
-      then
-        fail();
+        true = SCode.finalEqual(f1, f2);
+        true = SCode.eachEqual(each1, each2);
+        els1 = List.map(elsmods1, Util.tuple21); 
+        els2 = List.map(elsmods2, Util.tuple21);
+        true = List.fold(List.threadMap(els1, els2, SCode.elementEqual), boolAnd, true);
+      then 
+        true;
+    
+    case(DAE.NOMOD(),DAE.NOMOD()) then true;
+    
+    case (_, _) then false;
+      
   end matchcontinue;
 end modSubsetOrEqualOrNonOverlap;
 
@@ -2168,39 +2339,44 @@ algorithm
     // typed mods
     case(SOME(DAE.TYPED(modifierAsExp = exp1)),SOME(DAE.TYPED(modifierAsExp = exp2))) 
       equation
-        equal = Expression.expEqual(exp1,exp2);
-      then equal;
+        true = eqModEqual(eqMod1,eqMod2);
+      then 
+        true;
     
     // typed vs. untyped mods
     case(SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp1))),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        //aexp1 = Expression.unelabExp(exp1);
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     case(SOME(DAE.TYPED(exp1,_,_,NONE(),_)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         aexp1 = Expression.unelabExp(exp1);
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     // untyped vs. typed 
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp2)))) 
       equation
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE(),_))) 
       equation
         aexp2 = Expression.unelabExp(exp2);
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     // untyped mods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     // anything else gives false
     case(_,_) then false;
@@ -2262,21 +2438,34 @@ algorithm
       SCode.Each each1,each2;
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
+      list<tuple<SCode.Element, DAE.Mod>> elsmods1, elsmods2;
+      SCode.Program els1, els2;
 
     case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2)) 
       equation
-        true = valueEq(f1,f2);
+        true = SCode.finalEqual(f1, f2);
         true = SCode.eachEqual(each1,each2);
         true = subModsEqual(submods1,submods2);
         true = eqModEqual(eqmod1,eqmod2);
       then 
         true;
     
-    case(DAE.REDECL(_,_,_),DAE.REDECL(_,_,_)) then valueEq(mod1,mod2);
+    // two exactly the same mod, return just one! (used when it is REDECL or a submod is REDECL)
+    case(DAE.REDECL(f1, each1, elsmods1),DAE.REDECL(f2, each2, elsmods2))
+      equation
+        true = SCode.finalEqual(f1, f2);
+        true = SCode.eachEqual(each1, each2);
+        els1 = List.map(elsmods1, Util.tuple21); 
+        els2 = List.map(elsmods2, Util.tuple21);
+        true = List.fold(List.threadMap(els1, els2, SCode.elementEqual), boolAnd, true);
+      then 
+        true;
+    
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
     
     // adrpo: do not fail, return false!
-    case (_, _) then false;
+    case (_, _) 
+      then false;
   end matchcontinue;
 end modEqual;
 
@@ -2293,7 +2482,7 @@ algorithm
       list<DAE.SubMod> subModLst1, subModLst2;
       
     
-    case ({},_) then true;
+    case ({},{}) then true;
     
     case (DAE.NAMEMOD(id1,mod1)::subModLst1,DAE.NAMEMOD(id2,mod2)::subModLst2)
       equation
@@ -2313,6 +2502,7 @@ algorithm
     
     // otherwise false
     case(_,_) then false;
+  
   end matchcontinue;
 end subModsEqual;
 
@@ -2348,6 +2538,26 @@ algorithm
   end matchcontinue;
 end subModEqual;
 
+protected function valEqual
+  input Option<Values.Value> inV1;
+  input Option<Values.Value> inV2;
+  input Boolean equal;
+  output Boolean bEq;
+algorithm
+  bEq := matchcontinue(inV1, inV2, equal)
+    local Values.Value v1, v2;
+    case (_, _, true) then true;
+    case (NONE(), NONE(), _) then equal;
+    case (SOME(v1), SOME(v2), false)
+      equation
+        bEq = Expression.expEqual(
+                  ValuesUtil.valueExp(v1), 
+                  ValuesUtil.valueExp(v2));
+      then
+        bEq;
+  end matchcontinue;
+end valEqual;
+
 protected function eqModEqual "Returns true if two EqMods are equal"
   input Option<DAE.EqMod> eqMod1;
   input Option<DAE.EqMod> eqMod2;
@@ -2357,48 +2567,59 @@ algorithm
     local 
       Absyn.Exp aexp1,aexp2;
       DAE.Exp exp1,exp2;
+      Option<Values.Value> v1, v2;
 
     // no equ mods
     case(NONE(),NONE()) then true;
 
     // typed equmods
-    case(SOME(DAE.TYPED(modifierAsExp=exp1)),SOME(DAE.TYPED(modifierAsExp=exp2))) 
+    case(SOME(DAE.TYPED(modifierAsExp = exp1, modifierAsValue = v1)),
+         SOME(DAE.TYPED(modifierAsExp = exp2, modifierAsValue = v2))) 
       equation
         equal = Expression.expEqual(exp1,exp2);
-      then equal;
+        // check the values as crefs might have been replaced!
+        true = valEqual(v1, v2, equal);
+      then 
+        true;
 
     // typed vs. untyped equmods
     case(SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp1))),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     case(SOME(DAE.TYPED(exp1,_,_,NONE(),_)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
         aexp1 = Expression.unelabExp(exp1);
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     // untyped vs. typed equmods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(modifierAsAbsynExp=SOME(aexp2)))) 
       equation
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE(),_))) 
       equation
         aexp2 = Expression.unelabExp(exp2);
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     // untyped equmods
     case(SOME(DAE.UNTYPED(exp=aexp1)),SOME(DAE.UNTYPED(exp=aexp2))) 
       equation
-        equal = Absyn.expEqual(aexp1,aexp2);
-      then equal;
+        true = Absyn.expEqual(aexp1,aexp2);
+      then 
+        true;
 
     // anything else will give false
     case(_,_) then false;
+  
   end matchcontinue;
 end eqModEqual;
 
@@ -2435,7 +2656,7 @@ algorithm
       equation
         prefix =  SCodeDump.finalStr(finalPrefix) +& SCodeDump.eachStr(eachPrefix);
         s1 = printSubs1Str(subs);
-        s1_1 = stringDelimitList(s1, ",");
+        s1_1 = stringDelimitList(s1, ", ");
         s1_1 = Util.if_(listLength(subs)>=1," {" +& s1_1 +& "} ",s1_1);
         s2 = printEqmodStr(eq);
         str = stringAppendList({prefix,s1_1,s2});
@@ -2471,32 +2692,26 @@ algorithm
       SCode.Final fp;
       DAE.EqMod eq;
 
-    // 0 since we are only interested in this scopes modifier.
     case(DAE.MOD(subModLst = subs, eqModOption=NONE()),_)
       equation
         str = prettyPrintSubs(subs,depth);
       then 
         str;
 
-    case(DAE.MOD(subModLst = subs, eqModOption=NONE()),_) then "";
-
     case(DAE.MOD(finalPrefix = fp, eqModOption=SOME(eq)),_)
       equation
-        str = Util.if_(SCode.finalBool(fp),"final ","") +& Types.unparseEqMod(eq);
+        str = Util.if_(SCode.finalBool(fp),"final ","") +& " = " +& Types.unparseEqMod(eq);
       then
         str;
 
     case(DAE.REDECL(tplSCodeElementModLst = tup),_)
       equation
-        s1 = stringDelimitList(List.map(List.map(tup,Util.tuple21),SCode.elementName),", ");
-        //print(stringDelimitList(List.map(List.map(tup,Util.tuple21),SCodeDump.printElementStr),",") +& "\n");
-        //s2 = stringDelimitList(List.map1(List.map(tup,Util.tuple22),prettyPrintMod,0),", ");
-        //print(" (depth: " +& intString(depth) +& " (("+&s2+&")))Redeclaration of element(s): " +& s1 +& "\n");
-        //print(" ok\n");
+        str = stringDelimitList(List.map(List.map(tup,Util.tuple21),SCodeDump.unparseElementStr),", ");
       then
-        "redeclare...";
+        str;
     
     case(DAE.NOMOD(),_) then "";
+    
     case(_,_) 
       equation 
         print(" failed prettyPrintMod\n"); 
@@ -2622,14 +2837,14 @@ algorithm
     case DAE.NAMEMOD(ident = n,mod = mod)
       equation
         mod_str = printModStr(mod);
-        res = stringAppend(n, mod_str);
+        res = stringAppend(n +& " ", mod_str);
       then
         res;
     case DAE.IDXMOD(integerLst = ss,mod = mod)
       equation
         str = printSubscriptsStr(ss);
         mod_str = printModStr(mod);
-        res = stringAppend(str, mod_str);
+        res = stringAppend(str +& " ", mod_str);
       then
         res;
   end match;

@@ -229,8 +229,8 @@ public constant Message INVALID_CONNECTOR_VARIABLE = MESSAGE(52, TRANSLATION(), 
   Util.gettext("The type of variables %s (%s) are inconsistent in connect equations"));
 public constant Message TYPE_ERROR = MESSAGE(53, TRANSLATION(), ERROR(),
   Util.gettext("Wrong type on %s, expected %s"));
-public constant Message MODIFY_PROTECTED = MESSAGE(54, TRANSLATION(), ERROR(),
-  Util.gettext("Attempt to modify protected element %s"));
+public constant Message MODIFY_PROTECTED = MESSAGE(54, TRANSLATION(), WARNING(),
+  Util.gettext("Modification or redeclaration of protected elements is not allowed.\n\tElement: %s, modification: %s."));
 public constant Message INVALID_TUPLE_CONTENT = MESSAGE(55, TRANSLATION(), ERROR(),
   Util.gettext("Tuple %s  must contain component references only"));
 public constant Message MISSING_REDECLARE_IN_CLASS_MOD = MESSAGE(56, TRANSLATION(), ERROR(),
@@ -334,7 +334,7 @@ public constant Message CONNECT_OUTER_OUTER = MESSAGE(118, TRANSLATION(), ERROR(
 public constant Message CONNECTOR_ARRAY_NONCONSTANT = MESSAGE(119, TRANSLATION(), ERROR(),
   Util.gettext("in statement %s, subscript %s is not a parameter or constant"));
 public constant Message CONNECTOR_ARRAY_DIFFERENT = MESSAGE(120, TRANSLATION(), ERROR(),
-  Util.gettext("Unmatched dimension in equation connect(%s, %s)"));
+  Util.gettext("Unmatched dimension in equation connect(%s, %s), %s != %s"));
 public constant Message MODIFIER_NON_ARRAY_TYPE_WARNING = MESSAGE(121, TRANSLATION(), WARNING(),
   Util.gettext("Non-array modification '%s' for array component, possibly due to missing 'each'."));
 public constant Message BUILTIN_VECTOR_INVALID_DIMENSIONS = MESSAGE(122, TRANSLATION(), ERROR(),

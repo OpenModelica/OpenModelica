@@ -10298,7 +10298,7 @@ algorithm
       then
         (cache,e,DAE.C_VAR(),attr);
 
-    // a constant with parameter subscript
+    /*/ a constant with parameter subscript
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),DAE.C_PARAM(),_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
       equation
         cr2 = ComponentReference.crefStripLastSubs(cr);
@@ -10307,7 +10307,7 @@ algorithm
         e = ValuesUtil.valueExp(v);
         e = Expression.makeASUB(e, List.map(subsc,Expression.getSubscriptExp));
       then
-        (cache,e,DAE.C_PARAM(),attr);
+        (cache,e,DAE.C_PARAM(),attr);*/
 
     // a constant -> evaluate binding
     case (cache,env,cr,attr as DAE.ATTR(variability = SCode.CONST()),_,_,tt,binding,doVect,Lookup.SPLICEDEXPDATA(_,idTp),_,_,_)
@@ -10315,7 +10315,7 @@ algorithm
         true = Types.equivtypes(tt,idTp);
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG(info));
         e = ValuesUtil.valueExp(v);
-        const = Types.constAnd(DAE.C_CONST(), constSubs);
+        const = DAE.C_CONST(); //Types.constAnd(DAE.C_CONST(), constSubs);
       then
         (cache,e,const,attr);
     

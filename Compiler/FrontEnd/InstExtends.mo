@@ -157,6 +157,7 @@ algorithm
 
         //print("Found " +& cn +& "\n");
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
+        // outermod = mod;
         
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih,outermod,pre,c,impl,info);
         els = updateElementListVisibility(els, vis);
@@ -642,15 +643,17 @@ algorithm
       DAE.Mod cmod, cmod2, mod_rest;
       String id;
       Boolean b;
+      SCode.Mod m;
  
-    case ((comp as SCode.COMPONENT(name = id), cmod, b), _, _)
+    case ((comp as SCode.COMPONENT(name = id, modifications = m), cmod, b), _, _)
       equation
         // Debug.traceln(" comp: " +& id +& " " +& Mod.printModStr(mod));
         // take ONLY the modification from the equation if is typed
+        // cmod2 = Mod.getModifs(inMod, id, m); 
         cmod2 = Mod.lookupCompModificationFromEqu(inMod, id);
         // Debug.traceln("\tSpecific mods on comp: " +&  Mod.printModStr(cmod2));
         cmod = Mod.merge(cmod2, cmod, inEnv, Prefix.NOPRE());
-        mod_rest = Mod.removeMod(inMod, id);
+        mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
       then
         ((comp, cmod, b), mod_rest);
 
@@ -663,7 +666,7 @@ algorithm
     case ((comp as SCode.CLASS(name = id, prefixes = SCode.PREFIXES(replaceablePrefix = SCode.REPLACEABLE(_))), _, b), _, _)
       equation
         DAE.REDECL(_, _, (comp, cmod)::_) = Mod.lookupCompModification(inMod, id);
-        mod_rest = Mod.removeMod(inMod, id);
+        mod_rest = inMod; //mod_rest = Mod.removeMod(inMod, id);
         comp = SCode.renameElement(comp, id);
       then
         ((comp, cmod, b), mod_rest);

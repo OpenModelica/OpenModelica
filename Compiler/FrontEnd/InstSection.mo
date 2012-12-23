@@ -3891,7 +3891,7 @@ algorithm
   _ := matchcontinue(inLhsType, inRhsType, inLhsCref, inRhsCref, inInfo)
     local
       DAE.Type t1, t2;
-      String cs1, cs2, cref_str1, cref_str2;
+      String cs1, cs2, cref_str1, cref_str2, str1, str2;
       list<Integer> dims1, dims2;
 
     case (_, _, _, _, _)
@@ -3924,8 +3924,12 @@ algorithm
         false = (listLength(dims1) + listLength(dims2)) == 0;
         cref_str1 = ComponentReference.printComponentRefStr(inLhsCref);
         cref_str2 = ComponentReference.printComponentRefStr(inRhsCref);
+        str1 = stringDelimitList(List.map(dims1, intString), ", ");
+        str1 = "[" +& str1 +& "]";
+        str2 = stringDelimitList(List.map(dims2, intString), ", ");
+        str2 = "[" +& str2 +& "]";
         Error.addSourceMessage(Error.CONNECTOR_ARRAY_DIFFERENT,
-          {cref_str1, cref_str2}, inInfo);
+          {cref_str1, cref_str2, str1, str2}, inInfo);
       then
         fail();
 

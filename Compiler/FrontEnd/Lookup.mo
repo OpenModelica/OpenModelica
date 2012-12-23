@@ -375,7 +375,8 @@ algorithm
   outCache := inCache;
   */
   // print("Lookup C1: " +& Absyn.pathString(inPath) +& " env: " +& Env.printEnvPathStr(inEnv) +& " msg: " +& boolString(msg) +& "\n"); 
-  (outCache,outClass,outEnv,_) := lookupClass1(inCache,inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
+  (outCache,outClass,outEnv,_) := lookupClass1(inCache, inEnv, inPath, {}, Util.makeStatefulBoolean(false), msg);
+  // outEnv := selectUpdatedEnv(inEnv, outEnv);
   // print("Lookup C2: " +& " outenv: " +& Env.printEnvPathStr(outEnv) +& "\n");
 end lookupClass;
 
@@ -1996,7 +1997,7 @@ algorithm
   end matchcontinue;
 end lookupFunctionsInFrame;
 
-protected function selectUpdatedEnv
+public function selectUpdatedEnv
   input Env.Env inNewEnv;
   input Env.Env inOldEnv;
   output Env.Env outEnv;

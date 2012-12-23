@@ -272,6 +272,18 @@ algorithm
       then 
         (islist, inInstStack);
 
+    // filter out operators
+    case (NFSCodeEnv.CLASS(
+            cls = scls as SCode.CLASS(name = name, restriction = res),  
+            env = env), 
+          _, _, _, _, _)
+      equation
+        true = boolOr(SCode.isOperator(scls), 
+                      stringEq(name, "Complex"));
+        islist = inIScopesAcc;
+      then 
+        (islist, inInstStack);
+
     // extending basic type
     case (NFSCodeEnv.CLASS(
             cls = SCode.CLASS(name = name),  
@@ -591,6 +603,7 @@ algorithm
       list<tuple<Item, Env>> previousItem;
       Infos infos;
       Absyn.Path fullName;
+      SCode.Restriction res;
 
     // A component, look up it's type and instantiate that class.
     case (SCode.COMPONENT(
@@ -640,13 +653,25 @@ algorithm
         islist = Util.if_(List.isEmpty(islist),inIScopesAcc, is::inIScopesAcc);
       then
         (islist, ii);
-
+     
+    // ignore class extends
     case (SCode.CLASS(
             name = name, 
             info = info,
             classDef = SCode.CLASS_EXTENDS(baseClassName = _) 
             ), _, _, _, _, _, _, _, _)
       equation
+      then
+        (inIScopesAcc,inInstStack);
+
+    // ignore operators
+    case (SCode.CLASS(
+            name = name, 
+            info = info,
+            restriction = res 
+            ), _, _, _, _, _, _, _, _)
+      equation
+        true = boolOr(SCode.isOperator(inElement), stringEq(name, "Complex"));
       then
         (inIScopesAcc,inInstStack);
 

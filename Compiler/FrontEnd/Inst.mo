@@ -45,7 +45,7 @@ encapsulated package Inst
   This module uses Lookup to lookup classes and variables from the
   environment defined in Env. It uses Connect for generating equations from
   connect statements. The type system defined in Types is used for
-  variable instantiation and type . DAE.Mod is used for modifiers and
+  variable instantiation and type. DAE.Mod is used for modifiers and
   merging of modifiers.
 
   The extends language feature is performed by InstExtends. Instantiation of
@@ -3522,7 +3522,9 @@ algorithm
 
         //Add variables to env, wihtout type and binding, which will be added
         //later in instElementList (where update_variable is called)"
-        (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, emods, pre, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
+        checkMods = Mod.merge(mods,emods,env2,pre);
+        mods = checkMods;
+        (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
         //Update the modifiers of elements to typed ones, needed for modifiers
         //on components that are inherited.
         (cache,env4,ih,compelts_2) = updateCompeltsMods(cache, env3, ih, pre, extcomps, ci_state, impl);
@@ -3543,9 +3545,6 @@ algorithm
         
         // Debug.fprintln(Flags.INNER_OUTER, "Number of components: " +& intString(listLength(compelts_2_elem)));
         // Debug.fprintln(Flags.INNER_OUTER, stringDelimitList(List.map(compelts_2_elem, SCodeDump.printElementStr), "\n"));
-        
-        checkMods = Mod.merge(mods,emods,env4,pre);
-        mods = checkMods;
         
         //print("To match modifiers,\n" +& Mod.printModStr(checkMods) +& "\n on components: ");
         //print(" (" +& stringDelimitList(List.map(compelts_2_elem,SCode.elementName),", ") +& ") \n");
@@ -3738,7 +3737,6 @@ algorithm
         // elab the modifiers in the parent environment!!
         parentEnv = List.stripFirst(env);
         (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
-        // mods_1 = Mod.merge(mods, buildDerivedModifier(mod_1, cn2), parentEnv, pre);
         // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
         
@@ -4879,18 +4877,6 @@ algorithm
   end matchcontinue;
 end filterConnectionSetCrefs;
 
-protected function buildDerivedModifier
-  input DAE.Mod inMod;
-  input String className;
-  output DAE.Mod outMod;
-algorithm
-  outMod := match(inMod, className)
-    case (DAE.NOMOD(), _) then DAE.NOMOD();
-    case (DAE.MOD(_,_,{},NONE()), _) then DAE.NOMOD();
-    case (inMod, className) then DAE.MOD(SCode.NOT_FINAL(), SCode.NOT_EACH(), {DAE.NAMEMOD(className, inMod)}, NONE());
-  end match;
-end buildDerivedModifier;
-
 protected function partialInstClassdef
 "function: partialInstClassdef
   This function is used by partialInstClassIn for instantiating local
@@ -5044,7 +5030,6 @@ algorithm
         // elab the modifiers in the parent environment!!
         parentEnv = List.stripFirst(env);
         (cache, mod_1) = Mod.elabMod(cache, parentEnv, ih, pre, mod, false, info);
-        // mods_1 = Mod.merge(mods, buildDerivedModifier(mod_1, cn2), parentEnv, pre);
         // print("mods: " +& Absyn.pathString(cn) +& " " +& Mod.printModStr(mods_1) +& "\n");
         mods_1 = Mod.merge(mods, mod_1, parentEnv, pre);
         
@@ -5319,6 +5304,7 @@ algorithm
       InstanceHierarchy ih;
       String name;
       Absyn.Info info;
+      SCode.Final fprefix;
 
     case (cache,env,ih,pre,{},_,_) then (cache,env,ih,{});
       
@@ -5334,13 +5320,14 @@ algorithm
         cref = Absyn.CREF_IDENT(name,{});
         ltmod = List.map1(crefs,getModsForDep,xs);
         cmod2 = List.fold2r(cmod::ltmod,Mod.merge,env,pre,DAE.NOMOD());
+        SCode.PREFIXES(finalPrefix = fprefix) = SCode.elementPrefixes(comp);
 
         //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("REDECL     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
         ErrorExt.setCheckpoint("updateCompeltsMods");
         (cache,env2,ih) = updateComponentsInEnv(cache, env2, ih, pre, 
-          DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), 
+          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), 
           {cref}, ci_state, impl);
         ErrorExt.rollBack("updateCompeltsMods") "roll back any errors";
         (cache,cmod_1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl, info);
@@ -5361,8 +5348,11 @@ algorithm
         false = Mod.isUntypedMod(cmod);
         name = SCode.elementName(comp);
         cref = Absyn.CREF_IDENT(name,{});
+        SCode.PREFIXES(finalPrefix = fprefix) = SCode.elementPrefixes(comp);
 
-        (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, impl);
+        (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, 
+          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()),
+          {cref}, ci_state, impl);
         (cache,env3,ih,res) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, impl);
       then
         (cache,env3,ih,((comp,cmod) :: res));
@@ -5379,12 +5369,15 @@ algorithm
 
         ltmod = List.map1(crefs,getModsForDep,xs);
         cmod2 = List.fold2r(ltmod,Mod.merge,env,pre,DAE.NOMOD());
+        SCode.PREFIXES(finalPrefix = fprefix) = SCode.elementPrefixes(comp);
 
         //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",") +& ") subs: " +& stringDelimitList(List.map(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
 
         (cache,env2,ih) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, impl);
-        (cache,env2,ih) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(SCode.NOT_FINAL(),SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, impl);
+        (cache,env2,ih) = updateComponentsInEnv(cache, env2, ih, pre, 
+          DAE.MOD(fprefix,SCode.NOT_EACH(),{DAE.NAMEMOD(name, cmod)},NONE()),
+          {cref}, ci_state, impl);
 
         (cache,cmod_1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl, info);
         (cache,env3,ih,res) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, impl);
@@ -6703,6 +6696,7 @@ algorithm
       Option<Absyn.Exp> condition;
       InstanceHierarchy ih;
       Env.Cache cache;
+      list<SCode.Ident> named;
 
     // a component
     case (cache,env,ih,mods,pre,ci_state,
@@ -6711,18 +6705,8 @@ algorithm
                                     t,m,comment,condition,info),cmod) :: xs),
           inst_dims,impl)
       equation
-        compmod = Mod.lookupCompModification(mods, n)
-        "PA: PROBLEM, Modifiers should be merged in this phase, but
-         since undeclared components can not be found (is done in this phase)
-         the modifiers can not be elaborated to get a variable binding.
-         Thus, we need to store the merged modifier for elaboration in
-         the next stage.
-
-         Solution: Save all modifiers in environment...
-         Use type T_UNKNOWN instead of as earier trying to instantiate,
-         since instanitation might fail without having correct
-         modifications, e.g. when instanitating a partial class that must
-         be redeclared through a modification" ;
+        // compmod = Mod.getModifs(mods, n, m); 
+        compmod = Mod.lookupCompModification(mods, n);
         cmod_1 = Mod.merge(compmod, cmod, env, pre);
 
         /*
@@ -6744,8 +6728,10 @@ algorithm
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, ci_state, xs, inst_dims, impl);
       then
         (cache,env_2,ih);
+    
     // no components in list
     case (cache,env,ih,_,_,_,{},_,_) then (cache,env,ih);
+    
     // failtrace
     case (cache,env,ih,_,_,_,comps,_,_)
       equation
@@ -7117,12 +7103,12 @@ algorithm
         
         // If the element is protected, and an external modification 
         // is applied, it is an error. 
-        checkProt(vis, mm, vn);
+        checkProt(vis, mm, vn, info);
         
         //Instantiate the component  
         // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
         inst_dims = listAppend(inst_dims,{{}}); 
-        (cache,mod_1) = Mod.updateMod(cache, cenv, ih, pre, mod_1, impl, info);
+        (cache,mod_1) = Mod.updateMod(cache, env2 /* cenv */, ih, pre, mod_1, impl, info);
         
         // print("Before selectModifiers:\n\tmod: " +& Mod.printModStr(mod) +& "\n\t" +&"mod_1: " +& Mod.printModStr(mod_1) +& "\n\t" +&"comp: " +& SCodeDump.unparseElementStr(comp) +& "\n");
         
@@ -9849,14 +9835,6 @@ algorithm
         //print("updateComponentInEnv: NEW ENV:\n" +& Env.printEnvStr(env) +& "\n");
       then
         (cache,env,ih,updatedComps);
-      
-    // If first part of ident is a class, e.g StateSelect.None, nothing to update
-    case (cache,env,ih,_,mods,_,_,_,updatedComps,_)
-      equation
-        id = Absyn.crefFirstIdent(cref);
-        (cache,cl,cenv) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
-      then
-        (cache,env,ih,updatedComps);
 
     // Variable with NONE() element is already instantiated.
     case (cache,env,ih,_,mods,_,_,_,updatedComps,_)
@@ -9900,6 +9878,14 @@ algorithm
         (cache,env_1,ih,updatedComps) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,pf,DAE.ATTR(ct,prl1,var1,dir,io,visibility),info,m,cmod,mods,cref,ci_state,impl,updatedComps);
       then
         (cache,env_1,ih,updatedComps);
+
+    // If first part of ident is a class, e.g StateSelect.None, nothing to update
+    case (cache,env,ih,_,mods,_,_,_,updatedComps,_)
+      equation
+        id = Absyn.crefFirstIdent(cref);
+        (cache,cl,cenv) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
+      then
+        (cache,env,ih,updatedComps);
 
     /*
     case (cache,env,ih,pre,mods,cref,ci_state,impl,updatedComps)
@@ -14846,19 +14832,22 @@ protected function checkProt
   input SCode.Visibility inVisibility;
   input DAE.Mod inMod;
   input DAE.ComponentRef inComponentRef;
+  input Absyn.Info info;
 algorithm
-  _ := matchcontinue (inVisibility,inMod,inComponentRef)
+  _ := matchcontinue (inVisibility,inMod,inComponentRef,info)
     local
       DAE.ComponentRef cref;
-      String str;
-    case (SCode.PUBLIC(),_,cref) then ();
-    case (_,DAE.NOMOD(),_) then ();
-    case (SCode.PROTECTED(),_,cref)
+      String str1, str2;
+    case (SCode.PUBLIC(),_,cref,_) then ();
+    case (_,DAE.NOMOD(),_,_) then ();
+    case (_,DAE.MOD(_, _, {}, NONE()),_,_) then ();
+    case (SCode.PROTECTED(),_,cref,_)
       equation
-        str = ComponentReference.printComponentRefStr(cref);
-        Error.addMessage(Error.MODIFY_PROTECTED, {str});
+        str1 = ComponentReference.printComponentRefStr(cref);
+        str2 = Mod.prettyPrintMod(inMod, 0);
+        Error.addSourceMessage(Error.MODIFY_PROTECTED, {str1, str2}, info);
       then
-        fail();
+        ();
   end matchcontinue;
 end checkProt;
 
