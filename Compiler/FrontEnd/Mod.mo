@@ -2738,16 +2738,13 @@ algorithm str := matchcontinue(inSubs,depth)
   case({},_) then "";
   case((s as DAE.NAMEMOD(id,(m as DAE.REDECL(finalPrefix=_))))::subs,_)
     equation
-      //s1 = prettyPrintSubs(subs);
-      //s2  = prettyPrintMod(m,depth+1);
-      //s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
       s2 = " redeclare(" +& id +&  "), class or component " +& id;
     then
       s2;
   case((s as DAE.NAMEMOD(id,m))::subs,_)
     equation
       s2  = prettyPrintMod(m,depth+1);
-      s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
+      s2 = Util.if_(stringLength(s2) == 0, "", s2);
       s2 = "(" +& id +& s2 +& "), class or component " +& id;
     then
       s2;
@@ -2755,7 +2752,7 @@ algorithm str := matchcontinue(inSubs,depth)
     equation
       //s1 = prettyPrintSubs(subs);
       s2  = prettyPrintMod(m,depth+1);
-      s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& " = " +& s2;
+      s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& s2;
     then
       s1;
 end matchcontinue;
@@ -2787,7 +2784,7 @@ algorithm
     case(DAE.NAMEMOD(id,m))
       equation
         s2  = prettyPrintMod(m,0);
-        s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
+        s2 = Util.if_(stringLength(s2) == 0, "", s2);
         s2 = id +& s2;
       then
         s2;
@@ -2795,7 +2792,7 @@ algorithm
     case(DAE.IDXMOD(li,m))
       equation
         s2  = prettyPrintMod(m,0);
-        s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& " = " +& s2;
+        s1 = "["+& stringDelimitList(List.map(li,intString),",")+&"]" +& s2;
       then
         s1;
     
