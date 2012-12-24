@@ -330,7 +330,7 @@ typedef struct MODEL_DATA
   modelica_string_t modelGUID;
 
   fortran_integer nStates;
-  long nVariablesReal; /* all Real Variables of the model (states,statesderivatives,algebraics) */
+  long nVariablesReal;          /* all Real Variables of the model (states, statesderivatives, algebraics) */
   long nVariablesInteger;
   long nVariablesBoolean;
   long nVariablesString;
@@ -340,22 +340,23 @@ typedef struct MODEL_DATA
   long nParametersString;
   long nInputVars;
   long nOutputVars;
-  long nHelpVars;   /* results of relations in when equation */
+  long nHelpVars;               /* results of relations in when equation */
 
   long nZeroCrossings;
   long nSamples;
   long nRelations;
-  long nMathEvents;         /* number of math triggering functions e.g. cail, floor, integer */
+  long nMathEvents;             /* number of math triggering functions e.g. cail, floor, integer */
   long nDelayExpressions;
-  long nInitEquations;      /* number of initial equations */
-  long nInitAlgorithms;     /* number of initial algorithms */
-  long nInitResiduals;      /* number of initial residuals */
+  long nInitEquations;          /* number of initial equations */
+  long nInitAlgorithms;         /* number of initial algorithms */
+  long nInitResiduals;          /* number of initial residuals */
   long nExtObjs;
   long nFunctions;
   long nEquations;
   long nProfileBlocks;
   long nNonLinearSystems;
   long nStateSets;
+  long nInlineVars;             /* number of additional variables for the inline solverr */
 
   long nAliasReal;
   long nAliasInteger;
@@ -448,6 +449,8 @@ typedef struct SIMULATION_DATA
   modelica_integer* integerVars;
   modelica_boolean* booleanVars;
   modelica_string* stringVars;
+  
+  modelica_real* inlineVars;  /* needed for the inline solver */
 
 }SIMULATION_DATA;
 

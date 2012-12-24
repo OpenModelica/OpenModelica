@@ -282,6 +282,7 @@ template populateModelInfo(ModelInfo modelInfo, String fileNamePrefix, String gu
     data->modelData.nEquations = <%varInfo.numEquations%>;
     data->modelData.nNonLinearSystems = <%varInfo.numNonLinearResFunctions%>;
     data->modelData.nStateSets = <%varInfo.numStateSets%>;
+    data->modelData.nInlineVars = <%varInfo.numInlineVars%>;
     
     data->modelData.nDelayExpressions = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
 
@@ -371,17 +372,22 @@ template variableDefinitions(ModelInfo modelInfo)
       
       /* States */
       <%vars.stateVars |> var =>
-        globalDataVarDefine(var, "realVars",0)
+        globalDataVarDefine(var, "realVars", 0)
       ;separator="\n"%>
       
       /* StatesDerivatives */
       <%vars.derivativeVars |> var =>
-        globalDataVarDefine(var, "realVars",numStateVars)
+        globalDataVarDefine(var, "realVars", numStateVars)
+      ;separator="\n"%>
+      
+      /* InlineSolver Vars */
+      <%vars.inlineVars |> var =>
+        globalDataVarDefine(var, "inlineVars", 0)
       ;separator="\n"%>
       
       /* Algebraic Vars */
       <%vars.algVars |> var =>
-        globalDataVarDefine(var, "realVars",intMul(2,numStateVars))
+        globalDataVarDefine(var, "realVars", intMul(2, numStateVars))
       ;separator="\n"%>
       
       /* Algebraic Parameter */
@@ -928,9 +934,10 @@ template functionExtraResiduals(list<SimEqSystem> allEquations)
 end functionExtraResiduals;
 
 // =============================================================================
-//
 // section for State Sets
 //
+// This section generates the followng c functions:
+//   - void initializeStateSets(STATE_SET_DATA* statesetData, DATA *data)
 // =============================================================================
 
 template functionInitialStateSets(list<StateSet> stateSets)
@@ -974,7 +981,11 @@ end functionInitialStateSets;
 // =============================================================================
 // section for initialization
 //
-// This is all the stuff to generate the c code for the initialization.
+// This section generates the followng c functions:
+//   - int updateBoundStartValues(DATA *data)
+//   - int updateBoundParameters(DATA *data)
+//   - int initial_residual(DATA *data, double *initialResiduals)
+//   - int functionInitialEquations(DATA *data)
 // =============================================================================
 
 template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
@@ -1006,6 +1017,34 @@ template functionUpdateBoundStartValues(list<SimEqSystem> startValueEquations)
   }
   >>
 end functionUpdateBoundStartValues;
+
+template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
+  "Generates function in simulation file."
+::=
+  let () = System.tmpTickReset(0)
+  let &varDecls = buffer "" /*BUFD*/
+  let &tmp = buffer ""
+  /*TODO: make possible to call updateBoundParameters 
+   *      discrete and continuous for current initialization.
+   *      currently it only possible to call it with discontinuities
+   */ 
+  let body = (parameterEquations |> eq  =>
+      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
+    ;separator="\n")  
+  <<
+  <%&tmp%>
+  int updateBoundParameters(DATA *data)
+  {
+    state mem_state;
+    <%varDecls%>
+    mem_state = get_memory_state();
+    <%body%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionUpdateBoundParameters;
 
 template functionInitialResidualBody(SimEqSystem eq, Text &varDecls /*BUFP*/, Text &eqs)
  "Generates an equation."
@@ -1118,7 +1157,8 @@ end functionInitialEquations;
 // =============================================================================
 // section for inline solver
 //
-// This is all the stuff to generate the c code for the inline solver.
+// This section generates the followng c functions:
+//   - int functionInlineEquations(DATA *data)
 // =============================================================================
 
 template functionInlineEquations(list<SimEqSystem> inlineEquations)
@@ -1145,34 +1185,6 @@ template functionInlineEquations(list<SimEqSystem> inlineEquations)
   }
   >>
 end functionInlineEquations;
-
-template functionUpdateBoundParameters(list<SimEqSystem> parameterEquations)
-  "Generates function in simulation file."
-::=
-  let () = System.tmpTickReset(0)
-  let &varDecls = buffer "" /*BUFD*/
-  let &tmp = buffer ""
-  /*TODO: make possible to call updateBoundParameters 
-   *      discrete and continuous for current initialization.
-   *      currently it only possible to call it with discontinuities
-   */ 
-  let body = (parameterEquations |> eq  =>
-      equation_(eq, contextSimulationDiscrete, &varDecls /*BUFD*/, &tmp)
-    ;separator="\n")  
-  <<
-  <%&tmp%>
-  int updateBoundParameters(DATA *data)
-  {
-    state mem_state;
-    <%varDecls%>
-    mem_state = get_memory_state();
-    <%body%>
-    restore_memory_state(mem_state);
-  
-    return 0;
-  }
-  >>
-end functionUpdateBoundParameters;
 
 template functionStoreDelayed(DelayedExpression delayed)
   "Generates function in simulation file."
