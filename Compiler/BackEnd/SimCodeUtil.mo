@@ -2384,7 +2384,20 @@ algorithm
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
       then
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1,itempvars);
-        
+
+        // inverse Algorithm for single variable.
+    case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),_, _, false, _,_,_)
+      equation
+        BackendDAE.ALGORITHM(alg=alg,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        varOutput::{} = CheckModel.algorithmOutputs(alg);
+        v = BackendVariable.getVarAt(vars,varNum);
+        // We need to solve an inverse problem of an algorithm section.
+        false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+        algStatements = solveAlgorithmInverse(algStatements,{v});
+      then
+        ({SimCode.SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1,itempvars);
+
         // inverse Algorithm for single variable.
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),_, _, false, _,_,_)
       equation
@@ -2421,6 +2434,18 @@ algorithm
         v = BackendVariable.getVarAt(vars,varNum);
         // We need to solve an inverse problem of an algorithm section.
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+        algStatements = solveAlgorithmInverse(algStatements,{v});
+      then
+        ({SimCode.SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1,itempvars);        
+        // inverse Algorithm for single variable.
+    case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns),_, _, true, _,_,_)
+      equation
+        BackendDAE.ALGORITHM(alg=alg,source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        varOutput::{} = CheckModel.algorithmOutputs(alg);
+        v = BackendVariable.getVarAt(vars,varNum);
+        // We need to solve an inverse problem of an algorithm section.
+        false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v),varOutput);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = ComponentReference.printComponentRefStr(BackendVariable.varCref(v));
         message = stringAppendList({"Inverse Algorithm needs to be solved for ",message," in ",algStr,". This has not been implemented yet.\n"});
@@ -2428,6 +2453,34 @@ algorithm
       then fail();
   end matchcontinue;
 end createEquation;
+
+protected function solveAlgorithmInverse
+  input list<DAE.Statement> inStmts;
+  input list<BackendDAE.Var> solveFor;
+  output list<DAE.Statement> outStmts;
+algorithm
+  outStmts := matchcontinue (inStmts, solveFor)
+    local
+      DAE.ComponentRef cr;
+      DAE.Exp e1,e2,varexp,exp;
+      DAE.ElementSource source;
+      list<DAE.Statement> asserts;
+      BackendDAE.Var v;
+      DAE.Type tp;
+
+        // Algorithm for single variable.
+    case (DAE.STMT_ASSIGN(exp1=e1,exp=e2,source=source)::{}, ( v as BackendDAE.VAR(varName=cr))::{})
+      equation
+        varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        (exp,asserts) = ExpressionSolve.solve(e1, e2, varexp);
+        cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
+        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp, asserts);
+        tp = Expression.typeof(varexp); 
+      then
+        {DAE.STMT_ASSIGN(tp,varexp,exp,source)};
+  end matchcontinue;
+end solveAlgorithmInverse;
 
 protected function createSampleEquations
 " function: createSampleEquations
@@ -6707,6 +6760,17 @@ algorithm
       then 
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1);
         
+        // inverse Algorithm for single variable.
+    case (BackendDAE.ALGORITHM(alg=alg)::_,_,false,_)
+      equation
+        solvedVars = List.map(vars,BackendVariable.varCref);
+        algOutVars = CheckModel.algorithmOutputs(alg);
+        // We need to solve an inverse problem of an algorithm section.
+        DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
+        algStatements = solveAlgorithmInverse(algStatements,vars);
+      then
+        ({SimCode.SES_ALGORITHM(iuniqueEqIndex,algStatements)},iuniqueEqIndex+1);
+                
         // Error message, inverse algorithms not supported yet
     case (BackendDAE.ALGORITHM(alg=alg,source=source)::_,_,_,_)
       equation
