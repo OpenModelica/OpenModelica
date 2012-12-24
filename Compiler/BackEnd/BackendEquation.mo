@@ -1642,12 +1642,47 @@ public function getEqns "function: getEqns
   input list<Integer> inIndxes;
   input BackendDAE.EquationArray inEquationArray;
   output list<BackendDAE.Equation> outEqns;
-protected
-  list<Integer> indxs;
 algorithm
-  indxs := List.map1(inIndxes, intSub, 1);
-  outEqns := List.map1r(indxs, BackendDAEUtil.equationNth, inEquationArray);  
+  outEqns := List.map1r(inIndxes, equationNth, inEquationArray);  
 end getEqns;
+  
+public function equationNth "function: equationNth
+  author: PA
+
+  Return the n:th equation from the expandable equation array
+  indexed from 1..n.
+
+  inputs:  (EquationArray, int /* n */)
+  outputs:  Equation
+
+"
+  input BackendDAE.EquationArray inEquationArray;
+  input Integer pos;
+  output BackendDAE.Equation outEquation;
+algorithm
+  outEquation:=
+  matchcontinue (inEquationArray,pos)
+    local
+      BackendDAE.Equation e;
+      Integer n;
+      array<Option<BackendDAE.Equation>> arr;
+      String str;
+      
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n,equOptArr = arr),_)
+      equation
+        true = intLe(pos,n);
+        SOME(e) = arr[pos];
+      then
+        e;
+    case (BackendDAE.EQUATION_ARRAY(numberOfElement = n),_)
+      equation
+        str = "BackendDAEUtil.equationNth failed; numberOfElement=" +& intString(n) +& "; pos=" +& intString(pos);
+        print(str +& "\n");
+        Error.addMessage(Error.INTERNAL_ERROR,{str});
+      then
+        fail();
+  end matchcontinue;
+end equationNth;
   
 public function equationDelete "function: equationDelete
   author: Frenkel TUD 2010-12

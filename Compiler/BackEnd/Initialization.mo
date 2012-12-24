@@ -55,6 +55,7 @@ protected import Error;
 protected import Expression;
 protected import Flags;
 protected import List;
+protected import System;
 
 // =============================================================================
 // section for all public functions
@@ -76,7 +77,7 @@ protected
 algorithm
   dae := inlineWhenForInitialization(inDAE);
   Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpBackendDAE, dae, "inlineWhenForInitialization");
-  
+
   initVars := selectInitializationVariablesDAE(dae);
   Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
 
@@ -114,11 +115,12 @@ protected
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.EquationArray eqns;
   BackendDAE.StateSets stateSets;
+  list<BackendDAE.Equation> eqnlst;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inEqSystem;
   
-  eqns := BackendEquation.emptyEqns();
-  eqns := BackendEquation.traverseBackendDAEEqns(orderedEqs, inlineWhenForInitialization2, eqns);
+  eqnlst := BackendEquation.traverseBackendDAEEqns(orderedEqs, inlineWhenForInitialization2, {});
+  eqns := BackendEquation.listEquation(eqnlst);
 
   outEqSystem := BackendDAE.EQSYSTEM(orderedVars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),stateSets);
 end inlineWhenForInitialization1;
@@ -126,28 +128,25 @@ end inlineWhenForInitialization1;
 protected function inlineWhenForInitialization2 "function inlineWhenForInitialization2
   author: lochel
   This is a helper function for inlineWhenForInitialization1."
-  input tuple<BackendDAE.Equation, BackendDAE.EquationArray> inTpl;
-  output tuple<BackendDAE.Equation, BackendDAE.EquationArray> outTpl;
+  input tuple<BackendDAE.Equation, list<BackendDAE.Equation>> inTpl;
+  output tuple<BackendDAE.Equation, list<BackendDAE.Equation>> outTpl;
 protected
-  BackendDAE.Equation eqn, eqn1;
-  BackendDAE.EquationArray eqns;
-  Boolean isWhen, isAlg;
+  BackendDAE.Equation eqn;
+  list<BackendDAE.Equation> eqnlst;
 algorithm
-  (eqn, eqns) := inTpl;
-
-  eqn1 := inlineWhenForInitialization3(eqn);
-  eqns := BackendEquation.equationAdd(eqn1, eqns);
-  
-  outTpl := (eqn, eqns);
+  (eqn, eqnlst) := inTpl;
+  eqnlst := inlineWhenForInitialization3(eqn,eqnlst);
+  outTpl := (eqn, eqnlst);
 end inlineWhenForInitialization2;
 
 protected function inlineWhenForInitialization3 "function inlineWhenForInitialization3
   author: lochel
   This is a helper function for inlineWhenForInitialization2."
   input BackendDAE.Equation inEqn;
-  output BackendDAE.Equation outEqn;
+  input list<BackendDAE.Equation> iEqns;
+  output list<BackendDAE.Equation> outEqns;
 algorithm
-  outEqn := matchcontinue(inEqn)
+  outEqns := matchcontinue(inEqn,iEqns)
     local
       DAE.Exp condition        "The when-condition" ;
       DAE.ComponentRef left    "Left hand side of equation" ;
@@ -158,28 +157,36 @@ algorithm
       DAE.Algorithm alg;
       Integer size;
       list< DAE.Statement> stmts;
+      list< BackendDAE.Equation> eqns;
       
     // active when equation during initialization
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
-      true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
-      identType = ComponentReference.crefType(left);
-      eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), right, source, false);
-    then eqn;
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source),_)
+      equation
+        true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
+        identType = ComponentReference.crefType(left);
+        eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), right, source, false);
+      then
+        eqn::iEqns;
     
     // inactive when equation during initialization
-    case BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source) equation
-      false = Expression.containsInitialCall(condition, false);
-      eqn = generateInactiveWhenEquationForInitialization(left, source);
-    then eqn;
+    case (BackendDAE.WHEN_EQUATION(whenEquation=BackendDAE.WHEN_EQ(condition=condition, left=left, right=right), source=source),_)
+      equation
+        false = Expression.containsInitialCall(condition, false);
+        eqn = generateInactiveWhenEquationForInitialization(left, source);
+      then
+        eqn::iEqns;
     
     // algorithm
-    case BackendDAE.ALGORITHM(size=size, alg=alg, source=source) equation
-      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
-      stmts = generateInitialWhenAlg(stmts);
-      alg = DAE.ALGORITHM_STMTS(stmts);
-    then BackendDAE.ALGORITHM(size, alg, source);
+    case (BackendDAE.ALGORITHM(size=size, alg=alg, source=source),_)
+      equation
+        DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
+        (stmts,eqns) = generateInitialWhenAlg(stmts,iEqns);
+        alg = DAE.ALGORITHM_STMTS(stmts);
+        eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source), eqns);
+    then
+       eqns;
     
-    else then inEqn;
+    else then inEqn::iEqns;
   end matchcontinue;
 end inlineWhenForInitialization3;
 
@@ -188,9 +195,11 @@ protected function generateInitialWhenAlg "function generateInitialWhenAlg
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
   This is a helper function for inlineWhenForInitialization3."
   input list< DAE.Statement> inStmts;
+  input list< BackendDAE.Equation> iEqns;
   output list< DAE.Statement> outStmts;
+  output list< BackendDAE.Equation> oEqns;
 algorithm
-  outStmts := matchcontinue(inStmts)
+  (outStmts,oEqns) := matchcontinue(inStmts,iEqns)
     local
       DAE.Exp condition        "The when-condition" ;
       DAE.ComponentRef left    "Left hand side of equation" ;
@@ -205,30 +214,47 @@ algorithm
       DAE.Algorithm alg;
       DAE.ElementSource source "origin of when-stmt";
       DAE.ElementSource algSource "origin of algorithm";
+      list< BackendDAE.Equation> eqns;
       
-    case {} then {};
+    case ({},_) then ({},iEqns);
     
     // active when equation during initialization
-    case DAE.STMT_WHEN(exp=condition, statementLst=stmts)::rest equation
-      true = Expression.containsInitialCall(condition, false);
-      rest = generateInitialWhenAlg(rest);
-      stmts = listAppend(stmts, rest);
-    then stmts;
-    
+    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts)::rest,_)
+      equation
+        true = Expression.containsInitialCall(condition, false);
+        (rest,eqns) = generateInitialWhenAlg(rest,iEqns);
+        stmts = listAppend(stmts, rest);
+      then
+       (stmts,eqns);
+
+    // single inactive when equation during initialization
+    case (((stmt as (DAE.STMT_WHEN(exp=condition, source=source)))::{}),_)
+      equation
+        false = Expression.containsInitialCall(condition, false);
+        crefLst = CheckModel.algorithmStatementListOutputs({stmt});
+        eqns = List.map1(crefLst, generateInactiveWhenEquationForInitialization, source);
+        eqns = listAppend(iEqns,eqns);
+      then
+        ({},eqns); 
+            
     // inactive when equation during initialization
-    case ((stmt as (DAE.STMT_WHEN(exp=condition, source=source)))::rest) equation
-      false = Expression.containsInitialCall(condition, false);
-      crefLst = CheckModel.algorithmStatementListOutputs({stmt});
-      stmts = List.map1(crefLst, generateInactiveWhenAlgStatementForInitialization, source);
-      rest = generateInitialWhenAlg(rest);
-      stmts = listAppend(stmts, rest);
-    then stmts;
+    case (((stmt as (DAE.STMT_WHEN(exp=condition, source=source)))::rest),_)
+      equation
+        false = Expression.containsInitialCall(condition, false);
+        crefLst = CheckModel.algorithmStatementListOutputs({stmt});
+        stmts = List.map1(crefLst, generateInactiveWhenAlgStatementForInitialization, source);
+        (rest,eqns) = generateInitialWhenAlg(rest,iEqns);
+        stmts = listAppend(stmts, rest);
+      then
+        (stmts,eqns);
     
     // no when equation
-    case stmt::rest equation
-      // false = isWhenStmt(stmt);
-      rest = generateInitialWhenAlg(rest);
-    then stmt::rest;
+    case (stmt::rest,_)
+      equation
+        // false = isWhenStmt(stmt);
+        (rest,eqns) = generateInitialWhenAlg(rest,iEqns);
+      then 
+        (stmt::rest,eqns);
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function generateInitialWhenAlg failed"});
@@ -281,12 +307,13 @@ protected function selectInitializationVariablesDAE "function selectInitializati
   output BackendDAE.Variables outVars;
 protected
   BackendDAE.EqSystems systs;
-  BackendDAE.Variables knownVars;
+  BackendDAE.Variables knownVars,alias;
 algorithm
-  BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knownVars)) := inDAE;
+  BackendDAE.DAE(systs, BackendDAE.SHARED(knownVars=knownVars,aliasVars=alias)) := inDAE;
   outVars := selectInitializationVariables(systs);
   outVars := BackendVariable.traverseBackendDAEVars(knownVars, selectInitializationVariables2, outVars);
-  /* what is with alias variables, I guess this one should also be checked */
+  /* what is with alias variables, I guess this one should also be checked for unfixed discrete */
+  outVars := BackendVariable.traverseBackendDAEVars(alias, selectInitializationVariables2, outVars);
 end selectInitializationVariablesDAE;
 
 protected function selectInitializationVariables "function selectInitializationVariables
@@ -305,10 +332,32 @@ protected function selectInitializationVariables1 "function selectInitialization
   output BackendDAE.Variables outVars;
 protected
   BackendDAE.Variables vars;
+  BackendDAE.StateSets stateSets;
 algorithm
-  BackendDAE.EQSYSTEM(orderedVars=vars) := inEqSystem;
+  BackendDAE.EQSYSTEM(orderedVars=vars,stateSets=stateSets) := inEqSystem;
   outVars := BackendVariable.traverseBackendDAEVars(vars, selectInitializationVariables2, inVars);
+  // ignore not the states of the statesets
+  outVars := List.fold(stateSets,selectInitialStateSetVars,outVars);
 end selectInitializationVariables1;
+
+protected function selectInitialStateSetVars
+  input BackendDAE.StateSet inSet;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Variables outVars;
+protected
+  list< BackendDAE.Var> statescandidates;
+algorithm
+  BackendDAE.STATESET(statescandidates=statescandidates) := inSet;
+  outVars := List.fold(statescandidates,selectInitialStateSetVar,inVars);
+end selectInitialStateSetVars;
+
+protected function selectInitialStateSetVar
+  input BackendDAE.Var inVar;
+  input BackendDAE.Variables inVars;
+  output BackendDAE.Variables outVars;
+algorithm
+  ((_,outVars)) := selectInitializationVariables2((inVar,inVars));
+end selectInitialStateSetVar;
 
 protected function selectInitializationVariables2 "function selectInitializationVariables2
   author: lochel"
@@ -324,8 +373,10 @@ algorithm
       DAE.InstDims arryDim;
     
     // unfixed state
-    case((var as BackendDAE.VAR(varKind=BackendDAE.STATE()), vars)) equation
+    case((var as BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE()), vars)) equation
       false = BackendVariable.varFixed(var);
+      // ignore stateset variables
+      false = isStateSetVar(cr);
       vars = BackendVariable.addVar(var, vars);
     then ((var, vars));
     
@@ -347,6 +398,23 @@ algorithm
     then inTpl;
   end matchcontinue;
 end selectInitializationVariables2;
+
+protected function isStateSetVar
+  input DAE.ComponentRef cr;
+  output Boolean isStateSet;
+algorithm
+  isStateSet := match(cr)
+    local 
+      DAE.Ident ident;
+      Integer i;
+    case DAE.CREF_QUAL(ident=ident)
+      equation
+        i = System.strncmp("$STATESET",ident,9);
+      then
+        intEq(i,0);
+    else then false;
+  end match;
+end isStateSetVar;
 
 // =============================================================================
 // 
@@ -599,6 +667,7 @@ algorithm
       BackendDAE.EquationArray eqns;
       BackendDAE.BackendDAE inDAE;
       BackendDAE.Shared shared;
+      DAE.ComponentRef cr,pcr;
       
     // over-determined system
     case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared,(inDAE,initVars)))
@@ -609,6 +678,23 @@ algorithm
       
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Trying to fix over-determined initial system... [not implemented yet!]");
       then fail();
+
+    // under-determined system with var = pre(var) and only var and pre(var) 
+    case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared,(inDAE,initVars)))
+      equation
+        2 = BackendVariable.varsSize(vars);
+        1 = BackendDAEUtil.equationSize(eqns);
+        
+        // var = pre(var)
+        BackendDAE.EQUATION(exp=DAE.CREF(componentRef=cr),scalar=DAE.CREF(componentRef=DAE.CREF_QUAL(ident="$PRE",componentRef=pcr))) = BackendEquation.equationNth(eqns,1);
+        true = ComponentReference.crefEqualNoStringCompare(cr, pcr);
+        
+        // return empty system
+        vars = BackendVariable.emptyVars();
+        eqns = BackendEquation.emptyEqns();
+        system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
+    then
+       (system,(shared,(inDAE,initVars)));
     
     // under-determined system  
     case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared,(inDAE,initVars)))
@@ -620,6 +706,7 @@ algorithm
         (true, vars, eqns) = fixUnderDeterminedInitialSystem(inDAE, vars, eqns, initVars);
       
         system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
+        (system,_, _) = BackendDAEUtil.getIncidenceMatrix(system, BackendDAE.NORMAL());
     then
        (system,(shared,(inDAE,initVars)));
 
