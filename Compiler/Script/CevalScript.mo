@@ -501,7 +501,7 @@ algorithm
         DAE.RCONST(r) = getConst(exp, inExpType);
         r = realNeg(r);
       then 
-        DAE.ICONST(r);
+        DAE.RCONST(r);
     
     case (Absyn.INTEGER(i), DAE.T_INTEGER(source = _))  then DAE.ICONST(i);
     case (Absyn.REAL(r),    DAE.T_REAL(source = _)) then DAE.RCONST(r);
