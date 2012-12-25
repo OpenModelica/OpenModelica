@@ -489,6 +489,20 @@ algorithm
       Integer i; Real r;
       Absyn.Exp exp;
     
+    case (Absyn.UNARY(Absyn.SUB(),exp), _)
+      equation
+        DAE.ICONST(i) = getConst(exp, inExpType);
+        i = intNeg(i);
+      then 
+        DAE.ICONST(i);
+    
+    case (Absyn.UNARY(Absyn.SUB(),exp), _)
+      equation
+        DAE.RCONST(r) = getConst(exp, inExpType);
+        r = realNeg(r);
+      then 
+        DAE.ICONST(r);
+    
     case (Absyn.INTEGER(i), DAE.T_INTEGER(source = _))  then DAE.ICONST(i);
     case (Absyn.REAL(r),    DAE.T_REAL(source = _)) then DAE.RCONST(r);
         
