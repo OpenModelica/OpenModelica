@@ -12328,7 +12328,7 @@ public function optimizeInitialSystem
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
 algorithm
-  outDAE := match (inDAE)
+  outDAE := matchcontinue (inDAE)
     local
       BackendDAE.EqSystems systs;
       BackendDAE.Variables knvars;
@@ -12338,6 +12338,7 @@ algorithm
       Boolean optimizationfound;
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knownVars=knvars,initialEqs=inieqns)))
       equation
+        false = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
         // search 
         initalAliases = HashTable2.emptyHashTable();
         eqnlst = BackendEquation.equationList(inieqns);
@@ -12345,7 +12346,8 @@ algorithm
       then
         // do optimization
         optimizeInitialSystemWork(optimizationfound,inDAE,eqnlst,initalAliases);
-  end match;
+    else then inDAE;
+  end matchcontinue;
 end optimizeInitialSystem;
 
 protected function optimizeInitialSystemWork
