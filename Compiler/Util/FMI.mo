@@ -184,4 +184,15 @@ algorithm
   end match;
 end getFMIType;
 
+public function getFMIVersion
+  input Info inFMIInfo;
+  output String fmiVersion;
+algorithm
+  fmiVersion := match(inFMIInfo)
+    local
+      String version;
+    case (INFO(fmiVersion = version)) then version;
+  end match;
+end getFMIVersion;
+
 end FMI;

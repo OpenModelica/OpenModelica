@@ -56,7 +56,8 @@ public function releaseFMIImport
   input Option<Integer> inFMIModelVariablesInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
   input Option<Integer> inFMIInstance "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
   input Option<Integer> inFMIContext "Stores a pointer. If it is declared as Integer, it is truncated to 32-bit.";
-  external "C" FMIImpl__releaseFMIImport(inFMIModelVariablesInstance, inFMIInstance, inFMIContext) annotation(Library = {"omcruntime","fmilib"});
+  input String inFMIVersion;
+  external "C" FMIImpl__releaseFMIImport(inFMIModelVariablesInstance, inFMIInstance, inFMIContext, inFMIVersion) annotation(Library = {"omcruntime","fmilib"});
 end releaseFMIImport;
 
 end FMIExt;

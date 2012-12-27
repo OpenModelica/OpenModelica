@@ -1527,15 +1527,16 @@ algorithm
         pd = System.pathDelimiter();
         str1 = FMI.getFMIModelIdentifier(fmiInfo);
         str2 = FMI.getFMIType(fmiInfo);
+        str3 = FMI.getFMIVersion(fmiInfo);
         outputFile = stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"});
         filename_1 = Util.if_(b1,stringAppendList({workdir,pd,str1,"_",str2,"_FMU.mo"}),stringAppendList({str1,"_",str2,"_FMU.mo"}));
         System.writeFile(outputFile, str);
         /* Release FMI objects */
-        FMIExt.releaseFMIImport(SOME(fmiModelVariablesInstance), SOME(fmiInstance), SOME(fmiContext));
+        FMIExt.releaseFMIImport(SOME(fmiModelVariablesInstance), SOME(fmiInstance), SOME(fmiContext), str3);
       then
         (cache,Values.STRING(filename_1),st);
         
-    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)},st,_)
       equation
         false = System.regularFileExists(filename);
         Error.clearMessages() "Clear messages";
@@ -1543,7 +1544,7 @@ algorithm
       then
         (cache,Values.STRING(""),st);
     
-    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2)},st,_)
+    case (cache,env,"importFMU",{Values.STRING(filename),Values.STRING(workdir),Values.INTEGER(fmiLogLevel),Values.BOOL(b1), Values.BOOL(b2), Values.BOOL(inputConnectors), Values.BOOL(outputConnectors)},st,_)
       then
         (cache,Values.STRING(""),st);
         

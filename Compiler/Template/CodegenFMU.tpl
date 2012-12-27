@@ -1346,6 +1346,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
   >>
 end importFMU1ModelExchange;
 
+/* Fix the FMI 2.0 code generation. The one below is just the copy of FMI 1.0. Also write the wrapper C files for it. */
 template importFMU2ModelExchange(FmiImport fmi)
  "Generates Modelica code for FMI Model Exchange version 2.0"
 ::=
