@@ -304,11 +304,12 @@ function linspace
   input Real x2 "end";
   input Integer n "number";
   output Real v[n];
-annotation(Documentation(info="<html>
+
+annotation(__OpenModelica_EarlyInline=true,Documentation(info="<html>
   See <a href=\"modelica://ModelicaReference.Operators.'linspace()'\">linspace()</a>
 </html>"));
 algorithm
-  assert(n >= 2, "linspace requires n>=2 but got " + String(n));
+  // assert(n >= 2, "linspace requires n>=2 but got " + String(n));
   v := {x1 + (x2-x1)*(i-1)/(n-1) for i in 1:n};
 end linspace;
 

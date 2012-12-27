@@ -1466,6 +1466,33 @@ algorithm
   DAE.ARRAY(array=es) := e;
 end getArrayContents;
 
+public function getArrayOrRangeContents "returns the list of expressions in the array"
+  input DAE.Exp e;
+  output list<DAE.Exp> es;
+algorithm
+  es := match e
+    local
+      Boolean bstart,bstep,bstop;
+      Integer istart,istep,istop;
+      Real rstart,rstep,rstop;
+    case DAE.ARRAY(array=es) then es;
+    case DAE.RANGE(DAE.T_BOOL(varLst = _), DAE.BCONST(bstart), NONE(), DAE.BCONST(bstop))
+      then List.map(ExpressionSimplify.simplifyRangeBool(bstart, bstop), makeBoolExp);
+      
+    case DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),NONE(),DAE.ICONST(istop))
+      then List.map(ExpressionSimplify.simplifyRange(istart,1,istop), makeIntegerExp);
+        
+    case DAE.RANGE(DAE.T_INTEGER(varLst = _),DAE.ICONST(istart),SOME(DAE.ICONST(istep)),DAE.ICONST(istop))
+      then List.map(ExpressionSimplify.simplifyRange(istart,istep,istop), makeIntegerExp);
+    
+    case DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),NONE(),DAE.RCONST(rstop))
+      then List.map(ExpressionSimplify.simplifyRangeReal(rstart,1.0,rstop), makeRealExp);
+        
+    case DAE.RANGE(DAE.T_REAL(varLst = _),DAE.RCONST(rstart),SOME(DAE.RCONST(rstep)),DAE.RCONST(rstop))
+      then List.map(ExpressionSimplify.simplifyRangeReal(rstart,rstep,rstop), makeRealExp);
+  end match;
+end getArrayOrRangeContents;
+
 public function get2dArrayOrMatrixContent "returns the list of expressions in the array"
   input DAE.Exp e;
   output list<list<DAE.Exp>> outExps;
@@ -3361,6 +3388,24 @@ public function makeIntegerExp
 algorithm
   e := DAE.ICONST(i);
 end makeIntegerExp;
+
+public function makeRealExp
+"Creates an integer constant expression given the integer input."
+  input Real r;
+  output DAE.Exp e;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  e := DAE.RCONST(r);
+end makeRealExp;
+
+public function makeBoolExp
+"Creates an integer constant expression given the integer input."
+  input Boolean b;
+  output DAE.Exp e;
+  annotation(__OpenModelica_EarlyInline = true);
+algorithm
+  e := DAE.BCONST(b);
+end makeBoolExp;
 
 public function makeConstOne
 "function makeConstOne

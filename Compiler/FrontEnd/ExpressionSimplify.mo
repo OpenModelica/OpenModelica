@@ -1398,7 +1398,7 @@ algorithm
       equation
         e2 = Util.if_(intGt(i,j),e,e1);
       then e2; 
-   
+
   end matchcontinue;
 end simplifyBuiltinConstantCalls;
 
@@ -4535,7 +4535,7 @@ protected function simplifyReduction
 algorithm
   outValue := matchcontinue (inReduction,b)
     local
-      DAE.Exp expr,  cref;
+      DAE.Exp expr, cref, range;
       DAE.Ident iter_name;
       list<DAE.Exp> values;
       Option<Values.Value> defaultValue;
@@ -4561,7 +4561,8 @@ algorithm
     case (DAE.REDUCTION(reductionInfo = DAE.REDUCTIONINFO(path = Absyn.IDENT(str), exprType = ty, defaultValue = defaultValue, foldExp = foldExp), expr = expr, iterators = iterators),_)
       equation
         true = listMember(str,{"array","min","max","sum","product"});
-        {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = DAE.ARRAY(array = values))} = iterators;
+        {DAE.REDUCTIONITER(id = iter_name, guardExp = NONE(), exp = range)} = iterators;
+        values = Expression.getArrayOrRangeContents(range);
         // TODO: Use foldExp
         ety = Types.simplifyType(ty);
         cref = DAE.CREF(DAE.CREF_IDENT(iter_name, ety, {}), ety);
