@@ -181,7 +181,13 @@ algorithm
         unreplacable = traverseCrefUnreplacable(cr,NONE(),unreplacable);
       then
         ((e, unreplacable));
-    case _ then inExp;
+/* This is a test for the initial system
+     case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr)}), unreplacable))
+      equation
+        unreplacable = BaseHashSet.add(cr,unreplacable);
+      then
+        ((e, unreplacable));
+*/    case _ then inExp;
   end matchcontinue;
 end traverserExpUnreplacable;
  
@@ -1604,6 +1610,7 @@ algorithm
       DAE.ComponentRef cr;
     case (BackendDAE.VAR(varName=cr,varKind=kind),_)
       equation
+        false = BackendVariable.isVarDiscrete(var);
         //false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
@@ -2343,7 +2350,7 @@ protected function handleVarSetAttributes
 algorithm
   oVars := matchcontinue(iAttributes,inVar,i,iVars,ishared)
     local
-      Boolean fixedset;
+      Boolean fixedset,isdiscrete;
       Option<DAE.Exp> nominalset;
       tuple<Option<DAE.Exp>,Option<DAE.Exp>> minmaxset;
       Integer nNominal;
@@ -2352,8 +2359,9 @@ algorithm
       BackendDAE.Variables vars;
     case((fixedset,startvalues,nominalset,nNominal,minmaxset),_,_,_,_)
       equation
+        isdiscrete = BackendVariable.isVarDiscrete(inVar);
         // start and fixed
-        v = mergeStartFixedAttributes(inVar,fixedset,startvalues,ishared);
+        v = Debug.bcallret4(not isdiscrete,mergeStartFixedAttributes,inVar,fixedset,startvalues,ishared,inVar);
         // nominal
         v = mergeNominalAttribute(nominalset,nNominal,v);
         // min max

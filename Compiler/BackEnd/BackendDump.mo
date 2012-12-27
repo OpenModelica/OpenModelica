@@ -384,15 +384,15 @@ end printSparsityPattern;
 //   - dumpVarList
 // =============================================================================
 
-protected constant String border    = "########################################";
-protected constant String underline = "========================================";
+protected constant String BORDER    = "########################################";
+protected constant String UNDERLINE = "========================================";
 
 public function dumpBackendDAE "function dumpBackendDAE
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
     input String heading;
 algorithm
-  print("\n" +& border +& "\n" +& heading +& "\n" +& border +& "\n\n");
+  print("\n" +& BORDER +& "\n" +& heading +& "\n" +& BORDER +& "\n\n");
   printBackendDAE(inBackendDAE);
   print("\n");
 end dumpBackendDAE;
@@ -401,7 +401,7 @@ public function dumpEqSystem "function dumpEqSystem"
   input BackendDAE.EqSystem inEqSystem;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& underline +& "\n");
+  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
   printEqSystem(inEqSystem);
   print("\n");
 end dumpEqSystem;
@@ -410,7 +410,7 @@ public function dumpVariables "function dumpVariables"
   input BackendDAE.Variables inVars;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(BackendVariable.varsSize(inVars)) +& ")\n" +& underline +& "\n");
+  print("\n" +& heading +& " (" +& intString(BackendVariable.varsSize(inVars)) +& ")\n" +& UNDERLINE +& "\n");
   printVariables(inVars);
   print("\n");
 end dumpVariables;
@@ -419,7 +419,7 @@ public function dumpVarList "function dumpVarList"
   input list<BackendDAE.Var> inVars;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(inVars)) +& ")\n" +& underline +& "\n");
+  print("\n" +& heading +& " (" +& intString(listLength(inVars)) +& ")\n" +& UNDERLINE +& "\n");
   printVarList(inVars);
   print("\n");
 end dumpVarList;
@@ -428,7 +428,7 @@ public function dumpEquationArray "function dumpEquationArray"
   input BackendDAE.EquationArray inEqns;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(BackendEquation.equationList(inEqns))) +& ", " +& intString(BackendDAEUtil.equationSize(inEqns)) +& ")\n" +& underline +& "\n");
+  print("\n" +& heading +& " (" +& intString(listLength(BackendEquation.equationList(inEqns))) +& ", " +& intString(BackendDAEUtil.equationSize(inEqns)) +& ")\n" +& UNDERLINE +& "\n");
   printEquationArray(inEqns);
   print("\n");
 end dumpEquationArray;
@@ -438,7 +438,7 @@ protected function dumpExternalObjectClasses "function dumpExternalObjectClasses
   input BackendDAE.ExternalObjectClasses inEOC;
   input String heading;
 algorithm
-  print("\n" +& heading +& " (" +& intString(listLength(inEOC)) +& ")\n" +& underline +& "\n");
+  print("\n" +& heading +& " (" +& intString(listLength(inEOC)) +& ")\n" +& UNDERLINE +& "\n");
   printExternalObjectClasses(inEOC);
   print("\n");
 end dumpExternalObjectClasses;
@@ -447,7 +447,7 @@ protected function dumpStateSets
   input BackendDAE.StateSets stateSets;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& underline +& "\n");
+  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
   printStateSets(stateSets);
   print("\n");
 end dumpStateSets;
@@ -456,7 +456,7 @@ protected function dumpZeroCrossingList "function dumpZeroCrossingList"
   input list<BackendDAE.ZeroCrossing> inZeroCrossingList;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& underline +& "\n");
+  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
   print(zeroCrossingListString(inZeroCrossingList));
   print("\n");
 end dumpZeroCrossingList;
@@ -465,7 +465,7 @@ protected function dumpWhenClauseList "function dumpWhenClauseList"
   input list<BackendDAE.WhenClause> inWhenClauseList;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& underline +& "\n");
+  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
   print(whenClauseListString(inWhenClauseList));
   print("\n");
 end dumpWhenClauseList;
@@ -474,7 +474,7 @@ protected function dumpConstraintArray "function dumpConstraintArray"
   input array<DAE.Constraint> inConstraintArray;
   input String heading;
 algorithm
-  print("\n" +& heading +& "\n" +& underline +& "\n");
+  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
   dumpConstraints(arrayList(inConstraintArray), 0);
   print("\n");
 end dumpConstraintArray;
@@ -489,7 +489,7 @@ protected
 algorithm
   (pattern, (diffVars, diffedVars)) := inPattern;
   
-  print("\n" +& heading +& "\n" +& underline +& "\n");
+  print("\n" +& heading +& "\n" +& UNDERLINE +& "\n");
   print("independents [or inputs] (" +& intString(listLength(diffVars)) +& ")\n");
   ComponentReference.printComponentRefList(diffVars);
   
@@ -962,7 +962,7 @@ public function dumpComponents
   input BackendDAE.StrongComponents inComps;
 algorithm
   print("StrongComponents\n");
-  print(underline +& "\n");  
+  print(UNDERLINE +& "\n");  
   List.map_0(inComps,dumpComponent);
 end dumpComponents;
 
@@ -2685,7 +2685,7 @@ protected
   list<list<Integer>> m_1;
 algorithm
   print("\nIncidence Matrix (row: equation)\n");
-  print(underline +& "\n");
+  print(UNDERLINE +& "\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   print("number of rows: ");
@@ -2707,7 +2707,7 @@ protected
   list<list<Integer>> m_1;
 algorithm
   print("\nTranspose Incidence Matrix (row: var)\n");
-  print(underline +& "\n");
+  print(UNDERLINE +& "\n");
   mlen := arrayLength(m);
   mlen_str := intString(mlen);
   print("number of rows: ");
@@ -2907,7 +2907,7 @@ protected
   String len_str;
 algorithm
   print("Matching\n");
-  print(underline +& "\n");
+  print(UNDERLINE +& "\n");
   len := arrayLength(v);
   len_str := intString(len);
   print(len_str);

@@ -180,7 +180,7 @@ algorithm
     case (BackendDAE.ALGORITHM(size=size, alg=alg, source=source),_)
       equation
         DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
-        (stmts,eqns) = generateInitialWhenAlg(stmts,iEqns);
+        (stmts,eqns) = generateInitialWhenAlg(stmts,true,iEqns);
         alg = DAE.ALGORITHM_STMTS(stmts);
         eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source), eqns);
     then
@@ -195,11 +195,12 @@ protected function generateInitialWhenAlg "function generateInitialWhenAlg
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
   This is a helper function for inlineWhenForInitialization3."
   input list< DAE.Statement> inStmts;
+  input Boolean first;
   input list< BackendDAE.Equation> iEqns;
   output list< DAE.Statement> outStmts;
   output list< BackendDAE.Equation> oEqns;
 algorithm
-  (outStmts,oEqns) := matchcontinue(inStmts,iEqns)
+  (outStmts,oEqns) := matchcontinue(inStmts,first,iEqns)
     local
       DAE.Exp condition        "The when-condition" ;
       DAE.ComponentRef left    "Left hand side of equation" ;
@@ -216,19 +217,19 @@ algorithm
       DAE.ElementSource algSource "origin of algorithm";
       list< BackendDAE.Equation> eqns;
       
-    case ({},_) then ({},iEqns);
+    case ({},_,_) then ({},iEqns);
     
     // active when equation during initialization
-    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts)::rest,_)
+    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts)::rest,_,_)
       equation
         true = Expression.containsInitialCall(condition, false);
-        (rest,eqns) = generateInitialWhenAlg(rest,iEqns);
+        (rest,eqns) = generateInitialWhenAlg(rest,false,iEqns);
         stmts = listAppend(stmts, rest);
       then
        (stmts,eqns);
 
     // single inactive when equation during initialization
-    case (((stmt as (DAE.STMT_WHEN(exp=condition, source=source)))::{}),_)
+    case (((stmt as (DAE.STMT_WHEN(exp=condition, source=source)))::{}),true,_)
       equation
         false = Expression.containsInitialCall(condition, false);
         crefLst = CheckModel.algorithmStatementListOutputs({stmt});
@@ -238,21 +239,21 @@ algorithm
         ({},eqns); 
             
     // inactive when equation during initialization
-    case (((stmt as (DAE.STMT_WHEN(exp=condition, source=source)))::rest),_)
+    case (((stmt as (DAE.STMT_WHEN(exp=condition, source=source)))::rest),_,_)
       equation
         false = Expression.containsInitialCall(condition, false);
         crefLst = CheckModel.algorithmStatementListOutputs({stmt});
         stmts = List.map1(crefLst, generateInactiveWhenAlgStatementForInitialization, source);
-        (rest,eqns) = generateInitialWhenAlg(rest,iEqns);
+        (rest,eqns) = generateInitialWhenAlg(rest,false,iEqns);
         stmts = listAppend(stmts, rest);
       then
         (stmts,eqns);
     
     // no when equation
-    case (stmt::rest,_)
+    case (stmt::rest,_,_)
       equation
         // false = isWhenStmt(stmt);
-        (rest,eqns) = generateInitialWhenAlg(rest,iEqns);
+        (rest,eqns) = generateInitialWhenAlg(rest,false,iEqns);
       then 
         (stmt::rest,eqns);
     
@@ -668,6 +669,7 @@ algorithm
       BackendDAE.BackendDAE inDAE;
       BackendDAE.Shared shared;
       DAE.ComponentRef cr,pcr;
+      String msg;
       
     // over-determined system
     case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared,(inDAE,initVars)))
@@ -675,8 +677,9 @@ algorithm
         nVars = BackendVariable.varsSize(vars);
         nEqns = BackendDAEUtil.equationSize(eqns);
         true = intGt(nEqns, nVars);
-      
-        Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Trying to fix over-determined initial system... [not implemented yet!]");
+        Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpEqSystem, isyst, "Trying to fix over-determined initial system");
+        msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
+        Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, msg);
       then fail();
 
     // under-determined system with var = pre(var) and only var and pre(var) 
