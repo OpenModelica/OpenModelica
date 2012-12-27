@@ -380,11 +380,6 @@ template variableDefinitions(ModelInfo modelInfo)
         globalDataVarDefine(var, "realVars", numStateVars)
       ;separator="\n"%>
       
-      /* InlineSolver Vars */
-      <%vars.inlineVars |> var =>
-        globalDataVarDefine(var, "inlineVars", 0)
-      ;separator="\n"%>
-      
       /* Algebraic Vars */
       <%vars.algVars |> var =>
         globalDataVarDefine(var, "realVars", intMul(2, numStateVars))
