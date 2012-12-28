@@ -908,27 +908,30 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
   initDelay(data, data->simulationInfo.startTime);
 
-  /* initialize all relations that are ZeroCrossings */
-  storePreValues(data);
-  overwriteOldSimulationData(data);
-  updateDiscreteSystem(data);
 
-  /* and restore start values and helpvars */
-  restoreExtrapolationDataOld(data);
-  syncPreForHelpVars(data);     /* resetAllHelpVars(data); */
-  storeRelations(data);
-  storePreValues(data);
-
-  /* select the right initialization-method */
-  if(initMethod == IIM_NONE)
-    retVal = 0;
-  else if(initMethod == IIM_NUMERIC)
-    retVal = numeric_initialization(data, optiMethod);
-  else if(initMethod == IIM_SYMBOLIC)
+  if(initMethod == IIM_SYMBOLIC)
     retVal = symbolic_initialization(data);
   else
-    THROW("unsupported option -iim");
+  {
+    /* initialize all relations that are ZeroCrossings */
+    storePreValues(data);
+    overwriteOldSimulationData(data);
+    updateDiscreteSystem(data);
 
+    /* and restore start values and helpvars */
+    restoreExtrapolationDataOld(data);
+    syncPreForHelpVars(data);     /* resetAllHelpVars(data); */
+    storeRelations(data);
+    storePreValues(data);
+
+    /* select the right initialization-method */
+    if(initMethod == IIM_NONE)
+      retVal = 0;
+    else if(initMethod == IIM_NUMERIC)
+      retVal = numeric_initialization(data, optiMethod);
+    else
+      THROW("unsupported option -iim");
+  }
   INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
   printAllVars(data, 0, LOG_SOTI);
