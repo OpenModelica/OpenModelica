@@ -363,7 +363,7 @@ protected function generateInitialWhenAlg "function generateInitialWhenAlg
   output list< BackendDAE.Equation> oEqns;
   output BackendDAE.Variables oVars;  
 algorithm
-  (outStmts,oEqns,oVars) := match(inStmts,first,hs,inAcc,iEqns,iVars)
+  (outStmts,oEqns,oVars) := matchcontinue(inStmts,first,hs,inAcc,iEqns,iVars)
     local
       DAE.Exp condition;
       list< DAE.ComponentRef> crefLst;
@@ -395,7 +395,7 @@ algorithm
         (stmts,eqns,vars) = generateInitialWhenAlg(rest,false,hs,stmt::inAcc,iEqns,iVars);
       then 
         (stmts,eqns,vars);
-  end match;
+  end matchcontinue;
 end generateInitialWhenAlg;
 
 protected function inlineWhenForInitializationWhenStmt "function inlineWhenForInitializationWhenStmt
@@ -728,10 +728,6 @@ algorithm
       
       ((vars, fixvars, eqns, reeqns)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns)));
       ((eqns, reeqns)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
-
-      // collect pre(var) from alias
-      // ((_, vars, fixvars)) = traverseBackendDAEExpsEqns(eqns, collectAliasPreVars, (avars, vars, fixvars));
-      // ((_, vars, fixvars)) = traverseBackendDAEExpsEqns(reeqns, collectAliasPreVars, (avars, vars, fixvars));
 
       // generate initial system
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
@@ -1523,52 +1519,5 @@ algorithm
     then inExp;
   end matchcontinue;
 end replaceDerPreCrefExp;
-
-// =============================================================================
-// section for probably not needed code
-// 
-// This section can be probably removed.
-// =============================================================================
-
-protected function collectAliasPreVars "function collectAliasPreVars
-  author: jfrenkel"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> inTpl;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> outTpl;
-algorithm
-  outTpl :=
-  matchcontinue inTpl
-    local  
-      DAE.Exp exp;
-      BackendDAE.Variables avars,vars,fixvars;
-    case ((exp,(avars,vars,fixvars)))
-      equation
-         ((_,(avars,vars,fixvars))) = Expression.traverseExp(exp,collectAliasPreVarsExp,(avars,vars,fixvars));
-       then
-        ((exp,(avars,vars,fixvars)));
-    case _ then inTpl;
-  end matchcontinue;
-end collectAliasPreVars;
-
-protected function collectAliasPreVarsExp "function collectAliasPreVarsExp
-  author: jfrenkel"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> inTuple;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,BackendDAE.Variables,BackendDAE.Variables>> outTuple;
-algorithm
-  outTuple := matchcontinue(inTuple)
-    local
-      DAE.Exp e;
-      BackendDAE.Variables avars,vars,fixvars;
-      DAE.ComponentRef cr;
-      BackendDAE.Var v;    
-    // add it?
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {DAE.CREF(componentRef = cr)}),(avars,vars,fixvars)))
-      equation
-         (v::_,_) = BackendVariable.getVar(cr, avars);
-         ((_,(vars,fixvars))) =  collectInitialVars((v,(vars,fixvars)));
-      then
-        ((e, (avars,vars,fixvars)));
-    else then inTuple;
-  end matchcontinue;
-end collectAliasPreVarsExp;
 
 end Initialization;
