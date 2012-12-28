@@ -6180,19 +6180,32 @@ algorithm
       array<Integer> vec1,vec2,vec3,mapIncRowEqn;
       array<Boolean> eqnsflag;
       BackendDAE.EqSystem syst;
-    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt),matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
-//    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
+    case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
       equation
         vars = BackendVariable.daeVars(isyst);
         eqns = BackendEquation.daeEqns(isyst);
-        //(_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL());
-        //mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
-        (_,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
+        (_,m,mt) = BackendDAEUtil.getIncidenceMatrix(isyst,BackendDAE.NORMAL());
+        mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         graph = GraphML.getGraph("G",false);  
         ((_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(1,graph));
         //neqns = BackendDAEUtil.equationArraySize(eqns);
         neqns = BackendDAEUtil.equationSize(eqns);
         eqnsids = List.intRange(neqns);
+        graph = List.fold2(eqnsids,addEqnGraph,eqns,mapIncRowEqn,graph);
+        ((_,_,graph)) = List.fold(eqnsids,addEdgesGraph,(1,m,graph));
+        GraphML.dumpGraph(graph,filename);
+     then
+       ();
+    case (BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mt),matching=BackendDAE.NO_MATCHING()),_,NONE(),_)      
+      equation
+        vars = BackendVariable.daeVars(isyst);
+        eqns = BackendEquation.daeEqns(isyst);
+        graph = GraphML.getGraph("G",false);  
+        ((_,graph)) = BackendVariable.traverseBackendDAEVars(vars,addVarGraph,(1,graph));
+        //neqns = BackendDAEUtil.equationArraySize(eqns);
+        neqns = BackendDAEUtil.equationSize(eqns);
+        eqnsids = List.intRange(neqns);
+        mapIncRowEqn = listArray(List.intRange(arrayLength(m)));
         graph = List.fold2(eqnsids,addEqnGraph,eqns,mapIncRowEqn,graph);
         ((_,_,graph)) = List.fold(eqnsids,addEdgesGraph,(1,m,graph));
         GraphML.dumpGraph(graph,filename);
