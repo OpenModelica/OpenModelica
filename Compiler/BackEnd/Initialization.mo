@@ -317,7 +317,7 @@ algorithm
   (oEqns,oVars) := matchcontinue(inWEqn,hs,source,iEqns,iVars)
     local
       DAE.ComponentRef left;
-      DAE.Exp condition,right;
+      DAE.Exp condition,right,crexp;
       BackendDAE.Equation eqn;
       DAE.Type identType;
       list< BackendDAE.Equation> eqns;
@@ -328,8 +328,9 @@ algorithm
     case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right),_,_,_,_)
       equation
         true = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
-        identType = ComponentReference.crefType(left);
-        eqn = BackendDAE.EQUATION(DAE.CREF(left, identType), right, source, false);
+        crexp = Expression.crefExp(left);
+        identType = Expression.typeof(crexp);
+        eqn = BackendEquation.generateEquation(crexp,right,identType,source,false);
       then
         (eqn::iEqns,iVars);
     
@@ -1652,9 +1653,12 @@ algorithm
       fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
     then ((var, (vars, fixvars)));
     
-    case((var as BackendDAE.VAR(bindExp=SOME(_)), (vars, fixvars))) equation
+    case((var as BackendDAE.VAR(bindExp=SOME(bindExp)), (vars, fixvars))) equation
       isInput = BackendVariable.isVarOnTopLevelAndInput(var);
-      vars = Debug.bcallret2(not isInput, BackendVariable.addVar, var, vars, vars);
+      isFixed = Expression.isConst(bindExp);
+      b = isInput or isFixed;
+      vars = Debug.bcallret2(not b, BackendVariable.addVar, var, vars, vars);
+      fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
     then ((var, (vars, fixvars)));
     
     case ((var, _)) equation

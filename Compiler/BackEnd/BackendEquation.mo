@@ -2169,6 +2169,56 @@ algorithm
    end match;
 end equationLstSize_impl;
 
+public function generateEquation
+"function generateEquation
+  author Frenkel TUD 2012-12
+  helper to generate an equation from lhs and rhs.
+  This function is called if an equation is found which is not simple"
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  input DAE.Type ty;
+  input DAE.ElementSource source;
+  input Boolean differentiated;
+  output BackendDAE.Equation outEqn;
+algorithm
+  outEqn := matchcontinue (lhs,rhs,ty,source,differentiated)
+    local
+      Integer size;
+      DAE.Dimensions dims;
+      list<Integer> ds;
+      Boolean b1,b2;
+    // complex types to complex equations  
+    case (_,_,_,_,_)
+      equation
+        true = DAEUtil.expTypeComplex(ty);
+        size = Expression.sizeOf(ty);
+       then
+        BackendDAE.COMPLEX_EQUATION(size,lhs,rhs,source,differentiated);
+    // array types to array equations  
+    case (_,_,_,_,_)
+      equation
+        true = DAEUtil.expTypeArray(ty);
+        dims = Expression.arrayDimension(ty);
+        ds = Expression.dimensionsSizes(dims);
+      then
+        BackendDAE.ARRAY_EQUATION(ds,lhs,rhs,source,differentiated);
+    // other types  
+    case (_,_,_,_,_)
+      equation
+        b1 = DAEUtil.expTypeComplex(ty);
+        b2 = DAEUtil.expTypeArray(ty);
+        false = b1 or b2;
+      then
+        BackendDAE.EQUATION(lhs,rhs,source,differentiated);
+    else
+      equation
+        // show only on failtrace!
+        true = Flags.isSet(Flags.FAILTRACE);
+        Debug.traceln("- BackendEquation.generateEquation failed on: " +& ExpressionDump.printExpStr(lhs) +& " = " +& ExpressionDump.printExpStr(rhs) +& "\n");
+      then
+        fail();      
+  end matchcontinue;  
+end generateEquation;
 
 public function generateEQUATION "
 Author: Frenkel TUD 2010-05"
