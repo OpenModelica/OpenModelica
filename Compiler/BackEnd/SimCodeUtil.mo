@@ -4242,7 +4242,9 @@ algorithm
         allvars = BackendVariable.copyVariables(iAllVars);
         allvars = BackendVariable.removeCrefs(independentComRefs, allvars);
         allvars = BackendVariable.removeCrefs(otherVarsLstComRefs, allvars);
-        knvars = BackendVariable.mergeVariables(inKnVars,allvars);
+        knvars = BackendVariable.copyVariables(inKnVars);
+        knvars = BackendVariable.removeCrefs(otherVarsLstComRefs,knvars);
+        knvars = BackendVariable.mergeVariables(knvars,allvars);
 
         Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, inKnVars);
