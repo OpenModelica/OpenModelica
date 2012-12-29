@@ -733,6 +733,9 @@ algorithm
       ((vars, fixvars, eqns, reeqns)) = List.fold(systs, collectInitialVarsEqnsSystem, ((vars, fixvars, eqns, reeqns)));
       ((eqns, reeqns)) = BackendVariable.traverseBackendDAEVars(vars, collectInitialBindings, (eqns, reeqns));
 
+      // replace initial() with true and sample(..) with false
+      _ = BackendDAEUtil.traverseBackendDAEExpsEqnsWithUpdate(eqns, simplifyInitialFunktions, false);
+
       // generate initial system
       initsyst = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
       // remove unused variables
@@ -776,6 +779,32 @@ algorithm
         (NONE(),itempVar);
   end matchcontinue;
 end solveInitialSystem1;
+
+protected function simplifyInitialFunktions "function simplifyInitialFunktions
+  author: Frenkel TUD 2012-12
+  simplify initial() with true and sample with false"
+  input tuple<DAE.Exp, Boolean> inTpl;
+  output tuple<DAE.Exp, Boolean> outTpl;
+protected
+  DAE.Exp exp;
+  Boolean b;
+algorithm
+  (exp,b) := inTpl;
+  outTpl := Expression.traverseExp(exp, simplifyInitialFunktionsExp, b);
+end simplifyInitialFunktions;
+
+protected function simplifyInitialFunktionsExp "function simplifyInitialFunktionsExp
+  author: Frenkel TUD 2012-12
+  helper for simplifyInitialFunktions"
+  input tuple<DAE.Exp, Boolean> inExp;
+  output tuple<DAE.Exp, Boolean> outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+    case ((DAE.CALL(path = Absyn.IDENT(name = "initial")), _)) then ((DAE.BCONST(true), true));
+    case ((DAE.CALL(path = Absyn.IDENT(name = "sample")), _)) then ((DAE.BCONST(false), true));
+    else then inExp;
+  end matchcontinue;
+end simplifyInitialFunktionsExp;
 
 protected function solveInitialSystem3 "function solveInitialSystem2
   author: jfrenkel, lochel
