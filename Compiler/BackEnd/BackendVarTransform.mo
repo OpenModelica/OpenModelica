@@ -791,11 +791,15 @@ end avoidDoubleHashLookup;
 public function replacementEmpty
   input VariableReplacements repl;
   output Boolean empty;
-protected
-  HashTable2.HashTable ht;
 algorithm
-  REPLACEMENTS(hashTable = ht) := repl;   
-  empty := intGt(BaseHashTable.hashTableCurrentSize(ht),0);  
+  empty := match(repl)
+    local
+      HashTable2.HashTable ht,derConst;
+    case REPLACEMENTS(hashTable = ht,derConst=NONE())
+      then
+        intGt(BaseHashTable.hashTableCurrentSize(ht),0);
+    case REPLACEMENTS(derConst=SOME(_)) then false;
+  end match;
 end replacementEmpty;
 
 /*********************************************************/
@@ -1331,12 +1335,11 @@ public function replaceEquations
 algorithm
   (outEqns,replacementPerformed) := matchcontinue(inEqns,repl,inFuncTypeExpExpToBooleanOption)
     local
-      HashTable2.HashTable ht;
       list<BackendDAE.Equation> eqns;
-    case(_,REPLACEMENTS(hashTable = ht),_)
+    case(_,_,_)
       equation
         // Do not do empty replacements; it just takes time ;)
-        true = intGt(BaseHashTable.hashTableCurrentSize(ht),0);
+        false = replacementEmpty(repl);
         (eqns,replacementPerformed) = replaceEquations2(inEqns,repl,inFuncTypeExpExpToBooleanOption,{},false);
       then
         (eqns,replacementPerformed);
@@ -2291,6 +2294,36 @@ algorithm
         ();
   end match;
 end dumpExtendReplacements;
+
+public function dumpDerConstReplacements
+"function: dumpReplacements
+  Prints the variable derConst replacements on form var1 -> exp"
+  input VariableReplacements inVariableReplacements;
+algorithm
+  _:=
+  match (inVariableReplacements)
+    local
+      String str,len_str;
+      Integer len;
+      HashTable2.HashTable ht;
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
+    case (REPLACEMENTS(derConst= SOME(ht)))
+      equation
+        (tplLst) = BaseHashTable.hashTableList(ht);
+        str = stringDelimitList(List.map(tplLst,printReplacementTupleStr),"\n");
+        print("DerConstReplacements: (");
+        len = listLength(tplLst);
+        len_str = intString(len);
+        print(len_str);
+        print(")\n");
+        print("=============\n");
+        print(str);
+        print("\n");
+      then
+        ();
+    else then ();
+  end match;
+end dumpDerConstReplacements;
 
 protected function printReplacementTupleStr "help function to dumpReplacements"
   input tuple<DAE.ComponentRef,DAE.Exp> tpl;

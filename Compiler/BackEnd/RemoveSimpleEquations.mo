@@ -1706,7 +1706,7 @@ algorithm
       DAE.ComponentRef pcr,cr;
       EquationAttributes eqnAttributes;
       DAE.ElementSource source;
-      Boolean negate,replacable,constExp;
+      Boolean negate,replacable,constExp,isState;
       DAE.Exp exp,exp1,expcr;
       BackendDAE.Variables vars;
       list<BackendDAE.Equation> eqnslst;
@@ -1764,10 +1764,12 @@ algorithm
        replacable = replaceableAlias(v,unreplacable);
        // set fixed=true if replacable
        v = Debug.bcallret2(replacable,BackendVariable.setVarFixed,v,true,v);
-       (vars,shared,_,eqnslst) = optMoveVarShared(replacable,v,i,eqnAttributes,exp,BackendVariable.addKnVarDAE,iMT,iVars,ishared,iEqnslst);
+       (vars,shared,isState,eqnslst) = optMoveVarShared(replacable,v,i,eqnAttributes,exp,BackendVariable.addKnVarDAE,iMT,iVars,ishared,iEqnslst);
        constExp = Expression.isConst(exp);
        // add to replacements if constant
        repl = Debug.bcallret4(replacable and constExp, BackendVarTransform.addReplacement,iRepl, cr, exp,SOME(BackendVarTransform.skipPreChangeEdgeOperator),iRepl);
+       // if state der(var) has to replaced to 0
+       repl = Debug.bcallret3(isState,BackendVarTransform.addDerConstRepl, cr, DAE.RCONST(0.0), repl, repl);
        exp = Expression.crefExp(cr);
        vsattr = addVarSetAttributes(v,false,mark,simpleeqnsarr,EMPTYVARSETATTRIBUTES);
        rows = List.removeOnTrue(r,intEq,iMT[i]);
@@ -2735,7 +2737,8 @@ algorithm
     case (true,BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,aliasVars,inieqns,remeqns,constrs,clsAttrs,cache,env,funcTree,BackendDAE.EVENT_INFO(whenClauseLst,zeroCrossingLst,sampleLst,relationsLst,numberOfRealtions,numMathFunctions),eoc,btp,symjacs)),_)
       equation
         Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpReplacements, repl);
-        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);        
+        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpExtendReplacements, repl);
+        Debug.fcall(Flags.DUMP_REPL, BackendVarTransform.dumpDerConstReplacements, repl);
         // replace moved vars in knvars,remeqns
         (aliasVars,(_,varlst)) = BackendVariable.traverseBackendDAEVarsWithUpdate(aliasVars,replaceAliasVarTraverser,(repl,{}));
         aliasVars = List.fold(varlst,fixAliasConstBindings,aliasVars);
