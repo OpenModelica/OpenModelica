@@ -1580,7 +1580,7 @@ algorithm
       BackendDAE.Var var, preVar, derVar;
       BackendDAE.Variables vars, fixvars;
       DAE.ComponentRef cr, preCR, derCR;
-      Boolean isFixed;
+      Boolean isFixed,isInput,b;
       DAE.Type ty;
       DAE.InstDims arryDim;
       Option<DAE.Exp> startValue;
@@ -1646,13 +1646,15 @@ algorithm
 
     case((var as BackendDAE.VAR(bindExp=NONE()), (vars, fixvars))) equation
       isFixed = BackendVariable.varFixed(var);
-      
-      vars = Debug.bcallret2(not isFixed, BackendVariable.addVar, var, vars, vars);
-      fixvars = Debug.bcallret2(isFixed, BackendVariable.addVar, var, fixvars, fixvars);
+      isInput = BackendVariable.isVarOnTopLevelAndInput(var);
+      b = isFixed or isInput;
+      vars = Debug.bcallret2(not b, BackendVariable.addVar, var, vars, vars);
+      fixvars = Debug.bcallret2(b, BackendVariable.addVar, var, fixvars, fixvars);
     then ((var, (vars, fixvars)));
     
     case((var as BackendDAE.VAR(bindExp=SOME(_)), (vars, fixvars))) equation
-      vars = BackendVariable.addVar(var, vars);
+      isInput = BackendVariable.isVarOnTopLevelAndInput(var);
+      vars = Debug.bcallret2(not isInput, BackendVariable.addVar, var, vars, vars);
     then ((var, (vars, fixvars)));
     
     case ((var, _)) equation
