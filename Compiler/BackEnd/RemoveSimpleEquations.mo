@@ -154,6 +154,56 @@ algorithm
   odae := removeSimpleEquationsShared(b,odae,repl);
 end fastAcausal;
 
+protected function addUnreplacableFromStateSets
+"function addUnreplacableFromStateSet
+ author: Frenkel TUD 2012-12"
+  input BackendDAE.BackendDAE inDAE;
+  input HashSet.HashSet inUnreplacable;
+  output HashSet.HashSet outUnreplacable;
+protected
+  BackendDAE.EqSystems systs;
+algorithm
+  BackendDAE.DAE(eqs=systs) := inDAE;
+  outUnreplacable := List.fold(systs,addUnreplacableFromStateSetSystem,inUnreplacable);
+end addUnreplacableFromStateSets;
+
+protected function addUnreplacableFromStateSetSystem
+"function: addUnreplacableFromStateSetSystem
+  author: Frenkel TUD 2012-12
+  traverse an Equationsystem to handle states sets"
+  input BackendDAE.EqSystem isyst; 
+  input HashSet.HashSet inUnreplacable;
+  output HashSet.HashSet outUnreplacable;
+algorithm
+  outUnreplacable:= match (isyst,inUnreplacable)
+    local
+      BackendDAE.StateSets stateSets;
+      HashSet.HashSet unreplacable;
+    // no stateSet
+    case (BackendDAE.EQSYSTEM(stateSets={}),_) then inUnreplacable;
+    // sets
+    case (BackendDAE.EQSYSTEM(stateSets=stateSets),_)
+      equation
+        unreplacable = List.fold(stateSets,addUnreplacableFromStateSet,inUnreplacable);
+      then
+        unreplacable;
+  end match;
+end addUnreplacableFromStateSetSystem;
+
+protected function addUnreplacableFromStateSet
+  input BackendDAE.StateSet iStateSet;
+  input HashSet.HashSet inUnreplacable;
+  output HashSet.HashSet outUnreplacable;
+protected
+  list<BackendDAE.Var> statevars; 
+  list<DAE.ComponentRef> crlst; 
+algorithm
+  BackendDAE.STATESET(statescandidates=statevars) := iStateSet;
+  crlst := List.map(statevars,BackendVariable.varCref);
+  crlst := List.map(crlst,ComponentReference.crefStripLastSubs);
+  outUnreplacable := List.fold(crlst,BaseHashSet.add,inUnreplacable);
+end addUnreplacableFromStateSet;
+
 protected function traverserUnreplacable
 "@author: Frenkel TUD 2012-12"
   input tuple<DAE.Exp, HashSet.HashSet> inExp;
@@ -2865,6 +2915,8 @@ algorithm
   // check for unreplacable crefs
   unreplacable := HashSet.emptyHashSet();
   unreplacable := BackendDAEUtil.traverseBackendDAEExps(inDAE,traverserUnreplacable,unreplacable);
+  // do not replace state sets
+  unreplacable := addUnreplacableFromStateSets(inDAE,unreplacable);
   Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
   Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
   (outDAE,(repl,_,b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,causal1,(repl,unreplacable,false));

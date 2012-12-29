@@ -43,6 +43,7 @@ public import DAE;
 public import Env;
 public import Util;
 
+protected import BackendDAEEXT;
 protected import BackendDAEOptimize;
 protected import BackendDAEUtil;
 protected import BackendDump;
@@ -57,6 +58,7 @@ protected import Expression;
 protected import Flags;
 protected import HashSet;
 protected import List;
+protected import Matching;
 protected import System;
 
 // =============================================================================
@@ -848,17 +850,6 @@ algorithm
 
 end solveInitialSystem2;
 
-protected function analyzeInitialSystem "function analyzeInitialSystem
-  author: lochel
-  This function fixes discrete and state variables to balance the initial equation system."
-  input BackendDAE.BackendDAE initDAE;
-  input BackendDAE.BackendDAE inDAE;      // original DAE
-  input BackendDAE.Variables inInitVars;
-  output BackendDAE.BackendDAE outDAE;
-algorithm
-  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(initDAE,analyzeInitialSystem2,(inDAE,inInitVars));
-end analyzeInitialSystem;
-
 protected function removeUnusedInitialVars
   input BackendDAE.EqSystem inSystem;
   output BackendDAE.EqSystem outSystem;
@@ -889,6 +880,7 @@ algorithm
       list<Integer> row;
       Boolean b;
       BackendDAE.Variables vars;
+      list<BackendDAE.Var> rvarlst;
     case(0,_,_,false) then (iVars,false);
     case(0,_,_,true)
       equation
@@ -900,17 +892,42 @@ algorithm
         row = mt[n];
         b = List.isEmpty(row);
         row = Util.if_(b,{n},{});
-        (vars,_) = BackendVariable.removeVars(row,iVars,{});
+        (vars,rvarlst) = BackendVariable.removeVars(row,iVars,{});
+        Debug.fcall(Flags.PEDANTIC, dumpRemoveUnusedInitialVar, rvarlst);
         (vars,b) = removeUnusedInitialVarsWork(n-1,mt,vars,b or iB);
       then
         (vars,b);
   end match;
 end removeUnusedInitialVarsWork;
-/*
-protected import IndexReduction;
-protected import Matching;
-protected import BackendDAEEXT;
-*/
+
+protected function dumpRemoveUnusedInitialVar
+ input list<BackendDAE.Var> rvarlst;
+algorithm
+  _ := match(rvarlst)
+    local
+      BackendDAE.Var v;
+      list<BackendDAE.Var> rest;
+    case {} then ();
+    case (v::rest)
+      equation
+        print("Ignore unused variable " +& BackendDump.varString(v) +& "\n");
+        dumpRemoveUnusedInitialVar(rest);
+      then
+        ();
+  end match;
+end dumpRemoveUnusedInitialVar;
+
+protected function analyzeInitialSystem "function analyzeInitialSystem
+  author: lochel
+  This function fixes discrete and state variables to balance the initial equation system."
+  input BackendDAE.BackendDAE initDAE;
+  input BackendDAE.BackendDAE inDAE;      // original DAE
+  input BackendDAE.Variables inInitVars;
+  output BackendDAE.BackendDAE outDAE;
+algorithm
+  (outDAE,_) := BackendDAEUtil.mapEqSystemAndFold(initDAE,analyzeInitialSystem2,(inDAE,inInitVars));
+end analyzeInitialSystem;
+
 protected function analyzeInitialSystem2 "function analyzeInitialSystem2
   author lochel"
   input BackendDAE.EqSystem isyst; 
@@ -931,13 +948,15 @@ algorithm
       array<Integer> vec1,vec2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;   
-      array<Integer> mapIncRowEqn ;  
+      array<Integer> mapIncRowEqn;
+      BackendDAE.EqSystem syst;      
     // over-determined system
     case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),(shared,(inDAE,initVars)))
       equation
         nVars = BackendVariable.varsSize(vars);
         nEqns = BackendDAEUtil.equationSize(eqns);
         true = intGt(nEqns, nVars);
+        
 /*
 print("Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]");
         (system,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
@@ -952,11 +971,11 @@ print("Trying to fix over-determined initial system Variables " +& intString(nVa
         system = BackendDAEUtil.setEqSystemMatching(system,BackendDAE.MATCHING(vec1,vec2,{}));        
         BackendDump.printEqSystem(system);
 
+
         Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpEqSystem, system, "Trying to fix over-determined initial system");
         msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, msg);
-*/
-//        IndexReduction.dumpSystemGraphML(isyst,shared,NONE(),"Initialization" +& intString(nVars) +& ".graphml");
+*/        
       then fail();
 
     // under-determined system  
@@ -965,26 +984,9 @@ print("Trying to fix over-determined initial system Variables " +& intString(nVa
         nVars = BackendVariable.varsSize(vars);
         nEqns = BackendDAEUtil.equationSize(eqns);
         true = intLt(nEqns, nVars);
-/*
-print("Trying to fix under-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]");
-        (system,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
-        vec1 = arrayCreate(nVars,-1);
-        vec2 = arrayCreate(nEqns,-1);
-        Matching.matchingExternalsetIncidenceMatrix(nVars,nEqns,m);        
-        BackendDAEEXT.matching(nVars,nEqns,5,-1,0.0,1);
-        BackendDAEEXT.getAssignment(vec2,vec1);
-        BackendDump.dumpMatching(mapIncRowEqn);
-        BackendDump.dumpMatching(vec1);
-        BackendDump.dumpMatching(vec2);
-        system = BackendDAEUtil.setEqSystemMatching(system,BackendDAE.MATCHING(vec1,vec2,{}));        
-        BackendDump.printEqSystem(system);
-
-        IndexReduction.dumpSystemGraphML(isyst,shared,NONE(),"Initialization" +& intString(nVars) +& ".graphml");
- */     
+        
         (true, vars, eqns) = fixUnderDeterminedInitialSystem(inDAE, vars, eqns, initVars);
-      
         system = BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
-        (system,_, _) = BackendDAEUtil.getIncidenceMatrix(system, BackendDAE.NORMAL());
     then
        (system,(shared,(inDAE,initVars)));
 
@@ -1013,7 +1015,37 @@ algorithm
       list<BackendDAE.Var> outputs;   // $res1 ... $resN (initial equations)
       list<tuple< DAE.ComponentRef, list< DAE.ComponentRef>>> dep;
       list< DAE.ComponentRef> selectedVars;
-    
+      array<Integer> vec1,vec2;
+      BackendDAE.IncidenceMatrix m;
+      BackendDAE.IncidenceMatrixT mt;   
+      array<Integer> mapIncRowEqn;
+      BackendDAE.EqSystem syst;
+      list<Integer> unassigned;
+    // fix undetermined system
+    case (_,_,_,_)
+      equation
+        // match the system
+        nVars = BackendVariable.varsSize(inVars);
+        nEqns = BackendDAEUtil.equationSize(inEqns);
+        syst = BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
+        (syst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE());
+        //  BackendDump.printEqSystem(syst);
+        vec1 = arrayCreate(nVars,-1);
+        vec2 = arrayCreate(nEqns,-1);
+        Matching.matchingExternalsetIncidenceMatrix(nVars,nEqns,m);        
+        BackendDAEEXT.matching(nVars,nEqns,5,-1,0.0,1);
+        BackendDAEEXT.getAssignment(vec2,vec1);
+        // try to find for unmatched variables without startvalue an equation by unassign a variable with start value 
+        unassigned = Matching.getUnassigned(nVars, vec1, {});
+        //  print("Unasigned Vars " +& stringDelimitList(List.map(unassigned,intString),", ") +& "\n");
+        unassigned = replaceFixedCandidates(unassigned,nVars,nEqns,m,mt,vec1,vec2,inVars,inInitVars,1,arrayCreate(nEqns,-1),{});
+        // add for all free variables an equation 
+        Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
+        initVarList = List.map1r(unassigned,BackendVariable.getVarAt,inVars);
+        eqns = addStartValueEquations(initVarList, inEqns);
+      then 
+        (true, inVars, eqns);        
+
     // fix all free variables
     case(_, _, eqns, _) equation
       nInitVars = BackendVariable.varsSize(inInitVars);
@@ -1051,6 +1083,260 @@ algorithm
     then (false, inVars, inEqns);
   end matchcontinue;
 end fixUnderDeterminedInitialSystem;
+
+protected function replaceFixedCandidates "function replaceFixedCandidates
+  author Frenkel TUD 2012-12
+  try to switch to more appropriate candidates for fixed variables"
+  input list<Integer> iUnassigned;
+  input Integer nVars;
+  input Integer nEqns;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> vec1;
+  input array<Integer> vec2;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables inInitVars;
+  input Integer mark;
+  input array<Integer> markarr;
+  input list<Integer> iAcc;
+  output list<Integer> oUnassigned;
+algorithm
+  oUnassigned := matchcontinue(iUnassigned,nVars,nEqns,m,mT,vec1,vec2,inVars,inInitVars,mark,markarr,iAcc)
+    local
+      Integer i,i1,i2,e;
+      list<Integer> unassigned,acc;
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;
+      Boolean b;
+    case ({},_,_,_,_,_,_,_,_,_,_,_) then iAcc;
+    // member of inInitVars is ok to be free
+    case (i::unassigned,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        v = BackendVariable.getVarAt(inVars,i);
+        cr = BackendVariable.varCref(v);
+        true = BackendVariable.existsVar(cr, inInitVars, false);
+        //  print("Unasigned Var from InitVars " +& ComponentReference.printComponentRefStr(cr) +& "\n");        
+      then
+        replaceFixedCandidates(unassigned,nVars,nEqns,m,mT,vec1,vec2,inVars,inInitVars,mark,markarr,i::iAcc);
+    // not member of inInitVars try to change it
+    case (i::unassigned,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        v = BackendVariable.getVarAt(inVars,i);
+        cr = BackendVariable.varCref(v);
+        false = BackendVariable.existsVar(cr, inInitVars, false);
+        (i1,i2) = getAssignedVarFromInitVars(1,BackendVariable.varsSize(inInitVars),vec1,inVars,inInitVars);
+        //  print("try to switch " +& ComponentReference.printComponentRefStr(cr) +& " with " +& intString(i1) +& "\n");
+        // unassign var
+        e = vec1[i1];
+        _ = arrayUpdate(vec2,e,-1);
+        _ = arrayUpdate(vec1,i1,-1);
+        // try to assign i1
+        b = pathFound({i},i,m,mT,vec1,vec2,mark,markarr);
+        acc = replaceFixedCandidates1(b,i,i1,e,i2,nVars,nEqns,m,mT,vec1,vec2,inVars,inInitVars,mark+1,markarr,iAcc);
+      then
+        replaceFixedCandidates(unassigned,nVars,nEqns,m,mT,vec1,vec2,inVars,inInitVars,mark+1,markarr,acc);
+    // if not assignable use it
+    case (i::unassigned,_,_,_,_,_,_,_,_,_,_,_)
+      //equation
+      //  print("cannot switch var " +& intString(i) +& "\n");        
+      then
+        replaceFixedCandidates(unassigned,nVars,nEqns,m,mT,vec1,vec2,inVars,inInitVars,mark,markarr,i::iAcc); 
+  end matchcontinue;
+end replaceFixedCandidates;
+
+protected function replaceFixedCandidates1
+  input Boolean iFound;
+  input Integer iI;
+  input Integer iI1;
+  input Integer iE;
+  input Integer iI2;
+  input Integer nVars;
+  input Integer nEqns;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> vec1;
+  input array<Integer> vec2;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables inInitVars;
+  input Integer mark;
+  input array<Integer> markarr;
+  input list<Integer> iAcc;
+  output list<Integer> oUnassigned;
+algorithm
+  oUnassigned := match(iFound,iI,iI1,iE,iI2,nVars,nEqns,m,mT,vec1,vec2,inVars,inInitVars,mark,markarr,iAcc)
+    local
+      Integer i,i1,i2,e;
+      Boolean b;
+    case (true,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_) then iI1::iAcc;
+    case (false,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        // revert assignment 
+        _ = arrayUpdate(vec2,iE,iI1);
+        _ = arrayUpdate(vec1,iI1,iE);
+        // get next
+        (i1,i2) = getAssignedVarFromInitVars(iI2+1,BackendVariable.varsSize(inInitVars),vec1,inVars,inInitVars);
+        //  print("try to switch " +& intString(iI) +& " with " +& intString(i1) +& "\n");
+        // unassign var
+        e = vec1[i1];
+        _ = arrayUpdate(vec2,e,-1);
+        _ = arrayUpdate(vec1,i1,-1);
+        // try to assign i1
+        b = pathFound({iI},iI,m,mT,vec1,vec2,mark,markarr);
+      then
+        replaceFixedCandidates1(b,iI,i1,e,i2,nVars,nEqns,m,mT,vec1,vec2,inVars,inInitVars,mark+1,markarr,iAcc);
+  end match;
+end replaceFixedCandidates1;
+
+protected function getAssignedVarFromInitVars
+  input Integer iIndex;
+  input Integer nVars;
+  input array<Integer> vec1;
+  input BackendDAE.Variables inVars;
+  input BackendDAE.Variables inInitVars;
+  output Integer oVar;
+  output Integer oIndex;
+algorithm
+  (oVar,oIndex) := matchcontinue(iIndex,nVars,vec1,inVars,inInitVars)
+    local
+      Integer i;
+      BackendDAE.Var v;
+      DAE.ComponentRef cr;      
+    case(_,_,_,_,_)
+      equation
+        true = intLe(iIndex,nVars);
+        v = BackendVariable.getVarAt(inInitVars,iIndex);
+        cr = BackendVariable.varCref(v);
+        (_,{i}) = BackendVariable.getVar(cr,inVars);
+        // var is free?
+        true = intGt(vec1[i],0);
+        //  print("found free InitVars " +& ComponentReference.printComponentRefStr(cr) +& "\n"); 
+      then
+        (i,iIndex);
+    case(_,_,_,_,_)
+      equation
+        true = intLe(iIndex,nVars);
+        (oVar,oIndex) = getAssignedVarFromInitVars(iIndex+1,nVars,vec1,inVars,inInitVars);      
+      then
+        (oVar,oIndex);
+  end matchcontinue;  
+end getAssignedVarFromInitVars;
+
+protected function pathFound
+"function helper for getAssignedVarFromInitVars, traverses all colums and perform a DFSB phase on each
+  author: Frenkel TUD 2012-12"
+  input list<Integer> stack;
+  input Integer i;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input Integer mark;
+  input array<Integer> markarr;
+  output Boolean found;
+algorithm
+  found :=
+  match (stack,i,m,mT,ass1,ass2,mark,markarr)
+    local
+      list<Integer> eqns;  
+    case ({},_,_,_,_,_,_,_) then false;
+    case (_,_,_,_,_,_,_,_)
+      equation
+        // traverse all adiacent eqns
+        eqns = List.select(mT[i], Util.intPositive);
+      then
+        pathFoundtraverseEqns(eqns,stack,m,mT,ass1,ass2,mark,markarr);
+  end match;
+end pathFound;
+
+protected function pathFoundtraverseEqns
+"function helper for pathFound, traverses all vars of a equations and search a augmenting path
+ author: Frenkel TUD 2012-12"
+  input list<Integer> rows;
+  input list<Integer> stack;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input Integer mark;
+  input array<Integer> markarr;
+  output Boolean found;
+algorithm
+  found:=
+  matchcontinue (rows,stack,m,mT,ass1,ass2,mark,markarr)
+    local
+      list<Integer> rest,visitedColums; 
+      Integer rc,e;
+      Boolean b;
+    case ({},_,_,_,_,_,_,_) then false;
+    case (e::rest,_,_,_,_,_,_,_)
+      equation
+        // row is unmatched -> augmenting path found
+        true = intLt(ass2[e],0);
+        reasign(stack,e,ass1,ass2);  
+      then
+        true;
+    case (e::rest,_,_,_,_,_,_,_)
+      equation
+        // row is matched
+        rc = ass2[e];
+        false = intLt(rc,0);
+        false = intEq(markarr[e],mark);
+        _ = arrayUpdate(markarr,e,mark);
+        b = pathFound(rc::stack,rc,m,mT,ass1,ass2,mark,markarr);
+      then
+        pathFoundtraverseEqns1(b,rest,stack,m,mT,ass1,ass2,mark,markarr);
+    case (_::rest,_,_,_,_,_,_,_)
+      then
+        pathFoundtraverseEqns(rest,stack,m,mT,ass1,ass2,mark,markarr);
+  end matchcontinue;
+end pathFoundtraverseEqns;
+
+protected function pathFoundtraverseEqns1
+"function helper for pathFoundtraverseEqns
+ author: Frenkel TUD 2012-12"
+  input Boolean b;
+  input list<Integer> rows;
+  input list<Integer> stack;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+  input Integer mark;
+  input array<Integer> markarr;  
+  output Boolean found; 
+algorithm
+  found:=
+  match (b,rows,stack,m,mT,ass1,ass2,mark,markarr)
+    case (true,_,_,_,_,_,_,_,_) then true;
+    else pathFoundtraverseEqns(rows,stack,m,mT,ass1,ass2,mark,markarr);
+  end match;
+end pathFoundtraverseEqns1;
+
+protected function reasign
+"function helper for pathfound, reasignment(rematching) allong the augmenting path
+ remove all edges from the assignments that are in the path
+ add all other edges to the assignment
+ author: Frenkel TUD 2012-03"
+  input list<Integer> stack;
+  input Integer e;
+  input array<Integer> ass1;
+  input array<Integer> ass2;
+algorithm  
+  _ := match (stack,e,ass1,ass2)
+    local 
+      Integer i,e1;
+      list<Integer> rest;
+    case ({},_,_,_) then ();
+    case (i::rest,_,_,_)
+      equation
+        e1 = ass1[i];
+        _ = arrayUpdate(ass1,i,e);
+        _ = arrayUpdate(ass2,e,i);
+        reasign(rest,e1,ass1,ass2);
+      then ();
+   end match;
+end reasign;
+
 
 protected function collectIndependentVars "function collectIndependentVars
   author lochel"

@@ -2950,9 +2950,8 @@ algorithm
       equation 
         (varlst,_) = getVar(inComponentRef,inVariables);
         varlst = Debug.bcallret2(skipDiscrete, List.select, varlst, isVarNonDiscrete, varlst);
-        outBoolean = intGt(listLength(varlst),0);
       then
-        outBoolean;
+        List.isNotEmpty(varlst);
     case (_,_,_)
       equation
         failure((_,_) = getVar(inComponentRef,inVariables));
