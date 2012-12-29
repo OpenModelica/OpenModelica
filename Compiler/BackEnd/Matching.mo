@@ -6364,7 +6364,7 @@ algorithm
   vec1 := arrayCreate(nEqns1,-1);
   vec2 := arrayCreate(nVars1,-1);
   (vec1,vec2) := singularSystemCheckMatch(nVars1,nEqns1,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets),ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
-  //  BackendDump.dumpEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets));
+  //  BackendDump.printEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets));
   //  BackendDump.dumpMatching(vec2);
   //  BackendDump.dumpMatching(vec1);  
 end singularSystemCheck;
@@ -6537,6 +6537,9 @@ protected
   Absyn.Info info;
   array<Integer> mapIncRowEqn;
 algorithm
+  //  BackendDump.printEqSystem(isyst);
+  //  BackendDump.dumpMatching(inAssignments1);
+  //  BackendDump.dumpMatching(inAssignments2); 
   (_,_,_,mapIncRowEqn,_) := inArg;
   n := BackendDAEUtil.systemSize(isyst);
   // get from scalar eqns indexes the indexes in the equation array

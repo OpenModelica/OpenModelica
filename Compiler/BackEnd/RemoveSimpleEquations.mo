@@ -2745,7 +2745,7 @@ algorithm
         ((_,eqnslst,b1)) = BackendEquation.traverseBackendDAEEqns(remeqns,replaceEquationTraverser,(repl,{},false));
         remeqns1 = Debug.bcallret1(b1,BackendEquation.listEquation,eqnslst,remeqns);
         (whenClauseLst1,_) = BackendVarTransform.replaceWhenClauses(whenClauseLst, repl, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
-        systs1 = removeSimpleEquationsShared1(systs,{},repl);
+        systs1 = removeSimpleEquationsShared1(systs,{},repl,NONE(),aliasVars);
         // remove asserts with condition=true from removed equations
         remeqns1 = BackendEquation.listEquation(List.select(BackendEquation.equationList(remeqns1),assertWithCondTrue));
       then 
@@ -2850,28 +2850,129 @@ protected function removeSimpleEquationsShared1
   input BackendDAE.EqSystems inSysts;
   input BackendDAE.EqSystems inSysts1;
   input BackendVarTransform.VariableReplacements repl;
+  input Option<BackendVarTransform.VariableReplacements> statesetrepl;
+  input BackendDAE.Variables aliasVars;
   output BackendDAE.EqSystems outSysts;
 algorithm
-  outSysts := match (inSysts,inSysts1,repl)
+  outSysts := match (inSysts,inSysts1,repl,statesetrepl,aliasVars)
     local
       BackendDAE.EqSystems rest;
       BackendDAE.Variables v;
       BackendDAE.EquationArray eqns;
       list<BackendDAE.Equation> eqnslst;
-      Boolean b;
+      Boolean b,b1;
       BackendDAE.EqSystem syst;
       BackendDAE.StateSets stateSets;
-    case ({},_,_) then inSysts1;
-    case ((syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqns,stateSets=stateSets))::rest,_,_)
+      Option<BackendVarTransform.VariableReplacements> statesetrepl1;
+    case ({},_,_,_,_) then inSysts1;
+    case ((syst as BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqns,stateSets=stateSets))::rest,_,_,_,_)
       equation
         ((_,eqnslst,b)) = BackendEquation.traverseBackendDAEEqns(eqns,replaceEquationTraverser,(repl,{},false));
         eqnslst = Debug.bcallret1(b,listReverse,eqnslst,eqnslst);
         eqns = Debug.bcallret1(b,BackendEquation.listEquation,eqnslst,eqns);
-        syst = Util.if_(b,BackendDAE.EQSYSTEM(v,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),syst);
+        (stateSets,b1,statesetrepl1) = removeAliasVarsStateSets(stateSets,statesetrepl,v,aliasVars,{},false);
+        syst = Util.if_(b or b1,BackendDAE.EQSYSTEM(v,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),syst);
       then
-        removeSimpleEquationsShared1(rest,syst::inSysts1,repl);
+        removeSimpleEquationsShared1(rest,syst::inSysts1,repl,statesetrepl1,aliasVars);
     end match;
 end removeSimpleEquationsShared1;
+
+protected function removeAliasVarsStateSets
+  input BackendDAE.StateSets iStateSets;
+  input Option<BackendVarTransform.VariableReplacements> iStatesetrepl;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables aliasVars;
+  input BackendDAE.StateSets iAcc;
+  input Boolean inB;
+  output BackendDAE.StateSets oStateSets;
+  output Boolean outB;
+  output Option<BackendVarTransform.VariableReplacements> oStatesetrepl;
+algorithm
+  (oStateSets,outB,oStatesetrepl) := match(iStateSets,iStatesetrepl,vars,aliasVars,iAcc,inB)
+    local
+      BackendDAE.StateSets stateSets;
+      Integer rang;
+      list< DAE.ComponentRef> states;
+      DAE.ComponentRef crA,crJ;
+      list< BackendDAE.Var> varA,statescandidates,ovars,varJ;
+      list< BackendDAE.Equation> eqns,oeqns;
+      BackendVarTransform.VariableReplacements repl;
+      Boolean b,b1;
+    case ({},_,_,_,_,_) then (listReverse(iAcc),inB,iStatesetrepl);
+    case (BackendDAE.STATESET(rang,states,crA,varA,statescandidates,ovars,eqns,oeqns,crJ,varJ)::stateSets,_,_,_,_,_)
+      equation
+        repl = getAliasReplacements(iStatesetrepl,aliasVars);
+        // do not replace the set variables
+        ovars = replaceOtherStateSetVars(ovars,vars,aliasVars,{});
+        (eqns,b) = BackendVarTransform.replaceEquations(eqns,repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        (oeqns,b1) = BackendVarTransform.replaceEquations(oeqns,repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        (stateSets,b,oStatesetrepl) = removeAliasVarsStateSets(stateSets,SOME(repl),vars,aliasVars,BackendDAE.STATESET(rang,states,crA,varA,statescandidates,ovars,eqns,oeqns,crJ,varJ)::iAcc,b or b1);
+      then
+        (stateSets,b,oStatesetrepl);
+  end match;
+end removeAliasVarsStateSets;
+
+protected function replaceOtherStateSetVars
+  input list< BackendDAE.Var> iVarLst;
+  input BackendDAE.Variables vars;
+  input BackendDAE.Variables aliasVars;  
+  input list< BackendDAE.Var> iAcc;
+  output list< BackendDAE.Var> oVarLst;
+algorithm
+  oVarLst := matchcontinue(iVarLst,vars,aliasVars,iAcc)
+    local
+      BackendDAE.Var var;
+      list< BackendDAE.Var> varlst;
+      DAE.ComponentRef cr;
+      DAE.Exp exp;
+    case ({},_,_,_) then iAcc;
+    case (var::varlst,_,_,_)
+      equation
+        cr = BackendVariable.varCref(var);
+        ({var},_) = BackendVariable.getVar(cr,aliasVars);
+        exp = BackendVariable.varBindExp(var);
+        cr::{} = Expression.extractCrefsFromExp(exp);
+        ({var},_) = BackendVariable.getVar(cr,vars);
+      then
+        replaceOtherStateSetVars(varlst,vars,aliasVars,var::iAcc);
+    case (var::varlst,_,_,_)
+      then
+        replaceOtherStateSetVars(varlst,vars,aliasVars,var::iAcc);
+  end matchcontinue;
+end replaceOtherStateSetVars;
+
+protected function getAliasReplacements
+  input Option<BackendVarTransform.VariableReplacements> iStatesetrepl;
+  input BackendDAE.Variables aliasVars;
+  output BackendVarTransform.VariableReplacements oStatesetrepl;
+algorithm
+  oStatesetrepl := match(iStatesetrepl,aliasVars)
+    local
+      BackendVarTransform.VariableReplacements repl;
+    case (SOME(repl),_) then repl;
+    case (NONE(),_)
+      equation
+        repl = BackendVarTransform.emptyReplacementsSized(BackendVariable.varsSize(aliasVars));
+        repl = BackendVariable.traverseBackendDAEVars(aliasVars, getAliasVarReplacements, repl);
+      then
+        repl;
+  end match;
+end getAliasReplacements;
+
+protected function getAliasVarReplacements
+  input tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> inTpl;
+  output tuple<BackendDAE.Var, BackendVarTransform.VariableReplacements> outTpl;
+protected
+  BackendDAE.Var v;
+  DAE.Exp exp;
+  DAE.ComponentRef cr;
+  BackendVarTransform.VariableReplacements repl;
+algorithm
+  (v,repl) := inTpl;
+  BackendDAE.VAR(varName=cr,bindExp=SOME(exp)) := v;
+  repl := BackendVarTransform.addReplacement(repl, cr, exp, SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+  outTpl := (v,repl);
+end getAliasVarReplacements;
 
 protected function replaceEquationTraverser
   "Help function to e.g. removeSimpleEquations"
