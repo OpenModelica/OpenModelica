@@ -376,7 +376,7 @@ algorithm
       DAE.ElementSource source;
     case ({},_,_,_,_,_) then (listReverse(inAcc),iEqns,iVars);
     // single inactive when equation during initialization
-    case ((stmt as DAE.STMT_WHEN(exp=condition, source=source))::{},true,_,_,_,_)
+    case ((stmt as DAE.STMT_WHEN(exp=condition, source=source, elseWhen=NONE()))::{},true,_,_,_,_)
       equation
         false = Expression.containsInitialCall(condition, false);
         crefLst = CheckModel.algorithmStatementListOutputs({stmt});
@@ -715,7 +715,7 @@ algorithm
                                                  cache=cache,
                                                  env=env,
                                                  functionTree=functionTree)), _, _, _) equation
-      true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
+//      true = Flags.isSet(Flags.SOLVE_INITIAL_SYSTEM);
       
       // collect vars and eqns for initial system
       vars = BackendVariable.emptyVars();

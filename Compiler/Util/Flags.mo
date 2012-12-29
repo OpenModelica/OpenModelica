@@ -639,8 +639,8 @@ constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
     "inputDerivativesUsed",
     "detectJacobianSparsePattern",
 //    "generateSymbolicJacobian",
-    "removeConstants", 
-    "optimizeInitialSystem"
+    "removeConstants" 
+//    "optimizeInitialSystem"
   }),
   SOME(STRING_DESC_OPTION({
     ("lateInlineFunction", Util.gettext("perform function inlining for function with annotation LateInline=true")),

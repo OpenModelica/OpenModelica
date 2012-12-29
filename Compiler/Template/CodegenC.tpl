@@ -956,7 +956,7 @@ template functionInitialStateSets(list<StateSet> stateSets)
        statesetData[<%i1%>].A = &<%cref(crA)%>__varInfo;
        statesetData[<%i1%>].rowPivot = (modelica_integer*) calloc(<%nCandidates%>-<%nStates%>,sizeof(modelica_integer));
        statesetData[<%i1%>].colPivot = (modelica_integer*) calloc(<%nCandidates%>,sizeof(modelica_integer));
-       statesetData[<%i1%>].J = (modelica_real*) calloc(<%nCandidates%>*<%nStates%>,sizeof(modelica_real));
+       statesetData[<%i1%>].J = (modelica_real*) calloc(<%nCandidates%>*(<%nCandidates%>-<%nStates%>),sizeof(modelica_real));
        statesetData[<%i1%>].analyticalJacobianColumn = <%generatedJac%>;
        statesetData[<%i1%>].initialAnalyticalJacobian = <%initialJac%>;
        statesetData[<%i1%>].jacobianIndex = <%jacIndex%>;
