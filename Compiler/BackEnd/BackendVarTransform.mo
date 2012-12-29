@@ -797,7 +797,7 @@ algorithm
       HashTable2.HashTable ht,derConst;
     case REPLACEMENTS(hashTable = ht,derConst=NONE())
       then
-        intGt(BaseHashTable.hashTableCurrentSize(ht),0);
+        intLt(BaseHashTable.hashTableCurrentSize(ht),1);
     case REPLACEMENTS(derConst=SOME(_)) then false;
   end match;
 end replacementEmpty;
