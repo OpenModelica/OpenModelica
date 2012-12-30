@@ -1,8 +1,8 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
-  <GroupCell closed="false" >
-    <GroupCell closed="false" >
-      <TextCell style="Title" >
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -10,10 +10,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">if-Statements&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">if-Statements&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -21,9 +21,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">General Description&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -31,29 +31,29 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">The semantics of an &lt;span style=" font-family:'Courier New';">if&lt;/span>-statement is:&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;span style=" font-family:'Courier New';"> &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; font-weight:600;">if&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt;"> expression &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; font-weight:600;">then&lt;/span>&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">     { algorithm ";" }&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">   { &lt;span style=" font-weight:600;">elseif&lt;/span> expression &lt;span style=" font-weight:600;">then&lt;/span>&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">     { algorithm ";" }&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">   }&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">   [ &lt;span style=" font-weight:600;">else&lt;/span>&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">     { algorithm ";" }&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">   ]&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;"> &lt;span style=" font-weight:600;">end if&lt;/span>;&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:10pt; font-weight:600; color:#000000;">inside an &lt;span style=" font-size:12pt; font-weight:400;">algorithm&lt;/span> section and  &lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:10pt; font-weight:600; color:#000000;">&lt;span style=" font-size:11pt; font-weight:400;"> if expression then&lt;/span>&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">     { equation ";" }&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">   { elseif expression then&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">     { equation ";" }&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">   }&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">   [ else&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">     { equation ";" }&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">   ]&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;"> end if;&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:10pt; font-weight:600; color:#000000;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:400;">inside an &lt;/span>&lt;span style=" font-size:12pt; font-weight:400;">equation&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:400;"> section.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The semantics of an &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statement is:&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;"> &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; font-weight:600; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;"> expression &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; font-weight:600; color:#000000;">then&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">     { algorithm &amp;quot;;&amp;quot; }&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">   { &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; font-weight:600; color:#000000;">elseif&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;"> expression &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; font-weight:600; color:#000000;">then&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">     { algorithm &amp;quot;;&amp;quot; }&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">   }&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">   [ &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; font-weight:600; color:#000000;">else&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">     { algorithm &amp;quot;;&amp;quot; }&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">   ]&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;"> &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; font-weight:600; color:#000000;">end if&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">;&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:10pt; font-weight:600; color:#000000;">inside an &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">algorithm&lt;/span>&lt;span style=" font-family:'Courier New'; font-size:10pt; font-weight:600; color:#000000;"> section and  &lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;"> if expression then&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">     { equation &amp;quot;;&amp;quot; }&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">   { elseif expression then&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">     { equation &amp;quot;;&amp;quot; }&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">   }&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">   [ else&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">     { equation &amp;quot;;&amp;quot; }&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;">   ]&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Courier New'; font-size:11pt; color:#000000;"> end if;&lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">inside an &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">equation&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> section.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="" >
+        <TextCell style="">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -61,12 +61,12 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'MS Shell Dlg'; font-size:8pt;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">If the condition after the keyword &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> evaluates to true, the statements after &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">then&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> are executed. Otherwise if there are one or more elseif-parts there conditions are evaluated in order; the first that evaluates to true causes the corresponding statements to be executed. Otherwise, if present, the statements in the else-part are executed. The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">elseif&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> part is conditional and can appear in zero or more iterations. The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-clause is conditional depending on the variability of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expression. In case the expression is of parameter type then the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-clause can be emitted. In case the variability of the expression condition is higher than parameter then the  &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-clause cann't be omitted since the single assignment rule would not hold, because the number of equations may change during a simualtion. &lt;/span>&lt;/p>
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">If the condition after the keyword &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> evaluates to true, the statements after &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">then&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> are executed. Otherwise if there are one or more elseif-parts there conditions are evaluated in order; the first that evaluates to true causes the corresponding statements to be executed. Otherwise, if present, the statements in the else-part are executed. The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">elseif&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> part is conditional and can appear in zero or more iterations. The &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-clause is conditional depending on the variability of the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-expression. In case the expression is of parameter type then the &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-clause can be emitted. In case the variability of the expression condition is higher than parameter then the  &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">else&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-clause cann't be omitted since the single assignment rule would not hold, because the number of equations may change during a simualtion. &lt;/span>&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
       </GroupCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -74,9 +74,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">SumVector&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">SumVector&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -84,9 +84,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">In the class SumVector there is an exmple of an &lt;span style=" font-family:'Courier New';">if&lt;/span>-statement which performs a combined summation and computation on a vector v.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">In the class SumVector there is an exmple of an &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statement which performs a combined summation and computation on a vector v.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell style="Graph" closed="false">
           <Input>class SumVector
   Real sum;
   parameter Real v[5] = {100, 200, -300, 400, 500};
@@ -106,8 +106,8 @@ end SumVector;</Input>
           <Output>{SumVector}</Output>
         </GraphCell>
       </GroupCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -115,9 +115,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of SumVector&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Simulation of SumVector&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -125,23 +125,22 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">After we have simulated &lt;span style=" font-family:'Courier New';">SumVector&lt;/span> we see that the sum of the absolute value of the elements in the vecor is 1500.&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">After we have simulated &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">SumVector&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> we see that the sum of the absolute value of the elements in the vecor is 1500.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
-          <Input>simulate( SumVector ) //?? algorithm sections outside functions not yet implemented</Input>
+        <GraphCell style="Graph" closed="false">
+          <Input>simulation( SumVector ) </Input>
           <Output>record SimulationResult
-    resultFile = "Simulation failed.
-Error: Internal error For statements in algorithms not supported yet. Suggested workaround: place for statement in a Modelica function
-"
+    messages = "",
+    simulationTime = 0.17935413242547352
 end SimulationResult;</Output>
         </GraphCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
-          <Input>val(sum,0)  /??val needed</Input>
-          <Output></Output>
+        <GraphCell style="Graph" closed="false">
+          <Input>val(sum,0)  </Input>
+          <Output>1500.0</Output>
         </GraphCell>
       </GroupCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -149,9 +148,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Assignments within if-Statements&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Assignments within if-Statements&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -159,10 +158,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">There are a special feature regarding assignment statements inside &lt;span style=" font-family:'Courier New';">if&lt;/span>-statements. Modelica guarantees that all the outputs of an algorithm section always have well-defined values, and that an algorithm section does &lt;span style=" font-style:italic;">not&lt;/span> have memory of previous invocations. This is achieved by &lt;span style=" font-style:italic;">initializing&lt;/span> all &lt;span style=" font-style:italic;">conditionally assigned variables&lt;/span> to their start-values whenever the algorithm is invoked. &lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">There are a special feature regarding assignment statements inside &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">if&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">-statements. Modelica guarantees that all the outputs of an algorithm section always have well-defined values, and that an algorithm section does &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">not&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> have memory of previous invocations. This is achieved by &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">initializing&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> all &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-style:italic; color:#000000;">conditionally assigned variables&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> to their start-values whenever the algorithm is invoked. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -170,9 +169,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">CondAssign&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">CondAssign&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -180,9 +179,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">The algorithm section in the class &lt;span style=" font-family:'Courier New';">CondAssign&lt;/span> below automatically assigns the start values 35 and 45 to the variables &lt;span style=" font-family:'Courier New';">x&lt;/span> and &lt;span style=" font-family:'Courier New';">y&lt;/span> respectively when entering the algorithm section since these variables are conditionally assigned within the algorithm section. This means that the condition &lt;span style=" font-family:'Courier New';">x&amp;gt;5 &lt;/span>becomes &lt;span style=" font-family:'Courier New';">35&amp;gt;5&lt;/span> which is always true. On the other hand, the variable z is not given its start value when entering the algorithm section since it is not conditionally assigned; it is actually an input to the algorithm section.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The algorithm section in the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">CondAssign&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> below automatically assigns the start values 35 and 45 to the variables &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">x&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">y&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> respectively when entering the algorithm section since these variables are conditionally assigned within the algorithm section. This means that the condition &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">x&amp;gt;5 &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">becomes &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">35&amp;gt;5&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> which is always true. On the other hand, the variable z is not given its start value when entering the algorithm section since it is not conditionally assigned; it is actually an input to the algorithm section.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>class CondAssign
   Real x(start = 35);
   Real y(start = 45);
@@ -198,8 +197,8 @@ end CondAssign;</Input>
             <Output>{CondAssign}</Output>
           </GraphCell>
         </GroupCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -207,24 +206,25 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of CondAssign&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of CondAssign&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
-            <Input>simulate( CondAssign ) </Input>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulation( CondAssign ) </Input>
             <Output>record SimulationResult
-    resultFile = "CondAssign_res.plt"
+    messages = "",
+    simulationTime = 0.18605346043957535
 end SimulationResult;</Output>
           </GraphCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.0025" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.2" MajorY="0.005" closed="false" YLabel="" Area="AAAAAAAAAABARn7R8On51T/wGp3Z7Gg/P5TmwhixsAA=" ShowGraph="true" Grid="true" XLabel="time" Legend="true" >
-            <Data Id="0" Label="time" >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</Data>
-            <Data Id="0" Label="y" >AAAB90BGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAAA=</Data>
-            <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="y" Color="#ff0000" />
+          <GraphCell style="Graph" closed="false">
+            <OMCPlot PlotType="0" XRangeMin="0" Title="Plot by OpenModelica" LogX="false" XRangeMax="0" Grid="true" LogY="false" YRangeMin="0" YRangeMax="0" YLabel="" Legend="true" XLabel="time">
+              <Curve Title="y" Visible="true" XData="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" YData="QEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAABARoAAAAAAAEBGgAAAAAAAQEaAAAAAAAA=" Color="4294901760"/>
+            </OMCPlot>
             <Input>plot({y})</Input>
-            <Output>true</Output>
+            <Output>[done]</Output>
           </GraphCell>
         </GroupCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -232,9 +232,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">CondAssign&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">CondAssign&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -242,9 +242,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">The function CondAssignFunc below behaves similarily. Here the local variables x and y are automatically assigned the default initial values 35 and 45 on entry to the algorithm section that comprises its function body.&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The function CondAssignFunc below behaves similarily. Here the local variables x and y are automatically assigned the default initial values 35 and 45 on entry to the algorithm section that comprises its function body.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>function CondAssignFunc
   input Real z;
   output Real x := 35;
@@ -259,7 +259,7 @@ algorithm
 end CondAssignFunc;</Input>
             <Output>{CondAssignFunc}</Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -267,10 +267,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>class CondAssignFuncCall
   Real a, b;
 equation
@@ -279,8 +278,8 @@ end CondAssignFuncCall;</Input>
             <Output>{CondAssignFuncCall}</Output>
           </GraphCell>
         </GroupCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -288,17 +287,16 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of CondAssignFuncCall&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of CondAssignFuncCall&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
-            <Input>simulate( CondAssignFuncCall )  //??error</Input>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulation( CondAssignFuncCall )  </Input>
             <Output>record SimulationResult
-    resultFile = "Simulation failed.
-Error: Too few equations, underdetermined system. The model has 1 equation(s) and 2 variable(s)
-"
+    messages = "",
+    simulationTime = 0.13844801284065367
 end SimulationResult;</Output>
           </GraphCell>
-          <TextCell style="Output" >
+          <TextCell style="Output">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -306,13 +304,15 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>{val(a,0), val(b,0)}  //??val used
 </Input>
-            <Output></Output>
+            <Output>{400.0,45.0}
+OMC-ERROR: 
+"Error: Class val not found in scope &lt;global scope> (looking for a function or record).
+"</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>

@@ -22,7 +22,7 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />In the class &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">CelestialBody&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">radius&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">name&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> and &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">mass&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> are examples of fields/variables. Every object of the type &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">CelestialBody&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> has its own instances of these fields. Changing the mass field in one object will not affect the mass in another object.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+      <GraphCell style="Graph" closed="false">
         <Input>class CelestialBody
   constant Real g = 6.672e-11;
   parameter Real radius;
@@ -52,12 +52,14 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Duplicate field names is not allowed in class declarations. The name of a declared element must be different from the names of all other declared elements in the class.&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+        <GraphCell style="Graph" closed="false">
           <Input>class IllegalDuplicate
   parameter Real duplicate = 4.0;
   parameter Integer duplicate = 6;   // Error! Illegal duplicate field name.
 end IllegalDuplicate;</Input>
-          <Output>{IllegalDuplicate}</Output>
+          <Output>Error occured building AST
+Syntax Error
+[&lt;interactive>:2:3-2:33:writable] Error: An element with name duplicate is already declared in this scope.</Output>
         </GraphCell>
         <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
@@ -91,26 +93,11 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">As we can see when simulating &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">IllegalDuplicate&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">, the class generates an error for trying to redefine the field &lt;/span>&lt;span style=" font-family:'Courier New'; font-size:12pt; color:#000000;">duplicate&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
-          <Input>simulate(IllegalDuplicate)
+        <GraphCell style="Graph" closed="false">
+          <Input>simulation(IllegalDuplicate)
 </Input>
           <Output>record SimulationResult
-    resultFile = "",
-    simulationOptions = "startTime = 0.0, stopTime = 1.0, numberOfIntervals = 500, tolerance = 1e-06, method = 'dassl', fileNamePrefix = 'IllegalDuplicate', storeInTemp = false, noClean = false, options = '', outputFormat = 'plt'",
-    messages = "Simulation failed for model: IllegalDuplicate
-[&lt;interactive>:3:3-3:34:writable] Error: Duplicate elements (due to inherited elements) not identical:
-	first element is:  parameter Integer duplicate  = 6;
-	second element is: parameter Real duplicate  = 4.0;
-
-Error: Error occured while flattening model IllegalDuplicate
-",
-    timeFrontend = 0.0,
-    timeBackend = 0.0,
-    timeSimCode = 0.0,
-    timeTemplates = 0.0,
-    timeCompile = 0.0,
-    timeSimulation = 0.0,
-    timeTotal = 0.0
+    messages = "Simulation Failed. Model: IllegalDuplicate does not exist! Please load it first before simulation."
 end SimulationResult;</Output>
         </GraphCell>
       </GroupCell>
@@ -136,7 +123,7 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Voltage&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+          <GraphCell style="Graph" closed="false">
             <Input>type Voltage = Real(unit = "V");</Input>
             <Output>{Voltage}</Output>
           </GraphCell>
@@ -162,12 +149,14 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">It is not allowed to have the same name of a field/variable and its type specifier.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+          <GraphCell style="Graph" closed="false">
             <Input>class IllegalTypeAsField
   Voltage Voltage;   // Error!
   Voltage voltage;   // Legal, Voltage and voltage are two different names
 end IllegalTypeAsField;</Input>
-            <Output>{IllegalTypeAsField}</Output>
+            <Output>Error occured building AST
+Syntax Error
+[&lt;interactive>:2:3-2:18:writable] Error: Found a component with same name when looking for type Voltage</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>
@@ -192,12 +181,11 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Semantic checking is also performed during flattening. As we can see when simulating IllegalTypeAsField we get a warning for trying to name our variable Voltage, which is the same as the type name.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+        <GraphCell style="Graph" closed="false">
           <Input>instantiateModel( IllegalTypeAsField );</Input>
           <Output>
 OMC-ERROR: 
-"[&lt;interactive>:2:3-2:18:writable] Warning: Component Voltage has the same name as its type IllegalTypeAsField.Voltage.
-	This is forbidden by Modelica specification and may lead to lookup errors.
+"Error: Class IllegalTypeAsField not found in scope &lt;TOP>.
 "</Output>
         </GraphCell>
         <GroupCell closed="false">
@@ -221,16 +209,29 @@ p, li { white-space: pre-wrap; }
 &lt;td style="border: none;">
 &lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">By changing the name of the first field/variable to voltage1, we fix the problem.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
+          <GraphCell style="Graph" closed="false">
             <Input>class LegalVoltage
   Voltage voltage1;  // Legal!
   Voltage voltage;   // Legal, Voltage and voltage are two different names
 end LegalVoltage;</Input>
             <Output>{LegalVoltage}</Output>
           </GraphCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false">
-            <Input>instantiateModel( LegalVoltage );</Input>
-            <Output>[done]</Output>
+          <GraphCell style="Graph" closed="false">
+            <Input>instantiateModel( LegalVoltage )</Input>
+            <Output>"class LegalVoltage
+  Real voltage1(unit = \"V\");
+  Real voltage(unit = \"V\");
+end LegalVoltage;
+"</Output>
+          </GraphCell>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulation(LegalVoltage)</Input>
+            <Output>record SimulationResult
+    messages = "Simulation failed for model: LegalVoltage
+Error: Too few equations, underdetermined system. The model has 0 equation(s) and 2 variable(s)
+Error: Internal error Transformation Module omc index Reduction Method dummyDerivative failed!
+"
+end SimulationResult;</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>
