@@ -7016,6 +7016,7 @@ algorithm
     case ((v as BackendDAE.VAR(varName = cr,bindExp=SOME(exp),source=source),(uniqueEqIndex,eqns)))
       equation
         false = BackendVariable.varFixed(v);
+        false = BackendVariable.isVarOnTopLevelAndInput(v);
       then
         ((v,(uniqueEqIndex+1,SimCode.SES_SIMPLE_ASSIGN(uniqueEqIndex,cr,exp,source)::eqns)));
     else then inTpl;
