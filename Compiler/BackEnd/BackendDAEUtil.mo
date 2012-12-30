@@ -3637,8 +3637,10 @@ algorithm
       then ((e,false,(vars,pa)));        
     case ((e as DAE.IFEXP(expThen = e1,expElse = e2),(vars,pa)))
       equation
-        ((_,(vars,pa))) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, (vars,pa));
+        ((_,(vars,p))) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, (vars,pa));
         ((_,(vars,pa))) = Expression.traverseExpTopDown(e2, traversingincidenceRowExpSolvableFinder, (vars,pa));
+        // take only variables found in both branches, cannot use intersectionIntN because of negative values for states
+        pa = List.intersectionOnTrue(p,pa,intEq);
       then
         ((e,false,(vars,pa)));
     case ((e as DAE.RANGE(ty = _),(vars,pa)))

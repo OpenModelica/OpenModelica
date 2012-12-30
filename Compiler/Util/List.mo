@@ -1783,50 +1783,46 @@ public function intersectionIntN
   input list<Integer> inList2;
   input Integer inN;
   output list<Integer> outResult;
-protected 
-  array<Integer> a1, a2;
 algorithm
-  a1 := arrayCreate(inN, 0);
-  a2 := arrayCreate(inN, 0);
-  a1 := setPos(inList1, a1, 1);
-  a2 := setPos(inList1, a2, 1);
-  outResult := intersectionIntVec(a1, a2, 1);
+  outResult := matchcontinue(inList1,inList2,inN)
+    local
+      array<Integer> a;
+    case (_,_,_)
+      equation
+        true = intGt(inN,0);
+        a = arrayCreate(inN, 0);
+        a = addPos(inList1, a, 1);
+        a = addPos(inList2, a, 1);
+      then
+        intersectionIntVec(a, inN, {});
+    else then {};
+ end matchcontinue;
 end intersectionIntN;
 
 protected function intersectionIntVec 
   "Helper function to intersectionIntN."
-  input array<Integer> inArray1;
-  input array<Integer> inArray2;
+  input array<Integer> inArray;
   input Integer inIndex;
+  input list<Integer> iAcc;
   output list<Integer> outResult;
 algorithm
-  outResult := matchcontinue(inArray1, inArray2, inIndex)
+  outResult := match(inArray, inIndex, iAcc)
     local
-      list<Integer> res;
+      list<Integer> acc;
+
+    case(_, 0, _) 
+      then 
+        iAcc;
 
     case(_, _, _) 
       equation
-        true = inIndex > arrayLength(inArray1) or inIndex > arrayLength(inArray2);
+        acc = consOnTrue(intEq(inArray[inIndex],2),inIndex,iAcc);
       then 
-        {};
-
-    case(_, _, _) 
-      equation
-        true = inArray1[inIndex] == 1 and inArray2[inIndex] == 1;
-        res = intersectionIntVec(inArray1, inArray2, inIndex + 1);
-      then 
-        inIndex :: res;
-
-    case(inArray1, inArray2, inIndex) 
-      equation
-        false = inArray1[inIndex] == 1 and inArray2[inIndex] == 1;
-        res = intersectionIntVec(inArray1, inArray2, inIndex + 1);
-      then 
-        res;
-  end matchcontinue;
+        intersectionIntVec(inArray, inIndex - 1, acc);
+  end match;
 end intersectionIntVec;
 
-protected function setPos 
+protected function addPos 
   "Helper function to intersectionIntN."
   input list<Integer> inList;
   input array<Integer> inArray;
@@ -1843,20 +1839,20 @@ algorithm
 
     case(i :: irest, _, _) 
       equation
-        arr = arrayUpdate(inArray, i, inIndex);
-        arr = setPos(irest, inArray, inIndex);
+        arr = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex));
+        arr = addPos(irest, inArray, inIndex);
       then 
         arr;
 
     case(i :: _, _, _) 
       equation
-        failure(_ = arrayUpdate(inArray, i, 1));
-        print("Internal error in List.setPos, index = " +& intString(i) +&
+        failure(_ = arrayUpdate(inArray, i, intAdd(inArray[i],inIndex)));
+        print("Internal error in List.addPos, index = " +& intString(i) +&
           " but array size is " +& intString(arrayLength(inArray)) +& "\n");
       then 
         fail();
   end matchcontinue;
-end setPos;
+end addPos;
 
 public function intersectionOnTrue
   "Takes two lists and a comparison function over two elements of the lists. It
@@ -1961,47 +1957,43 @@ public function setDifferenceIntN
   input list<Integer> inList2;
   input Integer inN;
   output list<Integer> outDifference;
-protected 
-  array<Integer> a1, a2;
 algorithm
-  a1 := arrayCreate(inN, 0);
-  a2 := arrayCreate(inN, 0);
-  a1 := setPos(inList1, a1, 1);
-  a2 := setPos(inList2, a2, 1);
-  outDifference := setDifferenceIntVec(a1, a2, 1);
+  outDifference := matchcontinue(inList1,inList2,inN)
+    local
+      array<Integer> a;
+    case (_,_,_)
+      equation
+        true = intGt(inN,0);
+        a = arrayCreate(inN, 0);
+        a = addPos(inList1, a, 1);
+        a = addPos(inList2, a, 1);
+      then
+        setDifferenceIntVec(a, inN, {});
+    else then {};
+ end matchcontinue;  
 end setDifferenceIntN;
 
 protected function setDifferenceIntVec 
   "Helper function to intersectionIntN."
-  input array<Integer> inArray1;
-  input array<Integer> inArray2;
+  input array<Integer> inArray;
   input Integer inIndex;
+  input list<Integer> iAcc;
   output list<Integer> outDifference;
 algorithm
-  outDifference := matchcontinue(inArray1, inArray2, inIndex)
+  outDifference := match(inArray, inIndex, iAcc)
     local
-      list<Integer> res;
+      list<Integer> acc;
+
+    case(_, 0, _) 
+      then 
+        iAcc;
 
     case(_, _, _) 
       equation
-        true = inIndex > arrayLength(inArray1) or inIndex > arrayLength(inArray2);
+        acc = consOnTrue(intEq(inArray[inIndex],1),inIndex,iAcc);
       then 
-        {};
-
-    case(_, _, _) 
-      equation
-        true = inArray1[inIndex] - inArray2[inIndex] <> 0;
-        res = setDifferenceIntVec(inArray1, inArray2, inIndex + 1);
-      then 
-        inIndex :: res;
-
-    case(_, _, _) 
-      equation
-        false = inArray1[inIndex] - inArray2[inIndex] <> 0;
-        res = setDifferenceIntVec(inArray1, inArray2, inIndex + 1);
-      then 
-        res;
-  end matchcontinue;
+        setDifferenceIntVec(inArray, inIndex - 1, acc);
+  end match;
 end setDifferenceIntVec;
 
 public function setDifferenceOnTrue
@@ -2077,47 +2069,43 @@ public function unionIntN
   input list<Integer> inList2;
   input Integer inN;
   output list<Integer> outUnion;
-protected 
-  array<Integer> a1, a2;
 algorithm
-  a1 := arrayCreate(inN, 0);
-  a2 := arrayCreate(inN, 0);
-  a1 := setPos(inList1, a1, 1);
-  a2 := setPos(inList2, a2, 1);
-  outUnion := unionIntVec(a1, a2, 1);
+  outUnion := matchcontinue(inList1,inList2,inN)
+    local
+      array<Integer> a;
+    case (_,_,_)
+      equation
+        true = intGt(inN,0);
+        a = arrayCreate(inN, 0);
+        a = addPos(inList1, a, 1);
+        a = addPos(inList2, a, 1);
+      then
+        unionIntVec(a, inN, {});
+    else then {};
+ end matchcontinue;    
 end unionIntN;
 
 protected function unionIntVec 
   "Helper function to listIntersectionIntN."
-  input array<Integer> inArray1;
-  input array<Integer> inArray2;
+  input array<Integer> inArray;
   input Integer inIndex;
+  input list<Integer> iAcc;
   output list<Integer> outUnion;
 algorithm
-  outUnion := matchcontinue(inArray1, inArray2, inIndex)
+  outUnion := match(inArray, inIndex, iAcc)
     local
-      list<Integer> res;
+      list<Integer> acc;
+
+    case(_, 0, _) 
+      then 
+        iAcc;
 
     case(_, _, _) 
       equation
-        true = inIndex > arrayLength(inArray1) or inIndex > arrayLength(inArray2);
+        acc = consOnTrue(intGt(inArray[inIndex],0),inIndex,iAcc);
       then 
-        {};
-
-    case(_, _, _) 
-      equation
-        true = inArray1[inIndex] == 1 or inArray2[inIndex] == 1;
-        res = unionIntVec(inArray1, inArray2, inIndex + 1);
-      then 
-        inIndex :: res;
-
-    case(_, _, _) 
-      equation
-        false = inArray1[inIndex] == 1 or inArray2[inIndex]==1;
-        res = unionIntVec(inArray1, inArray2, inIndex + 1);
-      then 
-        res;
-  end matchcontinue;
+        unionIntVec(inArray, inIndex - 1, acc);
+  end match;
 end unionIntVec;
 
 public function unionElt 

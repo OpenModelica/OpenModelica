@@ -1102,6 +1102,7 @@ algorithm
         unassigned = Matching.getUnassigned(nVars, vec1, {});
         //  print("Unassigned Vars " +& stringDelimitList(List.map(unassigned,intString),", ") +& "\n");
         Debug.bcall(intGt(listLength(unassigned),nVars-nEqns),print,"Error could not match all equations\n");
+        unassigned = Util.if_(intGt(listLength(unassigned),nVars-nEqns),{},unassigned);
         //unassigned = List.firstN(listReverse(unassigned),nVars-nEqns);
         unassigned = replaceFixedCandidates(unassigned,nVars,nEqns,m,mt,vec1,vec2,inVars,inInitVars,1,arrayCreate(nEqns,-1),{});
         // add for all free variables an equation 
