@@ -641,6 +641,18 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
     snprintf(buf,WARNINGBUFFSIZE,"File[%d]=%f\n",time.n,time.data[time.n-1]);
     res = mk_cons(mk_scon(buf),res);
   }
+  /* check if time is larger or equal reftime */
+  if (AlmostEqualRelativeAndAbs(time.data[time.n-1],timeref.data[timeref.n-1]) == 0) {
+    char buf[WARNINGBUFFSIZE];
+#ifdef DEBUGOUTPUT
+    fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n-1],timeref.data[timeref.n-1]);
+#endif
+    res = mk_cons(mk_scon("Warning: Resultfile and Reference have different end time points!\n"),res);
+    snprintf(buf,WARNINGBUFFSIZE,"Reffile[%d]=%f\n",timeref.n,timeref.data[timeref.n-1]);
+    res = mk_cons(mk_scon(buf),res);
+    snprintf(buf,WARNINGBUFFSIZE,"File[%d]=%f\n",time.n,time.data[time.n-1]);
+    res = mk_cons(mk_scon(buf),res);
+  }
   var1=NULL;
   var2=NULL;
   /* compare vars */

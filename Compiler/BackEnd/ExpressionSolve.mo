@@ -375,7 +375,7 @@ algorithm
       then
         (rhs,asserts);
         
-    // a^b = f(..) -> a = sign(pre(a))*(f(...)^(1/b))
+    // a^b = f(..) -> a = (if pre(a)==0 then 1 else sign(pre(a)))*(f(...)^(1/b))
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         e = Expression.makeDiff(inExp1,inExp2);
@@ -394,6 +394,7 @@ algorithm
         tp = Expression.typeof(inExp3);                   
         dere = Expression.makeBuiltinCall("pre",{inExp3},tp);
         dere = Expression.makeBuiltinCall("sign",{dere},DAE.T_INTEGER_DEFAULT);
+        dere = DAE.IFEXP(DAE.RELATION(dere,DAE.EQUAL(tp),DAE.RCONST(0.0),-1,NONE()),DAE.RCONST(1.0),dere);
         rhs = Expression.expMul(dere,rhs);
       then
         (rhs,asserts);        
