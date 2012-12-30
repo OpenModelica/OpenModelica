@@ -1066,7 +1066,8 @@ protected function fixUnderDeterminedInitialSystem "function fixUnderDeterminedI
   output BackendDAE.Shared oShared;
 algorithm
   (outSucceed, outVars, outEqns, oShared) := matchcontinue(inDAE, inVars, inEqns, inInitVars, iShared)
-    local    
+    local
+      BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       Integer nVars, nInitVars, nEqns;
       list<BackendDAE.Var> initVarList;
@@ -1090,17 +1091,17 @@ algorithm
         nEqns = BackendDAEUtil.equationSize(inEqns);
         syst = BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
         (syst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE());
-        //  BackendDump.printEqSystem(syst);
+          BackendDump.printEqSystem(syst);
         vec1 = arrayCreate(nVars,-1);
         vec2 = arrayCreate(nEqns,-1);
         Matching.matchingExternalsetIncidenceMatrix(nVars,nEqns,m);        
         BackendDAEEXT.matching(nVars,nEqns,5,-1,0.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);
         // try to find for unmatched variables without startvalue an equation by unassign a variable with start value 
-        //unassigned1 = Matching.getUnassigned(nEqns, vec2, {});
-        //  print("Unassigned Eqns " +& stringDelimitList(List.map(unassigned1,intString),", ") +& "\n");
+        unassigned1 = Matching.getUnassigned(nEqns, vec2, {});
+          print("Unassigned Eqns " +& stringDelimitList(List.map(unassigned1,intString),", ") +& "\n");
         unassigned = Matching.getUnassigned(nVars, vec1, {});
-        //  print("Unassigned Vars " +& stringDelimitList(List.map(unassigned,intString),", ") +& "\n");
+          print("Unassigned Vars " +& stringDelimitList(List.map(unassigned,intString),", ") +& "\n");
         Debug.bcall(intGt(listLength(unassigned),nVars-nEqns),print,"Error could not match all equations\n");
         unassigned = Util.if_(intGt(listLength(unassigned),nVars-nEqns),{},unassigned);
         //unassigned = List.firstN(listReverse(unassigned),nVars-nEqns);
@@ -1108,9 +1109,9 @@ algorithm
         // add for all free variables an equation 
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
         initVarList = List.map1r(unassigned,BackendVariable.getVarAt,inVars);
-        (eqns,shared) = addStartValueEquations(initVarList, inEqns, iShared);
+        (vars,eqns,shared) = addStartValueEquations(initVarList, inVars, inEqns, iShared);
       then 
-        (true, inVars, eqns, shared);        
+        (true, vars, eqns, shared);        
 
     // fix all free variables
     case(_, _, eqns, _, _) equation
@@ -1121,8 +1122,8 @@ algorithm
       
       Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
       initVarList = BackendVariable.varList(inInitVars);
-      (eqns,shared) = addStartValueEquations(initVarList, eqns, iShared);
-    then (true, inVars, eqns, shared);
+      (vars,eqns,shared) = addStartValueEquations(initVarList, inVars, eqns, iShared);
+    then (true, vars, eqns, shared);
     
     // fix a subset of unfixed variables
     case(_, _, eqns, _, _) equation
@@ -1440,16 +1441,19 @@ end collectIndependentVars;
 
 protected function addStartValueEquations "function addStartValueEquations
   author lochel"
-  input list<BackendDAE.Var> inVars;
+  input list<BackendDAE.Var> inVarLst;
+  input BackendDAE.Variables iVars;
   input BackendDAE.EquationArray inEqns;
   input BackendDAE.Shared iShared;
+  output BackendDAE.Variables oVars;
   output BackendDAE.EquationArray outEqns;
   output BackendDAE.Shared oShared;
 algorithm
-  (outEqns,oShared) := matchcontinue(inVars, inEqns,iShared)
+  (oVars,outEqns,oShared) := matchcontinue(inVarLst,iVars,inEqns,iShared)
     local
+      BackendDAE.Variables vars;
       BackendDAE.Var var,preVar;
-      list<BackendDAE.Var> vars;
+      list<BackendDAE.Var> varlst;
       BackendDAE.Equation eqn;
       BackendDAE.EquationArray eqns;
       DAE.Exp e, e1, crefExp, startExp;
@@ -1460,9 +1464,9 @@ algorithm
       BackendDAE.Shared shared;
       Option<DAE.Exp> optexp;
       
-    case ({}, _, _) then (inEqns,iShared);
+    case ({}, _, _, _) then (iVars,inEqns,iShared);
     
-    case (var::vars, _,_) 
+    case (var::varlst, _, _, _) 
       equation
         preCref = BackendVariable.varCref(var);
         true = ComponentReference.isPreCref(preCref);
@@ -1481,36 +1485,39 @@ algorithm
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [discrete] " +& crStr);
 
         eqns = BackendEquation.equationAdd(eqn, inEqns);
-        (eqns,shared) = addStartValueEquations(vars, eqns, iShared);
+        (vars,eqns,shared) = addStartValueEquations(varlst, iVars, eqns, iShared);
       then 
-        (eqns,shared);
+        (vars,eqns,shared);
 
-    case ((var as BackendDAE.VAR(varName=cref, varType=tp, arryDim=arryDim))::vars, _,_) 
+    case ((var as BackendDAE.VAR(varName=cref, varType=tp, arryDim=arryDim))::varlst, _, _, _) 
       equation
         true = BackendVariable.isVarDiscrete(var);
         crefExp = DAE.CREF(cref, tp);
         
-        optexp = BackendVariable.varStartValueOption(var);
+        //optexp = BackendVariable.varStartValueOption(var);
         preCref = ComponentReference.crefPrefixPre(cref);  // cr => $PRE.cr
-        preVar = BackendDAE.VAR(preCref, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), tp, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
-        preVar = BackendVariable.setVarFixed(preVar, true);
-        preVar = BackendVariable.setVarStartValueOption(preVar, optexp);        
+        //preVar = BackendDAE.VAR(preCref, BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), tp, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+        //preVar = BackendVariable.setVarFixed(preVar, true);
+        //preVar = BackendVariable.setVarStartValueOption(preVar, optexp);        
 
-        e = Expression.crefExp(cref);
-        startExp = Expression.crefExp(preCref);
+        // e = Expression.crefExp(cref);
+        //startExp = Expression.crefExp(preCref);
 
-        eqn = BackendEquation.generateEquation(crefExp, startExp, tp, DAE.emptyElementSource, false);
+        //eqn = BackendEquation.generateEquation(crefExp, startExp, tp, DAE.emptyElementSource, false);
 
         crStr = ComponentReference.crefStr(cref);
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [discrete] " +& crStr);
        
+        ({preVar},_) = BackendVariable.getVar(preCref,iVars);
+        preVar = BackendVariable.setVarFixed(preVar, true);
+        vars = BackendVariable.deleteVar(preCref,iVars);
         shared = BackendVariable.addKnVarDAE(preVar,iShared);
-        eqns = BackendEquation.equationAdd(eqn, inEqns);
-        (eqns,shared) = addStartValueEquations(vars, eqns,shared);
+        //eqns = BackendEquation.equationAdd(eqn, inEqns);
+        (vars,eqns,shared) = addStartValueEquations(varlst,vars,inEqns,shared);
       then 
-        (eqns,shared);
+        (vars,eqns,shared);
     
-    case (var::vars, _,_) 
+    case (var::varlst, _, _, _) 
       equation
         cref = BackendVariable.varCref(var);
         tp = BackendVariable.varType(var);
@@ -1527,9 +1534,9 @@ algorithm
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "  [continuous] " +& crStr);
        
         eqns = BackendEquation.equationAdd(eqn, inEqns);
-        (eqns,shared) = addStartValueEquations(vars, eqns,iShared);
+        (vars,eqns,shared) = addStartValueEquations(varlst,iVars,eqns,iShared);
       then 
-        (eqns,shared);
+        (vars,eqns,shared);
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function addStartValueEquations failed"});

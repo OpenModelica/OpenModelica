@@ -368,18 +368,21 @@ algorithm
       HashSet.HashSet unreplacable;
       DAE.Exp e;
       DAE.ComponentRef cr;
+      list<DAE.Exp> explst;
+      list<DAE.ComponentRef> crlst;
     case((e as DAE.CREF(componentRef = cr), unreplacable))
       equation
         unreplacable = traverseCrefUnreplacable(cr,NONE(),unreplacable);
       then
         ((e, unreplacable));
-/* This is a test for the initial system
-     case((DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst={e as DAE.CREF(componentRef=cr)}), unreplacable))
+     case((e as DAE.CALL(path=Absyn.IDENT(name = "pre"),expLst=explst), unreplacable))
       equation
-        unreplacable = BaseHashSet.add(cr,unreplacable);
+        crlst = List.flatten(List.map(explst,Expression.extractCrefsFromExp));
+        crlst = List.map(crlst,ComponentReference.crefStripLastSubs);
+        unreplacable = List.fold(crlst,BaseHashSet.add,unreplacable);
       then
         ((e, unreplacable));
-*/    case _ then inExp;
+    case _ then inExp;
   end matchcontinue;
 end traverserExpUnreplacable;
  
