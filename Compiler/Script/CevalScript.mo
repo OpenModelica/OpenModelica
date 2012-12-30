@@ -144,14 +144,20 @@ protected constant DAE.Type simulationResultType_rtest = DAE.T_COMPLEX(ClassInf.
 protected constant DAE.Type simulationResultType_full = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("simulationOptions",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeFrontend",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("messagesalachew",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeFrontendalachew",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeBackend",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeSimCode",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeTemplates",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeCompile",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeSimulation",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeTotal",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE())
+  },NONE(),DAE.emptyTypeSource);
+
+protected constant DAE.Type simulationResultType_drModelica = DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
+  DAE.TYPES_VAR("messages",DAE.dummyAttrVar,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("flatteningTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("simulationTime",DAE.dummyAttrVar,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE())
   },NONE(),DAE.emptyTypeSource);
 
 //these are in reversed order than above
@@ -164,7 +170,6 @@ protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResu
     ("timeBackend",    Values.REAL(0.0)),
     ("timeFrontend",   Values.REAL(0.0))    
   };
-
 
 public
 uniontype SimulationOptions "these are the simulation/buildModel* options"
@@ -246,6 +251,12 @@ algorithm
   t := Util.if_(Config.getRunningTestsuite(), simulationResultType_rtest, simulationResultType_full);
 end getSimulationResultType;
 
+public function getDrModelicaSimulationResultType
+  output DAE.Type t;
+algorithm
+  t := Util.if_(Config.getRunningTestsuite(), simulationResultType_rtest, simulationResultType_drModelica);
+end getDrModelicaSimulationResultType;
+
 public function createSimulationResult
   input String resultFile;
   input String options;
@@ -268,6 +279,27 @@ algorithm
     "resultFile"::"simulationOptions"::"messages"::fields,-1);
 end createSimulationResult;
 
+public function createDrModelicaSimulationResult
+  input String resultFile;
+  input String options;
+  input String message;
+  input list<tuple<String,Values.Value>> inAddResultValues "additional values in reversed order; expected values see in CevalScript.simulationResultType_full";
+  output Values.Value res;
+protected
+  list<tuple<String,Values.Value>> resultValues;
+  list<Values.Value> vals;
+  list<String> fields;
+  Boolean isTestType,notest;
+algorithm
+  resultValues := listReverse(inAddResultValues);
+  //TODO: maybe we should test if the fields are the ones in simulationResultType_full
+  notest := not Config.getRunningTestsuite();
+  fields := Debug.bcallret2(notest, List.map, resultValues, Util.tuple21, {});
+  vals := Debug.bcallret2(notest, List.map, resultValues, Util.tuple22, {});
+  res := Values.RECORD(Absyn.IDENT("SimulationResult"),Values.STRING(message)::
+    vals, "messages"::fields,-1);
+end createDrModelicaSimulationResult;
+
 public function createSimulationResultFailure
   input String message;
   input String options;
@@ -278,6 +310,17 @@ protected
 algorithm
   res := createSimulationResult("", options, message, zeroAdditionalSimulationResultValues);
 end createSimulationResultFailure;
+
+public function createDrModelicaSimulationResultFailure
+  input String message;
+  input String options;
+  output Values.Value res;
+protected
+  list<Values.Value> vals;
+  list<String> fields;
+algorithm
+  res := createDrModelicaSimulationResult("", options, message, {});
+end createDrModelicaSimulationResultFailure;
 
 protected function buildCurrentSimulationResultExp
   output DAE.Exp outExp;
@@ -1366,6 +1409,13 @@ algorithm
         false = 0 == System.removeFile("output.log");
         simValue = createSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
       then (cache,simValue,st);
+
+    case (cache,env,"simulation",vals,st,_)
+      equation
+        true = System.regularFileExists("output.log");
+        false = 0 == System.removeFile("output.log");
+        simValue = createDrModelicaSimulationResultFailure("Failed to remove existing file output.log", simOptionsAsString(vals));
+      then (cache,simValue,st);
         
     // adrpo: see if the model exists before simulation!
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),_)
@@ -1376,7 +1426,16 @@ algorithm
         simValue = createSimulationResultFailure(errMsg, simOptionsAsString(vals));
       then
         (cache,simValue,st);
-        
+
+    case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st as Interactive.SYMBOLTABLE(ast = p),_)
+      equation
+        crefCName = Absyn.pathToCref(className);
+        false = Interactive.existClass(crefCName, p);
+        errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exist! Please load it first before simulation.";
+        simValue = createDrModelicaSimulationResultFailure(errMsg, simOptionsAsString(vals));
+      then
+        (cache,simValue,st);
+     
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
       equation
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
@@ -1402,6 +1461,31 @@ algorithm
       then
         (cache,simValue,newst);
  
+    case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st_1,_)
+      equation
+        System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
+        (cache,st,compileDir,executable,method_str,outputFormat_str,_,simflags,resultValues) = buildModel(cache,env,vals,st_1,msg);
+        
+        cit = winCitation();
+        ifcpp=Util.equal(Config.simCodeTarget(),"Cpp");
+        exeDir=Util.if_(ifcpp,Settings.getInstallationDirectoryPath() +& "/bin/" ,compileDir);        
+        libDir= Settings.getInstallationDirectoryPath() +& "/lib/omc/cpp" ;
+        configDir=Settings.getInstallationDirectoryPath() +& "/share/omc/runtime/cpp/";
+        result_file = stringAppendList(List.consOnTrue(not Config.getRunningTestsuite(),compileDir,{executable,"_res.",outputFormat_str}));
+        simflags2=Util.if_(ifcpp,stringAppendList({"-r ",libDir," ","-m ",compileDir," ","-R ",result_file," ","-c ",configDir}), simflags);           
+        executable1=Util.if_(ifcpp,"OMCppSimulation",executable); 
+        executableSuffixedExe = stringAppend(executable1, System.getExeExt());
+        // sim_call = stringAppendList({"sh -c ",cit,"ulimit -t 60; ",cit,pwd,pd,executableSuffixedExe,cit," > output.log 2>&1",cit});
+        sim_call = stringAppendList({cit,exeDir,executableSuffixedExe,cit," ",simflags2," > output.log 2>&1"});
+        System.realtimeTick(RT_CLOCK_SIMULATE_SIMULATION);
+        SimulationResults.close() "Windows cannot handle reading and writing to the same file from different processes like any real OS :(";
+        resI = System.systemCall(sim_call);
+        timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
+        //timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
+        (cache,simValue,newst) = createDrModelicaSimulationResultFromcallModelExecutable(resI,timeSimulation,resultValues,cache,className,vals,st,result_file);
+      then
+        (cache,simValue,newst);
+ 
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
@@ -1411,7 +1495,17 @@ algorithm
         simValue = createSimulationResultFailure(res, simOptionsAsString(vals));
       then
         (cache,simValue,st);
-        
+
+    case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
+      equation
+        omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
+        errorStr = Error.printMessagesStr();
+        str = Absyn.pathString(className);
+        res = stringAppendList({"Simulation failed for model: ", str, "\n", errorStr});
+        simValue = createDrModelicaSimulationResultFailure(res, simOptionsAsString(vals));
+      then
+        (cache,simValue,st);
+      
     case (cache,env,"simulate",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
       equation
         str = Absyn.pathString(className);
@@ -1421,7 +1515,17 @@ algorithm
           simOptionsAsString(vals));
       then
         (cache,simValue,st);
-        
+
+    case (cache,env,"simulation",vals as Values.CODE(Absyn.C_TYPENAME(className))::_,st,_)
+      equation
+        str = Absyn.pathString(className);
+        simValue = createDrModelicaSimulationResultFailure(
+          "Simulation failed for model: " +& str +& 
+          "\nEnvironment variable OPENMODELICAHOME not set.", 
+          simOptionsAsString(vals));
+      then
+        (cache,simValue,st);
+       
     case (cache,env,"linearize",(vals as Values.CODE(Absyn.C_TYPENAME(className))::_),st_1,_)
       equation
 
@@ -3415,6 +3519,51 @@ algorithm
         (inCache,simValue,inSt);
   end matchcontinue;
 end createSimulationResultFromcallModelExecutable;
+
+protected function createDrModelicaSimulationResultFromcallModelExecutable
+"function createSimulationResultFromcallModelExecutable
+  This function calls the compiled simulation executable."
+  input Integer callRet;
+  //input Real timeTotal;
+  input Real timeSimulation;
+  input list<tuple<String,Values.Value>> resultValues;
+  input Env.Cache inCache;
+  input Absyn.Path className;
+  input list<Values.Value> inVals;
+  input Interactive.SymbolTable inSt;
+  input String result_file;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable) := matchcontinue (callRet, timeSimulation,resultValues,inCache,className,inVals,inSt,result_file)
+    local
+      Interactive.SymbolTable newst;
+      String res,str;
+      Values.Value ret_val,simValue;
+
+    case (0,_,_,_,_,_,_,_)
+      equation
+        simValue = createDrModelicaSimulationResult(
+           result_file, 
+           simOptionsAsString(inVals), 
+           System.readFile("output.log"),
+           ("simulationTime", Values.REAL(timeSimulation)) ::
+          {});
+        newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, inSt);
+      then
+        (inCache,simValue,newst);
+    else
+      equation
+        true = System.regularFileExists("output.log");
+        res = System.readFile("output.log");
+        str = Absyn.pathString(className);
+        res = stringAppendList({"Simulation execution failed for model: ", str, "\n", res});
+        simValue = createDrModelicaSimulationResult("", simOptionsAsString(inVals), res, {});
+      then
+        (inCache,simValue,inSt);
+  end matchcontinue;
+end createDrModelicaSimulationResultFromcallModelExecutable;
 
 protected function buildOpenTURNSInterface "builds the OpenTURNS interface by calling the OpenTURNS module"
   input Env.Cache inCache;

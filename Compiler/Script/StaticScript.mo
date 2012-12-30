@@ -352,6 +352,13 @@ public function elabCallInteractive "function: elabCallInteractive
       then
         (cache,Expression.makeBuiltinCall("simulate",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "simulation"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
+      equation
+        (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
+        recordtype = CevalScript.getDrModelicaSimulationResultType();
+      then
+        (cache,Expression.makeBuiltinCall("simulation",simulationArgs,DAE.T_UNKNOWN_DEFAULT),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+
     case (cache,env,Absyn.CREF_IDENT(name = "residualCMP"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,_) /* Fill in rest of defaults here */
       equation
         (cache, simulationArgs) = getSimulationArguments(cache, env, inExps, args, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, info);
