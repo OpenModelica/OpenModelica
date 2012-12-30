@@ -289,6 +289,9 @@ algorithm
       BackendDAE.WhenEquation weqn;
       BackendDAE.Variables vars;
       list<BackendDAE.Var> initVars;
+      list< DAE.ComponentRef> crefLst;
+      HashTable.HashTable leftCrs;
+      list<tuple<DAE.ComponentRef,Integer>> crintLst;
       
     // when equation during initialization
     case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation=weqn, source=source),(hs,vars,eqns,initVars)))
@@ -301,9 +304,12 @@ algorithm
     case ((eqn as BackendDAE.ALGORITHM(alg=alg, source=source),(hs,vars,eqns,initVars)))
       equation
         DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
-        (stmts,eqns,vars,initVars) = generateInitialWhenAlg(stmts,true,hs,{},eqns,vars,initVars);
+        (stmts,leftCrs) = generateInitialWhenAlg(stmts,true,{},HashTable.emptyHashTableSized(50));
         alg = DAE.ALGORITHM_STMTS(stmts);
         size = listLength(CheckModel.algorithmOutputs(alg));
+        crintLst = BaseHashTable.hashTableList(leftCrs);
+        crefLst = List.fold(crintLst,selectSecondZero,{});
+        (eqns,vars,initVars) = generateInactiveWhenEquationForInitialization(crefLst,source,hs,eqns,vars,initVars);
         eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source), eqns);
     then
        ((eqn,(hs,vars,eqns,initVars)));
@@ -335,7 +341,6 @@ algorithm
       BackendDAE.WhenEquation weqn;
       BackendDAE.Variables vars;
       list<BackendDAE.Var> initVars;
-      
     // active when equation during initialization
     case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right),_,_,_,_,_)
       equation
@@ -370,56 +375,45 @@ protected function generateInitialWhenAlg "function generateInitialWhenAlg
   This is a helper function for inlineWhenForInitialization3."
   input list< DAE.Statement> inStmts;
   input Boolean first;
-  input HashSet.HashSet hs;
   input list< DAE.Statement> inAcc;
-  input list<BackendDAE.Equation> iEqns;
-  input BackendDAE.Variables iVars;
-  input list<BackendDAE.Var> inInitVars;
+  input HashTable.HashTable iLeftCrs;
   output list< DAE.Statement> outStmts;
-  output list< BackendDAE.Equation> oEqns;
-  output BackendDAE.Variables oVars;
-  output list<BackendDAE.Var> outInitVars;  
+  output HashTable.HashTable oLeftCrs;  
 algorithm
-  (outStmts,oEqns,oVars,outInitVars) := matchcontinue(inStmts,first,hs,inAcc,iEqns,iVars,inInitVars)
+  (outStmts,oLeftCrs) := matchcontinue(inStmts,first,inAcc,iLeftCrs)
     local
       DAE.Exp condition;
       list< DAE.ComponentRef> crefLst;
       DAE.Statement stmt;
       list< DAE.Statement> stmts, rest;
-      list< BackendDAE.Equation> eqns;
-      BackendDAE.Variables vars;
-      DAE.ElementSource source;
-      list<BackendDAE.Var> initVars;
       HashTable.HashTable leftCrs;
       list<tuple<DAE.ComponentRef,Integer>> crintLst;
-    case ({},_,_,_,_,_,_) then (listReverse(inAcc),iEqns,iVars,inInitVars);
+    case ({},_,_,_) then (listReverse(inAcc),iLeftCrs);
     // single inactive when equation during initialization
-    case ((stmt as DAE.STMT_WHEN(exp=condition, source=source, elseWhen=NONE()))::{},true,_,_,_,_,_)
+    case ((stmt as DAE.STMT_WHEN(exp=condition, elseWhen=NONE()))::{},true,_,_)
       equation
         false = Expression.containsInitialCall(condition, false);
         crefLst = CheckModel.algorithmStatementListOutputs({stmt});
-        (eqns,vars,initVars) = generateInactiveWhenEquationForInitialization(crefLst,source,hs,iEqns,iVars,inInitVars);
+        crintLst = List.map1(crefLst,Util.makeTuple,1);
+        leftCrs = List.fold(crintLst,BaseHashTable.add,iLeftCrs);        
       then
-        ({},eqns,iVars,initVars); 
+        ({},leftCrs); 
     // when equation during initialization
-    case ((stmt as DAE.STMT_WHEN(source=source))::rest,_,_,_,_,_,_)
+    case ((stmt as DAE.STMT_WHEN(source=_))::rest,_,_,_)
       equation
         // for when statements it is not necessary that all branches have the same left hand side variables
         // -> take care that for each left hand site an assigment is generated 
-        (stmts,leftCrs) = inlineWhenForInitializationWhenStmt(stmt,false,HashTable.emptyHashTableSized(50),inAcc);
-        crintLst = BaseHashTable.hashTableList(leftCrs);
-        crefLst = List.fold(crintLst,selectSecondZero,{});
-        (eqns,vars,initVars) = generateInactiveWhenEquationForInitialization(crefLst,source,hs,iEqns,iVars,inInitVars);
-        (stmts,eqns,vars,initVars) = generateInitialWhenAlg(rest,false,hs,stmts,eqns,vars,initVars);
+        (stmts,leftCrs) = inlineWhenForInitializationWhenStmt(stmt,false,iLeftCrs,inAcc);
+        (stmts,leftCrs) = generateInitialWhenAlg(rest,false,stmts,leftCrs);
       then 
-        (stmts,eqns,vars,initVars);
+        (stmts,leftCrs);
     // no when equation
-    case (stmt::rest,_,_,_,_,_,_)
+    case (stmt::rest,_,_,_)
       equation
         // false = isWhenStmt(stmt);
-        (stmts,eqns,vars,initVars) = generateInitialWhenAlg(rest,false,hs,stmt::inAcc,iEqns,iVars,inInitVars);
+        (stmts,leftCrs) = generateInitialWhenAlg(rest,false,stmt::inAcc,iLeftCrs);
       then 
-        (stmts,eqns,vars,initVars);
+        (stmts,leftCrs);
   end matchcontinue;
 end generateInitialWhenAlg;
 
@@ -1031,9 +1025,9 @@ print("Trying to fix over-determined initial system Variables " +& intString(nVa
 
 
         Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpEqSystem, system, "Trying to fix over-determined initial system");
-        msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
-        Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, msg);
-*/        
+*/        msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
+        Error.addCompilerWarning(msg);
+        
       then fail();
 
     // under-determined system  
