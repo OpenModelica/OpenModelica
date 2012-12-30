@@ -1091,17 +1091,17 @@ algorithm
         nEqns = BackendDAEUtil.equationSize(inEqns);
         syst = BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(),{});
         (syst,m,mt,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE());
-          BackendDump.printEqSystem(syst);
+        //  BackendDump.printEqSystem(syst);
         vec1 = arrayCreate(nVars,-1);
         vec2 = arrayCreate(nEqns,-1);
         Matching.matchingExternalsetIncidenceMatrix(nVars,nEqns,m);        
         BackendDAEEXT.matching(nVars,nEqns,5,-1,0.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);
         // try to find for unmatched variables without startvalue an equation by unassign a variable with start value 
-        unassigned1 = Matching.getUnassigned(nEqns, vec2, {});
-          print("Unassigned Eqns " +& stringDelimitList(List.map(unassigned1,intString),", ") +& "\n");
+        //unassigned1 = Matching.getUnassigned(nEqns, vec2, {});
+        //  print("Unassigned Eqns " +& stringDelimitList(List.map(unassigned1,intString),", ") +& "\n");
         unassigned = Matching.getUnassigned(nVars, vec1, {});
-          print("Unassigned Vars " +& stringDelimitList(List.map(unassigned,intString),", ") +& "\n");
+        //  print("Unassigned Vars " +& stringDelimitList(List.map(unassigned,intString),", ") +& "\n");
         Debug.bcall(intGt(listLength(unassigned),nVars-nEqns),print,"Error could not match all equations\n");
         unassigned = Util.if_(intGt(listLength(unassigned),nVars-nEqns),{},unassigned);
         //unassigned = List.firstN(listReverse(unassigned),nVars-nEqns);
