@@ -50,6 +50,7 @@ protected import BackendDump;
 protected import BackendEquation;
 protected import BackendVariable;
 protected import BaseHashSet;
+protected import BaseHashTable;
 protected import CheckModel;
 protected import ComponentReference;
 protected import Debug;
@@ -57,6 +58,7 @@ protected import Error;
 protected import Expression;
 protected import Flags;
 protected import HashSet;
+protected import HashTable;
 protected import List;
 protected import Matching;
 protected import System;
@@ -296,11 +298,12 @@ algorithm
         ((eqn,(hs,vars,eqns,initVars)));
     
     // algorithm
-    case ((eqn as BackendDAE.ALGORITHM(size=size, alg=alg, source=source),(hs,vars,eqns,initVars)))
+    case ((eqn as BackendDAE.ALGORITHM(alg=alg, source=source),(hs,vars,eqns,initVars)))
       equation
         DAE.ALGORITHM_STMTS(statementLst=stmts) = alg;
         (stmts,eqns,vars,initVars) = generateInitialWhenAlg(stmts,true,hs,{},eqns,vars,initVars);
         alg = DAE.ALGORITHM_STMTS(stmts);
+        size = listLength(CheckModel.algorithmOutputs(alg));
         eqns = List.consOnTrue(List.isNotEmpty(stmts), BackendDAE.ALGORITHM(size, alg, source), eqns);
     then
        ((eqn,(hs,vars,eqns,initVars)));
@@ -387,6 +390,8 @@ algorithm
       BackendDAE.Variables vars;
       DAE.ElementSource source;
       list<BackendDAE.Var> initVars;
+      HashTable.HashTable leftCrs;
+      list<tuple<DAE.ComponentRef,Integer>> crintLst;
     case ({},_,_,_,_,_,_) then (listReverse(inAcc),iEqns,iVars,inInitVars);
     // single inactive when equation during initialization
     case ((stmt as DAE.STMT_WHEN(exp=condition, source=source, elseWhen=NONE()))::{},true,_,_,_,_,_)
@@ -397,10 +402,15 @@ algorithm
       then
         ({},eqns,iVars,initVars); 
     // when equation during initialization
-    case ((stmt as DAE.STMT_WHEN(exp=_))::rest,_,_,_,_,_,_)
+    case ((stmt as DAE.STMT_WHEN(source=source))::rest,_,_,_,_,_,_)
       equation
-        (stmts,eqns,vars) = inlineWhenForInitializationWhenStmt(stmt,hs,inAcc,iEqns,iVars);
-        (stmts,eqns,vars,initVars) = generateInitialWhenAlg(rest,false,hs,stmts,eqns,vars,inInitVars);
+        // for when statements it is not necessary that all branches have the same left hand side variables
+        // -> take care that for each left hand site an assigment is generated 
+        (stmts,leftCrs) = inlineWhenForInitializationWhenStmt(stmt,false,HashTable.emptyHashTableSized(50),inAcc);
+        crintLst = BaseHashTable.hashTableList(leftCrs);
+        crefLst = List.fold(crintLst,selectSecondZero,{});
+        (eqns,vars,initVars) = generateInactiveWhenEquationForInitialization(crefLst,source,hs,iEqns,iVars,inInitVars);
+        (stmts,eqns,vars,initVars) = generateInitialWhenAlg(rest,false,hs,stmts,eqns,vars,initVars);
       then 
         (stmts,eqns,vars,initVars);
     // no when equation
@@ -413,66 +423,99 @@ algorithm
   end matchcontinue;
 end generateInitialWhenAlg;
 
+protected function selectSecondZero
+  input tuple<DAE.ComponentRef,Integer> inTpl;
+  input list<DAE.ComponentRef> iAcc;
+  output list<DAE.ComponentRef> oAcc;
+protected
+  DAE.ComponentRef cr;
+  Integer i;
+algorithm
+  (cr,i) := inTpl;
+  oAcc := List.consOnTrue(intEq(i,0),cr,iAcc);  
+end selectSecondZero;
+
 protected function inlineWhenForInitializationWhenStmt "function inlineWhenForInitializationWhenStmt
   author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
   This is a helper function for inlineWhenForInitialization3."
   input DAE.Statement inWhen;
-  input HashSet.HashSet hs;
+  input Boolean foundAktiv;
+  input HashTable.HashTable iLeftCrs;
   input list< DAE.Statement> inAcc;
-  input list<BackendDAE.Equation> iEqns;
-  input BackendDAE.Variables iVars;  
   output list< DAE.Statement> outStmts;
-  output list< BackendDAE.Equation> oEqns;
-  output BackendDAE.Variables oVars;  
+  output HashTable.HashTable oLeftCrs;
 algorithm
-  (outStmts,oEqns,oVars) := matchcontinue(inWhen,hs,inAcc,iEqns,iVars)
+  (outStmts,oLeftCrs) := matchcontinue(inWhen,foundAktiv,iLeftCrs,inAcc)
     local
-      DAE.ComponentRef left;
-      DAE.Exp condition,right;
-      BackendDAE.Equation eqn;
-      DAE.Type identType;
-      String errorMessage;
+      DAE.Exp condition;
       list< DAE.ComponentRef> crefLst;
       DAE.Statement stmt;
-      list< DAE.Statement> stmts, rest;
-      Integer size;
-      DAE.Algorithm alg;
-      DAE.ElementSource source;
-      DAE.ElementSource algSource;
-      list< BackendDAE.Equation> eqns;
-      BackendDAE.Variables vars;
+      list< DAE.Statement> stmts;
+      HashTable.HashTable leftCrs;
+      list<tuple<DAE.ComponentRef,Integer>> crintLst;
       
     // active when equation during initialization
-    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts),_,_,_,_)
+    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()),_,_,_)
       equation
         true = Expression.containsInitialCall(condition, false);
+        crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+        crintLst = List.map1(crefLst,Util.makeTuple,1);
+        leftCrs = List.fold(crintLst,BaseHashTable.add,iLeftCrs);
         stmts = List.foldr(stmts,List.consr,inAcc);
       then
-        (stmts,iEqns,iVars);
-          
-    // inactive when equation during initialization
-    case (DAE.STMT_WHEN(exp=condition, source=source, elseWhen=NONE()),_,_,_,_)
+        (stmts,leftCrs);
+    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)),false,_,_)
       equation
-        false = Expression.containsInitialCall(condition, false);
-        crefLst = CheckModel.algorithmStatementListOutputs({inWhen});
-        (stmts,vars) = generateInactiveWhenAlgStatementForInitialization(crefLst, hs, source, inAcc, iVars);
+        true = Expression.containsInitialCall(condition, false);
+        crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+        crintLst = List.map1(crefLst,Util.makeTuple,1);
+        leftCrs = List.fold(crintLst,BaseHashTable.add,iLeftCrs);
+        stmts = List.foldr(stmts,List.consr,inAcc);
+        (stmts,leftCrs) = inlineWhenForInitializationWhenStmt(stmt,true,leftCrs,stmts);
       then
-        (stmts,iEqns,vars);
+        (stmts,leftCrs);
+    // inactive when equation during initialization
+    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()),_,_,_)
+      equation
+        false = Expression.containsInitialCall(condition, false) and not foundAktiv;
+        crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+        leftCrs = List.fold(crefLst,addWhenLeftCr,iLeftCrs);
+      then
+        (inAcc,leftCrs);
 
     // inactive when equation during initialization with elsewhen part
-    case (DAE.STMT_WHEN(exp=condition, source=source, elseWhen=SOME(stmt)),_,_,_,_)
+    case (DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=SOME(stmt)),_,_,_)
       equation
-        false = Expression.containsInitialCall(condition, false);
-        (stmts,eqns,vars) = inlineWhenForInitializationWhenStmt(stmt,hs,inAcc,iEqns,iVars);
+        false = Expression.containsInitialCall(condition, false) and not foundAktiv;
+        crefLst = CheckModel.algorithmStatementListOutputs(stmts);
+        leftCrs = List.fold(crefLst,addWhenLeftCr,iLeftCrs);        
+        (stmts,leftCrs) = inlineWhenForInitializationWhenStmt(stmt,foundAktiv,leftCrs,inAcc);
       then
-        (stmts,eqns,vars);    
+        (stmts,leftCrs);    
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/Initialization.mo: function inlineWhenForInitializationWhenStmt failed"});
     then fail();
   end matchcontinue;
 end inlineWhenForInitializationWhenStmt;
+
+protected function addWhenLeftCr
+  input DAE.ComponentRef cr;
+  input HashTable.HashTable iLeftCrs;
+  output HashTable.HashTable oLeftCrs;
+algorithm
+  oLeftCrs := matchcontinue(cr,iLeftCrs)
+    local
+      HashTable.HashTable leftCrs;
+    case (_,_)
+      equation
+        leftCrs = BaseHashTable.addUnique((cr,0),iLeftCrs);
+      then
+        leftCrs;
+    else then iLeftCrs;
+  end matchcontinue;
+end addWhenLeftCr;
 
 protected function generateInactiveWhenEquationForInitialization "function generateInactiveWhenEquationForInitialization
   author: lochel
@@ -504,9 +547,8 @@ algorithm
         identType = ComponentReference.crefType(cr);
         preCR = ComponentReference.crefPrefixPre(cr);
         eqn = BackendDAE.EQUATION(DAE.CREF(cr, identType), DAE.CREF(preCR, identType), inSource, false);
-        (vars,b,initVars) = fixUninitializedVarsInInactiveWhenForInitialization(BaseHashSet.has(cr,hs),cr, iVars, inInitVars, false);
-        eqns = List.consOnTrue(b, eqn, inEqns);
-        (eqns,vars,initVars) = generateInactiveWhenEquationForInitialization(rest,inSource,hs,eqns,vars,initVars);
+        (vars,initVars) = fixUninitializedVarsInInactiveWhenForInitialization(BaseHashSet.has(cr,hs),cr, iVars, inInitVars);
+        (eqns,vars,initVars) = generateInactiveWhenEquationForInitialization(rest,inSource,hs,eqn::inEqns,vars,initVars);
       then
         (eqns,vars,initVars);
  end match;
@@ -519,61 +561,25 @@ protected function fixUninitializedVarsInInactiveWhenForInitialization "function
   input DAE.ComponentRef inCRef;
   input BackendDAE.Variables iVars;
   input list<BackendDAE.Var> iVarLst;
-  input Boolean doWarning;
   output BackendDAE.Variables oVars;
-  output Boolean b;
   output list<BackendDAE.Var> oVarLst;
 algorithm
-  (oVars,b,oVarLst) := matchcontinue(isPreInitialized,inCRef,iVars,iVarLst,doWarning)
+  (oVars,oVarLst) := matchcontinue(isPreInitialized,inCRef,iVars,iVarLst)
     local
       BackendDAE.Var v;
       BackendDAE.Variables vars;
       String crstr;
-    case(false,_,_,_,_)
+    case(false,_,_,_)
       equation
         ({v},_) = BackendVariable.getVar(inCRef, iVars);
         false = BackendVariable.varFixed(v);
         crstr = ComponentReference.printComponentRefStr(inCRef);
-        Debug.bcall(doWarning,Error.addCompilerWarning,"Assuming fixed start value for " +& crstr +& " due to uninitialized pre(" +& crstr +& ").");
-        v = Debug.bcallret2(doWarning,BackendVariable.setVarFixed,v,true,v);
         vars = BackendVariable.addVar(v,iVars);
       then
-        (vars,false,v::iVarLst);
-    else then (iVars,true,iVarLst);
+        (vars,v::iVarLst);
+    else then (iVars,iVarLst);
   end matchcontinue;
 end fixUninitializedVarsInInactiveWhenForInitialization;
-
-protected function generateInactiveWhenAlgStatementForInitialization "function generateInactiveWhenAlgStatementForInitialization
-  author: lochel
-  This is a helper function for generateInitialWhenAlg."
-  input list<DAE.ComponentRef> inCrefs;
-  input HashSet.HashSet hs;
-  input DAE.ElementSource inSource;
-  input list< DAE.Statement> inAcc;
-  input BackendDAE.Variables iVars;  
-  output list<DAE.Statement> outStmts;
-  output BackendDAE.Variables oVars;
-algorithm
-  (outStmts,oVars) := match(inCrefs,hs,inSource,inAcc,iVars)
-    local
-      DAE.Type identType;
-      DAE.ComponentRef cr,preCR;
-      list<DAE.ComponentRef> rest;
-      DAE.Statement stmt;
-      list<DAE.Statement> stmts;
-      BackendDAE.Variables vars;
-    case ({},_,_,_,_) then (inAcc,iVars);
-    case (cr::rest,_,_,_,_)
-      equation
-        identType = ComponentReference.crefType(cr);
-        preCR = ComponentReference.crefPrefixPre(cr);
-        stmt = DAE.STMT_ASSIGN(identType, DAE.CREF(cr, identType), DAE.CREF(preCR, identType), inSource);
-        (vars,_,_) = fixUninitializedVarsInInactiveWhenForInitialization(BaseHashSet.has(cr,hs),cr, iVars, {}, true);
-        (stmts,vars) = generateInactiveWhenAlgStatementForInitialization(rest,hs,inSource,stmt::inAcc,vars);
-      then
-        (stmts,vars);
-  end match;
-end generateInactiveWhenAlgStatementForInitialization;
 
 // =============================================================================
 // section for selecting initialization variables
