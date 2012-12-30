@@ -146,6 +146,7 @@ algorithm
   // check for unreplacable crefs
   unreplacable := HashSet.emptyHashSet();
   unreplacable := BackendDAEUtil.traverseBackendDAEExps(dae,traverserUnreplacable,unreplacable);
+  unreplacable := addUnreplacableFromWhens(dae,unreplacable);
   Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
   Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
   // traverse all systems and remove simple equations 
@@ -203,6 +204,147 @@ algorithm
   crlst := List.map(crlst,ComponentReference.crefStripLastSubs);
   outUnreplacable := List.fold(crlst,BaseHashSet.add,inUnreplacable);
 end addUnreplacableFromStateSet;
+
+protected function addUnreplacableFromWhens
+"function addUnreplacableFromWhens
+ author: Frenkel TUD 2012-12"
+  input BackendDAE.BackendDAE inDAE;
+  input HashSet.HashSet inUnreplacable;
+  output HashSet.HashSet outUnreplacable;
+protected
+  BackendDAE.EqSystems systs;
+algorithm
+  BackendDAE.DAE(eqs=systs) := inDAE;
+  outUnreplacable := List.fold(systs,addUnreplacableFromWhensSystem,inUnreplacable);
+end addUnreplacableFromWhens;
+
+protected function addUnreplacableFromWhensSystem
+"function: addUnreplacableFromWhensSystem
+  author: Frenkel TUD 2012-12
+  traverse the Whens of an  Equationsystem to add all variables set in when"
+  input BackendDAE.EqSystem isyst; 
+  input HashSet.HashSet inUnreplacable;
+  output HashSet.HashSet outUnreplacable;
+protected
+  BackendDAE.EquationArray eqns;
+algorithm
+  eqns := BackendEquation.daeEqns(isyst);
+  outUnreplacable := BackendEquation.traverseBackendDAEEqns(eqns,addUnreplacableFromWhenEqn,inUnreplacable);
+end addUnreplacableFromWhensSystem;
+
+protected function addUnreplacableFromWhenEqn
+  input tuple<BackendDAE.Equation, HashSet.HashSet> inTpl;
+  output tuple<BackendDAE.Equation, HashSet.HashSet> outTpl;  
+algorithm
+  outTpl := match inTpl
+    local
+      BackendDAE.Equation eqn;
+      HashSet.HashSet hs;
+      BackendDAE.WhenEquation weqn;
+      list< DAE.Statement> stmts;
+    // when eqn
+    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation=weqn),hs))
+      equation
+        hs = addUnreplacableFromWhen(weqn,hs);
+      then 
+        ((eqn,hs));
+    // algorithm
+    case ((eqn as BackendDAE.ALGORITHM(alg=DAE.ALGORITHM_STMTS(statementLst=stmts)),hs))
+      equation
+        hs = List.fold(stmts,addUnreplacableFromWhenStmt,hs);
+      then
+       ((eqn,hs));
+    else then inTpl; 
+  end match;
+end addUnreplacableFromWhenEqn;
+
+protected function addUnreplacableFromWhenStmt "function addUnreplacableFromWhenStmt
+  author: Frenkel TUD 2012-12"
+  input DAE.Statement inWhen;
+  input HashSet.HashSet iHs;
+  output HashSet.HashSet oHs;
+algorithm
+  oHs := match(inWhen,iHs)
+    local
+      DAE.Statement stmt;
+      list< DAE.Statement> stmts;
+      HashSet.HashSet hs;
+    case (DAE.STMT_WHEN(statementLst=stmts, elseWhen=NONE()),_)
+      equation
+        hs = List.fold(stmts,addUnreplacableFromStmt,iHs);
+      then
+        hs;
+    case (DAE.STMT_WHEN(statementLst=stmts, elseWhen=SOME(stmt)),_)
+      equation
+        hs = List.fold(stmts,addUnreplacableFromStmt,iHs);
+        hs = addUnreplacableFromWhenStmt(stmt,hs);
+      then
+        hs;    
+    else then iHs;    
+  end match;
+end addUnreplacableFromWhenStmt;
+
+protected function addUnreplacableFromStmt "function addUnreplacableFromStmt
+  author: Frenkel TUD 2012-12"
+  input DAE.Statement inStmt;
+  input HashSet.HashSet iHs;
+  output HashSet.HashSet oHs;
+algorithm
+  oHs := match(inStmt,iHs)
+    local
+      DAE.ComponentRef cr;
+      HashSet.HashSet hs;
+      list<DAE.Exp> expExpLst;
+      list<DAE.ComponentRef> crlst;
+    case (DAE.STMT_ASSIGN(exp1=DAE.CREF(componentRef=cr)),_)
+      equation
+        cr = ComponentReference.crefStripLastSubs(cr);
+        hs = BaseHashSet.add(cr,iHs);
+      then
+        hs;
+    case (DAE.STMT_TUPLE_ASSIGN(expExpLst=expExpLst),_)
+      equation
+        crlst = List.flatten(List.map(expExpLst,Expression.extractCrefsFromExp));
+        crlst = List.map(crlst,ComponentReference.crefStripLastSubs);
+        hs = List.fold(crlst,BaseHashSet.add,iHs);
+      then
+        hs;
+    case (DAE.STMT_ASSIGN_ARR(componentRef=cr),_)
+      equation
+        cr = ComponentReference.crefStripLastSubs(cr);
+        hs = BaseHashSet.add(cr,iHs);
+      then
+        hs;
+    else then iHs;    
+  end match;
+end addUnreplacableFromStmt;
+
+protected function addUnreplacableFromWhen "function addUnreplacableFromWhen
+  author: Frenkel TUD 2012-12
+  This is a helper function for addUnreplacableFromWhenEqn."
+  input BackendDAE.WhenEquation inWEqn;
+  input HashSet.HashSet iHs;
+  output HashSet.HashSet oHs;
+algorithm
+  oHs := match(inWEqn,iHs)
+    local
+      DAE.ComponentRef left;
+      BackendDAE.WhenEquation weqn;
+      HashSet.HashSet hs;
+    case (BackendDAE.WHEN_EQ(left=left, elsewhenPart=NONE()),_)
+      equation
+        left = ComponentReference.crefStripLastSubs(left);
+        hs = BaseHashSet.add(left,iHs);
+      then
+        hs;
+    case (BackendDAE.WHEN_EQ(left=left,elsewhenPart=SOME(weqn)),_)
+      equation
+        left = ComponentReference.crefStripLastSubs(left);
+        hs = BaseHashSet.add(left,iHs);
+      then
+        addUnreplacableFromWhen(weqn,hs);
+  end match;
+end addUnreplacableFromWhen;
 
 protected function traverserUnreplacable
 "@author: Frenkel TUD 2012-12"
@@ -1660,8 +1802,6 @@ algorithm
       DAE.ComponentRef cr;
     case (BackendDAE.VAR(varName=cr,varKind=kind),_)
       equation
-        false = BackendVariable.isVarDiscrete(var);
-        //false = BackendVariable.isStateorStateDerVar(var) "cr1 not state";
         BackendVariable.isVarKindVariable(kind) "cr1 not constant";
         false = BackendVariable.isVarOnTopLevelAndOutput(var);
         false = BackendVariable.isVarOnTopLevelAndInput(var);
@@ -3019,6 +3159,7 @@ algorithm
   // check for unreplacable crefs
   unreplacable := HashSet.emptyHashSet();
   unreplacable := BackendDAEUtil.traverseBackendDAEExps(inDAE,traverserUnreplacable,unreplacable);
+  unreplacable := addUnreplacableFromWhens(inDAE,unreplacable);
   // do not replace state sets
   unreplacable := addUnreplacableFromStateSets(inDAE,unreplacable);
   Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
@@ -3306,6 +3447,7 @@ algorithm
   // check for unreplacable crefs
   unreplacable := HashSet.emptyHashSet();
   unreplacable := BackendDAEUtil.traverseBackendDAEExps(inDAE,traverserUnreplacable,unreplacable);
+  unreplacable := addUnreplacableFromWhens(inDAE,unreplacable);
   Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
   Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
   (outDAE,(repl,_,b)) := BackendDAEUtil.mapEqSystemAndFold(inDAE,allAcausal1,(repl,unreplacable,false));
