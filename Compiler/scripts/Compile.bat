@@ -44,4 +44,4 @@ goto :Final
 set RESULT=%ERRORLEVEL%
 set PATH=%OLD_PATH%
 set OLD_PATH=
-exit %RESULT%
+exit /b %RESULT%
