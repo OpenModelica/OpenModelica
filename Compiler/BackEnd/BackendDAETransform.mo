@@ -2335,7 +2335,6 @@ algorithm
         e = Expression.crefExp(dcr);
       then
         ((e,false,so));
-
      case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})},attr=attr),so))
       equation
         dcr = getStateOrder(cr,so);
