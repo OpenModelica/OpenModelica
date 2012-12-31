@@ -1046,6 +1046,7 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.Variables knvars,exobj,knvars1,av;
       BackendDAE.EquationArray remeqns,inieqns;
+      list<BackendDAE.Equation> eqns_1,lsteqns;
       array<DAE.Constraint> constrs;
       array<DAE.ClassAttributes> clsAttrs;
       Env.Cache cache;
@@ -1053,16 +1054,25 @@ algorithm
       BackendDAE.EventInfo einfo;
       BackendDAE.ExternalObjectClasses eoc;
       BackendDAE.SymbolicJacobians symjacs;
-      BackendVarTransform.VariableReplacements repl,repl1,repl2;
+      BackendVarTransform.VariableReplacements repl;
       BackendDAE.BackendDAEType btp;
       BackendDAE.EqSystems systs;
+      Boolean b;
     case (BackendDAE.DAE(systs,BackendDAE.SHARED(knvars,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs)))
       equation
         repl = BackendVarTransform.emptyReplacements();
-        ((repl1,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
-        (knvars1,repl2) = replaceFinalVars(1,knvars,repl1,true);
-        Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl2);
-        systs = List.map1(systs,removeFinalParametersWork,repl2);
+        ((repl,_)) = BackendVariable.traverseBackendDAEVars(knvars,removeFinalParametersFinder,(repl,knvars));
+        (knvars1,repl) = replaceFinalVars(1,knvars,repl,true);
+        Debug.fcall(Flags.DUMP_FP_REPL, BackendVarTransform.dumpReplacements, repl);
+        // do replacements in initial equations
+        lsteqns = BackendEquation.equationList(inieqns);
+        (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
+        inieqns = Debug.bcallret1(b,BackendEquation.listEquation,eqns_1,inieqns);
+        // do replacements in simple equations        
+        lsteqns = BackendEquation.equationList(remeqns);
+        (eqns_1,b) = BackendVarTransform.replaceEquations(lsteqns, repl,NONE());
+        remeqns = Debug.bcallret1(b,BackendEquation.listEquation,eqns_1,remeqns);        
+        systs = List.map1(systs,removeFinalParametersWork,repl);
       then
         BackendDAE.DAE(systs,BackendDAE.SHARED(knvars1,exobj,av,inieqns,remeqns,constrs,clsAttrs,cache,env,funcs,einfo,eoc,btp,symjacs));
   end match;
@@ -1118,12 +1128,14 @@ algorithm
       then ((v,(repl_1,vars)));
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindValue=SOME(bindValue),values=values),(repl,vars)))
       equation
+        true = BackendVariable.varFixed(v);
         true = BackendVariable.isFinalVar(v);
         exp = ValuesUtil.valueExp(bindValue);
         repl_1 = BackendVarTransform.addReplacement(repl, varName, exp,NONE());
       then ((v,(repl_1,vars)));
     case ((v as BackendDAE.VAR(varName=varName,varKind=BackendDAE.PARAM(),bindExp=NONE(),values=values),(repl,vars)))
       equation
+        true = BackendVariable.varFixed(v);
         true = BackendVariable.isFinalVar(v);
         exp = DAEUtil.getStartAttrFail(values);
         ((exp1, _)) = Expression.traverseExp(exp, BackendDAEUtil.replaceCrefsWithValues, (vars, varName));
@@ -1795,7 +1807,7 @@ algorithm
     // Parameter with evaluate=true
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),bindExp=SOME(e),comment=SOME(comment)),_,_,_,_,_,_)
       equation
-        true = hasEvaluateAnnotation(comment);  
+        true = hasEvaluateAnnotation(comment);
         // applay replacements
         (e,_) = BackendVarTransform.replaceExp(e, irepl, NONE());
         // evaluate expression
@@ -1814,6 +1826,7 @@ algorithm
     case (BackendDAE.VAR(varName = cr,varKind=BackendDAE.PARAM(),values=dae_var_attr,comment=SOME(comment)),_,_,_,_,_,_)
       equation
         true = hasEvaluateAnnotation(comment);
+        true = BackendVariable.varFixed(var);
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         // applay replacements
         (e,_) = BackendVarTransform.replaceExp(e, irepl, NONE());
