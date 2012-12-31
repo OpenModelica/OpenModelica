@@ -390,12 +390,12 @@ algorithm
       list<tuple<DAE.ComponentRef,Integer>> crintLst;
     case ({},_,_,_) then (listReverse(inAcc),iLeftCrs);
     // single inactive when equation during initialization
-    case ((stmt as DAE.STMT_WHEN(exp=condition, elseWhen=NONE()))::{},true,_,_)
+    case ((stmt as DAE.STMT_WHEN(exp=condition, statementLst=stmts, elseWhen=NONE()))::{},true,_,_)
       equation
         false = Expression.containsInitialCall(condition, false);
-        crefLst = CheckModel.algorithmStatementListOutputs({stmt});
+        crefLst = CheckModel.algorithmStatementListOutputs(stmts);
         crintLst = List.map1(crefLst,Util.makeTuple,1);
-        leftCrs = List.fold(crintLst,BaseHashTable.add,iLeftCrs);        
+        leftCrs = List.fold(crefLst,addWhenLeftCr,iLeftCrs);
       then
         ({},leftCrs); 
     // when equation during initialization
@@ -1012,6 +1012,7 @@ algorithm
 /*
 print("Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]");
         (system,m,mt,_,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
+        BackendDump.printEqSystem(system);
         vec1 = arrayCreate(nVars,-1);
         vec2 = arrayCreate(nEqns,-1);
         Matching.matchingExternalsetIncidenceMatrix(nVars,nEqns,m);        
@@ -1022,10 +1023,9 @@ print("Trying to fix over-determined initial system Variables " +& intString(nVa
         BackendDump.dumpMatching(vec2);
         system = BackendDAEUtil.setEqSystemMatching(system,BackendDAE.MATCHING(vec1,vec2,{}));        
         BackendDump.printEqSystem(system);
-
-
+*/
         Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpEqSystem, system, "Trying to fix over-determined initial system");
-*/        msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
+        msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
         Error.addCompilerWarning(msg);
         
       then fail();

@@ -2259,7 +2259,7 @@ algorithm
       list<SimCode.SimEqSystem> resEqs;
       list<BackendDAE.WhenClause> wcl;
       DAE.ComponentRef left,varOutput;
-      DAE.Exp e1,e2,varexp,exp_,right,cond;
+      DAE.Exp e1,e2,varexp,exp_,right,cond,prevarexp;
       list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
       BackendDAE.WhenEquation whenEquation,elseWhen;
       String algStr,message,eqStr;
@@ -2339,6 +2339,26 @@ algorithm
         (resEqs,uniqueEqIndex) = addAssertEqn(asserts,{SimCode.SES_SIMPLE_ASSIGN(iuniqueEqIndex,cr, exp_, source)},iuniqueEqIndex+1);
       then
         (resEqs,uniqueEqIndex,itempvars);
+
+        // single equation from if-equation -> 0.0 = if .. then bla else lbu and var is not in all branches
+        // change branches without variable to var - pre(var)
+    case (_, _,
+        BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns),_,
+        _, false, _,_,_)
+      equation
+        BackendDAE.EQUATION(exp= e1 as DAE.RCONST(_), scalar=e2 as DAE.IFEXP(expCond=_), source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
+        (v as BackendDAE.VAR(varName = cr, values=values)) = BackendVariable.getVarAt(vars,varNum);
+        varexp = Expression.crefExp(cr);
+        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
+        failure((_,_) = ExpressionSolve.solve(e1, e2, varexp));
+        prevarexp = Expression.makeBuiltinCall("pre",{varexp},Expression.typeof(varexp));
+        prevarexp = Expression.expSub(varexp,prevarexp);
+        ((e2,_)) = Expression.traverseExp(e2,replaceIFBrancheswithoutVar,(varexp,prevarexp));
+        eqn = BackendDAE.EQUATION(e1,e2,source,false);
+        (resEqs,uniqueEqIndex,tempvars) = createNonlinearResidualEquations({eqn},iuniqueEqIndex,itempvars);
+        cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
+      then
+        ({SimCode.SES_NONLINEAR(uniqueEqIndex, resEqs, {cr}, 0, NONE())},uniqueEqIndex+1,tempvars);
         
         // non-linear
     case (_, _,
@@ -2453,6 +2473,26 @@ algorithm
       then fail();
   end matchcontinue;
 end createEquation;
+
+protected function replaceIFBrancheswithoutVar
+  input tuple<DAE.Exp,tuple<DAE.Exp,DAE.Exp>> inExp;
+  output tuple<DAE.Exp,tuple<DAE.Exp,DAE.Exp>> outExp;
+algorithm
+  outExp := match(inExp)
+    local
+      DAE.Exp exp,crexp,cond,e1,e2;
+      Boolean b;
+    case((DAE.IFEXP(cond,e1,e2),(crexp,exp)))
+      equation
+        b = Expression.expContains(e1,crexp);
+        e1 = Util.if_(b,e1,exp);
+        b = Expression.expContains(e2,crexp);
+        e2 = Util.if_(b,e2,exp);
+      then
+        ((DAE.IFEXP(cond,e1,e2),(crexp,exp)));
+    else then inExp;
+  end match;
+end replaceIFBrancheswithoutVar;
 
 protected function solveAlgorithmInverse
   input list<DAE.Statement> inStmts;
