@@ -2784,7 +2784,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__), simula
   # /MD - link with MSVCRT.LIB
   # /link - [linker options and libraries]
   # /LIBPATH: - Directories where libs can be found
-  LDFLAGS=/MD /link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/release/" f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib ModelicaExternalC.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib  
+  LDFLAGS=/MD /link /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/" /LIBPATH:"<%makefileParams.omhome%>/lib/omc/msvc/release/" f2c.lib initialization.lib libexpat.lib math-support.lib meta.lib ModelicaExternalC.lib results.lib simulation.lib solver.lib sundials_kinsol.lib sundials_nvecserial.lib util.lib lapack_win32_MT.lib
 
   # /MDd link with MSVCRTD.LIB debug lib
   # lib names should not be appended with a d just switch to lib/omc/msvc/debug
@@ -8388,7 +8388,7 @@ template expTypeFromExpFlag(Exp exp, Integer flag)
   case SCONST(__)        then if acceptMetaModelicaGrammar() then
                                 (match flag case 1 then "metatype" else "modelica_metatype")
                               else
-                                (match flag case 1 then "string" else "modelica_string")
+                                (match flag case 1 then "string" case 2 then "modelica_string_t" else "modelica_string")
   case BCONST(__)        then match flag case 1 then "boolean" else "modelica_boolean"
   case ENUM_LITERAL(__)  then match flag case 8 then "int" case 1 then "integer" else "modelica_integer"
   case e as BINARY(__)
