@@ -44,7 +44,11 @@
 #define _OMC_OCL_COMMON_HEADER
 
 #include <stdio.h>
+#ifdef __APPLE__
+#include <OpenCL/cl.h>
+#else
 #include <CL/cl.h>
+#endif
 #include <openmodelica.h>
 #include <stdarg.h>
 
