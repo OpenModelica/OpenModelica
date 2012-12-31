@@ -1023,9 +1023,9 @@ print("Trying to fix over-determined initial system Variables " +& intString(nVa
         BackendDump.dumpMatching(vec2);
         system = BackendDAEUtil.setEqSystemMatching(system,BackendDAE.MATCHING(vec1,vec2,{}));        
         BackendDump.printEqSystem(system);
-*/
+
         Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpEqSystem, system, "Trying to fix over-determined initial system");
-        msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
+*/        msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
         Error.addCompilerWarning(msg);
         
       then fail();
