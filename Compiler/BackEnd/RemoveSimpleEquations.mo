@@ -213,10 +213,45 @@ protected function addUnreplacableFromWhens
   output HashSet.HashSet outUnreplacable;
 protected
   BackendDAE.EqSystems systs;
+  BackendDAE.EquationArray eqns;
 algorithm
-  BackendDAE.DAE(eqs=systs) := inDAE;
+  BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(initialEqs=eqns)) := inDAE;
   outUnreplacable := List.fold(systs,addUnreplacableFromWhensSystem,inUnreplacable);
+  outUnreplacable := BackendDAEUtil.traverseBackendDAEExpsEqns(eqns,addUnreplacableFromEqns,outUnreplacable);
 end addUnreplacableFromWhens;
+
+protected function addUnreplacableFromEqns "function: addUnreplacableFromEqns
+  author: Frenkel TUD 2010-12
+  helper for equationsCrefs"
+ input tuple<DAE.Exp,HashSet.HashSet> inTpl;
+ output tuple<DAE.Exp,HashSet.HashSet> outTpl;
+protected
+ HashSet.HashSet hs;
+ DAE.Exp e,e1; 
+algorithm 
+  (e,hs) := inTpl;
+  outTpl := Expression.traverseExp(e, addUnreplacableFromEqnsExp, hs);
+end addUnreplacableFromEqns;
+
+protected function addUnreplacableFromEqnsExp "function: addUnreplacableFromEqnsExp
+author: Frenkel TUD 2010-12"
+  input tuple<DAE.Exp,HashSet.HashSet> inExp;
+  output tuple<DAE.Exp,HashSet.HashSet> outExp;
+algorithm 
+  outExp := match(inExp)
+    local
+      HashSet.HashSet hs;
+      DAE.ComponentRef cr;
+      DAE.Exp e;
+    case((e as DAE.CREF(componentRef=cr), hs))
+      equation
+        cr = ComponentReference.crefStripLastSubs(cr);
+        hs = BaseHashSet.add(cr,hs);
+      then
+        ((e, hs ));
+    case _ then inExp;
+  end match;
+end addUnreplacableFromEqnsExp;
 
 protected function addUnreplacableFromWhensSystem
 "function: addUnreplacableFromWhensSystem

@@ -5143,23 +5143,18 @@ Returns a list containing, unique, all componentRef in an Expression."
   input tuple<DAE.Exp, list<ComponentRef>> inExp;
   output tuple<DAE.Exp, list<ComponentRef>> outExp;
 algorithm 
-  outExp := matchcontinue(inExp)
+  outExp := match(inExp)
     local
       list<ComponentRef> crefs;
       ComponentRef cr;
-      Type ty;
       DAE.Exp e;
-    
-    case((e as DAE.CREF(cr,ty), crefs))
+    case((e as DAE.CREF(componentRef=cr), crefs))
       equation
         crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
-        // e = makeCrefExp(cr,ty);
       then
         ((e, crefs ));
-    
     case _ then inExp;
-    
-  end matchcontinue;
+  end match;
 end traversingComponentRefFinder;
 
 public function traversingDerAndComponentRefFinder "

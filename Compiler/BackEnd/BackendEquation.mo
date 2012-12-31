@@ -479,18 +479,13 @@ protected function traversingEquationCrefFinder
 "author: Frenkel TUD 2010-11"
  input tuple<BackendDAE.Equation, list<DAE.ComponentRef>> inTpl;
  output tuple<BackendDAE.Equation, list<DAE.ComponentRef>> outTpl;
+protected
+  BackendDAE.Equation e;
+  list<DAE.ComponentRef> cr_lst;
 algorithm
-  outTpl:=
-  matchcontinue (inTpl)
-    local
-      BackendDAE.Equation e;
-      list<DAE.ComponentRef> cr_lst,cr_lst1;
-    case ((e,cr_lst))
-      equation
-        (_,cr_lst1) = traverseBackendDAEExpsEqn(e,extractCrefsFromExp,cr_lst);
-      then ((e,cr_lst1));
-    case _ then inTpl;
-  end matchcontinue;
+  (e,cr_lst) := inTpl;
+  (_,cr_lst) := traverseBackendDAEExpsEqn(e,extractCrefsFromExp,cr_lst);
+  outTpl := (e,cr_lst);
 end traversingEquationCrefFinder;
 
 protected function extractCrefsFromExp "function: extractCrefsFromExp
@@ -498,17 +493,12 @@ protected function extractCrefsFromExp "function: extractCrefsFromExp
   helper for equationsCrefs"
  input tuple<DAE.Exp, list<DAE.ComponentRef>> inTpl;
  output tuple<DAE.Exp, list<DAE.ComponentRef>> outTpl;
+protected
+ list<DAE.ComponentRef> crefs;
+ DAE.Exp e,e1; 
 algorithm 
-  outTpl := match(inTpl)
-    local 
-      list<DAE.ComponentRef> crefs,crefs1;
-      DAE.Exp e,e1;
-    case((e,crefs))
-      equation
-        ((e1,crefs1)) = Expression.traverseExp(e, Expression.traversingComponentRefFinder, crefs);
-      then
-        ((e1,crefs1));
-  end match;
+  (e,crefs) := inTpl;
+  outTpl := Expression.traverseExp(e, Expression.traversingComponentRefFinder, crefs);
 end extractCrefsFromExp;
 
 public function equationUnknownCrefs
