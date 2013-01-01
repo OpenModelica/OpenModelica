@@ -11,6 +11,7 @@ datadir = @datadir@
 docdir = @docdir@
 CMAKE = CC=$(CC) CXX=$(CXX) cmake
 CMAKE_TARGET = "Unix Makefiles"
+OPENCL = @OPENCL@
 
 defaultMakefileTarget = Makefile
 QMAKE=@QMAKE@

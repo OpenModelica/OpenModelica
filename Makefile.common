@@ -92,7 +92,7 @@ fmiclean:
 	$(MAKE) -C SimulationRuntime/fmi/import/ -f $(defaultMakefileTarget) clean
 
 opencl_rt: 
-ifeq "$(OSTYPE)" "darwin"
+ifeq "$(OPENCL)" "Yes"
 else
 	$(MAKE) -C SimulationRuntime/ParModelica/OpenCLRuntime -f $(defaultMakefileTarget)
 endif
