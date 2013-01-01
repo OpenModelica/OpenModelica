@@ -9042,7 +9042,7 @@ algorithm
         points = List.fold2(states, calcVarWights,mt,ass2,points);
         eqns = Matching.getUnassigned(arrayLength(m),ass2,{});
         points = List.fold2(eqns,addEqnWights,m,ass1,points);
-        //points = List.fold1(states,discriminateDiscrete,vars,points);
+        points = List.fold1(states,discriminateDiscrete,vars,points);
         //points = List.fold2(states,addOneEdgeEqnWights,(m,mt),ass1,points);
          Debug.fcall(Flags.TEARING_DUMP,  BackendDump.dumpMatching,points);
         tvar = selectVarWithMostPoints(states,points,-1,-1);

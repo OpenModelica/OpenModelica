@@ -2108,9 +2108,9 @@ algorithm
         // try again and add also stateSelect.always vars.
         nv = listLength(hov);
         true = intGt(neqns,nv);
-        (varlst,dummyStates,isyst,ishared,iSetIndex) = processComps2New(nv,hov,neqns,eqnslst,ilst,inComps,isyst,ishared,vec2,inArg,hov,inDummyStates,iSetIndex);
+        (outDummyVars,dummyStates,syst,shared,setIndex) = processComps2New(nv,hov,neqns,eqnslst,ilst,inComps,isyst,ishared,vec2,inArg,hov,inDummyStates,iSetIndex);
       then 
-        (varlst,dummyStates,isyst,ishared,iSetIndex);
+        (outDummyVars,dummyStates,syst,shared,setIndex);
   end matchcontinue;
 end processComps2New;
 
@@ -2168,7 +2168,7 @@ algorithm
         mT = BackendDAEUtil.transposeMatrix(m,inVarSize);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
         // simplify the system
-
+         
         // do onefree matching
         vec1 = arrayCreate(inEqnsSize,-1);
         vec2 = arrayCreate(inVarSize,-1);
