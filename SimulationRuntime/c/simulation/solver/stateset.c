@@ -79,13 +79,13 @@ void initializeStateSetJacobians(DATA *data)
 void getAnalyticalJacobianSet(DATA* data, unsigned int index)
 {
   unsigned int i,j,k,l,ii;
-  unsigned int nStates = data->simulationInfo.stateSetData[index].nStates;
-  unsigned int nCandidates = data->simulationInfo.stateSetData[index].nCandidates;
   unsigned int jacIndex = data->simulationInfo.stateSetData[index].jacobianIndex;
+  unsigned int nrows = data->simulationInfo.analyticJacobians[jacIndex].sizeRows;
+  unsigned int ncols = data->simulationInfo.analyticJacobians[jacIndex].sizeCols;
   double* jac = data->simulationInfo.stateSetData[index].J;
 
   /* set all elements to zero */
-  memset(jac, 0, (nStates*nCandidates*sizeof(double)));
+  memset(jac, 0, (nrows*ncols*sizeof(double)));
 
   for(i=0; i < data->simulationInfo.analyticJacobians[jacIndex].sparsePattern.maxColors; i++)
   {

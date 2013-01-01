@@ -2043,14 +2043,15 @@ algorithm
       BackendDAE.ConstraintEquations orgEqnsLst;
       array<list<Integer>> mapEqnIncRow,mapEqnIncRow1;
       array<Integer> mapIncRowEqn,mapIncRowEqn1;    
-      Integer noofeqns,setIndex;
+      Integer noofeqns,setIndex,nv;
       list<DAE.ComponentRef> dummyStates;  
       BackendDAE.Variables vars;
       BackendDAE.EquationArray eqns;
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.AdjacencyMatrixEnhanced me;
-      BackendDAE.AdjacencyMatrixTEnhanced meT;      
+      BackendDAE.AdjacencyMatrixTEnhanced meT;
+      String msg;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
@@ -2091,6 +2092,25 @@ algorithm
         (outDummyVars,dummyStates,syst,shared,setIndex) = processComps3New(freeStates,neqns,syst,me,meT,mapEqnIncRow1,mapIncRowEqn1,isyst,ishared,vec2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),hov,inDummyStates,iSetIndex);
       then
         (outDummyVars,dummyStates,syst,shared,setIndex);
+    case (_,_,_,_,_,_,_,_,_,_,{},_,_)
+      equation
+        true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
+        true = intGt(neqns,freeStates);
+        // no chance, to much equations
+        msg = "It is not possible to select continues time states becasue Number of Equations " +& intString(neqns) +& " greater than number of States " +& intString(freeStates) +& " to select from.";
+        Error.addMessage(Error.INTERNAL_ERROR, {msg});
+      then
+        fail();
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        true = Flags.getConfigBool(Flags.DYNAMIC_PIVOT);
+        true = intGt(neqns,freeStates);
+        // try again and add also stateSelect.always vars.
+        nv = listLength(hov);
+        true = intGt(neqns,nv);
+        (varlst,dummyStates,isyst,ishared,iSetIndex) = processComps2New(nv,hov,neqns,eqnslst,ilst,inComps,isyst,ishared,vec2,inArg,hov,inDummyStates,iSetIndex);
+      then 
+        (varlst,dummyStates,isyst,ishared,iSetIndex);
   end matchcontinue;
 end processComps2New;
 
@@ -2147,6 +2167,8 @@ algorithm
         m = incidenceMatrixfromEnhanced2(inMe,vars);
         mT = BackendDAEUtil.transposeMatrix(m,inVarSize);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
+        // simplify the system
+
         // do onefree matching
         vec1 = arrayCreate(inEqnsSize,-1);
         vec2 = arrayCreate(inVarSize,-1);
