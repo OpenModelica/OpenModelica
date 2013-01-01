@@ -2167,14 +2167,10 @@ algorithm
         m = incidenceMatrixfromEnhanced2(inMe,vars);
         mT = BackendDAEUtil.transposeMatrix(m,inVarSize);
         Debug.fcall(Flags.BLT_DUMP, BackendDump.printEqSystem, BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),{}));
-        // simplify the system
-         
-        // do onefree matching
+
+        // match the variables not the equations, to have prevered states unmatched
         vec1 = arrayCreate(inEqnsSize,-1);
         vec2 = arrayCreate(inVarSize,-1);
-        //onefreeMatchingBFS(List.intRange(inEqnsSize),m,mT,vec2,vec1,{});
-        // match the variables not the equations, to have prevered states unmatched
-        //true = BackendDAEEXT.setAssignment(inVarSize,inEqnsSize,vec2,vec1);
         Matching.matchingExternalsetIncidenceMatrix(inEqnsSize,inVarSize,mT);
         BackendDAEEXT.matching(inEqnsSize,inVarSize,3,-1,1.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);
@@ -2196,9 +2192,8 @@ algorithm
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.MATCHING(vec2,vec1,{}),{});
         //  dumpSystemGraphML(syst,inIshared,NONE(),"StateSelection" +& intString(arrayLength(m)) +& ".graphml");
         (syst,m,mT,mapEqnIncRow1,mapIncRowEqn1) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.NORMAL());
-        sets = Matching.getEqnsforIndexReduction(unassigned,arrayLength(m),m,mT,vec1,vec2,(so,orgEqnsLst,mapEqnIncRow1,mapIncRowEqn1,noofeqns));
-        // collect equations with no sets and add it to the system
-        
+        // TODO: partition the system 
+        sets = {unassigned};
         
         //  print("Sets:\n");
         //  BackendDump.dumpIncidenceMatrix(listArray(sets));
@@ -2208,87 +2203,6 @@ algorithm
         (vlst,dummyStates,syst,shared,setIndex);
   end matchcontinue;
 end processComps3New;
-
-protected function onefreeMatchingBFS
-"function onefreeMatchingBFS
-  author: Frenkel TUD 2012-05"
-  input BackendDAE.IncidenceMatrixElement queue;
-  input BackendDAE.IncidenceMatrix m;
-  input BackendDAE.IncidenceMatrixT mt;
-  input array<Integer> ass1; 
-  input array<Integer> ass2;
-  input BackendDAE.IncidenceMatrixElement nextQeue;
-algorithm
-  _ := match(queue,m,mt,ass1,ass2,nextQeue)
-    local 
-      Integer c;
-      BackendDAE.IncidenceMatrixElement rest,newqueue,rows;
-    case ({},_,_,_,_,{}) then ();
-    case ({},_,_,_,_,_)
-      equation
-        //  print("NextQeue\n");
-        onefreeMatchingBFS(nextQeue,m,mt,ass1,ass2,{});
-      then 
-        ();
-    case(c::rest,_,_,_,_,_)
-      equation
-        //  print("Process Eqn " +& intString(c) +& "\n");
-        rows = List.removeOnTrue(ass1, isAssignedSaveEnhanced, m[c]); 
-        //_ = arrayUpdate(columark,c,mark);
-        newqueue = onefreeMatchingBFS1(rows,c,mt,ass1,ass2,nextQeue);
-        onefreeMatchingBFS(rest,m,mt,ass1,ass2,newqueue);
-      then 
-        ();
-  end match; 
-end onefreeMatchingBFS;
-
-protected function isAssignedSaveEnhanced
-"function isAssigned
-  author: Frenkel TUD 2012-05"
-  input array<Integer> ass;
-  input Integer inTpl;
-  output Boolean outB;
-algorithm
-  outB := matchcontinue(ass,inTpl)
-    local
-      Integer i;
-    case (_,i)
-      equation
-        true = intGt(i,0);
-      then
-        intGt(ass[i],0); 
-    else
-      true;
-  end matchcontinue;
-end isAssignedSaveEnhanced;
-
-protected function onefreeMatchingBFS1
-"function onefreeMatchingBFS1
-  author: Frenkel TUD 2012-05"
-  input BackendDAE.IncidenceMatrixElement rows;
-  input Integer c;
-  input BackendDAE.IncidenceMatrix mt;
-  input array<Integer> ass1; 
-  input array<Integer> ass2;
-  input BackendDAE.IncidenceMatrixElement inNextQeue;
-  output BackendDAE.IncidenceMatrixElement outNextQeue;
-algorithm
-  outNextQeue := matchcontinue(rows,c,mt,ass1,ass2,inNextQeue)
-    local 
-      Integer r;
-      BackendDAE.IncidenceMatrixElement vareqns;
-    case (r::{},_,_,_,_,_)
-      equation
-        //  print("Assign Var" +& intString(r) +& " with Eqn " +& intString(c) +& "\n");
-        // assigen 
-        _ = arrayUpdate(ass1,r,c);
-        _ = arrayUpdate(ass2,c,r);
-        vareqns = List.removeOnTrue(ass2, isAssignedSaveEnhanced, mt[r]);   
-      then 
-        listAppend(inNextQeue,vareqns);
-    else then inNextQeue;
-  end matchcontinue; 
-end onefreeMatchingBFS1;
 
 protected function processComps4New
 "function: processComps4

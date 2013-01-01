@@ -4181,6 +4181,7 @@ algorithm
     case({},_,_,_,_,_,_,_) then (iVars,iEquations,iuniqueEqIndex,itempvars,iNumStateSets);
     case(BackendDAE.STATESET(rang=rang,state=crset,crA=crA,varA=aVars,statescandidates=statevars,ovars=dstatesvars,eqns=ceqns,oeqns=oeqns,crJ=crJ,varJ=varJ)::sets,_,_,_,_,_,_,_)
       equation
+        // ToDo: get Equations for Jac from the strong component with crset equation
         // add vars for A
         vars = BackendVariable.addVars(aVars,iVars);
         // replace der in equations
