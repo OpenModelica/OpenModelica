@@ -638,8 +638,11 @@ protected function selectInitialStateSetVar
   input BackendDAE.Var inVar;
   input BackendDAE.Variables inVars;
   output BackendDAE.Variables outVars;
+protected
+  Boolean b;
 algorithm
-  ((_,outVars)) := selectInitializationVariables2((inVar,inVars));
+  b := BackendVariable.varFixed(inVar);
+  outVars := Debug.bcallret2(not b,BackendVariable.addVar,inVar, inVars, inVars);
 end selectInitialStateSetVar;
 
 protected function selectInitializationVariables2 "function selectInitializationVariables2
