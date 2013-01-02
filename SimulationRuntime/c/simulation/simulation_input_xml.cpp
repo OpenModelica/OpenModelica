@@ -264,7 +264,12 @@ void read_input_xml(int argc, char **argv,
   /* first, check the modelGUID!
      TODO! FIXME! THIS SEEMS TO FAIL!
      ARE WE READING THE OLD XML FILE?? */
-  if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
+  if (mi.md.find("guid") == mi.md.end()) 
+  {
+     WARNING2(LOG_SIMULATION, "The Model GUID: %s is not set in file: %s",
+        modelData->modelGUID,
+        filename->c_str());
+  } else if(strcmp(modelData->modelGUID, mi.md["guid"].c_str()))
   {
     XML_ParserFree(parser);
     fclose(file);

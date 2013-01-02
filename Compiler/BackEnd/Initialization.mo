@@ -1091,7 +1091,7 @@ algorithm
         //  BackendDump.printEqSystem(syst);
         vec1 = arrayCreate(nVars,-1);
         vec2 = arrayCreate(nEqns,-1);
-        Matching.matchingExternalsetIncidenceMatrix(nVars,nEqns,m);        
+        Matching.matchingExternalsetIncidenceMatrix(nVars,nEqns,m);
         BackendDAEEXT.matching(nVars,nEqns,5,-1,0.0,1);
         BackendDAEEXT.getAssignment(vec2,vec1);
         // try to find for unmatched variables without startvalue an equation by unassign a variable with start value 
@@ -1107,8 +1107,8 @@ algorithm
         Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "Assuming fixed start value for the following " +& intString(nVars-nEqns) +& " variables:");
         initVarList = List.map1r(unassigned,BackendVariable.getVarAt,inVars);
         (vars,eqns,shared) = addStartValueEquations(initVarList, inVars, inEqns, iShared);
-      then 
-        (true, vars, eqns, shared);        
+      then
+        (true, vars, eqns, shared);
 
     // fix all free variables
     case(_, _, eqns, _, _) equation

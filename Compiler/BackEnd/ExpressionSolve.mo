@@ -102,8 +102,8 @@ algorithm
     case(_,_,_,_) // FOR DEBBUGING...
       equation
         print("Try to solve: rhs: " +&
-          ExpressionDump.printExpStr(inExp1) +& " lhs: " +&
-          ExpressionDump.printExpStr(inExp2) +& " with respect to: " +&
+          ExpressionDump.dumpExpStr(inExp1,0) +& " lhs: " +&
+          ExpressionDump.dumpExpStr(inExp2,0) +& " with respect to: " +&
           ExpressionDump.printExpStr(inExp3) +& "\n");
       then
         fail();
@@ -185,6 +185,20 @@ algorithm
     local
       DAE.Exp res;
       DAE.ComponentRef cr,cr1;
+      DAE.Type tp;
+      list<DAE.Statement> asserts;
+
+    // special case for inital system when already solved, cr1 = $_start(...)
+    case (DAE.CREF(componentRef = cr1),DAE.CALL(path = Absyn.IDENT(name = "$_start")),DAE.CREF(componentRef = cr))
+      equation
+        true = ComponentReference.crefEqual(cr, cr1);
+      then
+        (inExp2,{});
+    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr1)}),DAE.CALL(path = Absyn.IDENT(name = "$_start")),DAE.CREF(componentRef = cr))
+      equation
+        true = ComponentReference.crefEqual(cr, cr1);
+      then
+        (inExp2,{});
     
     // special case when already solved, cr1 = rhs, otherwise division by zero when dividing with derivative
     case (DAE.CREF(componentRef = cr1),_,DAE.CREF(componentRef = cr))
@@ -290,6 +304,15 @@ algorithm
       then
         (Expression.negate(inExp1),{});
 
+    // Integer(enumcr) = ...
+    case (DAE.CALL(path = Absyn.IDENT(name = "Integer"),expLst={DAE.CREF(componentRef = cr1)}),_,DAE.CREF(componentRef = cr,ty=tp))
+      equation
+        true = ComponentReference.crefEqual(cr, cr1);
+        // cr not in e2
+        false = Expression.expHasCrefNoPreorDer(inExp2,cr);
+        asserts = generateAssertType(tp,cr,inExp3,{});
+      then
+        (DAE.CAST(tp,inExp2),asserts);
   end matchcontinue;
 end solveSimple;
 
@@ -359,7 +382,7 @@ algorithm
         tp = Expression.typeof(e);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         (rhs,asserts) = solve(e,z,inExp3);
-        asserts = generateAssert(inExp1,inExp2,inExp3,a,asserts);
+        asserts = generateAssertZero(inExp1,inExp2,inExp3,a,asserts);
       then
         (rhs,asserts);
        
@@ -371,7 +394,7 @@ algorithm
         tp = Expression.typeof(e);
         (z,_) = Expression.makeZeroExpression(Expression.arrayDimension(tp));
         (rhs,asserts) = solve(e,z,inExp3);
-        asserts = generateAssert(inExp1,inExp2,inExp3,a,asserts);
+        asserts = generateAssertZero(inExp1,inExp2,inExp3,a,asserts);
       then
         (rhs,asserts);
         
@@ -477,7 +500,7 @@ algorithm
   end matchcontinue;
 end traversingVarOnlyinPow;
 
-protected function generateAssert
+protected function generateAssertZero
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Exp inExp3;
@@ -508,7 +531,44 @@ algorithm
       then
         DAE.STMT_ASSERT(DAE.RELATION(a,DAE.NEQUAL(tp),z,-1,NONE()),DAE.SCONST(estr),DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
   end matchcontinue;
-end generateAssert;
+end generateAssertZero;
+
+protected function generateAssertType
+  input DAE.Type tp;
+  input DAE.ComponentRef cr;
+  input DAE.Exp iExp;
+  input list<DAE.Statement> inAsserts;
+  output list<DAE.Statement> outAsserts;
+algorithm
+  outAsserts := match(tp,cr,iExp,inAsserts)
+    local
+      Absyn.Path path,p1,pn;
+      list<String> names;
+      Integer n;
+      DAE.Exp e1,en,e,es;
+      String s1,sn,se,estr,crstr;
+    case (DAE.T_ENUMERATION(path=path,names=names),_,_,_)
+      equation
+        p1 = Absyn.suffixPath(path,listGet(names,1));
+        e1 = DAE.ENUM_LITERAL(p1,1);
+        n = listLength(names);
+        pn = Absyn.suffixPath(path,listGet(names,n));
+        en = DAE.ENUM_LITERAL(p1,n);
+        s1 = Absyn.pathString(p1);
+        sn = Absyn.pathString(pn);
+        se = ExpressionDump.printExpStr(iExp);
+        crstr = ComponentReference.printComponentRefStr(cr);
+        estr = "Expression for " +& crstr +& " out of min(" +& s1 +& ")/max(" +& sn +& ") = ";
+        // iExp >= e1 and iExp <= en
+        e = DAE.LBINARY(DAE.RELATION(iExp,DAE.GREATEREQ(DAE.T_INTEGER_DEFAULT),e1,-1,NONE()),DAE.AND(DAE.T_BOOL_DEFAULT),
+                                     DAE.RELATION(iExp,DAE.LESSEQ(DAE.T_INTEGER_DEFAULT),en,-1,NONE()));
+        es = Expression.makeBuiltinCall("String", {iExp,DAE.SCONST("d")}, DAE.T_STRING_DEFAULT);
+        es = DAE.BINARY(DAE.SCONST(estr),DAE.ADD(DAE.T_STRING_DEFAULT),es);
+      then
+        DAE.STMT_ASSERT(e,es,DAE.ASSERTIONLEVEL_ERROR,DAE.emptyElementSource)::inAsserts;
+    else then inAsserts;
+  end match;
+end generateAssertType;
 
 protected function solve3
 "function: solve3

@@ -3698,7 +3698,7 @@ algorithm
     /* delay(e) can be used to break algebraic loops given some solver options */
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),(vars,pa))))
       equation
-        b = Flags.isSet(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+        b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then ((e,not b,(vars,pa)));
 
     case ((e,(vars,pa))) then ((e,true,(vars,pa)));
@@ -3755,7 +3755,7 @@ algorithm
     /* delay(e) can be used to break algebraic loops given some solver options */
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),(vars,pa))))
       equation
-        b = Flags.isSet(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+        b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then ((e,not b,(vars,pa)));
 
     case ((e,(vars,pa))) then ((e,true,(vars,pa)));
@@ -5676,7 +5676,7 @@ algorithm
     // delay(e) can be used to break algebraic loops given some solver options 
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),(vars,bs,(mark,rowmark),pa))))
       equation
-        b = Flags.isSet(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+        b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then ((e,not b,(vars,bs,(mark,rowmark),pa)));
     case ((e,(vars,bs,(mark,rowmark),pa))) then ((e,true,(vars,bs,(mark,rowmark),pa)));
   end matchcontinue;
@@ -5807,7 +5807,7 @@ algorithm
     // delay(e) can be used to break algebraic loops given some solver options 
     case ((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),bt))
       equation
-        b = Flags.isSet(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
+        b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
       then ((e,not b,bt));
     case ((e,bt)) then ((e,true,bt));        
   end match;
