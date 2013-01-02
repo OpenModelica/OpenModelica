@@ -2142,21 +2142,18 @@ algorithm
       list<Integer> xs;
       array<Integer> arr;
     
-    case ({},_) then false;
+    case ({},_)
+    then false;
     
-    case ((x :: xs),arr)
-      equation
-        0 = arr[x];
-        res = blockIsDynamic(xs, arr);
-      then
-        res;
+    case ((x :: xs),arr) equation
+      0 = arr[x];
+      res = blockIsDynamic(xs, arr);
+    then res;
     
-    case ((x :: xs),arr)
-      equation
-        mark_value = arr[x];
-        (mark_value <> 0) = true;
-      then
-        true;
+    case ((x :: xs),arr) equation
+      mark_value = arr[x];
+      (mark_value <> 0) = true;
+    then true;
   end matchcontinue;
 end blockIsDynamic;
 

@@ -1882,8 +1882,7 @@ algorithm
   outValues := List.map(inDims, dimensionSizeAll);
 end dimensionsSizes;
 
-public function typeof "
-function typeof
+public function typeof "function typeof
   Retrieves the Type of the Expression"
   input DAE.Exp inExp;
   output Type outType;
