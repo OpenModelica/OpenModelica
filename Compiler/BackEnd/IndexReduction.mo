@@ -1988,7 +1988,7 @@ algorithm
     case (_,_,_,_,(_,{},_,_,_),_,_,_) then (inDummyStates,isyst,ishared,iSetIndex);
     case (_,_,_,_,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_,_)
       equation
-        // get Orgequations of that level
+        // get orgequations of that level
         (eqnslst,ilst,orgEqnsLst) = getFirstOrgEqns(orgEqnsLst,{},{},{});
         // replace final parameter
         (eqnslst,_) = BackendEquation.traverseBackendDAEExpsEqnList(eqnslst, replaceFinalVarsEqn,(BackendVariable.daeKnVars(ishared),false,BackendVarTransform.emptyReplacements()));
@@ -2193,7 +2193,7 @@ algorithm
         //  dumpSystemGraphML(syst,inIshared,NONE(),"StateSelection" +& intString(arrayLength(m)) +& ".graphml");
         (syst,m,mT,mapEqnIncRow1,mapIncRowEqn1) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.NORMAL());
         // TODO: partition the system 
-        sets = {unassigned};
+        sets = partitionSystem(m,mT);
         
         //  print("Sets:\n");
         //  BackendDump.dumpIncidenceMatrix(listArray(sets));
@@ -2203,6 +2203,117 @@ algorithm
         (vlst,dummyStates,syst,shared,setIndex);
   end matchcontinue;
 end processComps3New;
+
+protected function partitionSystem
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mT;
+  output list<list<Integer>> systs;
+protected
+  array<Integer> rowmarkarr,collmarkarr;
+  Integer nsystems,neqns;
+  array<list<Integer>> systsarr;
+algorithm
+  neqns := arrayLength(m);
+  // array to mark the independent systems
+  rowmarkarr := arrayCreate(neqns,0);
+  collmarkarr := arrayCreate(arrayLength(mT),0);
+  // mark the systems
+  nsystems := partitionSystem1(neqns,m,mT,rowmarkarr,collmarkarr,1);
+  // splitt it in independen systems
+  systsarr := arrayCreate(nsystems,{});
+  systs := partitionSystemSplitt(neqns,rowmarkarr,systsarr);
+end partitionSystem;
+
+protected function partitionSystem1
+  input Integer index;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrix mT;
+  input array<Integer> rowmarkarr;
+  input array<Integer> collmarkarr;
+  input Integer iNSystems;
+  output Integer oNSystems;
+algorithm
+  oNSystems := matchcontinue(index,m,mT,rowmarkarr,collmarkarr,iNSystems)
+    local
+      list<Integer> rows;
+      Integer nsystems;
+    case (0,_,_,_,_,_) then iNSystems-1;
+    case (_,_,_,_,_,_)
+      equation
+        // if unmarked then increse nsystems
+        false = intGt(rowmarkarr[index],0);
+        _ = arrayUpdate(rowmarkarr,index,iNSystems);
+        rows = List.select(m[index], Util.intPositive);
+        nsystems = partitionSystemstraverseRows(rows,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
+      then
+        partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,nsystems);
+    case (_,_,_,_,_,_)
+      equation
+        // if marked skipp it
+        true = intGt(rowmarkarr[index],0);
+      then
+        partitionSystem1(index-1,m,mT,rowmarkarr,collmarkarr,iNSystems);
+  end matchcontinue;
+end partitionSystem1;
+
+protected function partitionSystemstraverseRows
+  input list<Integer> iRows;
+  input list<Integer> iQueue;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrix mT;
+  input array<Integer> rowmarkarr;
+  input array<Integer> collmarkarr;
+  input Integer iNSystems;
+  output Integer oNSystems;
+algorithm
+  oNSystems := matchcontinue(iRows,iQueue,m,mT,rowmarkarr,collmarkarr,iNSystems)
+    local
+      list<Integer> rest,colls,rows;
+      Integer r;
+    case ({},{},_,_,_,_,_) then iNSystems+1;
+    case ({},_,_,_,_,_,_)
+      then
+        partitionSystemstraverseRows(iQueue,{},m,mT,rowmarkarr,collmarkarr,iNSystems);
+    case (r::rest,_,_,_,_,_,_)
+      equation
+        // if unmarked then add 
+        false = intGt(collmarkarr[r],0);
+        _ = arrayUpdate(collmarkarr,r,iNSystems);
+        colls = List.select(mT[r], Util.intPositive);
+        colls = List.select1r(colls,Matching.isUnAssigned, rowmarkarr);
+        _ = List.fold(colls, markTrue, (rowmarkarr,iNSystems));
+        rows = List.flatten(List.map1r(colls,arrayGet,m));
+        rows = List.select1r(rows,Matching.isUnAssigned, collmarkarr);
+        rows = listAppend(rows,iQueue);
+      then
+        partitionSystemstraverseRows(rest,rows,m,mT,rowmarkarr,collmarkarr,iNSystems);
+    case (r::rest,_,_,_,_,_,_)
+      equation
+        // if marked skipp it
+        true = intGt(collmarkarr[r],0);
+      then
+        partitionSystemstraverseRows(rest,iQueue,m,mT,rowmarkarr,collmarkarr,iNSystems);
+  end matchcontinue;
+end partitionSystemstraverseRows;
+
+protected function partitionSystemSplitt
+  input Integer index;
+  input array<Integer> rowmarkarr;
+  input array<list<Integer>> systsarr;
+  output list<list<Integer>> systs;
+algorithm
+  systs := match(index,rowmarkarr,systsarr)
+    local
+      Integer i;
+    case (0,_,_) then arrayList(systsarr);
+    case (_,_,_)
+      equation
+        i = rowmarkarr[index];
+        _ = Util.arrayCons(i, index, systsarr);
+      then
+        partitionSystemSplitt(index-1,rowmarkarr,systsarr);
+  end match;
+end partitionSystemSplitt;
 
 protected function processComps4New
 "function: processComps4
