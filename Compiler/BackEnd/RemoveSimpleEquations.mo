@@ -1236,11 +1236,11 @@ algorithm
         (varlst,_::_)= BackendVariable.getVar(cr, knvars) "input variables stored in known variables are input on top level" ;
         false = List.mapAllValueBool(varlst,toplevelInputOrUnfixed,false);
       then ((e,false,(true,vars,knvars,b1,b2,ilst)));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample"), expLst = {_,_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "change"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "edge"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
-    case((e as DAE.CALL(path = Absyn.IDENT(name = "delay"), expLst = {_}), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "sample")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "change")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "edge")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "delay")), (_,vars,knvars,b1,b2,ilst))) then ((e,false,(true,vars,knvars,b1,b2,ilst) ));
     // case for finding simple equation in jacobians 
     // there are all known variables mark as input
     // and they are all time-depending  
