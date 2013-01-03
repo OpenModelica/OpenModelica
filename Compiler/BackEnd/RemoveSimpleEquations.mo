@@ -120,8 +120,6 @@ protected type VarSetAttributes =
 
 protected constant VarSetAttributes EMPTYVARSETATTRIBUTES  = (false,(-1,{}),NONE(),0,(NONE(),NONE()));
 
-protected constant Integer MAXTRAVERSALS = 2 "maximal times of traverse the acausal equtaions to find simple equations";
-
 /*
  * fastAcausal
  *
@@ -152,7 +150,7 @@ algorithm
   Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
   Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
   // traverse all systems and remove simple equations 
-  (odae,(repl,b,_,_)) := BackendDAEUtil.mapEqSystemAndFold(dae,fastAcausal1,(repl,false,unreplacable,MAXTRAVERSALS));
+  (odae,(repl,b,_,_)) := BackendDAEUtil.mapEqSystemAndFold(dae,fastAcausal1,(repl,false,unreplacable,Flags.getConfigInt(Flags.MAXTRAVERSALS)));
   // traverse the shared parts
   odae := removeSimpleEquationsShared(b,odae,repl);
 end fastAcausal;

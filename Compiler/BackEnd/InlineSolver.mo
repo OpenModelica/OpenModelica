@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-  
+
 encapsulated package InlineSolver
 " file:        InlineSolver.mo
   package:     InlineSolver 
@@ -516,13 +516,13 @@ algorithm
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
-	  DAE.RCONST(0.08125000000000000000000000000000),  //(0)
-	  DAE.RCONST(0.6934764274975466670326692885405),  //(1)
-	  DAE.RCONST(0.3555555555555555555555555555556),  //(2)
-	  DAE.RCONST(0.0619239222016411115914895523205),  //-(3)
-	  DAE.RCONST(0.018750), //(4)
-	  DAE.RCONST(2.0),   // +0,-1
-	  f0, f1, f2, f3, f4, x0, x2);
+      DAE.RCONST(0.08125000000000000000000000000000),  //(0)
+      DAE.RCONST(0.6934764274975466670326692885405),  //(1)
+      DAE.RCONST(0.3555555555555555555555555555556),  //(2)
+      DAE.RCONST(0.0619239222016411115914895523205),  //-(3)
+      DAE.RCONST(0.018750), //(4)
+      DAE.RCONST(2.0),   // +0,-1
+      f0, f1, f2, f3, f4, x0, x2);
   
   lhs := eADD(z0, eMUL(eADD4(k0, k1, k2, k4),dt));
   rhs := eADD(z1, eMUL(k3,dt));
@@ -530,13 +530,13 @@ algorithm
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
   (k0, k1, k2, k3, k4, z0, z1) := LobattoTerms(
-	  DAE.RCONST(0.0649080108944342854789983145097),  //(0)
-	  DAE.RCONST(0.3161826581932177779607790887147),  //(1)
-	  DAE.RCONST(0.4560365520606882543865426789669),  //(2)
-	  DAE.RCONST(0.1843013502802311107451084892373),  //(3)
-	  DAE.RCONST(0.02142857142857142857142857142857), //-(4)
-	  DAE.RCONST(1.208712152522079996705976403136),   // +0,-1
-	  f0, f1, f2, f3, f4, x0, x3);
+      DAE.RCONST(0.0649080108944342854789983145097),  //(0)
+      DAE.RCONST(0.3161826581932177779607790887147),  //(1)
+      DAE.RCONST(0.4560365520606882543865426789669),  //(2)
+      DAE.RCONST(0.1843013502802311107451084892373),  //(3)
+      DAE.RCONST(0.02142857142857142857142857142857), //-(4)
+      DAE.RCONST(1.208712152522079996705976403136),   // +0,-1
+      f0, f1, f2, f3, f4, x0, x3);
   
   lhs := eADD(z0, eMUL(eADD4(k0, k1, k2, k3),dt));
   rhs := eADD(z1, eMUL(k4,dt));

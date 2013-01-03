@@ -750,9 +750,9 @@ constant ConfigFlag DEFAULT_OPENCL_DEVICE = CONFIG_FLAG(42, "defaultOCLDevice",
 constant ConfigFlag NO_TEARING = CONFIG_FLAG(43, "noTearing",
   NONE(), EXTERNAL(), BOOL_FLAG(false),NONE(),
   Util.gettext("Disables tearing at all."));
-constant ConfigFlag DYNAMIC_PIVOT = CONFIG_FLAG(44, "dynamicPivot",
-  NONE(), EXTERNAL(), BOOL_FLAG(true),NONE(),
-  Util.gettext("Enable dynamic pivoting of states during simulation. Works only with dynamic state selection"));
+constant ConfigFlag MAXTRAVERSALS = CONFIG_FLAG(44, "maxTraversals",
+  NONE(), EXTERNAL(), INT_FLAG(2),NONE(),
+  Util.gettext("Maximal traversals to find find simple equations in the acausal system."));
 constant ConfigFlag DUMP_TARGET = CONFIG_FLAG(45, "dumpTarget",
   NONE(), EXTERNAL(), STRING_FLAG(""), NONE(),
   Util.gettext("rederect the dump to file. If file ends with .html HTML code is generated."));
@@ -808,7 +808,7 @@ constant list<ConfigFlag> allConfigFlags = {
   LOCALE_FLAG,
   DEFAULT_OPENCL_DEVICE,
   NO_TEARING,
-  DYNAMIC_PIVOT,
+  MAXTRAVERSALS,
   DUMP_TARGET,
   DELAY_BREAK_LOOP
 };

@@ -665,8 +665,8 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
     snprintf(buf,WARNINGBUFFSIZE,"File[%d]=%f\n",time.n,time.data[time.n-1]);
     res = mk_cons(mk_scon(buf),res);
   }
-  /* check if time is larger or equal reftime */
-  if (AlmostEqualRelativeAndAbs(time.data[time.n-1],timeref.data[timeref.n-1]) == 0) {
+  /* check if time is larger or less reftime */
+  if (absdouble(time.data[time.n-1]-timeref.data[timeref.n-1]) > reltol*fabs(timeref.data[timeref.n-1])) {
     char buf[WARNINGBUFFSIZE];
 #ifdef DEBUGOUTPUT
     fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n-1],timeref.data[timeref.n-1]);
