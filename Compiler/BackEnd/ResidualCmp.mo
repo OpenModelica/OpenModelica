@@ -93,7 +93,7 @@ protected
 algorithm
   a_cref := Absyn.pathToCref(className);
   fileDir := CevalScript.getFileDir(a_cref, p);
-  (libs, includes, includeDirs, recordDecls, functions) := createFunctions(dae, functionTree, className);
+  (libs, includes, includeDirs, recordDecls, functions) := createFunctions(p, dae, functionTree, className);
   residualcmp := createResidualCmp(dae,className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, recordDecls, args);
 
   Debug.execStat("ResidualCmp",CevalScript.RT_CLOCK_SIMCODE);
@@ -108,6 +108,7 @@ end generateModelCode;
 /* Finds the called functions in BackendDAE and transforms them to a list of
  libraries and a list of SimCode.Function uniontypes. */
 public function createFunctions
+  input Absyn.Program program;
   input DAE.DAElist inDAElist;
   input DAE.FunctionTree functionTree;
   input Absyn.Path inPath;
@@ -118,7 +119,7 @@ public function createFunctions
   output list<SimCode.Function> functions;
 algorithm
   (libs, includes, includeDirs, recordDecls, functions) :=
-  matchcontinue (inDAElist,functionTree,inPath)
+  matchcontinue (program,inDAElist,functionTree,inPath)
     local
       list<String> libs2,includes2,includeDirs2;
       list<DAE.Function> funcelems,part_func_elems;
@@ -127,7 +128,7 @@ algorithm
       list<SimCode.Function> fns;
       list<DAE.Exp> lits;
       
-    case (dae,_,path)
+    case (_,dae,_,path)
       equation
         // get all the used functions from the function tree
         funcelems = DAEUtil.getFunctionList(functionTree);
@@ -136,7 +137,7 @@ algorithm
         funcelems = List.union(part_func_elems, part_func_elems);
         //funcelems = List.union(funcelems, part_func_elems);
         //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;
-        (fns, recordDecls, includes2, includeDirs2, libs2) = SimCodeUtil.elaborateFunctions(funcelems, {}, {}, {}); // Do we need metarecords here as well?
+        (fns, recordDecls, includes2, includeDirs2, libs2) = SimCodeUtil.elaborateFunctions(program, funcelems, {}, {}, {}); // Do we need metarecords here as well?
       then
         (libs2, includes2, includeDirs2, recordDecls, fns);
     else
