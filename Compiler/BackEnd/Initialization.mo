@@ -74,9 +74,9 @@ public function solveInitialSystem "function solveInitialSystem
   author: lochel
   This function generates a algebraic system of equations for the initialization and solves it."
   input BackendDAE.BackendDAE inDAE;
-  input list<BackendDAE.Var> itempVar;
+  input list<BackendDAE.Var> inTempVar;
   output Option<BackendDAE.BackendDAE> outInitDAE;
-  output list<BackendDAE.Var> otempVar;
+  output list<BackendDAE.Var> outTempVar;
 protected 
   BackendDAE.BackendDAE dae;
   list<BackendDAE.Var> initVarsLst;
@@ -95,7 +95,7 @@ algorithm
   initVars := BackendVariable.addVars(initVarsLst, initVars);
   Debug.fcall2(Flags.DUMP_INITIAL_SYSTEM, BackendDump.dumpVariables, initVars, "selected initialization variables");
 
-  (outInitDAE, otempVar) := solveInitialSystem1(dae, initVars, hs, itempVar);
+  (outInitDAE, outTempVar) := solveInitialSystem1(dae, initVars, hs, inTempVar);
 end solveInitialSystem;
 
 // =============================================================================
@@ -352,7 +352,7 @@ algorithm
       (eqns, vars, initVars) = generateInactiveWhenEquationForInitialization({left}, source, hs, iEqns, iVars, inInitVars);
     then (eqns, iVars, initVars);
 
-    // inactive active when equation during initialization with else when part
+    // inactive when equation during initialization with else when part (no strict Modelica)
     case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=SOME(weqn)), _, _, _, _, _) equation
       false = Expression.containsInitialCall(condition, false);  // do not use Expression.traverseExp
       (eqns, vars, initVars) = inlineWhenForInitializationWhenEquation(weqn, hs, source, iEqns, iVars, inInitVars);
@@ -806,8 +806,11 @@ protected function simplifyInitialFunktionsExp "function simplifyInitialFunktion
   output tuple<DAE.Exp, Boolean> outExp;
 algorithm
   outExp := matchcontinue(inExp)
-    case ((DAE.CALL(path = Absyn.IDENT(name = "initial")), _)) then ((DAE.BCONST(true), true));
-    case ((DAE.CALL(path = Absyn.IDENT(name = "sample")), _)) then ((DAE.BCONST(false), true));
+    local
+      DAE.Exp e1;
+    case ((DAE.CALL(path = Absyn.IDENT(name="initial")), _)) then ((DAE.BCONST(true), true));
+    case ((DAE.CALL(path = Absyn.IDENT(name="sample")), _)) then ((DAE.BCONST(false), true));
+    case ((DAE.CALL(path = Absyn.IDENT(name="delay")), expLst=e1::_)) then ((e1, true));
     else then inExp;
   end matchcontinue;
 end simplifyInitialFunktionsExp;
