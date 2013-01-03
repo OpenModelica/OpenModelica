@@ -9663,7 +9663,8 @@ algorithm
     case (clst::rest,_,_,_,_,_,_,_)
       equation
         elst = List.map1r(clst,arrayGet,mapIncRowEqn);
-        e::{} = List.fold2(elst,uniqueIntLst,mark,columark,{});
+        elst = List.fold2(elst,uniqueIntLst,mark,columark,{});
+        {e} = elst;
         e = eindxarr[e];
         vlst = List.map1r(clst,arrayGet,ass2);
         vlst = List.map1r(vlst,arrayGet,varindxarr);

@@ -121,39 +121,14 @@ protected type VarSetAttributes =
 protected constant VarSetAttributes EMPTYVARSETATTRIBUTES  = (false,(-1,{}),NONE(),0,(NONE(),NONE()));
 
 /*
- * fastAcausal
+ * functions to find unreplacable variables
  *
+ * unreplacable: 
+ *   - variables with variable subscribts
+ *   - variables set in when-clauses
+ *   - variables used in pre
+ *   - statescandidates of statesets
  */
-
-public function fastAcausal
-"function: fastAcausal
-  author: Frenkel TUD 2012-12
-  This Function remove with a linear skaling with respect to the 
-  number of equations in an acausal system as much as 
-  possible simple equations."
-  input BackendDAE.BackendDAE dae;
-  output BackendDAE.BackendDAE odae;
-protected
-  BackendVarTransform.VariableReplacements repl;
-  Boolean b;
-  Integer size;
-  HashSet.HashSet unreplacable;
-algorithm
-  // get the size of the system to set up the replacement hashmap 
-  size := BackendDAEUtil.daeSize(dae);
-  size := intMax(BaseHashTable.defaultBucketSize,realInt(realMul(intReal(size),0.7)));
-  repl := BackendVarTransform.emptyReplacementsSized(size);
-  // check for unreplacable crefs
-  unreplacable := HashSet.emptyHashSet();
-  unreplacable := BackendDAEUtil.traverseBackendDAEExps(dae,traverserUnreplacable,unreplacable);
-  unreplacable := addUnreplacableFromWhens(dae,unreplacable);
-  Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
-  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
-  // traverse all systems and remove simple equations 
-  (odae,(repl,b,_)) := BackendDAEUtil.mapEqSystemAndFold(dae,fastAcausal1,(repl,false,unreplacable));
-  // traverse the shared parts
-  odae := removeSimpleEquationsShared(b,odae,repl);
-end fastAcausal;
 
 protected function addUnreplacableFromStateSets
 "function addUnreplacableFromStateSet
@@ -473,19 +448,54 @@ algorithm
   end match;
 end traverseCrefUnreplacable;
 
+/*
+ * fastAcausal
+ *
+ */
+
+public function fastAcausal
+"function: fastAcausal
+  author: Frenkel TUD 2012-12
+  This Function remove with a linear skaling with respect to the 
+  number of equations in an acausal system as much as 
+  possible simple equations."
+  input BackendDAE.BackendDAE dae;
+  output BackendDAE.BackendDAE odae;
+protected
+  BackendVarTransform.VariableReplacements repl;
+  Boolean b;
+  Integer size;
+  HashSet.HashSet unreplacable;
+algorithm
+  // get the size of the system to set up the replacement hashmap 
+  size := BackendDAEUtil.daeSize(dae);
+  size := intMax(BaseHashTable.defaultBucketSize,realInt(realMul(intReal(size),0.7)));
+  repl := BackendVarTransform.emptyReplacementsSized(size);
+  // check for unreplacable crefs
+  unreplacable := HashSet.emptyHashSet();
+  unreplacable := BackendDAEUtil.traverseBackendDAEExps(dae,traverserUnreplacable,unreplacable);
+  unreplacable := addUnreplacableFromWhens(dae,unreplacable);
+  Debug.fcall(Flags.DUMP_REPL, print, "Unreplacable Crefs:\n");
+  Debug.fcall(Flags.DUMP_REPL, BaseHashSet.dumpHashSet, unreplacable);
+  // traverse all systems and remove simple equations 
+  (odae,(repl,b,_,_)) := BackendDAEUtil.mapEqSystemAndFold(dae,fastAcausal1,(repl,false,unreplacable,2 /* times traverse the equtaions*/));
+  // traverse the shared parts
+  odae := removeSimpleEquationsShared(b,odae,repl);
+end fastAcausal;
+
 protected function fastAcausal1
 "function: fastAcausal1
   author: Frenkel TUD 2012-12
   traverse an Equations system to remove simple equations"
   input BackendDAE.EqSystem isyst; 
-  input tuple<BackendDAE.Shared,tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet>> sharedOptimized;
+  input tuple<BackendDAE.Shared,tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet,Integer>> sharedOptimized;
   output BackendDAE.EqSystem osyst;
-  output tuple<BackendDAE.Shared,tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet>> osharedOptimized;
+  output tuple<BackendDAE.Shared,tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet,Integer>> osharedOptimized;
 algorithm
   (osyst,osharedOptimized):=
   match (isyst,sharedOptimized)
     local
-      tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet> tpl;
+      tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet,Integer> tpl;
       HashSet.HashSet unreplacable;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
@@ -495,7 +505,8 @@ algorithm
       BackendDAE.EquationArray eqns;
       array<list<Integer>> mT;
       Boolean b;
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),(shared,tpl))
+      Integer traversals;
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns),(shared,tpl as (_,_,_,traversals)))
       equation
         // transform to list, this is later not neccesary because the acausal system should save the equations as list
         eqnslst = BackendEquation.equationList(eqns);
@@ -1446,10 +1457,10 @@ protected function fastAcausal2
   input array<list<Integer>> iMT;
   input BackendDAE.EqSystem isyst; 
   input BackendDAE.Shared ishared;
-  input tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet> iTpl;
+  input tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet,Integer> iTpl;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
-  output tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet> oTpl;
+  output tuple<BackendVarTransform.VariableReplacements,Boolean,HashSet.HashSet,Integer> oTpl;
 algorithm
   (osyst,oshared,oTpl):=
   match (foundSimple,iSimpleeqnslst,iEqnslst,iMT,isyst,ishared,iTpl)
@@ -1465,8 +1476,9 @@ algorithm
       BackendDAE.EqSystem syst;
       HashSet.HashSet unreplacable;
       BackendDAE.StateSets stateSets;
+      Integer traversals;
     case (false,_,_,_,_,_,_) then (isyst,ishared,iTpl);
-    case (true,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,stateSets=stateSets),_,(repl,b,unreplacable))
+    case (true,_,_,_,BackendDAE.EQSYSTEM(orderedVars=vars,stateSets=stateSets),_,(repl,b,unreplacable,traversals))
       equation
         // transform simpleeqns to array
         simpleeqns = listArray(listReverse(iSimpleeqnslst));
@@ -1477,7 +1489,7 @@ algorithm
         // replace unoptimized equations with optimized
         eqns = BackendEquation.listEquation(listReverse(eqnslst));        
       then 
-        (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),shared,(repl,true,unreplacable));
+        (BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),shared,(repl,true,unreplacable,traversals));
   end match;
 end fastAcausal2;
 
