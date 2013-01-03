@@ -2555,7 +2555,9 @@ algorithm
         varlst = List.map1r(statevars,BackendVariable.getVarAt,iVars);
         assigend1 = List.map1r(unassigned,arrayGet,inMapIncRowEqn);
         assigend1 = List.uniqueIntN(assigend1,arrayLength(inMapIncRowEqn));
+        //  print("BackendEquation.getEqns " +& stringDelimitList(List.map(assigend1,intString),", ") +& "\n");
         eqnlst = BackendEquation.getEqns(assigend1,iEqns);
+        //  print("BackendEquation.equationRemove " +& stringDelimitList(List.map(assigend1,intString),", ") +& "\n");
         eqns1 = List.fold(assigend1,BackendEquation.equationRemove,iEqns);
         (eqnlst,varlst,ass1,ass2,eqns1) = getSetSystem(assigned,inMapEqnIncRow,inMapIncRowEqn,vec1,iVars,eqns1,arrayCreate(inEqnsSize,true),listLength(assigned),eqnlst,varlst,ass1,ass2);
         eqns = BackendEquation.listEquation(eqnlst);
@@ -2623,6 +2625,7 @@ algorithm
         true = flag[e];
         true = intGt(vec1[e],0);
         e1 = inMapIncRowEqn[e];
+        // print("BackendDAEUtil.equationNth " +& intString(e1) +& "\n");
         eqn = BackendDAEUtil.equationNth(iEqnsArr,e1-1);
         eqnarr = BackendEquation.equationRemove(e1,iEqnsArr);
         eqns = inMapEqnIncRow[e1];
