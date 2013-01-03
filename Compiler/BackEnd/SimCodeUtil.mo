@@ -8109,8 +8109,6 @@ algorithm
           BackendVariable.isStateVar(dlowVar), simvar, stateVars);
         derivativeVars = List.consOnTrue((not isalias) and
           BackendVariable.isStateVar(dlowVar), derivSimvar, derivativeVars);
-        inlineVars = List.consOnTrue((not isalias) and
-          BackendVariable.isVarAlg(dlowVar), simvar, inlineVars);
         algVars = List.consOnTrue((not isalias) and
           BackendVariable.isVarAlg(dlowVar), simvar, algVars);
         intAlgVars = List.consOnTrue((not isalias) and
