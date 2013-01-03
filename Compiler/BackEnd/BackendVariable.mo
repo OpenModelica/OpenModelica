@@ -1090,13 +1090,13 @@ public function isVarDiscrete
   output Boolean outBoolean;
 algorithm 
   outBoolean := 
-  matchcontinue (inVar)
+  match (inVar)
     case (BackendDAE.VAR(varKind = BackendDAE.DISCRETE())) then true;
     case (BackendDAE.VAR(varType = DAE.T_INTEGER(source = _))) then true;
     case (BackendDAE.VAR(varType = DAE.T_BOOL(source = _))) then true;
     case (BackendDAE.VAR(varType = DAE.T_ENUMERATION(source = _))) then true;
     case (_) then false;
-  end matchcontinue;
+  end match;
 end isVarDiscrete;
 
 public function isVarNonDiscrete
@@ -1113,19 +1113,14 @@ public function hasDiscreteVar
 algorithm
   outBoolean := matchcontinue (inBackendDAEVarLst)
     local
-      Boolean res;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
-    case ((v :: vs))
+    case (v :: vs)
       equation
         true = isVarDiscrete(v);
       then
         true;
-    case ((v :: vs))
-      equation
-        res = hasDiscreteVar(vs);
-      then
-        res;
+    case (v :: vs) then hasDiscreteVar(vs);
     case ({}) then false;
   end matchcontinue;
 end hasDiscreteVar;

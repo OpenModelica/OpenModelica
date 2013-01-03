@@ -1163,7 +1163,7 @@ protected function transformXToXd "function transformXToXd
   input BackendDAE.Var inVar;
   output BackendDAE.Var outVar;
 algorithm
-  outVar := matchcontinue (inVar)
+  outVar := match (inVar)
     local
       Expression.ComponentRef cr;
       DAE.VarDirection dir;
@@ -1175,8 +1175,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       Option<SCode.Comment> comment;
       DAE.ConnectorType ct;
-      DAE.ElementSource source "the origin of the element";
-      BackendDAE.Var backendVar;
+      DAE.ElementSource source;
       
     case (BackendDAE.VAR(varName = cr,
       varKind = BackendDAE.STATE(),
@@ -1195,10 +1194,8 @@ algorithm
       then
         BackendDAE.VAR(cr,BackendDAE.STATE_DER(),dir,prl,tp,exp,v,dim,source,attr,comment,ct);
         
-    case (backendVar)
-    then
-      backendVar;
-  end matchcontinue;
+    else then inVar;
+  end match;
 end transformXToXd;
 
 protected function replaceDerOpInEquationList
@@ -1500,7 +1497,7 @@ algorithm
     local list<tuple<BackendDAE.Equation,Integer>> eqnindxlst;
     case (_,_,_,_) 
       equation
-      (discVarLst,contVarLst,indxdiscVarLst,indxcontVarLst) = splitVars(varLst,indxVarLst,BackendDAEUtil.isVarDiscrete,{},{},{},{});
+      (discVarLst,contVarLst,indxdiscVarLst,indxcontVarLst) = splitVars(varLst,indxVarLst,BackendVariable.isVarDiscrete,{},{},{},{});
       eqnindxlst = List.map1(discVarLst,findDiscreteEquation,(eqnLst,indxEqnLst));
       discEqnLst = List.map(eqnindxlst,Util.tuple21);
       indxdiscEqnLst = List.map(eqnindxlst,Util.tuple22);
