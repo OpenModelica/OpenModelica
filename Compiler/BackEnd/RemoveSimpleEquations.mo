@@ -3223,11 +3223,43 @@ algorithm
         ovars = replaceOtherStateSetVars(ovars,vars,aliasVars,{});
         (eqns,b) = BackendVarTransform.replaceEquations(eqns,repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         (oeqns,b1) = BackendVarTransform.replaceEquations(oeqns,repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
+        oeqns = List.fold(oeqns,removeEqualLshRshEqns,{});
+        oeqns = listReverse(oeqns);
         (stateSets,b,oStatesetrepl) = removeAliasVarsStateSets(stateSets,SOME(repl),vars,aliasVars,BackendDAE.STATESET(rang,states,crA,varA,statescandidates,ovars,eqns,oeqns,crJ,varJ)::iAcc,b or b1);
       then
         (stateSets,b,oStatesetrepl);
   end match;
 end removeAliasVarsStateSets;
+
+protected function removeEqualLshRshEqns
+"function: removeEqualLshRshEqns
+  author: Frenkel TUD 2012-12"
+  input BackendDAE.Equation iEqn;
+  input list<BackendDAE.Equation> iEqns;
+  output list<BackendDAE.Equation> oEqns;
+algorithm
+  oEqns := matchcontinue(iEqn,iEqns)
+    local
+      DAE.Exp rhs,lhs;
+      Boolean b;
+    case (BackendDAE.EQUATION(exp=lhs,scalar=rhs),_)
+      equation
+        b = Expression.expEqual(lhs,rhs);
+      then
+        List.consOnTrue(not b,iEqn,iEqns);
+    case (BackendDAE.ARRAY_EQUATION(left=lhs,right=rhs),_)
+      equation
+        b = Expression.expEqual(lhs,rhs);
+      then
+        List.consOnTrue(not b,iEqn,iEqns);
+    case (BackendDAE.COMPLEX_EQUATION(left=lhs,right=rhs),_)
+      equation
+        b = Expression.expEqual(lhs,rhs);
+      then
+        List.consOnTrue(not b,iEqn,iEqns);
+    else then iEqn::iEqns;
+  end matchcontinue;
+end removeEqualLshRshEqns;
 
 protected function replaceOtherStateSetVars
 "function: replaceOtherStateSetVars
