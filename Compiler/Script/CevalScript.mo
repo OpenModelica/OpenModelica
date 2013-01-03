@@ -1888,7 +1888,7 @@ algorithm
         v = ValuesUtil.makeArray(List.map(Absyn.pathToStringList(path),ValuesUtil.makeString));
       then (cache,v,st);
 
-    case (cache,env,"generateHeader",{Values.STRING(filename)},(st as Interactive.SYMBOLTABLE(ast = p)),_)
+    case (cache,env,"generateHeader",{Values.STRING(filename)},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         str = Tpl.tplString(Unparsing.programExternalHeader, SCodeUtil.translateAbsyn2SCode(p));
         System.writeFile(filename,str);
@@ -1899,10 +1899,10 @@ algorithm
       then
         (cache,Values.BOOL(false),st);
 
-    case (cache,env,"generateCode",{Values.CODE(Absyn.C_TYPENAME(path))},st,_)
+    case (cache,env,"generateCode",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
         (cache,Util.SUCCESS()) = Static.instantiateDaeFunction(cache, env, path, false, NONE(), true);
-        (cache,_) = cevalGenerateFunction(cache,env,path);
+        (cache,_) = cevalGenerateFunction(cache,env,p,path);
       then
         (cache,Values.BOOL(true),st);
         
@@ -1913,7 +1913,7 @@ algorithm
     case (cache,env,"generateSeparateCode",{},(st as Interactive.SYMBOLTABLE(ast = p)),_)
       equation
         sp = SCodeUtil.translateAbsyn2SCode(p);
-        deps = generateFunctions(cache,env,sp,{});
+        deps = generateFunctions(cache,env,p,sp,{});
       then (cache,Values.BOOL(true),st);
 
     case (cache,env,"generateSeparateCode",{},st,_)
@@ -4485,11 +4485,12 @@ public function cevalGenerateFunction "function: cevalGenerateFunction
   Generates code for a given function name."
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input Absyn.Program program;
   input Absyn.Path inPath;
   output Env.Cache outCache;
   output String functionName;
 algorithm
-  (outCache,functionName) := matchcontinue (inCache,inEnv,inPath)
+  (outCache,functionName) := matchcontinue (inCache,inEnv,program,inPath)
     local
       String pathstr;
       list<Env.Frame> env;
@@ -4500,7 +4501,7 @@ algorithm
       list<DAE.Type> metarecordTypes;
       DAE.FunctionTree funcs;
     // template based translation
-    case (cache, env, path)
+    case (cache, env, _, path)
       equation
         false = Flags.isSet(Flags.NO_GEN);
         false = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
@@ -4508,7 +4509,7 @@ algorithm
         (cache, mainFunction, d, metarecordTypes) = collectDependencies(cache, env, path);
         
         pathstr = generateFunctionName(path);
-        SimCodeMain.translateFunctions(pathstr, SOME(mainFunction), d, metarecordTypes, {});
+        SimCodeMain.translateFunctions(program, pathstr, SOME(mainFunction), d, metarecordTypes, {});
         compileModel(pathstr, {}, "", "", "");
       then
         (cache, pathstr);
@@ -4518,7 +4519,7 @@ algorithm
     // * Don't generate extra code for unreferenced MetaRecord types (for external functions)
     //   This could be an annotation instead anyway.
     // * Don't compile the generated files
-    case (cache, env, path)
+    case (cache, env, _, path)
       equation
         false = Flags.isSet(Flags.NO_GEN);
         true = Flags.isSet(Flags.GENERATE_CODE_CHEAT);
@@ -4528,11 +4529,11 @@ algorithm
         
         // The list of functions is not ordered, so we need to filter out the main function...
         d = DAEUtil.getFunctionList(funcs);
-        SimCodeMain.translateFunctions(pathstr, NONE(), d, {}, {});
+        SimCodeMain.translateFunctions(program, pathstr, NONE(), d, {}, {});
       then
         (cache, pathstr);
 
-    case (cache, env, path)
+    case (cache, env, _, path)
       equation
         false = Flags.isSet(Flags.NO_GEN);
         (cache,false) = Static.isExternalObjectFunction(cache,env,path);
@@ -4548,11 +4549,12 @@ end cevalGenerateFunction;
 protected function generateFunctions
   input Env.Cache icache;
   input Env.Env ienv;
+  input Absyn.Program p;
   input list<SCode.Element> isp;
   input list<tuple<String,list<String>>> iacc;
   output list<tuple<String,list<String>>> deps;
 algorithm
-  deps := match (icache,ienv,isp,iacc)
+  deps := match (icache,ienv,p,isp,iacc)
     local
       String name;
       list<String> names,dependencies;
@@ -4565,12 +4567,12 @@ algorithm
       Env.Cache cache;
       Env.Env env;
 
-    case (cache,env,{},acc) then acc;
-    case (cache,env,SCode.CLASS(name="OpenModelica")::sp,acc)
+    case (cache,env,_,{},acc) then acc;
+    case (cache,env,_,SCode.CLASS(name="OpenModelica")::sp,acc)
       equation
-        acc = generateFunctions(cache,env,sp,acc);
+        acc = generateFunctions(cache,env,p,sp,acc);
       then acc;
-    case (cache,env,SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp,acc)
+    case (cache,env,_,SCode.CLASS(name=name,encapsulatedPrefix=SCode.ENCAPSULATED(),restriction=SCode.R_PACKAGE(),classDef=SCode.PARTS(elementLst=elementLst))::sp,acc)
       equation
         names = List.map(List.filterOnTrue(List.map(List.filterOnTrue(elementLst, SCode.elementIsClass), SCode.getElementClass), SCode.isFunction), SCode.className);
         paths = List.map1r(names,Absyn.makeQualifiedPathFromStrings,name);
@@ -4582,12 +4584,12 @@ algorithm
         acc = (name,dependencies)::acc;
         dependencies = List.map1(dependencies,stringAppend,".h\"");
         dependencies = List.map1r(dependencies,stringAppend,"#include \"");
-        SimCodeMain.translateFunctions(name, NONE(), d, {}, dependencies);
-        acc = generateFunctions(cache,env,sp,acc);
+        SimCodeMain.translateFunctions(p, name, NONE(), d, {}, dependencies);
+        acc = generateFunctions(cache,env,p,sp,acc);
       then acc;
-    case (cache,env,_::sp,acc)
+    case (cache,env,_,_::sp,acc)
       equation
-        acc = generateFunctions(cache,env,sp,acc);
+        acc = generateFunctions(cache,env,p,sp,acc);
       then acc;
   end match;
 end generateFunctions;
@@ -6637,7 +6639,7 @@ algorithm
         //print("\nfunctions in SYMTAB: " +& Interactive.dumpCompiledFunctions(syt)
         
         // now is safe to generate code 
-        (cache, funcstr) = cevalGenerateFunction(cache, env, funcpath);
+        (cache, funcstr) = cevalGenerateFunction(cache, env, p, funcpath);
         print_debug = Flags.isSet(Flags.DYN_LOAD);
         libHandle = System.loadLibrary(funcstr, print_debug);
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
@@ -6677,7 +6679,7 @@ algorithm
          
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
-        (cache,funcstr) = cevalGenerateFunction(cache, env, funcpath);
+        (cache,funcstr) = cevalGenerateFunction(cache, env, Absyn.PROGRAM({},Absyn.TOP(),Absyn.dummyTimeStamp), funcpath);
         // generate a uniquely named dll!
         Debug.fprintln(Flags.DYN_LOAD, "cevalCallFunction: about to execute " +& funcstr);
         print_debug = Flags.isSet(Flags.DYN_LOAD);

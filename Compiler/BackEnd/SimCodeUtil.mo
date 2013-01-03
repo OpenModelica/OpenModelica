@@ -487,6 +487,7 @@ end appendLists;
 /* Finds the called functions in BackendDAE and transforms them to a list of
  libraries and a list of SimCode.Function uniontypes. */
 public function createFunctions
+  input Absyn.Program inProgram;
   input DAE.DAElist inDAElist;
   input BackendDAE.BackendDAE inBackendDAE;
   input Absyn.Path inPath;
@@ -500,7 +501,7 @@ public function createFunctions
   output tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
 algorithm
   (libs, includes, includeDirs, recordDecls, functions, outBackendDAE, outDAE, literals) :=
-  matchcontinue (inDAElist,inBackendDAE,inPath)
+  matchcontinue (inProgram,inDAElist,inBackendDAE,inPath)
     local
       list<String> libs2,includes2,includeDirs2;
       list<DAE.Function> funcelems,part_func_elems;
@@ -511,7 +512,7 @@ algorithm
       list<SimCode.Function> fns;
       list<DAE.Exp> lits;
       
-    case (dae,dlow as BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)),path)
+    case (_,dae,dlow as BackendDAE.DAE(shared=BackendDAE.SHARED(functionTree=functionTree)),path)
       equation
         // get all the used functions from the function tree
         funcelems = DAEUtil.getFunctionList(functionTree);
@@ -523,7 +524,7 @@ algorithm
         funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}),{});
         //Debug.fprintln(Flags.INFO, "Generating functions, call Codegen.\n") "debug" ;
         (funcelems,literals as (_,_,lits)) = simulationFindLiterals(dlow,funcelems);
-        (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(funcelems, {}, lits, {}); // Do we need metarecords here as well?
+        (fns, recordDecls, includes2, includeDirs2, libs2) = elaborateFunctions(inProgram, funcelems, {}, lits, {}); // Do we need metarecords here as well?
       then
         (libs2, includes2, includeDirs2, recordDecls, fns, dlow, dae, literals);
     else
@@ -559,6 +560,7 @@ algorithm
 end getCalledFunctionReferences;
 
 public function elaborateFunctions
+  input Absyn.Program program;
   input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
   input list<DAE.Exp> literals;
@@ -573,11 +575,12 @@ protected
   list<String> outRecordTypes;
 algorithm
   (extraRecordDecls, outRecordTypes) := elaborateRecordDeclarationsForMetarecords(literals,{},{});
-  (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs) := elaborateFunctions2(daeElements,{},outRecordTypes,extraRecordDecls,includes,{},{});
+  (functions, outRecordTypes, extraRecordDecls, outIncludes, includeDirs, libs) := elaborateFunctions2(program,daeElements,{},outRecordTypes,extraRecordDecls,includes,{},{});
   (extraRecordDecls,_) := elaborateRecordDeclarationsFromTypes(metarecordTypes, extraRecordDecls, outRecordTypes);
 end elaborateFunctions;
 
 protected function elaborateFunctions2
+  input Absyn.Program program;
   input list<DAE.Function> daeElements;
   input list<SimCode.Function> inFunctions;
   input list<String> inRecordTypes;
@@ -593,7 +596,7 @@ protected function elaborateFunctions2
   output list<String> outLibs;
 algorithm
   (outFunctions, outRecordTypes, outDecls, outIncludes, outIncludeDirs, outLibs) :=
-  matchcontinue (daeElements, inFunctions, inRecordTypes, inDecls, inIncludes, inIncludeDirs, inLibs)
+  matchcontinue (program,daeElements, inFunctions, inRecordTypes, inDecls, inIncludes, inIncludeDirs, inLibs)
     local
       list<SimCode.Function> accfns, fns;
       SimCode.Function fn;
@@ -605,39 +608,39 @@ algorithm
       list<String> includeDirs;
       Absyn.Path path;
       
-    case ({}, accfns, rt, decls, includes, includeDirs, libs)
+    case (_,{}, accfns, rt, decls, includes, includeDirs, libs)
     then (listReverse(accfns), rt, decls, includes, includeDirs, libs);
-    case ((DAE.FUNCTION(path=path,type_ = DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR()))) :: rest), accfns, rt, decls, includes, includeDirs, libs)
+    case (_,(DAE.FUNCTION(path=path,type_ = DAE.T_FUNCTION(functionAttributes=DAE.FUNCTION_ATTRIBUTES(isBuiltin=DAE.FUNCTION_BUILTIN_PTR()))) :: rest), accfns, rt, decls, includes, includeDirs, libs)
       equation
         // skip over builtin functions
-        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, includeDirs, libs);
+        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
-    case ((DAE.FUNCTION(partialPrefix = true) :: rest), accfns, rt, decls, includes, includeDirs, libs)
+    case (_,(DAE.FUNCTION(partialPrefix = true) :: rest), accfns, rt, decls, includes, includeDirs, libs)
       equation
         // skip over partial functions
-        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, includeDirs, libs);
+        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
-    case (DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(language="builtin"))::_)::rest,accfns,rt,decls,includes,includeDirs,libs)
+    case (_,DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(language="builtin"))::_)::rest,accfns,rt,decls,includes,includeDirs,libs)
       equation
         // skip over builtin functions
-        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, includeDirs, libs);
+        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
         
-    case (DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name,language="C"))::_)::rest,accfns,rt,decls,includes,includeDirs,libs)
+    case (_,DAE.FUNCTION(functions = DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(name=name,language="C"))::_)::rest,accfns,rt,decls,includes,includeDirs,libs)
       equation
         // skip over builtin functions
         true = listMember(name,SCode.knownExternalCFunctions);
-        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, accfns, rt, decls, includes, includeDirs, libs);
+        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, accfns, rt, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
 
-    case ((fel :: rest), accfns, rt, decls, includes, includeDirs, libs)
+    case (_,(fel :: rest), accfns, rt, decls, includes, includeDirs, libs)
       equation
-        (fn, rt_1, decls, includes, includeDirs, libs) = elaborateFunction(fel, rt, decls, includes, includeDirs, libs);
-        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(rest, (fn :: accfns), rt_1, decls, includes, includeDirs, libs);
+        (fn, rt_1, decls, includes, includeDirs, libs) = elaborateFunction(program, fel, rt, decls, includes, includeDirs, libs);
+        (fns, rt_2, decls, includes, includeDirs, libs) = elaborateFunctions2(program, rest, (fn :: accfns), rt_1, decls, includes, includeDirs, libs);
       then
         (fns, rt_2, decls, includes, includeDirs, libs);
   end matchcontinue;
@@ -645,6 +648,7 @@ end elaborateFunctions2;
 
 /* Does the actual work of transforming a DAE.FUNCTION to a SimCode.Function. */
 protected function elaborateFunction
+  input Absyn.Program program;
   input DAE.Function inElement;
   input list<String> inRecordTypes;
   input list<SimCode.RecordDeclaration> inRecordDecls;
@@ -659,7 +663,7 @@ protected function elaborateFunction
   output list<String> outLibs;
 algorithm
   (outFunction,outRecordTypes,outRecordDecls,outIncludes,outIncludeDirs,outLibs):=
-  matchcontinue (inElement,inRecordTypes,inRecordDecls,inIncludes,inIncludeDirs,inLibs)
+  matchcontinue (program,inElement,inRecordTypes,inRecordDecls,inIncludes,inIncludeDirs,inLibs)
     local
       DAE.Function fn;
       String extfnname,lang,str;
@@ -686,7 +690,7 @@ algorithm
       DAE.FunctionAttributes funAttrs;
       
       // Modelica functions.
-    case (DAE.FUNCTION(path = fpath, source = source,
+    case (_,DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
       type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes=funAttrs),
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
@@ -706,7 +710,7 @@ algorithm
         (SimCode.FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts,info),rt_1,recordDecls,includes,includeDirs,libs);
         
         
-     case (DAE.FUNCTION(path = fpath, source = source,
+     case (_,DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
       type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes=funAttrs),
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
@@ -726,7 +730,7 @@ algorithm
         (SimCode.KERNEL_FUNCTION(fpath,outVars,funArgs,varDecls,bodyStmts,info),rt_1,recordDecls,includes,includeDirs,libs);   
         
         
-    case (DAE.FUNCTION(path = fpath, source = source,
+    case (_,DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
       type_ = tp as DAE.T_FUNCTION(funcArg=args, funcResultType=restype, functionAttributes = funAttrs),
       partialPrefix=false), rt, recordDecls, includes, includeDirs, libs)
@@ -784,7 +788,7 @@ algorithm
 */
         
         // External functions.
-    case (DAE.FUNCTION(path = fpath, source = source,
+    case (_,DAE.FUNCTION(path = fpath, source = source,
       functions = DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)::_, // might be followed by derivative maps
       type_ = (tp as DAE.T_FUNCTION(funcArg = args,funcResultType = restype))),rt,recordDecls,includes,includeDirs,libs)
       equation
@@ -798,7 +802,7 @@ algorithm
         inVars = List.map(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = List.map(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, recordDecls, rt);
-        (fn_includes, fn_includeDirs, fn_libs, dynamicLoad) = generateExtFunctionIncludes(fpath,ann);
+        (fn_includes, fn_includeDirs, fn_libs, dynamicLoad) = generateExtFunctionIncludes(program,fpath,ann);
         includes = List.union(fn_includes, includes);
         includeDirs = List.union(fn_includeDirs, includeDirs);
         libs = List.union(fn_libs, libs);
@@ -814,7 +818,7 @@ algorithm
           rt_1, recordDecls, includes, includeDirs, libs);
         
         // Record constructor.
-    case (DAE.RECORD_CONSTRUCTOR(path = fpath, source = source, type_ = tp as DAE.T_FUNCTION(funcArg = args,funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt,recordDecls,includes,includeDirs,libs)
+    case (_,DAE.RECORD_CONSTRUCTOR(path = fpath, source = source, type_ = tp as DAE.T_FUNCTION(funcArg = args,funcResultType = restype as DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)))), rt,recordDecls,includes,includeDirs,libs)
       equation
         funArgs = List.map(args, typesSimFunctionArg);
         (recordDecls,rt_1) = elaborateRecordDeclarationsForRecord(restype, recordDecls, rt);
@@ -823,7 +827,7 @@ algorithm
         (SimCode.RECORD_CONSTRUCTOR(name, funArgs, info),rt_1,recordDecls,includes,includeDirs,libs);
         
         // failure
-    case (fn,_,_,_,_,_)
+    case (_,fn,_,_,_,_,_)
       equation 
         str = "./Compiler/BackEnd/SimCodeUtil.mo: function elaborateFunction failed for function: \n" +& DAEDump.dumpFunctionStr(fn);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -10515,6 +10519,7 @@ protected function generateExtFunctionIncludes
 "function: generateExtFunctionIncludes
   Collects the includes and libs for an external function
   by investigating the annotation of an external function."
+  input Absyn.Program program;
   input Absyn.Path path;
   input Option<SCode.Annotation> inAbsynAnnotationOption;
   output list<String> includes;
@@ -10523,46 +10528,47 @@ protected function generateExtFunctionIncludes
   output Boolean dynamcLoad;
 algorithm
   (includes,includeDirs,libs,dynamcLoad):=
-  match (path,inAbsynAnnotationOption)
+  match (program,path,inAbsynAnnotationOption)
     local
       SCode.Mod mod;
       Boolean b;
 
-    case (_,SOME(SCode.ANNOTATION(mod)))
+    case (_,_,SOME(SCode.ANNOTATION(mod)))
       equation
         b = generateExtFunctionDynamicLoad(mod);
         libs = generateExtFunctionIncludesLibstr(mod);
         includes = generateExtFunctionIncludesIncludestr(mod);
-        libs = generateExtFunctionLibraryDirectoryFlags(path,mod,libs);
-        includeDirs = generateExtFunctionIncludeDirectoryFlags(path,mod,includes);
+        libs = generateExtFunctionLibraryDirectoryFlags(program,path,mod,libs);
+        includeDirs = generateExtFunctionIncludeDirectoryFlags(program,path,mod,includes);
       then
         (includes,includeDirs,libs,b);
-    case (_,NONE()) then ({},{},{},false);
+    case (_,_,NONE()) then ({},{},{},false);
   end match;
 end generateExtFunctionIncludes;
 
 protected function generateExtFunctionIncludeDirectoryFlags
   "Process LibraryDirectory and IncludeDirectory"
+  input Absyn.Program program;
   input Absyn.Path path;
   input SCode.Mod inMod;
   input list<String> includes;
   output list<String> outDirs;
 algorithm
-  outDirs := matchcontinue (path,inMod,includes)
+  outDirs := matchcontinue (program,path,inMod,includes)
     local
       String str;
-    case (_,_,{}) then {};
-    case (_,_,_)
+    case (_,_,_,{}) then {};
+    case (_,_,_,_)
       equation
         SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
           Mod.getUnelabedSubMod(inMod, "IncludeDirectory");
-        str = CevalScript.getFullPathFromUri(str,false);
+        str = CevalScript.getFullPathFromUri(program,str,false);
         str = "\"-I"+&str+&"\"";
       then {str};
-    case (_,_,_)
+    case (_,_,_,_)
       equation
         str = "modelica://" +& Absyn.pathStringNoQual(path) +& "/Resources/Include";
-        str = CevalScript.getFullPathFromUri(str,false);
+        str = CevalScript.getFullPathFromUri(program,str,false);
         str = "\"-I"+&str+&"\"";
       then {str};
         // Read Absyn.Info instead?
@@ -10572,21 +10578,22 @@ end generateExtFunctionIncludeDirectoryFlags;
 
 protected function generateExtFunctionLibraryDirectoryFlags
   "Process LibraryDirectory and IncludeDirectory"
+  input Absyn.Program program;
   input Absyn.Path path;
   input SCode.Mod inMod;
   input list<String> inLibs;
   output list<String> outLibs;
 algorithm
-  outLibs := matchcontinue (path,inMod,inLibs)
+  outLibs := matchcontinue (program,path,inMod,inLibs)
     local
       String str,str1,str2,str3,platform1,platform2;
       list<String> libs;
-    case (_,_,{}) then {};
-    case (_,_,libs)
+    case (_,_,_,{}) then {};
+    case (_,_,_,libs)
       equation
         SCode.MOD(binding = SOME((Absyn.STRING(str), _))) =
           Mod.getUnelabedSubMod(inMod, "LibraryDirectory");
-        str = CevalScript.getFullPathFromUri(str,false);
+        str = CevalScript.getFullPathFromUri(program,str,false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");
@@ -10594,10 +10601,10 @@ algorithm
         str3 ="\"-L" +& str +& "\"";
         libs = str1::str2::str3::libs;
       then libs;
-    case (_,_,libs)
+    case (_,_,_,libs)
       equation
         str = "modelica://" +& Absyn.pathStringNoQual(path) +& "/Resources/Library";
-        str = CevalScript.getFullPathFromUri(str,false);
+        str = CevalScript.getFullPathFromUri(program,str,false);
         platform1 = System.openModelicaPlatform();
         platform2 = System.modelicaPlatform();
         str1 = Util.if_(platform1 ==& "", "", "\"-L" +& str +& "/" +& platform1 +& "\"");

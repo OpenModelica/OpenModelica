@@ -133,7 +133,7 @@ algorithm
   fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-  SimCodeUtil.createFunctions(dae, inBackendDAE, className);
+  SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   simCode := SimCodeUtil.createSimCode(outIndexedBackendDAE,
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
@@ -250,7 +250,7 @@ algorithm
   fileDir := CevalScript.getFileDir(a_cref, p);
   System.realtimeTick(CevalScript.RT_CLOCK_SIMCODE);
   (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
-  SimCodeUtil.createFunctions(dae, inBackendDAE, className);
+  SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
   simCode := SimCodeUtil.createSimCode(outIndexedBackendDAE, 
     className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals, args);
 
@@ -429,13 +429,14 @@ public function translateFunctions
 "Entry point to translate Modelica/MetaModelica functions to C functions.
     
  Called from other places in the compiler."
+  input Absyn.Program program;
   input String name;
   input Option<DAE.Function> optMainFunction;
   input list<DAE.Function> idaeElements;
   input list<DAE.Type> metarecordTypes;
   input list<String> inIncludes;
 algorithm
-  _ := match (name, optMainFunction, idaeElements, metarecordTypes, inIncludes)
+  _ := match (program, name, optMainFunction, idaeElements, metarecordTypes, inIncludes)
     local
       DAE.Function daeMainFunction;
       SimCode.Function mainFunction;
@@ -447,11 +448,11 @@ algorithm
       list<DAE.Exp> literals;
       list<DAE.Function> daeElements;
       
-    case (_, SOME(daeMainFunction), daeElements, _, includes)
+    case (_, _, SOME(daeMainFunction), daeElements, _, includes)
       equation
         // Create SimCode.FunctionCode
         (daeElements,literals) = SimCodeUtil.findLiterals(daeMainFunction::daeElements);
-        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(daeElements, metarecordTypes, literals, includes);
+        (mainFunction::fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
         SimCodeUtil.checkValidMainFunction(name, mainFunction);
         makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
         fnCode = SimCode.FUNCTIONCODE(name, SOME(mainFunction), fns, literals, includes, makefileParams, extraRecordDecls);
@@ -459,11 +460,11 @@ algorithm
         _ = Tpl.tplString(CodegenC.translateFunctions, fnCode);
       then
         ();
-    case (_, NONE(), daeElements, _, includes)
+    case (_, _, NONE(), daeElements, _, includes)
       equation
         // Create SimCode.FunctionCode
         (daeElements,literals) = SimCodeUtil.findLiterals(daeElements);
-        (fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(daeElements, metarecordTypes, literals, includes);
+        (fns, extraRecordDecls, includes, includeDirs, libs) = SimCodeUtil.elaborateFunctions(program, daeElements, metarecordTypes, literals, includes);
         makefileParams = SimCodeUtil.createMakefileParams(includeDirs, libs);
         fnCode = SimCode.FUNCTIONCODE(name, NONE(), fns, literals, includes, makefileParams, extraRecordDecls);
         // Generate code
