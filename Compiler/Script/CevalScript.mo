@@ -2794,9 +2794,9 @@ algorithm
         str = Error.printMessagesStr();
       then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING(str)}),st);
         
-    case (cache,env,"uriToFilename",{Values.STRING(str)},st,_)
+    case (cache,env,"uriToFilename",{Values.STRING(str)},st as Interactive.SYMBOLTABLE(ast = p),_)
       equation
-        str = getFullPathFromUri(str,true);
+        str = getFullPathFromUri(p,str,true);
       then (cache,Values.STRING(str),st);
 
     case (cache,env,"uriToFilename",_,st,_)
@@ -4645,23 +4645,25 @@ end instantiateDaeFunctions;
 protected function getBasePathFromUri "Handle modelica:// URIs"
   input String scheme;
   input String iname;
+  input Absyn.Program program;
   input String modelicaPath;
   input Boolean printError;
   output String basePath;
 algorithm
-  basePath := matchcontinue (scheme,iname,modelicaPath,printError)
+  basePath := matchcontinue (scheme,iname,program,modelicaPath,printError)
     local
       list<String> mps,names;
-      String gd,mp,bp,str,name;
-    case ("modelica://",name,mp,_)
+      String gd,mp,bp,str,name,version;
+    case ("modelica://",name,_,mp,_)
       equation
-        names = System.strtok(name,".");
+        (names as name::_) = System.strtok(name,".");
+        version = getPackageVersion(Absyn.IDENT(name),program);
         gd = System.groupDelimiter();
         mps = System.strtok(mp, gd);
-        bp = findModelicaPath(mps,names);
+        bp = findModelicaPath(mps,names,version);
       then bp;
-    case ("file://",_,_,_) then "";
-    case ("modelica://",name,mp,true)
+    case ("file://",_,_,_,_) then "";
+    case ("modelica://",name,_,mp,true)
       equation
         name::_ = System.strtok(name,".");
         str = "Could not resolve modelica://" +& name +& " with MODELICAPATH: " +& mp;
@@ -4673,45 +4675,71 @@ end getBasePathFromUri;
 protected function findModelicaPath "Handle modelica:// URIs"
   input list<String> imps;
   input list<String> names;
+  input String version;
   output String basePath;
 algorithm
-  basePath := matchcontinue (imps,names)
+  basePath := matchcontinue (imps,names,version)
     local
       String mp;
       list<String> mps;
       
-    case (mp::_,_)
-      then findModelicaPath2(mp,names,false);
-    case (_::mps,_)
-      then findModelicaPath(mps,names);
+    case (mp::_,_,_)
+      then findModelicaPath2(mp,names,version,false);
+    case (_::mps,_,_)
+      then findModelicaPath(mps,names,version);
   end matchcontinue;
 end findModelicaPath;
 
 protected function findModelicaPath2 "Handle modelica:// URIs"
   input String mp;
   input list<String> inames;
+  input String version;
   input Boolean b;
   output String basePath;
 algorithm
-  basePath := matchcontinue (mp,inames,b)
+  basePath := matchcontinue (mp,inames,version,b)
     local
       list<String> names;
-      String name;
-    case (_,name::names,_)
+      String name,file;
+
+    case (_,name::names,_,_)
       equation
-        true = System.directoryExists(mp +& "/" +& name);
-      then findModelicaPath2(mp,names,true);
-    case (_,name::names,_)
+        false = stringEq(version,"");
+        file = mp +& "/" +& name +& " " +& version;
+        true = System.directoryExists(file);
+        // print("Found file 1: " +& file +& "\n");
+      then findModelicaPath2(file,names,"",true);
+    case (_,name::names,_,_)
       equation
-        true = System.regularFileExists(mp +& "/" +& name +& ".mo");
-      then mp;
+        false = stringEq(version,"");
+        file = mp +& "/" +& name +& " " +& version +& ".mo";
+        true = System.regularFileExists(file);
+        // print("Found file 2: " +& file +& "\n");
+      then file;
+
+    case (_,name::names,_,_)
+      equation
+        file = mp +& "/" +& name;
+        true = System.directoryExists(file);
+        // print("Found file 3: " +& file +& "\n");
+      then findModelicaPath2(file,names,"",true);
+    case (_,name::names,_,_)
+      equation
+        file = mp +& "/" +& name +& ".mo";
+        true = System.regularFileExists(file);
+        // print("Found file 4: " +& file +& "\n");
+      then file;
+
       // This class is part of the current package.mo, or whatever... 
-    case (_,name::names,true)
+    case (_,_,_,true)
+      equation
+        // print("Did not find file 5: " +& mp +& " - " +& name +& "\n");
       then mp;
   end matchcontinue;
 end findModelicaPath2;
 
 public function getFullPathFromUri
+  input Absyn.Program program;
   input String uri;
   input Boolean printError;
   output String path;
@@ -4719,7 +4747,7 @@ protected
   String str1,str2,str3;
 algorithm
   (str1,str2,str3) := System.uriToClassAndPath(uri);
-  path := getBasePathFromUri(str1,str2,Settings.getModelicaPath(Config.getRunningTestsuite()),printError) +& str3;
+  path := getBasePathFromUri(str1,str2,program,Settings.getModelicaPath(Config.getRunningTestsuite()),printError) +& str3;
 end getFullPathFromUri;
 
 protected function errorToValue
