@@ -741,7 +741,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
     c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Files not Equal\n"), msg, 0);
   }
   else
-    res = mk_cons(mk_scon("Files Equal!"),mk_nil());
+    res = mk_cons(mk_scon("Files Equal!"),res);
 
   if (var1) free(var1);
   if (var2) free(var2);
