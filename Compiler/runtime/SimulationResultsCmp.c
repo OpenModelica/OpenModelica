@@ -584,9 +584,23 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
 
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
-  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) return mk_cons(mk_scon("Error Open File!"),mk_nil());
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
+    char *str = (char*) malloc(21+strlen(reffilename));
+    *str = 0;
+    strcat(strcat(str,"Error opening file: "),filename);
+    void *res = mk_scon(str);
+    free(str);
+    return mk_cons(res,mk_nil());
+  }
   /* fprintf(stderr, "Open File %s\n", reffilename); */
-  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) return mk_cons(mk_scon("Error Open RefFile!"),mk_nil());
+  if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
+    char *str = (char*) malloc(31+strlen(reffilename));
+    *str = 0;
+    strcat(strcat(str,"Error opening reference file: "),reffilename);
+    void *res = mk_scon(str);
+    free(str);
+    return mk_cons(res,mk_nil());
+  }
 
   size = SimulationResultsImpl__readSimulationResultSize(filename,&simresglob_c);
   /* fprintf(stderr, "Read size of File %s size= %d\n", filename,size); */

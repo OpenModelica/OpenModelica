@@ -56,12 +56,16 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
   else if (0 == strcmp(filename+len-4, ".mat")) format = MATLAB4;
   else if (0 == strcmp(filename+len-4, ".plt")) format = PLT;
   else if (0 == strcmp(filename+len-4, ".csv")) format = CSV;
-  else format = UNKNOWN_PLOT;
+  else {
+    msg[0] = filename;
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Unknown result-file suffix of file '%s'"), msg, 1);
+    format = UNKNOWN_PLOT;
+  }
   switch (format) {
   case MATLAB4:
     if (0!=(msg[0]=omc_new_matlab4_reader(filename,&simresglob->matReader))) {
       msg[1] = filename;
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s\n"), msg, 2);
+      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s"), msg, 2);
       return UNKNOWN_PLOT;
     }
     break;
