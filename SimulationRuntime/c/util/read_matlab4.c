@@ -238,7 +238,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
       if(binTrans==1) {
         unsigned int k;
         if(hdr.mrows == 0) return "data_1 matrix does not contain at least 1 variable";
-        if(hdr.ncols != 2) return "data_1 matrix does not have 2 rows";
+        if(hdr.ncols != 2 && hdr.ncols != 1) return "data_1 matrix does not have 1 or 2 cols";
         reader->nparam = hdr.mrows;
         if(reader->doublePrecision==1)
         {
@@ -259,14 +259,14 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
        /* fprintf(stderr, "    startTime = %.6g\n", reader->params[0]);
         * fprintf(stderr, "    stopTime = %.6g\n", reader->params[1]); */
         for(k=1; k<reader->nparam; k++) {
-          if(reader->params[k] != reader->params[k+reader->nparam]) return "data_1 matrix contained parameter that changed between start and stop-time";
+          if(hdr.ncols == 2 && reader->params[k] != reader->params[k+reader->nparam]) return "data_1 matrix contained parameter that changed between start and stop-time";
           /* fprintf(stderr, "    Parameter[%d] = %.6g\n", k, reader->params[k]); */
         }
       }
       if(binTrans==0) {
         unsigned int k,j;
         if(hdr.ncols == 0) return "data_1 matrix does not contain at least 1 variable";
-        if(hdr.mrows != 2) return "data_1 matrix does not have 2 rows";
+        if(hdr.mrows != 2 && hdr.mrows != 1) return "data_1 matrix does not have 1 or 2 rows";
         reader->nparam = hdr.ncols;
         if(reader->doublePrecision==1)
         {
@@ -295,7 +295,7 @@ const char* omc_new_matlab4_reader(const char *filename, ModelicaMatReader *read
           free(tmp);
         }
         for(k=1; k<reader->nparam; k++) {
-          if(reader->params[k] != reader->params[k+reader->nparam]) return "data_1 matrix contained parameter that changed between start and stop-time";
+          if(hdr.mrows == 2 && reader->params[k] != reader->params[k+reader->nparam]) return "data_1 matrix contained parameter that changed between start and stop-time";
         }
       }
       break;

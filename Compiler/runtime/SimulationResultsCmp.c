@@ -563,6 +563,20 @@ int writeLogFile(const char *filename,DiffDataField *ddf,const char *f,const cha
   return 0;
 }
 
+static const char* getTimeVarName(void *vars) {
+  const char *res = "time";
+  while (RML_NILHDR != RML_GETHDR(vars)) {
+    char *var = RML_STRINGDATA(RML_CAR(vars));
+    if (0==strcmp("time",var)) break;
+    if (0==strcmp("Time",var)) {
+      res="Time";
+      break;
+    }
+    vars = RML_CDR(vars);
+  }
+  return res;
+}
+
 void* SimulationResultsCmp_compareResults(const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol,  void *vars)
 {
   char **cmpvars=NULL;
@@ -570,12 +584,13 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   unsigned int vardiffindx=0;
   unsigned int ncmpvars = 0;
   unsigned int ngetfailedvars = 0;
-  void *allvars,*res;
+  void *allvars,*allvarsref,*res;
   unsigned int i,size,size_ref,len,oldlen,j,k;
   char *var,*var1,*var2;
   DataField time,timeref,data,dataref;
   DiffDataField ddf;
   const char *msg[2] = {"",""};
+  const char *timeVarName, *timeVarNameRef;
   ddf.data=NULL;
   ddf.n=0;
   ddf.n_max=0;
@@ -610,9 +625,10 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   /* get vars to compare */
   cmpvars = getVars(vars,&ncmpvars);
   /* if no var compare all vars */
+  allvars = SimulationResultsImpl__readVars(filename,&simresglob_ref);
+  allvarsref = SimulationResultsImpl__readVars(reffilename,&simresglob_ref);
   if (ncmpvars==0){
-    allvars = SimulationResultsImpl__readVars(reffilename,&simresglob_ref);
-    cmpvars = getVars(allvars,&ncmpvars);
+    cmpvars = getVars(allvarsref,&ncmpvars);
     if (ncmpvars==0) return mk_cons(mk_scon("Error Get Vars!"),mk_nil());
   }
   cmpdiffvars = (char**)malloc(sizeof(char*)*(ncmpvars));
@@ -623,24 +639,18 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
 #endif
   /*  get time */
   /* fprintf(stderr, "get time\n"); */
-  time = getData("time",filename,size,&simresglob_c);
+  timeVarName = getTimeVarName(allvars);
+  timeVarNameRef = getTimeVarName(allvarsref);
+  time = getData(timeVarName,filename,size,&simresglob_c);
   if (time.n==0)
   {
-    time = getData("Time",filename,size,&simresglob_c);
-    if (time.n==0){
-      /* fprintf(stderr, "Cannot get var time\n"); */
-      return mk_cons(mk_scon("Error get time!"),mk_nil());
-    }
+    return mk_cons(mk_scon("Error get time!"),mk_nil());
   }
   /* fprintf(stderr, "get reftime\n"); */
-  timeref = getData("time",reffilename,size_ref,&simresglob_ref);
+  timeref = getData(timeVarNameRef,reffilename,size_ref,&simresglob_ref);
   if (timeref.n==0)
   {
-    timeref = getData("Time",reffilename,size_ref,&simresglob_ref);
-    if (timeref.n==0){
-      /* fprintf(stderr, "Cannot get var reftime\n"); */
-      return mk_cons(mk_scon("Error get ref time!"),mk_nil());
-    }
+    return mk_cons(mk_scon("Error get ref time!"),mk_nil());
   }
   /* check if reftime is larger or equal time */
   res = mk_nil();
