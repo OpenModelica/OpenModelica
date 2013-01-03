@@ -355,7 +355,7 @@ int CorbaImpl__initialize()
     "ORBNoResolve",
     "-ORBIIOPAddr",
     "inet:127.0.0.1:0" /*,  "-ORBDebugLevel", "10", "-ORBIIOPBlocking" */ 
-  }
+  };
 #endif
   
   pthread_cond_init(&omc_waitformsg,NULL);

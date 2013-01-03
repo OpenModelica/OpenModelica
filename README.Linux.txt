@@ -1,6 +1,7 @@
 Debian/Ubuntu Compile Cheat Sheet (or read on for the full guide)
 =================================================================
 
+Note: $ means run this command as *non-root*. If you must run the command as super-user (you don't), do it under sudo and hope omc did not detect it or your build might fail.
 $ sudo su -c "echo deb http://build.openmodelica.org/apt precise nightly >> /etc/apt/sources.list"
 $ sudo su -c "echo deb-src http://build.openmodelica.org/apt precise nightly >> /etc/apt/sources.list"
 $ sudo apt-get update
@@ -25,21 +26,19 @@ But first you need to install dependencies:
     rml needs smlnj: http://www.smlnj.org (working version v110.xx) and/or mlton (mlton.org)
     mico or omniORB:
         omniORB:
-          Is better maintained by Linux distributions, but doesn't print as
-          good error messages if things go really wrong.
+          Is well maintained by Linux distributions. This makes it our default choice.
         mico:
           http://www.mico.org - tested on 2.3.11, 2.3.12, 2.3.13
           Note: for newer gcc compilers you might need to add
             #include <limits.h> in orb/fast_array.cc
     java     version > 1.4
-    gcc      (tested with most of the versions; 4.4 or 4.6 recommended over 4.5)
+    gcc      (tested with most of the versions; 4.4 is preferred over 4.5, 4.6 or 4.7 because the newer compilers are *much* slower)
     readline & libreadlineX-dev, currently X=5
     liblpsolve: http://www.cs.sunysb.edu/~algorith/implement/lpsolve/distrib/lp_solve_5.5.0.11_source.tar.gz
     sqlite3
-The latest OpenModelica uses Qt for potting and 3D functionality. You will also need:
-    Qt 4.x.x (http://trolltech.com - >= 4.6)
-    Coin3D   (http://www.coin3d.org - tested with 3.0.0; deprecated)
-    SoQt     (http://www.coin3d.org - tested with 1.4.1; deprecated)
+OpenModelica uses Qt for plotting functionality and graphical. You will need:
+    Qt 4.x.x (http://trolltech.com - >= 4.4.3? 4.6?)
+    libqwt
 OMOptim uses some packages for its optimization algorithms
     paradisEO (http://paradiseo.gforge.inria.fr/ - tested with 1.3; see the Debian installer for the directory structure or send openmodelica <at> ida.liu.se a listing of the files paradiseo installs to /usr/local/ to have the Makefiles updated)
 Note:
@@ -63,9 +62,9 @@ You need:
         or
         $ sudo apt-get install sun-java6-jre
         $ sudo update-java-alternatives -s java-6-sun
-    Qt+Coin3D+SoQt
+    Qt and friends
         you need readline and Qt dev stuff to compile omc and mosh (OMShell)
-        $ sudo apt-get install libreadline5-dev libsoqt4-dev
+        $ sudo apt-get install libreadline5-dev libqt4-dev libqtwebkit-dev libqwt5-qt4-dev
     paradiseo
       sudo apt-get install paradiseo (using the OpenModelica repository)
     sqlite3
@@ -100,8 +99,8 @@ Setting your environment for compiling OpenModelica
 
 To Compile OpenModelica
   run:
-    $ ./configure --with-CORBA=/path/to/mico (if you want omc to use mico corba)
     $ ./configure --with-omniORB=/path/to/omniORB (if you want omc to use omniORB corba)
+    $ ./configure --with-CORBA=/path/to/mico (if you want omc to use mico corba)
     $ ./configure --without-CORBA            (if you want omc to use sockets)
   in the trunk directory
   Make sure that all makefiles are created. Check carefully for error messages.
