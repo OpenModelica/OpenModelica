@@ -73,7 +73,7 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
     simresglob->pltReader = fopen(filename, "r");
     if (simresglob->pltReader==NULL) {
       msg[1] = filename;
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s\n"), msg, 2);
+      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s"), msg, 2);
       return UNKNOWN_PLOT;
     }
     break;
@@ -81,13 +81,13 @@ static PlotFormat SimulationResultsImpl__openFile(const char *filename, Simulati
     simresglob->csvReader = fopen(filename, "r");
     if (simresglob->csvReader==NULL) {
       msg[1] = filename;
-      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s\n"), msg, 2);
+      c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s: %s"), msg, 2);
       return UNKNOWN_PLOT;
     }
     break;
   default:
     msg[0] = filename;
-    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s\n"), msg, 1);
+    c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("Failed to open simulation result %s"), msg, 1);
     return UNKNOWN_PLOT;
   }
 

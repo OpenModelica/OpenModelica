@@ -76,6 +76,7 @@ public function close
 end close;
 
 public function cmpSimulationResults
+  input Boolean runningTestsuite;
   input String filename;
   input String reffilename;
   input String logfilename;
@@ -83,7 +84,7 @@ public function cmpSimulationResults
   input Real absTol;
   input list<String> vars;
   output list<String> res;
-  external "C" res=SimulationResults_cmpSimulationResults(filename,reffilename,logfilename,refTol,absTol,vars) annotation(Library = "omcruntime");
+  external "C" res=SimulationResults_cmpSimulationResults(runningTestsuite,filename,reffilename,logfilename,refTol,absTol,vars) annotation(Library = "omcruntime");
 end cmpSimulationResults;
 
 

@@ -577,7 +577,7 @@ static const char* getTimeVarName(void *vars) {
   return res;
 }
 
-void* SimulationResultsCmp_compareResults(const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol,  void *vars)
+void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *filename, const char *reffilename, const char *resultfilename, double reltol, double abstol,  void *vars)
 {
   char **cmpvars=NULL;
   char **cmpdiffvars=NULL;
@@ -600,9 +600,9 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   /* open files */
   /*  fprintf(stderr, "Open File %s\n", filename); */
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(filename,&simresglob_c)) {
-    char *str = (char*) malloc(21+strlen(reffilename));
+    char *str = (char*) malloc(21+strlen(filename));
     *str = 0;
-    strcat(strcat(str,"Error opening file: "),filename);
+    strcat(strcat(str,"Error opening file: "),runningTestsuite ? SystemImpl__basename(filename) : filename);
     void *res = mk_scon(str);
     free(str);
     return mk_cons(res,mk_nil());
@@ -611,7 +611,7 @@ void* SimulationResultsCmp_compareResults(const char *filename, const char *reff
   if (UNKNOWN_PLOT == SimulationResultsImpl__openFile(reffilename,&simresglob_ref)) {
     char *str = (char*) malloc(31+strlen(reffilename));
     *str = 0;
-    strcat(strcat(str,"Error opening reference file: "),reffilename);
+    strcat(strcat(str,"Error opening reference file: "),runningTestsuite ? SystemImpl__basename(reffilename) : reffilename);
     void *res = mk_scon(str);
     free(str);
     return mk_cons(res,mk_nil());

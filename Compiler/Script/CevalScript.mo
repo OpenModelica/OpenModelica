@@ -2264,7 +2264,7 @@ algorithm
         filename_1 = stringAppendList({pwd,pd,filename_1});
         filename2 = stringAppendList({pwd,pd,filename2});
         vars_1 = List.map(cvars, ValuesUtil.valString);
-        strings = SimulationResults.cmpSimulationResults(filename,filename_1,filename2,x1,x2,vars_1);
+        strings = SimulationResults.cmpSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,x1,x2,vars_1);
         cvars = List.map(strings,ValuesUtil.makeString);
         v = Util.if_(intGt(listLength(cvars),1),Values.LIST(cvars),listNth(cvars,0));
       then
