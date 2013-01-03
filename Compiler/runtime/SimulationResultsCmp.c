@@ -652,20 +652,8 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
   {
     return mk_cons(mk_scon("Error get ref time!"),mk_nil());
   }
-  /* check if reftime is larger or equal time */
-  res = mk_nil();
-  if (time.data[time.n-1] > timeref.data[timeref.n-1]) {
-    char buf[WARNINGBUFFSIZE];
-#ifdef DEBUGOUTPUT
-    fprintf(stderr, "max time value=%.6g ref max time value: %.6g\n",time.data[time.n-1],timeref.data[timeref.n-1]);
-#endif
-    res = mk_cons(mk_scon("Reference file has not enough time points!\n"),res);
-    snprintf(buf,WARNINGBUFFSIZE,"Reffile[%d]=%f\n",timeref.n,timeref.data[timeref.n-1]);
-    res = mk_cons(mk_scon(buf),res);
-    snprintf(buf,WARNINGBUFFSIZE,"File[%d]=%f\n",time.n,time.data[time.n-1]);
-    res = mk_cons(mk_scon(buf),res);
-  }
   /* check if time is larger or less reftime */
+  res = mk_nil();
   if (absdouble(time.data[time.n-1]-timeref.data[timeref.n-1]) > reltol*fabs(timeref.data[timeref.n-1])) {
     char buf[WARNINGBUFFSIZE];
 #ifdef DEBUGOUTPUT
