@@ -49,8 +49,11 @@
 #include <iomanip>
 #include <map>
 #include <list>
+#include <string>
 #include <string.h>
 #include <expat.h>
+
+using namespace std;
 
 typedef std::map<std::string, std::string> omc_ModelDescription;
 typedef std::map<std::string, std::string> omc_DefaultExperiment;

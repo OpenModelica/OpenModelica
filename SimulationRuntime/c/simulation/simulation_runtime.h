@@ -51,21 +51,14 @@
 #include "linearize.h"
 #include "simulation_result.h"
 
-#include <fstream>
-#include <iostream>
-#include <string>
-
-using namespace std;
-
-
-extern "C" {
-
-extern simulation_result *sim_result;
-
 #ifndef NO_INTERACTIVE_DEPENDENCY
 #include "../../../interactive/socket.h"
 extern Socket sim_communication_port;
 #endif
+
+extern "C" {
+
+extern simulation_result *sim_result;
 
 #endif /* cplusplus */
 

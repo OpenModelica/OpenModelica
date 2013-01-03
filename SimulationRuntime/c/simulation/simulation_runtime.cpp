@@ -46,6 +46,9 @@
 #include <cstring>
 #include <cassert>
 #include <signal.h>
+#include <fstream>
+#include <string>
+
 #ifndef _MSC_VER
 #include <regex.h>
 #endif
