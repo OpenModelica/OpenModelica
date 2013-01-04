@@ -1178,7 +1178,7 @@ algorithm
       DAE.ElementSource source;
       
     case (BackendDAE.VAR(varName = cr,
-      varKind = BackendDAE.STATE(),
+      varKind = BackendDAE.STATE(_),
       varDirection = dir,
       varParallelism = prl,
       varType = tp,
@@ -2937,31 +2937,25 @@ protected function findState
 "function: findState
   author: PA
   Returns the first state from a list of component references."
-  input BackendDAE.Variables inVariables;
+  input BackendDAE.Variables vars;
   input list<DAE.ComponentRef> inExpComponentRefLst;
   output DAE.ComponentRef outComponentRef;
 algorithm
   outComponentRef:=
-  matchcontinue (inVariables,inExpComponentRefLst)
+  matchcontinue (vars,inExpComponentRefLst)
     local
       BackendDAE.Var v;
-      BackendDAE.Variables vars;
       DAE.ComponentRef cr;
       list<DAE.ComponentRef> crs;
-
-    case (vars,(cr :: crs))
+    case (_,(cr :: crs))
       equation
         ((v :: _),_) = BackendVariable.getVar(cr, vars);
-        BackendDAE.STATE() = BackendVariable.varKind(v);
+        BackendDAE.STATE(_) = BackendVariable.varKind(v);
       then
         cr;
-
-    case (vars,(cr :: crs))
-      equation
-        cr = findState(vars, crs);
+    case (_,(cr :: crs))
       then
-        cr;
-
+        findState(vars, crs);
   end matchcontinue;
 end findState;
 
@@ -3523,7 +3517,7 @@ algorithm
 
     case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),(vars,i)))
       equation
-        ((BackendDAE.VAR(cr,BackendDAE.STATE(),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
+        ((BackendDAE.VAR(cr,BackendDAE.STATE(_),a,prl,b,c,d,lstSubs,source,dae_var_attr,comment,ct) :: _),_) = BackendVariable.getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
         dummyder = ComponentReference.crefPrefixDer(cr);
         dummyder = ComponentReference.crefPrefixDer(dummyder);
         vars_1 = BackendVariable.addVar(BackendDAE.VAR(dummyder, BackendDAE.DUMMY_DER(), a, prl, b, NONE(), NONE(), lstSubs, source, NONE(), comment, ct), vars);

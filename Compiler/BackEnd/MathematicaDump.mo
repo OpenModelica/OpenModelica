@@ -713,7 +713,7 @@ algorithm
   local DAE.ComponentRef name;
     String nameStr;
     case (BackendDAE.VAR(varName=DAE.CREF_IDENT("$dummy",DAE.T_UNKNOWN(_),{})),_,_) then "";
-    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE()),true,_) 
+    case (BackendDAE.VAR(varName=name,varKind=BackendDAE.STATE(_)),true,_) 
       equation
         nameStr = printComponentRefMmaStr(name,allVars,BackendVariable.emptyVars());
       then nameStr;

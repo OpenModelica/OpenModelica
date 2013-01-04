@@ -658,7 +658,7 @@ algorithm
     
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) =
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: _),p) =
         BackendVariable.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
                                  x is inserted as negative value, since it is needed by debugging and index
                                  reduction using dummy derivatives" ;
@@ -818,7 +818,7 @@ algorithm
     
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),p) = BackendVariable.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: _),p) = BackendVariable.getVar(cr, vars);
         pStr = List.map(p, intString);
       then
         pStr;

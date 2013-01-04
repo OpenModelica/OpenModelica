@@ -175,7 +175,7 @@ algorithm
     fixed is by default false. For all variables declared as constant it is an error to have "fixed = false".      
   case (v) // states are by default fixed. 
       equation
-        BackendDAE.STATE() = varKind(v);
+        BackendDAE.STATE(_) = varKind(v);
         fixes = Flags.isSet(Flags.INIT_DLOW_DUMP);
       then
         not fixed;
@@ -889,7 +889,7 @@ public function isStateVar
 algorithm
   outBoolean:=
   matchcontinue (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_))) then true;
     case (_) then false;
   end matchcontinue;
 end isStateVar;
@@ -906,7 +906,7 @@ algorithm
       BackendDAE.Variables vars;
     case(cr,vars)
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: _),_) = getVar(cr, vars);
       then 
         true;
     case(_,_) then false;
@@ -1077,7 +1077,7 @@ public function isStateorStateDerVar
 algorithm
   outBoolean:=
   match (inVar)
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE())) then true;
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_))) then true;
     case (BackendDAE.VAR(varKind = BackendDAE.STATE_DER())) then true;
   else
    then false;
@@ -1135,19 +1135,13 @@ algorithm
       Boolean res;
       BackendDAE.Var v;
       list<BackendDAE.Var> vs;
-    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_INTEGER(source = _)) :: _)) then false;
-    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_BOOL(source = _)) :: _)) then false;
-    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_ENUMERATION(source = _)) :: _)) then false;            
-    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE()) :: _)) then true;
-    case ((BackendDAE.VAR(varKind=BackendDAE.STATE()) :: _)) then true;
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_REAL(source = _)) :: _)) then true;            
+    case ((BackendDAE.VAR(varKind=BackendDAE.VARIABLE(),varType = DAE.T_ARRAY(ty=DAE.T_REAL(source = _))) :: _)) then true;            
+    case ((BackendDAE.VAR(varKind=BackendDAE.STATE(_)) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.STATE_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_DER()) :: _)) then true;
     case ((BackendDAE.VAR(varKind=BackendDAE.DUMMY_STATE()) :: _)) then true;
-    case ((v :: vs))
-      equation
-        res = hasContinousVar(vs);
-      then
-        res;
+    case ((v :: vs)) then hasContinousVar(vs);
     case ({}) then false;
   end match;
 end hasContinousVar;
@@ -1610,7 +1604,7 @@ public function createDummyVar "function createDummyVar
   output DAE.ComponentRef outCr;
 algorithm
   outCr := ComponentReference.makeCrefIdent("$dummy",DAE.T_REAL_DEFAULT,{});
-  outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
+  outVar := BackendDAE.VAR(outCr, BackendDAE.STATE(1),DAE.BIDIR(),DAE.NON_PARALLEL(),DAE.T_REAL_DEFAULT,NONE(),NONE(),{},
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),SOME(DAE.BCONST(true)),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE(),NONE())),
                             NONE(),DAE.NON_CONNECTOR());
@@ -2547,7 +2541,7 @@ algorithm
   _:=
   match (inVarKind)
     case (BackendDAE.VARIABLE()) then ();
-    case (BackendDAE.STATE()) then ();
+    case (BackendDAE.STATE(_)) then ();
     case (BackendDAE.DUMMY_STATE()) then ();
     case (BackendDAE.DUMMY_DER()) then ();
     case (BackendDAE.DISCRETE()) then ();

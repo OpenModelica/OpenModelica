@@ -646,7 +646,7 @@ algorithm
       DAE.InstDims arryDim;
     
     // unfixed state
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE()), vars)) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(_)), vars)) equation
       false = BackendVariable.varFixed(var);
       // ignore stateset variables
       false = isStateSetVar(cr);
@@ -1672,7 +1672,7 @@ algorithm
       BackendDAE.VarKind varKind;
     
     // state
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(), varType=ty, arryDim=arryDim), (vars, fixvars, hs))) equation
+    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(_), varType=ty, arryDim=arryDim), (vars, fixvars, hs))) equation
       isFixed = BackendVariable.varFixed(var);
       var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
       preused = BaseHashSet.has(cr, hs);

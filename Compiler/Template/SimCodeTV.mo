@@ -691,7 +691,9 @@ package BackendDAE
 
   uniontype VarKind "- Variabile kind"
     record VARIABLE end VARIABLE;
-    record STATE end STATE;
+    record STATE
+      Integer index;
+    end STATE;
     record STATE_DER end STATE_DER;
     record DUMMY_DER end DUMMY_DER;
     record DUMMY_STATE end DUMMY_STATE;

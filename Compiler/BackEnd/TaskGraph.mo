@@ -160,7 +160,7 @@ algorithm
         buildInits2(rest,index+1);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
+    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(_),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
         v = ExpressionDump.printExpStr(e);
@@ -169,7 +169,7 @@ algorithm
         buildInits2(rest,index+1);
       then
         ();
-    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
+    case ((BackendDAE.VAR(varKind = BackendDAE.STATE(_),varName = origname,values = dae_var_attr,comment = comment) :: rest),_)
       equation
         origname_str = ComponentReference.printComponentRefStr(origname);
         TaskGraphExt.addInitState(index, "0.0", origname_str);

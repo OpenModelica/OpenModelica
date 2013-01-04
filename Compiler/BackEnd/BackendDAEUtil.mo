@@ -907,7 +907,7 @@ algorithm
     local
       BackendDAE.Var v;
       Boolean b;
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE()),_))
+    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE(_)),_))
       then ((v,false,false));
     case ((v,b)) then ((v,b,b));
   end match;
@@ -1131,7 +1131,7 @@ algorithm
       then
         ((var,(nx,ny+1,ny_string, ny_int,ny_bool)));
 
-    case ((var as BackendDAE.VAR(varKind = BackendDAE.STATE()),(nx,ny,ny_string, ny_int, ny_bool)))
+    case ((var as BackendDAE.VAR(varKind = BackendDAE.STATE(_)),(nx,ny,ny_string, ny_int, ny_bool)))
       then
         ((var,(nx+1,ny,ny_string, ny_int,ny_bool)));
 
@@ -1641,7 +1641,7 @@ algorithm
         ((e,false,(vars,e::expl)));
     case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})),(vars,expl)))
       equation
-        ((BackendDAE.VAR(varKind = BackendDAE.STATE()) :: _),_) = BackendVariable.getVar(cr, vars);
+        ((BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: _),_) = BackendVariable.getVar(cr, vars);
       then
         ((e,false,(vars,e::expl)));
     // is this case right?    
@@ -3798,7 +3798,7 @@ algorithm
     /*If variable x is a state, der(x) is a variable in incidence matrix,
          x is inserted as negative value, since it is needed by debugging and
          index reduction using dummy derivatives */ 
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE()) :: rest,i::irest,vars,b)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: rest,i::irest,vars,b)
       equation
         i1 = Util.if_(b,-i,i);
         failure(_ = List.getMemberOnTrue(i1, vars, intEq));
@@ -3909,7 +3909,7 @@ algorithm
         failure(_ = List.getMemberOnTrue(i, vars, intEq));
         res = incidenceRowExp1(rest,irest,i::vars,b);
       then res;
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE()) :: rest,i::irest,vars,b)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: rest,i::irest,vars,b)
       equation
         failure( true = b);
         failure(_ = List.getMemberOnTrue(i, vars, intEq));
@@ -5341,7 +5341,7 @@ algorithm
         // if not negatet rowmark then  
         false = intEq(rowmark[r],-mark);
         // solved?
-        BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE()) = BackendVariable.getVarAt(vars, r);
+        BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE(_)) = BackendVariable.getVarAt(vars, r);
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasDerCref(e2,cr);
       then
@@ -5351,7 +5351,7 @@ algorithm
         // if not negatet rowmark then  
         false = intEq(rowmark[r],-mark);
         // solved?
-        BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE()) = BackendVariable.getVarAt(vars, r);
+        BackendDAE.VAR(varName=cr1,varKind=BackendDAE.STATE(_)) = BackendVariable.getVarAt(vars, r);
         true = ComponentReference.crefEqualNoStringCompare(cr, cr1);
         false = Expression.expHasDerCref(e1,cr);
       then
@@ -5443,7 +5443,7 @@ algorithm
         // if not negatet rowmark then linear or nonlinear 
         false = intEq(rowmark[r],-mark);
         // de/dvar 
-        BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE()) = BackendVariable.getVarAt(vars, r);
+        BackendDAE.VAR(varName=cr,varKind=BackendDAE.STATE(_)) = BackendVariable.getVarAt(vars, r);
         cr1 = ComponentReference.crefPrefixDer(cr);
         de = Expression.crefExp(cr);
         ((de,_)) = Expression.replaceExp(Expression.expSub(e1,e2), DAE.CALL(Absyn.IDENT("der"),{de},DAE.callAttrBuiltinReal), Expression.crefExp(cr1));
@@ -5868,13 +5868,13 @@ algorithm
     /*If variable x is a state, der(x) is a variable in incidence matrix,
          x is inserted as negative value, since it is needed by debugging and
          index reduction using dummy derivatives */ 
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE()) :: rest,i::irest,_,false,_,_,_)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: rest,i::irest,_,false,_,_,_)
       equation
         false = intEq(intAbs(rowmark[i]),mark);
         _ = arrayUpdate(rowmark,i,Util.if_(unsolvable,-mark,mark));
         res = adjacencyRowExpEnhanced1(rest,irest,i::vars,notinder,mark,rowmark,unsolvable);
       then res;         
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE()) :: rest,i::irest,_,true,_,_,_)
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_)) :: rest,i::irest,_,true,_,_,_)
       equation
         i1 = -i;
         failure(_ = List.getMemberOnTrue(i1, vars, intEq));

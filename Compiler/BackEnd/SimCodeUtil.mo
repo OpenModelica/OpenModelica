@@ -249,7 +249,7 @@ algorithm
         //errstr = "Template did not find the simulation variable for "+& ComponentReference.printComponentRefStr(cref) +& ". ";
         //Error.addMessage(Error.INTERNAL_ERROR, {errstr});
       then
-        SimCode.SIMVAR(badcref, BackendDAE.STATE(), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.INTERNAL(),NONE(),{});
+        SimCode.SIMVAR(badcref, BackendDAE.STATE(1), "", "", "", -1, NONE(), NONE(), NONE(), NONE(), false, DAE.T_REAL_DEFAULT, false, NONE(), SimCode.NOALIAS(), DAE.emptyElementSource, SimCode.INTERNAL(),NONE(),{});
   end matchcontinue;
 end cref2simvar;
 
@@ -4912,7 +4912,7 @@ algorithm
      then
        creatallDiffedVars(restVar,cref,inAllVars,inIndex, inMatrixName,iVars);    
  
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE(_))::restVar,cref,_,_, _, _) equation
       ({v1}, _) = BackendVariable.getVar(currVar, inAllVars);
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
@@ -4927,7 +4927,7 @@ algorithm
     then 
       creatallDiffedVars(restVar, cref, inAllVars, inIndex+1, inMatrixName,r1::iVars); 
  
-     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE())::restVar,cref,_,_, _, _) equation
+     case(BackendDAE.VAR(varName=currVar,varKind=BackendDAE.STATE(_))::restVar,cref,_,_, _, _) equation
       currVar = ComponentReference.crefPrefixDer(currVar);
       derivedCref = BackendDAEOptimize.differentiateVarWithRespectToX(currVar, cref, inMatrixName);
       r1 = SimCode.SIMVAR(derivedCref, BackendDAE.VARIABLE(), "","","",-1,NONE(),NONE(),NONE(),NONE(),false,DAE.T_REAL_DEFAULT,false,NONE(),SimCode.NOALIAS(),DAE.emptyElementSource,SimCode.NONECAUS(),NONE(),{});
@@ -9329,7 +9329,7 @@ algorithm
         startv = Expression.makeBuiltinCall("$_start", {e}, tp);
       then
         ((v,(BackendDAE.EQUATION(e,startv,source,false)::eqns,av)));
-    case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.STATE(),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
+    case (((v as BackendDAE.VAR(varName = cr,varKind = BackendDAE.STATE(_),values = attr,source=source)),(eqns,av))) /* add equations for variables with fixed = true */
       equation
         SimCode.NOALIAS() = getAliasVar(v,SOME(av));
         true = BackendVariable.varFixed(v);
@@ -9843,7 +9843,7 @@ algorithm
       BackendDAE.Var backendVar;
       
     case (BackendDAE.VAR(varName = cr,
-      varKind = BackendDAE.STATE(),
+      varKind = BackendDAE.STATE(_),
       varDirection = dir,
       varParallelism = prl,
       varType = tp,
@@ -11172,7 +11172,7 @@ algorithm
         true = Expression.isConstValue(e);
       then
         SOME(e);
-    case (BackendDAE.VAR(varKind = BackendDAE.STATE(), values = dae_var_attr))
+    case (BackendDAE.VAR(varKind = BackendDAE.STATE(_), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
         true = Expression.isConstValue(e);
@@ -12021,7 +12021,7 @@ algorithm outDerExps := matchcontinue(inVars)
     list<Expression.Exp> rec;
     DAE.ComponentRef cr;
   case({}) then {};
-  case((v as BackendDAE.VAR(varKind = BackendDAE.STATE(),varName = cr))::vars)
+  case((v as BackendDAE.VAR(varKind = BackendDAE.STATE(_),varName = cr))::vars)
     equation
       //true = DAELow.isStateVar(v);
       rec = makeCallDerExp(vars);

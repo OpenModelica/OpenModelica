@@ -2358,9 +2358,11 @@ public function kindString
 algorithm
   kindStr:=
   match (inVarKind)
-    local Absyn.Path path;
+    local 
+      Absyn.Path path;
+      Integer i;
     case BackendDAE.VARIABLE()    then "VARIABLE";
-    case BackendDAE.STATE()       then "STATE";
+    case BackendDAE.STATE(i)      then "STATE(" +& intString(i) +& ")";
     case BackendDAE.STATE_DER()   then "STATE_DER";
     case BackendDAE.DUMMY_DER()   then "DUMMY_DER";
     case BackendDAE.DUMMY_STATE() then "DUMMY_STATE";

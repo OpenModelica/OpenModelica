@@ -6389,7 +6389,7 @@ algorithm
       array<Integer> stateindexs;
       Integer indx,s;
       list<Integer> derstatesindexs;
-    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE()),(stateindexs,indx,s,derstatesindexs)))
+    case ((v as BackendDAE.VAR(varKind=BackendDAE.STATE(_)),(stateindexs,indx,s,derstatesindexs)))
       equation
         s = s+1;
         _= arrayUpdate(stateindexs,indx,s);
