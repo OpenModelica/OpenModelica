@@ -2683,8 +2683,8 @@ algorithm
         (varlst,dummyStates,stateSets);
     case (seteqns::sets,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-          print("seteqns: " +& intString(listLength(seteqns)) +& "\n");
-          print(stringDelimitList(List.map(seteqns,intString),", ") +& "\n");
+        //  print("seteqns: " +& intString(listLength(seteqns)) +& "\n");
+        //  print(stringDelimitList(List.map(seteqns,intString),", ") +& "\n");
         unassigned = List.select1r(seteqns,Matching.isUnAssigned,vec1);
         n = arrayLength(inM);
         set = getEqnsforDynamicStateSelection(unassigned,n,inM,inMT,vec1,vec2,inMapEqnIncRow,inMapIncRowEqn);
