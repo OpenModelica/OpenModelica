@@ -354,20 +354,12 @@ end expressionVars;
 protected function checkEquationsVars
   input tuple<DAE.Exp, tuple<BackendDAE.Variables,BinaryTreeInt.BinTree>> inTpl;
   output tuple<DAE.Exp, tuple<BackendDAE.Variables,BinaryTreeInt.BinTree>> outTpl;
+protected
+  DAE.Exp exp;
+  tuple<BackendDAE.Variables,BinaryTreeInt.BinTree> tpl;
 algorithm
-  outTpl :=
-  matchcontinue inTpl
-    local  
-      DAE.Exp exp;
-      BackendDAE.Variables vars;
-      BinaryTreeInt.BinTree bt;
-    case ((exp,(vars,bt)))
-      equation
-         ((_,(_,bt))) = Expression.traverseExp(exp,checkEquationsVarsExp,(vars,bt));
-       then
-        ((exp,(vars,bt)));
-    case _ then inTpl;
-  end matchcontinue;
+  (exp,tpl) := inTpl;
+  outTpl := Expression.traverseExp(exp,checkEquationsVarsExp,tpl);
 end checkEquationsVars;
 
 protected function checkEquationsVarsExp

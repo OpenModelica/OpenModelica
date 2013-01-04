@@ -116,7 +116,7 @@ algorithm
         BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs) = currentSystem;
         BackendDAE.SHARED(knownVars=sharedVars) = shared;         
         
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL());
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
 
         //(dlow_1 as BackendDAE.DAE(BackendDAE.EQSYSTEM(orderedVars=allVars,orderedEqs=allEqs,m=SOME(m),mT=SOME(mt))::eqsyslist,_)) = BackendDAEUtil.mapEqSystem(dlow_1,BackendDAEUtil.getIncidenceMatrixScalarfromOptionForMapEqSystem);
 
@@ -149,7 +149,7 @@ algorithm
         BackendDAE.SHARED(knownVars=sharedVars) = shared;         
         
 
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL());
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.incidenceMatrixScalar(currentSystem,BackendDAE.NORMAL(),NONE());
 
         text = getMathematicaText("After Symbolic Elimination");
         stepsDumpStrings=text::stepsDumpStrings;
@@ -1548,7 +1548,7 @@ algorithm
       //print("partially indexed crs:"+&Util.stringDelimitList(Util.listMap(crefDouble,Exp.printComponentRefStr),",\n")+&"\n");
       repl = BackendVarTransform.emptyReplacements();
 
-      (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL()); 
+      (m,_,_,_) = BackendDAEUtil.incidenceMatrixScalar(syst, BackendDAE.NORMAL(),NONE()); 
       (eqnLst,seqns,movedvars_1,repl) = eliminateVariablesDAE2(eqnLst,1,vars,kvars,HashTable.emptyHashTable(),repl,crefDouble,m,elimVarIndexList,false);
       //Debug.fcall("dumprepl",BackendVarTransform.dumpReplacements,repl);
 
@@ -1560,7 +1560,7 @@ algorithm
       dae = setDaeKnownVars(dae,kvars_1);
       
       dae = BackendDAEUtil.transformBackendDAE(dae,SOME((BackendDAE.NO_INDEX_REDUCTION(),BackendDAE.ALLOW_UNDERCONSTRAINED())),NONE(),NONE());
-      dae = BackendDAEUtil.mapEqSystem(dae,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem);
+      dae = BackendDAEUtil.mapEqSystem1(dae,BackendDAEUtil.getIncidenceMatrixfromOptionForMapEqSystem,BackendDAE.NORMAL());
     then dae;
   end match;
 end eliminateVariablesDAE;

@@ -1524,7 +1524,7 @@ algorithm
       HashTableCG.HashTable checkcr;
       list<DAE.Statement> stmts;
       VarTransform.VariableReplacements repl;
-      Boolean generateEvents;
+      Boolean generateEvents,b;
       Option<SCode.Comment> comment;
     case ((e1 as DAE.CALL(p,args,DAE.CALL_ATTR(inlineType=inlineType)),(fns,_)))
       equation
@@ -1546,9 +1546,9 @@ algorithm
         newExp = Debug.bcallret1(not generateEvents,Expression.addNoEventToRelationsAndConds,newExp,newExp);
         ((newExp,(_,_,true))) = Expression.traverseExp(newExp,replaceArgs,(argmap,checkcr,true));
         // for inlinecalls in functions
-        ((newExp1,(fns1,_))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
+        ((newExp1,(fns1,b))) = Expression.traverseExp(newExp,forceInlineCall,(fns,true));
       then
-        ((newExp1,(fns,true)));
+        ((newExp1,(fns,b)));
     else inTuple;
   end matchcontinue;
 end forceInlineCall;

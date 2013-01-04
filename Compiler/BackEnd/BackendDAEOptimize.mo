@@ -2012,16 +2012,18 @@ algorithm
       BackendDAE.EqSystem syst;
       BackendDAE.Shared shared;
       BackendDAE.StateSets stateSets;
+      DAE.FunctionTree funcs;
 
     case (syst as BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,stateSets=stateSets),shared)
       equation
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
+        funcs = BackendDAEUtil.getFunctions(shared);
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
         // check equations
         (m_1,(mT_1,_,eqns1,changed)) = traverseIncidenceMatrix(m,removeEqualFunctionCallFinder,(mT,vars,eqns,{}));
         b = intGt(listLength(changed),0);
         // update arrayeqns and algorithms, collect info for wrappers
         syst = BackendDAE.EQSYSTEM(vars,eqns,SOME(m_1),SOME(mT_1),BackendDAE.NO_MATCHING(),stateSets);
-        syst = BackendDAEUtil.updateIncidenceMatrix(syst,changed);
+        syst = BackendDAEUtil.updateIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE(),changed);
       then (syst,shared);
   end match;
 end removeEqualFunctionCallsWork;
@@ -2056,7 +2058,7 @@ algorithm
         // failure(DAE.CREF(componentRef=_) = exp);
         // failure(DAE.UNARY(operator=DAE.UMINUS(ty=_),exp=DAE.CREF(componentRef=_)) = exp);
         // BackendDump.debugStrExpStrExpStr(("Found ",ecr," = ",exp,"\n"));
-        expvars = BackendDAEUtil.incidenceRowExp(exp,vars, {},BackendDAE.NORMAL());
+        expvars = BackendDAEUtil.incidenceRowExp(exp,vars,{},NONE(),BackendDAE.NORMAL());
         // print("expvars "); BackendDump.debuglst((expvars,intString," ","\n"));
         (expvars1::expvarseqns) = List.map1(expvars,varEqns,(pos,mT));
         // print("expvars1 "); BackendDump.debuglst((expvars1,intString," ","\n"));;
@@ -3139,7 +3141,7 @@ algorithm
         l = listLength(tearingvars);
         sub_dae = BackendDAEUtil.copyBackendDAE(dlow1_1);
         BackendDAE.DAE({sub_eqSyst},sub_shared) = dlow1_1;
-        (m_subSyst1,mT_subSyst1) = BackendDAEUtil.incidenceMatrix(sub_eqSyst, BackendDAE.NORMAL());
+        (m_subSyst1,mT_subSyst1) = BackendDAEUtil.incidenceMatrix(sub_eqSyst, BackendDAE.NORMAL(), NONE());
         residual = residualeqns;
         tvars = tearingvars;
         BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns) = sub_eqSyst;
@@ -3149,7 +3151,7 @@ algorithm
         var_lst = List.map1r(tvars, BackendVariable.getVarAt, vars);
         subSyst = getSubSystemDaeForVars(residual,tvars,dlow1_1);
         BackendDAE.DAE({sub_eqSyst2},sub_shared2) = subSyst;
-        (m_subSyst2,mT_subSyst2) = BackendDAEUtil.incidenceMatrix(sub_eqSyst2, BackendDAE.NORMAL());
+        (m_subSyst2,mT_subSyst2) = BackendDAEUtil.incidenceMatrix(sub_eqSyst2, BackendDAE.NORMAL(), NONE());
         BackendDAE.EQSYSTEM(orderedVars=vars_subSyst,orderedEqs=eqns_subSyst) = sub_eqSyst2;
         BackendDAE.EQUATION_ARRAY(sizeArr,NOE,arrSize,eq_subSyst_Arr) = eqns_subSyst;
         eq_subSyst_Lst = arrayList(eq_subSyst_Arr);
@@ -3192,7 +3194,7 @@ algorithm
         emptyVars = BackendVariable.emptyVars();
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
         shared = BackendDAE.SHARED(knownVars,externalObjects,aliasVars,emptyEqns,removedEqs,constraints,classAttrs,cache,env,functionTree,BackendDAE.EVENT_INFO({},{},{},{},0,0),{},BackendDAE.SIMULATION(),{});
-        (m_new,mT_new) = BackendDAEUtil.incidenceMatrix(eqSystem,BackendDAE.NORMAL());
+        (m_new,mT_new) = BackendDAEUtil.incidenceMatrix(eqSystem,BackendDAE.NORMAL(),NONE());
         match1 = arrayCreate(l,1);
         matching = BackendDAE.MATCHING(match1,match1,{});
         eqSystem = BackendDAE.EQSYSTEM(variables,eqArray,SOME(m_new),SOME(mT_new),matching,{});
@@ -3222,7 +3224,7 @@ algorithm
         v1_2 = arrayCreate(ll, 0);
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
         BackendDAE.DAE({syst},shared) = dlow1_1;
-        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL());
+        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
         dlow1_2 = BackendDAE.DAE({syst},shared);
         (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
         // next Block
@@ -3246,7 +3248,7 @@ algorithm
         v1_2 = arrayCreate(ll, 0);
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
         BackendDAE.DAE({syst},shared) = dlow1_1;
-        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL());
+        (syst,m_3,mT_3) = BackendDAEUtil.getIncidenceMatrix(syst,BackendDAE.NORMAL(),NONE());
         dlow1_2 = BackendDAE.DAE({syst},shared);
         (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
         // next Block
@@ -4734,7 +4736,7 @@ algorithm
         
         // generate adjacency matrix including diff vars        
         (syst1 as BackendDAE.EQSYSTEM(orderedVars=varswithDiffs,orderedEqs=orderedEqns)) = BackendDAEUtil.addVarsToEqSystem(syst,jacDiffVars);
-        (adjMatrix, adjMatrixT) = BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE());
+        (adjMatrix, adjMatrixT) = BackendDAEUtil.incidenceMatrix(syst1,BackendDAE.SPARSE(),NONE());
         adjSize = arrayLength(adjMatrix);
         adjSizeT = arrayLength(adjMatrixT);
         
@@ -7603,11 +7605,12 @@ algorithm
       Integer i;
       BackendDAE.Shared shared;
       BackendDAE.EqSystem syst;
-      
+      DAE.FunctionTree funcs;
     case (syst,shared,_,_)
       equation
         // print("partitionIndependentBlocks: TODO: Implement me\n");
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
+        funcs = BackendDAEUtil.getFunctions(ishared);
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
         ixs = arrayCreate(arrayLength(m),0);
         // ixsT = arrayCreate(arrayLength(mT),0);
         i = partitionIndependentBlocks0(arrayLength(m),0,mT,m,ixs);
@@ -8310,6 +8313,7 @@ protected
   BackendDAE.AdjacencyMatrixTEnhanced meT;
   array<list<Integer>> mapEqnIncRow;
   array<Integer> mapIncRowEqn;
+  DAE.FunctionTree funcs;
 algorithm
   // generate Subsystem to get the incidence matrix
   size := listLength(vindx);
@@ -8318,7 +8322,8 @@ algorithm
   var_lst := List.map1r(vindx, BackendVariable.getVarAt, BackendVariable.daeVars(isyst));
   vars := BackendVariable.listVar1(var_lst);
   subsyst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL());
+  funcs := BackendDAEUtil.getFunctions(ishared);
+  (subsyst,m,mt,_,_) := BackendDAEUtil.getIncidenceMatrixScalar(subsyst, BackendDAE.NORMAL(), SOME(funcs));
   //  IndexReduction.dumpSystemGraphML(subsyst,ishared,NONE(),"System" +& intString(size) +& ".graphml");
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.printEqSystem, subsyst);
 

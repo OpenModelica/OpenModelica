@@ -3070,10 +3070,11 @@ public function incidenceMatrix
     wbraun: beware dim(IncidenceMatrix) != dim(IncidenceMatrixT) due to array equations. "
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
-  (outIncidenceMatrix, outIncidenceMatrixT) := matchcontinue(inEqSystem, inIndexType)
+  (outIncidenceMatrix, outIncidenceMatrixT) := matchcontinue(inEqSystem, inIndexType, functionTree)
     local
       BackendDAE.IncidenceMatrix arr;
       BackendDAE.IncidenceMatrixT arrT;
@@ -3081,13 +3082,13 @@ algorithm
       EquationArray eqns;
       Integer numberOfEqs, numberofVars;
 
-    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _) equation
+    case (BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _) equation
       // get the size
       numberOfEqs = equationArraySize(eqns);
       numberofVars = BackendVariable.varsSize(vars);
       // create the array to hold the incidence matrix
       arrT = arrayCreate(numberofVars, {});
-      (arr, arrT) = incidenceMatrixDispatch(vars, eqns, {}, arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType);
+      (arr, arrT) = incidenceMatrixDispatch(vars, eqns, {}, arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType, functionTree);
     then (arr,arrT);
 
     else equation
@@ -3103,13 +3104,14 @@ public function incidenceMatrixScalar
   You can ask for absolute indexes or normal (negative for der) via the IndexType"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
   output array<list<Integer>> outMapEqnIncRow;
   output array<Integer> outMapIncRowEqn;
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT,outMapEqnIncRow,outMapIncRowEqn) := 
-  matchcontinue (syst, inIndexType)
+  matchcontinue (syst, inIndexType, functionTree)
     local
       BackendDAE.IncidenceMatrix arr;
       BackendDAE.IncidenceMatrixT arrT;
@@ -3119,14 +3121,14 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
     
-    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), _)
+    case (BackendDAE.EQSYSTEM(orderedVars = vars,orderedEqs = eqns), _, _)
       equation
         // get the size
         numberOfEqs = equationArraySize(eqns);
         numberofVars = BackendVariable.varsSize(vars);
         // create the array to hold the incidence matrix
         arrT = arrayCreate(numberofVars, {});
-        (arr,arrT,mapEqnIncRow,mapIncRowEqn) = incidenceMatrixDispatchScalar(vars, eqns, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType, 0, {}, {});
+        (arr,arrT,mapEqnIncRow,mapIncRowEqn) = incidenceMatrixDispatchScalar(vars, eqns, {},arrT, 0, numberOfEqs, intLt(0, numberOfEqs), inIndexType, functionTree, 0, {}, {});
       then
         (arr,arrT,mapEqnIncRow,mapIncRowEqn);
     
@@ -3168,10 +3170,11 @@ protected function incidenceMatrixDispatch
   input Integer numberOfEqs;
   input Boolean stop;
   input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.IncidenceMatrix outIncidenceArray;
   output BackendDAE.IncidenceMatrixT outIncidenceArrayT;
 algorithm
-  (outIncidenceArray, outIncidenceArrayT) := match(vars, inEqsArr, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType)
+  (outIncidenceArray, outIncidenceArrayT) := match(vars, inEqsArr, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType, functionTree)
     local
       list<Integer> row;
       BackendDAE.Equation e;
@@ -3180,21 +3183,21 @@ algorithm
       Integer i1;
     
     // i = n (we reach the end)
-    case (_, _, iArr, iArrT, _, _, false, _)
+    case (_, _, iArr, iArrT, _, _, false, _, _)
     then (listArray(listReverse(iArr)), iArrT);
     
     // i < n 
-    case (_, _, iArr, iArrT, _, _, true, _) equation
+    case (_, _, iArr, iArrT, _, _, true, _, _) equation
       // get the equation
       e = equationNth(inEqsArr, index);
       // compute the row
-      (row, _) = incidenceRow(e, vars, inIndexType, {});
+      (row, _) = incidenceRow(e, vars, inIndexType, functionTree, {});
       i1 = index+1;       
       // put it in the arrays
       iArr = row::iArr;
       iArrT = fillincidenceMatrixT(row, {i1}, iArrT);
       // next equation
-      (outIncidenceArray, iArrT) = incidenceMatrixDispatch(vars, inEqsArr, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType);
+      (outIncidenceArray, iArrT) = incidenceMatrixDispatch(vars, inEqsArr, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType, functionTree);
     then (outIncidenceArray,iArrT);
   end match;
 end incidenceMatrixDispatch;
@@ -3210,6 +3213,7 @@ protected function incidenceMatrixDispatchScalar
   input Integer numberOfEqs;
   input Boolean stop;
   input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
   input Integer inRowSize;
   input list<list<Integer>> imapEqnIncRow;
   input list<Integer> imapIncRowEqn;
@@ -3219,7 +3223,7 @@ protected function incidenceMatrixDispatchScalar
   output array<Integer> omapIncRowEqn;
 algorithm
   (outIncidenceArray,outIncidenceArrayT,omapEqnIncRow,omapIncRowEqn) := 
-    match (vars, inEqsArr, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType, inRowSize, imapEqnIncRow, imapIncRowEqn)
+    match (vars, inEqsArr, inIncidenceArray, inIncidenceArrayT, index, numberOfEqs, stop, inIndexType, functionTree, inRowSize, imapEqnIncRow, imapIncRowEqn)
     local
       list<Integer> row,rowindxs,mapIncRowEqn;
       BackendDAE.Equation e;
@@ -3228,15 +3232,15 @@ algorithm
       Integer i1,rowSize,size;
     
     // i = n (we reach the end)
-    case (_, _, iArr, iArrT, _, _, false, _, _, _, _) then (listArray(listReverse(iArr)),iArrT,listArray(listReverse(imapEqnIncRow)),listArray(listReverse(imapIncRowEqn)));
+    case (_, _, iArr, iArrT, _, _, false, _, _, _, _, _) then (listArray(listReverse(iArr)),iArrT,listArray(listReverse(imapEqnIncRow)),listArray(listReverse(imapIncRowEqn)));
     
     // i < n 
-    case (_, _, iArr, iArrT, _, _, true, _, _, _, _)
+    case (_, _, iArr, iArrT, _, _, true, _, _, _, _, _)
       equation
         // get the equation
         e = equationNth(inEqsArr, index);
         // compute the row
-        (row,size) = incidenceRow(e, vars, inIndexType, {});
+        (row,size) = incidenceRow(e, vars, inIndexType, functionTree, {});
         rowSize = inRowSize + size;
         rowindxs = List.intRange2(inRowSize+1, rowSize);
         i1 = index+1;
@@ -3245,7 +3249,7 @@ algorithm
         iArr = List.consN(size,row,iArr);
         iArrT = fillincidenceMatrixT(row,rowindxs,iArrT);
         // next equation
-        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn) = incidenceMatrixDispatchScalar(vars, inEqsArr, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType, rowSize, rowindxs::imapEqnIncRow, mapIncRowEqn);
+        (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn) = incidenceMatrixDispatchScalar(vars, inEqsArr, iArr, iArrT, i1, numberOfEqs, intLt(i1, numberOfEqs), inIndexType, functionTree, rowSize, rowindxs::imapEqnIncRow, mapIncRowEqn);
       then
         (outIncidenceArray,iArrT,omapEqnIncRow,omapIncRowEqn);
     
@@ -3316,12 +3320,13 @@ protected function incidenceRow
   input BackendDAE.Equation inEquation;
   input BackendDAE.Variables vars;
   input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
   input list<Integer> iRow;
   output list<Integer> outIntegerLst;
   output Integer rowSize; 
 algorithm
   (outIntegerLst,rowSize) := 
-   matchcontinue (inEquation,vars,inIndexType,iRow)
+   matchcontinue (inEquation,vars,inIndexType,functionTree,iRow)
     local
       list<Integer> lst1,lst2,res,dimsize;
       DAE.Exp e1,e2,e,expCref,cond;
@@ -3335,62 +3340,62 @@ algorithm
       list<BackendDAE.Equation> eqns;
     
     // EQUATION
-    case (BackendDAE.EQUATION(exp = e1,scalar = e2),_,_,_)
+    case (BackendDAE.EQUATION(exp = e1,scalar = e2),_,_,_,_)
       equation
-        lst1 = incidenceRowExp(e1, vars, iRow,inIndexType);
-        res = incidenceRowExp(e2, vars, lst1,inIndexType);
+        lst1 = incidenceRowExp(e1,vars,iRow,functionTree,inIndexType);
+        res = incidenceRowExp(e2,vars,lst1,functionTree,inIndexType);
       then
         (res,1);
     
     // COMPLEX_EQUATION
-    case (BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2),_,_,_)
+    case (BackendDAE.COMPLEX_EQUATION(size=size,left=e1,right=e2),_,_,_,_)
       equation
-        lst1 = incidenceRowExp(e1, vars, iRow,inIndexType);
-        res = incidenceRowExp(e2, vars, lst1,inIndexType);
+        lst1 = incidenceRowExp(e1,vars,iRow,functionTree,inIndexType);
+        res = incidenceRowExp(e2,vars,lst1,functionTree,inIndexType);
       then
         (res,size);    
     
     // ARRAY_EQUATION
-    case (BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2),_,_,_)
+    case (BackendDAE.ARRAY_EQUATION(dimSize=dimsize,left=e1,right=e2),_,_,_,_)
       equation
         size = List.reduce(dimsize, intMul);
-        lst1 = incidenceRowExp(e1, vars, iRow,inIndexType);
-        res = incidenceRowExp(e2, vars, lst1,inIndexType);
+        lst1 = incidenceRowExp(e1,vars,iRow,functionTree,inIndexType);
+        res = incidenceRowExp(e2,vars,lst1,functionTree,inIndexType);
       then
         (res,size);    
     
     // SOLVED_EQUATION
-    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_,_,_)
+    case (BackendDAE.SOLVED_EQUATION(componentRef = cr,exp = e),_,_,_,_)
       equation
         expCref = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(expCref, vars, iRow,inIndexType);
-        res = incidenceRowExp(e, vars, lst1,inIndexType);
+        lst1 = incidenceRowExp(expCref,vars,iRow,functionTree,inIndexType);
+        res = incidenceRowExp(e,vars,lst1,functionTree,inIndexType);
       then
         (res,1);
     
     // RESIDUAL_EQUATION
-    case (BackendDAE.RESIDUAL_EQUATION(exp = e),_,_,_)
+    case (BackendDAE.RESIDUAL_EQUATION(exp = e),_,_,_,_)
       equation
-        res = incidenceRowExp(e, vars, iRow,inIndexType);
+        res = incidenceRowExp(e,vars,iRow,functionTree,inIndexType);
       then
         (res,1);
     
     // WHEN_EQUATION
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE())),_,_,_)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE())),_,_,_,_)
       equation
         e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond, vars, iRow,inIndexType);
-        lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
-        res = incidenceRowExp(e2, vars, lst2,inIndexType);
+        lst1 = incidenceRowExp(cond,vars,iRow,functionTree,inIndexType);
+        lst2 = incidenceRowExp(e1,vars,lst1,functionTree,inIndexType);
+        res = incidenceRowExp(e2,vars,lst2,functionTree,inIndexType);
       then
         (res,size);
-    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe))),_,_,_)
+    case (BackendDAE.WHEN_EQUATION(size=size,whenEquation = we as BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe))),_,_,_,_)
       equation
         e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond, vars, iRow,inIndexType);
-        lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
-        res = incidenceRowExp(e2, vars, lst2,inIndexType);
-        res = incidenceRowWhen(vars,elsewe,inIndexType,res);
+        lst1 = incidenceRowExp(cond,vars,iRow,functionTree,inIndexType);
+        lst2 = incidenceRowExp(e1,vars,lst1,functionTree,inIndexType);
+        res = incidenceRowExp(e2,vars,lst2,functionTree,inIndexType);
+        res = incidenceRowWhen(vars,elsewe,inIndexType,functionTree,res);
       then
         (res,size);
     // ALGORITHM For now assume that algorithm will be solvable for 
@@ -3398,22 +3403,22 @@ algorithm
     // If algorithm later on needs to be inverted, i.e. solved for
     // different variables than calculated, a non linear solver or
     // analysis of algorithm itself needs to be implemented.
-    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst)),_,_,_)
+    case (BackendDAE.ALGORITHM(size=size,alg=DAE.ALGORITHM_STMTS(statementLst = statementLst)),_,_,_,_)
       equation
-        ((_,res,_)) = traverseStmts(statementLst, incidenceRowAlgorithm, (vars, iRow,inIndexType));
+        ((_,res,_,_)) = traverseStmts(statementLst, incidenceRowAlgorithm, (vars,iRow,functionTree,inIndexType));
       then
         (res,size);
         
     // if Equation
-    case(BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns),_,_,_)
+    case(BackendDAE.IF_EQUATION(conditions=expl,eqnstrue=eqnslst,eqnsfalse=eqns),_,_,_,_)
       equation
-        res = incidenceRow1(expl, incidenceRowExp, vars, iRow,inIndexType);
-        (res,_) = incidenceRowLstLst(eqnslst,vars,inIndexType,res,0);
-        (res,size) = incidenceRowLst(eqns,vars,inIndexType,res,0);
+        res = incidenceRow1(expl, incidenceRowExp,vars,iRow,functionTree,inIndexType);
+        (res,_) = incidenceRowLstLst(eqnslst,vars,inIndexType,functionTree,res,0);
+        (res,size) = incidenceRowLst(eqns,vars,inIndexType,functionTree,res,0);
       then
         (res,size);
     
-    case (_,_,_,_)
+    else
       equation
         eqnstr = BackendDump.equationString(inEquation);
         print("- BackendDAE.incidenceRow failed for eqn: ");
@@ -3432,23 +3437,24 @@ protected function incidenceRowLst
   input list<BackendDAE.Equation> inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inIntegerLst;
   input Integer inRowSize;
   output list<Integer> outIntegerLst;
   output Integer rowSize; 
 algorithm
   (outIntegerLst,rowSize) := 
-   match (inEquation,inVariables,inIndexType,inIntegerLst,inRowSize)
+   match (inEquation,inVariables,inIndexType,functionTree,inIntegerLst,inRowSize)
      local
        Integer size;
        list<Integer> row;
        BackendDAE.Equation eqn;
        list<BackendDAE.Equation> eqns;
-     case({},_,_,_,_) then (inIntegerLst,inRowSize);
-     case(eqn::eqns,_,_,_,_)
+     case({},_,_,_,_,_) then (inIntegerLst,inRowSize);
+     case(eqn::eqns,_,_,_,_,_)
        equation
-         (row,size) = incidenceRow(eqn,inVariables,inIndexType,inIntegerLst);
-         (row,size) = incidenceRowLst(eqns,inVariables,inIndexType,row,inRowSize+size);
+         (row,size) = incidenceRow(eqn,inVariables,inIndexType,functionTree,inIntegerLst);
+         (row,size) = incidenceRowLst(eqns,inVariables,inIndexType,functionTree,row,inRowSize+size);
        then
          (row,size);
   end match;
@@ -3462,23 +3468,24 @@ protected function incidenceRowLstLst
   input list<list<BackendDAE.Equation>> inEquation;
   input BackendDAE.Variables inVariables;
   input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inIntegerLst;
   input Integer inRowSize;
   output list<Integer> outIntegerLst;
   output Integer rowSize; 
 algorithm
   (outIntegerLst,rowSize) := 
-   match (inEquation,inVariables,inIndexType,inIntegerLst,inRowSize)
+   match (inEquation,inVariables,inIndexType,functionTree,inIntegerLst,inRowSize)
      local
        Integer size;
        list<Integer> row;
        list<BackendDAE.Equation> eqn;
        list<list<BackendDAE.Equation>> eqns;
-     case({},_,_,_,_) then (inIntegerLst,inRowSize);
-     case(eqn::eqns,_,_,_,_)
+     case({},_,_,_,_,_) then (inIntegerLst,inRowSize);
+     case(eqn::eqns,_,_,_,_,_)
        equation
-         (row,size) = incidenceRowLst(eqn,inVariables,inIndexType,inIntegerLst,inRowSize);
-         (row,size) = incidenceRowLstLst(eqns,inVariables,inIndexType,row,size);
+         (row,size) = incidenceRowLst(eqn,inVariables,inIndexType,functionTree,inIntegerLst,inRowSize);
+         (row,size) = incidenceRowLstLst(eqns,inVariables,inIndexType,functionTree,row,size);
        then
          (row,size);
   end match;
@@ -3492,11 +3499,12 @@ protected function incidenceRowWhen
   input BackendDAE.Variables inVariables;
   input BackendDAE.WhenEquation inEquation;
   input BackendDAE.IndexType inIndexType;
+  input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inRow;
   output list<Integer> outIntegerLst;
 algorithm
   outIntegerLst := 
-   match (inVariables,inEquation,inIndexType,inRow)
+   match (inVariables,inEquation,inIndexType,functionTree,inRow)
     local
       list<Integer> lst1,lst2,res;
       BackendDAE.Variables vars;
@@ -3504,21 +3512,21 @@ algorithm
       DAE.ComponentRef cr;
       BackendDAE.WhenEquation elsewe;
 
-    case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE()),_,_)
+    case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=NONE()),_,_,_)
       equation
         e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond, vars, inRow,inIndexType);
-        lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
-        res = incidenceRowExp(e2, vars, lst2,inIndexType);
+        lst1 = incidenceRowExp(cond,vars,inRow,functionTree,inIndexType);
+        lst2 = incidenceRowExp(e1,vars,lst1,functionTree,inIndexType);
+        res = incidenceRowExp(e2,vars,lst2,functionTree,inIndexType);
       then
         res;
-    case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe)),_,_)
+    case (vars,BackendDAE.WHEN_EQ(condition=cond,left=cr,right=e2,elsewhenPart=SOME(elsewe)),_,_,_)
       equation
         e1 = Expression.crefExp(cr);
-        lst1 = incidenceRowExp(cond, vars, inRow,inIndexType);
-        lst2 = incidenceRowExp(e1, vars, lst1,inIndexType);
-        res = incidenceRowExp(e2, vars, lst2,inIndexType);
-        res = incidenceRowWhen(vars,elsewe,inIndexType,res);
+        lst1 = incidenceRowExp(cond,vars,inRow,functionTree,inIndexType);
+        lst2 = incidenceRowExp(e1,vars,lst1,functionTree,inIndexType);
+        res = incidenceRowExp(e2,vars,lst2,functionTree,inIndexType);
+        res = incidenceRowWhen(vars,elsewe,inIndexType,functionTree,res);
       then
         res;
       
@@ -3526,17 +3534,18 @@ algorithm
 end incidenceRowWhen;
 
 protected function incidenceRowAlgorithm
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>,BackendDAE.IndexType>> inTpl;
-  output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>,BackendDAE.IndexType>> outTpl;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>,BackendDAE.IndexType>> inTpl;
+  output tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>,BackendDAE.IndexType>> outTpl;
 protected
   DAE.Exp e;
   BackendDAE.Variables vars;
   BackendDAE.IndexType ity;
   list<Integer> lst;
+  Option<DAE.FunctionTree> functionTree;
 algorithm
-  (e,(vars,lst,ity)) := inTpl;
-  lst := incidenceRowExp(e,vars,lst,ity);
-  outTpl := (e,(vars,lst,ity));
+  (e,(vars,lst,functionTree,ity)) := inTpl;
+  lst := incidenceRowExp(e,vars,lst,functionTree,ity);
+  outTpl := (e,(vars,lst,functionTree,ity));
 end incidenceRowAlgorithm;
 
 public function incidenceRow1
@@ -3546,31 +3555,34 @@ public function incidenceRow1
   input Type_b inArg;
   input Type_c inArg1;
   input Type_d inArg2;
+  input Type_e inArg3;
   output Type_c outArg1;
 
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
 
   partial function FuncType
     input Type_a inElem;
     input Type_b inArg;
     input Type_c inArg1;
     input Type_d inArg2;
+    input Type_e inArg3;
     output Type_c outArg1;
   end FuncType;
 algorithm
-  outArg1 := match(inList, inFunc, inArg, inArg1, inArg2)
+  outArg1 := match(inList, inFunc, inArg, inArg1, inArg2, inArg3)
     local
       Type_a e1;
       list<Type_a> rest_e1;
       Type_c res,res1;
-    case ({}, _, _, _, _) then inArg1;
-    case (e1 :: rest_e1, _, _, _, _)
+    case ({}, _, _, _, _, _) then inArg1;
+    case (e1 :: rest_e1, _, _, _, _, _)
       equation
-        res = inFunc(e1, inArg, inArg1, inArg2);
-        res1 = incidenceRow1(rest_e1, inFunc, inArg, res, inArg2);
+        res = inFunc(e1, inArg, inArg1, inArg2, inArg3);
+        res1 = incidenceRow1(rest_e1, inFunc, inArg, res, inArg2, inArg3);
       then
         res1;
   end match;
@@ -3583,23 +3595,24 @@ public function incidenceRowExp "function: incidenceRowExp
   input DAE.Exp inExp;
   input BackendDAE.Variables inVariables;
   input list<Integer> inIntegerLst;
+  input Option<DAE.FunctionTree> functionTree;
   input BackendDAE.IndexType inIndexType;  
   output list<Integer> outIntegerLst;
 algorithm
-  outIntegerLst := match (inExp,inVariables,inIntegerLst,inIndexType)
+  outIntegerLst := match (inExp,inVariables,inIntegerLst,functionTree,inIndexType)
     local
       list<Integer> vallst;
-  case(_,_,_,BackendDAE.SPARSE())      
+  case(_,_,_,_,BackendDAE.SPARSE())      
     equation
       ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinderwithInput, (inVariables,inIntegerLst));
       then
         vallst;     
-  case(_,_,_,BackendDAE.SOLVABLE())      
+  case(_,_,_,_,BackendDAE.SOLVABLE())      
     equation
-      ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables,inIntegerLst));
+      ((_,(_,vallst,_))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpSolvableFinder, (inVariables,inIntegerLst,functionTree));
       then
         vallst;
-  case(_,_,_,_)      
+  case(_,_,_,_,_)      
     equation
       ((_,(_,vallst))) = Expression.traverseExpTopDown(inExp, traversingincidenceRowExpFinder, (inVariables,inIntegerLst));
       // only absolute indexes?
@@ -3612,12 +3625,12 @@ end incidenceRowExp;
 public function traversingincidenceRowExpSolvableFinder "
 Author: Frenkel TUD 2010-11
 Helper for statesAndVarsExp"
-  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>>> inTpl;
-  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<Integer>>> outTpl;
+  input tuple<DAE.Exp, tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>>> inTpl;
+  output tuple<DAE.Exp, Boolean, tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
   local
-      list<Integer> p,pa,res,ilst;
+      list<Integer> p,pa,ilst;
       DAE.ComponentRef cr;
       BackendDAE.Variables vars;
       DAE.Exp e,e1,e2,startvalue,stopvalue,stepvalue;
@@ -3627,20 +3640,23 @@ algorithm
       Option<DAE.Exp> stepvalueopt;
       Integer istart,istep,istop;
       list<DAE.ComponentRef> crlst;
+      Option<DAE.FunctionTree> ofunctionTree;
+      DAE.FunctionTree functionTree;
+      tuple<BackendDAE.Variables,list<Integer>,Option<DAE.FunctionTree>> tpl;
       
-    case ((e as DAE.LBINARY(exp1 = _),(vars,pa)))
-      then ((e,false,(vars,pa)));        
-    case ((e as DAE.RELATION(exp1 = _),(vars,pa)))
-      then ((e,false,(vars,pa)));        
-    case ((e as DAE.IFEXP(expThen = e1,expElse = e2),(vars,pa)))
+    case ((e as DAE.LBINARY(exp1 = _),tpl))
+      then ((e,false,tpl));        
+    case ((e as DAE.RELATION(exp1 = _),tpl))
+      then ((e,false,tpl));        
+    case ((e as DAE.IFEXP(expThen = e1,expElse = e2),tpl))
       equation
-        ((_,(vars,pa))) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, (vars,pa));
-        ((_,(vars,pa))) = Expression.traverseExpTopDown(e2, traversingincidenceRowExpSolvableFinder, (vars,pa));
+        ((_,tpl)) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
+        ((_,tpl)) = Expression.traverseExpTopDown(e2, traversingincidenceRowExpSolvableFinder, tpl);
       then
-        ((e,false,(vars,pa)));
-    case ((e as DAE.RANGE(ty = _),(vars,pa)))
-      then ((e,false,(vars,pa))); 
-    case ((e as DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub=explst),(vars,pa)))
+        ((e,false,tpl));
+    case ((e as DAE.RANGE(ty = _),tpl))
+      then ((e,false,tpl)); 
+    case ((e as DAE.ASUB(exp = DAE.CREF(componentRef = cr), sub=explst),(vars,pa,ofunctionTree)))
       equation
         {e1 as DAE.RANGE(start=startvalue,step=stepvalueopt,stop=stopvalue)} = ExpressionSimplify.simplifyList(explst, {});
         stepvalue = Util.getOptionOrDefault(stepvalueopt,DAE.ICONST(1));
@@ -3650,55 +3666,61 @@ algorithm
         ilst = List.intRange3(istart,istep,istop);
         crlst = List.map1r(ilst,ComponentReference.subscriptCrefWithInt,cr);      
         (varslst,p) = BackendVariable.getVarLst(crlst,vars,{},{});
-        res = incidenceRowExp1(varslst,p,pa,true);
-      then ((e,false,(vars,res)));
+        pa = incidenceRowExp1(varslst,p,pa,true);
+      then ((e,false,(vars,pa,ofunctionTree)));
 
     // if it could not simplified take all found
-    case ((e as DAE.ASUB(exp = _),(vars,pa)))
+    case ((e as DAE.ASUB(exp = e1),tpl))
       equation
-        ((_,(vars,pa))) = Expression.traverseExpTopDown(e, traversingincidenceRowExpFinder, (vars,pa));
-      then ((e,false,(vars,pa)));
+        ((_,tpl)) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
+      then ((e,false,tpl));
         
-    case ((e as DAE.TSUB(exp = _),(vars,pa)))
+    case ((e as DAE.TSUB(exp = e1),tpl))
       equation
-        ((_,(vars,pa))) = Expression.traverseExpTopDown(e, traversingincidenceRowExpFinder, (vars,pa));
-      then ((e,false,(vars,pa)));
+        ((_,tpl)) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
+      then ((e,false,tpl));
                             
-    case (((e as DAE.CREF(componentRef = cr),(vars,pa))))
+    case (((e as DAE.CREF(componentRef = cr),(vars,pa,ofunctionTree))))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
-        res = incidenceRowExp1(varslst,p,pa,true);
+        pa = incidenceRowExp1(varslst,p,pa,true);
       then
-        ((e,false,(vars,res)));
+        ((e,false,(vars,pa,ofunctionTree)));
     
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,ofunctionTree))))
       equation
         (varslst,p) = BackendVariable.getVar(cr, vars);
-        res = incidenceRowExp1(varslst,p,pa,false);
+        pa = incidenceRowExp1(varslst,p,pa,false);
       then
-        ((e,false,(vars,res)));
+        ((e,false,(vars,pa,ofunctionTree)));
     
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa))))
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),(vars,pa,ofunctionTree))))
       equation
         cr = ComponentReference.crefPrefixDer(cr);
         (varslst,p) = BackendVariable.getVar(cr, vars);
-        res = incidenceRowExp1(varslst,p,pa,false);
+        pa = incidenceRowExp1(varslst,p,pa,false);
       then
-        ((e,false,(vars,res)));
+        ((e,false,(vars,pa,ofunctionTree)));
 
     // lochel: internally generated call start(v) depends not on v
-    case ((e as DAE.CALL(path = Absyn.IDENT(name = "$_start")), (vars, pa))) then ((e, false, (vars, pa)));
+    case ((e as DAE.CALL(path = Absyn.IDENT(name = "$_start")), tpl)) then ((e, false, tpl));
     
     /* pre(v) is considered a known variable */
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),(vars,pa)))) then ((e,false,(vars,pa)));
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "pre")),tpl))) then ((e,false,tpl));
     
     /* delay(e) can be used to break algebraic loops given some solver options */
-    case (((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),(vars,pa))))
+    case (((e as DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {_,_,e1,e2}),tpl)))
       equation
         b = Flags.getConfigBool(Flags.DELAY_BREAK_LOOP) and Expression.expEqual(e1,e2);
-      then ((e,not b,(vars,pa)));
+      then ((e,not b,tpl));
 
-    case ((e,(vars,pa))) then ((e,true,(vars,pa)));
+    // use the inlined function to analyze the ocuring variables
+    case ((e as DAE.CALL(path = _), tpl as (vars, pa, SOME(functionTree))))
+      equation
+        ((e1,(_,true))) = Inline.forceInlineCall((e, ((SOME(functionTree), {DAE.NORM_INLINE(),DAE.NO_INLINE()}),false)) );
+        ((_,tpl)) = Expression.traverseExpTopDown(e1, traversingincidenceRowExpSolvableFinder, tpl);
+      then ((e, false, tpl));
+    case ((e,tpl)) then ((e,true,tpl));
   end matchcontinue;
 end traversingincidenceRowExpSolvableFinder;
 
@@ -4013,21 +4035,22 @@ public function updateIncidenceMatrix
             int list /* list of equations to update */)
   outputs: (IncidenceMatrix, IncidenceMatrixT)"
   input BackendDAE.EqSystem syst;
+  input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inIntegerLst;
   output BackendDAE.EqSystem osyst;
 algorithm
-  osyst := matchcontinue (syst,inIntegerLst)
+  osyst := matchcontinue (syst,inIndxType,functionTree,inIntegerLst)
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
-      list<Integer> eqns;
       BackendDAE.Variables vars;
       EquationArray daeeqns;
       BackendDAE.Matching matching;
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),eqns)
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),_,_,_)
       equation
-        (m,mt) = updateIncidenceMatrix1(vars,daeeqns,m,mt,eqns);
+        (m,mt) = updateIncidenceMatrix1(vars,daeeqns,inIndxType,functionTree,m,mt,inIntegerLst);
       then
         BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets);
 
@@ -4044,35 +4067,37 @@ protected function updateIncidenceMatrix1
   "Helper"
   input BackendDAE.Variables vars;
   input EquationArray daeeqns;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> functionTree;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
   input list<Integer> inIntegerLst;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT):=
-  match (vars,daeeqns,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst)
+  match (vars,daeeqns,inIndxType,functionTree,m,mt,inIntegerLst)
     local
-      BackendDAE.IncidenceMatrix m,m_1,m_2;
-      BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
+      BackendDAE.IncidenceMatrix m_1,m_2;
+      BackendDAE.IncidenceMatrixT mt_1,mt_2,mt_3;
       Integer e_1,e,abse;
       BackendDAE.Equation eqn;
       list<Integer> row,invars,outvars,eqns,oldvars;
 
-    case (_,_,m,mt,{}) then (m,mt);
+    case (_,_,_,_,_,_,{}) then (m,mt);
 
-    case (_,_,m,mt,(e :: eqns))
+    case (_,_,_,_,_,_,(e :: eqns))
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
         eqn = equationNth(daeeqns, e_1);
-        (row,_) = incidenceRow(eqn,vars,BackendDAE.NORMAL(),{});
+        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         oldvars = getOldVars(m,abse);
         m_1 = Util.arrayReplaceAtWithFill(abse,row,{},m);
         (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
         mt_1 = removeValuefromMatrix(abse,outvars,mt);
         mt_2 = addValuetoMatrix(abse,invars,mt_1);
-        (m_2,mt_3) = updateIncidenceMatrix1(vars,daeeqns,m_1,mt_2,eqns);
+        (m_2,mt_3) = updateIncidenceMatrix1(vars,daeeqns,inIndxType,functionTree,m_1,mt_2,eqns);
       then (m_2,mt_3);
 
   end match;
@@ -4095,6 +4120,7 @@ public function updateIncidenceMatrixScalar
   outputs: (IncidenceMatrix, IncidenceMatrixT)"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> functionTree;
   input list<Integer> inIntegerLst "numbers of equations in equationarray";
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
@@ -4102,7 +4128,7 @@ public function updateIncidenceMatrixScalar
   output array<list<Integer>> oMapEqnIncRow;
   output array<Integer> oMapIncRowEqn;
 algorithm
-  (osyst,oMapEqnIncRow,oMapIncRowEqn) := matchcontinue (syst,inIndxType,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn)
+  (osyst,oMapEqnIncRow,oMapIncRowEqn) := matchcontinue (syst,inIndxType,functionTree,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn)
     local
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -4114,7 +4140,7 @@ algorithm
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;      
       BackendDAE.StateSets stateSets;
-    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_)
+    case (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),_,_,_,_,_)
       equation
         // extend the mapping arrays
         oldsize = arrayLength(iMapEqnIncRow);
@@ -4128,10 +4154,10 @@ algorithm
         m = Util.arrayExpand(deltasize,m,{});
         mt = Util.arrayExpand(deltasize,mt,{});
         // fill the extended parts first
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(oldsize+1,newsize,oldsize1,vars,daeeqns,m,mt,mapEqnIncRow,mapIncRowEqn,inIndxType);
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(oldsize+1,newsize,oldsize1,vars,daeeqns,m,mt,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree);
         // update the old 
         eqns = List.removeOnTrue(oldsize, intLt, inIntegerLst);
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m,mt,eqns,mapEqnIncRow,mapIncRowEqn,inIndxType);
+        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m,mt,eqns,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree);
       then
         (BackendDAE.EQSYSTEM(vars,daeeqns,SOME(m),SOME(mt),matching,stateSets),mapEqnIncRow,mapIncRowEqn);
 
@@ -4148,37 +4174,38 @@ protected function updateIncidenceMatrixScalar1
   "Helper"
   input BackendDAE.Variables vars;
   input EquationArray daeeqns;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
   input list<Integer> inIntegerLst;
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
   input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
   output array<list<Integer>> oMapEqnIncRow;
   output array<Integer> oMapIncRowEqn;  
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT,oMapEqnIncRow,oMapIncRowEqn):=
-  match (vars,daeeqns,inIncidenceMatrix,inIncidenceMatrixT,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn,inIndxType)
+  match (vars,daeeqns,m,mt,inIntegerLst,iMapEqnIncRow,iMapIncRowEqn,inIndxType,functionTree)
     local
-      BackendDAE.IncidenceMatrix m,m_1,m_2;
-      BackendDAE.IncidenceMatrixT mt,mt_1,mt_2,mt_3;
+      BackendDAE.IncidenceMatrix m_1,m_2;
+      BackendDAE.IncidenceMatrixT mt_1,mt_2,mt_3;
       Integer e_1,e,abse,size;
       BackendDAE.Equation eqn;
       list<Integer> row,invars,outvars,eqns,oldvars,scalarindxs;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn; 
       
-    case (_,_,m,mt,{},_,_,_) then (m,mt,iMapEqnIncRow,iMapIncRowEqn);
+    case (_,_,_,_,{},_,_,_,_) then (m,mt,iMapEqnIncRow,iMapIncRowEqn);
 
-    case (_,_,m,mt,e::eqns,_,_,_)
+    case (_,_,_,_,e::eqns,_,_,_,_)
       equation
         abse = intAbs(e);
         e_1 = abse - 1;
         eqn = equationNth(daeeqns, e_1);
         size = BackendEquation.equationSize(eqn);
-        (row,_) = incidenceRow(eqn,vars,inIndxType,{});
+        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});
         scalarindxs = iMapEqnIncRow[abse];
         oldvars = getOldVars(m,listGet(scalarindxs,1));
         (_,outvars,invars) = List.intersection1OnTrue(oldvars,row,intEq);
@@ -4186,7 +4213,7 @@ algorithm
         m_1 = List.fold1r(scalarindxs,arrayUpdate,row,m);
         mt_1 = List.fold1(scalarindxs,removeValuefromMatrix,outvars,mt);
         mt_2 = List.fold1(scalarindxs,addValuetoMatrix,invars,mt_1);
-        (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType);
+        (m_2,mt_3,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar1(vars,daeeqns,m_1,mt_2,eqns,iMapEqnIncRow,iMapIncRowEqn,inIndxType,functionTree);
       then (m_2,mt_3,mapEqnIncRow,mapIncRowEqn);
 
   end match;
@@ -4199,45 +4226,46 @@ protected function updateIncidenceMatrixScalar2
   input Integer size;
   input BackendDAE.Variables vars;
   input EquationArray daeeqns;
-  input BackendDAE.IncidenceMatrix inIncidenceMatrix;
-  input BackendDAE.IncidenceMatrixT inIncidenceMatrixT;
+  input BackendDAE.IncidenceMatrix m;
+  input BackendDAE.IncidenceMatrixT mt;
   input array<list<Integer>> iMapEqnIncRow;
   input array<Integer> iMapIncRowEqn;
   input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.IncidenceMatrix outIncidenceMatrix;
   output BackendDAE.IncidenceMatrixT outIncidenceMatrixT;
   output array<list<Integer>> oMapEqnIncRow;
   output array<Integer> oMapIncRowEqn;  
 algorithm
   (outIncidenceMatrix,outIncidenceMatrixT,oMapEqnIncRow,oMapIncRowEqn):=
-  matchcontinue (index,n,size,vars,daeeqns,inIncidenceMatrix,inIncidenceMatrixT,iMapEqnIncRow,iMapIncRowEqn,inIndxType)
+  matchcontinue (index,n,size,vars,daeeqns,m,mt,iMapEqnIncRow,iMapIncRowEqn,inIndxType,functionTree)
     local
-      BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;
+      BackendDAE.IncidenceMatrix m1;
+      BackendDAE.IncidenceMatrixT mt1;
       Integer e_1,abse,rowsize,new_size;
       BackendDAE.Equation eqn;
       list<Integer> row,scalarindxs;
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn; 
       
-    case (_,_,_,_,_,m,mt,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = intGt(index,n);
         abse = intAbs(index);
         e_1 = abse - 1;
         eqn = equationNth(daeeqns, e_1);
         rowsize = BackendEquation.equationSize(eqn);
-        (row,_) = incidenceRow(eqn,vars,inIndxType,{});  
+        (row,_) = incidenceRow(eqn,vars,inIndxType,functionTree,{});  
         new_size = size+rowsize;      
         scalarindxs = List.intRange2(size+1,new_size);
         mapEqnIncRow = arrayUpdate(iMapEqnIncRow,abse,scalarindxs);
         mapIncRowEqn = List.fold1r(scalarindxs,arrayUpdate,abse,iMapIncRowEqn);
-        m = List.fold1r(scalarindxs,arrayUpdate,row,m);
-        mt = fillincidenceMatrixT(row,scalarindxs,mt);
-        (m,mt,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(index+1,n,new_size,vars,daeeqns,m,mt,mapEqnIncRow,mapIncRowEqn,inIndxType);
+        m1= List.fold1r(scalarindxs,arrayUpdate,row,m);
+        mt1 = fillincidenceMatrixT(row,scalarindxs,mt);
+        (m1,mt1,mapEqnIncRow,mapIncRowEqn) = updateIncidenceMatrixScalar2(index+1,n,new_size,vars,daeeqns,m1,mt1,mapEqnIncRow,mapIncRowEqn,inIndxType,functionTree);
       then 
-        (m,mt,mapEqnIncRow,mapIncRowEqn);
-    case (_,_,_,_,_,m,mt,_,_,_)
+        (m1,mt1,mapEqnIncRow,mapIncRowEqn);
+    case (_,_,_,_,_,_,_,_,_,_,_)
       then 
         (m,mt,iMapEqnIncRow,iMapIncRowEqn);
   end matchcontinue;
@@ -4360,41 +4388,45 @@ end copyIncidenceMatrix;
 
 public function getIncidenceMatrixfromOptionForMapEqSystem "function getIncidenceMatrixfromOption"
   input BackendDAE.EqSystem syst;
+  input BackendDAE.IndexType inIndxType;
   input BackendDAE.Shared shared;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.Shared oshared;
+protected
+  DAE.FunctionTree funcs;
 algorithm
-  (osyst,_,_) := getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
+  funcs := getFunctions(shared);
+  (osyst,_,_) := getIncidenceMatrixfromOption(syst,inIndxType,SOME(funcs));
   oshared := shared;
 end getIncidenceMatrixfromOptionForMapEqSystem;
 
 public function getIncidenceMatrixfromOption "function getIncidenceMatrixfromOption"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
 algorithm
   (osyst,outM,outMT):=
-  match (syst,inIndxType)
+  match (syst,inIndxType, functionTree)
     local  
       BackendDAE.IncidenceMatrix m,mT;
       BackendDAE.Variables v;
       EquationArray eq;
       BackendDAE.Matching matching;
-      BackendDAE.IndexType it;
       BackendDAE.StateSets stateSets;
-    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=NONE(),matching=matching,stateSets=stateSets),it)
+    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=NONE(),matching=matching,stateSets=stateSets),_,_)
       equation
-        (m,mT) = incidenceMatrix(syst, it);
+        (m,mT) = incidenceMatrix(syst, inIndxType, functionTree);
       then
         (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,stateSets),m,mT);
-    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=SOME(m),mT=NONE(),matching=matching,stateSets=stateSets),_)
+    case(BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,m=SOME(m),mT=NONE(),matching=matching,stateSets=stateSets),_,_)
       equation  
         mT = transposeMatrix(m,BackendVariable.varsSize(v));
       then
         (BackendDAE.EQSYSTEM(v,eq,SOME(m),SOME(mT),matching,stateSets),m,mT);
-    case(BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT)),_)
+    case(BackendDAE.EQSYSTEM(m=SOME(m),mT=SOME(mT)),_,_)
       then
         (syst,m,mT);
   end match;
@@ -4405,6 +4437,7 @@ public function getIncidenceMatrix "function getIncidenceMatrix
   if the system contains multidimensional equations and the scalare one is needed us getIncidenceMatrixScalar"
   input BackendDAE.EqSystem inEqSystem;
   input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.EqSystem outEqSystem;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
@@ -4415,13 +4448,14 @@ protected
   BackendDAE.StateSets stateSets;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets) := inEqSystem;
-  (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType);
+  (outM, outMT) := incidenceMatrix(inEqSystem, inIndxType,functionTree);
   outEqSystem := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets);
 end getIncidenceMatrix;    
     
 public function getIncidenceMatrixScalar "function getIncidenceMatrixScalar"
   input BackendDAE.EqSystem syst;
   input BackendDAE.IndexType inIndxType;
+  input Option<DAE.FunctionTree> functionTree;
   output BackendDAE.EqSystem osyst;
   output BackendDAE.IncidenceMatrix outM;
   output BackendDAE.IncidenceMatrix outMT;
@@ -4434,7 +4468,7 @@ protected
   BackendDAE.StateSets stateSets;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eq,matching=matching,stateSets=stateSets) := syst;
-  (outM,outMT,outMapEqnIncRow,outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType);
+  (outM,outMT,outMapEqnIncRow,outMapIncRowEqn) := incidenceMatrixScalar(syst, inIndxType, functionTree);
   osyst := BackendDAE.EQSYSTEM(v, eq, SOME(outM), SOME(outMT), matching, stateSets);
 end getIncidenceMatrixScalar;     
     
@@ -7997,7 +8031,8 @@ algorithm
       BackendDAE.StructurallySingularSystemHandlerArg arg;
       StructurallySingularSystemHandlerFunc sssHandler;
       array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn;      
+      array<Integer> mapIncRowEqn;
+      DAE.FunctionTree funcs;
 
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(comps=_)),_,_,_,_)
       then
@@ -8005,7 +8040,8 @@ algorithm
     case (BackendDAE.EQSYSTEM(matching=BackendDAE.NO_MATCHING()),_,_,(matchingAlgorithmfunc,mAmethodstr),(sssHandler,str1,_,_))
       equation
         //  print("SystemSize: " +& intString(systemSize(isyst)) +& "\n");
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE());
+        funcs = getFunctions(ishared);
+        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.SOLVABLE(), SOME(funcs));
         match_opts = Util.getOptionOrDefault(inMatchingOptions,(BackendDAE.INDEX_REDUCTION(), BackendDAE.EXACT()));
         arg = IndexReduction.getStructurallySingularSystemHandlerArg(syst,ishared,mapEqnIncRow,mapIncRowEqn);
         // match the system and reduce index if neccessary
@@ -8061,11 +8097,13 @@ algorithm
       String str;
       BackendDAE.EqSystem syst;   
       array<list<Integer>> mapEqnIncRow;
-      array<Integer> mapIncRowEqn; 
+      array<Integer> mapIncRowEqn;
+      DAE.FunctionTree funcs;
     case (_,_)
       equation
         // sorting algorithm
-        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL());
+        funcs = getFunctions(ishared);
+        (syst,_,_,mapEqnIncRow,mapIncRowEqn) = getIncidenceMatrixScalar(isyst,BackendDAE.NORMAL(), SOME(funcs));
         (syst,_) = BackendDAETransform.strongComponentsScalar(syst, ishared,mapEqnIncRow,mapIncRowEqn);        
         Debug.execStat("transformDAE -> sort components",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
       then (syst,ishared);

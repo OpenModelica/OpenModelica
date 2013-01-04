@@ -1885,12 +1885,14 @@ algorithm
       array<Integer> ass1,ass2,stateeqnsmark;
       BackendDAE.Variables vars;
       list<SimCode.SimVar> tempvars;
+      DAE.FunctionTree funcs;
     case ({},_,_,_,odeEquations,algebraicEquations,allEquations,_)
       then (iuniqueEqIndex,odeEquations,algebraicEquations,allEquations,itempvars);
     
     case ((syst as BackendDAE.EQSYSTEM(orderedVars=vars,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2,comps=comps)))::systs,_,_,_,odeEquations,algebraicEquations,allEquations,_)
       equation
-        (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE());
+        funcs = BackendDAEUtil.getFunctions(shared);
+        (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(),SOME(funcs));
         stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);        
         stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
         (odeEquations1,algebraicEquations1,allEquations1,uniqueEqIndex,tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, comps, helpVarInfo,iuniqueEqIndex,itempvars);
@@ -3386,7 +3388,7 @@ algorithm
         vars_1 = BackendVariable.listVar1(var_lst_1);
         eqns_1 = BackendEquation.listEquation(eqn_lst);
         syst = BackendDAE.EQSYSTEM(vars_1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-        (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE());
+        (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(),NONE());
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, false, ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = BackendDAEUtil.analyzeJacobian(vars_1, eqns_1, jac);
         // if BackendDAEUtil.JAC_NONLINEAR() then set to time_varying
@@ -3445,7 +3447,7 @@ algorithm
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(vars_1, eqns_1, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
         shared = BackendDAE.SHARED(knvars, exvars, ave, eeqns, eeqns, constrs, clsAttrs, cache, env, funcs, ev, eoc, BackendDAE.ALGEQSYSTEM(), {});
-        (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE());
+        (m, mt) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(),NONE());
         syst = BackendDAE.EQSYSTEM(vars_1, eqns_1, SOME(m), SOME(mt), BackendDAE.NO_MATCHING(), {});
         subsystem_dae = BackendDAE.DAE({syst}, shared);
         (subsystem_dae_1 as BackendDAE.DAE(eqs={BackendDAE.EQSYSTEM(matching=BackendDAE.MATCHING(v1, v2, comps))})) = BackendDAEUtil.transformBackendDAE(subsystem_dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
@@ -3858,7 +3860,7 @@ algorithm
         vars = BackendVariable.listVar1(inVars);
         eqns = BackendEquation.listEquation(inEqns);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        (m,_) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE());
+        (m,_) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.ABSOLUTE(),NONE());
         jac = BackendDAEUtil.calculateJacobian(vars, eqns, m, false,ishared) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = BackendDAEUtil.analyzeJacobian(vars,eqns,jac);
       then
@@ -3928,7 +3930,7 @@ algorithm
          eqns1 = BackendEquation.listEquation(reqns);
          syst = BackendDAE.EQSYSTEM(v,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
          //  BackendDump.dumpEqSystem(syst);
-         (m,_) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
+         (m,_) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE(),NONE());
          // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
          SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqns1, m, true,ishared);
          //  print(BackendDump.dumpJacobianStr(SOME(jac)) +& "\n");
@@ -6275,7 +6277,7 @@ algorithm
         
     case (block_ as _::_::_,_,BackendDAE.EQSYSTEM(orderedVars=v,orderedEqs=eqn),BackendDAE.SHARED(knownVars=kv,functionTree=funcs), _,_,_)
       equation
-        (m,mT) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL());
+        (m,mT) = BackendDAEUtil.incidenceMatrix(syst, BackendDAE.NORMAL(),NONE());
         //mT = BackendDAEUtil.transposeMatrix(m);
         SOME(jac) = BackendDAEUtil.calculateJacobian(v, eqn, m, false,shared);
         ((simVars,_)) = BackendVariable.traverseBackendDAEVars(v,traversingdlowvarToSimvar,({},kv));
@@ -7353,7 +7355,7 @@ algorithm
         funcs = DAEUtil.avlTreeNew();
         syst = BackendDAE.EQSYSTEM(v,pe,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
         shared = BackendDAE.SHARED(kn,extobj,alisvars,emptyeqns,emptyeqns,constrs,clsAttrs,cache,env,funcs,BackendDAE.EVENT_INFO({},{},{},{},0,0),extObjClasses,BackendDAE.PARAMETERSYSTEM(),{});
-        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
+        (syst,m,mT) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),SOME(funcs));
         paramdlow = BackendDAE.DAE({syst},shared);
         //mT = BackendDAEUtil.transposeMatrix(m);
         v1 = listArray(lv1);

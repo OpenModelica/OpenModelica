@@ -58,7 +58,9 @@ protected import Error;
 protected import Expression;
 protected import Flags;
 protected import HashSet;
+protected import HashTable3;
 protected import HashTable;
+protected import HashTableCG;
 protected import List;
 protected import Matching;
 protected import System;
@@ -717,6 +719,7 @@ algorithm
       array<DAE.Constraint> constraints;
       array<DAE.ClassAttributes> classAttrs;
       list<BackendDAE.Var> tempVar;
+      Boolean b;
     case(BackendDAE.DAE(systs, shared as BackendDAE.SHARED(knownVars=knvars, 
                                                  aliasVars=avars, 
                                                  initialEqs=inieqns, 
@@ -780,6 +783,8 @@ algorithm
       // now let's solve the system!
       (initdae, _) = BackendDAEUtil.mapEqSystemAndFold(initdae, solveInitialSystem3, inDAE);
       initdae = solveInitialSystem2(initdae);
+      b = Flags.isSet(Flags.DUMP_EQNINORDER) and Flags.isSet(Flags.DUMP_INITIAL_SYSTEM);
+      Debug.bcall(b, BackendDump.dumpEqnsSolved, initdae);
     then (SOME(initdae), tempVar);
       
     else then (NONE(), itempVar);
@@ -896,7 +901,7 @@ protected
   Boolean b;
   BackendDAE.IncidenceMatrix mt;
 algorithm
-  (_, _, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL());
+  (_, _, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(),NONE());
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inSystem;
   (orderedVars, b) := removeUnusedInitialVarsWork(arrayLength(mt), mt, orderedVars, false);
   outSystem := Util.if_(b, BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets), inSystem);
@@ -978,36 +983,56 @@ algorithm
       BackendDAE.BackendDAE inDAE;
       BackendDAE.Shared shared;
       DAE.ComponentRef cr, pcr;
-      String msg;
+      String msg,eqn_str,var_str;
       array<Integer> vec1, vec2;
       BackendDAE.IncidenceMatrix m;
-      BackendDAE.IncidenceMatrixT mt;   
+      BackendDAE.IncidenceMatrixT mt;
+      array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
-      BackendDAE.EqSystem syst;      
+      BackendDAE.EqSystem syst;
+      DAE.FunctionTree funcs;
+      list<Integer> unassignedeqns,varindxlst;
+      list<list<Integer>> ilstlst;
+      HashTableCG.HashTable ht;
+      HashTable3.HashTable dht;
+      
     // over-determined system
     case(BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), (shared, (inDAE, initVars))) equation
       nVars = BackendVariable.varsSize(vars);
       nEqns = BackendDAEUtil.equationSize(eqns);
       true = intGt(nEqns, nVars);
+      Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpEqSystem, isyst, "Trying to fix over-determined initial system");
+      msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
+      Error.addCompilerWarning(msg);
       
-/*
-      print("Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]");
-      (system, m, mt, _, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL());
-      BackendDump.printEqSystem(system);
+      // analyze system
+      funcs = BackendDAEUtil.getFunctions(shared);
+      (system, m, mt, mapEqnIncRow, mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(isyst, BackendDAE.NORMAL(), SOME(funcs));
+      // BackendDump.printEqSystem(system);
       vec1 = arrayCreate(nVars, -1);
       vec2 = arrayCreate(nEqns, -1);
       Matching.matchingExternalsetIncidenceMatrix(nVars, nEqns, m);        
       BackendDAEEXT.matching(nVars, nEqns, 5, -1, 0.0, 1);
       BackendDAEEXT.getAssignment(vec2, vec1);
-      BackendDump.dumpMatching(mapIncRowEqn);
-      BackendDump.dumpMatching(vec1);
-      BackendDump.dumpMatching(vec2);
-      system = BackendDAEUtil.setEqSystemMatching(system, BackendDAE.MATCHING(vec1, vec2, {}));        
-      BackendDump.printEqSystem(system);
-*/
-      Debug.fcall2(Flags.PEDANTIC, BackendDump.dumpEqSystem, isyst, "Trying to fix over-determined initial system");
-      msg = "Trying to fix over-determined initial system Variables " +& intString(nVars) +& " Equations " +& intString(nEqns) +& "... [not implemented yet!]";
-      Error.addCompilerWarning(msg);
+      // BackendDump.dumpMatching(mapIncRowEqn);
+      // BackendDump.dumpMatching(vec1);
+      // BackendDump.dumpMatching(vec2);
+      // system = BackendDAEUtil.setEqSystemMatching(system, BackendDAE.MATCHING(vec1, vec2, {}));        
+      // BackendDump.printEqSystem(system);
+      unassignedeqns = Matching.getUnassigned(nEqns, vec2, {});
+      ht = HashTableCG.emptyHashTable();
+      dht = HashTable3.emptyHashTable();
+      ilstlst = Matching.getEqnsforIndexReduction(unassignedeqns, nEqns, m, mt, vec1, vec2, (BackendDAE.STATEORDER(ht,dht),{},mapEqnIncRow, mapIncRowEqn,nEqns));
+      unassignedeqns = List.flatten(ilstlst);
+      unassignedeqns = List.map1r(unassignedeqns,arrayGet,mapIncRowEqn);
+      unassignedeqns = List.uniqueIntN(unassignedeqns,arrayLength(mapIncRowEqn));
+      eqn_str = BackendDump.dumpMarkedEqns(isyst, unassignedeqns);
+      //vars = getUnassigned(nVars, vec1, {});
+      //vars = List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
+      //vars = List.select1(vars,intLe,n);
+      //var_str = BackendDump.dumpMarkedVars(isyst, vars);
+      msg = "System is over-determined in Equations " +& eqn_str;
+      Error.addCompilerWarning(msg);  
     then fail();
 
     // under-determined system  
@@ -1054,14 +1079,15 @@ algorithm
       BackendDAE.EqSystem syst;
       list<Integer> unassigned, unassigned1;
       BackendDAE.Shared shared;
-      
+      DAE.FunctionTree funcs;
     // fix undetermined system
     case (_, _, _, _, _) equation
       // match the system
       nVars = BackendVariable.varsSize(inVars);
       nEqns = BackendDAEUtil.equationSize(inEqns);
       syst = BackendDAE.EQSYSTEM(inVars, inEqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), {});
-      (syst, m, mt, _, _) = BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE());
+      funcs = BackendDAEUtil.getFunctions(iShared);
+      (syst, m, mt, _, _) = BackendDAEUtil.getIncidenceMatrixScalar(syst, BackendDAE.SOLVABLE(), SOME(funcs));
       //  BackendDump.printEqSystem(syst);
       vec1 = arrayCreate(nVars, -1);
       vec2 = arrayCreate(nEqns, -1);

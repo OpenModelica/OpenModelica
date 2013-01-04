@@ -141,24 +141,28 @@ public function printEquationArray "function printEquationArray
   Helper function to dump."
   input BackendDAE.EquationArray eqns;
 algorithm
-  _ := List.fold(BackendEquation.equationList(eqns), printEquationList2, 1);
+  _ := List.fold(BackendEquation.equationList(eqns), printEquationList2, (1, 1));
 end printEquationArray;
 
 public function printEquationList "function printEquationList
   Helper function to dump."
   input list<BackendDAE.Equation> eqns;
 algorithm
-  _ := List.fold(eqns, printEquationList2, 1);
+  _ := List.fold(eqns, printEquationList2, (1, 1));
 end printEquationList;
 
 protected function printEquationList2 "function printEquationList2
   Helper function for printEquationArray and printEquationList"
   input BackendDAE.Equation inEquation;
-  input Integer inInteger;
-  output Integer oInteger;
+  input tuple<Integer,Integer> inInteger;
+  output tuple<Integer,Integer> oInteger;
+protected
+  Integer iscalar,i,size;
 algorithm
-  print(intString(inInteger) +& " (" +& intString(BackendEquation.equationSize(inEquation)) +& "): " +& equationString(inEquation) +& "\n");
-  oInteger := inInteger + 1;
+  (i,iscalar) := inInteger;
+  size := BackendEquation.equationSize(inEquation);
+  print(intString(i) +& "/" +& intString(iscalar) +& " (" +& intString(size) +& "): " +& equationString(inEquation) +& "\n");
+  oInteger := (i + 1,iscalar + size);
 end printEquationList2;
 
 public function printEquations "function printEquations
@@ -3106,7 +3110,7 @@ algorithm
     case ((l :: lst),i)
       equation
         print("{");
-        ls = List.map(l, intString);
+        ls = List.map(List.sort(l,intGt), intString);
         s = stringDelimitList(ls, ", ");
         print(s);
         print("}\n");

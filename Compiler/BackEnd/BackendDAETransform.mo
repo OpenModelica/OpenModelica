@@ -1127,7 +1127,7 @@ algorithm
         vars_1 = BackendVariable.listVar1(var_lst_1);
         eqns_1 = BackendEquation.listEquation(eqn_lst);
         syst = BackendDAE.EQSYSTEM(vars_1,eqns_1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
-        (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE());
+        (m,mt) = BackendDAEUtil.incidenceMatrix(syst,BackendDAE.ABSOLUTE(),NONE());
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = BackendDAEUtil.calculateJacobian(vars_1, eqns_1, m, true,shared);
         // Jacobian of a Linear System is always linear 
@@ -1757,21 +1757,21 @@ protected function strongConnect "function: strongConnect
   input array<Integer> a2;
   input array<Integer> number;
   input array<Integer> lowlink;  
-  input Integer inInteger5;
-  input Integer inInteger6;
-  input list<Integer> inIntegerLst7;
-  input list<list<Integer>> inIntegerLstLst8;
-  output Integer outInteger;
-  output list<Integer> outIntegerLst;
-  output list<list<Integer>> outIntegerLstLst;
+  input Integer i;
+  input Integer v;
+  input list<Integer> stack;
+  input list<list<Integer>> comps;
+  output Integer oi;
+  output list<Integer> ostack;
+  output list<list<Integer>> ocomps;
 algorithm
-  (outInteger,outIntegerLst,outIntegerLstLst):=
-  matchcontinue (m,mt,a1,a2,number,lowlink,inInteger5,inInteger6,inIntegerLst7,inIntegerLstLst8)
+  (oi,ostack,ocomps):=
+  matchcontinue (m,mt,a1,a2,number,lowlink,i,v,stack,comps)
     local
-      Integer i_1,i,v;
-      list<Integer> stack_1,eqns,stack_2,stack_3,comp,stack;
-      list<list<Integer>> comps_1,comps_2,comps;
-    case (_,_,_,_,_,_,i,v,stack,comps)
+      Integer i_1;
+      list<Integer> stack_1,eqns,stack_2,stack_3,comp;
+      list<list<Integer>> comps_1,comps_2;
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         i_1 = i + 1;
         _ = arrayUpdate(number,v,i_1);
@@ -1785,7 +1785,7 @@ algorithm
         (i_1,stack_3,comps_2);
     else
       equation
-        Debug.traceln("- BackendDAETransform.strongConnect failed for eqn " +& intString(inInteger5));
+        Debug.traceln("- BackendDAETransform.strongConnect failed for eqn " +& intString(v));
       then
         fail();
   end matchcontinue;
@@ -1837,8 +1837,8 @@ algorithm
       String eqnstr;
     case (_,_,_,_,_)
       equation
-        var = a2[eqn];
-        reachable = mt[var] "Got the variable that is solved in the equation" ;
+        var = a2[eqn] "Got the variable that is solved in the equation" ;
+        reachable = Debug.bcallret2(intGt(var,0),arrayGet,mt,var,{}) "Got the equations of that variable" ;
         reachable_1 = BackendDAEUtil.removeNegative(reachable) "in which other equations is this variable present ?" ;
       then
         List.removeOnTrue(eqn, intEq, reachable_1);
@@ -1873,11 +1873,11 @@ protected function iterateReachableNodes "function: iterateReachableNodes
   input Integer v;
   input list<Integer> istack;
   input list<list<Integer>> icomps;
-  output Integer outInteger;
-  output list<Integer> outIntegerLst;
-  output list<list<Integer>> outIntegerLstLst;
+  output Integer outI;
+  output list<Integer> outStack;
+  output list<list<Integer>> outComps;
 algorithm
-  (outInteger,outIntegerLst,outIntegerLstLst):=
+  (outI,outStack,outComps):=
   matchcontinue (eqns,m,mt,a1,a2,number,lowlink,i,v,istack,icomps)
     local
       Integer i1,lv,lw,minv,w,nw,nv,lowlinkv;
@@ -2707,6 +2707,7 @@ algorithm
       BackendDAE.ConstraintEquations orgEqnsLst,orgEqnsLst1;  
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn;
+      DAE.FunctionTree funcs;
 
     case (_,_,syst as BackendDAE.EQSYSTEM(mT=SOME(mt)),shared,ass1,ass2,(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns))
       equation
@@ -2741,11 +2742,12 @@ algorithm
         (syst,shared) = replaceDummyDer(stateexpcall, dummyderexp, syst, shared, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         syst = makeAlgebraic(syst, state);
-        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), changedeqns,mapEqnIncRow,mapIncRowEqn);
+        funcs = BackendDAEUtil.getFunctions(shared);
+        (syst,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.updateIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(),SOME(funcs),changedeqns,mapEqnIncRow,mapIncRowEqn);
         // BackendDump.dumpEqSystem(systm, "new DAE:");
         // BackendDump.dump(BackendDAE.DAE({syst},shared));
         // print("new IM:");
-        // (_,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.SOLVABLE());
+        // (_,m,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.SOLVABLE(),SOME(funcs));
         // BackendDump.dumpIncidenceMatrix(m);
         // BackendDump.dumpStateVariables(BackendVariable.daeVars(syst));
       then

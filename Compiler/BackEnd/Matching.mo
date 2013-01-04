@@ -5509,11 +5509,9 @@ public function matchingExternalsetIncidenceMatrix
   input Integer ne;  
   input array<list<Integer>> m;
 protected
- Integer l;
  Integer nz;
 algorithm
-  l:=arrayLength(m);
-  nz := countincidenceMatrixEntries(l,m,0);
+  nz := countincidenceMatrixEntries(ne,m,0);
   BackendDAEEXT.setIncidenceMatrix(nv,ne,nz,m);
 end matchingExternalsetIncidenceMatrix;
 
@@ -5998,7 +5996,7 @@ algorithm
   testMatchingAlgorithms1(matchingAlgorithms,syst,ishared,inMatchingOptions);
   
   System.realtimeTick(BackendDAE.RT_PROFILER0);
-  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL());
+  (_,m,_) := BackendDAEUtil.getIncidenceMatrixfromOption(syst,BackendDAE.NORMAL(),NONE());
   matchingExternalsetIncidenceMatrix(nv,ne,m);
   cheapID := 3;
   t := System.realtimeTock(BackendDAE.RT_PROFILER0);
@@ -6222,7 +6220,7 @@ algorithm
        setrandArray(nv,randarr1);
        eqns1 = randSortSystem1(ne,-1,randarr,eqns,BackendEquation.listEquation({}),BackendDAEUtil.equationNth,BackendEquation.equationAdd);
        vars1 = randSortSystem1(nv,0,randarr1,vars,BackendVariable.emptyVars(),BackendVariable.getVarAt,BackendVariable.addVar);
-       (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),BackendDAE.NORMAL());
+       (syst,_,_) = BackendDAEUtil.getIncidenceMatrix(BackendDAE.EQSYSTEM(vars1,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),stateSets),BackendDAE.NORMAL(),NONE());
      then 
        syst;
   end match;
@@ -6327,6 +6325,8 @@ algorithm
   end matchcontinue;
 end checkSystemForMatching;
 
+//protected import BackendDAETransform;
+
 protected function singularSystemCheck
 "function: singularSystemCheck
   author: Frenkel TUD 2012-12
@@ -6347,6 +6347,7 @@ protected
   BackendDAE.IncidenceMatrixT mT;
   list<Integer> derstatesindexs;
   BackendDAE.StateSets stateSets;
+  list<list<Integer>> comps;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=SOME(mO),stateSets=stateSets) := isyst;
   // get State Indexes
@@ -6361,12 +6362,21 @@ algorithm
   singularSystemCheckGetIncidenceMatrixStates(derstatesindexs,nVars1,nEqns1,m,mT);
   singularSystemCheckGetIncidenceMatrix(nEqns,m,mT,mO,stateindexs);
   // try to match
-  vec1 := arrayCreate(nEqns1,-1);
-  vec2 := arrayCreate(nVars1,-1);
+  vec1 := arrayCreate(nVars1,-1);
+  vec2 := arrayCreate(nEqns1,-1);
   (vec1,vec2) := singularSystemCheckMatch(nVars1,nEqns1,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets),ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
-  //  BackendDump.printEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets));
-  //  BackendDump.dumpMatching(vec2);
-  //  BackendDump.dumpMatching(vec1);  
+  /*
+    matchingExternalsetIncidenceMatrix(nVars1, nEqns, m);
+    BackendDAEEXT.matching(nVars1, nEqns, 5, -1, 0.0, 1);
+    BackendDAEEXT.getAssignment(vec2, vec1);
+
+    print("singularSystemCheck:\n");
+    BackendDump.printEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets));
+    BackendDump.dumpMatching(vec2);
+    BackendDump.dumpMatching(vec1);
+    comps := BackendDAETransform.tarjanAlgorithm(m,mT,vec1,vec2);
+    BackendDump.dumpComponentsOLD(comps);
+  */
 end singularSystemCheck;
 
 protected function getStateIndexes
