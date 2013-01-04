@@ -6,7 +6,7 @@ log:="BuildModelRecursive.html";
 MSLVersion:="3.1";
 runModelicaTest:=false;
 ulimitOmc:="1200"; // 20 minutes to generate the C-code
-ulimitExe:="60";  // 60 seconds to initialize and run the simulation
+ulimitExe:="120";  // 2 minutes to initialize and run the simulation
 loadModel(Modelica,{MSLVersion});
 getErrorString();
 
