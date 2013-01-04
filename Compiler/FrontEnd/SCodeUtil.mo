@@ -1479,9 +1479,19 @@ protected function translateImports "Used to handle group imports, i.e. A.B.C.{x
 algorithm
   elts := match (imp,visibility,info)
     local
+      Absyn.Import imp2;
+      String name;
       Absyn.Path p;
       list<Absyn.GroupImport> groups;
     
+      /* Maybe these should give warnings? I don't know. See https://trac.modelica.org/Modelica/ticket/955 */
+    case (Absyn.NAMED_IMPORT(name,Absyn.FULLYQUALIFIED(p)),_,_)
+      then translateImports(Absyn.NAMED_IMPORT(name,p),visibility,info);
+    case (Absyn.QUAL_IMPORT(Absyn.FULLYQUALIFIED(p)),_,_)
+      then translateImports(Absyn.QUAL_IMPORT(p),visibility,info);
+    case (Absyn.UNQUAL_IMPORT(Absyn.FULLYQUALIFIED(p)),_,_)
+      then translateImports(Absyn.UNQUAL_IMPORT(p),visibility,info);
+
     case (Absyn.GROUP_IMPORT(prefix=p,groups=groups),_,_)
       then List.map3(groups, translateGroupImport, p, visibility, info);
     else {SCode.IMPORT(imp, visibility, info)};
