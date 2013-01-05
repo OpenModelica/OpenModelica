@@ -1650,7 +1650,7 @@ algorithm
   //  BackendDump.dumpIncidenceMatrix(m);  
   //  BackendDump.dumpIncidenceMatrixT(mt);  
   ass := listArray(range);
-  comps := BackendDAETransform.tarjanAlgorithm(m, mt, ass, ass);
+  comps := BackendDAETransform.tarjanAlgorithm(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
   ((order,linkslst)) := List.fold(comps,getOrder,({},{}));  
   //  print("order: " +& stringDelimitList(List.map(order,intString),", ") +& "\n");
@@ -1665,7 +1665,7 @@ algorithm
   omark := getOrphansOrderEdvanced4(linkslst,m,mt,mark,rowmarks,order,{});
   //  BackendDump.dumpIncidenceMatrix(m);  
   mt := BackendDAEUtil.transposeMatrix(m,arrayLength(mt));
-  comps := BackendDAETransform.tarjanAlgorithm(m, mt, ass, ass);
+  comps := BackendDAETransform.tarjanAlgorithm(mt, ass);
   //  BackendDump.dumpComponentsOLD(comps);
   sortvorphans := List.flatten(listReverse(comps));  
   // map back to global indexes

@@ -3312,7 +3312,7 @@ algorithm
   end matchcontinue;
 end fillincidenceMatrixT;
 
-protected function incidenceRow
+public function incidenceRow
 "function: incidenceRow
   author: PA
   Helper function to incidenceMatrix. Calculates the indidence row

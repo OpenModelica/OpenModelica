@@ -6374,7 +6374,7 @@ algorithm
     BackendDump.printEqSystem(BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets));
     BackendDump.dumpMatching(vec2);
     BackendDump.dumpMatching(vec1);
-    comps := BackendDAETransform.tarjanAlgorithm(m,mT,vec1,vec2);
+    comps := BackendDAETransform.tarjanAlgorithm(mT,vec2);
     BackendDump.dumpComponentsOLD(comps);
   */
 end singularSystemCheck;

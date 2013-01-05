@@ -1660,7 +1660,7 @@ algorithm
         ((_,_,mlst,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,{},arrayCreate(size,{})));
         v = listArray(List.intRange(size));
         m = listArray(listReverse(mlst));
-        comps = BackendDAETransform.tarjanAlgorithm(m, mt, v, v);        
+        comps = BackendDAETransform.tarjanAlgorithm(mt, v);        
         // evaluate vars with bind expression consists of evaluated vars
         (knvars,repl,cache) = traverseVariablesSorted(comps,knvars,BackendVarTransform.emptyReplacements(),BackendVarTransform.emptyReplacements(),cache,env);
         Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repl);
@@ -1713,7 +1713,7 @@ algorithm
         ((_,_,mlst,mt)) = BackendVariable.traverseBackendDAEVars(knvars,getParameterIncidenceMatrix,(knvars,1,{},arrayCreate(size,{})));
         v = listArray(List.intRange(size));
         m = listArray(listReverse(mlst));
-        comps = BackendDAETransform.tarjanAlgorithm(m, mt, v, v);        
+        comps = BackendDAETransform.tarjanAlgorithm(mt, v);        
         // evaluate vars with bind expression consists of evaluated vars
         (knvars,repl,cache) = traverseVariablesSorted(comps,knvars,BackendVarTransform.emptyReplacements(),BackendVarTransform.emptyReplacements(),cache,env);
         Debug.fcall(Flags.DUMP_EA_REPL, BackendVarTransform.dumpReplacements, repl);
@@ -8375,7 +8375,7 @@ algorithm
   number := arrayCreate(size,0);
   lowlink := arrayCreate(size,0);        
   number := setIntArray(residual,number,size);
-  (_,_,othercomps) := BackendDAETransform.strongConnectMain(m1, mt1, ass1, ass2, number, lowlink, size, 0, 1, {}, {});        
+  (_,_,othercomps) := BackendDAETransform.strongConnectMain(mt1, ass2, number, lowlink, size, 0, 1, {}, {});        
   Debug.fcall(Flags.TEARING_DUMP, print, "OtherEquationsOrder:\n"); 
   Debug.fcall(Flags.TEARING_DUMP, BackendDump.dumpComponentsOLD,othercomps); 
   Debug.fcall(Flags.TEARING_DUMP, print, "\n");

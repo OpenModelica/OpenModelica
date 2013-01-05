@@ -3051,7 +3051,7 @@ algorithm
       then {};
     case(_,_,_,_,_,_)
       equation
-        eqns = BackendDAETransform.reachableNodes(i, m, mT, ass1, ass2);
+        eqns = BackendDAETransform.reachableNodes(i, mT, ass2);
         llst = List.map(eqns,List.create);
         llst = List.map1(llst, List.consr, i);
         slst = List.map(llst,intListStr);
