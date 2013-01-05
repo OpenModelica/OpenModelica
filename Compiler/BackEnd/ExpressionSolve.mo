@@ -399,7 +399,8 @@ algorithm
         (rhs,asserts);
         
     // a^b = f(..) -> a = (if pre(a)==0 then 1 else sign(pre(a)))*(f(...)^(1/b))
-    case (_,_,DAE.CREF(componentRef = cr),_)
+    // does not work because not all have pre in code generation
+/*    case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         e = Expression.makeDiff(inExp1,inExp2);
         ((e,(_,false,SOME(a)))) = Expression.traverseExpTopDown(e, traversingVarOnlyinPow, (cr,false,NONE()));
@@ -421,7 +422,7 @@ algorithm
         rhs = Expression.expMul(dere,rhs);
       then
         (rhs,asserts);        
-/*
+*//*
     case (_,_,DAE.CREF(componentRef = cr),_)
       equation
         e = Expression.makeDiff(inExp1,inExp2);
