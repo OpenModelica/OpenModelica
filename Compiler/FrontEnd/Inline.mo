@@ -1629,6 +1629,7 @@ algorithm
       list<DAE.Element> rest;
       VarTransform.VariableReplacements repl;
       Option<DAE.Exp> binding;
+      DAE.Type tp;
     case ({},_,_,_,_) then (listReverse(iInputs),listReverse(iOutput),iBody,iRepl);
     case (DAE.VAR(componentRef=cr,direction=DAE.INPUT())::rest,_,_,_,_)
       equation
@@ -1640,8 +1641,10 @@ algorithm
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,cr::iOutput,iBody,iRepl);
       then 
         (oInputs,oOutput,oBody,repl);
-    case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),binding=binding)::rest,_,_,_,_)
+    case (DAE.VAR(componentRef=cr,protection=DAE.PROTECTED(),ty=tp,binding=binding)::rest,_,_,_,_)
       equation
+        false = Expression.isArrayType(tp);
+        false = Expression.isRecordType(tp);        
         repl = addOptBindingReplacements(cr,binding,iRepl);
         (oInputs,oOutput,oBody,repl) = getFunctionInputsOutputBody(rest,iInputs,iOutput,iBody,repl);
       then 
