@@ -2524,7 +2524,8 @@ algorithm
         // generate system
         eqns = BackendEquation.listEquation(eqnslst);
         eqns = BackendEquation.addEquations(eqnslst1, eqns);
-        vars = BackendVariable.addVars(vlst, hovvars);
+        vars = BackendVariable.listVar1(vlst);
+        vars = BackendVariable.addVars(BackendVariable.varList(hovvars), vars);
         syst = BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
         //  BackendDump.printEqSystem(syst);
         // get advanced incidence Matrix
