@@ -2229,8 +2229,11 @@ algorithm
         deqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,false),
                                       BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,false));
         // add equations
-        eqns = BackendEquation.equationAdd(eqn, iEqns);        
-        eqns = BackendEquation.equationAdd(deqn, eqns);        
+        eqns = BackendEquation.equationAdd(eqn, iEqns);
+        eqns = BackendEquation.equationAdd(deqn, eqns);
+        // set varkind to dummy_state
+        stateCandidates = List.map1(stateCandidates,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
+        otherVars = List.map1(otherVars,BackendVariable.setVarKind,BackendDAE.DUMMY_STATE());
         // generate state set;
         (setIndex,vars,eqns,stateSets) = generateStateSets(rest,iSetIndex+1,vars,eqns,BackendDAE.STATESET(rang,crset,crA,aVars,stateCandidates,otherVars,cEqnsLst,oEqnLst,crJ,varJ)::iStateSets);
       then
@@ -2269,8 +2272,7 @@ algorithm
       DAE.FunctionTree funcs;
       BackendDAE.IncidenceMatrix m;
       array<Integer> ass1,ass2;
-      Integer size;
-      Integer setIndex;
+      Integer ne,nv,setIndex;
       BackendDAE.Shared shared;
       list<BackendDAE.Var> hov;
       array<list<Integer>> mapEqnIncRow;
@@ -2288,13 +2290,14 @@ algorithm
         // update IncidenceMatrix
         funcs = BackendDAEUtil.getFunctions(ishared);
         (syst,m,_,_,_) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
-        // genereate new Matching
+        // expand the matching
         ass1 = Util.arrayExpand(nfreeStates,ass1,-1);
         ass2 =Util.arrayExpand(nOrgEqns,ass2,-1);
-        size = BackendDAEUtil.systemSize(syst);
-        true = BackendDAEEXT.setAssignment(nOrgEqns,nfreeStates,ass2,ass1);
-        Matching.matchingExternalsetIncidenceMatrix(nfreeStates, nOrgEqns, m);
-        BackendDAEEXT.matching(nfreeStates, nOrgEqns, 5, -1, 0.0, 0);
+        nv = BackendVariable.varsSize(BackendVariable.daeVars(syst));
+        ne = BackendDAEUtil.systemSize(syst);
+        true = BackendDAEEXT.setAssignment(ne,nv,ass2,ass1);
+        Matching.matchingExternalsetIncidenceMatrix(nv, ne, m);
+        BackendDAEEXT.matching(nv, ne, 5, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(ass1,ass2,{}));
       then 
