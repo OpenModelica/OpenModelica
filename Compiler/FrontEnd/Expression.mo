@@ -5156,6 +5156,29 @@ algorithm
   end match;
 end traversingComponentRefFinder;
 
+public function traversingComponentRefFinderNoPreDer "
+Author: BZ 2008-06
+Exp traverser that Union the current ComponentRef with list if it is already there.
+Returns a list containing, unique, all componentRef in an Expression."
+  input tuple<DAE.Exp, list<ComponentRef>> inExp;
+  output tuple<DAE.Exp, Boolean, list<ComponentRef>> outExp;
+algorithm 
+  outExp := match(inExp)
+    local
+      list<ComponentRef> crefs;
+      ComponentRef cr;
+      DAE.Exp e;
+    case((e as DAE.CREF(componentRef=cr), crefs))
+      equation
+        crefs = List.unionEltOnTrue(cr,crefs,ComponentReference.crefEqual);
+      then
+        ((e, false, crefs ));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "der")), crefs)) then ((e, false, crefs));
+    case((e as DAE.CALL(path = Absyn.IDENT(name = "pre")), crefs)) then ((e, false, crefs));
+    case ((e,crefs)) then ((e,true,crefs));
+  end match;
+end traversingComponentRefFinderNoPreDer;
+
 public function traversingDerAndComponentRefFinder "
 Author: Frenkel TUD 2012-06
 Exp traverser that Union the current ComponentRef with list if it is already there.
