@@ -1,8 +1,8 @@
 <!DOCTYPE OMNotebook>
 <Notebook>
-  <GroupCell closed="false" >
-    <GroupCell closed="false" >
-      <TextCell style="Title" >
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
         <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -10,10 +10,10 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Game of Life&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Game of Life&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
       </TextCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -21,9 +21,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Introduction&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Introduction&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -31,20 +31,20 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;span style=" font-weight:600;">Rules for the Game of Life:&lt;/span>&lt;br />&lt;br />Life is played on a grid of square cells--like a chess board but extending infinitely in every direction. A cell can be live or dead. A live cell is shown by putting a marker on its square. A dead cell is shown by leaving the square empty. Each cell in the grid has a neighborhood consisting of the eight cells in every direction including diagonals. To apply one step of the rules, we count the number of live neighbors for each cell. What happens next depends on this number.&lt;br />To apply one step of the rules, we count the number of live neighbors for each cell. What happens next depends on this number.&lt;br />- A dead cell with exactly three live neighbors becomes a live cell (birth). &lt;br />&lt;br />&lt;br />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/92.png" width="48" height="48" />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/93.png" width="48" height="48" />&lt;br />A live cell with two or three live neighbors stays alive (survival). &lt;br />&lt;br />&lt;br />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/94.png" width="48" height="48" />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/95.png" width="48" height="48" />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/96.png" width="48" height="48" />&lt;br />In all other cases, a cell dies or remains dead (overcrowding or loneliness). &lt;br />&lt;br />&lt;br />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/97.png" width="48" height="48" />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/98.png" width="48" height="48" />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/99.png" width="48" height="48" />&lt;img src="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/100.png" width="48" height="48" />&lt;br />&lt;span style=" font-weight:600;">Note:&lt;/span> The number of live neighbors is always based on the cells &lt;span style=" font-weight:600; font-style:italic; color:#0000fe;">before&lt;/span> the rule was applied. In other words, we must first find all of the cells that change before changing any of them. Sounds like a job for a computer!&lt;span style=" font-size:14pt;"> &lt;/span>&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/92.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAQ5JREFUaIHtl9EOhSAIhrHa6v2ftrZz5rlrySyV8ACO786i8f8ySUKMMYJhlrsXIRzJOsa1uxgKAVcAC8doMzJdFyXxtTH/5DTQIkyTiakcopsJgLajWqowRgUsM4YBSm/X8j8YowIAbTuqZfcBUAVqhGkSD5C5C50vrF7mrGH+EHebB45vSNbr3Fbo2vzs8wAWjikZac3POg+UxJdiKPnZ5oEa8U+x1Py3Z+At27In6/2zdcnDMg/gHcXic8+u37zJb76NugFpWOYB3NtzBxY/u37zJn+3LtSr62DY5oGWq0IulpqfdR6oMfEUQ8nfbR4Qu8xZY4w2ahk3II0bkMYNSOMGpHED0rgBadyAND8Eu5NCaCFoGgAAAABJRU5ErkJggg==</Image>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/93.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAQhJREFUaIHtmdEKwzAIRU1baP//a1vYyN7KIi1NsuvU4HmzCfSqxERMOedMjlnuFlI6CjvnVVxMD4lngAvnWHNk+jaexNfu+SenAy3CLDkxPW+xzUTUF1ErWRgjA54Zw4Ge2m7lPhgjA0RtEbUSfSKWgRphlsQTXbyFzgWvjzlvuD/EYv3A8U6Fvc4yiYb3A1w4B+0ItB94El+7pwVYP9AiDOnE7Rn4lW3ZC3t/bSL/gfQDPKJc/NU3VBbcl9FwQBtIP8Br+9WB5d9Q94FYFZKqOhxYP9ASUeRtDO0HaoShnxJi/YDaY84b7stozAe0ifmANu4PccwHtAkHtIn5gDYxH9Am5gPafADCCJ81lSlEfQAAAABJRU5ErkJggg==</Image>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/94.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAKpJREFUaIHtl8EKgCAQBVcJ+v/P7bSdirJElqBh5c0t1lc7maTF3d0SU+kGviIBGgnQSIBGAjQSoJEAjQRo0gssvUIp2+3afQ3d+K98aU9kbbBl1Mjf+dsnNAqPxhD52itEm6Dy6RdxNYvZH1wzZH6OGcjMHALRn0ybIfNzzIBZ7C28jaXytVeIPJzMP/ZCZyHrZi4b8yzirEiARgI0EqCRAI0EaCRAIwGaHQQcYU/+OQEBAAAAAElFTkSuQmCC</Image>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/95.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAANtJREFUaIHtmcEOhCAMRAeyyf7/5+6pezNKdqMiMJ2m70bk0FKrvLSYmUGY178HpXwOa7P39GB6KG0F2sBbvCVS94uz4K/uWcmWwJ3APCVRz7f4pgJ9J+qlCjEqoEyMBHq+7V7+BzEqANw7US+nDzQVuBKYp+CBH3eh7YHqZU4N+Sae5gOrXsHhPrDaJ4b6AMMnhvkAyyfkm3iIDzB9IkYFlImRwFMfYPpEjAoAz32A5RNDfYDhE9N8gHaZU0O+iXM+wCbnA2zkmzjnA2wyATY5H2CT8wE2OR9g8wWFp5Q1W2f6OwAAAABJRU5ErkJggg==</Image>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/96.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAALxJREFUaIHtl8sKwzAMBO0S6P9/bk/qqYGKEEe20q1g5hbQWl4/iLebmbXCPNQTWAUDajCgBgNqMKAGA2owoAYDasob2O4auPfX17fZ8xZ9z05kvrFnZCSqTz1Co+ajmhl9moErzc9qZ/XlL3GKgcjqHWlW9OyAGgy0Fv9Jec2Knh34EFnFo9pZfeoOXJnEWc2MPv0ttA9c9TH3a8pfYvLAqLGHPEAe+DPIA2owoIY8oIY8EJ0EecDXVc8Db+aRiEKkjuOxAAAAAElFTkSuQmCC</Image>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/97.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAATRJREFUaIHtl8kOwzAIRKGqlPz/19Yn95SIIjveJoVIvFMXrMwYsAnnnDM9mLe1gBrM6ed7zls5zlsGtHCNNvK6U8woLfGlGDcGesSXYt0YmMWFgZHd12tcGFghDFjjwkDtkupZ48LACm4MjGRBxroxQNRnQse4m4UOHjvMjbJcQomZEvPf1mlg7wOJmTaRzKsSQAg/n4MoISlop89l7If28/MGqF7IKSSFSIEatHgi4DEqd75kQv7WytII0HugZuIu8USgHtANWysjLX5mBtLcchOXdhm98weuRokZbjHQamIkEAOylnXD1hobUf9E4AzUTpvWEbsCbJjruY3dXmS9o4T8DzUPLWdACpkZ5lYzAZtGtZCrJj1iEVmIFxprwoA1YcCaMGBNGLAmDFgTBqwJA9Z8ASjGizVn09fnAAAAAElFTkSuQmCC</Image>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/98.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAUFJREFUaIHtl8ESgyAMRDdMZ/T/v1ZO9FJtTEUaiGZweKe2sHVDBBJKKSV0zCs3QBR331OaVH98l55kBqRQUjJytz5oxKU5HvqQG9Ca8NKHk3ldEABd9Ctc46l/RgZ65hkBaC8ZqfHUPyMDgG4VjuZ66UNuQPNwT/1PLbQN9FrM9UbzJo5EiES36SRm/UAkwsSSeaa3ML49x6If4IZmLKf6BfP2eTJ4e036AW6EG5RYmwcM+wG+8kdB8N9KWdJgehPngrjKPPDZAzX1OPDdD1Kfe42k+ZoaSHJJLXS0ytYrv/KcYs6S0ia2xLwfkBs2t7Et3n/AOAO506Z0xLawu4n/PY1qb+NLL7KcMUlLKcHHrOqh5n6AG6kp5loz0dwPrGZqjMgKtobR0HgzAvBmBODNCMCbEYA3IwBvRgDejAC8eQNRDd8koG0WOwAAAABJRU5ErkJggg==</Image>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/99.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAALNJREFUaIHtl9EKgCAMRTcJ+v/P7Wm9BRpSTuWycc9bLLkezVQ1M5PAFHQHZqEAGgqgoQAaCqChABoKoKEAmvACR6+gelXPZuf2znjytb2RtQ1bdouM5lef0Ffjv+948eSXXmE2aBRvfvhFXER8I7pyFmbyc8xAZHIIeP7tK/eDmfwcMyAyNgo7dmNvfukVVgSN4sl/nYWeQtTDXDTyLOKoUAANBdBQAA0F0FAADQXQUADNDRpFRk/OehVpAAAAAElFTkSuQmCC</Image>
-          <Image name="file:///C:/OpenModelica1.5.0-svn/OMNotebook/DrModelica/OMNoteboook_tempfiles/100.png" >AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAOVJREFUaIHtmc0KAyEMhKMU9v0ft6fsrbAWi5lE8lO/m0SZjcHVIY2ZmRLzmgVaez/GzNf2j0H021iBceHI7kSk+l2yeHUOCqLfZwGtkBRUv/+Yl4JOhO2oZRU0+jUqkJkaCSD/dsv7QKNfowJEsl3YcRuj+n0WsBCSguh/vYU+gayPuWykP8Rh/cAq4fyAlFB+ACGMH0BJf4hD+AENNSqQmRoJePsBDTUqQOTvB1BC+QGEsH5gleMHvJn6AW/SWkpVf8AbVX/Am//uD3hz+gOZOQlYcPoDETDpD3hj2h/wJu1jTsoNB5WUNf6TzWkAAAAASUVORK5CYII=</Image>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:600; color:#000000;">Rules for the Game of Life:&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;br />Life is played on a grid of square cells--like a chess board but extending infinitely in every direction. A cell can be live or dead. A live cell is shown by putting a marker on its square. A dead cell is shown by leaving the square empty. Each cell in the grid has a neighborhood consisting of the eight cells in every direction including diagonals. To apply one step of the rules, we count the number of live neighbors for each cell. What happens next depends on this number.&lt;br />To apply one step of the rules, we count the number of live neighbors for each cell. What happens next depends on this number.&lt;br />- A dead cell with exactly three live neighbors becomes a live cell (birth). &lt;br />&lt;br />&lt;br />&lt;/span>&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/13.png" width="48" height="48" />&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/14.png" width="48" height="48" />&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />A live cell with two or three live neighbors stays alive (survival). &lt;br />&lt;br />&lt;br />&lt;/span>&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/15.png" width="48" height="48" />&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/16.png" width="48" height="48" />&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/17.png" width="48" height="48" />&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />In all other cases, a cell dies or remains dead (overcrowding or loneliness). &lt;br />&lt;br />&lt;br />&lt;/span>&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/18.png" width="48" height="48" />&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/19.png" width="48" height="48" />&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/20.png" width="48" height="48" />&lt;img src="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/21.png" width="48" height="48" />&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:600; color:#000000;">Note:&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> The number of live neighbors is always based on the cells &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; font-weight:600; font-style:italic; color:#0000fe;">before&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> the rule was applied. In other words, we must first find all of the cells that change before changing any of them. Sounds like a job for a computer!&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:14pt; color:#000000;"> &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/13.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAAEOSURBVGiB7ZfRDoUgCIax2ur9n7a2c+a5a8kslfAAju/OovH/MklCjDGCYZa7FyEcyTrGtbsYCgFXAAvHaDMyXRcl8bUx/+Q00CJMk4mpHKKbCYC2o1qqMEYFLDOGAUpv1/I/GKMCAG07qmX3AVAFaoRpEg+QuQudL6xe5qxh/hB3mweOb0jW69xW6Nr87PMAFo4pGWnNzzoPlMSXYij52eaBGvFPsdT8t2fgLduyJ+v9s3XJwzIP4B3F4nPPrt+8yW++jboBaVjmAdzbcwcWP7t+8yZ/ty7Uq+tg2OaBlqtCLpaan3UeqDHxFEPJ320eELvMWWOMNmoZNyCNG5DGDUjjBqRxA9K4AWncgDQ/BLuTQmghaBoAAAAASUVORK5CYII=</Image>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/14.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAAEISURBVGiB7ZnRCsMwCEVNW2j//2tb2MjeyiItTbLr1OB5swn0qsRETDnnTI5Z7hZSOgo751VcTA+JZ4AL51hzZPo2nsTX7vknpwMtwiw5MT1vsc1E1BdRK1kYIwOeGcOBntpu5T4YIwNEbRG1En0iloEaYZbEE128hc4Fr485b7g/xGL9wPFOhb3OMomG9wNcOAftCLQfeBJfu6cFWD/QIgzpxO0Z+JVt2Qt7f20i/4H0AzyiXPzVN1QW3JfRcEAbSD/Aa/vVgeXfUPeBWBWSqjocWD/QElHkbQztB2qEoZ8SYv2A2mPOG+7LaMwHtIn5gDbuD3HMB7QJB7SJ+YA2MR/QJuYD2nwAwgifNZUpRH0AAAAASUVORK5CYII=</Image>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/15.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAACqSURBVGiB7ZfBCoAgEAVXCfr/z+20nYqyRJagYeXNLdZXO5mkxd3dElPpBr4iARoJ0EiARgI0EqCRAI0EaNILLL1CKdvt2n0N3fivfGlPZG2wZdTI3/nbJzQKj8YQ+dorRJug8ukXcTWL2R9cM2R+jhnIzBwC0Z9MmyHzc8yAWewtvI2l8rVXiDyczD/2Qmch62YuG/Ms4qxIgEYCNBKgkQCNBGgkQCMBmh0EHGFP/jkBAQAAAABJRU5ErkJggg==</Image>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/16.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAADbSURBVGiB7ZnBDoQgDEQHssn+/+fuqXszSnajIjCdpu9G5NBSq7y0mJlBmNe/B6V8Dmuz9/RgeihtBdrAW7wlUveLs+Cv7lnJlsCdwDwlUc+3+KYCfSfqpQoxKqBMjAR6vu1e/gcxKgDcO1Evpw80FbgSmKfggR93oe2B6mVODfkmnuYDq17B4T6w2ieG+gDDJ4b5AMsn5Jt4iA8wfSJGBZSJkcBTH2D6RIwKAM99gOUTQ32A4RPTfIB2mVNDvolzPsAm5wNs5Js45wNsMgE2OR9gk/MBNjkfYPMFhaeUNVtn+jsAAAAASUVORK5CYII=</Image>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/17.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAAC8SURBVGiB7ZfLCsMwDATtEuj/f25P6qmBihBHttKtYOYW0FpeP4i3m5m1wjzUE1gFA2owoAYDajCgBgNqMKAGA2rKG9juGrj319e32fMWfc9OZL6xZ2Qkqk89QqPmo5oZfZqBK83Pamf15S9xioHI6h1pVvTsgBoMtBb/SXnNip4d+BBZxaPaWX3qDlyZxFnNjD79LbQPXPUx92vKX2LywKixhzxAHvgzyANqMKCGPKCGPBCdBHnA11XPA2/mkYhCpI7jsQAAAABJRU5ErkJggg==</Image>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/18.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAAE0SURBVGiB7ZfJDsMwCEShqpT8/9fWJ/eUiCI73iaFSLxTF6zMGLAJ55wzPZi3tYAazOnne85bOc5bBrRwjTbyulPMKC3xpRg3BnrEl2LdGJjFhYGR3ddrXBhYIQxY48JA7ZLqWePCwApuDIxkQca6MUDUZ0LHuJuFDh47zI2yXEKJmRLz39ZpYO8DiZk2kcyrEkAIP5+DKCEpaKfPZeyH9vPzBqheyCkkhUiBGrR4IuAxKne+ZEL+1srSCNB7oGbiLvFEoB7QDVsrIy1+ZgbS3HITl3YZvfMHrkaJGW4x0GpiJBADspZ1w9YaG1H/ROAM1E6b1hG7AmyY67mN3V5kvaOE/A81Dy1nQAqZGeZWMwGbRrWQqyY9YhFZiBcaa8KANWHAmjBgTRiwJgxYEwasCQPWfAEoxos1Z9PX5wAAAABJRU5ErkJggg==</Image>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/19.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAAFBSURBVGiB7ZfBEoMgDEQ3TGf0/79WTvRSbUxFGohmcHintrB1QwQSSikldMwrN0AUd99TmlR/fJeeZAakUFIycrc+aMSlOR76kBvQmvDSh5N5XRAAXfQrXOOpf0YGeuYZAWgvGanx1D8jA4BuFY7meulDbkDzcE/9Ty20DfRazPVG8yaORIhEt+kkZv1AJMLEknmmtzC+PceiH+CGZiyn+gXz9nkyeHtN+gFuhBuUWJsHDPsBvvJHQfDfSlnSYHoT54K4yjzw2QM19Tjw3Q9Sn3uNpPmaGkhySS10tMrWK7/ynGLOktImtsS8H5AbNrexLd5/wDgDudOmdMS2sLuJ/z2Nam/jSy+ynDFJSynBx6zqoeZ+gBupKeZaM9HcD6xmaozICraG0dB4MwLwZgTgzQjAmxGANyMAb0YA3owAvHkDUQ3fJKBtFjsAAAAASUVORK5CYII=</Image>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/20.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAACzSURBVGiB7ZfRCoAgDEU3Cfr/z+1pvQUaUk7lsnHPWyy5Hs1UNTOTwBR0B2ahABoKoKEAGgqgoQAaCqChAJrwAkevoHpVz2bn9s548rW9kbUNW3aLjOZXn9BX47/vePHkl15hNmgUb374RVxEfCO6chZm8nPMQGRyCHj+7Sv3g5n8HDMgMjYKO3Zjb37pFVYEjeLJf52FnkLUw1w08iziqFAADQXQUAANBdBQAA0F0FAAzQ0aRUZPznoVaQAAAABJRU5ErkJggg==</Image>
+          <Image name="file:///C:/Users/alash325/AppData/Local/Temp/OpenModelica/21.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAAwAAAAMAgGAAAAVwL5hwAAAARzQklUCAgICHwIZIgAAAAJcEhZcwAACxMAAAsTAQCanBgAAADlSURBVGiB7ZnNCgMhDISjFPb9H7en7K2wFouZRPJTv5tEmY3B1SGNmZkS85oFWns/xszX9o9B9NtYgXHhyO5EpPpdsnh1Dgqi32cBrZAUVL//mJeCToTtqGUVNPo1KpCZGgkg/3bL+0CjX6MCRLJd2HEbo/p9FrAQkoLof72FPoGsj7lspD/EYf3AKuH8gJRQfgAhjB9ASX+IQ/gBDTUqkJkaCXj7AQ01KkDk7wdQQvkBhLB+YJXjB7yZ+gFv0lpKVX/AG1V/wJv/7g94c/oDmTkJWHD6AxEw6Q94Y9of8CbtY07KDQeVlDX+k81pAAAAAElFTkSuQmCC</Image>
         </TextCell>
       </GroupCell>
-      <GroupCell closed="false" >
-        <TextCell style="Section" >
+      <GroupCell closed="false">
+        <TextCell style="Section">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -52,9 +52,9 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Game of Life&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Game of Life&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell style="Graph" closed="false">
           <Input>model GameOfLife
   parameter Integer n = 10;
   parameter Integer initialAlive[:,2] = {{2,2},{2,1},{1,2},{3,3},{3,2}};
@@ -71,7 +71,7 @@ equation
 end GameOfLife;</Input>
           <Output>{GameOfLife}</Output>
         </GraphCell>
-        <TextCell style="Text" >
+        <TextCell style="Text">
           <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -79,10 +79,12 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
         </TextCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell style="Graph" closed="false">
           <Input>function firstGeneration
   input Integer M[:,:];
   input Integer I[:,2];
@@ -94,7 +96,7 @@ algorithm
 end firstGeneration;</Input>
           <Output>{firstGeneration}</Output>
         </GraphCell>
-        <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="false" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+        <GraphCell style="Graph" closed="false">
           <Input>function nextGeneration
   input Integer M[:,:];
   output Integer G[size(M,1), size(M,1)];
@@ -120,8 +122,8 @@ algorithm
 end nextGeneration;</Input>
           <Output>{nextGeneration}</Output>
         </GraphCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -129,11 +131,11 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Animation of GameOfLife (to be done)&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Animation of GameOfLife (to be done)&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
         </GroupCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -141,13 +143,18 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of GameOfLife&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of GameOfLife&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
-            <Input>simulate( GameOfLife );</Input>
-            <Output></Output>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulation( GameOfLife )</Input>
+            <Output>record SimulationResult
+    messages = "Simulation failed for model: GameOfLife
+Error: Too few equations, underdetermined system. The model has 2 equation(s) and 101 variable(s)
+Error: Internal error Transformation Module omc index Reduction Method dummyDerivative failed!
+"
+end SimulationResult;</Output>
           </GraphCell>
-          <TextCell style="Text" >
+          <TextCell style="Text">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -155,16 +162,21 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>PlotGameOfLife[lifeHistory]</Input>
-            <Output></Output>
+            <Output>
+OMC-ERROR: 
+"Error: Variable PlotGameOfLife[lifeHistory] not found in scope &lt;global scope>
+"</Output>
           </GraphCell>
         </GroupCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -172,18 +184,18 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Test of GameOfLife&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Test of GameOfLife&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>model test1
   GameOfLife g(initialAlive = {{1,1},{2,2},{3,3},{4,4},{5,5},{6,6},{7,7},{8,8},{9,9},{10,10},
   {1,10},{2,9},{3,8},{4,7},{5,6},{6,5},{7,4},{8,3},{9,2},{10,1}});
 end test1;</Input>
-            <Output></Output>
+            <Output>{test1}</Output>
           </GraphCell>
         </GroupCell>
-        <GroupCell closed="false" >
-          <TextCell style="Subsection" >
+        <GroupCell closed="false">
+          <TextCell style="Subsection">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -191,13 +203,18 @@ p, li { white-space: pre-wrap; }
 &lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of test1&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Simulation of test1&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
-            <Input>simulate( test1 );  //??Not yet implemented</Input>
-            <Output></Output>
+          <GraphCell style="Graph" closed="false">
+            <Input>simulation( test1 )  //??Not yet implemented</Input>
+            <Output>record SimulationResult
+    messages = "Simulation failed for model: test1
+Error: Too few equations, underdetermined system. The model has 2 equation(s) and 101 variable(s)
+Error: Internal error Transformation Module omc index Reduction Method dummyDerivative failed!
+"
+end SimulationResult;</Output>
           </GraphCell>
-          <TextCell style="Output" >
+          <TextCell style="Output">
             <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
 &lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
 p, li { white-space: pre-wrap; }
@@ -205,13 +222,18 @@ p, li { white-space: pre-wrap; }
 &lt;table style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
 &lt;tr>
 &lt;td style="border: none;">
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;/p>
-&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:8pt;">&lt;br />&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Courier New'; font-size:11pt; color:#000000;">&lt;br />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
           </TextCell>
-          <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.1" Antialiasing="false" MinorY="0.1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="1" closed="true" YLabel="" Area="wEgAAAAAAADALgAAAAAAAEBYwAAAAAAAQD0AAAAAAAA=" ShowGraph="false" Grid="true" XLabel="" Legend="false" >
+          <GraphCell style="Graph" closed="false">
             <Input>PlotGameOfLife[g.lifeHistory
 ]</Input>
-            <Output></Output>
+            <Output>
+OMC-ERROR: 
+"Error: Variable PlotGameOfLife[g.lifeHistory] not found in scope &lt;global scope>
+"</Output>
           </GraphCell>
         </GroupCell>
       </GroupCell>
