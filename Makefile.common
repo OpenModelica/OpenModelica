@@ -204,25 +204,25 @@ build/lib/omlibrary/stamp: libraries/README
 	touch $@
 omlibrary-internal:
 	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type d -not -path "*svn*" -exec install -m755 -d ../build/lib/omlibrary/{} \;)
-	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type f -not -path "*svn*" -exec install -m644 {} ../build/lib/omlibrary/{} \;)
+	(cd libraries/ && find $(OMLIBRARY_INTERNAL_DIRS) -type f -not -path "*svn*" -exec install -p -m644 {} ../build/lib/omlibrary/{} \;)
 omlibrary-32:
 	(cd "libraries/Modelica 3.2.1/Modelica" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/Modelica 3.2.1/{}" \;)
-	(cd "libraries/Modelica 3.2.1/Modelica" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../../build/lib/omlibrary/Modelica 3.2.1/{}" \;)
-	install -m644 "libraries/Modelica 3.2.1/Complex.mo" "build/lib/omlibrary/Complex 3.2.1.mo"
-	install -m644 "libraries/Modelica 3.2.1/ObsoleteModelica3.mo" "build/lib/omlibrary/ObsoleteModelica3 3.2.1.mo"
+	(cd "libraries/Modelica 3.2.1/Modelica" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/Modelica 3.2.1/{}" \;)
+	install -p -m644 "libraries/Modelica 3.2.1/Complex.mo" "build/lib/omlibrary/Complex 3.2.1.mo"
+	install -p -m644 "libraries/Modelica 3.2.1/ObsoleteModelica3.mo" "build/lib/omlibrary/ObsoleteModelica3 3.2.1.mo"
 	patch -d build/lib/omlibrary -p3 < "libraries/Modelica 3.2.1.patch"
 	find "build/lib/omlibrary/Modelica 3.2.1" -name "*.orig" -exec rm -f "{}" ";"
 omlibrary-services:
 	(cd "libraries/Modelica 3.2.1/ModelicaServices" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
-	(cd "libraries/Modelica 3.2.1/ModelicaServices" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaServices" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/ModelicaServices 3.2.1/{}" \;)
 	patch -d build/lib/omlibrary -p3 < "libraries/ModelicaServices 3.2.1.patch"
 	find "build/lib/omlibrary/ModelicaServices 3.2.1" -name "*.orig" -exec rm -f "{}" ";"
 omlibrary-reference:
 	(cd "libraries/Modelica 3.2.1/ModelicaReference" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaReference 3.2.1/{}" \;)
-	(cd "libraries/Modelica 3.2.1/ModelicaReference" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../../build/lib/omlibrary/ModelicaReference 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaReference" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/ModelicaReference 3.2.1/{}" \;)
 omlibrary-test:
 	(cd "libraries/Modelica 3.2.1/ModelicaTest" && find . -type d -not -path "*svn*" -exec install -m755 -d "../../../build/lib/omlibrary/ModelicaTest 3.2.1/{}" \;)
-	(cd "libraries/Modelica 3.2.1/ModelicaTest" && find . -type f -not -path "*svn*" -exec install -m644 {} "../../../build/lib/omlibrary/ModelicaTest 3.2.1/{}" \;)
+	(cd "libraries/Modelica 3.2.1/ModelicaTest" && find . -type f -not -path "*svn*" -exec install -p -m644 {} "../../../build/lib/omlibrary/ModelicaTest 3.2.1/{}" \;)
 
 # Run this command to update the omlibrary patch. Add more libraries as needed
 omlibrary-diff:
