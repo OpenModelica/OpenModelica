@@ -5765,8 +5765,9 @@ algorithm
   v := BackendVariable.getVarAt(vars,intAbs(i));
   s := BackendVariable.varStateSelect(v);
   si := BackendVariable.stateSelectToInteger(s);
-  b := BackendVariable.isStateVar(v);
-  oRow := List.consOnTrue(intLt(si,0) or not b,i,iRow);
+  oRow := List.consOnTrue(intLt(si,0),i,iRow);
+//  b := BackendVariable.isStateVar(v);
+//  oRow := List.consOnTrue(intLt(si,0) or not b,i,iRow);
 end incidenceMatrixElementElementfromEnhanced2_1;
 
 protected function checkAssignment
