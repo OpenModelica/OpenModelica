@@ -77,7 +77,7 @@ BIG NOTE WARNING!
     - take qtlibs from:
       https://www.ida.liu.se/~adrpo/omc/omdev/qtlibs/
       unpack it, point it by environment variable QTHOME
-    - svn checkout https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/tools/mingw
+    - svn checkout https://openmodelica.org/svn/OpenModelica/installers/windows/OMDev/tools/mingw
       -> to \trunk\build\MinGW
       Clean up (to be easy to add MinGW to the Setup.vdproj, otherwise it takes forever!):
        REMOVE all .svn directories from it! Search .svn, select all .svn directories, Delete!

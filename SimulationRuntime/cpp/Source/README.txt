@@ -6,4 +6,4 @@
 
 if you need it, use 3rdParty from OMDev\lib\3rdParty
 or from subversion here:
-https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev/lib/3rdParty
+https://openmodelica.org/svn/OpenModelica/installers/windows/OMDev/lib/3rdParty

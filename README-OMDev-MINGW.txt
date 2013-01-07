@@ -8,7 +8,7 @@ Adrian Pop, Adrian.Pop@liu.se, date above.
 
 
 1. Checkout the OMDev package from Subversion:
-   https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/OMDev
+   https://openmodelica.org/svn/OpenModelica/installers/windows/OMDev
    user: anonymous
    pass: none    <-- write "none" here
    + this package contains all prerequisites to compile OMC on Windows using MinGW+MSys
