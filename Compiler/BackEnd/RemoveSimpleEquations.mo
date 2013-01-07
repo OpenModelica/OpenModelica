@@ -3214,13 +3214,16 @@ algorithm
       list< BackendDAE.Var> varA,statescandidates,ovars,varJ;
       list< BackendDAE.Equation> eqns,oeqns;
       BackendVarTransform.VariableReplacements repl;
+      HashSet.HashSet hs;
       Boolean b,b1;
     case ({},_,_,_,_,_) then (listReverse(iAcc),inB,iStatesetrepl);
     case (BackendDAE.STATESET(rang,states,crA,varA,statescandidates,ovars,eqns,oeqns,crJ,varJ)::stateSets,_,_,_,_,_)
       equation
         repl = getAliasReplacements(iStatesetrepl,aliasVars);
         // do not replace the set variables
-        ovars = replaceOtherStateSetVars(ovars,vars,aliasVars,{});
+        hs = HashSet.emptyHashSet();
+        hs = List.fold(List.map(statescandidates,BackendVariable.varCref),BaseHashSet.add,hs);
+        ovars = replaceOtherStateSetVars(ovars,vars,aliasVars,hs,{});
         (eqns,b) = BackendVarTransform.replaceEquations(eqns,repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         (oeqns,b1) = BackendVarTransform.replaceEquations(oeqns,repl,SOME(BackendVarTransform.skipPreChangeEdgeOperator));
         oeqns = List.fold(oeqns,removeEqualLshRshEqns,{});
@@ -3266,29 +3269,40 @@ protected function replaceOtherStateSetVars
   author: Frenkel TUD 2012-12"
   input list< BackendDAE.Var> iVarLst;
   input BackendDAE.Variables vars;
-  input BackendDAE.Variables aliasVars;  
+  input BackendDAE.Variables aliasVars;
+  input HashSet.HashSet hs;
   input list< BackendDAE.Var> iAcc;
   output list< BackendDAE.Var> oVarLst;
 algorithm
-  oVarLst := matchcontinue(iVarLst,vars,aliasVars,iAcc)
+  oVarLst := matchcontinue(iVarLst,vars,aliasVars,hs,iAcc)
     local
       BackendDAE.Var var;
       list< BackendDAE.Var> varlst;
       DAE.ComponentRef cr;
       DAE.Exp exp;
-    case ({},_,_,_) then iAcc;
-    case (var::varlst,_,_,_)
+      Boolean b;
+    case ({},_,_,_,_) then iAcc;
+    case (var::varlst,_,_,_,_)
       equation
         cr = BackendVariable.varCref(var);
+        false = BaseHashSet.has(cr,hs);
         ({var},_) = BackendVariable.getVar(cr,aliasVars);
         exp = BackendVariable.varBindExp(var);
         cr::{} = Expression.extractCrefsFromExp(exp);
+        b = BaseHashSet.has(cr,hs);
         ({var},_) = BackendVariable.getVar(cr,vars);
+        varlst = List.consOnTrue(not b, var, iAcc);
       then
-        replaceOtherStateSetVars(varlst,vars,aliasVars,var::iAcc);
-    case (var::varlst,_,_,_)
+        replaceOtherStateSetVars(varlst,vars,aliasVars,hs,varlst);
+    case (var::varlst,_,_,_,_)
+      equation
+        cr = BackendVariable.varCref(var);
+        true = BaseHashSet.has(cr,hs);
       then
-        replaceOtherStateSetVars(varlst,vars,aliasVars,var::iAcc);
+        replaceOtherStateSetVars(varlst,vars,aliasVars,hs,iAcc);
+    case (var::varlst,_,_,_,_)
+      then
+        replaceOtherStateSetVars(varlst,vars,aliasVars,hs,var::iAcc);
   end matchcontinue;
 end replaceOtherStateSetVars;
 

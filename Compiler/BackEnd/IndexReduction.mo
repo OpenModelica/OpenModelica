@@ -2392,11 +2392,11 @@ algorithm
         ne = BackendDAEUtil.systemSize(isyst);
         // add the original equations to the systems
         syst = BackendEquation.equationsAddDAE(eqnslst1, isyst);
+        // add the found state sets for dynamic state selection to the system
+        (setIndex,syst) = addStateSets(stateSets,iSetIndex,syst);        
         // change dummy states
         dummyStates = List.map(dummyVars,BackendVariable.varCref);
         (syst,ht) = addDummyStates(dummyStates,syst,iHt);
-        // add the found state sets for dynamic state selection to the system
-        (setIndex,syst) = addStateSets(stateSets,iSetIndex,syst);        
         // update IncidenceMatrix
         (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
         // genereate new Matching
