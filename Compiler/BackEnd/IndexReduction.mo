@@ -1627,7 +1627,7 @@ algorithm
      then 
        (isyst,ishared,iHt,iSetIndex);
     // do state selection
-/*    case (syst as BackendDAE.EQSYSTEM(orderedVars=v,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),BackendDAE.SHARED(functionTree=funcs),(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,_),_,_)
+    case (syst as BackendDAE.EQSYSTEM(orderedVars=v,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),BackendDAE.SHARED(functionTree=funcs),(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,_),_,_)
       equation
         // do late Inline also in orgeqnslst
         orgEqnsLst = inlineOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),{});
@@ -1646,8 +1646,8 @@ algorithm
         Debug.fcall2(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst, "Final System with DummyStates");      
      then 
        (syst,shared,ht,setIndex);       
-*/    // do state selection
-    case (syst as BackendDAE.EQSYSTEM(orderedVars=v,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),BackendDAE.SHARED(functionTree=funcs),(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_)
+    // do state selection
+/*    case (syst as BackendDAE.EQSYSTEM(orderedVars=v,matching=BackendDAE.MATCHING(ass1=ass1,ass2=ass2)),BackendDAE.SHARED(functionTree=funcs),(so,orgEqnsLst,mapEqnIncRow,mapIncRowEqn,noofeqns),_,_)
       equation
         // do late Inline also in orgeqnslst
         orgEqnsLst = inlineOrgEqns(orgEqnsLst,(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()}),{});
@@ -1684,7 +1684,7 @@ algorithm
         Debug.fcall2(Flags.BLT_DUMP, BackendDump.dumpEqSystem, syst, "Final System with DummyStates");      
      then 
        (syst,shared,ht,setIndex);
-    else
+*/    else
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"- IndexReduction.dynamicStateSelectionWork failed!"});
       then
@@ -2356,7 +2356,7 @@ algorithm
       list<DAE.ComponentRef> dummyStates;  
       array<list<Integer>> mapEqnIncRow;
       array<Integer> mapIncRowEqn,ass1,ass2;    
-      Integer nfreeStates,neqns,setIndex,size; 
+      Integer nfreeStates,neqns,setIndex,ne,ne1,nv,nv1; 
       StateSets stateSets;
       DAE.FunctionTree funcs;
       BackendDAE.Variables vars;
@@ -2385,6 +2385,8 @@ algorithm
         (dummyVars,stateSets) = selectStatesWork1(nfreeStates,varlst,neqns,eqnslst,level,isyst,ishared,so,iMapEqnIncRow,iMapIncRowEqn,iHov,{},{});
         // get derivatives one order less
         lov = BackendVariable.varList(lowerOrderDerivatives(BackendVariable.listVar1(iHov),vars,so));
+        nv = BackendVariable.varsSize(BackendVariable.daeVars(isyst));
+        ne = BackendDAEUtil.systemSize(isyst);
         // add the original equations to the systems
         syst = BackendEquation.equationsAddDAE(eqnslst1, isyst);
         // change dummy states
@@ -2395,12 +2397,13 @@ algorithm
         // update IncidenceMatrix
         (syst,m,_,mapEqnIncRow,mapIncRowEqn) = BackendDAEUtil.getIncidenceMatrixScalar(syst,BackendDAE.SOLVABLE(), SOME(funcs));
         // genereate new Matching
-        ass1 = Util.arrayExpand(nfreeStates,ass1,-1);
-        ass2 =Util.arrayExpand(neqns,ass2,-1);
-        size = BackendDAEUtil.systemSize(syst);
-        true = BackendDAEEXT.setAssignment(size,size,ass2,ass1);
-        Matching.matchingExternalsetIncidenceMatrix(size, size, m);
-        BackendDAEEXT.matching(size, size, 5, -1, 0.0, 0);
+        nv1 = BackendVariable.varsSize(BackendVariable.daeVars(syst));
+        ne1 = BackendDAEUtil.systemSize(syst);
+        ass1 = Util.arrayExpand(nv1-nv,ass1,-1);
+        ass2 =Util.arrayExpand(ne1-ne,ass2,-1);
+        true = BackendDAEEXT.setAssignment(nv1,ne1,ass2,ass1);
+        Matching.matchingExternalsetIncidenceMatrix(nv1, ne1, m);
+        BackendDAEEXT.matching(nv1, ne1, 5, -1, 0.0, 0);
         BackendDAEEXT.getAssignment(ass2, ass1);
         syst = BackendDAEUtil.setEqSystemMatching(syst,BackendDAE.MATCHING(ass1,ass2,{}));
         // next level
@@ -2467,9 +2470,15 @@ algorithm
         true = intGt(nfreeStates,1);
         false = intGt(neqns,nfreeStates);
         Debug.fcall(Flags.BLT_DUMP, print, "try to select dummy vars with natural matching(newer)\n");
+        //  print("Vars " +& intString(nfreeStates) +& " Eqns " +& intString(neqns) +& "\n");
         // sort vars with heuristic
         hovvars = BackendVariable.listVar1(statecandidates);
-        hovvars = sortStateCandidatesVars(hovvars,BackendVariable.daeVars(isyst),so);
+        eqns1 = BackendEquation.listEquation(eqnslst);
+        syst = BackendDAE.EQSYSTEM(hovvars,eqns1,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
+        (me,meT,_,_) =  BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst,ishared);
+        m1 = incidenceMatrixfromEnhanced2(me,hovvars);
+        mT1 = BackendDAEUtil.transposeMatrix(m1,nfreeStates);
+        hovvars = sortStateCandidatesVars(hovvars,BackendVariable.daeVars(isyst),so,SOME(mT1));
         // generate incidence matrix from system and equations of that level and the states of that level
         nv = BackendVariable.varsSize(vars);
         ne = BackendDAEUtil.equationSize(eqns);
@@ -2758,7 +2767,6 @@ algorithm
     // i < n 
     case (e::rest, _, _, _, _, _, _, _, _, _, _)
       equation
-      print("Index: " +& intString(index) +& " SIndex: " +& intString(sindex) +& "\n");
         // compute the row
         (row,size) = BackendDAEUtil.incidenceRow(e, vars, BackendDAE.SOLVABLE(), SOME(functionTree), {});
         rowSize = sindex + size;
@@ -2898,7 +2906,7 @@ algorithm
         
         // sort vars with heuristic
         vars = BackendVariable.listVar1(varlst);
-        vars = sortStateCandidatesVars(vars,BackendVariable.daeVars(isyst),so);
+        vars = sortStateCandidatesVars(vars,BackendVariable.daeVars(isyst),so,NONE());
         (vars,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars,setVarKind,BackendDAE.VARIABLE());
         
         eqns = BackendEquation.listEquation(eqnslst);
@@ -4056,7 +4064,7 @@ algorithm
         Debug.fcall(Flags.BLT_DUMP, print, "try to select dummy vars with natural matching\n");
         
         // sort vars with heuristic
-        vars1 = sortStateCandidatesVars(vars,BackendVariable.daeVars(isyst),so);
+        vars1 = sortStateCandidatesVars(vars,BackendVariable.daeVars(isyst),so,NONE());
 
         (vars1,_) = BackendVariable.traverseBackendDAEVarsWithUpdate(vars1,setVarKind,BackendDAE.VARIABLE());
         syst = BackendDAE.EQSYSTEM(vars1,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
@@ -4107,10 +4115,11 @@ protected function sortStateCandidatesVars
   input BackendDAE.Variables inVars;
   input BackendDAE.Variables allVars;
   input BackendDAE.StateOrder so;
+  input Option<BackendDAE.IncidenceMatrix> m;
   output BackendDAE.Variables outStates;
 algorithm
   outStates:=
-  matchcontinue (inVars,allVars,so)
+  matchcontinue (inVars,allVars,so,m)
     local
       Integer varsize;
       list<Integer> varIndices;
@@ -4118,10 +4127,10 @@ algorithm
       list<tuple<DAE.ComponentRef,Integer,Real>> prioTuples;
       list<BackendDAE.Var> vlst;
 
-    case (_,_,_)
+    case (_,_,_,_)
       equation
         varsize = BackendVariable.varsSize(inVars);
-        prioTuples = calculateVarPriorities(1,inVars,varsize,allVars,so,{});
+        prioTuples = calculateVarPriorities(1,inVars,varsize,allVars,so,m,{});
         prioTuples = List.sort(prioTuples,sortprioTuples);
         varIndices = List.map(prioTuples,Util.tuple32);
         vlst = List.map1r(varIndices,BackendVariable.getVarAt,inVars);
@@ -4156,27 +4165,28 @@ protected function calculateVarPriorities
   input Integer varsSize;
   input BackendDAE.Variables allVars;
   input BackendDAE.StateOrder so;
+  input Option<BackendDAE.IncidenceMatrix> m;
   input list<tuple<DAE.ComponentRef,Integer,Real>> iTuples;
   output list<tuple<DAE.ComponentRef,Integer,Real>> tuples;
 algorithm
-  tuples := matchcontinue(index,vars,varsSize,allVars,so,iTuples)
+  tuples := matchcontinue(index,vars,varsSize,allVars,so,m,iTuples)
     local 
       DAE.ComponentRef varCref;
       BackendDAE.Var v;
       Real prio,prio1,prio2;
     
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         true = intLe(index,varsSize);
         v = BackendVariable.getVarAt(vars,index);
         varCref = BackendVariable.varCref(v);
         prio1 = varStateSelectPrio(v);
-        prio2 = varStateSelectHeuristicPrio(v,allVars,so);
+        prio2 = varStateSelectHeuristicPrio(v,allVars,so,index,m);
         prio = prio1 +. prio2;
         Debug.fcall(Flags.DUMMY_SELECT,BackendDump.debugStrCrefStrRealStrRealStrRealStr,("Calc Prio for ",varCref,"\n Prio StateSelect : ",prio1,"\n Prio Heuristik : ",prio2,"\n ### Prio Result : ",prio,"\n"));
       then
-        calculateVarPriorities(index+1,vars,varsSize,allVars,so,(varCref,index,prio)::iTuples);
-    case (_,_,_,_,_,_)
+        calculateVarPriorities(index+1,vars,varsSize,allVars,so,m,(varCref,index,prio)::iTuples);
+    case (_,_,_,_,_,_,_)
       equation
         false = intLe(index,varsSize);
       then
@@ -4190,17 +4200,20 @@ protected function varStateSelectHeuristicPrio
   input BackendDAE.Var v;
   input BackendDAE.Variables vars;
   input BackendDAE.StateOrder so;
+  input Integer index;
+  input Option<BackendDAE.IncidenceMatrix> m;
   output Real prio;
 protected
-  Real prio1,prio2,prio3,prio4,prio5;
+  Real prio1,prio2,prio3,prio4,prio5,prio6;
 algorithm
   prio1 := varStateSelectHeuristicPrio1(v);
   prio2 := varStateSelectHeuristicPrio2(v);
   prio3 := varStateSelectHeuristicPrio3(v);
   prio4 := varStateSelectHeuristicPrio4(v,so,vars);
   prio5 := varStateSelectHeuristicPrio5(v);
-  prio:= prio1 +. prio2 +. prio3 +. prio4 +. prio5;
-  printVarListtateSelectHeuristicPrio(prio1,prio2,prio3,prio4,prio5);
+  prio6 := varStateSelectHeuristicPrio6(v,index,m);
+  prio:= prio1 +. prio2 +. prio3 +. prio4 +. prio5 +. prio6;
+  printVarListtateSelectHeuristicPrio(prio1,prio2,prio3,prio4,prio5,prio6);
 end varStateSelectHeuristicPrio;
 
 protected function printVarListtateSelectHeuristicPrio
@@ -4209,9 +4222,10 @@ protected function printVarListtateSelectHeuristicPrio
   input Real Prio3;
   input Real Prio4;
   input Real Prio5;
+  input Real Prio6;
 algorithm
-  _ := matchcontinue(Prio1,Prio2,Prio3,Prio4,Prio5)
-    case(_,_,_,_,_)
+  _ := matchcontinue(Prio1,Prio2,Prio3,Prio4,Prio5,Prio6)
+    case(_,_,_,_,_,_)
       equation
         true = Flags.isSet(Flags.DUMMY_SELECT);
         print("Prio 1 : " +& realString(Prio1) +& "\n");
@@ -4219,11 +4233,34 @@ algorithm
         print("Prio 3 : " +& realString(Prio3) +& "\n");
         print("Prio 4 : " +& realString(Prio4) +& "\n");
         print("Prio 5 : " +& realString(Prio5) +& "\n");
+        print("Prio 6 : " +& realString(Prio6) +& "\n");
       then
         ();
     else then ();        
   end matchcontinue;
 end printVarListtateSelectHeuristicPrio;
+
+protected function varStateSelectHeuristicPrio6
+"function varStateSelectHeuristicPrio6
+  author: Frenkel TUD 2013-01
+  Helper function to varStateSelectHeuristicPrio.
+  added prio for states/variables, good state have much edges -> brackes loops"
+  input BackendDAE.Var v;
+  input Integer index;
+  input Option<BackendDAE.IncidenceMatrix> om;
+  output Real prio;
+algorithm
+  prio := match(v,index,om)
+    local 
+      list<Integer> row;
+      BackendDAE.IncidenceMatrix m;
+    case(_,_,NONE()) then 0.0;
+    case(_,_,SOME(m))
+      equation
+        row = m[index];
+      then intReal(listLength(row));
+  end match;
+end varStateSelectHeuristicPrio6;
 
 protected function varStateSelectHeuristicPrio5
 "function varStateSelectHeuristicPrio5
@@ -5765,9 +5802,9 @@ algorithm
   v := BackendVariable.getVarAt(vars,intAbs(i));
   s := BackendVariable.varStateSelect(v);
   si := BackendVariable.stateSelectToInteger(s);
-  oRow := List.consOnTrue(intLt(si,0),i,iRow);
-//  b := BackendVariable.isStateVar(v);
-//  oRow := List.consOnTrue(intLt(si,0) or not b,i,iRow);
+//  oRow := List.consOnTrue(intLt(si,0),i,iRow);
+  b := BackendVariable.isStateVar(v);
+  oRow := List.consOnTrue(intLt(si,0) or not b,i,iRow);
 end incidenceMatrixElementElementfromEnhanced2_1;
 
 protected function checkAssignment
