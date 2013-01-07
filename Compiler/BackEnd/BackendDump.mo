@@ -750,6 +750,7 @@ algorithm
       list<tuple<Integer,list<Integer>>> eqnsvartpllst;
       Boolean b;
       String s;
+      Option<list<tuple<Integer, Integer, BackendDAE.Equation>>> jac;
     case ({},_,_)  then (); 
     case (BackendDAE.SINGLEEQUATION(eqn=e,var=v)::rest,_,_) 
       equation
@@ -772,13 +773,14 @@ algorithm
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();
-    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst,jacType=jacType)::rest,_,_) 
+    case (BackendDAE.EQUATIONSYSTEM(eqns=elst,vars=vlst,jac=jac,jacType=jacType)::rest,_,_) 
       equation
         print("Equationsystem " +& jacobianTypeStr(jacType) +& ":\n");
         varlst = List.map1r(vlst, BackendVariable.getVarAt, vars);
         printVarList(varlst);
         eqnlst = BackendEquation.getEqns(elst,eqns); 
         printEquationList(eqnlst);
+        print("Jac:\n" +& dumpJacobianStr(jac) +& "\n");
         dumpEqnsSolved2(rest,eqns,vars);
       then 
         ();

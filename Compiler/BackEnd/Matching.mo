@@ -5481,6 +5481,14 @@ algorithm
   end match;
 end matchingExternal;
 
+protected function countincidenceMatrixElementEntries
+  input Integer i;
+  input Integer inCount;
+  output Integer outCount;
+algorithm
+  outCount := Util.if_(intGt(i,0),inCount+1,inCount);
+end countincidenceMatrixElementEntries;
+
 protected function countincidenceMatrixEntries
   input Integer i;
   input BackendDAE.IncidenceMatrix m;
@@ -5489,15 +5497,13 @@ protected function countincidenceMatrixEntries
 algorithm
   outCount := match(i,m,inCount)
     local 
-      list<Integer> lst;
       Integer l;
     case(0,_,_) then inCount;
     else
       equation
-        lst = List.select(m[i], Util.intPositive);
-        l = listLength(lst);   
+        l = List.fold(m[i], countincidenceMatrixElementEntries, inCount);
       then 
-        countincidenceMatrixEntries(i-1,m,inCount + l);
+        countincidenceMatrixEntries(i-1,m,l);
   end match;
 end countincidenceMatrixEntries;
 
@@ -6366,8 +6372,8 @@ algorithm
   vec2 := arrayCreate(nEqns1,-1);
   (vec1,vec2) := singularSystemCheckMatch(nVars1,nEqns1,BackendDAE.EQSYSTEM(vars,eqns,SOME(m),SOME(mT),BackendDAE.NO_MATCHING(),stateSets),ishared,vec1,vec2,inArg,matchingAlgorithmfunc,extMatchingAlgorithmFunc);
   /*
-    matchingExternalsetIncidenceMatrix(nVars1, nEqns, m);
-    BackendDAEEXT.matching(nVars1, nEqns, 5, -1, 0.0, 1);
+    matchingExternalsetIncidenceMatrix(nVars1, nEqns1, m);
+    BackendDAEEXT.matching(nVars1, nEqns1, 5, -1, 0.0, 1);
     BackendDAEEXT.getAssignment(vec2, vec1);
 
     print("singularSystemCheck:\n");

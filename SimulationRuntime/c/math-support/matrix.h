@@ -91,10 +91,16 @@ _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
  if(info < 0) { \
    INFO3(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
    data->simulationInfo.found_solution = -1; \
+   if(!data->simulationInfo.initial){ \
+      WARNING3(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f. Argument %d illegal.\n",id,data->localData[0]->timeValue,info); \
+   } \
  } \
  else if(info > 0) { \
    INFO2(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
    data->simulationInfo.found_solution = -1; \
+   if(!data->simulationInfo.initial){ \
+      WARNING2(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
+   } \
  } \
 free(ipiv); \
 } while(0) /* (no trailing ; ) */

@@ -1360,6 +1360,15 @@ algorithm
       then
         DAE.BINARY(DAE.BINARY(e1,DAE.MUL_SCALAR_PRODUCT(tp),e2_1),DAE.ADD_ARR(tp),
           DAE.BINARY(e1_1,DAE.MUL_SCALAR_PRODUCT(tp),e2));
+    
+    /* f\'g + fg\' */
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_MATRIX_PRODUCT(ty = tp),exp2 = e2),_,_,_)
+      equation
+        e1_1 = differentiateExp(e1, inComponentRef, differentiateIfExp,inFuncs);
+        e2_1 = differentiateExp(e2, inComponentRef, differentiateIfExp,inFuncs);
+      then
+        DAE.BINARY(DAE.BINARY(e1,DAE.MUL_MATRIX_PRODUCT(tp),e2_1),DAE.ADD_ARR(tp),
+          DAE.BINARY(e1_1,DAE.MUL_MATRIX_PRODUCT(tp),e2)); 
 
     // (f'g - fg' ) / g^2
     case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp),exp2 = e2),_,_,_)
