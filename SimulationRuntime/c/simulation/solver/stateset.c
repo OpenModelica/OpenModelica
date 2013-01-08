@@ -44,6 +44,9 @@ void initializeStateSetJacobians(DATA *data)
   for (i=0;i<data->modelData.nStateSets;i++)
   {
     STATE_SET_DATA *set = &(data->simulationInfo.stateSetData[i]);
+    unsigned int aid = set->A->id - data->modelData.integerVarsData[0].info.id;
+    modelica_integer *A = &(data->localData[0]->integerVars[aid]);
+    memset(A,0,set->nCandidates*set->nStates*sizeof(modelica_integer));
     if(set->initialAnalyticalJacobian(data))
     {
       THROW("Error, can not initialze Jacobians for dynamic state selection");
@@ -55,14 +58,14 @@ void initializeStateSetJacobians(DATA *data)
     }
     for (n=0;n<set->nCandidates;n++)
     {
-      set->colPivot[n] = n;
+      set->colPivot[n] = set->nCandidates-n-1;
     }
-/*    for (n=0;n<set->nStates;n++)
+    for (n=0;n<set->nStates;n++)
     {
-      /* set A[row,col] 
-      set_matrix_elt(set->A,n,n,set->nCandidates,1);
+      /* set A[row,col] */
+      set_matrix_elt(A,n,n,set->nStates,1);
     }
-*/  }
+  }
 }
 
 
@@ -154,7 +157,7 @@ void setAMatrix(modelica_integer* newEnable, modelica_integer nCandidates, model
       unsigned int sid = states[row]->id-firstrealid;
       INFO1(LOG_DSS," select %s\n",statecandidates[col]->name);
       /* set A[row,col] */
-      set_matrix_elt(A,col,row,nCandidates,1);
+      set_matrix_elt(A,row,col,nStates,1);
       /* reinit state */
       data->localData[0]->realVars[sid] = data->localData[0]->realVars[id];
       row++;

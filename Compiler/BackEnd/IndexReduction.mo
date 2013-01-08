@@ -6748,7 +6748,7 @@ algorithm
   oAVars := List.map1(oAVars,BackendVariable.setVarFixed,true);
   // add start value A[i,j] = if i==j then 1 else 0 via initial equations
   oAVars := List.map1(oAVars,BackendVariable.setVarStartValue,DAE.ICONST(0));
-  oAVars := setSetAStart(oAVars,1,1,nStates,{});
+  oAVars := setSetAStart(oAVars,1,1,setsize,{});
   tp := Util.if_(intGt(nCEqns,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nCEqns)}, DAE.emptyTypeSource),DAE.T_REAL_DEFAULT);
   ocrJ := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("J",tp,{}));
   oJVars := generateArrayVar(ocrJ,BackendDAE.VARIABLE(),tp,NONE());
@@ -6768,13 +6768,12 @@ algorithm
     local
       BackendDAE.Var v;
       list<BackendDAE.Var> rest;
-      Integer n1,r1;
-      DAE.Exp start;
+      Integer n1,r1,start;
     case({},_,_,_,_) then listReverse(iAcc);
     case(v::rest,_,_,_,_)
       equation
-        start = Util.if_(intEq(n,r),DAE.ICONST(1),DAE.ICONST(0));
-        v = BackendVariable.setVarStartValue(v,start);
+        start = Util.if_(intEq(n,r),1,0);
+        v = BackendVariable.setVarStartValue(v,DAE.ICONST(start));
         n1 = Util.if_(intEq(n,nStates),1,n+1);
         r1 = Util.if_(intEq(n,nStates),r+1,r);
       then
