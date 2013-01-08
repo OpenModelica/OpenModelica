@@ -3579,6 +3579,20 @@ algorithm
   end match;
 end getPropType;
 
+public function setPropType "Set the Type from Properties."
+  input Properties inProperties;
+  input Type ty;
+  output Properties outProperties;
+algorithm
+  outProperties := match (inProperties,ty)
+    local
+      DAE.Const constFlag;
+      DAE.TupleConst tupleConst;
+    case (DAE.PROP(constFlag = constFlag),_) then DAE.PROP(ty,constFlag);
+    case (DAE.PROP_TUPLE(tupleConst = tupleConst),_) then DAE.PROP_TUPLE(ty,tupleConst);
+  end match;
+end setPropType;
+
 public
  type TypeMemoryEntry = tuple<DAE.Type, DAE.Type>;
  type TypeMemoryEntryList = list<TypeMemoryEntry>;

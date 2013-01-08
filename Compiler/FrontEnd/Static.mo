@@ -7075,8 +7075,71 @@ function: elabCallArgs
 algorithm
   (outCache,SOME((outExp,outProperties))) :=
   elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Util.makeStatefulBoolean(false),inInteractiveInteractiveSymbolTableOption,inPrefix,info);
+  (outCache,outProperties) := elabCallArgsEvaluateArrayLength(outCache,inEnv,outProperties,inPrefix,info);
 end elabCallArgs;
 
+protected function elabCallArgsEvaluateArrayLength "Evaluate array dimensions in the returned type. For a call f(n) we might get Integer[n] back, where n is a parameter expression.
+We consider any such parameter structural since it decides the dimension of an array.
+We fall back to not evaluating the parameter if we fail since the dimension may not be structural (used in another call or reduction, etc)."
+  input Env.Cache inCache;
+  input Env.Env env;
+  input DAE.Properties inProperties;
+  input Prefix.Prefix inPrefix;
+  input Absyn.Info info;
+  output Env.Cache outCache;
+  output DAE.Properties outProperties;
+algorithm
+  (outCache,outProperties) := matchcontinue (inCache,env,inProperties,inPrefix,info)
+    local
+      Env.Cache cache;
+      DAE.Type ty;
+      /* Unsure if we want to evaluate dimensions inside function scope */
+    case (_,Env.FRAME(scopeType = SOME(Env.CLASS_SCOPE()))::_,_,_,_)
+      equation
+        ty = Types.getPropType(inProperties);
+        ((ty,(cache,_))) = Types.traverseType((ty,(inCache,env)),elabCallArgsEvaluateArrayLength2);
+      then (cache,Types.setPropType(inProperties,ty));
+    else (inCache,inProperties);
+  end matchcontinue;
+end elabCallArgsEvaluateArrayLength;
+
+protected function elabCallArgsEvaluateArrayLength2
+  input tuple<DAE.Type,tuple<Env.Cache,Env.Env>> inTpl;
+  output tuple<DAE.Type,tuple<Env.Cache,Env.Env>> outTpl;
+algorithm
+  (outTpl) := matchcontinue (inTpl)
+    local
+      tuple<Env.Cache,Env.Env> tpl;
+      DAE.Dimensions dims;
+      DAE.TypeSource source;
+      DAE.Type ty;
+    case ((DAE.T_ARRAY(ty,dims,source),tpl))
+      equation
+        (dims,tpl) = List.mapFold(dims,elabCallArgsEvaluateArrayLength3,tpl);
+      then ((DAE.T_ARRAY(ty,dims,source),tpl));
+    else inTpl;
+  end matchcontinue;
+end elabCallArgsEvaluateArrayLength2;
+
+protected function elabCallArgsEvaluateArrayLength3
+  input DAE.Dimension inDim;
+  input tuple<Env.Cache,Env.Env> inTpl;
+  output DAE.Dimension outDim;
+  output tuple<Env.Cache,Env.Env> outTpl;
+algorithm
+  (outDim,outTpl) := matchcontinue (inDim,inTpl)
+    local
+      Integer i;
+      DAE.Exp exp;
+      Env.Cache cache;
+      Env.Env env;
+    case (DAE.DIM_EXP(exp),(cache,env))
+      equation
+        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env,exp,false,NONE(),Ceval.NO_MSG());
+      then (DAE.DIM_INTEGER(i),(cache,env));
+    else (inDim,inTpl);
+  end matchcontinue;
+end elabCallArgsEvaluateArrayLength3;
 
 protected function createInputVariableReplacements
 "@author: adrpo
