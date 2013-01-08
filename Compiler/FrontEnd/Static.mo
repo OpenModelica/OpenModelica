@@ -11776,7 +11776,7 @@ algorithm
       DAE.Const c,c1,c2,c3;
       DAE.Exp exp,e1,e2,e3,e2_1,e3_1;
       list<Env.Frame> env;
-      DAE.Type t2,t3,t2_1,t3_1,t1;
+      DAE.Type t2,t3,t2_1,t3_1,t1,ty;
       Boolean impl;
       Option<Interactive.SymbolTable> st;
       Ident e_str,t_str,e1_str,t1_str,e2_str,t2_str,pre_str;
@@ -11796,18 +11796,20 @@ algorithm
     case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
         (e1,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true);
-        (e2_1,t2_1) = Types.matchType(e2, t2, t3, true);
+        (t2_1,t3_1) = Types.ifExpMakeDimsUnknown(t2,t3);
+        (e2_1,t2_1) = Types.matchType(e2, t2_1, t3_1, true);
         c = constIfexp(e1, c1, c2, c3) "then-part type converted to match else-part" ;
-        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2_1, e3, c1, impl, st, inInfo);
+        (cache,exp,ty) = cevalIfexpIfConstant(cache,env, e1, e2_1, e3, c1, t2, t3, t2_1, impl, st, inInfo);
       then
-        (cache,exp,DAE.PROP(t2_1,c));
+        (cache,exp,DAE.PROP(ty,c));
 
     case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st,_, _)
       equation
         (e1,_) = Types.matchType(e1, t1, DAE.T_BOOL_DEFAULT, true);
+        (t2_1,t3_1) = Types.ifExpMakeDimsUnknown(t2,t3);
         (e3_1,t3_1) = Types.matchType(e3, t3, t2, true);
         c = constIfexp(e1, c1, c2, c3) "else-part type converted to match then-part" ;
-        (cache,exp) = cevalIfexpIfConstant(cache,env, e1, e2, e3_1, c1, impl, st, inInfo);
+        (cache,exp,ty) = cevalIfexpIfConstant(cache,env, e1, e2, e3_1, c1, t2, t3, t3_1, impl, st, inInfo);
       then
         (cache,exp,DAE.PROP(t2,c));
 
@@ -11852,14 +11854,18 @@ protected function cevalIfexpIfConstant "function: cevalIfexpIfConstant
   input DAE.Exp inExp3;
   input DAE.Exp inExp4;
   input DAE.Const inConst5;
+  input DAE.Type trueType;
+  input DAE.Type falseType;
+  input DAE.Type defaultType;
   input Boolean inBoolean6;
   input Option<Interactive.SymbolTable> inST;
   input Absyn.Info inInfo;
   output Env.Cache outCache;
   output DAE.Exp outExp;
+  output DAE.Type outType;
 algorithm
-  (outCache,outExp) :=
-  matchcontinue (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,inBoolean6,inST,inInfo)
+  (outCache,outExp,outType) :=
+  matchcontinue (inCache,inEnv1,inExp2,inExp3,inExp4,inConst5,trueType,falseType,defaultType,inBoolean6,inST,inInfo)
     local
       list<Env.Frame> env;
       DAE.Exp e1,e2,e3,res;
@@ -11867,23 +11873,33 @@ algorithm
       Option<Interactive.SymbolTable> st;
       Env.Cache cache;
       Ceval.Msg msg;
+      DAE.Type ty,t1,t2;
 
-    case (cache,env,e1,e2,e3,DAE.C_VAR(),impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3));
-    case (cache,env,e1,e2,e3,DAE.C_PARAM(),impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3));
-    case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st,_)
+    case (cache,env,e1,e2,e3,DAE.C_VAR(),_,_,_,impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
+    case (cache,env,e1,e2,e3,DAE.C_PARAM(),_,_,_,impl,st,_)
+      equation
+        false = valueEq(Types.getDimensionSizes(trueType),Types.getDimensionSizes(falseType));
+        // We have different dimensions in the branches, so we should consider the condition structural in order to handle more models
+        (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st, Ceval.NO_MSG());
+        res = Util.if_(cond, e2, e3);
+        ty = Util.if_(cond, trueType, falseType);
+      then (cache,res,ty);
+    case (cache,env,e1,e2,e3,DAE.C_PARAM(),_,_,_,impl,st,_) then (cache,DAE.IFEXP(e1,e2,e3),defaultType);
+    case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,impl,st,_)
       equation
         msg = Util.if_(Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env), Ceval.NO_MSG(), Ceval.MSG(inInfo));
         (cache,Values.BOOL(cond),_) = Ceval.ceval(cache,env, e1, impl, st,msg);
         res = Util.if_(cond, e2, e3);
+        ty = Util.if_(cond, trueType, falseType);
       then
-        (cache,res);
+        (cache,res,ty);
     // Allow ceval of constant if expressions to fail. This is needed because of
     // the stupid Lookup which instantiates packages without modifiers.
-    case (cache,env,e1,e2,e3,DAE.C_CONST(),impl,st,_)
+    case (cache,env,e1,e2,e3,DAE.C_CONST(),_,_,_,impl,st,_)
       equation
         true = Env.inFunctionScope(env) or Env.inForOrParforIterLoopScope(env);
       then
-        (cache, DAE.IFEXP(e1, e2, e3));
+        (cache, DAE.IFEXP(e1, e2, e3),defaultType);
     
   end matchcontinue;
 end cevalIfexpIfConstant;

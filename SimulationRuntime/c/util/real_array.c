@@ -1567,9 +1567,11 @@ void symmetric_real_array(const real_array_t * a,real_array_t* dest)
 void cross_real_array(const real_array_t * x,const real_array_t * y, real_array_t* dest)
 {
     /* Assert x and y are vectors */
-    /* Assert x and y have size 3 */
-    /* Assert dest is a vector */
-    /* Assert that dest have size 3*/
+    assert((x->ndims == 1) && (x->dim_size[0] == 3));
+    /* Assert y is vector of size 3 */
+    assert((y->ndims == 1) && (y->dim_size[0] == 3));
+    /* Assert dest is vector of size 3 */
+    assert((dest->ndims == 1) && (dest->dim_size[0] == 3));
 
     real_set(dest, 0, (real_get(x,1) * real_get(y,2)) - (real_get(x,2) * real_get(y,1)));
     real_set(dest, 1, (real_get(x,2) * real_get(y,0)) - (real_get(x,0) * real_get(y,2)));

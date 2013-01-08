@@ -7463,6 +7463,34 @@ algorithm
   end match;
 end classTypeEqualIfRecord;
 
+public function ifExpMakeDimsUnknown "If one branch of an if-expression has truly unknown dimensions they both will need to return unknown dimensions for type-checking to work"
+  input DAE.Type ty1;
+  input DAE.Type ty2;
+  output DAE.Type oty1;
+  output DAE.Type oty2;
+algorithm
+  (oty1,oty2) := match (ty1,ty2)
+    local
+      DAE.Type inner1,inner2;
+      DAE.TypeSource ts1,ts2;
+      DAE.Dimensions dims2;
+      DAE.Dimension d,d1,d2;
+    case (DAE.T_ARRAY(ty=inner1,dims={DAE.DIM_UNKNOWN()},source=ts1),DAE.T_ARRAY(ty=inner2,dims={_},source=ts2))
+      equation
+        (oty1,oty2) = ifExpMakeDimsUnknown(inner1,inner2);
+      then (DAE.T_ARRAY(inner1,DAE.DIM_UNKNOWN()::{},ts1),DAE.T_ARRAY(inner2,DAE.DIM_UNKNOWN()::{},ts2));
+    case (DAE.T_ARRAY(ty=inner1,dims={_},source=ts1),DAE.T_ARRAY(ty=inner2,dims={DAE.DIM_UNKNOWN()},source=ts2))
+      equation
+        (oty1,oty2) = ifExpMakeDimsUnknown(inner1,inner2);
+      then (DAE.T_ARRAY(inner1,DAE.DIM_UNKNOWN()::{},ts1),DAE.T_ARRAY(inner2,DAE.DIM_UNKNOWN()::{},ts2));
+    case (DAE.T_ARRAY(ty=inner1,dims={d1},source=ts1),DAE.T_ARRAY(ty=inner2,dims={d2},source=ts2))
+      equation
+        (oty1,oty2) = ifExpMakeDimsUnknown(inner1,inner2);
+      then (DAE.T_ARRAY(inner1,{d1},ts1),DAE.T_ARRAY(inner2,{d2},ts2));
+    else (ty1,ty2);
+  end match;
+end ifExpMakeDimsUnknown;
+
 public function fixUnknownDimensions "Fixes unknown dimensions by getting hints from the final expression"
   input DAE.Type ty1;
   input DAE.Type ty2 "Simplified type, but might have more dimensions known";
