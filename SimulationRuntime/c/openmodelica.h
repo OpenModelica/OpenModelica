@@ -258,6 +258,7 @@ struct type_desc_s {
 #define fmax(x, y) ((x>y)?x:y)
 #define fmin(x, y) ((x<y)?x:y)
 #define snprintf sprintf_s
+#define trunc(a) ((double)((int)(a)))
 #endif
 
 /* Define _OMC_(s)random.*/

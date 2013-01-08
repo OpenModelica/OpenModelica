@@ -1029,6 +1029,7 @@ modelica_integer _event_div_integer(modelica_integer x1, modelica_integer x2, mo
     value1 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index];
     value2 = (modelica_integer)data->simulationInfo.mathEventsValuePre[index+1];
   }
+  ASSERT1(value2 != 0,"event_div_integer failt at time %f because x2 is zero!",data->localData[0]->timeValue);
   return ldiv(value1,value2).quot;
 }
 
