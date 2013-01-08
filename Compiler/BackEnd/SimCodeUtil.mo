@@ -82,6 +82,7 @@ protected import ExpressionSimplify;
 protected import ExpressionSolve;
 protected import Flags;
 protected import HashSet;
+protected import IndexReduction;
 protected import Initialization;
 protected import Inline;
 protected import InlineSolver;
@@ -1893,7 +1894,7 @@ algorithm
       equation
         funcs = BackendDAEUtil.getFunctions(shared);
         (syst,_,_) = BackendDAEUtil.getIncidenceMatrixfromOption(syst, BackendDAE.ABSOLUTE(),SOME(funcs));
-        stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);        
+        stateeqnsmark = arrayCreate(BackendDAEUtil.equationArraySizeDAE(syst), 0);
         stateeqnsmark = BackendDAEUtil.markStateEquations(syst, stateeqnsmark, ass1);
         (odeEquations1,algebraicEquations1,allEquations1,uniqueEqIndex,tempvars) = createEquationsForSystem1(stateeqnsmark, syst, shared, comps, helpVarInfo,iuniqueEqIndex,itempvars);
         odeEquations = odeEquations1::odeEquations;
@@ -1901,7 +1902,6 @@ algorithm
         allEquations = listAppend(allEquations,allEquations1);
         (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars) = createEquationsForSystems(systs,shared,helpVarInfo,uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars);
      then (uniqueEqIndex,odeEquations,algebraicEquations,allEquations,tempvars);
-         
   end match;
 end createEquationsForSystems;
 
@@ -4198,17 +4198,16 @@ algorithm
       tuple<list<SimCode.SimEqSystem>,Integer,list<SimCode.SimVar>> tpl;
       list<SimCode.StateSet> equations;
       Integer uniqueEqIndex,numStateSets;
-      list<SimCode.SimVar> tempvars;      
-      DAE.FunctionTree functree;
+      list<SimCode.SimVar> tempvars;
+      BackendDAE.StrongComponents comps;
     // no stateSet
     case (BackendDAE.EQSYSTEM(stateSets={}),_) then (isyst,sharedChanged);
     // sets
-    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching,stateSets=stateSets),
+    case (BackendDAE.EQSYSTEM(orderedVars=vars,orderedEqs=eqns,m=m,mT=mT,matching=matching as BackendDAE.MATCHING(comps=comps),stateSets=stateSets),
          (shared,(equations,uniqueEqIndex,tempvars,numStateSets)))
       equation
-        knvars = BackendVariable.daeKnVars(shared);
-        functree = BackendDAEUtil.getFunctions(shared);
-        (vars,equations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(stateSets,vars,knvars,functree,equations,uniqueEqIndex,tempvars,numStateSets);
+
+        (vars,equations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(stateSets,vars,eqns,shared,comps,equations,uniqueEqIndex,tempvars,numStateSets);
       then
         (BackendDAE.EQSYSTEM(vars,eqns,m,mT,matching,stateSets),(shared,(equations,uniqueEqIndex,tempvars,numStateSets)));
   end match;
@@ -4217,8 +4216,9 @@ end createStateSetsSystem;
 protected function createStateSetsSets
   input BackendDAE.StateSets iStateSets;
   input BackendDAE.Variables iVars;
-  input BackendDAE.Variables knVars;
-  input DAE.FunctionTree functree;
+  input BackendDAE.EquationArray iEqns;
+  input BackendDAE.Shared shared;
+  input BackendDAE.StrongComponents comps;
   input list<SimCode.StateSet> iEquations;
   input Integer iuniqueEqIndex;
   input list<SimCode.SimVar> itempvars;
@@ -4230,25 +4230,77 @@ protected function createStateSetsSets
   output Integer oNumStateSets;
 algorithm
   (oVars,oEquations,ouniqueEqIndex,otempvars,oNumStateSets) := 
-  matchcontinue(iStateSets,iVars,knVars,functree,iEquations,iuniqueEqIndex,itempvars,iNumStateSets)
+  matchcontinue(iStateSets,iVars,iEqns,shared,comps,iEquations,iuniqueEqIndex,itempvars,iNumStateSets)
     local
+      DAE.FunctionTree functree;
       BackendDAE.StateSets sets;
-      Integer rang,numStateSets,nCandidates;
+      Integer rang,numStateSets,nCandidates,index;
       list<DAE.ComponentRef> crset;
       DAE.ComponentRef crA,crJ;
-      BackendDAE.Variables vars;
-      list<BackendDAE.Var> aVars,statevars,dstatesvars,varJ;
-      list<BackendDAE.Equation> ceqns,oeqns;
+      BackendDAE.Variables vars,knVars;
+      list<BackendDAE.Var> aVars,statevars,dstatesvars,varJ,compvars;
+      list<BackendDAE.Equation> ceqns,oeqns,compeqns;
       list<DAE.ComponentRef> crstates;
       SimCode.JacobianMatrix jacobianMatrix;
       list<SimCode.StateSet> simequations;
       list<SimCode.SimVar> tempvars;
       Integer uniqueEqIndex;
       BackendDAE.Variables diffVars,ovars;
-      BackendDAE.EquationArray eqnsarr,oeqnsarr;      
-    case({},_,_,_,_,_,_,_) then (iVars,iEquations,iuniqueEqIndex,itempvars,iNumStateSets);
-    case(BackendDAE.STATESET(rang=rang,state=crset,crA=crA,varA=aVars,statescandidates=statevars,ovars=dstatesvars,eqns=ceqns,oeqns=oeqns,crJ=crJ,varJ=varJ)::sets,_,_,_,_,_,_,_)
+      BackendDAE.EquationArray eqnsarr,oeqnsarr;
+      HashSet.HashSet hs;
+      array<Boolean> marked;
+    case({},_,_,_,_,_,_,_,_) then (iVars,iEquations,iuniqueEqIndex,itempvars,iNumStateSets);
+
+    case(BackendDAE.STATESET(rang=rang,state=crset,crA=crA,varA=aVars,statescandidates=statevars,ovars=dstatesvars,crJ=crJ,varJ=varJ)::sets,_,_,_,_,_,_,_,_)
       equation
+        knVars = BackendVariable.daeKnVars(shared);
+        functree = BackendDAEUtil.getFunctions(shared);
+        // get state names
+        crstates = List.map(statevars,BackendVariable.varCref);
+        marked = arrayCreate(BackendVariable.varsSize(iVars),false);
+        // get Equations for Jac from the strong component
+        marked = List.fold1(crstates,markSetStates,iVars,marked);
+        (compeqns,compvars) = getStateSetCompVarEqns(comps,marked,iEqns,iVars,{},{});
+        // remove the state set equation
+        compeqns = List.select(compeqns, removeStateSetEqn);
+        // remove the state candidates to geht the other vars
+        hs = List.fold(crstates,BaseHashSet.add,HashSet.emptyHashSet());
+        compvars = List.select1(compvars, removeStateSetStates,hs);
+        // match the equations to get the residual equations
+        (ceqns,oeqns) = IndexReduction.splitEqnsinConstraintAndOther(compvars,compeqns,shared);
+        // add vars for A
+        vars = BackendVariable.addVars(aVars,iVars);
+        // change state vars to ders
+        compvars = List.map(compvars,transformXToXd);
+        // replace der in equations
+        ceqns = replaceDerOpInEquationList(ceqns);
+        oeqns = replaceDerOpInEquationList(oeqns);
+        // convert ceqns to res[..] = lhs-rhs
+        ceqns = createResidualSetEquations(ceqns,crJ,1,intGt(listLength(ceqns),1),{});
+        // get first a element for varinfo
+        crA = ComponentReference.subscriptCrefWithInt(crA,1);
+        crA = Debug.bcallret2(intGt(listLength(crset),1),ComponentReference.subscriptCrefWithInt,crA,1,crA);
+        // number of states
+        nCandidates = listLength(statevars);
+
+        // create symbolic jacobian for simulation
+        //oeqnsarr = BackendEquation.listEquation(oeqns);
+        //eqnsarr = BackendEquation.listEquation(ceqns);
+        //diffVars = BackendVariable.listVar1(statevars);
+        //ovars = BackendVariable.listVar1(dstatesvars);
+        //(SOME(jacobianMatrix),uniqueEqIndex,tempvars) = createSymbolicSimulationJacobian(diffVars, knVars, eqnsarr, oeqnsarr, ovars, functree, vars, "StateSetJac", iuniqueEqIndex,itempvars);
+
+        // create symbolic jacobian for simulation
+        (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobianSet(statevars, knVars, varJ, ceqns, compvars, oeqns, vars, functree, iuniqueEqIndex,itempvars);
+        // next set  
+        (vars,simequations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(sets,vars,iEqns,shared,comps,SimCode.SES_STATESET(iuniqueEqIndex,nCandidates,rang,crset,crstates,crA,jacobianMatrix)::iEquations,uniqueEqIndex,tempvars,iNumStateSets+1);
+      then
+        (vars,simequations,uniqueEqIndex,tempvars,numStateSets);
+
+    case(BackendDAE.STATESET(rang=rang,state=crset,crA=crA,varA=aVars,statescandidates=statevars,ovars=dstatesvars,eqns=ceqns,oeqns=oeqns,crJ=crJ,varJ=varJ)::sets,_,_,_,_,_,_,_,_)
+      equation
+        knVars = BackendVariable.daeKnVars(shared);
+        functree = BackendDAEUtil.getFunctions(shared);
         // ToDo: get Equations for Jac from the strong component with crset equation
         // add vars for A
         vars = BackendVariable.addVars(aVars,iVars);
@@ -4275,11 +4327,105 @@ algorithm
         // create symbolic jacobian for simulation
         (jacobianMatrix,uniqueEqIndex,tempvars) = createSymbolicSimulationJacobianSet(statevars, knVars, varJ, ceqns, dstatesvars, oeqns, vars, functree, iuniqueEqIndex,itempvars);
         // next set  
-        (vars,simequations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(sets,vars,knVars,functree,SimCode.SES_STATESET(iuniqueEqIndex,nCandidates,rang,crset,crstates,crA,jacobianMatrix)::iEquations,uniqueEqIndex,tempvars,iNumStateSets+1);
+        (vars,simequations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(sets,vars,iEqns,shared,comps,SimCode.SES_STATESET(iuniqueEqIndex,nCandidates,rang,crset,crstates,crA,jacobianMatrix)::iEquations,uniqueEqIndex,tempvars,iNumStateSets+1);
       then
         (vars,simequations,uniqueEqIndex,tempvars,numStateSets);
   end matchcontinue;
 end createStateSetsSets;
+
+protected function markSetStates
+  input DAE.ComponentRef inCr;
+  input BackendDAE.Variables iVars;
+  input array<Boolean> iMark;
+  output array<Boolean> oMark;
+protected
+  Integer index;
+algorithm
+  (_,{index}) := BackendVariable.getVar(inCr, iVars);
+  oMark := arrayUpdate(iMark,index,true);
+end markSetStates;
+
+protected function removeStateSetStates
+  input BackendDAE.Var inVar;
+  input HashSet.HashSet hs;
+  output Boolean b;
+algorithm
+  b := not BaseHashSet.has(BackendVariable.varCref(inVar),hs);  
+end removeStateSetStates;
+
+protected function removeStateSetEqn
+  input BackendDAE.Equation inEqn;
+  output Boolean b;
+algorithm
+  b := match(inEqn)
+    case BackendDAE.ARRAY_EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
+    case BackendDAE.EQUATION(source=DAE.SOURCE(info=Absyn.INFO(fileName="stateselection"))) then false;
+    else then true;
+  end match;
+end removeStateSetEqn;
+
+protected function foundMarked
+  input list<Integer> ilst;
+  input array<Boolean> marked;
+  output Boolean found;
+algorithm
+  found := match(ilst,marked)
+    local 
+      Boolean b;
+      Integer i;
+      list<Integer> rest;
+    case ({},_) then false;
+    case (i::rest,_)
+      equation
+        b = marked[i];
+        b = Debug.bcallret2(not b,foundMarked,rest,marked,b);
+      then
+        b;
+  end match; 
+end foundMarked;
+
+protected function getStateSetCompVarEqns
+"function: getEquationAndSolvedVar
+  author: Frenkel TUD 2013-01
+  Retrieves the equation and the variable for a state set"
+  input BackendDAE.StrongComponents inComp;
+  input array<Boolean> marked;
+  input BackendDAE.EquationArray inEquationArray;
+  input BackendDAE.Variables inVariables;
+  input list<BackendDAE.Equation> inEquations;
+  input list<BackendDAE.Var> inVars;
+  output list<BackendDAE.Equation> outEquations;
+  output list<BackendDAE.Var> outVars;
+algorithm
+  (outEquations,outVars):=
+  matchcontinue (inComp,marked,inEquationArray,inVariables,inEquations,inVars)
+    local
+      list<Integer> elst,vlst,indxlst;
+      list<BackendDAE.Equation> eqnlst;
+      list<BackendDAE.Var> varlst;
+      BackendDAE.StrongComponent comp;
+      list<tuple<Integer,list<Integer>>> eqnvartpllst;
+      BackendDAE.StrongComponents rest,acc;
+      Boolean b1,b2;
+    case ({},_,_,_,_,_) then (inEquations,inVars);
+    case (comp::rest,_,_,_,_,_)
+      equation
+        (elst,vlst) = BackendDAETransform.getEquationAndSolvedVarIndxes(comp);
+        true = foundMarked(vlst,marked);
+        eqnlst = BackendEquation.getEqns(elst,inEquationArray);        
+        varlst = List.map1r(vlst, BackendVariable.getVarAt, inVariables);
+        eqnlst = listAppend(eqnlst,inEquations);
+        varlst = listAppend(varlst,inVars);
+        (eqnlst,varlst) = getStateSetCompVarEqns(rest,marked,inEquationArray,inVariables,eqnlst,varlst);
+      then
+        (eqnlst,varlst);        
+    case (_::rest,_,_,_,_,_)
+      equation 
+        (eqnlst,varlst) = getStateSetCompVarEqns(rest,marked,inEquationArray,inVariables,inEquations,inVars);
+      then
+        (eqnlst,varlst); 
+  end matchcontinue;
+end getStateSetCompVarEqns;
 
 protected function createSymbolicSimulationJacobianSet
 "fuction createSymbolicSimulationJacobian
@@ -4355,8 +4501,8 @@ algorithm
         knvars = BackendVariable.removeCrefs(otherVarsLstComRefs,knvars);
         knvars = BackendVariable.mergeVariables(knvars,allvars);
 
-        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
-        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, inKnVars);
+        //Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
+        //Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, inKnVars);
 
         residualVarsLst = inResVars;
 

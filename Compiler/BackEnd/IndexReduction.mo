@@ -2197,6 +2197,7 @@ algorithm
         BackendDAE.EquationArray eqns;
         list<BackendDAE.Equation> cEqnsLst,oEqnLst;
         BackendDAE.StateSets stateSets;
+        DAE.ElementSource source;
     case ({},_,_,_,_) then (iSetIndex,iVars,iEqns,iStateSets);
     case ((nStates,nStateCandidates,nUnassignedEquations,stateCandidates,cEqnsLst,otherVars,oEqnLst)::rest,_,_,_,_)
       equation
@@ -2222,9 +2223,10 @@ algorithm
         ((mulAdstates,(_,_))) = BackendDAEUtil.extendArrExp((mulAdstates,(NONE(),false)));
         expset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrset),listGet(expcrset,1));
         expderset = Util.if_(intGt(rang,1),DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(rang)},DAE.emptyTypeSource),true,expcrdset),listGet(expcrdset,1));
+        source = DAE.SOURCE(Absyn.INFO("stateselection",false,0,0,0,0,Absyn.dummyTimeStamp),{},{},{},{},{},{});
         // set.x = set.A*set.statecandidates
-        eqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,DAE.emptyElementSource,false),
-                                      BackendDAE.EQUATION(expset,mulAstates,DAE.emptyElementSource,false));
+        eqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expset,mulAstates,source,false),
+                                      BackendDAE.EQUATION(expset,mulAstates,source,false));
         // der(set.x) = set.A*der(set.candidates)
         deqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,false),
                                       BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,false));
@@ -6136,6 +6138,54 @@ algorithm
   end match;
 end consArrayUpdate;
 
+
+
+public function splitEqnsinConstraintAndOther
+"function: splitEqnsinConstraintAndOther
+  author: Frenkel TUD 2013-01
+  splitt the list of set equations in constrained equations and other equations"
+  input list<BackendDAE.Var> inVarLst;
+  input list<BackendDAE.Equation> inEqnsLst;
+  input BackendDAE.Shared shared;
+  output list<BackendDAE.Equation> outCEqnsLst;
+  output list<BackendDAE.Equation> outOEqnsLst;
+protected
+  list<BackendDAE.Equation> eqnslst;
+  BackendDAE.Variables vars;
+  BackendDAE.EquationArray eqns;
+  BackendDAE.EqSystem syst;
+  BackendDAE.AdjacencyMatrixEnhanced me;
+  array<list<Integer>> mapEqnIncRow;
+  array<Integer> mapIncRowEqn; 
+  BackendDAE.IncidenceMatrix m;
+  Integer ne,nv;
+  array<Integer> vec1,vec2;
+  list<Integer> unassigned,assigned;
+algorithm
+  vars := BackendVariable.listVar1(inVarLst);
+  (eqnslst,_) := BackendDAEOptimize.getScalarArrayEqns(inEqnsLst,{},false);
+  eqns := BackendEquation.listEquation(eqnslst);
+  syst := BackendDAE.EQSYSTEM(vars,eqns,NONE(),NONE(),BackendDAE.NO_MATCHING(),{});
+  (me,_,mapEqnIncRow,mapIncRowEqn) := BackendDAEUtil.getAdjacencyMatrixEnhancedScalar(syst, shared);
+  m := incidenceMatrixfromEnhanced2(me,vars);
+  // match the equations, umatched are constrained equations
+  nv := BackendVariable.varsSize(vars);
+  ne := BackendDAEUtil.equationSize(eqns);
+  vec1 := arrayCreate(nv,-1);
+  vec2 := arrayCreate(ne,-1);
+  Matching.matchingExternalsetIncidenceMatrix(nv,ne,m);
+  BackendDAEEXT.matching(nv,ne,5,-1,1.0,1);
+  BackendDAEEXT.getAssignment(vec2,vec1);
+  unassigned := Matching.getUnassigned(ne, vec2, {});
+  assigned := Matching.getAssigned(ne, vec2, {});
+  unassigned := List.map1r(unassigned,arrayGet,mapIncRowEqn);
+  unassigned := List.uniqueIntN(unassigned, ne);
+  outCEqnsLst := BackendEquation.getEqns(unassigned, eqns);
+  assigned := List.map1r(assigned,arrayGet,mapIncRowEqn);
+  assigned := List.uniqueIntN(assigned, ne);
+  outOEqnsLst := BackendEquation.getEqns(assigned, eqns);
+end splitEqnsinConstraintAndOther;
+
 /*****************************************
  calculation of the determinant of a square matrix . 
  *****************************************/
@@ -6689,9 +6739,9 @@ algorithm
   crset := Debug.bcallret3(intGt(setsize,1),List.map1r,range, ComponentReference.subscriptCrefWithInt, crstates,{crstates});
   oSetVars := List.map4(crset,generateVar,BackendDAE.STATE(1),DAE.T_REAL_DEFAULT,{},NONE());
   oSetVars := List.map1(oSetVars,BackendVariable.setVarFixed,false);
-  tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nStates),DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource),
+  tp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource),
                                  DAE.T_ARRAY(DAE.T_INTEGER_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource));
-  realtp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStates),DAE.DIM_INTEGER(setsize)}, DAE.emptyTypeSource),
+  realtp := Util.if_(intGt(setsize,1),DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(setsize),DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource),
                                  DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStates)}, DAE.emptyTypeSource));
   ocrA := ComponentReference.joinCrefs(set,ComponentReference.makeCrefIdent("A",tp,{}));
   oAVars := generateArrayVar(ocrA,BackendDAE.VARIABLE(),tp,NONE());

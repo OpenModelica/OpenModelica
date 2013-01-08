@@ -6552,12 +6552,17 @@ protected
   DAE.ElementSource source;
   Absyn.Info info;
   array<Integer> mapIncRowEqn;
+  BackendDAE.EqSystem syst;
 algorithm
-  //  BackendDump.printEqSystem(isyst);
-  //  BackendDump.dumpMatching(inAssignments1);
-  //  BackendDump.dumpMatching(inAssignments2); 
   (_,_,_,mapIncRowEqn,_) := inArg;
   n := BackendDAEUtil.systemSize(isyst);
+  // for debugging
+  /*  BackendDump.printEqSystem(isyst);
+    BackendDump.dumpMatching(inAssignments1);
+    BackendDump.dumpMatching(inAssignments2);
+    syst := BackendDAEUtil.setEqSystemMatching(isyst, BackendDAE.MATCHING(inAssignments1,inAssignments2,{}));
+    IndexReduction.dumpSystemGraphML(syst,ishared,NONE(),"SingularSystem" +& intString(n) +& ".graphml");
+  */
   // get from scalar eqns indexes the indexes in the equation array
   unmatched := List.select1(List.flatten(eqns),intLe,n);
   unmatched1 := List.map1r(unmatched,arrayGet,mapIncRowEqn);
