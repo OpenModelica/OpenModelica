@@ -3,7 +3,7 @@
 setCommandLineOptions({"+g=Modelica","+d=nogen"});
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
 log:="BuildModelRecursive.html";
-MSLVersion:="3.1";
+MSLVersion:="3.2";
 runModelicaTest:=false;
 ulimitOmc:="1200"; // 20 minutes to generate the C-code
 ulimitExe:="180";  // 3 minutes to initialize and run the simulation

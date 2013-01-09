@@ -3731,12 +3731,12 @@ public function isExpandableConnectorType
   input DAE.Type ty;
   output Boolean isExpandable;
 algorithm
-  isExpandable := matchcontinue(ty)
+  isExpandable := match (ty)
     case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
     // TODO! check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,true))) then true;
     case (_) then false;
-  end matchcontinue;
+  end match;
 end isExpandableConnectorType;
 
 protected function getStateFromType
@@ -3746,7 +3746,7 @@ protected function getStateFromType
   input DAE.Type ty;
   output ClassInf.State outState;
 algorithm
-  outState := matchcontinue(ty)
+  outState := match (ty)
     local
       ClassInf.State state;
     case (DAE.T_COMPLEX(complexClassType = state)) then state;
@@ -3754,7 +3754,7 @@ algorithm
     case (DAE.T_SUBTYPE_BASIC(complexClassType = state)) then state;
     // adpo: TODO! FIXME! add a debug print here!
     case (_) then fail();
-  end matchcontinue;
+  end match;
 end getStateFromType;
 
 protected function isConnectorType
@@ -3763,12 +3763,12 @@ protected function isConnectorType
   input DAE.Type ty;
   output Boolean isConnector;
 algorithm
-  isConnector := matchcontinue(ty)
+  isConnector := match (ty)
     case (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(_,false))) then true;
     // TODO! check if subtype is needed here
     case (DAE.T_SUBTYPE_BASIC(complexClassType = ClassInf.CONNECTOR(_,false))) then true;
     case (_) then false;
-  end matchcontinue;
+  end match;
 end isConnectorType;
 
 protected function flipDirection
