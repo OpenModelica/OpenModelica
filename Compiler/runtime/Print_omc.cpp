@@ -64,7 +64,7 @@ extern const char* Print_getString(void)
   if (res == NULL)
     MMC_THROW();
   // fprintf(stderr, "Print_getString: %s##\n", res);fflush(NULL);
-  return strdup(res);
+  return res; // strdup(res);
 }
 
 extern const char* Print_getErrorString(void)
@@ -72,7 +72,7 @@ extern const char* Print_getErrorString(void)
   const char* res = PrintImpl__getErrorString();
   if (res == NULL)
     MMC_THROW();
-  return strdup(res);
+  return res; // strdup(res);
 }
 
 extern void Print_clearErrorBuf(void)

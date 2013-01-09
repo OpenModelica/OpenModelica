@@ -77,9 +77,14 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__getErrorString)
 {
   const char* str = PrintImpl__getErrorString();
+  rml_uint_t nbytes = strlen(str);
+  struct rml_string *retval;
   if (str == NULL)
     RML_TAILCALLK(rmlFC);
-  rmlA0=(void*)mk_scon((char*)str);
+  // use internal RML to allocate the string memory!
+  retval = rml_prim_mkstring(nbytes,0);
+  memcpy(retval->data, str, nbytes+1); /* including terminating '\0' */
+  rmlA0 = RML_TAGPTR(retval);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -104,9 +109,14 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__getString)
 {
   const char* str = PrintImpl__getString();
+  rml_uint_t nbytes = strlen(str);
+  struct rml_string *retval;
   if (str == NULL)
     RML_TAILCALLK(rmlFC);
-  rmlA0=(void*)mk_scon((char*)str);
+  // use internal RML to allocate the string memory!
+  retval = rml_prim_mkstring(nbytes,0);
+  memcpy(retval->data, str, nbytes+1); /* including terminating '\0' */
+  rmlA0 = RML_TAGPTR(retval);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
