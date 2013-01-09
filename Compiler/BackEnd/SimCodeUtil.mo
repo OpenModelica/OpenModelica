@@ -1561,7 +1561,7 @@ algorithm
       (parameterEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(parameterEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
       (allEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
       modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
-              
+      
       // replace div operator with div operator with check of Division by zero
       allEquations = List.map(allEquations,addDivExpErrorMsgtoSimEqSystem);
       odeEquations = List.mapList(odeEquations,addDivExpErrorMsgtoSimEqSystem);

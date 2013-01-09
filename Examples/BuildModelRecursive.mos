@@ -25,7 +25,7 @@ system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 
-a:={typeNameString(x) for x guard isExperiment(x) in if runModelicaTest then getClassNames(ModelicaTest,recursive=true,sort=true) else getClassNames(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT,recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in if runModelicaTest then getClassNames(ModelicaTest,recursive=true,sort=true) else getClassNames(recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
