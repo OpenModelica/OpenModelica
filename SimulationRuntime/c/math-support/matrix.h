@@ -96,10 +96,18 @@ _omc_dgesv_(&n,&nrhs,&A[0],&lda,ipiv,&b[0],&ldb,&info); \
    } \
  } \
  else if(info > 0) { \
-   INFO2(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
+   INFO4(LOG_NLS,"Error solving linear system of equations (no. %d) at time %f, system is singular for A[%d,%d].\n",id,data->localData[0]->timeValue,info,info); \
    data->simulationInfo.found_solution = -1; \
    if(!data->simulationInfo.initial){ \
-      WARNING2(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f, system is singular.\n",id,data->localData[0]->timeValue); \
+      long int l=0; \
+      long int k=0; \
+      for (l=0;l<size;l++) { \
+          for (k=0;k<size;k++) { \
+            printf("%.5f ",get_matrix_elt(A,l,k,size)); \
+          } \
+          printf("\n"); \
+      } \
+      WARNING4(LOG_STDOUT, "Error solving linear system of equations (no. %d) at time %f, system is singular for A[%d,%d].\n",id,data->localData[0]->timeValue,info,info); \
    } \
  } \
 free(ipiv); \

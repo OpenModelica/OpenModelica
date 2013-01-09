@@ -913,8 +913,9 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   overwriteOldSimulationData(data);
 
 
-  if(initMethod == IIM_SYMBOLIC)
+  if(initMethod == IIM_SYMBOLIC) {
     retVal = symbolic_initialization(data);
+  }
   updateDiscreteSystem(data);
 
   /* and restore start values and helpvars */
@@ -930,6 +931,8 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
     retVal = numeric_initialization(data, optiMethod);
   else if(initMethod == IIM_SYMBOLIC) {
     retVal = symbolic_initialization(data);
+    /* do pivoting for dynamic state selection */ 
+    stateSelection(data);
   }
   else
     THROW("unsupported option -iim");
