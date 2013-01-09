@@ -25,7 +25,7 @@ system("rm -f Modelica");
 system("ln -fs '"+getInstallationDirectoryPath()+"/lib/omlibrary/Modelica "+MSLVersion+"/' Modelica");
 omc:=getInstallationDirectoryPath()+"/bin/omc";
 
-a:={typeNameString(x) for x guard isExperiment(x) in if runModelicaTest then getClassNames(ModelicaTest,recursive=true,sort=true) else getClassNames(recursive=true,sort=true)};
+a:={typeNameString(x) for x guard isExperiment(x) in if runModelicaTest then getClassNames(ModelicaTest,recursive=true,sort=true) else getClassNames(Modelica.Electrical.Spice3.Examples.Spice3BenchmarkFourBitBinaryAdder.TWOBIT,recursive=true,sort=true)};
 getErrorString();
 
 // writeFile("x",sum(s + "\n" for s in a));
@@ -62,15 +62,12 @@ echo(false);
 frontend :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_FRONTEND);
 backend  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BACKEND);
 simcode  :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMCODE);
-// linearize:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_LINEARIZE);
-linearize:=0.0;
 templates:=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_TEMPLATES);
 total    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_SIMULATE_TOTAL);
 build    :=OpenModelica.Scripting.Internal.Time.timerTock(OpenModelica.Scripting.Internal.Time.RT_CLOCK_BUILD_MODEL);
 frontend :=if frontend <> -1.0 then frontend-backend else -1.0;
 backend  :=if backend <> -1.0 then backend-simcode else -1.0;
-simcode  :=if simcode <> -1.0 then simcode-linearize else -1.0;
-// linearize:=if linearize <> -1.0 then linearize-templates else -1.0;
+simcode  :=if simcode <> -1.0 then simcode-templates else -1.0;
 templates:=if templates <> -1.0 then templates-build else -1.0;
 
 OpenModelica.Scripting.Internal.Time.timerTick(OpenModelica.Scripting.Internal.Time.RT_CLOCK_USER_RESERVED);
