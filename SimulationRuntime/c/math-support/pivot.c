@@ -67,6 +67,7 @@ int maxsearch( double *A, modelica_integer start, modelica_integer n_rows, model
   *maxrow = mrow;
   *maxcol = mcol;
   *maxabsval = mabsval;
+  return 0;
 }
 
 
