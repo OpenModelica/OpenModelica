@@ -923,7 +923,7 @@ algorithm
   end matchcontinue;
 end getMessagesStrSeverity;
 
-protected function messageTypeStr "function: messageTypeStr
+public function messageTypeStr "function: messageTypeStr
 
   Converts a MessageType to a string.
 "
@@ -941,7 +941,7 @@ algorithm
   end match;
 end messageTypeStr;
 
-protected function severityStr "function: severityStr
+public function severityStr "function: severityStr
 
   Converts a Severity to a string.
 "
