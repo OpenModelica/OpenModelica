@@ -33,24 +33,24 @@
 /* 
 find the maximum element below (and including) line/row start
 */
-void maxsearch( double *A, modelica_integer start, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd, modelica_integer *maxrow, modelica_integer *maxcol, double *maxabsval)
+int maxsearch( double *A, modelica_integer start, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd, modelica_integer *maxrow, modelica_integer *maxcol, double *maxabsval)
 {
-  // temporary variables
+  /* temporary variables */
   modelica_integer row;
   modelica_integer col;
 
-  // Initialization
+  /* Initialization */
   modelica_integer mrow = -1;
   modelica_integer mcol = -1;
   double mabsval = 0.0;
 
-  // go through all rows and columns
+  /* go through all rows and columns */
   for(row=start; row<n_rows; row++)
   {
     for(col=start; col<n_cols; col++)
     {
       double tmp = fabs(get_pivot_matrix_elt(A,row,col));
-      // Compare element to current maximum
+      /* Compare element to current maximum */
       if (tmp > mabsval)
       {
         mrow = row;
@@ -60,11 +60,10 @@ void maxsearch( double *A, modelica_integer start, modelica_integer n_rows, mode
     }
   }
 
-  // assert that the matrix is not identical to zero
-  assert(mrow >= 0);
-  assert(mcol >= 0);
+  /* assert that the matrix is not identical to zero */
+  if ((mrow < 0) || (mcol < 0)) return -1;
 
-  // return result
+  // return result */
   *maxrow = mrow;
   *maxcol = mcol;
   *maxabsval = mabsval;
@@ -78,12 +77,12 @@ rowInd and colInd are vectors of length nrwos and n_cols respectively.
 They hold the old (and new) pivoting information, such that
   A_pivoted[i,j] = A[rowInd[i], colInd[j]]
 */
-void pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd )
+int pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd )
 {
-  // parameter, determines how much larger an element should be before rows and columns are interchanged
+  /* parameter, determines how much larger an element should be before rows and columns are interchanged */
   const double fac = 1.125; // approved by dymola ;)
 
-  // temporary variables
+  /* temporary variables */
   modelica_integer row;
   modelica_integer i,j;
   modelica_integer maxrow;
@@ -91,39 +90,41 @@ void pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelic
   double maxabsval;
   double pivot;
 
-  // go over all pivot elements
+  /* go over all pivot elements */
   for(row=0; row<min(n_rows,n_cols); row++)
   {
-    // get current pivot
+    /* get current pivot */
     pivot = fabs(get_pivot_matrix_elt(A,row,row));
 
-    // find the maximum element in matrix
-    // result is stored in maxrow, maxcol and maxabsval
-    maxsearch(A, row, n_rows, n_cols, rowInd, colInd, &maxrow, &maxcol, &maxabsval);
+    /* find the maximum element in matrix
+       result is stored in maxrow, maxcol and maxabsval */
+    if (maxsearch(A, row, n_rows, n_cols, rowInd, colInd, &maxrow, &maxcol, &maxabsval) != 0) return -1;
 
-    // compare max element and pivot (scaled by fac)
+
+    /* compare max element and pivot (scaled by fac) */
     if (maxabsval > (fac*pivot))
     {
-      // row interchange
+      /* row interchange */
       swap(rowInd[row], rowInd[maxrow]);
-      // column interchange
+      /* column interchange */
       swap(colInd[row], colInd[maxcol]);
     }
 
-    // get pivot (without abs, may have changed because of row/column interchange
+    /* get pivot (without abs, may have changed because of row/column interchange */
     pivot = get_pivot_matrix_elt(A,row,row);
+    /* internal error, pivot element should never be zero if maxsearch succeeded */
     assert(pivot != 0);
 
-    // perform one step of Gaussian Elimination
+    /* perform one step of Gaussian Elimination */
     for(i=row+1;i<n_rows;i++)
     {
       double leader = get_pivot_matrix_elt(A,i,row);
       if (leader != 0.0)
       {
         double scale = -leader/pivot;
-        // set leader to zero
+        /* set leader to zero */
         set_pivot_matrix_elt(A,i,row, 0.0);
-        // subtract scaled equation from pivot row from current row
+        /* subtract scaled equation from pivot row from current row */
         for(j=row+1;j<n_cols;j++)
         {
           double t1 = get_pivot_matrix_elt(A,i,j);
@@ -134,5 +135,7 @@ void pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelic
       }
     }
   }
+  /* all fine */
+  return 0;
 }
 

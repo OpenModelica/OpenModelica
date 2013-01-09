@@ -41,7 +41,7 @@ void initializeStateSetJacobians(DATA *data);
 int stateSelection(DATA *data);
 
 /* do pivoting */
-extern void pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd );
+extern int pivot( double *A, modelica_integer n_rows, modelica_integer n_cols, modelica_integer *rowInd, modelica_integer *colInd );
 
 
 #endif /* OMC_STATESET_H */

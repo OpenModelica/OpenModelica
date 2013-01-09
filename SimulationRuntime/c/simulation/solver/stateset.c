@@ -31,6 +31,7 @@
 
 #include "stateset.h"
 #include "matrix.h"
+#include "omc_error.h"
 
 #include <memory.h>
 
@@ -212,6 +213,7 @@ int comparePivot(modelica_integer *oldPivot, modelica_integer *newPivot, modelic
 int stateSelection(DATA *data)
 {
   long i=0;
+  long j=0;
   int res=0;
   /* go troug all state sets*/
   for (i=0;i<data->modelData.nStateSets;i++)
@@ -222,7 +224,21 @@ int stateSelection(DATA *data)
     getAnalyticalJacobianSet(data,i);
     /* call pivoting function to select the states */
     memcpy(oldColPivot,set->colPivot,set->nCandidates*sizeof(modelica_integer));
-    pivot(set->J,set->nDummyStates,set->nCandidates,set->rowPivot,set->colPivot);
+    if (pivot(set->J,set->nDummyStates,set->nCandidates,set->rowPivot,set->colPivot) != 0)
+    {
+      /* error, report the matrix and the time */
+      for(i=0;  i < data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeRows;i++)
+      {
+        for(j=0;  j < data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols;j++)
+          printf("% .5e ",set->J[i*data->simulationInfo.analyticJacobians[set->jacobianIndex].sizeCols+j]);
+        printf("\n");
+      }
+      for (i=0;i<set->nCandidates;i++)
+      {
+        printf("%s\n",set->statescandidates[i]->name);
+      }
+      THROW1("Error, singular Jacobian for dynamic state selection at time %f\nUse -lv LOG_DSSJAC to get the Jacobian\n",data->localData[0]->timeValue);
+    }
     /* if we have a new set throw event for reinitialization 
        and set the A matrix for set.x=A*(states) */
     res = comparePivot(oldColPivot,set->colPivot,set->nCandidates,set->nDummyStates,set->nStates,set->A,set->states,set->statescandidates,data);

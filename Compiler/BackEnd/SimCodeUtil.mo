@@ -1570,6 +1570,7 @@ algorithm
       startValueEquations = List.map(startValueEquations,addDivExpErrorMsgtoSimEqSystem);
       parameterEquations = List.map(parameterEquations,addDivExpErrorMsgtoSimEqSystem);
       removedEquations = List.map(removedEquations,addDivExpErrorMsgtoSimEqSystem);
+      initialEquations = List.map(initialEquations,addDivExpErrorMsgtoSimEqSystem);
       
       // generate jacobian or linear model matrices
       LinearMatrices = createJacobianLinearCode(symJacs, modelInfo, uniqueEqIndex);
