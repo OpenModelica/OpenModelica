@@ -29,10 +29,13 @@
  *
  */
 
-#include <stdio.h>
+#ifndef OMC_READ_CSV_H
+#define OMC_READ_CSV_H
 
 int read_csv_dataset_size(const char* filename);
 
 char** read_csv_variables(const char *filename);
 
 double* read_csv_dataset(const char *filename, const char *var, int dimsize);
+
+#endif

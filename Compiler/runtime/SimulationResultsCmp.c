@@ -625,7 +625,7 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
   /* get vars to compare */
   cmpvars = getVars(vars,&ncmpvars);
   /* if no var compare all vars */
-  allvars = SimulationResultsImpl__readVars(filename,&simresglob_ref);
+  allvars = SimulationResultsImpl__readVars(filename,&simresglob_c);
   allvarsref = SimulationResultsImpl__readVars(reffilename,&simresglob_ref);
   if (ncmpvars==0){
     cmpvars = getVars(allvarsref,&ncmpvars);
