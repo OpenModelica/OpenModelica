@@ -67,41 +67,51 @@ int read_csv_dataset_size(const char* filename)
 
 char** read_csv_variables(const char* filename)
 {
-  string header;
-  string variable;
-  vector<string> variablesList;
-  bool startReading = false;
-  int length;
+  FILE *fin;
+  int length = 0, numVar = 0, p;
+  char *buf,**res,**tmp;
 
-  ifstream stream(filename);
+  fin = fopen(filename,"r");
+  if (!fin) {
+    /* c_add_message(-1, ErrorType_scripting, ErrorLevel_error, gettext("read_csv_variables: Could not open file: %s"), &filename, 1); */
+    return NULL;
+  }
 
-  getline(stream,header);
-  length = strlen(header.c_str());
-
-  for(int i = 0 ; i < length ; i++)
-  {
-    if(startReading)
-      variable.append(1,header[i]);
-
-    if(header[i] == '"') {
-      if(startReading) {
-        if(header[i+1] == ',') {
-          startReading = false;
-          variablesList.push_back(variable.erase((strlen(variable.c_str()) - 1), 1));
-          variable.clear();
-        }
-      } else {
-        startReading = true;
-      }
+  do {
+    p = (char)fgetc(fin);
+    if (p == ',') numVar++;
+    length++;
+  } while(p != EOF && p != '\n');
+  fseek(fin,0,SEEK_SET);
+  buf = (char*) malloc((length+1)*sizeof(char));
+  res = (char**)malloc((2+numVar)*sizeof(char*));
+  if (!fgets(buf,length,fin)) {
+    free(buf);
+    free(res);
+    return NULL;
+  }
+  res[numVar] = 0;
+  res[numVar+1] = 0;
+  tmp = res;
+  tmp[0] = buf;
+  tmp = tmp+1;
+  if (*buf == '\"')
+    buf++;
+  tmp[0] = buf;
+  do {
+    if (*buf == ',') {
+      *buf = '\0';
+      tmp++;
+      if (buf[-1] == '"')
+        buf[-1] = '\0';
+      if (buf[1] == '"') buf++;
+      if (buf[1] != '\0' && buf[1] != '\r')
+        *tmp = ++buf;
+    } else {
+      ++buf;
     }
-  }
+  } while(*buf != '\0');
 
-  char **res = (char**)malloc((1+variablesList.size())*sizeof(char));
-  for(unsigned int k = 0 ; k < variablesList.size(); k++)
-  {
-    res[k] = strdup(variablesList.at(k).c_str());
-  }
-  res[variablesList.size()] = NULL;
   return res;
 }
 

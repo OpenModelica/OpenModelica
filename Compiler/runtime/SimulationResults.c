@@ -233,13 +233,16 @@ static void* SimulationResultsImpl__readVars(const char *filename, SimulationRes
   case CSV: {
     char **variables = read_csv_variables(filename);
     char **toFree = variables;
-    while (*variables)
-    {
-      res = mk_cons(mk_scon(*variables),res);
-      free(*variables);
-      variables++;
+    if (variables) {
+      variables++ /* Skip the first element: It's the malloc buffer. */;
+      while (*variables) {
+        res = mk_cons(mk_scon(*variables),res);
+        variables++;
+      }
+      /* All strings are allocated in a single malloc for efficiency */
+      free(*toFree);
+      free(toFree);
     }
-    free(toFree);
     break;
   }
   default:
