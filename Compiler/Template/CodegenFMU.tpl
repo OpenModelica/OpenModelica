@@ -1177,7 +1177,7 @@ case FMIIMPORT(fmiInfo=INFO(__),fmiExperimentAnnotation=EXPERIMENTANNOTATION(__)
     Integer fmi_status;
   initial algorithm
     flowInstantiate := fmiFunctions.fmi1InstantiateModel(fmi, "<%fmiInfo.fmiModelIdentifier%>", debugLogging);
-    flowTime := fmiFunctions.fmi1SetTime(fmi, time);
+    flowParamsStart := 0;
     <%if not boolAnd(stringEq(realStartVariablesValueReferences, ""), stringEq(realStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmi1SetReal(fmi, {"+realStartVariablesValueReferences+"}, {"+realStartVariablesNames+"});"%>
     <%if not boolAnd(stringEq(integerStartVariablesValueReferences, ""), stringEq(integerStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmi1SetInteger(fmi, {"+integerStartVariablesValueReferences+"}, {"+integerStartVariablesNames+"});"%>
     <%if not boolAnd(stringEq(booleanStartVariablesValueReferences, ""), stringEq(booleanStartVariablesNames, "")) then "flowParamsStart := fmiFunctions.fmi1SetBoolean(fmi, {"+booleanStartVariablesValueReferences+"}, {"+booleanStartVariablesNames+"});"%>
