@@ -2424,7 +2424,7 @@ match eq
 case SES_NONLINEAR(__) then
   let size = listLength(crefs)
   let eqncalls = (eqs |> eq2 => equationNamesExtraResidualsPreBody(eq2) ;separator="\n")  
-  let nonlinindx = indexNonLinear
+  let otherinlines = (eqs |> eq2 => equationNamesExtraResidualsPreBodyInline(eq2,context) ;separator="\n")  
   <<
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
@@ -2444,11 +2444,25 @@ case SES_NONLINEAR(__) then
   <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsx[<%i0%>];' ;separator="\n"%>
   <%inlineCrefs(context,crefs)%>
   <%eqncalls%>
+  <%otherinlines%>
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_ACC_EQ(SIM_PROF_EQ_<%index%>);
   #endif<%\n%>
   >>
 end equationNonlinear;
+
+template equationNamesExtraResidualsPreBodyInline(SimEqSystem eq, Context context)
+ "Generates an inline call from a simple assignment."
+::=
+match eq
+  case e as SES_SIMPLE_ASSIGN(__)
+  then 
+  <<
+  <%inlineCref(context,cref)%>;
+  >>
+  else ""
+  end match
+end equationNamesExtraResidualsPreBodyInline;
 
 template reverseLookupEquationNumber(Integer index)
 ::=
