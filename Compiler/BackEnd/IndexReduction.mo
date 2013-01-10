@@ -2310,8 +2310,6 @@ algorithm
         ErrorExt.setCheckpoint("DynamicStateSelection");
         // get highest order derivatives
         hov = highestOrderDerivatives(BackendVariable.daeVars(isyst),so);
-        Debug.fcall(Flags.BLT_DUMP, print, "highest Order Derivatives:\n");
-        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVarList, hov);
         // copy can be removed if method works fine
         (syst,_) = BackendDAEUtil.copyBackendDAEEqSystem(isyst,ishared);
         // get scalar incidence matrix solvable
@@ -2484,6 +2482,8 @@ algorithm
         m1 = incidenceMatrixfromEnhanced2(me,hovvars);
         mT1 = BackendDAEUtil.transposeMatrix(m1,nfreeStates);
         hovvars = sortStateCandidatesVars(hovvars,BackendVariable.daeVars(isyst),so,SOME(mT1));
+        Debug.fcall(Flags.BLT_DUMP, print, "highest Order Derivatives:\n");
+        Debug.fcall(Flags.BLT_DUMP, BackendDump.printVariables, hovvars);
         // generate incidence matrix from system and equations of that level and the states of that level
         nv = BackendVariable.varsSize(vars);
         ne = BackendDAEUtil.equationSize(eqns);
@@ -5789,7 +5789,8 @@ algorithm
     case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=true)),_,_) then i::iRow;
     case ((i,BackendDAE.SOLVABILITY_PARAMETER(b=false)),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
     case ((i,BackendDAE.SOLVABILITY_TIMEVARYING(b=_)),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
-    case ((i,BackendDAE.SOLVABILITY_NONLINEAR()),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
+//    case ((i,BackendDAE.SOLVABILITY_NONLINEAR()),_,_) then incidenceMatrixElementElementfromEnhanced2_1(i,vars,iRow);
+    case ((i,BackendDAE.SOLVABILITY_NONLINEAR()),_,_) then iRow;
     else then iRow;
   end match;
 end incidenceMatrixElementElementfromEnhanced2;
@@ -6632,6 +6633,7 @@ algorithm
     case ((v as BackendDAE.VAR(varKind=BackendDAE.VARIABLE()))::rest,i::ilst,_,_)
       equation
         v = BackendVariable.setVarKind(v,BackendDAE.STATE(1));
+        // v = BackendVariable.setVarStateSelect(v,DAE.AVOID());
         vars = BackendVariable.addVar(v,inVars);
         (outVars,outChangedVars) = changeDerVariablestoStates1(rest,ilst,vars,i::inChangedVars);
       then

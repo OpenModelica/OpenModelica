@@ -335,7 +335,7 @@ match type_
   case T_REAL(__) then '<Real <%/*ScalarVariableTypeCommonAttribute(initialValue,isFixed)%> <%ScalarVariableTypeRealAttribute(unit,displayUnit)*/%>/>'
   case T_BOOL(__) then '<Boolean/>'
   case T_STRING(__) then '<String/>'
-  case T_ENUMERATION(__) then '<Real/>'
+  case T_ENUMERATION(__) then '<Integer/>'
   else 'UNKOWN_TYPE'
 end ScalarVariableType;
 
