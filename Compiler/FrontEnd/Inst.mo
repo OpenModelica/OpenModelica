@@ -14373,7 +14373,7 @@ algorithm
         (min_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "min",false);
         (max_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "max",false);
         (start_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "start",false);
-        (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
+        (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
         (nominal_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "nominal",false);
         
         (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect",stateSelectType,true);
@@ -14397,7 +14397,7 @@ algorithm
         (min_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);
         (max_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "max",false);
         (start_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
-        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
+        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",true);
         (cache,exp_bind_uncertainty) = instEnumerationBinding(cache,env, mod, varLst, index_list, "uncertain",uncertaintyType,true);
         (uncertainty_value) = getUncertainFromExpOption(exp_bind_uncertainty);
         distribution_value = instDistributionBinding(mod, varLst, index_list, "distribution", false);
@@ -14411,7 +14411,7 @@ algorithm
       equation
         (quantity_str) = instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
-        (fixed_val) = instBinding(mod, varLst, tp, index_list, "fixed",false);
+        (fixed_val) = instBinding(mod, varLst, tp, index_list, "fixed",true);
         startOrigin = instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_BOOL(quantity_str,start_val,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
@@ -14432,7 +14432,7 @@ algorithm
         (exp_bind_min) = instBinding(mod, varLst, enumtype, index_list, "min",false);
         (exp_bind_max) = instBinding(mod, varLst, enumtype, index_list, "max",false);
         (exp_bind_start) = instBinding(mod, varLst, enumtype, index_list, "start",false);
-        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",false);
+        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",true);
         startOrigin = instStartOrigin(mod, varLst, "start");
       then
         (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val,NONE(),NONE(),NONE(),startOrigin)));
