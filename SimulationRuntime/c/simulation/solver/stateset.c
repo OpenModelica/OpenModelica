@@ -45,13 +45,26 @@ void initializeStateSetJacobians(DATA *data)
   for (i=0;i<data->modelData.nStateSets;i++)
   {
     STATE_SET_DATA *set = &(data->simulationInfo.stateSetData[i]);
-    unsigned int aid = set->A->id - data->modelData.integerVarsData[0].info.id;
-    modelica_integer *A = &(data->localData[0]->integerVars[aid]);
-    memset(A,0,set->nCandidates*set->nStates*sizeof(modelica_integer));
     if(set->initialAnalyticalJacobian(data))
     {
       THROW("Error, can not initialze Jacobians for dynamic state selection");
     }
+    initializeStateSetPivoting(data);
+  }
+}
+
+/* initialize pivoting data for state selection */
+void initializeStateSetPivoting(DATA *data)
+{
+  long i=0;
+  modelica_integer n=0;
+  /* go troug all state sets*/
+  for (i=0;i<data->modelData.nStateSets;i++)
+  {
+    STATE_SET_DATA *set = &(data->simulationInfo.stateSetData[i]);
+    unsigned int aid = set->A->id - data->modelData.integerVarsData[0].info.id;
+    modelica_integer *A = &(data->localData[0]->integerVars[aid]);
+    memset(A,0,set->nCandidates*set->nStates*sizeof(modelica_integer));
     /* initialize row and col indizes */
     for (n=0;n<set->nDummyStates;n++)
     {
@@ -68,7 +81,6 @@ void initializeStateSetJacobians(DATA *data)
     }
   }
 }
-
 
 /*! \fn getAnalyticalJacobian
  *
@@ -214,10 +226,11 @@ int stateSelection(DATA *data)
 {
   long i=0;
   long j=0;
-  int res=0;
+  int globalres=0;
   /* go troug all state sets*/
   for (i=0;i<data->modelData.nStateSets;i++)
   {
+    int res=0;
     STATE_SET_DATA *set = &(data->simulationInfo.stateSetData[i]);
     modelica_integer* oldColPivot = (modelica_integer*) calloc(set->nCandidates,sizeof(modelica_integer));
     /* generate jacobian, stored in set->J */
@@ -245,9 +258,9 @@ int stateSelection(DATA *data)
     if (res)
     {
       INFO(LOG_DSS,"Select new States:");
-      res = 1;
+      globalres = 1;
     }
     free(oldColPivot);
   }
-  return res;
+  return globalres;
 }

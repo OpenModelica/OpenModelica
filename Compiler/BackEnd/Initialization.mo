@@ -607,7 +607,7 @@ algorithm
   BackendDAE.EQSYSTEM(orderedVars=vars, stateSets=stateSets) := inEqSystem;
   outVars := BackendVariable.traverseBackendDAEVars(vars, selectInitializationVariables2, inVars);
   // ignore not the states of the statesets
-  outVars := List.fold(stateSets, selectInitialStateSetVars, outVars);
+  //outVars := List.fold(stateSets, selectInitialStateSetVars, outVars);
 end selectInitializationVariables1;
 
 protected function selectInitialStateSetVars
@@ -649,7 +649,7 @@ algorithm
     case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(_)), vars)) equation
       false = BackendVariable.varFixed(var);
       // ignore stateset variables
-      false = isStateSetVar(cr);
+      // false = isStateSetVar(cr);
       vars = BackendVariable.addVar(var, vars);
     then ((var, vars));
     
@@ -1600,7 +1600,7 @@ algorithm
 
   ((vars, fixvars, hs)) := BackendVariable.traverseBackendDAEVars(orderedVars, collectInitialVars, (vars, fixvars, hs));
   ((eqns, reqns)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, collectInitialEqns, (eqns, reqns));
-  ((fixvars, eqns)) := List.fold(stateSets, collectInitialStateSetVars, (fixvars, eqns));
+  //((fixvars, eqns)) := List.fold(stateSets, collectInitialStateSetVars, (fixvars, eqns));
 
   oTpl := (vars, fixvars, eqns, reqns, hs);
 end collectInitialVarsEqnsSystem;

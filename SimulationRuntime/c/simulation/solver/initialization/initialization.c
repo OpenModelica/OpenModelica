@@ -914,12 +914,15 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
 
 
   if(initMethod == IIM_SYMBOLIC) {
+    /* do pivoting for dynamic state selection */ 
+    stateSelection(data);
     retVal = symbolic_initialization(data);
   }
   updateDiscreteSystem(data);
 
   /* and restore start values and helpvars */
   restoreExtrapolationDataOld(data);
+  initializeStateSetPivoting(data); /* reset state selection */
   syncPreForHelpVars(data);     /* resetAllHelpVars(data); */
   storeRelations(data);
   storePreValues(data);
@@ -930,9 +933,17 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   else if(initMethod == IIM_NUMERIC)
     retVal = numeric_initialization(data, optiMethod);
   else if(initMethod == IIM_SYMBOLIC) {
-    retVal = symbolic_initialization(data);
     /* do pivoting for dynamic state selection */ 
     stateSelection(data);
+    retVal = symbolic_initialization(data);
+    /* do pivoting for dynamic state selection if selection changed try again an */ 
+    if (stateSelection(data) == 1) {
+      retVal = symbolic_initialization(data);
+      if (stateSelection(data) == 1) {
+        /* report a warning about strange start values */
+        THROW("Error, cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
+      }
+    }
   }
   else
     THROW("unsupported option -iim");

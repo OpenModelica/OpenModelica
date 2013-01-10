@@ -2190,8 +2190,8 @@ algorithm
         Integer rang,nStates,nStateCandidates,nUnassignedEquations,setIndex;
         BackendDAE.Variables vars;
         
-        DAE.Exp expcrA,mulAstates,mulAdstates,expset,expderset;
-        list<DAE.Exp> expcrstates,expcrdstates,expcrset,expcrdset;
+        DAE.Exp expcrA,mulAstates,mulAdstates,expset,expderset,expsetstart;
+        list<DAE.Exp> expcrstates,expcrdstates,expcrset,expcrdset,expcrstatesstart;
         DAE.Operator op;
         BackendDAE.Equation eqn,deqn;
         BackendDAE.EquationArray eqns;
@@ -2204,13 +2204,12 @@ algorithm
         rang = nStateCandidates - nUnassignedEquations;
          // generate Set Vars
         (set,crset,setVars,crA,aVars,tp,crJ,varJ) = getSetVars(iSetIndex,rang,nStateCandidates,nUnassignedEquations);
-        // add set states 
-        vars = BackendVariable.addVars(setVars,iVars);
         // add Equations
         // set.x = set.A*set.statecandidates
         // der(set.x) = set.A*der(set.candidates)
         crstates = List.map(stateCandidates,BackendVariable.varCref);
         expcrstates = List.map(crstates,Expression.crefExp);
+        expcrstatesstart = List.map(expcrstates,makeStartExp);
         expcrdstates = List.map(expcrstates,makeder);
         expcrset = List.map(crset,Expression.crefExp);
         expcrdset = List.map(expcrset,makeder);
@@ -2230,6 +2229,12 @@ algorithm
         // der(set.x) = set.A*der(set.candidates)
         deqn  = Util.if_(intGt(rang,1),BackendDAE.ARRAY_EQUATION({rang},expderset,mulAdstates,DAE.emptyElementSource,false),
                                       BackendDAE.EQUATION(expderset,mulAdstates,DAE.emptyElementSource,false));
+        // start values for the set
+        expsetstart = DAE.BINARY(expcrA,op,DAE.ARRAY(DAE.T_ARRAY(DAE.T_REAL_DEFAULT,{DAE.DIM_INTEGER(nStateCandidates)},DAE.emptyTypeSource),true,expcrstatesstart));
+        ((expsetstart,(_,_))) = BackendDAEUtil.extendArrExp((expsetstart,(NONE(),false)));
+        (setVars,_) = List.map2Fold(setVars,setStartExp,expsetstart,rang,1);
+        // add set states 
+        vars = BackendVariable.addVars(setVars,iVars);
         // add equations
         eqns = BackendEquation.equationAdd(eqn, iEqns);
         eqns = BackendEquation.equationAdd(deqn, eqns);
@@ -2242,6 +2247,33 @@ algorithm
         (setIndex,vars,eqns,stateSets);        
   end match;
 end generateStateSets;
+
+protected function makeStartExp
+"function makeStartExp
+  generate the expression: $_start(inExp)"
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := Expression.makeBuiltinCall("$_start", {inExp}, Expression.typeof(inExp));
+end makeStartExp;
+
+protected function setStartExp
+"function makeStartExp
+  generate the expression: $_start(inExp)"
+  input BackendDAE.Var inVar;
+  input DAE.Exp startExp;
+  input Integer size;
+  input Integer iIndex;
+  output BackendDAE.Var outVar;
+  output Integer oIndex;
+protected 
+  DAE.Exp e;
+algorithm
+  e := Debug.bcallret2(intGt(size,1),Expression.makeASUB,startExp, {DAE.ICONST(iIndex)}, startExp);
+  (e,_) := ExpressionSimplify.simplify(e);
+  outVar := BackendVariable.setVarStartValue(inVar,e);
+  oIndex := iIndex + 1;
+end setStartExp;
 
 protected function selectStates
 "function: selectStates

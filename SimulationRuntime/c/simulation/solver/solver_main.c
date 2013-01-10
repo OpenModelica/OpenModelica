@@ -201,9 +201,6 @@ int solver_main(DATA* data, const char* init_initMethod,
   saveZeroCrossings(data);
   storePreValues(data);
 
-  /* do pivoting for dynamic state selection */ 
-  stateSelection(data);
-
   /* Activate sample and evaluate again */
   if(data->simulationInfo.curSampleTimeIx < data->simulationInfo.nSampleTimes)
   {

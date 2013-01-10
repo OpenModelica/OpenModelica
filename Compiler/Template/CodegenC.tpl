@@ -2434,14 +2434,14 @@ case SES_NONLINEAR(__) then
   <%crefs |> name hasindex i0 =>
     let namestr = cref(name)
     <<
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>] = <%namestr%>;
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
-    data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+    data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsx[<%i0%>] = <%namestr%>;
+    data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
+    data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
     >>
   ;separator="\n"%>
-  solve_nonlinear_system(data, <%indexNonLinear%>);
+  solve_nonlinear_system(data, SIM_PROF_EQ_<%index%>);
   /* write solution */ 
-  <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%nonlinindx%>].nlsx[<%i0%>];' ;separator="\n"%>
+  <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsx[<%i0%>];' ;separator="\n"%>
   <%inlineCrefs(context,crefs)%>
   <%eqncalls%>
   #ifdef _OMC_MEASURE_TIME
