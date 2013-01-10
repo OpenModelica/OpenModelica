@@ -4717,7 +4717,7 @@ algorithm
         file = mp +& "/" +& name +& " " +& version +& ".mo";
         true = System.regularFileExists(file);
         // print("Found file 2: " +& file +& "\n");
-      then file;
+      then mp;
 
     case (_,name::names,_,_)
       equation
@@ -4730,7 +4730,7 @@ algorithm
         file = mp +& "/" +& name +& ".mo";
         true = System.regularFileExists(file);
         // print("Found file 4: " +& file +& "\n");
-      then file;
+      then mp;
 
       // This class is part of the current package.mo, or whatever... 
     case (_,_,_,true)
