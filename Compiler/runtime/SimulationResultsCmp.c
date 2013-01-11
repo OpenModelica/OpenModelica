@@ -696,7 +696,7 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
       fixCommaInName(&var2,len);
       dataref = getData(var2,reffilename,size_ref,&simresglob_ref);
       if (dataref.n==0) {
-        fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,reffilename);
+        fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,runningTestsuite ? SystemImpl__basename(reffilename) : reffilename);
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get Data of Var failed!\n"), msg, 0);
         ngetfailedvars++;
         continue;
@@ -710,7 +710,7 @@ void* SimulationResultsCmp_compareResults(int runningTestsuite, const char *file
       data = getData(var1,filename,size,&simresglob_c);
       if (data.n==0)  {
         if (data.data) free(data.data);
-        fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,filename);
+        fprintf(stderr, "Get Data of Var %s from file %s failed\n",var,runningTestsuite ? SystemImpl__basename(filename) : filename);
         c_add_message(-1, ErrorType_scripting, ErrorLevel_warning, gettext("Get Data of Var failed!\n"), msg, 0);
         ngetfailedvars++;
         continue;

@@ -619,6 +619,7 @@ constant ConfigFlag INDEX_REDUCTION_METHOD = CONFIG_FLAG(15, "indexReductionMeth
   NONE(), EXTERNAL(), STRING_FLAG("dynamicStateSelection"),
   SOME(STRING_DESC_OPTION({
     ("dummyDerivative", Util.gettext("simple index reduction method, select dummy states based on heuristics")),
+    ("uode", Util.gettext("use the underlying ode without the constraints")),
     ("dynamicStateSelection", Util.gettext("simple index reduction method, select (dynamic) dummy states based on analysis of the system"))})),
     Util.gettext("Sets the index reduction method to use. See +help=optmodules for more info."));
 constant ConfigFlag POST_OPT_MODULES = CONFIG_FLAG(16, "postOptModules",
