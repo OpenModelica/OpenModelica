@@ -858,6 +858,9 @@ void deInitializeDataStruc(DATA *data)
   free(data->simulationInfo.booleanParameter);
   free(data->simulationInfo.stringParameter);
 
+  /* free buffer for state sets */
+  free(data->simulationInfo.stateSetData);
+
   /* free buffer jacobians */
   free(data->simulationInfo.nonlinearSystemData);
 

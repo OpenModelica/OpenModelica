@@ -155,7 +155,7 @@ template simulationFile(SimCode simCode, String guid)
     <%functionExtraResiduals(parameterEquations)%>
     <%functionExtraResiduals(allEquations)%>
     
-    <%functionInitialNonLinearSystems(initialEquations,parameterEquations,allEquations)%>
+    <%functionInitialNonLinearSystems(initialEquations,inlineEquations,parameterEquations,allEquations)%>
 
     <%functionInitialStateSets(stateSets)%>
     
@@ -816,10 +816,11 @@ template functionSampleEquations(list<SimEqSystem> sampleEqns)
   >>
 end functionSampleEquations;
 
-template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations)
+template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, list<SimEqSystem> inlineEquations, list<SimEqSystem> parameterEquations, list<SimEqSystem> allEquations)
   "Generates functions in simulation file."
 ::=
   let initbody = functionInitialNonLinearSystemsTemp(initialEquations)
+  let inlinebody = functionInitialNonLinearSystemsTemp(inlineEquations)
   let parambody = functionInitialNonLinearSystemsTemp(parameterEquations)
   let body = functionInitialNonLinearSystemsTemp(allEquations)
   <<
@@ -827,6 +828,7 @@ template functionInitialNonLinearSystems(list<SimEqSystem> initialEquations, lis
   void initialNonLinearSystem(NONLINEAR_SYSTEM_DATA* nonLinearSystemData)
   {
     <%initbody%>
+    <%inlinebody%>
     <%parambody%>
     <%body%>
   }

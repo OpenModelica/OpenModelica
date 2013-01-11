@@ -40,6 +40,9 @@ void initializeStateSetJacobians(DATA *data);
 /* initialize pivoting data for state selection */
 void initializeStateSetPivoting(DATA *data);
 
+/* free jacobians for state selection */
+void freeStateSetData(DATA *data);
+
 /* update the state selection */
 int stateSelection(DATA *data);
 

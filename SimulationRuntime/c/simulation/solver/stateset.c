@@ -82,6 +82,23 @@ void initializeStateSetPivoting(DATA *data)
   }
 }
 
+/* free jacobians for state selection */
+void freeStateSetData(DATA *data)
+{
+  long i=0;
+  modelica_integer n=0;
+  /* go troug all state sets*/
+  for (i=0;i<data->modelData.nStateSets;i++)
+  {
+     STATE_SET_DATA *set = &(data->simulationInfo.stateSetData[i]);
+     free(set->states);
+     free(set->statescandidates);
+     free(set->rowPivot);
+     free(set->colPivot);
+     free(set->J);
+  }
+}
+
 /*! \fn getAnalyticalJacobian
  *
  *  function calculates analytical jacobian

@@ -529,6 +529,8 @@ fmiStatus fmiInitialize(fmiComponent c, fmiBoolean toleranceControlled, fmiReal 
   callExternalObjectConstructors(comp->fmuData);
   /* allocate memory for non-linear system solvers */
   allocateNonlinearSystem(comp->fmuData);
+  /* allocate memory for state selection */
+  initializeStateSetJacobians(comp->fmuData);
   /*TODO: Simulation stop time is need to calculate in before hand all sample events
           We shouldn't generate them all in beforehand */
   initSample(comp->fmuData, comp->fmuData->localData[0]->timeValue,  100 /*should be stopTime*/);
@@ -600,6 +602,15 @@ fmiStatus fmiEventUpdate(fmiComponent c, fmiBoolean intermediateResults, fmiEven
     eventInfo->terminateSimulation = fmiFalse;
   }
 
+  /******** check state selection ********/
+  if (stateSelection(comp->fmuData))
+  {
+    if (comp->loggingOn) comp->functions.logger(c, comp->instanceName, fmiOK, "log",
+      "fmiEventUpdate: Need to iterate state values changed!");
+    /* if new set is calculated reinit the solver */
+    eventInfo->stateValuesChanged  = fmiTrue;
+  }
+
   /* due to an event overwrite old values */
   overwriteOldSimulationData(comp->fmuData);
 
@@ -651,6 +662,8 @@ fmiStatus fmiTerminate(fmiComponent c){
   callExternalObjectDestructors(comp->fmuData);
   /* free nonlinear system data */
   freeNonlinearSystem(comp->fmuData);
+  /* free stateset data */
+  freeStateSetData(comp->fmuData);
   deInitializeDataStruc(comp->fmuData);
   comp->functions.freeMemory(comp->fmuData);
 

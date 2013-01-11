@@ -1469,6 +1469,7 @@ algorithm
       SimCode.JacobianMatrix jacG;
       Option<BackendDAE.BackendDAE> inlineDAE;
       list<SimCode.StateSet> stateSets;
+      array<Integer> nonLinIndexMap;
       
     case (dlow, class_, _, fileDir, _, _, _, _, _, _, _, _) equation
       System.tmpTickReset(0);
@@ -1558,6 +1559,8 @@ algorithm
       (inlineEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(inlineEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
       (parameterEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(parameterEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
       (allEquations, numberofEqns, numberofNonLinearSys, NLSjacs) = indexNonLinSysandCountEqns(allEquations, numberofEqns, numberofNonLinearSys, NLSjacs);
+      nonLinIndexMap = List.fold(allEquations,getNonLinSysIndexMap,arrayCreate(uniqueEqIndex,-1));
+      odeEquations = List.mapList1_1(odeEquations, setNonLinSysIndexMap, nonLinIndexMap);
       modelInfo = addNumEqnsandNonLinear(modelInfo, numberofEqns, numberofNonLinearSys);
       
       // replace div operator with div operator with check of Division by zero
@@ -1796,6 +1799,58 @@ algorithm
         then SimCode.MODELINFO(name,directory,varInfo,vars,functions,labels);
   end match;
 end addNumEqnsandNonLinear;
+
+protected function getNonLinSysIndexMap
+  input SimCode.SimEqSystem inEqn;
+  input array<Integer> iNonLinSysIndexMap;
+  output array<Integer> oNonLinSysIndexMap;
+algorithm
+  oNonLinSysIndexMap := match(inEqn,iNonLinSysIndexMap)
+    local
+      Integer index,indexNonLinear;
+      array<Integer> nonLinSysIndexMap;
+      SimCode.SimEqSystem cont;
+    case(SimCode.SES_NONLINEAR(index=index, indexNonLinear = indexNonLinear), _)
+      equation
+        nonLinSysIndexMap = arrayUpdate(iNonLinSysIndexMap,index,indexNonLinear);
+      then nonLinSysIndexMap;
+    case(SimCode.SES_MIXED(cont=cont), _)
+      equation
+        nonLinSysIndexMap = getNonLinSysIndexMap(cont,iNonLinSysIndexMap);
+      then nonLinSysIndexMap;
+    else then iNonLinSysIndexMap;
+  end match;
+end getNonLinSysIndexMap;
+
+
+protected function setNonLinSysIndexMap
+" function setNonLinSysIndexMap
+ function counts equations
+ and updates index of nonlinear systems"
+  input SimCode.SimEqSystem inEqn;
+  input array<Integer> nonLinSysIndexMap;
+  output SimCode.SimEqSystem outEqn;
+algorithm
+  outEqn := match(inEqn, nonLinSysIndexMap)
+    local
+      Integer index, nonLinSysIndex;
+      list<SimCode.SimEqSystem> eqs;
+      list<DAE.ComponentRef> crefs;
+      SimCode.SimEqSystem cont;
+      list<SimCode.SimVar> discVars;
+      list<SimCode.SimEqSystem> discEqs;
+      Option<SimCode.JacobianMatrix> optSymJac;
+    case(SimCode.SES_NONLINEAR(index, eqs, crefs, _, optSymJac), _)
+      equation
+        nonLinSysIndex = nonLinSysIndexMap[index];
+      then SimCode.SES_NONLINEAR(index, eqs, crefs, nonLinSysIndex, optSymJac);
+    case(SimCode.SES_MIXED(index, cont, discVars, discEqs), _)
+      equation
+        cont = setNonLinSysIndexMap(cont,nonLinSysIndexMap);
+      then SimCode.SES_MIXED(index, cont, discVars, discEqs);          
+    else then inEqn;
+  end match;
+end setNonLinSysIndexMap;
 
 protected function indexNonLinSysandCountEqns
 " function updateNonLinearSys

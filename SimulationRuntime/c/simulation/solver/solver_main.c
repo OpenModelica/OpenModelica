@@ -564,6 +564,8 @@ int solver_main(DATA* data, const char* init_initMethod,
 
   /* free nonlinear system data */
   freeNonlinearSystem(data);
+  /* free stateset data */
+  freeStateSetData(data);
 
   if(fmt)
     fclose(fmt);
