@@ -1112,7 +1112,7 @@ algorithm
     case ("help", _, _)
       equation
         values = List.map(inValues, System.tolower);
-        System.gettextInit(Util.if_(getConfigBool(RUNNING_TESTSUITE),"C",getConfigString(LOCALE_FLAG)));
+        System.gettextInit(Util.if_(getConfigString(RUNNING_TESTSUITE) ==& "","C",getConfigString(LOCALE_FLAG)));
         printHelp(values);
         setConfigBool(HELP, true);
       then
