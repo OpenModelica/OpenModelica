@@ -1846,7 +1846,7 @@ algorithm
       then SimCode.SES_NONLINEAR(index, eqs, crefs, nonLinSysIndex, optSymJac);
     case(SimCode.SES_MIXED(index, cont, discVars, discEqs), _)
       equation
-        cont = setNonLinSysIndexMap(cont,nonLinSysIndexMap);
+        cont = setNonLinSysIndexMap(cont, nonLinSysIndexMap);
       then SimCode.SES_MIXED(index, cont, discVars, discEqs);          
     else then inEqn;
   end match;
@@ -4350,7 +4350,7 @@ algorithm
         (vars,simequations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(sets,vars,iEqns,shared,comps,SimCode.SES_STATESET(iuniqueEqIndex,nCandidates,rang,crset,crstates,crA,jacobianMatrix)::iEquations,uniqueEqIndex,tempvars,iNumStateSets+1);
       then
         (vars,simequations,uniqueEqIndex,tempvars,numStateSets);
-
+/*
     case(BackendDAE.STATESET(rang=rang,state=crset,crA=crA,varA=aVars,statescandidates=statevars,ovars=dstatesvars,eqns=ceqns,oeqns=oeqns,crJ=crJ,varJ=varJ)::sets,_,_,_,_,_,_,_,_)
       equation
         knVars = BackendVariable.daeKnVars(shared);
@@ -4384,7 +4384,7 @@ algorithm
         (vars,simequations,uniqueEqIndex,tempvars,numStateSets) = createStateSetsSets(sets,vars,iEqns,shared,comps,SimCode.SES_STATESET(iuniqueEqIndex,nCandidates,rang,crset,crstates,crA,jacobianMatrix)::iEquations,uniqueEqIndex,tempvars,iNumStateSets+1);
       then
         (vars,simequations,uniqueEqIndex,tempvars,numStateSets);
-  end matchcontinue;
+*/  end matchcontinue;
 end createStateSetsSets;
 
 protected function markSetStates
@@ -4509,7 +4509,7 @@ algorithm
 
     BackendDAE.Variables emptyVars, dependentVars, independentVars, knvars, allvars, alldiffedVars, residualVars;
     BackendDAE.EquationArray emptyEqns, eqns;    
-    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst, allVarsLst, otherVarsLst, residualVarsLst;
+    list<BackendDAE.Var> knvarLst, independentVarsLst, dependentVarsLst, allVarsLst, otherVarsLst, residualVarsLst, statevars;
     list<BackendDAE.Equation> residual_eqnlst;
     list<DAE.ComponentRef> independentComRefs, dependentVarsComRefs, knownVarsComRefs, otherVarsLstComRefs;
     
@@ -4549,14 +4549,15 @@ algorithm
                 
         // all vars beside the inVars are inputs for the jacobian
         allvars = BackendVariable.copyVariables(iAllVars);
+        statevars = BackendVariable.getAllStateVarFromVariables(allvars);
+        statevars = List.map(statevars,transformXToXd);
+        allvars = BackendVariable.addVars(statevars, allvars);
         allvars = BackendVariable.removeCrefs(independentComRefs, allvars);
         allvars = BackendVariable.removeCrefs(otherVarsLstComRefs, allvars);
+
         knvars = BackendVariable.copyVariables(inKnVars);
         knvars = BackendVariable.removeCrefs(otherVarsLstComRefs,knvars);
         knvars = BackendVariable.mergeVariables(knvars,allvars);
-
-        //Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
-        //Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, inKnVars);
 
         residualVarsLst = inResVars;
 
@@ -4573,8 +4574,11 @@ algorithm
         Debug.fcall(Flags.JAC_DUMP2, BackendDump.printEquationArray, eqns);
 
         // create known variables
-        //knvarLst = BackendEquation.equationsVars(eqns,knvars);
-        //knvars = BackendVariable.listVar1(knvarLst);
+        knvarLst = BackendEquation.equationsVars(eqns,knvars);
+        knvars = BackendVariable.listVar1(knvarLst);
+
+        Debug.fcall(Flags.JAC_DUMP2, print, "\n---+++ known variables +++---\n");
+        Debug.fcall(Flags.JAC_DUMP2, BackendDump.printVariables, knvars);
         
         //prepare vars and equations for BackendDAE
         emptyVars =  BackendVariable.emptyVars();
