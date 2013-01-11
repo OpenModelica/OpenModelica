@@ -1116,7 +1116,7 @@ template funOutputVariableXml(Variable var)
       </fun:Name>
       <fun:Record>
         <%varTypeXml(var)%>
-      <fun:Record>
+      </fun:Record>
     </fun:OutputVariable>
     >>
   case VARIABLE(__) then
@@ -1141,7 +1141,7 @@ template funArgDefinitionXml(Variable var)
       </fun:Name>
       <fun:Record>
         <%varTypeXml(var)%>
-      <fun:Record>
+      </fun:Record>
     </fun:InputVariable>
     >>
   case VARIABLE(__) then 
@@ -1266,7 +1266,7 @@ case EXTERNAL_FUNCTION(__) then
     <exp:Expression>
       <exp:FunctionCall>
         <exp:Name>
-          <exp:QualifiedNamePart name="<%extName%>">
+          <exp:QualifiedNamePart name="<%extName%>" />
         </exp:Name>
         <exp:Arguments>
           <%args%>
@@ -1293,7 +1293,7 @@ case EXTERNAL_FUNCTION(__) then
     <exp:Expression>
       <exp:FunctionCall>
         <exp:Name>
-          <exp:QualifiedNamePart name="<%extName%>">
+          <exp:QualifiedNamePart name="<%extName%>" />
         </exp:Name>
         <exp:Arguments>
           <%args%>
@@ -1561,10 +1561,10 @@ template algStmtAssignXml(DAE.Statement stmt, Context context, Text &varDecls /*
         let expPart = daeExpXml(val, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
         <<
         <fun:Assign>
-        <%varPart%> 
-        <fun:Expression>
-          <%expPart%>  
-        </fun:Expression>  
+          <%varPart%> 
+          <fun:Expression>
+            <%expPart%>  
+          </fun:Expression>  
         </fun:Assign>
         >>
     )
@@ -1754,9 +1754,9 @@ case STMT_IF(__) then
       <fun:Condition>
         <%condExp%>
       </fun:Condition>
-      <fun:Statments>
+      <fun:Statements>
         <%statementLst |> stmt => algStatementXml(stmt, context, &varDecls /*BUFD*/) ;separator="\n"%>
-      </fun:Statments>
+      </fun:Statements>
       <%elseExprXml(else_, context, &varDecls /*BUFD*/)%>
     </fun:If>
     >>
@@ -1811,9 +1811,9 @@ case RANGE(__) then
           </exp:Range>
         </fun:IterationSet>
       </fun:Index>
-      <fun:Statments>
+      <fun:Statements>
         <%body%>
-      </fun:Statments>
+      </fun:Statements>
     </fun:For>
     >> 
 end algStmtForRange_implXml;
@@ -1851,9 +1851,9 @@ template algStmtForGeneric_implXml(Exp exp, Ident iterator, String type,
           </exp:Array>
         </fun:IterationSet>
       </fun:Index>
-      <fun:Statments>
+      <fun:Statements>
           <%body%>
-      </fun:Statments>
+      </fun:Statements>
     </fun:For>
     >>
 end algStmtForGeneric_implXml;
@@ -1870,9 +1870,9 @@ case STMT_WHILE(__) then
       <fun:Condition>
         <%var%>
       </fun:Condition>
-      <fun:Statments>
+      <fun:Statements>
         <%statementLst |> stmt => algStatementXml(stmt, context, &varDecls /*BUFD*/) ;separator="\n"%>
-      </fun:Statments>
+      </fun:Statements>
     </fun:While>
     >>
 end algStmtWhileXml;
@@ -1929,10 +1929,10 @@ case SIMULATION(genDiscrete=true) then
       <fun:When>
         <fun:Condition>
           <%preIf%>
-        <fun:Condition>
-        <fun:Statments>
+        </fun:Condition>
+        <fun:Statements>
           <%statements%> 
-        <fun:Statments>
+        </fun:Statements>
         <%else%>
       >>
   end match
@@ -1991,12 +1991,12 @@ case SOME(when as STMT_WHEN(__)) then
     <<
     <fun:Condition>
       <%elseCondStr%>
-    <fun:Condition>
-    <fun:Statments>
+    </fun:Condition>
+    <fun:Statements>
       <%statements%> 
-    <fun:Statments>
+    </fun:Statements>
     <%else%>
-    <fun:When>
+    </fun:When>
     >>
 end algStatementWhenElseXml;
 
@@ -2814,7 +2814,7 @@ case rel as RELATION(__) then
           <exp:LogLt> 
             <%e1%>
             <%e2%>
-          <exp:LogLt> <%\n%>
+          </exp:LogLt> <%\n%>
           >>
           res
         case LESSEQ(__) then
@@ -2823,7 +2823,7 @@ case rel as RELATION(__) then
           <exp:LogLeq> 
             <%e1%>   
             <%e2%>
-          <exp:LogLeq> <%\n%>
+          </exp:LogLeq> <%\n%>
           >> 
           res
         case GREATER(__) then
@@ -2841,7 +2841,7 @@ case rel as RELATION(__) then
           <exp:LogGeq> 
             <%e1%> 
             <%e2%>
-          <exp:LogGeq> <%\n%>
+          </exp:LogGeq> <%\n%>
           >> 
           res
         end match
@@ -2912,7 +2912,7 @@ case rel as RELATION(__) then
           <exp:LogLeq>
             <%e1%>  
             <%e2%>
-          <exp:LogLeq> <%\n%>
+          </exp:LogLeq> <%\n%>
           >> 
           res
         case GREATER(__) then
@@ -2944,7 +2944,7 @@ case rel as RELATION(__) then
      case LESS(__) then
         let &preExp +=
         <<
-        <exp:LogLt>
+            <exp:LogLt>
               <%e1%>
               <%e2%>
             </exp:LogLt><%\n%>
@@ -3048,9 +3048,9 @@ case IFEXP(__) then
         <fun:Condition>
           <%condExp%>
         </fun:Condition>
-        <fun:Statments>
+        <fun:Statements>
           <%eThen%>
-        </fun:Statments>
+        </fun:Statements>
       </fun:If>
       <fun:Else>
         <%eElse%>
@@ -3719,7 +3719,7 @@ template arrayScalarRhsXml(Type ty, list<Exp> subs, String arrName, Context cont
           <exp:ArraySubscripts>
             <exp:IndexExpression>
               <%dimsValuesStr%>
-            <exp:IndexExpression>
+            </exp:IndexExpression>
           </exp:ArraySubscripts>
         </exp:QualifiedNamepart>
       </exp:QualifiedName>
