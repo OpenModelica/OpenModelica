@@ -2424,7 +2424,8 @@ match eq
 case SES_NONLINEAR(__) then
   let size = listLength(crefs)
   let eqncalls = (eqs |> eq2 => equationNamesExtraResidualsPreBody(eq2) ;separator="\n")  
-  let otherinlines = (eqs |> eq2 => equationNamesExtraResidualsPreBodyInline(eq2,context) ;separator="\n")  
+  let otherinlines = (eqs |> eq2 => equationNamesExtraResidualsPreBodyInline(eq2,context) ;separator="\n")
+  let nonlinindx = indexNonLinear
   <<
   #ifdef _OMC_MEASURE_TIME
   SIM_PROF_TICK_EQ(SIM_PROF_EQ_<%index%>);
@@ -2434,14 +2435,14 @@ case SES_NONLINEAR(__) then
   <%crefs |> name hasindex i0 =>
     let namestr = cref(name)
     <<
-    data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsx[<%i0%>] = <%namestr%>;
-    data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
-    data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
+    data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsx[<%i0%>] = <%namestr%>;
+    data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsxOld[<%i0%>] = _<%namestr%>(1) /*old*/;
+    data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsxExtrapolation[<%i0%>] = extraPolate(<%namestr%>, _<%namestr%>(1) /*old*/, _<%namestr%>(2) /*old2*/);
     >>
   ;separator="\n"%>
-  solve_nonlinear_system(data, SIM_PROF_EQ_<%index%>);
+  solve_nonlinear_system(data, <%indexNonLinear%>);
   /* write solution */ 
-  <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[SIM_PROF_EQ_<%index%>].nlsx[<%i0%>];' ;separator="\n"%>
+  <%crefs |> name hasindex i0 => '<%cref(name)%> = data->simulationInfo.nonlinearSystemData[<%indexNonLinear%>].nlsx[<%i0%>];' ;separator="\n"%>
   <%inlineCrefs(context,crefs)%>
   <%eqncalls%>
   <%otherinlines%>
