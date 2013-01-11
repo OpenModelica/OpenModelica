@@ -272,9 +272,27 @@
     N_VDestroy_Serial(c);
     KINFree(&kmem);
 
-    if(error_code < 0)
+    if(DEBUG_STREAM(LOG_NLS))
     {
-      WARNING1(LOG_STDOUT, "kinsol failed [error_code=%d]. see last warning. use [-lv LOG_NLS] for more output.", error_code);
+      if(error_code == KIN_LINESEARCH_NONCONV)
+      {
+        WARNING(LOG_NLS, "kinsol failed. The linesearch algorithm was unable to find an iterate sufficiently distinct from the current iterate.");
+        return 0;
+      }
+      else if(error_code == KIN_MAXITER_REACHED)
+      {
+        WARNING(LOG_NLS, "kinsol failed. The maximum number of nonlinear iterations has been reached.");
+        return 0;
+      }
+      else if(error_code < 0)
+      {
+        WARNING1(LOG_NLS, "kinsol failed [error_code=%d]", error_code);
+        return 0;
+      }
+    }
+    else if(error_code < 0)
+    {
+      WARNING(LOG_STDOUT, "kinsol failed. Use [-lv LOG_NLS] for more output.");
       return 0;
     }
 
