@@ -6647,5 +6647,39 @@ algorithm
               DAE.UNBOUND(),
               NONE());
 end mkEmptyVar;
+
+public function getElementSource
+  input DAE.Element element;
+  output DAE.ElementSource source;
+algorithm
+  source := match element
+    case DAE.VAR(source=source) then source;
+    case DAE.DEFINE(source=source) then source;
+    case DAE.INITIALDEFINE(source=source) then source;
+    case DAE.EQUATION(source=source) then source;
+    case DAE.EQUEQUATION(source=source) then source;
+    case DAE.ARRAY_EQUATION(source=source) then source;
+    case DAE.INITIAL_ARRAY_EQUATION(source=source) then source;
+    case DAE.COMPLEX_EQUATION(source=source) then source;
+    case DAE.INITIAL_COMPLEX_EQUATION(source=source) then source;
+    case DAE.WHEN_EQUATION(source=source) then source;
+    case DAE.IF_EQUATION(source=source) then source;
+    case DAE.INITIAL_IF_EQUATION(source=source) then source;
+    case DAE.INITIALEQUATION(source=source) then source;
+    case DAE.ALGORITHM(source=source) then source;
+    case DAE.INITIALALGORITHM(source=source) then source;
+    case DAE.COMP(source=source) then source;
+    case DAE.EXTOBJECTCLASS(source=source) then source;
+    case DAE.ASSERT(source=source) then source;
+    case DAE.TERMINATE(source=source) then source;
+    case DAE.REINIT(source=source) then source;
+    case DAE.NORETCALL(source=source) then source;
+    case DAE.CONSTRAINT(source=source) then source;
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"DAEUtil.getElementSource failed: Element does not have a source"}); 
+      then fail();
+  end match;
+end getElementSource;
   
 end DAEUtil;

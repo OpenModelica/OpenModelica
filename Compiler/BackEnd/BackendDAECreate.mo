@@ -1071,9 +1071,8 @@ algorithm
 
     case (_,_,_)
       equation
-        true = Flags.isSet(Flags.FAILTRACE);
         s = "BackendDAECreate.lowerEqn failed for " +& DAEDump.dumpElementsStr({inElement});
-        Error.addMessage(Error.INTERNAL_ERROR, {s});
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {s}, DAEUtil.getElementSourceFileInfo(DAEUtil.getElementSource(inElement)));
       then fail();          
 
   end match;
