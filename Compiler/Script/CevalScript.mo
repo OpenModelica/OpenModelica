@@ -1204,7 +1204,14 @@ algorithm
         (cache,ret_val,st_1) = translateModelFMU(cache, env, className, st, filenameprefix, true, NONE());
       then
         (cache,ret_val,st_1);
-    
+
+    case (cache,env,"translateModelXML",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
+      equation
+        filenameprefix = Util.stringReplaceChar(filenameprefix,".","_");
+        (cache,ret_val,st_1) = translateModelXML(cache, env, className, st, filenameprefix, true, NONE());
+      then
+        (cache,ret_val,st_1);
+ 
     case (cache,env,"exportDAEtoMatlab",{Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(filenameprefix)},st,_)
       equation
         (cache,ret_val,st_1,_) = getIncidenceMatrix(cache,env, className, st, msg, filenameprefix);
@@ -3179,6 +3186,45 @@ algorithm
         (cache,ValuesUtil.makeArray({Values.STRING("translateModelFMU error."),Values.STRING(str)}),st);
   end match;
 end translateModelFMU;
+
+
+protected function translateModelXML "function translateModelXML
+ author: Alachew
+ translates a model into XML code "
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className "path for the model";
+  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable):=
+  match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
+    local
+      Env.Cache cache;
+      list<Env.Frame> env;
+      BackendDAE.BackendDAE indexed_dlow;
+      Interactive.SymbolTable st;
+      list<String> libs;
+      Values.Value outValMsg;
+      String file_dir, fileNamePrefix, str;
+    case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
+      equation
+        (cache, outValMsg, st, indexed_dlow, libs, file_dir, _) =
+          SimCodeMain.translateModelXML(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
+      then
+        (cache,outValMsg,st);
+    case (cache,env,_,st,fileNamePrefix,_,_) /* mo file directory */
+      equation
+         str = Error.printMessagesStr();
+      then
+        (cache,ValuesUtil.makeArray({Values.STRING("translateModelXML error."),Values.STRING(str)}),st);
+  end match;
+end translateModelXML;
 
 
 public function translateGraphics "function: translates the graphical annotations from old to new version"

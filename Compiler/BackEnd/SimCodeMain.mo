@@ -145,6 +145,49 @@ algorithm
 end generateModelCodeFMU;
 
 
+public function generateModelCodeXML
+  "Generates code for a model by creating a SimCode structure and calling the
+   template-based code generator on it."
+  input BackendDAE.BackendDAE inBackendDAE;
+  input Absyn.Program p;
+  input DAE.DAElist dae;
+  input Absyn.Path className;
+  input String filenamePrefix;
+  input Option<SimCode.SimulationSettings> simSettingsOpt;
+  output BackendDAE.BackendDAE outIndexedBackendDAE;
+  output list<String> libs;
+  output String fileDir;
+  output Real timeBackend;
+  output Real timeSimCode;
+  output Real timeTemplates;
+protected 
+  list<String> includes,includeDirs;
+  list<SimCode.Function> functions;
+  // DAE.DAElist dae2;
+  String filename, funcfilename;
+  SimCode.SimCode simCode;
+  list<SimCode.RecordDeclaration> recordDecls;
+  BackendDAE.BackendDAE indexed_dlow,indexed_dlow_1;
+  Absyn.ComponentRef a_cref;
+  tuple<Integer,HashTableExpToIndex.HashTable,list<DAE.Exp>> literals;
+algorithm
+  timeBackend := System.realtimeTock(CevalScript.RT_CLOCK_BACKEND);
+  a_cref := Absyn.pathToCref(className);
+  fileDir := CevalScript.getFileDir(a_cref, p);
+  System.realtimeTick(CevalScript.RT_CLOCK_SIMCODE);
+  (libs, includes, includeDirs, recordDecls, functions, outIndexedBackendDAE, _, literals) :=
+  SimCodeUtil.createFunctions(p, dae, inBackendDAE, className);
+  simCode := SimCodeUtil.createSimCode(outIndexedBackendDAE,
+    className, filenamePrefix, fileDir, functions, includes, includeDirs, libs, simSettingsOpt, recordDecls, literals,Absyn.FUNCTIONARGS({},{}));
+  timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_SIMCODE);
+  Debug.execStat("SimCode",CevalScript.RT_CLOCK_SIMCODE);
+  
+  System.realtimeTick(CevalScript.RT_CLOCK_TEMPLATES);
+  callTargetTemplatesXML(simCode, Config.simCodeTarget());
+  timeTemplates := System.realtimeTock(CevalScript.RT_CLOCK_TEMPLATES);
+end generateModelCodeXML;
+
+
 public function translateModelFMU
 "Entry point to translate a Modelica model for FMU export.
     
@@ -212,6 +255,76 @@ algorithm
         fail();
   end matchcontinue;
 end translateModelFMU;
+
+
+public function translateModelXML
+"Entry point to translate a Modelica model for XML export.
+    
+ Called from other places in the compiler."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path className "path for the model";
+  input Interactive.SymbolTable inInteractiveSymbolTable;
+  input String inFileNamePrefix;
+  input Boolean addDummy "if true, add a dummy state";
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Interactive.SymbolTable outInteractiveSymbolTable;
+  output BackendDAE.BackendDAE outBackendDAE;
+  output list<String> outStringLst;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt)
+    local
+      String filenameprefix,file_dir,resstr;
+      DAE.DAElist dae;
+      list<Env.Frame> env;
+      BackendDAE.BackendDAE dlow,dlow_1,indexed_dlow_1;
+      list<String> libs;
+      Interactive.SymbolTable st;
+      Absyn.Program p;
+      //DAE.Exp fileprefix;
+      Env.Cache cache;
+      DAE.FunctionTree funcs;
+      Real timeSimCode, timeTemplates, timeBackend, timeFrontend;
+    case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),filenameprefix,_, _)
+      equation
+        /* calculate stuff that we need to create SimCode data structure */
+        System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
+        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
+        (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
+        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
+        System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);
+        funcs = Env.getFunctionTree(cache);
+        dae = DAEUtil.transformationsBeforeBackend(cache,env,dae);
+        dlow = BackendDAECreate.lower(dae,cache,env);
+        dlow_1 = BackendDAEUtil.getSolvedSystem(dlow,NONE(), NONE(), NONE(), NONE());
+        Debug.fprintln(Flags.DYN_LOAD, "translateModel: Generating simulation code and functions.");
+        (indexed_dlow_1,libs,file_dir,timeBackend,timeSimCode,timeTemplates) = 
+          generateModelCodeXML(dlow_1, p, dae,  className, filenameprefix, inSimSettingsOpt);
+        resultValues = 
+        {("timeTemplates",Values.REAL(timeTemplates)),
+          ("timeSimCode",  Values.REAL(timeSimCode)),
+          ("timeBackend",  Values.REAL(timeBackend)),
+          ("timeFrontend", Values.REAL(timeFrontend))
+          };
+          resstr = Absyn.pathStringNoQual(className);
+        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated to XML"});
+      then
+        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+    case (_,_,_,_,_,_, _)
+      equation        
+        resstr = Absyn.pathStringNoQual(className);
+        resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated to XML"});
+        Error.addMessage(Error.INTERNAL_ERROR, {resstr});
+      then
+        fail();
+  end matchcontinue;
+end translateModelXML;
+
 
 
 public function generateModelCode
@@ -355,6 +468,41 @@ algorithm
       then fail();
   end match;
 end callTargetTemplatesFMU;
+
+
+protected function callTargetTemplatesXML
+"Generate target code by passing the SimCode data structure to templates."
+  input SimCode.SimCode simCode;
+  input String target;
+algorithm
+  _ := match (simCode,target)
+    local
+      String str;
+      
+    case (_,"C")
+      equation
+        Tpl.tplNoret(CodegenXML.translateModel, simCode);
+      then ();        
+    case (_,"Cpp")
+      equation
+        Tpl.tplNoret(CodegenXML.translateModel, simCode);
+      then (); 
+    case (_,"Dump")
+      equation
+        // Yes, do this better later on...
+        print(Tpl.tplString(SimCodeDump.dumpSimCode, simCode));
+      then ();      
+    case (_,"XML")
+      equation
+        Tpl.tplNoret(CodegenXML.translateModel, simCode);
+      then ();        
+    case (_,_)
+      equation
+        str = "Unknown template target : " +& target;
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then fail();
+  end match;
+end callTargetTemplatesXML;
 
 public function translateModel
 "Entry point to translate a Modelica model for simulation.
