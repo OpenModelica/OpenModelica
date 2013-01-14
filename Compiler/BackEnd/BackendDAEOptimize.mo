@@ -12645,7 +12645,7 @@ algorithm
     case ((BackendDAE.ALGORITHM(size=size, alg=alg_, source=source), (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
       DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
       size = size-index;
-      (stmts, preStmts, vars1, additionalInitialEquations1, index, ht) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index, ht);
+      (stmts, preStmts, vars1, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index);
       size = size+index;
       stmts = listAppend(preStmts, stmts);
       additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
@@ -12858,7 +12858,7 @@ protected function encapsulateWhenConditionsForAlgorithms "function encapsulateW
   output list<BackendDAE.Equation> outAdditionalInitialEquations;
   output Integer outIndex;
 algorithm
-  (outStmts, outPreStmts, outVars, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inStmts, inVars, inIndex, inHT)
+  (outStmts, outPreStmts, outVars, outAdditionalInitialEquations, outIndex) := matchcontinue(inStmts, inVars, inIndex)
     local
       DAE.Exp condition;
       list< DAE.ComponentRef> crefLst;
@@ -12921,7 +12921,7 @@ protected function encapsulateWhenConditionsForAlgorithms1 "function encapsulate
   output list<BackendDAE.Equation> outAdditionalInitialEquations;
   output Integer outIndex;
 algorithm
-  (outCondition, outVars, outStmts, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inCondition, inSource, inIndex, inHT)
+  (outCondition, outVars, outStmts, outAdditionalInitialEquations, outIndex) := matchcontinue(inCondition, inSource, inIndex)
     local
       Integer index;
       BackendDAE.WhenEquation elsewhenPart, whenEquation;
