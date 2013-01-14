@@ -19,7 +19,6 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import Static;
 protected import Types;
-protected import Dump;
 
 
 protected function calculateSimulationTimes
@@ -49,7 +48,7 @@ algorithm
       Prefix.Prefix pre;
       Absyn.Info info;
       Integer intervals;
-      Real stepTime;
+      Real rstepTime, rstopTime, rstartTime;
       Env.Cache cache;
       Env.Env env;
     
@@ -57,20 +56,27 @@ algorithm
     case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,_)
       equation
         // An ICONST is used as the default value of stepSize so that this case
-        // fails if stepSize isn't given as argument to buildModel.        
-        
-        (cache, DAE.RCONST(stepTime)) = 
+        // fails if stepSize isn't given as argument to buildModel.
+        (cache, DAE.RCONST(rstepTime)) = 
           Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stepSize", DAE.T_REAL_DEFAULT, 
                               args, DAE.ICONST(0), // force failure if stepSize is not found via division by zero below!
                               pre, info);
-        
-        startTime = DAE.RCONST(0.0);
-        stopTime = DAE.RCONST(1.0);
-        intervals = realInt(1.0 /. stepTime);
+
+        (cache,startTime as DAE.RCONST(rstartTime)) = 
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT, 
+                              args, CevalScript.getSimulationOption(inSimOpt, "startTime"),
+                              pre, info);
+
+        (cache,stopTime as DAE.RCONST(rstopTime)) = 
+          Static.getOptionalNamedArg(cache, env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT, 
+                              args, CevalScript.getSimulationOption(inSimOpt, "stopTime"),
+                              pre, info);
+                              
+        intervals = realInt((rstopTime -. rstartTime) /. rstepTime);
         numberOfIntervals = DAE.ICONST(intervals);
       then
         (cache, startTime, stopTime, numberOfIntervals);
-        
+
     // normal case, fill in defaults
     case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info,_)
       equation
@@ -92,7 +98,7 @@ algorithm
                               pre, info);
       then
         (cache, startTime, stopTime, numberOfIntervals);
-   
+
    end matchcontinue;
 end calculateSimulationTimes;
 
