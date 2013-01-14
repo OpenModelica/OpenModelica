@@ -815,7 +815,7 @@ algorithm
       DAE.Exp e1;
     case ((DAE.CALL(path = Absyn.IDENT(name="initial")), _)) then ((DAE.BCONST(true), true));
     case ((DAE.CALL(path = Absyn.IDENT(name="sample")), _)) then ((DAE.BCONST(false), true));
-    case ((DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = e1::_ ),_)) then ((e1, true));
+    case ((DAE.CALL(path = Absyn.IDENT(name="delay"), expLst = _::e1::_ ),_)) then ((e1, true));
     else then inExp;
   end matchcontinue;
 end simplifyInitialFunktionsExp;
