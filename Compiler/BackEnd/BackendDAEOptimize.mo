@@ -84,13 +84,10 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 
-
-
-
-/*
- * inline arrayeqns stuff
- *
- */
+// =============================================================================
+// inline arrayeqns stuff
+// 
+// =============================================================================
 public function inlineArrayEqn "function inlineArrayEqn
   author: Frenkel TUD 2011-3"
   input BackendDAE.BackendDAE inDAE;
@@ -308,10 +305,10 @@ end generateScalarArrayEqns2;
 
 
 
-/*
- * inline functions stuff
- *
- */
+// =============================================================================
+// inline functions stuff
+//
+// =============================================================================
 public function lateInlineFunction "function lateInlineFunction"
     input BackendDAE.BackendDAE inDAE;
     output BackendDAE.BackendDAE outDAE;
@@ -322,12 +319,10 @@ end lateInlineFunction;
 
 
 
-/*
- * remove simply equations stuff
- *
- */
-
-
+// =============================================================================
+// remove simply equations stuff
+//
+// =============================================================================
 protected function updateEquationSystemMatching
 " function: updateEquationSystemMatching
   author: Frenkel TUD 2012-09"
@@ -962,11 +957,10 @@ algorithm
 end countsimpleEquation;
 
 
-/*  
- * evalutate final parameters stuff
- *
- */ 
-
+// =============================================================================
+// evalutate final parameters stuff
+//
+// =============================================================================
 public function evaluateFinalParameters
 "function: evaluateFinalParameters
   author Frenkel TUD"
@@ -1031,10 +1025,10 @@ algorithm
   end match;
 end evaluateFinalParametersVariables;
 
-/*  
- * remove final parameters stuff
- *
- */ 
+// =============================================================================
+// remove final parameters stuff
+//
+// =============================================================================
 public function removeFinalParameters
 "function: removeFinalParameters
   author Frenkel TUD"
@@ -1430,10 +1424,10 @@ end traverseExpVisitorWrapper;
 
 
 
-/*  
- * remove parameters stuff
- *
- */
+// =============================================================================
+// remove parameters stuff
+//
+// =============================================================================
 public function removeParameters
 "function: removeParameters
   author wbraun"
@@ -1526,10 +1520,10 @@ end removeParametersFinder;
 
 
 
-/*
- * remove protected parameters stuff
- *
- */
+// =============================================================================
+// remove protected parameters stuff
+//
+// =============================================================================
 public function removeProtectedParameters
 "function: removeProtectedParameters
   author Frenkel TUD"
@@ -1621,11 +1615,11 @@ end protectedParametersFinder;
 
 
 
-/*  
- * evaluate parameters stuff 
- * evaluate all parameter with evaluate=true Annotation
- */
-
+// =============================================================================
+// evaluate parameters stuff 
+//
+// evaluate all parameter with evaluate=true Annotation
+// =============================================================================
 public function evaluateParameters
 "function: evaluateParameters
   author Frenkel TUD"
@@ -1672,11 +1666,11 @@ algorithm
   end match;
 end evaluateParameters;
 
-/*  
- * remove evaluated parameters stuff 
- * remove all parameter with evaluate=true Annotation
- */
-
+// =============================================================================
+// remove evaluated parameters stuff 
+//
+// remove all parameter with evaluate=true Annotation
+// =============================================================================
 public function removeevaluateParameters
 "function: removeevaluateParameters
   author Frenkel TUD"
@@ -1976,10 +1970,10 @@ end hasEvaluateAnnotation;
 
 
 
-/* 
- * remove equal function calls equations stuff
- *
- */
+// =============================================================================
+// remove equal function calls equations stuff
+//
+// =============================================================================
 public function removeEqualFunctionCalls
 "function: removeEqualFunctionCalls
   author: Frenkel TUD 2011-04
@@ -2214,10 +2208,10 @@ algorithm
   outTpl := ((e1,(ops,(se,te,i+j))));
 end replaceExp;
 
-/* 
- * remove unused parameter
- */
-
+// =============================================================================
+// remove unused parameter
+//
+// =============================================================================
 public function removeUnusedParameter
 "function: removeUnusedParameter
   author: Frenkel TUD 2011-04
@@ -2354,10 +2348,10 @@ algorithm
   end matchcontinue;
 end checkUnusedParameterExp;
 
-/* 
- * remove unused variables
- */
-
+// =============================================================================
+// remove unused variables
+//
+// =============================================================================
 public function removeUnusedVariables
 "function: removeUnusedVariables
   author: Frenkel TUD 2011-04
@@ -2472,10 +2466,10 @@ algorithm
   end matchcontinue;
 end checkUnusedVariablesExp;
 
-/* 
- * remove unused functions
- */
-
+// =============================================================================
+// remove unused functions
+//
+// =============================================================================
 public function removeUnusedFunctions
 "function: removeUnusedFunctions
   author: Frenkel TUD 2012-03
@@ -2957,10 +2951,10 @@ end checkLinearSystem;
 
 
 
-/*  
- * tearing system of equations stuff
- *
- */ 
+// =============================================================================
+// tearing system of equations stuff
+//
+// =============================================================================
 public function tearingSystem
 " function: tearingSystem
   author: Frenkel TUD
@@ -4634,10 +4628,10 @@ algorithm
   end matchcontinue;
 end splitComps;
 
-/* 
- * Generate sparse pattern
- */
- 
+// =============================================================================
+// Generate sparse pattern
+//
+// =============================================================================
  public function detectSparsePatternODE
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
@@ -5204,10 +5198,10 @@ end transposeSparsePattern2;
 
 
 
-/* 
- * initialization stuff
- *
- */
+// ============================================================================= 
+// initialization stuff
+//
+// =============================================================================
 public function collectInitialEquations "function collectInitialEquations
   author: lochel
   This function collects all initial equations in the following order:
@@ -5645,10 +5639,10 @@ end generateInitialMatricesSparsityPattern;
 
 
 
-/*
- * Symbolic Jacobian subsection
- *
- */ 
+// =============================================================================
+// Symbolic Jacobian subsection
+//
+// =============================================================================
 public function generateSymbolicJacobianPast
   input BackendDAE.BackendDAE inBackendDAE;
   output BackendDAE.BackendDAE outBackendDAE;
@@ -7124,10 +7118,10 @@ end createDiffListMeta;
 
 
 
-/*
- * diff functions for differemtiatewrtX vectorize
- *
- */
+// =============================================================================
+// diff functions for differemtiatewrtX vectorize
+//
+// =============================================================================
 protected function diffInt
   input tuple<DAE.Exp, DAE.ComponentRef, Option<Type_a>> inTplExpTypeA;
   output DAE.Exp outTplExpTypeA;
@@ -7307,10 +7301,10 @@ end diffNumCall;
 
 
 
-/*
- * Merge functions for differemtiatewrtX vectorize
- *
- */
+// =============================================================================
+// Merge functions for differemtiatewrtX vectorize
+//
+// =============================================================================
 protected function mergeCall
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
@@ -7532,10 +7526,10 @@ end mergeTuple;
 
 
 
-/*
- * parallel backend stuff
- *
- */
+// =============================================================================
+// parallel backend stuff
+//
+// =============================================================================
 public function collapseIndependentBlocks
   "Finds independent partitions of the equation system by "
   input BackendDAE.BackendDAE dlow;
@@ -7910,10 +7904,10 @@ end residualForm2;
 
 
 
-/*
- * simplify time independent function calls
- *
- */
+// =============================================================================
+// simplify time independent function calls
+//
+// =============================================================================
 public function simplifyTimeIndepFuncCalls "function simplifyTimeIndepFuncCalls
   simplifies time independent built in function calls like
   pre(param) -> param
@@ -8175,10 +8169,10 @@ algorithm
   end match;
 end traverseZeroCrossingExps;
 
-/*
- * tearing
- *
- */
+// =============================================================================
+// section for tearing
+//
+// =============================================================================
 public function tearingSystemNew "function tearingSystem
   author: Frenkel TUD 2012-05"
   input BackendDAE.BackendDAE inDAE;
@@ -10548,10 +10542,10 @@ end replaceTornEquationsinSystem1;
 
 
 
-/*
- * countOperations
- *
- */
+// =============================================================================
+// countOperations
+//
+// =============================================================================
 public function countOperations "function countOperations
   author: Frenkel TUD 2011-05"
   input BackendDAE.BackendDAE inDAE;
@@ -10876,10 +10870,10 @@ algorithm
 end countOperator;
 
 
-/* 
- * simplify if equations
- *
- */
+// =============================================================================
+// simplify if equations
+//
+// =============================================================================
 
 public function simplifyIfEquations
 "function: simplifyIfEquations
@@ -11569,10 +11563,10 @@ algorithm
 end makeEquationsFromResiduals;
 
 
-/* 
- * simplify semiLinear calls 
- *
- */
+// =============================================================================
+// simplify semiLinear calls 
+//
+// =============================================================================
 
 public function simplifysemiLinear
 "function: simplifysemiLinear
@@ -11584,8 +11578,7 @@ algorithm
   odae := BackendDAEUtil.mapEqSystem(dae,simplifysemiLinearWork);
 end simplifysemiLinear;
 
-protected function simplifysemiLinearWork
-"function: simplifysemiLinearWork
+protected function simplifysemiLinearWork "function simplifysemiLinearWork
   author: Frenkel TUD 2012-08
   This function traveres all equations and tries to simplify calls to semiLinear"
   input BackendDAE.EqSystem isyst;
@@ -11837,8 +11830,7 @@ algorithm
   end match;
 end semiLinearOptimize1;
 
-protected function semiLinearSort
-"function: semiLinearSort
+protected function semiLinearSort "function semiLinearSort
   author: Frenkel TUD 2012-08
   helper for simplifysemiLinear"
   input  list<tuple<BackendDAE.Equation,Integer>> eqnslst;
@@ -12049,10 +12041,10 @@ algorithm
   end matchcontinue;
 end simplifysemiLinearFinder;
 
-/*
- * check for derivatives of inputs
- *
- */
+// =============================================================================
+// check for derivatives of inputs
+//
+// =============================================================================
 public function inputDerivativesUsed "function inputDerivativesUsed
   checks if der(input) is used and report a warning/error.
   author: Frenkel TUD 2012-10"
@@ -12135,10 +12127,10 @@ algorithm
 end traverserExpinputDerivativesUsed;
 
 
-/*  
- * remove constants stuff
- *
- */ 
+// =============================================================================
+// remove constants stuff
+//
+// =============================================================================
 public function removeConstants
 "function: removeConstants
   author Frenkel TUD"
@@ -12228,10 +12220,10 @@ algorithm
 end removeConstantsFinder;
 
 
-/*
- * reaplace edge and change with (b and not pre(b)) and (v <> pre(v) 
- *
- */
+// =============================================================================
+// reaplace edge and change with (b and not pre(b)) and (v <> pre(v) 
+//
+// =============================================================================
 public function replaceEdgeChange "function replaceEdgeChange
   replace 
   edge(b) = b and not pre(b)
@@ -12336,13 +12328,11 @@ algorithm
 end replaceEdgeChangeShared;
 
 
-/*
- * optimize inital system
- *
- */
-
-public function optimizeInitialSystem
-"function: optimizeInitialSystem
+// =============================================================================
+// optimize inital system
+//
+// =============================================================================
+public function optimizeInitialSystem "function optimizeInitialSystem
   author Frenkel TUD 2012-08"
   input BackendDAE.BackendDAE inDAE;
   output BackendDAE.BackendDAE outDAE;
@@ -12369,8 +12359,7 @@ algorithm
   end matchcontinue;
 end optimizeInitialSystem;
 
-protected function optimizeInitialSystemWork
-"function: optimizeInitialSystemWork
+protected function optimizeInitialSystemWork "function optimizeInitialSystemWork
   author Frenkel TUD 2012-08"
   input Boolean optimizationfound;
   input BackendDAE.BackendDAE inDAE;
@@ -12404,7 +12393,7 @@ algorithm
   end match;
 end optimizeInitialSystemWork;
 
-protected function optimizeInitialSystem1"
+protected function optimizeInitialSystem1 "function optimizeInitialSystem1
   author: Frenkel TUD 2012-06"
   input list<BackendDAE.Equation> iEqns;
   input BackendDAE.Variables knvars;
@@ -12474,8 +12463,7 @@ algorithm
   end matchcontinue;
 end addInitialAlias;
 
-protected function optimizeInitialAliases
-"function: optimizeInitialAliases
+protected function optimizeInitialAliases "function optimizeInitialAliases
   author Frenkel TUD 2012-08"
   input BackendDAE.EqSystem isyst;
   input HashTable2.HashTable initalAliases;
@@ -12499,10 +12487,10 @@ algorithm
   end match;
 end optimizeInitialAliases;
 
-protected function optimizeInitialAliasesFinder
-"author: Frenkel TUD 2011-03"
- input tuple<BackendDAE.Var, tuple<HashTable2.HashTable,Boolean>> inTpl;
- output tuple<BackendDAE.Var, tuple<HashTable2.HashTable,Boolean>> outTpl;
+protected function optimizeInitialAliasesFinder "function optimizeInitialAliasesFinder
+  author: Frenkel TUD 2011-03"
+  input tuple<BackendDAE.Var, tuple<HashTable2.HashTable,Boolean>> inTpl;
+  output tuple<BackendDAE.Var, tuple<HashTable2.HashTable,Boolean>> outTpl;
 algorithm
   outTpl:=
   matchcontinue (inTpl)
@@ -12521,5 +12509,520 @@ algorithm
     case _ then inTpl;
   end matchcontinue;
 end optimizeInitialAliasesFinder;
+
+// =============================================================================
+// section for preOptModule >>encapsulateWhenConditions<<
+// 
+// This module encapsulates each when-condition in a boolean-variable 
+// $whenConditionN and generates to each of these variables an initial equation
+// $whenConditionN = pre($whenConditionN)
+// =============================================================================
+
+public function encapsulateWhenConditions "function encapsulateWhenConditions
+  author: lochel"
+  input BackendDAE.BackendDAE inDAE;
+  output BackendDAE.BackendDAE outDAE;
+protected
+  BackendDAE.EqSystems systs;
+  BackendDAE.Shared shared;
+  BackendDAE.Variables knownVars;
+  BackendDAE.Variables externalObjects;
+  BackendDAE.Variables aliasVars;
+  BackendDAE.EquationArray initialEqs;
+  BackendDAE.EquationArray removedEqs;
+  array<DAE.Constraint> constraints;
+  array<DAE.ClassAttributes> classAttrs;
+  Env.Cache cache;
+  Env.Env env;
+  DAE.FunctionTree functionTree;
+  BackendDAE.EventInfo eventInfo;
+  BackendDAE.ExternalObjectClasses extObjClasses;
+  BackendDAE.BackendDAEType backendDAEType;
+  BackendDAE.SymbolicJacobians symjacs;
+  list<BackendDAE.Equation> additionalInitialEquations;
+  HashTableExpToIndex.HashTable ht;   // is used to avoid redundant condition-variables
+algorithm
+  BackendDAE.DAE(systs, shared) := inDAE;
+  BackendDAE.SHARED(knownVars=knownVars,
+                    externalObjects=externalObjects,
+                    aliasVars=aliasVars,
+                    initialEqs=initialEqs,
+                    removedEqs=removedEqs,
+                    constraints=constraints,
+                    classAttrs=classAttrs,
+                    cache=cache,
+                    env=env,
+                    functionTree=functionTree,
+                    eventInfo=eventInfo,
+                    extObjClasses=extObjClasses,
+                    backendDAEType=backendDAEType,
+                    symjacs=symjacs) := shared;
+  
+  ht := HashTableExpToIndex.emptyHashTable();
+  (systs, (additionalInitialEquations, _, ht)) := List.mapFold(systs, encapsulateWhenConditions1, ({}, 1, ht));
+  
+  initialEqs := BackendEquation.addEquations(additionalInitialEquations, initialEqs);
+  shared := BackendDAE.SHARED(knownVars,
+                              externalObjects,
+                              aliasVars,
+                              initialEqs,
+                              removedEqs,
+                              constraints,
+                              classAttrs,
+                              cache,
+                              env,
+                              functionTree,
+                              eventInfo,
+                              extObjClasses,
+                              backendDAEType,
+                              symjacs);
+  outDAE := BackendDAE.DAE(systs, shared);
+  Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpBackendDAE, outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
+end encapsulateWhenConditions;
+
+protected function encapsulateWhenConditions1 "function encapsulateWhenConditions1
+  author: lochel
+  This is a helper function for encapsulateWhenConditions."
+  input BackendDAE.EqSystem inEqSystem;
+  input tuple<list<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> inTpl;
+  output BackendDAE.EqSystem outEqSystem;
+  output tuple<list<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable> outTpl;
+protected  
+  BackendDAE.Variables orderedVars;
+  BackendDAE.EquationArray orderedEqs;
+  BackendDAE.StateSets stateSets;
+  list<BackendDAE.Var> varLst;
+  list<BackendDAE.Equation> eqnLst, additionalInitialEquations;
+  Integer index;
+  HashTableExpToIndex.HashTable ht;
+algorithm
+  BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inEqSystem;
+  (additionalInitialEquations, index, ht) := inTpl;
+  
+  ((orderedEqs, varLst, eqnLst, additionalInitialEquations, index, ht)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, encapsulateWhenConditions2, (BackendEquation.emptyEqns(), {}, {}, additionalInitialEquations, index, ht));
+
+  Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpVarList, varLst, "when-condition | vars");
+  Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpEquationList, eqnLst, "when-condition | equations");
+  Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpEquationList, additionalInitialEquations, "when-condition | initial equations");
+  
+  orderedVars := BackendVariable.addVars(varLst, orderedVars);
+  orderedEqs := BackendEquation.addEquations(eqnLst, orderedEqs);
+
+  outTpl := (additionalInitialEquations, index, ht);
+  outEqSystem := BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
+end encapsulateWhenConditions1;
+
+protected function encapsulateWhenConditions2 "function encapsulateWhenConditions2
+  author: lochel
+  This is a helper function for encapsulateWhenConditions1."
+  input tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray, list<BackendDAE.Var>, list<BackendDAE.Equation>, list<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<BackendDAE.EquationArray, list<BackendDAE.Var>, list<BackendDAE.Equation>, list<BackendDAE.Equation>, Integer, HashTableExpToIndex.HashTable>> outTpl;
+algorithm
+  outTpl := match(inTpl)
+    local
+      BackendDAE.Equation eqn, eqn2;
+      list<BackendDAE.Var> vars, vars1;
+      list<BackendDAE.Equation> eqns, eqns1, additionalInitialEquations, additionalInitialEquations1;
+      BackendDAE.WhenEquation whenEquation;
+      DAE.ElementSource source;
+      Integer index, size;
+      BackendDAE.EquationArray equationArray;
+      DAE.Algorithm alg_;
+      list<DAE.Statement> stmts, preStmts;
+      HashTableExpToIndex.HashTable ht;
+
+    // when equation
+    case ((BackendDAE.WHEN_EQUATION(size=size, whenEquation=whenEquation, source=source), (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
+      (whenEquation, vars1, eqns1, additionalInitialEquations1, index, ht) = encapsulateWhenConditionsForEquations(whenEquation, source, index, ht);
+      vars = listAppend(vars, vars1);
+      eqns = listAppend(eqns, eqns1);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      eqn = BackendDAE.WHEN_EQUATION(size, whenEquation, source);
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
+    then ((eqn, (equationArray, vars, eqns, additionalInitialEquations, index, ht)));
+
+    // algorithm
+    case ((BackendDAE.ALGORITHM(size=size, alg=alg_, source=source), (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
+      DAE.ALGORITHM_STMTS(statementLst=stmts) = alg_;
+      size = size-index;
+      (stmts, preStmts, vars1, additionalInitialEquations1, index, ht) = encapsulateWhenConditionsForAlgorithms(stmts, vars, index, ht);
+      size = size+index;
+      stmts = listAppend(preStmts, stmts);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      alg_ = DAE.ALGORITHM_STMTS(stmts);
+      eqn = BackendDAE.ALGORITHM(size, alg_, source);
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
+    then ((eqn, (equationArray, vars1, eqns, additionalInitialEquations, index, ht)));
+
+    case ((eqn, (equationArray, vars, eqns, additionalInitialEquations, index, ht))) equation
+      equationArray = BackendEquation.addEquations({eqn}, equationArray);
+    then ((eqn, (equationArray, vars, eqns, additionalInitialEquations, index, ht)));
+  end match;
+end encapsulateWhenConditions2;
+
+protected function encapsulateWhenConditionsForEquations "function encapsulateWhenConditionsForEquations
+  author: lochel
+  This is a helper function for encapsulateWhenConditions2."
+  input BackendDAE.WhenEquation inWhenEquation;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  input HashTableExpToIndex.HashTable inHT;
+  output BackendDAE.WhenEquation outWhenEquation;
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.Equation> outAdditionalInitialEquations;
+  output Integer outIndex;
+  output HashTableExpToIndex.HashTable outHT;
+algorithm
+  (outWhenEquation, outVars, outEqns, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inWhenEquation, inSource, inIndex, inHT)
+    local
+      Integer index;
+      BackendDAE.WhenEquation elsewhenPart, whenEquation;
+      list<BackendDAE.Var> vars, vars1;
+      list<BackendDAE.Equation> eqns, eqns1, additionalInitialEquations, additionalInitialEquations1;
+      String crStr;
+      
+      DAE.Exp condition;
+      DAE.ComponentRef left;
+      DAE.Exp right;
+      
+      HashTableExpToIndex.HashTable ht;
+      
+    // when
+    case (BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=NONE()), _, index, ht) equation
+      (condition, vars, eqns, additionalInitialEquations, index, ht) = encapsulateWhenConditionsForEquations1(condition, inSource, index, ht);
+      whenEquation = BackendDAE.WHEN_EQ(condition, left, right, NONE());
+    then (whenEquation, vars, eqns, additionalInitialEquations, index, ht);
+
+    // when - elsewhen
+    case (whenEquation as BackendDAE.WHEN_EQ(condition=condition, left=left, right=right, elsewhenPart=SOME(elsewhenPart)), _, index, ht) equation
+      (elsewhenPart, vars1, eqns1, additionalInitialEquations1, index, ht) = encapsulateWhenConditionsForEquations(elsewhenPart, inSource, index, ht);
+      (condition, vars, eqns, additionalInitialEquations, index, ht) = encapsulateWhenConditionsForEquations1(condition, inSource, index, ht);
+      whenEquation = BackendDAE.WHEN_EQ(condition, left, right, SOME(elsewhenPart));
+      vars = listAppend(vars, vars1);
+      eqns = listAppend(eqns, eqns1);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+    then (whenEquation, vars, eqns, additionalInitialEquations, index, ht);
+  end matchcontinue;
+end encapsulateWhenConditionsForEquations;
+
+protected function encapsulateWhenConditionsForEquations1 "function encapsulateWhenConditionsForEquations1
+  author: lochel
+  This is a helper function for encapsulateWhenConditionsForEquations."
+  input DAE.Exp inCondition;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  input HashTableExpToIndex.HashTable inHT;
+  output DAE.Exp outCondition;
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.Equation> outAdditionalInitialEquations;
+  output Integer outIndex;
+  output HashTableExpToIndex.HashTable outHT;
+algorithm
+  (outCondition, outVars, outEqns, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inCondition, inSource, inIndex, inHT)
+    local
+      Integer index, localIndex;
+      BackendDAE.WhenEquation elsewhenPart, whenEquation;
+      BackendDAE.Var var;
+      BackendDAE.Equation eqn;
+      BackendDAE.Equation initialEqn;
+      list<BackendDAE.Equation> initialEqns;
+      list<BackendDAE.Var> vars;
+      list<BackendDAE.Equation> eqns;
+      String crStr;
+      
+      DAE.Exp condition;
+      DAE.ComponentRef left;
+      DAE.Exp right;
+      list<DAE.Exp> array;
+      
+      DAE.Type ty;
+      Boolean scalar "scalar for codegen" ;
+      
+      DAE.ComponentRef preCR;
+      HashTableExpToIndex.HashTable ht;
+
+    // we do not replace initial()
+    case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index, ht)
+    then (condition, {}, {}, {}, index, ht);
+    
+    // array-condition with dim = 1 [already in ht]
+    case (DAE.ARRAY(array={condition}), _, index, ht) equation
+      localIndex = BaseHashTable.get(condition, ht);
+      crStr = "$whenCondition" +& intString(localIndex);
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+    then (condition, {}, {}, {}, index, ht);
+    
+    // array-condition with dim = 1 [not yet in ht]
+    case (DAE.ARRAY(array={condition}), _, index, ht) equation
+      ht = BaseHashTable.add((condition, index), ht);
+      crStr = "$whenCondition" +& intString(index);
+      
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      eqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource, false);
+      
+      preCR = ComponentReference.crefPrefixPre(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}));
+      initialEqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), DAE.CREF(preCR, DAE.T_BOOL_DEFAULT), inSource, false);
+      
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+    then (condition, {var}, {eqn}, {initialEqn}, index+1, ht);
+
+    // array-condition
+    case (condition as DAE.ARRAY(ty=ty, scalar=scalar, array=array), _, _, ht) equation
+      (array, vars, eqns, initialEqns, index, ht) = encapsulateWhenConditionsForEquationsWithArrayConditions(array, inSource, inIndex, ht);
+    then (DAE.ARRAY(ty, scalar, array), vars, eqns, initialEqns, index, ht);
+    
+    // simple condition [already in ht]
+    case (condition, _, index, ht) equation
+      localIndex = BaseHashTable.get(condition, ht);
+      crStr = "$whenCondition" +& intString(localIndex);
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+    then (condition, {}, {}, {}, index, ht);
+    
+    // simple condition [not yet in ht]
+    case (condition, _, index, ht) equation
+      ht = BaseHashTable.add((condition, index), ht);
+      crStr = "$whenCondition" +& intString(index);
+      
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      eqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource, false);
+      
+      preCR = ComponentReference.crefPrefixPre(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}));
+      initialEqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), DAE.CREF(preCR, DAE.T_BOOL_DEFAULT), inSource, false);
+      
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+    then (condition, {var}, {eqn}, {initialEqn}, index+1, ht);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function encapsulateWhenConditionsForEquations1 failed"});
+    then fail();
+  end matchcontinue;
+end encapsulateWhenConditionsForEquations1;
+
+protected function encapsulateWhenConditionsForEquationsWithArrayConditions "function encapsulateWhenConditionsForEquationsWithArrayConditions
+  author: lochel
+  This is a helper function for encapsulateWhenConditionsForEquations1."
+  input list<DAE.Exp> inConditionList;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  input HashTableExpToIndex.HashTable inHT;
+  output list<DAE.Exp> outConditionList;
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.Equation> outAdditionalInitialEquations;
+  output Integer outIndex;
+  output HashTableExpToIndex.HashTable outHT;
+algorithm
+  (outConditionList, outVars, outEqns, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inConditionList, inSource, inIndex, inHT)
+    local
+      Integer index;
+      BackendDAE.WhenEquation elsewhenPart, whenEquation;
+      BackendDAE.Var var;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Var> vars1, vars2;
+      list<BackendDAE.Equation> eqns1, eqns2;
+      String crStr;
+      
+      DAE.Exp condition;
+      list<DAE.Exp> conditionList;
+      DAE.ComponentRef left;
+      DAE.Exp right;
+      list<DAE.Exp> array;
+      list<BackendDAE.Equation> additionalInitialEquations, additionalInitialEquations1;
+      
+      HashTableExpToIndex.HashTable ht;
+    
+    case ({}, _, _, _) equation
+    then ({}, {}, {}, {}, inIndex, inHT);
+    
+    case (condition::conditionList, _, index, ht) equation
+      (condition, vars1, eqns1, additionalInitialEquations, index, ht) = encapsulateWhenConditionsForEquations1(condition, inSource, index, ht);
+      (conditionList, vars2, eqns2, additionalInitialEquations1, index, ht) = encapsulateWhenConditionsForEquationsWithArrayConditions(conditionList, inSource, index, ht);
+      vars1 = listAppend(vars1, vars2);
+      eqns1 = listAppend(eqns1, eqns2);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+    then (condition::conditionList, vars1, eqns1, additionalInitialEquations, index, ht);
+  end matchcontinue;
+end encapsulateWhenConditionsForEquationsWithArrayConditions;
+
+protected function encapsulateWhenConditionsForAlgorithms "function encapsulateWhenConditionsForAlgorithms
+  author: lochel
+  This is a helper function for encapsulateWhenConditions2."
+  input list<DAE.Statement> inStmts;
+  input list<BackendDAE.Var> inVars;
+  input Integer inIndex;
+  output list<DAE.Statement> outStmts;
+  output list<DAE.Statement> outPreStmts; // these are additional statements that should be inserted directly before a STMT_WHEN
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outAdditionalInitialEquations;
+  output Integer outIndex;
+algorithm
+  (outStmts, outPreStmts, outVars, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inStmts, inVars, inIndex, inHT)
+    local
+      DAE.Exp condition;
+      list< DAE.ComponentRef> crefLst;
+      DAE.Statement stmt, elseWhen;
+      list<DAE.Statement> stmts, rest, stmts1, stmts_, preStmts, preStmts2;
+      list<tuple<DAE.ComponentRef, Integer>> crintLst;
+      list<BackendDAE.Var> vars1, vars2;
+      list<Integer> helpVarIndices;
+      list<BackendDAE.Equation> eqns, additionalInitialEquations, additionalInitialEquations1;
+      Integer index;
+      DAE.ElementSource source;
+      list<BackendDAE.Var> vars;
+      
+    case ({}, _, _)
+    then ({}, {}, inVars, {}, inIndex);
+    
+    // when statement
+    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=NONE(), helpVarIndices=helpVarIndices, source=source))::rest, _, _) equation
+      (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
+      vars = listAppend(vars, inVars);
+      stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, stmts1, NONE(), helpVarIndices, source)});
+      
+      (stmts, preStmts, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
+      stmts_ = listAppend(stmts_, stmts);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+    then (stmts_, preStmts, vars, additionalInitialEquations, index);
+    
+    // when - elsewhen statement
+    case ((DAE.STMT_WHEN(exp=condition, statementLst=stmts1, elseWhen=SOME(elseWhen), helpVarIndices=helpVarIndices, source=source))::rest, _, _) equation
+      (condition, vars, preStmts, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, source, inIndex);
+      vars = listAppend(vars, inVars);
+      
+      ({elseWhen}, preStmts2, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms({elseWhen}, vars, index);
+      preStmts = listAppend(preStmts, preStmts2);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+      stmts_ = listAppend(preStmts, {DAE.STMT_WHEN(condition, stmts1, SOME(elseWhen), helpVarIndices, source)});
+
+      (stmts, preStmts, vars, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithms(rest, vars, index);
+      stmts_ = listAppend(stmts_, stmts);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+    then (stmts_, preStmts, vars, additionalInitialEquations, index);
+    
+    // no when statement
+    case (stmt::rest, _, _) equation
+      (stmts, preStmts, vars, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms(rest, inVars, inIndex);
+      stmts = listAppend(preStmts, stmts);
+    then (stmt::stmts, {}, vars, additionalInitialEquations, index);
+  end matchcontinue;
+end encapsulateWhenConditionsForAlgorithms;
+
+protected function encapsulateWhenConditionsForAlgorithms1 "function encapsulateWhenConditionsForAlgorithms1
+  author: lochel
+  This is a helper function for encapsulateWhenConditionsForEquations."
+  input DAE.Exp inCondition;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  output DAE.Exp outCondition;
+  output list<BackendDAE.Var> outVars;
+  output list<DAE.Statement> outStmts;
+  output list<BackendDAE.Equation> outAdditionalInitialEquations;
+  output Integer outIndex;
+algorithm
+  (outCondition, outVars, outStmts, outAdditionalInitialEquations, outIndex, outHT) := matchcontinue(inCondition, inSource, inIndex, inHT)
+    local
+      Integer index;
+      BackendDAE.WhenEquation elsewhenPart, whenEquation;
+      BackendDAE.Var var;
+      DAE.Statement stmt;
+      list<BackendDAE.Var> vars;
+      list<DAE.Statement> stmts;
+      String crStr;
+      
+      DAE.Exp condition;
+      DAE.ComponentRef left;
+      DAE.Exp right;
+      list<DAE.Exp> array;
+      
+      DAE.Type ty;
+      Boolean scalar "scalar for codegen" ;
+      
+      DAE.ComponentRef preCR;
+      BackendDAE.Equation initialEqn;
+      list<BackendDAE.Equation> initialEqns;
+
+    // we do not replace initial()
+    case (condition as DAE.CALL(path = Absyn.IDENT(name = "initial")), _, index)
+    then (condition, {}, {}, {}, index);
+    
+    // array-condition
+    case (DAE.ARRAY(array={condition}), _, index) equation
+      crStr = "$whenCondition" +& intString(index);
+      
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+      
+      preCR = ComponentReference.crefPrefixPre(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}));
+      initialEqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), DAE.CREF(preCR, DAE.T_BOOL_DEFAULT), inSource, false);
+    then (condition, {var}, {stmt}, {initialEqn}, index+1);
+
+    // array-condition
+    case (condition as DAE.ARRAY(ty=ty, scalar=scalar, array=array), _, _) equation
+      (array, vars, stmts, initialEqns, index) = encapsulateWhenConditionsForAlgorithmsWithArrayConditions(array, inSource, inIndex);
+    then (DAE.ARRAY(ty, scalar, array), vars, stmts, initialEqns, index);
+    
+    // simple condition
+    case (condition, _, index) equation
+      crStr = "$whenCondition" +& intString(index);
+      
+      var = BackendDAE.VAR(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), BackendDAE.DISCRETE(), DAE.BIDIR(), DAE.NON_PARALLEL(), DAE.T_BOOL_DEFAULT, NONE(), NONE(), {}, inSource, NONE(), NONE(), DAE.NON_CONNECTOR());
+      stmt = DAE.STMT_ASSIGN(DAE.T_BOOL_DEFAULT, DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), condition, inSource);
+      condition = DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT);
+      
+      preCR = ComponentReference.crefPrefixPre(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}));
+      initialEqn = BackendDAE.EQUATION(DAE.CREF(DAE.CREF_IDENT(crStr, DAE.T_BOOL_DEFAULT, {}), DAE.T_BOOL_DEFAULT), DAE.CREF(preCR, DAE.T_BOOL_DEFAULT), inSource, false);
+    then (condition, {var}, {stmt}, {initialEqn}, index+1);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/BackendDAEOptimize.mo: function encapsulateWhenConditionsForAlgorithms1 failed"});
+    then fail();
+  end matchcontinue;
+end encapsulateWhenConditionsForAlgorithms1;
+
+protected function encapsulateWhenConditionsForAlgorithmsWithArrayConditions "function encapsulateWhenConditionsForAlgorithmsWithArrayConditions
+  author: lochel
+  This is a helper function for encapsulateWhenConditionsForAlgorithms1."
+  input list<DAE.Exp> inConditionList;
+  input DAE.ElementSource inSource;
+  input Integer inIndex;
+  output list<DAE.Exp> outConditionList;
+  output list<BackendDAE.Var> outVars;
+  output list<DAE.Statement> outStmts;
+  output list<BackendDAE.Equation> outAdditionalInitialEquations;
+  output Integer outIndex;
+algorithm
+  (outConditionList, outVars, outStmts, outAdditionalInitialEquations, outIndex) := matchcontinue(inConditionList, inSource, inIndex)
+    local
+      Integer index;
+      BackendDAE.WhenEquation elsewhenPart, whenEquation;
+      BackendDAE.Var var;
+      BackendDAE.Equation eqn;
+      list<BackendDAE.Var> vars1, vars2;
+      list<DAE.Statement> stmt1, stmt2;
+      String crStr;
+      
+      DAE.Exp condition;
+      list<DAE.Exp> conditionList;
+      DAE.ComponentRef left;
+      DAE.Exp right;
+      list<DAE.Exp> array;
+      
+      list<BackendDAE.Equation> additionalInitialEquations, additionalInitialEquations1;
+    
+    case ({}, _, _) equation
+    then ({}, {}, {}, {}, inIndex);
+    
+    case (condition::conditionList, _, index) equation
+      (condition, vars1, stmt1, additionalInitialEquations, index) = encapsulateWhenConditionsForAlgorithms1(condition, inSource, index);
+      (conditionList, vars2, stmt2, additionalInitialEquations1, index) = encapsulateWhenConditionsForAlgorithmsWithArrayConditions(conditionList, inSource, index);
+      vars1 = listAppend(vars1, vars2);
+      stmt1 = listAppend(stmt1, stmt2);
+      additionalInitialEquations = listAppend(additionalInitialEquations, additionalInitialEquations1);
+    then (condition::conditionList, vars1, stmt1, additionalInitialEquations, index);
+  end matchcontinue;
+end encapsulateWhenConditionsForAlgorithmsWithArrayConditions;
 
 end BackendDAEOptimize;

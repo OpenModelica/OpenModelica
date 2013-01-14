@@ -98,9 +98,10 @@ protected import ValuesUtil;
 //protected import ReduceDAE;
 
 // =============================================================================
+// section for public function for SimCodeTV
 //
-// Section for public function for SimCodeTV
 // =============================================================================
+
 public function elementVars
 "Used by templates to get a list of variables from a valueblock."
   input list<DAE.Element> ild;
@@ -476,17 +477,15 @@ algorithm
   outEqn := listAppend(inEqn1,inEqn2);
 end appendLists;
 
-
 /** end of TypeView published functions **/
 
-
 // =============================================================================
+// section to generate SimCode from functions
 //
-// Section to generate SimCode from functions
+// Finds the called functions in BackendDAE and transforms them to a list of
+// libraries and a list of SimCode.Function uniontypes.
 // =============================================================================
 
-/* Finds the called functions in BackendDAE and transforms them to a list of
- libraries and a list of SimCode.Function uniontypes. */
 public function createFunctions
   input Absyn.Program inProgram;
   input DAE.DAElist inDAElist;
@@ -1137,10 +1136,9 @@ algorithm
   end match;
 end isBoxedArg;
 
-
 // =============================================================================
+// section of literals translation SimCode
 //
-// Section of literals translation SimCode
 // =============================================================================
 
 public function findLiterals
@@ -1392,10 +1390,9 @@ algorithm
   end match;
 end isLiteralExp;
 
-
 // =============================================================================
+// section to create SimCode from BackendDAE
 //
-// Section to create SimCode from BackendDAE
 // =============================================================================
 
 public function createSimCode "function createSimCode
@@ -1906,8 +1903,8 @@ algorithm
 end indexNonLinSysandCountEqns;
 
 // =============================================================================
+// section to create SimCode.Equations from BackendDAE.Equation
 //
-// Section to create SimCode.Equations from BackendDAE.Equation
 // =============================================================================
 
 protected function createEquationsForSystems "function createEquationsForSystems
@@ -2468,7 +2465,7 @@ algorithm
       then
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
         
-    // Algorithm for single variable.
+    // algorithm for single variable
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, false, false, _, _)
       equation
         BackendDAE.ALGORITHM(alg=alg) = BackendDAEUtil.equationNth(eqns, eqNum-1);
@@ -2482,7 +2479,7 @@ algorithm
       then
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
 
-    // inverse Algorithm for single variable.
+    // inverse Algorithm for single variable
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, false, _, _, _)
       equation
         BackendDAE.ALGORITHM(alg=alg, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
@@ -2495,7 +2492,7 @@ algorithm
       then
         ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
 
-    // inverse Algorithm for single variable.
+    // inverse Algorithm for single variable failed
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, false, _, _, _)
       equation
         BackendDAE.ALGORITHM(alg=alg, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
@@ -2508,7 +2505,8 @@ algorithm
         message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in ", algStr, ". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR, {message});
       then fail();
-    // Algorithm for single variable.
+/*
+    // algorithm for single variable.
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, true, false, _, _)
       equation
         BackendDAE.ALGORITHM(alg=alg, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
@@ -2520,10 +2518,9 @@ algorithm
         true = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
         algStr =  DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg, source)});
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
-      then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
-        
-    // inverse Algorithm for single variable.
+      then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
+
+    // inverse algorithm
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, true, _, _, _)
       equation
         BackendDAE.ALGORITHM(alg=alg, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
@@ -2533,9 +2530,9 @@ algorithm
         false = ComponentReference.crefEqualNoStringCompare(BackendVariable.varCref(v), varOutput);
         DAE.ALGORITHM_STMTS(algStatements) = BackendDAEUtil.collateAlgorithm(alg, NONE());
         algStatements = solveAlgorithmInverse(algStatements, {v});
-      then
-        ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);        
-    // inverse Algorithm for single variable.
+      then ({SimCode.SES_ALGORITHM(iuniqueEqIndex, algStatements)}, iuniqueEqIndex+1, itempvars);
+        
+    // inverse algorithm failed
     case (_, _, BackendDAE.EQSYSTEM(orderedVars = vars, orderedEqs = eqns), _, _, true, _, _, _)
       equation
         BackendDAE.ALGORITHM(alg=alg, source=source) = BackendDAEUtil.equationNth(eqns, eqNum-1);
@@ -2548,6 +2545,7 @@ algorithm
         message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in ", algStr, ". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR, {message});
       then fail();
+*/
   end matchcontinue;
 end createEquation;
 
@@ -2571,39 +2569,67 @@ algorithm
   end match;
 end replaceIFBrancheswithoutVar;
 
-protected function solveAlgorithmInverse
+protected function solveAlgorithmInverse "function solveAlgorithmInverse
+  author: jfrenkel
+  This function solves symbolically a algorithm inverse for a few special cases."
   input list<DAE.Statement> inStmts;
-  input list<BackendDAE.Var> solveFor;
+  input list<BackendDAE.Var> inSolveFor;
   output list<DAE.Statement> outStmts;
 algorithm
-  outStmts := matchcontinue (inStmts, solveFor)
+  outStmts := matchcontinue (inStmts, inSolveFor)
     local
-      DAE.ComponentRef cr;
-      DAE.Exp e1,e2,varexp,exp;
-      DAE.ElementSource source;
+      DAE.ComponentRef cr1;
+      DAE.Exp e11, e12, varexp1, solvedExp1;
+      DAE.ElementSource source1;
+      DAE.Type tp1;
+      BackendDAE.Var v1;
+      
+      DAE.ComponentRef cr2;
+      DAE.Exp e21, e22, varexp2, solvedExp2;
+      DAE.ElementSource source2;
+      DAE.Type tp2;
+      BackendDAE.Var v2;
+      
       list<DAE.Statement> asserts;
-      BackendDAE.Var v;
-      DAE.Type tp;
 
-        // Algorithm for single variable.
-    case (DAE.STMT_ASSIGN(exp1=e1,exp=e2,source=source)::{}, ( v as BackendDAE.VAR(varName=cr))::{})
-      equation
-        varexp = Expression.crefExp(cr);
-        varexp = Debug.bcallret1(BackendVariable.isStateVar(v), Expression.expDer, varexp, varexp);
-        (exp,asserts) = ExpressionSolve.solve(e1, e2, varexp);
-        cr = Debug.bcallret1(BackendVariable.isStateVar(v), ComponentReference.crefPrefixDer, cr, cr);
-        source = DAEUtil.addSymbolicTransformationSolve(true, source, cr, e1, e2, exp, asserts);
-        tp = Expression.typeof(varexp); 
-      then
-        {DAE.STMT_ASSIGN(tp,varexp,exp,source)};
+    // Algorithm for single variable
+    // a := exp1(b); => b := exp1_(a);
+    case (DAE.STMT_ASSIGN(exp1=e11, exp=e12, source=source1)::{}, (v1 as BackendDAE.VAR(varName=cr1))::{}) equation
+      varexp1 = Expression.crefExp(cr1);
+      varexp1 = Debug.bcallret1(BackendVariable.isStateVar(v1), Expression.expDer, varexp1, varexp1);
+      (solvedExp1, asserts) = ExpressionSolve.solve(e11, e12, varexp1);
+      cr1 = Debug.bcallret1(BackendVariable.isStateVar(v1), ComponentReference.crefPrefixDer, cr1, cr1);
+      source1 = DAEUtil.addSymbolicTransformationSolve(true, source1, cr1, e11, e12, solvedExp1, asserts);
+      tp1 = Expression.typeof(varexp1); 
+    then {DAE.STMT_ASSIGN(tp1, varexp1, solvedExp1, source1)};
+    
+    // a := exp1(b); c := exp2(d); => b := exp1_(a); d := exp2_(c);
+    case (DAE.STMT_ASSIGN(exp1=e11, exp=e12, source=source1)::DAE.STMT_ASSIGN(exp1=e21, exp=e22, source=source2)::{}, (v1 as BackendDAE.VAR(varName=cr1))::(v2 as BackendDAE.VAR(varName=cr2))::{}) equation
+      // check for cross-over dependencies
+      false = Expression.expHasCref(e12, cr2);
+      false = Expression.expHasCref(e22, cr1);
+      
+      varexp1 = Expression.crefExp(cr1);
+      varexp1 = Debug.bcallret1(BackendVariable.isStateVar(v1), Expression.expDer, varexp1, varexp1);
+      (solvedExp1, asserts) = ExpressionSolve.solve(e11, e12, varexp1);
+      cr1 = Debug.bcallret1(BackendVariable.isStateVar(v1), ComponentReference.crefPrefixDer, cr1, cr1);
+      source1 = DAEUtil.addSymbolicTransformationSolve(true, source1, cr1, e11, e12, solvedExp1, asserts);
+      tp1 = Expression.typeof(varexp1);
+      
+      varexp2 = Expression.crefExp(cr2);
+      varexp2 = Debug.bcallret1(BackendVariable.isStateVar(v2), Expression.expDer, varexp2, varexp2);
+      (solvedExp2, asserts) = ExpressionSolve.solve(e21, e22, varexp2);
+      cr2 = Debug.bcallret1(BackendVariable.isStateVar(v2), ComponentReference.crefPrefixDer, cr2, cr2);
+      source2 = DAEUtil.addSymbolicTransformationSolve(true, source2, cr2, e21, e22, solvedExp2, asserts);
+      tp2 = Expression.typeof(varexp2); 
+    then {DAE.STMT_ASSIGN(tp1, varexp1, solvedExp1, source1), DAE.STMT_ASSIGN(tp2, varexp2, solvedExp2, source2)};
   end matchcontinue;
 end solveAlgorithmInverse;
 
-protected function createSampleEquations
-" function: createSampleEquations
-author: wbraun
-Create SimCodeEqns from Backend Equation list.
-used for create Sample equations."
+protected function createSampleEquations "function createSampleEquations
+  author: wbraun
+  Create SimCodeEqns from Backend Equation list.
+  used for create Sample equations."
   input list<BackendDAE.Equation> inEqns;
   input Integer iIndex;
   input list<SimCode.SimEqSystem> iSamEqns;
@@ -4203,8 +4229,8 @@ algorithm
 end createTornSystemOtherEqns1;
 
 // =============================================================================
+// section to create state set equations
 //
-// Section to create state set equations
 // =============================================================================
 
 protected function createStateSets 
@@ -4738,14 +4764,14 @@ algorithm
 end indexStateSets;
 
 // =============================================================================
+// section to create SimCode symbolic jacobian from BackendDAE.Equations
 //
-// Section to create SimCode symbolic jacobian from BackendDAE.Equations  
 // =============================================================================
-protected function createSymbolicSimulationJacobian
-"fuction createSymbolicSimulationJacobian
- function creates a symbolic jacobian column for 
- non-linear systems and tearing systems.  
- author: wbraun"
+
+protected function createSymbolicSimulationJacobian "fuction createSymbolicSimulationJacobian
+  author: wbraun
+  function creates a symbolic jacobian column for 
+  non-linear systems and tearing systems."
   input BackendDAE.Variables inVars;
   input BackendDAE.Variables inKnVars;
   input BackendDAE.EquationArray inResEquations;

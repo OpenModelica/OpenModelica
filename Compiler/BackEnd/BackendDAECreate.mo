@@ -71,8 +71,7 @@ protected import SCode;
 protected import System;
 protected import Util;
 
-public function lower
-"function: lower
+public function lower "function: lower
   This function translates a DAE, which is the result from instantiating a
   class, into a more precise form, called BackendDAE.BackendDAE defined in this module.
   The BackendDAE.BackendDAE representation splits the DAE into equations and variables
@@ -89,46 +88,46 @@ public function lower
   input Env.Env inEnv;
   output BackendDAE.BackendDAE outBackendDAE;
 protected
-  BackendDAE.Variables vars,knvars,vars_1,extVars,aliasVars;
-  list<BackendDAE.Equation> eqns,reqns,ieqns,algeqns,algeqns1,ialgeqns,multidimeqns,imultidimeqns,eqns_1,ceeqns,iceeqns;
+  BackendDAE.Variables vars, knvars, vars_1, extVars, aliasVars;
+  list<BackendDAE.Equation> eqns, reqns, ieqns, algeqns, algeqns1, ialgeqns, multidimeqns, imultidimeqns, eqns_1, ceeqns, iceeqns;
   list<DAE.Constraint> constrs;
   list<DAE.ClassAttributes> clsAttrs;
-  list<BackendDAE.WhenClause> whenclauses,whenclauses_1;
-  BackendDAE.EquationArray eqnarr,reqnarr,ieqnarr;
+  list<BackendDAE.WhenClause> whenclauses, whenclauses_1;
+  BackendDAE.EquationArray eqnarr, reqnarr, ieqnarr;
   array<DAE.Constraint> constrarra;
   array<DAE.ClassAttributes> clsattrsarra;
   BackendDAE.ExternalObjectClasses extObjCls;
   BackendDAE.SymbolicJacobians symjacs;
   BackendDAE.EventInfo einfo;
-  list<DAE.Element> elems,aliaseqns;
+  list<DAE.Element> elems, aliaseqns;
   list<BackendDAE.ZeroCrossing> zero_crossings;
   DAE.FunctionTree functionTree;
 algorithm
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
-  Debug.execStat("Enter Backend",BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
+  Debug.execStat("Enter Backend", BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
-  (DAE.DAE(elems),functionTree) := processDelayExpressions(lst,functionTree);
+  (DAE.DAE(elems), functionTree) := processDelayExpressions(lst, functionTree);
   vars := BackendVariable.emptyVars();
   knvars := BackendVariable.emptyVars();
   extVars := BackendVariable.emptyVars();
-  (vars,knvars,extVars,eqns,reqns,ieqns,constrs,clsAttrs,whenclauses,extObjCls,aliaseqns) := lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {});
+  (vars, knvars, extVars, eqns, reqns, ieqns, constrs, clsAttrs, whenclauses, extObjCls, aliaseqns) := lower2(listReverse(elems), functionTree, vars, knvars, extVars, {}, {}, {}, {}, {}, {}, {}, {});
   whenclauses_1 := listReverse(whenclauses);
   aliasVars := BackendVariable.emptyVars();
   // handle alias equations
-  (vars,knvars,extVars,aliasVars,eqns,reqns,ieqns,whenclauses_1) := handleAliasEquations(aliaseqns,vars,knvars,extVars,aliasVars,eqns,reqns,ieqns,whenclauses_1);
-  vars_1 := detectImplicitDiscrete(vars,knvars,eqns);
+  (vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1) := handleAliasEquations(aliaseqns, vars, knvars, extVars, aliasVars, eqns, reqns, ieqns, whenclauses_1);
+  vars_1 := detectImplicitDiscrete(vars, knvars, eqns);
   eqnarr := BackendEquation.listEquation(eqns);
   reqnarr := BackendEquation.listEquation(reqns);
   ieqnarr := BackendEquation.listEquation(ieqns);
   constrarra := listArray(constrs);
   clsattrsarra := listArray(clsAttrs);
   einfo := BackendDAE.EVENT_INFO(whenclauses_1, {}, {}, {}, 0, 0);
-  symjacs := {(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{}),(NONE(),({},({},{})),{})};
+  symjacs := {(NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {}), (NONE(), ({}, ({}, {})), {})};
   outBackendDAE := BackendDAE.DAE(BackendDAE.EQSYSTEM(vars_1,
                                                       eqnarr,
                                                       NONE(),
                                                       NONE(),
-                                                      BackendDAE.NO_MATCHING(),{})::{},
+                                                      BackendDAE.NO_MATCHING(), {})::{},
                                   BackendDAE.SHARED(knvars,
                                                     extVars,
                                                     aliasVars,

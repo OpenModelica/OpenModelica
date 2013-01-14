@@ -2778,12 +2778,11 @@ algorithm
   end matchcontinue;
 end collateAlgorithm;
 
-protected function collateArrExpStmt
-" Author: Frenkel TUD 2010-07
+protected function collateArrExpStmt "function collateArrExpStmt
+  author: Frenkel TUD 2010-07
   wbraun: added as workaround for when condition.
-  As long as we don't support fully array helpVars, we
-  we can't collate the expression of a when condition.
-  "
+  As long as we don't support fully array helpVars,
+  we can't collate the expression of a when condition."
   input tuple<DAE.Exp, DAE.Statement, Option<DAE.FunctionTree>> itpl;
   output tuple<DAE.Exp, Option<DAE.FunctionTree>> otpl;
 algorithm 
@@ -2800,12 +2799,11 @@ algorithm
   end matchcontinue;
 end collateArrExpStmt;
   
-protected function traversingcollateArrExpStmt "
-Author: Frenkel TUD 2010-07.
+protected function traversingcollateArrExpStmt "function traversingcollateArrExpStmt
+  author: Frenkel TUD 2010-07.
   wbraun: added as workaround for when condition.
-  As long as we don't support fully array helpVars, we
-  we can't collate the expression of a when condition.
-"
+  As long as we don't support fully array helpVars,
+  we can't collate the expression of a when condition."
   input tuple<DAE.Exp, tuple<DAE.Statement, Option<DAE.FunctionTree>> > inExp;
   output tuple<DAE.Exp, tuple<DAE.Statement, Option<DAE.FunctionTree>> > outExp;
 algorithm outExp := matchcontinue(inExp)
@@ -8515,24 +8513,23 @@ protected
   list<tuple<preoptimiseDAEModule,String,Boolean>> allPreOptModules;
   list<String> strPreOptModules;
 algorithm
-  allPreOptModules := {
-          (RemoveSimpleEquations.fastAcausal,"removeSimpleEquations",false),
-          (RemoveSimpleEquations.allAcausal,"removeAllSimpleEquations",false),
-          (BackendDAEOptimize.inlineArrayEqn,"inlineArrayEqn",false),
-          (BackendDAEOptimize.evaluateFinalParameters,"evaluateFinalParameters",false),
-          (BackendDAEOptimize.evaluateParameters,"evaluateParameters",false),
-          (BackendDAEOptimize.removeFinalParameters,"removeFinalParameters",false),
-          (BackendDAEOptimize.removeEqualFunctionCalls,"removeEqualFunctionCalls",false),
-          (BackendDAEOptimize.removeProtectedParameters,"removeProtectedParameters",false),
-          (BackendDAEOptimize.removeUnusedParameter,"removeUnusedParameter",false),
-          (BackendDAEOptimize.removeUnusedVariables,"removeUnusedVariables",false),
-          (BackendDAEOptimize.partitionIndependentBlocks,"partitionIndependentBlocks",true),
-          (BackendDAEOptimize.collapseIndependentBlocks,"collapseIndependentBlocks",true),
-          (BackendDAECreate.expandDerOperator,"expandDerOperator",false),
-          (BackendDAEOptimize.simplifyIfEquations,"simplifyIfEquations",false),
-          (BackendDAEOptimize.replaceEdgeChange,"replaceEdgeChange",false),
-          (BackendDAEOptimize.residualForm,"residualForm",false)
-  };
+  allPreOptModules := {(BackendDAEOptimize.encapsulateWhenConditions, "encapsulateWhenConditions", false),
+                       (RemoveSimpleEquations.fastAcausal, "removeSimpleEquations", false),
+                       (RemoveSimpleEquations.allAcausal, "removeAllSimpleEquations", false),
+                       (BackendDAEOptimize.inlineArrayEqn, "inlineArrayEqn", false),
+                       (BackendDAEOptimize.evaluateFinalParameters, "evaluateFinalParameters", false),
+                       (BackendDAEOptimize.evaluateParameters, "evaluateParameters", false),
+                       (BackendDAEOptimize.removeFinalParameters, "removeFinalParameters", false),
+                       (BackendDAEOptimize.removeEqualFunctionCalls, "removeEqualFunctionCalls", false),
+                       (BackendDAEOptimize.removeProtectedParameters, "removeProtectedParameters", false),
+                       (BackendDAEOptimize.removeUnusedParameter, "removeUnusedParameter", false),
+                       (BackendDAEOptimize.removeUnusedVariables, "removeUnusedVariables", false),
+                       (BackendDAEOptimize.partitionIndependentBlocks, "partitionIndependentBlocks", true),
+                       (BackendDAEOptimize.collapseIndependentBlocks, "collapseIndependentBlocks", true),
+                       (BackendDAECreate.expandDerOperator, "expandDerOperator", false),
+                       (BackendDAEOptimize.simplifyIfEquations, "simplifyIfEquations", false),
+                       (BackendDAEOptimize.replaceEdgeChange, "replaceEdgeChange", false),
+                       (BackendDAEOptimize.residualForm, "residualForm", false)};
   strPreOptModules := getPreOptModulesString();
   strPreOptModules := Util.getOptionOrDefault(ostrPreOptModules,strPreOptModules);
   preOptModules := selectOptModules(strPreOptModules,allPreOptModules,{});

@@ -154,7 +154,7 @@ uniontype Equation "- Equation"
   end ALGORITHM;
   
   record WHEN_EQUATION
-    Integer size          "size of equation";
+    Integer size              "size of equation";
     WhenEquation whenEquation "whenEquation" ;
     .DAE.ElementSource source "origin of equation";
   end WHEN_EQUATION;

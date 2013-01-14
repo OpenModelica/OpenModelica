@@ -382,6 +382,7 @@ end printSparsityPattern;
 //   - dumpEqSystem
 //   - dumpEquation
 //   - dumpEquationArray
+//   - dumpEquationList
 //   - dumpSparsityPattern
 //   - dumpTearing
 //   - dumpVariables
@@ -394,7 +395,7 @@ protected constant String UNDERLINE = "========================================"
 public function dumpBackendDAE "function dumpBackendDAE
   This function dumps the BackendDAE.BackendDAE representaton to stdout."
   input BackendDAE.BackendDAE inBackendDAE;
-    input String heading;
+  input String heading;
 algorithm
   print("\n" +& BORDER +& "\n" +& heading +& "\n" +& BORDER +& "\n\n");
   printBackendDAE(inBackendDAE);
@@ -436,6 +437,15 @@ algorithm
   printEquationArray(inEqns);
   print("\n");
 end dumpEquationArray;
+
+public function dumpEquationList "function dumpEquationList"
+  input list<BackendDAE.Equation> inEqns;
+  input String heading;
+algorithm
+  print("\n" +& heading +& " (" +& intString(listLength(inEqns)) +& ")\n" +& UNDERLINE +& "\n");
+  printEquationList(inEqns);
+  print("\n");
+end dumpEquationList;
 
 protected function dumpExternalObjectClasses "function dumpExternalObjectClasses
   dump classes of external objects"

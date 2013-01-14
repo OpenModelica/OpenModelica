@@ -393,6 +393,8 @@ constant DebugFlag INLINE_SOLVER = DEBUG_FLAG(113, "inlineSolver",
     Util.gettext("generates code for inline solver"));
 constant DebugFlag DUMP_INLINE_SOLVER = DEBUG_FLAG(114, "dumpInlineSolver",
     Util.gettext("dumps the inline solver equation system"));
+constant DebugFlag DUMP_ENCAPSULATEWHENCONDITIONS = DEBUG_FLAG(115, "dumpEncapsulateWhenConditions",
+  Util.gettext("Dumps the results of the preOptModule encapsulateWhenConditions"));
 
 // This is a list of all debug flags, to keep track of which flags are used. A
 // flag can not be used unless it's in this list, and the list is checked at
@@ -512,7 +514,8 @@ constant list<DebugFlag> allDebugFlags = {
   SHOW_EQUATION_SOURCE,
   NLS_ANALYTIC_JACOBIAN,
   INLINE_SOLVER,
-  DUMP_INLINE_SOLVER
+  DUMP_INLINE_SOLVER,
+  DUMP_ENCAPSULATEWHENCONDITIONS
 };
 
 // CONFIGURATION FLAGS
@@ -565,9 +568,11 @@ public constant ConfigFlag PRE_OPT_MODULES = CONFIG_FLAG(12, "preOptModules",
     "expandDerOperator",
     "replaceEdgeChange",
     "inlineArrayEqn",
+    "encapsulateWhenConditions",
     "removeSimpleEquations"
 }),
   SOME(STRING_DESC_OPTION({
+    ("encapsulateWhenConditions", Util.gettext("replace each when-condition with an discrete variable")),
     ("removeSimpleEquations", removeSimpleEquationDesc),
     ("removeAllSimpleEquations", removeSimpleEquationDesc),
     ("inlineArrayEqn", Util.notrans("DESCRIBE ME")),

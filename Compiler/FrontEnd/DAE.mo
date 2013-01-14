@@ -170,118 +170,118 @@ public uniontype Element
   record DEFINE "A solved equation"
     ComponentRef componentRef;
     Exp exp;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end DEFINE;
 
   record INITIALDEFINE " A solved initial equation"
     ComponentRef componentRef;
     Exp exp;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end INITIALDEFINE;
 
   record EQUATION "Scalar equation"
     Exp exp;
     Exp scalar;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end EQUATION;
 
   record EQUEQUATION "effort variable equality"
     ComponentRef cr1;
     ComponentRef cr2;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end EQUEQUATION;
 
   record ARRAY_EQUATION " an array equation"
     Dimensions dimension "dimension sizes" ;
     Exp exp;
     Exp array;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end ARRAY_EQUATION;
 
   record INITIAL_ARRAY_EQUATION "An initial array equation"
     Dimensions dimension "dimension sizes";
     Exp exp;
     Exp array;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end INITIAL_ARRAY_EQUATION;
 
   record COMPLEX_EQUATION "an equation of complex type, e.g. record = func(..)"
     Exp lhs;
     Exp rhs;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end COMPLEX_EQUATION;
 
   record INITIAL_COMPLEX_EQUATION "an initial equation of complex type, e.g. record = func(..)"
     Exp lhs;
     Exp rhs;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end INITIAL_COMPLEX_EQUATION;
 
   record WHEN_EQUATION " a when equation"
     Exp condition "Condition" ;
     list<Element> equations "Equations" ;
     Option<Element> elsewhen_ "Elsewhen should be of type WHEN_EQUATION" ;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end WHEN_EQUATION;
 
   record IF_EQUATION " an if-equation"
     list<Exp> condition1 "Condition" ;
     list<list<Element>> equations2 "Equations of true branch" ;
     list<Element> equations3 "Equations of false branch" ;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end IF_EQUATION;
 
   record INITIAL_IF_EQUATION "An initial if-equation"
     list<Exp> condition1 "Condition" ;
     list<list<Element>> equations2 "Equations of true branch" ;
     list<Element> equations3 "Equations of false branch" ;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end INITIAL_IF_EQUATION;
 
   record INITIALEQUATION " An initial equaton"
     Exp exp1;
     Exp exp2;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end INITIALEQUATION;
 
   record ALGORITHM " An algorithm section"
     Algorithm algorithm_;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end ALGORITHM;
 
   record INITIALALGORITHM " An initial algorithm section"
     Algorithm algorithm_;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end INITIALALGORITHM;
 
   record COMP
     Ident ident;
     list<Element> dAElist "a component with subelements, normally only used at top level.";
-    ElementSource source "the origin of the component/equation/algorithm"; // we might not this here.
+    ElementSource source "the origin of the component/equation/algorithm" ; // we might not this here.
     Option<SCode.Comment> comment;
   end COMP;
 
   record EXTOBJECTCLASS "The 'class' of an external object"
     Absyn.Path path "className of external object";
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end EXTOBJECTCLASS;
 
   record ASSERT " The Modelica builtin assert"
     Exp condition;
     Exp message;
     Exp level;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end ASSERT;
 
   record TERMINATE " The Modelica builtin terminate(msg)"
     Exp message;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end TERMINATE;
 
   record REINIT " reinit operator for reinitialization of states"
     ComponentRef componentRef;
     Exp exp;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end REINIT;
 
   record NORETCALL "call with no return value, i.e. no equation.
@@ -289,12 +289,12 @@ public uniontype Element
     Connections.* i.e. Connections.root(...) functions."
     Absyn.Path functionName;
     list<Exp> functionArgs;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end NORETCALL;
   
   record CONSTRAINT " constraint section"
     Constraint constraints;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end CONSTRAINT;  
   
   record CLASS_ATTRIBUTES
@@ -315,14 +315,14 @@ public uniontype Function
     Type type_;
     Boolean partialPrefix "MetaModelica extension";
     InlineType inlineType;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
     Option<SCode.Comment> comment;
   end FUNCTION;
 
   record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
     Absyn.Path path;
     Type type_;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end RECORD_CONSTRUCTOR;
 end Function;
 
@@ -566,28 +566,28 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Type type_;
     Exp exp1;
     Exp exp;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_ASSIGN;
 
   record STMT_TUPLE_ASSIGN
     Type type_;
     list<Exp> expExpLst;
     Exp exp;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_TUPLE_ASSIGN;
 
   record STMT_ASSIGN_ARR
     Type type_;
     ComponentRef componentRef;
     Exp exp;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_ASSIGN_ARR;
 
   record STMT_IF
     Exp exp;
     list<Statement> statementLst;
     Else else_;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_IF;
 
   record STMT_FOR
@@ -597,7 +597,7 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Integer index "the index of the iterator variable, to make it unique; used by the new inst";
     Exp range "range for the loop";
     list<Statement> statementLst;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_FOR;
   
   record STMT_PARFOR
@@ -608,79 +608,79 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Exp range "range for the loop";
     list<Statement> statementLst;
     list<tuple<ComponentRef,Absyn.Info>> loopPrlVars "list of parallel variables used/referenced in the parfor loop";
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_PARFOR;
 
   record STMT_WHILE
     Exp exp;
     list<Statement> statementLst;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_WHILE;
 
   record STMT_WHEN
     Exp exp;
     list<Statement> statementLst;
     Option<Statement> elseWhen;
-    list<Integer> helpVarIndices;
-    ElementSource source "the origin of the component/equation/algorithm";
+    list<Integer> helpVarIndices "this should be removed soon" ;
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_WHEN;
 
   record STMT_ASSERT "assert(cond,msg)"
     Exp cond;
     Exp msg;
     Exp level;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_ASSERT;
 
   record STMT_TERMINATE "terminate(msg)"
     Exp msg;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_TERMINATE;
 
   record STMT_REINIT
     Exp var "Variable";
     Exp value "Value ";
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_REINIT;
 
   record STMT_NORETCALL "call with no return value, i.e. no equation.
        Typically sideeffect call of external function."
     Exp exp;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_NORETCALL;
 
   record STMT_RETURN
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_RETURN;
 
   record STMT_BREAK
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_BREAK;
   
   record STMT_ARRAY_INIT "For function initialization"
     String name;
     Type ty;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_ARRAY_INIT;
 
   // MetaModelica extension. KS
   record STMT_FAILURE
     list<Statement> body;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_FAILURE;
 
   record STMT_TRY
     list<Statement> tryBody;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_TRY;
 
   record STMT_CATCH
     list<Statement> catchBody;
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_CATCH;
 
   record STMT_THROW
-    ElementSource source "the origin of the component/equation/algorithm";
+    ElementSource source "the origin of the component/equation/algorithm" ;
   end STMT_THROW;
 
   //-----

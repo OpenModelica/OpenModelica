@@ -101,8 +101,9 @@ algorithm
 end solveInitialSystem;
 
 // =============================================================================
-// collect all pre(var) in time equations to get the discrete states
+// section for collecting discrete states
 //
+// collect all pre(var) in time equations to get the discrete states
 // =============================================================================
 
 protected function discreteStates "function discreteStates
@@ -129,14 +130,14 @@ protected function discreteStatesSystems "function discreteStatesSystems
   This is a helper function for discreteStates.
   The function collects all discrete states in the time equations."
   input BackendDAE.EqSystem inEqSystem;
-  input HashSet.HashSet iHs;
-  output HashSet.HashSet oHs;
+  input HashSet.HashSet inHs;
+  output HashSet.HashSet outHs;
 protected
   BackendDAE.EquationArray orderedEqs;
   BackendDAE.EquationArray eqns;
 algorithm
   BackendDAE.EQSYSTEM(orderedEqs=orderedEqs) := inEqSystem;
-  oHs := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, discreteStatesEquations, iHs);
+  outHs := BackendDAEUtil.traverseBackendDAEExpsEqns(orderedEqs, discreteStatesEquations, inHs);
 end discreteStatesSystems;
 
 protected function discreteStatesEquations
@@ -409,18 +410,6 @@ algorithm
   end matchcontinue;
 end generateInitialWhenAlg;
 
-protected function selectSecondZero
-  input tuple<DAE.ComponentRef, Integer> inTpl;
-  input list<DAE.ComponentRef> iAcc;
-  output list<DAE.ComponentRef> oAcc;
-protected
-  DAE.ComponentRef cr;
-  Integer i;
-algorithm
-  (cr, i) := inTpl;
-  oAcc := List.consOnTrue(intEq(i, 0), cr, iAcc);  
-end selectSecondZero;
-
 protected function inlineWhenForInitializationWhenStmt "function inlineWhenForInitializationWhenStmt
   author: lochel
   This function generates out of a given when-algorithm, a algorithm for the initialization-problem.
@@ -480,6 +469,18 @@ algorithm
   end matchcontinue;
 end inlineWhenForInitializationWhenStmt;
 
+protected function selectSecondZero
+  input tuple<DAE.ComponentRef, Integer> inTpl;
+  input list<DAE.ComponentRef> iAcc;
+  output list<DAE.ComponentRef> oAcc;
+protected
+  DAE.ComponentRef cr;
+  Integer i;
+algorithm
+  (cr, i) := inTpl;
+  oAcc := List.consOnTrue(intEq(i, 0), cr, iAcc);  
+end selectSecondZero;
+
 protected function addWhenLeftCr
   input DAE.ComponentRef cr;
   input HashTable.HashTable iLeftCrs;
@@ -537,7 +538,7 @@ end generateInactiveWhenEquationForInitialization;
 
 protected function fixUninitializedVarsInInactiveWhenForInitialization "function fixUninitializedVarsInInactiveWhenForInitialization
   author: lochel
-  This is a helper function for inlineWhenForInitialization3."
+  This is a helper function for generateInactiveWhenEquationForInitialization."
   input Boolean isPreInitialized;
   input DAE.ComponentRef inCRef;
   input BackendDAE.Variables iVars;
@@ -551,7 +552,7 @@ algorithm
       BackendDAE.Variables vars;
       String crstr;
       
-    case(false, _, _, _) equation
+    case (false, _, _, _) equation
       ({v}, _) = BackendVariable.getVar(inCRef, iVars);
       false = BackendVariable.varFixed(v);
       crstr = ComponentReference.printComponentRefStr(inCRef);
@@ -901,7 +902,7 @@ protected
   Boolean b;
   BackendDAE.IncidenceMatrix mt;
 algorithm
-  (_, _, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(),NONE());
+  (_, _, mt) := BackendDAEUtil.getIncidenceMatrix(inSystem, BackendDAE.NORMAL(), NONE());
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inSystem;
   (orderedVars, b) := removeUnusedInitialVarsWork(arrayLength(mt), mt, orderedVars, false);
   outSystem := Util.if_(b, BackendDAE.EQSYSTEM(orderedVars, orderedEqs, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets), inSystem);
@@ -983,7 +984,7 @@ algorithm
       BackendDAE.BackendDAE inDAE;
       BackendDAE.Shared shared;
       DAE.ComponentRef cr, pcr;
-      String msg,eqn_str,var_str;
+      String msg, eqn_str, var_str;
       array<Integer> vec1, vec2;
       BackendDAE.IncidenceMatrix m;
       BackendDAE.IncidenceMatrixT mt;
@@ -991,7 +992,7 @@ algorithm
       array<Integer> mapIncRowEqn;
       BackendDAE.EqSystem syst;
       DAE.FunctionTree funcs;
-      list<Integer> unassignedeqns,varindxlst;
+      list<Integer> unassignedeqns, varindxlst;
       list<list<Integer>> ilstlst;
       HashTableCG.HashTable ht;
       HashTable3.HashTable dht;
@@ -1022,14 +1023,14 @@ algorithm
       unassignedeqns = Matching.getUnassigned(nEqns, vec2, {});
       ht = HashTableCG.emptyHashTable();
       dht = HashTable3.emptyHashTable();
-      ilstlst = Matching.getEqnsforIndexReduction(unassignedeqns, nEqns, m, mt, vec1, vec2, (BackendDAE.STATEORDER(ht,dht),{},mapEqnIncRow, mapIncRowEqn,nEqns));
+      ilstlst = Matching.getEqnsforIndexReduction(unassignedeqns, nEqns, m, mt, vec1, vec2, (BackendDAE.STATEORDER(ht, dht), {}, mapEqnIncRow, mapIncRowEqn, nEqns));
       unassignedeqns = List.flatten(ilstlst);
-      unassignedeqns = List.map1r(unassignedeqns,arrayGet,mapIncRowEqn);
-      unassignedeqns = List.uniqueIntN(unassignedeqns,arrayLength(mapIncRowEqn));
+      unassignedeqns = List.map1r(unassignedeqns, arrayGet, mapIncRowEqn);
+      unassignedeqns = List.uniqueIntN(unassignedeqns, arrayLength(mapIncRowEqn));
       eqn_str = BackendDump.dumpMarkedEqns(isyst, unassignedeqns);
       //vars = getUnassigned(nVars, vec1, {});
-      //vars = List.fold1(unmatched,getAssignedVars,inAssignments1,vars);
-      //vars = List.select1(vars,intLe,n);
+      //vars = List.fold1(unmatched, getAssignedVars, inAssignments1, vars);
+      //vars = List.select1(vars, intLe, n);
       //var_str = BackendDump.dumpMarkedVars(isyst, vars);
       msg = "System is over-determined in Equations " +& eqn_str;
       Error.addCompilerWarning(msg);  
@@ -1365,11 +1366,11 @@ algorithm
   end match;
 end pathFoundtraverseEqns1;
 
-protected function reasign
-" function helper for pathfound, reasignment(rematching) allong the augmenting path
+protected function reasign "function reasign
+  author: Frenkel TUD 2012-03
+  function helper for pathfound, reasignment(rematching) allong the augmenting path
   remove all edges from the assignments that are in the path
-  add all other edges to the assignment
-  author: Frenkel TUD 2012-03"
+  add all other edges to the assignment"
   input list<Integer> stack;
   input Integer e;
   input array<Integer> ass1;

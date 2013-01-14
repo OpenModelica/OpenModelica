@@ -3832,7 +3832,6 @@ algorithm
   res := matchcontinue(condition, inB)
     local
       Boolean b;
-      DAE.Type ty;
       list<Exp> array;
       Exp e1, e2;
     
@@ -3842,17 +3841,8 @@ algorithm
     case (DAE.CALL(path = Absyn.IDENT(name = "initial")), _) equation
     then true;
     
-    case (DAE.ARRAY(ty=ty, array=array), _) equation
+    case (DAE.ARRAY(array=array), _) equation
       b = List.fold(array, containsInitialCall, inB);
-    then b;
-    
-    // just to provide older models
-    case (DAE.LBINARY(exp1=e1, operator=DAE.OR(_), exp2=e2), _) equation
-      b = containsInitialCall(e1, inB);
-      b = containsInitialCall(e2, b);
-      true = b;
-      
-      Debug.fcall(Flags.PEDANTIC, Error.addCompilerWarning, "The equations of a when-clause are active during initialization, if and only if they are explicitly enabled with the initial() operator in one of the two forms when initial() then or when {…,initial(),…} then.");
     then b;
 
     else
@@ -5213,9 +5203,9 @@ algorithm
   end matchcontinue;
 end traversingDerAndComponentRefFinder;
 
-public function expHasCref "
-@author: Frenkel TUD 2011-04
- returns true if the expression contains the cref"
+public function expHasCref "function expHasCref
+  author: Frenkel TUD 2011-04
+  returns true if the expression contains the cref"
   input DAE.Exp inExp;
   input ComponentRef inCr;
   output Boolean hasCref;
