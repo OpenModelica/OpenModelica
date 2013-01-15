@@ -2189,7 +2189,7 @@ public function compareSimulationResults "compares simulation results."
   input String filename;
   input String reffilename;
   input String logfilename;
-  input Real refTol;
+  input Real relTol;
   input Real absTol;
   input String[:] vars;
   output String[:] result;

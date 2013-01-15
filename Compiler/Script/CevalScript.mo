@@ -1857,7 +1857,7 @@ algorithm
         (cache,Values.STRING(res),newst);
         
     case (cache,env,"runScript",_,st,_)
-    then (cache,Values.STRING("Failed"),st);
+      then (cache,Values.STRING("Failed"),st);
       
     case (cache,env,"getIndexReductionMethod",_,st,_)
       equation
