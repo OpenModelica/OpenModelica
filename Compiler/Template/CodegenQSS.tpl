@@ -388,7 +388,7 @@ template generateCond(list<tuple<DAE.Exp, Integer>> conds, list<DAE.ComponentRef
                       list<DAE.ComponentRef> disc,list<DAE.ComponentRef> algs,Text &extraCode, Integer index)
 ::=
   match conds
-  case ({(DAE.CALL(path=IDENT(name="sample"),expLst={start,interval,_}),_)}) then
+  case ({(DAE.CALL(path=IDENT(name="sample"),expLst={_,start,interval,_}),_)}) then
   let &extraCode += 
   << 
   d[<% intAdd(index,1) %>] := pre(d[<% intAdd(index,1) %>]) + <%ExpressionDump.printExpStr(BackendQSS.replaceVars(interval,states,disc,algs)) %>;

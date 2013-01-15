@@ -4669,7 +4669,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var1 = daeExp(arg, context, &preExp, &varDecls,simCode)
     '_event_handling.pre(<%var1%>,"<%cref(arg.componentRef)%>")'
     
-  case CALL(path=IDENT(name="sample"), expLst={start, interval,index}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
     let &preExp = buffer "" /*BUFD*/
     let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
@@ -6149,7 +6149,7 @@ end timeEventcondition;
 template timeEventcondition1(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
   match relation
-  case CALL(path=IDENT(name="sample"), expLst={start, interval,index}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
     let &preExp = buffer "" /*BUFD*/
     let eStart = daeExp(start, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
@@ -6189,7 +6189,7 @@ end resetTimeEvent;
 template resetTimeEvent1(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
   match relation
-  case CALL(path=IDENT(name="sample"), expLst={start, interval,index}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
     let &preExp = buffer "" /*BUFD*/
     let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
      <<
@@ -6221,7 +6221,7 @@ end handleEvent1;
 template handleEvent2(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
   match relation
-  case CALL(path=IDENT(name="sample"), expLst={start, interval,index}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
     let &preExp = buffer "" /*BUFD*/
     let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
      <<
@@ -6511,7 +6511,7 @@ end conditionvarSample;
 template conditionvarSample1(Integer index1, Exp relation, Text &varDecls /*BUFP*/,SimCode simCode)
 ::=
   match relation
-  case CALL(path=IDENT(name="sample"), expLst={start, interval,index}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, index}) then
     let &preExp = buffer "" /*BUFD*/
     let eIndex = daeExp(index, contextOther, &preExp, &varDecls /*BUFD*/,simCode)
      <<

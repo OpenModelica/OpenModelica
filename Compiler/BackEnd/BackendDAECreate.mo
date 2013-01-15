@@ -106,7 +106,7 @@ algorithm
   System.realtimeTick(BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   Debug.execStat("Enter Backend", BackendDAE.RT_CLOCK_EXECSTAT_BACKEND_MODULES);
   functionTree := Env.getFunctionTree(inCache);
-  (DAE.DAE(elems), functionTree) := processDelayExpressions(lst, functionTree);
+  (DAE.DAE(elems), functionTree) := processBuiltinExpressions(lst, functionTree);
   vars := BackendVariable.emptyVars();
   knvars := BackendVariable.emptyVars();
   extVars := BackendVariable.emptyVars();
@@ -457,6 +457,82 @@ algorithm
         fail();
   end match;
 end lower3;
+
+// =============================================================================
+// section for processing builtin expressions
+//
+// Insert a unique index (starting with 1) before the first arguments of some 
+// builtin calls. Equal calls will get the same index.
+//   - delay(expr, delayTime, delayMax)
+//       => delay(index, expr, delayTime, delayMax)
+//   - sample(start, interval)
+//       => sample(index, start, interval)
+// =============================================================================
+
+protected function processBuiltinExpressions "function processBuiltinExpressions
+  author: lochel
+  Assign some builtin calls with a unique id argument."
+  input DAE.DAElist inDAE;
+  input DAE.FunctionTree functionTree;
+  output DAE.DAElist outDAE;
+  output DAE.FunctionTree outTree;
+protected
+  HashTableExpToIndex.HashTable ht;
+algorithm
+  ht := HashTableExpToIndex.emptyHashTable();
+ (outDAE, outTree, _) := DAEUtil.traverseDAE(inDAE, functionTree, transformBuiltinExpressions, (ht, 1, 1));
+end processBuiltinExpressions;
+
+protected function transformBuiltinExpressions "function transformBuiltinExpressions
+  author: lochel
+  Helper for processBuiltinExpressions"
+  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, Integer>> itpl;
+  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, Integer>> otpl;
+protected
+  DAE.Exp e;
+  tuple<HashTableExpToIndex.HashTable, Integer, Integer> i;
+algorithm
+  (e, i) := itpl;
+  otpl := Expression.traverseExp(e, transformBuiltinExpression, i);
+end transformBuiltinExpressions;
+
+protected function transformBuiltinExpression "function transformBuiltinExpression
+  author: lochel
+  Helper for transformBuiltinExpressions"
+  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, Integer>> inTuple;
+  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable, Integer, Integer>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> es;
+      HashTableExpToIndex.HashTable ht;
+      Integer iDelay, iSample, i;
+      DAE.CallAttributes attr;
+    
+    // delay [already in ht]
+    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample))) equation
+      i = BaseHashTable.get(e, ht);
+    then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample)));
+
+    // delay [not yet in ht]
+    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht, iDelay, iSample))) equation
+      ht = BaseHashTable.add((e, iDelay), ht);
+    then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(iDelay)::es, attr), (ht, iDelay+1, iSample)));
+    
+    // sample [already in ht]
+    case ((e as DAE.CALL(Absyn.IDENT("sample"), es, attr), (ht, iDelay, iSample))) equation
+      i = BaseHashTable.get(e, ht);
+    then ((DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(i)::es, attr), (ht, iDelay, iSample)));
+
+    // sample [not yet in ht]
+    case ((e as DAE.CALL(Absyn.IDENT("sample"), es, attr), (ht, iDelay, iSample))) equation
+      ht = BaseHashTable.add((e, iSample), ht);
+    then ((DAE.CALL(Absyn.IDENT("sample"), DAE.ICONST(iSample)::es, attr), (ht, iDelay, iSample+1)));
+
+    else inTuple;
+  end matchcontinue;
+end transformBuiltinExpression;
 
 /*
  *  lower all variables
@@ -2680,62 +2756,9 @@ algorithm
   end match;
 end replaceableAlias;
 
-
 /*
  *     other helping functions
  */
-
-protected function processDelayExpressions
-"Assign each call to delay() with a unique id argument"
-  input DAE.DAElist inDAE;
-  input DAE.FunctionTree functionTree;
-  output DAE.DAElist outDAE;
-  output DAE.FunctionTree outTree;
-protected
-  HashTableExpToIndex.HashTable ht;
-algorithm
-  ht := HashTableExpToIndex.emptyHashTableSized(100);
- (outDAE,outTree,_) := DAEUtil.traverseDAE(inDAE, functionTree, transformDelayExpressions, (ht,0));
-end processDelayExpressions;
-
-protected function transformDelayExpressions
-"Helper for processDelayExpressions()"
-  input tuple<DAE.Exp,tuple<HashTableExpToIndex.HashTable,Integer>> itpl;
-  output tuple<DAE.Exp,tuple<HashTableExpToIndex.HashTable,Integer>> otpl;
-protected
-  DAE.Exp e;
-  tuple<HashTableExpToIndex.HashTable,Integer> i;
-algorithm
-  (e,i) := itpl;
-  otpl := Expression.traverseExp(e, transformDelayExpression, i);
-end transformDelayExpressions;
-
-protected function transformDelayExpression
-"Insert a unique index into the arguments of a delay() expression.
-Repeat delay as maxDelay if not present."
-  input tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable,Integer>> inTuple;
-  output tuple<DAE.Exp, tuple<HashTableExpToIndex.HashTable,Integer>> outTuple;
-algorithm
-  outTuple := matchcontinue(inTuple)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> es;
-      HashTableExpToIndex.HashTable ht;
-      Integer i;
-      DAE.CallAttributes attr;
-    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht,_)))
-      equation
-        i = BaseHashTable.get(e,ht);
-      then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht,i)));
-
-    case ((e as DAE.CALL(Absyn.IDENT("delay"), es, attr), (ht,i)))
-      equation
-        ht = BaseHashTable.add((e,i),ht);
-      then ((DAE.CALL(Absyn.IDENT("delay"), DAE.ICONST(i)::es, attr), (ht,i+1)));
-
-    else inTuple;
-  end matchcontinue;
-end transformDelayExpression;
 
 protected function detectImplicitDiscrete
 "function: detectImplicitDiscrete

@@ -2505,7 +2505,7 @@ algorithm
         message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in ", algStr, ". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR, {message});
       then fail();
-/*
+
     // algorithm for single variable.
     case (_, _, BackendDAE.EQSYSTEM(orderedVars=vars, orderedEqs=eqns), _, _, true, false, _, _)
       equation
@@ -2545,7 +2545,6 @@ algorithm
         message = stringAppendList({"Inverse Algorithm needs to be solved for ", message, " in ", algStr, ". This has not been implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR, {message});
       then fail();
-*/
   end matchcontinue;
 end createEquation;
 
@@ -2717,6 +2716,7 @@ algorithm
         args_ = listAppend(args_,{DAE.ICONST(hindex)});
         condition1 = DAE.CALL(name, args_, attr);
         true = Expression.expEqual(condition1, e);
+        
         //s1 = ExpressionDump.printExpStr(condition1);
         //s2 = ExpressionDump.printExpStr(e);
         //print("Added Hindex for \n ** Condition: " +& s1 +& "  HelpVar exp: " +& s2 +& " with index : " +& intString(hindex) +&  "\n");
@@ -2774,12 +2774,14 @@ algorithm
    Absyn.Path name;
    list<DAE.Exp> args_;
    DAE.CallAttributes attr;
+   
   case(condition, {}) then condition;
   case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr), (hindex, e, _) :: restHelpVarInfo)
       equation
         args_ = listAppend(args_,{DAE.ICONST(hindex)});
         condition1 = DAE.CALL(name, args_, attr);
         true = Expression.expEqual(condition1, e);
+        
         //s1 = ExpressionDump.printExpStr(condition1);
         //s2 = ExpressionDump.printExpStr(e);
         //print("** matchwithHelpVar TRUE CASE** :\n Condition: " +& s1 +& " --  HelpVar Exp: " +& s2 +& "\n");
@@ -5319,8 +5321,8 @@ end createInitialMatrices;
 
 
 // =============================================================================
+// section with unsorted function
 //
-// Section with unsorted function
 // TODO: clean up this section ;)
 // =============================================================================
 
@@ -7840,6 +7842,7 @@ algorithm
         nh = nh + 1;
         args_ = listAppend(args_,{DAE.ICONST(nh)});
         condition = DAE.CALL(name, args_, attr);
+        
         //Error.addMessage(Error.INTERNAL_ERROR, {"Could not find help var index for Sample condition"});
       then ((condition,nh),{(nh,condition,-1)});
     case (condition as DAE.CALL(path = name as Absyn.IDENT("sample"),expLst=args_,attr=attr), (hindex, e, _) :: restHelpVarInfo,_)

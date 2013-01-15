@@ -777,7 +777,7 @@ template timeEventTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     <<
     /* <%index1%> Not a time event */
     >>
-  case CALL(path=IDENT(name="sample"), expLst={start, interval,_}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, _}) then
     let &preExp = buffer "" /*BUFD*/
     let e1 = daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFD*/)
@@ -1580,7 +1580,7 @@ template zeroCrossingTpl(Integer index1, Exp relation, Text &varDecls /*BUFP*/)
     <%preExp%>
     ZEROCROSSING(<%index1%>, <%e1%>?1:-1);
     >>
-  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, _}) then
     << >>
   case CALL(path=IDENT(name="integer"), expLst={exp1, idx}) then
     let &preExp = buffer "" /*BUFD*/
@@ -7292,7 +7292,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/, Text &varD
   case CALL(path=IDENT(name="noEvent"), expLst={e1}) then
     daeExp(e1, context, &preExp, &varDecls)
   
-  case CALL(path=IDENT(name="sample"), expLst={e1, e2, e3}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, e1, e2, e3}) then
     let tvar = tempDecl("modelica_boolean", &varDecls /*BUFD*/)
     let var1 = daeExp(e1, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
     let var2 = daeExp(e2, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)

@@ -569,7 +569,7 @@ template functionInitSample(list<SampleCondition> sampleConditions, SimCode simC
           <<
           /* <%zcIndex%> Not a time event */
           >>
-        case CALL(path=IDENT(name="sample"), expLst={start, interval,_}) then
+        case CALL(path=IDENT(name="sample"), expLst={_, start, interval, _}) then
           let &preExp = buffer "" /*BUFD*/
           let startE = daeExp(start, contextOther, &preExp, simCode)
           let intervalE = daeExp(interval, contextOther, &preExp, simCode)
@@ -777,7 +777,7 @@ template zeroCrossing(Exp zcExp, Integer zcIndex, SimCode simCode) ::=
     <%preExp%>
     gout[<%zcIndex%>] = (<%e1%>)?1:-1;    
     >>  
-  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
+  case CALL(path=IDENT(name="sample"), expLst={_, start, interval, _}) then
     let &preExp = buffer "" //is ignored
     let eStart = daeExp(start, contextOther, &preExp, simCode)
     let eInterval = daeExp(interval, contextOther, &preExp, simCode)
