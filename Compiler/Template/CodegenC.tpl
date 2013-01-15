@@ -1148,6 +1148,7 @@ template functionInitialEquations(Boolean useSymbolicInitialization, list<SimEqS
   
     mem_state = get_memory_state();
     <%info%>
+    data->simulationInfo.discreteCall = 1;
     <%body%>
     restore_memory_state(mem_state);
   
