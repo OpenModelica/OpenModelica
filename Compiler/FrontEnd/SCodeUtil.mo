@@ -566,7 +566,7 @@ algorithm
     // Already filled.
     case (SOME(SCode.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
     // EXTERNALDECL.
-    case (SOME(SCode.EXTERNALDECL(name,l,out,a,ann1)),parts)
+    case (SOME(SCode.EXTERNALDECL(name,l,out,a,ann1)),_)
       equation
         ann2 = List.fold(parts, mergeSCodeAnnotationsFromParts, NONE());
         ann = mergeSCodeOptAnn(ann1, ann2);
