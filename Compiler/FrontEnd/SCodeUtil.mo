@@ -552,54 +552,62 @@ input Option<SCode.ExternalDecl> decl;
 input list<Absyn.ClassPart> parts;
 output Option<SCode.ExternalDecl> outDecl;
 algorithm
-  outDecl := matchcontinue(decl,parts)
+  outDecl := match (decl,parts)
     local
-      Absyn.Annotation aann;
-      SCode.Annotation ann;
       Option<SCode.Ident> name ;
       Option<String> l ;
       Option<Absyn.ComponentRef> out ;
       list<Absyn.Exp> a;
       list<Absyn.ElementItem> els;
       list<Absyn.ClassPart> cls;
+      Option<SCode.Annotation> ann1,ann2,ann;
     // none
     case (NONE(),_) then NONE();
     // Already filled.
     case (SOME(SCode.EXTERNALDECL(annotation_ = SOME(_))),_) then decl;
     // EXTERNALDECL.
-    case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.EXTERNAL(_,SOME(aann))::_)
+    case (SOME(SCode.EXTERNALDECL(name,l,out,a,ann1)),parts)
       equation
-        ann = translateAnnotation(aann);
-      then SOME(SCode.EXTERNALDECL(name,l,out,a,SOME(ann)));
-  // Annotation item.
-    case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(Absyn.ANNOTATIONITEM(aann)::_)::_)
-      equation
-        ann = translateAnnotation(aann);
-      then SOME(SCode.EXTERNALDECL(name,l,out,a,SOME(ann)));
-    // Next element in public list
-    case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC(_::els)::cls)
-    then translateAlternativeExternalAnnotation(decl,Absyn.PUBLIC(els)::cls);
-  // Next classpart list
-    case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PUBLIC({})::cls)
-    then translateAlternativeExternalAnnotation(decl,cls);
-
-  case (SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(Absyn.ANNOTATIONITEM(aann)::_)::_)
-    equation
-      ann = translateAnnotation(aann);
-    then SOME(SCode.EXTERNALDECL(name,l,out,a,SOME(ann)));
-    // Next element in public list
-    case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED(_::els)::cls)
-    then translateAlternativeExternalAnnotation(decl,Absyn.PROTECTED(els)::cls);
-  // Next classpart list
-    case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),Absyn.PROTECTED({})::cls)
-    then translateAlternativeExternalAnnotation(decl,cls);
-  // Next in list
-  case(SOME(SCode.EXTERNALDECL(name,l,out,a,NONE())),_::cls)
-    then translateAlternativeExternalAnnotation(decl,cls);
-  // not found
-    case (_,_) then decl;
-  end matchcontinue;
+        ann2 = List.fold(parts, mergeSCodeAnnotationsFromParts, NONE());
+        ann = mergeSCodeOptAnn(ann1, ann2);
+      then SOME(SCode.EXTERNALDECL(name,l,out,a,ann));
+  end match;
 end translateAlternativeExternalAnnotation;
+
+protected function mergeSCodeAnnotationsFromParts
+  input Absyn.ClassPart part;
+  input Option<SCode.Annotation> inMod;
+  output Option<SCode.Annotation> outMod;
+algorithm
+  outMod := match (part,inMod)
+    local
+      Absyn.Annotation aann;
+      SCode.Annotation ann1;
+      Option<SCode.Annotation> ann;
+      list<Absyn.ElementItem> rest;
+    case (Absyn.EXTERNAL(_,SOME(aann)),_)
+      equation
+        ann1 = translateAnnotation(aann);
+        ann = mergeSCodeOptAnn(SOME(ann1), inMod);
+      then ann;
+    case (Absyn.PUBLIC(Absyn.ANNOTATIONITEM(aann)::rest),_)
+      equation
+        ann1 = translateAnnotation(aann);
+        ann = mergeSCodeOptAnn(SOME(ann1), inMod);
+      then mergeSCodeAnnotationsFromParts(Absyn.PUBLIC(rest),ann);
+    case (Absyn.PUBLIC(_::rest),_)
+      then mergeSCodeAnnotationsFromParts(Absyn.PUBLIC(rest),inMod);
+    case (Absyn.PROTECTED(Absyn.ANNOTATIONITEM(aann)::rest),_)
+      equation
+        ann1 = translateAnnotation(aann);
+        ann = mergeSCodeOptAnn(SOME(ann1), inMod);
+      then mergeSCodeAnnotationsFromParts(Absyn.PROTECTED(rest),ann);
+    case (Absyn.PROTECTED(_::rest),_)
+      then mergeSCodeAnnotationsFromParts(Absyn.PROTECTED(rest),inMod);
+        
+    else inMod;
+  end match;
+end mergeSCodeAnnotationsFromParts;
 
 protected function translateEnumlist
 "function: translateEnumlist
@@ -2631,6 +2639,24 @@ algorithm
 
   end matchcontinue;
 end mergeSCodeMods;
+
+protected function mergeSCodeOptAnn
+  input Option<SCode.Annotation> inModOuter;
+  input Option<SCode.Annotation> inModInner;
+  output Option<SCode.Annotation> outMod;
+algorithm
+  outMod := match (inModOuter, inModInner)
+    local 
+      SCode.Mod mod1, mod2, mod;
+
+    case (NONE(),_) then inModInner;
+    case (_,NONE()) then inModOuter;
+    case (SOME(SCode.ANNOTATION(mod1)),SOME(SCode.ANNOTATION(mod2)))
+      equation
+        mod = mergeSCodeMods(mod1,mod2);
+      then SOME(SCode.ANNOTATION(mod));
+  end match;
+end mergeSCodeOptAnn;
 
 protected function makeElementsIntoSubMods
 "transform elements into submods with named mods"
