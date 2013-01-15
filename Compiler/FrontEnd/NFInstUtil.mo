@@ -1892,7 +1892,7 @@ algorithm
       list<Element> inputs;
 
     case NFInstTypes.FUNCTION(inputs = inputs) then inputs;
-    case NFInstTypes.RECORD(components = inputs) then inputs;
+    case NFInstTypes.RECORD_CONSTRUCTOR(inputs = inputs) then inputs;
 
   end match;
 end getFunctionInputs;
@@ -2180,5 +2180,119 @@ algorithm
 
   end match; 
 end prefixFirstName;
+
+
+public function isModifiableElement
+  input Element inElement;
+  output Boolean outBool;
+algorithm
+  outBool := match(inElement)
+    local
+      Component comp;
+      
+    case(NFInstTypes.ELEMENT(comp, _)) then isModifiableComponent(comp);
+      
+  end match;
+end isModifiableElement;
+
+public function isModifiableComponent
+"@mahge:
+ Returns true if a component is modifiable from outside of scope. 
+ Protected, final and constants with bidings can not be modifed. 
+ Everything else can be.
+"
+  input Component inComponent;
+  output Boolean outBool;
+algorithm
+  outBool := matchcontinue(inComponent)  
+    local
+      Prefixes prefixes;
+    case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(visibility = SCode.PROTECTED()))) then false;
+    case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(variability = SCode.CONST()), binding = NFInstTypes.UNBOUND())) then true;
+    case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(variability = SCode.CONST()))) then false;
+    case(NFInstTypes.UNTYPED_COMPONENT(prefixes = NFInstTypes.PREFIXES(finalPrefix = SCode.FINAL()))) then false;
+    else true;
+  end matchcontinue;   
+end isModifiableComponent;
+
+public function markElementAsInput
+  input Element inElement;
+  output Element outElement;
+algorithm
+  outElement := match(inElement)
+    local
+      Component comp;
+      Class cls;
+      
+    case(NFInstTypes.ELEMENT(comp, cls)) 
+      equation
+        comp = markComponentAsInput(comp);
+      then NFInstTypes.ELEMENT(comp, cls);
+      
+  end match;
+end markElementAsInput;
+
+public function markComponentAsInput
+  input Component inComponent;
+  output Component outComponent;
+algorithm
+  outComponent := match(inComponent)  
+    local
+      Absyn.Path name;
+      DAE.Type baseType;
+      array<Dimension> dimensions;
+      ParamType paramType;
+      Binding binding;
+      Absyn.Info info;
+      
+    case(NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, _, paramType, binding, info)) 
+      then NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, NFInstTypes.DEFAULT_INPUT_PREFIXES, paramType, binding, info);
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"NFInstUtil.markComponentAsInput failed"});
+      then fail();
+  end match;   
+end markComponentAsInput;
+
+public function markElementAsProtected
+  input Element inElement;
+  output Element outElement;
+algorithm
+  outElement := match(inElement)
+    local
+      Component comp;
+      Class cls;
+      
+    case(NFInstTypes.ELEMENT(comp, cls)) 
+      equation
+        comp = markComponentAsProtected(comp);
+      then NFInstTypes.ELEMENT(comp, cls);
+      
+  end match;
+end markElementAsProtected;
+
+public function markComponentAsProtected
+  input Component inComponent;
+  output Component outComponent;
+algorithm
+  outComponent := match(inComponent)  
+    local
+      Absyn.Path name;
+      DAE.Type baseType;
+      array<Dimension> dimensions;
+      ParamType paramType;
+      Binding binding;
+      Absyn.Info info;
+      
+    case(NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, _, paramType, binding, info)) 
+      then NFInstTypes.UNTYPED_COMPONENT(name, baseType, dimensions, NFInstTypes.DEFAULT_PROTECTED_PREFIXES, paramType, binding, info);
+
+    else
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,{"NFInstUtil.markComponentAsProtected failed"});
+      then fail();
+  end match;   
+end markComponentAsProtected;
 
 end NFInstUtil;

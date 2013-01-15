@@ -53,6 +53,7 @@ protected import ComponentReference;
 protected import NFConnectCheck;
 protected import NFConnectEquations;
 protected import NFConnectUtil2;
+protected import DAEUtil;
 protected import Debug;
 protected import Error;
 protected import Expression;
@@ -62,6 +63,7 @@ protected import Flags;
 protected import NFInstUtil;
 protected import List;
 protected import Types;
+protected import Util;
 protected import NFTypeCheck;
 
 public type Binding = NFInstTypes.Binding;
@@ -83,6 +85,7 @@ public type Prefixes = NFInstTypes.Prefixes;
 public type Prefix = NFInstTypes.Prefix;
 public type Statement = NFInstTypes.Statement;
 public type SymbolTable = NFInstSymbolTable.SymbolTable;
+public type FunctionHashTable = HashTablePathToFunction.HashTable;
 
 public uniontype Context
   record CONTEXT_MODEL end CONTEXT_MODEL;
@@ -99,11 +102,12 @@ public function typeClass
   input Class inClass;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
   (outClass, outSymbolTable) :=
-    typeClass2(inClass, NONE(), inContext, inSymbolTable);
+    typeClass2(inClass, NONE(), inContext, inSymbolTable, inFunctionTable);
 end typeClass;
 
 public function typeClass2
@@ -111,10 +115,11 @@ public function typeClass2
   input Option<Component> inParent;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output Class outClass;
   output SymbolTable outSymbolTable;
 algorithm
-  (outClass, outSymbolTable) := match(inClass, inParent, inContext, inSymbolTable)
+  (outClass, outSymbolTable) := match(inClass, inParent, inContext, inSymbolTable, inFunctionTable)
     local
       list<Element> comps;
       list<Equation> eq, ieq;
@@ -122,11 +127,11 @@ algorithm
       SymbolTable st;
       Absyn.Path name;
 
-    case (NFInstTypes.BASIC_TYPE(name), _, _, st) then (inClass, st);
+    case (NFInstTypes.BASIC_TYPE(name), _, _, st, _) then (inClass, st);
 
-    case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), _, _, st)
+    case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), _, _, st, _)
       equation
-        (comps, st) = List.map2Fold(comps, typeElement, inParent, inContext, st);
+        (comps, st) = List.map3Fold(comps, typeElement, inParent, inContext, inFunctionTable, st);
       then
         (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st);
 
@@ -137,12 +142,13 @@ protected function typeElement
   input Element inElement;
   input Option<Component> inParent;
   input Context inContext;
+  input FunctionHashTable inFunctionTable;
   input SymbolTable inSymbolTable;
   output Element outElement;
   output SymbolTable outSymbolTable;
 algorithm
   (outElement, outSymbolTable) :=
-  match(inElement, inParent, inContext, inSymbolTable)
+  match(inElement, inParent, inContext, inFunctionTable, inSymbolTable)
     local
       Component comp;
       Class cls;
@@ -151,19 +157,19 @@ algorithm
       DAE.Type ty;
 
     case (NFInstTypes.ELEMENT(comp as NFInstTypes.UNTYPED_COMPONENT(name = name), cls),
-        _, _, st)
+        _, _, _, st)
       equation
         comp = NFInstSymbolTable.lookupName(name, st); 
-        (comp, st) = typeComponent(comp, inParent, inContext, st);
-        (cls, st) = typeClass2(cls, SOME(comp), inContext, st);
+        (comp, st) = typeComponent(comp, inParent, inContext, st, inFunctionTable);
+        (cls, st) = typeClass2(cls, SOME(comp), inContext, st, inFunctionTable);
         (comp, st) = updateComplexComponentType(comp, cls, st);
       then
         (NFInstTypes.ELEMENT(comp, cls), st);
 
-    case (NFInstTypes.ELEMENT(comp, cls), _, _, st)
+    case (NFInstTypes.ELEMENT(comp, cls), _, _, _, st)
       equation
         comp = NFInstUtil.setComponentParent(comp, inParent);
-        (cls, st) = typeClass2(cls, SOME(comp), inContext, st);
+        (cls, st) = typeClass2(cls, SOME(comp), inContext, st, inFunctionTable);
       then
         (NFInstTypes.ELEMENT(comp, cls), st);
 
@@ -177,11 +183,12 @@ protected function typeComponent
   input Option<Component> inParent;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output Component outComponent;
   output SymbolTable outSymbolTable;
 algorithm
   (outComponent, outSymbolTable) :=
-  match(inComponent, inParent, inContext, inSymbolTable)
+  match(inComponent, inParent, inContext, inSymbolTable, inFunctionTable)
     local
       Absyn.Path name;
       DAE.Type ty;
@@ -191,48 +198,48 @@ algorithm
       Context c;
 
     case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, binding = binding),
-        _, c, st)
+        _, c, st, _)
       equation
-        (ty, st) = typeComponentDims(inComponent, inContext, st);
-        (comp, st) = typeComponentBinding(inComponent, SOME(ty), inParent, c, st);
+        (ty, st) = typeComponentDims(inComponent, inContext, st, inFunctionTable);
+        (comp, st) = typeComponentBinding(inComponent, SOME(ty), inParent, c, st, inFunctionTable);
       then
         (comp, st);
 
     // A typed component without a parent has been typed due to a dependency
     // such as a binding, when parent information was not available. Update it
     // now if we have that information.
-    case (NFInstTypes.TYPED_COMPONENT(parent = NONE()), SOME(_), _, st)
+    case (NFInstTypes.TYPED_COMPONENT(parent = NONE()), SOME(_), _, st, _)
       equation
         comp = NFInstUtil.setComponentParent(inComponent, inParent);
         st = NFInstSymbolTable.updateComponent(comp, st);
       then
         (comp, st);
     
-    case (NFInstTypes.TYPED_COMPONENT(name = _), _, _, st) then (inComponent, st);
+    case (NFInstTypes.TYPED_COMPONENT(name = _), _, _, st, _) then (inComponent, st);
         
-    case (NFInstTypes.PACKAGE(parent = NONE()), SOME(_), _, st)
+    case (NFInstTypes.PACKAGE(parent = NONE()), SOME(_), _, st, _)
       equation
         comp = NFInstUtil.setComponentParent(inComponent, inParent);
       then
         (comp, st);
 
-    case (NFInstTypes.PACKAGE(name = _), _, _, st) then (inComponent, st);
+    case (NFInstTypes.PACKAGE(name = _), _, _, st, _) then (inComponent, st);
 
-    case (NFInstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, _, st)
+    case (NFInstTypes.OUTER_COMPONENT(innerName = SOME(name)), _, _, st, _)
       equation
         comp = NFInstSymbolTable.lookupName(name, st);
-        (comp, st) = typeComponent(comp, inParent, inContext, st);
+        (comp, st) = typeComponent(comp, inParent, inContext, st, inFunctionTable);
       then
         (comp, st);
 
-    case (NFInstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), _, _, st)
+    case (NFInstTypes.OUTER_COMPONENT(name = name, innerName = NONE()), _, _, st, _)
       equation
         (_, SOME(inner_comp), st) = NFInstSymbolTable.updateInnerReference(inComponent, st);
-        (inner_comp, st) = typeComponent(inner_comp, inParent, inContext, st);
+        (inner_comp, st) = typeComponent(inner_comp, inParent, inContext, st, inFunctionTable);
       then
         (inner_comp, st);
 
-    case (NFInstTypes.CONDITIONAL_COMPONENT(name = name), _, _, _)
+    case (NFInstTypes.CONDITIONAL_COMPONENT(name = name), _, _, _, _)
       equation
         print("Trying to type conditional component " +& Absyn.pathString(name) +& "\n");
       then
@@ -245,10 +252,11 @@ protected function typeComponentDims
   input Component inComponent;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
-  (outType, outSymbolTable) := matchcontinue(inComponent, inContext, inSymbolTable)
+  (outType, outSymbolTable) := matchcontinue(inComponent, inContext, inSymbolTable, inFunctionTable)
     local
       DAE.Type ty;
       SymbolTable st;
@@ -257,19 +265,19 @@ algorithm
       Absyn.Path name;
       Absyn.Info info;
 
-    case (NFInstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims, info = info), _, st)
+    case (NFInstTypes.UNTYPED_COMPONENT(baseType = ty, dimensions = dims, info = info), _, st, _)
       equation
         true = intEq(0, arrayLength(dims));
       then
         (ty, st);
 
-    case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, dimensions = dims), _, st)
+    case (NFInstTypes.UNTYPED_COMPONENT(name = name, baseType = ty, dimensions = dims), _, st, _)
       equation
-        (typed_dims, st) = typeDimensions(dims, name, inContext, st);
+        (typed_dims, st) = typeDimensions(dims, name, inContext, st, inFunctionTable);
       then
         (DAE.T_ARRAY(ty, typed_dims, DAE.emptyTypeSource), st);
         
-    case (NFInstTypes.TYPED_COMPONENT(ty = ty), _, st) then (ty, st);
+    case (NFInstTypes.TYPED_COMPONENT(ty = ty), _, st, _) then (ty, st);
     
     else
       equation
@@ -287,10 +295,11 @@ protected function typeComponentDim
   input Integer inIndex;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output DAE.Dimension outDimension;
   output SymbolTable outSymbolTable;
 algorithm
-  (outDimension, outSymbolTable) := match(inComponent, inIndex, inContext, inSymbolTable)
+  (outDimension, outSymbolTable) := match(inComponent, inIndex, inContext, inSymbolTable, inFunctionTable)
     local
       list<DAE.Dimension> dims;
       DAE.Dimension typed_dim;
@@ -299,16 +308,16 @@ algorithm
       Dimension dim;
       Absyn.Path name;
 
-    case (NFInstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _, st)
+    case (NFInstTypes.TYPED_COMPONENT(ty = DAE.T_ARRAY(dims = dims)), _, _, st, _)
       equation
         typed_dim = listGet(dims, inIndex);
       then
         (typed_dim, st);
 
-    case (NFInstTypes.UNTYPED_COMPONENT(name = name, dimensions = dims_arr), _, _, st)
+    case (NFInstTypes.UNTYPED_COMPONENT(name = name, dimensions = dims_arr), _, _, st, _)
       equation
         dim = arrayGet(dims_arr, inIndex);
-        (typed_dim, st) = typeDimension(dim, name, inContext, st, dims_arr, inIndex);
+        (typed_dim, st) = typeDimension(dim, name, inContext, st, inFunctionTable, dims_arr, inIndex);
       then
         (typed_dim, st);
 
@@ -320,6 +329,7 @@ protected function typeDimensions
   input Absyn.Path inComponentName;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output list<DAE.Dimension> outDimensions;
   output SymbolTable outSymbolTable;
 protected
@@ -327,7 +337,7 @@ protected
 algorithm
   len := arrayLength(inDimensions);
   (outDimensions, outSymbolTable) := 
-    typeDimensions2(inDimensions, inComponentName, inContext, inSymbolTable, 1, len, {});
+    typeDimensions2(inDimensions, inComponentName, inContext, inSymbolTable, inFunctionTable, 1, len, {});
 end typeDimensions;
 
 protected function typeDimensions2
@@ -335,6 +345,7 @@ protected function typeDimensions2
   input Absyn.Path inComponentName;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input Integer inIndex;
   input Integer inLength;
   input list<DAE.Dimension> inAccDims;
@@ -342,14 +353,14 @@ protected function typeDimensions2
   output SymbolTable outSymbolTable;
 algorithm
   (outDimensions, outSymbolTable) :=
-  matchcontinue(inDimensions, inComponentName, inContext, inSymbolTable, inIndex, inLength, inAccDims)
+  matchcontinue(inDimensions, inComponentName, inContext, inSymbolTable, inFunctionTable, inIndex, inLength, inAccDims)
     local
       Dimension dim;
       DAE.Dimension typed_dim;
       SymbolTable st;
       list<DAE.Dimension> dims;
 
-    case (_, _, _, _, _, _, _)
+    case (_, _, _, _, _, _, _, _)
       equation
         true = inIndex > inLength;
       then
@@ -359,8 +370,8 @@ algorithm
       equation
         dim = arrayGet(inDimensions, inIndex);
         (typed_dim, st) = 
-          typeDimension(dim, inComponentName, inContext, inSymbolTable, inDimensions, inIndex);
-        (dims, st) = typeDimensions2(inDimensions, inComponentName, inContext, st, inIndex + 1,
+          typeDimension(dim, inComponentName, inContext, inSymbolTable, inFunctionTable, inDimensions, inIndex);
+        (dims, st) = typeDimensions2(inDimensions, inComponentName, inContext, st, inFunctionTable, inIndex + 1,
           inLength, typed_dim :: inAccDims);
       then
         (dims, st);
@@ -373,13 +384,14 @@ protected function typeDimension
   input Absyn.Path inComponentName;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input array<Dimension> inDimensions;
   input Integer inIndex;
   output DAE.Dimension outDimension;
   output SymbolTable outSymbolTable;
 algorithm
   (outDimension, outSymbolTable) := 
-  match(inDimension, inComponentName, inContext, inSymbolTable, inDimensions, inIndex)
+  match(inDimension, inComponentName, inContext, inSymbolTable, inFunctionTable, inDimensions, inIndex)
     local
       SymbolTable st;
       DAE.Dimension dim;
@@ -388,16 +400,16 @@ algorithm
       Dimension typed_dim;
       Component comp;
 
-    case (NFInstTypes.UNTYPED_DIMENSION(isProcessing = true), _, _, _, _, _)
+    case (NFInstTypes.UNTYPED_DIMENSION(isProcessing = true), _, _, _, _, _, _)
       equation
         print("Found dimension loop\n");
       then
         fail();
 
-    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, _, st, _, _)
+    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_EXP(exp = dim_exp)), _, _, st, _, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(dim, true));
-        (dim_exp, _, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), inContext, st);
+        (dim_exp, _, _, st) = typeExp(dim_exp, EVAL_CONST_PARAM(), inContext, st, inFunctionTable);
         (dim_exp, _) = ExpressionSimplify.simplify(dim_exp);
         dim = NFInstUtil.makeDimension(dim_exp);
         typed_dim = NFInstTypes.TYPED_DIMENSION(dim);
@@ -405,11 +417,11 @@ algorithm
       then
         (dim, st);
 
-    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, CONTEXT_MODEL(), st, _, _)
+    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, CONTEXT_MODEL(), st, _, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.UNTYPED_DIMENSION(dim, true));
         comp = NFInstSymbolTable.lookupName(inComponentName, st);
-        (comp, st) = typeComponentBinding(comp, NONE(), NONE(), inContext, st);
+        (comp, st) = typeComponentBinding(comp, NONE(), NONE(), inContext, st, inFunctionTable);
         dim_count = arrayLength(inDimensions);
         dim = NFInstUtil.getComponentBindingDimension(comp, inIndex, dim_count);
         typed_dim = NFInstTypes.TYPED_DIMENSION(dim);
@@ -417,19 +429,19 @@ algorithm
       then
         (dim, st);
 
-    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, CONTEXT_FUNCTION(), st, _, _)
+    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim as DAE.DIM_UNKNOWN()), _, CONTEXT_FUNCTION(), st, _, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.TYPED_DIMENSION(dim));
       then
         (dim, st);
 
-    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim), _, _, st, _, _)
+    case (NFInstTypes.UNTYPED_DIMENSION(dimension = dim), _, _, st, _, _, _)
       equation
         _ = arrayUpdate(inDimensions, inIndex, NFInstTypes.TYPED_DIMENSION(dim));
       then 
         (dim, st);
 
-    case (NFInstTypes.TYPED_DIMENSION(dimension = dim), _, _, st, _, _) then (dim, st);
+    case (NFInstTypes.TYPED_DIMENSION(dimension = dim), _, _, st, _, _, _) then (dim, st);
 
     else
       equation
@@ -446,22 +458,23 @@ protected function typeComponentBinding
   input Option<Component> inParent;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output Component outComponent;
   output SymbolTable outSymbolTable;
 algorithm
   (outComponent, outSymbolTable) :=
-  match(inComponent, inType, inParent, inContext, inSymbolTable)
+  match(inComponent, inType, inParent, inContext, inSymbolTable, inFunctionTable)
     local
       Binding binding;
       SymbolTable st;
       Component comp;
       EvalPolicy ep;
 
-    case (NFInstTypes.UNTYPED_COMPONENT(binding = binding), _, _, _, st)
+    case (NFInstTypes.UNTYPED_COMPONENT(binding = binding), _, _, _, st, _)
       equation
         st = markComponentBindingAsProcessing(inComponent, st);
         ep = getEvalPolicyForBinding(inComponent);
-        (binding, st) = typeBinding(binding, ep, inContext, st);
+        (binding, st) = typeBinding(binding, ep, inContext, st, inFunctionTable);
         comp = updateComponentBinding(inComponent, binding, inType, inParent);
         st = NFInstSymbolTable.updateComponent(comp, st);
       then
@@ -562,11 +575,12 @@ protected function typeBinding
   input EvalPolicy inEvalPolicy;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output Binding outBinding;
   output SymbolTable outSymbolTable;
 algorithm
   (outBinding, outSymbolTable) :=
-  match(inBinding, inEvalPolicy, inContext, inSymbolTable)
+  match(inBinding, inEvalPolicy, inContext, inSymbolTable, inFunctionTable)
     local
       DAE.Exp binding;
       SymbolTable st;
@@ -574,21 +588,21 @@ algorithm
       Integer pd;
       Absyn.Info info;
 
-    case (NFInstTypes.UNTYPED_BINDING(isProcessing = true), _, _, st)
+    case (NFInstTypes.UNTYPED_BINDING(isProcessing = true), _, _, st, _)
       equation
         NFInstSymbolTable.showCyclicDepError(st);
       then
         fail();
 
     case (NFInstTypes.UNTYPED_BINDING(bindingExp = binding, propagatedDims = pd,
-        info = info), _, _, st)
+        info = info), _, _, st, _)
       equation
-        (binding, ty, _, st) = typeExp(binding, inEvalPolicy, inContext, st);
+        (binding, ty, _, st) = typeExp(binding, inEvalPolicy, inContext, st, inFunctionTable);
         checkBindingTypeOk(ty, Expression.typeof(binding), binding, info);
       then
         (NFInstTypes.TYPED_BINDING(binding, ty, pd, info), st);
 
-    case (NFInstTypes.TYPED_BINDING(bindingExp = _), _, _, st)
+    case (NFInstTypes.TYPED_BINDING(bindingExp = _), _, _, st, _)
       then (inBinding, st);
 
     else (NFInstTypes.UNBOUND(), inSymbolTable);
@@ -669,13 +683,14 @@ protected function typeExpList
   input EvalPolicy inEvalPolicy;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output list<DAE.Exp> outExpList;
   output list<DAE.Type> outTypeList;
   output list<DAE.Const> outConstList;
   output SymbolTable outSymbolTable;
 algorithm
   (outExpList, outTypeList, outConstList, outSymbolTable) :=
-  match(inExpList, inEvalPolicy, inContext, inSymbolTable)
+  match(inExpList, inEvalPolicy, inContext, inSymbolTable, inFunctionTable)
     local
       DAE.Exp exp;
       list<DAE.Exp> rest_expl;
@@ -687,12 +702,12 @@ algorithm
       list<DAE.Const> constList;
       DAE.Const const;
 
-    case ({}, _, _, st) then ({}, {}, {}, st);
+    case ({}, _, _, st, _) then ({}, {}, {}, st);
 
-    case (exp :: rest_expl, ep, c, st)
+    case (exp :: rest_expl, ep, c, st, _)
       equation
-        (exp, ty, const, st) = typeExp(exp, ep, c, st);
-        (rest_expl, tyList, constList, st) = typeExpList(rest_expl, ep, c, st);
+        (exp, ty, const, st) = typeExp(exp, ep, c, st, inFunctionTable);
+        (rest_expl, tyList, constList, st) = typeExpList(rest_expl, ep, c, st, inFunctionTable);
       then
         (exp::rest_expl, ty::tyList, const::constList, st);
 
@@ -704,21 +719,22 @@ public function typeExpOpt
   input EvalPolicy inEvalPolicy;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output Option<DAE.Exp> outExp;
   output Option<DAE.Type> outType;
   output DAE.Const outConst;
   output SymbolTable outSymbolTable;
 algorithm
-  (outExp, outType, outConst, outSymbolTable) := match(inExp, inEvalPolicy, inContext, inSymbolTable)
+  (outExp, outType, outConst, outSymbolTable) := match(inExp, inEvalPolicy, inContext, inSymbolTable, inFunctionTable)
     local
       DAE.Exp exp;
       SymbolTable st;
       DAE.Type ty;
       DAE.Const const;
 
-    case (SOME(exp), _, _, st)
+    case (SOME(exp), _, _, st, _)
       equation
-        (exp, ty, const, st) = typeExp(exp, inEvalPolicy, inContext, st);
+        (exp, ty, const, st) = typeExp(exp, inEvalPolicy, inContext, st, inFunctionTable);
       then
         (SOME(exp), SOME(ty), const, st);
 
@@ -740,7 +756,7 @@ algorithm
   end match;
 end selectType;
 
-public function typeExp
+public function typeExpEmptyFunctionTable
   input DAE.Exp inExp;
   input EvalPolicy inEvalPolicy;
   input Context inContext;
@@ -749,14 +765,33 @@ public function typeExp
   output DAE.Type outType;
   output DAE.Const outConst;
   output SymbolTable outSymbolTable;
+protected 
+  FunctionHashTable functionTable;
+algorithm
+  functionTable := HashTablePathToFunction.emptyHashTableSized(BaseHashTable.lowBucketSize);
+  (outExp, outType, outConst, outSymbolTable) := typeExp(inExp, inEvalPolicy, inContext, inSymbolTable, functionTable);
+end typeExpEmptyFunctionTable;
+
+
+public function typeExp
+  input DAE.Exp inExp;
+  input EvalPolicy inEvalPolicy;
+  input Context inContext;
+  input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
+  output DAE.Exp outExp;
+  output DAE.Type outType;
+  output DAE.Const outConst;
+  output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outConst, outSymbolTable) :=
-  match(inExp, inEvalPolicy, inContext, inSymbolTable)
+  match(inExp, inEvalPolicy, inContext, inSymbolTable, inFunctionTable)
     local
       DAE.Exp e1, e2, e3;
       DAE.ComponentRef cref;
       DAE.Type ty,ty1,ty2,tyOp;
       SymbolTable st;
+      FunctionHashTable ft;
       DAE.Operator op;
       Component comp;
       Integer dim_int;
@@ -772,29 +807,29 @@ algorithm
       DAE.CallAttributes attrs;
       Function func;
 
-    case (DAE.ICONST(integer = _), _, _, st) then (inExp, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
-    case (DAE.RCONST(real = _), _, _, st) then (inExp, DAE.T_REAL_DEFAULT, DAE.C_CONST(), st);
-    case (DAE.SCONST(string = _), _, _, st) then (inExp, DAE.T_STRING_DEFAULT, DAE.C_CONST(), st);
-    case (DAE.BCONST(bool = _), _, _, st) then (inExp, DAE.T_BOOL_DEFAULT, DAE.C_CONST(), st);
-    case (DAE.CREF(componentRef = cref), ep, c, st)
+    case (DAE.ICONST(integer = _), _, _, st, _) then (inExp, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
+    case (DAE.RCONST(real = _), _, _, st, _) then (inExp, DAE.T_REAL_DEFAULT, DAE.C_CONST(), st);
+    case (DAE.SCONST(string = _), _, _, st, _) then (inExp, DAE.T_STRING_DEFAULT, DAE.C_CONST(), st);
+    case (DAE.BCONST(bool = _), _, _, st, _) then (inExp, DAE.T_BOOL_DEFAULT, DAE.C_CONST(), st);
+    case (DAE.CREF(componentRef = cref), ep, c, st, _)
       equation
-        (e1, ty, const, st) = typeCref(cref, ep, c, st);
+        (e1, ty, const, st) = typeCref(cref, ep, c, st, inFunctionTable);
       then
         (e1, ty, const, st);
         
-    case (DAE.ARRAY(array = expl), ep, c, st)
+    case (DAE.ARRAY(array = expl), ep, c, st, ft)
       equation
-        (expl, ty::_, constList, st) = typeExpList(expl, ep, c, st);
+        (expl, ty::_ , constList, st) = typeExpList(expl, ep, c, st, ft);
         dim_int = listLength(expl);
         ty = DAE.T_ARRAY(ty, {DAE.DIM_INTEGER(dim_int)}, DAE.emptyTypeSource);
         const = List.fold(constList, Types.constAnd, DAE.C_CONST());
       then
         (DAE.ARRAY(ty, true, expl), ty, const, st);
 
-    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
+    case (DAE.BINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st, ft)
       equation
-        (e1, ty1, const1, st) = typeExp(e1, ep, c, st);
-        (e2, ty2, const2, st) = typeExp(e2, ep, c, st);
+        (e1, ty1, const1, st) = typeExp(e1, ep, c, st, ft);
+        (e2, ty2, const2, st) = typeExp(e2, ep, c, st, ft);
          
          // Check operands vs operator
         (e3,ty) = NFTypeCheck.checkBinaryOperation(e1,ty1,op,e2,ty2);
@@ -803,10 +838,10 @@ algorithm
       then
         (e3, ty, const, st);
 
-    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
+    case (DAE.LBINARY(exp1 = e1, operator = op, exp2 = e2), ep, c, st, ft)
       equation
-        (e1, ty1, const1, st) = typeExp(e1, ep, c, st);
-        (e2, ty2, const2, st) = typeExp(e2, ep, c, st);
+        (e1, ty1, const1, st) = typeExp(e1, ep, c, st, ft);
+        (e2, ty2, const2, st) = typeExp(e2, ep, c, st, ft);
         
         // Check operands vs operator
         (e3,ty) = NFTypeCheck.checkLogicalBinaryOperation(e1,ty1,op,e2,ty2);
@@ -815,18 +850,18 @@ algorithm
       then
         (DAE.LBINARY(e1, op, e2), ty, const, st);
 
-    case (DAE.LUNARY(operator = op, exp = e1), ep, c, st)
+    case (DAE.LUNARY(operator = op, exp = e1), ep, c, st, ft)
       equation
-        (e1, ty, const, st) = typeExp(e1, ep, c, st);
+        (e1, ty, const, st) = typeExp(e1, ep, c, st, ft);
         tyOp = Expression.typeofOp(op);
         ty = selectType(tyOp, ty);
       then
         (DAE.LUNARY(op, e1), ty, const, st);
     
-    case (DAE.RELATION(exp1 = e1, operator = op, exp2 = e2), ep, c, st)
+    case (DAE.RELATION(exp1 = e1, operator = op, exp2 = e2), ep, c, st, ft)
       equation
-        (e1, ty1, const1, st) = typeExp(e1, ep, c, st);
-        (e2, ty2, const2, st) = typeExp(e2, ep, c, st);
+        (e1, ty1, const1, st) = typeExp(e1, ep, c, st, ft);
+        (e2, ty2, const2, st) = typeExp(e2, ep, c, st, ft);
          
          // Check operands vs operator
         (e3,ty) = NFTypeCheck.checkRelationOperation(e1,ty1,op,e2,ty2);
@@ -835,26 +870,26 @@ algorithm
       then
         (e3, ty, const, st);
 
-    case (DAE.SIZE(exp = e1 as DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, c, st)
+    case (DAE.SIZE(exp = e1 as DAE.CREF(componentRef = cref), sz = SOME(e2)), ep, c, st, ft)
       equation
-        (e2 as DAE.ICONST(dim_int), _, _, st) = typeExp(e2, EVAL_CONST_PARAM(), c, st);
+        (e2 as DAE.ICONST(dim_int), _, _, st) = typeExp(e2, EVAL_CONST_PARAM(), c, st, ft);
         comp = NFInstSymbolTable.lookupCref(cref, st);
-        (dim, st) = typeComponentDim(comp, dim_int, c, st);
+        (dim, st) = typeComponentDim(comp, dim_int, c, st, ft);
         e1 = dimensionExp(dim, e1, e2, c);
       then
         (e1, DAE.T_INTEGER_DEFAULT, DAE.C_CONST(), st);
 
-    case (DAE.RANGE(start = e1, step = oe, stop = e2), ep, c, st)
+    case (DAE.RANGE(start = e1, step = oe, stop = e2), ep, c, st, ft)
       equation
-        (e1, ty, const1, st) = typeExp(e1, ep, c, st);
-        (oe, _, const2, st) = typeExpOpt(oe, ep, c, st);
-        (e2, _, const3, st) = typeExp(e2, ep, c, st);
+        (e1, ty, const1, st) = typeExp(e1, ep, c, st, ft);
+        (oe, _, const2, st) = typeExpOpt(oe, ep, c, st, ft);
+        (e2, _, const3, st) = typeExp(e2, ep, c, st, ft);
         ty = Expression.liftArrayLeft(ty, DAE.DIM_UNKNOWN());
         const = Types.constAnd(const1,Types.constAnd(const2,const3));
       then
         (DAE.RANGE(ty, e1, oe, e2), ty, const, st);
 
-    case (DAE.MATRIX(ty = _), _, _, _)
+    case (DAE.MATRIX(ty = _), _, _, _, _)
       equation
         /* ------------------------------------------------------------------*/
         // TODO: Remove MATRIX from DAE when we remove the old instantiation.
@@ -865,20 +900,17 @@ algorithm
       then
         fail();
         
-    /* Uncomment this when lookup can find functions. */
-    /*
-    case (DAE.CALL(path = fnName, expLst = args, attr = attrs), ep, c, st)
+    case (DAE.CALL(path = fnName, expLst = args, attr = attrs), ep, c, st, ft)
       equation
         // Make sure that the func is there before typing the arguments
-        func = lookupFunction(fnName, inSymbolTable);
+        func = lookupFunction(fnName, inFunctionTable);
         
-        (args, tyList, constList, st) = typeExpList(args, ep, c, st);
-        (e1,ty) = typeCall(func, args, tyList, attrs);
+        (args, tyList, constList, st) = typeExpList(args, ep, c, st, ft);
+        (e1,ty) = typeCall(func, args, tyList, attrs, st);
         const = List.fold(constList, Types.constAnd, DAE.C_CONST());
       then
         (e1, ty, const, st);
-    */
-    
+
     else (inExp, DAE.T_UNKNOWN_DEFAULT, DAE.C_VAR(), inSymbolTable);
     //else
     //  equation
@@ -901,10 +933,11 @@ protected function typeCall
   input list<DAE.Exp> inArgs;
   input list<DAE.Type> inArgTypes;
   input DAE.CallAttributes inAttrs;
+  input SymbolTable inSymbolTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
 algorithm
-  (outExp, outType) := matchcontinue(inFunc, inArgs, inArgTypes, inAttrs)
+  (outExp, outType) := matchcontinue(inFunc, inArgs, inArgTypes, inAttrs, inSymbolTable)
     local
       DAE.Exp outexp;
       DAE.Type retType, outtype;
@@ -917,8 +950,9 @@ algorithm
       DAE.CallAttributes attrs;
       DAE.Dimensions forEachDim;
       Absyn.Path fnName;
+      Component rec;
       
-      case(NFInstTypes.FUNCTION(fnName, inputs, outputs, _, _), _, _, _)
+      case(NFInstTypes.FUNCTION(fnName, inputs, outputs, _, _), _, _, _, _)
         equation
           
           // Match the args of the call exp againest the input/formal types of the function.
@@ -933,6 +967,34 @@ algorithm
           // create the call attributes. retType + isTuple
           DAE.CALL_ATTR( _, _, isBuiltin, inlineType, tailCall) = inAttrs;
           attrs = DAE.CALL_ATTR(retType, isTuple, isBuiltin, inlineType, tailCall);
+          
+          // See if we need to vectorize the call i.e. if we have 'forEachDim' then
+          // we return an array exp other wise a call exp.
+          (outexp,outtype) = NFTypeCheck.vectorizeCall(fnName, fixedArgs, attrs, retType, forEachDim);
+          
+        then
+          (outexp,outtype);
+          
+      case(NFInstTypes.RECORD_CONSTRUCTOR(fnName, retType, inputs, _, _), _, _, _, _)
+        equation
+          
+          // Match the args of the call exp againest the input/formal types of the function.
+          // We get matched args and a 'foreachdim' if vectorization is done
+          inputTypes = List.map(inputs, NFInstUtil.getElementComponentType);
+          (fixedArgs, forEachDim) = NFTypeCheck.matchCallArgs(inArgs, inArgTypes, inputTypes, {} /*vectorization dim*/); 
+          
+          // retType = DAE.T_COMPLEX(ClassInf.RECORD(fnName), inputs, NONE(), DAE.emptyTypeSource);
+          // Create the return type for the record constructor
+          // rec = NFInstSymbolTable.lookupName(fnName, inSymbolTable);
+          // retType = NFInstUtil.getComponentType(rec);
+          
+          // Create the return type for the function
+          // outputTypes = List.map(outputs, NFInstUtil.getElementComponentType);
+          // (retType, isTuple) = NFTypeCheck.makeCallReturnType(outputTypes);
+          
+          // create the call attributes. retType + isTuple
+          DAE.CALL_ATTR( _, _, isBuiltin, inlineType, tailCall) = inAttrs;
+          attrs = DAE.CALL_ATTR(retType, false, isBuiltin, inlineType, tailCall);
           
           // See if we need to vectorize the call i.e. if we have 'forEachDim' then
           // we return an array exp other wise a call exp.
@@ -977,13 +1039,14 @@ protected function typeCref
   input EvalPolicy inEvalPolicy;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output DAE.Const outConst;
   output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outConst, outSymbolTable) :=
-  matchcontinue(inCref, inEvalPolicy, inContext, inSymbolTable)
+  matchcontinue(inCref, inEvalPolicy, inContext, inSymbolTable, inFunctionTable)
     local
       SymbolTable st;
       Component comp;
@@ -996,20 +1059,20 @@ algorithm
       Context c;
       DAE.Const const;
 
-    case (_, ep, c, st)
+    case (_, ep, c, st, _)
       equation
         comp = NFInstSymbolTable.lookupCref(inCref, st);
         var = NFInstUtil.getEffectiveComponentVariability(comp);
         const = NFInstUtil.toConst(var);
         eval = shouldEvaluate(var, ep);
-        (exp, ty, st) = typeCref2(inCref, comp, eval, ep, c, st);
+        (exp, ty, st) = typeCref2(inCref, comp, eval, ep, c, st, inFunctionTable);
       then
         (exp, ty, const, st);
 
-    case (_, ep, c, st)
+    case (_, ep, c, st, _)
       equation
         (cref, st) = NFInstUtil.replaceCrefOuterPrefix(inCref, st);
-        (exp, ty, const, st) = typeCref(cref, ep, c, st);
+        (exp, ty, const, st) = typeCref(cref, ep, c, st, inFunctionTable);
       then
         (exp, ty, const, st);
 
@@ -1043,12 +1106,13 @@ protected function typeCref2
   input EvalPolicy inEvalPolicy;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output DAE.Exp outExp;
   output DAE.Type outType;
   output SymbolTable outSymbolTable;
 algorithm
   (outExp, outType, outSymbolTable) :=
-  match(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inContext, inSymbolTable)
+  match(inCref, inComponent, inShouldEvaluate, inEvalPolicy, inContext, inSymbolTable, inFunctionTable)
     local
       DAE.Type ty;
       Binding binding;
@@ -1061,7 +1125,7 @@ algorithm
       Boolean se;
       Context c;
 
-    case (_, NFInstTypes.TYPED_COMPONENT(ty = ty, binding = binding), true, ep, c, st)
+    case (_, NFInstTypes.TYPED_COMPONENT(ty = ty, binding = binding), true, ep, c, st, _)
       equation
         /* ------------------------------------------------------------------*/
         // TODO: The start value should be used if a parameter or constant has
@@ -1072,21 +1136,21 @@ algorithm
         // TODO: Apply cref subscripts to the expression.
         /* ------------------------------------------------------------------*/
         // type the actual expression as the cref might have WRONG TYPE!
-        (exp, ty, _, st) = typeExp(exp, ep, c, st); 
+        (exp, ty, _, st) = typeExp(exp, ep, c, st, inFunctionTable); 
       then
         (exp, ty, st);
 
-    case (_, NFInstTypes.TYPED_COMPONENT(ty = ty), false, _, c, st)
+    case (_, NFInstTypes.TYPED_COMPONENT(ty = ty), false, _, c, st, _)
       equation
         ty = propagateCrefSubsToType(ty, inCref);
         cref = NFInstUtil.typeCrefWithComponent(inCref, inComponent);
       then
         (DAE.CREF(cref, ty), ty, st);
 
-    case (_, NFInstTypes.UNTYPED_COMPONENT(name = _), true, _, c, st)
+    case (_, NFInstTypes.UNTYPED_COMPONENT(name = _), true, _, c, st, _)
       equation
         (NFInstTypes.TYPED_COMPONENT(ty = ty, binding = binding), st) =
-          typeComponent(inComponent, NONE(), c, st);
+          typeComponent(inComponent, NONE(), c, st, inFunctionTable);
         exp = NFInstUtil.getBindingExp(binding);
         /* ------------------------------------------------------------------*/
         // TODO: Apply cref subscripts to the expression.
@@ -1094,19 +1158,19 @@ algorithm
       then
         (exp, ty, st);
 
-    case (_, NFInstTypes.UNTYPED_COMPONENT(name = _), false, _, c, st)
+    case (_, NFInstTypes.UNTYPED_COMPONENT(name = _), false, _, c, st, _)
       equation
-        (ty, st) = typeComponentDims(inComponent, c, st);
+        (ty, st) = typeComponentDims(inComponent, c, st, inFunctionTable);
         ty = propagateCrefSubsToType(ty, inCref);
       then
         (DAE.CREF(inCref, ty), ty, st);
 
-    case (_, NFInstTypes.OUTER_COMPONENT(name = _), se, ep, c, st)
+    case (_, NFInstTypes.OUTER_COMPONENT(name = _), se, ep, c, st, _)
       equation
-        (inner_comp, st) = typeComponent(inComponent, NONE(), c, st);
+        (inner_comp, st) = typeComponent(inComponent, NONE(), c, st, inFunctionTable);
         inner_name = NFInstUtil.getComponentName(inner_comp);
         inner_cref = NFInstUtil.removeCrefOuterPrefix(inner_name, inCref);
-        (exp, ty, st) = typeCref2(inner_cref, inner_comp, se, ep, c, st);
+        (exp, ty, st) = typeCref2(inner_cref, inner_comp, se, ep, c, st, inFunctionTable);
       then
         (exp, ty, st);
 
@@ -1203,21 +1267,23 @@ end propagateCrefSubsToCref;
 public function typeSections
   input Class inClass;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output Class outClass;
   output Connections outConnections;
 algorithm
   (outClass, outConnections) := typeSections2(inClass, inSymbolTable,
-    NFConnect2.emptyConnections);
+    inFunctionTable,NFConnect2.emptyConnections);
 end typeSections;
 
 public function typeSections2
   input Class inClass;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input Connections inConnections;
   output Class outClass;
   output Connections outConnections;
 algorithm
-  (outClass, outConnections) := match(inClass, inSymbolTable, inConnections)
+  (outClass, outConnections) := match(inClass, inSymbolTable, inFunctionTable, inConnections)
     local
       list<Element> comps;
       list<Equation> eq, ieq;
@@ -1226,18 +1292,18 @@ algorithm
       Connections conn;
       Absyn.Path name;
 
-    case (NFInstTypes.BASIC_TYPE(name), _, _) then (inClass, inConnections);
+    case (NFInstTypes.BASIC_TYPE(name), _, _, _) then (inClass, inConnections);
 
-    case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, conn)
+    case (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), st, _, conn)
       equation
-        (comps, conn) = typeSectionsInElements(comps, st, conn);
-        (eq, conn) = typeEquations(eq, st, conn);
+        (comps, conn) = typeSectionsInElements(comps, st, inFunctionTable, conn);
+        (eq, conn) = typeEquations(eq, st, inFunctionTable, conn);
         // Connections are not allowed in initial equation sections, so we
         // shouldn't get any connections back from typeEquations here.
         (ieq, _) =
-          typeEquations(ieq, st, NFConnect2.emptyConnections);
-        al = typeAlgorithms(al, st);
-        ial = typeAlgorithms(ial, st);
+          typeEquations(ieq, st, inFunctionTable, NFConnect2.emptyConnections);
+        al = typeAlgorithms(al, st, inFunctionTable);
+        ial = typeAlgorithms(ial, st, inFunctionTable);
       then
         (NFInstTypes.COMPLEX_CLASS(name, comps, eq, ieq, al, ial), conn);
 
@@ -1247,22 +1313,24 @@ end typeSections2;
 protected function typeSectionsInElements
   input list<Element> inElements;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input Connections inConnections;
   output list<Element> outElements;
   output Connections outConnections;
 algorithm
-  (outElements, outConnections) := List.map1Fold(inElements,
-    typeSectionsInElement, inSymbolTable, inConnections);
+  (outElements, outConnections) := List.map2Fold(inElements,
+    typeSectionsInElement, inSymbolTable, inFunctionTable, inConnections);
 end typeSectionsInElements;
     
 protected function typeSectionsInElement
   input Element inElement;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input Connections inConnections;
   output Element outElement;
   output Connections outConnections;
 algorithm
-  (outElement, outConnections) := match(inElement, inSymbolTable, inConnections)
+  (outElement, outConnections) := match(inElement, inSymbolTable, inFunctionTable, inConnections)
     local
       Component comp;
       Class cls;
@@ -1271,13 +1339,13 @@ algorithm
       SymbolTable st;
       Connections conn;
 
-    case (NFInstTypes.ELEMENT(comp, cls), st, conn)
+    case (NFInstTypes.ELEMENT(comp, cls), st, _, conn)
       equation
-        (cls, conn) = typeSections2(cls, st, conn);
+        (cls, conn) = typeSections2(cls, st, inFunctionTable, conn);
       then
         (NFInstTypes.ELEMENT(comp, cls), conn);
 
-    case (NFInstTypes.CONDITIONAL_ELEMENT(_), st, _)
+    case (NFInstTypes.CONDITIONAL_ELEMENT(_), st, _, _)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,
           {"NFTyping.typeSectionsInElement got a conditional element!"});
@@ -1290,38 +1358,40 @@ end typeSectionsInElement;
 protected function typeEquations
   input list<Equation> inEquations;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input Connections inConnections;
   output list<Equation> outEquations;
   output Connections outConnections;
 algorithm
   (outEquations, outConnections) :=
-    typeEquations2(inEquations, inSymbolTable, {}, inConnections);
+    typeEquations2(inEquations, inSymbolTable, inFunctionTable, {}, inConnections);
 end typeEquations;
 
 protected function typeEquations2
   input list<Equation> inEquations;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input list<Equation> inAccumEql;
   input Connections inConnections;
   output list<Equation> outEquations;
   output Connections outConnections;
 algorithm
   (outEquations, outConnections) :=
-  match(inEquations, inSymbolTable, inAccumEql, inConnections)
+  match(inEquations, inSymbolTable, inFunctionTable, inAccumEql, inConnections)
     local
       Equation eq;
       list<Equation> rest_eq, acc_eq;
       SymbolTable st;
       Connections conn;
       
-    case (eq :: rest_eq, st, acc_eq, _)
+    case (eq :: rest_eq, st, _, acc_eq, _)
       equation
-        (acc_eq, conn) = typeEquation(eq, st, acc_eq, inConnections);
-        (acc_eq, conn) = typeEquations2(rest_eq, st, acc_eq, conn);
+        (acc_eq, conn) = typeEquation(eq, st, inFunctionTable, acc_eq, inConnections);
+        (acc_eq, conn) = typeEquations2(rest_eq, st, inFunctionTable, acc_eq, conn);
       then
         (acc_eq, conn);
 
-    case ({}, _, _, _) then (listReverse(inAccumEql), inConnections);
+    case ({}, _, _, _, _) then (listReverse(inAccumEql), inConnections);
 
   end match;
 end typeEquations2;
@@ -1329,13 +1399,14 @@ end typeEquations2;
 protected function typeEquation
   input Equation inEquation;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input list<Equation> inAccumEql;
   input Connections inConnections;
   output list<Equation> outAccumEql;
   output Connections outConnections;
 algorithm
   (outAccumEql, outConnections) :=
-  match(inEquation, inSymbolTable, inAccumEql, inConnections)
+  match(inEquation, inSymbolTable, inFunctionTable, inAccumEql, inConnections)
     local
       DAE.Exp rhs, lhs, exp1, exp2, exp3;
       list<DAE.Exp> args;
@@ -1354,10 +1425,10 @@ algorithm
       Equation eq;
       Connections conn;
 
-    case (NFInstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, acc_el, _)
+    case (NFInstTypes.EQUALITY_EQUATION(lhs, rhs, info), st, _, acc_el, _)
       equation
-        (lhs, ty1, _, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st);
-        (rhs, ty2, _, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (lhs, ty1, _, _) = typeExp(lhs, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
+        (rhs, ty2, _, _) = typeExp(rhs, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
         
         (lhs, tty1, rhs, tty2) = NFTypeCheck.checkExpEquality(lhs, ty1, rhs, ty2, "equ", info);
         
@@ -1366,32 +1437,32 @@ algorithm
         (eq :: acc_el, inConnections);
 
     case (NFInstTypes.CONNECT_EQUATION(cref1, _, _, cref2, _, _, prefix, info),
-        st, acc_el, conn)
+        st, _, acc_el, conn)
       equation
         (acc_el, conn) = typeConnection(cref1, cref2, prefix, st, info, acc_el, conn);
       then
         (acc_el, conn);
 
-    case (NFInstTypes.FOR_EQUATION(name, index, _, SOME(exp1), eql, info), st, acc_el, conn)
+    case (NFInstTypes.FOR_EQUATION(name, index, _, SOME(exp1), eql, info), st, _, acc_el, conn)
       equation
-        (exp1, ty, _, _) = typeExp(exp1, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st);
+        (exp1, ty, _, _) = typeExp(exp1, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st, inFunctionTable);
         ty = rangeToIteratorType(ty, exp1, info);
         iter_name = Absyn.IDENT(name);
         iter = NFInstUtil.makeIterator(iter_name, ty, info);
         st = NFInstSymbolTable.addIterator(iter_name, iter, st);
-        (eql, conn) = typeEquations(eql, st, conn);
+        (eql, conn) = typeEquations(eql, st, inFunctionTable, conn);
         eq = NFInstTypes.FOR_EQUATION(name, index, ty, SOME(exp1), eql, info);
       then
         (eq :: acc_el, conn);
 
-    case (NFInstTypes.FOR_EQUATION(_, _, _, NONE(), eql, info), st, acc_el, _)
+    case (NFInstTypes.FOR_EQUATION(_, _, _, NONE(), eql, info), st, _, acc_el, _)
       equation
         Error.addSourceMessage(Error.INTERNAL_ERROR,{"Implicit for ranges are not yet implemented"},info);
       then fail();
 
-    case (NFInstTypes.IF_EQUATION(branches, info), st, acc_el, _)
+    case (NFInstTypes.IF_EQUATION(branches, info), st, _, acc_el, _)
       equation
-        (branches, conn) = typeBranches(branches, st);
+        (branches, conn) = typeBranches(branches, st, inFunctionTable);
         eq = NFInstTypes.IF_EQUATION(branches, info);
         /* ------------------------------------------------------------------*/
         // TODO: Check conn here, connections are not allowed inside
@@ -1400,9 +1471,9 @@ algorithm
       then
         (eq :: acc_el, conn);
 
-    case (NFInstTypes.WHEN_EQUATION(branches, info), st, acc_el, _)
+    case (NFInstTypes.WHEN_EQUATION(branches, info), st, _, acc_el, _)
       equation
-        (branches, conn) = typeBranches(branches, st);
+        (branches, conn) = typeBranches(branches, st, inFunctionTable);
         /* ------------------------------------------------------------------*/
         // TODO: Check conn here, connections are not allowed inside when.
         /* ------------------------------------------------------------------*/
@@ -1413,40 +1484,40 @@ algorithm
       then
         (eq :: acc_el, NFConnect2.emptyConnections);
 
-    case (NFInstTypes.ASSERT_EQUATION(exp1, exp2, exp3, info), st, acc_el, _)
+    case (NFInstTypes.ASSERT_EQUATION(exp1, exp2, exp3, info), st, _, acc_el, _)
       equation
-        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
-        (exp2, _, _, _) = typeExp(exp2, EVAL_CONST(), CONTEXT_MODEL(), st);
-        (exp3, _, _, _) = typeExp(exp3, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
+        (exp2, _, _, _) = typeExp(exp2, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
+        (exp3, _, _, _) = typeExp(exp3, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
         eq = NFInstTypes.ASSERT_EQUATION(exp1, exp2, exp3, info);
       then
         (eq :: acc_el, NFConnect2.emptyConnections);
 
-    case (NFInstTypes.TERMINATE_EQUATION(exp1, info), st, acc_el, _)
+    case (NFInstTypes.TERMINATE_EQUATION(exp1, info), st, _, acc_el, _)
       equation
-        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
         eq = NFInstTypes.TERMINATE_EQUATION(exp1, info);
       then
         (eq :: acc_el, NFConnect2.emptyConnections);
 
-    case (NFInstTypes.REINIT_EQUATION(cref1, exp1, info), st, acc_el, _)
+    case (NFInstTypes.REINIT_EQUATION(cref1, exp1, info), st, _, acc_el, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
-        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st, inFunctionTable);
+        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
         eq = NFInstTypes.REINIT_EQUATION(cref1, exp1, info);
       then
         (eq :: acc_el, NFConnect2.emptyConnections);
 
     case (NFInstTypes.NORETCALL_EQUATION(DAE.CALL(path = Absyn.QUALIFIED(name = "Connections",
-        path = Absyn.IDENT(name = name)), expLst = args), info), st, acc_el, _)
+        path = Absyn.IDENT(name = name)), expLst = args), info), st, _, acc_el, _)
       equation
-        conn = typeConnectionsEquation(name, args, st, info);
+        conn = typeConnectionsEquation(name, args, st, inFunctionTable,info);
       then
         (acc_el, conn);
 
-    case (NFInstTypes.NORETCALL_EQUATION(exp1, info), st, acc_el, _)
+    case (NFInstTypes.NORETCALL_EQUATION(exp1, info), st, _, acc_el, _)
       equation
-        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st);
+        (exp1, _, _, _) = typeExp(exp1, EVAL_CONST(), CONTEXT_MODEL(), st, inFunctionTable);
         eq = NFInstTypes.NORETCALL_EQUATION(exp1, info);
       then
         (eq :: acc_el, NFConnect2.emptyConnections);
@@ -1487,39 +1558,40 @@ protected function typeConnectionsEquation
   input String inName;
   input list<DAE.Exp> inArgs;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input Absyn.Info inInfo;
   output Connections outConnections;
 algorithm
-  outConnections := match(inName, inArgs, inSymbolTable, inInfo)
+  outConnections := match(inName, inArgs, inSymbolTable, inFunctionTable, inInfo)
     local
       DAE.ComponentRef cref1, cref2;
       SymbolTable st;
       DAE.Exp prio;
 
     case ("branch", {DAE.CREF(componentRef = cref1),
-        DAE.CREF(componentRef = cref2)}, st, _)
+        DAE.CREF(componentRef = cref2)}, st, _, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
-        (DAE.CREF(componentRef = cref2), _, _, _) = typeCref(cref2, NO_EVAL(), CONTEXT_MODEL(), st);
+        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st, inFunctionTable);
+        (DAE.CREF(componentRef = cref2), _, _, _) = typeCref(cref2, NO_EVAL(), CONTEXT_MODEL(), st, inFunctionTable);
       then
         NFConnectUtil2.makeBranch(cref1, cref2, inInfo);
 
-    case ("root", {DAE.CREF(componentRef = cref1)}, st, _)
+    case ("root", {DAE.CREF(componentRef = cref1)}, st, _, _)
       equation
-        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st);
+        (DAE.CREF(componentRef = cref1), _, _, _) = typeCref(cref1, NO_EVAL(), CONTEXT_MODEL(), st, inFunctionTable);
       then
         NFConnectUtil2.makeRoot(cref1, inInfo);
 
-    case ("potentialRoot", {DAE.CREF(componentRef = cref1), prio}, st, _)
+    case ("potentialRoot", {DAE.CREF(componentRef = cref1), prio}, st, _, _)
       equation
-        (prio, _, _, _) = typeExp(prio, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st);
+        (prio, _, _, _) = typeExp(prio, EVAL_CONST_PARAM(), CONTEXT_MODEL(), st, inFunctionTable);
       then
         NFConnectUtil2.makePotentialRoot(cref1, prio, inInfo);
 
     // Modelica allows you to omit crefs from the lhs, so isRoot may be called
     // as a non-returning call. It won't do anything though. Perhaps we should
     // tell the user that this is stupid?
-    case ("isRoot", _, _, _)
+    case ("isRoot", _, _, _, _)
       then NFConnect2.emptyConnections;
 
   end match;
@@ -1821,30 +1893,32 @@ end rangeToIteratorType;
 protected function typeBranches
   input list<tuple<DAE.Exp, list<Equation>>> inBranches;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output list<tuple<DAE.Exp, list<Equation>>> outBranches;
   output Connections outConnections;
 algorithm
-  (outBranches, outConnections) := List.map1Fold(inBranches, typeBranch,
-    inSymbolTable, NFConnect2.emptyConnections); 
+  (outBranches, outConnections) := List.map2Fold(inBranches, typeBranch,
+    inSymbolTable, inFunctionTable, NFConnect2.emptyConnections); 
 end typeBranches;
 
 protected function typeBranch
   input tuple<DAE.Exp, list<Equation>> inBranch;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input Connections inConnections;
   output tuple<DAE.Exp, list<Equation>> outBranch;
   output Connections outConnections;
 algorithm
-  (outBranch, outConnections) := match(inBranch, inSymbolTable, inConnections)
+  (outBranch, outConnections) := match(inBranch, inSymbolTable, inFunctionTable, inConnections)
     local
       DAE.Exp cond_exp;
       list<Equation> branch_body;
       Connections conn;
 
-    case ((cond_exp, branch_body), _, conn)
+    case ((cond_exp, branch_body), _, _, conn)
       equation
-        (cond_exp, _, _, _) = typeExp(cond_exp, EVAL_CONST(), CONTEXT_MODEL(), inSymbolTable);
-        (branch_body, conn) = typeEquations(branch_body, inSymbolTable, conn);
+        (cond_exp, _, _, _) = typeExp(cond_exp, EVAL_CONST(), CONTEXT_MODEL(), inSymbolTable, inFunctionTable);
+        (branch_body, conn) = typeEquations(branch_body, inSymbolTable, inFunctionTable, conn);
       then
         ((cond_exp, branch_body), conn);
 
@@ -1854,61 +1928,65 @@ end typeBranch;
 protected function typeAlgorithms
   input list<list<Statement>> inStmts;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output list<list<Statement>> outStmts;
 algorithm
-  outStmts := List.map2(inStmts,typeStatements,CONTEXT_MODEL(),inSymbolTable);
+  outStmts := List.map3(inStmts,typeStatements,CONTEXT_MODEL(),inSymbolTable, inFunctionTable);
 end typeAlgorithms;
 
 protected function typeStatements
   input list<Statement> inStmts;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output list<Statement> outStmts;
 algorithm
-  outStmts := listReverse(List.fold2(inStmts, typeStatement, inContext, inSymbolTable, {}));
+  outStmts := listReverse(List.fold3(inStmts, typeStatement, inContext, inSymbolTable, inFunctionTable, {}));
 end typeStatements;
 
 protected function typeStatement
   input Statement inStmt;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   input list<Statement> inAcc;
   output list<Statement> outAcc;
 algorithm
-  outAcc := match (inStmt,inContext,inSymbolTable,inAcc)
+  outAcc := match (inStmt,inContext,inSymbolTable,inFunctionTable,inAcc)
     local
       DAE.Exp lhs,rhs,exp;
       Absyn.Info info;
       DAE.Type lty,rty,ty;
       SymbolTable st;
+      FunctionHashTable ft;
       list<tuple<DAE.Exp,list<Statement>>> branches;
       String name;
       Context c;
 
-    case (NFInstTypes.ASSIGN_STMT(lhs=lhs,rhs=rhs,info=info),c,st,_)
+    case (NFInstTypes.ASSIGN_STMT(lhs=lhs,rhs=rhs,info=info),c,st,ft,_)
       equation
-        (lhs,lty,_,_) = typeExp(lhs, NO_EVAL(), c, st);
-        (rhs,rty,_,_) = typeExp(rhs, EVAL_CONST(), c, st);
+        (lhs,lty,_,_) = typeExp(lhs, NO_EVAL(), c, st, ft);
+        (rhs,rty,_,_) = typeExp(rhs, EVAL_CONST(), c, st, ft);
         (lhs, _, rhs, _) = NFTypeCheck.checkExpEquality(lhs, lty, rhs, rty, "alg", info);
       then typeAssignment(lhs,rhs,info,inAcc);
-    case (NFInstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),c,st,_)
+    case (NFInstTypes.FUNCTION_ARRAY_INIT(name=name,ty=ty,info=info),c,st,_,_)
       equation
         NFInstTypes.TYPED_COMPONENT(ty=ty) = NFInstSymbolTable.lookupCref(DAE.CREF_IDENT(name,ty,{}),st);
       then NFInstTypes.FUNCTION_ARRAY_INIT(name,ty,info) :: inAcc;
-    case (NFInstTypes.NORETCALL_STMT(exp=exp, info=info),c,st,_)
+    case (NFInstTypes.NORETCALL_STMT(exp=exp, info=info),c,st,ft,_)
       equation
         // Let's try skipping evaluation. Maybe helps some external functions
-        (exp,_,_,_) = typeExp(exp, NO_EVAL(), c, st);
+        (exp,_,_,_) = typeExp(exp, NO_EVAL(), c, st, ft);
         /* ------------------------------------------------------------------*/
         // TODO: Check variability/etc to potentially reduce the statement?
         /* ------------------------------------------------------------------*/
       then NFInstTypes.NORETCALL_STMT(exp,info)::inAcc;
-    case (NFInstTypes.IF_STMT(branches=branches, info=info),c,st,_)
+    case (NFInstTypes.IF_STMT(branches=branches, info=info),c,st,ft,_)
       equation
-        branches = List.map2(branches, typeBranchStatement, c, st);
+        branches = List.map3(branches, typeBranchStatement, c, st, ft);
       then
         NFInstTypes.IF_STMT(branches, info) :: inAcc;
-    case (NFInstTypes.FOR_STMT(info=_),c,st,_)
+    case (NFInstTypes.FOR_STMT(info=_),c,st,ft,_)
       then
         inStmt :: inAcc;
     else
@@ -1945,21 +2023,22 @@ protected function typeBranchStatement
   input tuple<DAE.Exp, list<Statement>> inBranch;
   input Context inContext;
   input SymbolTable inSymbolTable;
+  input FunctionHashTable inFunctionTable;
   output tuple<DAE.Exp, list<Statement>> outBranch;
 algorithm
-  outBranch := match(inBranch, inContext, inSymbolTable)
+  outBranch := match(inBranch, inContext, inSymbolTable, inFunctionTable)
     local
       DAE.Exp cond_exp;
       list<Statement> branch_body;
       Context c;
 
-    case ((cond_exp, branch_body), c, _)
+    case ((cond_exp, branch_body), c, _, _)
       equation
-        (cond_exp, _, _, _) = typeExp(cond_exp, EVAL_CONST(), c, inSymbolTable);
+        (cond_exp, _, _, _) = typeExp(cond_exp, EVAL_CONST(), c, inSymbolTable, inFunctionTable);
         /* ------------------------------------------------------------------*/
         // TODO: Type-check the condition
         /* ------------------------------------------------------------------*/
-        branch_body = typeStatements(branch_body, c, inSymbolTable);
+        branch_body = typeStatements(branch_body, c, inSymbolTable, inFunctionTable);
       then
         ((cond_exp, branch_body));
 
@@ -2015,6 +2094,7 @@ algorithm
       list<NFInstTypes.Statement> al;
       HashTablePathToFunction.HashTable ht;
       SymbolTable st;
+      DAE.Type recType;
 
     case (NFInstTypes.FUNCTION(inputs = inputs, outputs = outputs, locals = locals,
         algorithms = al), _, ht, st)
@@ -2023,18 +2103,25 @@ algorithm
         st = NFInstSymbolTable.addElements(inputs, st);
         st = NFInstSymbolTable.addElements(outputs, st);
         st = NFInstSymbolTable.addElements(locals, st);
-        (inputs, st) = List.map2Fold(inputs, typeElement, NONE(), CONTEXT_FUNCTION(), st);
-        (outputs, st) = List.map2Fold(outputs, typeElement, NONE(), CONTEXT_FUNCTION(), st);
-        (locals, st) = List.map2Fold(locals, typeElement, NONE(), CONTEXT_FUNCTION(), st);
-        al = typeStatements(al, CONTEXT_FUNCTION(), st);
+        (inputs, st) = List.map3Fold(inputs, typeElement, NONE(), CONTEXT_FUNCTION(), inFunctionTable, st);
+        (outputs, st) = List.map3Fold(outputs, typeElement, NONE(), CONTEXT_FUNCTION(), inFunctionTable, st);
+        (locals, st) = List.map3Fold(locals, typeElement, NONE(), CONTEXT_FUNCTION(), inFunctionTable, st);
+        al = typeStatements(al, CONTEXT_FUNCTION(), st, inFunctionTable);
         ht = BaseHashTable.add((inPath, NFInstTypes.FUNCTION(inPath, inputs, outputs, locals, al)), ht);
         _::st = st;
       then
         ((ht, st));
 
-    case (NFInstTypes.RECORD(path = _), _, ht, st)
+    case (NFInstTypes.RECORD_CONSTRUCTOR(recType = recType, inputs = inputs, locals = locals, algorithms = al), _, ht, st)
       equation
-        print("- NFTyping.typeFunction2: Support for record constructors not yet implemented.\n");
+        st = NFInstSymbolTable.addFunctionScope(st);
+        st = NFInstSymbolTable.addElements(inputs, st);
+        st = NFInstSymbolTable.addElements(locals, st);
+        (inputs, st) = List.map3Fold(inputs, typeElement, NONE(), CONTEXT_FUNCTION(), inFunctionTable, st);
+        (locals, st) = List.map3Fold(locals, typeElement, NONE(), CONTEXT_FUNCTION(), inFunctionTable, st);
+        al = typeStatements(al, CONTEXT_FUNCTION(), st, inFunctionTable);
+        ht = BaseHashTable.add((inPath, NFInstTypes.RECORD_CONSTRUCTOR(inPath, recType, inputs, locals, al)), ht);
+        _::st = st;
       then
         ((ht, st));
 

@@ -6757,6 +6757,69 @@ algorithm
   end matchcontinue;
 end exist;
 
+public function extractOnTrue
+  "Takes a list of values and a filter function over the values and returns a
+   two lists. one of values for which the matching function returns true and the 
+   other containing the remaining elements.
+   N.B. The original list is lost in here. Will fix if I comeup with something more efficient. 
+     Example:
+       extractOnTrue({1, 2, 3, 4, 5}, isEven) => {2, 4}, {1, 3, 5}"
+  input list<ElementType> inList;
+  input FilterFunc inFilterFunc;
+  output list<ElementType> outExtractedList;
+  output list<ElementType> outRemainingList;
+
+  partial function FilterFunc
+    input ElementType inElement;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  (outExtractedList, outRemainingList) := extractOnTrue_tail(inList, inFilterFunc, {}, {});
+  outExtractedList := listReverse(outExtractedList);
+  outRemainingList := listReverse(outRemainingList);
+end extractOnTrue;
+
+protected function extractOnTrue_tail
+  "Tail recursive implementation of extractOnTrue."
+  input list<ElementType> inList;
+  input FilterFunc inFilterFunc;
+  input list<ElementType> inExtractedList;
+  input list<ElementType> inRemainingList;
+  output list<ElementType> outExtractedList;
+  output list<ElementType> outRemainingList;
+
+  partial function FilterFunc
+    input ElementType inElement;
+    output Boolean outResult;
+  end FilterFunc;
+algorithm
+  (outExtractedList, outRemainingList) := matchcontinue(inList, inFilterFunc, inExtractedList, inRemainingList)
+    local
+      ElementType e;
+      list<ElementType> rest;
+      list<ElementType> exted;
+      list<ElementType> remain;
+
+    case ({}, _, _, _) then (inExtractedList, inRemainingList);
+
+    // Add to front of extracted list if the condition works.
+    case (e :: rest, _, _, _)
+      equation
+        true = inFilterFunc(e);
+        (exted, remain) = extractOnTrue_tail(rest, inFilterFunc, e :: inExtractedList, inRemainingList);
+      then
+        (exted, remain);
+
+    // Add to front of remaining list if the condition doesn't work.
+    case (e :: rest, _, _, _)
+      equation
+        (exted, remain) = extractOnTrue_tail(rest, inFilterFunc, inExtractedList, e :: inRemainingList);
+      then 
+        (exted, remain);
+
+  end matchcontinue;
+end extractOnTrue_tail;
+
 public function filter
   "Takes a list of values and a filter function over the values and returns a
    sub list of values for which the matching function succeeds.

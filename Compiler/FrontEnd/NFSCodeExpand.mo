@@ -1049,6 +1049,9 @@ algorithm
       list<DAE.Element> el;
       list<NFInstTypes.Element> inputs,outputs,locals;
       list<NFInstTypes.Statement> al;
+      DAE.Type recType;
+      DAE.Element outRec;
+      
     case NFInstTypes.FUNCTION(path=path,inputs=inputs,outputs=outputs,locals=locals,algorithms=al)
       equation
         el = {};
@@ -1058,6 +1061,23 @@ algorithm
         el = expandArray((al,EXPAND_FUNCTION(),false /* not initial */), EXPAND_FUNCTION(), {}, {}::{}, el, expandStatements);
         el = listReverse(el);
       then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
+      
+      
+    case NFInstTypes.RECORD_CONSTRUCTOR(path, recType , inputs, locals, _)
+      equation
+        el = List.fold2(inputs, expandElement, EXPAND_FUNCTION(), {}, {});     
+        el = List.fold2(locals, expandElement, EXPAND_FUNCTION(), {}, el);
+        
+        // Create the return variable for the record constructor which will have the type of the
+        // record itself.
+        outRec = DAE.VAR(DAE.CREF_IDENT("$res", DAE.T_UNKNOWN_DEFAULT, {}), DAE.VARIABLE(), 
+          DAE.OUTPUT(), DAE.NON_PARALLEL(), DAE.PUBLIC(), recType,
+          NONE(), {}, DAE.NON_CONNECTOR(), DAE.emptyElementSource, NONE(), NONE(),
+          Absyn.NOT_INNER_OUTER());
+        el = outRec::el;
+        el = listReverse(el);
+      then DAE.FUNCTION(path,{DAE.FUNCTION_DEF(el)},DAE.T_FUNCTION_DEFAULT,false,DAE.NO_INLINE(),DAE.emptyElementSource,NONE());
+        
   end match;
 end expandFunction;
 

@@ -165,7 +165,7 @@ algorithm
         // Mark structural parameters.
         (cls, symtab) = assignParamTypes(cls, symtab);
         // Type the instantiated class.
-        (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab);
+        (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab, functions);
 
         // Instantiate conditional components now that we have typed all crefs
         // that might be used as conditions.
@@ -175,7 +175,7 @@ algorithm
 
         // Type the instantiated class again, to type any instantiated
         // conditional components that might have been added.
-        (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab);
+        (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab, functions);
         
         // Type all instantiated functions.
         ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions),
@@ -185,7 +185,7 @@ algorithm
         (cls, symtab) = NFTypeCheck.checkClassComponents(cls, NFTyping.CONTEXT_MODEL(), symtab);        
         
         // Type all equation and algorithm sections in the class.
-        (cls, conn) = NFTyping.typeSections(cls, symtab);
+        (cls, conn) = NFTyping.typeSections(cls, symtab, functions);
         
         // Generate connect equations.
         flows = NFConnectUtil2.collectFlowConnectors(cls);
@@ -2594,22 +2594,36 @@ algorithm
       list<Statement> stmts;
       list<Statement> initBindings;
       Function func;
+      DAE.Type recRetType;
+      list<DAE.Var> vars;
 
     // Records, treat them the same as globals and add bindings as algorithm
     // statements.
-    case (_, NFInstTypes.COMPLEX_CLASS(components = inputs,
+    case (_, NFInstTypes.COMPLEX_CLASS(components = locals,
         algorithms = algorithms), true)
       equation
         initBindings = {};
-        (inputs, initBindings) = List.mapFold(inputs, dimensionDeps, initBindings);
+        (locals, initBindings) = List.mapFold(locals, dimensionDeps, initBindings);
         (initBindings, {}) = Graph.topologicalSort(
           Graph.buildGraph(initBindings, getStatementDependencies,
             (initBindings, List.map(initBindings, getInitStatementName))),
           statementLhsEqual);
         algorithms = initBindings :: algorithms;
         stmts = List.flatten(algorithms);
+        
+        // make DAE vars for the return type. Includes all components in the record.
+        // No need to type and expand an NFInstTypes.ELEMENT. We know what we want.
+        vars = List.accumulateMapReverse(locals, NFInstUtil.makeDaeVarsFromElement);
+        recRetType = DAE.T_COMPLEX(ClassInf.RECORD(inName), vars, NONE(), DAE.emptyTypeSource);
+        
+        // extract all modifiable components in to 'inputs' the rest go in 'locals'
+        (inputs, locals) = List.extractOnTrue(locals, NFInstUtil.isModifiableElement);
+        // strip all other prefixes and mark as inputs
+        inputs = List.map(inputs, NFInstUtil.markElementAsInput);
+        // strip all other prefixes and mark as protected.
+        locals = List.map(locals, NFInstUtil.markElementAsProtected);
       then
-        NFInstTypes.RECORD(inName, inputs, stmts);
+        NFInstTypes.RECORD_CONSTRUCTOR(inName, recRetType, inputs, locals, stmts);
 
     // Normal globals.
     case (_, NFInstTypes.COMPLEX_CLASS(algorithms = algorithms), false)
@@ -3931,7 +3945,7 @@ algorithm
     case (NFInstTypes.CONDITIONAL_COMPONENT(name, cond_exp, sel, mod, prefs, env,
         prefix, info), st, globals)
       equation
-        (cond_exp, ty, _, st) = NFTyping.typeExp(cond_exp, NFTyping.EVAL_CONST_PARAM(),
+        (cond_exp, ty, _, st) = NFTyping.typeExpEmptyFunctionTable(cond_exp, NFTyping.EVAL_CONST_PARAM(),
           NFTyping.CONTEXT_MODEL(), st);
         (cond_exp, _) = ExpressionSimplify.simplify(cond_exp);
         cond = evaluateConditionalExp(cond_exp, ty, name, info);

@@ -105,11 +105,13 @@ public uniontype Function
     list<Statement> algorithms "TODO: Add default bindings";
   end FUNCTION;
   
-  record RECORD "A record has locals with bindings"
+  record RECORD_CONSTRUCTOR "A record constructor has inputs and locals (with bindings)?"
     Absyn.Path path;
-    list<Element> components;
+    DAE.Type recType;
+    list<Element> inputs "componets of the original record which CAN be modified";
+    list<Element> locals "componets of the original record which CAN NOT be modified (protected, final, constant WITH binding)";
     list<Statement> algorithms "TODO: Add default bindings";
-  end RECORD;
+  end RECORD_CONSTRUCTOR;
     
 end Function;
 
@@ -252,6 +254,10 @@ end Prefixes;
 public constant Prefixes DEFAULT_PROTECTED_PREFIXES = PREFIXES(
   SCode.PROTECTED(), SCode.VAR(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
   (Absyn.BIDIR(), Absyn.dummyInfo), (SCode.POTENTIAL(), Absyn.dummyInfo), NO_VARARG());
+  
+public constant Prefixes DEFAULT_INPUT_PREFIXES = PREFIXES(
+  SCode.PUBLIC(), SCode.VAR(), SCode.NOT_FINAL(), Absyn.NOT_INNER_OUTER(),
+  (Absyn.INPUT(), Absyn.dummyInfo), (SCode.POTENTIAL(), Absyn.dummyInfo), NO_VARARG());
 
 public uniontype VarArgs
   record NO_VARARG end NO_VARARG;
