@@ -541,7 +541,6 @@ algorithm
       equation
         // calculate stuff that we need to create SimCode data structure 
         System.realtimeTick(CevalScript.RT_CLOCK_FRONTEND);
-        //(cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st),NONE(), msg);
         (cache,env,dae,st) = CevalScript.runFrontEnd(cache,env,className,st,false);
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_FRONTEND);
         System.realtimeTick(CevalScript.RT_CLOCK_BACKEND);

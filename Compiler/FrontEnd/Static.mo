@@ -13935,7 +13935,7 @@ algorithm
   res := b and res;
 end slotAnd;
 
-protected function elabCodeExp
+public function elabCodeExp
   input Absyn.Exp exp;
   input Env.Cache cache;
   input Env.Env env;

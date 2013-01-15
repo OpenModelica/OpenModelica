@@ -9,6 +9,7 @@ public import Prefix;
 
 public type Ident = String;
 
+protected import Ceval;
 protected import CevalScript;
 protected import ClassInf;
 protected import Debug;
@@ -19,6 +20,7 @@ protected import ExpressionSimplify;
 protected import Flags;
 protected import Static;
 protected import Types;
+protected import Values;
 
 
 protected function calculateSimulationTimes
@@ -121,6 +123,7 @@ algorithm
   (outCache, outSimulationArguments) := 
   match (inCache, inEnv, inAbsynExpLst, inAbsynNamedArgLst, inBoolean, inInteractiveInteractiveSymbolTableOption, inPrefix, inInfo)  
     local
+      Absyn.Exp crexp;
       Absyn.ComponentRef cr;
       DAE.ComponentRef  cr_1;
       list<Absyn.NamedArg> args;
@@ -130,19 +133,22 @@ algorithm
       Absyn.Info info;
       String cname_str;
       Absyn.Path className;
-      DAE.Exp startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
+      DAE.Exp exp,startTime,stopTime,numberOfIntervals,tolerance,method,cflags,simflags;
       DAE.Exp fileNamePrefix,storeInTemp,options,noClean,outputFormat,variableFilter,measureTime;
       CevalScript.SimulationOptions defaulSimOpt;
       Env.Cache cache;
       Env.Env env;
+      Values.Value v;
     
     // fill in defaults
-    case (cache,env,{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre,info)
+    case (cache,env,{crexp},args,impl,SOME(st),pre,info)
       equation
-        (cache,cr_1) = Static.elabUntypedCref(cache,env,cr,impl,pre,info);
-        className = Static.componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
+        exp = Static.elabCodeExp(crexp,cache,env,DAE.C_TYPENAME(),info);
+        // We need to force eval in order to get the correct prefix
+        (cache,v,SOME(st)) = Ceval.ceval(cache,env,exp,true,SOME(st),Ceval.MSG(info));
+        Values.CODE(Absyn.C_TYPENAME(className)) = CevalScript.evalCodeTypeName(v,env);
+
         cname_str = Absyn.pathString(Absyn.unqotePathIdents(className)) "easier than checking if the file system supports UTF-8...";
-        
         defaulSimOpt = CevalScript.buildSimulationOptionsFromModelExperimentAnnotation(st, className, cname_str);
         
         (cache, startTime, stopTime, numberOfIntervals) = 

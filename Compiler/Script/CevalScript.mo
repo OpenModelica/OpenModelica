@@ -6449,7 +6449,7 @@ algorithm
   end matchcontinue;
 end unparseGroupImport;
 
-protected function evalCodeTypeName
+public function evalCodeTypeName
   input Values.Value val;
   input Env.Env env;
   output Values.Value res;
