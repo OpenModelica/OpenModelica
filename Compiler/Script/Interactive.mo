@@ -2336,7 +2336,7 @@ algorithm
         filenameprefix = Absyn.pathLastIdent(modelpath);
         (env,st) = buildEnvFromSymboltable(st);  
         (_,{_,_,_,_,_,DAE.SCONST(method),_,_,_,_,_,_,_,_}) = StaticScript.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo); 
-        (_,_,_,_,libs,file_dir,_) = SimCodeMain.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),
+        (_,_,_,libs,file_dir,_) = SimCodeMain.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),
         Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.ARRAY(exp_list)},{}));
         CevalScript.compileModel(filenameprefix,libs, file_dir,"",method);        
       then
@@ -2360,7 +2360,7 @@ algorithm
         Flags.setConfigBool(Flags.GENERATE_LABELED_SIMCODE,false);
         _ = Flags.disableDebug(Flags.WRITE_TO_BUFFER); 
         (_,{_,_,_,_,_,DAE.SCONST(method),_,_,_,_,_,_,_,_}) = StaticScript.getSimulationArguments(Env.emptyCache(),{},{Absyn.CREF(cr)},{},false,SOME(st),Prefix.NOPRE(),Absyn.dummyInfo); 
-        (_,_,_,_,libs,file_dir,_) = SimCodeMain.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),
+        (_,_,_,libs,file_dir,_) = SimCodeMain.translateModel(Env.emptyCache(),env,modelpath,st,filenameprefix,true,NONE(),
         Absyn.FUNCTIONARGS({Absyn.CREF(cr), Absyn.ARRAY(exp_list), Absyn.ARRAY(exp_list2)}, {}));
         CevalScript.compileModel(filenameprefix,libs,file_dir,"",method);   
       then

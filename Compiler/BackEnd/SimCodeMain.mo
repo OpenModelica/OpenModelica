@@ -517,14 +517,13 @@ public function translateModel
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   input Absyn.FunctionArgs args "labels for remove terms";
   output Env.Cache outCache;
-  output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  (outCache,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy, inSimSettingsOpt, args)
     local
       String filenameprefix,file_dir,resstr;
@@ -556,20 +555,16 @@ algorithm
           ("timeSimCode",  Values.REAL(timeSimCode)),
           ("timeBackend",  Values.REAL(timeBackend)),
           ("timeFrontend", Values.REAL(timeFrontend))
-          };          
-        resstr = Util.if_(Flags.isSet(Flags.FAILTRACE),Absyn.pathStringNoQual(className),"");
-        resstr = stringAppendList({"SimCode: The model ",resstr," has been translated"});
-        //        resstr = "SimCode: The model has been translated";
+          };
       then
-        (cache,Values.STRING(resstr),st,indexed_dlow_1,libs,file_dir, resultValues);
+        (cache,st,indexed_dlow_1,libs,file_dir, resultValues);
     case (_,_,_,_,_,_,_,_)
       equation        
         true = Flags.isSet(Flags.FAILTRACE);
         resstr = Absyn.pathStringNoQual(className);
         resstr = stringAppendList({"SimCode: The model ",resstr," could not be translated"});
         Error.addMessage(Error.INTERNAL_ERROR, {resstr});
-      then
-        fail();
+      then fail();
   end matchcontinue;
 end translateModel;
 

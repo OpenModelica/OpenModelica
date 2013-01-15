@@ -1176,12 +1176,12 @@ algorithm
     case (cache,env,"translateModel",vals as {Values.CODE(Absyn.C_TYPENAME(className)),_,_,_,_,_,Values.STRING(filenameprefix),_,_,_,_,_,_,_,_},st,_)
       equation
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
-        (cache,ret_val,st_1,_,_,_,_) = translateModel(cache, env, className, st, filenameprefix, true, SOME(simSettings));
+        (cache,st_1,_,_,_,_) = translateModel(cache, env, className, st, filenameprefix, true, SOME(simSettings));
       then
-        (cache,ret_val,st_1);
+        (cache,Values.BOOL(true),st_1);
    
     case (cache,env,"translateModel",_,st,_)
-      then (cache,Values.STRING("There were errors during translation. Use getErrorString() to see them."),st);
+      then (cache,Values.BOOL(false),st);
 
     case (cache,env,"modelEquationsUC",vals as {Values.CODE(Absyn.C_TYPENAME(className)),Values.STRING(outputFile),Values.BOOL(dumpExtractionSteps)},st,_)
       equation
@@ -1583,23 +1583,23 @@ algorithm
       then
         (cache,Values.STRING(str),st);
         
-    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(className))},st as Interactive.SYMBOLTABLE(ast=p),_)
+    case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},st as Interactive.SYMBOLTABLE(ast=p),_)
       equation
-        cr_1 = Absyn.pathToCref(className);
+        cr_1 = Absyn.pathToCref(path);
         false = Interactive.existClass(cr_1, p);
-        str = "Unknown model in instantiateModel: " +& Absyn.pathString(className) +& "\n";
+        str = Absyn.pathString(path);
+        Error.addMessage(Error.LOOKUP_ERROR, {str,"<TOP>"});
       then
-        (cache,Values.STRING(str),st);
+        (cache,Values.STRING(""),st);
         
     case (cache,env,"instantiateModel",{Values.CODE(Absyn.C_TYPENAME(path))},st,_)
       equation
         b = Error.getNumMessages() == 0;
-        cname = Absyn.pathString(path);
-        str = "Internal error, instantiation of " +& cname +& 
-          " failed with no error message.";
-        str = Util.if_(b, str, "");
+        str = Absyn.pathString(path);
+        str = "Instantiation of " +& str +& " failed with no error message";
+        Debug.bcall2(b, Error.addMessage, Error.INTERNAL_ERROR, {str,"<TOP>"});
       then
-        (cache,Values.STRING(str),st);
+        (cache,Values.STRING(""),st);
 
     case (cache,env,"reopenStandardStream",{Values.ENUM_LITERAL(index=i),Values.STRING(filename)},st,_)
       equation
@@ -2267,13 +2267,13 @@ algorithm
       equation
         pwd = System.pwd();
         pd = System.pathDelimiter();
-        filename = stringAppendList({pwd,pd,filename});
-        filename_1 = stringAppendList({pwd,pd,filename_1});
-        filename2 = stringAppendList({pwd,pd,filename2});
+        filename = Util.if_(System.substring(filename,1,1) ==& "/",filename,stringAppendList({pwd,pd,filename}));
+        filename_1 = Util.if_(System.substring(filename_1,1,1) ==& "/",filename_1,stringAppendList({pwd,pd,filename_1}));
+        filename2 = Util.if_(System.substring(filename2,1,1) ==& "/",filename2,stringAppendList({pwd,pd,filename2}));
         vars_1 = List.map(cvars, ValuesUtil.valString);
         strings = SimulationResults.cmpSimulationResults(Config.getRunningTestsuite(),filename,filename_1,filename2,x1,x2,vars_1);
         cvars = List.map(strings,ValuesUtil.makeString);
-        v = Util.if_(intGt(listLength(cvars),1),Values.LIST(cvars),listNth(cvars,0));
+        v = ValuesUtil.makeArray(cvars);
       then
         (cache,v,st);
         
@@ -3077,14 +3077,13 @@ protected function translateModel "function translateModel
   input Boolean addDummy "if true, add a dummy state";
   input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
-  output Values.Value outValue;
   output Interactive.SymbolTable outInteractiveSymbolTable;
   output BackendDAE.BackendDAE outBackendDAE;
   output list<String> outStringLst;
   output String outFileDir;
   output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
+  (outCache,outInteractiveSymbolTable,outBackendDAE,outStringLst,outFileDir,resultValues):=
   match (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
@@ -3098,10 +3097,10 @@ algorithm
     
     case (cache,env,_,st as Interactive.SYMBOLTABLE(ast=p),fileNamePrefix,_,_)
       equation
-        (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
+        (cache, st, indexed_dlow, libs, file_dir, resultValues) =
           SimCodeMain.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt,Absyn.FUNCTIONARGS({},{}));
       then
-        (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
+        (cache,st,indexed_dlow,libs,file_dir,resultValues);
 
   end match;
 end translateModel;
@@ -3490,7 +3489,7 @@ algorithm
         SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) 
            = simSettings;
         
-        (cache,ret_val,st,indexed_dlow_1,libs,file_dir,resultValues) = translateModel(cache,env, classname, st_1, filenameprefix,true, SOME(simSettings));
+        (cache,st,indexed_dlow_1,libs,file_dir,resultValues) = translateModel(cache,env, classname, st_1, filenameprefix,true, SOME(simSettings));
         //cname_str = Absyn.pathString(classname);
         //SimCodeUtil.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
         //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
@@ -4455,7 +4454,7 @@ algorithm
         oldDir = System.pwd();
         compileDir = changeToTempDirectory(cdToTemp);
         (cache,simSettings) = calculateSimulationSettings(cache,env,vals,st,msg);
-        (cache,ret_val,st,indexed_dlow_1,libs,file_dir,_) 
+        (cache,st,indexed_dlow_1,libs,file_dir,_) 
           = translateModel(cache,env, classname, st, filenameprefix,true,SOME(simSettings));
         SimCode.SIMULATION_SETTINGS(method = method_str) = simSettings;
         //cname_str = Absyn.pathString(classname);

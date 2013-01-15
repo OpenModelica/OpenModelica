@@ -2192,7 +2192,7 @@ public function compareSimulationResults "compares simulation results."
   input Real refTol;
   input Real absTol;
   input String[:] vars;
-  output String result;
+  output String[:] result;
 external "builtin";
 annotation(preferredView="text");
 end compareSimulationResults;
