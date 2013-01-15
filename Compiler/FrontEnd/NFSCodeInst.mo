@@ -164,6 +164,11 @@ algorithm
 
         // Mark structural parameters.
         (cls, symtab) = assignParamTypes(cls, symtab);
+        
+        // Type all instantiated functions.
+        ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions),
+          NFTyping.typeFunction, (functions, symtab));
+        
         // Type the instantiated class.
         (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab, functions);
 
@@ -176,10 +181,6 @@ algorithm
         // Type the instantiated class again, to type any instantiated
         // conditional components that might have been added.
         (cls, symtab) = NFTyping.typeClass(cls, NFTyping.CONTEXT_MODEL(), symtab, functions);
-        
-        // Type all instantiated functions.
-        ((functions, symtab)) = List.fold(BaseHashTable.hashTableKeyList(functions),
-          NFTyping.typeFunction, (functions, symtab));
 
         // Type check the typed class components.
         (cls, symtab) = NFTypeCheck.checkClassComponents(cls, NFTyping.CONTEXT_MODEL(), symtab);        
