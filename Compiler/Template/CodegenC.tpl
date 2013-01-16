@@ -1245,28 +1245,35 @@ template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
   "Generates reinit statemeant"
 ::=
   match whenClauses
-  case SIM_WHEN_CLAUSE(__) then
-    let &preExp = buffer "" /*BUFD*/
-    let &helpInits = buffer "" /*BUFD*/
-    let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
-      ;separator=" || ")
-    let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
+    case SIM_WHEN_CLAUSE(__) then
+      let &preExp = buffer "" /*BUFD*/
+      let &helpInits = buffer "" /*BUFD*/
+      let helpIf = (conditions |> (e, hidx) =>
+        let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+        let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+        '<%whenCondition(e)%>';separator=" || ")
+      let ifthen = functionWhenReinitStatementThen(reinits, &varDecls /*BUFP*/)                     
 
-    if reinits then  
-      <<
-      //For whenclause index: <%int%>
-      <%preExp%>
-      <%helpInits%>
-      if(<%helpIf%>)
-      { 
+      if reinits then  
+        <<
+        //For whenclause index: <%int%>
+        <%preExp%>
+        <%helpInits%>
+        if(<%helpIf%>)
+        { 
           <%ifthen%>
-      }
-      >>
+        }
+        >>
 end genreinits;
 
+
+template whenCondition(DAE.Exp exp)
+::=
+  match exp
+    case CALL(path = IDENT(name = "initial"), expLst = {}) then
+      'initial() && !useSymbolicInitialization'
+    else '<%expCref(exp)%> && !$P$PRE<%expCref(exp)%> /* edge */'
+end whenCondition;
 
 template functionWhenReinitStatementThen(list<WhenOperator> reinits, Text &varDecls /*BUFP*/)
   "Generates re-init statement for when equation."
@@ -2288,13 +2295,7 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
 
 case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
-  let expPart = daeExp(exp, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
-  let &helpInits = buffer "" /*BUFD*/
-  let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
-    ;separator=" || ")C*/, &varDecls /*BUFD*/)
+  let expPart = daeExp(exp, context, &preExp, &varDecls /*BUFD*/)
   match expTypeFromExpShort(eqn.exp)
   case "boolean" then
     let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)
@@ -2481,10 +2482,9 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
-    ;separator=" || ")
+    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+    '<%whenCondition(e)%>';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
   <%preExp%>
@@ -2502,10 +2502,9 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   let &preExp = buffer "" /*BUFD*/
   let &helpInits = buffer "" /*BUFD*/
   let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
-    ;separator=" || ")
+    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+    '<%whenCondition(e)%>';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
   <<
@@ -2529,10 +2528,9 @@ template equationElseWhen(SimEqSystem eq, Context context, Text &preExp /*BUFD*/
 match eq
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) then
   let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
-    ;separator=" || ")
+    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+    '<%whenCondition(e)%>';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   <<
   else if(<%helpIf%>)
@@ -2542,10 +2540,9 @@ case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = NONE()) th
   >>
 case SES_WHEN(left=left, right=right,conditions=conditions,elseWhen = SOME(elseWhenEq)) then
   let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
-    ;separator=" || ")
+    let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
+    let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
+    '<%whenCondition(e)%>';separator=" || ")
   let assign = whenAssign(left,typeof(right),right,context, &varDecls /*BUFD*/)
   let elseWhen = equationElseWhen(elseWhenEq,context,preExp,helpInits, varDecls)
   <<
@@ -2563,13 +2560,7 @@ template whenAssign(ComponentRef left, Type ty, Exp right, Context context,  Tex
 match ty
   case T_ARRAY(__) then
     let &preExp = buffer "" /*BUFD*/
-    let expPart = daeExp(right, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
-    let &helpInits = buffer "" /*BUFD*/
-    let helpIf = (conditions |> (e, hidx) =>
-      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFD*/)
-      let &helpInits += 'data->simulationInfo.helpVars[<%hidx%>] = <%helpInit%>;'
-      'data->simulationInfo.helpVars[<%hidx%>] && !data->simulationInfo.helpVarsPre[<%hidx%>] /* edge */'
-     ;separator=" || ")C*/, &varDecls /*BUFD*/)
+    let expPart = daeExp(right, context, &preExp, &varDecls /*BUFD*/)
     match expTypeFromExpShort(right)
     case "boolean" then
       let tvar = tempDecl("boolean_array", &varDecls /*BUFD*/)

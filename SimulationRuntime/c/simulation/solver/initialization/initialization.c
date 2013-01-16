@@ -46,6 +46,7 @@
 #include "model_help.h"
 #include "read_matlab4.h"
 #include "events.h"
+#include "stateset.h"
 
 #include "initialization_data.h"
 
@@ -606,6 +607,23 @@ static int numeric_initialization(DATA *data, int optiMethod)
 {
   int retVal = 0;
 
+  /* initial sample and delay before initial the system */
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
+  initDelay(data, data->simulationInfo.startTime);
+
+  /* initialize all relations that are ZeroCrossings */
+  storePreValues(data);
+  overwriteOldSimulationData(data);
+
+  updateDiscreteSystem(data);
+
+  /* and restore start values and helpvars */
+  restoreExtrapolationDataOld(data);
+  initializeStateSetPivoting(data);   /* reset state selection */
+  syncPreForHelpVars(data);           /* resetAllHelpVars(data); */
+  storeRelations(data);
+  storePreValues(data);
+
   resetAllHelpVars(data);              /* just a workaround - as long as this method do not support discrete systems at all */
 
   retVal = initialize(data, optiMethod);
@@ -630,7 +648,41 @@ static int numeric_initialization(DATA *data, int optiMethod)
  */
 static int symbolic_initialization(DATA *data)
 {
+  /* initial sample and delay before initial the system */
+  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
+  initDelay(data, data->simulationInfo.startTime);
+
+  /* initialize all relations that are ZeroCrossings */
+  storePreValues(data);
+  overwriteOldSimulationData(data);
+
+  /* do pivoting for dynamic state selection */ 
+  stateSelection(data);
   functionInitialEquations(data);
+
+  updateDiscreteSystem(data);
+
+  /* and restore start values and helpvars */
+  restoreExtrapolationDataOld(data);
+  initializeStateSetPivoting(data);   /* reset state selection */
+  syncPreForHelpVars(data);           /* resetAllHelpVars(data); */
+  storeRelations(data);
+  storePreValues(data);
+
+  /* do pivoting for dynamic state selection */ 
+  stateSelection(data);
+  functionInitialEquations(data);
+  
+  /* do pivoting for dynamic state selection if selection changed try again an */ 
+  if(stateSelection(data) == 1)
+  {
+    functionInitialEquations(data);
+    if(stateSelection(data) == 1)
+    {
+      /* report a warning about strange start values */
+      THROW("Error, cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
+    }
+  }
 
   return 0;
 }
@@ -899,54 +951,22 @@ int initialization(DATA *data, const char* pInitMethod, const char* pOptiMethod,
   }
 
   INFO2(LOG_INIT, "initialization method: %-15s [%s]", initMethodStr[initMethod], initMethodDescStr[initMethod]);
-  INFO2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
+  if(optiMethod == IIM_NUMERIC)
+    INFO2(LOG_INIT, "optimization method:   %-15s [%s]", optiMethodStr[optiMethod], optiMethodDescStr[optiMethod]);
 
   /* start with the real initialization */
   data->simulationInfo.initial = 1;             /* to evaluate when-equations with initial()-conditions */
-
-  /* initial sample and delay before initial the system */
-  initSample(data, data->simulationInfo.startTime, data->simulationInfo.stopTime);
-  initDelay(data, data->simulationInfo.startTime);
-
-  /* initialize all relations that are ZeroCrossings */
-  storePreValues(data);
-  overwriteOldSimulationData(data);
-
-
-  if(initMethod == IIM_SYMBOLIC) {
-    /* do pivoting for dynamic state selection */ 
-    stateSelection(data);
-    retVal = symbolic_initialization(data);
-  }
-  updateDiscreteSystem(data);
-
-  /* and restore start values and helpvars */
-  restoreExtrapolationDataOld(data);
-  initializeStateSetPivoting(data); /* reset state selection */
-  syncPreForHelpVars(data);     /* resetAllHelpVars(data); */
-  storeRelations(data);
-  storePreValues(data);
 
   /* select the right initialization-method */
   if(initMethod == IIM_NONE)
     retVal = 0;
   else if(initMethod == IIM_NUMERIC)
     retVal = numeric_initialization(data, optiMethod);
-  else if(initMethod == IIM_SYMBOLIC) {
-    /* do pivoting for dynamic state selection */ 
-    stateSelection(data);
+  else if(initMethod == IIM_SYMBOLIC)
     retVal = symbolic_initialization(data);
-    /* do pivoting for dynamic state selection if selection changed try again an */ 
-    if (stateSelection(data) == 1) {
-      retVal = symbolic_initialization(data);
-      if (stateSelection(data) == 1) {
-        /* report a warning about strange start values */
-        THROW("Error, cannot initialize unique the dynamic state selection. Use -lv LOG_DSS to see the switching state set.");
-      }
-    }
-  }
   else
     THROW("unsupported option -iim");
+    
   INFO(LOG_SOTI, "### SOLUTION OF THE INITIALIZATION ###");
   INDENT(LOG_SOTI);
   printAllVars(data, 0, LOG_SOTI);

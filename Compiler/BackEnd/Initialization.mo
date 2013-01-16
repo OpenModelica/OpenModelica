@@ -758,19 +758,19 @@ algorithm
       eavars = BackendVariable.emptyVars();
       emptyeqns = BackendEquation.emptyEqns();
       shared = BackendDAE.SHARED(fixvars, 
-                                                 evars, 
-                                                 eavars, 
-                                                 emptyeqns, 
-                                                 reeqns, 
-                                                 constraints, 
-                                                 classAttrs, 
-                                                 cache, 
-                                                 env, 
-                                                 functionTree, 
-                                                 BackendDAE.EVENT_INFO({}, {}, {}, {}, 0, 0), 
-                                                 {}, 
-                                                 BackendDAE.INITIALSYSTEM(), 
-                                                 {});
+                                 evars, 
+                                 eavars, 
+                                 emptyeqns, 
+                                 reeqns, 
+                                 constraints, 
+                                 classAttrs, 
+                                 cache, 
+                                 env, 
+                                 functionTree, 
+                                 BackendDAE.EVENT_INFO({}, {}, {}, {}, 0, 0), 
+                                 {}, 
+                                 BackendDAE.INITIALSYSTEM(), 
+                                 {});
 
       // split it in independend subsystems
       (systs, shared) = BackendDAEOptimize.partitionIndependentBlocksHelper(initsyst, shared, Error.getNumErrorMessages(), true);

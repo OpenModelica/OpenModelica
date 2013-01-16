@@ -187,7 +187,7 @@ algorithm
   end match;
 end getScalarArrayEqns;
 
-protected function getScalarArrayEqns1"
+protected function getScalarArrayEqns1 "function getScalarArrayEqns1
   author: Frenkel TUD 2012-06"
   input  BackendDAE.Equation iEqn;
   input list<BackendDAE.Equation> iAcc;
@@ -12540,7 +12540,20 @@ protected
   BackendDAE.BackendDAEType backendDAEType;
   BackendDAE.SymbolicJacobians symjacs;
   list<BackendDAE.Equation> additionalInitialEquations;
+  
+    list<BackendDAE.WhenClause> whenClauseLst     "List of when clauses. The WhenEquation datatype refer to this list by position" ;
+    list<BackendDAE.ZeroCrossing> zeroCrossingLst "List of zero crossing coditions";
+    list<BackendDAE.ZeroCrossing> sampleLst "List of sample as before, used by cpp runtime";
+    list<BackendDAE.ZeroCrossing> relationsLst "List of zero crossing function as before, used by cpp runtime";
+    Integer relationsNumber "stores the number of relation in all zero-crossings";
+    Integer numberMathEvents "stores the number of math function that trigger events e.g. floor, ceil, integer, ...";
+    
+  Integer index;
   HashTableExpToIndex.HashTable ht;   // is used to avoid redundant condition-variables
+  list<BackendDAE.Var> vars;
+  list<BackendDAE.Equation> eqns;
+  BackendDAE.Variables vars_;
+  BackendDAE.EquationArray eqns_;
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
   BackendDAE.SHARED(knownVars=knownVars,
@@ -12557,11 +12570,27 @@ algorithm
                     extObjClasses=extObjClasses,
                     backendDAEType=backendDAEType,
                     symjacs=symjacs) := shared;
+  BackendDAE.EVENT_INFO(whenClauseLst=whenClauseLst,
+                        zeroCrossingLst=zeroCrossingLst,
+                        sampleLst=sampleLst,
+                        relationsLst=relationsLst,
+                        relationsNumber=relationsNumber,
+                        numberMathEvents=numberMathEvents) := eventInfo;
   
   ht := HashTableExpToIndex.emptyHashTable();
-  (systs, (additionalInitialEquations, _, ht)) := List.mapFold(systs, encapsulateWhenConditions1, ({}, 1, ht));
+  (systs, (additionalInitialEquations, index, ht)) := List.mapFold(systs, encapsulateWhenConditions1, ({}, 1, ht));
+  (whenClauseLst, vars, eqns, additionalInitialEquations, ht, index) := encapsulateWhenConditionsFromWhenClause(whenClauseLst, {}, {}, {}, additionalInitialEquations, ht, index);
+  vars_ := BackendVariable.listVar(vars);
+  eqns_ := BackendEquation.listEquation(eqns);
+  systs := listAppend(systs, {BackendDAE.EQSYSTEM(vars_, eqns_, NONE(), NONE(), BackendDAE.NO_MATCHING(), {})});
   
   initialEqs := BackendEquation.addEquations(additionalInitialEquations, initialEqs);
+  eventInfo := BackendDAE.EVENT_INFO(whenClauseLst,
+                                     zeroCrossingLst,
+                                     sampleLst,
+                                     relationsLst,
+                                     relationsNumber,
+                                     numberMathEvents);
   shared := BackendDAE.SHARED(knownVars,
                               externalObjects,
                               aliasVars,
@@ -12579,6 +12608,48 @@ algorithm
   outDAE := BackendDAE.DAE(systs, shared);
   Debug.fcall2(Flags.DUMP_ENCAPSULATEWHENCONDITIONS, BackendDump.dumpBackendDAE, outDAE, "DAE after PreOptModule >>encapsulateWhenConditions<<");
 end encapsulateWhenConditions;
+
+protected function encapsulateWhenConditionsFromWhenClause
+  input list<BackendDAE.WhenClause> inWhenClause;
+  input list<BackendDAE.WhenClause> inWhenClause_done;
+  input list<BackendDAE.Var> inVars;
+  input list<BackendDAE.Equation> inEqns;
+  input list<BackendDAE.Equation> inAdditionalInitialEquations;
+  input HashTableExpToIndex.HashTable inHT;
+  input Integer inIndex;
+  output list<BackendDAE.WhenClause> outWhenClause;
+  output list<BackendDAE.Var> outVars;
+  output list<BackendDAE.Equation> outEqns;
+  output list<BackendDAE.Equation> outAdditionalInitialEquations;
+  output HashTableExpToIndex.HashTable outHT;
+  output Integer outIndex;
+algorithm
+  (outWhenClause, outVars, outEqns, outAdditionalInitialEquations, outHT, outIndex) := match(inWhenClause, inWhenClause_done, inVars, inEqns, inAdditionalInitialEquations, inHT, inIndex)
+    local
+      list<BackendDAE.Equation> additionalInitialEquations;
+      HashTableExpToIndex.HashTable ht;
+      Integer index;
+      DAE.Exp condition;
+      list<BackendDAE.WhenOperator> reinitStmtLst;
+      Option<Integer> elseClause;
+      
+      list<BackendDAE.Var> vars;
+      list<BackendDAE.Equation> eqns;
+      list<BackendDAE.WhenClause> rest, whenClause_done;
+      
+    case ({}, _, _, _, _, _, _) then (inWhenClause_done, inVars, inEqns, inAdditionalInitialEquations, inHT, inIndex);
+    
+    case (BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)::rest, _, _, _, _, ht, index) equation
+      (condition, vars, eqns, additionalInitialEquations, index, ht) = encapsulateWhenConditionsForEquations1(condition, DAE.emptyElementSource, index, ht);
+      vars = listAppend(vars, inVars);
+      eqns = listAppend(eqns, inEqns);
+      additionalInitialEquations = listAppend(additionalInitialEquations, inAdditionalInitialEquations);
+      whenClause_done = listAppend({BackendDAE.WHEN_CLAUSE(condition, reinitStmtLst, elseClause)}, inWhenClause_done);
+      
+      (whenClause_done, vars, eqns, additionalInitialEquations, ht, index) = encapsulateWhenConditionsFromWhenClause(rest, whenClause_done, vars, eqns, additionalInitialEquations, ht, index);
+    then (whenClause_done, vars, eqns, additionalInitialEquations, ht, index);
+  end match;
+end encapsulateWhenConditionsFromWhenClause;
 
 protected function encapsulateWhenConditions1 "function encapsulateWhenConditions1
   author: lochel

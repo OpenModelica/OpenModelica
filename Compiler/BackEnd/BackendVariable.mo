@@ -2417,8 +2417,7 @@ algorithm
   end match;
 end listVar;
 
-public function listVar1
-"function: listVar
+public function listVar1 "function listVar1
   author: Frenkel TUD 2012-05
   ToDo: replace all listVar calls with this function, tailrecursive implementation
   Takes BackendDAE.Var list and creates a BackendDAE.Variables structure, see also var_list."

@@ -480,7 +480,7 @@ protected
   HashTableExpToIndex.HashTable ht;
 algorithm
   ht := HashTableExpToIndex.emptyHashTable();
- (outDAE, outTree, _) := DAEUtil.traverseDAE(inDAE, functionTree, transformBuiltinExpressions, (ht, 1, 1));
+  (outDAE, outTree, _) := DAEUtil.traverseDAE(inDAE, functionTree, transformBuiltinExpressions, (ht, 1, 1));
 end processBuiltinExpressions;
 
 protected function transformBuiltinExpressions "function transformBuiltinExpressions

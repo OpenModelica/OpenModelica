@@ -219,8 +219,8 @@ end WhenOperator;
 public
 uniontype WhenClause "- When Clause"
   record WHEN_CLAUSE
-    .DAE.Exp condition                   "The when-condition" ;
-    list<WhenOperator> reinitStmtLst "List of reinit statements associated to the when clause." ;
+    .DAE.Exp condition                  "The when-condition" ;
+    list<WhenOperator> reinitStmtLst    "List of reinit statements associated to the when clause." ;
     Option<Integer> elseClause          "index of elsewhen clause" ;
 
   // HL only needs to know if it is an elsewhen the equations take care of which clauses are related.
@@ -228,7 +228,6 @@ uniontype WhenClause "- When Clause"
     // The equations associated to the clause are linked to this when clause by the index in the
     // when clause list where this when clause is stored.
   end WHEN_CLAUSE;
-
 end WhenClause;
 
 public

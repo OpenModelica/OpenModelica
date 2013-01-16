@@ -2625,6 +2625,118 @@ algorithm
   end matchcontinue;
 end solveAlgorithmInverse;
 
+// =============================================================================
+// section for creating SimCode when-clauses
+//
+// =============================================================================
+
+protected function createSimWhenClauses
+  input BackendDAE.BackendDAE inBackendDAE;
+  input list<SimCode.HelpVarInfo> inHelpVarInfo;
+  output list<SimCode.SimWhenClause> outSimWhenClause;
+algorithm
+  outSimWhenClause := matchcontinue (inBackendDAE, inHelpVarInfo)
+    local
+      list<BackendDAE.WhenClause> wc;
+      BackendDAE.EqSystems systs;
+      list<SimCode.SimWhenClause> simWhenClauses;
+      
+    case (BackendDAE.DAE(eqs=systs, shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))), _) equation
+      simWhenClauses = List.fold1(systs, createSimWhenClausesEqs, inHelpVarInfo, {});
+      simWhenClauses =  List.fold1(wc, whenClauseToSimWhenClause, inHelpVarInfo, simWhenClauses);
+    then listReverse(simWhenClauses);
+    
+    else equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/SimCodeUtil.mo: function createSimWhenClauses failed"});
+    then fail();
+  end matchcontinue;
+end createSimWhenClauses;
+
+protected function createSimWhenClausesEqs
+  input BackendDAE.EqSystem inEqSystem;
+  input list<SimCode.HelpVarInfo> inHelpVarInfo;
+  input list<SimCode.SimWhenClause> inSimWhenClause;
+  output list<SimCode.SimWhenClause> outSimWhenClause;
+protected
+  BackendDAE.EquationArray eqs;
+algorithm
+  BackendDAE.EQSYSTEM(orderedEqs=eqs) := inEqSystem;
+  ((outSimWhenClause, _)) := BackendEquation.traverseBackendDAEEqns(eqs, findWhenEquation, (inSimWhenClause, inHelpVarInfo));
+end createSimWhenClausesEqs;
+
+protected function findWhenEquation
+  input tuple<BackendDAE.Equation, tuple<list<SimCode.SimWhenClause>, list<SimCode.HelpVarInfo>>> inTpl;
+  output tuple<BackendDAE.Equation, tuple<list<SimCode.SimWhenClause>, list<SimCode.HelpVarInfo>>> outTpl;
+algorithm
+  outTpl := matchcontinue (inTpl)
+    local
+      BackendDAE.WhenEquation eq;
+      BackendDAE.Equation eqn;
+      list<SimCode.SimWhenClause> simWhenClause;
+      list<SimCode.HelpVarInfo> helpVarInfo;
+      
+    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation = eq), (simWhenClause, helpVarInfo))) equation
+      simWhenClause = findWhenEquation1(eq, helpVarInfo, simWhenClause);
+    then ((eqn, (simWhenClause, helpVarInfo)));
+    
+    else then inTpl;
+  end matchcontinue;
+end findWhenEquation;
+
+protected function findWhenEquation1
+  input BackendDAE.WhenEquation inWhenEquation;
+  input list<SimCode.HelpVarInfo> inHelpVarInfo; 
+  input list<SimCode.SimWhenClause> inSimWhenClause;
+  output list<SimCode.SimWhenClause> outSimWhenClause;
+algorithm
+  outSimWhenClause := match(inWhenEquation, inHelpVarInfo, inSimWhenClause)
+    local
+      DAE.Exp cond;
+      list<DAE.Exp> conditions;
+      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
+      list<DAE.ComponentRef> conditionVars; 
+      BackendDAE.WhenEquation we;
+      
+    case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=NONE()), _, _) equation
+      conditions = getConditionList(cond);
+      conditionsWithHindex =  List.map2(conditions, addHelpForCondition, inHelpVarInfo, inHelpVarInfo);
+      conditionVars = Expression.extractCrefsFromExp(cond);        
+    then SimCode.SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWhenEquation), conditionsWithHindex)::inSimWhenClause;
+    
+    case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=SOME(we)), _, _) equation
+      conditions = getConditionList(cond);
+      conditionsWithHindex =  List.map2(conditions, addHelpForCondition, inHelpVarInfo, inHelpVarInfo);
+      conditionVars = Expression.extractCrefsFromExp(cond);        
+    then findWhenEquation1(we, inHelpVarInfo, SimCode.SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWhenEquation), conditionsWithHindex)::inSimWhenClause);        
+  end match;
+end findWhenEquation1; 
+
+protected function whenClauseToSimWhenClause
+  input BackendDAE.WhenClause whenClause;
+  input list<SimCode.HelpVarInfo> helpVarInfo;
+  input list<SimCode.SimWhenClause> isimWhenClauses;
+  output list<SimCode.SimWhenClause> osimWhenClauses;
+protected
+  DAE.Exp cond;
+  list<BackendDAE.WhenOperator> reinits;
+  list<DAE.ComponentRef> conditionVars;
+  list<DAE.Exp> conditions;
+  list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
+algorithm
+  BackendDAE.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits) := whenClause;
+
+  conditions := getConditionList(cond);
+  conditionsWithHindex := List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
+  conditionVars := Expression.extractCrefsFromExp(cond);
+
+  osimWhenClauses := SimCode.SIM_WHEN_CLAUSE(conditionVars, reinits, NONE(), conditionsWithHindex)::isimWhenClauses;
+end whenClauseToSimWhenClause;
+
+// =============================================================================
+// section for ???
+//
+// =============================================================================
+
 protected function createSampleEquations "function createSampleEquations
   author: wbraun
   Create SimCodeEqns from Backend Equation list.
@@ -5956,119 +6068,6 @@ algorithm
     case _ then inTpl;
   end matchcontinue;
 end traversingisVarDiscreteCrefFinder;
-
-protected function createSimWhenClauses
-  input BackendDAE.BackendDAE dlow;
-  input list<SimCode.HelpVarInfo> helpVarInfo;
-  output list<SimCode.SimWhenClause> osimWhenClauses;
-algorithm
-  osimWhenClauses := matchcontinue (dlow,helpVarInfo)
-    local
-      list<BackendDAE.WhenClause> wc;
-      BackendDAE.EqSystems systs;
-      list<SimCode.SimWhenClause> simWhenClauses;
-      
-    case (BackendDAE.DAE(eqs=systs,shared=BackendDAE.SHARED(eventInfo=BackendDAE.EVENT_INFO(whenClauseLst=wc))),_)
-      equation
-        simWhenClauses = List.fold1(systs,createSimWhenClausesEqs,helpVarInfo,{});
-        simWhenClauses =  List.fold1(wc,whenClauseToSimWhenClause,helpVarInfo,simWhenClauses);
-      then
-        listReverse(simWhenClauses);
-    else
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR,{"./Compiler/BackEnd/SimCodeUtil.mo: function createSimWhenClauses failed"});
-      then fail();
-  end matchcontinue;
-end createSimWhenClauses;
-
-protected function createSimWhenClausesEqs
-  input BackendDAE.EqSystem syst;
-  input list<SimCode.HelpVarInfo> helpVarInfo;
-  input list<SimCode.SimWhenClause> isimWhenClauses;
-  output list<SimCode.SimWhenClause> osimWhenClauses;
-algorithm
-  osimWhenClauses := match (syst,helpVarInfo,isimWhenClauses)
-    local
-      BackendDAE.EquationArray eqs;
-    case (BackendDAE.EQSYSTEM(orderedEqs=eqs),_,_)
-      equation
-        ((osimWhenClauses,_)) = BackendEquation.traverseBackendDAEEqns(eqs,findWhenEquation,(isimWhenClauses,helpVarInfo));
-      then
-        osimWhenClauses;
-  end match;
-end createSimWhenClausesEqs;
-
-protected function findWhenEquation
-  input tuple<BackendDAE.Equation, tuple<list<SimCode.SimWhenClause>,list<SimCode.HelpVarInfo>>> inTpl;
-  output tuple<BackendDAE.Equation, tuple<list<SimCode.SimWhenClause>,list<SimCode.HelpVarInfo>>> outTpl;
-algorithm
-  outTpl := matchcontinue (inTpl)
-    local
-      BackendDAE.WhenEquation eq;
-      BackendDAE.Equation eqn;
-      list<SimCode.SimWhenClause> scw;
-      list<SimCode.HelpVarInfo> helpVarInfo;     
-    case ((eqn as BackendDAE.WHEN_EQUATION(whenEquation = eq), (scw,helpVarInfo)))
-      equation
-        scw = findWhenEquation1(eq,helpVarInfo,scw);
-      then ((eqn,(scw,helpVarInfo)));
-    else then inTpl;
-  end matchcontinue;
-end findWhenEquation;
-
-protected function findWhenEquation1
-  input BackendDAE.WhenEquation inWEqn;
-  input list<SimCode.HelpVarInfo> helpVarInfo; 
-  input list<SimCode.SimWhenClause> iscw;
-  output list<SimCode.SimWhenClause> oscw;
-algorithm
-  oscw := match(inWEqn,helpVarInfo,iscw)
-    local
-      DAE.Exp cond;
-      list<DAE.Exp> conditions;
-      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
-      list<DAE.ComponentRef> conditionVars; 
-      BackendDAE.WhenEquation we;
-    case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=NONE()),_,_)
-      equation
-        conditions = getConditionList(cond);
-        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-        conditionVars = Expression.extractCrefsFromExp(cond);        
-      then
-        SimCode.SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWEqn), conditionsWithHindex)::iscw;
-    case (BackendDAE.WHEN_EQ(condition=cond, elsewhenPart=SOME(we)),_,_)
-      equation
-        conditions = getConditionList(cond);
-        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-        conditionVars = Expression.extractCrefsFromExp(cond);        
-      then
-        findWhenEquation1(we,helpVarInfo,SimCode.SIM_WHEN_CLAUSE(conditionVars, {}, SOME(inWEqn), conditionsWithHindex)::iscw);        
-  end match;
-end findWhenEquation1; 
-
-protected function whenClauseToSimWhenClause
-  input BackendDAE.WhenClause whenClause;
-  input list<SimCode.HelpVarInfo> helpVarInfo;
-  input list<SimCode.SimWhenClause> isimWhenClauses;
-  output list<SimCode.SimWhenClause> osimWhenClauses;
-algorithm
-  osimWhenClauses := match (whenClause, helpVarInfo, isimWhenClauses)
-    local
-      DAE.Exp cond;
-      list<BackendDAE.WhenOperator> reinits;
-      list<DAE.ComponentRef> conditionVars;
-      list<DAE.Exp> conditions;
-      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
-      
-    case (BackendDAE.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), _,_)
-      equation
-        conditions = getConditionList(cond);
-        conditionsWithHindex =  List.map2(conditions, addHelpForCondition, helpVarInfo, helpVarInfo);
-        conditionVars = Expression.extractCrefsFromExp(cond);
-      then
-        SimCode.SIM_WHEN_CLAUSE(conditionVars, reinits, NONE(), conditionsWithHindex)::isimWhenClauses;
-  end match;
-end whenClauseToSimWhenClause;
 
 protected function generateTearingSystem "function: generateTearingSystem
   author: Frenkel TUD
