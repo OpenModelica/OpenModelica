@@ -3168,10 +3168,102 @@ algorithm
   end matchcontinue;   
 end expMul;
 
+public function expPow "function expPow
+  author: vitalij"
+  input DAE.Exp e1;
+  input DAE.Exp e2;
+  output DAE.Exp outExp;
+  
+algorithm
+  outExp := matchcontinue(e1,e2)
+    local
+      Type tp;
+      DAE.Exp e,e3,e4;
+      Real r1,r2;
+    
+    // e1^1 = e1
+    case(_,_) equation
+      true = isOne(e2);
+    then e1;
+
+    // e1^0 = 1
+    case(_,_) equation
+      true = isZero(e2);
+      false = isZero(e1);
+    then makeConstOne(typeof(e1));
+    
+    // 1^e2 = 1
+    case (_,_) equation
+      true = isConstOne(e1);
+    then e1;
+      
+    // 0^e2 = 0
+    case (_,_) equation
+      true = isZero(e1);
+      false = isZero(e2);
+    then makeConstZero(typeof(e1));
+    
+    // (r1*e1)^r2 = c*e1^r2
+    case (DAE.BINARY(DAE.RCONST(real = r1),DAE.MUL(_),exp2 = e3) , DAE.RCONST(real = r2)) equation
+      e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
+      e = expMul(e,expPow(e3,e2));
+      then e;
+        
+   // (e1*r1)^r2 = c*e1^r2
+    case (DAE.BINARY(e3, DAE.MUL(_), DAE.RCONST(real = r1)) , DAE.RCONST(real = r2)) equation
+      e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
+      e = expMul(e,expPow(e3,e2));
+      then e;
+    
+    // (r1/e1)^r2 = c/e1^r2
+    case (DAE.BINARY(DAE.RCONST(real = r1),DAE.DIV(_),exp2 = e3) , DAE.RCONST(real = r2)) equation
+      e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
+      e = makeDiv(e, expPow(e3,e2));
+      then e;
+        
+    // (e1/r1)^r2 = c*e1^r2
+    case (DAE.BINARY(e3, DAE.MUL(_), DAE.RCONST(real = r1)) , DAE.RCONST(real = r2)) equation
+      e = expPow(DAE.RCONST(r1), DAE.RCONST(r2));
+      e = makeDiv(DAE.RCONST(1.0), e);
+      e = expMul(e, expPow(e3,e2));
+      then e;
+   
+   // (-e)^r = e^r if r is even
+   case (DAE.UNARY(exp=e,operator=DAE.UMINUS(ty=tp)), DAE.RCONST(real = r1)) equation
+    r2 = realMod(r1,2.0);
+    true = realEq(r2,0.0);
+    e = expPow(e,DAE.RCONST(r1));
+   then e;
+     
+  // (e1/e2)^(-r) = (e2/e1)^r
+  case (DAE.BINARY(e3, DAE.DIV(_), e4) , DAE.RCONST(r2)) equation
+    true = realLt(r2, 0.0);
+    r2 = realNeg(r2);
+    e = makeDiv(e4,e3);
+    e = expPow(e,DAE.RCONST(r2));
+  then e;
+    
+  // e ^ -r1 / 1/(e^r1)  
+  case (_, DAE.RCONST(real = r1)) equation
+    true = realLt(r1, 0.0);
+    r1 = realNeg(r1);
+    e = DAE.RCONST(1.0);
+    e3 = expPow(e1, DAE.RCONST(r1));
+    e = makeDiv(e,e3);
+  then e;
+    
+  else equation
+     tp = typeof(e1);
+  then DAE.BINARY(e1,DAE.POW(tp),e2);   
+    
+  end matchcontinue;
+end expPow;
+
+
 public function expMaxScalar
-"function: expMin
+"function: expMax
   author: Frenkel TUD 2011-04
-  returns min(e1,e2)."
+  returns max(e1,e2)."
   input DAE.Exp e1;
   input DAE.Exp e2;
   output DAE.Exp outExp;

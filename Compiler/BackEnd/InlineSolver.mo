@@ -119,8 +119,7 @@ protected
   
 algorithm
   BackendDAE.DAE(systs, shared) := inDAE;
-  ((systs,vars,outInlineVars)) := List.fold(systs, eliminatedStatesDerivations,({},BackendVariable.emptyVars(),BackendVariable.emptyVars()));
-  outInlineVars := BackendVariable.mergeVariables(outInlineVars,vars);
+  ((systs,vars)) := List.fold(systs, eliminatedStatesDerivations,({},BackendVariable.emptyVars()));
   timesystem := timeEquation();
   systs := listAppend(systs, {timesystem});
   shared := addKnowInitialValueForState(shared,vars);
@@ -135,6 +134,8 @@ algorithm
   dae := BackendDAEUtil.transformBackendDAE(dae, SOME((BackendDAE.NO_INDEX_REDUCTION(), BackendDAE.EXACT())), NONE(), NONE());
   // simplify system
   (outDAE, Util.SUCCESS()) := BackendDAEUtil.pastoptimiseDAE(dae, pastOptModules, matchingAlgorithm, daeHandler);
+  
+  outInlineVars := BackendVariable.emptyVars();
 end dae_to_algSystem;
 
 protected function addKnowInitialValueForState "function addKnowInitialValueForState
@@ -205,19 +206,19 @@ algorithm
   eqn := BackendDAE.SOLVED_EQUATION(t0, t, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
-  rhs := eADD(eMUL(DAE.RCONST(0.1726731646460114281008537718766),dt),t);
+  rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.1726731646460114281008537718766),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t1, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
-  rhs := eADD(eMUL(DAE.RCONST(0.50),dt),t);
+  rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.50),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t2, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
-  rhs := eADD(eMUL(DAE.RCONST(0.8273268353539885718991462281234),dt),t);
+  rhs := Expression.expAdd(Expression.expMul(DAE.RCONST(0.8273268353539885718991462281234),dt),t);
   eqn := BackendDAE.SOLVED_EQUATION(t3, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
-  rhs := eADD(dt,t);
+  rhs := Expression.expAdd(dt,t);
   eqn := BackendDAE.SOLVED_EQUATION(t4, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
@@ -231,8 +232,8 @@ protected function eliminatedStatesDerivations "function eliminatedStatesDerivat
   change function call der(x) in  variable xder
   change kind: state in known variable"
   input BackendDAE.EqSystem inEqSystem;
-  input tuple<BackendDAE.EqSystems, BackendDAE.Variables,BackendDAE.Variables> inTupel ;
-  output tuple<BackendDAE.EqSystems, BackendDAE.Variables,BackendDAE.Variables> outTupel;
+  input tuple<BackendDAE.EqSystems, BackendDAE.Variables> inTupel ;
+  output tuple<BackendDAE.EqSystems, BackendDAE.Variables> outTupel;
 protected  
   BackendDAE.Variables orderedVars;
   BackendDAE.Variables vars, invars, outvars,inlinevars,inInlinevars;
@@ -243,7 +244,7 @@ protected
   BackendDAE.StateSets stateSets;
 algorithm
   BackendDAE.EQSYSTEM(orderedVars=orderedVars, orderedEqs=orderedEqs, stateSets=stateSets) := inEqSystem;
-  (inSystems, invars, inInlinevars) := inTupel;
+  (inSystems, invars) := inTupel;
   vars := BackendVariable.emptyVars();
   eqns := BackendEquation.emptyEqns();
   eqns2 := BackendEquation.emptyEqns();
@@ -259,10 +260,10 @@ algorithm
   ((_, eqns1,_,_)) := BackendEquation.traverseBackendDAEEqns(orderedEqs, replaceStates_eqs, (orderedVars, eqns,"$t4","$t4_der"));
   eqns2 :=  BackendEquation.mergeEquationArray(eqns1,eqns2);
   // change kind: state in known variable 
-  ((vars, eqns, outvars, inlinevars)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns2, invars,inInlinevars));
+  ((vars, eqns, outvars)) := BackendVariable.traverseBackendDAEVars(orderedVars, replaceStates_vars, (vars, eqns2, invars));
   eqSystem := BackendDAE.EQSYSTEM(vars, eqns, NONE(), NONE(), BackendDAE.NO_MATCHING(), stateSets);
   (eqSystem, _, _) := BackendDAEUtil.getIncidenceMatrix(eqSystem, BackendDAE.NORMAL(),NONE());
-  outTupel := (listAppend(inSystems,{eqSystem}), BackendVariable.mergeVariables(invars,outvars),inlinevars);
+  outTupel := (listAppend(inSystems,{eqSystem}), BackendVariable.mergeVariables(invars,outvars));
 end eliminatedStatesDerivations;
 
 protected function replaceStates_eqs "function replaceStates_eqs
@@ -305,12 +306,7 @@ algorithm
       BackendDAE.Equation eqn;
     case (BackendDAE.EQUATION(exp=e1,scalar=e2,source=source,differentiated=differentiated),true) equation
       cr = Expression.expCref(e1);
-      eqn = BackendDAE.SOLVED_EQUATION(
-        cr, 
-        e2,
-        source, 
-        differentiated
-        );
+      eqn = BackendDAE.SOLVED_EQUATION(cr, e2, source, differentiated);
       then eqn;
     else 
       then inEqn;
@@ -394,12 +390,12 @@ end crefPrefixStringWithpopCref;
 
 protected function replaceStates_vars "function replaceStates_vars
   author: vitalij"
-  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables, BackendDAE.Variables>> inTpl;
-  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables, BackendDAE.Variables>> outTpl;
+  input tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables>> inTpl;
+  output tuple<BackendDAE.Var, tuple<BackendDAE.Variables, BackendDAE.EquationArray, BackendDAE.Variables>> outTpl;
 algorithm
   outTpl := matchcontinue(inTpl)
     local
-      BackendDAE.Var var;
+      BackendDAE.Var var, var0;
       BackendDAE.Variables vars, vars0, inlineVars;
       DAE.ComponentRef cr, x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4;
       DAE.Type ty;
@@ -410,62 +406,54 @@ algorithm
       DAE.Exp dt;
  
     // state
-    case((var as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(_), varType=ty, arryDim=arryDim), (vars, eqns,vars0, inlineVars))) equation
-      var = BackendVariable.setVarKind(var, BackendDAE.VARIABLE());
+    case((var0 as BackendDAE.VAR(varName=cr, varKind=BackendDAE.STATE(_), varType=ty, arryDim=arryDim), (vars, eqns,vars0))) equation
+      var = BackendVariable.setVarKind(var0, BackendDAE.VARIABLE());
       vars = BackendVariable.addVar(var, vars);
     
       (x0,var) = stringCrVar("$t0", cr, ty, arryDim); // knownVars
       vars0 = BackendVariable.addVar(var, vars0);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (x1,var) = stringCrVar("$t1",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (x2,var) = stringCrVar("$t2",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (x3,var) = stringCrVar("$t3",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (x4,var) = stringCrVar("$t4",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (derx0,var) = stringCrVar("$t0_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (derx1,var) = stringCrVar("$t1_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (derx2,var) = stringCrVar("$t2_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (derx3,var) = stringCrVar("$t3_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
       
       (derx4,var) = stringCrVar("$t4_der",cr,ty,arryDim);
       vars = BackendVariable.addVar(var, vars);
-      inlineVars = BackendVariable.addVar(var,inlineVars);
+      
+      var = BackendVariable.setVarKind(var0, BackendDAE.VARIABLE());
+      vars = BackendVariable.addVar(var, vars);
       
       dt = DAE.CREF(DAE.CREF_IDENT("$dt", DAE.T_REAL_DEFAULT, {}), DAE.T_REAL_DEFAULT);
       
-      //eqn = eulerStep(x0,x1,derx0,dt,ty);
       eqn = stepLobatt(x0, x1, x2, x3, x4, derx0, derx1, derx2, derx3, derx4, dt, ty);
       eqns = BackendEquation.mergeEquationArray(eqn, eqns);
       eqns = BackendEquation.equationAdd(BackendDAE.SOLVED_EQUATION(cr, DAE.CREF(x4, ty), DAE.emptyElementSource, false), eqns);
-    then ((var, (vars, eqns,vars0,inlineVars)));
+    then ((var, (vars, eqns,vars0)));
     
     // else
-    case((var, (vars, eqns,vars0,inlineVars))) equation
+    case((var, (vars, eqns,vars0))) equation
       vars = BackendVariable.addVar(var, vars);
-    then ((var, (vars, eqns,vars0,inlineVars)));
+    then ((var, (vars, eqns,vars0)));
     
     else equation
       Error.addMessage(Error.INTERNAL_ERROR, {"./Compiler/BackEnd/InlineSolver.mo: function replaceStates1_vars failed"});
@@ -510,8 +498,8 @@ algorithm
     DAE.RCONST(5.791287847477920003294023596864),   // +0,-1
     f0, f1, f2, f3, f4, x0, x1);
   
-  lhs := eADD(z0, eMUL(eADD3(k0, k1, k3),dt));
-  rhs := eADD(z1, eMUL(eADD(k2, k4),dt));
+  lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k3}),dt));
+  rhs := Expression.expAdd(z1, Expression.expMul(Expression.expAdd(k2, k4),dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
@@ -524,8 +512,8 @@ algorithm
       DAE.RCONST(2.0),   // +0,-1
       f0, f1, f2, f3, f4, x0, x2);
   
-  lhs := eADD(z0, eMUL(eADD4(k0, k1, k2, k4),dt));
-  rhs := eADD(z1, eMUL(k3,dt));
+  lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k4}),dt));
+  rhs := Expression.expAdd(z1, Expression.expMul(k3,dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
@@ -538,8 +526,8 @@ algorithm
       DAE.RCONST(1.208712152522079996705976403136),   // +0,-1
       f0, f1, f2, f3, f4, x0, x3);
   
-  lhs := eADD(z0, eMUL(eADD4(k0, k1, k2, k3),dt));
-  rhs := eADD(z1, eMUL(k4,dt));
+  lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k3}),dt));
+  rhs := Expression.expAdd(z1, Expression.expMul(k4,dt));
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
   
@@ -552,7 +540,7 @@ algorithm
     DAE.RCONST(1.0),   // +0,-1
     f0, f1, f2, f3, f4, x0, x4);
   
-  lhs := eADD(z0, eMUL(eADD5(k0, k1, k2, k3,k4),dt));
+  lhs := Expression.expAdd(z0, Expression.expMul(Expression.makeSum({k0, k1, k2, k3,k4}),dt));
   rhs := z1;
   eqn := BackendDAE.EQUATION(lhs, rhs, DAE.emptyElementSource, false);
   eqns := BackendEquation.equationAdd(eqn, eqns);
@@ -564,13 +552,13 @@ protected function LobattoTerms
   input DAE.Exp f0, f1, f2, f3, f4, x0, x1;
   output DAE.Exp k0, k1, k2, k3, k4, z0, z1;
  algorithm
-   k0 := eMUL(a0, f0);
-   k1 := eMUL(a1, f1);
-   k2 := eMUL(a2, f2);
-   k3 := eMUL(a3, f3);
-   k4 := eMUL(a4, f4); 
-   z0 := eMUL(aa, x0);
-   z1 := eMUL(aa, x1); 
+   k0 := Expression.expMul(a0, f0);
+   k1 := Expression.expMul(a1, f1);
+   k2 := Expression.expMul(a2, f2);
+   k3 := Expression.expMul(a3, f3);
+   k4 := Expression.expMul(a4, f4); 
+   z0 := Expression.expMul(aa, x0);
+   z1 := Expression.expMul(aa, x1); 
 end LobattoTerms;
 
 protected function stringCrVar "function stringCrVar
@@ -585,57 +573,5 @@ algorithm
   outCR := ComponentReference.crefPrefixString(varTyp, inCR);
   var := BackendDAE.VAR(outCR, BackendDAE.VARIABLE(), DAE.BIDIR(), DAE.NON_PARALLEL(), ty, NONE(), NONE(), arryDim, DAE.emptyElementSource, NONE(), NONE(), DAE.NON_CONNECTOR());
 end stringCrVar;
-
-
-protected function eADD "function eADD
-  author vitalij"
-  input DAE.Exp a;
-  input DAE.Exp b;
-  output DAE.Exp c;
-algorithm
-  c := DAE.BINARY(a,DAE.ADD(DAE.T_REAL_DEFAULT),b);
-end eADD;
-
-protected function eADD3 "function eADD3
-  author vitalij"
-  input DAE.Exp a;
-  input DAE.Exp b;
-  input DAE.Exp c;
-  output DAE.Exp d;
-algorithm
-  d := eADD(eADD(a,b),c);
-end eADD3;
-
-protected function eADD4 "function eADD4
-  author vitalij"
-  input DAE.Exp a;
-  input DAE.Exp b;
-  input DAE.Exp c;
-  input DAE.Exp d;
-  output DAE.Exp e;
-algorithm
-  e := eADD(eADD3(a,b,c),d);
-end eADD4;
-
-protected function eADD5 "function eADD5
-  author vitalij"
-  input DAE.Exp a;
-  input DAE.Exp b;
-  input DAE.Exp c;
-  input DAE.Exp d;
-  input DAE.Exp e;
-  output DAE.Exp f;
-algorithm
-  f := eADD(eADD4(a,b,c,d),e);
-end eADD5;
-
-protected function eMUL "function eMUL
-  author vitalij"
-  input DAE.Exp a;
-  input DAE.Exp b;
-  output DAE.Exp c;
-algorithm
-  c := DAE.BINARY(a,DAE.MUL(DAE.T_REAL_DEFAULT),b);
-end eMUL;
 
 end InlineSolver;
