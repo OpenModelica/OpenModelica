@@ -8412,7 +8412,7 @@ algorithm
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache, env, ih, ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
-        // cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
+        cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
@@ -8432,7 +8432,7 @@ algorithm
             pf, dims, idxs, inst_dims, impl, comment, info, graph, csets);
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         (cache,dae) = addArrayVarEquation(cache,compenv,ih,ci_state, dae, ty, mod, NFInstUtil.toConst(vt), pre, n, source);
-        // cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
+        cache = addRecordConstructorFunction(cache,Types.arrayElementType(ty));
         Error.updateCurrentComponent("",Absyn.dummyInfo);
       then
         (cache,compenv,ih,store,dae,csets,ty,graph);
